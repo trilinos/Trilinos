@@ -51,13 +51,13 @@ done
 #
 # Set up configuration files
 #
-BASE=/projects/albany
+BASE=/usr/local/gcc-5.1.0/mpich-3.1.4
 BOOSTDIR=$BASE
-COMPILER_PATH=/sierra/sntools/SDK/compilers/gcc/5.2.0-RHEL6
-MPI_BASE_DIR=/sierra/sntools/SDK/mpi/openmpi/1.8.8-gcc-5.2.0-RHEL6
+COMPILER_PATH=/usr/local/gcc-5.1.0
+MPI_BASE_DIR=/usr/local/gcc-5.1.0/mpich-3.1.4
 NETCDF=$BASE
 HDFDIR=$BASE
-MKL_PATH=/sierra/sntools/SDK/compilers/intel/composer_xe_2016.1.150
+MKL_PATH=/opt/intel/composer_xe_2015.3.187
 LABLAS_LIBRARIES="-L$MKL_PATH/lib/intel64 -Wl,--start-group $MKL_PATH/mkl/lib/intel64/libmkl_intel_lp64.a $MKL_PATH/mkl/lib/intel64/libmkl_core.a $MKL_PATH/mkl/lib/intel64/libmkl_sequential.a -Wl,--end-group -lpthread -ldl"
 
 echo "
@@ -106,13 +106,13 @@ echo "
 -D TPL_ENABLE_HDF5:BOOL=ON
 -D TPL_ENABLE_Matio:BOOL=OFF
 -D Netcdf_INCLUDE_DIRS:PATH=\"$NETCDF/include\"
--D Netcdf_LIBRARY_DIRS:PATH=\"$NETCDF/lib\"
+-D Netcdf_LIBRARY_DIRS:PATH=\"$NETCDF/lib64\"
 -D HDF5_INCLUDE_DIRS:PATH=\"$HDFDIR/include\"
 -D HDF5_LIBRARY_DIRS:PATH=\"$HDFDIR/lib\"
 -D Zlib_INCLUDE_DIRS:PATH=$HDFDIR/include
 -D Zlib_LIBRARY_DIRS:PATH=$HDFDIR/lib
--D TPL_HDF5_LIBRARIES:PATH=\"${HDFDIR}/lib/libnetcdf.a;${HDFDIR}/lib/libhdf5_hl.a;${HDFDIR}/lib/libhdf5.a;${HDFDIR}/lib/libz.a\" 
--D Trilinos_EXTRA_LINK_FLAGS:STRING=\"-L${HDFDIR}/lib -lnetcdf -lhdf5_hl -lhdf5 -lz -lgfortran\"
+-D TPL_HDF5_LIBRARIES:PATH=\"${HDFDIR}/lib64/libnetcdf.a;${HDFDIR}/lib/libhdf5_hl.a;${HDFDIR}/lib/libhdf5.a;${HDFDIR}/lib/libz.a\" 
+-D Trilinos_EXTRA_LINK_FLAGS:STRING=\"-L${HDFDIR}/lib -L${HDFDIR}/lib64 -lnetcdf -lhdf5_hl -lhdf5 -lz -lgfortran\"
 " > MPI_RELEASE_SS.config
 
 
@@ -121,6 +121,7 @@ echo "
 -DCMAKE_CXX_COMPILER:STRING=$COMPILER_PATH/bin/g++
 -DCMAKE_C_COMPILER:STRING=$COMPILER_PATH/bin/gcc
 -DCMAKE_Fortran_COMPILER:STRING=$COMPILER_PATH/bin/gfortran
+-DTrilinos_ENABLE_Isorropia:BOOL=OFF
 " > SERIAL_RELEASE.config
 
 #../../checkin-test.py \
@@ -132,9 +133,13 @@ echo "
 #--no-eg-git-version-check \
 #$EXTRA_ARGS
 
+# Isorropia does not pass all serial tests
+# --disable-packages=Isorropia \
+
 ../../checkin-test.py \
 --make-options="-j 32" \
---ctest-options="-j 1" \
+--st-extra-builds=MPI_RELEASE_SS \
+--ctest-options="-j 16" \
 --send-email-to="" \
 $EXTRA_ARGS
 

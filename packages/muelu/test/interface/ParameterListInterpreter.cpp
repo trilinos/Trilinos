@@ -335,7 +335,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 int main(int argc, char* argv[]) {
   bool success = false;
   bool verbose = true;
-  int return_code = EXIT_FAILURE;
 
   try {
     const bool throwExceptions     = false;
@@ -355,7 +354,7 @@ int main(int argc, char* argv[]) {
 
     if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-      return_code = main_<double,int,int,Xpetra::EpetraNode>(clp, argc, argv);
+      return main_<double,int,int,Xpetra::EpetraNode>(clp, argc, argv);
 #else
       throw MueLu::Exceptions::RuntimeError("Epetra is not available");
 #endif
@@ -366,14 +365,14 @@ int main(int argc, char* argv[]) {
       typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-      return_code = main_<double,int,long,Node>(clp, argc, argv);
+      return main_<double,int,long,Node>(clp, argc, argv);
 #else
 #  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-      return_code = main_<double,int,int,Node> (clp, argc, argv);
+      return main_<double,int,int,Node> (clp, argc, argv);
 #  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-      return_code = main_<double,int,long,Node>(clp, argc, argv);
+      return main_<double,int,long,Node>(clp, argc, argv);
 #  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-      return_code = main_<double,int,long long,Node>(clp, argc, argv);
+      return main_<double,int,long long,Node>(clp, argc, argv);
 #  else
       throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
 #  endif
@@ -388,7 +387,7 @@ int main(int argc, char* argv[]) {
   // fix warning of unused variable success. We need success for above macro
   if(success == false) success = (return_code == EXIT_FAILURE) ? false : true;
 
-  return return_code;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
 void run_sed(const std::string& pattern, const std::string& baseFile) {

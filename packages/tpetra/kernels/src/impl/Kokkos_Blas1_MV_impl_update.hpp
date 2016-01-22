@@ -47,6 +47,10 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
+#ifdef HAVE_TPETRAKERNELS_ETI_ONLY
+#define KOKKOSBLAS_ETI_ONLY
+#endif
+
 namespace KokkosBlas {
 namespace Impl {
 
@@ -536,6 +540,7 @@ struct Update {};
 // Partial specialization for XMV, YMV, and ZMV rank-2 Views.
 template<class XMV, class YMV, class ZMV>
 struct Update<XMV, YMV, ZMV, 2>
+#ifndef KOKKOSBLAS_ETI_ONLY
 {
   typedef typename XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
@@ -600,11 +605,14 @@ struct Update<XMV, YMV, ZMV, 2>
       MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
     }
   }
-};
+}
+#endif
+;
 
 // Partial specialization for XV, YV, and ZV rank-1 Views.
 template<class XV, class YV, class ZV>
 struct Update<XV, YV, ZV, 1>
+#ifndef KOKKOSBLAS_ETI_ONLY
 {
   typedef typename XV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
@@ -668,7 +676,9 @@ struct Update<XV, YV, ZV, 1>
       V_Update_Generic<XV, YV, ZV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -724,30 +734,40 @@ struct Update<Kokkos::View<const SCALAR**, \
 
 #ifdef KOKKOS_HAVE_SERIAL
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA
@@ -864,30 +884,40 @@ struct Update<Kokkos::View<const SCALAR*, \
 
 #ifdef KOKKOS_HAVE_SERIAL
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
 
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA

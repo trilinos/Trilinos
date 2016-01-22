@@ -5,7 +5,7 @@
     <ParameterList name="Sample Generator">
       <!-- =========== OPTIMIZATION-BASED SAMPLING SUBLIST =========== -->
       <ParameterList name="SROM">
-        <Parameter name="Number of Samples"       type="int"    value="15"                /> 
+        <Parameter name="Number of Samples"       type="int"    value="10"                /> 
         <Parameter name="Moments"                 type="string" value="{ 1, 2, 3, 4, 5 }" />
         <Parameter name="CDF Smoothing Parameter" type="double" value="1.e-2"             />
         <Parameter name="Coefficients"            type="string" value="{ 1, 1 }"          />
@@ -63,7 +63,7 @@
         </ParameterList>
         <!-- ===========  STATUS TEST  =========== -->
         <ParameterList name="Status Test">
-          <Parameter name="Gradient Tolerance"   type="double" value="1.e-12" />
+          <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
           <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
           <Parameter name="Step Tolerance"       type="double" value="1.e-8"  />
           <Parameter name="Iteration Limit"      type="int"    value="100"    />

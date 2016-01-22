@@ -1006,9 +1006,10 @@ namespace {
 
     // Get the (mesh) offsets of the diagonal blocks; we'll need them
     // later for getLocalDiagCopy.
-    Teuchos::ArrayRCP<size_t> diagMeshOffsets; // allocated by the method
+    typedef typename Node::device_type DT;
+    Kokkos::View<size_t*, DT> diagMeshOffsets ("offsets", numLclMeshPoints);
     try {
-      blockMat.getLocalDiagOffsets (diagMeshOffsets);
+      graph.getLocalDiagOffsets (diagMeshOffsets);
     } catch (std::exception& e) {
       success = false;
       std::ostringstream os;
@@ -1033,13 +1034,13 @@ namespace {
     // OK to use here.)
     bool meshOffsetsCorrect = true;
     if (numLclMeshPoints == 0) {
-      TEST_EQUALITY( diagMeshOffsets.size (), 0 );
-      if (diagMeshOffsets.size () != 0) {
+      TEST_EQUALITY( diagMeshOffsets.dimension_0 (), 0 );
+      if (diagMeshOffsets.dimension_0 () != 0) {
         meshOffsetsCorrect = false;
       }
     }
     else {
-      TEST_ASSERT( diagMeshOffsets.size () != 0 );
+      TEST_ASSERT( diagMeshOffsets.dimension_0 () != 0 );
       auto localGraph = graph.getLocalGraph ();
       const auto& colMap = * (graph.getColMap ());
 
@@ -1134,7 +1135,7 @@ namespace {
     typedef Kokkos::View<IST***, device_type> diag_blocks_type;
     diag_blocks_type diagBlocks ("diagBlocks", numLclMeshPoints,
                                  blockSize, blockSize);
-    blockMat.getLocalDiagCopy (diagBlocks, diagMeshOffsets ());
+    blockMat.getLocalDiagCopy (diagBlocks, diagMeshOffsets);
 
     bool allBlocksGood = true;
     for (LO lclRowInd = 0; lclRowInd < static_cast<LO> (numLclMeshPoints); ++lclRowInd) {
@@ -1781,13 +1782,13 @@ namespace {
       solution.replaceLocalValues (lclRowInd, baseResidual.getRawPtr ());
     }
 
-    Teuchos::ArrayRCP<size_t> diagonalOffsets(numLocalMeshPoints);
-    blockMat.getLocalDiagOffsets(diagonalOffsets);
+    Kokkos::View<size_t*, device_type> diagonalOffsets ("offsets", numLocalMeshPoints);
+    graph.getLocalDiagOffsets (diagonalOffsets);
 
     typedef Kokkos::View<impl_scalar_type***, device_type> block_diag_type;
     block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
                                blockSize, blockSize);
-    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets());
+    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
 
     Kokkos::View<int**, device_type> pivots ("pivots", numLocalMeshPoints, blockSize);
     // That's how we found this test: the pivots array was filled with ones.
@@ -1981,13 +1982,13 @@ namespace {
       }
     }
 
-    Teuchos::ArrayRCP<size_t> diagonalOffsets(numLocalMeshPoints);
-    blockMat.getLocalDiagOffsets(diagonalOffsets);
+    Kokkos::View<size_t*, device_type> diagonalOffsets ("offsets", numLocalMeshPoints);
+    graph.getLocalDiagOffsets(diagonalOffsets);
 
     typedef Kokkos::View<impl_scalar_type***, device_type> block_diag_type;
     block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
                                blockSize, blockSize);
-    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets());
+    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
 
     Kokkos::View<int**, device_type> pivots ("pivots", numLocalMeshPoints, blockSize);
     // That's how we found this test: the pivots array was filled with ones.
@@ -2049,7 +2050,7 @@ namespace {
       }
     }
 
-    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets ());
+    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
 
     for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
       auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());

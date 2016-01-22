@@ -233,8 +233,9 @@ void OrderingProblem<Adapter>::solve(bool newData)
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
   else if (method == std::string("nd")) 
   {
-      AlgND<base_adapter_t> alg(this->envConst_,problemComm_,this->graphModel_,
-		                this->coordinateModel_,this->baseInputAdapter_);
+      AlgND<Adapter> alg(this->envConst_,problemComm_,this->graphModel_,
+                         this->coordinateModel_,this->baseInputAdapter_);
+
       alg.order(this->solution_);
   }
 #endif
@@ -288,6 +289,14 @@ void OrderingProblem<Adapter>::createOrderingProblem()
       (method == std::string("minimum_degree"))) {
     modelType = GraphModelType;
   }
+
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+  if ((method == std::string("nd")))
+  {
+    modelType = GraphModelType;
+  }
+
+#endif
 
   // Select Model based on parameters and InputAdapter type
 

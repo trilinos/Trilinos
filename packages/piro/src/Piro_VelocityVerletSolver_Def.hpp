@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,20 +36,27 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
 #include <cmath>
 
+#include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
+#include "Piro_TransientDecorator.hpp"
+
+#define ALBANY_BUILD
 #include "Piro_InvertMassMatrixDecorator.hpp"
 
-template <typename Scalar>
-Piro::VelocityVerletSolver<Scalar>::VelocityVerletSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+VelocityVerletSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
                           const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model_,
+                          const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr_,
                           const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer_ ) :
   appParams(appParams_),
   model(model_),
+  solMgr(solMgr_),
   observer(observer_),
   out(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
@@ -85,29 +92,29 @@ Piro::VelocityVerletSolver<Scalar>::VelocityVerletSolver(const Teuchos::RCP<Teuc
   t_final = vvPL->get("Final Time", 0.1);
   t_init  = vvPL->get("Initial Time", 0.0);
   delta_t = t_final / numTimeSteps;
-  
+
   if (vvPL->get("Invert Mass Matrix", false)) {
     Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
     bool lump=vvPL->get("Lump Mass Matrix", false);
     *out << "\nB) Using InvertMassMatrix Decorator\n";
-    model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-             sublist(vvPL,"Stratimikos", true), origModel, 
+    model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
+             sublist(vvPL,"Stratimikos", true), origModel,
              true, lump, true));
   }
 }
 
-template<typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::VelocityVerletSolver<Scalar>::get_x() const
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_x() const
 {
 
   return model->get_x();
 
 }
 
-template<typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::VelocityVerletSolver<Scalar>::get_x_dot() const
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_x_dot() const
 {
 
   return model->get_x_dot();
@@ -115,9 +122,9 @@ Piro::VelocityVerletSolver<Scalar>::get_x_dot() const
 }
 
 
-template<typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::VelocityVerletSolver<Scalar>::get_p_space(int l) const
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p || l < 0,
@@ -130,9 +137,9 @@ Piro::VelocityVerletSolver<Scalar>::get_p_space(int l) const
   return model->get_p_space(l);
 }
 
-template<typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::VelocityVerletSolver<Scalar>::get_g_space(int j) const
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_space(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g || j < 0,
@@ -150,9 +157,9 @@ Piro::VelocityVerletSolver<Scalar>::get_g_space(int j) const
   }
 }
 
-template<typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::VelocityVerletSolver<Scalar>::getNominalValues() const
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNominalValues() const
 {
   Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model->getNominalValues();
@@ -162,9 +169,9 @@ Piro::VelocityVerletSolver<Scalar>::getNominalValues() const
   return result;
 }
 
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar> 
-Piro::VelocityVerletSolver<Scalar>::createInArgs() const
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInArgs() const
 {
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
@@ -172,9 +179,9 @@ Piro::VelocityVerletSolver<Scalar>::createInArgs() const
   return inArgs;
 }
 
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar> 
-Piro::VelocityVerletSolver<Scalar>::createOutArgsImpl() const
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createOutArgsImpl() const
 {
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
@@ -234,9 +241,9 @@ Piro::VelocityVerletSolver<Scalar>::createOutArgsImpl() const
 
 }
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-Piro::VelocityVerletSolver<Scalar>::evalModelImpl(
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
@@ -260,16 +267,45 @@ Piro::VelocityVerletSolver<Scalar>::evalModelImpl(
   }
   const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x = inArgs.get_x()->clone_v();
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > v = inArgs.get_x_dot()->clone_v();
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = Thyra::createMember<Scalar>(model->get_f_space());
+// create a new vector and fill it with the contents of model->get_x()
+  // Build a multivector holding x (0th vector), v (1st vector), and a (2nd vector)
+//  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > soln = createMembers(model->get_x_space(), 3);
+
+// create a new vector and fill it with the contents of model->get_x()
+/*
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x = soln->col(0);
+  assign(x.ptr(), *model->getNominalValues().get_x());
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > v = soln->col(1);
+  assign(v.ptr(), *model->getNominalValues().get_x_dot());
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = soln->col(2);
+  assign(a.ptr(), *model->get_x_dotdot());
+*/
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x = model->getNominalValues().get_x()->clone_v();
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > v = model->getNominalValues().get_x_dot()->clone_v();
+
+// Note that Thyra doesn't have x_dotdot - go get it from the transient decorator around the Albany model
+//  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = model->get_x_dotdot()->clone_v();
+
+  Teuchos::RCP<Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar> >
+      DMEWSF(Teuchos::rcp_dynamic_cast<Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar> >(model));
+
+  Teuchos::RCP<const Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > dec =
+       Teuchos::rcp_dynamic_cast<const Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+           (DMEWSF->getUnderlyingModel());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(dec), std::logic_error,
+      "Underlying model in VelovityVerletSolver does not cast to a Piro::TransientDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>"
+      << std::endl);
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = dec->get_x_dotdot()->clone_v();
 
   RCP<Thyra::VectorBase<Scalar> > finalSolution;
 
   // Zero out the acceleration vector
-  put_scalar(0.0, a.ptr()); 
+  put_scalar(0.0, a.ptr());
 
-  TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null,
                      Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::VelocityVerletSolver " <<
                      "Requires initial x and x_dot: " << std::endl);
@@ -277,9 +313,9 @@ Piro::VelocityVerletSolver<Scalar>::evalModelImpl(
   Scalar t = t_init;
 
   // Observe initial condition
-  if (observer != Teuchos::null) observer->observeSolution(*x, t);
+//  if (observer != Teuchos::null) observer->observeSolution(*soln, t);
 
-  Scalar vo = norm_2(*v); 
+  Scalar vo = norm_2(*v);
   *out << "Initial Velocity = " << vo << std::endl;
 
    if (Teuchos::VERB_MEDIUM <= solnVerbLevel) *out << std::endl;
@@ -298,19 +334,22 @@ Piro::VelocityVerletSolver<Scalar>::evalModelImpl(
    model->evalModel(model_inargs, model_outargs);
 
    for (int timeStep = 1; timeStep <= numTimeSteps; timeStep++) {
- 
+
 //     x->Update(delta_t, *v, ddt, *a, 1.0);
-     V_StVpStV(x.ptr(), delta_t, *v, ddt, *a);
-     t += delta_t; model_inargs.set_t(t);
+     Vp_StV(x.ptr(), delta_t, *v);
+     Vp_StV(x.ptr(), ddt, *a);
+
+     t += delta_t;
+     model_inargs.set_t(t);
 
 //     v->Update(0.5*delta_t, *a, 1.0);
-     V_StV(v.ptr(), 0.5 * delta_t, *a);
+     Vp_StV(v.ptr(), 0.5 * delta_t, *a);
 
      //calc a(x,t,p);
      model->evalModel(model_inargs, model_outargs);
 
 //     v->Update(0.5*delta_t, *a, 1.0);
-     V_StV(v.ptr(), 0.5 * delta_t, *a);
+     Vp_StV(v.ptr(), 0.5 * delta_t, *a);
 
      // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*x, t);
@@ -327,9 +366,9 @@ Piro::VelocityVerletSolver<Scalar>::evalModelImpl(
   }
 }
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Teuchos::ParameterList>
-Piro::VelocityVerletSolver<Scalar>::getValidVelocityVerletParameters() const
+Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidVelocityVerletParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      Teuchos::rcp(new Teuchos::ParameterList("ValidVelocityVerletParams"));;

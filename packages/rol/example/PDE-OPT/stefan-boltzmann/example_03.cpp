@@ -115,6 +115,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > c_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_c, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > pEu_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > pVu_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > Eu_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > Vu_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     // Set all values to 1 in u, z and c.
@@ -130,6 +132,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(c_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > pEup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(pEu_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > pVup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(pVu_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > Eup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(Eu_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > Vup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(Vu_rcp));
     // Create ROL SimOpt vectors.
@@ -185,7 +189,7 @@ int main(int argc, char *argv[]) {
 
     RealT w = 0.0, tol = 1.e-8;
     ROL::Elementwise::Power<RealT> sqr(2.0);
-    Eup->zero(); Vup->zero();
+    pEup->zero(); pVup->zero();
     Teuchos::RCP<ROL::Vector<RealT> > up2 = up->clone();
     for (int i = 0; i < sampler->numMySamples(); i++) {
       // Get samples and weights
@@ -195,18 +199,38 @@ int main(int argc, char *argv[]) {
       con->setParameter(par);
       con->solve(*cp,*up,*zp,tol);
       // Accumulate expected value
-      Eup->axpy(w,*up);
+      pEup->axpy(w,*up);
       // Accumulate variance
       up2->set(*up); up2->applyUnary(sqr);
-      Vup->axpy(w,*up2);
+      pVup->axpy(w,*up2);
     }
+    sampler->sumAll(*Eup,*pEup);
+    sampler->sumAll(*Vup,*pVup);
+
     up2->set(*Eup); up2->applyUnary(sqr);
     Vup->axpy(-1.0,*up2);
     if (sampler->numMySamples() > 1) {
-      Vup->scale((RealT)sampler->numMySamples()/(RealT)(sampler->numMySamples()-1));
+      Vup->scale((RealT)nsamp/(RealT)(nsamp-1));
     }
     data->outputTpetraVector(Eu_rcp, "expected_value_state.txt");
     data->outputTpetraVector(Vu_rcp, "variance_state.txt");
+
+    int nsampCDF = parlist->sublist("Problem").get("Number of Samples for CDF Computation",10*nsamp);
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > samplerCDF
+      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsampCDF,bounds,bman,false,false,100));
+    std::stringstream name;
+    name << "objective_samples." << comm->getRank() << ".txt";
+    std::ofstream file;
+    file.open(name.str().c_str());
+    RealT fval = 0.0;
+    for (int i = 0; i < samplerCDF->numMySamples(); i++) {
+      par = samplerCDF->getMyPoint(i);
+      w   = samplerCDF->getMyWeight(i);
+      objReduced->setParameter(par);
+      fval = objReduced->value(*zp,tol);
+      file << w << "  " << fval << "\n"; 
+    }
+    file.close();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

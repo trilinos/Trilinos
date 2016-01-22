@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -50,9 +50,11 @@
 #include "Teuchos_RCP.hpp"
 #include "Piro_ObserverBase.hpp"
 
+#include "Thyra_AdaptiveSolutionManager.hpp"
+
 namespace Piro {
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class VelocityVerletSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar> {
 
@@ -65,6 +67,7 @@ class VelocityVerletSolver
   /** \brief Takes the number of elements in the discretization . */
   VelocityVerletSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams,
                        const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+                       const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
                        const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null
                       );
 
@@ -110,6 +113,7 @@ private:
    mutable Teuchos::RCP<Teuchos::ParameterList> appParams;
    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
    Teuchos::RCP<Piro::ObserverBase<Scalar> > observer;
+   Teuchos::RCP<Thyra::AdaptiveSolutionManager> solMgr;
    Teuchos::RCP<Teuchos::FancyOStream> out;
    Teuchos::EVerbosityLevel solnVerbLevel;
 

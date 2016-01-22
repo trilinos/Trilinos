@@ -30,8 +30,6 @@ APPEND_SET(HEADERS
   Piro_SolutionObserverBase.hpp
   Piro_SolverFactory.hpp
   Piro_SolverFactory_Def.hpp
-  Piro_AdaptiveSolverFactory.hpp
-  Piro_AdaptiveSolverFactory_Def.hpp
   Piro_StratimikosUtils.hpp
   Piro_ConfigDefs.hpp
   )

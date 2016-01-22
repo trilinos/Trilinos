@@ -104,7 +104,7 @@ inverse_full_pivot(Tensor<T, N> const & A);
 /// \return Subtensor with i-row and j-col deleted.
 ///
 template<typename T, Index N>
-Tensor<T, dimension_subtract<N, 1>::value >
+Tensor<T, N>
 subtensor(Tensor<T, N> const & A, Index const i, Index const j);
 
 ///

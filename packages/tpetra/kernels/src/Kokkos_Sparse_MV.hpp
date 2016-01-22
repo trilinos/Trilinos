@@ -46,6 +46,7 @@
 
 #ifdef KOKKOS_HAVE_CXX11
 #include <type_traits>
+#include <Kokkos_Sparse_impl_spmv.hpp>
 #endif // KOKKOS_HAVE_CXX11
 
 namespace KokkosSparse {
@@ -109,10 +110,10 @@ spmv(const char mode[],
   }
 
   typedef KokkosSparse::CrsMatrix<typename AMatrix::const_value_type,
-    typename AMatrix::const_ordinal_type,
+    typename AMatrix::ordinal_type,
     typename AMatrix::device_type,
-    typename AMatrix::memory_traits,
-    typename AMatrix::const_size_type> AMatrix_Internal;
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename AMatrix::size_type> AMatrix_Internal;
   AMatrix_Internal A_i = A;
 
   // Call single vector version if appropriate

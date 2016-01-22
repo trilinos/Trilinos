@@ -69,6 +69,7 @@ class AdaptiveSolutionManager
 public:
 
   AdaptiveSolutionManager (
+           const int number_of_time_derivatives,
            const Teuchos::RCP<const Epetra_Map> &map_,
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_);
@@ -163,6 +164,9 @@ protected:
 
       //! Current solution vector
       Teuchos::RCP<NOX::Epetra::Vector> currentSolution;
+
+      //! Number of time derivatives (x - 0, x_dot - 1, x_dotdot - 2)
+      const int num_time_deriv;
 
 
 };

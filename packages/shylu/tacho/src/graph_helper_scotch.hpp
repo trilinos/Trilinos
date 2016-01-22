@@ -108,7 +108,7 @@ namespace Tacho {
       SCOTCH_graphFree(&_graph);
     }
 
-    int computeOrdering(const ordinal_type treecut = 15,
+    int computeOrdering(const ordinal_type treecut = 0,
                         const ordinal_type minblksize = 0) {
       int ierr = 0;
 

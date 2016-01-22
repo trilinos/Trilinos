@@ -30,46 +30,14 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
-  int max_task_dependence = 10;
-  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
-
-  int team_size = 1;
-  clp.setOption("team-size", &team_size, "Team size");
-
-  int fill_level = 0;
-  clp.setOption("fill-level", &fill_level, "Fill level");
-
-  int league_size = 1;
-  clp.setOption("league-size", &league_size, "League size");
-
-  bool team_interface = true;
-  clp.setOption("enable-team-interface", "disable-team-interface",
-                &team_interface, "Flag for team interface");
-
-  bool mkl_interface = false;
-  clp.setOption("enable-mkl-interface", "disable-mkl-interface",
-                &mkl_interface, "Flag for MKL interface");
-
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
-  int treecut = 15;
-  clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
-
-  int minblksize = 0;
-  clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
-
-  int prunecut = 0;
-  clp.setOption("prunecut", &prunecut, "Leve to prune tree from bottom");
-
-  int seed = 0;
-  clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
-
-  int niter = 10;
-  clp.setOption("niter", &niter, "Number of iterations for testing");
+  int nrhs = 1;
+  clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -84,20 +52,21 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
 
-    r_val = exampleCholPerformance
+#ifdef HAVE_SHYLUTACHO_MKL
+    const bool skip_factorize = false;
+    const bool skip_solve     = false;
+    r_val = examplePardisoCholPerformance
       <value_type,ordinal_type,size_type,exec_space,void>
       (file_input,
-       treecut,
-       minblksize,
-       prunecut,
-       seed,
-       niter,
-       nthreads, max_task_dependence, team_size,
-       fill_level, league_size,
-       team_interface,
-       (nthreads != 1),
-       mkl_interface,
+       nrhs, 
+       nthreads,
+       skip_factorize,
+       skip_solve,
        verbose);
+#else
+    r_val = -1;
+    cout << "MKL is NOT configured in Trilinos" << endl;
+#endif
 
     exec_space::finalize();
   }

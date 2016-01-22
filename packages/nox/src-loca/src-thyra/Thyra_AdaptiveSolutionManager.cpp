@@ -45,20 +45,19 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Thyra_AdaptiveSolutionManager.H"
+#include "Thyra_AdaptiveSolutionManager.hpp"
 
 
 using Teuchos::rcp;
 
-LOCA::Thyra::AdaptiveSolutionManager::AdaptiveSolutionManager() :
+Thyra::AdaptiveSolutionManager::AdaptiveSolutionManager() :
    adaptiveMesh_(false),
-   time_(0.0), iter_(0),
-   p_index_(0)
+   time_(0.0), iter_(0)
 {
 }
 
 void
-LOCA::Thyra::AdaptiveSolutionManager::
+Thyra::LOCAAdaptiveState::
 buildSolutionGroup() {
 
   const NOX::Thyra::Vector initialGuess(*model_->getNominalValues().get_x());
@@ -68,22 +67,37 @@ buildSolutionGroup() {
 
 }
 
-void
-LOCA::Thyra::AdaptiveSolutionManager::
-initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+Thyra::LOCAAdaptiveState::
+LOCAAdaptiveState(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
            const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
            const Teuchos::RCP<LOCA::GlobalData>& global_data,
            const Teuchos::RCP<LOCA::ParameterVector>& p,
-           int p_index){
+           int p_index)
+    : AdaptiveStateBase(model),
+      saveDataStrategy_(saveDataStrategy.create_weak()),
+      globalData_(global_data),
+      paramVector_(p),
+      p_index_(p_index)
+{
 
   // Create weak RCPs for the model and data strategy to address circular RCPs in the current design
-  model_ = model.create_weak();
-  saveDataStrategy_ = saveDataStrategy.create_weak();
-  globalData_ = global_data;
-  paramVector_ = p;
-  p_index_ = p_index;
 
   buildSolutionGroup();
+
+}
+
+Thyra::TransAdaptiveState::
+TransAdaptiveState(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model)
+    : AdaptiveStateBase(model)
+{
+}
+
+Thyra::AdaptiveStateBase::
+AdaptiveStateBase(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model)
+   : model_(model.create_weak())
+{
+
+  // Create weak RCPs for the model and data strategy to address circular RCPs in the current design
 
 }
 

@@ -201,15 +201,16 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
   if (num_g > 0) g_out = outArgs.get_g(0); 
   RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+     model->get_x_init() == Teuchos::null || model->get_x_dot_init() == Teuchos::null,
+                     Teuchos::Exceptions::InvalidParameter,
+                     std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
+                     "Requires x, and x_dot " << std::endl);
+
   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*model->get_x_init()));
   RCP<Epetra_Vector> v = rcp(new Epetra_Vector(*model->get_x_dot_init()));
   RCP<Epetra_Vector> a = rcp(new Epetra_Vector(*model->get_f_map()));
   a->PutScalar(0.0); 
-
-  TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
-                     Teuchos::Exceptions::InvalidParameter,
-                     std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
-                     "Requires initial x and x_dot: " << std::endl);
 
   double t = t_init;
 

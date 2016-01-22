@@ -82,7 +82,7 @@ template <typename Scalar>
 Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-    const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
+    const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy) :
   SteadyStateSolver<Scalar>(model, model->Np() > 0), // Only one parameter supported
   piroParams_(piroParams),
@@ -101,7 +101,8 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
     (void) paramVector_.addParameter(paramName(k));
   }
 
-  solMgr_->initialize(model, saveDataStrategy_, globalData_, Teuchos::rcpFromRef(paramVector_), l);
+  solMgr_->initialize(Teuchos::rcp(new Thyra::LOCAAdaptiveState(model, saveDataStrategy_, globalData_, 
+            Teuchos::rcpFromRef(paramVector_), l)));
 
   // TODO: Create non-trivial stopping criterion for the stepper
   locaStatusTests_ = Teuchos::null;
@@ -145,7 +146,9 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
       paramVector_[k] = p_init_values[k];
     }
 
-    solMgr_->getSolutionGroup()->setParams(paramVector_);
+//    solMgr_->getSolutionGroup()->setParams(paramVector_);
+    Teuchos::rcp_dynamic_cast< ::Thyra::LOCAAdaptiveState >(solMgr_->getState())
+                 ->getSolutionGroup()->setParams(paramVector_);
   }
 
   LOCA::Abstract::Iterator::IteratorStatus status;
@@ -194,7 +197,10 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
   if(Teuchos::nonnull(x_outargs)){ // g has been allocated, calculate the sizes of g and the solution
 
     x_args_dim = x_outargs->space()->dim();
-    f_sol_dim = solMgr_->getSolutionGroup()->getX().length();
+//    f_sol_dim = solMgr_->getSolutionGroup()->getX().length();
+    f_sol_dim = Teuchos::rcp_dynamic_cast< ::Thyra::LOCAAdaptiveState >(solMgr_->getState())
+          ->getSolutionGroup()->getX().length();
+
 
   }
 
@@ -212,7 +218,10 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
   {
     // Deep copy final solution from LOCA group
     NOX::Thyra::Vector finalSolution(x_final);
-    finalSolution = solMgr_->getSolutionGroup()->getX();
+//    finalSolution = solMgr_->getSolutionGroup()->getX();
+    finalSolution = Teuchos::rcp_dynamic_cast< ::Thyra::LOCAAdaptiveState >(solMgr_->getState())
+                      ->getSolutionGroup()->getX();
+
   }
 
   // If the arrays need resizing
@@ -262,7 +271,7 @@ Teuchos::RCP<Piro::LOCAAdaptiveSolver<Scalar> >
 Piro::observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-    const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
+    const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer)
 {
   const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy =

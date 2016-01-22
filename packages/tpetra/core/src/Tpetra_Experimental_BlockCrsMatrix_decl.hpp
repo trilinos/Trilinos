@@ -616,18 +616,24 @@ public:
   /// that you must call this method again to recompute the offsets.
   void getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
 
-  /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.
+  /// \brief Variant of getLocalDiagCopy() that uses precomputed
+  ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
+  ///
+  /// \param diag [out] On input: Must be preallocated, with
+  ///   dimensions at least (number of diagonal blocks on the calling
+  ///   process) x getBlockSize() x getBlockSize(). On output: the
+  ///   diagonal blocks.  Leftmost index is "which block," then the
+  ///   row index within a block, then the column index within a
+  ///   block.
   ///
   /// This method uses the offsets of the diagonal entries, as
   /// precomputed by getLocalDiagOffsets(), to speed up copying the
   /// diagonal of the matrix.
-  ///
-  /// If the matrix has a const ("static") graph, and if that graph
-  /// is fill complete, then the offsets array remains valid through
-  /// calls to fillComplete() and resumeFill().
   void
-  getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
-                    const Teuchos::ArrayView<const size_t>& offsets) const;
+  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
+                                       Kokkos::MemoryUnmanaged>& diag,
+                    const Kokkos::View<const size_t*, device_type,
+                                       Kokkos::MemoryUnmanaged>& offsets) const;
 
   /// \brief Variant of getLocalDiagCopy() that uses precomputed
   ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
@@ -645,6 +651,23 @@ public:
   void
   getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
                                        Kokkos::MemoryUnmanaged>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const;
+
+  /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.
+  ///
+  /// \warning This overload of the method is DEPRECATED.  Call the
+  ///   overload above that returns the diagonal blocks as a 3-D
+  ///   Kokkos::View.
+  ///
+  /// This method uses the offsets of the diagonal entries, as
+  /// precomputed by getLocalDiagOffsets(), to speed up copying the
+  /// diagonal of the matrix.
+  ///
+  /// If the matrix has a const ("static") graph, and if that graph
+  /// is fill complete, then the offsets array remains valid through
+  /// calls to fillComplete() and resumeFill().
+  void
+  getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
 protected:

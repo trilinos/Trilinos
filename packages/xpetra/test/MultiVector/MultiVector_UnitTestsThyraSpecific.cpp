@@ -102,6 +102,57 @@ namespace {
   }
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( Map, Create,        M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
+  {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Scalar scalar_type;
+    typedef Xpetra::Map<LO, GO, Node> map_type;
+    typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
+    typedef Xpetra::ThyraUtils<Scalar, LO, GO, Node> th_utils_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm ();
+    EXTRACT_LIB(comm,M) // returns mylib
+
+    Teuchos::Array<GlobalOrdinal> gids;
+    gids.push_back(Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30);
+    gids.push_back(Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 + 10);
+    gids.push_back(Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 + 20);
+
+    // create an Xpetra map
+    Teuchos::RCP<const map_type> map = map_factory_type::Build (mylib,
+           3 * Teuchos::as<GlobalOrdinal>(comm->getSize()),
+           gids.view(0,3),
+           0,
+           comm);
+
+    // create Thyra vector space out of Xpetra Map
+    Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> > thMap = th_utils_type::toThyra(map);
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Teuchos::Ordinal>(map->getGlobalNumElements())!=thMap->dim(), std::logic_error, "Global dimension of Xpetra map and Thyra VectorSpaceBase are different.");
+    Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<scalar_type> > thSpmdMap = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<scalar_type> >(thMap);
+    TEUCHOS_TEST_FOR_EXCEPTION(thSpmdMap == Teuchos::null, std::logic_error, "Cannot cast VectorSpaceBase to SpmdVectorSpaceBase.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Teuchos::Ordinal>(map->getNodeNumElements())!=thSpmdMap->localSubDim(), std::logic_error, "Local dimension of Xpetra map and Thyra VectorSpaceBase on one (or more) processor(s) are different.");
+
+    Teuchos::RCP<const map_type> map2 = th_utils_type::toXpetra(thMap, comm);
+    TEST_EQUALITY( map2->getGlobalNumElements(), 3 * Teuchos::as<Xpetra::global_size_t>(comm->getSize()) );
+    TEST_EQUALITY( map2->getNodeNumElements(), 3 );
+    TEST_EQUALITY( map2->getMinGlobalIndex(), Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 );
+    TEST_EQUALITY( map2->getMaxGlobalIndex(), Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 + 20 );
+    TEST_EQUALITY( map2->getGlobalElement(0), Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 );
+    TEST_EQUALITY( map2->getGlobalElement(1), Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 + 10 );
+    TEST_EQUALITY( map2->getGlobalElement(2), Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 + 20 );
+    TEST_EQUALITY( map2->getLocalElement(Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30), 0 );
+    TEST_EQUALITY( map2->getLocalElement(Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 + 10), 1 );
+    TEST_EQUALITY( map2->getLocalElement(Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 + 20), 2 );
+    TEST_EQUALITY( map2->isNodeGlobalElement(Teuchos::as<GlobalOrdinal>(1)), false );
+    TEST_EQUALITY( map2->isNodeLocalElement(Teuchos::as<LocalOrdinal>(1)), true );
+    TEST_EQUALITY( map2->isContiguous(), false );
+    TEST_EQUALITY( map2->getIndexBase(), 0 );
+    TEST_EQUALITY( map2->isSameAs(*map), true );
+    TEST_EQUALITY( map->isSameAs(*map2), true );
+  }
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, Create,        M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
     typedef LocalOrdinal LO;
@@ -317,6 +368,7 @@ namespace {
 
 // list of all tests which run both with Epetra and Tpetra
 #define XP_THYRAMULTIVECTOR_INSTANT(S,LO,GO,N) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( Map,         Create,          M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Create,          M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, CreateProductMV, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
 

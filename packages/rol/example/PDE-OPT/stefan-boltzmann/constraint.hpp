@@ -85,6 +85,7 @@ public:
     data_->getMatB()->apply(*zp, *cp, Teuchos::NO_TRANS, one, one);
 
     // A*u + B*z - f
+    data_->updateF(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
     cp->update(-one, *(data_->getVecF()), one);
   }
 
