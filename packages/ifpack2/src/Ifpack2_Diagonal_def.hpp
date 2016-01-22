@@ -139,7 +139,7 @@ template<class MatrixType>
 void Diagonal<MatrixType>::reset ()
 {
   inverseDiag_ = Teuchos::null;
-  offsets_ = Teuchos::null;
+  offsets_ = offsets_type ();
   isInitialized_ = false;
   isComputed_ = false;
 }
@@ -178,11 +178,17 @@ void Diagonal<MatrixType>::initialize ()
     // the input matrix is a Tpetra::CrsMatrix.
     Teuchos::RCP<const crs_matrix_type> A_crs =
       Teuchos::rcp_dynamic_cast<const crs_matrix_type> (matrix_);
+
     if (A_crs.is_null ()) {
-      offsets_ = Teuchos::null; // offsets are no longer valid
+      offsets_ = offsets_type (); // offsets are no longer valid
     }
     else {
-      A_crs->getLocalDiagOffsets (offsets_);
+      const size_t lclNumRows = A_crs->getNodeNumRows ();
+      if (offsets_.dimension_0 () < lclNumRows) {
+        offsets_ = offsets_type (); // clear first to save memory
+        offsets_ = offsets_type ("offsets", lclNumRows);
+      }
+      A_crs->getCrsGraph ()->getLocalDiagOffsets (offsets_);
     }
   }
 
@@ -225,7 +231,7 @@ void Diagonal<MatrixType>::compute ()
     else {
       // Get the diagonal entries from the Tpetra::CrsMatrix using the
       // precomputed offsets.
-      A_crs->getLocalDiagCopy (*tmpVec, offsets_ ());
+      A_crs->getLocalDiagCopy (*tmpVec, offsets_);
     }
     tmpVec->reciprocal (*tmpVec); // invert the diagonal entries
     inverseDiag_ = tmpVec;

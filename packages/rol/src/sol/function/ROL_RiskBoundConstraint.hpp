@@ -67,10 +67,11 @@ public:
     if ( type == "CVaR" || type == "HMCR" ||
          type == "Log-Exponential Quadrangle" ||
          type == "Quantile-Based Quadrangle" ||
+         type == "Smoothed Worst-Case Quadrangle" ||
          type == "Truncated Mean Quadrangle" ) {
       augmented_ = true;
     }
-    if ( !(bc_->isActivated()) ) {
+    if ( bc == Teuchos::null || (bc != Teuchos::null && !bc->isActivated()) ) {
       BoundConstraint<Real>::deactivate();
     }
   }

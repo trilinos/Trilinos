@@ -280,7 +280,9 @@ private:
 
   //! The vector of inverse diagonal entries to use in apply().
   Teuchos::RCP<const vector_type> inverseDiag_;
-  Teuchos::ArrayRCP<size_t> offsets_;
+
+  typedef Kokkos::View<size_t*, typename node_type::device_type> offsets_type;
+  offsets_type offsets_;
 
   double initializeTime_;
   double computeTime_;

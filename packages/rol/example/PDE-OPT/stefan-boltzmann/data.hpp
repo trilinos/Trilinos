@@ -146,7 +146,7 @@ public:
   StefanBoltzmannData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                       const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                       const Teuchos::RCP<std::ostream> &outStream) {
-    sdim_ = parlist->sublist("Problem").get("Stochastic Dimension",4);
+    sdim_ = parlist->sublist("Problem").get("Stochastic Dimension",6);
     std::vector<Real> par(sdim_,1.0);
 
     /************************************/
@@ -374,7 +374,8 @@ public:
     for (int i=0; i<numCells_; ++i) {                                                        // evaluate RHS function at cubature points
       for (int j=0; j<numCubPoints_; ++j) {
         (*dataF_)(i, j) = funcRHS((*cubPointsPhysical_)(i, j, 0),
-                                  (*cubPointsPhysical_)(i, j, 1));
+                                  (*cubPointsPhysical_)(i, j, 1),
+                                  par);
       }
     }
     Intrepid::FunctionSpaceTools::integrate<Real>(*datavalVecF_,                             // compute local data.val vectors for RHS F
@@ -629,13 +630,16 @@ public:
   }
 
 
-  Real funcRHS(const Real &x1, const Real &x2) const {
-    return 2.0*M_PI*M_PI*std::sin(M_PI*x1)*std::sin(M_PI*x2) + (1.0/(alpha_*128.0*M_PI*M_PI))*std::sin(8.0*M_PI*x1)*std::sin(8.0*M_PI*x2);
+  Real funcRHS(const Real &x1, const Real &x2, const std::vector<Real> &par) const {
+    Real xi1 = 0.5*(par[sdim_-2]+1.0), xi2 = 0.5*(par[sdim_-1]+1.0);
+    return std::exp(-1.e-2*(std::pow(x1-xi1,2.0)+std::pow(x2-xi2,2.0)));
+    // return 2.0*M_PI*M_PI*std::sin(M_PI*x1)*std::sin(M_PI*x2) + (1.0/(alpha_*128.0*M_PI*M_PI))*std::sin(8.0*M_PI*x1)*std::sin(8.0*M_PI*x2);
   }
 
 
   Real funcTarget(const Real &x1, const Real &x2) const {
-    return std::sin(M_PI*x1)*std::sin(M_PI*x2) - std::sin(8.0*M_PI*x1)*std::sin(8.0*M_PI*x2);
+    return 1.0;
+    // return std::sin(M_PI*x1)*std::sin(M_PI*x2) - std::sin(8.0*M_PI*x1)*std::sin(8.0*M_PI*x2);
   }
 
 
@@ -650,7 +654,7 @@ public:
     Real Lc = 1.0/16.0, sqrtpi = std::sqrt(M_PI), xi = std::sqrt(sqrtpi*Lc);
     Real sqrt3 = std::sqrt(3.0), f = 0.0, phi = 0.0;
     Real val = 1.0 + sqrt3*par[0]*std::sqrt(sqrtpi*Lc*0.5);
-    for (int i = 1; i < sdim_; i++) {
+    for (int i = 1; i < sdim_-2; i++) {
       f = floor((Real)(i+1)/2.0);
       phi = ((i+1)%2 ? std::sin(f*M_PI*x1) : std::cos(f*M_PI*x1));
       val += xi*std::exp(-std::pow(f*M_PI*Lc,2.0)/8.0)*phi*sqrt3*par[i];
@@ -658,6 +662,41 @@ public:
     return 0.5 + std::exp(val);
   }
 
+  void updateF(const std::vector<Real> &par) {
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    int numLocalDofs = cellDofs.dimension(1);
+    for (int i=0; i<numCells_; ++i) {                                                        // evaluate RHS function at cubature points
+      for (int j=0; j<numCubPoints_; ++j) {
+        (*dataF_)(i, j) = funcRHS((*cubPointsPhysical_)(i, j, 0),
+                                  (*cubPointsPhysical_)(i, j, 1),
+                                  par);
+      }
+    }
+    Intrepid::FunctionSpaceTools::integrate<Real>(*datavalVecF_,                             // compute local data.val vectors for RHS F
+                                                  *dataF_,
+                                                  *valPhysicalWeighted_,
+                                                  Intrepid::COMP_CPP);
+
+    // vecF_ requires assembly using vecF_overlap_ and redistribution
+    vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
+    for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
+      for (int j=0; j<numLocalDofs; ++j) {
+        vecF_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                          0,
+                                          (*datavalVecF_)[i*numLocalDofs+j]);
+      }
+    }
+    Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
+    vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
+
+    Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
+    for (int i=0; i<myDirichletDofs_.size(); ++i) {
+      if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
+        vecF_dirichlet_->replaceGlobalValue(myDirichletDofs_[i], 0, 0);
+      }
+    }
+  }
 
   void updateA(const std::vector<Real> &par) {
 

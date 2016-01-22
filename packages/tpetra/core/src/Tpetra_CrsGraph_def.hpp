@@ -5732,6 +5732,276 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, Kokkos::MemoryUnmanaged>& offsets) const
+  {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    const char tfecfFuncName[] = "getLocalDiagOffsets: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! hasColMap (), std::runtime_error, "The graph must have a column Map.");
+    const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<LO> (offsets.dimension_0 ()) < lclNumRows,
+       std::invalid_argument, "offsets.dimension_0() = " <<
+       offsets.dimension_0 () << " < getNodeNumRows() = " << lclNumRows << ".");
+
+    const map_type& rowMap = * (this->getRowMap ());
+    const map_type& colMap = * (this->getColMap ());
+
+#ifdef HAVE_TPETRA_DEBUG
+    bool allRowMapDiagEntriesInColMap = true;
+    bool allDiagEntriesFound = true;
+    bool allOffsetsCorrect = true;
+    bool noOtherWeirdness = true;
+    std::vector<std::pair<LO, size_t> > wrongOffsets;
+    auto localGraph = this->getLocalGraph ();
+#endif // HAVE_TPETRA_DEBUG
+
+    // FIXME (mfh 16 Dec 2015) It's easy to thread-parallelize this
+    // setup, at least on the host.  For CUDA, we have to use LocalMap
+    // (that comes from each of the two Maps).
+
+    for (LO lclRowInd = 0; lclRowInd < lclNumRows; ++lclRowInd) {
+      const GO gblRowInd = rowMap.getGlobalElement (lclRowInd);
+      const GO gblColInd = gblRowInd;
+      const LO lclColInd = colMap.getLocalElement (gblColInd);
+
+      if (lclColInd == Teuchos::OrdinalTraits<LO>::invalid ()) {
+#ifdef HAVE_TPETRA_DEBUG
+        allRowMapDiagEntriesInColMap = false;
+#endif // HAVE_TPETRA_DEBUG
+        offsets[lclRowInd] = Teuchos::OrdinalTraits<size_t>::invalid ();
+      }
+      else {
+        const RowInfo rowInfo = this->getRowInfo (lclRowInd);
+        if (static_cast<LO> (rowInfo.localRow) == lclRowInd &&
+            rowInfo.numEntries > 0) {
+          const size_t offset = this->findLocalIndex (rowInfo, lclColInd);
+          offsets(lclRowInd) = offset;
+
+#ifdef HAVE_TPETRA_DEBUG
+          // Now that we have what we think is an offset, make sure
+          // that it really does point to the diagonal entry.  Offsets
+          // are _relative_ to each row, not absolute (for the whole
+          // (local) graph).
+          Teuchos::ArrayView<const LO> lclColInds;
+          try {
+            this->getLocalRowView (lclRowInd, lclColInds);
+          }
+          catch (...) {
+            noOtherWeirdness = false;
+          }
+          // Don't continue with error checking if the above failed.
+          if (noOtherWeirdness) {
+            const size_t numEnt = lclColInds.size ();
+            if (offset >= numEnt) {
+              // Offsets are relative to each row, so this means that
+              // the offset is out of bounds.
+              allOffsetsCorrect = false;
+              wrongOffsets.push_back (std::make_pair (lclRowInd, offset));
+            } else {
+              const LO actualLclColInd = lclColInds[offset];
+              const GO actualGblColInd = colMap.getGlobalElement (actualLclColInd);
+              if (actualGblColInd != gblColInd) {
+                allOffsetsCorrect = false;
+                wrongOffsets.push_back (std::make_pair (lclRowInd, offset));
+              }
+            }
+          }
+#endif // HAVE_TPETRA_DEBUG
+        }
+        else {
+          offsets(lclRowInd) = Teuchos::OrdinalTraits<size_t>::invalid ();
+#ifdef HAVE_TPETRA_DEBUG
+          allDiagEntriesFound = false;
+#endif // HAVE_TPETRA_DEBUG
+        }
+      }
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    if (wrongOffsets.size () != 0) {
+      std::ostringstream os;
+      os << "Proc " << this->getComm ()->getRank () << ": Wrong offsets: [";
+      for (size_t k = 0; k < wrongOffsets.size (); ++k) {
+        os << "(" << wrongOffsets[k].first << ","
+           << wrongOffsets[k].second << ")";
+        if (k + 1 < wrongOffsets.size ()) {
+          os << ", ";
+        }
+      }
+      os << "]" << std::endl;
+      std::cerr << os.str ();
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+#ifdef HAVE_TPETRA_DEBUG
+    using Teuchos::reduceAll;
+    using std::endl;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+    const bool localSuccess =
+      allRowMapDiagEntriesInColMap && allDiagEntriesFound && allOffsetsCorrect;
+    const int numResults = 5;
+    int lclResults[5];
+    lclResults[0] = allRowMapDiagEntriesInColMap ? 1 : 0;
+    lclResults[1] = allDiagEntriesFound ? 1 : 0;
+    lclResults[2] = allOffsetsCorrect ? 1 : 0;
+    lclResults[3] = noOtherWeirdness ? 1 : 0;
+    // min-all-reduce will compute least rank of all the processes
+    // that didn't succeed.
+    lclResults[4] = ! localSuccess ? comm->getRank () : comm->getSize ();
+
+    int gblResults[5];
+    gblResults[0] = 0;
+    gblResults[1] = 0;
+    gblResults[2] = 0;
+    gblResults[3] = 0;
+    gblResults[4] = 0;
+    reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN,
+                         numResults, lclResults, gblResults);
+
+    if (gblResults[0] != 1 || gblResults[1] != 1 || gblResults[2] != 1
+        || gblResults[3] != 1) {
+      std::ostringstream os; // build error message
+      os << "Issue(s) that we noticed (on Process " << gblResults[4] << ", "
+        "possibly among others): " << endl;
+      if (gblResults[0] == 0) {
+        os << "  - The column Map does not contain at least one diagonal entry "
+          "of the graph." << endl;
+      }
+      if (gblResults[1] == 0) {
+        os << "  - On one or more processes, some row does not contain a "
+          "diagonal entry." << endl;
+      }
+      if (gblResults[2] == 0) {
+        os << "  - On one or more processes, some offsets are incorrect."
+           << endl;
+      }
+      if (gblResults[3] == 0) {
+        os << "  - One or more processes had some other error."
+           << endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, os.str());
+    }
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+  namespace { // (anonymous)
+
+    // mfh 21 Jan 2016: This is useful for getLocalDiagOffsets (see
+    // below).  The point is to avoid the deep copy between the input
+    // Teuchos::ArrayRCP and the internally used Kokkos::View.  We
+    // can't use UVM to avoid the deep copy with CUDA, because the
+    // ArrayRCP is a host pointer, while the input to the graph's
+    // getLocalDiagOffsets method is a device pointer.  Assigning a
+    // host pointer to a device pointer is incorrect unless the host
+    // pointer points to host pinned memory.  The goal is to get rid
+    // of the Teuchos::ArrayRCP overload anyway, so we accept the deep
+    // copy for backwards compatibility.
+    //
+    // We have to use template magic because
+    // "staticGraph_->getLocalDiagOffsets(offsetsHosts)" won't compile
+    // if device_type::memory_space is not Kokkos::HostSpace (as is
+    // the case with CUDA).
+
+    template<class DeviceType,
+             const bool memSpaceIsHostSpace =
+               std::is_same<typename DeviceType::memory_space,
+                            Kokkos::HostSpace>::value>
+    struct HelpGetLocalDiagOffsets {};
+
+    template<class DeviceType>
+    struct HelpGetLocalDiagOffsets<DeviceType, true> {
+      typedef DeviceType device_type;
+      typedef Kokkos::View<size_t*, Kokkos::HostSpace,
+                           Kokkos::MemoryUnmanaged> device_offsets_type;
+      typedef Kokkos::View<size_t*, Kokkos::HostSpace,
+                           Kokkos::MemoryUnmanaged> host_offsets_type;
+
+      static device_offsets_type
+      getDeviceOffsets (const host_offsets_type& hostOffsets)
+      {
+        // Host and device are the same; no need to allocate a
+        // temporary device View.
+        return hostOffsets;
+      }
+
+      static void
+      copyBackIfNeeded (const host_offsets_type& /* hostOffsets */,
+                        const device_offsets_type& /* deviceOffsets */)
+      { /* copy back not needed; host and device are the same */ }
+    };
+
+    template<class DeviceType>
+    struct HelpGetLocalDiagOffsets<DeviceType, false> {
+      typedef DeviceType device_type;
+      // We have to do a deep copy, since host memory space != device
+      // memory space.  Thus, the device View is managed (we need to
+      // allocate a temporary device View).
+      typedef Kokkos::View<size_t*, device_type> device_offsets_type;
+      typedef Kokkos::View<size_t*, Kokkos::HostSpace,
+                           Kokkos::MemoryUnmanaged> host_offsets_type;
+
+      static device_offsets_type
+      getDeviceOffsets (const host_offsets_type& hostOffsets)
+      {
+        // Host memory space != device memory space, so we must
+        // allocate a temporary device View for the graph.
+        return device_offsets_type ("offsets", hostOffsets.dimension_0 ());
+      }
+
+      static void
+      copyBackIfNeeded (const host_offsets_type& hostOffsets,
+                        const device_offsets_type& deviceOffsets)
+      {
+        Kokkos::deep_copy (hostOffsets, deviceOffsets);
+      }
+    };
+  } // namespace (anonymous)
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
+  {
+    typedef LocalOrdinal LO;
+    const char tfecfFuncName[] = "getLocalDiagOffsets: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->hasColMap (), std::runtime_error,
+       "The graph does not yet have a column Map.");
+    const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
+    if (static_cast<LO> (offsets.size ()) != myNumRows) {
+      // NOTE (mfh 21 Jan 2016) This means that the method does not
+      // satisfy the strong exception guarantee (no side effects
+      // unless successful).
+      offsets.resize (myNumRows);
+    }
+
+    // mfh 21 Jan 2016: This method unfortunately takes a
+    // Teuchos::ArrayRCP, which is host memory.  The graph wants a
+    // device pointer.  We can't access host memory from the device;
+    // that's the wrong direction for UVM.  (It's the right direction
+    // for inefficient host pinned memory, but we don't want to use
+    // that here.)  Thus, if device memory space != host memory space,
+    // we allocate and use a temporary device View to get the offsets.
+    // If the two spaces are equal, the template magic makes the deep
+    // copy go away.
+    typedef HelpGetLocalDiagOffsets<device_type> helper_type;
+    typedef typename helper_type::host_offsets_type host_offsets_type;
+    // Unmanaged host View that views the output array.
+    host_offsets_type hostOffsets (offsets.getRawPtr (), myNumRows);
+    // Allocate temp device View if host != device, else reuse host array.
+    auto deviceOffsets = helper_type::getDeviceOffsets (hostOffsets);
+    // NOT recursion; this calls the overload that takes a device View.
+    this->getLocalDiagOffsets (deviceOffsets);
+    helper_type::copyBackIfNeeded (hostOffsets, deviceOffsets);
+  }
+
 } // namespace Tpetra
 
 //

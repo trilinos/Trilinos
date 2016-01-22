@@ -150,7 +150,7 @@ extern const int hex_side_to_node_table[6][8] = {
 
 extern const int face_bit_mask[6] = {1, 2, 4, 8, 16, 32};
  
-extern const char* Element_Type_Names[NUM_ELEMENT_TYPES] = {
+const char* Element_Type_Names[NUM_ELEMENT_TYPES] = {
                                                 "UNKNOWN_ELEMENT",
                                                 "CIRCLE",
                                                 "SPHERE",

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#necessary because the testbeds don't setup modules by
+#default on the login node or compute nodes.
+source /etc/profile.d/modules.sh
+
 #
 # TrilinosDriver settings:
 #

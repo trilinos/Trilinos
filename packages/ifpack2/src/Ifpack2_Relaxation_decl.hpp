@@ -794,7 +794,8 @@ private:
   /// These are only used if the matrix has a const ("static") graph.
   /// In that case, the offsets of the diagonal entries will never
   /// change, even if the values of the diagonal entries change.
-  Teuchos::ArrayRCP<size_t> diagOffsets_;
+  Kokkos::View<size_t*, typename node_type::device_type> diagOffsets_;
+
   /// \brief Whether we have precomputed offsets of diagonal entries.
   ///
   /// We need this flag because it is not enough just to test if
