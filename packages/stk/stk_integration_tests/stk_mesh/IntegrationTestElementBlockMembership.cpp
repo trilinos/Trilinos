@@ -24,7 +24,7 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
-//#define VERBOSE_OUTPUT
+#define VERBOSE_OUTPUT
 
 namespace
 {
@@ -47,7 +47,10 @@ TestCaseData get_test_cases()
 // D = sideset containing 2 sides, one associated to left and one to right
 // X = sideset associated with all sides on this surface
 // J = two hexes in block A connected to the same 8 nodes
-//
+// Z = degenerate hex in block Z
+// Y = degenerate hex in block Y
+// T = tet in block T
+// g = degenerate shell (usually attached to face of tet T)
 // .e = the language of our Patron Saint Exodus
 //
 // RR = pronounced like a pirate
@@ -111,7 +114,18 @@ TestCaseData get_test_cases()
             {"ALefRA.e",   3u},
             {"ARefLA.e",   3u},
             {"AeDfA.e",    3u},
-            {"ALJ.e",      1u}
+            {"ALJ.e",      1u},
+            {"TDg.e",      2u},
+            {"ZDZ.e",      1u},
+            {"Tg.e",       2u},
+            {"ZY.e",       2u},
+            {"ef.e",       2u}
+// The following fail with nProc > 2
+//            {"AB_doubleKissing.e",      2u},
+//            {"ADDA_doubleKissing.e",    1u},
+//            {"ALRA_doubleKissing.e",    1u},
+//            {"ALLA_doubleKissing.e",    1u},
+//            {"ARRA_doubleKissing.e",    1u}
     };
 
     return test_cases;
