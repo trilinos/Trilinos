@@ -1009,36 +1009,51 @@ namespace Tpetra {
     ///   the right to do extra checking in a debug build that will
     ///   require collectives.
     ///
-    /// \pre The graph must have a column Map.
-    /// \pre All diagonal entries of the graph must be populated on
-    ///   this process.  Results are undefined otherwise.
-    /// \pre <tt>offsets.dimension_0() == getNodeNumRows()</tt>
+    /// This method helps users optimize
+    /// Tpetra::CrsMatrix::getLocalDiagCopy and
+    /// Tpetra::Experimental::BlockCrsMatrix::getLocalDiagCopy, for
+    /// several calls when the graph's structure does not change.  The
+    /// method fills an array of offsets of the local diagonal entries
+    /// in the matrix.  getLocalDiagCopy uses the offsets to extract
+    /// the diagonal entries directly, without needing to search for
+    /// them using Map lookups and search in each row of the graph.
     ///
-    /// This method creates an array of offsets of the local diagonal
-    /// entries in the matrix.  This array is suitable for use in the
-    /// two-argument version of getLocalDiagCopy().  However, its
-    /// contents are not defined in any other context.  For example,
+    /// The output array's contents are not defined in any other
+    /// context other than for use in getLocalDiagCopy.  For example,
     /// you should not rely on \c offsets(i) being the index of the
     /// diagonal entry in the views returned by
-    /// CrsMatrix::getLocalRowView.  This may be the case, but it need
-    /// not be.  (For example, we may choose to optimize the lookups
-    /// down to the optimized storage level, in which case the offsets
-    /// will be computed with respect to the underlying storage
-    /// format, rather than with respect to the views.)
+    /// Tpetra::CrsMatrix::getLocalRowView.  This may be the case, but
+    /// it need not be.  (For example, we may choose to optimize the
+    /// lookups down to the optimized storage level, in which case the
+    /// offsets will be computed with respect to the underlying
+    /// storage format, rather than with respect to the views.)
     ///
     /// Changes to the graph's structure, or calling fillComplete on
     /// the graph (if its structure is not already fixed), may make
     /// the output array's contents invalid.  "Invalid" means that you
     /// must call this method again to recompute the offsets.
     ///
-    /// \param offsets [out] Output array of offsets.  NOT allocated
-    ///   by this method; the caller must allocate.  Must have
-    ///   getNodeNumRows() entries on the calling process.  (This may
-    ///   be different on different processes.)
+    /// \pre The graph must have a column Map.
+    /// \pre All diagonal entries of the graph must be populated on
+    ///   this process.  Results are undefined otherwise.
+    /// \pre <tt>offsets.dimension_0() >= this->getNodeNumRows()</tt>
+    ///
+    /// \param offsets [out] Output array of offsets.  This method
+    ///   does NOT allocate the array; the caller must allocate.  Must
+    ///   have getNodeNumRows() entries on the calling process.  (This
+    ///   may be different on different processes.)
     void
     getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, Kokkos::MemoryUnmanaged>& offsets) const;
 
-    //! Backwards compatibility version of the above method.
+    /// \brief Backwards compatibility overload of the above method.
+    ///
+    /// This method takes a Teuchos::ArrayRCP instead of a
+    /// Kokkos::View.  It also reallocates the output array if it is
+    /// not long enough.
+    ///
+    /// \param offsets [out] Output array of offsets.  This method
+    ///   reallocates the array if it is not long enough.  This is why
+    ///   the method takes the array by reference.
     void
     getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
 
@@ -1143,7 +1158,8 @@ namespace Tpetra {
                     const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
                     const bool sortIndicesInEachRow = true);
 
-    /// \brief Replace the current domain Map and Import with the given parameters.
+    /// \brief Replace the current domain Map and Import with the
+    ///   given parameters.
     ///
     /// \warning This method is ONLY for use by experts.
     /// \warning We make NO promises of backwards compatibility.
@@ -1159,7 +1175,8 @@ namespace Tpetra {
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                  const Teuchos::RCP<const import_type>& newImporter);
 
-    /// \brief Remove processes owning zero rows from the Maps and their communicator.
+    /// \brief Remove processes owning zero rows from the Maps and
+    ///   their communicator.
     ///
     /// \warning This method is ONLY for use by experts.  We highly
     ///   recommend using the nonmember function of the same name
