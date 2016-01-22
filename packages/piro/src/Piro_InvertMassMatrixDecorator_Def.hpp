@@ -53,6 +53,7 @@
 #include "Thyra_DiagonalLinearOpBase.hpp"
 
 #ifdef HAVE_PIRO_IFPACK2
+#include "Teuchos_AbstractFactoryStd.hpp"
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #endif
