@@ -39,8 +39,20 @@
 #include <vector>
 #include <iostream>
 
-#include <boost/timer.hpp>
-#include <boost/foreach.hpp>
+#include <stk_util/environment/CPUTime.hpp>
+
+namespace {
+
+struct Timer {
+  Timer() : startTime(stk::cpu_time()) {}
+
+  double elapsed() const { return stk::cpu_time() - startTime; }
+
+private:
+  double startTime;
+};
+
+}
 
 void force_calculation( long long sum )
 {
@@ -66,7 +78,7 @@ struct sum_func
 
 TEST( loop_iteration, loop_iteration)
 {
-  boost::timer  total_time;
+  Timer  total_time;
 
   const size_t vector_size = 100000000;
   const size_t num_repetitions = 20;
@@ -75,14 +87,14 @@ TEST( loop_iteration, loop_iteration)
   data.reserve(vector_size);
 
   {
-    boost::timer timer;
+    Timer timer;
     std::srand(10);
     std::generate_n(std::back_inserter(data), vector_size, &std::rand);
     double elapsedtime = timer.elapsed();
     std::cout << "Construction time: " << elapsedtime << " seconds." << std::endl;
   }
   {
-    boost::timer timer;
+    Timer timer;
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
       sum += std::accumulate( data.begin(), data.end(), 0ll );
@@ -92,7 +104,7 @@ TEST( loop_iteration, loop_iteration)
     force_calculation(sum);
   }
   {
-    boost::timer timer;
+    Timer timer;
     unsigned* begin = &data.front();
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
@@ -103,7 +115,7 @@ TEST( loop_iteration, loop_iteration)
     force_calculation(sum);
   }
   {
-    boost::timer timer;
+    Timer timer;
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
       for( std::vector<unsigned>::iterator it = data.begin(), iend = data.end(); it != iend; ++it ) {
@@ -115,7 +127,7 @@ TEST( loop_iteration, loop_iteration)
     force_calculation(sum);
   }
   {
-    boost::timer timer;
+    Timer timer;
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
       unsigned* it = &data.front();
@@ -128,7 +140,7 @@ TEST( loop_iteration, loop_iteration)
     force_calculation(sum);
   }
   {
-    boost::timer timer;
+    Timer timer;
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
       for( std::size_t i = 0, size = data.size(); i != size; ++i ) {
@@ -140,7 +152,7 @@ TEST( loop_iteration, loop_iteration)
     force_calculation(sum);
   }
   {
-    boost::timer timer;
+    Timer timer;
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
       for( int i = 0, size = data.size(); i != size; ++i ) {
@@ -152,7 +164,7 @@ TEST( loop_iteration, loop_iteration)
     force_calculation(sum);
   }
   {
-    boost::timer timer;
+    Timer timer;
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
       sum += std::for_each( data.begin(), data.end(), sum_func() ).sum;
@@ -162,7 +174,7 @@ TEST( loop_iteration, loop_iteration)
     force_calculation(sum);
   }
   {
-    boost::timer timer;
+    Timer timer;
     unsigned* begin = &data.front();
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
@@ -173,19 +185,7 @@ TEST( loop_iteration, loop_iteration)
     force_calculation(sum);
   }
   {
-    boost::timer timer;
-    long long sum = 0;
-    for (size_t n = 0; n < num_repetitions; ++n) {
-      BOOST_FOREACH( unsigned i, data ) {
-        sum += i;
-      }
-    }
-    double elapsedtime = timer.elapsed();
-    std::cout << "BOOST_FOREACH took " << elapsedtime << " seconds." << std::endl;
-    force_calculation(sum);
-  }
-  {
-    boost::timer timer;
+    Timer timer;
     long long sum = 0;
     for (size_t n = 0; n < num_repetitions; ++n) {
       for( unsigned i : data ) {
