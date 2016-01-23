@@ -102,7 +102,6 @@ void VerboseObjectBase::initializeVerboseObjectBase(
   )
 {
   thisOStream_ = oStream;
-  informUpdatedVerbosityState();
 }
 
 
