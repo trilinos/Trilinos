@@ -246,6 +246,55 @@ struct SCAL<ViewType, CoefficientType, Kokkos::LayoutRight, IndexType, 2> {
   }
 };
 
+
+/// \brief Implementation of Tpetra::Experimental::FILL function.
+///
+/// This is the "generic" version that we don't implement.
+/// We actually implement versions for ViewType rank 1 or rank 2.
+template<class ViewType,
+         class InputType,
+         class LayoutType = typename ViewType::array_layout,
+         class IndexType = int,
+         const int rank = ViewType::rank>
+struct FILL {
+  static void run (const ViewType& x, const InputType& val);
+};
+
+/// \brief Implementation of Tpetra::Experimental::FILL function, for
+///   ViewType rank 1 (i.e., a vector).
+template<class ViewType,
+         class InputType,
+         class LayoutType,
+         class IndexType>
+struct FILL<ViewType, InputType, LayoutType, IndexType, 1> {
+  static void run (const ViewType& x, const InputType& val)
+  {
+    const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
+    for (IndexType i = 0; i < numRows; ++i) {
+      x(i) = val;
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra::Experimental::FILL function, for
+///   ViewType rank 2 (i.e., a matrix).
+template<class ViewType,
+         class InputType,
+         class LayoutType,
+         class IndexType>
+struct FILL<ViewType, InputType, LayoutType, IndexType, 2> {
+  static void run (const ViewType& X, const InputType& val)
+  {
+    const IndexType numRows = static_cast<IndexType> (X.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (X.dimension_1 ());
+    for (IndexType j = 0; j < numCols; ++j) {
+      for (IndexType i = 0; i < numRows; ++i) {
+        X(i,j) = val;
+      }
+    }
+  }
+};
+
 /// \brief Implementation of Tpetra::Experimental::AXPY function.
 ///
 /// This is the "generic" version that we don't implement.
@@ -596,6 +645,16 @@ template<class ViewType,
          const int rank = ViewType::rank>
 void SCAL (const CoefficientType& alpha, const ViewType& x) {
   Impl::SCAL<ViewType, CoefficientType, LayoutType, IndexType, rank>::run (alpha, x);
+}
+
+/// \brief Set every entry of x to val.
+template<class ViewType,
+         class InputType,
+         class LayoutType = typename ViewType::array_layout,
+         class IndexType = int,
+         const int rank = ViewType::rank>
+void FILL (const ViewType& x, const InputType& val) {
+  Impl::FILL<ViewType, InputType, LayoutType, IndexType, rank>::run (x, val);
 }
 
 /// \brief <tt>y := y + alpha * x</tt> (dense vector or matrix update)

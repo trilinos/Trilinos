@@ -66,7 +66,7 @@ namespace {
     Teuchos::OSTab tab2 (out);
     const IST zero = KAT::zero ();
     const IST one = KAT::one ();
-    const IST two = one + one;
+    //const IST two = one + one;
     // Temporary space for the blocks.  For now, we only exercise
     // HostSpace blocks.
     std::vector<IST> blkMem (maxBlkSize * maxBlkSize);
