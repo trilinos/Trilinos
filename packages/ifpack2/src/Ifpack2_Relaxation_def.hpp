@@ -584,6 +584,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::REDUCE_SUM;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
+  typedef typename block_crs_matrix_type::impl_scalar_type IST;
   typedef local_ordinal_type LO;
 
   {
@@ -669,16 +670,44 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       }
     }
 
-    blockDiagFactPivots_ =
-      pivots_type ("Ifpack2::Relaxation::pivots", lclNumMeshRows, blockSize);
+    // Pivots from LU factorization (with partial pivoting) of the
+    // BlockCrsMatrix's block diagonal.
+    //
+    // This is only allocated and used if the input matrix is a
+    // Tpetra::BlockCrsMatrix.  In that case, Ifpack2::Relaxation does
+    // block relaxation, using the (small dense) blocks in the
+    // BlockCrsMatrix.
+    //
+    // To get the 1-D array of pivots corresponding to local (graph
+    // a.k.a. "mesh") row index i, do the following:
+    // \code
+    // auto ipiv_i = Kokkos::subview (blockDiagFactPivots, i, Kokkos::ALL ());
+    // \endcode
+    typedef Kokkos::View<int**, typename block_crs_matrix_type::device_type> pivots_type;
+    typedef Kokkos::View<int**, typename block_crs_matrix_type::device_type,
+                         Kokkos::MemoryUnmanaged> unmanaged_pivots_type;
+
+    pivots_type blockDiagFactPivots ("Ifpack2::Relaxation::pivots",
+                                     lclNumMeshRows, blockSize);
     // Use an unmanaged View to avoid ref count overhead in loop below.
-    unmanaged_pivots_type pivots = blockDiagFactPivots_;
+    unmanaged_pivots_type pivots = blockDiagFactPivots;
 
     int info = 0;
+    // GETRI needs workspace.  Use host space for now.
+    Teuchos::Array<IST> workVec (blockSize);
+    Kokkos::View<IST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
+      work (workVec.getRawPtr (), blockSize);
     for (LO i = 0 ; i < lclNumMeshRows; ++i) {
       auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
       auto ipiv = Kokkos::subview (pivots, i, ALL ());
       Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "GETF2 failed with info = " << info
+         << " != 0.");
+      Tpetra::Experimental::GETRI (diagBlock, ipiv, work, info);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "GETRI failed with info = " << info
+         << " != 0.");
     }
 
     // In a debug build, do an extra test to make sure that all the
@@ -1131,53 +1160,66 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
-ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                                                             global_ordinal_type, node_type>& X,
-                                   Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                                                       global_ordinal_type,node_type>& Y) const
+ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type,
+                                     local_ordinal_type,
+                                     global_ordinal_type,
+                                     node_type>& X,
+                                   Tpetra::MultiVector<scalar_type,
+                                     local_ordinal_type,
+                                     global_ordinal_type,
+                                     node_type>& Y) const
 {
-  using Kokkos::ALL;
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type,node_type> BMV;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> MV;
-  typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
+    local_ordinal_type, global_ordinal_type, node_type> BMV;
 
-  // Get unmanaged Views, so that taking subviews repeatedly won't
-  // update the reference count.
-  unmanaged_block_diag_type blockDiag = blockDiag_;
-  unmanaged_pivots_type pivots = blockDiagFactPivots_;
+  const block_crs_matrix_type* blockMatConst =
+    dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (blockMatConst == NULL, std::logic_error, "This method should never be "
+     "called if the matrix A_ is not a BlockCrsMatrix.  Please report this "
+     "bug to the Ifpack2 developers.");
+  // mfh 23 Jan 2016: Unfortunately, the const cast is necessary.
+  // This is because applyBlock() is nonconst (more accurate), while
+  // apply() is const (required by Tpetra::Operator interface, but a
+  // lie, because it possibly allocates temporary buffers).
+  block_crs_matrix_type* blockMat =
+    const_cast<block_crs_matrix_type*> (blockMatConst);
+
+  auto meshRowMap = blockMat->getRowMap ();
+  auto meshColMap = blockMat->getColMap ();
+  const local_ordinal_type blockSize = blockMat->getBlockSize ();
+
+  BMV X_blk (X, *meshColMap, blockSize);
+  BMV Y_blk (Y, *meshRowMap, blockSize);
 
   if (ZeroStartingSolution_) {
-    Y.putScalar (STS::zero ());
+    // For the first sweep, if we are allowed to assume that the
+    // initial guess is zero, then block Jacobi is just block diagonal
+    // scaling.  (A_ij * x_j = 0 for i != j, since x_j = 0.)
+    //
+    // FIXME (mfh 24 Jan 2016) Need to use GETRI to compute this.
+    Y_blk.blockWiseMultiply (DampingFactor_, blockDiag_, X_blk);
+    if (NumSweeps_ == 1) {
+      return;
+    }
   }
 
-  const size_t numVectors = X.getNumVectors ();
+  auto pointRowMap = Y.getMap ();
+  const size_t numVecs = X.getNumVectors ();
 
-  const block_crs_matrix_type* blockMat =
-    dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+  // We don't need to initialize the result MV, since the sparse
+  // mat-vec will clobber its contents anyway.
+  BMV A_times_Y (*meshRowMap, *pointRowMap, blockSize, numVecs);
 
-  const local_ordinal_type blockSize = blockMat->getBlockSize ();
-  BMV A_times_Y_Block (* (blockMat->getRowMap ()), * (Y.getMap ()),
-                       blockSize, numVectors);
-  MV A_times_Y = A_times_Y_Block.getMultiVectorView();
-  BMV yBlock (Y, * (blockMat->getRowMap ()), blockSize);
-  for (int j = 0; j < NumSweeps_; ++j) {
-    blockMat->apply (Y, A_times_Y);
-    A_times_Y.update (STS::one (), X, -STS::one ());
-    const size_t numRows = blockMat->getNodeNumRows ();
-    for (size_t i = 0; i < numVectors; ++i) {
-      for (size_t k = 0; k < numRows; ++k) {
-        // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-        auto factorizedBlockDiag = Kokkos::subview (blockDiag, k, ALL (), ALL ());
-        auto ipiv = Kokkos::subview (pivots, k, ALL ());
-        little_vec_type xloc = A_times_Y_Block.getLocalBlock (k, i);
-        little_vec_type yloc = yBlock.getLocalBlock (k, i);
-        int info = 0;
-        Tpetra::Experimental::GETRS ("N", factorizedBlockDiag, ipiv, xloc, info);
-        Tpetra::Experimental::AXPY (DampingFactor_, xloc, yloc);
-      }
-    }
+  // If we were allowed to assume that the starting guess was zero,
+  // then we have already done the first sweep above.
+  const int startSweep = ZeroStartingSolution_ ? 1 : 0;
+
+  for (int j = startSweep; j < NumSweeps_; ++j) {
+    blockMat->applyBlock (Y_blk, A_times_Y);
+    // Y := Y + \omega D^{-1} (X - A*Y).  Use A_times_Y as scratch.
+    Y_blk.blockJacobiUpdate (DampingFactor_, blockDiag_,
+                             X_blk, A_times_Y, STS::one ());
   }
 }
 
@@ -1508,7 +1550,6 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
       yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     }
     A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
-                        blockDiagFactPivots_,
                         DampingFactor_, direction);
     if (performImport) {
       RCP<const MV> yBlockColPointDomain =
@@ -1855,7 +1896,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     if (performImport && sweep > 0) {
       yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
     }
-    A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_, blockDiagFactPivots_,
+    A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
                         DampingFactor_, direction);
     if (performImport) {
       RCP<const MV> yBlockColPointDomain =

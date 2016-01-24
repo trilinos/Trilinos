@@ -1687,7 +1687,7 @@ namespace {
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef typename graph_type::device_type device_type;
-    typedef typename BCM::impl_scalar_type impl_scalar_type;
+    typedef typename BCM::impl_scalar_type IST;
     typedef Teuchos::ScalarTraits<ST> STS;
 
     const ST two = STS::one () + STS::one ();
@@ -1785,7 +1785,7 @@ namespace {
     Kokkos::View<size_t*, device_type> diagonalOffsets ("offsets", numLocalMeshPoints);
     graph.getLocalDiagOffsets (diagonalOffsets);
 
-    typedef Kokkos::View<impl_scalar_type***, device_type> block_diag_type;
+    typedef Kokkos::View<IST***, device_type> block_diag_type;
     block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
                                blockSize, blockSize);
     blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
@@ -1818,9 +1818,16 @@ namespace {
       int info = 0;
       Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
       TEST_EQUALITY( info, 0 );
+
+      // GETRI needs workspace.  Use host space for now.
+      Teuchos::Array<IST> workVec (blockSize);
+      Kokkos::View<IST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
+        work (workVec.getRawPtr (), blockSize);
+      Tpetra::Experimental::GETRI (diagBlock, ipiv, work, info);
+      TEST_EQUALITY( info, 0 );
     }
 
-    blockMat.localGaussSeidel (residual, solution, blockDiag, pivots,
+    blockMat.localGaussSeidel (residual, solution, blockDiag,
                                STS::one(), Tpetra::Forward);
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
@@ -1834,7 +1841,7 @@ namespace {
       }
     }
 
-    blockMat.localGaussSeidel (residual, solution, blockDiag, pivots,
+    blockMat.localGaussSeidel (residual, solution, blockDiag,
                                STS::one (), Tpetra::Backward);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
@@ -1860,7 +1867,7 @@ namespace {
     using Kokkos::ALL;
     typedef Tpetra::Experimental::BlockVector<ST, LO, GO, Node> BV;
     typedef Tpetra::Experimental::BlockCrsMatrix<ST, LO, GO, Node> BCM;
-    typedef typename BCM::impl_scalar_type impl_scalar_type;
+    typedef typename BCM::impl_scalar_type IST;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef typename graph_type::device_type device_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
@@ -1985,7 +1992,7 @@ namespace {
     Kokkos::View<size_t*, device_type> diagonalOffsets ("offsets", numLocalMeshPoints);
     graph.getLocalDiagOffsets(diagonalOffsets);
 
-    typedef Kokkos::View<impl_scalar_type***, device_type> block_diag_type;
+    typedef Kokkos::View<IST***, device_type> block_diag_type;
     block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
                                blockSize, blockSize);
     blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
@@ -2000,9 +2007,16 @@ namespace {
       int info = 0;
       Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
       TEST_EQUALITY( info, 0 );
+
+      // GETRI needs workspace.  Use host space for now.
+      Teuchos::Array<IST> workVec (blockSize);
+      Kokkos::View<IST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
+        work (workVec.getRawPtr (), blockSize);
+      Tpetra::Experimental::GETRI (diagBlock, ipiv, work, info);
+      TEST_EQUALITY( info, 0 );
     }
 
-    blockMat.localGaussSeidel (residual, solution, blockDiag, pivots,
+    blockMat.localGaussSeidel (residual, solution, blockDiag,
                                STS::one (), Tpetra::Forward);
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
@@ -2058,9 +2072,16 @@ namespace {
       int info = 0;
       Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
       TEST_EQUALITY( info, 0 );
+
+      // GETRI needs workspace.  Use host space for now.
+      Teuchos::Array<IST> workVec (blockSize);
+      Kokkos::View<IST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
+        work (workVec.getRawPtr (), blockSize);
+      Tpetra::Experimental::GETRI (diagBlock, ipiv, work, info);
+      TEST_EQUALITY( info, 0 );
     }
 
-    blockMat.localGaussSeidel (residual, solution, blockDiag, pivots,
+    blockMat.localGaussSeidel (residual, solution, blockDiag,
                                STS::one (), Tpetra::Symmetric);
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
