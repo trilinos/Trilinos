@@ -485,6 +485,106 @@ struct COPY<ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::LayoutLeft, IndexT
   }
 };
 
+
+template<class VecType1,
+         class BlkType,
+         class VecType2,
+         class CoeffType,
+         class IndexType = int,
+         class VecLayoutType1 = typename VecType1::array_layout,
+         class BlkLayoutType = typename BlkType::array_layout,
+         class VecLayoutType2 = typename VecType2::array_layout>
+struct GEMV {
+  static void
+  run (const CoeffType& alpha,
+       const BlkType& A,
+       const VecType1& x,
+       const VecType2& y)
+  {
+    static_assert (VecType1::rank == 1, "GEMV: VecType1 must have rank 1.");
+    static_assert (BlkType::rank == 2, "GEMV: BlkType must have rank 2.");
+    static_assert (VecType2::rank == 1, "GEMV: VecType2 must have rank 1.");
+    typedef typename std::decay<decltype (y(0)) >::type y_elt_type;
+
+    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+
+    for (IndexType i = 0; i < numRows; ++i) {
+      y_elt_type y_i = y(i);
+      for (IndexType j = 0; j < numCols; ++j) {
+        y_i += alpha * A(i,j) * x(j);
+      }
+      y(i) = y_i;
+    }
+  }
+};
+
+template<class VecType1,
+         class BlkType,
+         class VecType2,
+         class CoeffType,
+         class IndexType>
+struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
+            Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight>
+{
+  static void
+  run (const CoeffType& alpha,
+       const BlkType& A,
+       const VecType1& x,
+       const VecType2& y)
+  {
+    static_assert (VecType1::rank == 1, "GEMV: VecType1 must have rank 1.");
+    static_assert (BlkType::rank == 2, "GEMV: BlkType must have rank 2.");
+    static_assert (VecType2::rank == 1, "GEMV: VecType2 must have rank 1.");
+    typedef typename std::decay<decltype (y(0)) >::type y_elt_type;
+    typedef typename std::decay<decltype (A(0,0)) >::type A_elt_type;
+
+    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+    const A_elt_type* const A_raw = A.ptr_on_device ();
+
+    for (IndexType i = 0; i < numRows; ++i) {
+      y_elt_type y_i = y(i);
+      const A_elt_type* const A_i = A_raw + i*numCols;
+      for (IndexType j = 0; j < numCols; ++j) {
+        y_i += alpha * A_i[j] * x(j);
+      }
+      y(i) = y_i;
+    }
+  }
+};
+
+template<class VecType1,
+         class BlkType,
+         class VecType2,
+         class CoeffType,
+         class IndexType>
+struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
+            Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft>
+{
+  static void
+  run (const CoeffType& alpha,
+       const BlkType& A,
+       const VecType1& x,
+       const VecType2& y)
+  {
+    static_assert (VecType1::rank == 1, "GEMV: VecType1 must have rank 1.");
+    static_assert (BlkType::rank == 2, "GEMV: BlkType must have rank 2.");
+    static_assert (VecType2::rank == 1, "GEMV: VecType2 must have rank 1.");
+    typedef typename std::decay<decltype (A(0,0)) >::type A_elt_type;
+
+    const A_elt_type* const A_raw = A.ptr_on_device ();
+    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+    for (IndexType j = 0; j < numCols; ++j) {
+      const A_elt_type* const A_j = A_raw + j*numRows;
+      for (IndexType i = 0; i < numRows; ++i) {
+        y(i) += alpha * A_j[i] * x(i);
+      }
+    }
+  }
+};
+
 } // namespace Impl
 
 /// \brief x := alpha*x, where x is either rank 1 (a vector) or rank 2
@@ -542,41 +642,28 @@ void COPY (const ViewType1& x, const ViewType2& y) {
 
 /// \brief <tt>y := y + alpha * A * x</tt> (dense matrix-vector multiply)
 ///
-/// \param alpha [in] Coefficient by which to multiply A*x
+/// \param alpha [in] Coefficient by which to multiply A*x (this does
+///   NOT necessarily follow BLAS rules; the caller is responsible for
+///   checking whether alpha == 0 and implementing BLAS rules in that
+///   case).
 /// \param A [in] Small dense matrix (must have rank 2)
 /// \param x [in] Small dense vector input (must have rank 1 and at least as
 ///   many rows as A has columns)
 /// \param y [in/out] Small dense vector output (must have rank 1 and
 ///   at least as many rows as A has rows)
-///
-/// This function follows the BLAS convention that if alpha == 0, then
-/// it does nothing.  (This matters only if x contains Inf or NaN
-/// values.)
-template<class LittleVectorType1,
-         class LittleBlockType,
-         class LittleVectorType2,
-         class CoefficientType,
+template<class VecType1,
+         class BlkType,
+         class VecType2,
+         class CoeffType,
          class IndexType = int>
 void
-GEMV (const CoefficientType& alpha,
-      const LittleBlockType& A,
-      const LittleVectorType1& x,
-      const LittleVectorType2& y)
+GEMV (const CoeffType& alpha,
+      const BlkType& A,
+      const VecType1& x,
+      const VecType2& y)
 {
-  const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-  const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
-
-  if (alpha != 0.0) {
-    for (IndexType i = 0; i < numRows; ++i) {
-      typename std::remove_reference<decltype (y(i)) >::type y_i = y(i);
-      for (IndexType j = 0; j < numCols; ++j) {
-        y_i += alpha * A(i,j) * x(j);
-      }
-      y(i) = y_i;
-    }
-  }
+  Impl::GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType>::run (alpha, A, x, y);
 }
-
 
 /// \brief Small dense matrix-matrix multiply: <tt>C := alpha*A*B + beta*C</tt>
 ///
