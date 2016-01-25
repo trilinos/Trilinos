@@ -48,13 +48,13 @@
 #include <math.h>
 #include <complex>
 #include <vector>
-#include "enumsBDDC.h"
+#include "shylu_enumsBDDC.h"
 
-#include "SolverFactoryBDDC.h"
-#include "PartitionOfUnityBDDC.h"
-#include "SubdomainBDDC.h"
-#include "DofManager.h"
-#include "UtilBDDC.h"
+#include "shylu_SolverFactoryBDDC.h"
+#include "shylu_PartitionOfUnityBDDC.h"
+#include "shylu_SubdomainBDDC.h"
+#include "shylu_DofManager.h"
+#include "shylu_UtilBDDC.h"
 
 // SRSR : Avoid depending on stk. See below for explanation.
 //#include <stk_util/environment/memory_util.hpp>

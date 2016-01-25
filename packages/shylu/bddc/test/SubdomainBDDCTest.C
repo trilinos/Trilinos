@@ -43,9 +43,9 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 #include "ProblemMakerBDDC.h"
-#include "SubdomainBDDC.h"
-#include "UtilBDDC.h"
-#include "enumsBDDC.h"
+#include "shylu_SubdomainBDDC.h"
+#include "shylu_UtilBDDC.h"
+#include "shylu_enumsBDDC.h"
 
 using Teuchos::RCP;
 

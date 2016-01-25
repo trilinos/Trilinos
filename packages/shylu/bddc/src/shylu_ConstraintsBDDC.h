@@ -48,11 +48,11 @@
 #include <math.h>
 #include <complex>
 #include <vector>
-#include "enumsBDDC.h"
+#include "shylu_enumsBDDC.h"
 
-#include "PartitionOfUnityBDDC.h"
-#include "SubdomainBDDC.h"
-#include "UtilBDDC.h"
+#include "shylu_PartitionOfUnityBDDC.h"
+#include "shylu_SubdomainBDDC.h"
+#include "shylu_UtilBDDC.h"
 
 using Teuchos::RCP;
 using Teuchos::rcp;

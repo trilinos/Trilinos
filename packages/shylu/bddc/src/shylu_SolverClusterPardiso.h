@@ -40,46 +40,51 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef SOLVERPARDISOBDDC_H
-#define SOLVERPARDISOBDDC_H
+#ifndef SOLVERCLUSTERPARDISOBDDC_H
+#define SOLVERCLUSTERPARDISOBDDC_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <math.h>
 #include <string.h>
 
+#ifdef USE_INTEL_CLUSTER_PARDISO
 #include "mkl.h"
-#include "mkl_pardiso.h"
-#include "SolverBaseBDDC.h"
-#include "UtilPardiso.h"
+#include "mkl_cluster_sparse_solver.h"
+#endif
+#include "shylu_SolverBaseBDDC.h"
+#include "shylu_UtilPardiso.h"
 
 namespace bddc {
 
 template <class SX, class SM, class LO, class GO> 
-  class SolverPardiso : 
+  class SolverClusterPardiso : 
   public SolverBase<SX,SM,LO,GO>
 {
 public:
-  ~SolverPardiso()
+  ~SolverClusterPardiso()
   {
     delete [] m_rowBeginP;
     delete [] m_columnsP;
     delete [] m_valuesP;
-    delete [] m_perm;
   }
-  SolverPardiso(LO numRows,
-		LO* rowBegin,
-		LO* columns,
-		SX* values,
-		Teuchos::ParameterList & Parameters) :
-  SolverBase<SX,SM,LO,GO>(numRows, rowBegin, columns, values, Parameters),
+  SolverClusterPardiso(LO numRows,
+		       LO* rowBegin,
+		       LO* columns,
+		       SX* values,
+		       Teuchos::ParameterList & Parameters,
+		       MPI_Comm* pComm) :
+  SolverBase<SX,SM,LO,GO>(numRows, rowBegin, columns, values, Parameters,
+			  pComm),
     m_matrixIsSymmetric(true),
     m_rowBeginP(0),
     m_columnsP(0),
     m_perm(0),
     m_matrixType(2),
     m_valuesP(0),
-    m_messageLevel(0)
+    m_messageLevel(0),
+    m_myPID(0),
+    m_fComm(0)
     {
     }
   
@@ -89,6 +94,10 @@ public:
     int noMessage = 0;
     m_messageLevel = this->m_Parameters.get("Pardiso Message Level", 
 					    noMessage);
+    MPI_Comm Comm = *(this->m_pComm);
+    m_fComm = MPI_Comm_c2f(Comm);
+    MPI_Comm_rank(Comm, &m_myPID);
+    
     int error = InitializePardiso(this->m_numRows, 
 				  this->m_rowBegin, 
 				  this->m_columns, 
@@ -106,11 +115,14 @@ public:
 	       SX* Sol)
   {
     int n = this->m_numRows;
-    int one(1), error;
+    int one(1), error(0);
     int phase = 33; // solve phase
-    pardiso((_MKL_DSS_HANDLE_t*)m_pt, &one, &one, &m_matrixType, &phase, 
-	    &n, m_valuesP, m_rowBeginP, m_columnsP, m_perm, &NRHS, m_iparam, 
-	    &m_messageLevel, Rhs, Sol, &error);
+#ifdef USE_INTEL_CLUSTER_PARDISO
+    cluster_sparse_solver((_MKL_DSS_HANDLE_t*)m_pt, &one, &one, &m_matrixType, 
+			  &phase, &n, m_valuesP, m_rowBeginP, m_columnsP, 
+			  m_perm, &NRHS, m_iparam, &m_messageLevel, Rhs, Sol, 
+			  &m_fComm, &error);
+#endif
     assert (error == 0);
   }
 
@@ -124,13 +136,14 @@ private:
 			const LO* columns,
 			const SX* values)
   {
-    // get matrix in Pardiso format
-    UtilPardiso<LO,SX>::constructPardisoMatrix
-      (numRows, rowBegin, columns, values, m_matrixIsSymmetric,
-       m_rowBeginP, m_columnsP, m_valuesP);
+    // matrix stored entirely on PID = 0
+    if (m_myPID == 0) {
+      UtilPardiso<LO,SX>::constructPardisoMatrix
+	(numRows, rowBegin, columns, values, m_matrixIsSymmetric,
+	 m_rowBeginP, m_columnsP, m_valuesP);
+    }
     // Pardiso initialization
     int n = numRows;
-    m_perm = new int[n];
     for (int i=0; i<64; i++) {
       m_pt[i] = 0;       // intialized to zero, don't change later
       m_iparam[i] = 0;   // to use default pardiso parameters
@@ -140,9 +153,12 @@ private:
     int one(1), NRHS(1), error(0);
     double RHS[1], SOL[1];
     double startWallTime = this->wall_time();
-    pardiso((_MKL_DSS_HANDLE_t*)m_pt, &one, &one, &m_matrixType, &phase, &n, 
-	    m_valuesP, m_rowBeginP, m_columnsP, m_perm, &NRHS, m_iparam, 
-	    &m_messageLevel, RHS, SOL, &error);
+#ifdef USE_INTEL_CLUSTER_PARDISO
+    cluster_sparse_solver((_MKL_DSS_HANDLE_t*)m_pt, &one, &one, &m_matrixType, 
+			  &phase, &n, m_valuesP, m_rowBeginP, m_columnsP, 
+			  m_perm, &NRHS, m_iparam, &m_messageLevel, RHS, SOL, 
+			  &m_fComm, &error);
+#endif
     double endWallTime = this->wall_time();
     double deltaT = endWallTime - startWallTime;
     if (error != 0) std::cout << "> Pardiso error = " << error << std::endl;
@@ -158,10 +174,11 @@ private:
   double *m_valuesP;
   int m_messageLevel;
   long m_pt[64];
-  MKL_INT m_iparam[64];
+  int m_iparam[64];
+  int m_myPID, m_fComm;
  };
   
 } // namespace bddc
 
-#endif // SOLVERPARDISOBDDC_H
+#endif // SOLVERCLUSTERPARDISOBDDC_H
   

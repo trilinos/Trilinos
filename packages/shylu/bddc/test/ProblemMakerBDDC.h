@@ -58,7 +58,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"  
-#include "enumsBDDC.h"
+#include "shylu_enumsBDDC.h"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
