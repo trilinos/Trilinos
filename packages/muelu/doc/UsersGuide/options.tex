@@ -218,29 +218,37 @@ post-smoothing, and SuperLU for coarse system solver.
 \section{Reuse options}
 \label{sec:options_reuse}
 
-Reuse options are currently only used with \verb!sa! multigrid algorithm. We
-also assume that the matrix preserves graph structure, and only matrix values
-change.
+Reuse options are a way for a user to speed up the setup stage of multigrid.
+The main requirement to use reuse is that the matrix' graph structure does not
+change. Only matrix values are allowed to change.
+
+The reuse options control the degree to which multigrid hierarchy is preserved
+for a subsequent setup call.
 
 In addition, please note that not all combinations of multigrid algorithms and
 reuse options are valid, or even make sense. For instance, the "emin" reuse
 option should only be use with "emin" multigrid algorithm.
+
+Table~\ref{t:reuse_types} contains the information about different reuse
+options. The options are ordered in increasing number of reuse components, from
+the no reuse to the full reuse ("full").
 
 \begin{table}[h!]
   \begin{center}
     \begin{tabular}{p{3.0cm} p{12cm}}
       \toprule
       \verb!none!   & No reuse \\
+      \verb!S!      & Reuse only the symbolic information of the level smoothers. \\
+      \verb!tP!     & Reuse tentative prolongator. The graphs of smoothed
+                      prolongator and matrices in Galerkin product are reused
+                      only if filtering is not being used ({\it i.e.}, either
+                      \verb!sa: use filtered matrix! or \verb!aggregation: drop tol! is false) \\
       \verb!emin!   & Reuse old prolongator as an initial guess to energy
                       minimization, and reuse the prolongator pattern \\
       \verb!RP!     & Reuse smoothed prolongator and restrictor. Smoothers are
                       recomputed.  \ding{42} \verb!RP! should reuse matrix graphs for
                       matrix-matrix product, but currently that is disabled as only \epetra{}
                       supports it. \\
-      \verb!tP!     & Reuse tentative prolongator. The graphs of smoothed
-                      prolongator and matrices in Galerkin product are reused
-                      only if filtering is not being used ({\it i.e.}, either
-                      \verb!sa: use filtered matrix! or \verb!aggregation: drop tol! is false) \\
       \verb!RAP!    & Recompute only the finest level smoothers, reuse all other operators \\
       \verb!full!   & Reuse everything \\
       \bottomrule
