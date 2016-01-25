@@ -29,7 +29,22 @@ namespace
 const SideTestUtil::TestCaseData allBlockBoundaryTestCases =
 {
   /* filename, max#procs, #side,  sideset */
-    {"AB.e",      2,        11,   {}},
+    {"AA.e",      2,       10,    {}},
+    {"AB.e",      2,       11,    {}},
+    {"Ae.e",      2,        7,    {}},
+    {"Aef.e",     3,        7,    {}},
+    {"AeA.e",     3,       12,    {}},
+    {"AeB.e",     3,       12,    {}},
+    {"AefA.e",    4,       12,    {}},
+    {"AefB.e",    4,       12,    {}},
+    {"ef.e",      2,        2,    {}},
+
+    {"AA_doubleKissing.e", 2,  8, {}},
+    {"AB_doubleKissing.e", 2, 10, {}},
+
+    {"Tg.e",      2,        6,    {}},
+    {"ZZ.e",      2,       10,    {}},
+    {"ZY.e",      2,       11,    {}}
 };
 
 class AllBlockBoundaryTester : public SideTestUtil::SideCreationTester
