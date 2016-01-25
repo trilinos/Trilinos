@@ -198,7 +198,9 @@ namespace BaskerNS
 
     
      //Incomplete Factor Setup
-     #ifdef BASKER_INC_LVL
+     //#ifdef BASKER_INC_LVL
+     if(Options.incomplete == BASKER_TRUE)
+       {
      Int lvl_nnz = 1.2*global_nnz;
      MALLOC_INT_1DARRAY(INC_LVL_ARRAY, lvl_nnz);
      //init_value(INC_LVL_ARRAY, lvl_nnz, A.max_idx);
@@ -208,8 +210,10 @@ namespace BaskerNS
      MALLOC_INT_1DARRAY(INC_LVL_TEMP, A.nrow);
      //init_value(INC_LVL_TEMP, A.nrow, A.max_idx);
      init_value(INC_LVL_TEMP, A.nrow, BASKER_MAX_IDX);
-     #endif
-     
+     //#endif
+     printf("MALLOC TEMP SIZE: %d \n", A.nrow);
+
+       }
 
      return 0;
    }//end default_symb()

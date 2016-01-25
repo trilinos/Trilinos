@@ -192,11 +192,12 @@ int main(int argc, char* argv[])
   int result = 0;
   BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
   //----Basker - Options
-  mybasker.Options.no_pivot  = true;
-  mybasker.Options.symmetric = false;
-  mybasker.Options.realloc   = true;
-  mybasker.Options.btf       = true;
- 
+  mybasker.Options.no_pivot   = true;
+  mybasker.Options.symmetric  = false;
+  mybasker.Options.realloc    = true;
+  mybasker.Options.btf        = true;
+  mybasker.Options.incomplete = true;
+  mybasker.Options.inc_lvl    = 0;
 
   mybasker.SetThreads(numthreads);
   cout << "--------------Done Setting Threads----------" << endl;
@@ -206,8 +207,8 @@ int main(int argc, char* argv[])
 
  // mybasker.Factor(m,n,nnz,col_ptr,row_idx,vals);
   //cout << "--------------Done NFactor-----------------" << endl;
-  //mybasker.DEBUG_PRINT();
-  //cout << "--------------Done Print----------------------"<<endl;
+  mybasker.DEBUG_PRINT();
+  cout << "--------------Done Print----------------------"<<endl;
   // mybasker.SolveTest();
   //mybasker.Solve(y,x);
   //cout << "--------------Done Solve----------------------"<<endl;
