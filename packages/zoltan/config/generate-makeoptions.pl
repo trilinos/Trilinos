@@ -10,7 +10,7 @@
 #
 use strict;
 
-if( !(defined(@ARGV) && scalar(@ARGV)==2) ) {
+if( !((@ARGV) && scalar(@ARGV)==2) ) {
   die "Error, this script takes two and only two arguments (makefile_name package_name).!\n";
 }
 
