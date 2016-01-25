@@ -56,8 +56,96 @@ if (${PACKAGE_NAME}_ENABLE_AmgX)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
 ENDIF()
 
+#########################################################
+## TAW: 9/22/15
+## CMake-based ETI system inspired by Ifpack2 ETI
+## - auto generate *.cpp files for (all) MueLu classes
+#########################################################
+
+# Function to generate ETI (explicit template instantiation) files
+# from a template and list of class names
+## TODO introduce REGEX expressions here
+## https://cmake.org/cmake/help/v3.0/command/string.html
+FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
+  SET(SRCS "")
+  FOREACH(CLASS ${ETI_CLASSES})
+    # find spearator of class name and (optional) conditions
+    string(FIND ${CLASS} "-" DASHPOS)
+    IF ('${DASHPOS}' STREQUAL '-1')
+      string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
+      #MESSAGE("New class name = ${CLASS_NAME}")
+      set (CONDITION_NAME "")
+      set (CONDITION_NAME_END "")      
+    ELSE()
+      string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
+      #MESSAGE("New class name = ${CLASS_NAME}")
+      string(SUBSTRING ${CLASS} ${DASHPOS} -1 CONDITION_NAME)
+      string(REPLACE "[" "(" CONDITION_NAME ${CONDITION_NAME})
+      string(REPLACE "]" ")" CONDITION_NAME ${CONDITION_NAME})
+      string(REPLACE "." " " CONDITION_NAME ${CONDITION_NAME})
+      string(REPLACE "-" "" CONDITION_NAME ${CONDITION_NAME})
+      string(REPLACE "?" "#" CONDITION_NAME ${CONDITION_NAME})
+      string(STRIP CONDITION_NAME ${CONDITION_NAME})
+      #MESSAGE("New condition name = ${CONDITION_NAME}")
+      set (CONDITION_NAME_END "#endif")
+    ENDIF()
+    
+    string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS_NAME}")
+    string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
+    string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
+    
+    # the following generates one cpp file for all instantiations and 
+    # enabled configurations
+    CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME})
+    #MESSAGE("Configure file ${FINAL_FILE_NAME} using template ${TEMPLATE_FILE}")
+    SET(SRCS ${SRCS} ${FINAL_FILE_NAME})
+    
+  ENDFOREACH()
+  SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
+ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
+
+##
+## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
+## These are later added to the gloabl list of source files (SOURCES)
+##
+SET(MUELU_ETI_CPP_SOURCES "")
+
+##
+## only build ETI *.cpp files if ETI is enabled.
+##
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  ##
+  ## MUELU_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
+  ## *.cpp files have to be generated for. Contains basically all MueLu 
+  ## classes (with some exceptions, though).
+  ##
+  INCLUDE(Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
+
+  ##
+  ## MUELU_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
+  ## *.cpp files have to be generated for. Contains basically all MueLu 
+  ## classes (with some exceptions, though).
+  ##
+  INCLUDE(Utils/ExplicitInstantiation/ETI_LO_GO_NO_classes.cmake)
+
+  MUELU_PROCESS_ETI_TEMPLATE(
+    "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
+    Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO.tmpl
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
+    MueLu_ETI_SC_LO_GO_NO_SRC)
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
+  
+  MUELU_PROCESS_ETI_TEMPLATE(
+    "${MUELU_LO_GO_NO_ETI_CLASSES}"
+    Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO.tmpl
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
+    MueLu_ETI_LO_GO_NO_SRC)
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
+ENDIF()
+
 ###############################################
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
+## TODO check this
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
 APPEND_GLOB(HEADERS */*.hpp)
@@ -72,9 +160,12 @@ LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
 
 ###############################################
-SET(SOURCES "")
+SET(SOURCES ${MUELU_ETI_CPP_SOURCES})
 APPEND_GLOB(SOURCES */*.cpp)
 
+#APPEND_GLOB(SOURCES ${MUELU_ETI_CPP_SOURCES})  # append ETI cpp sources (if any)
+
+## TODO are the following lines necessary???
 #APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only if explicit instantiation is enabled
 APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
@@ -86,6 +177,9 @@ APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
 APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
+
+#MESSAGE("ETI_SOURCES = ${MUELU_ETI_CPP_SOURCES}")
+#MESSAGE("SOURCES = ${SOURCES}")
 
 #
 # Explicit instantiation
