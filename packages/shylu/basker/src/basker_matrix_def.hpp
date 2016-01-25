@@ -112,6 +112,13 @@ namespace BaskerNS
         w_fill = BASKER_FALSE;
       }
 
+    if(inc_lvl_flg == BASKER_TRUE)
+      {
+	FREE_INT_1DARRAY(inc_lvl);
+	inc_lvl_flg = BASKER_FALSE;
+      }
+    
+
   }//end finalize()
 
   template <class Int, class Entry, class Exe_Space>
@@ -432,12 +439,15 @@ namespace BaskerNS
         val(i) = 0;
       }
 
-    #ifdef BASKER_INC_LVL
+    //#ifdef BASKER_INC_LVL
+    if(inc_lvl_flg == BASKER_TRUE)
+      {
     for(Int i = 0; i < nnz; i++)
       {
 	inc_lvl(i) = 0;
       }
-    #endif
+      }
+    //#endif
 
     v_fill = BASKER_TRUE;
     return 0;
@@ -571,6 +581,20 @@ namespace BaskerNS
     //print();
     
   }//end convert2d(Matrix)
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::init_inc_lvl()
+  {
+
+    MALLOC_INT_1DARRAY(inc_lvl, nnz+1);
+    //for(Int i = 0; i < nnz+1; i++)
+    //  {
+    //	inc_lvl(i) = 0; 
+    // }
+    inc_lvl_flg = BASKER_TRUE;
+
+  }
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

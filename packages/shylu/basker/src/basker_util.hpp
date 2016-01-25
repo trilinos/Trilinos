@@ -268,6 +268,12 @@ namespace BaskerNS
 				       LL(b)(row).ncol,
 				       LL(b)(row).nnz);
 		
+
+		//Fix when this all happens in the future
+		if(Options.incomplete == BASKER_TRUE)
+		  {
+		LL(b)(row).init_inc_lvl();
+		  }
 		LL(b)(row).fill();
 		LL(b)(row).init_pend();
 		
