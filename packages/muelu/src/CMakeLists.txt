@@ -67,7 +67,6 @@ ENDIF()
 ## TODO introduce REGEX expressions here
 ## https://cmake.org/cmake/help/v3.0/command/string.html
 FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
-  #MESSAGE("Am in process eti templates with ETI_CLASSES=${ETI_CLASS}")
   SET(SRCS "")
   FOREACH(CLASS ${ETI_CLASSES})
     # find spearator of class name and (optional) conditions
@@ -79,7 +78,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
       set (CONDITION_NAME_END "")      
     ELSE()
       string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
-      MESSAGE("New class name = ${CLASS_NAME}")
+      #MESSAGE("New class name = ${CLASS_NAME}")
       string(SUBSTRING ${CLASS} ${DASHPOS} -1 CONDITION_NAME)
       string(REPLACE "[" "(" CONDITION_NAME ${CONDITION_NAME})
       string(REPLACE "]" ")" CONDITION_NAME ${CONDITION_NAME})
@@ -94,9 +93,13 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
     string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS_NAME}")
     string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
     string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
+    
+    # the following generates one cpp file for all instantiations and 
+    # enabled configurations
     CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME})
     #MESSAGE("Configure file ${FINAL_FILE_NAME} using template ${TEMPLATE_FILE}")
     SET(SRCS ${SRCS} ${FINAL_FILE_NAME})
+    
   ENDFOREACH()
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
@@ -125,27 +128,19 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ##
   INCLUDE(Utils/ExplicitInstantiation/ETI_LO_GO_NO_classes.cmake)
 
-  ##MESSAGE("MueLu_LO_GO_NO_ETI... = ${MUELU_LO_GO_NO_ETI_CLASSES}")
-
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO.tmpl
-    "UtilsETI/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_SC_LO_GO_NO_SRC)
   LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO.tmpl
-    "UtilsETI/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_LO_GO_NO_SRC)
   LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
-  ##### TODO remove this?? LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-
-  MESSAGE("New files: ${MueLuFiles_SRCS_not_used_here}")
-
-  # add only automatically generated ETI cpp files
-  ##### TODO remove this?? cpp files are automatically added below... APPEND_SET(SOURCES ${MUELUADAPTERS_ETI_CPP_SOURCES})
 ENDIF()
 
 ###############################################
@@ -183,8 +178,8 @@ APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
 APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
 
-MESSAGE("ETI_SOURCES = ${MUELU_ETI_CPP_SOURCES}")
-MESSAGE("SOURCES = ${SOURCES}")
+#MESSAGE("ETI_SOURCES = ${MUELU_ETI_CPP_SOURCES}")
+#MESSAGE("SOURCES = ${SOURCES}")
 
 #
 # Explicit instantiation
