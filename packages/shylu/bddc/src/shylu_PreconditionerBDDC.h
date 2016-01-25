@@ -49,13 +49,13 @@
 #include <complex>
 #include <vector>
 
-#include "PartitionOfUnityBDDC.h"
-#include "SubdomainBDDC.h"
-#include "WeightsBDDC.h"
-#include "ConstraintsBDDC.h"
-#include "CoarseSpaceBDDC.h"
-#include "DofManager.h"
-#include "UtilBDDC.h"
+#include "shylu_PartitionOfUnityBDDC.h"
+#include "shylu_SubdomainBDDC.h"
+#include "shylu_WeightsBDDC.h"
+#include "shylu_ConstraintsBDDC.h"
+#include "shylu_CoarseSpaceBDDC.h"
+#include "shylu_DofManager.h"
+#include "shylu_UtilBDDC.h"
 
 using Teuchos::RCP;
 using Teuchos::rcp;

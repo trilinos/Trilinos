@@ -49,8 +49,8 @@
 #include <complex>
 #include <vector>
 
-#include "PreconditionerBDDC.h"
-#include "OrthogGCR.h"
+#include "shylu_PreconditionerBDDC.h"
+#include "shylu_OrthogGCR.h"
 
 using Teuchos::RCP;
 using Teuchos::rcp;

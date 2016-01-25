@@ -54,22 +54,22 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "SolverBaseBDDC.h"
+#include "shylu_SolverBaseBDDC.h"
 
 #if defined(USING_NOPIVOT)
-#include "SolverNoPivotT.h"
+#include "shylu_SolverNoPivotT.h"
 #endif
 
 #if defined(USING_ESMOND)
-#include "SolverEsmondBDDC.h"
+#include "shylu_SolverEsmondBDDC.h"
 #endif
 
 #if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
-#include "SolverPardisoBDDC.h"
+#include "shylu_SolverPardisoBDDC.h"
 #endif
 
 #if defined(USE_INTEL_CLUSTER_PARDISO)
-#include "SolverClusterPardiso.h"
+#include "shylu_SolverClusterPardiso.h"
 #endif
 
 namespace bddc {

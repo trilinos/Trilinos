@@ -48,8 +48,8 @@
 #include <math.h>
 #include <string.h>
 
-#include "SolverBaseBDDC.h"
-#include "NoPivotT.h"
+#include "shylu_SolverBaseBDDC.h"
+#include "shylu_NoPivotT.h"
 #include <metis.h>
 
 #if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)

@@ -52,8 +52,8 @@
 #include "mkl.h"
 #include "mkl_cluster_sparse_solver.h"
 #endif
-#include "SolverBaseBDDC.h"
-#include "UtilPardiso.h"
+#include "shylu_SolverBaseBDDC.h"
+#include "shylu_UtilPardiso.h"
 
 namespace bddc {
 

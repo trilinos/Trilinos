@@ -50,8 +50,8 @@
 
 #include "mkl.h"
 #include "mkl_pardiso.h"
-#include "SolverBaseBDDC.h"
-#include "UtilPardiso.h"
+#include "shylu_SolverBaseBDDC.h"
+#include "shylu_UtilPardiso.h"
 
 namespace bddc {
 
