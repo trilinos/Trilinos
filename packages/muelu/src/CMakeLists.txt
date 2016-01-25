@@ -66,7 +66,50 @@ ENDIF()
 # from a template and list of class names
 ## TODO introduce REGEX expressions here
 ## https://cmake.org/cmake/help/v3.0/command/string.html
-FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
+FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST SKIP_SCALAR_INSTANTIATION)
+
+  # Make sure that Tpetra actually defined these variables, even if they
+  # are empty.
+  # TODO: workaround for Tpetra is disabled but Epetra is enabled?
+  ASSERT_DEFINED(TpetraCore_ETI_SCALARS)
+  ASSERT_DEFINED(TpetraCore_ETI_LORDS)
+  ASSERT_DEFINED(TpetraCore_ETI_GORDS)
+  ASSERT_DEFINED(TpetraCore_ETI_NODES)
+
+  # Exclude GlobalOrdinal types from the list of Scalar types over which
+  # MueLu does ETI.
+  #
+  # Look at each entry in Tpetra's list of ETI Scalar types.  If it is
+  # also a Tpetra ETI GlobalOrdinal type, don't append it to MueLu's
+  # list of ETI Scalar types.  Otherwise, do.
+  SET (MueLu_ETI_SCALARS_TEMP ) # start with the empty list
+  FOREACH (scalarName IN LISTS TpetraCore_ETI_SCALARS)
+    LIST (FIND TpetraCore_ETI_GORDS ${scalarName} scalarNameIndex)
+    IF (-1 EQUAL scalarNameIndex) # not in the list of integer types
+      LIST (APPEND MueLu_ETI_SCALARS_TEMP ${scalarName})
+    ENDIF ()
+  ENDFOREACH ()
+
+  SET(MueLu_ETI_SCALARS ${MueLu_ETI_SCALARS_TEMP})
+  SET(MueLu_ETI_LORDS   ${TpetraCore_ETI_LORDS})
+  SET(MueLu_ETI_GORDS   ${TpetraCore_ETI_GORDS})
+  SET(MueLu_ETI_NODES   ${TpetraCore_ETI_NODES})
+
+  #MESSAGE("MueLu_ETI_SCALARS = ${MueLu_ETI_SCALARS}")
+  #MESSAGE("MueLu_ETI_LORDS   = ${MueLu_ETI_LORDS}")
+  #MESSAGE("MueLu_ETI_GORDS   = ${MueLu_ETI_GORDS}")
+  #MESSAGE("MueLu_ETI_NODES   = ${MueLu_ETI_NODES}")
+
+  # check whether both Epetra and Tpetra are enabled
+  SET(MueLu_ETI_EpetraGuards "")
+  SET(MueLu_ETI_EpetraGuards_END "")
+  IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+	# both Epetra and Tpetra are enabled. The Epetra instantiation needs to be guarded
+	SET(MueLu_ETI_EpetraGuards "#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))")
+    SET(MueLu_ETI_EpetraGuards_END "#endif")
+  ENDIF()
+        
+  # loop over all ETI_CLASSES
   SET(SRCS "")
   FOREACH(CLASS ${ETI_CLASSES})
     # find spearator of class name and (optional) conditions
@@ -96,10 +139,50 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
     
     # the following generates one cpp file for all instantiations and 
     # enabled configurations
-    CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME})
-    #MESSAGE("Configure file ${FINAL_FILE_NAME} using template ${TEMPLATE_FILE}")
-    SET(SRCS ${SRCS} ${FINAL_FILE_NAME})
+    #CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME}.cpp)
+    #SET(SRCS ${SRCS} ${FINAL_FILE_NAME}.cpp)  
     
+    # Experiment
+    # If Epetra is enabled, instantiate it on <double,int,int,EpetraNode>
+    # Note: no Epetra64 support in MueLu
+    # EpetraNode is defined in the template file depending on the enabled
+    # Kokkos nodes (either Serial or OpenMP)
+    IF (${PACKAGE_NAME}_ENABLE_Epetra)
+      CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
+      SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
+    ENDIF()
+    
+    # If Tpetra is enabled create the cpp file for all combinations of template parameters
+    IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+      FOREACH(NT ${MueLu_ETI_NODES})
+	    TPETRA_MANGLE_TEMPLATE_PARAMETER(NT_MANGLED "${NT}")
+	    TPETRA_NODE_MACRO_NAME(NT_MACRO_NAME "${NT}")
+	    FOREACH(GO ${MueLu_ETI_GORDS})
+	      TPETRA_MANGLE_TEMPLATE_PARAMETER(GO_MANGLED "${GO}")
+	      TPETRA_SLG_MACRO_NAME(GO_MACRO_NAME "${GO}")
+	      FOREACH(LO ${MueLu_ETI_LORDS})
+	        TPETRA_MANGLE_TEMPLATE_PARAMETER(LO_MANGLED "${LO}")
+	        TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
+	        
+	        IF(${SKIP_SCALAR_INSTANTIATION})
+	          CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
+	          SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)  	        
+	        ELSE()
+    	      FOREACH(SC ${MueLu_ETI_SCALARS})
+		        TPETRA_MANGLE_TEMPLATE_PARAMETER(SC_MANGLED "${SC}")
+		        TPETRA_SLG_MACRO_NAME(SC_MACRO_NAME "${SC}")
+		        TPETRA_SC_MACRO_EXPR(SC_MACRO_EXPR "${SC}" "${GO}" "${SC_MACRO_NAME}")
+		
+		        CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
+		        SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)   
+	          ENDFOREACH() # SC
+	        ENDIF() # skip loop over SC
+	      ENDFOREACH() # LO
+	    ENDFOREACH() # GO
+	  ENDFOREACH() # NT
+    
+    ENDIF()
+    # Experiment end
   ENDFOREACH()
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
@@ -131,15 +214,17 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO.tmpl
-    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
-    MueLu_ETI_SC_LO_GO_NO_SRC)
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
+    MueLu_ETI_SC_LO_GO_NO_SRC
+    0)
   LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO.tmpl
-    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
-    MueLu_ETI_LO_GO_NO_SRC)
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
+    MueLu_ETI_LO_GO_NO_SRC
+    1)
   LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
