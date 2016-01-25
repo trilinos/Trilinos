@@ -136,7 +136,9 @@ const SideTestUtil::TestCaseData createExposedBoundaryForOneBlockTestCases =
     {"AefA.e",      4,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
 
     {"Ae.e",        2,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
-    //{"ef.e",        2,       2,     {{1, 0}, {1, 1}, {2, 0}, {2, 1}}},
+
+    // Throws on 2 procs with stk::CommBuffer::unpack<T>(...){ overflow by -12 bytes. }
+//    {"ef.e",        2,       2,     {{1, 0}, {1, 1}, {2, 0}, {2, 1}}},
 
     {"AB_doubleKissing.e",  2,  4,  {{1, 0}, {1, 3}, {1, 4}, {1, 5}}},
     {"Tg.e",        2,      4,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}}},
