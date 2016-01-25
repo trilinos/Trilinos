@@ -16,7 +16,7 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-
+  // test
   /* 
      ./driver.exe matrixfilename.mtx nthreads 
   */
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
   mybasker.Options.realloc    = true;
   mybasker.Options.btf        = true;
   mybasker.Options.incomplete = true;
-  mybasker.Options.inc_lvl    = 0;
+  mybasker.Options.inc_lvl    = 1;
 
   mybasker.SetThreads(numthreads);
   cout << "--------------Done Setting Threads----------" << endl;
