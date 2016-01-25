@@ -90,6 +90,12 @@ template <> struct GetSacadoSize<0> {
                       const size_t n7 = 0 ) {
     return n0;
   }
+
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static size_t eval( const Layout& layout ) {
+    return layout.dimension[0];
+  }
 };
 template <> struct GetSacadoSize<1> {
   KOKKOS_INLINE_FUNCTION
@@ -102,6 +108,12 @@ template <> struct GetSacadoSize<1> {
                       const size_t n6 = 0 ,
                       const size_t n7 = 0 ) {
     return n1;
+  }
+
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static size_t eval( const Layout& layout ) {
+    return layout.dimension[1];
   }
 };
 template <> struct GetSacadoSize<2> {
@@ -116,6 +128,12 @@ template <> struct GetSacadoSize<2> {
                       const size_t n7 = 0 ) {
     return n2;
   }
+
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static size_t eval( const Layout& layout ) {
+    return layout.dimension[2];
+  }
 };
 template <> struct GetSacadoSize<3> {
   KOKKOS_INLINE_FUNCTION
@@ -128,6 +146,12 @@ template <> struct GetSacadoSize<3> {
                       const size_t n6 = 0 ,
                       const size_t n7 = 0 ) {
     return n3;
+  }
+
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static size_t eval( const Layout& layout ) {
+    return layout.dimension[3];
   }
 };
 template <> struct GetSacadoSize<4> {
@@ -142,6 +166,12 @@ template <> struct GetSacadoSize<4> {
                       const size_t n7 = 0 ) {
     return n4;
   }
+
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static size_t eval( const Layout& layout ) {
+    return layout.dimension[4];
+  }
 };
 template <> struct GetSacadoSize<5> {
   KOKKOS_INLINE_FUNCTION
@@ -154,6 +184,12 @@ template <> struct GetSacadoSize<5> {
                       const size_t n6 = 0 ,
                       const size_t n7 = 0 ) {
     return n5;
+  }
+
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static size_t eval( const Layout& layout ) {
+    return layout.dimension[5];
   }
 };
 template <> struct GetSacadoSize<6> {
@@ -168,6 +204,12 @@ template <> struct GetSacadoSize<6> {
                       const size_t n7 = 0 ) {
     return n6;
   }
+
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static size_t eval( const Layout& layout ) {
+    return layout.dimension[6];
+  }
 };
 template <> struct GetSacadoSize<7> {
   KOKKOS_INLINE_FUNCTION
@@ -180,6 +222,12 @@ template <> struct GetSacadoSize<7> {
                       const size_t n6 ,
                       const size_t n7 ) {
     return n7;
+  }
+
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static size_t eval( const Layout& layout ) {
+    return layout.dimension[7];
   }
 };
 

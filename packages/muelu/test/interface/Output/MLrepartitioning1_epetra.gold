@@ -5,9 +5,14 @@ aggregate ordering :                    natural
 =============================================================================
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- relaxation: type = symmetric Gauss-Seidel   [unused]
- relaxation: sweeps = 2   [unused]
- relaxation: damping factor = 1   [unused]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  relaxation: type = symmetric Gauss-Seidel   [unused]
+  relaxation: sweeps = 2   [unused]
+  relaxation: damping factor = 1   [unused]
+  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
 
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -84,9 +89,14 @@ Level 1
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- relaxation: type = symmetric Gauss-Seidel   [unused]
- relaxation: sweeps = 2   [unused]
- relaxation: damping factor = 1   [unused]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  relaxation: type = symmetric Gauss-Seidel   [unused]
+  relaxation: sweeps = 2   [unused]
+  relaxation: damping factor = 1   [unused]
+  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
 
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -163,9 +173,14 @@ Level 2
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- relaxation: type = symmetric Gauss-Seidel   [unused]
- relaxation: sweeps = 2   [unused]
- relaxation: damping factor = 1   [unused]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  relaxation: type = symmetric Gauss-Seidel   [unused]
+  relaxation: sweeps = 2   [unused]
+  relaxation: damping factor = 1   [unused]
+  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
 
 Level 3
  Build (MueLu::RebalanceTransferFactory)
@@ -242,9 +257,14 @@ Level 3
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- relaxation: type = symmetric Gauss-Seidel   [unused]
- relaxation: sweeps = 2   [unused]
- relaxation: damping factor = 1   [unused]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  relaxation: type = symmetric Gauss-Seidel   [unused]
+  relaxation: sweeps = 2   [unused]
+  relaxation: damping factor = 1   [unused]
+  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
 
 Level 4
  Build (MueLu::RebalanceTransferFactory)
@@ -321,9 +341,14 @@ Level 4
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- relaxation: type = symmetric Gauss-Seidel   [unused]
- relaxation: sweeps = 2   [unused]
- relaxation: damping factor = 1   [unused]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  relaxation: type = symmetric Gauss-Seidel   [unused]
+  relaxation: sweeps = 2   [unused]
+  relaxation: damping factor = 1   [unused]
+  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
 
 Level 5
  Build (MueLu::RebalanceTransferFactory)
@@ -400,7 +425,11 @@ Level 5
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::AmesosSmoother{type = Klu})
- [empty list]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
 
 
 --------------------------------------------------------------------------------

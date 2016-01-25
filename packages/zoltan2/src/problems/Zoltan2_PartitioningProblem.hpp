@@ -657,7 +657,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
       try{
         graphQuality = new psq_t(this->envConst_, problemCommConst_,
-                                 this->baseInputAdapter_, solutionConst,
+                                 this->baseInputAdapter_, &this->getSolution(),
                                  this->graphModel_);
       }
       Z2_FORWARD_EXCEPTIONS

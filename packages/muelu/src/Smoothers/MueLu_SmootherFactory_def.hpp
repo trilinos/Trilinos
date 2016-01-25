@@ -81,6 +81,18 @@ namespace MueLu {
     CheckPrototypes();
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set<bool>("keep smoother data", false, "Keep constructed smoothers for later reuse");
+
+    validParamList->set< RCP<SmootherPrototype> >("PreSmoother data",   null, "Pre-smoother data for reuse");
+    validParamList->set< RCP<SmootherPrototype> >("PostSmoother data",  null, "Post-smoother data for reuse");
+
+    return validParamList;
+  }
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckPrototypes() const {
     TEUCHOS_TEST_FOR_EXCEPTION(preSmootherPrototype_  != Teuchos::null && preSmootherPrototype_->IsSetup()  == true,
@@ -132,11 +144,17 @@ namespace MueLu {
     // there is no way to be sure that this factory would generate any of "PreSmoother" or "PostSmoother", unless you are
     // able to cast it to SmootherFactory, do GetPrototypes and to check whether any of those is Teuchos::null.
 
+    const Teuchos::ParameterList& pL = GetParameterList();
+
     RCP<SmootherPrototype> preSmoother, postSmoother;
     ParameterList preSmootherParams, postSmootherParams;
 
     if ((preOrPost & PRE) && !preSmootherPrototype_.is_null()) {
-      preSmoother = preSmootherPrototype_->Copy();
+
+      if (currentLevel.IsAvailable("PreSmoother data", this))
+        preSmoother = currentLevel.Get<RCP<SmootherPrototype> >("PreSmoother data", this);
+      else
+        preSmoother = preSmootherPrototype_->Copy();
 
       int oldRank = -1;
       if (!currentLevel.GetComm().is_null())
@@ -149,6 +167,9 @@ namespace MueLu {
         preSmoother->SetProcRankVerbose(oldRank);
 
       currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
+
+      if (pL.get<bool>("keep smoother data"))
+        Set(currentLevel, "PreSmoother data", preSmoother);
     }
 
     if ((preOrPost & POST) && !postSmootherPrototype_.is_null()) {
@@ -157,7 +178,7 @@ namespace MueLu {
         // Same prototypes for pre- and post-smoothers mean that we only need to call Setup only once
         postSmoother = preSmoother;
 
-        //            }  else if (preOrPost == BOTH &&
+        //               else if (preOrPost == BOTH &&
         //                        preSmootherPrototype_ != Teuchos::null &&
         //                        preSmootherPrototype_->GetType() == postSmootherPrototype_->GetType()) {
 
@@ -177,43 +198,48 @@ namespace MueLu {
         //               // CopyParameters resets the smoother (only if parameters are
         //               // different) and we must call Setup() again.
         //               postSmoother->Setup(currentLevel);
+        //               }
 
         //               // TODO: if CopyParameters do not exist, do setup twice.
 
       } else {
-        // No reuse:
-        //  - either we only do postsmoothing without any presmoothing
-        //  - or our postsmoother is different from presmoother
-        postSmoother = postSmootherPrototype_->Copy();
+
+        if (currentLevel.IsAvailable("PostSmoother data", this)) {
+          postSmoother = currentLevel.Get<RCP<SmootherPrototype> >("PostSmoother data", this);
+        } else {
+          // No reuse:
+          //  - either we only do postsmoothing without any presmoothing
+          //  - or our postsmoother is different from presmoother
+          postSmoother = postSmootherPrototype_->Copy();
+        }
 
         int oldRank = -1;
         if (!currentLevel.GetComm().is_null())
           oldRank = postSmoother->SetProcRankVerbose(GetProcRankVerbose());
 
         postSmoother->Setup(currentLevel);
+        postSmootherParams = postSmoother->GetParameterList();
 
         if (oldRank != -1)
           postSmoother->SetProcRankVerbose(oldRank);
       }
-      postSmootherParams = postSmoother->GetParameterList();
 
       currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
+
+      if (pL.get<bool>("keep smoother data"))
+        Set(currentLevel, "PostSmoother data", preSmoother);
     }
 
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
     if (postSmoother == preSmoother && !preSmoother.is_null()) {
-      paramList = preSmoother->GetParameterList();
+      paramList.sublist("smoother", false) = preSmoother->GetParameterList();
 
     } else {
-      if (!preSmoother.is_null()) {
-        ParameterList& preList = paramList.sublist("presmoother", false);
-        preList = preSmootherParams;
-      }
+      if (!preSmoother.is_null())
+        paramList.sublist("presmoother", false) = preSmootherParams;
 
-      if (!postSmoother.is_null()) {
-        ParameterList& postList = paramList.sublist("postsmoother", false);
-        postList = postSmootherParams;
-      }
+      if (!postSmoother.is_null())
+        paramList.sublist("postsmoother", false) = postSmootherParams;
     }
 
   } // Build()

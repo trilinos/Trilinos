@@ -1,0 +1,10 @@
+#ifndef SHYLUHTS_CONFIG_H
+#define SHYLUHTS_CONFIG_H
+
+/* Optional TPL */
+
+#cmakedefine HAVE_SHYLUHTS_MKL
+
+#cmakedefine HAVE_SHYLUHTS_BLAS
+
+#endif

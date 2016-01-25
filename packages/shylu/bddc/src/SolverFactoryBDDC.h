@@ -64,7 +64,7 @@
 #include "SolverEsmondBDDC.h"
 #endif
 
-#if defined(USE_INTEL_PARDISO)
+#if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
 #include "SolverPardisoBDDC.h"
 #endif
 
@@ -116,7 +116,7 @@ template <class SX,
 #endif
     }
     else if (solverString == "Pardiso") {
-#if defined(USE_INTEL_PARDISO)
+#if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
       SolverPtr = new SolverPardiso<SX,SM,LO,GO>(numRows, 
 						 rowBegin,
 						 columns,
