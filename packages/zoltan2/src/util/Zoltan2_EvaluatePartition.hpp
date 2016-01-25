@@ -117,7 +117,7 @@ public:
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
-    const RCP<const PartitioningSolution<Adapter> > &soln,
+    const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
 
@@ -258,7 +258,7 @@ template <typename Adapter>
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const typename Adapter::base_adapter_t> &ia, 
-  const RCP<const PartitioningSolution<Adapter> > &soln,
+  const PartitioningSolution<Adapter> *soln,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0),
     graphMetrics_(),  graphMetricsConst_()
@@ -289,7 +289,7 @@ template <typename Adapter>
   // Parts to which objects are assigned.
 
   const part_t *parts;
-  if (soln != Teuchos::null) {
+  if (soln) {
     parts = soln->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set",
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
@@ -320,7 +320,7 @@ template <typename Adapter>
     Z2_FORWARD_EXCEPTIONS;
   }
 
-  if (soln != Teuchos::null)
+  if (soln)
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
   else targetGlobalParts_ = problemComm->getSize();
 

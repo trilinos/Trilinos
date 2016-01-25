@@ -328,7 +328,8 @@ int main(int narg, char *arg[]) {
     RCP<quality_t> graphMetricObject;
 
     if (action == "scotch") {
-      graphMetricObject = rcp(new quality_t(env, CommT, bia, solutionConst));
+      graphMetricObject = rcp(new quality_t(env, CommT, bia,
+					    &problem.getSolution()));
     }
 
     if (!me) {
