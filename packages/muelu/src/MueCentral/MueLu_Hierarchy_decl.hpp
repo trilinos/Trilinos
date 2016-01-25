@@ -65,7 +65,7 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManager.hpp" // no fwd declaration because constructor of FactoryManager is used as a default parameter of Setup()
-#include "MueLu_HierarchyHelpers_fwd.hpp"
+#include "MueLu_HierarchyUtils_fwd.hpp"
 #include "MueLu_KeepType.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_MasterList.hpp"

@@ -58,7 +58,9 @@
 
 #include "MueLu_BoostGraphviz.hpp"
 #include "MueLu_FactoryManager.hpp"
-#include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_HierarchyUtils.hpp"
+#include "MueLu_TopRAPFactory.hpp"
+#include "MueLu_TopSmootherFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PFactory.hpp"
