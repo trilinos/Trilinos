@@ -227,15 +227,15 @@ public:
 
   // Generate "flattened" multidimensional array specification type.
   typedef typename
-    ViewDataType< scalar_type , scalar_dimension >::type array_scalar_type ;
+    ViewDataType< scalar_type , scalar_dimension >::type scalar_array_type ;
 
   typedef typename
     ViewDataType< const_scalar_type , scalar_dimension >::type
-      const_array_scalar_type ;
+      const_scalar_array_type ;
 
   typedef typename
     ViewDataType< non_const_scalar_type , scalar_dimension >::type
-      non_const_array_scalar_type ;
+      non_const_scalar_array_type ;
 };
 
 } // namespace Impl
@@ -501,31 +501,19 @@ public:
 
   //----------------------------------------
 
-  /** \brief  Span, in bytes, of the potentially non-contiguous referenced memory */
-  KOKKOS_INLINE_FUNCTION constexpr size_t memory_span() const
-  {
-    return m_offset.span() * sizeof(fad_value_type);
-  }
-
   /** \brief  Span, in bytes, of the required memory */
-  template< bool AllowPadding >
   KOKKOS_INLINE_FUNCTION
-  static constexpr size_t memory_span
-    ( const std::integral_constant<bool,AllowPadding> &
-    , const size_t N0 , const size_t N1 , const size_t N2 , const size_t N3
-    , const size_t N4 , const size_t N5 , const size_t N6 , const size_t N7
-    )
+  static constexpr size_t memory_span( typename Traits::array_layout const & layout )
     {
       // Do not introduce padding...
-      return offset_type( std::integral_constant< unsigned , 0 >()
-                        , N0, N1, N2, N3, N4, N5, N6, N7
-                        ).span() * sizeof(fad_value_type);
+      typedef std::integral_constant< unsigned , 0 >  padding ;
+      return offset_type( padding() , layout ).span() * sizeof(fad_value_type);
     }
 
   //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping() = default ;
+  KOKKOS_INLINE_FUNCTION ViewMapping() : m_handle(0) , m_offset() , m_fad_size(0) {}
 
   KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
   KOKKOS_INLINE_FUNCTION  ViewMapping & operator = ( const ViewMapping & ) = default ;
@@ -533,17 +521,14 @@ public:
   KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
-  template< bool AllowPadding >
   KOKKOS_INLINE_FUNCTION
   ViewMapping
     ( pointer_type ptr
-    , const std::integral_constant<bool,AllowPadding> &
-    , const size_t N0 , const size_t N1 , const size_t N2 , const size_t N3
-    , const size_t N4 , const size_t N5 , const size_t N6 , const size_t N7
+    , typename Traits::array_layout const & layout
     )
     : m_handle( reinterpret_cast< handle_type >( ptr ) )
     , m_offset( std::integral_constant< unsigned , 0 >()
-              , N0, N1, N2, N3, N4, N5, N6, N7 )
+              , layout )
     // Query m_offset, not input, in case of static dimension
     , m_fad_size(
        ( Rank == 0 ? m_offset.dimension_0() :
@@ -557,8 +542,69 @@ public:
     {}
 
   //----------------------------------------
+  /*  Allocate and construct mapped array.
+   *  Allocate via shared allocation record and
+   *  return that record for allocation tracking.
+   */
+  template< class ... P >
+  SharedAllocationRecord<> *
+  allocate_shared( ViewAllocProp< P... > const & prop
+                 , typename Traits::array_layout const & layout )
+  {
+    typedef ViewAllocProp< P... > alloc_prop ;
+
+    typedef typename alloc_prop::execution_space  execution_space ;
+    typedef typename Traits::memory_space         memory_space ;
+    typedef ViewValueFunctor< execution_space , fad_value_type > functor_type ;
+    typedef SharedAllocationRecord< memory_space , functor_type > record_type ;
+
+    // Disallow padding
+    typedef std::integral_constant< unsigned , 0 > padding ;
+
+    m_offset = offset_type( padding(), layout );
+    m_fad_size = ( Rank == 0 ? m_offset.dimension_0() :
+                   ( Rank == 1 ? m_offset.dimension_1() :
+                     ( Rank == 2 ? m_offset.dimension_2() :
+                       ( Rank == 3 ? m_offset.dimension_3() :
+                         ( Rank == 4 ? m_offset.dimension_4() :
+                           ( Rank == 5 ? m_offset.dimension_5() :
+                             ( Rank == 6 ? m_offset.dimension_6() :
+                               m_offset.dimension_7() ))))))) - 1 ;
+
+    const size_t alloc_size = m_offset.span() * sizeof(fad_value_type);
+
+    // Create shared memory tracking record with allocate memory from the memory space
+    record_type * const record =
+      record_type::allocate( ( (ViewAllocProp<void,memory_space> const &) prop ).value
+                           , ( (ViewAllocProp<void,std::string>  const &) prop ).value
+                           , alloc_size );
+
+    //  Only set the the pointer and initialize if the allocation is non-zero.
+    //  May be zero if one of the dimensions is zero.
+    if ( alloc_size ) {
+
+      m_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
+
+      if ( alloc_prop::initialize ) {
+        // Assume destruction is only required when construction is requested.
+        // The ViewValueFunctor has both value construction and destruction operators.
+        record->m_destroy = functor_type( ( (ViewAllocProp<void,execution_space> const &) prop).value
+                                        , (fad_value_type *) m_handle
+                                        , m_offset.span()
+                                        );
+
+        // Construct values
+        record->m_destroy.construct_shared_allocation();
+      }
+    }
+
+    return record ;
+  }
+
+  //----------------------------------------
   // If the View is to construct or destroy the elements.
 
+  /*
   template< class ExecSpace >
   void construct( const ExecSpace & space ) const
     {
@@ -574,6 +620,7 @@ public:
 
       (void) FunctorType( space , m_handle , m_offset.span() , FunctorType::DESTROY );
     }
+  */
 
 };
 
@@ -668,10 +715,10 @@ public:
         "View assignment must have compatible layout" );
 
       static_assert(
-        std::is_same< typename DstTraits::array_scalar_type
-                    , typename SrcTraits::array_scalar_type >::value ||
-        std::is_same< typename DstTraits::array_scalar_type
-                    , typename SrcTraits::const_array_scalar_type >::value ,
+        std::is_same< typename DstTraits::scalar_array_type
+                    , typename SrcTraits::scalar_array_type >::value ||
+        std::is_same< typename DstTraits::scalar_array_type
+                    , typename SrcTraits::const_scalar_array_type >::value ,
         "View assignment must have same value type or const = non-const" );
 
       static_assert(
