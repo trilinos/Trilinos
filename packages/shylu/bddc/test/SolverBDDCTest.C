@@ -43,10 +43,10 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 #include "ProblemMakerBDDC.h"
-#include "PreconditionerBDDC.h"
-#include "SolverGCR.h"
-#include "UtilBDDC.h"
-#include "enumsBDDC.h"
+#include "shylu_PreconditionerBDDC.h"
+#include "shylu_SolverGCR.h"
+#include "shylu_UtilBDDC.h"
+#include "shylu_enumsBDDC.h"
 #if defined(_OPENMP)
 
 #include <omp.h>
