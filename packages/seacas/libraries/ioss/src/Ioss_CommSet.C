@@ -51,11 +51,20 @@ Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database,
   assert(entity_type == "node" || entity_type == "side");
   properties.add(Ioss::Property("entity_type",  entity_type));
 
-  // Field contains a pair of type [entity_id, shared_cpu]
-  fields.add(Ioss::Field("entity_processor", field_int_type(), "pair",
-			 Ioss::Field::COMMUNICATION, entity_count));
-  fields.add(Ioss::Field("entity_processor_raw", field_int_type(), "pair",
-			 Ioss::Field::COMMUNICATION, entity_count));
+  if (entity_type == "node") {
+    // Field contains a pair of type [entity_id, shared_cpu]
+    fields.add(Ioss::Field("entity_processor", field_int_type(), "pair",
+			   Ioss::Field::COMMUNICATION, entity_count));
+    fields.add(Ioss::Field("entity_processor_raw", field_int_type(), "pair",
+			   Ioss::Field::COMMUNICATION, entity_count));
+  }
+  else {
+    // Field contains a triplet of type [entity_id, local_side, shared_cpu]
+    fields.add(Ioss::Field("entity_processor", field_int_type(), "Real[3]",
+			   Ioss::Field::COMMUNICATION, entity_count));
+    fields.add(Ioss::Field("entity_processor_raw", field_int_type(), "Real[3]",
+			   Ioss::Field::COMMUNICATION, entity_count));
+  }
 }
 
 int64_t Ioss::CommSet::internal_get_field_data(const Ioss::Field& field,

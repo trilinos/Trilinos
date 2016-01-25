@@ -60,7 +60,7 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Assert.hpp"
-
+#include "Intrepid2_KokkosRank.hpp"
 namespace Intrepid2 {
   
   /** \class Intrepid2::FieldContainer
@@ -785,6 +785,19 @@ struct Return_Type<const FieldContainer<FadType>, Scalar>{
       typedef FadType& return_type;
       typedef FadType  const_return_type;
 };
+
+
+
+template<class FadType>
+struct CheckType<FieldContainer<FadType> >{
+static const bool value = true;
+};
+
+template<class FadType>
+struct CheckType<const FieldContainer<FadType> >{
+static const bool value = true;
+};
+
 
 } // end namespace Intrepid2
 

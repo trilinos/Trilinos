@@ -136,9 +136,9 @@ namespace BaskerNS
     BOOL_1DARRAY union_bit;
    
    
-    #ifdef BASKER_INC_LVL
+    //#ifdef BASKER_INC_LVL
     INT_1DARRAY   inc_lvl;
-    #endif
+    //#endif
 
     #ifdef BASKER_2DL
     BASKER_BOOL   w_fill;

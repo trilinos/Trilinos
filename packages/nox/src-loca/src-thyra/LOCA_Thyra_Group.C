@@ -411,16 +411,20 @@ LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
     in_args_.set_x_dot(x_dot_vec);
   in_args_.set_p(param_index, param_thyra_vec);
-  in_args_.set_alpha(-beta);
-  in_args_.set_beta(alpha);
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
+    in_args_.set_alpha(-beta);
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
+    in_args_.set_beta(alpha);
   out_args_.set_W_op(lop_);
 
   model_->evalModel(in_args_, out_args_);
 
   in_args_.set_x(Teuchos::null);
   in_args_.set_p(param_index, Teuchos::null);
-  in_args_.set_alpha(0.0);
-  in_args_.set_beta(1.0);
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
+    in_args_.set_alpha(0.0);
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
+    in_args_.set_beta(1.0);
   out_args_.set_W_op(Teuchos::null);
 
   is_valid_jacobian_ = false;

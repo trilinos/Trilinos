@@ -48,23 +48,6 @@
 namespace Piro {
 
 template <typename Scalar>
-class SolnSet {
-public:
-  SolnSet(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &solution_,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &solution_dot_,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &solution_dotdot_,
-      const Scalar stamp_) : stamp(stamp_), solution(solution_), 
-                             solution_dot(solution_dot_), solution_dotdot(solution_dotdot_){}
-
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution;
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dot;
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dotdot;
-      Scalar stamp;
-
-};
-
-template <typename Scalar>
 class ObserverBase {
 public:
   virtual void observeSolution(
@@ -80,7 +63,7 @@ public:
       const Scalar stamp);
 
   virtual void observeSolution(
-      const SolnSet<Scalar> &solution);
+      const Thyra::MultiVectorBase<Scalar> &solution, Scalar time);
 
   virtual ~ObserverBase() {}
 };
@@ -115,7 +98,7 @@ ObserverBase<Scalar>::observeSolution(
 template <typename Scalar>
 void
 ObserverBase<Scalar>::observeSolution(
-      const SolnSet<Scalar> &solution)
+      const Thyra::MultiVectorBase<Scalar> &solution, Scalar time)
 {
   // Nothing to do by default
 }

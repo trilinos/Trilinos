@@ -41,8 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-
 #include "Phalanx_config.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_DAG_Manager.hpp"
@@ -134,6 +135,8 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   using namespace Teuchos;
   using namespace PHX;
   
+  PHX::InitializeKokkosDevice();
+
   DagManager<MyTraits> em;
 
   registerDagNodes(em,false,false,false,false);
@@ -174,6 +177,7 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   cout << "\n" << em << endl;   cout << "\n" << em << endl;  
  
   //Teuchos::TimeMonitor::summarize();
+  PHX::FinalizeKokkosDevice();
 }
 
 // Catch cyclic dependencies (not a true DAG)
@@ -183,6 +187,8 @@ TEUCHOS_UNIT_TEST(dag, cyclic)
   using namespace Teuchos;
   using namespace PHX;
   
+  PHX::InitializeKokkosDevice();
+
   DagManager<MyTraits> em("cyclic");
   em.setDefaultGraphvizFilenameForErrors("error_cyclic.dot");
   em.setWriteGraphvizFileOnError(true);
@@ -195,6 +201,8 @@ TEUCHOS_UNIT_TEST(dag, cyclic)
   em.requireField(tag);
 
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::circular_dag_exception);
+
+  PHX::FinalizeKokkosDevice();
 }
 
 // Catch multiple evaluators that evaluate the same field
@@ -204,6 +212,8 @@ TEUCHOS_UNIT_TEST(dag, duplicate_evaluators)
   using namespace Teuchos;
   using namespace PHX;
   
+  PHX::InitializeKokkosDevice();
+
   DagManager<MyTraits> em("duplicate_evaluators");
   em.setDefaultGraphvizFilenameForErrors("error_duplicate_evaluators.dot");
   em.setWriteGraphvizFileOnError(true);
@@ -214,6 +224,8 @@ TEUCHOS_UNIT_TEST(dag, duplicate_evaluators)
 #else
   registerDagNodes(em,false,true,false,false);
 #endif
+
+  PHX::FinalizeKokkosDevice();
 }
 
 // Catch missing required field 
@@ -223,6 +235,8 @@ TEUCHOS_UNIT_TEST(dag, missing_req_field)
   using namespace Teuchos;
   using namespace PHX;
   
+  PHX::InitializeKokkosDevice();
+
   DagManager<MyTraits> em("missing_req_field");
   em.setDefaultGraphvizFilenameForErrors("error_missing_req_field.dot");
   em.setWriteGraphvizFileOnError(true);
@@ -235,6 +249,8 @@ TEUCHOS_UNIT_TEST(dag, missing_req_field)
   em.requireField(tag);
 
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
+
+  PHX::FinalizeKokkosDevice();
 }
 
 // Catch missing evalautor in subtree 
@@ -244,6 +260,8 @@ TEUCHOS_UNIT_TEST(dag, missing_evaluator)
   using namespace Teuchos;
   using namespace PHX;
   
+  PHX::InitializeKokkosDevice();
+    
   DagManager<MyTraits> em("missing_evaluator");
   em.setDefaultGraphvizFilenameForErrors("error_missing_evaluator.dot");
   em.setWriteGraphvizFileOnError(true);
@@ -256,6 +274,8 @@ TEUCHOS_UNIT_TEST(dag, missing_evaluator)
   em.requireField(tag);
 
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
+
+  PHX::FinalizeKokkosDevice();
 }
 
 // Test the analyzeGraph computation for speedup and parallelization
@@ -265,6 +285,8 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph)
   using namespace Teuchos;
   using namespace PHX;
   using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+  PHX::InitializeKokkosDevice();
   
   // Perfectly parallel test
   DagManager<MyTraits> dag("analyze_graph");
@@ -324,6 +346,8 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph)
   double tol = 1000.0 * Teuchos::ScalarTraits<double>::eps();
   TEST_FLOATING_EQUALITY(speedup,3.0,tol);
   TEST_FLOATING_EQUALITY(parallelizability,1.0,tol);
+
+  PHX::FinalizeKokkosDevice();
 }
 
 // Test the analyzeGraph computation for speedup and parallelization
@@ -334,6 +358,8 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph2)
   using namespace PHX;
   using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
   
+  PHX::InitializeKokkosDevice();
+
   // Perfectly parallel test
   DagManager<MyTraits> dag("analyze_graph2");
 
@@ -415,4 +441,7 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph2)
   TEST_FLOATING_EQUALITY(speedup,s_gold,tol);
   double p_gold = (1. - 1./s_gold)/(1. - 1./4.);
   TEST_FLOATING_EQUALITY(parallelizability,p_gold,tol);
+
+  
+  PHX::FinalizeKokkosDevice();
 }

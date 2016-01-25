@@ -50,10 +50,12 @@
 using Teuchos::rcp;
 
 NOX::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager(
+           const int number_time_derivatives,
            const Teuchos::RCP<const Epetra_Map> &map_,
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
-           const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_){
-
+           const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_) :
+  num_time_deriv(number_time_derivatives)
+{
 
    resizeMeshDataArrays(map_, overlapMap_, overlapJacGraph_);
 
@@ -68,15 +70,19 @@ void NOX::Epetra::AdaptiveSolutionManager::resizeMeshDataArrays(
   importer = rcp(new Epetra_Import(*overlapMap, *map));
   exporter = rcp(new Epetra_Export(*overlapMap, *map));
   overlapped_x = rcp(new Epetra_Vector(*overlapMap));
-  overlapped_xdot = rcp(new Epetra_Vector(*overlapMap));
-  overlapped_xdotdot = rcp(new Epetra_Vector(*overlapMap));
+  if(num_time_deriv > 0)
+    overlapped_xdot = rcp(new Epetra_Vector(*overlapMap));
+  if(num_time_deriv > 1)
+    overlapped_xdotdot = rcp(new Epetra_Vector(*overlapMap));
   overlapped_f = rcp(new Epetra_Vector(*overlapMap));
   overlapped_jac = rcp(new Epetra_CrsMatrix(Copy, *overlapJacGraph));
   tmp_ovlp_sol = rcp(new Epetra_Vector(*overlapMap));
 
   // Initialize solution vector and time deriv
-  initial_xdot = rcp(new Epetra_Vector(*map));
-  initial_xdotdot = rcp(new Epetra_Vector(*map));
+  if(num_time_deriv > 0)
+    initial_xdot = rcp(new Epetra_Vector(*map));
+  if(num_time_deriv > 1)
+    initial_xdotdot = rcp(new Epetra_Vector(*map));
 
 }
 

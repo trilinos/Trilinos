@@ -11,6 +11,7 @@
 #include "basker_matrix_view_def.hpp"
 
 #include "basker_nfactor_blk_inc.hpp"
+#include "basker_nfactor_col_inc.hpp"
 
 #include "basker_error_manager.hpp"
 
@@ -140,14 +141,14 @@ namespace BaskerNS
 	kokkos_nfactor_sep <Int, Entry, Exe_Space> 
 	  sep_nfactor(this, l);
 	*/
-	/*
-	kokkos_nfactor_sep2 <Int, Entry, Exe_Space>
+       
+	kokkos_nfactor_sep2_inc_lvl <Int, Entry, Exe_Space>
 	  sep_nfactor(this,l);
 	
 	Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
 			     sep_nfactor);
 	Kokkos::fence();
-	*/
+	
 	#ifdef BASKER_TIME
 	printf("Time INNERSEP: %d %f \n", 
 	       l, timer_inner_sep.seconds());

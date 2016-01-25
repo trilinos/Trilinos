@@ -75,3 +75,11 @@ void Constant<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 { }
 
 //**********************************************************************
+template<typename EvalT, typename Traits>
+KOKKOS_INLINE_FUNCTION
+void Constant<EvalT, Traits>::operator () (const int ) const
+{
+  // Needed for task parallel interface
+}
+
+//**********************************************************************

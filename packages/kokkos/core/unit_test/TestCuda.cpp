@@ -72,6 +72,7 @@
 #include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestMemorySpaceTracking.hpp>
+#include <TestMemoryPool.hpp>
 #include <TestTeamVector.hpp>
 #include <TestTemplateMetaFunctions.hpp>
 #include <TestCXX11Deduction.hpp>
@@ -122,6 +123,12 @@ TEST_F( cuda , compiler_macros )
 TEST_F( cuda , memory_space )
 {
   TestMemorySpace< Kokkos::Cuda >();
+}
+
+TEST_F( cuda , memory_pool )
+{
+  bool val = TestMemoryPool::test_mempool< Kokkos::Cuda >( 32, 8000000 );
+  ASSERT_TRUE( val );
 }
 
 TEST_F( cuda, uvm )
@@ -372,6 +379,7 @@ TEST_F( cuda, reduce )
 {
   TestReduce< long ,   Kokkos::Cuda >( 10000000 );
   TestReduce< double , Kokkos::Cuda >( 1000000 );
+  TestReduce< int , Kokkos::Cuda >( 0 );
 }
 
 TEST_F( cuda, reduce_team )
@@ -490,6 +498,10 @@ TEST_F( cuda , scan )
   TestScan< Kokkos::Cuda >::test_range( 1 , 1000 );
   TestScan< Kokkos::Cuda >( 1000000 );
   TestScan< Kokkos::Cuda >( 10000000 );
+
+  TestScan< Kokkos::Cuda >( 0 );
+  TestScan< Kokkos::Cuda >( 0 , 0 );
+
   Kokkos::Cuda::fence();
 }
 

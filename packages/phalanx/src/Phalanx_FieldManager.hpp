@@ -107,6 +107,17 @@ namespace PHX {
     template<typename EvalT>
     void evaluateFields(typename Traits::EvalData d);
 
+#ifdef PHX_ENABLE_KOKKOS_AMT
+    /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
+
+      @param threads_per_task The number of threads used for data parallelism within a single task.
+      @param d User defined data
+     */
+    template<typename EvalT>
+    void evaluateFieldsTaskParallel(const int& threads_per_task,
+				    typename Traits::EvalData d);
+#endif
+
     template<typename EvalT>
     void preEvaluate(typename Traits::PreEvalData d);
 

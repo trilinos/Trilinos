@@ -776,6 +776,6 @@ public:
     vecWriter.writeDenseFile(filename, vec);
   }
 
-}; // class Poisson_Data
+}; // class PoissonData
 
 #endif

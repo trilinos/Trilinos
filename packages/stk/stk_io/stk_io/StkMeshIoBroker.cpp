@@ -694,7 +694,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
 #endif
   {
     Ioss::CommSet* io_cs = region.get_commset("commset_node");
-    int num_sharings = io_cs->get_field("entity_processor").raw_count();
+    size_t num_sharings = io_cs->get_field("entity_processor").raw_count();
 
     // Check for corrupt incomplete nemesis information.  Some old
     // files are being used which do not have the correct nemesis
@@ -710,13 +710,13 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
                      << "global node count is  " << global_node_count
                      << " which is less than the node count on processor "
                      << stk::parallel_machine_rank(bulk.parallel())
-                     << " which is " << ids.size() << ".  "
-                     << "A possible work-around is to join and re-spread the mesh files.");
+                     << " which is " << ids.size() << ".\n"
+                     << "       A possible work-around is to join (epu) and re-spread (decomp) the mesh files.");
 
     std::vector<INT> entity_proc;
     io_cs->get_field_data("entity_processor", entity_proc);
 
-    for (int i = 0; i < num_sharings; ++i) {
+    for (size_t i = 0; i < num_sharings; ++i) {
       stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, entity_proc[i*2]);
       bulk.add_node_sharing(node, entity_proc[i*2+1]);
     }

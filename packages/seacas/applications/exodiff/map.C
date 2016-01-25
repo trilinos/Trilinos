@@ -32,6 +32,7 @@
 // 
 
 #include <cstdlib>
+#include <iomanip>
 #include <math.h>
 #include <float.h>
 
@@ -293,14 +294,16 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
 		    double x_val = x1_f[ conn1[l1] - 1 ];
 		    double y_val = dim > 1 ? y1_f[ conn1[l1] - 1 ] : 0.0;
 		    double z_val = dim > 2 ? z1_f[ conn1[l1] - 1 ] : 0.0;
-		    std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+		    std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t"
+			      << std::setprecision(9) << x_val << "\t" << y_val << "\t" << z_val << "\n";
 		  }
 		  std::cout << "\tFile 2: Element " << (l2+1) << " in Block " << file1.Block_Id(b) << " nodes:\n";
 		  for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
 		    double x_val = x2_f[ conn2[l3] - 1 ];
 		    double y_val = dim > 1 ? y2_f[ conn2[l3] - 1 ] : 0.0;
 		    double z_val = dim > 2 ? z2_f[ conn2[l3] - 1 ] : 0.0;
-		    std::cout << "\t(" << l3+1 << ")\t" << conn2[l3] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+		    std::cout << "\t(" << l3+1 << ")\t" << conn2[l3] << "\t"
+			      << std::setprecision(9) << x_val << "\t" << y_val << "\t" << z_val << "\n";
 		  }
 		  std::cout << "Coordinates compared using tolerance: " << interface.coord_tol.value
 			    << " (" << interface.coord_tol.typestr() << "), floor: "
@@ -546,14 +549,16 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
 	      double x_val = x1_f[ conn1[l1] - 1 ];
 	      double y_val = dim > 1 ? y1_f[ conn1[l1] - 1 ] : 0.0;
 	      double z_val = dim > 2 ? z1_f[ conn1[l1] - 1 ] : 0.0;
-	      std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+	      std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t"
+			<< std::setprecision(9) << x_val << "\t" << y_val << "\t" << z_val << "\n";
 	    }
 	    std::cout << "\tFile 2: Element " << (l2+1) << " in Block " << file1.Block_Id(b) << " nodes:\n";
 	    for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
 	      double x_val = x2_f[ conn2[l3] - 1 ];
 	      double y_val = dim > 1 ? y2_f[ conn2[l3] - 1 ] : 0.0;
 	      double z_val = dim > 2 ? z2_f[ conn2[l3] - 1 ] : 0.0;
-	      std::cout << "\t(" << l3+1 << ")\t" << conn2[l3] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+	      std::cout << "\t(" << l3+1 << ")\t" << conn2[l3] << "\t"
+			<< std::setprecision(9) << x_val << "\t" << y_val << "\t" << z_val << "\n";
 	    }
 	    std::cout << "Coordinates compared using tolerance: " << interface.coord_tol.value
 		      << " (" << interface.coord_tol.typestr() << "), floor: "

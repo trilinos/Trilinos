@@ -51,10 +51,11 @@
 using Teuchos::rcp;
 
 LOCA::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager(
+           const int number_of_time_derivatives,
            const Teuchos::RCP<const Epetra_Map> &map_,
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_) :
-   NOX::Epetra::AdaptiveSolutionManager(map_, overlapMap_, overlapJacGraph_)
+   NOX::Epetra::AdaptiveSolutionManager(number_of_time_derivatives, map_, overlapMap_, overlapJacGraph_)
 {
 }
 

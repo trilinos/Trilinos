@@ -116,13 +116,13 @@
 
 
 int main(int argc, char *argv[]) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+  typedef Xpetra::EpetraNode Node;
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
@@ -143,10 +143,6 @@ int main(int argc, char *argv[]) {
     // Timing
     Teuchos::Time myTime("global");
     Teuchos::TimeMonitor MM(myTime);
-
-#ifndef HAVE_XPETRA_INT_LONG_LONG
-    *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
-#endif
 
     // read in input parameters
 
@@ -180,7 +176,6 @@ int main(int argc, char *argv[]) {
     }
 
     int globalNumDofs = 1500;  // used for the maps
-    //int nDofsPerNode = 3;      // used for generating the fine level null-space
 
     // build strided maps
     // striding information: 2 velocity dofs and 1 pressure dof = 3 dofs per node

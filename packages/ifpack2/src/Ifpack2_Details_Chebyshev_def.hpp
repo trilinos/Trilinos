@@ -638,7 +638,7 @@ void
 Chebyshev<ScalarType, MV>::reset ()
 {
   D_ = Teuchos::null;
-  diagOffsets_ = Teuchos::null;
+  diagOffsets_ = offsets_type ();
   savedDiagOffsets_ = false;
   V_ = Teuchos::null;
   W_ = Teuchos::null;
@@ -699,7 +699,12 @@ Chebyshev<ScalarType, MV>::compute ()
     if (D_.is_null ()) { // We haven't computed D_ before
       if (! A_crsMat.is_null () && A_crsMat->isStaticGraph ()) {
         // It's a CrsMatrix with a const graph; cache diagonal offsets.
-        A_crsMat->getLocalDiagOffsets (diagOffsets_);
+        const size_t lclNumRows = A_crsMat->getNodeNumRows ();
+        if (diagOffsets_.dimension_0 () < lclNumRows) {
+          diagOffsets_ = offsets_type (); // clear first to save memory
+          diagOffsets_ = offsets_type ("offsets", lclNumRows);
+        }
+        A_crsMat->getCrsGraph ()->getLocalDiagOffsets (diagOffsets_);
         savedDiagOffsets_ = true;
         D_ = makeInverseDiagonal (*A_, true);
       }
@@ -712,7 +717,12 @@ Chebyshev<ScalarType, MV>::compute ()
         // It's a CrsMatrix with a const graph; cache diagonal offsets
         // if we haven't already.
         if (! savedDiagOffsets_) {
-          A_crsMat->getLocalDiagOffsets (diagOffsets_);
+          const size_t lclNumRows = A_crsMat->getNodeNumRows ();
+          if (diagOffsets_.dimension_0 () < lclNumRows) {
+            diagOffsets_ = offsets_type (); // clear first to save memory
+            diagOffsets_ = offsets_type ("offsets", lclNumRows);
+          }
+          A_crsMat->getCrsGraph ()->getLocalDiagOffsets (diagOffsets_);
           savedDiagOffsets_ = true;
         }
         // Now we're guaranteed to have cached diagonal offsets.
@@ -926,7 +936,7 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
         "if you have not previously saved offsets of diagonal entries.  "
         "This situation should never arise if this class is used properly.  "
         "Please report this bug to the Ifpack2 developers.");
-      A_crsMat->getLocalDiagCopy (*D_rowMap, diagOffsets_ ());
+      A_crsMat->getLocalDiagCopy (*D_rowMap, diagOffsets_);
     }
   }
   else {

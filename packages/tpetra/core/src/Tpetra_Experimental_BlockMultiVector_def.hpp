@@ -637,14 +637,91 @@ template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 putScalar (const Scalar& val)
 {
-  getMultiVectorView ().putScalar (val);
+  mv_.putScalar (val);
 }
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 scale (const Scalar& val)
 {
-  getMultiVectorView ().scale (val);
+  mv_.scale (val);
+}
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+update (const Scalar& alpha,
+        const BlockMultiVector<Scalar, LO, GO, Node>& X,
+        const Scalar& beta)
+{
+  mv_.update (alpha, X.mv_, beta);
+}
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+blockWiseMultiply (const Scalar& alpha,
+                   const Kokkos::View<const impl_scalar_type***,
+                     device_type, Kokkos::MemoryUnmanaged>& D,
+                   const BlockMultiVector<Scalar, LO, GO, Node>& X)
+{
+  using Kokkos::ALL;
+  const impl_scalar_type zero = static_cast<impl_scalar_type> (STS::zero ());
+  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
+  const LO numVecs = mv_.getNumVectors ();
+
+  if (alpha == STS::zero ()) {
+    this->putScalar (STS::zero ());
+  }
+  else { // alpha != 0
+    for (LO i = 0; i < numVecs; ++i) {
+      for (LO k = 0; k < lclNumMeshRows; ++k) {
+        auto D_curBlk = Kokkos::subview (D, k, ALL (), ALL ());
+        auto X_curBlk = X.getLocalBlock (k, i);
+        auto Y_curBlk = this->getLocalBlock (k, i);
+        // Y_curBlk := alpha * D_curBlk * X_curBlk.
+        // Recall that GEMV does an update (+=) of the last argument.
+        Tpetra::Experimental::FILL (Y_curBlk, zero);
+        Tpetra::Experimental::GEMV (alpha, D_curBlk, X_curBlk, Y_curBlk);
+      }
+    }
+  }
+}
+
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+blockJacobiUpdate (const Scalar& alpha,
+                   const Kokkos::View<const impl_scalar_type***,
+                     device_type, Kokkos::MemoryUnmanaged>& D,
+                   const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                   BlockMultiVector<Scalar, LO, GO, Node>& Z,
+                   const Scalar& beta)
+{
+  using Kokkos::ALL;
+  const impl_scalar_type zero = static_cast<impl_scalar_type> (STS::zero ());
+  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
+  const LO numVecs = mv_.getNumVectors ();
+
+  if (alpha == STS::zero ()) { // Y := beta * Y
+    this->scale (beta);
+  }
+  else { // alpha != 0
+    Z.update (STS::one (), X, -STS::one ());
+    for (LO i = 0; i < numVecs; ++i) {
+      for (LO k = 0; k < lclNumMeshRows; ++k) {
+        auto D_curBlk = Kokkos::subview (D, k, ALL (), ALL ());
+        auto Z_curBlk = Z.getLocalBlock (k, i);
+        auto Y_curBlk = this->getLocalBlock (k, i);
+        // Y_curBlk := beta * Y_curBlk + alpha * D_curBlk * Z_curBlk
+        if (beta == STS::zero ()) {
+          Tpetra::Experimental::FILL (Y_curBlk, zero);
+        }
+        else if (beta != STS::one ()) {
+          Tpetra::Experimental::SCAL (beta, Y_curBlk);
+        }
+        Tpetra::Experimental::GEMV (alpha, D_curBlk, Z_curBlk, Y_curBlk);
+      }
+    }
+  }
 }
 
 } // namespace Experimental

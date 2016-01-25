@@ -123,6 +123,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
 GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_STRATIMIKOS ${${PACKAGE_NAME}_ENABLE_Stratimikos})
 
+# Define HAVE_MUELU_TEKO if Teko package is enabled
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Teko)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_TEKO ${${PACKAGE_NAME}_ENABLE_Teko})
+
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - Enabling/disabling of scalar/ordinal types is controlled by Tpetra

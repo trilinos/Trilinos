@@ -33,9 +33,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 IF (ROL_ENABLE_Tpetra) 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sol)
   APPEND_SET(HEADERS 
     vector/ROL_TpetraMultiVector.hpp
     function/ROL_TpetraBoundConstraint.hpp 
+    sol/ROL_TpetraTeuchosBatchManager.hpp
  )
 ENDIF()
 

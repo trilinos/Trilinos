@@ -704,6 +704,10 @@ namespace BaskerNS
       //Pivot
       no_pivot   = BASKER_FALSE;
       pivot_tol  = .0001; 
+      pivot_bias = 1.001;
+
+      //BTF Options
+      btf_prune_size = (BASKER_INT)BASKER_BTF_PRUNE_SIZE;
 
       //Incomplete Factorization Options
       incomplete = BASKER_FALSE;
@@ -734,6 +738,10 @@ namespace BaskerNS
     //Pivot Options
     BASKER_BOOL  no_pivot;
     BASKER_ENTRY pivot_tol;  //Not Used
+    BASKER_ENTRY pivot_bias;
+
+    //BTF Options
+    BASKER_INT   btf_prune_size;
   
     //Incomplete Factorization Options
     BASKER_BOOL  incomplete;

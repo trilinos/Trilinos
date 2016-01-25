@@ -217,6 +217,12 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
   }
   nox_outargs.set_g(num_g, gx_out);
 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+     model->get_x_init() == Teuchos::null || model->get_x_dot_init() == Teuchos::null
+         || model->get_x_dotdot_init() == Teuchos::null,
+                     Teuchos::Exceptions::InvalidParameter,
+                     std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
+                     "Requires x, x_dot, and x_dotdot: " << std::endl);
 
   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*model->get_x_init()));
   RCP<Epetra_Vector> v = rcp(new Epetra_Vector(*model->get_x_dot_init()));
@@ -225,10 +231,6 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
   RCP<Epetra_Vector> x_pred_v = rcp(new Epetra_Vector(*model->get_f_map()));
   RCP<Epetra_Vector> a_old = rcp(new Epetra_Vector(*model->get_f_map()));
 
-  TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null,
-                     Teuchos::Exceptions::InvalidParameter,
-                     std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
-                     "Requires initial x and x_dot: " << std::endl);
 
    double t = t_init;
 

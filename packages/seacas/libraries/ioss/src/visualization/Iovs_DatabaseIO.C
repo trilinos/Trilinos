@@ -10,6 +10,7 @@
 #include <visualization/Iovs_DatabaseIO.h>
 #include <tokenize.h>
 #include <ParaViewCatalystSierraAdaptor.h>
+#include <ParaViewCatalystSierraParser.h>
 
 #include <cstring>
 #include <cctype>
@@ -34,8 +35,12 @@
 
 #if defined(__APPLE__)
  const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.dylib";
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP = "libParaViewCatalystSierraCppAdapter.dylib";
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER = "libParaViewCatalystSierraParser.dylib";
 #else
  const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.so";
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP = "libParaViewCatalystSierraCppAdapter.so";
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER = "libParaViewCatalystSierraParser.so";
 #endif
 
 const char* CATALYST_PLUGIN_PYTHON_MODULE = "PhactoriDriver.py";
@@ -51,11 +56,13 @@ namespace { // Internal helper functions
   int64_t extract_id(const std::string &name_id);
 
   void build_catalyst_plugin_paths(std::string& plugin_library_path,
-                                   std::string& plugin_python_path);
+                                   std::string& plugin_python_path,
+                                   const std::string& plugin_python_name);
 } // End anonymous namespace
 
 namespace Iovs {
   int DatabaseIO::useCount = 0;
+  std::string DatabaseIO::paraview_script_filename = "";
   int field_warning(const Ioss::GroupingEntity *ge,
                     const Ioss::Field &field, const std::string& inout);
 
@@ -111,7 +118,12 @@ namespace Iovs {
 
     if(props.exists("CATALYST_SCRIPT"))
       {
-      this->paraview_script_filename = props.get("CATALYST_SCRIPT").get_string();
+      DatabaseIO::paraview_script_filename = props.get("CATALYST_SCRIPT").get_string();
+      }
+
+    if(props.exists("CATALYST_SCRIPT_EXTRA_FILE"))
+      {
+      this->paraview_script_extra_filename = props.get("CATALYST_SCRIPT_EXTRA_FILE").get_string();
       }
 
     this->underscoreVectors = 1;
@@ -124,6 +136,12 @@ namespace Iovs {
     if(props.exists("CATALYST_APPLY_DISPLACEMENTS"))
       {
       this->applyDisplacements = props.get("CATALYST_APPLY_DISPLACEMENTS").get_int();
+      }
+
+    this->useCppPipe = 0;
+    if(props.exists("CATALYST_USE_CPP_PIPELINE"))
+      {
+      this->useCppPipe = props.get("CATALYST_USE_CPP_PIPELINE").get_int();
       }
 
     this->createNodeSets = 0;
@@ -183,20 +201,31 @@ namespace Iovs {
     elemMap.release_memory();
   }
 
-  void DatabaseIO::load_plugin_library() {
+  bool DatabaseIO::plugin_library_exists(const std::string& plugin_name) {
+    if(plugin_name == "ParaViewCatalystSierraParser")
+      return(ParaViewCatalystSierraParserBaseFactory::exists(plugin_name));
+    else if(plugin_name == "ParaViewCatalystSierraAdaptor")
+      return(ParaViewCatalystSierraAdaptorBaseFactory::exists(plugin_name));
+    else
+      return(false);
+  }
+  
+  void DatabaseIO::load_plugin_library(const std::string& plugin_name,
+                                       const std::string& plugin_library_name) {
       std::string plugin_library_path;
       std::string plugin_python_module_path;
 
-      if(!ParaViewCatalystSierraAdaptorBaseFactory::exists("ParaViewCatalystSierraAdaptor")) {
+      if(!DatabaseIO::plugin_library_exists(plugin_name)) {
           if(getenv("CATALYST_PLUGIN")) {
               plugin_library_path = getenv("CATALYST_PLUGIN");
           }
           else {
               build_catalyst_plugin_paths(plugin_library_path,
-                                          plugin_python_module_path);
+                                          plugin_python_module_path,
+                                          plugin_library_name);
           }
           sierra::Plugin::Registry::rootInstance().registerDL(plugin_library_path.c_str(), "");
-          if(!ParaViewCatalystSierraAdaptorBaseFactory::exists("ParaViewCatalystSierraAdaptor")) {
+          if(!DatabaseIO::plugin_library_exists(plugin_name)) {
               std::ostringstream errmsg;
               errmsg << "Unable to load catalyst plug-in dynamic library.\n"
                      << "Path: " << plugin_library_path << "\n";
@@ -205,10 +234,11 @@ namespace Iovs {
           }
       }
 
-      if(this->paraview_script_filename.empty()) {
+      if(DatabaseIO::paraview_script_filename.empty()) {
           if(plugin_python_module_path.empty()) {
               build_catalyst_plugin_paths(plugin_library_path,
-                                          plugin_python_module_path);
+                                          plugin_python_module_path,
+                                          plugin_library_name);
           }
           if ( !boost::filesystem::exists(plugin_python_module_path) ) {
               std::ostringstream errmsg;
@@ -217,7 +247,7 @@ namespace Iovs {
               IOSS_ERROR(errmsg);
               return;
           }
-          this->paraview_script_filename = plugin_python_module_path;
+          DatabaseIO::paraview_script_filename = plugin_python_module_path;
       }
   }
 
@@ -228,7 +258,17 @@ namespace Iovs {
     Ioss::Region *region = this->get_region();
     if(region->model_defined() && !this->pvcsa)
       {
-      this->load_plugin_library();
+      if(this->useCppPipe)
+        {
+        this->load_plugin_library("ParaViewCatalystSierraAdaptor",
+                                  CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP);
+        }
+      else
+        {
+        this->load_plugin_library("ParaViewCatalystSierraAdaptor",
+                                  CATALYST_PLUGIN_DYNAMIC_LIBRARY);
+        }
+
       this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
 
       std::string separator(1, this->get_field_separator());
@@ -242,8 +282,11 @@ namespace Iovs {
           }
       }
 
+      std::vector<std::string> catalyst_sierra_data;
+      catalyst_sierra_data.push_back(this->paraview_script_extra_filename);
+
       if(this->pvcsa)
-        this->pvcsa->CreateNewPipeline(this->paraview_script_filename.c_str(),
+        this->pvcsa->CreateNewPipeline(DatabaseIO::paraview_script_filename.c_str(),
                                        this->paraview_json_parse.c_str(),
                                        separator.c_str(),
                                        this->sierra_input_deck_name.c_str(),
@@ -253,7 +296,8 @@ namespace Iovs {
                                        this->enableLogging,
                                        this->debugLevel,
                                        this->DBFilename.c_str(),
-                                       this->catalyst_output_directory.c_str());
+                                       this->catalyst_output_directory.c_str(),
+                                       catalyst_sierra_data);
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(int i = 0;i<ebc.size();i++)
@@ -353,6 +397,21 @@ namespace Iovs {
   void DatabaseIO::read_meta_data ()
   {
 
+  }
+
+  int DatabaseIO::parseCatalystFile(const std::string& filepath,
+                                    std::string& json_result)
+  {
+   DatabaseIO::load_plugin_library("ParaViewCatalystSierraParser",
+                                   CATALYST_PLUGIN_DYNAMIC_LIBRARY_PARSER);
+   ParaViewCatalystSierraParserBase* pvcsp = 
+   ParaViewCatalystSierraParserBaseFactory::create("ParaViewCatalystSierraParser")();
+ 
+   int ret = pvcsp->parseFile(filepath,
+                              json_result);
+
+   delete pvcsp;
+   return ret;
   }
 
   void DatabaseIO::create_global_node_and_element_ids() const
@@ -563,17 +622,32 @@ namespace Iovs {
               int element_nodes = eb->get_property("topology_node_count").get_int();
               assert(field.transformed_storage()->component_count() == element_nodes);
               nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
+              Ioss::Field::BasicType ioss_type = field.get_type();
               int64_t eb_offset = eb->get_offset();
               int id = get_id(eb, EX_ELEM_BLOCK, &ids_);
-              if(this->pvcsa)
-                this->pvcsa->CreateElementBlock(eb->name().c_str(),
-                                                id,
-                                                eb->get_property("topology_type").get_string(),
-                                                element_nodes,
-                                                num_to_get,
-                                                &this->elemMap.map[eb_offset + 1],
-                                                static_cast<int*>(data),
-                                                this->DBFilename.c_str());
+
+              if (ioss_type == Ioss::Field::INTEGER) {
+                if(this->pvcsa)
+                  this->pvcsa->CreateElementBlock(eb->name().c_str(),
+                                                  id,
+                                                  eb->get_property("topology_type").get_string(),
+                                                  element_nodes,
+                                                  num_to_get,
+                                                  &this->elemMap.map[eb_offset + 1],
+                                                  static_cast<int*>(data),
+                                                  this->DBFilename.c_str());
+              }
+              else if (ioss_type == Ioss::Field::INT64) {
+                if(this->pvcsa)
+                  this->pvcsa->CreateElementBlock(eb->name().c_str(),
+                                                  id,
+                                                  eb->get_property("topology_type").get_string(),
+                                                  element_nodes,
+                                                  num_to_get,
+                                                  &this->elemMap.map[eb_offset + 1],
+                                                  static_cast<int64_t*>(data),
+                                                  this->DBFilename.c_str());
+              }
             }
           } else if (field.get_name() == "ids") {
             // Another 'const-cast' since we are modifying the database just
@@ -1244,7 +1318,8 @@ namespace {
    }
 
   void build_catalyst_plugin_paths(std::string& plugin_library_path,
-                                   std::string& plugin_python_path) {
+                                   std::string& plugin_python_path,
+                                   const std::string& plugin_library_name) {
       std::string sierra_ins_dir;
       if(getenv("SIERRA_INSTALL_DIR")) {
           sierra_ins_dir = getenv("SIERRA_INSTALL_DIR");
@@ -1303,7 +1378,7 @@ namespace {
             sierra_ins_path = sierra_ins_path.parent_path();
 
         boost::filesystem::path pip = sierra_ins_path / CATALYST_PLUGIN_PATH / sierra_system
-                                      / sierra_version / CATALYST_PLUGIN_DYNAMIC_LIBRARY;
+                                      / sierra_version / plugin_library_name;
 
         boost::filesystem::path pmp = sierra_ins_path / CATALYST_PLUGIN_PATH / sierra_system
                                       / sierra_version / CATALYST_PLUGIN_PYTHON_MODULE;

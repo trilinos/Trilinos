@@ -44,8 +44,34 @@
 #include <string>                       // for string, char_traits, etc
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, etc
-#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
-#include "boost/unordered/unordered_map.hpp"
+#include <unordered_map>
+
+namespace stk {
+typedef std::pair<MessageId, std::string> MessageKey;
+}
+
+namespace std {
+
+template<>
+struct hash<stk::MessageKey>
+{
+    const size_t operator()(const stk::MessageKey& msgkey) const
+    {
+        return hash_messagekey(msgkey);
+    }
+    const size_t operator()(const stk::MessageKey& msgkey1, const stk::MessageKey& msgkey2) const
+    {
+        return hash_messagekey(msgkey1)^hash_messagekey(msgkey2);
+    }
+
+private:
+    const size_t hash_messagekey(const stk::MessageKey& msgkey) const
+    {
+        return hash<stk::MessageId>()(msgkey.first + hash<std::string>()(msgkey.second));
+    }
+};
+
+}
 
 namespace stk {
 
@@ -64,9 +90,7 @@ void bootstrap()
 
 stk::Bootstrap x(bootstrap);
 
-typedef std::pair<MessageId, std::string> MessageKey;
-
-typedef boost::unordered_map<MessageKey, Throttle> MessageIdMap;
+typedef std::unordered_map<MessageKey, Throttle> MessageIdMap;
 
 MessageIdMap s_messageIdMap;
 
@@ -128,7 +152,7 @@ struct MessageTypeInfo
   std::string           m_name;
 };
 
-typedef boost::unordered_map<unsigned, MessageTypeInfo> MessageTypeInfoMap;
+typedef std::unordered_map<unsigned, MessageTypeInfo> MessageTypeInfoMap;
 
 MessageTypeInfoMap s_messageTypeInfo;
 
@@ -157,7 +181,7 @@ count_message(
   const char *          message, 
   const Throttle &      throttle)
 {
-  std::pair<MessageIdMap::iterator, bool> res = s_messageIdMap.insert(MessageIdMap::value_type(MessageIdMap::key_type(message_id, message), throttle));
+  std::pair<MessageIdMap::iterator, bool> res = s_messageIdMap.insert(MessageIdMap::value_type(MessageIdMap::key_type(message_id, std::string(message)), throttle));
   size_t count = ++(*res.first).second.m_count;
 
   if (count < (*res.first).second.m_cutoff)

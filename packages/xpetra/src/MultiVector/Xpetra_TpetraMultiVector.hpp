@@ -465,6 +465,11 @@ namespace Xpetra {
     //! @name Constructors and destructor
     //@{
 
+    //! Default constructor
+    TpetraMultiVector () {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");
+    }
+
     //! Basic constuctor.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true) {
       XPETRA_TPETRA_ETI_EXCEPTION("TpetraMultiVector<int,int>", "TpetraMultiVector<int,int>", "int");

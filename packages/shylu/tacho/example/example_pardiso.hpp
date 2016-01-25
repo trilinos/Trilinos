@@ -5,13 +5,8 @@
 #ifdef HAVE_SHYLUTACHO_MKL
 using namespace std;
 
-// pardiso C - header
-extern "C" {
-  void pardisoinit ( void * , int * , int * , int * , double * , int *);
-  void pardiso ( void * , int * , int * , int * , int * , int * ,
-                 double * , int * , int * , int * , int * , int * ,
-                 int * , double * , double * , int * , double *);
-}
+#include "util.hpp"
+#include "mkl_pardiso.h"
 
 namespace Tacho {
 
@@ -30,8 +25,6 @@ namespace Tacho {
 
   private:
     int _mtype,  // matrix type 2 - spd, 4 - hpd
-      _solver,   // 0 - direct, 1 - multi recursive iterative
-      _nthreads,
       _phase;
 
     int _maxfct, // maxfct - maximum number of factors (=1)
@@ -39,14 +32,66 @@ namespace Tacho {
       _msglvl;   // msglvl - print out level 0: nothing, 1: statistics
 
     // parameters
-    int iparm[64];
-    double dparm[64];
+    int _iparm[64];
+    double _dparm[64];
 
     // internal data address pointers: NEVER TOUCH
     void *_pt[64];
 
     // Translate Fortran index to C-index
-    int Fort(const int i) { return i-1; }
+    int Fort(const int i) const { return i-1; }
+
+    // Matrix type
+    //  1 - real structrue sym
+    //  2 - real sym pos def
+    // -2 - real sym indef
+    //  3 - complex structrue sym
+    //  4 - complex hermitian pos def
+    // -4 - complex and hermitian indef
+    //  6 - complex and sym
+    // 11 - real and nonsym
+    // 13 - complex and nonsym
+    template<typename ValueType, int Algo>
+    void setMatrixType();
+
+  public:
+    Pardiso()
+      : _mtype(0),
+        _phase(0) {
+    }
+
+    void setDefaultParameters() {
+      // initialize arrays
+      for (int i=0;i<64;++i) {
+        _iparm[i] = 0;
+        _dparm[i] = 0.0;
+        _pt[i] = 0;
+      }
+
+      _maxfct = 1;
+      _mnum = 1;
+      _msglvl = 1;
+    }
+
+    void setParameter(const int id, const int value) { _iparm[Fort(id)] = value; }
+    void setParameter(const int id, const double value) { _dparm[Fort(id)] = value; }
+
+    template<typename ValueType, int Algo>
+    int init() {
+      int ierr = 0;
+
+      setMatrixType<ValueType,Algo>();
+      setDefaultParameters();
+
+      // setParameter( 1, 1); // default param: 0 - default, 1 - user provided
+      // setParameter( 2, 0); // reordering: 0 - mindegreem, 2 - nd, 3 - parallel nd
+      // setParameter(27, 1); // mat check: 0 - no, 1 - check
+      setParameter(35, 1); // row and col index: 0 - fortran, 1 - CXX
+
+      pardisoinit(_pt,  &_mtype, _iparm);
+
+      return ierr;
+    }
 
     ostream& showErrorCode(ostream &os) const {
       os << "   0 No error" << endl
@@ -62,6 +107,8 @@ namespace Tacho {
          << "- 11 License expired " << endl
          << "- 12 Wrong user name or host" << endl
          << "-100 over, Krylov fail" << endl ;
+
+      return os;
     }
 
     ostream& showStat(ostream &os, const Phase phase) const {
@@ -101,67 +148,23 @@ namespace Tacho {
            << "Nothing serious in this phase" << endl;
         break;
       }
-    }
 
-    // Matrix type
-    //  1 - real structrue sym
-    //  2 - real sym pos def
-    // -2 - real sym indef
-    //  3 - complex structrue sym
-    //  4 - complex hermitian pos def
-    // -4 - complex and hermitian indef
-    //  6 - complex and sym
-    // 11 - real and nonsym
-    // 13 - complex and nonsym
-    template<typename ValueType, int Algo>
-    void setMatrixType() const;
-
-  public:
-    template<typenmae ValueType, int Algo>
-    Pardiso(const int nthreads = 1)
-      : _mtype(0),
-        _solver(0),
-        _nthreads(nthreads),
-        _phase(0) {
-      setMatrixType<ValueType,Algo>();
-      setDefaultParameters();
-    }
-
-    void setDefaultParameters() {
-      // initialize arrays
-      for (int i=0;i<64;++i) {
-        iparm[i] = 0;
-        dparm[i] = 0.0;
-        pt[i] = 0;
-      }
-
-      _maxfct = 1;
-      _mnum = 1;
-      _msglvl = 1;
-    }
-
-    void setParameter(const int id, const int value) { _iparm[Fort(id)] = value; }
-    void setParameter(const int id, const double value) { _dparm[Fort(id)] = value; }
-
-    int init() {
-      int ierr = 0;
-      pardisoinit(pt,  &_mtype, &_solver, _iparm, _dparm, &ierr);
-      return ierr;
+      return os;
     }
 
   private:
     int _ndof, *_ia, *_ja, *_pivot, _nrhs;
-    double _a, _b, _x;
+    double *_a, *_b, *_x;
 
   public:
     void setProblem(const int ndof,
-                    const double *a,
-                    const int *ia,
-                    const int *ja,
-                    const int *pivot,
-                    const int *nrhs,
-                    const double *b,
-                    const double *x) {
+                    double *a,
+                    int *ia,
+                    int *ja,
+                    int *pivot,
+                    const int nrhs,
+                    double *b,
+                    double *x) {
       _ndof = ndof;
       _a = a;
       _ia = ia;
@@ -172,25 +175,29 @@ namespace Tacho {
       _x = x;
     }
 
-    int run(const Phase phase) {
+    int run(int phase) {
       int ierr = 0;
-      pardiso(_pt, &_maxfct, &_mnum, &_mtype,
+
+      pardiso(_pt, 
+              &_maxfct, &_mnum, &_mtype,
               &phase,
-              &_ndof, &_a[0], &_ia[0], &_ja[0],
+              &_ndof, 
+              _a, _ia, _ja,
               _pivot, &_nrhs,
               _iparm, &_msglvl,
               _b, _x,
-              &ierr, _dparm);
+              &ierr);
+
       return ierr;
     }
 
   };
 
   template<>
-  void Pardiso::setMatrixType<double, AlgoChol::ExternalPardiso> { _mtype = 2; } // SPD
-
+  void Pardiso::setMatrixType<double, AlgoChol::ExternalPardiso>() { _mtype = 2; } // SPD
+  
   template<>
-  void Pardiso::setMatrixType<complex<double>, AlgoChol::ExternalPardiso> { _mtype = 4; } // HPD
+  void Pardiso::setMatrixType<complex<double>, AlgoChol::ExternalPardiso>() { _mtype = 4; } // HPD
 }
 
 #endif

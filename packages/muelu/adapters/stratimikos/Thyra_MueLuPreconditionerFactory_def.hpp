@@ -320,14 +320,7 @@ namespace Thyra {
       RCP<MueTpOp> muelu_tpetraOp = rcp(new MueTpOp(H));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(muelu_tpetraOp));
       RCP<TpOp> tpOp = Teuchos::rcp_dynamic_cast<TpOp>(muelu_tpetraOp);
-      // TAW 1/12/16: the following line only links if Tpetra is instantiated on GO=int
-      // Thyra::TpetraLinearOp seems to have some hardcoded defaults for GO.
-#if defined(HAVE_TPETRA_INST_INT_INT)
-        thyraPrecOp = Thyra::createLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpOp); // this line causes linker trouble
-#else
-        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
-                                         "Thyra::MueLuPreconditionerFactory: Thyra interface not working if GO=int disabled in Tpetra. Please recompile with Tpetra_INST_INT_INT enabled.");
-#endif
+      thyraPrecOp = Thyra::createLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpOp);
     }
 #endif
 

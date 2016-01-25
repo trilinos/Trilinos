@@ -46,13 +46,21 @@
 #define PHX_EXAMPLE_VP_DENSITY_HPP
 
 #include "Phalanx_config.hpp"
+#ifdef  PHX_ENABLE_KOKKOS_AMT
+#include "Evaluator_TaskBase.hpp"
+#else
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#endif
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
 
 template<typename EvalT, typename Traits>
-class Density : 
+class Density :
+#ifdef PHX_ENABLE_KOKKOS_AMT
+  public PHX_example::TaskBase<Traits,Density<EvalT,Traits>>,
+#else
   public PHX::EvaluatorWithBaseImpl<Traits>,
+#endif 
   public PHX::EvaluatorDerived<EvalT, Traits> {
   
 public:

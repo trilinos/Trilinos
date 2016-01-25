@@ -4,6 +4,7 @@
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"  // for ElemElemGraph
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_unit_test_utils/ElemGraphMultipleSharedSidesUtils.hpp"
+#include <stk_unit_test_utils/ioUtils.hpp>
 
 namespace {
 
@@ -35,6 +36,7 @@ TEST_F(TwoElemTwoSharedSideTester, skin_one_hex)
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
          test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 2u});
+         stk::unit_test_util::write_mesh_using_stk_io("doublyKissingHexes.e", bulkData, bulkData.parallel());
      }
 }
 
@@ -67,6 +69,7 @@ TEST_F(TwoElemThreeSharedSideTester, skin_one_hex)
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
          test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 3u});
+         stk::unit_test_util::write_mesh_using_stk_io("triplyKissingHexes.e", bulkData, bulkData.parallel());
      }
 }
 

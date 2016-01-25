@@ -118,7 +118,7 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(con
 
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>        TMV;
   typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  XTMV;
-  typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XMV;
+  // typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XMV; // unused
 
   TMV & temp_x = const_cast<TMV &>(X);
   const XTMV tX(rcpFromRef(temp_x));

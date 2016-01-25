@@ -152,7 +152,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     Diagonal_ = Teuchos::null; // ??? what if this comes from the user???
     isInitialized_ = false;
     IsComputed_ = false;
-    diagOffsets_ = Teuchos::null;
+    diagOffsets_ = Kokkos::View<size_t*, typename node_type::device_type> ();
     savedDiagOffsets_ = false;
     hasBlockCrsMatrix_ = false;
     if (! A.is_null ()) {
@@ -616,16 +616,22 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       blockDiag_ = block_diag_type (); // clear it before reallocating
       blockDiag_ = block_diag_type ("Ifpack2::Relaxation::blockDiag_",
                                     lclNumMeshRows, blockSize, blockSize);
-      blockCrsA->getLocalDiagOffsets (diagOffsets_);
+      if (diagOffsets_.dimension_0 () < lclNumMeshRows) {
+        typedef typename node_type::device_type DT;
+        diagOffsets_ = Kokkos::View<size_t*, DT> (); // clear first to save mem
+        diagOffsets_ = Kokkos::View<size_t*, DT> ("offsets", lclNumMeshRows);
+      }
+      blockCrsA->getCrsGraph ().getLocalDiagOffsets (diagOffsets_);
       TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (diagOffsets_.size ()) !=
+        (static_cast<size_t> (diagOffsets_.dimension_0 ()) !=
          static_cast<size_t> (blockDiag_.dimension_0 ()),
-         std::logic_error, "diagOffsets_.size() = " << diagOffsets_.size () <<
-         " != blockDiag_.dimension_0() = " << blockDiag_.dimension_0 () <<
+         std::logic_error, "diagOffsets_.dimension_0() = " <<
+         diagOffsets_.dimension_0 () << " != blockDiag_.dimension_0() = "
+         << blockDiag_.dimension_0 () <<
          ".  Please report this bug to the Ifpack2 developers.");
       savedDiagOffsets_ = true;
     }
-    blockCrsA->getLocalDiagCopy (blockDiag_, diagOffsets_ ());
+    blockCrsA->getLocalDiagCopy (blockDiag_, diagOffsets_);
 
     // Use an unmanaged View in this method, so that when we take
     // subviews of it (to get each diagonal block), we don't have to
@@ -775,10 +781,16 @@ void Relaxation<MatrixType>::compute ()
         A_->getLocalDiagCopy (*Diagonal_); // slow path
       } else {
         if (! savedDiagOffsets_) { // we haven't precomputed offsets
-          crsMat->getLocalDiagOffsets (diagOffsets_);
+          const size_t lclNumRows = A_->getRowMap ()->getNodeNumElements ();
+          if (diagOffsets_.dimension_0 () < lclNumRows) {
+            typedef typename node_type::device_type DT;
+            diagOffsets_ = Kokkos::View<size_t*, DT> (); // clear 1st to save mem
+            diagOffsets_ = Kokkos::View<size_t*, DT> ("offsets", lclNumRows);
+          }
+          crsMat->getCrsGraph ()->getLocalDiagOffsets (diagOffsets_);
           savedDiagOffsets_ = true;
         }
-        crsMat->getLocalDiagCopy (*Diagonal_, diagOffsets_ ());
+        crsMat->getLocalDiagCopy (*Diagonal_, diagOffsets_);
 #ifdef HAVE_TPETRA_DEBUG
         // Validate the fast-path diagonal against the slow-path diagonal.
         vector_type D_copy (A_->getRowMap ());

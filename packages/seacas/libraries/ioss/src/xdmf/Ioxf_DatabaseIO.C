@@ -1424,10 +1424,8 @@ namespace Ioxf {
 	int* entity_proc = (int*)data;
 	int j=0;
 	for (int i=0; i < entity_count; i++) {
-	  // Assume klugy side id generation.
-	  int global_id = entity_proc[j] / 10;
-	  entities[i] = element_global_to_local(global_id);
-	  sides[i] = entity_proc[j++] % 10;
+	  entities[i] = element_global_to_local(entity_proc[j]);
+	  sides[i] = entity_proc[j++];
 	  procs[i] = entity_proc[j++];
 	}
 

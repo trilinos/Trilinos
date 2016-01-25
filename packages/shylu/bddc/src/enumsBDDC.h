@@ -1,11 +1,12 @@
+
 //@HEADER
 // ************************************************************************
-//
-//            NOX: An Object-Oriented Nonlinear Solver Package
-//                 Copyright (2012) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// 
+//               ShyLU: Hybrid preconditioner package
+//                 Copyright 2012 Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,56 +35,30 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-// Glen Hansen (gahanse@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Thyra_AdaptiveSolutionManager.H"
+#ifndef ENUMSBDDC_H
+#define ENUMSBDDC_H
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
+
+namespace bddc {
+
+enum ProblemType {SCALARPDE, ELASTICITY, ELASTICITYWITHROTATIONS, HELMHOLTZ};
+
+enum EquivType{CORNER, EDGE, FACE};
+
+enum WeightType{STIFFNESS, CARDINALITY, DELUXE};
+
+enum MatrixType{OPERATOR, PRECONDITIONER};
+
+enum AnalysisType {STANDARD = 0, HELMHOLTZA = 1};
 
 
-using Teuchos::rcp;
+} // namespace bddc
 
-LOCA::Thyra::AdaptiveSolutionManager::AdaptiveSolutionManager() :
-   adaptiveMesh_(false),
-   time_(0.0), iter_(0),
-   p_index_(0)
-{
-}
-
-void
-LOCA::Thyra::AdaptiveSolutionManager::
-buildSolutionGroup() {
-
-  const NOX::Thyra::Vector initialGuess(*model_->getNominalValues().get_x());
-
-  grp_ = Teuchos::rcp(new LOCA::Thyra::GroupWrapper(globalData_, initialGuess, model_, *paramVector_, p_index_));
-  grp_->setSaveDataStrategy(saveDataStrategy_);
-
-}
-
-void
-LOCA::Thyra::AdaptiveSolutionManager::
-initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
-           const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
-           const Teuchos::RCP<LOCA::GlobalData>& global_data,
-           const Teuchos::RCP<LOCA::ParameterVector>& p,
-           int p_index){
-
-  // Create weak RCPs for the model and data strategy to address circular RCPs in the current design
-  model_ = model.create_weak();
-  saveDataStrategy_ = saveDataStrategy.create_weak();
-  globalData_ = global_data;
-  paramVector_ = p;
-  p_index_ = p_index;
-
-  buildSolutionGroup();
-
-}
-
+#endif // ENUMSBDDC_H

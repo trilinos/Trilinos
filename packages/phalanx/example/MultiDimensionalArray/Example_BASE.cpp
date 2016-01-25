@@ -273,8 +273,11 @@ int main(int argc, char *argv[])
 	TimeMonitor t(*eval_time);
 
 	for (std::size_t i = 0; i < worksets.size(); ++i) {
+#ifdef PHX_ENABLE_KOKKOS_AMT
+	  fm.evaluateFieldsTaskParallel<MyTraits::Residual>(1,worksets[i]);
+#else
 	  fm.evaluateFields<MyTraits::Residual>(worksets[i]);
-	  
+#endif	  
 	  // Use values: in this example, move values into local arrays
 	  for (size_type cell = 0; cell < energy_flux.dimension(0); ++cell) {
 	    for (size_type ip = 0; ip < energy_flux.dimension(1); ++ip) {
@@ -327,7 +330,11 @@ int main(int argc, char *argv[])
         TimeMonitor t(*eval_time2);
 
         for (std::size_t i = 0; i < worksets.size(); ++i) {
+#ifdef PHX_ENABLE_KOKKOS_AMT
+	  fm.evaluateFieldsTaskParallel<MyTraits::Jacobian>(1,worksets[i]);
+#else
           fm.evaluateFields<MyTraits::Jacobian>(worksets[i]);
+#endif
            for (size_type cell = 0; cell < j_energy_flux.dimension(0); ++cell) {
             for (size_type ip = 0; ip < j_energy_flux.dimension(1); ++ip) {
               for (size_type dim = 0; dim < j_energy_flux.dimension(2); ++dim) {

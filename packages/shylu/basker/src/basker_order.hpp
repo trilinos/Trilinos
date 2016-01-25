@@ -241,9 +241,13 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
     init_value(btf_schedule, num_threads+1, (Int)0);
   
+
     find_btf2(A); 
     sort_matrix(BTF_C);
 
+    //btf_tabs_offset = 0;
+    //btf_tabs
+    
    
     if((btf_tabs_offset != 0) )
       {
@@ -339,7 +343,7 @@ namespace BaskerNS
 	//Comeback
         #endif
 
-	//printMTX("BTF_A.mtx", BTF_A); 
+	printMTX("BTF_A.mtx", BTF_A); 
 	
       }//if btf_tab_offset == 0
 
@@ -500,6 +504,33 @@ namespace BaskerNS
     return 0; 
   }//end scotch_partition()
 
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry, Exe_Space>::permute_inv
+  (
+   INT_1DARRAY vec,
+   INT_1DARRAY p,
+   Int n
+   )
+  {
+    INT_1DARRAY temp;
+    MALLOC_INT_1DARRAY(temp,n);
+    init_value(temp, n, (Int) 0);
+
+    for(Int i = 0; i < n; ++i)
+      {
+	temp(p(i)) = vec(i);
+      }
+    for(Int i = 0; i < n; ++i)
+      {
+	vec(i) = temp(i);
+      }
+    
+    FREE_INT_1DARRAY(temp);
+    
+    return BASKER_SUCCESS;
+
+  }//end permute_inv (int,int)
   
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

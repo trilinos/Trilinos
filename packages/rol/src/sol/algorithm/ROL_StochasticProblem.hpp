@@ -109,6 +109,7 @@ public:
     parlist_ = Teuchos::rcp(&parlist,false);
     setObjective(obj);
     setSolutionVector(vec);
+    setBoundConstraint(Teuchos::null);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -124,6 +125,7 @@ public:
     parlist_ = Teuchos::rcp(&parlist,false);
     setObjective(obj);
     setSolutionVector(vec);
+    setBoundConstraint(Teuchos::null);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -140,6 +142,7 @@ public:
     parlist_ = Teuchos::rcp(&parlist,false);
     setObjective(obj);
     setSolutionVector(vec);
+    setBoundConstraint(Teuchos::null);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,

@@ -58,6 +58,8 @@
 
 #cmakedefine HAVE_MUELU_STRATIMIKOS
 
+#cmakedefine HAVE_MUELU_TEKO
+
 #cmakedefine HAVE_MUELU_ZOLTAN
 
 #cmakedefine HAVE_MUELU_ZOLTAN2

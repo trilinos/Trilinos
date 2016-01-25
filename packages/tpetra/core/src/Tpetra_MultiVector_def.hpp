@@ -114,6 +114,31 @@ namespace Kokkos {
 
 namespace { // (anonymous)
 
+  /// \brief Get column stride of a 2-D Kokkos::View or Kokkos::DualView.
+  ///
+  /// "Column stride" means the stride between entries in the same row
+  /// but consecutive columns.
+  ///
+  /// This function has a long name in order to avoid namespace
+  /// collisions when explicit template instantiation (ETI) is OFF.
+  /// (Tpetra_MultiVector_def.hpp is only exposed to code that
+  /// includes Tpetra_MultiVector.hpp when ETI is OFF.)
+  template<class ViewType>
+  size_t
+  getColumnStrideOfMultiVectorView (const ViewType& X)
+  {
+    static_assert (ViewType::rank > 0, "The input X must have nonzero rank.");
+    size_t strides[8];
+    X.stride (strides);
+    // If the second dimension is 0 (because the MultiVector has zero
+    // columns), then the stride might be 0, even though the number of
+    // rows is nonzero.  That makes the BLAS and LAPACK complain.
+    // Thus, in that case, take the number of rows as the column
+    // stride instead.
+    return (X.dimension_1 () > 1) ? strides[1] :
+      static_cast<size_t> (X.dimension_0 ());
+  }
+
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
   ///
   /// This function takes the same first four template parameters as
@@ -133,10 +158,6 @@ namespace { // (anonymous)
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type dual_view_type;
     const char* label = "MV::DualView";
 
-#if 0
-    (void) zeroOut;
-    return dual_view_type (label, lclNumRows, numCols);
-#else
     if (zeroOut) {
       return dual_view_type (label, lclNumRows, numCols);
     }
@@ -168,7 +189,6 @@ namespace { // (anonymous)
 
       return dual_view_type (d_view, h_view);
     }
-#endif // 0
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
@@ -326,12 +346,7 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(map,view): ";
 
-    // Get stride of view: if second dimension is 0, the
-    // stride might be 0, so take view_dimension instead.
-    size_t stride[8];
-    origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = getColumnStrideOfMultiVectorView (origView_);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
@@ -354,10 +369,7 @@ namespace Tpetra {
 
     // Get stride of view: if second dimension is 0, the stride might
     // be 0, so take view_dimension instead.
-    size_t stride[8];
-    d_view.stride (stride);
-    const size_t LDA = (d_view.dimension_1 () > 1) ? stride[1] :
-      d_view.dimension_0 ();
+    const size_t LDA = getColumnStrideOfMultiVectorView (d_view);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::View's "
@@ -388,12 +400,7 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(map,view,origView): ";
 
-    // Get stride of view: if second dimension is 0, the
-    // stride might be 0, so take view_dimension instead.
-    size_t stride[8];
-    origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = getColumnStrideOfMultiVectorView (origView_);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
@@ -450,12 +457,7 @@ namespace Tpetra {
         << " <= max(whichVectors) = " << maxColInd << ".");
     }
 
-    // Get stride of view: if second dimension is 0, the
-    // stride might be 0, so take view_dimension instead.
-    size_t stride[8];
-    origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = getColumnStrideOfMultiVectorView (origView_);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument,
       "LDA = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
@@ -523,12 +525,7 @@ namespace Tpetra {
         std::invalid_argument, "view.dimension_1() = " << view.dimension_1 ()
         << " <= max(whichVectors) = " << maxColInd << ".");
     }
-    // Get stride of view: if second dimension is 0, the
-    // stride might be 0, so take view_dimension instead.
-    size_t stride[8];
-    origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = getColumnStrideOfMultiVectorView (origView_);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "Input DualView's column stride"
       " = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
@@ -691,12 +688,7 @@ namespace Tpetra {
   getStride () const
   {
     if (isConstantStride ()) {
-      // Get stride of view: if second dimension is 0, the
-      // stride might be 0, so take view_dimension instead.
-      size_t stride[8];
-      origView_.stride (stride);
-      const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
-      return LDA;
+      return getColumnStrideOfMultiVectorView (origView_);
     }
     else {
       return static_cast<size_t> (0);
@@ -3635,36 +3627,35 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceLocalValue (LocalOrdinal MyRow,
-                     size_t VectorIndex,
+  replaceLocalValue (const LocalOrdinal lclRow,
+                     const size_t col,
                      const impl_scalar_type& ScalarValue) const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
     const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      MyRow < minLocalIndex || MyRow > maxLocalIndex,
+      lclRow < minLocalIndex || lclRow > maxLocalIndex,
       std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: row index " << MyRow
+      "Tpetra::MultiVector::replaceLocalValue: row index " << lclRow
       << " is invalid.  The range of valid row indices on this process "
       << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
       << ", " << maxLocalIndex << "].");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(VectorIndex),
+      vectorIndexOutOfRange(col),
       std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: vector index " << VectorIndex
+      "Tpetra::MultiVector::replaceLocalValue: vector index " << col
       << " of the multivector is invalid.");
 #endif
-    const size_t colInd = isConstantStride () ?
-      VectorIndex : whichVectors_[VectorIndex];
-    view_.h_view (MyRow, colInd) = ScalarValue;
+    const size_t colInd = isConstantStride () ? col : whichVectors_[col];
+    view_.h_view (lclRow, colInd) = ScalarValue;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoLocalValue (const LocalOrdinal localRow,
+  sumIntoLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
                      const impl_scalar_type& value,
                      const bool atomic) const
@@ -3673,9 +3664,9 @@ namespace Tpetra {
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
     const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      localRow < minLocalIndex || localRow > maxLocalIndex,
+      lclRow < minLocalIndex || lclRow > maxLocalIndex,
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: row index " << localRow
+      "Tpetra::MultiVector::sumIntoLocalValue: row index " << lclRow
       << " is invalid.  The range of valid row indices on this process "
       << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
       << ", " << maxLocalIndex << "].");
@@ -3687,10 +3678,10 @@ namespace Tpetra {
 #endif
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     if (atomic) {
-      Kokkos::atomic_add (& (view_.h_view(localRow, colInd)), value);
+      Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
     }
     else {
-      view_.h_view (localRow, colInd) += value;
+      view_.h_view (lclRow, colInd) += value;
     }
   }
 
@@ -3698,26 +3689,26 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceGlobalValue (GlobalOrdinal GlobalRow,
-                      size_t VectorIndex,
+  replaceGlobalValue (const GlobalOrdinal gblRow,
+                      const size_t col,
                       const impl_scalar_type& ScalarValue) const
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
-    const LocalOrdinal MyRow = this->map_->getLocalElement (GlobalRow);
+    const LocalOrdinal MyRow = this->map_->getLocalElement (gblRow);
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
       std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: Global row index " << GlobalRow
+      "Tpetra::MultiVector::replaceGlobalValue: Global row index " << gblRow
       << "is not present on this process "
       << this->getMap ()->getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange (VectorIndex), std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: Vector index " << VectorIndex
+      vectorIndexOutOfRange (col), std::runtime_error,
+      "Tpetra::MultiVector::replaceGlobalValue: Vector index " << col
       << " of the multivector is invalid.");
 #endif // HAVE_TPETRA_DEBUG
-    this->replaceLocalValue (MyRow, VectorIndex, ScalarValue);
+    this->replaceLocalValue (MyRow, col, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>

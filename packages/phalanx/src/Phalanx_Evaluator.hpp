@@ -48,8 +48,16 @@
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+
+#ifdef PHX_ENABLE_KOKKOS_AMT
+// amt only works with pthread and qthreads
+#include "Kokkos_TaskPolicy.hpp"
+#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
+#include "Kokkos_Threads.hpp"
+#endif
 
 namespace PHX {
 
@@ -102,7 +110,21 @@ namespace PHX {
 	@param d - user defined data object defined by the EvalData typedef in the traits class.
     */ 
     virtual void evaluateFields(typename Traits::EvalData d) = 0;
-    
+
+#ifdef PHX_ENABLE_KOKKOS_AMT
+    //! Create and return a task for aynchronous multi-tasking.
+    /*!
+        Input:
+	@param policy Kokkos task policy object used to create the task/future.
+	@param num_adjacencies The dependenc capacity in Kokkos. The maximum number of node adjacencies (task dependencies) that this task directly depends on. 
+	@param d - user defined data object defined by the EvalData typedef in the traits class.
+    */ 
+    virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
+    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+	       const std::size_t& num_adjacencies,
+	       typename Traits::EvalData d) = 0;
+#endif
+
     /*! \brief This routine is called before each residual/Jacobian fill.
 
         This routine is called ONCE on the provider before the fill
