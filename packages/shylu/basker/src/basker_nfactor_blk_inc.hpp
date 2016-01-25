@@ -60,7 +60,7 @@ namespace BaskerNS
       
       //if(kid == 8)
 	{
-      basker->t_nfactor_blk(kid);
+      basker->t_nfactor_blk_inc_lvl(kid);
 	}
     }//end operator
   };//end kokkos_nfactor_domain struct
@@ -167,6 +167,9 @@ namespace BaskerNS
     //Why did we need this?
     Int col_idx_offset = M.nnz;
 
+
+    printf("=======NFACTOR BLK INC LVL========\n");
+
     //printf("test one ws_size: %d \n", ws_size);
     
     //Note:
@@ -246,7 +249,7 @@ namespace BaskerNS
 	      //j i not pivotal (KLU)	      
 	      if(color[j] == 0)
 		{
-		  t_local_reach_inc_lvl(kid,0,0,j,top);
+		  t_local_reach_inc_lvl(kid,0,0,j,&top);
 		}
 
 	      
@@ -414,7 +417,10 @@ namespace BaskerNS
 		      L.val(lnnz) = EntryOP::divide(X(j),pivot);
 		     
 		      //Need to comeback for local convert
-		      L.inc_lvl(lnnz) = INC_LVL_TEMP(j);
+		      printf("two j: %d brow: %d %d \n",
+			     j, brow, j+brow);
+		      
+		      L.inc_lvl(lnnz) = INC_LVL_TEMP(j+brow);
                       lnnz++;
                     }
                 }//end if() not 0
@@ -651,6 +657,13 @@ namespace BaskerNS
 
 	    //printf("Adding idx: %d to pattern at location: %d \n",j, *top);
 
+
+	    printf("j: %d brow: %d %d\n",
+		   j, brow, j+brow);
+	    printf("inc: %d \n",
+		   INC_LVL_TEMP(j));
+	    printf("inc: %d \n",
+		   INC_LVL_TEMP(j+brow));
             //#ifdef BASKER_INC_LVL
 	    INC_LVL_TEMP(j+brow) =
 	      min(inc_lvl, INC_LVL_TEMP(j));
@@ -863,7 +876,7 @@ namespace BaskerNS
 	//     k, INC_LVL_TEMP[k], Options.inc_lvl, kid); 
 
 	//if(INC_LVL_TEMP[k]+1 > Options.inc_lvl)
-	if(INC_LVL_TEMP(k+brow)+1 > Options.inv_lvl)
+	if(INC_LVL_TEMP(k+brow)+1 > Options.inc_lvl)
 	  {
 	    //printf("continued\n");
 	    continue;
