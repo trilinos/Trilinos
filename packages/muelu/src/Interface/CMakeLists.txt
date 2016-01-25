@@ -71,12 +71,12 @@ INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # Cpp file
-IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
-ENDIF()
+#IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+#  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
+#  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+#  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
+#  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+#ENDIF()
 
 #
 # Define the targets for package's library(s)
