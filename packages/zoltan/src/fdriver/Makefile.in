@@ -110,30 +110,23 @@ CONFIG_HEADER = $(top_builddir)/src/include/Zoltan_config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__zfdrive_SOURCES_DIST = $(srcdir)/mpi_h.f $(srcdir)/mpistring.c \
-	$(srcdir)/farg_typical.f $(srcdir)/farg_nagf95.f \
-	$(srcdir)/mmio.f $(srcdir)/fdr_sort.f90 \
-	$(srcdir)/fdr_const.f90 $(srcdir)/fdr_input.f90 \
-	$(srcdir)/fdr_chaco_io.f90 $(srcdir)/fdr_param_file.f90 \
-	$(srcdir)/fdr_mm_io.f90 $(srcdir)/fdr_migrate.f90 \
-	$(srcdir)/fdr_loadbal.f90 $(srcdir)/fdr_main.f90
+am__zfdrive_SOURCES_DIST = $(srcdir)/mpi_h.f $(srcdir)/farg_typical.f \
+	$(srcdir)/farg_nagf95.f $(srcdir)/mmio.f \
+	$(srcdir)/fdr_sort.f90 $(srcdir)/fdr_const.f90 \
+	$(srcdir)/fdr_input.f90 $(srcdir)/fdr_chaco_io.f90 \
+	$(srcdir)/fdr_param_file.f90 $(srcdir)/fdr_mm_io.f90 \
+	$(srcdir)/fdr_migrate.f90 $(srcdir)/fdr_loadbal.f90 \
+	$(srcdir)/fdr_main.f90
 @NAG_F90_COMPILER_FALSE@am__objects_1 = farg_typical.$(OBJEXT)
 @NAG_F90_COMPILER_TRUE@am__objects_1 = farg_nagf95.$(OBJEXT)
-am_zfdrive_OBJECTS = mpi_h.$(OBJEXT) zfdrive-mpistring.$(OBJEXT) \
-	$(am__objects_1) mmio.$(OBJEXT) fdr_sort.$(OBJEXT) \
-	fdr_const.$(OBJEXT) fdr_input.$(OBJEXT) fdr_chaco_io.$(OBJEXT) \
-	fdr_param_file.$(OBJEXT) fdr_mm_io.$(OBJEXT) \
-	fdr_migrate.$(OBJEXT) fdr_loadbal.$(OBJEXT) fdr_main.$(OBJEXT)
+am_zfdrive_OBJECTS = mpi_h.$(OBJEXT) $(am__objects_1) mmio.$(OBJEXT) \
+	fdr_sort.$(OBJEXT) fdr_const.$(OBJEXT) fdr_input.$(OBJEXT) \
+	fdr_chaco_io.$(OBJEXT) fdr_param_file.$(OBJEXT) \
+	fdr_mm_io.$(OBJEXT) fdr_migrate.$(OBJEXT) \
+	fdr_loadbal.$(OBJEXT) fdr_main.$(OBJEXT)
 zfdrive_OBJECTS = $(am_zfdrive_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src/include
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-am__depfiles_maybe = depfiles
-am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
 F77LD = $(F77)
 F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
@@ -284,7 +277,6 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 @NAG_F90_COMPILER_TRUE@FARG_SRC = $(srcdir)/farg_nagf95.f
 zfdrive_SOURCES = \
 	$(srcdir)/mpi_h.f \
-	$(srcdir)/mpistring.c \
 	$(FARG_SRC) \
 	$(srcdir)/mmio.f \
 	$(srcdir)/fdr_sort.f90 \
@@ -315,7 +307,7 @@ MOSTLYCLEANFILES = *.mod
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .f .f90 .o .obj
+.SUFFIXES: .f .f90 .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -358,36 +350,6 @@ mostlyclean-compile:
 
 distclean-compile:
 	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfdrive-mpistring.Po@am__quote@
-
-.c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
-
-zfdrive-mpistring.o: $(srcdir)/mpistring.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zfdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zfdrive-mpistring.o -MD -MP -MF $(DEPDIR)/zfdrive-mpistring.Tpo -c -o zfdrive-mpistring.o `test -f '$(srcdir)/mpistring.c' || echo '$(srcdir)/'`$(srcdir)/mpistring.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/zfdrive-mpistring.Tpo $(DEPDIR)/zfdrive-mpistring.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mpistring.c' object='zfdrive-mpistring.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zfdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zfdrive-mpistring.o `test -f '$(srcdir)/mpistring.c' || echo '$(srcdir)/'`$(srcdir)/mpistring.c
-
-zfdrive-mpistring.obj: $(srcdir)/mpistring.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zfdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zfdrive-mpistring.obj -MD -MP -MF $(DEPDIR)/zfdrive-mpistring.Tpo -c -o zfdrive-mpistring.obj `if test -f '$(srcdir)/mpistring.c'; then $(CYGPATH_W) '$(srcdir)/mpistring.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mpistring.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/zfdrive-mpistring.Tpo $(DEPDIR)/zfdrive-mpistring.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mpistring.c' object='zfdrive-mpistring.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zfdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zfdrive-mpistring.obj `if test -f '$(srcdir)/mpistring.c'; then $(CYGPATH_W) '$(srcdir)/mpistring.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mpistring.c'; fi`
 
 .f.o:
 	$(F77COMPILE) -c -o $@ $<
@@ -601,7 +563,6 @@ clean: clean-am
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -647,7 +608,6 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
