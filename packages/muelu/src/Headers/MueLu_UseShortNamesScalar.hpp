@@ -107,6 +107,9 @@ typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarch
 #ifdef MUELU_HIERARCHYFACTORY_SHORT
 typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyFactory;
 #endif
+#ifdef MUELU_HIERARCHYUTILS_SHORT
+typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
+#endif
 #ifdef MUELU_IFPACK2SMOOTHER_SHORT
 typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2Smoother;
 #endif
@@ -259,6 +262,12 @@ typedef MueLu::ToggleCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdina
 #endif
 #ifdef MUELU_TOGGLEPFACTORY_SHORT
 typedef MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TogglePFactory;
+#endif
+#ifdef MUELU_TOPRAPFACTORY_SHORT
+typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TopRAPFactory;
+#endif
+#ifdef MUELU_TOPSMOOTHERFACTORY_SHORT
+typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TopSmootherFactory;
 #endif
 #ifdef MUELU_TPETRAOPERATOR_SHORT
 typedef MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraOperator;

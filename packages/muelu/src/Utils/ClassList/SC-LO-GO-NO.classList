@@ -33,6 +33,7 @@ GenericRFactory
 Hierarchy
 HierarchyManager
 HierarchyFactory
+HierarchyUtils
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 IndefBlockedDiagonalSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 LineDetectionFactory
@@ -84,6 +85,8 @@ TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory
+TopRAPFactory
+TopSmootherFactory
 TpetraOperator
 TransPFactory
 TrilinosSmoother

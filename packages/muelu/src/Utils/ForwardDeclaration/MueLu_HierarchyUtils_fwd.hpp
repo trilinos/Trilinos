@@ -43,16 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_HIERARCHYUTILS_FWD_HPP
+#define MUELU_HIERARCHYUTILS_FWD_HPP
 
 
 
-#include "MueLu_HierarchyHelpers_def.hpp"
 
-#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
-  template class MueLu::TopRAPFactory<SC,LO,GO,NO>; \
-  template class MueLu::TopSmootherFactory<SC,LO,GO,NO>; \
-  template class MueLu::HierarchyUtils<SC,LO,GO,NO>;
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class HierarchyUtils;
+}
 
-#include "MueLu_ETI_4arg.hpp"
+#ifndef MUELU_HIERARCHYUTILS_SHORT
+#define MUELU_HIERARCHYUTILS_SHORT
+#endif
 
 
+
+#endif // MUELU_HIERARCHYUTILS_FWD_HPP
