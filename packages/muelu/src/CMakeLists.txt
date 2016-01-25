@@ -137,12 +137,6 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
     string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
     string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
     
-    # the following generates one cpp file for all instantiations and 
-    # enabled configurations
-    #CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME}.cpp)
-    #SET(SRCS ${SRCS} ${FINAL_FILE_NAME}.cpp)  
-    
-    # Experiment
     # If Epetra is enabled, instantiate it on <double,int,int,EpetraNode>
     # Note: no Epetra64 support in MueLu
     # EpetraNode is defined in the template file depending on the enabled
@@ -182,7 +176,6 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
 	  ENDFOREACH() # NT
     
     ENDIF()
-    # Experiment end
   ENDFOREACH()
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
