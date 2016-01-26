@@ -66,7 +66,7 @@ ENDIF()
 # from a template and list of class names
 ## TODO introduce REGEX expressions here
 ## https://cmake.org/cmake/help/v3.0/command/string.html
-FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST SKIP_SCALAR_INSTANTIATION)
+FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES PROCESSED_FILE SOURCES_LIST SKIP_SCALAR_INSTANTIATION)
 
   # Make sure that Tpetra actually defined these variables, even if they
   # are empty.
@@ -142,8 +142,13 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOU
     # EpetraNode is defined in the template file depending on the enabled
     # Kokkos nodes (either Serial or OpenMP)
     IF (${PACKAGE_NAME}_ENABLE_Epetra)
-      CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
-      SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
+      IF(${SKIP_SCALAR_INSTANTIATION})
+        CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
+        SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
+      ELSE()
+        CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
+        SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
+      ENDIF()
     ENDIF()
     
     # If Tpetra is enabled create the cpp file for all combinations of template parameters
@@ -206,7 +211,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
-    Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_SC_LO_GO_NO_SRC
     0)
@@ -214,7 +218,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
-    Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_LO_GO_NO_SRC
     1)
