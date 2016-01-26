@@ -11,7 +11,6 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-#define __USE_FIXED_TEAM_SIZE__ 1
 typedef Kokkos::Serial exec_space;
 
 #include "example_chol_by_blocks.hpp"
