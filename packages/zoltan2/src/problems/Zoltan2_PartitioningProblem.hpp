@@ -636,20 +636,17 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   }
 
   if (metricsRequested_){
-    typedef PartitioningSolution<Adapter> ps_t;
     typedef EvaluatePartition<Adapter> psq_t;
-    //typedef StridedData<lno_t, scalar_t> input_t; // unused
 
     psq_t *quality = NULL;
-    RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
 
     if (inputType_ == GraphAdapterType ||
         inputType_ == MatrixAdapterType ||
         inputType_ == MeshAdapterType){
 
       try{
-        quality = new psq_t(this->envConst_, problemCommConst_,
-                            this->baseInputAdapter_, solutionConst, false);
+        quality=new psq_t(this->envConst_, problemCommConst_,
+			  this->baseInputAdapter_,&this->getSolution(),false);
       }
       Z2_FORWARD_EXCEPTIONS
 
@@ -666,8 +663,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     } else {
 
       try{
-        quality = new psq_t(this->envConst_, problemCommConst_,
-                            this->baseInputAdapter_, solutionConst, false);
+        quality=new psq_t(this->envConst_, problemCommConst_,
+			  this->baseInputAdapter_,&this->getSolution(),false);
       }
       Z2_FORWARD_EXCEPTIONS
     }
