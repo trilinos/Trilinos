@@ -48,7 +48,7 @@
  * \brief Reference-counted pointer node classes.
  */
 
-
+#include <atomic>
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_any.hpp"
 #include "Teuchos_map.hpp"
@@ -145,13 +145,13 @@ class TEUCHOSCORE_LIB_DLL_EXPORT RCPNode {
 public:
   /** \brief . */
   RCPNode(bool has_ownership_in)
-    : has_ownership_(has_ownership_in), extra_data_map_(NULL)
+    : extra_data_map_(NULL) {
 #ifdef TEUCHOS_DEBUG
-    ,insertion_number_(-1)
+      insertion_number_.store(-1)
 #endif // TEUCHOS_DEBUG
-    {
-      count_[RCP_STRONG] = 0;
-      count_[RCP_WEAK] = 0;
+      has_ownership_.store(has_ownership_in);
+      count_[RCP_STRONG].store(0);
+      count_[RCP_WEAK].store(0);
     }
   /** \brief . */
   virtual ~RCPNode()
@@ -162,34 +162,36 @@ public:
   /** \brief . */
   int strong_count() const
     {
-      return count_[RCP_STRONG];
+      return count_[RCP_STRONG].load();
     }
   /** \brief . */
   int weak_count() const
     {
-      return count_[RCP_WEAK];
+      return count_[RCP_WEAK].load();
     }
   /** \brief . */
   int incr_count( const ERCPStrength strength )
     {
       debugAssertStrength(strength);
-      return ++count_[strength];
+      ++count_[strength];
+      return count_[strength].load();
     }
   /** \brief . */
   int deincr_count( const ERCPStrength strength )
     {
       debugAssertStrength(strength);
-      return --count_[strength];
+      --count_[strength];
+      return count_[strength].load();
     }
   /** \brief . */
   void has_ownership(bool has_ownership_in)
     {
-      has_ownership_ = has_ownership_in;
+      has_ownership_.store(has_ownership_in);
     }
   /** \brief . */
   bool has_ownership() const
     {
-      return has_ownership_;
+      return has_ownership_.load();
     }
   /** \brief . */
   void set_extra_data(
@@ -249,8 +251,10 @@ private:
     EPrePostDestruction destroy_when;
   };
   typedef Teuchos::map<std::string,extra_data_entry_t> extra_data_map_t;
-  int count_[2];
-  bool has_ownership_;
+  // int count_[2];
+  std::atomic<int> count_[2];
+  // bool has_ownership_;
+  std::atomic<bool> has_ownership_;
   extra_data_map_t *extra_data_map_;
   // Above is made a pointer to reduce overhead for the general case when this
   // is not used.  However, this adds just a little bit to the overhead when
@@ -262,15 +266,16 @@ private:
   RCPNode(const RCPNode&);
   RCPNode& operator=(const RCPNode&);
 #ifdef TEUCHOS_DEBUG
-  int insertion_number_;
+  // int insertion_number_;
+  std::atomic<int> insertion_number_;
 public:
   void set_insertion_number(int insertion_number_in)
     {
-      insertion_number_ = insertion_number_in;
+      insertion_number_store(insertion_number_in);
     }
   int insertion_number() const
     {
-      return insertion_number_;
+      return insertion_number_.load();
     }
 #endif // TEUCHOS_DEBUG
 };
