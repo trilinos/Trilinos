@@ -61,8 +61,6 @@
 // macros with colons in them
 #if defined(HAVE_MUELU_TPETRA)
 # include <TpetraCore_config.h>
-# include <TpetraCore_ETIHelperMacros.h>
-TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
 #if defined(HAVE_MUELU_EPETRA)
 # include <Epetra_config.h>
@@ -87,7 +85,8 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 //    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
 @MueLu_ETI_EpetraGuards@
 
-  MUELU_ETI_GROUP(double,int,int,EpetraNode)
+  template class @CLASS_NAME@<double,int,int,EpetraNode>;
+  
 
 @MueLu_ETI_EpetraGuards_END@
 
