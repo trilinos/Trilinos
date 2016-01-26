@@ -101,6 +101,7 @@ TRIBITS_EXCLUDE_FILES(
   test/ch_grid20x19
   test/ch_hammond
   test/ch_hammond2
+  test/ch_hughes
   test/ch_nograph
   test/ch_onedbug
   test/ch_random
