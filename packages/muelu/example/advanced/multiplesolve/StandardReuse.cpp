@@ -227,6 +227,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
+  out.setOutputToRootOnly(0);
 
   // =========================================================================
   // Parameters initialization
@@ -339,8 +340,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   std::string thickSeparator = "==========================================================================================================================";
   std::string thinSeparator  = "--------------------------------------------------------------------------------------------------------------------------";
 
-  RCP<TimeMonitor> tm;
-
   // =========================================================================
   // Setup #1 (no reuse)
   // =========================================================================
@@ -348,20 +347,25 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   {
     RCP<Hierarchy> H;
 
+    RCP<Teuchos::Time> tm = TimeMonitor::getNewTimer("Setup #1: no reuse");
     for (int i = 0; i <= numRebuilds; i++) {
-      if (numRebuilds == 0 || i == 1) {
-        // Skip timing first build if possible to reduce jitter
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Setup #1: no reuse")));
-      }
+      // Start timing (skip first build to reduce jitter)
+      if (!(numRebuilds && i == 0))
+        tm->start();
 
       A->SetMaxEigenvalueEstimate(-one);
       H = CreateHierarchy(A, paramList, coordinates);
+
+      // Stop timing
+      if (!(numRebuilds && i == 0)) {
+        tm->stop();
+        tm->incrementNumCalls();
+      }
     }
-    tm = Teuchos::null;
 
     X->putScalar(zero);
     H->Iterate(*B, *X, nIts);
-    out << "||Residual|| = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
+    out << "No reuse   res = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
   }
 
   // =========================================================================
@@ -380,30 +384,33 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
     RCP<Hierarchy> H = CreateHierarchy(A, paramList, coordinates);
 
-    out << thinSeparator << "\nPreconditioner status:" << std::endl;
-    H->print(out, MueLu::Extreme);
-
     // Reuse setup
     RCP<Matrix> Acopy = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(A);
 
+    RCP<Teuchos::Time> tm = TimeMonitor::getNewTimer("Setup #2: reuse " + reuseNames[k]);
     for (int i = 0; i <= numRebuilds; i++) {
-      if (numRebuilds == 0 || i == 1) {
-        // Skip timing first build if possible to reduce jitter
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Setup #2: reuse " + reuseNames[k])));
-      }
+      // Start timing (skip first build to reduce jitter)
+      if (!(numRebuilds && i == 0))
+        tm->start();
 
       Acopy->SetMaxEigenvalueEstimate(-one);
       ReuseHierarchy(Acopy, *H);
 
+      // Stop timing
+      if (!(numRebuilds && i == 0)) {
+        tm->stop();
+        tm->incrementNumCalls();
+      }
+
       // Change the pointers so that reuse is not a no-op
       Acopy.swap(A);
     }
-    tm = Teuchos::null;
 
     X->putScalar(zero);
     H->Iterate(*B, *X, nIts);
-    out << "||Residual|| = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
+    out << "Reuse \"" << reuseNames[k] << "\"   res = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
   }
+  out << thickSeparator << std::endl;
 
   {
     const bool alwaysWriteLocal = true;
