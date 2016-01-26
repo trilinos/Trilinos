@@ -66,7 +66,7 @@ ENDIF()
 # from a template and list of class names
 ## TODO introduce REGEX expressions here
 ## https://cmake.org/cmake/help/v3.0/command/string.html
-FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES PROCESSED_FILE SOURCES_LIST SKIP_SCALAR_INSTANTIATION)
+FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE SOURCES_LIST SKIP_SCALAR_INSTANTIATION)
 
   # Make sure that Tpetra actually defined these variables, even if they
   # are empty.
@@ -143,10 +143,10 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES PROCESSED_FILE SOURCES_LIST SKIP
     # Kokkos nodes (either Serial or OpenMP)
     IF (${PACKAGE_NAME}_ENABLE_Epetra)
       IF(${SKIP_SCALAR_INSTANTIATION})
-        CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
+        CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
         SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
       ELSE()
-        CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
+        CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_SC_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
         SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
       ENDIF()
     ENDIF()
@@ -164,7 +164,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES PROCESSED_FILE SOURCES_LIST SKIP
 	        TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
 	        
 	        IF(${SKIP_SCALAR_INSTANTIATION})
-	          CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
+	          CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
 	          SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)  	        
 	        ELSE()
     	      FOREACH(SC ${MueLu_ETI_SCALARS})
@@ -172,7 +172,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE ETI_CLASSES PROCESSED_FILE SOURCES_LIST SKIP
 		        TPETRA_SLG_MACRO_NAME(SC_MACRO_NAME "${SC}")
 		        TPETRA_SC_MACRO_EXPR(SC_MACRO_EXPR "${SC}" "${GO}" "${SC_MACRO_NAME}")
 		
-		        CONFIGURE_FILE("Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
+		        CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_SC_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
 		        SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)   
 	          ENDFOREACH() # SC
 	        ENDIF() # skip loop over SC
@@ -200,6 +200,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ## *.cpp files have to be generated for. Contains basically all MueLu 
   ## classes (with some exceptions, though).
   ##
+  GLOBAL_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
 
   ##
@@ -207,9 +208,11 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ## *.cpp files have to be generated for. Contains basically all MueLu 
   ## classes (with some exceptions, though).
   ##
+  GLOBAL_SET ( MUELU_LO_GO_NO_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_LO_GO_NO_classes.cmake)
 
   MUELU_PROCESS_ETI_TEMPLATE(
+    "Utils/ExplicitInstantiation"
     "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_SC_LO_GO_NO_SRC
@@ -217,6 +220,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
+    "Utils/ExplicitInstantiation"
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_LO_GO_NO_SRC
@@ -244,9 +248,7 @@ LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 SET(SOURCES ${MUELU_ETI_CPP_SOURCES})
 APPEND_GLOB(SOURCES */*.cpp)
 
-#APPEND_GLOB(SOURCES ${MUELU_ETI_CPP_SOURCES})  # append ETI cpp sources (if any)
-
-## TODO are the following lines necessary???
+# add other *.cpp files for MueLu (whereever they are located)
 #APPEND_GLOB(SOURCES */*/*.cpp) -> ExplicitInstantiation files must be included only if explicit instantiation is enabled
 APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
@@ -258,9 +260,6 @@ APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
 APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
-
-#MESSAGE("ETI_SOURCES = ${MUELU_ETI_CPP_SOURCES}")
-#MESSAGE("SOURCES = ${SOURCES}")
 
 #
 # Explicit instantiation
@@ -296,6 +295,7 @@ ENDIF()
 INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
+### TODO what about that? we probably don't need that
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   CONFIGURE_FILE(${DIR}/Utils/ExplicitInstantiation/${PACKAGE_NAME}_ExplicitInstantiation.hpp.in ${BDIR}/MueLu_ExplicitInstantiation.hpp)
@@ -306,14 +306,7 @@ ENDIF()
 # NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(SOURCES_INTERFACE "")
 APPEND_GLOB(SOURCES_INTERFACE Interface//*.cpp)
-IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
-ENDIF()
 LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
-
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
@@ -355,6 +348,8 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("HEADERS_INTERFACE = ${HEADERS_INTERFACE}")
 #MESSAGE("")
 #MESSAGE("SOURCES_INTERFACE = ${SOURCES_INTERFACE}")
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
