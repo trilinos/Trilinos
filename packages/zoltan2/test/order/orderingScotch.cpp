@@ -261,7 +261,7 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
-  z2TestLO *checkPerm;
+  z2TestLO *checkPerm, *checkInvPerm;
   Zoltan2::OrderingSolution<z2TestLO, z2TestGO> *soln = problem.getSolution();
 
   cout << "Going to get results" << endl;
@@ -312,12 +312,18 @@ int main(int narg, char** arg)
   cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
+  if (testReturn) goto End;
+
+  // Check the inverse permutation.
+  for (size_t i=0; i<checkLength; i++){
+    testReturn = (checkInversePerm[checkPerm[i]] != i);
+    if (testReturn) goto End;
+  }
+    
   // TODO How do we validate the separator?
   //      E.g., RangeTab monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
   //      TreeTab root has -1, other values < NumBlocks
   //      NumBlocks appropriate for nLevels
-  // TODO How do we validate the inverse permutation?
-  //      InversePerm[Perm[i]] == i?
 
   cout << "Going to compute the bandwidth" << endl;
   // Compute original bandwidth
@@ -341,6 +347,7 @@ int main(int narg, char** arg)
       return 0;
   }
 
+End: // On error, goto End
   if (me == 0) {
     if (testReturn)
       std::cout << "Solution is not a permutation; FAIL" << std::endl;
