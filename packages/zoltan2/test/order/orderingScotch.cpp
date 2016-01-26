@@ -310,20 +310,31 @@ int main(int narg, char** arg)
   }
 
   cout << "Going to validate the soln" << endl;
-  // Verify that checkPerm is a permutation
+  // Validate that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
   if (testReturn) goto End;
 
-  // Check the inverse permutation.
+  // Validate the inverse permutation.
   for (size_t i=0; i<checkLength; i++){
     testReturn = (checkInversePerm[checkPerm[i]] != i);
     if (testReturn) goto End;
   }
     
-  // TODO How do we validate the separator?
-  //      E.g., RangeTab monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
+  // Validate NumBlocks
+  testReturn = !((NumBlocks>0) && (NumBlocks<checkLength));
+  if (testReturn) goto End;
+
+  // Validate RangTab.
+  // Should be monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
+  testReturn = RangTab[0];
+  if (testReturn) goto End;
+  for (size_t i=0; i<checkLength; i++){
+    testReturn = !(RangTab[i] < RangTab[i+1]);
+    if (testReturn) goto End;
+  }
+ 
+  // TODO How do we validate TreeTab?
   //      TreeTab root has -1, other values < NumBlocks
-  //      NumBlocks appropriate for nLevels
 
   cout << "Going to compute the bandwidth" << endl;
   // Compute original bandwidth
