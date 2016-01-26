@@ -712,7 +712,7 @@ Tensor<T, N>
 log_gregory(Tensor<T, N> const & A)
 {
   Index const
-  max_iter = 128;
+  max_iter = 8192;
 
   T const
   tol = machine_epsilon<T>();
@@ -898,33 +898,38 @@ log_rotation_pi(Tensor<T, N> const & R)
 
     case 3:
     {
-      // obtain U from R = LU
-      r = gaussian_elimination((R - identity<T, N>(3)));
+      Vector<T, N>
+      normal(3);
 
-      // backward substitution (for rotation exp(R) only)
-      T const tol = 10.0 * machine_epsilon<T>();
+      Tensor<T, N> const
+      B = R - identity<T, N>(3);
 
-      Vector<T, N> normal(3);
+      Vector<T, N> const
+      u = row(B, 0);
 
-      if (std::abs(r(2,2)) < tol){
-        normal(2) = 1.0;
-      } else {
-        normal(2) = 0.0;
+      Vector<T, N> const
+      v = row(B, 1);
+
+      normal = cross(u, v);
+
+      if (norm(normal) < machine_epsilon<T>()) {
+
+        Vector<T, N> const
+        w = row(B, 2);
+
+        normal = cross(u, w);
+
+        if (norm(normal) < machine_epsilon<T>()) {
+          std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+          std::cerr << std::endl;
+          std::cerr << "Cannot determine rotation vector of rotation.";
+          std::cerr << std::endl;
+          exit(1);
+        }
+
       }
 
-      if (std::abs(r(1,1)) < tol){
-        normal(1) = 1.0;
-      } else {
-        normal(1) = -normal(2)*r(1,2)/r(1,1);
-      }
-
-      if (std::abs(r(0,0)) < tol){
-        normal(0) = 1.0;
-      } else {
-        normal(0) = -normal(1)*r(0,1) - normal(2)*r(0,2)/r(0,0);
-      }
-
-      normal = normal / norm(normal);
+      normal = unit(normal);
 
       r.fill(ZEROS);
       r(0,1) = -normal(2);
@@ -934,7 +939,8 @@ log_rotation_pi(Tensor<T, N> const & R)
       r(2,0) = -normal(1);
       r(2,1) =  normal(0);
 
-      T const pi = std::acos(-1.0);
+      T const
+      pi = std::acos(-1.0);
 
       r = pi * r;
     }
