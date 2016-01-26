@@ -966,61 +966,6 @@ log_rotation_pi(Tensor<T, N> const & R)
   return r;
 }
 
-// Gaussian Elimination with partial pivot
-// \param matrix \f$ A \f$
-// \return \f$ U \f$ where \f$ A = LU \f$
-//
-template<typename T, Index N>
-Tensor<T, N>
-gaussian_elimination(Tensor<T, N> const & A)
-{
-  Index const
-  dimension = A.get_dimension();
-
-  Tensor<T, N>
-  U = A;
-
-  T const
-  tol = 10.0 * machine_epsilon<T>();
-
-  Index i = 0;
-  Index j = 0;
-  Index i_max = 0;
-
-  while ((i < dimension) && (j < dimension)) {
-    // find pivot in column j, starting in row i
-    i_max = i;
-    for (Index k = i + 1; k < dimension; ++k) {
-      if (std::abs(U(k,j)) > std::abs(U(i_max,j))) {
-        i_max = k;
-      }
-    }
-
-    // Check if A(i_max,j) equal to or very close to 0
-    if (std::abs(U(i_max,j)) > tol){
-      // swap rows i and i_max and divide each entry in row i
-      // by U(i,j)
-      for (Index k = 0; k < dimension; ++k) {
-        std::swap(U(i,k), U(i_max,k));
-      }
-
-      for (Index k = 0; k < dimension; ++k) {
-        U(i,k) = U(i,k) / U(i,j);
-      }
-
-      for (Index l = i + 1; l < dimension; ++l) {
-        for (Index k = 0; k < dimension; ++k) {
-          U(l,k) = U(l,k) - U(l,i) * U(i,k) / U(i,i);
-        }
-      }
-      ++i;
-    }
-    ++j;
-  }
-
-  return U;
-}
-
 //
 // Apply Givens-Jacobi rotation on the left in place.
 //
