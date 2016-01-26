@@ -13,7 +13,6 @@ typedef int    size_type;
 
 typedef Kokkos::Qthread exec_space;
 
-#define __USE_FIXED_TEAM_SIZE__ 1
 #include "example_chol_performance.hpp"
 
 using namespace Tacho;
