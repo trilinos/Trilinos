@@ -180,6 +180,35 @@ IF (DEFINED BUILD_SHARED_LIBS)
   ENDIF ()
 ENDIF ()
 
+# Teuchos_ENABLE_THREAD_SAFE option for turning thread safety on/off with RCP classes
+# Teuchos_ENABLE_THREAD_SAFE is set to Trilinos_THREAD_SAFE by default
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
+  HAVE_TEUCHOS_THREAD_SAFE
+  "Enable thread safe code for RCP classes."
+  ${${PROJECT_NAME}_ENABLE_THREAD_SAFE}
+  )
+
+# Trilinos_ENABLE_THREAD_SAFE can only be ON if we have Trilinos_ENABLE_CXX11
+# Teuchos_ENABLE_THREAD_SAFE could still be set ON with Trilinos_ENABLE_CXX11 OFF, so check and give a config error.
+IF (${PACKAGE_NAME}_ENABLE_THREAD_SAFE AND NOT ${PROJECT_NAME}_ENABLE_CXX11)
+  MESSAGE(FATAL_ERROR "You set Teuchos_ENABLE_THREAD_SAFE=ON, but Trilinos' support for CXX11 is not enabled   (Trilinos_ENABLE_CXX11=OFF).  This is not allowed.  Please enable Trilinos_ENABLE_CXX11 in Trilinos before attempting to enable Teuchos_ENABLE_THREAD_SAFE or leave Teucho_ENABLE_THREAD_SAFE off.")
+  ENDIF ()
+
+
+# Add an option to control whether we run the Teuchos Thread Safe Unit Tests
+# Make this option default to the Pthread setting
+# Some platforms will require Pthread to compile and run the unit tests which use std::thread.
+# However the checkin script will default Pthread off which could then cause the compile to break.
+# So default to the Pthread setting avoids this - the user can still override this setting.
+# This needs to be discussed further - right now when this is off the tests just do nothing.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE_UNIT_TESTS
+  HAVE_TEUCHOS_THREAD_SAFE_UNIT_TESTS
+  "Enable thread safe unit tests for Teuchos RCP classes."
+  ${TPL_ENABLE_Pthread}
+  )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC
   HAVE_TEUCHOS_ARRAY_BOUNDSCHECK

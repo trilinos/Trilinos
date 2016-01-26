@@ -1880,6 +1880,16 @@ MACRO(TRIBITS_SETUP_ENV)
     ENDIF()
   ENDIF()
 
+  # Set up thread safety options
+  OPTION(${PROJECT_NAME}_ENABLE_THREAD_SAFE
+    "Enable thread safe code including RCP classes."
+    OFF )
+
+  # If thread safety was turned on and CXX11 is off give a config error
+  IF (${PROJECT_NAME}_ENABLE_THREAD_SAFE AND NOT ${PROJECT_NAME}_ENABLE_CXX11)
+    MESSAGE(FATAL_ERROR "You set Trilinos_ENABLE_THREAD_SAFE=ON, but Trilinos' support for CXX11 is not enabled (Trilinos_ENABLE_CXX11=OFF).  This is not allowed.  Please enable Trilinos_ENABLE_CXX11 in Trilinos before attempting to enable Trilinos_ENABLE_THREAD_SAFE or leave Trilinos_ENABLE_THREAD_SAFE off.")
+  ENDIF ()
+
   # Set up some MPI info
 
   IF (TPL_ENABLE_MPI)
