@@ -57,6 +57,7 @@
 
 using namespace std;
 using std::vector;
+using Teuchos::RCP;
 
 /*! \example rcb_C.cpp
     An example of the use of the RCB algorithm to partition coordinate data.
@@ -84,7 +85,9 @@ int main(int argc, char *argv[])
 
   // TODO explain
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef inputAdapter_t::part_t part_t;
+  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Create input data.
@@ -143,21 +146,36 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 input adapter for this geometry. TODO explain
 
-  inputAdapter_t ia1(localCount, globalIds, x, y, z, 1, 1, 1);
+  inputAdapter_t *ia1 = new inputAdapter_t(localCount,globalIds,x,y,z,1,1,1);
 
   // Create a Zoltan2 partitioning problem
 
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 =
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params);
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(ia1, &params);
    
   // Solve the problem
 
   problem1->solve();
+
+  // An environment.  This is usually created by the problem.
+
+  RCP<const Zoltan2::Environment> env = problem1->getEnvironment();
+
+  RCP<const base_adapter_t> bia =
+    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia1));
+
+  // create metric object (also usually created by a problem)
+
+  RCP<quality_t>metricObject=rcp(new quality_t(env,problem1->getComm(),bia,
+					       &problem1->getSolution(),
+					       false));
    
   // Check the solution.
 
-  if (rank == 0)
+  if (rank == 0) {
+    metricObject->printMetrics(cout);
     problem1->printMetrics(cout);
+  }
 
   if (rank == 0){
     scalar_t imb = problem1->getWeightImbalance();
