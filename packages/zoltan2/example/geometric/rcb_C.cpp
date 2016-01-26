@@ -159,21 +159,21 @@ int main(int argc, char *argv[])
 
   // An environment.  This is usually created by the problem.
 
-  RCP<const Zoltan2::Environment> env = problem1->getEnvironment();
+  RCP<const Zoltan2::Environment> env1 = problem1->getEnvironment();
 
-  RCP<const base_adapter_t> bia =
+  RCP<const base_adapter_t> bia1 =
     Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia1));
 
   // create metric object (also usually created by a problem)
 
-  RCP<quality_t>metricObject=rcp(new quality_t(env,problem1->getComm(),bia,
-					       &problem1->getSolution(),
-					       false));
+  RCP<quality_t>metricObject1=rcp(new quality_t(env1,problem1->getComm(),bia1,
+						&problem1->getSolution(),
+						false));
    
   // Check the solution.
 
   if (rank == 0) {
-    metricObject->printMetrics(cout);
+    metricObject1->printMetrics(cout);
     problem1->printMetrics(cout);
   }
 
