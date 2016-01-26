@@ -428,7 +428,7 @@ int main(int argc, char* argv[]) {
     Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
     Xpetra::Parameters xpetraParameters(clp);
 
-    switch (clp.parse(argc, argv)) {
+    switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:

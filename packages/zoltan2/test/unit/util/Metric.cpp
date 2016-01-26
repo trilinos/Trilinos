@@ -239,15 +239,14 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     partNum[i] = rank;
 
   solution->setParts(partAssignment);
-  RCP<const Zoltan2::PartitioningSolution<idInput_t> > solutionConst =
-    rcp_const_cast<const Zoltan2::PartitioningSolution<idInput_t> >(solution);
 
   // create metric object (also usually created by a problem)
 
   RCP<quality_t> metricObject;
 
   try{
-    metricObject = rcp(new quality_t(env, comm, bia, solutionConst, false));
+    metricObject = rcp(new quality_t(env, comm, bia, solution.getRawPtr(), 
+				     false));
   }
   catch (std::exception &e){
     fail=1;

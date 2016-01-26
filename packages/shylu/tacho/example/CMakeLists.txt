@@ -214,6 +214,13 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
 )
 
+TRIBITS_ADD_EXECUTABLE(
+  chol_direct_nested_dense_block_pthread
+  NOEXEPREFIX
+  SOURCES example_chol_direct_nested_dense_block_pthread.cpp
+  COMM serial mpi
+)
+
 # Temporary
 # =========
 
