@@ -69,7 +69,6 @@ endif
 
 zfdrive_SOURCES = \
 	$(srcdir)/mpi_h.f \
-	$(srcdir)/mpistring.c \
 	$(FARG_SRC) \
 	$(srcdir)/mmio.f \
 	$(srcdir)/fdr_sort.f90 \

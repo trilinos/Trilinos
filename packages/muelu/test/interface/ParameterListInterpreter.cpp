@@ -301,6 +301,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         std::vector<std::string> classes;
         classes.push_back("Xpetra::Matrix");
         classes.push_back("MueLu::Constraint");
+        classes.push_back("MueLu::SmootherPrototype");
         for (size_t q = 0; q < classes.size(); q++)
           run_sed("'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/'", baseFile);
 
@@ -343,7 +344,7 @@ int main(int argc, char* argv[]) {
     Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
     Xpetra::Parameters xpetraParameters(clp);
 
-    switch (clp.parse(argc, argv)) {
+    switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:

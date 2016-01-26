@@ -246,6 +246,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   }
 
   ParameterList paramList;
+  paramList.set("verbosity", "none");
   if (xmlFileName != "")
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
 
@@ -340,14 +341,18 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   RCP<TimeMonitor> tm;
 
   // =========================================================================
-  // Solve #1 (no reuse)
+  // Setup #1 (no reuse)
   // =========================================================================
   out << thickSeparator << std::endl;
   {
     RCP<Hierarchy> H;
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Solve #1: no reuse")));
     for (int i = 0; i <= numRebuilds; i++) {
+      if (numRebuilds == 0 || i == 1) {
+        // Skip timing first build if possible to reduce jitter
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Setup #1: no reuse")));
+      }
+
       A->SetMaxEigenvalueEstimate(-one);
       H = CreateHierarchy(A, paramList, coordinates);
     }
@@ -359,13 +364,18 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   }
 
   // =========================================================================
-  // Solve #2 (reuse tentative P)
+  // Setup #2-inf (reuse)
   // =========================================================================
-  out << thickSeparator << std::endl;
-  {
+  std::vector<std::string> reuseTypes, reuseNames;
+  reuseTypes.push_back("S");  reuseNames.push_back("smoothers");
+  reuseTypes.push_back("tP"); reuseNames.push_back("tentative P");
+  reuseTypes.push_back("RP"); reuseNames.push_back("smoothed P and R");
+
+  for (size_t k = 0; k < reuseTypes.size(); k++) {
+    out << thickSeparator << std::endl;
     A->SetMaxEigenvalueEstimate(-one);
 
-    paramList.set("reuse: type", "tP");
+    paramList.set("reuse: type", reuseTypes[k]);
 
     RCP<Hierarchy> H = CreateHierarchy(A, paramList, coordinates);
 
@@ -375,40 +385,17 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     // Reuse setup
     RCP<Matrix> Acopy = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(A);
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Solve #2: reuse tentative P")));
     for (int i = 0; i <= numRebuilds; i++) {
+      if (numRebuilds == 0 || i == 1) {
+        // Skip timing first build if possible to reduce jitter
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Setup #2: reuse " + reuseNames[k])));
+      }
+
       Acopy->SetMaxEigenvalueEstimate(-one);
       ReuseHierarchy(Acopy, *H);
-    }
-    tm = Teuchos::null;
 
-    X->putScalar(zero);
-    H->Iterate(*B, *X, nIts);
-    out << "||Residual|| = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
-  }
-
-  // =========================================================================
-  // Solve #3 (reuse smoothed P and R)
-  // =========================================================================
-  out << thickSeparator << std::endl;
-  {
-    A->SetMaxEigenvalueEstimate(-one);
-
-    paramList.set("reuse: type", "RP");
-
-    RCP<Hierarchy> H = CreateHierarchy(A, paramList, coordinates);
-
-    out << thinSeparator << "\nPreconditioner status:" << std::endl;
-    H->print(out, MueLu::Extreme);
-
-    // Reuse setup
-    RCP<Matrix> Acopy = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(A);
-    Acopy->SetMaxEigenvalueEstimate(-one);
-
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Solve #3: reuse smoothed P and R")));
-    for (int i = 0; i <= numRebuilds; i++) {
-      Acopy->SetMaxEigenvalueEstimate(-one);
-      ReuseHierarchy(Acopy, *H);
+      // Change the pointers so that reuse is not a no-op
+      Acopy.swap(A);
     }
     tm = Teuchos::null;
 
@@ -422,7 +409,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     const bool writeGlobalStats = true;
     const bool writeZeroTimers  = false;
     const bool ignoreZeroTimers = true;
-    const std::string filter    = "Solve #";
+    const std::string filter    = "Setup #";
     TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
                            writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
   }
@@ -441,7 +428,7 @@ int main(int argc, char* argv[]) {
     Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
     Xpetra::Parameters xpetraParameters(clp);
 
-    switch (clp.parse(argc, argv)) {
+    switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:

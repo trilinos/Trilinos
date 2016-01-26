@@ -48,12 +48,12 @@
 #include <math.h>
 #include <string.h>
 
-#include "SolverBaseBDDC.h"
-#include "NoPivotT.h"
+#include "shylu_SolverBaseBDDC.h"
+#include "shylu_NoPivotT.h"
 #include <metis.h>
 
-#if defined(_OPENMP) && defined(USE_GTS)
-#include "gts_impl.hpp"
+#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+#include "shylu_hts.hpp"
 #endif
 
 namespace bddc {
@@ -70,16 +70,16 @@ public:
   SolverBase<SX,SM,LO,GO>(numRows, rowBegin, columns, values, Parameters),
     m_Solver(0)
   {
-    m_useGtsForSolves = useGtsForSolves();
+    m_useHtsForSolves = useHtsForSolves();
   }
 
   ~SolverNoPivotT()
   {
     delete m_Solver;
-#if defined(_OPENMP) && defined(USE_GTS)
-    if (m_useGtsForSolves) {
-      ::details::gts::delete_Impl(m_Uimpl);
-      ::details::gts::delete_Impl(m_Limpl);
+#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+    if (m_useHtsForSolves) {
+      HTST::delete_Impl(m_Uimpl);
+      HTST::delete_Impl(m_Limpl);
     }
 #endif
   }
@@ -135,7 +135,7 @@ public:
 				    this->m_columns,
 				    perm);
     m_Solver->NumericalFactorization(this->m_values);
-    initializeGts();
+    initializeHts();
     return 0;
   }
 
@@ -149,10 +149,10 @@ public:
 	       SX* Sol)
   {
     if (this->m_numRows == 0) return;
-    if (m_useGtsForSolves) {
-#if defined(_OPENMP) && defined(USE_GTS)
-      ::details::gts::solve_omp(m_Limpl, Rhs, NRHS, Sol);
-      ::details::gts::solve_omp(m_Uimpl, Sol, NRHS);
+    if (m_useHtsForSolves) {
+#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+      HTST::solve_omp(m_Limpl, Rhs, NRHS, Sol);
+      HTST::solve_omp(m_Uimpl, Sol, NRHS);
 #endif
     }
     else {
@@ -169,15 +169,16 @@ public:
 private:
   std::vector<idx_t> m_permInput;
   nopivot::NoPivotT<SX>* m_Solver;
-  bool m_useGtsForSolves;
-#if defined(_OPENMP) && defined(USE_GTS)
-  ::details::gts::Impl *m_Limpl, *m_Uimpl;
+  bool m_useHtsForSolves;
+#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+  typedef Experimental::HTS<LO, LO, SM> HTST;
+  typename HTST::Impl *m_Limpl, *m_Uimpl;
 #endif
 
-  bool useGtsForSolves() 
+  bool useHtsForSolves() 
   {
-#if defined(_OPENMP) && defined(USE_GTS)
-    if (this->m_Parameters.get("Use GTS For Solves", false)) {
+#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+    if (this->m_Parameters.get("Use HTS For Solves", false)) {
       return true;
     }
     else {
@@ -188,84 +189,32 @@ private:
 #endif
   }
 
-  void initializeGts()
+  void initializeHts()
   {
-    if (m_useGtsForSolves == false) return;
-#if defined(_OPENMP) && defined(USE_GTS)
-    // following Andrew Bradley's code (ThreadedSolverTest.C)
+    if ( ! m_useHtsForSolves) return;
+#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
     std::vector<int> ir, jc;
     std::vector<SX> d;
     std::vector<SX> diag;
     int in_nnz, out_nnz;
     m_Solver->extractLAsCcsMatrix(jc, ir, d, in_nnz, out_nnz);
     m_Solver->extractDiag(diag);
-    //    const int nthreads = omp_get_num_threads();
     const int nthreads = omp_get_max_threads();
     {
-      std::vector<int> irt, jct;
-      std::vector<SX> dt;
-      transpose(ir, jc, d, irt, jct, dt);
-      ::details::gts::CrsMatrix* L;
-      L = ::details::gts::make_CrsMatrix
-	(ir.size() - 1, &irt[0], &jct[0], &dt[0]);
-      m_Limpl = ::details::gts::preprocess
-	(L, 1, nthreads, true, m_Solver->getPermutation(), NULL);
-      ::details::gts::delete_CrsMatrix(L);   
+      typename HTST::CrsMatrix* L = HTST::make_CrsMatrix
+        (ir.size() - 1, ir.data(), jc.data(), d.data(), true);
+      m_Limpl = HTST::preprocess
+        (L, 1, nthreads, true, m_Solver->getPermutation(), NULL, NULL);
+      HTST::delete_CrsMatrix(L);
     }
-    ::details::gts::CrsMatrix* U;
-    U = ::details::gts::make_CrsMatrix(ir.size() - 1, &ir[0], &jc[0], &d[0]);
-    m_Uimpl = ::details::gts::preprocess
-      (U, 1, nthreads, true, NULL, m_Solver->getPermutation(), &diag[0]);
-    ::details::gts::delete_CrsMatrix(U);
+    {
+      typename HTST::CrsMatrix* U = HTST::make_CrsMatrix
+        (ir.size() - 1, ir.data(), jc.data(), d.data());
+      m_Uimpl = HTST::preprocess
+        (U, 1, nthreads, true, NULL, m_Solver->getPermutation(), diag.data());
+      HTST::delete_CrsMatrix(U);
+    }
     delete m_Solver; m_Solver = 0;
-#endif
-  }
-
-// (ir, jc, d) is for a CRS matrix. From Andrew Bradley's code 
-// (ThreadedSolverTest.C)
-  void transpose (const std::vector<int>& ir, 
-		  const std::vector<int>& jc,
-		  const std::vector<SX>& d, 
-		  std::vector<int>& irt,
-		  std::vector<int>& jct, 
-		  std::vector<SX>& dt)
-  {
-#if defined(_OPENMP) && defined(USE_GTS)
-    using ::details::gts::Int;
-    const int m = ir.size() - 1;
-    irt.resize(ir.size());
-    jct.resize(jc.size());
-    dt.resize(d.size());
-    // 1. Count the number of entries in each col.
-    for (Int i = 0; i <= m; ++i) irt[i] = 0;
-    const Int nnz = ir[m];
-    for (Int k = 0; k < nnz; ++k) {
-      // Store shifted up by 1. This is the trick that makes extra workspace
-      // unnecessary.
-      ++irt[jc[k]+1];
-    }
-    // 2. Cumsum to get the col pointers.
-    Int sum = 0;
-    for (Int i = 0; i < m; ++i) {
-      const Int incr = irt[i+1];
-      irt[i+1] = sum;
-      sum += incr;
-    }
-    assert(sum == nnz);
-    // At this point, At.ir[i+1] gives what is normally in At.ir[i].
-    // 3. Fill in jc and d.
-    for (Int r = 0; r < m; ++r)
-      for (Int j = ir[r]; j < ir[r+1]; ++j) {
-	const Int
-	  c = jc[j],
-	  p = irt[c+1]; // Points to next entry to be filled.
-	jct[p] = r;
-	dt[p] = d[j];
-	++irt[c+1]; // 3a. Increment to next available entry.
-      }
-    assert(irt[m] == ir[m]);
-    // 4. Step 3a made it such that At.ir[i] is now what we need except for
-    // i = 0. At.ir[0] was already set to 0 in step 1, so we're done.
 #endif
   }
   

@@ -49,13 +49,13 @@
 #include <complex>
 #include <assert.h>
 
-#include "SolverFactoryBDDC.h"
+#include "shylu_SolverFactoryBDDC.h"
 #include "Teuchos_ParameterList.hpp"  
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 
-#include "UtilBDDC.h"
-#include "enumsBDDC.h"
+#include "shylu_UtilBDDC.h"
+#include "shylu_enumsBDDC.h"
 
 // Author: Clark R. Dohrmann
 namespace bddc {

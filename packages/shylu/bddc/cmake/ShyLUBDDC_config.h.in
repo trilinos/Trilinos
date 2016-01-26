@@ -13,3 +13,4 @@
 
 #cmakedefine HAVE_SHYLUBDDC_PARDISO_MKL
 
+#cmakedefine HAVE_SHYLUBDDC_HTS

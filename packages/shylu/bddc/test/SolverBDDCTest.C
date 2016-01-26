@@ -43,10 +43,10 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 #include "ProblemMakerBDDC.h"
-#include "PreconditionerBDDC.h"
-#include "SolverGCR.h"
-#include "UtilBDDC.h"
-#include "enumsBDDC.h"
+#include "shylu_PreconditionerBDDC.h"
+#include "shylu_SolverGCR.h"
+#include "shylu_UtilBDDC.h"
+#include "shylu_enumsBDDC.h"
 #if defined(_OPENMP)
 
 #include <omp.h>
@@ -373,14 +373,14 @@ int setParameters(double lengthDir1,
     Parameters->set("Solver", "NoPivotT6");
     Parameters->set("Use Threads For Factorization", true);
     Parameters->set("Use Threads For Triangular Solves", true);
-#if defined(USE_GTS)
+#if defined(HAVE_SHYLUBDDC_HTS)
     Parameters->set("Use GTS For Solves", true); 
 #else
     std::cout << "GTS solver not available in this build, using NoPivot\n";
 #endif
     break;
   case 3: // MKL/Pardiso solver
-#if defined(USE_INTEL_PARDISO)
+#if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
     Parameters->set("Solver", "Pardiso");
 #else
     std::cout << "Pardiso solver not available in this build, using Esmond\n";

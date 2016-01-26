@@ -83,6 +83,11 @@ namespace BaskerNS
     BASKER_INLINE
     int fill();
 
+    BASKER_INLINE
+    void init_inc_lvl();
+
+
+
     //****Deprecated*******
     BASKER_INLINE
     void malloc_perm(Int n);
@@ -137,6 +142,7 @@ namespace BaskerNS
    
    
     //#ifdef BASKER_INC_LVL
+    BASKER_BOOL   inc_lvl_flg;
     INT_1DARRAY   inc_lvl;
     //#endif
 

@@ -48,7 +48,7 @@
 #include <math.h>
 #include <vector>
 #include <mpi.h>
-#include "enumsBDDC.h"
+#include "shylu_enumsBDDC.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"  

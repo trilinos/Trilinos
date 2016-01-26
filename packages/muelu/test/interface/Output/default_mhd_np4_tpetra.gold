@@ -1,14 +1,18 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
- schwarz: overlap level = 1   [unused]
- schwarz: combine mode = Zero   [unused]
- schwarz: use reordering = 0   [unused]
- subdomain solver name = RILUK   [unused]
- subdomain solver parameters ->
-  fact: iluk level-of-fill = 0   [unused]
-  fact: absolute threshold = 0   [unused]
-  fact: relative threshold = 1   [unused]
-  fact: relax value = 0   [unused]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  schwarz: overlap level = 1   [unused]
+  schwarz: combine mode = Zero   [unused]
+  schwarz: use reordering = 0   [unused]
+  subdomain solver name = RILUK   [unused]
+  subdomain solver parameters ->
+   fact: iluk level-of-fill = 0   [unused]
+   fact: absolute threshold = 0   [unused]
+   fact: relative threshold = 1   [unused]
+   fact: relax value = 0   [unused]
 
 Level 1
  Build (MueLu::TentativePFactory)
@@ -53,15 +57,19 @@ Level 1
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
- schwarz: overlap level = 1   [unused]
- schwarz: combine mode = Zero   [unused]
- schwarz: use reordering = 0   [unused]
- subdomain solver name = RILUK   [unused]
- subdomain solver parameters ->
-  fact: iluk level-of-fill = 0   [unused]
-  fact: absolute threshold = 0   [unused]
-  fact: relative threshold = 1   [unused]
-  fact: relax value = 0   [unused]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  schwarz: overlap level = 1   [unused]
+  schwarz: combine mode = Zero   [unused]
+  schwarz: use reordering = 0   [unused]
+  subdomain solver name = RILUK   [unused]
+  subdomain solver parameters ->
+   fact: iluk level-of-fill = 0   [unused]
+   fact: absolute threshold = 0   [unused]
+   fact: relative threshold = 1   [unused]
+   fact: relax value = 0   [unused]
 
 Level 2
  Build (MueLu::TentativePFactory)
@@ -106,6 +114,9 @@ Level 2
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother ->
   [empty list]
 
