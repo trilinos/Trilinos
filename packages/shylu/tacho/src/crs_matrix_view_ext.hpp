@@ -19,7 +19,8 @@ namespace Tacho {
   class DenseMatrixView;
 
   template<typename CrsMatViewType,
-           typename DenseMatViewType>
+           typename DenseFlatViewType,
+           typename DenseHierViewType>
   class CrsMatrixViewExt : public CrsMatViewType {
   public:
     typedef typename CrsMatViewType::space_type    space_type;
@@ -29,32 +30,35 @@ namespace Tacho {
     typedef typename CrsMatViewType::ordinal_type  ordinal_type;
     typedef typename CrsMatViewType::size_type     size_type;
 
-    typedef typename DenseMatViewType::mat_base_type dense_mat_base_type;
-    typedef DenseMatViewType dense_mat_view_type;
+    typedef          DenseFlatViewType                dense_flat_view_type;
+    typedef typename DenseFlatViewType::mat_base_type dense_flat_base_type;
+
+    typedef          DenseHierViewType                dense_hier_view_type;
+    typedef typename DenseHierViewType::mat_base_type dense_hier_base_type;
 
   private:
-    dense_mat_base_type _A;
+    dense_flat_base_type _A;
 
   public:
-    bool hasDenseMatBase() const {
+    bool hasDenseFlatBase() const {
       return (_A.NumRows() && _A.NumCols());
     }
 
-    bool isDenseMatBaseValid() const {
+    bool isDenseFlatBaseValid() const {
       return (_A.NumRows() >= this->NumRows() && _A.NumCols() >= this->NumCols());
     }
 
-    void createDenseMatBase() {
-      if (hasDenseMatBase() && isDenseMatBaseValid()) ;
+    void createDenseFlatBase() {
+      if (hasDenseFlatBase() && isDenseFlatBaseValid()) ;
       else
-        _A = dense_mat_base_type("NestedDenseBase", this->NumRows(), this->NumCols());
+        _A = dense_flat_base_type("NestedDenseFlatBase", this->NumRows(), this->NumCols());
     }
 
-    dense_mat_base_type* DenseBaseObject() { return &_A; }
+    dense_flat_base_type* DenseFlatBaseObject() { return &_A; }
 
-    int copyToDenseMatBase() {
+    int copyToDenseFlatBase() {
       int r_val = 0;
-      if (hasDenseMatBase() && isDenseMatBaseValid())  {
+      if (hasDenseFlatBase() && isDenseFlatBaseValid())  {
         const ordinal_type nrows = this->NumRows();
         for (ordinal_type i=0;i<nrows;++i) {
           auto row = this->RowView(i);
@@ -70,7 +74,7 @@ namespace Tacho {
 
     int copyToCrsMatrixView() {
       int r_val = 0;
-      if (hasDenseMatBase() && isDenseMatBaseValid())  {
+      if (hasDenseFlatBase() && isDenseFlatBaseValid())  {
         const ordinal_type nrows = this->NumRows();
         for (ordinal_type i=0;i<nrows;++i) {
           auto row = this->RowView(i);
@@ -119,10 +123,10 @@ namespace Kokkos {
     //
     //  This work-around is necessary until a TBD design refactorization of Kokkos::View.
 
-    template< class ExecSpace , typename T1, typename T2 >
-    struct ViewDefaultConstruct< ExecSpace , Tacho::CrsMatrixViewExt<T1,T2> , true >
+    template< class ExecSpace , typename T1, typename T2, typename T3 >
+    struct ViewDefaultConstruct< ExecSpace , Tacho::CrsMatrixViewExt<T1,T2,T3> , true >
     {
-      typedef Tacho::CrsMatrixViewExt<T1,T2> type ;
+      typedef Tacho::CrsMatrixViewExt<T1,T2,T3> type ;
       type * const m_ptr ;
 
       KOKKOS_FORCEINLINE_FUNCTION
