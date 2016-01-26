@@ -616,7 +616,7 @@ int main(int argc, char* argv[]) {
 
     std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
 
-    switch (clp.parse(argc, argv)) {
+    switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
