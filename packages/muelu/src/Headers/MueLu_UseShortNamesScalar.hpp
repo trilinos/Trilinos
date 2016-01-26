@@ -2,9 +2,6 @@
 
 #include <Xpetra_UseShortNamesScalar.hpp>
 
-#ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
-typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;
-#endif
 #ifdef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> AggregationExportFactory;
 #endif
@@ -134,9 +131,6 @@ typedef MueLu::MergedBlockedMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #ifdef MUELU_MERGEDSMOOTHER_SHORT
 typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MergedSmoother;
 #endif
-#ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
-typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
-#endif
 #ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorTransferFactory;
 #endif
@@ -148,9 +142,6 @@ typedef MueLu::NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> N
 #endif
 #ifdef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 typedef MueLu::NullspacePresmoothFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspacePresmoothFactory;
-#endif
-#ifdef MUELU_PARAMETERLISTINTERPRETER_SHORT
-typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
 #endif
 #ifdef MUELU_PATTERNFACTORY_SHORT
 typedef MueLu::PatternFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> PatternFactory;
@@ -304,6 +295,15 @@ typedef MueLu::ZoltanInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> ZoltanInt
 #endif
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT
 typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
+#endif
+#ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
+typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;
+#endif
+#ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
+typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
+#endif
+#ifdef MUELU_PARAMETERLISTINTERPRETER_SHORT
+typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
 #endif
 #ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
 typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;
