@@ -616,7 +616,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       blockDiag_ = block_diag_type (); // clear it before reallocating
       blockDiag_ = block_diag_type ("Ifpack2::Relaxation::blockDiag_",
                                     lclNumMeshRows, blockSize, blockSize);
-      if (diagOffsets_.dimension_0 () < lclNumMeshRows) {
+      if (Teuchos::as<LO>(diagOffsets_.dimension_0 () ) < lclNumMeshRows) {
         typedef typename node_type::device_type DT;
         diagOffsets_ = Kokkos::View<size_t*, DT> (); // clear first to save mem
         diagOffsets_ = Kokkos::View<size_t*, DT> ("offsets", lclNumMeshRows);
