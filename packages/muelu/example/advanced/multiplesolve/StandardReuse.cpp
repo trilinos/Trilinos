@@ -235,8 +235,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName = ""; clp.setOption("xml",        &xmlFileName, "read parameters from a file");
-  int         numRebuilds = 0;  clp.setOption("rebuild",    &numRebuilds, "#times to rebuild hierarchy");
+  std::string xmlFileName = "";     clp.setOption("xml",                &xmlFileName, "read parameters from a file");
+  int         numRebuilds = 0;      clp.setOption("rebuild",            &numRebuilds, "#times to rebuild hierarchy");
+  bool        useFilter   = true;   clp.setOption("filter", "nofilter", &useFilter, "Print out only Setup times");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -405,11 +406,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   }
 
   {
-    const bool alwaysWriteLocal = false;
+    const bool alwaysWriteLocal = true;
     const bool writeGlobalStats = true;
     const bool writeZeroTimers  = false;
     const bool ignoreZeroTimers = true;
-    const std::string filter    = "Setup #";
+    const std::string filter    = (useFilter ? "Setup #" : "");
     TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
                            writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
   }
