@@ -152,7 +152,7 @@ namespace BaskerNS
 
     //#ifdef BASKER_DEBUG_ORDER_BTF
     printf("BTF nblks returned: %d \n", nblks);
-    BASKER_ASSERT(nblks>1, "NOT ENOUGH BTF BLOCKS");
+    //BASKER_ASSERT(nblks>1, "NOT ENOUGH BTF BLOCKS");
     //#endif
 
     #ifdef BASKER_DEBUG_ORDER_BTF

@@ -145,11 +145,16 @@ namespace Tacho {
     }
     cout << "TriSolvePerformance:: reorder the matrix and partition right hand side::time = " << t_reorder << endl;
 
+    const size_t max_concurrency = 16384;
+    cout << "TriSolvePerformance:: max concurrency = " << max_concurrency << endl;
+
+    const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+    cout << "TriSolvePerformance:: max task size   = " << max_task_size << endl;
+
     if (!skip_serial) {
       __INIT_DENSE_MATRIX__(BB, 1.0);
-      typename TaskFactoryType::policy_type policy(HU.NumNonZeros(),
-                                                   // 3 member variables and policy reference
-                                                   3*sizeof(CrsTaskViewType)+8,
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
                                                    max_task_dependence, 
                                                    1);
 
@@ -206,9 +211,8 @@ namespace Tacho {
     
     {
       __INIT_DENSE_MATRIX__(BB, 1.0);
-      typename TaskFactoryType::policy_type policy(HU.NumNonZeros(),
-                                                   // 3 member variables and policy reference
-                                                   3*sizeof(CrsTaskViewType)+8,
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
                                                    max_task_dependence, 
                                                    team_size);
 

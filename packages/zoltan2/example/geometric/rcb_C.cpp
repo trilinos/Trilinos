@@ -387,10 +387,17 @@ int main(int argc, char *argv[])
   if (rank == 0)
     std::cout << "Request that " << nprocs << " parts be empty." <<std::endl;
 
+  // create metric object (also usually created by a problem)
+
+  metricObject1 = rcp(new quality_t(env1, problem1->getComm(), bia1,
+				    &problem1->getSolution(), false));
+
   // Check the solution.
 
-  if (rank == 0)
+  if (rank == 0) {
+    metricObject1->printMetrics(cout);
     problem1->printMetrics(cout);
+  }
 
   if (rank == 0){
     scalar_t imb = problem1->getWeightImbalance();
