@@ -51,6 +51,25 @@ namespace Tacho {
       policy.add_dependence(after, before);
     }
 
+    template<typename TaskFunctorType>
+    static 
+    void addDependence(policy_type &policy, 
+                       TaskFunctorType *after, const future_type &before) {
+      policy.add_dependence(after, before);
+    }
+
+    template<typename TaskFunctorType>
+    static 
+    void clearDependence(policy_type &policy, TaskFunctorType *func) {
+      policy.clear_dependence(func);
+    }
+
+    template<typename TaskFunctorType>
+    static
+    void respawn(policy_type &policy, TaskFunctorType *func) {
+      policy.respawn(func);
+    }
+
     static
     void setPolicy(policy_type *policy) {
       _policy = policy;

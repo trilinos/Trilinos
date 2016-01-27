@@ -41,10 +41,10 @@ namespace Tacho {
       Teuchos::BLAS<ordinal_type,value_type>::GEMM(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,
                                                    m, n, k,
                                                    alpha,
-                                                   A.ValuePtr(), A.BaseObject->ColStride(),
-                                                   B.ValuePtr(), B.BaseObject->ColStride(),
+                                                   A.ValuePtr(), A.BaseObject()->ColStride(),
+                                                   B.ValuePtr(), B.BaseObject()->ColStride(),
                                                    beta,
-                                                   C.ValuePtr(), C.BaseObject->ColStride());
+                                                   C.ValuePtr(), C.BaseObject()->ColStride());
     }
     return 0;
   }

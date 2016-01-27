@@ -39,9 +39,9 @@ namespace Tacho {
       Teuchos::BLAS<ordinal_type,value_type>::HERK(Teuchos::UPPER_TRI, Teuchos::CONJ_TRANS,
                                                    n, k,
                                                    alpha,
-                                                   A.ValuePtr(), A.BaseObject->ColStride(),
+                                                   A.ValuePtr(), A.BaseObject()->ColStride(),
                                                    beta,
-                                                   C.ValuePtr(), C.BaseObject->ColStride());
+                                                   C.ValuePtr(), C.BaseObject()->ColStride());
     }
     return 0;
   }
