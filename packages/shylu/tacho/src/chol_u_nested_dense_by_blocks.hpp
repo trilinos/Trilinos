@@ -29,16 +29,15 @@ namespace Tacho {
                       const typename ExecViewType::policy_type::member_type &member,
                       ExecViewType &A, 
                       bool &respawn,
-                      typename ExecViewType::policy_type::future_type &dependence) {
-      typedef typename ExecViewType::dense_mat_view_type dense_mat_view_type;
-      typedef typename ExecViewType::policy_type::future_type future_type;
+                      typename ExecViewType::future_type &dependence) {
+      typedef typename ExecViewType::dense_hier_view_type dense_hier_view_type;
 
       int r_val = 0;
       if (member.team_rank() == 0) {
         if (!respawn) {
-          if (A.copyToDenseMatBase() == 0) {
+          if (A.copyToDenseFlatBase() == 0) {
             auto H = dense_hier_view_type(A.DenseHierBaseObject());
-            r_val = Chol<Uplo::Upper,CtrlDetail(ControlType,AlgoChol::NestedDenseBlock,ArgVariant,CholDenseByBlocks)>
+            r_val = Chol<Uplo::Upper,CtrlDetail(ControlType,AlgoChol::NestedDenseByBlocks,ArgVariant,CholDenseByBlocks)>
               ::invoke(policy, member, H);
             respawn = true;
             dependence = H.Value(H.NumRows()-1, H.NumCols()-1).Future();
@@ -83,27 +82,27 @@ namespace Tacho {
 
       // task execution
       void apply(value_type &r_val) {
-        future_type dependence;
+        typename ExecViewType::future_type dependence;
         r_val = Chol::invoke(_policy, _policy.member_single(), 
                              _A, 
                              _respawn, dependence);
         if (_respawn) {
-          task_factory_type::clearDependence(this);
-          task_factory_type::addDependence(this, dependence);
-          task_factory_type::respawn(this);
+          task_factory_type::clearDependence(_policy, this);
+          task_factory_type::addDependence(_policy, this, dependence);
+          task_factory_type::respawn(_policy, this);
         } 
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        future_type dependence;
+        typename ExecViewType::future_type dependence;
         r_val = Chol::invoke(_policy, member,
                              _A, 
                              _respawn, dependence);
         if (_respawn) {
-          task_factory_type::clearDependence(this);
-          task_factory_type::addDependence(this, dependence);
-          task_factory_type::respawn(this);
+          task_factory_type::clearDependence(_policy, this);
+          task_factory_type::addDependence(_policy, this, dependence);
+          task_factory_type::respawn(_policy, this);
         } 
       }
 

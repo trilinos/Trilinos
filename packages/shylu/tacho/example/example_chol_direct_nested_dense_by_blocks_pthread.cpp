@@ -32,7 +32,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
   int max_concurrency = 1024;
-  clp.setOption("max-currency", &max_concurrency, "Max number of concurrent tasks");
+  clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
   int max_task_dependence = 3;
   clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
@@ -62,7 +62,7 @@ int main (int argc, char *argv[]) {
   int mb = 256;
   clp.setOption("mb", &mb, "Row (or column) block size for nested dense hierarchical matrix");
 
-  int thres_hier = 0;
+  int thres_hier = 2;
   clp.setOption("thres-hier", &thres_hier, "Threshold for constructing hierarchical matrix");
 
   int nrhs = 1;

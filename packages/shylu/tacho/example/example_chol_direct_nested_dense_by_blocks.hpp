@@ -235,7 +235,7 @@ namespace Tacho {
         cout << "CholDirectNestedDenseByBlocks:: ByBlocks factorize the matrix:: team_size = " << team_size << endl;
         timer.reset();    
         auto future = TaskFactoryType::Policy().create_team
-          (Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>
+          (Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Four>
            ::TaskFunctor<CrsHierTaskViewType>(TU), 0);
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());

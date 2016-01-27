@@ -31,15 +31,17 @@ namespace Tacho {
     typedef typename DenseExecViewTypeA::value_type        value_type;
 
     if (member.team_rank() == 0) {
+      Teuchos::BLAS<ordinal_type,value_type> blas;
+
       const ordinal_type m = A.NumRows();
       const ordinal_type n = B.NumCols();
 
-      Teuchos::BLAS<ordinal_type,value_type>::TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::CONJ_TRANS,
-                                                   (diagA == Diag::Unit ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG),
-                                                   m, n, 
-                                                   alpha,
-                                                   A.ValuePtr(), A.BaseObject()->ColStride(),
-                                                   B.ValuePtr(), B.BaseObject()->ColStride());
+      blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::CONJ_TRANS,
+                (diagA == Diag::Unit ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG),
+                m, n, 
+                alpha,
+                A.ValuePtr(), A.BaseObject()->ColStride(),
+                B.ValuePtr(), B.BaseObject()->ColStride());
     }
     return 0;
   }
