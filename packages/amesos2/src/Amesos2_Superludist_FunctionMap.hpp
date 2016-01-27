@@ -398,7 +398,7 @@ namespace Amesos2 {
   };
 
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX)  && !defined(__clang__)
   /* The specializations for Teuchos::as<> for SLUD::complex and
    * SLUD::doublecomplex are provided in Amesos2_Superlu_Type.hpp
    */
