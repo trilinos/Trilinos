@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/trilinos/Trilinos.png?label=ready&title=Ready)](https://waffle.io/trilinos/Trilinos)
 ![Trilinos](http://trilinos.sandia.gov/common/logo_trilinos_moon.png)
 
 [Website](http://trilinos.org/) |
