@@ -39,7 +39,11 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
 
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
 #include "KokkosExp_View_Fad.hpp"
+
+#else
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -1033,6 +1037,8 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+#endif
 
 #endif
 

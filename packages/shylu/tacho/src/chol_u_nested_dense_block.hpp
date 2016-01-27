@@ -28,13 +28,13 @@ namespace Tacho {
     static int invoke(typename ExecViewType::policy_type &policy,
                       const typename ExecViewType::policy_type::member_type &member,
                       ExecViewType &A) {
-      typedef typename ExecViewType::dense_mat_view_type dense_mat_view_type;
+      typedef typename ExecViewType::dense_flat_view_type dense_flat_view_type;
 
       int r_val = 0;
       if (member.team_rank() == 0) {
         // need size threshold here or when the dense block is created
-        if (A.copyToDenseMatBase() == 0) {
-          auto D = dense_mat_view_type(A.DenseBaseObject());
+        if (A.copyToDenseFlatBase() == 0) {
+          auto D = dense_flat_view_type(A.DenseFlatBaseObject());
           r_val = Chol<Uplo::Upper,CtrlDetail(ControlType,AlgoChol::NestedDenseBlock,ArgVariant,CholDense)>
             ::invoke(policy, member, D);
           A.copyToCrsMatrixView();
