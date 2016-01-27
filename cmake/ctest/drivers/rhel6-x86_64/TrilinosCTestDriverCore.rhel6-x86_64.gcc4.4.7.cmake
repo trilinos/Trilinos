@@ -53,46 +53,85 @@
 # ************************************************************************
 # @HEADER
 
-
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.shiller.generic.cmake")
-
-#
-# Set the options specific to this build case
-#
-
-SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_RELEASE_DEV_DownStream_ETI_SERIAL-$ENV{JENKINS_DO_SERIAL}_OPENMP-$ENV{JENKINS_DO_OPENMP}_PTHREAD-$ENV{JENKINS_DO_PTHREAD}_CUDA-$ENV{JENKINS_DO_CUDA}_COMPLEX-$ENV{JENKINS_DO_COMPLEX})
-SET(CTEST_PARALLEL_LEVEL 1)
-SET(CTEST_TEST_TYPE $ENV{JENKINS_JOB_TYPE})
-SET(CTEST_TEST_TIMEOUT 900)
-
-SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2 Xpetra Panzer Intrepid STK Seacas Anasazi Phalanx Sacado Stokhos Shylu Stratimikos Thyra)
-
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTPL_ENABLE_SuperLU=OFF"
-
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTeuchos_ENABLE_COMPLEX:BOOL=$ENV{JENKINS_DO_COMPLEX}"
-  "-DTrilinos_ENABLE_OpenMP:BOOL=$ENV{JENKINS_DO_OPENMP}"
-  "-DTPL_ENABLE_HWLOC:STRING=OFF"
-  "-DTPL_ENABLE_CUDA:STRING=$ENV{JENKINS_DO_CUDA}"
   
-  "-DKokkos_ENABLE_Pthreadi:BOOL=$ENV{JENKINS_DO_PTHREAD}"
-  "-DKokkos_ENABLE_Cuda_UVM:BOOL=$ENV{JENKINS_DO_CUDA}"
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
-  "-DTpetra_INST_SERIAL:BOOL=$ENV{JENKINS_DO_SERIAL}"
-  "-DTpetra_INST_OPENMP:BOOL=$ENV{JENKINS_DO_OPENMP}"
-  "-DTpetra_INST_PTHREAD:BOOL=$ENV{JENKINS_DO_PTHREAD}"
-  "-DTpetra_INST_CUDA:BOOL=$ENV{JENKINS_DO_CUDA}"
-  "-D Tpetra_INST_COMPLEX_DOUBLE:BOOL=$ENV{JENKINS_DO_COMPLEX}"
-  "-D MueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON"
-
-)
-
-#"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"
 #
-# Set the rest of the system-specific options and run the dashboard build/test
+# Platform/compiler specific options for trilinos-test using gcc
 #
 
-TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
+MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+
+  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+
+  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+  
+  SET_DEFAULT( CTEST_BUILD_FLAGS "-j8 -i" )
+
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
+
+  SET( CTEST_COVERAGE_COMMAND /usr/bin/gcov )
+  SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
+
+  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
+
+  # Only turn on PyTrilinos for shared libraries
+  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota)
+  
+  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+    "-DCOVERAGE_COMMAND:FILEPATH=/usr/bin/gcov"
+    "-DMEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind"
+    "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
+    "-DTPL_ENABLE_Matio=OFF"
+    "-DTrilinos_ENABLE_CXX11=OFF"
+    "-DCMAKE_MAKE_PROGRAM=make"
+    "-DCMAKE_CXX_FLAGS='-O3 -fPIC'"
+    "-DCMAKE_C_FLAGS='-O3 -fPIC'"
+    )
+
+  IF (BUILD_TYPE STREQUAL "DEBUG")
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+      "-DTrilinos_ENABLE_DEBUG:BOOL=ON"
+      )
+  ENDIF()
+
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.4.7")
+  
+  IF (COMM_TYPE STREQUAL MPI)
+    SET(TPL_ENABLE_MPI ON)
+  
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+      "-DTPL_ENABLE_MPI:BOOL=ON"
+      "-DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc"
+      "-DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpic++"
+      "-DCMAKE_Fortran_COMPILER=/usr/lib64/openmpi/bin/mpif77"
+      "-DMPI_EXEC=/usr/lib64/openmpi/bin/mpiexec"
+      )
+#      "-DMPI_BASE_DIR:PATH=/home/trilinos/gcc4.7.2/openmpi-1.6.5"
+#      )
+
+    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
+        "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_trilinos-test_openmpi_1.2.7.txt ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
+  
+  ELSE()
+  
+#    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+#      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+#      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/g++"
+#      "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/gcc"
+#      "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/gfortran"
+#      )
+
+    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
+        "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_trilinos-test_gcc-4.1.2.txt ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
+  
+  ENDIF()
+
+  TRILINOS_CTEST_DRIVER()
+
+ENDMACRO()

@@ -679,14 +679,14 @@ AXPY (const CoefficientType& alpha,
   Impl::AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, rank>::run (alpha, x, y);
 }
 
-/// \brief y := x, where x and y are either rank 1 (vectors) or rank 2
-///   (matrices) with the same dimension(s).
+/// \brief Deep copy x into y, where x and y are either rank 1
+///   (vectors) or rank 2 (matrices) with the same dimension(s).
 ///
 /// \param x [in] The input vector / matrix.
 /// \param y [out] The output vector / matrix.
 ///
 /// We put the output argument last, because that's what the BLAS
-/// functions _XCOPY (replace _ with "S", "D", "C", or "Z") do.
+/// functions _COPY (replace _ with "S", "D", "C", or "Z") do.
 template<class ViewType1,
          class ViewType2,
          class LayoutType1 = typename ViewType1::array_layout,
@@ -706,8 +706,8 @@ void COPY (const ViewType1& x, const ViewType2& y) {
 ///   checking whether alpha == 0 and implementing BLAS rules in that
 ///   case).
 /// \param A [in] Small dense matrix (must have rank 2)
-/// \param x [in] Small dense vector input (must have rank 1 and at least as
-///   many rows as A has columns)
+/// \param x [in] Small dense vector input (must have rank 1 and at
+///   least as many rows as A has columns)
 /// \param y [in/out] Small dense vector output (must have rank 1 and
 ///   at least as many rows as A has rows)
 template<class VecType1,

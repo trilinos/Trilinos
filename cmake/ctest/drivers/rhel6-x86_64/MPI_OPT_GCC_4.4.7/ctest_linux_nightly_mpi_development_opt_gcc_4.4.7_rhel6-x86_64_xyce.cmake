@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.shiller.generic.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.linux.gcc-4.4.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,35 +62,25 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.shiller.generic.cmake
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_RELEASE_DEV_DownStream_ETI_SERIAL-$ENV{JENKINS_DO_SERIAL}_OPENMP-$ENV{JENKINS_DO_OPENMP}_PTHREAD-$ENV{JENKINS_DO_PTHREAD}_CUDA-$ENV{JENKINS_DO_CUDA}_COMPLEX-$ENV{JENKINS_DO_COMPLEX})
-SET(CTEST_PARALLEL_LEVEL 1)
-SET(CTEST_TEST_TYPE $ENV{JENKINS_JOB_TYPE})
-SET(CTEST_TEST_TIMEOUT 900)
+SET(BUILD_DIR_NAME MPI_OPT_DEV_XYCE)
+#SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2 Xpetra Panzer Intrepid STK Seacas Anasazi Phalanx Sacado Stokhos Shylu Stratimikos Thyra)
+#SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTPL_ENABLE_SuperLU=OFF"
+SET( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos Kokkos Gtest ThreadPool RTOp Shards Thyra Xpetra Galeri Pamgen ML SEACAS Anasazi Stratimikos FEI Intrepid STK MueLu)
+SET(Trilinos_PACKAGES NOX EpetraExt TrilinosCouplings Ifpack Isorropia AztecOO Belos Teuchos Amesos Sacado Zoltan Epetra Triutils)
 
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTeuchos_ENABLE_COMPLEX:BOOL=$ENV{JENKINS_DO_COMPLEX}"
-  "-DTrilinos_ENABLE_OpenMP:BOOL=$ENV{JENKINS_DO_OPENMP}"
-  "-DTPL_ENABLE_HWLOC:STRING=OFF"
-  "-DTPL_ENABLE_CUDA:STRING=$ENV{JENKINS_DO_CUDA}"
-  
-  "-DKokkos_ENABLE_Pthreadi:BOOL=$ENV{JENKINS_DO_PTHREAD}"
-  "-DKokkos_ENABLE_Cuda_UVM:BOOL=$ENV{JENKINS_DO_CUDA}"
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DEpetraExt_BUILD_BTF=ON"
+  "-DTeuchos_ENABLE_COMPLEX=ON"
+  "-DNOX_ENABLE_LOCA=ON"
+  "-DTPL_ENABLE_ParMETIS:BOOL=OFF"
+  "-DParMETIS_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.7.2/ParMETIS-4.0.3_32bit/lib"
+  "-DParMETIS_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.7.2/ParMETIS-4.0.3_32bit/include"
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF"
+  "-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF"
+  )
 
-  "-DTpetra_INST_SERIAL:BOOL=$ENV{JENKINS_DO_SERIAL}"
-  "-DTpetra_INST_OPENMP:BOOL=$ENV{JENKINS_DO_OPENMP}"
-  "-DTpetra_INST_PTHREAD:BOOL=$ENV{JENKINS_DO_PTHREAD}"
-  "-DTpetra_INST_CUDA:BOOL=$ENV{JENKINS_DO_CUDA}"
-  "-D Tpetra_INST_COMPLEX_DOUBLE:BOOL=$ENV{JENKINS_DO_COMPLEX}"
-  "-D MueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON"
-
-)
-
-#"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #

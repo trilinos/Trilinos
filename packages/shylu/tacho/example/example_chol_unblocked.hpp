@@ -72,9 +72,15 @@ namespace Tacho {
     }
     cout << "CholUnblocked:: import input file::time = " << t << endl;        
 
-    typename TaskFactoryType::policy_type policy(10, // unblocked version any number is okay
-                                                 // 3 member variables and policy reference
-                                                 3*sizeof(CrsTaskViewType)+8,
+    const size_t max_concurrency = 10;
+    cout << "CholUnblocked:: max concurrency = " << max_concurrency << endl;
+
+    const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+    cout << "CholUnblocked:: max task size   = " << max_task_size << endl;
+
+
+    typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                 max_task_size,
                                                  max_task_dependence, 
                                                  team_size);
 

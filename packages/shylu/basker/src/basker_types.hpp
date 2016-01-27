@@ -52,14 +52,17 @@ enum BASKER_ERROR_CODE
 #else
 //#define ASSERT(a)             BASKER_NO_OP
 #include <assert.h>
-#define   ASSERT(a)           assert(a)
+#define ASSERT(a)           assert(a)
 #endif
 
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
-      {printf("\n\n%s\n\n", s);} \
+      {printf("\n\n%s\n\n", s);  \
+    exit(EXIT_FAILURE);   \
+}				 \
     ASSERT(a);                   \
+    assert(!a);  \
   } 
 
 

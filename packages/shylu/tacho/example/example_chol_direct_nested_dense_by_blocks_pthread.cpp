@@ -13,14 +13,14 @@ typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
 
-#include "example_chol_performance_single.hpp"
+#include "example_chol_direct_nested_dense_by_blocks.hpp"
 
 using namespace Tacho;
 
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of Chol algorithms on Kokkos::Threads execution space.\n");
+  clp.setDocString("This example program measure the performance of Chol direct factorization (nested dense block with LAPACK and BLAS) on Kokkos::Threads execution space.\n");
 
   int nthreads = 0;
   clp.setOption("nthreads", &nthreads, "Number of threads");
@@ -31,14 +31,14 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
-  int max_task_dependence = 10;
+  int max_concurrency = 1024;
+  clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
+
+  int max_task_dependence = 3;
   clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
-
-  int fill_level = 0;
-  clp.setOption("fill-level", &fill_level, "Fill level");
 
   int league_size = 1;
   clp.setOption("league-size", &league_size, "League size");
@@ -47,32 +47,38 @@ int main (int argc, char *argv[]) {
   clp.setOption("enable-team-interface", "disable-team-interface",
                 &team_interface, "Flag for team interface");
 
-  bool vtune_symbolic = false;
-  clp.setOption("enable-vtune-symbolic", "disable-vtune-symbolic", &vtune_symbolic, "Flag for vtune symbolic");
-
-  bool vtune_serial = false;
-  clp.setOption("enable-vtune-serial", "disable-vtune-serial", &vtune_serial, "Flag for vtune serial");
-
-  bool vtune_task = false;
-  clp.setOption("enable-vtune-task", "disable-vtune-task", &vtune_task, "Flag for vtune task");
-
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
-  int treecut = 15;
-  clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
-
-  int minblksize = 0;
-  clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
-
   int prunecut = 0;
-  clp.setOption("prunecut", &minblksize, "Level to prune tree from bottom");
+  clp.setOption("prunecut", &prunecut, "Leve to prune tree from bottom");
 
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
+
+  int mb = 256;
+  clp.setOption("mb", &mb, "Row (or column) block size for nested dense hierarchical matrix");
+
+  int thres_hier = 2;
+  clp.setOption("thres-hier", &thres_hier, "Threshold for constructing hierarchical matrix");
+
+  int nrhs = 1;
+  clp.setOption("nrhs", &nrhs, "Numer of right hand side");
+
+  int nb = 1;
+  clp.setOption("nb", &nrhs, "Column block size for multiple right hand side");
+
+  bool serial = false;
+  clp.setOption("enable-serial", "disable-serial", &serial, "Flag for serial solve");
+
+  bool solve = false;
+  clp.setOption("enable-solve", "disable-solve", &solve, "Flag for trisolve");
+
+  bool check = false;
+  clp.setOption("enable-check", "disable-check", &check, "Flag for check solution");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -87,21 +93,21 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
 
-    r_val = exampleCholPerformanceSingle
+    r_val = exampleCholDirectNestedDenseByBlocks
       <value_type,ordinal_type,size_type,exec_space,void>
       (file_input,
-       treecut,
-       minblksize,
        prunecut,
        seed,
-       nthreads,
-       max_task_dependence, team_size,
-       fill_level, league_size,
+       mb,
+       thres_hier,
+       nrhs,
+       nb,
+       nthreads, max_concurrency, max_task_dependence, team_size,
+       league_size,
        team_interface,
-       (nthreads != 1),
-       vtune_symbolic,
-       vtune_serial,
-       vtune_task,
+       serial,
+       solve,
+       check,
        verbose);
 
     exec_space::finalize();

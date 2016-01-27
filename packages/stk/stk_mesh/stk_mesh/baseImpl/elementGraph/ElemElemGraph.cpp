@@ -392,36 +392,45 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& element_s
     {
         connect_remote_element_to_existing_graph( receivedSharedEdge);
     }
-    //this->write_graph()
+//    this->write_graph();
 }
 
 void ElemElemGraph::write_graph() const
 {
     std::ostringstream os;
     os << "Graph for processor " << m_bulk_data.parallel_rank() << std::endl;
-    for(size_t i=0;i<m_graph.get_num_elements_in_graph();++i)
+    for(size_t localId=0;localId<m_graph.get_num_elements_in_graph();++localId)
     {
-        stk::mesh::Entity e=m_local_id_to_element_entity[i];
+        stk::mesh::Entity e=m_local_id_to_element_entity[localId];
         os << "Element " << m_bulk_data.identifier(e) << " has connections: ";
-        size_t numConnected = m_graph.get_num_edges_for_element(i);
-        for(size_t j=0;j<numConnected;++j)
-        {
-            const GraphEdge & graphEdge = m_graph.get_edge_for_element(i, j);
-            stk::mesh::EntityId other;
-            if(graphEdge.elem2 < 0)
-            {
-                other = -1*graphEdge.elem2;
-            }
-            else
-            {
-                other = m_bulk_data.identifier(m_local_id_to_element_entity[graphEdge.elem2]);
-            }
-            os << "(" << m_bulk_data.identifier(e) << ", " << graphEdge.side1 << ")<->";
-            os << "(" << other << ", " << graphEdge.side2 << ") ";
-        }
+        for(const stk::mesh::GraphEdge &graphEdge : m_graph.get_edges_for_element(localId))
+            write_graph_edge(os, graphEdge, e);
+        auto iter = m_coincidentGraph.find(localId);
+        if(iter != m_coincidentGraph.end())
+            for(const stk::mesh::GraphEdge &graphEdge : iter->second)
+                write_graph_edge(os, graphEdge, e);
         os << std::endl;
     }
     std::cerr << os.str();
+}
+
+void ElemElemGraph::write_graph_edge(std::ostringstream& os,
+                                     const stk::mesh::GraphEdge& graphEdge,
+                                     stk::mesh::Entity e) const
+{
+    stk::mesh::EntityId other;
+    stk::mesh::EntityId chosenSideId = 0;
+    if(graphEdge.elem2 < 0)
+    {
+        other = -1 * graphEdge.elem2;
+        chosenSideId = m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge).m_chosen_side_id;
+    }
+    else
+    {
+        other = m_bulk_data.identifier(m_local_id_to_element_entity[graphEdge.elem2]);
+    }
+    os << "(" << m_bulk_data.identifier(e) << ", " << graphEdge.side1 << ")<->";
+    os << "(" << other << ", " << graphEdge.side2 << ")[" << chosenSideId << "] ";
 }
 
 size_t ElemElemGraph::pack_shared_side_nodes_of_elements(stk::CommSparse &comm, impl::ElemSideToProcAndFaceId& elements_to_communicate)

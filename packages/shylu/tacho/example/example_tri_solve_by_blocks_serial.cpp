@@ -54,7 +54,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleTriSolveByBlocks
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, nrhs, nb, max_task_dependence, team_size, verbose);
+      (file_input, nrhs, nb, 1, max_task_dependence, team_size, verbose);
     
     Kokkos::finalize();
   }

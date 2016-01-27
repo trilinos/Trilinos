@@ -170,8 +170,6 @@ namespace Tacho {
 
     // use an external BLAS library
     static const int ExternalBlas = 2021;
-
-    static const int DenseMatrixByBlocks = 2031;
   };
 
   class AlgoTrsm : public AlgoGemm {
@@ -185,6 +183,9 @@ namespace Tacho {
     static const int ForTriSolveBlockedVar1 = AlgoGemm::ForTriSolveBlocked;  
     // data parallel for single rhs
     static const int ForTriSolveBlockedVar2 = 2012;
+
+    // use an external BLAS library
+    static const int ExternalBlas = 2021;
   };
 
   typedef AlgoGemm AlgoHerk;
