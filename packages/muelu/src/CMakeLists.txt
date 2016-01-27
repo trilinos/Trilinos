@@ -104,8 +104,8 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
   SET(MueLu_ETI_EpetraGuards "")
   SET(MueLu_ETI_EpetraGuards_END "")
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
-	# both Epetra and Tpetra are enabled. The Epetra instantiation needs to be guarded
-	SET(MueLu_ETI_EpetraGuards "#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))")
+  # both Epetra and Tpetra are enabled. The Epetra instantiation needs to be guarded
+  SET(MueLu_ETI_EpetraGuards "#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))")
     SET(MueLu_ETI_EpetraGuards_END "#endif")
   ENDIF()
         
@@ -154,31 +154,31 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
     # If Tpetra is enabled create the cpp file for all combinations of template parameters
     IF (${PACKAGE_NAME}_ENABLE_Tpetra)
       FOREACH(NT ${MueLu_ETI_NODES})
-	    TPETRA_MANGLE_TEMPLATE_PARAMETER(NT_MANGLED "${NT}")
-	    TPETRA_NODE_MACRO_NAME(NT_MACRO_NAME "${NT}")
-	    FOREACH(GO ${MueLu_ETI_GORDS})
-	      TPETRA_MANGLE_TEMPLATE_PARAMETER(GO_MANGLED "${GO}")
-	      TPETRA_SLG_MACRO_NAME(GO_MACRO_NAME "${GO}")
-	      FOREACH(LO ${MueLu_ETI_LORDS})
-	        TPETRA_MANGLE_TEMPLATE_PARAMETER(LO_MANGLED "${LO}")
-	        TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
-	        
-	        IF(${SKIP_SCALAR_INSTANTIATION})
-	          CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
-	          SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)  	        
-	        ELSE()
-    	      FOREACH(SC ${MueLu_ETI_SCALARS})
-		        TPETRA_MANGLE_TEMPLATE_PARAMETER(SC_MANGLED "${SC}")
-		        TPETRA_SLG_MACRO_NAME(SC_MACRO_NAME "${SC}")
-		        TPETRA_SC_MACRO_EXPR(SC_MACRO_EXPR "${SC}" "${GO}" "${SC_MACRO_NAME}")
-		
-		        CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_SC_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
-		        SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)   
-	          ENDFOREACH() # SC
-	        ENDIF() # skip loop over SC
-	      ENDFOREACH() # LO
-	    ENDFOREACH() # GO
-	  ENDFOREACH() # NT
+      TPETRA_MANGLE_TEMPLATE_PARAMETER(NT_MANGLED "${NT}")
+      TPETRA_NODE_MACRO_NAME(NT_MACRO_NAME "${NT}")
+      FOREACH(GO ${MueLu_ETI_GORDS})
+        TPETRA_MANGLE_TEMPLATE_PARAMETER(GO_MANGLED "${GO}")
+        TPETRA_SLG_MACRO_NAME(GO_MACRO_NAME "${GO}")
+        FOREACH(LO ${MueLu_ETI_LORDS})
+          TPETRA_MANGLE_TEMPLATE_PARAMETER(LO_MANGLED "${LO}")
+          TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
+          
+          IF(${SKIP_SCALAR_INSTANTIATION})
+            CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
+            SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)  	        
+          ELSE()
+            FOREACH(SC ${MueLu_ETI_SCALARS})
+            TPETRA_MANGLE_TEMPLATE_PARAMETER(SC_MANGLED "${SC}")
+            TPETRA_SLG_MACRO_NAME(SC_MACRO_NAME "${SC}")
+            TPETRA_SC_MACRO_EXPR(SC_MACRO_EXPR "${SC}" "${GO}" "${SC_MACRO_NAME}")
+    
+            CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_SC_LO_GO_NO_Tpetra.tmpl" ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)
+          SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_${SC_MACRO_NAME}_${LO_MACRO_NAME}_${GO_MACRO_NAME}_${NT_MACRO_NAME}.cpp)   
+            ENDFOREACH() # SC
+          ENDIF() # skip loop over SC
+        ENDFOREACH() # LO
+      ENDFOREACH() # GO
+    ENDFOREACH() # NT
     
     ENDIF()
   ENDFOREACH()
