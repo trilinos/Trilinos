@@ -72,10 +72,31 @@ APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+#  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
+#  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+#  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
+#  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+ENDIF()
+
+##
+## only build ETI *.cpp files if ETI is enabled.
+##
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+
+  SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES )
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::ParameterListInterpreter)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::MLParameterListInterpreter)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FactoryFactory)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::AdaptiveSaMLParameterListInterpreter)
+
+  MUELU_PROCESS_ETI_TEMPLATE(
+    "../Utils/ExplicitInstantiation"
+    "${MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES}"
+    "ExplicitInstantiation/CLASS_FILE_NAME"
+    MueLuInterface_ETI_SC_LO_GO_NO_SRC
+    0)
+  LIST(APPEND SOURCES ${MueLuInterface_ETI_SC_LO_GO_NO_SRC})
+  
 ENDIF()
 
 #

@@ -66,7 +66,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManager.hpp"
-#include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_PermutationFactory.hpp"
 
 #include "MueLu_Exceptions.hpp"
