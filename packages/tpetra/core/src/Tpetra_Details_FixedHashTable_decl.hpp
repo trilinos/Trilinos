@@ -174,12 +174,61 @@ namespace { // (anonymous)
       (dst.dimension_0 () != src.dimension_0 (), std::invalid_argument,
        "copyOffsets: dst.dimension_0() = " << dst.dimension_0 ()
        << " != src.dimension_0() = " << src.dimension_0 () << ".");
-    typedef CopyOffsets<OutputViewType, InputViewType> functor_type;
-    bool noOverflow = false;
-    Kokkos::parallel_reduce (dst.dimension_0 (), functor_type (dst, src), noOverflow);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! noOverflow, std::runtime_error, "copyOffsets: One or more values in "
-       "src were too big (in the sense of integer overflow) to fit in dst.");
+
+    // FIXME (mfh 27 Jan 2016) The CopyOffsets functor currently
+    // requires that the output View's execution space be able to
+    // access the input View's memory space.  If the output View's
+    // execution space is Cuda, it cannot currently access host memory
+    // (that's the opposite direction from what UVM allows).  Thus, in
+    // that case, we just copy the offsets directly, without checking
+    // for overflow.
+
+    using Kokkos::Impl::VerifyExecutionCanAccessMemorySpace;
+    if (VerifyExecutionCanAccessMemorySpace<typename OutputViewType::execution_space,
+        typename InputViewType::memory_space>::value) {
+      typedef CopyOffsets<OutputViewType, InputViewType> functor_type;
+      bool noOverflow = false;
+      Kokkos::parallel_reduce (dst.dimension_0 (), functor_type (dst, src), noOverflow);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! noOverflow, std::runtime_error, "copyOffsets: One or more values in "
+         "src were too big (in the sense of integer overflow) to fit in dst.");
+    }
+    else {
+      // mfh 27 Jan 2016: The output View's execution space can't
+      // access the input View's memory space.  Thus, tell Kokkos to
+      // copy the input View's data into the output View's memory
+      // space _first_.  Note that the offset types might be
+      // different, so we shouldn't just call Kokkos::deep_copy
+      // directly between the input and output Views of offsets; that
+      // wouldn't compile.
+      //
+      // FIXME (mfh 27 Jan 2016) This double-copies if the offset
+      // types are the same, but at least it won't crash.  The optimal
+      // thing to do would be to specialize copyOffsets (the function,
+      // not the functor) for the case where the offset types are the
+      // same.
+      typedef Kokkos::View<typename InputViewType::non_const_value_type*,
+                           Kokkos::LayoutLeft,
+                           typename OutputViewType::device_type>
+        output_space_copy_type;
+      using Kokkos::ViewAllocateWithoutInitializing;
+      output_space_copy_type
+        outputSpaceCopy (ViewAllocateWithoutInitializing ("outputSpace"),
+                         src.dimension_0 ());
+      Kokkos::deep_copy (outputSpaceCopy, src);
+
+      // The output View's execution space can access
+      // outputSpaceCopy's data, so we can run the functor now.
+      typedef CopyOffsets<OutputViewType, output_space_copy_type> functor_type;
+      bool noOverflow = false;
+      Kokkos::parallel_reduce (dst.dimension_0 (),
+                               functor_type (dst, outputSpaceCopy),
+                               noOverflow);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! noOverflow, std::runtime_error, "copyOffsets: One or more values "
+         "in src were too big (in the sense of integer overflow) to fit in "
+         "dst.");
+    }
   }
 
 } // namespace (anonymous)
