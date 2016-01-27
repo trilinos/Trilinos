@@ -1,4 +1,3 @@
-[![Stories in Ready](https://badge.waffle.io/trilinos/Trilinos.png?label=ready&title=Ready)](https://waffle.io/trilinos/Trilinos)
 ![Trilinos](http://trilinos.sandia.gov/common/logo_trilinos_moon.png)
 
 [Website](http://trilinos.org/) |
@@ -6,6 +5,7 @@
 [Mailing List](https://trilinos.org/mailman/listinfo/trilinos-users) |
 [Packages](http://trilinos.org/packages/)
 
+[![Stories in Ready](https://badge.waffle.io/trilinos/Trilinos.png?label=ready&title=Ready)](https://waffle.io/trilinos/Trilinos)
 [![Coverity Scan
 Build](https://scan.coverity.com/projects/1680/badge.svg)](https://scan.coverity.com/projects/1680)
 
