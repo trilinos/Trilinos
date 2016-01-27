@@ -577,7 +577,7 @@ rankValue=1;
 intepidManaged=true;
 sizeValue=dim_0;
 containerMemory=new Scalar[sizeValue];
-this->initialize();
+//this->initialize();
 }
 
 template <class Scalar>
@@ -589,7 +589,7 @@ rankValue=2;
 intepidManaged=true;
 sizeValue=dim_0*dim_1;
 containerMemory=new Scalar[sizeValue];
-this->initialize();
+//this->initialize();
 }
 template <class Scalar>
 FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::OpenMP>::FieldContainer_Kokkos(index_type dim_0,index_type dim_1,index_type dim_2){
@@ -601,7 +601,7 @@ rankValue=3;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2;
 containerMemory=new Scalar[sizeValue];
-this->initialize();
+//this->initialize();
 }
 
 template <class Scalar>
@@ -615,7 +615,7 @@ rankValue=4;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3;
 containerMemory=new Scalar[sizeValue];
-this->initialize();
+//this->initialize();
 }
 
 template <class Scalar>
@@ -630,7 +630,7 @@ rankValue=5;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4;
 containerMemory=new Scalar[sizeValue];
-this->initialize();
+//this->initialize();
 }
 
 template <class Scalar>
@@ -646,7 +646,7 @@ rankValue=6;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5;
 containerMemory=new Scalar[sizeValue];
-this->initialize();
+//this->initialize();
 }
 
 template <class Scalar>
@@ -663,7 +663,7 @@ rankValue=7;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6;
 containerMemory=new Scalar[sizeValue];
-this->initialize();
+//this->initialize();
 }
 
 
@@ -682,7 +682,7 @@ rankValue=8;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6*dim_7;
 containerMemory=new Scalar[sizeValue];
-this->initialize();
+//this->initialize();
 }
 
 

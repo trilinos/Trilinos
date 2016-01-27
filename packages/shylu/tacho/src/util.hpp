@@ -139,18 +139,22 @@ namespace Tacho {
   class AlgoChol {
   public:
     // One side factorization on flat matrices
-    static const int Dummy             = 1000;
-    static const int Unblocked         = 1001;
-    static const int UnblockedOpt      = 1002;
-    static const int Blocked           = 1101; // testing only
+    static const int Dummy                  = 1000;
+    static const int Unblocked              = 1001;
+    static const int UnblockedOpt           = 1002;
+    static const int Blocked                = 1101; // testing only
 
-    static const int RightLookByBlocks = 1201; // backbone structure is right looking
-    static const int ByBlocks          = RightLookByBlocks;
+    static const int RightLookByBlocks      = 1201; // backbone structure is right looking
+    static const int ByBlocks               = RightLookByBlocks;
 
-    static const int HierByBlocks      = 1211;
+    static const int NestedDenseBlock       = 1211;
+    static const int NestedDenseByBlocks    = 1212;
 
-    static const int ExternalLapack    = 1221;
-    static const int ExternalPardiso   = 1222;
+    static const int RightLookDenseByBlocks = 1221;
+    static const int DenseByBlocks          = RightLookDenseByBlocks;
+
+    static const int ExternalLapack         = 1231;
+    static const int ExternalPardiso        = 1232;
   };
 
   // aliasing name space

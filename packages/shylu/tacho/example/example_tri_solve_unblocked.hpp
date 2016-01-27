@@ -95,11 +95,12 @@ namespace Tacho {
     }
     cout << "TriSolveUnblocked:: create right hand side::time = " << t << endl;
 
-#ifdef __USE_FIXED_TEAM_SIZE__
-    typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-    typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
-#endif
+    typename TaskFactoryType::policy_type policy(10,
+                                                 // 3 member variables and policy reference
+                                                 3*sizeof(CrsTaskViewType)+8,
+                                                 max_task_dependence, 
+                                                 team_size);
+
     TaskFactoryType::setMaxTaskDependence(max_task_dependence);
     TaskFactoryType::setPolicy(&policy);
 

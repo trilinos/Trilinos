@@ -50,7 +50,7 @@
  * KDD:  gcc 4.5, where compiler optimizations removed assignment 
  * KDD:  statements in Zfw_Set_Fn (assignments to the Fortran callbacks), 
  * KDD:  causing segmentation faults when Zoltan attempted to call those
- * KDD:  callbakcs.  This problem was fixed by declaring all Zoltan_Structs
+ * KDD:  callbacks.  This problem was fixed by declaring all Zoltan_Structs
  * KDD:  using this aliasing to be "volatile".  A better fix would use the
  * KDD:  F90 "C_PTR" type in fwrap.f90.  We can do that fix as time permits.
  * KDD:  See Bugzilla bug 5077 for more info.

@@ -99,7 +99,7 @@ public:
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
-    const RCP<const PartitioningSolution<Adapter> > &soln,
+    const PartitioningSolution<Adapter> *soln,
     bool useDegreeAsWeight,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
@@ -210,7 +210,7 @@ template <typename Adapter>
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const typename Adapter::base_adapter_t> &ia, 
-  const RCP<const PartitioningSolution<Adapter> > &soln,
+  const PartitioningSolution<Adapter> *soln,
   bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
@@ -244,7 +244,7 @@ template <typename Adapter>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  if (soln != Teuchos::null)
+  if (soln)
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
   else
     targetGlobalParts_ = problemComm->getSize();

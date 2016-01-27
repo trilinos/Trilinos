@@ -99,6 +99,9 @@ namespace Tacho {
       return nnz; 
     }
 
+    virtual bool hasDenseMatBase() const { return false; }
+    virtual bool isDenseMatBaseValid() const { return false; }
+
     CrsMatrixView()
       : _base(NULL),
         _offm(0),
@@ -145,8 +148,11 @@ namespace Tacho {
            << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); "
            << " NumNonZeros = " << countNumNonZeros() << ";";
       else 
-        os << "-- Base object is null --";
-      
+        os << "-- Base object is null --;";
+
+      if (hasDenseMatBase()) 
+        os << " DenseMatBase::" << (isDenseMatBaseValid() ? "Valid  " : "Invalid");
+
       return os;
     }
 

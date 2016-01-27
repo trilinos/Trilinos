@@ -299,31 +299,10 @@ int main(int narg, char *arg[]) {
     RCP<const base_adapter_t> bia = 
       Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
 
-    // A solution (usually created by a problem)
-
-    int numLocalObj = bia->getLocalNumIDs();
-    int nWeights = bia->getNumWeightsPerID();
-    RCP<Zoltan2::PartitioningSolution<inputAdapter_t> > solution =
-      rcp(new Zoltan2::PartitioningSolution<inputAdapter_t>(env, CommT, 
-							    nWeights));
-
-    //Part assignment for my objects:  The algorithm usually calls this.
-
-    part_t *partNum = new part_t [numLocalObj];
-    ArrayRCP<part_t> partAssignment(partNum, 0, numLocalObj, true);
-    const part_t *parts = problem.getSolution().getPartListView();
-    for (int i=0; i < numLocalObj; i++)
-      partNum[i] = parts[i];
-
-    solution->setParts(partAssignment);
-    RCP<const Zoltan2::PartitioningSolution<inputAdapter_t> > solutionConst =
-      Teuchos::rcp_const_cast<const 
-      Zoltan2::PartitioningSolution<inputAdapter_t> >(solution);
-
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, CommT, bia, solutionConst, false));
+      rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
 
     RCP<quality_t> graphMetricObject;
 

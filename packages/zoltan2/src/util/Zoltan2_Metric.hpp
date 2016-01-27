@@ -1238,7 +1238,7 @@ template <typename Adapter>
     const RCP<const Comm<int> > &comm,
     multiCriteriaNorm mcNorm,
     const RCP<const typename Adapter::base_adapter_t> &ia,
-    const RCP<const PartitioningSolution<Adapter> > &solution,
+    const PartitioningSolution<Adapter> *solution,
     bool useDegreeAsWeight,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
@@ -1261,7 +1261,7 @@ template <typename Adapter>
   // Parts to which objects are assigned.
 
   const part_t *parts;
-  if (solution != Teuchos::null) {
+  if (solution) {
     parts = solution->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
@@ -1318,14 +1318,14 @@ template <typename Adapter>
 
   part_t targetNumParts = comm->getSize();
 
-  if (solution != Teuchos::null)
+  if (solution)
     targetNumParts = solution->getTargetGlobalNumberOfParts();
 
   scalar_t *psizes = NULL;
 
   ArrayRCP<ArrayRCP<scalar_t> > partSizes(numCriteria);
   for (int dim=0; dim < numCriteria; dim++){
-    if (solution != Teuchos::null)
+    if (solution)
     if (solution->criteriaHasUniformPartSizes(dim) != true){
       psizes = new scalar_t [targetNumParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
