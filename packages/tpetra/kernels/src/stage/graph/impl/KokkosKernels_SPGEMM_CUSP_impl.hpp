@@ -29,31 +29,36 @@ struct CopyArrayToCuspArray{
 };
 
 
-template <typename KernelHandle>
+
+
+template <typename KernelHandle,
+  typename in_row_index_view_type,
+  typename in_nonzero_index_view_type,
+  typename in_nonzero_value_view_type>
 void CUSP_apply(
     KernelHandle *handle,
-    typename KernelHandle::idx m,
-    typename KernelHandle::idx n,
-    typename KernelHandle::idx k,
-    typename KernelHandle::idx_array_type row_mapA,
-    typename KernelHandle::idx_edge_array_type entriesA,
-    typename KernelHandle::value_array_type valuesA,
+    typename KernelHandle::row_index_type m,
+    typename KernelHandle::row_index_type n,
+    typename KernelHandle::row_index_type k,
+    in_row_index_view_type row_mapA,
+    in_nonzero_index_view_type entriesA,
+    in_nonzero_value_view_type valuesA,
 
     bool transposeA,
-    typename KernelHandle::idx_array_type row_mapB,
-    typename KernelHandle::idx_edge_array_type entriesB,
-    typename KernelHandle::value_array_type valuesB,
+    in_row_index_view_type row_mapB,
+    in_nonzero_index_view_type entriesB,
+    in_nonzero_value_view_type valuesB,
     bool transposeB,
-    typename KernelHandle::idx_array_type &row_mapC,
-    typename KernelHandle::idx_edge_array_type &entriesC,
-    typename KernelHandle::value_array_type &valuesC){
+    in_row_index_view_type &row_mapC,
+    in_nonzero_index_view_type &entriesC,
+    in_nonzero_value_view_type &valuesC){
 #ifdef KERNELS_HAVE_CUSP
-  typedef typename KernelHandle::idx idx;
-  typedef typename KernelHandle::value_type value_type;
+  typedef typename KernelHandle::row_index_type idx;
+  typedef typename KernelHandle::nonzero_value_type value_type;
 
-  typedef typename KernelHandle::idx_device_type device1;
-  typedef typename KernelHandle::idx_edge_device_type device2;
-  typedef typename KernelHandle::value_type_device_type device3;
+  typedef typename in_row_index_view_type::device_type device1;
+  typedef typename in_nonzero_index_view_type::device_type device2;
+  typedef typename in_nonzero_value_view_type::device_type device3;
 
   std::cout << "RUNNING CUSP" << std::endl;
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
@@ -69,7 +74,7 @@ void CUSP_apply(
     return;
   }
 
-  typedef typename KernelHandle::idx_array_type idx_array_type;
+  typedef in_row_index_view_type idx_array_type;
 
   typedef typename Kokkos::RangePolicy<typename KernelHandle::HandleExecSpace> my_exec_space;
 
@@ -137,15 +142,15 @@ void CUSP_apply(
 
   std::cout << " C.column_indices.size():" <<  C.column_indices.size() << std::endl;
   std::cout << " C.values.size():" <<  C.values.size() << std::endl;
-  row_mapC = idx_array_type("rowmapC", m + 1);
-  entriesC = typename KernelHandle::idx_edge_array_type ("EntriesC" ,  C.column_indices.size());
-  valuesC = typename KernelHandle::value_array_type ("valuesC" ,  C.values.size());
+  row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", m + 1);
+  entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" ,  C.column_indices.size());
+  valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  C.values.size());
 
-  Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<typename KernelHandle::idx_array_type,
+  Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<in_row_index_view_type,
       idx >(row_mapC, (idx *) thrust::raw_pointer_cast(C.row_offsets.data())));
-  Kokkos::parallel_for (my_exec_space (0, C.column_indices.size()) , CopyArrayToCuspArray<typename KernelHandle::idx_edge_array_type,
+  Kokkos::parallel_for (my_exec_space (0, C.column_indices.size()) , CopyArrayToCuspArray<in_nonzero_index_view_type,
       idx >(entriesC, (idx *) thrust::raw_pointer_cast(C.column_indices.data())));
-  Kokkos::parallel_for (my_exec_space (0, C.values.size()) , CopyArrayToCuspArray<typename KernelHandle::value_array_type,
+  Kokkos::parallel_for (my_exec_space (0, C.values.size()) , CopyArrayToCuspArray<in_nonzero_value_view_type,
       value_type>(valuesC, (value_type *) thrust::raw_pointer_cast(C.values.data())));
 
 #else

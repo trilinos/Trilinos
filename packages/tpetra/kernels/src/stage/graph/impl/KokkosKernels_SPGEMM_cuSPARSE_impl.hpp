@@ -14,27 +14,32 @@ namespace Experimental{
 namespace Graph{
 namespace Impl{
 
-  template <typename KernelHandle>
+
+  template <typename KernelHandle,
+  typename in_row_index_view_type,
+  typename in_nonzero_index_view_type>
   void cuSPARSE_symbolic(
       KernelHandle *handle,
-      typename KernelHandle::idx m,
-      typename KernelHandle::idx n,
-      typename KernelHandle::idx k,
-      typename KernelHandle::idx_array_type row_mapA,
-      typename KernelHandle::idx_edge_array_type entriesA,
+      typename KernelHandle::row_index_type m,
+      typename KernelHandle::row_index_type n,
+      typename KernelHandle::row_index_type k,
+      in_row_index_view_type row_mapA,
+      in_nonzero_index_view_type entriesA,
+
       bool transposeA,
-      typename KernelHandle::idx_array_type row_mapB,
-      typename KernelHandle::idx_edge_array_type entriesB,
+      in_row_index_view_type row_mapB,
+      in_nonzero_index_view_type entriesB,
       bool transposeB,
-      typename KernelHandle::idx_array_type &row_mapC,
-      typename KernelHandle::idx_array_type &entriesC){
+      in_row_index_view_type &row_mapC,
+      in_nonzero_index_view_type &entriesC){
 
 #ifdef KERNELS_HAVE_CUSPARSE
 
-    typedef typename KernelHandle::idx_device_type device1;
-    typedef typename KernelHandle::idx_edge_device_type device2;
-    typedef typename KernelHandle::idx idx;
-    typedef typename KernelHandle::idx_array_type idx_array_type;
+    typedef typename in_row_index_view_type::device_type device1;
+    typedef typename in_nonzero_index_view_type::device_type device2;
+
+    typedef typename KernelHandle::row_index_type idx;
+    typedef in_row_index_view_type idx_array_type;
 
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
@@ -88,7 +93,7 @@ namespace Impl{
           cudaMemcpy(&baseC, c_xadj, sizeof(int), cudaMemcpyDeviceToHost);
           nnzC -= baseC;
       }
-      entriesC = idx_array_type("entriesC", nnzC);
+      entriesC = in_nonzero_index_view_type("entriesC", nnzC);
     }
     else {
       std::cerr << "CUSPARSE requires integer values" << std::endl;
@@ -102,36 +107,39 @@ namespace Impl{
   }
 
 
-  template <typename KernelHandle>
+
+  template <typename KernelHandle,
+  typename in_row_index_view_type,
+  typename in_nonzero_index_view_type,
+  typename in_nonzero_value_view_type>
   void cuSPARSE_apply(
       KernelHandle *handle,
-      typename KernelHandle::idx m,
-      typename KernelHandle::idx n,
-      typename KernelHandle::idx k,
-      typename KernelHandle::idx_array_type row_mapA,
-      typename KernelHandle::idx_edge_array_type entriesA,
-      typename KernelHandle::value_array_type valuesA,
+      typename KernelHandle::row_index_type m,
+      typename KernelHandle::row_index_type n,
+      typename KernelHandle::row_index_type k,
+      in_row_index_view_type row_mapA,
+      in_nonzero_index_view_type entriesA,
+      in_nonzero_value_view_type valuesA,
 
       bool transposeA,
-      typename KernelHandle::idx_array_type row_mapB,
-      typename KernelHandle::idx_edge_array_type entriesB,
-      typename KernelHandle::value_array_type valuesB,
+      in_row_index_view_type row_mapB,
+      in_nonzero_index_view_type entriesB,
+      in_nonzero_value_view_type valuesB,
       bool transposeB,
-      typename KernelHandle::idx_array_type &row_mapC,
-      typename KernelHandle::idx_edge_array_type &entriesC,
-      typename KernelHandle::value_array_type &valuesC){
+      in_row_index_view_type &row_mapC,
+      in_nonzero_index_view_type &entriesC,
+      in_nonzero_value_view_type &valuesC){
 
 #ifdef KERNELS_HAVE_CUSPARSE
-    typedef typename KernelHandle::idx idx;
-    typedef typename KernelHandle::idx_array_type idx_array_type;
+    typedef typename KernelHandle::row_index_type idx;
+    typedef in_row_index_view_type idx_array_type;
 
-    typedef typename KernelHandle::value_type value_type;
+    typedef typename KernelHandle::nonzero_value_type value_type;
 
 
-    typedef typename KernelHandle::idx_device_type device1;
-    typedef typename KernelHandle::idx_edge_device_type device2;
-    typedef typename KernelHandle::value_type_device_type device3;
-
+    typedef typename in_row_index_view_type::device_type device1;
+    typedef typename in_nonzero_index_view_type::device_type device2;
+    typedef typename in_nonzero_value_view_type::device_type device3;
     std::cout << "RUNNING CUSParse" << std::endl;
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){

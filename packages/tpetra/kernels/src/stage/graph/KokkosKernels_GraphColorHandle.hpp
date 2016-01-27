@@ -16,7 +16,7 @@ enum ColoringAlgorithm{COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
-template <class idx_array_type_, class color_array_type_, class idx_edge_array_type_,
+template <class row_index_view_type_, class nonconst_color_array_type_, class nonzero_index_view_type_,
       class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class GraphColoringHandle{
 
@@ -25,31 +25,84 @@ public:
   typedef TemporaryMemorySpace HandleTempMemorySpace;
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
-  typedef idx_array_type_ idx_array_type;
-  typedef idx_edge_array_type_ idx_edge_array_type;
-  typedef color_array_type_ color_array_type;
 
+  typedef row_index_view_type_ in_row_index_view_type;
+  //typedef row_index_view_type_ idx_array_type;
 
-  typedef typename idx_array_type::value_type idx;
-  typedef typename idx_array_type::array_layout idx_array_layout;
-  typedef typename idx_array_type::device_type idx_device_type;
-  typedef typename idx_array_type::memory_traits idx_memory_traits;
-  typedef typename idx_array_type::HostMirror host_view_type; //Host view type
+  //typedef nonzero_index_view_type_ idx_edge_array_type;
+  typedef nonzero_index_view_type_ in_nonzero_index_view_type;
+
+  //typedef typename row_index_view_type::value_type idx;
+  typedef typename in_row_index_view_type::non_const_value_type row_index_type;
+
+  //typedef typename row_index_view_type::array_layout idx_array_layout;
+  typedef typename in_row_index_view_type::array_layout row_view_array_layout;
+
+  //typedef typename row_index_view_type::device_type idx_device_type;
+  typedef typename in_row_index_view_type::device_type row_view_device_type;
+
+  //typedef typename row_index_view_type::memory_traits idx_memory_traits;
+  typedef typename in_row_index_view_type::memory_traits row_view_memory_traits;
+
+  //typedef typename row_index_view_type::HostMirror host_view_type;
+  typedef typename in_row_index_view_type::HostMirror row_host_view_type; //Host view type
   //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
-  typedef typename idx_edge_array_type::value_type idx_edge;
-  typedef typename idx_edge_array_type::array_layout idx_edge_array_layout;
-  typedef typename idx_edge_array_type::device_type idx_edge_device_type;
-  typedef typename idx_edge_array_type::memory_traits idx_edge_memory_traits;
-  typedef typename idx_edge_array_type::HostMirror host_edge_view_type; //Host view type
-  //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
+  //typedef typename nonzero_index_view_type::non_const_value_type idx_edge;
+  typedef typename in_nonzero_index_view_type::non_const_value_type nonzero_index_type;
 
-  typedef typename color_array_type::value_type color_type;
-  typedef typename color_array_type::array_layout color_type_array_layout;
-  typedef typename color_array_type::device_type color_type_device_type;
-  typedef typename color_array_type::memory_traits color_type_memory_traits;
-  typedef typename color_array_type::HostMirror host_color_view_type; //Host view type
+  //typedef typename nonzero_index_view_type::array_layout idx_edge_array_layout;
+  typedef typename in_nonzero_index_view_type::array_layout nonzero_index_view_array_layout;
 
+  //typedef typename nonzero_index_view_type::device_type idx_edge_device_type;
+  typedef typename in_nonzero_index_view_type::device_type nonzero_index_view_device_type;
+
+  //typedef typename nonzero_index_view_type::memory_traits idx_edge_memory_traits;
+  typedef typename in_nonzero_index_view_type::memory_traits nonzero_index_view_memory_traits;
+
+  //typedef typename nonzero_index_view_type::HostMirror host_edge_view_type; //Host view type
+  typedef typename in_nonzero_index_view_type::HostMirror nonzero_index_host_view_type; //Host view type
+
+
+
+  typedef nonconst_color_array_type_ color_view_type;
+
+  typedef typename color_view_type::non_const_value_type color_type;
+  typedef typename color_view_type::array_layout color_view_array_layout;
+  typedef typename color_view_type::device_type color_view_device_type;
+  typedef typename color_view_type::memory_traits color_view_memory_traits;
+  typedef typename color_view_type::HostMirror color_host_view_type; //Host view type
+
+
+
+  typedef typename in_row_index_view_type::const_data_type const_row_data_type;
+  typedef typename in_row_index_view_type::non_const_data_type non_const_row_data_type;
+  typedef typename in_row_index_view_type::memory_space row_view_memory_space;
+  typedef typename Kokkos::View<const_row_data_type, row_view_array_layout,
+      row_view_memory_space, row_view_memory_traits> const_row_index_view_type;
+  typedef typename Kokkos::View<non_const_row_data_type, row_view_array_layout,
+      row_view_memory_space, row_view_memory_traits> non_const_row_index_view_type;
+
+
+
+  typedef typename in_nonzero_index_view_type::const_data_type const_nonzero_index_data_type;
+  typedef typename in_nonzero_index_view_type::non_const_data_type non_const_nonzero_index_data_type;
+  typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
+  typedef typename Kokkos::View<const_nonzero_index_data_type, nonzero_index_view_array_layout,
+      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> const_nonzero_index_view_type;
+  typedef typename Kokkos::View<non_const_nonzero_index_data_type, nonzero_index_view_array_layout,
+      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> non_const_nonzero_index_view_type;
+
+
+
+
+  //typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> idx_temp_work_array_type;
+  typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> row_index_temp_work_view_type;
+  //typedef typename row_index_persistent_work_view_type idx_persistent_work_array_type;
+  typedef typename Kokkos::View<row_index_type *, PersistentMemorySpace> row_index_persistent_work_view_type;
+
+  //typedef typename row_index_persistent_work_view_type::HostMirror host_idx_persistent_view_type; //Host view type
+  typedef typename row_index_persistent_work_view_type::HostMirror row_index_persistent_host_view_type; //Host view type
 
 private:
   //Parameters
@@ -83,13 +136,13 @@ private:
   int num_phases; //
 
 
-  idx size_of_edge_list;
-  Kokkos::View<idx *, HandlePersistentMemorySpace> lower_triangle_src;
-  Kokkos::View<idx *, HandlePersistentMemorySpace> lower_triangle_dst;
+  row_index_type size_of_edge_list;
+  row_index_persistent_work_view_type lower_triangle_src;
+  row_index_persistent_work_view_type lower_triangle_dst;
 
-  color_array_type vertex_colors;
+  color_view_type vertex_colors;
   bool is_coloring_called_before;
-  idx num_colors;
+  row_index_type num_colors;
 
 
 
@@ -197,13 +250,13 @@ private:
         ): xadj(xadj_), adj(adj_), lower_xadj_counts(lower_xadj_counts_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const idx &i, idx &new_num_edge) const {
-      idx xadj_begin = xadj(i);
-      idx xadj_end = xadj(i + 1);
+    void operator()(const row_index_type &i, row_index_type &new_num_edge) const {
+      row_index_type xadj_begin = xadj(i);
+      row_index_type xadj_end = xadj(i + 1);
 
-      idx new_edge_count = 0;
-      for (idx j = xadj_begin; j < xadj_end; ++j){
-        idx n = adj(j);
+      row_index_type new_edge_count = 0;
+      for (row_index_type j = xadj_begin; j < xadj_end; ++j){
+        row_index_type n = adj(j);
         if (i < n){
           new_edge_count += 1;
         }
@@ -220,7 +273,7 @@ private:
         lower_xadj_counts(lower_xadj_counts_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const idx &ii, size_t& update, const bool final) const{
+    void operator()(const row_index_type &ii, size_t& update, const bool final) const{
       update += lower_xadj_counts(ii);
       if (final) {
         lower_xadj_counts(ii)  = update;
@@ -246,15 +299,15 @@ private:
             lower_srcs(lower_srcs_), lower_dsts(lower_dsts_) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const idx &i) const{
+    void operator()(const row_index_type &i) const{
 
-      idx xadj_begin = xadj[i];
-      idx xadj_end = xadj[i + 1];
+      row_index_type xadj_begin = xadj[i];
+      row_index_type xadj_end = xadj[i + 1];
 
-      for (idx j = xadj_begin; j < xadj_end; ++j){
-        idx n = adj(j);
+      for (row_index_type j = xadj_begin; j < xadj_end; ++j){
+        row_index_type n = adj(j);
         if (i < n){
-          idx position = lower_xadj_counts(i)++;
+          row_index_type position = lower_xadj_counts(i)++;
           lower_srcs(position) = i;
           lower_dsts(position) = n;
         }
@@ -263,12 +316,13 @@ private:
   };
 
 
+  template <typename row_index_view_type, typename nonzero_view_type>
   void get_lower_diagonal_edge_list(
-      idx nv, idx ne,
-      idx_array_type xadj, idx_edge_array_type adj,
-      idx  &num_out_edges,
-      Kokkos::View<idx *, HandlePersistentMemorySpace> &src,
-      Kokkos::View<idx *, HandlePersistentMemorySpace> &dst){
+      row_index_type nv, row_index_type ne,
+      row_index_view_type xadj, nonzero_view_type adj,
+      row_index_type  &num_out_edges,
+      row_index_persistent_work_view_type &src,
+      row_index_persistent_work_view_type &dst){
 
     if (size_of_edge_list > 0){
       num_out_edges = size_of_edge_list;
@@ -278,22 +332,23 @@ private:
       dst = (this->lower_triangle_dst);
     }
     else {
-      typedef typename Kokkos::View<idx *, HandleTempMemorySpace> idx_temp_view;
-      typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
 
+      row_index_temp_work_view_type lower_count("LowerXADJ", nv + 1);
+      row_index_type new_num_edge = 0;
+      typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
+      if (nv > 0) {
+        Kokkos::parallel_reduce(my_exec_space(0,nv),
+            CountLowerTriangle<row_index_view_type, nonzero_view_type, row_index_temp_work_view_type> (xadj, adj, lower_count), new_num_edge);
+      }
 
-      idx_temp_view lower_count("LowerXADJ", nv + 1);
-      idx new_num_edge = 0;
-      Kokkos::parallel_reduce(my_exec_space(0,nv), CountLowerTriangle<idx_array_type, idx_edge_array_type, idx_temp_view>(xadj, adj, lower_count), new_num_edge);
+      //std::cout << "nv:" << nv << " ne:" << ne << " new_num_edge:" << new_num_edge << std::endl;
 
-      Kokkos::View<idx*, HandlePersistentMemorySpace> half_src =
-          Kokkos::View<idx *, HandlePersistentMemorySpace>("HALF SRC",new_num_edge);
-      Kokkos::View<idx *, HandlePersistentMemorySpace> half_dst =
-          Kokkos::View<idx *, HandlePersistentMemorySpace>("HALF DST",new_num_edge);
-      Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<idx_temp_view>(lower_count));
-      Kokkos::parallel_for(my_exec_space(0,nv),
-          FillLowerTriangle<idx_array_type, idx_edge_array_type, idx_temp_view, Kokkos::View<idx*, HandlePersistentMemorySpace> >
-          (xadj, adj, lower_count, half_src, half_dst));
+      row_index_persistent_work_view_type half_src = row_index_persistent_work_view_type("HALF SRC",new_num_edge);
+      row_index_persistent_work_view_type half_dst = row_index_persistent_work_view_type("HALF DST",new_num_edge);
+      Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_index_temp_work_view_type>(lower_count));
+      Kokkos::parallel_for(my_exec_space(0,nv), FillLowerTriangle
+          <row_index_view_type, nonzero_view_type,
+          row_index_temp_work_view_type,row_index_persistent_work_view_type> (xadj, adj, lower_count, half_src, half_dst));
       src = lower_triangle_src = half_src;
       dst = lower_triangle_dst = half_dst;
       num_out_edges = size_of_edge_list = new_num_edge;
@@ -301,11 +356,11 @@ private:
   }
 
   struct ReduceMaxFunctor{
-    color_array_type colors;
-    ReduceMaxFunctor(color_array_type cat):colors(cat){}
+    color_view_type colors;
+    ReduceMaxFunctor(color_view_type cat):colors(cat){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const idx &i, color_type & color_max) const {
+    void operator()(const row_index_type &i, color_type & color_max) const {
       if (color_max < colors(i) ) color_max = colors(i);
     }
 
@@ -323,7 +378,7 @@ private:
   };
 
 
-  idx get_num_colors(){
+  row_index_type get_num_colors(){
     if (num_colors == 0){
       typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
       Kokkos::parallel_reduce(my_exec_space(0, vertex_colors.dimension_0()),
@@ -384,7 +439,7 @@ private:
   double get_overall_coloring_time() const { return this->overall_coloring_time;}
   double get_coloring_time() const { return this->coloring_time;}
   int get_num_phases() const { return this->num_phases;}
-  color_array_type get_vertex_colors() const {return this->vertex_colors;}
+  color_view_type get_vertex_colors() const {return this->vertex_colors;}
   bool is_coloring_called() const {return this->is_coloring_called_before;}
   //setters
   void set_coloring_type(const ColoringAlgorithm &col_algo){this->coloring_type = col_algo;}
@@ -400,7 +455,7 @@ private:
   void add_to_overall_coloring_time(const double &coloring_time_){this->overall_coloring_time += coloring_time_;}
   void set_coloring_time(const double &coloring_time_){this->coloring_time = coloring_time_;}
   void set_num_phases(const double &num_phases_){this->num_phases = num_phases_;}
-  void set_vertex_colors( const color_array_type vertex_colors_){
+  void set_vertex_colors( const color_view_type vertex_colors_){
     this->vertex_colors = vertex_colors_;
     this->is_coloring_called_before = true;
     this->num_colors = 0;

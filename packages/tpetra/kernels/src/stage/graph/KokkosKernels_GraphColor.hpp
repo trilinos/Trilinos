@@ -1,9 +1,9 @@
 #ifndef _KOKKOS_GRAPH_COLOR_HPP
 #define _KOKKOS_GRAPH_COLOR_HPP
 
-#include "GraphColor_impl.hpp"
-#include "GraphColoringHandle.hpp"
-#include "KokkosKernelsUtils.hpp"
+#include "KokkosKernels_GraphColor_impl.hpp"
+#include "KokkosKernels_GraphColorHandle.hpp"
+#include "KokkosKernels_Utils.hpp"
 namespace KokkosKernels{
 
 namespace Experimental{
@@ -11,29 +11,26 @@ namespace Experimental{
 
 namespace Graph{
 
-template <class KernelHandle>
+template <class KernelHandle,typename in_row_index_view_type, typename in_nonzero_index_view_type>
 void graph_color_symbolic(
     KernelHandle *handle,
-    typename KernelHandle::idx num_rows,
-    typename KernelHandle::idx num_cols,
-    typename KernelHandle::idx_array_type row_map,
-    typename KernelHandle::idx_edge_array_type entries,
+    typename KernelHandle::row_index_type num_rows,
+    typename KernelHandle::row_index_type num_cols,
+    in_row_index_view_type row_map,
+    in_nonzero_index_view_type entries,
     bool is_symmetric = true){
 
   Kokkos::Impl::Timer timer;
-
-  //typename KernelHandle::idx_array_type row_map = handle->get_row_map();
-  //typename KernelHandle::idx_edge_array_type entries = handle->get_entries();
 
   typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
 
   ColoringAlgorithm algorithm = gch->get_coloring_type();
 
-  typedef typename KernelHandle::GraphColoringHandleType::color_array_type color_view_type;
+  typedef typename KernelHandle::GraphColoringHandleType::color_view_type color_view_type;
   color_view_type colors_out = color_view_type("Graph Colors", num_rows);
 
   typedef typename Impl::GraphColor
-      <typename KernelHandle::GraphColoringHandleType> BaseGraphColoring;
+      <typename KernelHandle::GraphColoringHandleType, in_row_index_view_type, in_nonzero_index_view_type> BaseGraphColoring;
   BaseGraphColoring *gc = NULL;
 
 
@@ -49,7 +46,7 @@ void graph_color_symbolic(
   case COLORING_VBCS:
 
     typedef typename Impl::GraphColor_VB
-        <typename KernelHandle::GraphColoringHandleType> VBGraphColoring;
+        <typename KernelHandle::GraphColoringHandleType, in_row_index_view_type, in_nonzero_index_view_type> VBGraphColoring;
     gc = new VBGraphColoring(
         num_rows, entries.dimension_0(),
         row_map, entries, gch);
@@ -57,7 +54,7 @@ void graph_color_symbolic(
   case COLORING_EB:
 
     typedef typename Impl::GraphColor_EB
-        <typename KernelHandle::GraphColoringHandleType> EBGraphColoring;
+        <typename KernelHandle::GraphColoringHandleType, in_row_index_view_type, in_nonzero_index_view_type> EBGraphColoring;
 
     gc = new EBGraphColoring(num_rows, entries.dimension_0(),row_map, entries, gch);
     break;
