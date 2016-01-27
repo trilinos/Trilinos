@@ -54,9 +54,6 @@
 
 #include "@CLASS_FILE_NAME@_def.hpp"
 
-#define MUELU_ETI_GROUP(LO,GO,NO) \
-  template class @CLASS_NAME@<LO,GO,NO>;
-
 // We need to define these typedefs as it is not possible to properly expand
 // macros with colons in them
 #if defined(HAVE_MUELU_TPETRA)
