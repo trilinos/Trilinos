@@ -6,17 +6,8 @@
 /// \brief Extended matrix view that has nested dense block.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "dense_matrix_helper.hpp"
 namespace Tacho {
-
-  template<typename ValueType,
-           typename OrdinalType,
-           typename SizeType,
-           typename SpaceType,
-           typename MemoryTraits>
-  class DenseMatrixBase;
-
-  template<typename DenseMatBaseType>
-  class DenseMatrixView;
 
   template<typename CrsMatViewType,
            typename DenseFlatViewType,
@@ -38,10 +29,14 @@ namespace Tacho {
 
   private:
     dense_flat_base_type _A;
+    dense_hier_base_type _H;
 
   public:
     bool hasDenseFlatBase() const {
       return (_A.NumRows() && _A.NumCols());
+    }
+    bool hasDenseHierBase() const {
+      return (_H.NumRows() && _H.NumCols());
     }
 
     bool isDenseFlatBaseValid() const {
@@ -49,12 +44,16 @@ namespace Tacho {
     }
 
     void createDenseFlatBase() {
-      if (hasDenseFlatBase() && isDenseFlatBaseValid()) ;
-      else
-        _A = dense_flat_base_type("NestedDenseFlatBase", this->NumRows(), this->NumCols());
+      _A = dense_flat_base_type("NestedDenseFlatBase", this->NumRows(), this->NumCols());
+    }
+    void createDenseHierBase(const ordinal_type mb, const ordinal_type nb) {
+      if (hasDenseFlatBase() && isDenseFlatBaseValid()) {
+        DenseMatrixHelper::flat2hier(_A, _H, mb, nb);
+      }
     }
 
     dense_flat_base_type* DenseFlatBaseObject() { return &_A; }
+    dense_hier_base_type* DenseHierBaseObject() { return &_H; }
 
     int copyToDenseFlatBase() {
       int r_val = 0;
@@ -89,21 +88,21 @@ namespace Tacho {
     }
 
     CrsMatrixViewExt()
-      : CrsMatViewType(), _A()
+      : CrsMatViewType(), _A(), _H()
     { }
 
     CrsMatrixViewExt(const CrsMatrixViewExt &b)
-      : CrsMatViewType(b), _A(b._A)
+      : CrsMatViewType(b), _A(b._A), _H(b._H)
     { }
 
     CrsMatrixViewExt(typename CrsMatViewType::mat_base_type *b)
-      : CrsMatViewType(b), _A()
+      : CrsMatViewType(b), _A(), _H()
     { }
 
     CrsMatrixViewExt(typename CrsMatViewType::mat_base_type *b,
                  const ordinal_type offm, const ordinal_type m,
                  const ordinal_type offn, const ordinal_type n)
-      : CrsMatViewType(b, offm, m, offn, n), _A()
+      : CrsMatViewType(b, offm, m, offn, n), _A(), _H()
     { }
 
   };

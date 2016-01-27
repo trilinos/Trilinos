@@ -100,6 +100,7 @@ namespace Tacho {
     }
 
     virtual bool hasDenseFlatBase() const { return false; }
+    virtual bool hasDenseHierBase() const { return false; }
     virtual bool isDenseFlatBaseValid() const { return false; }
 
     CrsMatrixView()
@@ -152,6 +153,9 @@ namespace Tacho {
 
       if (hasDenseFlatBase()) 
         os << " DenseFlatBase::" << (isDenseFlatBaseValid() ? "Valid  " : "Invalid");
+
+      if (hasDenseHierBase()) 
+        os << " DenseHierBase::created";
 
       return os;
     }
