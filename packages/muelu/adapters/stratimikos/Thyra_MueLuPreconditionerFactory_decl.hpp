@@ -167,7 +167,7 @@ namespace Thyra {
 
   };
 
-
+#ifdef HAVE_MUELU_Epetra
   /** @brief Concrete preconditioner factory subclass for Thyra based on MueLu.
       @ingroup MueLuAdapters
       Add support for MueLu preconditioners in Thyra. This class provides an interface both
@@ -614,7 +614,7 @@ namespace Thyra {
 
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
   }; // end specialization for Epetra
-
+#endif // #ifdef HAVE_MUELU_Epetra
 
 } // namespace Thyra
 
