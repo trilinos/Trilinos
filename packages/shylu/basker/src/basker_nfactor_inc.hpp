@@ -123,7 +123,7 @@ namespace BaskerNS
     //---------------------------Sep--------------------------//
 
 
-    /*
+    
     if(btf_tabs_offset != 0)
       {
     //for(Int l=1; l<=4; l++)
@@ -170,7 +170,7 @@ namespace BaskerNS
       }
 
     //-------------------------End Sep----------------//
-*/
+
 
     //-------------------IF BTF-----------------------//
     if(Options.btf == BASKER_TRUE)
