@@ -99,8 +99,9 @@ namespace Tacho {
       return nnz; 
     }
 
-    virtual bool hasDenseMatBase() const { return false; }
-    virtual bool isDenseMatBaseValid() const { return false; }
+    virtual bool hasDenseFlatBase() const { return false; }
+    virtual bool hasDenseHierBase() const { return false; }
+    virtual bool isDenseFlatBaseValid() const { return false; }
 
     CrsMatrixView()
       : _base(NULL),
@@ -150,8 +151,11 @@ namespace Tacho {
       else 
         os << "-- Base object is null --;";
 
-      if (hasDenseMatBase()) 
-        os << " DenseMatBase::" << (isDenseMatBaseValid() ? "Valid  " : "Invalid");
+      if (hasDenseFlatBase()) 
+        os << " DenseFlatBase::" << (isDenseFlatBaseValid() ? "Valid  " : "Invalid");
+
+      if (hasDenseHierBase()) 
+        os << " DenseHierBase::created";
 
       return os;
     }

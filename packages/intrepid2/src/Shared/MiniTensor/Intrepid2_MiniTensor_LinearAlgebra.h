@@ -274,15 +274,6 @@ Tensor<T, N, ES>
 log_rotation_pi(Tensor<T, N, ES> const & R);
 
 ///
-/// Gaussian Elimination with partial pivot
-/// \return \f$ xvec \f$
-///
-template<typename T, Index N,  typename ES>
-KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>
-gaussian_elimination(Tensor<T, N, ES> const & A);
-
-///
 /// Apply Givens-Jacobi rotation on the left in place.
 /// \param c and s for a rotation G in form [c, s; -s, c]
 /// \param i and k indices for rows and columns where rotation is applied.

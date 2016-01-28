@@ -38,20 +38,21 @@ namespace Tacho {
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
   int exampleCholPerformanceSingle(const string file_input,
-                                    const int treecut,
-                                    const int minblksize,
-                                    const int prunecut,
-                                    const int seed,
-                                    const int max_task_dependence,
-                                    const int team_size,
-                                    const int fill_level,
-                                    const int league_size,
-                                    const bool team_interface,
-                                    const bool skip_serial,
-                                    const bool vtune_symbolic,
-                                    const bool vtune_serial,
-                                    const bool vtune_task,
-                                    const bool verbose) {
+                                   const int treecut,
+                                   const int minblksize,
+                                   const int prunecut,
+                                   const int seed,
+                                   const int nthreads,
+                                   const int max_task_dependence,
+                                   const int team_size,
+                                   const int fill_level,
+                                   const int league_size,
+                                   const bool team_interface,
+                                   const bool skip_serial,
+                                   const bool vtune_symbolic,
+                                   const bool vtune_serial,
+                                   const bool vtune_task,
+                                   const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
@@ -173,12 +174,18 @@ namespace Tacho {
     CrsMatrixBaseType RR("RR");
     RR.copy(UU);
 
+    const size_t max_concurrency = 16384;
+    cout << "CholPerformance:: max concurrency = " << max_concurrency << endl;
+
+    const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+    cout << "CholPerformance:: max task size   = " << max_task_size << endl;
+
     if (!skip_serial) {
-#ifdef __USE_FIXED_TEAM_SIZE__
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   1);
+
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
@@ -214,11 +221,10 @@ namespace Tacho {
     }
 
     {
-#ifdef __USE_FIXED_TEAM_SIZE__
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   team_size);
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);

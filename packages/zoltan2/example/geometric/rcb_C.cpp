@@ -57,6 +57,7 @@
 
 using namespace std;
 using std::vector;
+using Teuchos::RCP;
 
 /*! \example rcb_C.cpp
     An example of the use of the RCB algorithm to partition coordinate data.
@@ -84,7 +85,9 @@ int main(int argc, char *argv[])
 
   // TODO explain
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef inputAdapter_t::part_t part_t;
+  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Create input data.
@@ -143,21 +146,36 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 input adapter for this geometry. TODO explain
 
-  inputAdapter_t ia1(localCount, globalIds, x, y, z, 1, 1, 1);
+  inputAdapter_t *ia1 = new inputAdapter_t(localCount,globalIds,x,y,z,1,1,1);
 
   // Create a Zoltan2 partitioning problem
 
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 =
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params);
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(ia1, &params);
    
   // Solve the problem
 
   problem1->solve();
+
+  // An environment.  This is usually created by the problem.
+
+  RCP<const Zoltan2::Environment> env1 = problem1->getEnvironment();
+
+  RCP<const base_adapter_t> bia1 =
+    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia1));
+
+  // create metric object (also usually created by a problem)
+
+  RCP<quality_t>metricObject1=rcp(new quality_t(env1,problem1->getComm(),bia1,
+						&problem1->getSolution(),
+						false));
    
   // Check the solution.
 
-  if (rank == 0)
+  if (rank == 0) {
+    metricObject1->printMetrics(cout);
     problem1->printMetrics(cout);
+  }
 
   if (rank == 0){
     scalar_t imb = problem1->getWeightImbalance();
@@ -192,24 +210,37 @@ int main(int argc, char *argv[])
 
   weightVec[0] = weights; weightStrides[0] = 1;
 
-  inputAdapter_t ia2(
-    localCount, globalIds,  
-    coordVec, coordStrides, 
-    weightVec, weightStrides);
+  inputAdapter_t *ia2=new inputAdapter_t(localCount, globalIds, coordVec, 
+					 coordStrides,weightVec,weightStrides);
 
   // Create a Zoltan2 partitioning problem
 
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem2 =
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia2, &params);
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(ia2, &params);
 
   // Solve the problem
 
   problem2->solve();
 
+  // An environment.  This is usually created by the problem.
+
+  RCP<const Zoltan2::Environment> env2 = problem2->getEnvironment();
+
+  RCP<const base_adapter_t> bia2 =
+    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia2));
+
+  // create metric object (also usually created by a problem)
+
+  RCP<quality_t>metricObject2=rcp(new quality_t(env2,problem2->getComm(),bia2,
+						&problem2->getSolution(),
+						false));
+
   // Check the solution.
 
-  if (rank == 0)
+  if (rank == 0) {
+    metricObject2->printMetrics(cout);
     problem2->printMetrics(cout);
+  }
 
   if (rank == 0){
     scalar_t imb = problem2->getWeightImbalance();
@@ -255,24 +286,37 @@ int main(int argc, char *argv[])
   weightVec[1] = weights+1; weightStrides[1] = 3;
   weightVec[2] = weights+2; weightStrides[2] = 3;
 
-  inputAdapter_t ia3(
-    localCount, globalIds,  
-    coordVec, coordStrides, 
-    weightVec, weightStrides);
+  inputAdapter_t *ia3=new inputAdapter_t(localCount, globalIds, coordVec,
+					 coordStrides,weightVec,weightStrides);
 
   // Create a Zoltan2 partitioning problem.
 
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem3 =
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia3, &params);
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(ia3, &params);
 
   // Solve the problem
 
   problem3->solve();
 
+  // An environment.  This is usually created by the problem.
+
+  RCP<const Zoltan2::Environment> env3 = problem3->getEnvironment();
+
+  RCP<const base_adapter_t> bia3 =
+    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia3));
+
+  // create metric object (also usually created by a problem)
+
+  RCP<quality_t>metricObject3=rcp(new quality_t(env3,problem3->getComm(),bia3,
+						&problem3->getSolution(),
+						false));
+
   // Check the solution.
 
-  if (rank == 0)
+  if (rank == 0) {
+    metricObject3->printMetrics(cout);
     problem3->printMetrics(cout);
+  }
 
   if (rank == 0){
     scalar_t imb = problem3->getWeightImbalance();
@@ -369,10 +413,17 @@ int main(int argc, char *argv[])
   if (rank == 0)
     std::cout << "Request that " << nprocs << " parts be empty." <<std::endl;
 
+  // create metric object (also usually created by a problem)
+
+  metricObject1 = rcp(new quality_t(env1, problem1->getComm(), bia1,
+				    &problem1->getSolution(), false));
+
   // Check the solution.
 
-  if (rank == 0)
+  if (rank == 0) {
+    metricObject1->printMetrics(cout);
     problem1->printMetrics(cout);
+  }
 
   if (rank == 0){
     scalar_t imb = problem1->getWeightImbalance();

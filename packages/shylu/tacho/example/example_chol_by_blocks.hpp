@@ -31,9 +31,10 @@ namespace Tacho {
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
   int exampleCholByBlocks(const string file_input,
-                           const int max_task_dependence,
-                           const int team_size,
-			   const bool verbose) {
+                          const int nthreads,
+                          const int max_task_dependence,
+                          const int team_size,
+                          const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
@@ -107,9 +108,14 @@ namespace Tacho {
     }
     cout << "CholByBlocks:: reorder the matrix::time = " << t << endl;            
 
-    typename TaskFactoryType::policy_type policy(HU.NumNonZeros(),
-                                                 // 3 member variables and policy reference
-                                                 3*sizeof(CrsTaskViewType)+8,
+    const size_t max_concurrency = 16384;
+    cout << "CholByBlocks:: max concurrency = " << max_concurrency << endl;
+
+    const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+    cout << "CholByBlocks:: max task size   = " << max_task_size << endl;
+
+    typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                 max_task_size,
                                                  max_task_dependence, 
                                                  team_size);
 

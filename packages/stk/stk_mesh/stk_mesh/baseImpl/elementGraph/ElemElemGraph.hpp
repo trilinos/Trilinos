@@ -258,6 +258,7 @@ private:
     void extract_coincident_edges_and_fix_chosen_side_ids_for_specified_elems(const stk::mesh::EntityVector &elems);
     std::vector<impl::LocalId> get_local_ids_for_element_entities(const stk::mesh::EntityVector &elems);
     std::vector<int> get_exposed_sides(stk::mesh::impl::LocalId localId, int numElemSides);
+    void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge, stk::mesh::Entity e) const;
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

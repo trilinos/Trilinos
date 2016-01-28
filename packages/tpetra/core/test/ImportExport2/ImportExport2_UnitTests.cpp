@@ -1796,6 +1796,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, PackAndPrepareWithOwningPIDs, LO
   // so this test is broken for now.
   return;
 
+#if 0
   // Unit Test the functionality in Tpetra_Import_Util
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Import<LO, GO> ImportType;
@@ -1869,6 +1870,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, PackAndPrepareWithOwningPIDs, LO
   }
 
   TEST_EQUALITY(total_err,0);
+#endif // 0
 }
 
 

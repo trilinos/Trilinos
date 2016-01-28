@@ -712,7 +712,7 @@ Tensor<T, N>
 log_gregory(Tensor<T, N> const & A)
 {
   Index const
-  max_iter = 128;
+  max_iter = 8192;
 
   T const
   tol = machine_epsilon<T>();
@@ -898,33 +898,38 @@ log_rotation_pi(Tensor<T, N> const & R)
 
     case 3:
     {
-      // obtain U from R = LU
-      r = gaussian_elimination((R - identity<T, N>(3)));
+      Vector<T, N>
+      normal(3);
 
-      // backward substitution (for rotation exp(R) only)
-      T const tol = 10.0 * machine_epsilon<T>();
+      Tensor<T, N> const
+      B = R - identity<T, N>(3);
 
-      Vector<T, N> normal(3);
+      Vector<T, N> const
+      u = row(B, 0);
 
-      if (std::abs(r(2,2)) < tol){
-        normal(2) = 1.0;
-      } else {
-        normal(2) = 0.0;
+      Vector<T, N> const
+      v = row(B, 1);
+
+      normal = cross(u, v);
+
+      if (norm(normal) < machine_epsilon<T>()) {
+
+        Vector<T, N> const
+        w = row(B, 2);
+
+        normal = cross(u, w);
+
+        if (norm(normal) < machine_epsilon<T>()) {
+          std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+          std::cerr << std::endl;
+          std::cerr << "Cannot determine rotation vector of rotation.";
+          std::cerr << std::endl;
+          exit(1);
+        }
+
       }
 
-      if (std::abs(r(1,1)) < tol){
-        normal(1) = 1.0;
-      } else {
-        normal(1) = -normal(2)*r(1,2)/r(1,1);
-      }
-
-      if (std::abs(r(0,0)) < tol){
-        normal(0) = 1.0;
-      } else {
-        normal(0) = -normal(1)*r(0,1) - normal(2)*r(0,2)/r(0,0);
-      }
-
-      normal = normal / norm(normal);
+      normal = unit(normal);
 
       r.fill(ZEROS);
       r(0,1) = -normal(2);
@@ -934,7 +939,8 @@ log_rotation_pi(Tensor<T, N> const & R)
       r(2,0) = -normal(1);
       r(2,1) =  normal(0);
 
-      T const pi = std::acos(-1.0);
+      T const
+      pi = std::acos(-1.0);
 
       r = pi * r;
     }
@@ -958,61 +964,6 @@ log_rotation_pi(Tensor<T, N> const & R)
   }
 
   return r;
-}
-
-// Gaussian Elimination with partial pivot
-// \param matrix \f$ A \f$
-// \return \f$ U \f$ where \f$ A = LU \f$
-//
-template<typename T, Index N>
-Tensor<T, N>
-gaussian_elimination(Tensor<T, N> const & A)
-{
-  Index const
-  dimension = A.get_dimension();
-
-  Tensor<T, N>
-  U = A;
-
-  T const
-  tol = 10.0 * machine_epsilon<T>();
-
-  Index i = 0;
-  Index j = 0;
-  Index i_max = 0;
-
-  while ((i < dimension) && (j < dimension)) {
-    // find pivot in column j, starting in row i
-    i_max = i;
-    for (Index k = i + 1; k < dimension; ++k) {
-      if (std::abs(U(k,j)) > std::abs(U(i_max,j))) {
-        i_max = k;
-      }
-    }
-
-    // Check if A(i_max,j) equal to or very close to 0
-    if (std::abs(U(i_max,j)) > tol){
-      // swap rows i and i_max and divide each entry in row i
-      // by U(i,j)
-      for (Index k = 0; k < dimension; ++k) {
-        std::swap(U(i,k), U(i_max,k));
-      }
-
-      for (Index k = 0; k < dimension; ++k) {
-        U(i,k) = U(i,k) / U(i,j);
-      }
-
-      for (Index l = i + 1; l < dimension; ++l) {
-        for (Index k = 0; k < dimension; ++k) {
-          U(l,k) = U(l,k) - U(l,i) * U(i,k) / U(i,i);
-        }
-      }
-      ++i;
-    }
-    ++j;
-  }
-
-  return U;
 }
 
 //

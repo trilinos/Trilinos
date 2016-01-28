@@ -70,8 +70,13 @@ namespace Tacho {
     typedef DenseMatrixView<DenseMatrixBaseType> DenseMatrixViewType;
     typedef TaskView<DenseMatrixViewType,TaskFactoryType> DenseTaskViewType;
 
+    typedef DenseMatrixBase<DenseTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> DenseHierMatrixBaseType;
+    
+    typedef DenseMatrixView<DenseHierMatrixBaseType> DenseHierMatrixViewType;
+    typedef TaskView<DenseHierMatrixViewType,TaskFactoryType> DenseHierTaskViewType;
+
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
-    typedef CrsMatrixViewExt<CrsMatrixViewType,DenseTaskViewType> CrsMatrixViewExtType;
+    typedef CrsMatrixViewExt<CrsMatrixViewType,DenseTaskViewType,DenseHierTaskViewType> CrsMatrixViewExtType;
     typedef TaskView<CrsMatrixViewExtType,TaskFactoryType> CrsTaskViewType;
     
     typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> CrsHierMatrixBaseType;
@@ -79,10 +84,6 @@ namespace Tacho {
     typedef CrsMatrixView<CrsHierMatrixBaseType> CrsHierMatrixViewType;
     typedef TaskView<CrsHierMatrixViewType,TaskFactoryType> CrsHierTaskViewType;
 
-    typedef DenseMatrixBase<DenseTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> DenseHierMatrixBaseType;
-    
-    typedef DenseMatrixView<DenseHierMatrixBaseType> DenseHierMatrixViewType;
-    typedef TaskView<DenseHierMatrixViewType,TaskFactoryType> DenseHierTaskViewType;
 
     int r_val = 0;
 
@@ -152,7 +153,7 @@ namespace Tacho {
           block.fillRowViewArray();
           if (block.OffsetRows() == block.OffsetCols() &&
               block.NumRows()    == block.NumCols()) 
-           block.createDenseMatBase();
+            block.createDenseFlatBase();
         }
 
         DenseMatrixHelper::flat2hier(BB, HB,
@@ -172,12 +173,18 @@ namespace Tacho {
 
 
     {
+      const size_t max_concurrency = 16384;
+      cout << "CholDirectNestedDenseBlock:: max concurrency = " << max_concurrency << endl;
+
+      const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+      cout << "CholDirectNestedDenseBlock:: max task size   = " << max_task_size << endl;
+
       // Policy setup
-#ifdef __USE_FIXED_TEAM_SIZE__ 
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   team_size);
+
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);

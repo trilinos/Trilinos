@@ -292,7 +292,7 @@ namespace phalanx_test {
     Kokkos::View<const double**,PHX::Device> ca = a;
  
     // Need to get the nonconst array type given the const array type
-    typedef Kokkos::View<const double**,PHX::Device>::non_const_array_intrinsic_type nonconst_array_type;
+    typedef Kokkos::View<const double**,PHX::Device>::non_const_data_type nonconst_array_type;
 
     Kokkos::View<nonconst_array_type,PHX::Device> b;
 

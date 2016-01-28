@@ -238,26 +238,6 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadConstNumVecs, LO, GO, Scalar , Node )
-  {
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
-
-    // create a Map
-    const size_t numLocal = 13;
-    const GO indexBase = 0;
-    RCP<const map_type> map =
-      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
-
-    TEST_THROW(MV mvec(map,0),  std::invalid_argument);
-    if (std::numeric_limits<size_t>::is_signed) {
-      TEST_THROW(MV mvec(map,INVALID), std::invalid_argument);
-    }
-  }
-
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadConstLDA, LO, GO, Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
@@ -3600,8 +3580,8 @@ namespace {
       comm->barrier (); \
       comm->barrier (); \
     } \
+    return; \
   } \
-  return; \
 } while (false)
 
   // Exercise getVector, subView(Range1D) and subCopy(Range1D) where
@@ -4179,7 +4159,6 @@ namespace {
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, basic             , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonMemberConstructors, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstNumVecs   , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstLDA       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstAA        , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyConst         , LO, GO, SCALAR, NODE ) \
