@@ -16,9 +16,6 @@ T
 Function_Base<FunctionDerived, S>::
 value(FunctionDerived & f, Vector<T, N> const & x)
 {
-  Index const
-  dimension = x.get_dimension();
-
   Vector<T, N> const
   r = f.gradient(x);
 
