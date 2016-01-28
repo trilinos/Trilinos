@@ -43,6 +43,7 @@ namespace Tacho {
                              const int nrhs,
                              const int nb, 
                              const int nthreads,
+                             const int max_concurrency,
                              const int max_task_dependence,
                              const int team_size,
                              const int league_size,
@@ -164,7 +165,6 @@ namespace Tacho {
 
 
     {
-      const size_t max_concurrency = 16384;
       cout << "CholDirectPlain:: max concurrency = " << max_concurrency << endl;
 
       const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;

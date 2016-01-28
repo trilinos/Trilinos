@@ -48,6 +48,7 @@ namespace Tacho {
     }
     void createDenseHierBase(const ordinal_type mb, const ordinal_type nb) {
       if (hasDenseFlatBase() && isDenseFlatBaseValid()) {
+        _H.setLabel("NestedDenseHierBase");
         DenseMatrixHelper::flat2hier(_A, _H, mb, nb);
       }
     }

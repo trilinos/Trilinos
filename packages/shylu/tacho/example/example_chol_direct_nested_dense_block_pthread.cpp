@@ -31,6 +31,9 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
+  int max_concurrency = 1024;
+  clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
+
   int max_task_dependence = 3;
   clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
@@ -55,6 +58,9 @@ int main (int argc, char *argv[]) {
 
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
+
+  int mb = 256;
+  clp.setOption("mb", &mb, "Row (or column) block size for nested dense block");
 
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "Numer of right hand side");
@@ -89,9 +95,10 @@ int main (int argc, char *argv[]) {
       (file_input,
        prunecut,
        seed,
+       mb,
        nrhs,
        nb,
-       nthreads, max_task_dependence, team_size,
+       nthreads, max_concurrency, max_task_dependence, team_size,
        league_size,
        team_interface,
        serial,
