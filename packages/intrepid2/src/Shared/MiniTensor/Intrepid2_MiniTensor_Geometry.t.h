@@ -497,7 +497,7 @@ median(Iterator begin, Iterator end)
   // Firewall
   if (begin == end) {
 #if defined(KOKKOS_HAVE_CUDA)
-   Kokkos::abort("ERROR (median) : Median undefined for empty set.");
+    Kokkos::abort("ERROR (median) : Median undefined for empty set.");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
     std::cerr << std::endl;
@@ -721,7 +721,7 @@ interpolate_element(
 
     default:
 #if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (Tensor::fill(): Unknown element type.");
+      Kokkos::abort("ERROR (Tensor::fill(): Unknown element type.");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
       std::cerr << std::endl;
