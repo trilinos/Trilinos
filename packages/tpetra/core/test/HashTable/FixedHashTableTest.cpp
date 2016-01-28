@@ -270,13 +270,12 @@ namespace { // (anonymous)
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
-    TEST_EQUALITY_CONST( duplicateKeys, false );
     if (! success) {
-      out << "Either table->hasDuplicateKeys() raised an exception, or it "
-        "returned true instead of false.  Either way, there's no sense in "
+      out << "table->hasDuplicateKeys() raised an exception; no sense in "
         "continuing." << endl;
       return;
     }
+    TEST_EQUALITY_CONST( duplicateKeys, false );
 
     KeyType key = 0;
     ValueType val = 0;

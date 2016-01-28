@@ -114,31 +114,6 @@ namespace Kokkos {
 
 namespace { // (anonymous)
 
-  /// \brief Get column stride of a 2-D Kokkos::View or Kokkos::DualView.
-  ///
-  /// "Column stride" means the stride between entries in the same row
-  /// but consecutive columns.
-  ///
-  /// This function has a long name in order to avoid namespace
-  /// collisions when explicit template instantiation (ETI) is OFF.
-  /// (Tpetra_MultiVector_def.hpp is only exposed to code that
-  /// includes Tpetra_MultiVector.hpp when ETI is OFF.)
-  template<class ViewType>
-  size_t
-  getColumnStrideOfMultiVectorView (const ViewType& X)
-  {
-    static_assert (ViewType::rank > 0, "The input X must have nonzero rank.");
-    size_t strides[8];
-    X.stride (strides);
-    // If the second dimension is 0 (because the MultiVector has zero
-    // columns), then the stride might be 0, even though the number of
-    // rows is nonzero.  That makes the BLAS and LAPACK complain.
-    // Thus, in that case, take the number of rows as the column
-    // stride instead.
-    return (X.dimension_1 () > 1) ? strides[1] :
-      static_cast<size_t> (X.dimension_0 ());
-  }
-
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
   ///
   /// This function takes the same first four template parameters as
@@ -287,9 +262,6 @@ namespace Tpetra {
                const bool zeroOut) : /* default is true */
     base_type (map)
   {
-   TEUCHOS_TEST_FOR_EXCEPTION(
-     numVecs < 1, std::invalid_argument, "Tpetra::MultiVector::MultiVector"
-     "(map,numVecs,zeroOut): numVecs = " << numVecs << " < 1.");
     const size_t lclNumRows = this->getLocalLength ();
     view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
     origView_ = view_;
@@ -346,7 +318,12 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(map,view): ";
 
-    const size_t LDA = getColumnStrideOfMultiVectorView (origView_);
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
+    size_t stride[8];
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
+      origView_.dimension_0 ();
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
@@ -369,7 +346,10 @@ namespace Tpetra {
 
     // Get stride of view: if second dimension is 0, the stride might
     // be 0, so take view_dimension instead.
-    const size_t LDA = getColumnStrideOfMultiVectorView (d_view);
+    size_t stride[8];
+    d_view.stride (stride);
+    const size_t LDA = (d_view.dimension_1 () > 1) ? stride[1] :
+      d_view.dimension_0 ();
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::View's "
@@ -400,7 +380,12 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(map,view,origView): ";
 
-    const size_t LDA = getColumnStrideOfMultiVectorView (origView_);
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
+    size_t stride[8];
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
+      origView_.dimension_0 ();
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
@@ -457,7 +442,12 @@ namespace Tpetra {
         << " <= max(whichVectors) = " << maxColInd << ".");
     }
 
-    const size_t LDA = getColumnStrideOfMultiVectorView (origView_);
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
+    size_t stride[8];
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
+      origView_.dimension_0 ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument,
       "LDA = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
@@ -525,7 +515,12 @@ namespace Tpetra {
         std::invalid_argument, "view.dimension_1() = " << view.dimension_1 ()
         << " <= max(whichVectors) = " << maxColInd << ".");
     }
-    const size_t LDA = getColumnStrideOfMultiVectorView (origView_);
+    // Get stride of view: if second dimension is 0, the
+    // stride might be 0, so take view_dimension instead.
+    size_t stride[8];
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
+      origView_.dimension_0 ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "Input DualView's column stride"
       " = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
@@ -688,7 +683,12 @@ namespace Tpetra {
   getStride () const
   {
     if (isConstantStride ()) {
-      return getColumnStrideOfMultiVectorView (origView_);
+      // Get stride of view: if second dimension is 0, the
+      // stride might be 0, so take view_dimension instead.
+      size_t stride[8];
+      origView_.stride (stride);
+      const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
+      return LDA;
     }
     else {
       return static_cast<size_t> (0);

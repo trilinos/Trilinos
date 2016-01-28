@@ -58,6 +58,8 @@ namespace Details {
 //
 namespace { // (anonymous)
 
+  // Implementation detail of copyOffsets (see below).
+  //
   // Overflow is impossible (the output can fit the input) if the
   // output type is bigger than the input type, or if the types have
   // the same size and (the output type is unsigned, or both types are
@@ -74,19 +76,25 @@ namespace { // (anonymous)
        (std::is_unsigned<T1>::value || (std::is_signed<T1>::value && std::is_signed<T2>::value)));
   };
 
+  // Implementation detail of copyOffsets (see below).
+  //
   // Kokkos parallel_reduce functor for copying offset ("ptr") arrays.
   // Tpetra::Details::FixedHashTable uses this in its "copy"
   // constructor for converting between different Device types.  All
   // the action happens in the partial specializations for different
-  // values of outputCanFitInput.
-  template<class OutputViewType, class InputViewType,
-           const bool outputCanFitInput = OutputCanFitInput<typename OutputViewType::non_const_value_type,
-                                                            typename InputViewType::non_const_value_type>::value>
-  class CopyOffsets {};
+  // values of outputCanFitInput.  "Output can fit input" means that
+  // casting the input's value type to the output's value type will
+  // never result in integer overflow.
+  template<class OutputViewType,
+           class InputViewType,
+           const bool outputCanFitInput =
+             OutputCanFitInput<typename OutputViewType::non_const_value_type,
+                               typename InputViewType::non_const_value_type>::value>
+  class CopyOffsetsFunctor {};
 
   // Specialization for when overflow is possible.
   template<class OutputViewType, class InputViewType>
-  class CopyOffsets<OutputViewType, InputViewType, false> {
+  class CopyOffsetsFunctor<OutputViewType, InputViewType, false> {
   public:
     typedef typename OutputViewType::execution_space execution_space;
     typedef typename OutputViewType::size_type size_type;
@@ -95,7 +103,7 @@ namespace { // (anonymous)
     typedef typename InputViewType::non_const_value_type input_value_type;
     typedef typename OutputViewType::non_const_value_type output_value_type;
 
-    CopyOffsets (const OutputViewType& dst, const InputViewType& src) :
+    CopyOffsetsFunctor (const OutputViewType& dst, const InputViewType& src) :
       dst_ (dst),
       src_ (src),
       // We know that output_value_type cannot fit all values of
@@ -106,7 +114,12 @@ namespace { // (anonymous)
       // output_value_type.
       minDstVal_ (static_cast<input_value_type> (std::numeric_limits<output_value_type>::min ())),
       maxDstVal_ (static_cast<input_value_type> (std::numeric_limits<output_value_type>::max ()))
-    {}
+    {
+      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename OutputViewType::execution_space, typename InputViewType::memory_space>::value,
+                     "CopyOffsetsFunctor, which implements copyOffsets, "
+                     "requires that the output View's execution space be able "
+                     "to access the input View's memory space.");
+    }
 
     KOKKOS_INLINE_FUNCTION void
     operator () (const size_type& i, value_type& noOverflow) const {
@@ -136,16 +149,21 @@ namespace { // (anonymous)
 
   // Specialization for when overflow is impossible.
   template<class OutputViewType, class InputViewType>
-  class CopyOffsets<OutputViewType, InputViewType, true> {
+  class CopyOffsetsFunctor<OutputViewType, InputViewType, true> {
   public:
     typedef typename OutputViewType::execution_space execution_space;
     typedef typename OutputViewType::size_type size_type;
     typedef bool value_type;
 
-    CopyOffsets (const OutputViewType& dst, const InputViewType& src) :
+    CopyOffsetsFunctor (const OutputViewType& dst, const InputViewType& src) :
       dst_ (dst),
       src_ (src)
-    {}
+    {
+      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename OutputViewType::execution_space, typename InputViewType::memory_space>::value,
+                     "CopyOffsetsFunctor, which implements copyOffsets, "
+                     "requires that the output View's execution space be able "
+                     "to access the input View's memory space.");
+    }
 
     KOKKOS_INLINE_FUNCTION void
     operator () (const size_type& i, value_type& /* noOverflow */) const {
@@ -168,45 +186,117 @@ namespace { // (anonymous)
     InputViewType src_;
   };
 
+  // Implementation detail of copyOffsets (see below).
+  //
+  // We specialize copyOffsets on two different conditions:
+  //
+  // 1. Can the output View's execution space access the input View's
+  //    memory space?
+  // 2. Do the input and output Views have the same value type?
+  //
+  // If (2) is true, that makes the implementation simple: just call
+  // Kokkos::deep_copy (FixedHashTable always uses the same layout, no
+  // matter the device type).  Otherwise, we need a custom copy
+  // functor.  If (1) is true, then we can use CopyOffsetsFunctor
+  // directly.  Otherwise, we have to copy the input View into the
+  // output View's memory space, before we can use the functor.
+  template<class OutputViewType,
+           class InputViewType,
+           const bool outputExecSpaceCanAccessInputMemSpace =
+             Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+               typename OutputViewType::execution_space,
+               typename InputViewType::memory_space>::value,
+           const bool offsetsSame =
+             std::is_same<typename OutputViewType::non_const_value_type,
+                          typename InputViewType::non_const_value_type>::value>
+  struct CopyOffsetsImpl {
+    static void run (const OutputViewType& dst, const InputViewType& src);
+  };
+
+  // Specialization for offsetsSame = true:
+  //
+  // If both input and output use the same type for offsets, then we
+  // don't need to check for overflow, and we can use
+  // Kokkos::deep_copy directly.  It doesn't matter whether the output
+  // execution space can access the input memory space:
+  // Kokkos::deep_copy takes care of the details.
+  template<class OutputViewType,
+           class InputViewType,
+           const bool outputExecSpaceCanAccessInputMemSpace>
+  struct CopyOffsetsImpl<OutputViewType, InputViewType,
+                         outputExecSpaceCanAccessInputMemSpace, true> {
+    static void run (const OutputViewType& dst, const InputViewType& src) {
+      static_assert (std::is_same<typename OutputViewType::non_const_value_type,
+                       typename InputViewType::non_const_value_type>::value,
+                     "CopyOffsetsImpl (implementation of copyOffsets): In order"
+                     " to call this specialization, the input and output must "
+                     "use the same offset type.");
+      static_assert (OutputViewType::rank == InputViewType::rank,
+                     "CopyOffsetsImpl (implementation of copyOffsets): In order"
+                     " to call this specialization, src and dst must have the "
+                     "same rank.");
+      static_assert (std::is_same<typename OutputViewType::array_layout,
+                       typename InputViewType::array_layout>::value,
+                     "CopyOffsetsImpl (implementation of copyOffsets): In order"
+                     " to call this specialization, src and dst must have the "
+                     "the same array_layout.");
+      Kokkos::deep_copy (dst, src);
+    }
+  };
+
+  // Specialization for offsetsSame = false:
+  //
+  // If input and output use different types for offsets, then we
+  // can't use Kokkos::deep_copy directly, and we may have to check
+  // for overflow.
+
+  // If the output execution space can access the input memory space,
+  // then we can use CopyOffsetsFunctor directly.
   template<class OutputViewType, class InputViewType>
-  void copyOffsets (const OutputViewType& dst, const InputViewType& src) {
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (dst.dimension_0 () != src.dimension_0 (), std::invalid_argument,
-       "copyOffsets: dst.dimension_0() = " << dst.dimension_0 ()
-       << " != src.dimension_0() = " << src.dimension_0 () << ".");
-
-    // FIXME (mfh 27 Jan 2016) The CopyOffsets functor currently
-    // requires that the output View's execution space be able to
-    // access the input View's memory space.  If the output View's
-    // execution space is Cuda, it cannot currently access host memory
-    // (that's the opposite direction from what UVM allows).  Thus, in
-    // that case, we just copy the offsets directly, without checking
-    // for overflow.
-
-    using Kokkos::Impl::VerifyExecutionCanAccessMemorySpace;
-    if (VerifyExecutionCanAccessMemorySpace<typename OutputViewType::execution_space,
-        typename InputViewType::memory_space>::value) {
-      typedef CopyOffsets<OutputViewType, InputViewType> functor_type;
-      bool noOverflow = false;
-      Kokkos::parallel_reduce (dst.dimension_0 (), functor_type (dst, src), noOverflow);
+  struct CopyOffsetsImpl<OutputViewType, InputViewType, true, false> {
+    static void run (const OutputViewType& dst, const InputViewType& src) {
+      static_assert (OutputViewType::rank == InputViewType::rank,
+                     "CopyOffsetsImpl (implementation of copyOffsets): In order"
+                     " to call this specialization, src and dst must have the "
+                     "same rank.");
+      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+                       typename OutputViewType::execution_space,
+                       typename InputViewType::memory_space>::value,
+                     "CopyOffsetsImpl (implementation of copyOffsets): In order"
+                     " to call this specialization, the output execution space "
+                     "must be able to access the input memory space.");
+      typedef CopyOffsetsFunctor<OutputViewType, InputViewType> functor_type;
+      bool noOverflow = false; // output argument of the reduction
+      Kokkos::parallel_reduce (dst.dimension_0 (),
+                               functor_type (dst, src),
+                               noOverflow);
       TEUCHOS_TEST_FOR_EXCEPTION
         (! noOverflow, std::runtime_error, "copyOffsets: One or more values in "
          "src were too big (in the sense of integer overflow) to fit in dst.");
     }
-    else {
-      // mfh 27 Jan 2016: The output View's execution space can't
-      // access the input View's memory space.  Thus, tell Kokkos to
-      // copy the input View's data into the output View's memory
-      // space _first_.  Note that the offset types might be
-      // different, so we shouldn't just call Kokkos::deep_copy
-      // directly between the input and output Views of offsets; that
-      // wouldn't compile.
-      //
-      // FIXME (mfh 27 Jan 2016) This double-copies if the offset
-      // types are the same, but at least it won't crash.  The optimal
-      // thing to do would be to specialize copyOffsets (the function,
-      // not the functor) for the case where the offset types are the
-      // same.
+  };
+
+  // If the output execution space canNOT access the input memory
+  // space, then we can't use CopyOffsetsFunctor directly.  Instead,
+  // tell Kokkos to copy the input View's data into the output View's
+  // memory space _first_.  Since the offset types are different for
+  // this specialization, we can't just call Kokkos::deep_copy
+  // directly between the input and output Views of offsets; that
+  // wouldn't compile.
+  //
+  // This case can and does come up in practice: If the output View's
+  // execution space is Cuda, it cannot currently access host memory
+  // (that's the opposite direction from what UVM allows).
+  // Furthermore, that case specifically requires overflow checking,
+  // since (as of 28 Jan 2016 at least) Kokkos::Cuda uses a smaller
+  // offset type than Kokkos' host spaces.
+  template<class OutputViewType, class InputViewType>
+  struct CopyOffsetsImpl<OutputViewType, InputViewType, false, false> {
+    static void run (const OutputViewType& dst, const InputViewType& src) {
+      static_assert (OutputViewType::rank == InputViewType::rank,
+                     "CopyOffsetsImpl (implementation of copyOffsets): In order"
+                     " to call this specialization, src and dst must have the "
+                     "same rank.");
       typedef Kokkos::View<typename InputViewType::non_const_value_type*,
                            Kokkos::LayoutLeft,
                            typename OutputViewType::device_type>
@@ -219,7 +309,8 @@ namespace { // (anonymous)
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.
-      typedef CopyOffsets<OutputViewType, output_space_copy_type> functor_type;
+      typedef CopyOffsetsFunctor<OutputViewType,
+                                 output_space_copy_type> functor_type;
       bool noOverflow = false;
       Kokkos::parallel_reduce (dst.dimension_0 (),
                                functor_type (dst, outputSpaceCopy),
@@ -229,8 +320,22 @@ namespace { // (anonymous)
          "in src were too big (in the sense of integer overflow) to fit in "
          "dst.");
     }
-  }
+  };
 
+  // Everything above is an implementation detail of this function,
+  // copyOffsets.  This function in turn is an implementation detail
+  // of FixedHashTable, in particular of the "copy constructor" that
+  // copies a FixedHashTable from one Kokkos device to another.
+  // copyOffsets copies the array of offsets (ptr_).
+  template<class OutputViewType, class InputViewType>
+  void copyOffsets (const OutputViewType& dst, const InputViewType& src) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (dst.dimension_0 () != src.dimension_0 (), std::invalid_argument,
+       "copyOffsets: dst.dimension_0() = " << dst.dimension_0 ()
+       << " != src.dimension_0() = " << src.dimension_0 () << ".");
+
+    CopyOffsetsImpl<OutputViewType, InputViewType>::run (dst, src);
+  }
 } // namespace (anonymous)
 
 /// \class FixedHashTable
@@ -512,7 +617,7 @@ public:
 
   /// \brief Number of (key, value) pairs in the table.
   ///
-  /// This counts duplicate keys separately.
+  /// This counts pairs with the same key value as separate pairs.
   KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
     // NOTE (mfh 26 May 2015) Using val_.dimension_0() only works
     // because the table stores pairs with duplicate keys separately.
