@@ -617,7 +617,7 @@ public:
 
   /// \brief Number of (key, value) pairs in the table.
   ///
-  /// This counts duplicate keys separately.
+  /// This counts pairs with the same key value as separate pairs.
   KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
     // NOTE (mfh 26 May 2015) Using val_.dimension_0() only works
     // because the table stores pairs with duplicate keys separately.

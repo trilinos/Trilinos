@@ -1384,7 +1384,10 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 checkForDuplicateKeys () const
 {
   const offset_type size = this->getSize ();
-  if (size == 0) {
+  // It's allowed for the hash table to have a positive number of
+  // buckets (getSize()), but still store no entries (numPairs()).
+  // Both cases trivially entail no duplicates.
+  if (size == 0 || this->numPairs () == 0) {
     return false;
   }
   else {
