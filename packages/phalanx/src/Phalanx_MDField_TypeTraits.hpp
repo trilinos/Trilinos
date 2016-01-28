@@ -10,13 +10,6 @@ namespace PHX {
   template<typename ViewType>
   struct MDFieldTypeTraits {
     typedef typename ViewType::value_type ScalarT;
-    typedef ScalarT& return_type;
-  };
-
-  template<typename S, typename L, typename D, typename M>
-  struct MDFieldTypeTraits< Kokkos::View<S,L,D,M,Kokkos::Impl::ViewSpecializeSacadoFad> > {
-    typedef Kokkos::View<S,L,D,M,Kokkos::Impl::ViewSpecializeSacadoFad> ViewType;
-    // dimension and stride
     typedef typename ViewType::reference_type return_type;
   };
 
