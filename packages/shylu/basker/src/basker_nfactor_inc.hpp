@@ -122,6 +122,8 @@ namespace BaskerNS
    
     //---------------------------Sep--------------------------//
 
+
+    /*
     if(btf_tabs_offset != 0)
       {
     //for(Int l=1; l<=4; l++)
@@ -139,10 +141,6 @@ namespace BaskerNS
 	#ifdef BASKER_KOKKOS
 	Kokkos::Impl::Timer  timer_inner_sep;
 	#ifdef BASKER_NO_LAMBDA
-	/*
-	kokkos_nfactor_sep <Int, Entry, Exe_Space> 
-	  sep_nfactor(this, l);
-	*/
        
 	kokkos_nfactor_sep2_inc_lvl <Int, Entry, Exe_Space>
 	  sep_nfactor(this,l);
@@ -172,7 +170,7 @@ namespace BaskerNS
       }
 
     //-------------------------End Sep----------------//
-
+*/
 
     //-------------------IF BTF-----------------------//
     if(Options.btf == BASKER_TRUE)
@@ -192,19 +190,19 @@ namespace BaskerNS
 	Kokkos::fence();
 	*/
 	//=====Check for error======
-	while(true)
-	  {
-	    INT_1DARRAY thread_start;
-	    MALLOC_INT_1DARRAY(thread_start, num_threads+1);
-	    init_value(thread_start, num_threads+1, 
-		       (Int) BASKER_MAX_IDX);
-	    int nt = nfactor_diag_error(thread_start);
-	    if(nt == BASKER_SUCCESS)
-	      {
-		break;
-	      }
-	    else
-	      {
+	//while(true)
+	// {
+	    //INT_1DARRAY thread_start;
+	    // MALLOC_INT_1DARRAY(thread_start, num_threads+1);
+	    //init_value(thread_start, num_threads+1, 
+	    //	       (Int) BASKER_MAX_IDX);
+	    //int nt = nfactor_diag_error(thread_start);
+	    // if(nt == BASKER_SUCCESS)
+	    //  {
+	    ///		break;
+	    // }
+	    //else
+	    // {
 		/*
 		break;
 		printf("restart \n");
@@ -214,8 +212,8 @@ namespace BaskerNS
 				     diag_nfactor);
 		Kokkos::fence();
 		*/
-	      }
-	  }//end while
+	    //}
+	    // }//end while
 
 	//====TIMER
 	#ifdef BASKER_TIME

@@ -595,6 +595,12 @@ namespace BaskerNS
 			 Int blkcol, Int blkrow,
 			 Int X_col, Int X_row,
 			 Int k , Entry pivot);
+
+    BASKER_INLINE
+    int t_move_offdiag_L_inc_lvl(Int kid, 
+			 Int blkcol, Int blkrow,
+			 Int X_col, Int X_row,
+			 Int k , Entry pivot);
     BASKER_INLINE
     int t_move_offdiag_L_old(Int kid, 
 			 Int blkcol, Int blkrow,
