@@ -516,6 +516,7 @@ C   --Write the coordinates
       CALL MDDEL ('XN3')
       CALL MDDEL ('YN3')
       CALL MDDEL ('ZN3')
+      CALL MDRSRV ('NUMELB3', KNELB3, NELBLK)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
 
@@ -523,7 +524,7 @@ C   --Write the coordinates
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &     IA(KLINK), A(KATRIB), A(KELATT), 
      &     IA(KIXEL), IA(KINCEL), IA(KNREL), IA(KIECOL), IA(KIXNP),
-     &     IA(KNRNP))
+     &     IA(KNRNP), IA(KNELB3))
 
       CALL MDDEL ('LINK')
       CALL MDDEL ('ATRIB')
@@ -551,11 +552,12 @@ C   --Fixup sides sets if mirrored
         IF (NERR .GT. 0) GOTO 40
         CALL MIRSS (IDESET(0,1), IDESET(0,2),
      &    NESUR, IA(KISFRO), IA(KISBCK), IA(KLTES3), IA(KLTSS3),
-     *    COMTOP, C(KNMLB), IA(KNELB), IA(KIDXELB))
+     *    COMTOP, C(KNMLB), IA(KNELB3), IA(KIDXELB))
         CALL MDDEL ('IDXELB')
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
       END IF
+      CALL MDDEL('NUMELB3')
 C     --Write the side sets
       
       CALL WRESS (A, IA, IDESET(0,1), IDESET(0,2),
