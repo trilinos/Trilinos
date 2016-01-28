@@ -1428,7 +1428,7 @@ TEST(MiniTensor, TemplateMetaProgramming)
     ASSERT_EQ(is_equal, true);
   }
 
-#ifndef KOKKOS_HAVE_CUDA
+#if !defined(KOKKOS_HAVE_CUDA)
   {
     //
     // use double explicitly
@@ -1476,7 +1476,7 @@ TEST(MiniTensor, TemplateMetaProgramming)
 
     ASSERT_EQ(type_string, fad_string);
   }
-#endif
+#endif // KOKKOS_HAVE_CUDA
 
 }
 

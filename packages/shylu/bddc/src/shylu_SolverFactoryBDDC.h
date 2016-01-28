@@ -60,6 +60,10 @@
 #include "shylu_SolverNoPivotT.h"
 #endif
 
+#if defined(USING_NPT)
+#include "shylu_SolverNPT.h"
+#endif
+
 #if defined(USING_ESMOND)
 #include "shylu_SolverEsmondBDDC.h"
 #endif
@@ -102,6 +106,17 @@ template <class SX,
 						  Parameters);
 #else
       std::cout << "Error: NoPivotT solver is not available" << std::endl;
+#endif
+    }
+    else if (solverString == "NPT") {
+#if defined(USING_NPT)
+      SolverPtr = new SolverNPT<SX,SM,LO,GO>(numRows, 
+					     rowBegin,
+					     columns,
+					     values,
+					     Parameters);
+#else
+      std::cout << "Error: NPT solver is not available" << std::endl;
 #endif
     }
     else if (solverString == "Esmond") {

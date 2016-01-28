@@ -2409,18 +2409,22 @@ namespace Experimental {
     }
 
     size_t offset = 0;
+    bool errorDuringUnpack = false;
     for (size_type i = 0; i < numImportLIDs; ++i) {
       const size_t numBytes = numPacketsPerLID[i];
       if (numBytes == 0) {
-        // Empty buffer for that row means that the row is empty.
-        continue;
+        continue; // empty buffer for that row means that the row is empty
       }
       const size_t numEnt =
-        unpackRowCount<ST, LO, GO, HES> (importsK, offset, numBytes, numBytesPerValue);
+        unpackRowCount<ST, LO, GO, HES> (importsK, offset, numBytes,
+                                         numBytesPerValue);
       if (numEnt > maxRowNumEnt) {
+        errorDuringUnpack = true;
+#ifdef HAVE_TPETRA_DEBUG
         std::ostream& err = this->markLocalErrorAndGetStream ();
         err << prefix << "At i = " << i << ", numEnt = " << numEnt
             << " > maxRowNumEnt = " << maxRowNumEnt << endl;
+#endif // HAVE_TPETRA_DEBUG
         continue;
       }
 
@@ -2431,12 +2435,16 @@ namespace Experimental {
       vals_out_type valsOut = subview (vals, pair_type (0, numScalarEnt));
 
       const size_t numBytesOut =
-        unpackRowForBlockCrs<ST, LO, GO, HES> (gidsOut, valsOut, importsK, offset, numBytes,
-                                               numEnt, numBytesPerValue, blockSize);
+        unpackRowForBlockCrs<ST, LO, GO, HES> (gidsOut, valsOut, importsK,
+                                               offset, numBytes, numEnt,
+                                               numBytesPerValue, blockSize);
       if (numBytes != numBytesOut) {
+        errorDuringUnpack = true;
+#ifdef HAVE_TPETRA_DEBUG
         std::ostream& err = this->markLocalErrorAndGetStream ();
         err << prefix << "At i = " << i << ", numBytes = " << numBytes
             << " != numBytesOut = " << numBytesOut << ".";
+#endif // HAVE_TPETRA_DEBUG
         continue;
       }
 
@@ -2444,14 +2452,15 @@ namespace Experimental {
       lids_out_type lidsOut = subview (lclColInds, pair_type (0, numEnt));
       for (size_t k = 0; k < numEnt; ++k) {
         lidsOut(k) = tgtColMap.getLocalElement (gidsOut(k));
-#ifdef HAVE_TPETRA_DEBUG
         if (lidsOut(k) == Teuchos::OrdinalTraits<LO>::invalid ()) {
+          errorDuringUnpack = true;
+#ifdef HAVE_TPETRA_DEBUG
           std::ostream& err = this->markLocalErrorAndGetStream ();
           err << prefix << "At i = " << i << ", GID " << gidsOut(k)
               << " is not owned by the calling process.";
+#endif // HAVE_TPETRA_DEBUG
           continue;
         }
-#endif // HAVE_TPETRA_DEBUG
       }
 
       // Combine the incoming data with the matrix's current data.
@@ -2466,20 +2475,30 @@ namespace Experimental {
       } else if (CM == ABSMAX) {
         numCombd = this->absMaxLocalValues (lclRow, lidsRaw, valsRaw, numEnt);
       }
-#ifdef HAVE_TPETRA_DEBUG
+
       if (static_cast<LO> (numEnt) != numCombd) {
+        errorDuringUnpack = true;
+#ifdef HAVE_TPETRA_DEBUG
         std::ostream& err = this->markLocalErrorAndGetStream ();
         err << prefix << "At i = " << i << ", numEnt = " << numEnt
             << " != numCombd = " << numCombd << ".";
+#endif // HAVE_TPETRA_DEBUG
         continue;
       }
-#else
-      (void) numCombd; // ignore, just for now
-#endif // HAVE_TPETRA_DEBUG
 
       // Don't update offset until current LID has succeeded.
       offset += numBytes;
     } // for each import LID i
+
+    if (errorDuringUnpack) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix << "Unpacking failed.";
+#ifndef HAVE_TPETRA_DEBUG
+      err << "  Please run again with a debug build to get more verbose "
+        "diagnostic output.";
+#endif // ! HAVE_TPETRA_DEBUG
+      err << endl;
+    }
 
     if (debug) {
       std::ostringstream os;

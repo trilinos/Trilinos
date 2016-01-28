@@ -145,7 +145,7 @@ private:
   bool useProjectedGrad_;        ///< Flag whether to use the projected gradient criticality measure.
 
   std::vector<bool> useInexact_; ///< Contains flags for inexact (0) objective function, (1) gradient, (2) Hessian.
-  int               TRflag_  ;   ///< Trust-region exit flag.
+  ETrustRegionFlag  TRflag_  ;   ///< Trust-region exit flag.
   int               TR_nfval_;   ///< Trust-region function evaluation counter.
   int               TR_ngrad_;   ///< Trust-region gradient evaluation counter.
   int               CGflag_;     ///< Truncated CG termination flag.
@@ -245,7 +245,7 @@ public:
       etr_(TRUSTREGION_DOGLEG), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
       useProjectedGrad_(false),
-      TRflag_(0), TR_nfval_(0), TR_ngrad_(0),
+      TRflag_(TRUSTREGION_FLAG_SUCCESS), TR_nfval_(0), TR_ngrad_(0),
       CGflag_(0), CGiter_(0),
       delMax_(1.e4),
       alpha_init_(1.), max_fval_(20),
@@ -294,7 +294,7 @@ public:
       etr_(TRUSTREGION_DOGLEG), esec_(SECANT_USERDEFINED),
       useSecantHessVec_(false), useSecantPrecond_(false),
       useProjectedGrad_(false),
-      TRflag_(0), TR_nfval_(0), TR_ngrad_(0),
+      TRflag_(TRUSTREGION_FLAG_SUCCESS), TR_nfval_(0), TR_ngrad_(0),
       CGflag_(0), CGiter_(0),
       delMax_(1.e4),
       alpha_init_(1.), max_fval_(20),
@@ -500,7 +500,7 @@ public:
 
     // Update trust-region information;
     // Performs a hard update on the objective function
-    TRflag_   = 0;
+    TRflag_   = TRUSTREGION_FLAG_SUCCESS;
     TR_nfval_ = 0;
     TR_ngrad_ = 0;
     Real fold = algo_state.value;
@@ -514,7 +514,8 @@ public:
 
     // If step is accepted ...
     // Compute new gradient and update secant storage
-    if ( TRflag_ == 0 || TRflag_ == 1 ) {  
+    if ( TRflag_ == TRUSTREGION_FLAG_SUCCESS || 
+         TRflag_ == TRUSTREGION_FLAG_POSPREDNEG ) {  
       // Perform line search (smoothing) to ensure decrease 
       if ( con.isActivated() ) {
         // Compute new gradient

@@ -694,7 +694,7 @@ template<class ViewType1,
          class IndexType = int,
          const int rank = ViewType1::rank>
 void COPY (const ViewType1& x, const ViewType2& y) {
-  static_assert (ViewType1::rank == ViewType2::rank,
+  static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                  "COPY: x and y must have the same rank.");
   Impl::COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, rank>::run (x, y);
 }

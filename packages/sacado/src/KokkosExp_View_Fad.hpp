@@ -166,9 +166,16 @@ struct is_view_fad< View<T,P...> > {
 
 template <typename view_type>
 KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_fad<view_type>::value, unsigned >::type
+constexpr unsigned
 dimension_scalar(const view_type& view) {
+  return 0;
+}
+
+template <typename T, typename ... P>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_fad< View<T,P...> >::value, unsigned >::type
+dimension_scalar(const View<T,P...>& view) {
   return view.implementation_map().dimension_scalar();
 }
 

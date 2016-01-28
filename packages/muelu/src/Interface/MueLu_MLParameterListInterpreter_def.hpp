@@ -112,13 +112,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MLParameterListInterpreter(Teuchos::ParameterList & paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), xcoord_(NULL), ycoord_(NULL), zcoord_(NULL),TransferFacts_(factoryList), blksize_(1) {
 
-    if(paramList.isParameter("xml parameter file")){
+    if (paramList.isParameter("xml parameter file")){
       std::string filename = paramList.get("xml parameter file","");
-      if(filename.length()!=0) {
-        if(comm.is_null()) throw Exceptions::RuntimeError("xml parameter file requires a valid comm");
+      if (filename.length() != 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION(comm.is_null(), Exceptions::RuntimeError, "xml parameter file requires a valid comm");
         Teuchos::ParameterList paramList2 = paramList;
         Teuchos::updateParametersFromXmlFileAndBroadcast(filename, Teuchos::Ptr<Teuchos::ParameterList>(&paramList2),*comm);
-	paramList2.remove("xml parameter file");
+        paramList2.remove("xml parameter file");
         SetParameterList(paramList2);
       }
       else
@@ -137,8 +137,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList & paramList_in) {
     Teuchos::ParameterList paramList = paramList_in;
-
-    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
 
     //
     // Read top-level of the parameter list
@@ -172,23 +170,17 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "x-coordinates",                        double*,                NULL,       xcoord);
     MUELU_READ_PARAM(paramList, "y-coordinates",                        double*,                NULL,       ycoord);
     MUELU_READ_PARAM(paramList, "z-coordinates",                        double*,                NULL,       zcoord);
-    
+
 
     //
     // Move smoothers/aggregation/coarse parameters to sublists
     //
-
-    //std::cout << std::endl << "Paramter list before CreateSublists" << std::endl;
-    //std::cout << paramList << std::endl;
 
     // ML allows to have level-specific smoothers/aggregation/coarse parameters at the top level of the list or/and defined in sublists:
     // See also: ML Guide section 6.4.1, MueLu::CreateSublists, ML_CreateSublists
     ParameterList paramListWithSubList;
     MueLu::CreateSublists(paramList, paramListWithSubList);
     paramList = paramListWithSubList; // swap
-
-    //std::cout << std::endl << "Parameter list after CreateSublists" << std::endl;
-    //std::cout << paramListWithSubList << std::endl;
 
     //
     // Validate parameter list
@@ -205,18 +197,12 @@ namespace MueLu {
                                    "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
 #else
         // If no validator available: issue a warning and set parameter value to false in the output list
-        *out << "Warning: MueLu_ENABLE_ML=OFF. The parameter list cannot be validated." << std::endl;
+        this->GetOStream(Warnings0) << "Warning: MueLu_ENABLE_ML=OFF. The parameter list cannot be validated." << std::endl;
         paramList.set("ML validate parameter list", false);
 
 #endif // HAVE_MUELU_ML
       } // if(validate)
     } // scope
-
-
-    //
-    //
-    //
-
 
 
     // Matrix option
@@ -235,17 +221,18 @@ namespace MueLu {
     this->verbosity_ = eVerbLevel;
 
 
-    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled" && agg_type != "Coupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled" && agg_type != "Coupled", Exceptions::RuntimeError,
+        "MueLu::MLParameterListInterpreter::SetParameterList(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
 
     // Create MueLu factories
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-    if(agg_use_aux) {
+    if (agg_use_aux) {
       dropFact->SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(std::string("distance laplacian")));
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(agg_aux_thresh));
     }
 
     RCP<FactoryBase> AggFact = Teuchos::null;
-    if(agg_type == "Uncoupled") {
+    if (agg_type == "Uncoupled") {
       // Uncoupled aggregation
       RCP<UncoupledAggregationFactory> MyUncoupledAggFact = rcp(new UncoupledAggregationFactory());
       MyUncoupledAggFact->SetFactory("Graph", dropFact);
@@ -267,12 +254,14 @@ namespace MueLu {
       CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
       AggFact = CoupledAggFact2;
     }
-    if (verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
-      *out << "========================= Aggregate option summary  =========================" << std::endl;
-      *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
-      *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-      *out << "aggregate ordering :                    natural" << std::endl;
-      *out << "=============================================================================" << std::endl;
+    if (verbosityLevel > 3) {
+      std::ostringstream oss;
+      oss << "========================= Aggregate option summary  =========================" << std::endl;
+      oss << "min Nodes per aggregate :               " << minPerAgg << std::endl;
+      oss << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
+      oss << "aggregate ordering :                    natural" << std::endl;
+      oss << "=============================================================================" << std::endl;
+      this->GetOStream(Runtime1) << oss.str();
     }
 
     RCP<Factory> PFact;
@@ -410,7 +399,7 @@ namespace MueLu {
     //
     ParameterList& coarseList = paramList.sublist("coarse: list");
     // check whether coarse solver is set properly. If not, set default coarse solver.
-    if(!coarseList.isParameter("smoother: type"))
+    if (!coarseList.isParameter("smoother: type"))
       coarseList.set("smoother: type", "Amesos-KLU"); // set default coarse solver according to ML 5.0 guide
     RCP<SmootherFactory> coarseFact = GetSmootherFactory(coarseList, Teuchos::null);
 
@@ -460,7 +449,7 @@ namespace MueLu {
       manager->SetFactory("Ptent", PtentFact);
 
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-    if(bDoRepartition == 1) {
+    if (bDoRepartition == 1) {
       manager->SetFactory("A", RebalancedAFact);
       manager->SetFactory("P", RebalancedPFact);
       manager->SetFactory("R", RebalancedRFact);
@@ -509,19 +498,19 @@ namespace MueLu {
     // Do the same for coordinates
     size_t num_coords = 0;
     double * coordPTR[3];
-    if(xcoord_) {
-      coordPTR[0] = xcoord_; 
+    if (xcoord_) {
+      coordPTR[0] = xcoord_;
       num_coords++;
-      if(ycoord_) {
-	coordPTR[1] = ycoord_; 
-	num_coords++;
-	if(zcoord_) {
-	  coordPTR[2] = zcoord_;
-	  num_coords++;
-	}
+      if (ycoord_) {
+        coordPTR[1] = ycoord_;
+        num_coords++;
+        if (zcoord_) {
+          coordPTR[2] = zcoord_;
+          num_coords++;
+        }
       }
     }
-    if(num_coords){
+    if (num_coords){
       Teuchos::RCP<Level> fineLevel = H.GetLevel(0);
       Teuchos::RCP<Operator> Op = fineLevel->Get<RCP<Operator> >("A");
       Teuchos::RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Op);
@@ -600,7 +589,7 @@ namespace MueLu {
       ifpackType = "CHEBYSHEV";
 
       MUELU_COPY_PARAM(paramList, "smoother: sweeps",          int, 2,     smootherParamList, "chebyshev: degree");
-      if(paramList.isParameter("smoother: MLS alpha")) {
+      if (paramList.isParameter("smoother: MLS alpha")) {
         MUELU_COPY_PARAM(paramList, "smoother: MLS alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
       } else {
         MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
