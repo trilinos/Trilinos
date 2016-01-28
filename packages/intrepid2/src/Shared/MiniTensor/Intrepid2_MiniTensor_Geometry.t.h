@@ -720,11 +720,15 @@ interpolate_element(
       break;
 
     default:
+#if defined(KOKKOS_HAVE_CUDA)
+     Kokkos::abort("ERROR (Tensor::fill(): Unknown element type.");
+#else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
       std::cerr << std::endl;
       std::cerr << "Unknown element type in interpolation.";
       std::cerr << std::endl;
       exit(1);
+#endif
       break;
 
   }
