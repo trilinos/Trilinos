@@ -98,6 +98,8 @@ IF (Intrepid2_ENABLE_Boost)
     Shared/MiniTensor/Intrepid2_MiniTensor_Matrix.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Matrix.i.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Matrix.t.h
+    Shared/MiniTensor/Intrepid2_MiniTensor_Solvers.h
+    Shared/MiniTensor/Intrepid2_MiniTensor_Solvers.t.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Storage.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Storage.i.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Tensor.h
