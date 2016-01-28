@@ -210,24 +210,37 @@ int main(int argc, char *argv[])
 
   weightVec[0] = weights; weightStrides[0] = 1;
 
-  inputAdapter_t ia2(
-    localCount, globalIds,  
-    coordVec, coordStrides, 
-    weightVec, weightStrides);
+  inputAdapter_t *ia2=new inputAdapter_t(localCount, globalIds, coordVec, 
+					 coordStrides,weightVec,weightStrides);
 
   // Create a Zoltan2 partitioning problem
 
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem2 =
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia2, &params);
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(ia2, &params);
 
   // Solve the problem
 
   problem2->solve();
 
+  // An environment.  This is usually created by the problem.
+
+  RCP<const Zoltan2::Environment> env2 = problem2->getEnvironment();
+
+  RCP<const base_adapter_t> bia2 =
+    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia2));
+
+  // create metric object (also usually created by a problem)
+
+  RCP<quality_t>metricObject2=rcp(new quality_t(env2,problem2->getComm(),bia2,
+						&problem2->getSolution(),
+						false));
+
   // Check the solution.
 
-  if (rank == 0)
+  if (rank == 0) {
+    metricObject2->printMetrics(cout);
     problem2->printMetrics(cout);
+  }
 
   if (rank == 0){
     scalar_t imb = problem2->getWeightImbalance();
