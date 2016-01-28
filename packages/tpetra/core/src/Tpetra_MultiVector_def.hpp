@@ -262,9 +262,6 @@ namespace Tpetra {
                const bool zeroOut) : /* default is true */
     base_type (map)
   {
-   TEUCHOS_TEST_FOR_EXCEPTION(
-     numVecs < 1, std::invalid_argument, "Tpetra::MultiVector::MultiVector"
-     "(map,numVecs,zeroOut): numVecs = " << numVecs << " < 1.");
     const size_t lclNumRows = this->getLocalLength ();
     view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
     origView_ = view_;
