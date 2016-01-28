@@ -1879,7 +1879,7 @@ public:
 
     bool tictoc = this->cp->get_tictoc();
     Kokkos::Impl::Timer *timer = NULL;
-    tictoc = true;
+
     if (tictoc){
       timer = new Kokkos::Impl::Timer();
       std::cout << "\tRewriting EB params. num_initial_colors:" << numInitialColors

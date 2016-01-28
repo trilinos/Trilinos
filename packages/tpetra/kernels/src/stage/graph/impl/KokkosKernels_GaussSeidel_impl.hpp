@@ -68,10 +68,10 @@ public:
   typedef typename in_nonzero_value_view_type::const_data_type const_nonzero_value_data_type;
   typedef typename in_nonzero_value_view_type::non_const_data_type non_const_nonzero_value_data_type;
   typedef typename in_nonzero_value_view_type::memory_space nonzero_value_view_memory_space;
-  typedef typename Kokkos::View<const_nonzero_value_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> const_nonzero_value_view_type;
-  typedef typename Kokkos::View<non_const_nonzero_value_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> non_const_nonzero_value_view_type;
+  typedef typename Kokkos::View<const_nonzero_value_data_type, nonzero_value_view_array_layout,
+      nonzero_value_view_memory_space, nonzero_value_view_memory_traits> const_nonzero_value_view_type;
+  typedef typename Kokkos::View<non_const_nonzero_value_data_type, nonzero_value_view_array_layout,
+      nonzero_value_view_memory_space, nonzero_value_view_memory_traits> non_const_nonzero_value_view_type;
 
 
   typedef typename HandleType::HandleExecSpace MyExecSpace;
@@ -290,7 +290,7 @@ public:
       //std::cout << "graph_color_symbolic STARTTTTTT num_rows:" << num_rows  << " tmp_adj:" << tmp_adj.dimension_0() << " adj:" << adj.dimension_0()<< std::endl;
 
       else {
-        graph_color_symbolic <HandleType, const_row_index_view_type, const_row_index_view_type> (this->handle, num_rows, num_rows, xadj , adj);
+        graph_color_symbolic <HandleType, const_row_index_view_type, const_nonzero_index_view_type> (this->handle, num_rows, num_rows, xadj , adj);
       }
       //std::cout << "graph_color_symbolic ENDDDDDDDDDD num_rows:" << num_rows << std::endl;
     }
@@ -519,7 +519,8 @@ public:
       bool init_zero_x_vector = false,
       int numIter = 1,
       bool apply_forward = true,
-      bool apply_backward = true){
+      bool apply_backward = true,
+      bool update_y_vector = true){
     if (this->handle->get_gs_handle()->is_numeric_called() == false){
       this->initialize_numeric();
     }
@@ -538,16 +539,17 @@ public:
 
 
 
-    //TODO: I dont need to permute the vector if Y stays constant.
-    KokkosKernels::Experimental::Util::permute_vector
-      <y_value_array_type,
-      nonzero_value_persistent_work_view_type,
-      row_index_persistent_work_view_type, MyExecSpace>(
-        num_rows,
-        old_to_new_map,
-        y_rhs_input_vec,
-        Permuted_Yvector
-        );
+    if (update_y_vector){
+      KokkosKernels::Experimental::Util::permute_vector
+        <y_value_array_type,
+        nonzero_value_persistent_work_view_type,
+        row_index_persistent_work_view_type, MyExecSpace>(
+          num_rows,
+          old_to_new_map,
+          y_rhs_input_vec,
+          Permuted_Yvector
+      );
+    }
     MyExecSpace::fence();
     if(init_zero_x_vector){
       KokkosKernels::Experimental::Util::zero_vector<

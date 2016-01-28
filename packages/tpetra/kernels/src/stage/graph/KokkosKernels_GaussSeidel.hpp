@@ -18,7 +18,8 @@ namespace Graph{
       in_row_index_view_type row_map,
       in_nonzero_index_view_type entries,
       bool is_graph_symmetric = true){
-    typedef typename Impl::GaussSeidel<KernelHandle, in_row_index_view_type, in_nonzero_index_view_type, typename KernelHandle::in_nonzero_value_view_type> SGS;
+    typedef typename Impl::GaussSeidel<KernelHandle, in_row_index_view_type,
+          in_nonzero_index_view_type, typename KernelHandle::in_nonzero_value_view_type> SGS;
     SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
     sgs.initialize_symbolic();
   }
@@ -57,6 +58,7 @@ namespace Graph{
       x_value_array_type x_lhs_output_vec,
       y_value_array_type y_rhs_input_vec,
       bool init_zero_x_vector = false,
+      bool update_y_vector = true,
       int numIter = 1){
     typedef
         typename Impl::GaussSeidel
@@ -70,7 +72,7 @@ namespace Graph{
         init_zero_x_vector,
         numIter,
         true,
-        true);
+        true,update_y_vector);
 
   }
 
@@ -89,6 +91,7 @@ namespace Graph{
       x_value_array_type x_lhs_output_vec,
       y_value_array_type y_rhs_input_vec,
       bool init_zero_x_vector = false,
+      bool update_y_vector = true,
       int numIter = 1){
     typedef typename Impl::GaussSeidel <KernelHandle,
             in_row_index_view_type, in_nonzero_index_view_type,in_nonzero_value_view_type > SGS;
@@ -100,7 +103,7 @@ namespace Graph{
         init_zero_x_vector,
         numIter,
         true,
-        false);
+        false,update_y_vector);
 
   }
   template <class KernelHandle,
@@ -118,6 +121,7 @@ namespace Graph{
       x_value_array_type x_lhs_output_vec,
       y_value_array_type y_rhs_input_vec,
       bool init_zero_x_vector = false,
+      bool update_y_vector = true,
       int numIter = 1){
     typedef typename Impl::GaussSeidel <KernelHandle,
             in_row_index_view_type, in_nonzero_index_view_type,in_nonzero_value_view_type > SGS;
@@ -128,7 +132,7 @@ namespace Graph{
         init_zero_x_vector,
         numIter,
         false,
-        true);
+        true, update_y_vector);
 
   }
 }

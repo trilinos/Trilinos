@@ -689,7 +689,23 @@ void symmetrize_graph_symbolic(
             fse);
   MyExecSpace::fence();
 
+#ifndef SLOWSORT
   KokkosKernelsSorting::sort_key_value_views <idx_out_edge_array_type, idx_out_edge_array_type, MyExecSpace>(tmp_srcs, tmp_dsts);
+#else
+  {
+
+
+    typedef Kokkos::SortImpl::DefaultBinOp1D<idx_out_edge_array_type> CompType;
+    Kokkos::SortImpl::min_max<typename idx_out_edge_array_type::non_const_value_type> val;
+    Kokkos::parallel_reduce(tmp_srcs.dimension_0(),Kokkos::SortImpl::min_max_functor<idx_out_edge_array_type>(tmp_srcs),val);
+    Kokkos::fence();
+    Kokkos::BinSort<idx_out_edge_array_type, CompType> bin_sort(tmp_srcs,CompType(tmp_srcs.dimension_0()/2,val.min,val.max),true);
+    bin_sort.create_permute_vector();
+    bin_sort.sort(tmp_srcs);
+    bin_sort.sort(tmp_dsts);
+  }
+#endif
+
 
   MyExecSpace::fence();
 
