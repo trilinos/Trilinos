@@ -272,6 +272,7 @@ namespace PHX {
      void dimensions(std::vector<size_type>& dims);
     */
     template<typename iType>
+    KOKKOS_FORCEINLINE_FUNCTION 
     void dimensions(std::vector<iType>& dims);
    
     KOKKOS_FORCEINLINE_FUNCTION 
