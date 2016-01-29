@@ -28,6 +28,13 @@
 
 #include "az_aztec.h"
 #include "ml_read_utils.h"
+
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
+
 extern int AZ_using_fortran;
 
 /*****************************************************************************/
@@ -87,6 +94,10 @@ extern void add_row_3D(int row,int location,double val[],int bindx[], int *n);
 
 int main(int argc, char *argv[])
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
   int    i, input_option, precon_flag, N_elements_coarse;
   double *b, *x;
 #ifdef ML_BENCHMARK
@@ -116,6 +127,10 @@ int main(int argc, char *argv[])
   FILE *ifp;
 #endif
   char filename[80];
+
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   /* ----------------------- execution begins --------------------------------*/
 
@@ -1105,9 +1120,16 @@ void add_row_3D(int row, int location, double val[], int bindx[], int *n)
 
 {
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int        m;
   int        k, NP;
-int nx,ny,nz;
+  int nx,ny,nz;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   /* determine grid dimensions */
 
