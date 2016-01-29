@@ -1290,6 +1290,77 @@ create_mirror( const View<T,L,D,M,Impl::ViewPCEContiguous> & src )
   return host_view_type( label , dims );
 }
 
+template <typename T, typename L, typename D, typename M>
+struct is_view_uq_pce< View<T,L,D,M,Impl::ViewPCEContiguous> > {
+  static const bool value = true;
+};
+
+template <typename T, typename L, typename D, typename M>
+struct FlatArrayType< View<T,L,D,M,Impl::ViewPCEContiguous> > {
+  typedef View<T,L,D,M,Impl::ViewPCEContiguous> view_type;
+  typedef typename view_type::flat_array_type type;
+};
+
+template <typename T, typename L, typename D, typename M>
+struct CijkType< View<T,L,D,M,Impl::ViewPCEContiguous> > {
+  typedef View<T,L,D,M,Impl::ViewPCEContiguous> view_type;
+  typedef typename view_type::cijk_type type;
+};
+
+template <typename T, typename L, typename D, typename M>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar(const View<T,L,D,M,Impl::ViewPCEContiguous>& view) {
+  return view.sacado_size();
+}
+
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_uq_pce<view_type>::value,
+                typename CijkType<view_type>::type >::type
+cijk(const view_type& view) {
+  return view.cijk();
+}
+
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_uq_pce<view_type>::value, bool >::type
+is_allocation_contiguous(const view_type& view) {
+  return view.is_allocation_contiguous();
+}
+
+template <typename ViewType>
+ViewType
+make_view(const std::string& label,
+          const typename CijkType<ViewType>::type& cijk,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(label, cijk, N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+template <typename ViewType>
+ViewType
+make_view(const ViewAllocateWithoutInitializing& init,
+          const typename CijkType<ViewType>::type& cijk,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(init, cijk, N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+template <typename ViewType>
+typename std::enable_if< is_view_uq_pce<ViewType>::value, ViewType>::type
+make_view(typename ViewType::value_type* ptr,
+          const typename CijkType<ViewType>::type& cijk,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(ptr, cijk, N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
 } // namespace Kokkos
 
 namespace Kokkos {

@@ -59,22 +59,34 @@ namespace FENL {
 
 // Specialization of ResponseComputation for PCE scalar types.  We currently
 // have to do this because parallel_reduce doesn't support non-POD types
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+template< typename FixtureType ,
+          typename S , typename ... P >
+class ResponseComputation< FixtureType,
+                           Kokkos::View<Sacado::UQ::PCE<S>*,P...>
+                         >
+#else
 template< typename FixtureType ,
           typename S , typename L , typename D , typename M >
 class ResponseComputation< FixtureType,
                            Kokkos::View<S,L,D,M,Kokkos::Impl::ViewPCEContiguous>
                          >
+#endif
 {
 public:
 
   typedef FixtureType fixture_type ;
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+  typedef Kokkos::View<Sacado::UQ::PCE<S>*,P...> vector_type ;
+#else
   typedef Kokkos::View<S,L,D,M,Kokkos::Impl::ViewPCEContiguous> vector_type ;
+#endif
   typedef typename vector_type::execution_space execution_space ;
   typedef typename vector_type::value_type scalar_type ;
 
   // Hack to get parallel_reduce to work
-  typedef typename vector_type::intrinsic_scalar_type value_type[] ;
-  typedef typename vector_type::cijk_type cijk_type ;
+  typedef typename Kokkos::IntrinsicScalarType<vector_type>::type value_type[] ;
+  typedef typename Kokkos::CijkType<vector_type>::type cijk_type ;
 
   typedef Kokkos::Example::HexElement_Data< fixture_type::ElemNode > element_data_type ;
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
@@ -104,8 +116,8 @@ public:
     : elem_data()
     , fixture( arg_fixture )
     , solution( arg_solution )
-    , value_count( solution.sacado_size() )
-    , cijk( solution.cijk() )
+    , value_count( Kokkos::dimension_scalar(solution) )
+    , cijk( Kokkos::cijk(solution) )
     {}
 
   //------------------------------------
@@ -282,7 +294,7 @@ struct EvaluatePCE {
     scalar_view( arg_scalar_view ),
     quad_values( arg_quad_values ),
     qp( 0 ),
-    num_pce( arg_pce_view.sacado_size() ) {}
+    num_pce( Kokkos::dimension_scalar(arg_pce_view) ) {}
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
@@ -325,7 +337,7 @@ struct AssemblePCE {
     quad_values( arg_quad_values ),
     quad_weights( arg_quad_weights ),
     qp( 0 ),
-    num_pce( arg_pce_view.sacado_size() ) {}
+    num_pce( Kokkos::dimension_scalar(arg_pce_view) ) {}
 
   void apply( const unsigned arg_qp ) {
     qp = arg_qp;
@@ -368,7 +380,7 @@ struct AssembleRightPCE {
     quad_values( arg_quad_values ),
     quad_weights( arg_quad_weights ),
     qp( 0 ),
-    num_pce( arg_pce_view.sacado_size() ) {}
+    num_pce( Kokkos::dimension_scalar(arg_pce_view) ) {}
 
   void apply( const unsigned arg_qp ) {
     qp = arg_qp;
@@ -416,7 +428,7 @@ struct EvaluatePCE< pce_view_type,
     scalar_view( arg_scalar_view ),
     quad_values( arg_quad_values ),
     qp( 0 ),
-    num_pce( arg_pce_view.sacado_size() ),
+    num_pce( Kokkos::dimension_scalar(arg_pce_view) ),
     row_count( pce_view.dimension_1() ) {}
 
   void apply(const unsigned arg_qp) {
@@ -508,7 +520,7 @@ struct AssemblePCE< pce_view_type,
     quad_values( arg_quad_values ),
     quad_weights( arg_quad_weights ),
     qp( 0 ),
-    num_pce( arg_pce_view.sacado_size() ) {}
+    num_pce( Kokkos::dimension_scalar(arg_pce_view) ) {}
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
@@ -570,7 +582,7 @@ struct AssembleRightPCE< pce_view_type,
     quad_values( arg_quad_values ),
     quad_weights( arg_quad_weights ),
     qp( 0 ),
-    num_pce( arg_pce_view.sacado_size() ),
+    num_pce( Kokkos::dimension_scalar(arg_pce_view) ),
     row_count( pce_view.dimension_0() ) {}
 
   void apply(const unsigned arg_qp) {
