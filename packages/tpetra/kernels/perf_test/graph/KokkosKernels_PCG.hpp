@@ -55,8 +55,8 @@
 //#include <WrapMPI.hpp>
 
 #include <iostream>
-#include "GaussSeidel.hpp"
-#include "KokkosKernelsHandle.hpp"
+#include "KokkosKernels_GaussSeidel.hpp"
+#include "KokkosKernels_Handle.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -249,9 +249,11 @@ template< typename KernelHandle>
 inline
 void pcgsolve( //const ImportType & import,
               KernelHandle &kh
-            ,  const CrsMatrix< typename KernelHandle::value_type , typename KernelHandle::idx, typename KernelHandle::HandleExecSpace >      & A
-            , const Kokkos::View< typename KernelHandle::value_type * , typename KernelHandle::HandleExecSpace > & b
-            , const Kokkos::View< typename KernelHandle::value_type * , typename KernelHandle::HandleExecSpace > & x
+            ,  const CrsMatrix <typename KernelHandle::nonzero_value_type , typename KernelHandle::row_index_type, typename KernelHandle::HandleExecSpace >      & A
+            , const Kokkos::View <typename KernelHandle::nonzero_value_type *,
+                                  typename KernelHandle::HandleExecSpace> & b
+            , const Kokkos::View <typename KernelHandle::nonzero_value_type * ,
+                                  typename KernelHandle::HandleExecSpace > & x
             , const size_t  maximum_iteration = 200
             , const double  tolerance = std::numeric_limits<double>::epsilon()
             , CGSolveResult * result = 0
@@ -259,9 +261,9 @@ void pcgsolve( //const ImportType & import,
             )
 {
   typedef typename KernelHandle::HandleExecSpace Space;
-  //typedef typename KernelHandle::value_type MScalar;
-  typedef typename KernelHandle::value_type VScalar;
-  //typedef typename KernelHandle::idx Idx_Type;
+  //typedef typename KernelHandle::nonzero_value_type MScalar;
+  typedef typename KernelHandle::nonzero_value_type VScalar;
+  //typedef typename KernelHandle::row_index_type Idx_Type;
   //typedef typename KernelHandle::idx_array_type idx_array_type;
   typedef typename Kokkos::View< VScalar * , Space >  VectorType ;
 
@@ -321,7 +323,8 @@ void pcgsolve( //const ImportType & import,
     //gsHandler = kh.get_gs_handle();
     timer.reset();
 
-    KokkosKernels::Experimental::Graph::gauss_seidel_numeric<KernelHandle>(&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff);
+    KokkosKernels::Experimental::Graph::gauss_seidel_numeric
+      (&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff);
 
     Space::fence();
     precond_init_time += timer.seconds();
@@ -330,7 +333,8 @@ void pcgsolve( //const ImportType & import,
     Space::fence();
     timer.reset();
 
-    KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply<KernelHandle> (&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
+    KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply
+        (&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
 
     Space::fence();
     precond_time += timer.seconds();
@@ -387,7 +391,7 @@ void pcgsolve( //const ImportType & import,
     if (use_sgs){
       Space::fence();
       timer.reset();
-      KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply<KernelHandle> (&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
+      KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply(&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
 
       Space::fence();
       precond_time += timer.seconds();

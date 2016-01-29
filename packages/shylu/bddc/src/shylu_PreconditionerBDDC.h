@@ -247,10 +247,11 @@ public:
 	LO numBoundaryDofs = boundaryDofs.size();
 	// potential write conflicts because boundary dofs are common
 	// to different threads
-#pragma omp critical(initial_static_condensation)
+	//#pragma omp critical(initial_static_condensation)
 	{
 	  for (LO j=0; j<numBoundaryDofs; j++) {
 	    LO row = boundaryDofs[j];
+#pragma omp atomic
 	    rhsB[row] += subRhs[j];
 	  }
 	}
@@ -391,10 +392,12 @@ public:
 	  subRhs[j] = rhsB[subBoundaryDofs[j]];
 	}
 	m_Subdomain[i]->applyNeumannCorrection(&subRhs[0], &subSol[0]);
-#pragma omp critical(apply)
+	//#pragma omp critical(apply)
 	{
 	  for (LO j=0; j<numDofB; j++) {
-	    solB[subBoundaryDofs[j]] += subSol[j];
+	    int row = subBoundaryDofs[j];
+#pragma omp atomic
+	    solB[row] += subSol[j];
 	  }
 	}
       }
@@ -453,10 +456,12 @@ public:
 	    xSub[j] = xValues[subBoundaryDofs[j]];
 	  }
 	  m_Subdomain[i]->applyBoundaryOperator(&xSub[0], &AxSub[0]);
-#pragma omp critical(apply_operator)
+	  //#pragma omp critical(apply_operator)
 	  {
 	    for (LO j=0; j<numDofB; j++) {
-	      AxValues[subBoundaryDofs[j]] += AxSub[j];
+	      int row = subBoundaryDofs[j]; 
+#pragma omp atomic
+	      AxValues[row] += AxSub[j];
 	    }
 	  }
 	}
@@ -504,10 +509,12 @@ public:
 	  xSub[j] = xValues[subDofs[j]];
 	}
 	m_Subdomain[i]->applyFullOperator(&xSub[0], &AxSub[0]);
-#pragma omp critical(apply_full_operator)
+	//#pragma omp critical(apply_full_operator)
 	{
 	  for (LO j=0; j<numDofs; j++) {
-	    AxValues[subDofs[j]] += AxSub[j];
+	    int row = subDofs[j];
+#pragma omp atomic
+	    AxValues[row] += AxSub[j];
 	  }
 	}
       }

@@ -739,7 +739,7 @@ Tensor<T, N, ES>
 log_gregory(Tensor<T, N, ES> const & A)
 {
   Index const
-  max_iter = 128;
+  max_iter = 8192;
 
   T const
   tol = machine_epsilon<T>();

@@ -1,4 +1,4 @@
-#include <KokkosKernelsGraphHelpers.hpp>
+#include <KokkosKernels_GraphHelpers.hpp>
 #include <cstdlib>
 #include <iostream>
 

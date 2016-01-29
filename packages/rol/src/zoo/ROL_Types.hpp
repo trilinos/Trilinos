@@ -804,6 +804,49 @@ namespace ROL {
     return retString;
   }
   
+  /** \enum  ROL::ETrustRegionFlag 
+      \brief Enumation of flags used by trust-region solvers.
+
+      \arg TRUSTREGION_FLAG_SUCCESS        Actual and predicted reductions are positive 
+      \arg TRUSTREGION_FLAG_POSPREDNEG     Reduction is positive, predicted negative (impossible)
+      \arg TRUSTREGION_FLAG_NPOSPREDPOS    Reduction is nonpositive, predicted positive
+      \arg TRUSTREGION_FLAG_NPOSPREDNEG    Reduction is nonpositive, predicted negative (impossible)
+      \arg TRUSTREGION_FLAG_QMINSUFDEC     Insufficient decrease of the quadratic model (bound constraint only)
+      \arg TRUSTREGION_FLAG_NAN            Actual and/or predicted reduction is NaN
+
+  */
+  enum ETrustRegionFlag {
+    TRUSTREGION_FLAG_SUCCESS = 0,
+    TRUSTREGION_FLAG_POSPREDNEG,
+    TRUSTREGION_FLAG_NPOSPREDPOS,
+    TRUSTREGION_FLAG_NPOSPREDNEG,
+    TRUSTREGION_FLAG_QMINSUFDEC,
+    TRUSTREGION_FLAG_NAN 
+  };
+ 
+
+  inline std::string ETrustRegionFlagToString(ETrustRegionFlag trf) {
+    std::string retString;
+    switch(trf) {
+      case TRUSTREGION_FLAG_SUCCESS:  
+        break;
+      case TRUSTREGION_FLAG_POSPREDNEG: 
+        break;
+      case TRUSTREGION_FLAG_NPOSPREDPOS: 
+        break;
+      case TRUSTREGION_FLAG_NPOSPREDNEG:
+        break;
+      case TRUSTREGION_FLAG_QMINSUFDEC:
+        break;
+      case TRUSTREGION_FLAG_NAN:
+        break;
+      default:
+        retString = "INVALID ETrustRegionFlag";       
+    }
+    return retString;
+  }
+
+
   /** \brief  Verifies validity of a TrustRegion enum.
     
       \param  tr  [in]  - enum of the TrustRegion

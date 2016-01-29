@@ -82,14 +82,14 @@ struct CheckType{static const bool value = false; };
 
 template<class A>
 struct Rank{static const int value = -1;};
-template<class arg1, class arg2, class arg3, class arg4, class arg5>
-struct Rank<Kokkos::View<arg1,arg2,arg3,arg4,arg5> >{
-static const index_type value=Kokkos::View<arg1,arg2,arg3,arg4, arg5>::Rank;
+template<class Array, class ... Params>
+struct Rank<Kokkos::View<Array,Params...> >{
+  static const index_type value=Kokkos::View<Array,Params...>::Rank;
 };
 
-template<class arg1, class arg2, class arg3, class arg4, class arg5>
-struct Rank<const Kokkos::View<arg1,arg2,arg3,arg4,arg5> >{
-static const index_type value=Kokkos::View<arg1,arg2,arg3,arg4, arg5>::Rank;
+template<class Array, class ... Params>
+struct Rank<const Kokkos::View<Array,Params...> >{
+static const index_type value=Kokkos::View<Array,Params...>::Rank;
 };
 
 template<class arg1, class arg2, class arg3, class arg4, class arg5>

@@ -1,8 +1,3 @@
-========================= Aggregate option summary  =========================
-min Nodes per aggregate :               1
-min # of root nbrs already aggregated : 0
-aggregate ordering :                    natural
-=============================================================================
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  keep smoother data = 0   [default]

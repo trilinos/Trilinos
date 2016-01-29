@@ -645,7 +645,9 @@ check_strong_ellipticity(Tensor4<T, N> const & A)
   dimension = A.get_dimension();
 
   Vector<T, N>
-  eigenvector(dimension, 1.0 / dimension);
+  eigenvector(dimension, ONES);
+
+  eigenvector /= dimension;
 
   Index const
   maximum_iterarions = 128;
@@ -669,7 +671,7 @@ check_strong_ellipticity(Tensor4<T, N> const & A)
   while (error > tolerance && iteration < maximum_iterarions) {
 
     Tensor<T, N>
-    Q = dot(eigenvector, dot(A, eigenvector));
+    Q = dot2(eigenvector, dot(A, eigenvector));
 
     Tensor<T, N>
     V;

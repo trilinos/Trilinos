@@ -696,7 +696,9 @@ check_strong_ellipticity(Tensor4<T, N, ES> const & A)
   dimension = A.get_dimension();
 
   Vector<T, N, ES>
-  eigenvector(dimension, 1.0 / dimension);
+  eigenvector(dimension, ONES);
+
+  eigenvector /= dimension;
 
   Index const
   maximum_iterarions = 128;

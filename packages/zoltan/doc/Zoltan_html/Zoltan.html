@@ -378,6 +378,12 @@ User's Guide (<a href="ug_html/ug.html">HTML</a>)
 <b> Zoltan News:</b><br>
 <ul>
 <li>
+<a href="#ZOLTAN383">Zoltan v3.83</a> 
+was released in January 2016 as part of Trilinos v12.6.
+This release includes only minor software changes.
+See more details <a href="#ZOLTAN383">below</a>.
+<br><br>
+<li>
 <a href="#ZOLTAN382">Zoltan v3.82</a> 
 was released in May 2015 as part of Trilinos v12.
 This release includes only minor software changes.
@@ -463,7 +469,23 @@ Contact:  Karen Devine<br>
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <hr width="100%">
-<b>Now available:  Zoltan 3.82</b>  <br>
+<b>Now available:  Zoltan 3.83</b>  <br>
+<p>
+<a NAME="ZOLTAN383"></a>
+New Features in Zoltan v3.83, released January 2016.
+<a href="ug_html/ug_release.html">Release Notes</a> 
+&nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp;
+<a href="ug_html/ug_backward.html">Backward Compatibility</a>
+<ul>
+<li> Autotools files updated to avoid deprecated perl features </li>
+<li> Added Zoltan_Get_Fn interface to return pointers to registered callback
+functions.</li>
+<li> Several bug fixes in Fortran90 interface </li>
+<li> Subtle rounding error fixed in PHG hypergraph partitioner </li>
+<li> Minor changes to distributed data directory to track number of nodes
+per processor; include file DD.h is now named zoltan_dd_const.h </li>
+</ul>
+
 <p>
 <a NAME="ZOLTAN382"></a>
 New Features in Zoltan v3.82, released May 2015.

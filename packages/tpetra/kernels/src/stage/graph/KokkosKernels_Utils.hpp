@@ -87,6 +87,7 @@ void get_suggested_vector_team_size(
 
 template <typename idx_array_type,
           typename idx_edge_array_type,
+          typename idx_out_edge_array_type,
           typename team_member>
 struct FillSymmetricEdges{
   typedef typename idx_array_type::value_type idx;
@@ -95,16 +96,16 @@ struct FillSymmetricEdges{
   idx_array_type xadj;
   idx_edge_array_type adj;
 
-  idx_edge_array_type srcs;
-  idx_edge_array_type dsts;
+  idx_out_edge_array_type srcs;
+  idx_out_edge_array_type dsts;
 
   FillSymmetricEdges(
     typename idx_array_type::value_type num_rows_,
     idx_array_type xadj_,
     idx_edge_array_type adj_,
 
-    idx_edge_array_type srcs_,
-    idx_edge_array_type dsts_
+    idx_out_edge_array_type srcs_,
+    idx_out_edge_array_type dsts_
     ):num_rows(num_rows_),nnz(adj_.dimension_0()), xadj(xadj_), adj(adj_), srcs(srcs_), dsts(dsts_){}
 
   KOKKOS_INLINE_FUNCTION
@@ -135,7 +136,7 @@ struct FillSymmetricEdges{
 
 
 template <typename idx_array_type>
-void print_1Dview(idx_array_type view, bool print_all = true){
+void print_1Dview(idx_array_type view, bool print_all = false){
 
   typedef typename idx_array_type::HostMirror host_type;
   typedef typename idx_array_type::size_type idx;
@@ -341,16 +342,16 @@ void create_reverse_map(
 }
 
 
-template <typename value_array_type, typename idx_array_type>
+template <typename value_array_type, typename out_value_array_type, typename idx_array_type>
 struct PermuteVector{
   typedef typename idx_array_type::value_type idx;
   value_array_type old_vector;
-  value_array_type new_vector;
+  out_value_array_type new_vector;
   idx_array_type old_to_new_mapping;
   idx mapping_size;
   PermuteVector(
       value_array_type old_vector_,
-      value_array_type new_vector_,
+      out_value_array_type new_vector_,
       idx_array_type old_to_new_mapping_):
         old_vector(old_vector_), new_vector(new_vector_),old_to_new_mapping(old_to_new_mapping_), mapping_size(old_to_new_mapping_.dimension_0()){}
 
@@ -363,17 +364,17 @@ struct PermuteVector{
   }
 };
 
-template <typename value_array_type, typename idx_array_type, typename MyExecSpace>
+template <typename value_array_type, typename out_value_array_type, typename idx_array_type, typename MyExecSpace>
 void permute_vector(
     typename idx_array_type::value_type num_elements,
     idx_array_type &old_to_new_index_map,
     value_array_type &old_vector,
-    value_array_type &new_vector
+    out_value_array_type &new_vector
     ){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
   Kokkos::parallel_for( my_exec_space(0,num_elements),
-      PermuteVector<value_array_type, idx_array_type>(old_vector, new_vector, old_to_new_index_map));
+      PermuteVector<value_array_type, out_value_array_type, idx_array_type>(old_vector, new_vector, old_to_new_index_map));
 
 }
 
@@ -654,15 +655,15 @@ void symmetrize_graph_symbolic(
 
   idx nnz = adj.dimension_0();
 
-  idx_edge_array_type tmp_srcs("tmpsrc", nnz * 2);
-  idx_edge_array_type tmp_dsts("tmpdst",nnz * 2);
+  idx_out_edge_array_type tmp_srcs("tmpsrc", nnz * 2);
+  idx_out_edge_array_type tmp_dsts("tmpdst",nnz * 2);
 
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy ;
   typedef typename team_policy::member_type team_member ;
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  FillSymmetricEdges <idx_array_type,idx_edge_array_type,team_member> fse(
+  FillSymmetricEdges <idx_array_type,idx_edge_array_type,idx_out_edge_array_type, team_member> fse(
       num_rows_to_symmetrize,
       xadj,
       adj,
@@ -688,20 +689,38 @@ void symmetrize_graph_symbolic(
             fse);
   MyExecSpace::fence();
 
-  KokkosKernelsSorting::sort_key_value_views <idx_edge_array_type, idx_edge_array_type, MyExecSpace>(tmp_srcs, tmp_dsts);
+#ifndef SLOWSORT
+  KokkosKernelsSorting::sort_key_value_views <idx_out_edge_array_type, idx_out_edge_array_type, MyExecSpace>(tmp_srcs, tmp_dsts);
+#else
+  {
+
+
+    typedef Kokkos::SortImpl::DefaultBinOp1D<idx_out_edge_array_type> CompType;
+    Kokkos::SortImpl::min_max<typename idx_out_edge_array_type::non_const_value_type> val;
+    Kokkos::parallel_reduce(tmp_srcs.dimension_0(),Kokkos::SortImpl::min_max_functor<idx_out_edge_array_type>(tmp_srcs),val);
+    Kokkos::fence();
+    Kokkos::BinSort<idx_out_edge_array_type, CompType> bin_sort(tmp_srcs,CompType(tmp_srcs.dimension_0()/2,val.min,val.max),true);
+    bin_sort.create_permute_vector();
+    bin_sort.sort(tmp_srcs);
+    bin_sort.sort(tmp_dsts);
+  }
+#endif
+
 
   MyExecSpace::fence();
 
-  idx_edge_array_type pps("PPS", nnz * 2);
+  idx_out_edge_array_type pps("PPS", nnz * 2);
 
-  idx num_symmetric_edges = 0;
+  typename idx_out_edge_array_type::non_const_value_type num_symmetric_edges = 0;
+  if (nnz > 0)
   Kokkos::parallel_reduce(
             my_exec_space(0, nnz * 2),
-            MarkDuplicateSortedKeyValuePairs<idx_edge_array_type, idx_edge_array_type, idx_edge_array_type>(
+            MarkDuplicateSortedKeyValuePairs<idx_out_edge_array_type, idx_out_edge_array_type, idx_out_edge_array_type>(
                 tmp_srcs, tmp_dsts, pps, nnz * 2), num_symmetric_edges);
 
   Kokkos::fence();
-  exclusive_parallel_prefix_sum<idx_edge_array_type, MyExecSpace>(nnz * 2, pps);
+  if (nnz > 0)
+  exclusive_parallel_prefix_sum<idx_out_edge_array_type, MyExecSpace>(nnz * 2, pps);
 
   MyExecSpace::fence();
   sym_xadj = idx_out_array_type("sym_xadj", num_rows_to_symmetrize + 1);
@@ -710,26 +729,24 @@ void symmetrize_graph_symbolic(
   MyExecSpace::fence();
   Kokkos::parallel_for(
         my_exec_space(0, nnz * 2),
-        FillSymmetricCSR<idx_edge_array_type, idx_edge_array_type, idx_edge_array_type, idx_out_array_type, idx_out_edge_array_type>
+        FillSymmetricCSR<idx_out_edge_array_type, idx_out_edge_array_type, idx_out_edge_array_type, idx_out_array_type, idx_out_edge_array_type>
   (tmp_srcs, tmp_dsts, pps, nnz * 2, sym_xadj, sym_adj));
 
   MyExecSpace::fence();
-  remove_zeros_in_xadj_vector<idx_edge_array_type, MyExecSpace>(num_rows_to_symmetrize + 1, sym_xadj);
+  remove_zeros_in_xadj_vector<idx_out_array_type, MyExecSpace>(num_rows_to_symmetrize + 1, sym_xadj);
   MyExecSpace::fence();
-
-
 }
 
 template <typename from_vector, typename to_vector>
 struct CopyVector{
-  from_vector c;
-  to_vector k;
+  from_vector from;
+  to_vector to;
 
-  CopyVector(from_vector &c_, to_vector k_): c(c_), k(k_){}
+  CopyVector(from_vector &from_, to_vector to_): from(from_), to(to_){}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i) const {
-    c[i] = k[i];
+    to[i] = from[i];
   }
 };
 template <typename from_vector, typename to_vector, typename MyExecSpace>

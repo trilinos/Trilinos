@@ -272,7 +272,7 @@ namespace BaskerNS
 		//Fix when this all happens in the future
 		if(Options.incomplete == BASKER_TRUE)
 		  {
-		LL(b)(row).init_inc_lvl();
+		    LL(b)(row).init_inc_lvl();
 		  }
 		LL(b)(row).fill();
 		LL(b)(row).init_pend();
@@ -295,7 +295,7 @@ namespace BaskerNS
 		   LU[b][LU_size[b]-1].nnz);
 	    
 
-	    LU(b)(LU_size(b)-1).init_matrix("Uoffdig",
+	    LU(b)(LU_size(b)-1).init_matrix("Udiag",
 				   LU(b)(LU_size(b)-1).srow,
 				   LU(b)(LU_size(b)-1).nrow,
 				   LU(b)(LU_size(b)-1).scol,
@@ -327,10 +327,6 @@ namespace BaskerNS
 		  }
 
 
-
-
-
-		
 		printf("Init U: %d %d lvl: %d l: %d kid: %d nnz: %ld \n",
 		       U_col, U_row, lvl, l, kid, 
 		       LU[U_col][U_row].nnz);
@@ -344,6 +340,11 @@ namespace BaskerNS
 					LU(U_col)(U_row).nnz);
 		
 		LU(U_col)(U_row).fill();
+	       
+		if(Options.incomplete == BASKER_TRUE)
+		  {
+		    LU(U_col)(U_row).init_inc_lvl();
+		  }
 
 	      }//over inner lvls
 	  }//if KID

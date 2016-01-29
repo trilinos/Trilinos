@@ -1135,6 +1135,8 @@ public:
     }
   }
 
+  using ROL::ParametrizedObjective_SimOpt<Real>::value;
+
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > up =
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();

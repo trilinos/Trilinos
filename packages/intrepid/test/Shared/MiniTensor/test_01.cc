@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid2 Package
+//                           Intrepid Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -43,7 +43,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "Intrepid2_MiniTensor.h"
+#include "Intrepid_MiniTensor.h"
 
 int
 main(int ac, char* av[])
@@ -57,7 +57,7 @@ main(int ac, char* av[])
   Kokkos::finalize();
 }
 
-namespace Intrepid2 {
+namespace Intrepid {
 
 namespace {
 
@@ -75,27 +75,6 @@ generate_sequence(
 
   return v;
 }
-
-
-template <class Scalar, class Tensor>
-struct InitializationFunctor
-{
-
-  int dimension, num;
-
-  InitializationFunctor(const int &dimension_,
-                        const int &num_):
-                        dimension(dimension_),
-                        num(num_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  operator()(const unsigned int i) const {
-    Intrepid2::Tensor<Scalar, DYNAMIC, Kokkos::DefaultExecutionSpace>
-    Z(dimension);
-  }
-};
- 
 
 template<typename Tensor, typename Scalar>
 bool
@@ -167,6 +146,7 @@ test_fundamentals(Index const dimension)
   decremented = error <= machine_epsilon<Scalar>();
   passed = passed && decremented;
 
+#ifdef HAVE_INTREPID_KOKKOSCORE
   //test Tensor fill and create for Kokkos data types
   Kokkos::View<Scalar *, Kokkos::DefaultExecutionSpace>
   X1("X1_kokkos", dimension);
@@ -234,13 +214,10 @@ test_fundamentals(Index const dimension)
 
   error = norm_f(V);
 
-  Kokkos::parallel_for(
-      number_components,
-      InitializationFunctor<Scalar, Tensor>(dimension,number_components));
-
   bool const
   tensor_create_from_1d_kokkos = error <= machine_epsilon<Scalar>();
   passed = passed && tensor_create_from_1d_kokkos;
+#endif 
 
   return passed;
 }
@@ -1428,7 +1405,7 @@ TEST(MiniTensor, TemplateMetaProgramming)
     ASSERT_EQ(is_equal, true);
   }
 
-#ifndef KOKKOS_HAVE_CUDA
+#if !defined(KOKKOS_HAVE_CUDA)
   {
     //
     // use double explicitly
@@ -1476,8 +1453,8 @@ TEST(MiniTensor, TemplateMetaProgramming)
 
     ASSERT_EQ(type_string, fad_string);
   }
-#endif
+#endif // KOKKOS_HAVE_CUDA
 
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid

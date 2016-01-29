@@ -1,8 +1,68 @@
 
 #include <iostream>
-#include "KokkosKernelsGraphHelpers.hpp"
-#include "SPGEMM.hpp"
-#include "experiment_space.hpp"
+#include "KokkosKernels_GraphHelpers.hpp"
+#include "KokkosKernels_SPGEMM.hpp"
+
+
+#define CUDACONFIG
+//#define OPENMP
+
+#define RUNCUSP
+#define TRANPOSEFIRST false
+#define TRANPOSESECOND false
+
+#ifdef CUDACONFIG
+#define REPEAT 5
+typedef Kokkos::Cuda MyExecSpace;
+typedef Kokkos::Cuda MyMemorySpace;
+typedef Kokkos::CudaUVMSpace MyEdgeMemorySpace;
+
+typedef Kokkos::CudaHostPinnedSpace TemporaryWorkSpace;
+typedef Kokkos::CudaUVMSpace PersistentWorkSpace;
+
+#ifdef CUDAPINNEDSPACE
+  typedef Kokkos::CudaHostPinnedSpace MyEdgeMemorySpace;
+#else
+
+#endif
+
+#endif
+
+#ifdef OPENMP
+#define REPEAT 10
+typedef Kokkos::OpenMP MyExecSpace;
+typedef Kokkos::OpenMP MyMemorySpace;
+typedef Kokkos::OpenMP MyEdgeMemorySpace;
+
+typedef Kokkos::OpenMP TemporaryWorkSpace;
+typedef Kokkos::OpenMP PersistentWorkSpace;
+#endif
+
+
+
+typedef int idx;
+typedef double wt;
+typedef unsigned int color_type;
+typedef unsigned long long int color_type_eb;
+
+
+typedef Kokkos::View<idx *, MyMemorySpace> idx_array_type;
+typedef Kokkos::View<idx *, MyEdgeMemorySpace> idx_edge_array_type;
+typedef Kokkos::View<wt *, MyEdgeMemorySpace> value_array_type;
+
+typedef Kokkos::View<color_type_eb *, MyMemorySpace> color_eb_array_type;
+typedef Kokkos::View<color_type * , MyMemorySpace> color_array_type;
+
+typedef Kokkos::View<idx *, MyMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
+typedef Kokkos::View<idx *, MyMemorySpace::array_layout, MyEdgeMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
+
+
+typedef Kokkos::View<wt *, MyMemorySpace::array_layout, MyEdgeMemorySpace, Kokkos::MemoryUnmanaged> wt_um_edge_array_type;
+
+
+typedef Kokkos::View<wt *, MyMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_value_array_type;
+
+
 
 
 template <typename v1>
@@ -18,9 +78,6 @@ struct compare{
 
 };
 
-
-#define TRANPOSEFIRST false
-#define TRANPOSESECOND false
 
 int main (int argc, char ** argv){
   if (argc < 2){
@@ -73,9 +130,9 @@ int main (int argc, char ** argv){
 
 
 
-  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_MKL);
+  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSPARSE);
   Kokkos::Impl::Timer timer1;
-  KokkosKernels::Experimental::Graph::spgemm_symbolic<KernelHandle> (
+  KokkosKernels::Experimental::Graph::spgemm_symbolic (
       &kh,
       m,
       n,
@@ -148,7 +205,7 @@ int main (int argc, char ** argv){
 
 #ifdef RUNCUSP
   kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
-  Kokkos::Impl::Timer timer3;
+  Kokkos::Impl::Timer timer5;
   KokkosKernels::Experimental::Graph::spgemm_symbolic<KernelHandle> (
       &kh,
       m,
@@ -165,7 +222,7 @@ int main (int argc, char ** argv){
       );
 
   Kokkos::fence();
-  symbolic_time = timer3.seconds();
+  symbolic_time = timer5.seconds();
   Kokkos::Impl::Timer timer4;
   KokkosKernels::Experimental::Graph::spgemm_apply(
       &kh,

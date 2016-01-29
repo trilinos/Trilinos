@@ -53,6 +53,9 @@ template<class Real>
 class StdEpetraBatchManager : public EpetraBatchManager<Real> {
 public:
   StdEpetraBatchManager(Teuchos::RCP<Epetra_Comm> &comm) : EpetraBatchManager<Real>(comm) {}
+
+  using EpetraBatchManager<Real>::sumAll;
+
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
     Teuchos::RCP<std::vector<Real> > input_ptr = Teuchos::rcp_const_cast<std::vector<Real> >(
       (Teuchos::dyn_cast<StdVector<Real> >(input)).getVector());

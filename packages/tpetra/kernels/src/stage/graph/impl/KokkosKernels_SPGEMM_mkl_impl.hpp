@@ -4,13 +4,12 @@
 
 //#define KERNELS_HAVE_MKL
 
-#define KERNELS_HAVE_MKL
 
 #ifdef KERNELS_HAVE_MKL
 #include "mkl_spblas.h"
 #endif
 
-#include "KokkosKernelsUtils.hpp"
+#include "KokkosKernels_Utils.hpp"
 namespace KokkosKernels{
 
 namespace Experimental{
@@ -20,35 +19,40 @@ namespace Impl{
 
 
 
-  template <typename KernelHandle>
+
+  template <typename KernelHandle,
+  typename in_row_index_view_type,
+  typename in_nonzero_index_view_type,
+  typename in_nonzero_value_view_type>
   void mkl_apply(
       KernelHandle *handle,
-      typename KernelHandle::idx m,
-      typename KernelHandle::idx n,
-      typename KernelHandle::idx k,
-      typename KernelHandle::idx_array_type row_mapA,
-      typename KernelHandle::idx_edge_array_type entriesA,
-      typename KernelHandle::value_array_type valuesA,
+      typename KernelHandle::row_index_type m,
+      typename KernelHandle::row_index_type n,
+      typename KernelHandle::row_index_type k,
+      in_row_index_view_type row_mapA,
+      in_nonzero_index_view_type entriesA,
+      in_nonzero_value_view_type valuesA,
 
       bool transposeA,
-      typename KernelHandle::idx_array_type row_mapB,
-      typename KernelHandle::idx_edge_array_type entriesB,
-      typename KernelHandle::value_array_type valuesB,
+      in_row_index_view_type row_mapB,
+      in_nonzero_index_view_type entriesB,
+      in_nonzero_value_view_type valuesB,
       bool transposeB,
-      typename KernelHandle::idx_array_type &row_mapC,
-      typename KernelHandle::idx_edge_array_type &entriesC,
-      typename KernelHandle::value_array_type &valuesC){
+      in_row_index_view_type &row_mapC,
+      in_nonzero_index_view_type &entriesC,
+      in_nonzero_value_view_type &valuesC){
 
 #ifdef KERNELS_HAVE_MKL
-    typedef typename KernelHandle::idx idx;
-    typedef typename KernelHandle::idx_array_type idx_array_type;
 
-    typedef typename KernelHandle::value_type value_type;
+    typedef typename KernelHandle::row_index_type idx;
+    typedef in_row_index_view_type idx_array_type;
+
+    typedef typename KernelHandle::nonzero_value_type value_type;
 
 
-    typedef typename KernelHandle::idx_device_type device1;
-    typedef typename KernelHandle::idx_edge_device_type device2;
-    typedef typename KernelHandle::value_type_device_type device3;
+    typedef typename in_row_index_view_type::device_type device1;
+    typedef typename in_nonzero_index_view_type::device_type device2;
+    typedef typename in_nonzero_value_view_type::device_type device3;
 
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
 
@@ -139,15 +143,15 @@ namespace Impl{
           }
 
 
-          row_mapC = idx_array_type("rowmapC", c_rows + 1);
-          entriesC = typename KernelHandle::idx_edge_array_type ("EntriesC" , rows_end[m - 1] );
-          valuesC = typename KernelHandle::value_array_type ("valuesC" ,  rows_end[m - 1]);
+          row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", c_rows + 1);
+          entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" , rows_end[m - 1] );
+          valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  rows_end[m - 1]);
 
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, idx_array_type, MyExecSpace> (m, rows_start, row_mapC);
+          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
           idx nnz = row_mapC(m) =  rows_end[m - 1];
 
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename KernelHandle::idx_edge_array_type, MyExecSpace> (nnz, columns, entriesC);
-          KokkosKernels::Experimental::Util::copy_vector<float *, typename KernelHandle::value_array_type, MyExecSpace> (m, values, valuesC);
+          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_nonzero_index_view_type::non_const_type , MyExecSpace> (nnz, columns, entriesC);
+          KokkosKernels::Experimental::Util::copy_vector<float *, typename in_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
         }
 
 
@@ -221,15 +225,16 @@ namespace Impl{
           }
 
 
-          row_mapC = idx_array_type("rowmapC", c_rows + 1);
-          entriesC = typename KernelHandle::idx_edge_array_type ("EntriesC" , rows_end[m - 1] );
-          valuesC = typename KernelHandle::value_array_type ("valuesC" ,  rows_end[m - 1]);
 
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, idx_array_type, MyExecSpace> (m, rows_start, row_mapC);
+          row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", c_rows + 1);
+          entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" , rows_end[m - 1] );
+          valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  rows_end[m - 1]);
+
+          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
           idx nnz = row_mapC(m) =  rows_end[m - 1];
 
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename KernelHandle::idx_edge_array_type, MyExecSpace> (nnz, columns, entriesC);
-          KokkosKernels::Experimental::Util::copy_vector<double *, typename KernelHandle::value_array_type, MyExecSpace> (m, values, valuesC);
+          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
+          KokkosKernels::Experimental::Util::copy_vector<double *, typename in_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
 
         }
 

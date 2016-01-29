@@ -129,17 +129,17 @@ public:
     Hs_      = g.clone();
   }
 
-  virtual void update( Vector<Real> &x,
-                       Real         &fnew,
-                       Real         &del, 
-                       int          &nfval,
-                       int          &ngrad,
-                       int          &flagTR,
-                 const Vector<Real> &s,
-                 const Real          snorm, 
-                 const Real          fold,
-                 const Vector<Real> &g, 
-                       int           iter,
+  virtual void update( Vector<Real>      &x,
+                       Real              &fnew,
+                       Real              &del, 
+                       int               &nfval,
+                       int               &ngrad,
+                       ETrustRegionFlag  &flagTR,
+                 const Vector<Real>      &s,
+                 const Real              snorm, 
+                 const Real              fold,
+                 const Vector<Real>      &g, 
+                       int               iter,
                        ProjectedObjective<Real> &pObj ) { 
     Real tol = std::sqrt(ROL_EPSILON);
 
@@ -207,25 +207,25 @@ public:
     Real rho  = 0.0; 
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
       rho = 1.0; 
-      flagTR = 0;
+      flagTR = TRUSTREGION_FLAG_SUCCESS;
     }
     else if ( std::isnan(aRed) || std::isnan(pRed_) ) {
       rho = -1.0;
-      flagTR = 5;
+      flagTR = TRUSTREGION_FLAG_NAN;
     }
     else {
       rho = aRed/pRed_;
       if (pRed_ < 0 && aRed > 0) { 
-        flagTR = 1;
+        flagTR = TRUSTREGION_FLAG_POSPREDNEG;
       }
       else if (aRed <= 0 && pRed_ > 0) {
-        flagTR = 2;
+        flagTR = TRUSTREGION_FLAG_NPOSPREDPOS;
       }
       else if (aRed <= 0 && pRed_ < 0) { 
-        flagTR = 3;
+        flagTR = TRUSTREGION_FLAG_NPOSPREDNEG;
       }
       else {
-        flagTR = 0;
+        flagTR = TRUSTREGION_FLAG_SUCCESS;
       }
     }
 
@@ -258,7 +258,7 @@ public:
       pgnorm *= xupdate_->norm();
       // Sufficient decrease?
       decr = ( aRed >= 0.1*eta0_*pgnorm );
-      flagTR = (!decr ? 4 : flagTR);
+      flagTR = (!decr ? TRUSTREGION_FLAG_QMINSUFDEC : flagTR);
 
       if ( verbosity_ > 0 ) {
         std::cout << "    Decrease lower bound (constraints):      " << 0.1*eta0_*pgnorm << std::endl;
@@ -272,7 +272,8 @@ public:
     }
     
     // Accept or Reject Step and Update Trust Region
-    if ((rho < eta0_ && flagTR == 0) || flagTR >= 2 || !decr ) { // Step Rejected 
+    if ((rho < eta0_ && flagTR == TRUSTREGION_FLAG_SUCCESS) || 
+         flagTR >= 2 || !decr ) { // Step Rejected 
       //updateObj(x,iter,pObj);
       //pObj.update(x,true,iter);
       fnew = fold1;
@@ -289,7 +290,8 @@ public:
         del = gamma1_*snorm; 
       }
     }
-    else if ((rho >= eta0_ && flagTR != 3) || flagTR == 1) { // Step Accepted
+    else if ((rho >= eta0_ && flagTR != TRUSTREGION_FLAG_NPOSPREDNEG) || 
+      flagTR == TRUSTREGION_FLAG_POSPREDNEG) { // Step Accepted
       x.axpy(1.0,s);
       pObj.update(x,true,iter);
       if (rho >= eta2_) { // Increase trust-region radius
