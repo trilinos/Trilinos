@@ -134,7 +134,7 @@ namespace BaskerNS
 	//Int lthreads = pow(2,l);
 	//Int lnteams = num_threads/lthreads;
 	//#else
-	Int lthreads = 1;
+	Int lthreads = 2;
 	Int lnteams = num_threads/lthreads;
 	//#endif
 
