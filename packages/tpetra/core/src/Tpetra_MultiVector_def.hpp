@@ -180,8 +180,14 @@ namespace { // (anonymous)
     // Kokkos::Serial.  That's why we go through the trouble of asking
     // Kokkos::DualView what _its_ space is.  That seems to work
     // around this default execution space issue.
+    //
+    // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
+    // a memory space, rather than an execution space, as the first
+    // argument of VerifyExecutionCanAccessMemorySpace.
     typedef typename Kokkos::Impl::if_c<
-      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<ExecSpace, Kokkos::HostSpace>::value,
+      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+        typename ExecSpace::memory_space,
+        Kokkos::HostSpace>::value,
       typename ExecSpace::device_type,
       typename Kokkos::DualView<T*, ExecSpace>::host_mirror_space>::type host_exec_space;
     typedef Kokkos::LayoutLeft array_layout;
