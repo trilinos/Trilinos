@@ -133,7 +133,7 @@ namespace Tacho {
         timer.reset();
         F.createNonZeroPattern(Uplo::Upper, UU);
         t_symbolic = timer.seconds();
-        cout << "CholDirectPlain:: AA (nnz) = " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
+        cout << "CholDirectPlain:: AA (nrow, nnz) = " << AA.NumRows() << ", " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
       }
       cout << "CholDirectPlain:: symbolic factorization::time = " << t_symbolic << endl;            
 
@@ -145,8 +145,13 @@ namespace Tacho {
                                    S.TreeVector());
 
         // fill internal meta data for sparse blocs
-        for (ordinal_type k=0;k<HU.NumNonZeros();++k)
+        size_type nnz = 0;
+        for (ordinal_type k=0;k<HU.NumNonZeros();++k) {
           HU.Value(k).fillRowViewArray();
+          nnz += HU.Value(k).countNumNonZeros();
+        }
+        if (nnz != UU.NumNonZeros()) 
+          ERROR(">> 2D Blocks do not cover the flat matrix");
 
         DenseMatrixHelper::flat2hier(BB, HB,
                                      S.NumBlocks(),
