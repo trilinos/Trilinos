@@ -75,7 +75,7 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
-#include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"

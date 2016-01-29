@@ -99,9 +99,8 @@
 #include "MueLu_SimpleSmoother.hpp"
 #include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_Utilities.hpp"
-
-//TODO is it really needed?
-#include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_TopSmootherFactory.hpp"
+#include "MueLu_HierarchyUtils.hpp"
 
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>

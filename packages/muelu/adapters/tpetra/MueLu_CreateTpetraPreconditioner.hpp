@@ -22,7 +22,7 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_Utilities.hpp>
-#include <MueLu_HierarchyHelpers.hpp>
+#include <MueLu_HierarchyUtils.hpp>
 
 
 #if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
