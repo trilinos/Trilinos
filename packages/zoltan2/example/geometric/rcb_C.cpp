@@ -351,6 +351,7 @@ int main(int argc, char *argv[])
     metricObject3->printMetrics(cout);
     problem3->printMetrics(cout);
     scalar_t imb = problem3->getWeightImbalance();
+    metricObject3->getWeightImbalance(imb, 0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
