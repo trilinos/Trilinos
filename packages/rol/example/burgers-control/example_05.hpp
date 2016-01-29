@@ -92,6 +92,8 @@ private:
     return ip;
   }
 
+  using ROL::ParametrizedEqualityConstraint_SimOpt<Real>::update;
+
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
     for (unsigned i=0; i<u.size(); i++) {
       u[i] += alpha*s[i];
@@ -459,6 +461,8 @@ public:
   Objective_BurgersControl(Real alpha = 1.e-4, int nx = 128) : alpha_(alpha), nx_(nx) {
     dx_ = 1.0/((Real)nx+1.0);
   }
+
+  using ROL::ParametrizedObjective_SimOpt<Real>::value;
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > up =

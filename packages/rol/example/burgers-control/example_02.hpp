@@ -94,6 +94,8 @@ private:
     return ip;
   }
 
+  using ROL::EqualityConstraint_SimOpt<Real>::update;
+
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
     for (unsigned i=0; i<u.size(); i++) {
       u[i] += alpha*s[i];
