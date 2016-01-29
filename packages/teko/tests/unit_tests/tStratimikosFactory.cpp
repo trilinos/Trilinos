@@ -48,6 +48,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 
+#include "Kokkos_Core.hpp"
+
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
 #else
