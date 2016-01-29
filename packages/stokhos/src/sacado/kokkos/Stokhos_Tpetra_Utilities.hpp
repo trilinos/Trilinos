@@ -70,6 +70,80 @@ namespace Stokhos {
     MeanViewType mean_vals;
   };
 
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Specialization for Sacado::UQ::PCE
+   */
+  template <class Storage, class ... P>
+  class GetMeanValsFunc< Kokkos::View< Sacado::UQ::PCE<Storage>*,
+                                       P... > > {
+  public:
+    typedef Sacado::UQ::PCE<Storage> Scalar;
+    typedef Kokkos::View< Scalar*, P... > ViewType;
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::execution_space execution_space;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals_) : vals(vals_) {
+      const size_type nnz = vals.dimension_0();
+      mean_vals =
+        Kokkos::make_view<ViewType>("mean-values", Kokkos::cijk(vals), nnz, 1);
+      Kokkos::parallel_for( nnz, *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type i) const {
+      mean_vals(i) = vals(i).fastAccessCoeff(0);
+    }
+
+    MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+    ViewType vals;
+  };
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Specialization for Sacado::MP::Vector
+   */
+  template <class Storage, class ... P>
+  class GetMeanValsFunc< Kokkos::View< Sacado::MP::Vector<Storage>*,
+                                       P... > > {
+  public:
+    typedef Sacado::MP::Vector<Storage> Scalar;
+    typedef Kokkos::View< Scalar*, P... > ViewType;
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::execution_space execution_space;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals_) :
+      vals(vals_), vec_size(Kokkos::dimension_scalar(vals))
+    {
+      const size_type nnz = vals.dimension_0();
+      mean_vals = ViewType("mean-values", nnz, 1);
+      Kokkos::parallel_for( nnz, *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type i) const
+    {
+      typename Scalar::value_type s = 0.0;
+      for (size_type j=0; j<vec_size; ++j)
+        s += vals(i).fastAccessCoeff(j);
+      mean_vals(i) = s;
+    }
+
+    MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+    ViewType vals;
+    const size_type vec_size;
+  };
+
+#else
+
   //! Get mean values matrix for mean-based preconditioning
   /*! Specialization for Sacado::UQ::PCE
    */
@@ -138,6 +212,8 @@ namespace Stokhos {
     ViewType vals;
     const size_type vec_size;
   };
+
+#endif
 
   template <typename Scalar, typename LO, typename GO, typename N>
   Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LO,GO,N> >

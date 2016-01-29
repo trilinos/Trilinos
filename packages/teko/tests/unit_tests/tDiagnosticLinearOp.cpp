@@ -49,6 +49,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include "Kokkos_Core.hpp"
+
 #include <string>
 #include <iostream>
 
@@ -195,6 +197,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, application_test)
 
 TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, application_test_tpetra)
 {
+   Kokkos::initialize();
+
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -219,6 +223,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, application_test_tpetra)
    }
    // TEST_FLOATING_EQUALITY(timer.totalElapsedTime(),diag_A->totalTime(),0.05); // within 5% should be good enough
    TEST_EQUALITY(count,diag_A->numApplications());
+
+   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, inverse_lib_test)
@@ -254,6 +260,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, inverse_lib_test)
 
 TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, inverse_lib_test_tpetra)
 {
+   Kokkos::initialize();
+
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -277,6 +285,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, inverse_lib_test_tpetra)
    Teko::MultiVector y = Thyra::createMember(invA->range());
    Thyra::randomize(-1.0,1.0,x.ptr());
    Teko::applyOp(invA,x,y);
+
+   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test)
@@ -331,6 +341,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test)
 
 TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test_tpetra)
 {
+   Kokkos::initialize();
+
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -373,6 +385,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test_tpetra)
    TEST_EQUALITY(dpf.numRebuilds(),rebuildTime.numCalls());  
    // TEST_FLOATING_EQUALITY(dpf.totalRebuildTime(),
    //                        rebuildTime.totalElapsedTime(),0.05);  // within 5% should be good enough 
+
+   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test)
@@ -437,6 +451,8 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test)
 
 TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test_tpetra)
 {
+   Kokkos::initialize();
+
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -489,4 +505,6 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test_tpetra)
      
       TEST_FLOATING_EQUALITY(myresid,diag_invA->getResidualNorm(),1e-14);
    }
+
+   Kokkos::finalize();
 }

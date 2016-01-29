@@ -74,8 +74,8 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(dc,fm);
   this->utils.setFieldData(grad_temp,fm);
   
-  num_qp = Teuchos::as<PHX::index_size_type>(flux.dimension_1());
-  num_dim = Teuchos::as<PHX::index_size_type>(flux.dimension_2());
+  num_qp = static_cast<PHX::index_size_type>(flux.dimension_1());
+  num_dim = static_cast<PHX::index_size_type>(flux.dimension_2());
 }
 //*********************************************************************
 template<typename EvalT, typename Traits>

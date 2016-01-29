@@ -82,7 +82,7 @@ template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void NonlinearSource<EvalT, Traits>::operator () (const int i) const
 {
-  for (PHX::index_size_type ip = 0; ip < Teuchos::as<PHX::index_size_type>(density.dimension_1()); ++ip)
+  for (PHX::index_size_type ip = 0; ip < static_cast<PHX::index_size_type>(density.dimension_1()); ++ip)
     source(i,ip) =  density(i,ip) * temp(i,ip) * temp(i,ip);
 }
 

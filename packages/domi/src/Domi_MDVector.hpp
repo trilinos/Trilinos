@@ -491,7 +491,16 @@ public:
    */
   dim_type getLocalDim(int axis, bool withCommPad=false) const;
 
-  /** \brief Get the local dimension along the specified axis
+  /** \brief Get the local loop bounds along every axis
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.  For this method, padding is included in the bounds.
+   */
+  Teuchos::ArrayView< const Slice > getLocalBounds() const;
+
+  /** \brief Get the local looping bounds along the specified axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -505,6 +514,25 @@ public:
    * value.
    */
   Slice getLocalBounds(int axis, bool withPad=false) const;
+
+  /** \brief Get the local interior looping bounds along the specified
+   *         axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * Local interior loop bounds are the same as local loop bounds
+   * without padding, except that for non-periodic axes the global end
+   * points of the given axis are excluded. For periodic axes, the
+   * local interior loop bounds are exactly the same as local loop
+   * bounds without padding.
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.
+   */
+  Slice getLocalInteriorBounds(int axis) const;
 
   /** \brief Return true if there is any padding stored locally
    *
@@ -1769,11 +1797,33 @@ getLocalDim(int axis, bool withCommPad) const
 
 template< class Scalar,
           class Node >
+Teuchos::ArrayView< const Slice >
+MDVector< Scalar, Node >::
+getLocalBounds() const
+{
+  return _mdMap->getLocalBounds();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
 Slice
 MDVector< Scalar, Node >::
 getLocalBounds(int axis, bool withCommPad) const
 {
   return _mdMap->getLocalBounds(axis, withCommPad);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+Slice
+MDVector< Scalar, Node >::
+getLocalInteriorBounds(int axis) const
+{
+  return _mdMap->getLocalInteriorBounds(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
