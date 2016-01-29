@@ -169,7 +169,6 @@ int main(int argc, char *argv[])
   RCP<quality_t>metricObject1=rcp(new quality_t(env1,problem1->getComm(),bia1,
 						&problem1->getSolution(),
 						false));
-   
   // Check the solution.
 
   if (rank == 0) {
@@ -235,7 +234,6 @@ int main(int argc, char *argv[])
   RCP<quality_t>metricObject2=rcp(new quality_t(env2,problem2->getComm(),bia2,
 						&problem2->getSolution(),
 						false));
-
   // Check the solution.
 
   if (rank == 0) {
@@ -312,7 +310,6 @@ int main(int argc, char *argv[])
   RCP<quality_t>metricObject3=rcp(new quality_t(env3,problem3->getComm(),bia3,
 						&problem3->getSolution(),
 						false));
-
   // Check the solution.
 
   if (rank == 0) {
@@ -362,9 +359,20 @@ int main(int argc, char *argv[])
   params.set("partitioning_objective", "multicriteria_balance_total_maximum");
   problem3->resetParameters(&params);
   problem3->solve(dataHasChanged);    
+
+  // Objective changed!
+
+  env3 = problem3->getEnvironment();
+
+  // Solution changed!
+
+  metricObject3 = rcp(new quality_t(env3, problem3->getComm(), bia3,
+				    &problem3->getSolution(), false));
   if (rank == 0){
+    metricObject3->printMetrics(cout);
     problem3->printMetrics(cout);
     scalar_t imb = problem3->getWeightImbalance();
+    metricObject3->getWeightImbalance(imb, 0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -431,7 +439,6 @@ int main(int argc, char *argv[])
 
   metricObject1 = rcp(new quality_t(env1, problem1->getComm(), bia1,
 				    &problem1->getSolution(), false));
-
   // Check the solution.
 
   if (rank == 0) {
