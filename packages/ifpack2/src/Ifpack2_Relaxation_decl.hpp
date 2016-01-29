@@ -52,6 +52,11 @@
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
 
+//#define MD_EXPERIMENTAL
+#ifdef MD_EXPERIMENTAL
+#include <KokkosKernels_Handle.hpp>
+#endif
+
 namespace Teuchos {
   // forward declarations
   class ParameterList;
@@ -587,6 +592,21 @@ private:
                             global_ordinal_type, node_type> block_crs_matrix_type;
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
+
+#ifdef MD_EXPERIMENTAL
+  typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
+  typedef typename kokkos_csr_matrix::StaticCrsGraphType crs_graph_type;
+  typedef typename kokkos_csr_matrix::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename kokkos_csr_matrix::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename kokkos_csr_matrix::values_type scalar_nonzero_view_t;
+  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type::memory_space TemporaryWorkSpace;
+  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type::memory_space PersistentWorkSpace;
+  typedef typename kokkos_csr_matrix::StaticCrsGraphType::execution_space MyExecSpace;
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
+      <lno_row_view_t,lno_nonzero_view_t, scalar_nonzero_view_t,
+      MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > KernelHandle;
+  Teuchos::RCP<KernelHandle> kh;
+#endif
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
   //@{
@@ -622,6 +642,12 @@ private:
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
+  //! Apply multi-threaded Gauss-Seidel to X, returning the result in Y.
+  void ApplyInverseMTGS_CrsMatrix(
+          const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
+
   //! Apply Gauss-Seidel for a Tpetra::RowMatrix specialization.
   void ApplyInverseGS_RowMatrix(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -643,6 +669,22 @@ private:
   void ApplyInverseSGS(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
+  //! Apply symmetric multi-threaded Gauss-Seidel to X, returning the result in Y.
+  void ApplyInverseMTSGS_CrsMatrix(
+          const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
+  void MTGaussSeidel (
+      const crs_matrix_type* crsMat,
+      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
+      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
+      const Teuchos::ArrayView<local_ordinal_type>& rowIndices,
+      const scalar_type& dampingFactor,
+      const Tpetra::ESweepDirection direction,
+      const int numSweeps,
+      const bool zeroInitialGuess) const;
 
   //! Apply symmetric Gauss-Seidel for a Tpetra::RowMatrix specialization.
   void ApplyInverseSGS_RowMatrix(

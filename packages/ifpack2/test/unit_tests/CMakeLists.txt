@@ -55,6 +55,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     COMM serial mpi
   )
 
+
+#TRIBITS_ADD_EXECUTABLE(
+#    Distributed_SGS
+#    SOURCES Ifpack2_DistributedRelaxationTest.cpp 
+#  )
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ChebyshevConvergence
   SOURCES 
