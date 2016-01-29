@@ -4,7 +4,7 @@
 
 namespace Ioss {
 GetLongOption::GetLongOption(const char optmark)
-  : table(NULL), ustring(NULL), pname(NULL), last(NULL),
+  : table(nullptr), ustring(nullptr), pname(nullptr), last(nullptr),
     enroll_done(0), optmarker(optmark)
 {
    ustring = "[valid options and arguments]";
@@ -27,7 +27,7 @@ GetLongOption::basename(char * const pathname)
    char *s;
 
    s = strrchr(pathname, '/');
-   if ( s == 0 ) s = pathname;
+   if ( s == nullptr ) s = pathname;
    else ++s;
 
    return s;
@@ -46,9 +46,9 @@ GetLongOption::enroll(const char * const opt, const OptType t,
    c->description = desc ? desc : "no description available";
    c->value = val;
    c->opt_value = optval;
-   c->next = 0;
+   c->next = nullptr;
 
-   if ( last == 0 ) {
+   if ( last == nullptr ) {
       table = last = c;
    }
    else {
@@ -63,13 +63,13 @@ const char *
 GetLongOption::retrieve(const char * const opt) const
 {
    Cell *t;
-   for ( t = table; t != 0; t = t->next ) {
+   for ( t = table; t != nullptr; t = t->next ) {
       if ( strcmp(opt, t->option) == 0 )
 	 return t->value;
    }
    std::cerr << "GetLongOption::retrieve - unenrolled option ";
    std::cerr << optmarker << opt << "\n";
-   return 0;
+   return nullptr;
 }
 
 int
@@ -102,8 +102,8 @@ GetLongOption::parse(int argc, char * const *argv)
       enum { NoMatch, ExactMatch, PartialMatch, MultipleMatch}
       matchStatus = NoMatch;
 
-      Cell *pc = 0;	// pointer to the partially-matched cell
-      for ( t = table; t != 0; t = t->next ) {
+      Cell *pc = nullptr;	// pointer to the partially-matched cell
+      for ( t = table; t != nullptr; t = t->next ) {
 	 if ( strncmp(t->option, token, (tmptoken - token)) == 0 ) {
 	    if ( (int)strlen(t->option) == (tmptoken - token) ) {
 	       /* an exact match found */
@@ -117,7 +117,7 @@ GetLongOption::parse(int argc, char * const *argv)
 	    }
 	    else {
 	       /* partial match found */
-	       if (pc == 0) {
+	       if (pc == nullptr) {
 		 matchStatus = PartialMatch;
 		 pc = t;
 	       } else {
@@ -173,7 +173,7 @@ GetLongOption::parse(char * const str, char * const p)
 	 return -1;	/* end of options */
       }
 
-      char *ladtoken = 0;	/* lookahead token */
+      char *ladtoken = nullptr;	/* lookahead token */
       char *tmptoken = ++token;
       while ( *tmptoken && *tmptoken != '=' )
 	 ++tmptoken;
@@ -182,16 +182,16 @@ GetLongOption::parse(char * const str, char * const p)
 
       Cell *t;
       enum { NoMatch, ExactMatch, PartialMatch } matchStatus = NoMatch;
-      Cell *pc =0;	// pointer to the partially-matched cell
-      for ( t = table; t != 0; t = t->next ) {
+      Cell *pc =nullptr;	// pointer to the partially-matched cell
+      for ( t = table; t != nullptr; t = t->next ) {
 	 if ( strncmp(t->option, token, (tmptoken - token)) == 0 ) {
 	    if ( (int)strlen(t->option) == (tmptoken - token) ) {
 	       /* an exact match found */
-	       ladtoken = strtok(0, " \t");
+	       ladtoken = strtok(nullptr, " \t");
 	       int stat = setcell(t, tmptoken, ladtoken, name);
 	       if ( stat == -1 ) return -1;
 	       else if ( stat == 1 ) {
-		  ladtoken = 0;
+		  ladtoken = nullptr;
 	       }
 	       matchStatus = ExactMatch;
 	       break;
@@ -205,11 +205,11 @@ GetLongOption::parse(char * const str, char * const p)
       } /* end for */
 
       if ( matchStatus == PartialMatch ) {
-	 ladtoken = strtok(0, " \t");
+	 ladtoken = strtok(nullptr, " \t");
 	 int stat = setcell(pc, tmptoken, ladtoken, name);
 	 if ( stat == -1 ) return -1;
 	 else if ( stat == 1 ) {
-	    ladtoken = 0;
+	    ladtoken = nullptr;
 	 }
       }
       else if ( matchStatus == NoMatch ) {
@@ -218,7 +218,7 @@ GetLongOption::parse(char * const str, char * const p)
 	 return -1;		/* no match */
       }
 
-      token = ladtoken ? ladtoken : strtok(0, " \t");
+      token = ladtoken ? ladtoken : strtok(nullptr, " \t");
    } /* end while */
 
    return 1;
@@ -234,7 +234,7 @@ GetLongOption::setcell returns
 int
 GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *name)
 {
-   if ( c == 0 ) return -1;
+   if ( c == nullptr ) return -1;
 
    switch ( c->type ) {
    case GetLongOption::NoValue :
@@ -253,7 +253,7 @@ GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *nam
 	 return 0;
       }
       else {
-	 if ( nexttoken != 0 && nexttoken[0] != optmarker ) {
+	 if ( nexttoken != nullptr && nexttoken[0] != optmarker ) {
 	    c->value = nexttoken;
 	    return 1;
 	 }
@@ -268,7 +268,7 @@ GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *nam
 	 return 0;
       }
       else {
-	 if ( nexttoken != 0 && nexttoken[0] != optmarker ) {
+	 if ( nexttoken != nullptr && nexttoken[0] != optmarker ) {
 	    c->value = nexttoken;
 	    return 1;
 	 }
@@ -290,7 +290,7 @@ GetLongOption::usage(std::ostream &outfile) const
    Cell *t;
 
    outfile << "\nusage: " << pname << " " << ustring << "\n";
-   for ( t = table; t != 0; t = t->next ) {
+   for ( t = table; t != nullptr; t = t->next ) {
       outfile << "\t" << optmarker << t->option;
       if ( t->type == GetLongOption::MandatoryValue )
 	 outfile << " <$val>";

@@ -67,7 +67,7 @@ namespace Iotr {
     if (in == v2d || in == v3d) {
       return sca;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 

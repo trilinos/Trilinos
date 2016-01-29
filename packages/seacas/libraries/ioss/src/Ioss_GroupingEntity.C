@@ -50,7 +50,7 @@
 #include "Ioss_State.h"
 
 Ioss::GroupingEntity::GroupingEntity()
-  : entityCount(0), entityName("invalid"), database_(NULL), entityState(STATE_CLOSED),
+  : entityCount(0), entityName("invalid"), database_(nullptr), entityState(STATE_CLOSED),
     attributeCount(0)
 {}
 
@@ -69,7 +69,7 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
 
   if (my_name != "null_entity") {
     Ioss::Field::BasicType int_type = Ioss::Field::INTEGER;
-    if (io_database != NULL)
+    if (io_database != nullptr)
       int_type = field_int_type();
     fields.add(Ioss::Field("ids", int_type, "scalar",
 			   Ioss::Field::MESH, entity_count));
@@ -79,7 +79,7 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
 Ioss::GroupingEntity::~GroupingEntity()
 {
   // Only deleted by owning entity (Ioss::Region)
-  database_ = NULL;
+  database_ = nullptr;
 }
 
 // Default implementation is to do nothing. Redefined in Ioss::Region
@@ -90,7 +90,7 @@ void Ioss::GroupingEntity::really_delete_database()
 {
   Ioss::DatabaseIO *new_db = const_cast<Ioss::DatabaseIO*>(database_);
   delete new_db;
-  new_db = NULL;
+  new_db = nullptr;
 }
 
 std::string Ioss::GroupingEntity::generic_name() const
@@ -110,14 +110,14 @@ bool Ioss::GroupingEntity::is_alias(const std::string &my_name) const
 
 Ioss::DatabaseIO* Ioss::GroupingEntity::get_database() const
 {
-  assert(database_ != NULL);
+  assert(database_ != nullptr);
   return database_;
 }
 
 std::string Ioss::GroupingEntity::get_filename() const
 {
-  // Ok for database_ to be NULL at this point.
-  if (database_ == NULL)
+  // Ok for database_ to be nullptr at this point.
+  if (database_ == nullptr)
     return std::string();
   else
     return database_->get_filename();
@@ -125,8 +125,8 @@ std::string Ioss::GroupingEntity::get_filename() const
 
 void Ioss::GroupingEntity::set_database(Ioss::DatabaseIO *io_database)
 {
-  assert(database_ == NULL);     // Must be unset if we are setting it.
-  assert(io_database != NULL);  // Must be set to valid value
+  assert(database_ == nullptr);     // Must be unset if we are setting it.
+  assert(io_database != nullptr);  // Must be set to valid value
   database_ = io_database;
 }
 

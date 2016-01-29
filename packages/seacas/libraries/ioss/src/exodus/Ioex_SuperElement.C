@@ -38,7 +38,7 @@
 
 #include <assert.h>                     // for assert
 #include <netcdf.h>                     // for NC_NOERR, nc_close, etc
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t, nullptr
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <string>                       // for char_traits, operator<<, etc
 
@@ -102,7 +102,7 @@ namespace {
 
 Ioex::SuperElement::SuperElement(const std::string &filename,
 				 const std::string &my_name)
-  : Ioss::GroupingEntity(NULL, my_name, 1), fileName(filename),
+  : Ioss::GroupingEntity(nullptr, my_name, 1), fileName(filename),
     numDOF(0), num_nodes(0), numEIG(0), num_dim(0), filePtr(-1)
 {
 

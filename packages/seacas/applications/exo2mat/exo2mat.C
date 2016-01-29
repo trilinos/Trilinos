@@ -70,14 +70,14 @@
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
 #else
-#define TOPTR(x) (x.empty() ? NULL : &x[0])
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
 #endif
 
 #define EXT ".mat"
 int textfile=0;
 
-FILE* m_file=NULL;     /* file for m file output */
-mat_t *mat_file=NULL;  /* file for binary .mat output */
+FILE* m_file=nullptr;     /* file for m file output */
+mat_t *mat_file=nullptr;  /* file for binary .mat output */
 int debug = 0;
 
 static const char *qainfo[] =
@@ -95,12 +95,12 @@ std::string time_stamp(const std::string &format)
     const int length=256;
     static char time_string[length];
 
-    time_t calendar_time = time(NULL);
+    time_t calendar_time = time(nullptr);
     struct tm *local_time = localtime(&calendar_time);
 
     int error = strftime(time_string, length, format.c_str(), local_time);
     if (error != 0) {
-      time_string[length-1] = (char)NULL;
+      time_string[length-1] = '\0';
       return std::string(time_string);
     } else {
       return std::string("[ERROR]");
@@ -133,7 +133,7 @@ void usage()
 void mPutStr (const char *name, const char *str)
 {
   assert(m_file!=0);
-  if (strchr(str,'\n')==0)
+  if (strchr(str,'\n')==nullptr)
     fprintf(m_file,"%s='%s';\n",name,str);
   else {
     fprintf(m_file,"%s=[",name);
@@ -154,7 +154,7 @@ void mPutStr (const char *name, const char *str)
 /* put double array in m file */
 void mPutDbl (const char *name,int n1,int n2,double *pd)
 {
-  assert(m_file != NULL);
+  assert(m_file != nullptr);
   if (n1==1 && n2 ==1){
     fprintf(m_file,"%s=%15.8e;\n",name,*pd);
     return;
@@ -169,7 +169,7 @@ void mPutDbl (const char *name,int n1,int n2,double *pd)
 /* put integer array in m file */
 void mPutInt (const char *name, int pd)
 {
-  assert(m_file != NULL);
+  assert(m_file != nullptr);
   fprintf(m_file,"%s=%d;\n",name,pd);
   return;
 }
@@ -177,7 +177,7 @@ void mPutInt (const char *name, int pd)
 /* put integer array in m file */
 void mPutInt (const char *name,int n1,int n2, int *pd)
 {
-  assert(m_file != NULL);
+  assert(m_file != nullptr);
   if ( n1==1 && n2 ==1 ){
     fprintf(m_file,"%s=%d;\n",name,*pd);
     return;
@@ -193,14 +193,14 @@ void mPutInt (const char *name,int n1,int n2, int *pd)
 int matPutStr (const char *name, char *str)
 {
   int error = 0;
-  matvar_t *matvar = NULL;
+  matvar_t *matvar = nullptr;
   size_t dims[2];
 
   dims[0] = 1;
   dims[1] = strlen(str);
 
   matvar = Mat_VarCreate(name, MAT_C_CHAR, MAT_T_UINT8, 2, dims, str, MAT_F_DONT_COPY_DATA);
-  if (matvar != NULL) {
+  if (matvar != nullptr) {
     error = Mat_VarWrite(mat_file, matvar, MAT_COMPRESSION_NONE);
     Mat_VarFree(matvar);
   } else {
@@ -213,14 +213,14 @@ int matPutStr (const char *name, char *str)
 int matPutDbl (const char *name,int n1,int n2,double *pd)
 {
   int error = 0;
-  matvar_t *matvar = NULL;
+  matvar_t *matvar = nullptr;
 
   size_t dims[2];
   dims[0] = n1;
   dims[1] = n2;
 
   matvar = Mat_VarCreate(name, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, pd, MAT_F_DONT_COPY_DATA);
-  if (matvar != NULL) {
+  if (matvar != nullptr) {
     error = Mat_VarWrite(mat_file, matvar, MAT_COMPRESSION_ZLIB);
     Mat_VarFree(matvar);
   } else {
@@ -233,14 +233,14 @@ int matPutDbl (const char *name,int n1,int n2,double *pd)
 int matPutInt (const char *name,int n1,int n2, int *pd)
 {
   int error = 0;
-  matvar_t *matvar = NULL;
+  matvar_t *matvar = nullptr;
 
   size_t dims[2];
   dims[0] = n1;
   dims[1] = n2;
 
   matvar = Mat_VarCreate(name, MAT_C_INT32, MAT_T_INT32, 2, dims, pd, MAT_F_DONT_COPY_DATA);
-  if (matvar != NULL) {
+  if (matvar != nullptr) {
     error = Mat_VarWrite(mat_file, matvar, MAT_COMPRESSION_ZLIB);
     Mat_VarFree(matvar);
   } else {
@@ -290,7 +290,7 @@ int PutDbl (const char *name,int n1,int n2,double *pd)
 
 char ** get_exodus_names(size_t count, int size)
 {
-  char **names = new char* [count];
+  auto names = new char* [count];
   for (size_t i=0; i < count; i++) {
     names[i] = new char [size+1];
     std::memset(names[i], '\0', size+1);
@@ -365,12 +365,12 @@ void del_arg(int *argc, char* argv[], int j)
   for (int jj=j+1;jj<*argc;jj++)
     argv[jj-1]=argv[jj];
   (*argc)--;
-  argv[*argc]=0;
+  argv[*argc]=nullptr;
 }
 /**********************************************************************/
 int main (int argc, char *argv[])
 {
-  char *oname = NULL, *dot = NULL, *filename = NULL;
+  char *oname = nullptr, *dot = nullptr, *filename = nullptr;
   char str[32];
 
   const char* ext=EXT;
@@ -476,13 +476,13 @@ int main (int argc, char *argv[])
   }
   else {
     if (mat_version == 50) {
-      mat_file = Mat_CreateVer(filename, NULL, MAT_FT_MAT5);
+      mat_file = Mat_CreateVer(filename, nullptr, MAT_FT_MAT5);
     }
     else if (mat_version == 73) {
-      mat_file = Mat_CreateVer(filename, NULL, MAT_FT_MAT73);
+      mat_file = Mat_CreateVer(filename, nullptr, MAT_FT_MAT73);
     }
 
-    if (mat_file == NULL) {
+    if (mat_file == nullptr) {
       std::cerr << "ERROR: Unable to create matlab file " << filename << "\n";
       exit(1);
     }
@@ -703,7 +703,7 @@ int main (int argc, char *argv[])
       ex_get_elem_block(exo_file,ids[i],str2[i],&n,&n1,&n2);
       num_elem_in_block[i]=n;
       iscr.resize(n*n1);
-      ex_get_conn(exo_file,EX_ELEM_BLOCK,ids[i],TOPTR(iscr), NULL, NULL);
+      ex_get_conn(exo_file,EX_ELEM_BLOCK,ids[i],TOPTR(iscr), nullptr, nullptr);
       sprintf(str,"blk%02d",i+1);
       PutInt(str,n1,n,TOPTR(iscr));
     }

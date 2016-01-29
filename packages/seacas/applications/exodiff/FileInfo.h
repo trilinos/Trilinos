@@ -60,7 +60,7 @@ class FileInfo
   
   //! Create object referring to file with name \a filename
   //! \param filename name of file
-  explicit FileInfo(const std::string &filename);
+  explicit FileInfo(std::string filename);
 
   //! Create object referring to file with name \a filename
   //! \param filename name of file

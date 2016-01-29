@@ -650,7 +650,7 @@ const char *do_get_date(void)
   const size_t bufsize = 32;
   static char tmpstr[32];
 
-  time_t timer = time(NULL);
+  time_t timer = time(nullptr);
   struct tm *timeptr = localtime(&timer);
   
   /* First  the date in the form CCYY/MM/DD */
@@ -665,7 +665,7 @@ const char *do_get_iso_date(void)
   const size_t bufsize = 32;
   static char tmpstr[32];
 
-  time_t timer = time(NULL);
+  time_t timer = time(nullptr);
   struct tm *timeptr = localtime(&timer);
   
   /* First  the date in the form CCYY/MM/DD */
@@ -680,7 +680,7 @@ const char *do_get_time(void)
   const size_t bufsize = 32;
   static char tmpstr[32];
 
-  time_t timer = time(NULL);
+  time_t timer = time(nullptr);
   struct tm *timeptr = localtime(&timer);
   
   /* Now the time in the form HH:MM:SS where 0 <= HH < 24 */
@@ -748,7 +748,7 @@ const char *do_output(char *filename)
   }
   else {
     std::ostream* output = new std::ofstream(filename);
-    if (output != NULL) {
+    if (output != nullptr) {
       aprepro->outputStream.push(output);
 
       aprepro->info("Output now redirected to file'" +
@@ -758,7 +758,7 @@ const char *do_output(char *filename)
                    std::string(filename) + "'.\n", false);
     }
   }
-  return (NULL);
+  return (nullptr);
 }
 
 const char *do_append(char *filename)
@@ -776,8 +776,8 @@ const char *do_append(char *filename)
     aprepro->info("Output now redirected to original output stream.\n");
   }
   else {
-    std::ofstream* output = new std::ofstream(filename, std::ios_base::app); // Append
-    if (output != NULL) {
+    auto  output = new std::ofstream(filename, std::ios_base::app); // Append
+    if (output != nullptr) {
       aprepro->outputStream.push(output);
 
       aprepro->info("Output now redirected to file '" +
@@ -787,14 +787,13 @@ const char *do_append(char *filename)
                      std::string(filename) + "' for appending.\n", false);
     }
   }
-  return (NULL);
+  return (nullptr);
 }
 
 double do_word_count(char *string, char *delm)
 {
   std::string temp = string;
-  std::vector<std::string> tokens;
-  tokenize(temp, delm, tokens);
+  std::vector<std::string> tokens = tokenize(temp, delm);
   return (double)tokens.size();
 }
 
@@ -802,15 +801,14 @@ const char *do_get_word(double n, char *string, char *delm)
 {
   size_t in = (size_t)n;
   std::string temp = string;
-  std::vector<std::string> tokens;
-  tokenize(temp, delm, tokens);
+  std::vector<std::string> tokens = tokenize(temp, delm);
 
   if (tokens.size() >= in) {
-    char *word = NULL;
+    char *word = nullptr;
     new_string(tokens[in-1].c_str(), &word);
     return word;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -833,11 +831,11 @@ const char *do_getenv(char *env)
 {
   char *tmp;
   char *ret_string;
-  if (env == NULL)
+  if (env == nullptr)
     return "";
   
   tmp = (char *)getenv(env);
-  if (tmp != NULL) {
+  if (tmp != nullptr) {
     new_string(tmp, &ret_string);
     return (ret_string);
   } else {
@@ -858,21 +856,21 @@ const char *
 do_dumpsym(void)
 {
   aprepro->dumpsym(SEAMS::Parser::token::VAR, 0);
-  return(NULL);
+  return(nullptr);
 }
 
 const char *
 do_dumpfunc(void)
 {
   aprepro->dumpsym(SEAMS::Parser::token::FNCT, 1);
-  return(NULL);
+  return(nullptr);
 }
 
 const char *
 do_dumpvar(void)
 {
   aprepro->dumpsym(SEAMS::Parser::token::VAR, 1);
-  return(NULL);
+  return(nullptr);
 }
 
 double do_option(char *option, double value)
@@ -909,7 +907,7 @@ double do_option(char *option, double value)
 const char *do_include_path(char *new_path)
 {
   aprepro->ap_options.include_path = new_path;
-  return (NULL);
+  return (nullptr);
 }
 
 const char *do_intout(double intval)
@@ -938,32 +936,32 @@ const char *do_intout(double intval)
 const char *do_execute(char *string)
 {
   aprepro->lexer->execute(string);
-  return NULL;
+  return nullptr;
 }
 
 const char *do_rescan(char *string)
 {
   aprepro->lexer->rescan(string);
-  return NULL;
+  return nullptr;
 }
 
 const char *do_if(double x)
 {
   aprepro->inIfdefGetvar = false; 
   aprepro->lexer->if_handler(x);
-  return NULL;
+  return nullptr;
 }
 
 const char *do_notif(double x)
 {
   aprepro->lexer->if_handler(!x);
-  return NULL;
+  return nullptr;
 }
 
 const char *do_elseif(double x)
 {
   aprepro->lexer->elseif_handler(x);
-  return NULL;
+  return nullptr;
 }
 
 const char *do_str_if(char *string)
@@ -971,7 +969,7 @@ const char *do_str_if(char *string)
   std::string test(string);
   aprepro->lexer->if_handler(!test.empty());
 
-  return NULL;
+  return nullptr;
 }
 
 const char *do_str_notif(char* string)
@@ -979,7 +977,7 @@ const char *do_str_notif(char* string)
   std::string test(string);
   aprepro->lexer->if_handler(test.empty());
 
-  return NULL;
+  return nullptr;
 }
 
 const char*do_str_elseif(char* string)
@@ -987,26 +985,26 @@ const char*do_str_elseif(char* string)
   std::string test(string);
   aprepro->lexer->elseif_handler(!test.empty());
 
-  return NULL;
+  return nullptr;
 }
 
 const char *do_switch(double x)
 {
   aprepro->lexer->switch_handler(x);
-  return NULL;
+  return nullptr;
 }
 
 const char *do_case(double x)
 {
   aprepro->lexer->case_handler(x);
-  return NULL;
+  return nullptr;
 }
 
 const char *do_extract(char *string, char *begin, char *end)
 {
   /* From 'string' return a substring delimited by 'begin' and 'end'.
    *  'begin' is included in the string, but 'end' is not. If
-   *  'begin' does not appear in the string, return NULL; If 'end'
+   *  'begin' does not appear in the string, return nullptr; If 'end'
    *  does not appear, then return the remainder of the string. If
    *  'begin' == "", then start at beginning; if 'end' == "", then
    *  return remainder of the string.
@@ -1018,19 +1016,19 @@ const char *do_extract(char *string, char *begin, char *end)
   
   if (std::strlen(begin) > 0) {
     start = std::strstr(string, begin);
-    if (start == NULL)
-      return NULL;
+    if (start == nullptr)
+      return nullptr;
   }
   
   len = std::strlen(start);
   if (std::strlen(end) > 0) {
     char *finish = std::strstr(start, end);
-    if (finish != NULL) {
+    if (finish != nullptr) {
       len = finish-start;
     }
   }
 
-  char *tmpstr = new char[len+1];
+  auto tmpstr = new char[len+1];
   std::strncpy(tmpstr, start, len);
   tmpstr[len] = '\0';
   new_string(tmpstr, &tmp);
@@ -1051,12 +1049,12 @@ const char *do_error (char *error_string)
   yyerror(*aprepro, error_string);
   exit(EXIT_FAILURE);
   /* NOTREACHED */
-  return(NULL);
+  return(nullptr);
 }
 
 const char *do_print_array(const array *my_array_data)
 {
-  if (my_array_data != NULL) {
+  if (my_array_data != nullptr) {
     std::ostringstream lines;
 
     int rows = my_array_data->rows;
@@ -1087,12 +1085,12 @@ const char *do_delete(char *string)
 {
   aprepro->remove_variable(string);
 
-  return NULL;
+  return nullptr;
 }
 
 array *do_make_array(double rows, double cols)
 {
-  array *array_data = new array(rows, cols);
+  auto array_data = new array(rows, cols);
   return array_data;
 }
 
@@ -1100,7 +1098,7 @@ array *do_identity(double size)
 {
   int i;
   int isize = size;
-  array *array_data = new array(size,size);
+  auto array_data = new array(size,size);
 
   for (i=0; i < isize; i++) {
     array_data->data[i*isize+i] = 1.0;
@@ -1111,7 +1109,7 @@ array *do_identity(double size)
 array *do_transpose(const array *a)
 {
   int i,j;
-  array *array_data = new array(a->cols, a->rows);
+  auto array_data = new array(a->cols, a->rows);
 
   for (i=0; i < a->rows; i++) {
     for (j=0; j < a->cols; j++) {
@@ -1140,13 +1138,12 @@ array *do_csv_array(const char *filename, double skip)
   while (std::getline(*file, line)) {
     rows++;
     if (rows > rows_to_skip) {
-      std::vector<std::string> tokens;
-      tokenize(line, delim, tokens);
+      std::vector<std::string> tokens = tokenize(line, delim);
       cols = tokens.size() > cols ? tokens.size() : cols;
     }
   }
 
-  array *array_data = new array(rows-rows_to_skip, cols);
+  auto array_data = new array(rows-rows_to_skip, cols);
 
   /* Read file again storing entries in array_data->data */
   file->clear();
@@ -1156,8 +1153,7 @@ array *do_csv_array(const char *filename, double skip)
   rows = 0;
   while (std::getline(*file, line)) {
     if (++rows > rows_to_skip) {
-      std::vector<std::string> tokens;
-      tokenize(line, delim, tokens);
+      std::vector<std::string> tokens = tokenize(line, delim);
       for (size_t i=0; i < (size_t)array_data->cols; i++) {
 	if (i < tokens.size()) {
 	  array_data->data[idx++] = atof(tokens[i].c_str());
@@ -1184,13 +1180,12 @@ array *do_csv_array2(const char *filename, const char *comment)
   while (std::getline(*file, line)) {
     if (line[0] != comment[0]) {
       rows++;
-      std::vector<std::string> tokens;
-      tokenize(line, delim, tokens);
+      std::vector<std::string> tokens = tokenize(line, delim);
       cols = tokens.size() > cols ? tokens.size() : cols;
     }
   }
 
-  array *array_data = new array(rows, cols);
+  auto array_data = new array(rows, cols);
 
   /* Read file again storing entries in array_data->data */
   file->clear();
@@ -1201,8 +1196,7 @@ array *do_csv_array2(const char *filename, const char *comment)
   while (std::getline(*file, line)) {
     if (line[0] != comment[0]) {
       rows++;
-      std::vector<std::string> tokens;
-      tokenize(line, delim, tokens);
+      std::vector<std::string> tokens = tokenize(line, delim);
       for (size_t i=0; i < (size_t)array_data->cols; i++) {
 	if (i < tokens.size()) {
 	  array_data->data[idx++] = atof(tokens[i].c_str());

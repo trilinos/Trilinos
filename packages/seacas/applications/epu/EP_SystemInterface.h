@@ -83,7 +83,7 @@ namespace Excn {
   
       bool add_processor_id_field() const {return addProcessorId_;}
       bool sum_shared_nodes() const {return sumSharedNodes_;}
-      bool large_model() const {return largeModel_;}
+      bool use_netcdf4() const {return useNetcdf4_;}
       bool append() const {return append_;}
       bool map_element_ids() const {return mapIds_;}
       bool omit_nodesets() const {return omitNodesets_;}
@@ -92,7 +92,7 @@ namespace Excn {
       void set_int64() const {intIs64Bit_=true;}
       int  compress_data() const {return compressData_;}
       bool subcycle_join() const {return subcycleJoin_;}
-	  
+      bool output_shared_nodes() const {return outputSharedNodes_;}
       StringIdVector global_var_names() const {return globalVarNames_;}
       StringIdVector node_var_names() const {return nodeVarNames_;}
       StringIdVector elem_var_names() const {return elemVarNames_;}
@@ -147,10 +147,11 @@ namespace Excn {
       bool mapIds_;
       bool omitNodesets_;
       bool omitSidesets_;
-      bool largeModel_;
+      bool useNetcdf4_;
       bool append_;
       mutable bool intIs64Bit_;
       bool subcycleJoin_;
+      bool outputSharedNodes_;
       
       StringIdVector globalVarNames_;
       StringIdVector nodeVarNames_;

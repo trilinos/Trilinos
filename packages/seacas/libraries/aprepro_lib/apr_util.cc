@@ -213,8 +213,8 @@ namespace SEAMS {
 
   void cleanup_memory()
   {
-    for (size_t i=0; i < allocations.size(); i++) {
-      delete [] allocations[i];
+    for (auto & allocation : allocations) {
+      delete [] allocation;
     }
 
     // Clear the vector to avoid stale pointers.

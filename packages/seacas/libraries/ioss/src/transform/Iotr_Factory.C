@@ -42,7 +42,7 @@ namespace Iotr {
 
 Ioss::Transform* Factory::create(const std::string& type)
 {
-  Ioss::Transform *transform = NULL;
+  Ioss::Transform *transform = nullptr;
   FactoryMap::iterator iter = registry()->find(type);
   if (iter == registry()->end()) {
     if (registry()->empty()) {

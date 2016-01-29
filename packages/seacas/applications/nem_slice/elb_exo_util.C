@@ -38,7 +38,7 @@
 #include <vector>
 #include <string>
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for printf, NULL, sprintf
+#include <stdio.h>                      // for printf, nullptr, sprintf
 #include <stdlib.h>                     // for malloc, free, calloc
 #include <string.h>                     // for strlen
 #include <algorithm>
@@ -347,7 +347,7 @@ int read_mesh(const std::string &exo_file,
     }
 
   /* Read the coordinates, if desired */
-  xptr = yptr = zptr = NULL;
+  xptr = yptr = zptr = nullptr;
   if(problem->read_coords == ELB_TRUE)
     {
       switch(mesh->num_dims)
@@ -500,7 +500,7 @@ int read_mesh(const std::string &exo_file,
   } /* End "for(cnt=0; cnt < mesh->num_el_blks; cnt++)" */
 
   /* if there is a group designator, then parse it here */
-  if (problem->groups != NULL) {
+  if (problem->groups != nullptr) {
     if (!parse_groups(&el_blk_ids[0], &el_blk_cnts[0], mesh, problem)) {
       Gen_Error(0, "fatal: unable to parse group designator");
       ex_close(exoid);

@@ -62,9 +62,8 @@ Ioss::SideSet::SideSet(Ioss::DatabaseIO *io_database, const std::string& my_name
 Ioss::SideSet::~SideSet()
 {
   try {
-    Ioss::SideBlockContainer::const_iterator i = sideBlocks.begin();
-    while (i != sideBlocks.end()) {
-      delete *i++;
+    for (auto sb : sideBlocks) {
+      delete sb;
     }
   } catch (...) {
   }
@@ -78,19 +77,17 @@ Ioss::SideBlock* Ioss::SideSet::get_block(size_t which) const
   if (which < sideBlocks.size())
     return sideBlocks[which];
   else
-    return NULL;
+    return nullptr;
 }
 
 Ioss::SideBlock* Ioss::SideSet::get_side_block(const std::string& my_name) const
 {
-  Ioss::SideBlock *ge = NULL;
-  Ioss::SideBlockContainer::const_iterator i = sideBlocks.begin();
-  while (i != sideBlocks.end()) {
-    if ((*i)->name() == my_name) {
-      ge = *i;
+  Ioss::SideBlock *ge = nullptr;
+  for (auto sb : sideBlocks) {
+    if (sb->name() == my_name) {
+      ge = sb;
       break;
     }
-    ++i;
   }
   return ge;
 }
@@ -128,14 +125,10 @@ Ioss::SideSet::get_implicit_property(const std::string& my_name) const
 int Ioss::SideSet::max_parametric_dimension() const
 {
   int max_par_dim = 0;
-
-  Ioss::SideBlockContainer::const_iterator i = sideBlocks.begin();
-  while (i != sideBlocks.end()) {
-    Ioss::SideBlock * const sideblock = *i ;
+  for (auto sideblock : sideBlocks) {
     int parametric_dim = sideblock->topology()->parametric_dimension();
     if (parametric_dim > max_par_dim)
       max_par_dim = parametric_dim;
-    ++i;
   }
   if (max_par_dim == 0) {
     // If the sideset is empty, return the maximum that the parametric dimension could be...
@@ -149,12 +142,10 @@ int Ioss::SideSet::max_parametric_dimension() const
 void Ioss::SideSet::block_membership(std::vector<std::string> &block_members)
 {
   if (blockMembership.empty()) {
-    Ioss::SideBlockContainer::iterator i = sideBlocks.begin();
-    while (i != sideBlocks.end()) {
+    for (auto & sb : sideBlocks) {
       std::vector<std::string> blocks;
-      (*i)->block_membership(blocks);
+      sb->block_membership(blocks);
       blockMembership.insert(blockMembership.end(), blocks.begin(), blocks.end());
-      ++i;
     }
     std::sort(blockMembership.begin(), blockMembership.end());
     blockMembership.erase(std::unique(blockMembership.begin(), blockMembership.end()), blockMembership.end());

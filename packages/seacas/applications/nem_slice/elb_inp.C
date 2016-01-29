@@ -43,7 +43,7 @@
 #include "elb_inp.h"
 #include <exodusII.h>                   // for ex_close, EX_READ, etc
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for NULL, sprintf, printf, etc
+#include <stdio.h>                      // for nullptr, sprintf, printf, etc
 #include <stdlib.h>                     // for malloc, exit, free
 #include <string.h>                     // for strcmp, strstr, strchr, etc
 #include "elb.h"                        // for Problem_Description, etc
@@ -100,7 +100,7 @@ int cmd_line_arg_parse(
   )
 {
   int   opt_let, iret, el_blk, wgt, max_dim=0, i;
-  char *sub_opt=NULL, *value=NULL, *cptr=NULL, *cptr2=NULL;
+  char *sub_opt=nullptr, *value=nullptr, *cptr=nullptr, *cptr2=nullptr;
   char ctemp[1024];
 
   extern char *optarg;
@@ -115,7 +115,7 @@ int cmd_line_arg_parse(
      "edges",
      "time_index",
      "var_name",
-     NULL
+     nullptr
   };
 
   const char *mach_subopts[] = {
@@ -123,7 +123,7 @@ int cmd_line_arg_parse(
     "hcube",
     "hypercube",
     "cluster",
-    NULL
+    nullptr
   };
 
   const char *lb_subopts[] = {
@@ -145,14 +145,14 @@ int cmd_line_arg_parse(
     "rib",
     "hsfc",
     "ignore_z",
-    NULL
+    nullptr
   };
 
   const char *solve_subopts[] = {
     "tolerance",
     "use_rqi",
     "vmax",
-    NULL
+    nullptr
   };
 
 /*---------------------------Execution Begins--------------------------------*/
@@ -185,7 +185,7 @@ int cmd_line_arg_parse(
 
     case 'x':
       /* Undocumented flag for setting the error level */
-      if(optarg == NULL)
+      if(optarg == nullptr)
         error_lev = 1;
       else
       {
@@ -222,12 +222,12 @@ int cmd_line_arg_parse(
     case 'w':
       /* Weighting options */
       sub_opt = optarg;
-      while(sub_opt != NULL && *sub_opt != '\0')
+      while(sub_opt != nullptr && *sub_opt != '\0')
       {
         switch(md_getsubopt(&sub_opt, weight_subopts, &value))
         {
         case READ_EXO:
-          if(value == NULL)
+          if(value == nullptr)
           {
             sprintf(ctemp, "fatal: must specify a file name with %s",
                     weight_subopts[READ_EXO]);
@@ -253,7 +253,7 @@ int cmd_line_arg_parse(
           break; /* End "case READ_EXO" */
 
         case VAR_INDX:
-          if(value == NULL)
+          if(value == nullptr)
           {
             sprintf(ctemp, "fatal: must specify a value with %s",
                     weight_subopts[VAR_INDX]);
@@ -279,7 +279,7 @@ int cmd_line_arg_parse(
           break;
 
         case TIME_INDX:
-          if(value == NULL)
+          if(value == nullptr)
           {
             sprintf(ctemp, "fatal: must specify a value with %s",
                     weight_subopts[TIME_INDX]);
@@ -305,7 +305,7 @@ int cmd_line_arg_parse(
           break;
 
         case VAR_NAME:
-          if(value == NULL)
+          if(value == nullptr)
           {
             sprintf(ctemp, "fatal: must specify a value with %s",
                     weight_subopts[VAR_NAME]);
@@ -325,7 +325,7 @@ int cmd_line_arg_parse(
           break;
 
         case EL_BLK:
-          if(value == NULL)
+          if(value == nullptr)
           {
             sprintf(ctemp, "fatal: must specify an element block and weight with %s",
                     weight_subopts[EL_BLK]);
@@ -387,13 +387,13 @@ int cmd_line_arg_parse(
 
     case 'a':
       /* Only an ASCII input file name */
-      if (optarg != NULL)
+      if (optarg != nullptr)
 	ascii_inp_file = optarg;
       break;
 
     case 'o':
       /* Output NemesisI file name */
-      if (optarg != NULL)
+      if (optarg != nullptr)
 	nemI_out_file = optarg;
       break;
 
@@ -420,9 +420,9 @@ int cmd_line_arg_parse(
     case 'm':
       /* Machine type */
       sub_opt = optarg;
-      if (sub_opt != NULL)
+      if (sub_opt != nullptr)
 	string_to_lower(sub_opt, '\0');
-      while(sub_opt != NULL && *sub_opt != '\0') {
+      while(sub_opt != nullptr && *sub_opt != '\0') {
 
         /* Switch over the machine description */
         switch(md_getsubopt(&sub_opt, mach_subopts, &value))
@@ -450,7 +450,7 @@ int cmd_line_arg_parse(
         case CLUSTER:
           if (machine->type < 0)  /* so, get the number of boxes */
           {
-            if(value == NULL || strlen(value) == 0)
+            if(value == nullptr || strlen(value) == 0)
             {
               Gen_Error(0, "fatal: need to specify number of boxes");
               return 0;
@@ -484,13 +484,13 @@ int cmd_line_arg_parse(
             }
           }
 
-          if(cptr == NULL || strlen(cptr) == 0)
+          if(cptr == nullptr || strlen(cptr) == 0)
           {
             Gen_Error(0, "fatal: need to specify dimension");
             return 0;
           }
           cptr2 = strtok(cptr, "xX");
-          if(cptr2 == NULL)
+          if(cptr2 == nullptr)
           {
             Gen_Error(0, "fatal: bad size for dimension specification");
             return 0;
@@ -507,10 +507,10 @@ int cmd_line_arg_parse(
             }
 
             machine->num_dims++;
-            cptr2 = strtok(NULL, "xX");
+            cptr2 = strtok(nullptr, "xX");
 
             /* Only up to three-dimensional allowed */
-            if(machine->num_dims == max_dim && cptr2 != NULL)
+            if(machine->num_dims == max_dim && cptr2 != nullptr)
             {
               Gen_Error(0, "fatal: maximum number of dimensions exceeded");
               return 0;
@@ -532,9 +532,9 @@ int cmd_line_arg_parse(
     case 'l':
       /* Load balance information */
       sub_opt = optarg;
-      if (sub_opt != NULL) 
+      if (sub_opt != nullptr) 
 	string_to_lower(sub_opt, '\0');
-      while(sub_opt != NULL && *sub_opt != '\0')
+      while(sub_opt != nullptr && *sub_opt != '\0')
       {
         switch(md_getsubopt(&sub_opt, lb_subopts, &value))
         {
@@ -583,7 +583,7 @@ int cmd_line_arg_parse(
           break;
 
         case INFILE:
-          if(value == NULL)
+          if(value == nullptr)
           {
             Gen_Error(0, "fatal: need to specify a value with file");
             return 0;
@@ -608,7 +608,7 @@ int cmd_line_arg_parse(
           break;
 
         case NUM_SECTS:
-          if(value == NULL)
+          if(value == nullptr)
           {
             Gen_Error(0, "fatal: need to specify a value with num_sects");
             return 0;
@@ -630,7 +630,7 @@ int cmd_line_arg_parse(
           break;
 
         case OUTFILE:
-          if(value == NULL)
+          if(value == nullptr)
           {
             Gen_Error(0, "fatal: need to specify a value with outfile");
             return 0;
@@ -663,14 +663,14 @@ int cmd_line_arg_parse(
     case 's':
       /* Eigen solver options */
       sub_opt = optarg;
-      if (sub_opt != NULL)
+      if (sub_opt != nullptr)
 	string_to_lower(sub_opt, '\0');
-      while(sub_opt != NULL && *sub_opt != '\0')
+      while(sub_opt != nullptr && *sub_opt != '\0')
       {
         switch(md_getsubopt(&sub_opt, solve_subopts, &value))
         {
         case TOLER:
-          if(value == NULL)
+          if(value == nullptr)
           {
             fprintf(stderr, "fatal: tolerance specification requires \
 value\n");
@@ -694,7 +694,7 @@ value\n");
           break;
 
         case VMAX:
-          if(value == NULL)
+          if(value == nullptr)
           {
             fprintf(stderr, "fatal: must specify a value with %s\n",
                     solve_subopts[VMAX]);
@@ -723,7 +723,7 @@ value\n");
     case 'g':
       /* group designations */
       /* allocate string to hold designation */
-      if (optarg != NULL) {
+      if (optarg != nullptr) {
         prob->groups = (char*)malloc(strlen(optarg) + 1);
         strcpy(prob->groups, optarg);
       }
@@ -810,7 +810,7 @@ int read_cmd_file(std::string &ascii_inp_file,
       {
         /* The input ExodusII file name */
         if(exoII_inp_file.empty()) {
-        cptr = strtok(NULL, "\t=");
+        cptr = strtok(nullptr, "\t=");
         strip_string(cptr, " \t\n");
         exoII_inp_file = cptr;
         }
@@ -820,7 +820,7 @@ int read_cmd_file(std::string &ascii_inp_file,
         if(problem->vis_out < 0)
         {
           /* Output a visualization file */
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           if(strcasecmp(cptr, "yes") == 0 || strcasecmp(cptr, "true") == 0)
             problem->vis_out = 1;
@@ -849,7 +849,7 @@ int read_cmd_file(std::string &ascii_inp_file,
       {
         /* The NemesisI output file name */
         if(nemI_out_file.empty()) {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           nemI_out_file=cptr;
         }
@@ -865,7 +865,7 @@ int read_cmd_file(std::string &ascii_inp_file,
           cptr++;
           strip_string(cptr, " \t\n=");
           cptr = strtok(cptr, ",");
-          while(cptr != NULL)
+          while(cptr != nullptr)
           {
             strip_string(cptr, " \t\n");
             string_to_lower(cptr, '\0');
@@ -930,7 +930,7 @@ int read_cmd_file(std::string &ascii_inp_file,
               {
                 lb->type = INFILE;
                 cptr2 = strchr(cptr, '=');
-                if(cptr2 == NULL)
+                if(cptr2 == nullptr)
                 {
                   Gen_Error(0, "fatal: need to specify a value with infile");
                   return 0;
@@ -965,7 +965,7 @@ int read_cmd_file(std::string &ascii_inp_file,
               if(lb->num_sects < 0)
               {
                 cptr2 = strchr(cptr, '=');
-                if(cptr2 == NULL)
+                if(cptr2 == nullptr)
                 {
                   Gen_Error(0,
                             "fatal: need to specify a value with num_sects");
@@ -992,7 +992,7 @@ int read_cmd_file(std::string &ascii_inp_file,
               {
                 lb->outfile = ELB_TRUE;
                 cptr2 = strchr(cptr, '=');
-                if(cptr2 == NULL)
+                if(cptr2 == nullptr)
                 {
                   Gen_Error(0, "fatal: need to specify a value with outfile");
                   return 0;
@@ -1017,7 +1017,7 @@ int read_cmd_file(std::string &ascii_inp_file,
               Gen_Error(0, ctemp);
               return 0;
             }
-            cptr = strtok(NULL, ",");
+            cptr = strtok(nullptr, ",");
           }
         }
       }
@@ -1043,7 +1043,7 @@ int read_cmd_file(std::string &ascii_inp_file,
             if(solver->tolerance < 0.0)
             {
               cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
+              if(cptr2 == nullptr)
               {
                 Gen_Error(0,
                           "fatal: tolerance specification requires a value");
@@ -1071,7 +1071,7 @@ int read_cmd_file(std::string &ascii_inp_file,
             if(solver->vmax < 0)
             {
               cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
+              if(cptr2 == nullptr)
               {
                 Gen_Error(0, "fatal: vmax must have a value");
                 return 0;
@@ -1093,14 +1093,14 @@ int read_cmd_file(std::string &ascii_inp_file,
             Gen_Error(1, ctemp);
           }
 
-          cptr = strtok(NULL, ",");
+          cptr = strtok(nullptr, ",");
         }
       }
       else if(token_compare(cptr, "graph type"))
       {
         if(problem->type < 0)
         {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           string_to_lower(cptr, '\0');
           if(strcmp(cptr, "nodal") == 0)
@@ -1131,7 +1131,7 @@ int read_cmd_file(std::string &ascii_inp_file,
 
           /* Search to equal sign */
           cptr2 = strchr(cptr, '=');
-          if(cptr2 == NULL)
+          if(cptr2 == nullptr)
           {
             Gen_Error(0, "fatal: machine must have a dimension specified");
             return 0;
@@ -1200,10 +1200,10 @@ int read_cmd_file(std::string &ascii_inp_file,
             }
 
             machine->num_dims++;
-            cptr = strtok(NULL, "xX");
+            cptr = strtok(nullptr, "xX");
 
             /* Check how many dimensions there are */
-            if(machine->num_dims == max_dim && cptr != NULL)
+            if(machine->num_dims == max_dim && cptr != nullptr)
             {
               Gen_Error(0, "fatal: maximum number of dimensions exceeded");
               return 0;
@@ -1221,14 +1221,14 @@ int read_cmd_file(std::string &ascii_inp_file,
           strip_string(cptr," \t\n=");
           cptr = strtok(cptr, ",");
 
-          while(cptr != NULL)
+          while(cptr != nullptr)
           {
             strip_string(cptr, " \t\n");
             string_to_lower(cptr, '\0');
             if(strstr(cptr, "read"))
             {
               cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
+              if(cptr2 == nullptr)
               {
                 Gen_Error(0, "fatal: must specify file name with \"read\"");
                 return 0;
@@ -1249,7 +1249,7 @@ int read_cmd_file(std::string &ascii_inp_file,
             else if(strstr(cptr, "var_name"))
             {
               cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
+              if(cptr2 == nullptr)
               {
                 Gen_Error(0, "fatal: must specify a name with \"var_name\"");
                 return 0;
@@ -1266,7 +1266,7 @@ int read_cmd_file(std::string &ascii_inp_file,
             else if(strstr(cptr, "var_index"))
             {
               cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
+              if(cptr2 == nullptr)
               {
                 Gen_Error(0, "fatal: must specify a value with \"var_index\"");
                 return 0;
@@ -1284,7 +1284,7 @@ int read_cmd_file(std::string &ascii_inp_file,
             else if(strstr(cptr, "time_index"))
             {
               cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
+              if(cptr2 == nullptr)
               {
                 Gen_Error(0,
                           "fatal: must specify a value with \"time_index\"");
@@ -1302,7 +1302,7 @@ int read_cmd_file(std::string &ascii_inp_file,
             else if(strstr(cptr, "eb"))
             {
               cptr2 = strchr(cptr, '=');
-              if(cptr2 == NULL)
+              if(cptr2 == nullptr)
               {
                 Gen_Error(0,
                           "fatal: must specify a value with \"eb\"");
@@ -1355,7 +1355,7 @@ int read_cmd_file(std::string &ascii_inp_file,
               return 0;
             }
 
-            cptr = strtok(NULL, ",");
+            cptr = strtok(nullptr, ",");
           }
 
         } /* End "if(weight->type < 0)" */
@@ -1376,7 +1376,7 @@ int read_cmd_file(std::string &ascii_inp_file,
          * "}", and change them to blank spaces.
          */
         cptr2 = strchr(cptr, '{');
-        if (cptr2 != NULL) {
+        if (cptr2 != nullptr) {
           ilen = strlen(cptr2);
           for (i = 0; i < ilen; i++) {
             if (*cptr2 == '}') break;
@@ -1389,7 +1389,7 @@ int read_cmd_file(std::string &ascii_inp_file,
         cptr = strtok(cptr, ",");
 
         /* Loop until all the suboptions have been specified */
-        while(cptr != NULL)
+        while(cptr != nullptr)
         {
           strip_string(cptr, " \t\n");
           string_to_lower(cptr, '\0');
@@ -1451,7 +1451,7 @@ int read_cmd_file(std::string &ascii_inp_file,
           {
             /* "{" defines the beginning of the group designator */
             cptr2 = strchr(cptr, '{');
-            if (cptr2== NULL) {
+            if (cptr2== nullptr) {
               Gen_Error(0, "fatal: group start designator \"}\" not found");
               return 0;
             }
@@ -1469,7 +1469,7 @@ int read_cmd_file(std::string &ascii_inp_file,
                     cptr);
             Gen_Error(1, ctemp);
           }
-          cptr = strtok(NULL, ",");
+          cptr = strtok(nullptr, ",");
         }
       }
       else
@@ -1582,7 +1582,7 @@ int check_inp_specs(std::string &exoII_inp_file,
    * currently, do not allow groups and clusters since the
    * loops to chaco get a bit too confusing
    */
-  if (machine->num_boxes > 1 && prob->groups != NULL)
+  if (machine->num_boxes > 1 && prob->groups != nullptr)
   {
     Gen_Error(0, "fatal: groups cannot be designated for a cluster machine");
     return 0;

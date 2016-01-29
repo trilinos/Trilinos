@@ -36,7 +36,7 @@
 #include <Ioss_CodeTypes.h>             // for IntVector
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for int64_t
-#include <cstdlib>                      // for NULL
+#include <cstdlib>                      // for nullptr
 #include <iostream>                     // for ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <string>                       // for string
@@ -51,7 +51,7 @@ namespace Ioss { class SideBlock; }
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
 #else
-#define TOPTR(x) (x.empty() ? NULL : &x[0])
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
 #endif
 
 #define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
@@ -127,18 +127,18 @@ namespace Ioss {
      * of the current execution. Working_directory must end with '/' or be empty.
      */
     static std::string local_filename(const std::string &relative_filename,
-				      const std::string &type,
-				      const std::string &working_directory);
+                                      const std::string &type,
+                                      const std::string &working_directory);
 
     static int field_warning(const Ioss::GroupingEntity *ge,
-			     const Ioss::Field &field, const std::string& inout);
+                             const Ioss::Field &field, const std::string& inout);
 
     static void calculate_sideblock_membership(IntVector &face_is_member,
-					       const SideBlock *ef_blk,
-					       size_t int_byte_size,
-					       const void *element, const void *sides,
-					       int64_t number_sides, 
-					       const Region *region);
+                                               const SideBlock *ef_blk,
+                                               size_t int_byte_size,
+                                               const void *element, const void *sides,
+                                               int64_t number_sides, 
+                                               const Region *region);
 
     /*! And yet another idiosyncracy of sidesets...
      * The side of an element (especially shells) can be
@@ -161,13 +161,13 @@ namespace Ioss {
      * be accessing the file at the same time...
      */
     static void input_file(const std::string &file_name,
-			   std::vector<std::string> *lines, size_t max_line_length = 0);
+                           std::vector<std::string> *lines, size_t max_line_length = 0);
 
     template <class T> static std::string to_string(const T & t)
       {
-	std::ostringstream os;
-	os << t;
-	return os.str();
+        std::ostringstream os;
+        os << t;
+        return os.str();
       }
     
     /*!
@@ -187,15 +187,15 @@ namespace Ioss {
      * It also converts name to lowercase and converts spaces to '_'
      */
     static std::string variable_name_kluge(const std::string &name,
-					   size_t component_count, size_t copies,
-					   size_t max_var_len);
+                                           size_t component_count, size_t copies,
+                                           size_t max_var_len);
 
-  /*!
-   * The model for a history file is a single sphere element (1 node, 1 element)
-   * This is needed for some applications that read this file that require a "mesh"
-   * even though a history file is just a collection of global variables with no
-   * real mesh. This routine will add the mesh portion to a history file.
-   */
+    /*!
+     * The model for a history file is a single sphere element (1 node, 1 element)
+     * This is needed for some applications that read this file that require a "mesh"
+     * even though a history file is just a collection of global variables with no
+     * real mesh. This routine will add the mesh portion to a history file.
+     */
     static void generate_history_mesh(Ioss::Region *region);
 
     /*!

@@ -36,7 +36,7 @@
 #include "elb_output.h"
 #include <iostream>
 #include <exodusII.h>                   // for ex_close, ex_opts, etc
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t, nullptr
 #include <stdio.h>                      // for printf, sprintf, fprintf, etc
 #include <stdlib.h>                     // for free, malloc, realloc
 #include <string.h>                     // for strcat, strcpy, strlen, etc
@@ -220,7 +220,7 @@ int write_nemesis(std::string &nemI_out_file,
     Gen_Error(0, "warning: output of info records failed");
 
   /* Generate a QA record for the utility */
-  time_t time_val = time(NULL);
+  time_t time_val = time(nullptr);
   char *ct_ptr   = asctime(localtime(&time_val));
   char tm_date[30];
   strcpy(tm_date, ct_ptr);
@@ -345,7 +345,7 @@ int write_nemesis(std::string &nemI_out_file,
       /* Output the communication map parameters */
       if(ex_put_cmap_params_cc(exoid, TOPTR(node_cmap_ids_cc),
 			       TOPTR(node_cmap_cnts_cc),
-			       TOPTR(node_proc_ptr), NULL, NULL, NULL) < 0)
+			       TOPTR(node_proc_ptr), nullptr, nullptr, nullptr) < 0)
 	{
 	  Gen_Error(0, "fatal: unable to output communication map parameters");
 	  return 0;
@@ -364,7 +364,7 @@ int write_nemesis(std::string &nemI_out_file,
 	  }
 
 	/* Output the elemental map */
-	if(ex_put_processor_elem_maps(exoid, TOPTR(lb->int_elems[proc]), NULL, proc) < 0)
+	if(ex_put_processor_elem_maps(exoid, TOPTR(lb->int_elems[proc]), nullptr, proc) < 0)
 	  {
 	    Gen_Error(0, "fatal: failed to output element map");
 	    return 0;
@@ -433,7 +433,7 @@ int write_nemesis(std::string &nemI_out_file,
 	  if(ex_put_processor_node_maps(exoid,
 					TOPTR(lb->int_nodes[proc]),
 					TOPTR(lb->bor_nodes[proc]),
-					NULL, proc) < 0)
+					nullptr, proc) < 0)
 	    {
 	      Gen_Error(0, "fatal: failed to output node map");
 	      return 0;
@@ -634,9 +634,9 @@ int write_vis(std::string &nemI_out_file,
     }
 	
     /* Output the nodal coordinates */
-    float *xptr = NULL;
-    float *yptr = NULL;
-    float *zptr = NULL;
+    float *xptr = nullptr;
+    float *yptr = nullptr;
+    float *zptr = nullptr;
     switch(mesh->num_dims) {
     case 3:
       zptr = (mesh->coords) + 2*mesh->num_nodes;
@@ -758,8 +758,8 @@ int write_vis(std::string &nemI_out_file,
 	proc_vals[ncnt] = lb->vertex2proc[ncnt];
 
       for(int pcnt=0; pcnt < machine->num_procs; pcnt++) {
-	for(size_t ncnt=0; ncnt < lb->bor_nodes[pcnt].size(); ncnt++)
-	  proc_vals[lb->bor_nodes[pcnt][ncnt]] = machine->num_procs + 1;
+	for(auto & elem : lb->bor_nodes[pcnt])
+	  proc_vals[elem] = machine->num_procs + 1;
       }
 
       /* Output the nodal variables */

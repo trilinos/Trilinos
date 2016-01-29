@@ -96,7 +96,7 @@ struct TimeInterp
 
 string Date() {
   char tbuf[32];
-  time_t calendar_time = time(NULL);
+  time_t calendar_time = time(nullptr);
   struct tm *local_time = localtime(&calendar_time);
   strftime(tbuf, 32, "%Y/%m/%d   %H:%M:%S %Z", local_time);
   string time_string(tbuf);
@@ -353,7 +353,7 @@ namespace {
   
     sigfillset(&(sigact.sa_mask));
     sigact.sa_handler = floating_point_exception_handler;
-    if (sigaction(SIGFPE, &sigact, 0) == -1) perror("sigaction failed");
+    if (sigaction(SIGFPE, &sigact, nullptr) == -1) perror("sigaction failed");
 #if defined(LINUX) && defined(GNU)
     // for GNU, this seems to be needed to turn on trapping
     feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
@@ -515,8 +515,8 @@ namespace {
 
     // When mapping is on ("-m"), node_map maps indexes from file1 to indexes
     // into file2.  Similarly with elmt_map.
-    INT *node_map = 0;
-    INT *elmt_map = 0;
+    INT *node_map = nullptr;
+    INT *elmt_map = nullptr;
     if (interface.map_flag != FILE_ORDER) {
       if(interface.map_flag == PARTIAL) {
 	Compute_Partial_Maps(node_map, elmt_map, file1, file2);
@@ -550,8 +550,8 @@ namespace {
     // For now, assume that both files have the same map. At some point, need
     // to actually use the maps to build the correspondence map from one file
     // to the next...
-    const INT *node_id_map = NULL;
-    const INT *elem_id_map = NULL;
+    const INT *node_id_map = nullptr;
+    const INT *elem_id_map = nullptr;
     if (!interface.ignore_maps) {
       file1.Load_Node_Map();
       file1.Load_Elmt_Map();
@@ -601,7 +601,7 @@ namespace {
 	std::cout << "#  NOTE: All node and element ids are reported as local ids.\n\n";
     }
   
-    double* var_vals = 0;
+    double* var_vals = nullptr;
     if (out_file_id >= 0) {
       size_t max_ent = interface.glob_var_names.size();
       if (file1.Num_Nodes() > max_ent)
@@ -613,15 +613,15 @@ namespace {
     }
  
     // When mapping is in effect, it is efficient to grab pointers to all blocks.
-    Exo_Block<INT>** blocks2 = 0;
-    if (elmt_map != 0) {
+    Exo_Block<INT>** blocks2 = nullptr;
+    if (elmt_map != nullptr) {
       blocks2 = new Exo_Block<INT>*[file2.Num_Elmt_Blocks()];
       for (int b = 0; b < file2.Num_Elmt_Blocks(); ++b)
 	blocks2[b] = file2.Get_Elmt_Block_by_Index(b);
     }
   
     // Diff attributes...
-    if (!interface.ignore_attributes && elmt_map==NULL && !interface.summary_flag) {
+    if (!interface.ignore_attributes && elmt_map==nullptr && !interface.summary_flag) {
       if (diff_element_attributes(file1, file2, elmt_map, elem_id_map, blocks2))
 	diff_flag = true;
     }
@@ -1037,7 +1037,7 @@ namespace {
       checking_invalid = true;
       invalid_data = false;
     
-      SMART_ASSERT(values != NULL);
+      SMART_ASSERT(values != nullptr);
     
     
       for (size_t i=0; i < count; i++) {
@@ -1064,7 +1064,7 @@ namespace {
 
 bool Equal_Values(const double *values, size_t count, double *value)
   {
-    SMART_ASSERT(values != NULL);
+    SMART_ASSERT(values != nullptr);
     
     bool all_same = true;
     if (count > 0) {
@@ -1084,12 +1084,12 @@ bool Equal_Values(const double *values, size_t count, double *value)
   const double *get_nodal_values(ExoII_Read<INT> &filen, int time_step, size_t idx,
 				 int fno, const string &name, bool *diff_flag)
     {
-      const double *vals = NULL;
+      const double *vals = nullptr;
       if (fno == 1 || !interface.summary_flag) {
 	filen.Load_Nodal_Results(time_step, idx);
 	vals = filen.Get_Nodal_Results(idx);
     
-	if (vals != NULL) {
+	if (vals != nullptr) {
 	  if (Invalid_Values(vals, filen.Num_Nodes())) {
 	    std::cout << "\tERROR: NaN found for variable "
 		      << name << " in file " << fno << "\n";
@@ -1104,11 +1104,11 @@ bool Equal_Values(const double *values, size_t count, double *value)
   const double *get_nodal_values(ExoII_Read<INT> &filen, const TimeInterp &t, size_t idx,
 				 int fno, const string &name, bool *diff_flag)
     {
-      const double *vals = NULL;
+      const double *vals = nullptr;
       if (fno == 1 || !interface.summary_flag) {
 	vals = filen.Get_Nodal_Results(t.step1, t.step2, t.proportion, idx);
     
-	if (vals != NULL) {
+	if (vals != nullptr) {
 	  if (Invalid_Values(vals, filen.Num_Nodes())) {
 	    std::cout << "\tERROR: NaN found for variable "
 		      << name << " in file " << fno << "\n";
@@ -1170,16 +1170,16 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     // Global variables.
     file1.Load_Global_Results(step1);
     const double* vals1 = file1.Get_Global_Results();
-    if (vals1 == NULL) {
+    if (vals1 == nullptr) {
       std::cout << "\tERROR: Could not find global variables on file 1\n";
       exit(1);
     }
 
-    const double* vals2 = NULL;
+    const double* vals2 = nullptr;
     if (!interface.summary_flag) {
       file2.Load_Global_Results(t2.step1, t2.step2, t2.proportion);
       vals2 = file2.Get_Global_Results();
-      if (vals2 == NULL) {
+      if (vals2 == nullptr) {
 	std::cout << "\tERROR: Could not find global variables on file 2\n";
 	exit(1);
       }
@@ -1193,7 +1193,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	const string& name = (interface.glob_var_names)[out_idx];
 	int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
 	int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
-	if (idx1 < 0 || idx2 < 0 || vals1 == NULL || vals2 == NULL) {
+	if (idx1 < 0 || idx2 < 0 || vals1 == nullptr || vals2 == nullptr) {
 	  std::cerr << "ERROR: Unable to find global variable named '"
 		    << name << "' on database.\n";
 	  exit(1);
@@ -1292,12 +1292,12 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	const double* vals2 = get_nodal_values(file2, step2, idx2, 2,
 					       name, &diff_flag);
       
-	if (vals1 == NULL) {
+	if (vals1 == nullptr) {
 	  std::cout << "\tERROR: Could not find nodal variables on file 1\n";
 	  exit(1);
 	}
 
-	if (vals2 == NULL) {
+	if (vals2 == nullptr) {
 	  std::cout << "\tERROR: Could not find nodal variables on file 2\n";
 	  exit(1);
 	}
@@ -1306,8 +1306,8 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	for (size_t n = 0; n < ncount; ++n) {
         
 	  // Should this node be processed...
-	  if (node_map == 0 || node_map[n]>=0){
-	    INT n2 = node_map != 0 ? node_map[n] : n;
+	  if (node_map == nullptr || node_map[n]>=0){
+	    INT n2 = node_map != nullptr ? node_map[n] : n;
 	    nvals[n] = FileDiff(vals1[n], vals2[n2], interface.output_type);
 	  } else {
 	    nvals[n] = 0.;
@@ -1334,7 +1334,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	const double* vals1 = get_nodal_values(file1, step1, idx1, 1,
 					       name, &diff_flag);
 
-	if (vals1 == NULL) {
+	if (vals1 == nullptr) {
 	  std::cout << "\tERROR: Could not find nodal variables on file 1\n";
 	  exit(1);
 	}
@@ -1368,14 +1368,14 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       const double* vals1 = get_nodal_values(file1, step1, idx1, 1, name, &diff_flag);
       const double* vals2 = get_nodal_values(file2, t2,    idx2, 2, name, &diff_flag);
 
-      if (vals1 == NULL) {
+      if (vals1 == nullptr) {
 	std::cout << "\tERROR: Could not find nodal variable "
 		  << name << " on file 1\n";
 	diff_flag = true;
 	continue;
       }
 
-      if (vals2 == NULL) {
+      if (vals2 == nullptr) {
 	std::cout << "\tERROR: Could not find nodal variable "
 		  << name << " on file 2\n";
 	diff_flag = true;
@@ -1389,8 +1389,8 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       for (size_t n = 0; n < ncount; ++n) {
 
 	// Should this node be processed...
-	if (node_map == 0 || node_map[n]>=0){
-	  INT n2 = node_map != 0 ? node_map[n] : n;
+	if (node_map == nullptr || node_map[n]>=0){
+	  INT n2 = node_map != nullptr ? node_map[n] : n;
 	  double d = interface.node_var[n_idx].Delta(vals1[n], vals2[n2]);
 	  if (interface.show_all_diffs) {
 	    if (d > interface.node_var[n_idx].value) {
@@ -1471,7 +1471,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       
       Norm norm;
     
-      if (elmt_map != 0) { // Load variable for all blocks in file 2.
+      if (elmt_map != nullptr) { // Load variable for all blocks in file 2.
 	for (int b = 0; b < file2.Num_Elmt_Blocks(); ++b) {
 	  Exo_Block<INT> * block2 = file2.Get_Elmt_Block_by_Index(b);
 	  block2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
@@ -1491,15 +1491,15 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  continue;
 	}
         
-	Exo_Block<INT>* eblock2 = NULL;
+	Exo_Block<INT>* eblock2 = nullptr;
 	int b2 = b;
-	if (elmt_map == 0 && !interface.summary_flag) {
+	if (elmt_map == nullptr && !interface.summary_flag) {
 	  if (interface.by_name)
 	    eblock2 = file2.Get_Elmt_Block_by_Name(eblock1->Name());
 	  else
 	    eblock2 = file2.Get_Elmt_Block_by_Id(eblock1->Id());
 	    
-	  SMART_ASSERT(eblock2 != NULL);
+	  SMART_ASSERT(eblock2 != nullptr);
 	  if (!eblock2->is_valid_var(vidx2)) {
 	    continue;
 	  }
@@ -1507,7 +1507,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
         
 	eblock1->Load_Results(step1, vidx1);
 	const double* vals1 = eblock1->Get_Results(vidx1);
-	if (vals1 == NULL) {
+	if (vals1 == nullptr) {
 	  std::cout << "\tERROR: Could not find variable "
 		    << name << " in block "
 		    << eblock1->Id() << ", file 1\n";
@@ -1523,9 +1523,9 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
 
 	double v2 = 0;
-	const double* vals2 = NULL;
+	const double* vals2 = nullptr;
       
-	if (elmt_map == 0 && !interface.summary_flag) {
+	if (elmt_map == nullptr && !interface.summary_flag) {
 	  // Without mapping, get result for this block.
 	  size_t id = eblock1->Id();
 	  if (interface.by_name)
@@ -1535,7 +1535,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  eblock2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
 	  vals2 = eblock2->Get_Results(vidx2);
 
-	  if (vals2 == NULL) {
+	  if (vals2 == nullptr) {
 	    std::cout << "\tERROR: Could not find variable "
 		      << name << " in block "
 		      << eblock2->Id() << ", file 2\n";
@@ -1556,12 +1556,12 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	for (size_t e = 0; e < ecount; ++e) {
 	  if (out_file_id >= 0)evals[e] = 0.;
 	  INT el_flag = 1;
-	  if(elmt_map != 0)
+	  if(elmt_map != nullptr)
 	    el_flag = elmt_map[global_elmt_index];
 
 	  if(el_flag >= 0){
 	    if (!interface.summary_flag) {
-	      if (elmt_map == 0)
+	      if (elmt_map == nullptr)
 		v2 = vals2[e];
 	      else {
 		// With mapping, map global index from file 1 to global index
@@ -1612,7 +1612,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 		     eblock1->Id(), eblock1->Size(), evals);
         
 	eblock1->Free_Results();
-	if (!interface.summary_flag && elmt_map == 0) {
+	if (!interface.summary_flag && elmt_map == nullptr) {
 	  eblock2->Free_Results();
 	}
         
@@ -1693,21 +1693,21 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  continue;
 	}
         
-	Node_Set<INT>* nset2 = NULL;
+	Node_Set<INT>* nset2 = nullptr;
 	if (!interface.summary_flag) {
 	  size_t id = nset1->Id();
 	  if (interface.by_name)
 	    nset2 = file2.Get_Node_Set_by_Name(nset1->Name());
 	  else
 	    nset2 = file2.Get_Node_Set_by_Id(id);
-	  SMART_ASSERT(nset2 != NULL);
+	  SMART_ASSERT(nset2 != nullptr);
 	  if (!nset2->is_valid_var(vidx2)) continue;
 	}
         
 	nset1->Load_Results(step1, vidx1);
 	const double* vals1 = nset1->Get_Results(vidx1);
         
-	if (vals1 == NULL) {
+	if (vals1 == nullptr) {
 	  std::cout << "\tERROR: Could not find variable "
 		    << name << " in nodeset "
 		    << nset1->Id() << ", file 1\n";
@@ -1723,13 +1723,13 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
 
 	double v2 = 0;
-	double* vals2 = NULL;
+	double* vals2 = nullptr;
 	if (!interface.summary_flag) {
 	  // Without mapping, get result for this nset
 	  nset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
 	  vals2 = (double*)nset2->Get_Results(vidx2);
 
-	  if (vals2 == NULL) {
+	  if (vals2 == nullptr) {
 	    std::cout << "\tERROR: Could not find variable "
 		      << name << " in nodeset "
 		      << nset2->Id() << ", file 2\n";
@@ -1871,7 +1871,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       DiffData max_diff;
       for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
 	Side_Set<INT>* sset1 = file1.Get_Side_Set_by_Index(b);
-	SMART_ASSERT(sset1 != NULL);	
+	SMART_ASSERT(sset1 != nullptr);	
 	if (sset1->Size() == 0) {
 	  continue;
 	}
@@ -1879,19 +1879,19 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  continue;
 	}
 
-	Side_Set<INT>* sset2 = NULL;
+	Side_Set<INT>* sset2 = nullptr;
 	if (!interface.summary_flag) {
 	  if (interface.by_name)
 	    sset2 = file2.Get_Side_Set_by_Name(sset1->Name());
 	  else
 	    sset2 = file2.Get_Side_Set_by_Id(sset1->Id());
-	  if (sset2 == NULL || !sset2->is_valid_var(vidx2)) continue;
+	  if (sset2 == nullptr || !sset2->is_valid_var(vidx2)) continue;
 	}
         
 	sset1->Load_Results(step1, vidx1);
 	const double* vals1 = sset1->Get_Results(vidx1);
         
-	if (vals1 == NULL) {
+	if (vals1 == nullptr) {
 	  std::cout << "\tERROR: Could not find variable "
 		    << name << " in sideset "
 		    << sset1->Id() << ", file 1\n";
@@ -1907,12 +1907,12 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
 
 	double v2 = 0;
-	double* vals2 = NULL;
+	double* vals2 = nullptr;
 	if (!interface.summary_flag) {
 	  sset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
 	  vals2 = (double*)sset2->Get_Results(vidx2);
 
-	  if (vals2 == NULL) {
+	  if (vals2 == nullptr) {
 	    std::cout << "\tERROR: Could not find variable "
 		      << name << " in sideset "
 		      << sset2->Id() << ", file 2\n";
@@ -2038,14 +2038,14 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
   DiffData max_diff;
   for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
     Side_Set<INT>* sset1 = file1.Get_Side_Set_by_Index(b);
-    SMART_ASSERT(sset1 != NULL);	
+    SMART_ASSERT(sset1 != nullptr);	
 
-    Side_Set<INT>* sset2 = NULL;
+    Side_Set<INT>* sset2 = nullptr;
     if (interface.by_name)
       sset2 = file2.Get_Side_Set_by_Name(sset1->Name());
     else
       sset2 = file2.Get_Side_Set_by_Id(sset1->Id());
-    if (sset2 == NULL) continue;
+    if (sset2 == nullptr) continue;
         
     if (sset1->Distribution_Factor_Count() == 0 ||
 	sset2->Distribution_Factor_Count() == 0)
@@ -2053,7 +2053,7 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
     
     const double* vals1 = sset1->Distribution_Factors();
         
-    if (vals1 == NULL) {
+    if (vals1 == nullptr) {
       std::cout << "\tERROR: Could not distribution factors "
 		" in sideeset "
 		<< sset1->Id() << ", file 1\n";
@@ -2080,7 +2080,7 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
 
     double* vals2 = (double*)sset2->Distribution_Factors();
 
-    if (vals2 == NULL) {
+    if (vals2 == nullptr) {
       std::cout << "\tERROR: Could not distribution factors "
 		" in sideeset "
 		<< sset2->Id() << ", file 2\n";
@@ -2180,17 +2180,17 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
   size_t global_elmt_offset = 0;
   for (int b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
     Exo_Block<INT>* eblock1 = file1.Get_Elmt_Block_by_Index(b);
-    SMART_ASSERT(eblock1 != NULL);
+    SMART_ASSERT(eblock1 != nullptr);
 	
     size_t block_id = eblock1->Id();
     
-    Exo_Block<INT>* eblock2 = NULL;
+    Exo_Block<INT>* eblock2 = nullptr;
     if (interface.by_name)
       eblock2 = file2.Get_Elmt_Block_by_Name(eblock1->Name());
     else
       eblock2 = file2.Get_Elmt_Block_by_Id(block_id);
 
-    SMART_ASSERT(eblock2 != NULL);
+    SMART_ASSERT(eblock2 != nullptr);
 
     if (!diff_was_output && (eblock1->attr_count() > 0 || eblock2->attr_count() > 0)) {
       diff_was_output = true;
@@ -2227,7 +2227,7 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
       eblock1->Load_Attributes(idx1);
       const double* vals1 = eblock1->Get_Attributes(idx1);
         
-      if (vals1 == NULL) {
+      if (vals1 == nullptr) {
 	std::cout << "\tERROR: Could not find element attribute "
 		  << name << " in block "
 		  << eblock1->Id() << ", file 1\n";
@@ -2246,7 +2246,7 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
       eblock2->Load_Attributes(idx2);
       const double* vals2 = eblock2->Get_Attributes(idx2);
 
-      if (vals2 == NULL) {
+      if (vals2 == nullptr) {
 	std::cout << "\tERROR: Could not find element attribute "
 		  << name << " in block "
 		  << eblock2->Id() << ", file 2\n";
@@ -2453,8 +2453,8 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
 
   int timeStepIsExcluded(int ts)
   {
-    for (size_t i = 0; i < interface.exclude_steps.size(); ++i)
-      if (ts == interface.exclude_steps[i])
+    for (auto & elem : interface.exclude_steps)
+      if (ts == elem)
 	return 1;
   
     return 0;

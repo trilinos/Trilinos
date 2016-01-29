@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     }
     else if (std::strcmp("--scale_factor", argv[i]) == 0) {
       i++;
-      globals.scale_factor = std::strtod(argv[i++], NULL);
+      globals.scale_factor = std::strtod(argv[i++], nullptr);
     }
 
     // Found an option.  See if it has an argument...
@@ -220,7 +220,7 @@ namespace {
     //========================================================================
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
 						    (MPI_Comm)MPI_COMM_WORLD);
-    if (dbi == NULL || !dbi->ok(true)) {
+    if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
 
@@ -237,7 +237,7 @@ namespace {
     //========================================================================
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(output_type, outfile, Ioss::WRITE_RESTART,
 						    (MPI_Comm)MPI_COMM_WORLD);
-    if (dbo == NULL || !dbo->ok(true)) {
+    if (dbo == nullptr || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
 
@@ -339,14 +339,14 @@ namespace {
 
 	// Find corresponding output element block...
 	Ioss::ElementBlock *output_eb = output_region.get_element_block((*I)->name());
-	if (output_eb == NULL) {
+	if (output_eb == nullptr) {
 	  std::cerr << "ERROR: Could not put find element block "
 		    << (*I)->name() << "\n";
 	  std::exit(EXIT_FAILURE);
 	}
 
 	Ioss::NodeSet *output_ns = output_region.get_nodeset((*I)->name()+"_nodes");
-	if (output_ns == NULL) {
+	if (output_ns == nullptr) {
 	  std::cerr << "ERROR: Could not put find node set "
 		    << (*I)->name()+"_nodes" << "\n";
 	  std::exit(EXIT_FAILURE);

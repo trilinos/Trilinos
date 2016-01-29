@@ -34,7 +34,7 @@
 #include <Ioss_Field.h>                 // for Field, etc
 #include <Ioss_VariableType.h>          // for VariableType
 #include <math.h>                       // for fabs
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t, nullptr
 #include <stdlib.h>                     // for abs
 #include <algorithm>                    // for max_element, min_element
 #include <string>                       // for operator==, string
@@ -96,7 +96,7 @@ namespace Iotr {
     if (in == sca) {
       return sca;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 

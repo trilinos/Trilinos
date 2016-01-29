@@ -103,7 +103,7 @@ namespace Ioex {
       // If 'error_message' non-null, then put the warning message into the string and return it.
       // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
       //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-      virtual bool ok(bool write_message = false, std::string *error_message=NULL, int *bad_count=NULL) const = 0;
+      virtual bool ok(bool write_message = false, std::string *error_message=nullptr, int *bad_count=nullptr) const = 0;
 
       // Eliminate as much memory as possible, but still retain meta data information
       // Typically, eliminate the maps...

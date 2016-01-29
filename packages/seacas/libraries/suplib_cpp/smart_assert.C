@@ -48,11 +48,11 @@ void break_into_debugger() {
 namespace {
     // in case we're logging using the default logger...
     struct stream_holder {
-        stream_holder() : out_( 0), owns_( false) {}
+        stream_holder() : out_(nullptr), owns_( false) {}
         ~stream_holder() {
             if ( owns_)
                 delete out_;
-            out_ = 0;
+            out_ = nullptr;
         }
         std::ostream * out_;
         bool owns_;
@@ -131,7 +131,7 @@ namespace smart_assert {
     // logger
 
     void default_logger( const assert_context & context) {
-        if ( default_logger_info.out_ == 0)
+        if ( default_logger_info.out_ == nullptr)
             return;
         dump_context_detail( context, *( default_logger_info.out_) );
     }

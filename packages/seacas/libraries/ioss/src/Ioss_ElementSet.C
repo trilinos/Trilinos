@@ -45,7 +45,7 @@ class Field;
 }  // namespace Ioss
 
 Ioss::ElementSet::ElementSet()
-  : Ioss::EntitySet(NULL, "invalid", 0)
+  : Ioss::EntitySet(nullptr, "invalid", 0)
 {}
 
 Ioss::ElementSet::ElementSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
