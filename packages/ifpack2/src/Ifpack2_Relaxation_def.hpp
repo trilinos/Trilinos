@@ -1228,8 +1228,6 @@ ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type,
     // For the first sweep, if we are allowed to assume that the
     // initial guess is zero, then block Jacobi is just block diagonal
     // scaling.  (A_ij * x_j = 0 for i != j, since x_j = 0.)
-    //
-    // FIXME (mfh 24 Jan 2016) Need to use GETRI to compute this.
     Y_blk.blockWiseMultiply (DampingFactor_, blockDiag_, X_blk);
     if (NumSweeps_ == 1) {
       return;
