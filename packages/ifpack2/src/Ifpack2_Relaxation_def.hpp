@@ -1976,16 +1976,7 @@ void Relaxation<MatrixType>::ApplyInverseMTSGS_CrsMatrix (
   using Teuchos::as;
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
 
-  typedef scalar_type Scalar;
-  typedef local_ordinal_type LocalOrdinal;
-  typedef global_ordinal_type GlobalOrdinal;
-  typedef node_type Node;
-
-  typedef typename crs_matrix_type::import_type import_type;
-  typedef typename crs_matrix_type::export_type export_type;
-  typedef typename crs_matrix_type::map_type map_type;
-
-  Teuchos::ArrayView<LocalOrdinal> rowIndices;
+  Teuchos::ArrayView<local_ordinal_type> rowIndices;
   if (!localSmoothingIndices_.is_null ()) {
     std::cerr << "MT GaussSeidel ignores the given order" << std::endl;
   }
@@ -1997,16 +1988,12 @@ void Relaxation<MatrixType>::ApplyInverseMTSGS_CrsMatrix (
       direction, NumSweeps_,
       ZeroStartingSolution_);
 
-
-
   const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
   const double numVectors = as<double> (X.getNumVectors ());
   const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
   const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
   ApplyFlops_ += 2.0 * NumSweeps_ * numVectors *
       (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
-
-
 }
 
 
@@ -2014,7 +2001,6 @@ template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseMTGS_CrsMatrix (
     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X) const {
-
 
   const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2025,16 +2011,7 @@ void Relaxation<MatrixType>::ApplyInverseMTGS_CrsMatrix (
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
 
-  typedef scalar_type Scalar;
-  typedef local_ordinal_type LocalOrdinal;
-  typedef global_ordinal_type GlobalOrdinal;
-  typedef node_type Node;
-
-  typedef typename crs_matrix_type::import_type import_type;
-  typedef typename crs_matrix_type::export_type export_type;
-  typedef typename crs_matrix_type::map_type map_type;
-
-  Teuchos::ArrayView<LocalOrdinal> rowIndices;
+  Teuchos::ArrayView<local_ordinal_type> rowIndices;
   if (!localSmoothingIndices_.is_null ()) {
     std::cerr << "MT GaussSeidel ignores the given order" << std::endl;
   }
@@ -2046,16 +2023,12 @@ void Relaxation<MatrixType>::ApplyInverseMTGS_CrsMatrix (
       direction, NumSweeps_,
       ZeroStartingSolution_);
 
-
-
-
   const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
   const double numVectors = as<double> (X.getNumVectors ());
   const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
   const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
   ApplyFlops_ += NumSweeps_ * numVectors *
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
-
 }
 
 template<class MatrixType>
