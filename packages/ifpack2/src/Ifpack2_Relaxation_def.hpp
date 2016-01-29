@@ -600,8 +600,11 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::REDUCE_SUM;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
-  typedef typename block_crs_matrix_type::impl_scalar_type IST;
   typedef local_ordinal_type LO;
+  typedef typename block_crs_matrix_type::impl_scalar_type IST;
+  typedef typename node_type::device_type device_type;
+  typedef typename Kokkos::View<IST*, device_type>::HostMirror::device_type
+    host_device_type;
 
   {
     // Reset the timer each time, since Relaxation uses the same Time
@@ -634,9 +637,10 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       blockDiag_ = block_diag_type ("Ifpack2::Relaxation::blockDiag_",
                                     lclNumMeshRows, blockSize, blockSize);
       if (Teuchos::as<LO>(diagOffsets_.dimension_0 () ) < lclNumMeshRows) {
-        typedef typename node_type::device_type DT;
-        diagOffsets_ = Kokkos::View<size_t*, DT> (); // clear first to save mem
-        diagOffsets_ = Kokkos::View<size_t*, DT> ("offsets", lclNumMeshRows);
+        // Clear diagOffsets_ first (by assigning an empty View to it)
+        // to save memory, before reallocating.
+        diagOffsets_ = Kokkos::View<size_t*, device_type> ();
+        diagOffsets_ = Kokkos::View<size_t*, device_type> ("offsets", lclNumMeshRows);
       }
       blockCrsA->getCrsGraph ().getLocalDiagOffsets (diagOffsets_);
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -686,41 +690,20 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       }
     }
 
-    // Pivots from LU factorization (with partial pivoting) of the
-    // BlockCrsMatrix's block diagonal.
-    //
-    // This is only allocated and used if the input matrix is a
-    // Tpetra::BlockCrsMatrix.  In that case, Ifpack2::Relaxation does
-    // block relaxation, using the (small dense) blocks in the
-    // BlockCrsMatrix.
-    //
-    // To get the 1-D array of pivots corresponding to local (graph
-    // a.k.a. "mesh") row index i, do the following:
-    // \code
-    // auto ipiv_i = Kokkos::subview (blockDiagFactPivots, i, Kokkos::ALL ());
-    // \endcode
-    typedef Kokkos::View<int**, typename block_crs_matrix_type::device_type> pivots_type;
-    typedef Kokkos::View<int**, typename block_crs_matrix_type::device_type,
-                         Kokkos::MemoryUnmanaged> unmanaged_pivots_type;
-
-    pivots_type blockDiagFactPivots ("Ifpack2::Relaxation::pivots",
-                                     lclNumMeshRows, blockSize);
-    // Use an unmanaged View to avoid ref count overhead in loop below.
-    unmanaged_pivots_type pivots = blockDiagFactPivots;
-
     int info = 0;
-    // GETRI needs workspace.  Use host space for now.
-    Teuchos::Array<IST> workVec (blockSize);
-    Kokkos::View<IST*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
-      work (workVec.getRawPtr (), blockSize);
+    // GETRI needs workspace.  Use host space for now.  Once we
+    // parallelize this setup phase, we'll need to use Kokkos' new
+    // MemoryPool feature.  At that point, it will make sense to use
+    // device memory for the memory pool.
+    Kokkos::View<IST*, host_device_type> work ("work", blockSize);
+    Kokkos::View<int*, host_device_type> ipiv ("ipiv", blockSize);
     for (LO i = 0 ; i < lclNumMeshRows; ++i) {
-      auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
-      auto ipiv = Kokkos::subview (pivots, i, ALL ());
-      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      auto D_cur = Kokkos::subview (blockDiag, i, ALL (), ALL ());
+      Tpetra::Experimental::GETF2 (D_cur, ipiv, info);
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, std::runtime_error, "GETF2 failed with info = " << info
          << " != 0.");
-      Tpetra::Experimental::GETRI (diagBlock, ipiv, work, info);
+      Tpetra::Experimental::GETRI (D_cur, ipiv, work, info);
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, std::runtime_error, "GETRI failed with info = " << info
          << " != 0.");
