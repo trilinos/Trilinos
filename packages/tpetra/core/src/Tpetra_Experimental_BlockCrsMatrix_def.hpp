@@ -424,14 +424,15 @@ namespace Experimental {
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
                     BlockMultiVector<Scalar, LO, GO, Node>& X,
                     const Kokkos::View<impl_scalar_type***, device_type,
-                          Kokkos::MemoryUnmanaged>& factoredDiagonal,
-                    const Kokkos::View<int**, device_type,
-                          Kokkos::MemoryUnmanaged>& factorizationPivots,
+                      Kokkos::MemoryUnmanaged>& D_inv,
                     const Scalar& omega,
                     const ESweepDirection direction) const
   {
     using Kokkos::ALL;
-
+    const impl_scalar_type zero =
+      Kokkos::Details::ArithTraits<impl_scalar_type>::zero ();
+    const impl_scalar_type one =
+      Kokkos::Details::ArithTraits<impl_scalar_type>::one ();
     const LO numLocalMeshRows =
       static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO numVecs = static_cast<LO> (X.getNumVectors ());
@@ -458,8 +459,8 @@ namespace Experimental {
       rowStride = -1;
     }
     else if (direction == Symmetric) {
-      this->localGaussSeidel (B, X, factoredDiagonal, factorizationPivots, omega, Forward);
-      this->localGaussSeidel (B, X, factoredDiagonal, factorizationPivots, omega, Backward);
+      this->localGaussSeidel (B, X, D_inv, omega, Forward);
+      this->localGaussSeidel (B, X, D_inv, omega, Backward);
       return;
     }
 
@@ -480,7 +481,6 @@ namespace Experimental {
           const LO meshCol = ind_[absBlkOff];
           const_little_block_type A_cur =
             getConstLocalBlockFromAbsOffset (absBlkOff);
-
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
 
           // X_lcl += alpha*A_cur*X_cur
@@ -492,13 +492,10 @@ namespace Experimental {
         // NOTE (mfh 20 Jan 2016) The two input Views here are
         // unmanaged already, so we don't have to take unmanaged
         // subviews first.
-        auto D_lcl = Kokkos::subview (factoredDiagonal, actlRow, ALL (), ALL ());
-        auto ipiv = Kokkos::subview (factorizationPivots, actlRow, ALL ());
-        int info = 0;
-        GETRS ("N", D_lcl, ipiv, X_lcl, info);
-
+        auto D_lcl = Kokkos::subview (D_inv, actlRow, ALL (), ALL ());
         little_vec_type X_update = X.getLocalBlock (actlRow, 0);
-        COPY (X_lcl, X_update);
+        FILL (X_update, zero);
+        GEMV (one, D_lcl, X_lcl, X_update); // overwrite X_update
       } // for each local row of the matrix
     }
     else {
@@ -516,7 +513,6 @@ namespace Experimental {
             const LO meshCol = ind_[absBlkOff];
             const_little_block_type A_cur =
               getConstLocalBlockFromAbsOffset (absBlkOff);
-
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
 
             // X_lcl += alpha*A_cur*X_cur
@@ -524,17 +520,10 @@ namespace Experimental {
             GEMV (alpha, A_cur, X_cur, X_lcl);
           } // for each entry in the current local row of the matrx
 
-          // FIXME (mfh 16 Dec 2015) Get an unmanaged subview of
-          // factoredDiagonal BEFORE getting its subview!  This will
-          // avoid reference counting overhead, which introduces a
-          // scalability bottleneck.
-          auto D_lcl = Kokkos::subview (factoredDiagonal, actlRow, ALL (), ALL ());
-          auto ipiv = Kokkos::subview (factorizationPivots, actlRow, ALL ());
-          int info = 0;
-          GETRS ("N", D_lcl, ipiv, X_lcl, info);
-
-          little_vec_type X_update = X.getLocalBlock (actlRow, j);
-          COPY (X_lcl, X_update);
+          auto D_lcl = Kokkos::subview (D_inv, actlRow, ALL (), ALL ());
+          auto X_update = X.getLocalBlock (actlRow, j);
+          FILL (X_update, zero);
+          GEMV (one, D_lcl, X_lcl, X_update); // overwrite X_update
         } // for each entry in the current local row of the matrix
       } // for each local row of the matrix
     }
