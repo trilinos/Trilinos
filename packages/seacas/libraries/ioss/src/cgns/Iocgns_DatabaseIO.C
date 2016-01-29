@@ -37,6 +37,7 @@
 #include <stddef.h>
 #include <sys/select.h>
 #include <time.h>
+#include <numeric>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -66,6 +67,19 @@
 #include "Ioss_VariableType.h"
 
 namespace {
+  const char *Version() {return "Iocgns_DatabaseIO.C 2016/01/28";}
+
+  void cgns_error(int cgnsid, int lineno, int /* processor */)
+  {
+    std::ostringstream errmsg;
+    errmsg << "CGNS error '" << cg_get_error() << "' at line " << lineno
+	   << " in file '" << Version()
+	   << "' Please report to gdsjaar@sandia.gov if you need help.";
+    if (cgnsid > 0)
+      cg_close(cgnsid);
+    IOSS_ERROR(errmsg);
+  }
+
   std::string map_cgns_to_topology_type(CG_ElementType_t type)
   {
     std::string topology = "unknown";
@@ -110,6 +124,9 @@ namespace {
       case CG_HEXA_27:
 	topology = "hex27"; break;
       default:
+	std::cerr << "WARNING: Found topology of type "
+		  << cg_ElementTypeName(type)
+		  << " which is not currently supported.\n";
 	topology = "unknown";
       }
     return topology;
@@ -131,6 +148,12 @@ namespace Iocgns {
       errmsg << "ERROR: CGNS Currently only supports reading, not writing.\n";
       IOSS_ERROR(errmsg);
     }
+
+    if (CG_SIZEOF_SIZE == 64) {
+      std::cout << "CGNS DatabaseIO using 64-bit integers.\n";
+      set_int_byte_size_api(Ioss::USE_INT64_API);
+    }
+
     openDatabase();
   }
 
@@ -266,7 +289,7 @@ namespace Iocgns {
 	// ========================================================================
 	// Read the sections and create an element block for the ones that
 	// define elements.  Some define boundary conditions...
-	Ioss::ElementBlock *eblock = NULL;
+	Ioss::ElementBlock *eblock = nullptr;
 	
 	for (cgsize_t is = 1; is <= num_sections; is++) {
 	  char section_name[33];
@@ -285,8 +308,10 @@ namespace Iocgns {
 	  if (parent_flag == 0 && total_elements > 0) {
 	    total_elements -= num_entity;
 	    std::string element_topo = map_cgns_to_topology_type(e_type);
-	    std::cerr << "Added block " << zone_name << " of topo " << element_topo
-		      << " with " << num_entity << " elements\n";
+	    std::cout << "Added block " << zone_name
+		      << ": CGNS topology = '" << cg_ElementTypeName(e_type)
+		      << "', IOSS topology = '" << element_topo
+		      << "' with " << num_entity << " elements\n";
 
 	    eblock = new Ioss::ElementBlock(this, zone_name, element_topo, num_entity);
 	    eblock->property_add(Ioss::Property("base", base));
@@ -295,23 +320,23 @@ namespace Iocgns {
 	    bool added = get_region()->add(eblock);
 	    if(!added) {
 	      delete eblock;
-	      eblock = NULL;
+	      eblock = nullptr;
 	    }
 	  }
 	  else {
 	    // This is a boundary-condition -- sideset (?)
 	    // See if there is an existing sideset with this name...
 	    Ioss::SideSet *sset = get_region()->get_sideset(section_name);
-	    if (sset == NULL) {
+	    if (sset == nullptr) {
 	      Ioss::SideSet *sset = new Ioss::SideSet(this, section_name);
 	      bool added = get_region()->add(sset);
 	      if(!added) {
 		delete sset;
-		sset = NULL;
+		sset = nullptr;
 	      }
 	    }
 
-	    if (sset != NULL) {
+	    if (sset != nullptr) {
 	      std::string block_name(zone_name);
 	      block_name += "/";
 	      block_name += section_name;
@@ -319,13 +344,13 @@ namespace Iocgns {
 	      std::cerr << "Added sideset " << block_name << " of topo " << face_topo
 			<< " with " << num_entity << " faces\n";
 	      
-	      std::string parent_topo = eblock == NULL ? "unknown" : eblock->topology()->name();
+	      std::string parent_topo = eblock == nullptr ? "unknown" : eblock->topology()->name();
 	      Ioss::SideBlock *sblk = new Ioss::SideBlock(this, block_name, face_topo, parent_topo,
 							  num_entity);
 	      sblk->property_add(Ioss::Property("base", base));
 	      sblk->property_add(Ioss::Property("zone", zone));
 	      sblk->property_add(Ioss::Property("section", is));
-	      if (eblock != NULL) {
+	      if (eblock != nullptr) {
 		sblk->set_parent_element_block(eblock);
 	      }
 	      sset->add(sblk);
@@ -368,190 +393,295 @@ namespace Iocgns {
     Ioss::Field::RoleType role = field.get_role();
     cgsize_t base = nb->get_property("base").get_int();
     cgsize_t zone = nb->get_property("zone").get_int();
+    cgsize_t num_to_get = field.verify(data_size);
+    cgsize_t first = 1;
 
-#if 0
+    char basename[33];
+    cgsize_t cell_dimension = 0;
+    cgsize_t phys_dimension = 0;
+    cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension);
+
+
     if (role == Ioss::Field::MESH) {
       if (field.get_name() == "mesh_model_coordinates_x") {
 	double *rdata = static_cast<double*>(data);
 
-
-	int ierr = ex_get_coord(get_file_pointer(), rdata, NULL, NULL);
+	int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, &first, &num_to_get, rdata);
 	if (ierr < 0)
-	  Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  cgns_error(cgnsFilePtr, __LINE__, myProcessor);
       }
       
       else if (field.get_name() == "mesh_model_coordinates_y") {
 	double *rdata = static_cast<double*>(data);
-	int ierr = ex_get_coord(get_file_pointer(), NULL, rdata, NULL);
+
+	int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, &first, &num_to_get, rdata);
 	if (ierr < 0)
-	  Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  cgns_error(cgnsFilePtr, __LINE__, myProcessor);
       }
       
       else if (field.get_name() == "mesh_model_coordinates_z") {
 	double *rdata = static_cast<double*>(data);
-	int ierr = ex_get_coord(get_file_pointer(), NULL, NULL, rdata);
+
+	int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, &first, &num_to_get, rdata);
 	if (ierr < 0)
-	  Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  cgns_error(cgnsFilePtr, __LINE__, myProcessor);
       }
 
       else if (field.get_name() == "mesh_model_coordinates") {
+	double *rdata = static_cast<double*>(data);
+
 	// Data required by upper classes store x0, y0, z0, ... xn,
 	// yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
 	// ..., yn, z0, ..., zn so we have to allocate some scratch
 	// memory to read in the data and then map into supplied
 	// 'data'
-	std::vector<double> x(num_to_get);
-	std::vector<double> y;
-	if (spatialDimension > 1)
-	  y.resize(num_to_get);
-	std::vector<double> z;
-	if (spatialDimension == 3)
-	  z.resize(num_to_get);
-
-	// Cast 'data' to correct size -- double
-	double *rdata = static_cast<double*>(data);
-
-	int ierr = ex_get_coord(get_file_pointer(), TOPTR(x), TOPTR(y), TOPTR(z));
+	std::vector<double> scr(num_to_get);
+	int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, &first, &num_to_get, TOPTR(scr));
 	if (ierr < 0)
-	  Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  cgns_error(cgnsFilePtr, __LINE__, myProcessor);
 
 	size_t index = 0;
 	for (size_t i=0; i < num_to_get; i++) {
-	  rdata[index++] = x[i];
-	  if (spatialDimension > 1)
-	    rdata[index++] = y[i];
-	  if (spatialDimension == 3)
-	    rdata[index++] = z[i];
+	  rdata[index] = scr[i];
+	  index += phys_dimension;
+	}
+
+	if (phys_dimension > 1) {
+	  ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, &first, &num_to_get, TOPTR(scr));
+	  if (ierr < 0)
+	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+
+	  index = 1;
+	  for (size_t i=0; i < num_to_get; i++) {
+	    rdata[index] = scr[i];
+	    index += phys_dimension;
+	  }
+	}
+	  
+	if (phys_dimension > 2) {
+	  ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, &first, &num_to_get, TOPTR(scr));
+	  if (ierr < 0)
+	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+
+	  index = 2;
+	  for (size_t i=0; i < num_to_get; i++) {
+	    rdata[index] = scr[i];
+	    index += phys_dimension;
+	  }
 	}
       }
-
       else if (field.get_name() == "ids") {
 	// Map the local ids in this node block
 	// (1...node_count) to global node ids.
-	get_map(EX_NODE_BLOCK).map_implicit_data(data, field, num_to_get, 0);
+	if (field.get_type() == Ioss::Field::INT64) {
+	  int64_t *idata = static_cast<int64_t*>(data);
+	  std::iota(idata, idata+num_to_get, 1);
+	}
+	else {
+	  assert(field.get_type() == Ioss::Field::INT32);
+	  int *idata = static_cast<int*>(data);
+	  std::iota(idata, idata+num_to_get, 1);
+	}
       }
-#endif
-      return -1;
-    }
-
-    int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* nb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-
-    int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* ns */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::get_field_internal(const Ioss::FaceSet* /* ns */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::get_field_internal(const Ioss::ElementSet* /* ns */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock* /* eb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::get_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-
-    int64_t DatabaseIO::put_field_internal(const Ioss::Region* region, const Ioss::Field& field,
-					   void *data, size_t data_size) const
-    {
-      return -1;
-    }
-
-    int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock* /* nb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock* /* nb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-
-    int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet* /* ns */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet* /* ns */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet* /* ns */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock* /* fb */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-    int64_t DatabaseIO::put_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
-					   void */* data */, size_t /* data_size */) const
-    {
-      return -1;
-    }
-
-    unsigned DatabaseIO::entity_field_support() const
-    {
-      return Ioss::REGION;
+      else {
+	num_to_get = Ioss::Utils::field_warning(nb, field, "input");
+      }
+      return num_to_get;
     }
   }
+
+  int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* nb */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  
+  int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb,
+					 const Ioss::Field& field,
+					 void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
+
+      cgsize_t base = eb->get_property("base").get_int();
+      cgsize_t zone = eb->get_property("zone").get_int();
+      cgsize_t sect = eb->get_property("section").get_int();
+      size_t my_element_count = eb->get_property("entity_count").get_int();
+      Ioss::Field::RoleType role = field.get_role();
+
+      if (role == Ioss::Field::MESH) {
+	// Handle the MESH fields required for a CGNS file model.
+	// (The 'genesis' portion)
+
+	if (field.get_name() == "connectivity") {
+	  // TODO: Need to map local to global...
+	  int element_nodes = eb->get_property("topology_node_count").get_int();
+	  assert(field.raw_storage()->component_count() == element_nodes);
+
+	  if (my_element_count > 0) {
+	    int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect,
+					(cgsize_t*)data, nullptr);
+	    if (ierr < 0)
+	      cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+	  }
+	}
+	else if (field.get_name() == "connectivity_raw") {
+	  int element_nodes = eb->get_property("topology_node_count").get_int();
+	  assert(field.raw_storage()->component_count() == element_nodes);
+
+	  if (my_element_count > 0) {
+	    int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect,
+					(cgsize_t*)data, nullptr);
+	    if (ierr < 0)
+	      cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+	  }
+	}
+	else if (field.get_name() == "ids") {
+	  // TODO: This needs to change for parallel.
+	  // Map the local ids in this element block
+	  // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
+	  size_t eb_offset_plus_one = eb->get_offset() + 1;
+	  if (field.get_type() == Ioss::Field::INT64) {
+	    int64_t *idata = static_cast<int64_t*>(data);
+	    std::iota(idata, idata+my_element_count, eb_offset_plus_one);
+	  } else {
+	    assert(field.get_type() == Ioss::Field::INT32);
+	    int *idata = static_cast<int*>(data);
+	    std::iota(idata, idata+my_element_count, eb_offset_plus_one);
+	  }
+	}
+	else if (field.get_name() == "implicit_ids") {
+	  // TODO: This needs to change for parallel.
+	  // If not parallel, then this is just 
+	  // (eb_offset+1...eb_offset+1+my_element_count).
+	  size_t eb_offset_plus_one = eb->get_offset() + 1;
+	  if (field.get_type() == Ioss::Field::INT64) {
+	    int64_t *idata = static_cast<int64_t*>(data);
+	    std::iota(idata, idata+my_element_count, eb_offset_plus_one);
+	  } else {
+	    assert(field.get_type() == Ioss::Field::INT32);
+	    int *idata = static_cast<int*>(data);
+	    std::iota(idata, idata+my_element_count, eb_offset_plus_one);
+	  }
+	}
+	else {
+	  num_to_get = Ioss::Utils::field_warning(eb, field, "input");
+	}
+      }
+      else {
+	num_to_get = Ioss::Utils::field_warning(eb, field, "unknown");
+      }
+    }
+    return num_to_get;
+  }
+
+  int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* ns */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::get_field_internal(const Ioss::FaceSet* /* ns */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::get_field_internal(const Ioss::ElementSet* /* ns */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock* /* eb */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::get_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  int64_t DatabaseIO::put_field_internal(const Ioss::Region* region, const Ioss::Field& field,
+					 void *data, size_t data_size) const
+  {
+    return -1;
+  }
+
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock* /* nb */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock* /* nb */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet* /* ns */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet* /* ns */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet* /* ns */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock* /* fb */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t DatabaseIO::put_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
+					 void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  unsigned DatabaseIO::entity_field_support() const
+  {
+    return Ioss::REGION;
+  }
+}
 
