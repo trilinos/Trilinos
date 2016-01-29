@@ -1981,6 +1981,9 @@ namespace Tpetra {
     // back to the GPU must occur after the waits.
     typedef ExpView exports_view;
     typedef ImpView imports_view;
+    // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use a
+    // memory space, rather than an execution space, as the first
+    // argument of VerifyExecutionCanAccessMemorySpace.
     const bool can_access_from_host =
       Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace,
       typename exports_view::memory_space >::value;

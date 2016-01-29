@@ -115,10 +115,15 @@ namespace { // (anonymous)
       minDstVal_ (static_cast<input_value_type> (std::numeric_limits<output_value_type>::min ())),
       maxDstVal_ (static_cast<input_value_type> (std::numeric_limits<output_value_type>::max ()))
     {
-      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename OutputViewType::execution_space, typename InputViewType::memory_space>::value,
-                     "CopyOffsetsFunctor, which implements copyOffsets, "
-                     "requires that the output View's execution space be able "
-                     "to access the input View's memory space.");
+      // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
+      // a memory space, rather than an execution space, as the first
+      // argument of VerifyExecutionCanAccessMemorySpace.
+      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+                       typename OutputViewType::memory_space,
+                       typename InputViewType::memory_space>::value,
+                     "CopyOffsetsFunctor (implements copyOffsets): Output "
+                     "View's space must be able to access the input View's "
+                     "memory space.");
     }
 
     KOKKOS_INLINE_FUNCTION void
@@ -159,10 +164,15 @@ namespace { // (anonymous)
       dst_ (dst),
       src_ (src)
     {
-      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename OutputViewType::execution_space, typename InputViewType::memory_space>::value,
-                     "CopyOffsetsFunctor, which implements copyOffsets, "
-                     "requires that the output View's execution space be able "
-                     "to access the input View's memory space.");
+      // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
+      // a memory space, rather than an execution space, as the first
+      // argument of VerifyExecutionCanAccessMemorySpace.
+      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+                       typename OutputViewType::memory_space,
+                       typename InputViewType::memory_space>::value,
+                     "CopyOffsetsFunctor (implements copyOffsets): Output "
+                     "View's space must be able to access the input View's "
+                     "memory space.");
     }
 
     KOKKOS_INLINE_FUNCTION void
@@ -200,11 +210,15 @@ namespace { // (anonymous)
   // functor.  If (1) is true, then we can use CopyOffsetsFunctor
   // directly.  Otherwise, we have to copy the input View into the
   // output View's memory space, before we can use the functor.
+  //
+  // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use a
+  // memory space, rather than an execution space, as the first
+  // argument of VerifyExecutionCanAccessMemorySpace.
   template<class OutputViewType,
            class InputViewType,
            const bool outputExecSpaceCanAccessInputMemSpace =
              Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
-               typename OutputViewType::execution_space,
+               typename OutputViewType::memory_space,
                typename InputViewType::memory_space>::value,
            const bool offsetsSame =
              std::is_same<typename OutputViewType::non_const_value_type,
@@ -231,7 +245,7 @@ namespace { // (anonymous)
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, the input and output must "
                      "use the same offset type.");
-      static_assert (OutputViewType::rank == InputViewType::rank,
+      static_assert (static_cast<int> (OutputViewType::rank) == static_cast<int> (InputViewType::rank),
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, src and dst must have the "
                      "same rank.");
@@ -255,16 +269,19 @@ namespace { // (anonymous)
   template<class OutputViewType, class InputViewType>
   struct CopyOffsetsImpl<OutputViewType, InputViewType, true, false> {
     static void run (const OutputViewType& dst, const InputViewType& src) {
-      static_assert (OutputViewType::rank == InputViewType::rank,
+      static_assert (static_cast<int> (OutputViewType::rank) == static_cast<int> (InputViewType::rank),
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, src and dst must have the "
                      "same rank.");
+      // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
+      // a memory space, rather than an execution space, as the first
+      // argument of VerifyExecutionCanAccessMemorySpace.
       static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
-                       typename OutputViewType::execution_space,
+                       typename OutputViewType::memory_space,
                        typename InputViewType::memory_space>::value,
-                     "CopyOffsetsImpl (implementation of copyOffsets): In order"
-                     " to call this specialization, the output execution space "
-                     "must be able to access the input memory space.");
+                     "CopyOffsetsImpl (implements copyOffsets): In order to "
+                     "call this specialization, the output View's space must "
+                     "be able to access the input View's memory space.");
       typedef CopyOffsetsFunctor<OutputViewType, InputViewType> functor_type;
       bool noOverflow = false; // output argument of the reduction
       Kokkos::parallel_reduce (dst.dimension_0 (),
@@ -293,7 +310,7 @@ namespace { // (anonymous)
   template<class OutputViewType, class InputViewType>
   struct CopyOffsetsImpl<OutputViewType, InputViewType, false, false> {
     static void run (const OutputViewType& dst, const InputViewType& src) {
-      static_assert (OutputViewType::rank == InputViewType::rank,
+      static_assert (static_cast<int> (OutputViewType::rank) == static_cast<int> (InputViewType::rank),
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, src and dst must have the "
                      "same rank.");
