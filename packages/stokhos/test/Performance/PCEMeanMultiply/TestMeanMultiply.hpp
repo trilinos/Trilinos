@@ -178,12 +178,20 @@ test_mean_multiply(const OrdinalType order,
     Kokkos::deep_copy( x_col[i] , value_type(1.0) );
     Kokkos::deep_copy( y_col[i] , value_type(0.0) );
   }
-  pce_vector_type x_pce(Kokkos::ViewAllocateWithoutInitializing("pce x"), kokkos_cijk, fem_length, pce_size);
-  pce_vector_type y_pce(Kokkos::ViewAllocateWithoutInitializing("pce y"), kokkos_cijk, fem_length, pce_size);
-  pce_multi_vector_type x_multi_pce(Kokkos::ViewAllocateWithoutInitializing("pce multi x"), kokkos_cijk, fem_length,
-                                    num_pce_col, pce_size);
-  pce_multi_vector_type y_multi_pce(Kokkos::ViewAllocateWithoutInitializing("pce multi y"), kokkos_cijk, fem_length,
-                                    num_pce_col, pce_size);
+  pce_vector_type x_pce =
+    Kokkos::make_view<pce_vector_type>(Kokkos::ViewAllocateWithoutInitializing("pce x"),
+                                       kokkos_cijk, fem_length, pce_size);
+  pce_vector_type y_pce =
+    Kokkos::make_view<pce_vector_type>(Kokkos::ViewAllocateWithoutInitializing("pce y"),
+                                       kokkos_cijk, fem_length, pce_size);
+  pce_multi_vector_type x_multi_pce =
+    Kokkos::make_view<pce_multi_vector_type>(Kokkos::ViewAllocateWithoutInitializing("pce multi x"),
+                                             kokkos_cijk, fem_length,
+                                             num_pce_col, pce_size);
+  pce_multi_vector_type y_multi_pce =
+    Kokkos::make_view<pce_multi_vector_type>(Kokkos::ViewAllocateWithoutInitializing("pce multi y"),
+                                             kokkos_cijk, fem_length,
+                                             num_pce_col, pce_size);
 
   Kokkos::deep_copy( xl , value_type(1.0) );
   Kokkos::deep_copy( yl , value_type(0.0) );
@@ -203,7 +211,7 @@ test_mean_multiply(const OrdinalType order,
   scalar_matrix_values_type scalar_matrix_values =
     scalar_matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("scalar matrix"), graph_length);
   pce_matrix_values_type pce_matrix_values =
-    pce_matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("pce matrix"), kokkos_cijk, graph_length, 1);
+    Kokkos::make_view<pce_matrix_values_type>(Kokkos::ViewAllocateWithoutInitializing("pce matrix"), kokkos_cijk, graph_length, 1);
   scalar_matrix_type scalar_matrix("scalar matrix", fem_length,
                                    scalar_matrix_values, matrix_graph);
   pce_matrix_type pce_matrix("pce matrix", fem_length,

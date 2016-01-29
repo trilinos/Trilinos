@@ -31,6 +31,9 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
+  int max_concurrency = 1024;
+  clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
+
   int max_task_dependence = 3;
   clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
@@ -91,7 +94,7 @@ int main (int argc, char *argv[]) {
        seed,
        nrhs,
        nb,
-       nthreads, max_task_dependence, team_size,
+       nthreads, max_concurrency, max_task_dependence, team_size,
        league_size,
        team_interface,
        serial,

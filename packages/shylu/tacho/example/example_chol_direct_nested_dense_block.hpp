@@ -43,9 +43,11 @@ namespace Tacho {
   int exampleCholDirectNestedDenseBlock(const string file_input,
                                         const int prunecut,
                                         const int seed,
+                                        const int mb,
                                         const int nrhs,
                                         const int nb, 
                                         const int nthreads,
+                                        const int max_concurrency,
                                         const int max_task_dependence,
                                         const int team_size,
                                         const int league_size,
@@ -151,8 +153,13 @@ namespace Tacho {
         for (ordinal_type k=0;k<HU.NumNonZeros();++k) {
           CrsTaskViewType &block = HU.Value(k);
           block.fillRowViewArray();
-          if (block.OffsetRows() == block.OffsetCols() &&
-              block.NumRows()    == block.NumCols()) 
+          const ordinal_type
+            offm = block.OffsetRows(),
+            offn = block.OffsetCols(),
+            m    = block.NumRows(),
+            n    = block.NumCols();
+
+          if (offm == offn && m == n && m > mb) 
             block.createDenseFlatBase();
         }
 
@@ -173,7 +180,6 @@ namespace Tacho {
 
 
     {
-      const size_t max_concurrency = 16384;
       cout << "CholDirectNestedDenseBlock:: max concurrency = " << max_concurrency << endl;
 
       const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;

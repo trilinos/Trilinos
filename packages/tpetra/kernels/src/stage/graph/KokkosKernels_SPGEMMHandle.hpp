@@ -20,9 +20,9 @@ namespace Graph{
 
 enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL};
 
-template <class idx_array_type_,
-          class idx_edge_array_type_,
-          class value_array_type_,
+template <class row_index_view_type_,
+          class nonzero_index_view_type_,
+          class nonzero_value_view_type_,
           class ExecutionSpace,
           class TemporaryMemorySpace,
           class PersistentMemorySpace>
@@ -32,36 +32,66 @@ public:
   typedef TemporaryMemorySpace HandleTempMemorySpace;
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
-  typedef idx_array_type_ idx_array_type;
-  typedef idx_edge_array_type_ idx_edge_array_type;
-  typedef value_array_type_ value_array_type;
+  typedef row_index_view_type_ in_row_index_view_type;
+  typedef nonzero_index_view_type_ in_nonzero_index_view_type;
+  typedef nonzero_value_view_type_ in_nonzero_value_view_type;
 
-  typedef typename idx_array_type::value_type idx;
-  typedef typename idx_array_type::array_layout idx_array_layout;
-  typedef typename idx_array_type::device_type idx_device_type;
-  typedef typename idx_array_type::memory_traits idx_memory_traits;
-  typedef typename idx_array_type::HostMirror host_view_type; //Host view type
+  typedef typename in_row_index_view_type::non_const_value_type row_index_type;
+  typedef typename in_row_index_view_type::array_layout row_view_array_layout;
+  typedef typename in_row_index_view_type::device_type row_view_device_type;
+  typedef typename in_row_index_view_type::memory_traits row_view_memory_traits;
+  typedef typename in_row_index_view_type::HostMirror row_host_view_type; //Host view type
   //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
-  typedef typename idx_edge_array_type::value_type idx_edge;
-  typedef typename idx_edge_array_type::array_layout idx_edge_array_layout;
-  typedef typename idx_edge_array_type::device_type idx_edge_device_type;
-  typedef typename idx_edge_array_type::memory_traits idx_edge_memory_traits;
-  typedef typename idx_edge_array_type::HostMirror host_edge_view_type; //Host view type
+  typedef typename in_nonzero_index_view_type::non_const_value_type nonzero_index_type;
+  typedef typename in_nonzero_index_view_type::array_layout nonzero_index_view_array_layout;
+  typedef typename in_nonzero_index_view_type::device_type nonzero_index_view_device_type;
+  typedef typename in_nonzero_index_view_type::memory_traits nonzero_index_view_memory_traits;
+  typedef typename in_nonzero_index_view_type::HostMirror nonzero_index_host_view_type; //Host view type
   //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
-  typedef typename value_array_type::value_type value_type;
-  typedef typename value_array_type::array_layout value_type_array_layout;
-  typedef typename value_array_type::device_type value_type_device_type;
-  typedef typename value_array_type::memory_traits value_type_memory_traits;
-  typedef typename value_array_type::HostMirror host_value_view_type; //Host view type
+  typedef typename in_nonzero_value_view_type::non_const_value_type nonzero_value_type;
+  typedef typename in_nonzero_value_view_type::array_layout nonzero_value_view_array_layout;
+  typedef typename in_nonzero_value_view_type::device_type nonzero_value_view_device_type;
+  typedef typename in_nonzero_value_view_type::memory_traits nonzero_value_view_memory_traits;
+  typedef typename in_nonzero_value_view_type::HostMirror nonzero_value_host_view_type; //Host view type
 
-  typedef typename Kokkos::View<idx *, HandleTempMemorySpace> idx_temp_work_array_type;
-  typedef typename Kokkos::View<idx *, HandlePersistentMemorySpace> idx_persistent_work_array_type;
-  typedef typename idx_persistent_work_array_type::HostMirror host_idx_persistent_view_type; //Host view type
 
-  typedef typename Kokkos::View<value_type *, HandleTempMemorySpace> value_temp_work_array_type;
-  typedef typename Kokkos::View<value_type *, HandlePersistentMemorySpace> value_persistent_work_array_type;
+  typedef typename in_row_index_view_type::const_data_type const_row_data_type;
+  typedef typename in_row_index_view_type::non_const_data_type non_const_row_data_type;
+  typedef typename in_row_index_view_type::memory_space row_view_memory_space;
+  typedef typename Kokkos::View<const_row_data_type, row_view_array_layout,
+      row_view_memory_space, row_view_memory_traits> const_row_index_view_type;
+  typedef typename Kokkos::View<non_const_row_data_type, row_view_array_layout,
+      row_view_memory_space, row_view_memory_traits> non_const_row_index_view_type;
+
+
+
+  typedef typename in_nonzero_index_view_type::const_data_type const_nonzero_index_data_type;
+  typedef typename in_nonzero_index_view_type::non_const_data_type non_const_nonzero_index_data_type;
+  typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
+  typedef typename Kokkos::View<const_nonzero_index_data_type, nonzero_index_view_array_layout,
+      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> const_nonzero_index_view_type;
+  typedef typename Kokkos::View<non_const_nonzero_index_data_type, nonzero_index_view_array_layout,
+      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> non_const_nonzero_index_view_type;
+
+
+
+  typedef typename in_nonzero_value_view_type::const_data_type const_nonzero_value_data_type;
+  typedef typename in_nonzero_value_view_type::non_const_data_type non_const_nonzero_value_data_type;
+  typedef typename in_nonzero_value_view_type::memory_space nonzero_value_view_memory_space;
+  typedef typename Kokkos::View<const_nonzero_value_data_type, nonzero_value_view_array_layout,
+      nonzero_value_view_memory_space, nonzero_value_view_memory_traits> const_nonzero_value_view_type;
+  typedef typename Kokkos::View<non_const_nonzero_value_data_type, nonzero_value_view_array_layout,
+      nonzero_value_view_memory_space, nonzero_value_view_memory_traits> non_const_nonzero_value_view_type;
+
+
+  typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> row_index_temp_work_view_type;
+  typedef typename Kokkos::View<row_index_type *, HandlePersistentMemorySpace> row_index_persistent_work_view_type;
+  typedef typename row_index_persistent_work_view_type::HostMirror row_index_persistent_host_view_type; //Host view type
+
+  typedef typename Kokkos::View<nonzero_value_type *, HandleTempMemorySpace> nonzero_value_temp_work_view_type;
+  typedef typename Kokkos::View<nonzero_value_type *, HandlePersistentMemorySpace> nonzero_value_persistent_work_view_type;
 
 #ifdef KERNELS_HAVE_CUSPARSE
   struct cuSparseHandleType{
@@ -246,7 +276,7 @@ private:
       int max_allowed_team_size,
       int &suggested_vector_size_,
       int &suggested_team_size_,
-      idx nr, idx nnz){
+      row_index_type nr, row_index_type nnz){
     //suggested_team_size_ =  this->suggested_team_size = 1;
     //suggested_vector_size_=this->suggested_vector_size = 1;
     //return;

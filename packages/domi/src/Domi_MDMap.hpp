@@ -437,7 +437,7 @@ public:
 
   /** \brief Get an array of the the global dimensions, including
    *         boundary padding
-    */
+   */
   Teuchos::Array< dim_type > getGlobalDims() const;
 
   /** \brief Get the global dimension along the specified axis
@@ -517,21 +517,6 @@ public:
    */
   Slice getLocalBounds(int axis,
                        bool withPad=false) const;
-
-  /** \brief Get the local interior loop bounds along each axis
-   *
-   * Local interior loop bounds are the same as local loop bounds
-   * without padding, except that for non-periodic axes the global end
-   * points of the given axis are excluded. For periodic axes, the
-   * local interior loop bounds are exactly the same as local loop
-   * bounds without padding.
-   *
-   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
-   * which the <tt>start()</tt> method returns the loop begin value,
-   * and the <tt>stop()</tt> method returns the non-inclusive end
-   * value.
-   */
-  Teuchos::ArrayView< const Slice > getLocalInteriorBounds() const;
 
   /** \brief Get the local interior loop bounds along the specified
    *         axis
@@ -2224,20 +2209,6 @@ getLocalBounds(int axis,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-Teuchos::ArrayView< const Slice >
-MDMap< Node >::
-getLocalInteriorBounds() const
-{
-  // std::cout << "getLocalInteriorBounds(" << axis << "," << withPad
-  //           << "): _pad[" << axis << "] = " << _pad[axis]
-  //           << ", _localBounds[" << axis << "] = " << _localBounds[axis]
-  //           << std::endl;
-  return _localBounds();
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Node >
 Slice
 MDMap< Node >::
 getLocalInteriorBounds(int axis) const
@@ -2249,10 +2220,6 @@ getLocalInteriorBounds(int axis) const
     "invalid axis index = " << axis << " (number of dimensions = " <<
     numDims() << ")");
 #endif
-  // std::cout << "getLocalInteriorBounds(" << axis << "," << withPad
-  //           << "): _pad[" << axis << "] = " << _pad[axis]
-  //           << ", _localBounds[" << axis << "] = " << _localBounds[axis]
-  //           << std::endl;
   dim_type start = _localBounds[axis].start() + _pad[axis][0];
   dim_type stop  = _localBounds[axis].stop()  - _pad[axis][1];
   if (_mdComm->getLowerNeighbor(axis) == -1) ++start;

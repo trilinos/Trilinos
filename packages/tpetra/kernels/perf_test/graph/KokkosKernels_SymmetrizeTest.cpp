@@ -1,8 +1,8 @@
-#include <KokkosKernelsUtils.hpp>
+#include <KokkosKernels_Utils.hpp>
 #include <cstdlib>
 #include <iostream>
 
-#include "KokkosKernelsGraphHelpers.hpp"
+#include "KokkosKernels_GraphHelpers.hpp"
 #include "experiment_space.hpp"
 
 int main (int argc, char ** argv){

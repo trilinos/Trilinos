@@ -1,7 +1,7 @@
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_Threads.hpp>
-#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
+#include <Kokkos_TaskPolicy.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -11,25 +11,16 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::Threads exec_space;
+typedef Kokkos::Serial exec_space;
 
-#include "example_chol_direct_nested_dense_block.hpp"
+#include "example_chol_direct_plain.hpp"
 
 using namespace Tacho;
 
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of Chol direct factorization (nested dense block with LAPACK and BLAS) on Kokkos::Threads execution space.\n");
-
-  int nthreads = 0;
-  clp.setOption("nthreads", &nthreads, "Number of threads");
-
-  int numa = 0;
-  clp.setOption("numa", &numa, "Number of numa node");
-
-  int core_per_numa = 0;
-  clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
+  clp.setDocString("This example program measure the performance of Chol direct factorization (plain) on Kokkos::Serial execution space.\n");
 
   int max_concurrency = 1024;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
@@ -59,9 +50,6 @@ int main (int argc, char *argv[]) {
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
 
-  int mb = 256;
-  clp.setOption("mb", &mb, "Row (or column) block size for nested dense block");
-
   int nrhs = 1;
   clp.setOption("nrhs", &nrhs, "Numer of right hand side");
 
@@ -69,7 +57,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("nb", &nrhs, "Column block size for multiple right hand side");
 
   bool serial = false;
-  clp.setOption("enable-serial", "disable-serial", &serial, "Flag for serial solve");
+  clp.setOption("enable-serial", "disable-serial", &serial, "Flag for serial factorization");
 
   bool solve = false;
   clp.setOption("enable-solve", "disable-solve", &solve, "Flag for trisolve");
@@ -87,18 +75,16 @@ int main (int argc, char *argv[]) {
 
   int r_val = 0;
   {
-    exec_space::initialize(nthreads, numa, core_per_numa);
-    exec_space::print_configuration(cout, true);
+    Kokkos::initialize();
 
-    r_val = exampleCholDirectNestedDenseBlock
+    r_val = exampleCholDirectPlain
       <value_type,ordinal_type,size_type,exec_space,void>
       (file_input,
        prunecut,
        seed,
-       mb,
        nrhs,
        nb,
-       nthreads, max_concurrency, max_task_dependence, team_size,
+       1, max_concurrency, max_task_dependence, team_size,
        league_size,
        team_interface,
        serial,
@@ -106,7 +92,7 @@ int main (int argc, char *argv[]) {
        check,
        verbose);
 
-    exec_space::finalize();
+    Kokkos::finalize();
   }
 
   return r_val;

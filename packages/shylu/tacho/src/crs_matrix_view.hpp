@@ -86,16 +86,25 @@ namespace Tacho {
     ordinal_type  NumCols() const { return _n; }
 
     KOKKOS_INLINE_FUNCTION
+    bool hasNumNonZeros() const { 
+      const ordinal_type m = NumRows();
+      for (ordinal_type i=0;i<m;++i) {
+        row_view_type row;
+        row.setView(*this, i);
+        if (row.NumNonZeros()) return true;
+      }
+      return false;
+    }
+
+    KOKKOS_INLINE_FUNCTION
     size_type countNumNonZeros() const { 
       size_type nnz = 0;
       const ordinal_type m = NumRows();
-
       for (ordinal_type i=0;i<m;++i) {
         row_view_type row;
         row.setView(*this, i);
         nnz += row.NumNonZeros();
       }
-
       return nnz; 
     }
 

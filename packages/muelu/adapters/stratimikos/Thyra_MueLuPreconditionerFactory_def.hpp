@@ -58,7 +58,7 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 #endif
-#ifdef HAVE_MUELU_TPETRA
+#ifdef HAVE_MUELU_EPETRA
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
 

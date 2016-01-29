@@ -67,6 +67,7 @@ public:
     alpha_ = parlist->sublist("Problem").get("Penalty parameter", 1e-2);
   }
 
+  using ROL::ParametrizedObjective_SimOpt<Real>::value;
   Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<const Tpetra::MultiVector<> > up =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();

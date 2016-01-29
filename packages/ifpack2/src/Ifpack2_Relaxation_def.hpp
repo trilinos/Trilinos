@@ -51,6 +51,11 @@
 #include <Ifpack2_Utilities.hpp>
 #include <Ifpack2_Relaxation_decl.hpp>
 
+//#define MD_EXPERIMENTAL
+#ifdef MD_EXPERIMENTAL
+#include <KokkosKernels_GaussSeidel.hpp>
+#endif
+
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
 // #ifndef IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
@@ -227,14 +232,18 @@ Relaxation<MatrixType>::getValidParameters () const
 
     // Set a validator that automatically converts from the valid
     // string options to their enum values.
-    Array<std::string> precTypes (3);
+    Array<std::string> precTypes (5);
     precTypes[0] = "Jacobi";
     precTypes[1] = "Gauss-Seidel";
     precTypes[2] = "Symmetric Gauss-Seidel";
-    Array<Details::RelaxationType> precTypeEnums (3);
+    precTypes[3] = "MT Gauss-Seidel";
+    precTypes[4] = "MT Symmetric Gauss-Seidel";
+    Array<Details::RelaxationType> precTypeEnums (5);
     precTypeEnums[0] = Details::JACOBI;
     precTypeEnums[1] = Details::GS;
     precTypeEnums[2] = Details::SGS;
+    precTypeEnums[3] = Details::MTGS;
+    precTypeEnums[4] = Details::MTSGS;
     const std::string defaultPrecType ("Jacobi");
     setStringToIntegralParameter<Details::RelaxationType> ("relaxation: type",
       defaultPrecType, "Relaxation method", precTypes (), precTypeEnums (),
@@ -499,6 +508,13 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       case Ifpack2::Details::SGS:
         ApplyInverseSGS(*Xcopy,Y);
         break;
+      case Ifpack2::Details::MTSGS:
+        ApplyInverseMTSGS_CrsMatrix(*Xcopy,Y);
+        break;
+      case Ifpack2::Details::MTGS:
+        ApplyInverseMTGS_CrsMatrix(*Xcopy,Y);
+        break;
+
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Ifpack2::Relaxation::apply: Invalid preconditioner type enum value "
@@ -585,6 +601,10 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
   typedef local_ordinal_type LO;
+  typedef typename block_crs_matrix_type::impl_scalar_type IST;
+  typedef typename node_type::device_type device_type;
+  typedef typename Kokkos::View<IST*, device_type>::HostMirror::device_type
+    host_device_type;
 
   {
     // Reset the timer each time, since Relaxation uses the same Time
@@ -617,9 +637,10 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       blockDiag_ = block_diag_type ("Ifpack2::Relaxation::blockDiag_",
                                     lclNumMeshRows, blockSize, blockSize);
       if (Teuchos::as<LO>(diagOffsets_.dimension_0 () ) < lclNumMeshRows) {
-        typedef typename node_type::device_type DT;
-        diagOffsets_ = Kokkos::View<size_t*, DT> (); // clear first to save mem
-        diagOffsets_ = Kokkos::View<size_t*, DT> ("offsets", lclNumMeshRows);
+        // Clear diagOffsets_ first (by assigning an empty View to it)
+        // to save memory, before reallocating.
+        diagOffsets_ = Kokkos::View<size_t*, device_type> ();
+        diagOffsets_ = Kokkos::View<size_t*, device_type> ("offsets", lclNumMeshRows);
       }
       blockCrsA->getCrsGraph ().getLocalDiagOffsets (diagOffsets_);
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -669,16 +690,23 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       }
     }
 
-    blockDiagFactPivots_ =
-      pivots_type ("Ifpack2::Relaxation::pivots", lclNumMeshRows, blockSize);
-    // Use an unmanaged View to avoid ref count overhead in loop below.
-    unmanaged_pivots_type pivots = blockDiagFactPivots_;
-
     int info = 0;
+    // GETRI needs workspace.  Use host space for now.  Once we
+    // parallelize this setup phase, we'll need to use Kokkos' new
+    // MemoryPool feature.  At that point, it will make sense to use
+    // device memory for the memory pool.
+    Kokkos::View<IST*, host_device_type> work ("work", blockSize);
+    Kokkos::View<int*, host_device_type> ipiv ("ipiv", blockSize);
     for (LO i = 0 ; i < lclNumMeshRows; ++i) {
-      auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
-      auto ipiv = Kokkos::subview (pivots, i, ALL ());
-      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      auto D_cur = Kokkos::subview (blockDiag, i, ALL (), ALL ());
+      Tpetra::Experimental::GETF2 (D_cur, ipiv, info);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "GETF2 failed with info = " << info
+         << " != 0.");
+      Tpetra::Experimental::GETRI (D_cur, ipiv, work, info);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "GETRI failed with info = " << info
+         << " != 0.");
     }
 
     // In a debug build, do an extra test to make sure that all the
@@ -738,6 +766,8 @@ void Relaxation<MatrixType>::compute ()
     computeBlockCrs ();
     return;
   }
+
+
 
   {
     // Reset the timer each time, since Relaxation uses the same Time
@@ -1048,6 +1078,37 @@ void Relaxation<MatrixType>::compute ()
       Importer_ = A_->getGraph ()->getImporter ();
       Diagonal_->template sync<device_type> ();
     }
+#ifdef MD_EXPERIMENTAL
+    //KokkosKernels GaussSiedel Initialization.
+    if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
+      const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          crsMat == NULL, std::runtime_error, "Ifpack2::Relaxation::compute: "
+          "MT methods works for CRSMatrix Only.");
+
+      this->kh = rcp(new KernelHandle());
+      if (kh->get_gs_handle() == NULL){
+        kh->create_gs_handle();
+      }
+      kokkos_csr_matrix kcsr = crsMat->getLocalMatrix ();
+      /*
+      std::cout << "initing kcsr.graph.row_map:" << kcsr.graph.row_map.dimension_0()
+                << " A_->getNodeNumRows():" << A_->getNodeNumRows()
+                << " entries:" << entries.dimension_0()
+                << " vals:" << vals.dimension_0()
+                << std::endl;
+       */
+
+      //TODO: Symbolic should go under initialize.
+      KokkosKernels::Experimental::Graph::gauss_seidel_symbolic
+          <KernelHandle, lno_row_view_t, lno_nonzero_view_t>
+          (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(), kcsr.graph.row_map, kcsr.graph.entries, false);
+
+      KokkosKernels::Experimental::Graph::gauss_seidel_numeric
+        <KernelHandle, lno_row_view_t, lno_nonzero_view_t, scalar_nonzero_view_t>
+        (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(), kcsr.graph.row_map, kcsr.graph.entries, kcsr.values, false);
+    }
+#endif
   } // end TimeMonitor scope
 
   ComputeTime_ += Time_->totalElapsedTime ();
@@ -1131,53 +1192,64 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
-ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                                                             global_ordinal_type, node_type>& X,
-                                   Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                                                       global_ordinal_type,node_type>& Y) const
+ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type,
+                                     local_ordinal_type,
+                                     global_ordinal_type,
+                                     node_type>& X,
+                                   Tpetra::MultiVector<scalar_type,
+                                     local_ordinal_type,
+                                     global_ordinal_type,
+                                     node_type>& Y) const
 {
-  using Kokkos::ALL;
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type,node_type> BMV;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> MV;
-  typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
+    local_ordinal_type, global_ordinal_type, node_type> BMV;
 
-  // Get unmanaged Views, so that taking subviews repeatedly won't
-  // update the reference count.
-  unmanaged_block_diag_type blockDiag = blockDiag_;
-  unmanaged_pivots_type pivots = blockDiagFactPivots_;
+  const block_crs_matrix_type* blockMatConst =
+    dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (blockMatConst == NULL, std::logic_error, "This method should never be "
+     "called if the matrix A_ is not a BlockCrsMatrix.  Please report this "
+     "bug to the Ifpack2 developers.");
+  // mfh 23 Jan 2016: Unfortunately, the const cast is necessary.
+  // This is because applyBlock() is nonconst (more accurate), while
+  // apply() is const (required by Tpetra::Operator interface, but a
+  // lie, because it possibly allocates temporary buffers).
+  block_crs_matrix_type* blockMat =
+    const_cast<block_crs_matrix_type*> (blockMatConst);
+
+  auto meshRowMap = blockMat->getRowMap ();
+  auto meshColMap = blockMat->getColMap ();
+  const local_ordinal_type blockSize = blockMat->getBlockSize ();
+
+  BMV X_blk (X, *meshColMap, blockSize);
+  BMV Y_blk (Y, *meshRowMap, blockSize);
 
   if (ZeroStartingSolution_) {
-    Y.putScalar (STS::zero ());
+    // For the first sweep, if we are allowed to assume that the
+    // initial guess is zero, then block Jacobi is just block diagonal
+    // scaling.  (A_ij * x_j = 0 for i != j, since x_j = 0.)
+    Y_blk.blockWiseMultiply (DampingFactor_, blockDiag_, X_blk);
+    if (NumSweeps_ == 1) {
+      return;
+    }
   }
 
-  const size_t numVectors = X.getNumVectors ();
+  auto pointRowMap = Y.getMap ();
+  const size_t numVecs = X.getNumVectors ();
 
-  const block_crs_matrix_type* blockMat =
-    dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+  // We don't need to initialize the result MV, since the sparse
+  // mat-vec will clobber its contents anyway.
+  BMV A_times_Y (*meshRowMap, *pointRowMap, blockSize, numVecs);
 
-  const local_ordinal_type blockSize = blockMat->getBlockSize ();
-  BMV A_times_Y_Block (* (blockMat->getRowMap ()), * (Y.getMap ()),
-                       blockSize, numVectors);
-  MV A_times_Y = A_times_Y_Block.getMultiVectorView();
-  BMV yBlock (Y, * (blockMat->getRowMap ()), blockSize);
-  for (int j = 0; j < NumSweeps_; ++j) {
-    blockMat->apply (Y, A_times_Y);
-    A_times_Y.update (STS::one (), X, -STS::one ());
-    const size_t numRows = blockMat->getNodeNumRows ();
-    for (size_t i = 0; i < numVectors; ++i) {
-      for (size_t k = 0; k < numRows; ++k) {
-        // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-        auto factorizedBlockDiag = Kokkos::subview (blockDiag, k, ALL (), ALL ());
-        auto ipiv = Kokkos::subview (pivots, k, ALL ());
-        little_vec_type xloc = A_times_Y_Block.getLocalBlock (k, i);
-        little_vec_type yloc = yBlock.getLocalBlock (k, i);
-        int info = 0;
-        Tpetra::Experimental::GETRS ("N", factorizedBlockDiag, ipiv, xloc, info);
-        Tpetra::Experimental::AXPY (DampingFactor_, xloc, yloc);
-      }
-    }
+  // If we were allowed to assume that the starting guess was zero,
+  // then we have already done the first sweep above.
+  const int startSweep = ZeroStartingSolution_ ? 1 : 0;
+
+  for (int j = startSweep; j < NumSweeps_; ++j) {
+    blockMat->applyBlock (Y_blk, A_times_Y);
+    // Y := Y + \omega D^{-1} (X - A*Y).  Use A_times_Y as scratch.
+    Y_blk.blockJacobiUpdate (DampingFactor_, blockDiag_,
+                             X_blk, A_times_Y, STS::one ());
   }
 }
 
@@ -1508,7 +1580,6 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
       yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     }
     A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
-                        blockDiagFactPivots_,
                         DampingFactor_, direction);
     if (performImport) {
       RCP<const MV> yBlockColPointDomain =
@@ -1518,6 +1589,469 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   }
 }
 
+
+
+
+template<class MatrixType>
+void Relaxation<MatrixType>::MTGaussSeidel (
+    const crs_matrix_type* crsMat,
+    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
+    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
+    const Teuchos::ArrayView<local_ordinal_type>& rowIndices,
+    const scalar_type& dampingFactor,
+    const Tpetra::ESweepDirection direction,
+    const int numSweeps,
+    const bool zeroInitialGuess) const
+{
+#ifdef MD_EXPERIMENTAL
+  using Teuchos::null;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcp_const_cast;
+
+  typedef scalar_type Scalar;
+  typedef local_ordinal_type LocalOrdinal;
+  typedef global_ordinal_type GlobalOrdinal;
+  typedef node_type Node;
+
+  typedef Scalar ST;
+  const char prefix[] = "Ifpack2::Relaxation::(reordered)MTGaussSeidel: ";
+  const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! crsMat->isFillComplete (), std::runtime_error,
+    prefix << "The matrix is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numSweeps < 0, std::invalid_argument,
+    prefix << "The number of sweeps must be nonnegative, "
+    "but you provided numSweeps = " << numSweeps << " < 0.");
+
+
+
+  if (numSweeps == 0) {
+    return;
+  }
+
+
+  typedef typename Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+  typedef typename crs_matrix_type::import_type import_type;
+  typedef typename crs_matrix_type::export_type export_type;
+  typedef typename crs_matrix_type::map_type map_type;
+
+  RCP<const import_type> importer = crsMat->getGraph ()->getImporter ();
+  RCP<const export_type> exporter = crsMat->getGraph ()->getExporter ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! exporter.is_null (), std::runtime_error,
+    "This method's implementation currently requires that the matrix's row, "
+    "domain, and range Maps be the same.  This cannot be the case, because "
+    "the matrix has a nontrivial Export object.");
+
+  RCP<const map_type> domainMap = crsMat->getDomainMap ();
+  RCP<const map_type> rangeMap = crsMat->getRangeMap ();
+  RCP<const map_type> rowMap = crsMat->getGraph ()->getRowMap ();
+  RCP<const map_type> colMap = crsMat->getGraph ()->getColMap ();
+
+
+#ifdef HAVE_TEUCHOS_DEBUG
+  {
+    // The relation 'isSameAs' is transitive.  It's also a
+    // collective, so we don't have to do a "shared" test for
+    // exception (i.e., a global reduction on the test value).
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! X.getMap ()->isSameAs (*domainMap), std::runtime_error,
+      "Ifpack2::Relaxation::MTGaussSeidel requires that the input "
+      "multivector X be in the domain Map of the matrix.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! B.getMap ()->isSameAs (*rangeMap), std::runtime_error,
+      "Ifpack2::Relaxation::MTGaussSeidel requires that the input "
+      "B be in the range Map of the matrix.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! D.getMap ()->isSameAs (*rowMap), std::runtime_error,
+      "Ifpack2::Relaxation::MTGaussSeidel requires that the input "
+      "D be in the row Map of the matrix.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! rowMap->isSameAs (*rangeMap), std::runtime_error,
+      "Ifpack2::Relaxation::MTGaussSeidel requires that the row Map and the "
+      "range Map be the same (in the sense of Tpetra::Map::isSameAs).");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! domainMap->isSameAs (*rangeMap), std::runtime_error,
+      "Ifpack2::Relaxation::MTGaussSeidel requires that the domain Map and "
+      "the range Map of the matrix be the same.");
+  }
+#else
+  // Forestall any compiler warnings for unused variables.
+  (void) rangeMap;
+  (void) rowMap;
+#endif // HAVE_TEUCHOS_DEBUG
+
+  // Fetch a (possibly cached) temporary column Map multivector
+  // X_colMap, and a domain Map view X_domainMap of it.  Both have
+  // constant stride by construction.  We know that the domain Map
+  // must include the column Map, because our Gauss-Seidel kernel
+  // requires that the row Map, domain Map, and range Map are all
+  // the same, and that each process owns all of its own diagonal
+  // entries of the matrix.
+
+  RCP<MV> X_colMap;
+  RCP<MV> X_domainMap;
+  bool copyBackOutput = false;
+  if (importer.is_null ()) {
+    if (X.isConstantStride ()) {
+      X_colMap = rcpFromRef (X);
+      X_domainMap = rcpFromRef (X);
+
+      // Column Map and domain Map are the same, so there are no
+      // remote entries.  Thus, if we are not setting the initial
+      // guess to zero, we don't have to worry about setting remote
+      // entries to zero, even though we are not doing an Import in
+      // this case.
+      if (zeroInitialGuess) {
+        X_colMap->putScalar (ZERO);
+      }
+      // No need to copy back to X at end.
+    }
+    else {
+      // We must copy X into a constant stride multivector.
+      // Just use the cached column Map multivector for that.
+      // force=true means fill with zeros, so no need to fill
+      // remote entries (not in domain Map) with zeros.
+      //X_colMap = crsMat->getColumnMapMultiVector (X, true);
+      X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+      // X_domainMap is always a domain Map view of the column Map
+      // multivector.  In this case, the domain and column Maps are
+      // the same, so X_domainMap _is_ X_colMap.
+      X_domainMap = X_colMap;
+      if (! zeroInitialGuess) { // Don't copy if zero initial guess
+        try {
+          deep_copy (*X_domainMap , X); // Copy X into constant stride MV
+        } catch (std::exception& e) {
+          std::ostringstream os;
+          os << "Ifpack2::Relaxation::MTGaussSeidel: "
+            "deep_copy(*X_domainMap, X) threw an exception: "
+             << e.what () << ".";
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
+        }
+      }
+      copyBackOutput = true; // Don't forget to copy back at end.
+      /*
+      TPETRA_EFFICIENCY_WARNING(
+        ! X.isConstantStride (),
+        std::runtime_error,
+        "MTGaussSeidel: The current implementation of the Gauss-Seidel "
+        "kernel requires that X and B both have constant stride.  Since X "
+        "does not have constant stride, we had to make a copy.  This is a "
+        "limitation of the current implementation and not your fault, but we "
+        "still report it as an efficiency warning for your information.");
+        */
+    }
+  }
+  else { // Column Map and domain Map are _not_ the same.
+    //X_colMap = crsMat->getColumnMapMultiVector (X);
+    X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+
+    X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
+
+#ifdef HAVE_TPETRA_DEBUG
+    typename MV::dual_view_type X_colMap_view = X_colMap->getDualView ();
+    typename MV::dual_view_type X_domainMap_view = X_domainMap->getDualView ();
+
+    if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_colMap_view.h_view.ptr_on_device () != X_domainMap_view.h_view.ptr_on_device (),
+        std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
+        "Pointer to start of column Map view of X is not equal to pointer to "
+        "start of (domain Map view of) X.  This may mean that "
+        "Tpetra::MultiVector::offsetViewNonConst is broken.  "
+        "Please report this bug to the Tpetra developers.");
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      X_colMap_view.dimension_0 () < X_domainMap_view.dimension_0 () ||
+      X_colMap->getLocalLength () < X_domainMap->getLocalLength (),
+      std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
+      "X_colMap has fewer local rows than X_domainMap.  "
+      "X_colMap_view.dimension_0() = " << X_colMap_view.dimension_0 ()
+      << ", X_domainMap_view.dimension_0() = "
+      << X_domainMap_view.dimension_0 ()
+      << ", X_colMap->getLocalLength() = " << X_colMap->getLocalLength ()
+      << ", and X_domainMap->getLocalLength() = "
+      << X_domainMap->getLocalLength ()
+      << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
+      "is broken.  Please report this bug to the Tpetra developers.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      X_colMap->getNumVectors () != X_domainMap->getNumVectors (),
+      std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
+      "X_colMap has a different number of columns than X_domainMap.  "
+      "X_colMap->getNumVectors() = " << X_colMap->getNumVectors ()
+      << " != X_domainMap->getNumVectors() = "
+      << X_domainMap->getNumVectors ()
+      << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
+      "is broken.  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+    if (zeroInitialGuess) {
+      // No need for an Import, since we're filling with zeros.
+      X_colMap->putScalar (ZERO);
+    } else {
+      // We could just copy X into X_domainMap.  However, that
+      // wastes a copy, because the Import also does a copy (plus
+      // communication).  Since the typical use case for
+      // Gauss-Seidel is a small number of sweeps (2 is typical), we
+      // don't want to waste that copy.  Thus, we do the Import
+      // here, and skip the first Import in the first sweep.
+      // Importing directly from X effects the copy into X_domainMap
+      // (which is a view of X_colMap).
+      X_colMap->doImport (X, *importer, Tpetra::CombineMode::INSERT);
+    }
+    copyBackOutput = true; // Don't forget to copy back at end.
+  } // if column and domain Maps are (not) the same
+
+  // The Gauss-Seidel / SOR kernel expects multivectors of constant
+  // stride.  X_colMap is by construction, but B might not be.  If
+  // it's not, we have to make a copy.
+  RCP<const MV> B_in;
+  if (B.isConstantStride ()) {
+    B_in = rcpFromRef (B);
+  }
+  else {
+    // Range Map and row Map are the same in this case, so we can
+    // use the cached row Map multivector to store a constant stride
+    // copy of B.
+    //RCP<MV> B_in_nonconst = crsMat->getRowMapMultiVector (B, true);
+    RCP<MV> B_in_nonconst = rcp (new MV (rowMap, B.getNumVectors()));
+    try {
+      deep_copy (*B_in_nonconst, B);
+    } catch (std::exception& e) {
+      std::ostringstream os;
+      os << "Ifpack2::Relaxation::MTGaussSeidel: "
+        "deep_copy(*B_in_nonconst, B) threw an exception: "
+         << e.what () << ".";
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
+    }
+    B_in = rcp_const_cast<const MV> (B_in_nonconst);
+
+    /*
+    TPETRA_EFFICIENCY_WARNING(
+      ! B.isConstantStride (),
+      std::runtime_error,
+      "MTGaussSeidel: The current implementation requires that B have "
+      "constant stride.  Since B does not have constant stride, we had to "
+      "copy it into a separate constant-stride multivector.  This is a "
+      "limitation of the current implementation and not your fault, but we "
+      "still report it as an efficiency warning for your information.");
+      */
+  }
+
+  kokkos_csr_matrix kcsr = crsMat->getLocalMatrix ();
+  const size_t NumVectors = X.getNumVectors ();
+
+  bool update_y_vector = true;
+  //false as it was done up already, and we dont want to zero it in each sweep.
+  bool zero_x_vector = false;
+  for (int sweep = 0; sweep < numSweeps; ++sweep) {
+    if (! importer.is_null () && sweep > 0) {
+      // We already did the first Import for the zeroth sweep above,
+      // if it was necessary.
+      X_colMap->doImport (*X_domainMap, *importer, Tpetra::CombineMode::INSERT);
+    }
+
+
+    if (rowIndices.is_null ()) {
+
+
+      /*
+        std::cout   << "X_colMap->getNumVectors:" << X_colMap->getNumVectors()
+                    <<" X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ()->dimension_0():"
+                    <<  X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ().dimension_0()
+                    <<" X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ()->dimension_1():"
+                    <<  X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ().dimension_1()
+                    << " B_in->getNumVectors:" << B_in->getNumVectors()
+
+                    <<" B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ()->dimension_0():"
+                    <<  B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ().dimension_0()
+                    <<" B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ()->dimension_1():"
+                    <<  B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ().dimension_1()
+                    << std::endl;
+
+
+        KokkosKernels::Experimental::Util::print_1Dview(entries);
+        std::cout << std::endl;
+        KokkosKernels::Experimental::Util::print_1Dview(vals);
+        std::cout << std::endl;
+        KokkosKernels::Experimental::Util::print_1Dview(Kokkos::subview(X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), Kokkos::ALL (), 0));
+        std::cout << std::endl;
+        KokkosKernels::Experimental::Util::print_1Dview(Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), Kokkos::ALL (), 0));
+        std::cout << std::endl;
+       */
+      typedef typename MV::dual_view_type dual_view_type;
+      typedef typename dual_view_type::t_dev device_view_type;
+      //device_view_type KernelB = Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), 0, Kokkos::ALL ());
+      //std::cout << " 5" << std::endl;
+      //scalar_nonzero_view_t KernelXcolMap = Kokkos::subview(X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), 0, Kokkos::ALL ());
+      //std::cout << " 6" << std::endl;
+
+      /*
+
+        crsMat->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
+                                                 dampingFactor,
+                                                 KokkosClassic::Forward);
+        // mfh 18 Mar 2013: Aztec's implementation of "symmetric
+        // Gauss-Seidel" does _not_ do an Import between the forward
+        // and backward sweeps.  This makes symmetric Gauss-Seidel a
+        // symmetric preconditioner if the matrix A is symmetric.  We
+        // imitate Aztec's behavior here.
+        crsMat->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
+                                                 dampingFactor,
+                                                 KokkosClassic::Backward);
+       */
+
+
+      for (size_t indVec = 0; indVec < NumVectors; ++indVec){
+        if (direction == Tpetra::Symmetric) {
+          KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply
+          (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+              kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
+              Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
+              Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
+              zero_x_vector, update_y_vector);
+        }
+        else if (direction == Tpetra::Forward) {
+          KokkosKernels::Experimental::Graph::forward_sweep_gauss_seidel_apply
+          (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+              kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
+              Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
+              Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
+              zero_x_vector, update_y_vector);
+        }
+        else if (direction == Tpetra::Backward) {
+          KokkosKernels::Experimental::Graph::backward_sweep_gauss_seidel_apply
+          (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+              kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
+              Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
+              Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
+              zero_x_vector, update_y_vector);
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::invalid_argument,
+              prefix << "The 'direction' enum does not have any of its valid "
+              "values: Forward, Backward, or Symmetric.");
+        }
+      }
+
+      if (NumVectors > 1){
+        update_y_vector = true;
+      }
+      else {
+        update_y_vector = false;
+      }
+
+      /*
+        std::cout << "after" << std::endl;
+        KokkosKernels::Experimental::Util::print_1Dview(Kokkos::subview(X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), Kokkos::ALL (), 0));
+        std::cout << std::endl;
+        KokkosKernels::Experimental::Util::print_1Dview(Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), Kokkos::ALL (), 0));
+        std::cout << std::endl;
+       */
+
+      /*
+      else {
+        crsMat->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
+                                                          D, rowIndices,
+                                                          dampingFactor,
+                                                          KokkosClassic::Forward);
+        crsMat->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
+                                                          D, rowIndices,
+                                                          dampingFactor,
+                                                          KokkosClassic::Backward);
+
+      }
+       */
+    }
+  }
+
+  if (copyBackOutput) {
+    try {
+      deep_copy (X , *X_domainMap); // Copy result back into X.
+    } catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::runtime_error, prefix << "deep_copy(X, *X_domainMap) "
+        "threw an exception: " << e.what ());
+    }
+  }
+#endif
+}
+
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseMTSGS_CrsMatrix (
+    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
+    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X) const {
+
+  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      crsMat == NULL, std::runtime_error, "Ifpack2::Relaxation::compute: "
+      "MT methods works for CRSMatrix Only.");
+
+  using Teuchos::as;
+  const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
+
+  Teuchos::ArrayView<local_ordinal_type> rowIndices;
+  if (!localSmoothingIndices_.is_null ()) {
+    std::cerr << "MT GaussSeidel ignores the given order" << std::endl;
+  }
+  this->MTGaussSeidel (
+      crsMat,
+      X, B,
+      *Diagonal_, rowIndices,
+      DampingFactor_,
+      direction, NumSweeps_,
+      ZeroStartingSolution_);
+
+  const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
+  const double numVectors = as<double> (X.getNumVectors ());
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
+  ApplyFlops_ += 2.0 * NumSweeps_ * numVectors *
+      (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
+}
+
+
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseMTGS_CrsMatrix (
+    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
+    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X) const {
+
+  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      crsMat == NULL, std::runtime_error, "Ifpack2::Relaxation::compute: "
+      "MT methods works for CRSMatrix Only.");
+
+  using Teuchos::as;
+  const Tpetra::ESweepDirection direction =
+    DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
+
+  Teuchos::ArrayView<local_ordinal_type> rowIndices;
+  if (!localSmoothingIndices_.is_null ()) {
+    std::cerr << "MT GaussSeidel ignores the given order" << std::endl;
+  }
+  this->MTGaussSeidel (
+      crsMat,
+      X, B,
+      *Diagonal_, rowIndices,
+      DampingFactor_,
+      direction, NumSweeps_,
+      ZeroStartingSolution_);
+
+  const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
+  const double numVectors = as<double> (X.getNumVectors ());
+  const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
+  const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
+  ApplyFlops_ += NumSweeps_ * numVectors *
+    (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
+}
 
 template<class MatrixType>
 void
@@ -1855,7 +2389,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     if (performImport && sweep > 0) {
       yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
     }
-    A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_, blockDiagFactPivots_,
+    A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
                         DampingFactor_, direction);
     if (performImport) {
       RCP<const MV> yBlockColPointDomain =
@@ -1890,7 +2424,12 @@ std::string Relaxation<MatrixType>::description () const
     os << "Gauss-Seidel";
   } else if (PrecType_ == Ifpack2::Details::SGS) {
     os << "Symmetric Gauss-Seidel";
-  } else {
+  } else if (PrecType_ == Ifpack2::Details::MTGS) {
+    os << "MT Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::MTSGS) {
+    os << "MT Symmetric Gauss-Seidel";
+  }
+  else {
     os << "INVALID";
   }
 
@@ -1965,6 +2504,10 @@ describe (Teuchos::FancyOStream &out,
         out << "Gauss-Seidel";
       } else if (PrecType_ == Ifpack2::Details::SGS) {
         out << "Symmetric Gauss-Seidel";
+      } else if (PrecType_ == Ifpack2::Details::MTGS) {
+        out << "MT Gauss-Seidel";
+      } else if (PrecType_ == Ifpack2::Details::MTSGS) {
+        out << "MT Symmetric Gauss-Seidel";
       } else {
         out << "INVALID";
       }

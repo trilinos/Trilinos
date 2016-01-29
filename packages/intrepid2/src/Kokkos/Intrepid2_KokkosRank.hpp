@@ -50,6 +50,11 @@
 
 namespace Intrepid2{
 
+template<typename field>
+struct is_mdfield{
+  enum {value=false};
+};
+
 
 /*template<typename T, typename = void>
 struct conditional_eSpace : Kokkos::Serial { };
@@ -215,11 +220,13 @@ inline index_type getrank(DataT& leftvalue){
 template<class Scalar,class ArrayType,int ArrayRank,bool isconstant>
 struct ArrayWrapper;
 
+
 // -1 means rank is determined at run time.
 // It's like an Intrepid FieldContainer, not like a Kokkos::View.
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar, ArrayType,-1, false> {
-   ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+   InternalArrayType view;
      typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
         ArrayWrapper<Scalar,ArrayType,1,false>runtimewrapper1;
@@ -229,7 +236,7 @@ struct ArrayWrapper<Scalar, ArrayType,-1, false> {
                 ArrayWrapper<Scalar,ArrayType,5,false>runtimewrapper5;
 
   KOKKOS_INLINE_FUNCTION
-  ArrayWrapper( ArrayType& view_):
+  ArrayWrapper(ArrayType& view_):
      view(view_),
      runtimewrapper1(view_),
      runtimewrapper2(view_),
@@ -271,7 +278,8 @@ struct ArrayWrapper<Scalar, ArrayType,-1, false> {
 
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,1,false> {
-   ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+   InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
@@ -295,7 +303,8 @@ struct ArrayWrapper<Scalar,ArrayType,1,false> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,2,false> {
-   ArrayType& view;
+    typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
@@ -319,7 +328,8 @@ struct ArrayWrapper<Scalar,ArrayType,2,false> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar, ArrayType,3,false> {
-   ArrayType& view;
+    typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
@@ -342,7 +352,8 @@ struct ArrayWrapper<Scalar, ArrayType,3,false> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,4,false> {
-   ArrayType& view;
+    typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
    typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
@@ -365,7 +376,8 @@ struct ArrayWrapper<Scalar,ArrayType,4,false> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,5,false> {
-   ArrayType& view;
+    typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
@@ -388,7 +400,8 @@ struct ArrayWrapper<Scalar,ArrayType,5,false> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,6,false> {
-   ArrayType& view;
+    typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
@@ -411,7 +424,8 @@ struct ArrayWrapper<Scalar,ArrayType,6,false> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,7,false> {
-   ArrayType& view;
+    typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
@@ -434,7 +448,8 @@ struct ArrayWrapper<Scalar,ArrayType,7,false> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,8,false> {
-   ArrayType& view;
+    typedef typename  std::conditional<is_mdfield<ArrayType>::value, ArrayType, ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
    typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
@@ -457,7 +472,8 @@ struct ArrayWrapper<Scalar,ArrayType,8,false> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar, ArrayType,-1, true> {
-  const ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
         ArrayWrapper<Scalar,ArrayType,1,true>runtimewrapper1;
@@ -510,7 +526,8 @@ struct ArrayWrapper<Scalar, ArrayType,-1, true> {
 
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,1,true> {
-  const ArrayType& view;
+    typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
@@ -534,7 +551,8 @@ struct ArrayWrapper<Scalar,ArrayType,1,true> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,2,true> {
-  const ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
@@ -559,7 +577,8 @@ struct ArrayWrapper<Scalar,ArrayType,2,true> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar, ArrayType,3,true> {
-  const ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
@@ -583,7 +602,8 @@ struct ArrayWrapper<Scalar, ArrayType,3,true> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,4,true> {
-  const ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
@@ -605,7 +625,8 @@ struct ArrayWrapper<Scalar,ArrayType,4,true> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,5,true> {
-  const ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
   KOKKOS_INLINE_FUNCTION
@@ -626,7 +647,8 @@ struct ArrayWrapper<Scalar,ArrayType,5,true> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,6,true> {
-  const ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
   KOKKOS_INLINE_FUNCTION
@@ -647,7 +669,8 @@ struct ArrayWrapper<Scalar,ArrayType,6,true> {
 };
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,7,true> {
-  const ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
   KOKKOS_INLINE_FUNCTION
@@ -671,7 +694,8 @@ struct ArrayWrapper<Scalar,ArrayType,7,true> {
 
 template<class Scalar,class ArrayType>
 struct ArrayWrapper<Scalar,ArrayType,8,true> {
-   const ArrayType& view;
+  typedef typename  std::conditional<is_mdfield<ArrayType>::value, const ArrayType, const ArrayType& >::type InternalArrayType;
+  InternalArrayType view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
   KOKKOS_INLINE_FUNCTION
