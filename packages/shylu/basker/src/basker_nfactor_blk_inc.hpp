@@ -567,7 +567,11 @@ namespace BaskerNS
 	    #endif
 	  }
        
-	INC_LVL_TEMP(j+L.srow) = 0;
+	if(INC_LVL_TEMP(j+L.srow) == BASKER_MAX_IDX)
+	  {
+	    INC_LVL_TEMP(j+L.srow) = 0;
+	  }
+	
 	#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	printf("===========LEAVING REACH ======\n");
 	printf("Leave top: %d leave pop: %d \n",
@@ -680,11 +684,11 @@ namespace BaskerNS
 			    store[j] = i1+1;
 			    done = BASKER_FALSE;
 		    
-			    #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+			    //#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 			    printf("additng: %d %d %d \n",
 				   inc_lvl, L.inc_lvl(i1),
 				   inc_lvl+L.inc_lvl(i1)+1);
-			    #endif
+			    //#endif
 			   
 			    inc_lvl = inc_lvl + L.inc_lvl(i1)+1;
 			   
@@ -2321,10 +2325,10 @@ namespace BaskerNS
     const Int    bcol           = L.scol;
   
 
-    printf("=============RIGHT ONE CALLED ============\n");
+    //printf("=============RIGHT ONE CALLED ============\n");
 
 
-    //#ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("\n\n");
     printf("t_back_solve_diag, kid: %d blkcol: %d blkrow: %d \n",
 	   kid, blkcol, blkrow);
@@ -2333,7 +2337,7 @@ namespace BaskerNS
     printf("t_back_solve_diag, kid: %d ws: %d starting psize: %d \n",
 	   kid,ws_size, nnz);
     printf("\n\n");
-    //#endif
+    #endif
     // B.info();
     //B.print();
 
@@ -2366,82 +2370,77 @@ namespace BaskerNS
     }//end if preload
   
     //SPMV
-    //#ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_BLK
     if(kid == 0)
     printf("t_back_solve_d, kid: %d xsize: %ld \n",
 	   kid, x_size);
-    //#endif
+    #endif
 
     for(Int i = 0 ; i < x_size; ++i)
       {
 	const Int k    = x_idx(i+x_offset);
 	const Entry xj = x(i+x_offset);
 
-        //#ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_BLK
 	if(kid == 0)
 	printf("t_back_solve_diag, kid: %d  k: %d %g  x_size: %d [%d %d] \n",
 	       kid, k, xj, x_size,  L.col_ptr[k], L.col_ptr[k+1]);
-	//#endif
+	#endif
        
 	
+	#ifdef BASKER_DEBUG_NFACTOR_BLK
 	if(kid == 0)
 	printf("L_size: %d k: %d kid: %d \n",
 	       L.col_ptr(k+1)-L.col_ptr(k), k, kid);
+	#endif
 
 	for(Int j = L.col_ptr(k); 
 	    j < L.col_ptr(k+1); j++)
 	  {
 	    const Int jj = L.row_idx(j);
-            //#ifdef BASKER_DEBUG_NFACTOR_BLK
+            #ifdef BASKER_DEBUG_NFACTOR_BLK
 	    if(kid ==0)
 	    printf("t_b_solve_d, kid: %d j: %d color: %d \n",
 		   kid, jj, color[jj]);
-	    //#endif
+	    #endif
 
 
-	    //#ifdef BASKER_DEBUG_NFACTOR_BLK
+	    #ifdef BASKER_DEBUG_NFACTOR_BLK
 	    if(kid == 0)
 	    printf("t_back_solve_d,id:%d  row_idx: %d b4: %f mult: %f %f\n",
 		    kid, jj,X[jj], L.val[j], xj);
-	    // #endif 
+	    #endif 
 	     
-	     //#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+	    #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	    if(kid == 0)
 	     printf("L.inc_lvl[%d]: %d %d kid: %d \n",
 		    j, L.inc_lvl(j), stack[jj], kid);
-	     //#endif
+	     #endif
 
-	     //#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+	     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	     if(kid == 0)
 	     printf("Assigned inc_lvl(%d) = %d \n",
 		    jj, stack[jj]);
-	     //#endif
+	     #endif
 
 	     
 	     if((stack[jj] == BASKER_MAX_IDX) ||
 		(stack[jj] > Options.inc_lvl))
 	       {
-		 //#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+		 #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 		 if(kid == 0)
 		 printf("continue,already used Linc(%d):%d %d\n",
 			j, L.inc_lvl(j), x_fill(i+x_offset));
-		 //#endif
+		 #endif
 		 continue;
 	       }
 
-	     if(jj == 4)
-	       {
-		 printf("SHOULD NOT COULD NOT, kid: %d k: %d stack: %d\n",
-			kid, k, stack[jj]);
-		 BASKER_ASSERT(0==1, "NOPE");
-	       }
-
-
-	     //#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+	  
+	     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	     if(kid == 0)
 	     printf("VALUE: before %f %f %f AFTER: %f\n",
 		    X(jj), L.val(j), xj, X(jj)-L.val(j)*xj);
-	     //#endif
+	     #endif
 	     
 	     X(jj) -= L.val(j)*xj;
 
@@ -2597,7 +2596,7 @@ namespace BaskerNS
 	
 	if(flvl+1 > Options.inc_lvl)
 	  {
-	    printf("Continued skip because too large\n");
+	    //printf("Continued skip because too large\n");
 	    continue;
 	  }
 	
@@ -2607,8 +2606,8 @@ namespace BaskerNS
 	    const Int jj    = L.row_idx(j);
 	    const Int nflvl = L.inc_lvl(j) + flvl + 1;
 	    
-	    printf("%d -- flvl: %d nflvl: %d kid: %d \n",
-		   jj, stack[jj], nflvl, kid);
+	    //printf("%d -- flvl: %d nflvl: %d kid: %d \n",
+	    //	   jj, stack[jj], nflvl, kid);
 
 	    if(stack[jj] == BASKER_MAX_IDX)
 	      {
@@ -2619,8 +2618,8 @@ namespace BaskerNS
 		stack[jj] = min(nflvl, stack[jj]);
 	      }
 
-	    printf("Assigned inc_lvl(%d) = %d, kid: %d \n",
-		   jj, stack[jj], kid);
+	    //printf("Assigned inc_lvl(%d) = %d, kid: %d \n",
+	    //	   jj, stack[jj], kid);
 	    
 
 	  }//end for-all nnz in L
@@ -2641,7 +2640,7 @@ namespace BaskerNS
    )
   {
 
-    printf("============t_pop_col_fill called============\n");
+    //printf("============t_pop_col_fill called============\n");
     //Note X_col is always the leader
     BASKER_MATRIX &M = ALM(blkcol)(blkrow);
     INT_1DARRAY  ws   = LL(X_col)(X_row).iws;
@@ -2657,9 +2656,11 @@ namespace BaskerNS
 
 
 	const Int j = M.row_idx(jj);
-
+	
+	#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	printf("Populating original(%d) = %d to %d \n",
 	       j, stack[j], 0);
+	#endif
 
 	stack[j] = 0;
 	
@@ -2667,12 +2668,14 @@ namespace BaskerNS
       }//end-for over all nnz in column
 
     //A debug test
+    #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
     printf("DEBUG fill-in pattern:\n");
     for(Int i = 0; i < M.nrow; i++)
       {
 	printf("i: %d %d \n",
 	      i, stack[i]);
       }
+    #endif
 
 
 
@@ -2724,8 +2727,8 @@ namespace BaskerNS
 	      {
 		if(stack[jj] != BASKER_MAX_IDX)
 		  {
-		    printf("Copy fillto leader: %d %d kid: %d\n",
-			   stack[jj], stackL[jj], kid);
+		    //printf("Copy fillto leader: %d %d kid: %d\n",
+		    //	   stack[jj], stackL[jj], kid);
 		    
 		    stackL[jj] = min(stackL[jj], stack[jj]);
 		    
@@ -2744,9 +2747,9 @@ namespace BaskerNS
    const Int k
    )
   {
-    printf("lvl: %d l: %d \n", lvl, l);
+    //printf("lvl: %d l: %d \n", lvl, l);
 
-    printf("===========T ADD ORIG FILL CALLED\n");
+    //printf("===========T ADD ORIG FILL CALLED\n");
     const Int leader_id  = find_leader(kid, l);
     const Int lteam_size = pow(2,l+1);
     const Int L_col      = S(lvl)(leader_id);
@@ -2757,15 +2760,15 @@ namespace BaskerNS
     Int X_row            = l+1;
     
 
-    printf("kid: %d leader_kid: %d \n",
-	   kid, leader_id);
+    //printf("kid: %d leader_kid: %d \n",
+    //	   kid, leader_id);
 
     //L_row += (kid-leader_id)+1;
     L_row += (kid-leader_id);
     //X_row += (kid-leader_id)+1;
     X_row += (kid-leader_id);
-    printf("L_row: %d X_row: %d kid: %d \n", 
-	   L_row, X_row, kid);
+    //printf("L_row: %d X_row: %d kid: %d \n", 
+    //	   L_row, X_row, kid);
     for( ;
 	 L_row < LL_size(L_col);
 	 X_row+=(lteam_size), L_row+=(lteam_size))
