@@ -239,6 +239,54 @@ struct FlatArrayType {
   typedef view_type type;
 };
 
+// Typename of the intrinsic scalar type in a view
+template <typename view_type, typename Enabled = void>
+struct IntrinsicScalarType {
+  typedef typename view_type::array_type::non_const_value_type type;
+};
+
+template <typename ViewType>
+ViewType
+make_view(const std::string& label,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(label, N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+template <typename ViewType>
+ViewType
+make_view(const ViewAllocateWithoutInitializing& init,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(init, N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+template <typename ViewType>
+ViewType
+make_view(typename ViewType::pointer_type ptr,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(ptr, N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+template <typename ViewType>
+ViewType
+make_view(const std::string& label,
+          const Experimental::Impl::WithoutInitializing_t& init,
+          size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
+          size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
+{
+  return ViewType(Experimental::view_alloc(label,init),
+                  N0, N1, N2, N3, N4, N5, N6, N7);
+}
+
+#endif
+
 } // namespace Kokkos
 
 #endif // KOKKOS_VIEW_UTILS_HPP

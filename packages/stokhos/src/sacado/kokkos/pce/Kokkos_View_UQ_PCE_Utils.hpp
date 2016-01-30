@@ -122,6 +122,14 @@ struct RebindStokhosStorageDevice< const Sacado::UQ::PCE< OldStorageType > , Dev
 
 } // namespace Impl
 
+// Whether a given type is a view with scalar type Sacado::UQ::PCE
+template <typename view_type>
+struct is_view_uq_pce { static const bool value = false; };
+
+// Typename of the Cijk tensor in a view
+template <typename view_type, typename Enabled = void>
+struct CijkType {};
+
 } // namespace Kokkos
 
 #endif // KOKKOS_UQ_PCE_UTILS_HPP

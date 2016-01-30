@@ -48,6 +48,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 
+#include "Kokkos_Core.hpp"
+
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
 #else
@@ -227,6 +229,8 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve)
 
 TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve_tpetra) 
 {
+   Kokkos::initialize();
+
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -277,6 +281,8 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve_tpetra)
       else
          out << "Apply 0: SUCCESS" << std::endl;
    }
+
+   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve) 
@@ -350,6 +356,8 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve)
 
 TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve_tpetra) 
 {
+   Kokkos::initialize();
+
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -409,4 +417,6 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve_tpetra)
       else
          out << "Apply 0: SUCCESS" << std::endl;
    }
+
+   Kokkos::finalize();
 }

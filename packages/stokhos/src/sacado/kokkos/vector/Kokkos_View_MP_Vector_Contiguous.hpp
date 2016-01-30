@@ -1057,11 +1057,10 @@ struct is_view_mp_vector< View<T,L,D,M,Impl::ViewMPVectorContiguous> > {
   static const bool value = true;
 };
 
-template <typename view_type>
+template <typename T, typename L, typename D, typename M>
 KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_mp_vector<view_type>::value, unsigned >::type
-dimension_scalar(const view_type& view) {
+constexpr unsigned
+dimension_scalar(const View<T,L,D,M,Impl::ViewMPVectorContiguous>& view) {
   return view.sacado_size();
 }
 

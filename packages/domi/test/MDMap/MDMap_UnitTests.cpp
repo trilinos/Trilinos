@@ -108,33 +108,42 @@ TEUCHOS_UNIT_TEST( MDMap, dimensionsConstructor )
   MDMap<> mdMap(mdComm, const_dims);
 
   // Perform unit tests of MDMap as a whole
-  TEST_ASSERT(mdMap.onSubcommunicator());
-  TEST_EQUALITY(mdMap.numDims(), num_dims);
-  TEST_ASSERT(not mdMap.hasPadding());
-  TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
+  TEST_ASSERT(    mdMap.onSubcommunicator());
+  TEST_ASSERT(not mdMap.hasPadding()       );
+  TEST_EQUALITY(mdMap.getTeuchosComm(), comm               );
+  TEST_EQUALITY(mdMap.getMDComm()     , mdComm             );
+  TEST_EQUALITY(mdMap.numDims()       , num_dims           );
+  TEST_EQUALITY(mdMap.getLayout()     , Domi::DEFAULT_ORDER);
 
   // Perform unit tests of MDMap axis quantities
   for (int axis = 0; axis < num_dims; ++axis)
   {
-    int axisRank = mdMap.getCommIndex(axis);
-    TEST_EQUALITY(mdMap.getCommDim(axis), commDims[axis]);
+    int   axisRank            = mdMap.getCommIndex(axis);
+    Slice globalBounds        = mdMap.getGlobalBounds(axis);
+    Slice globalRankBounds    = mdMap.getGlobalRankBounds(axis);
+    Slice localBounds         = mdMap.getLocalBounds(axis);
+    Slice localInteriorBounds = mdMap.getLocalInteriorBounds(axis);
+    int   intStart            = (mdMap.getLowerNeighbor(axis) == -1) ? 1 : 0;
+    int   intStop             = (mdMap.getUpperNeighbor(axis) == -1) ?
+                                localDim-1 : localDim;
     TEST_ASSERT(not mdMap.isPeriodic(axis));
-    TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
-    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis).start(), 0);
-    TEST_EQUALITY(mdMap.getGlobalBounds(axis).stop(), dims[axis]);
-    TEST_EQUALITY(mdMap.getLocalDim(axis) , localDim);
-    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis);
-    TEST_EQUALITY(globalRankBounds.start(), axisRank    *localDim);
-    TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
-    Slice localBounds  = mdMap.getLocalBounds(axis);
-    TEST_EQUALITY_CONST(localBounds.start(), 0);
-    TEST_EQUALITY(localBounds.stop(), localDim);
-    TEST_EQUALITY_CONST(mdMap.getLowerPadSize(axis), 0);
-    TEST_EQUALITY_CONST(mdMap.getUpperPadSize(axis), 0);
-    TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), 0);
-    TEST_EQUALITY_CONST(mdMap.getLowerBndryPad(axis), 0);
-    TEST_EQUALITY_CONST(mdMap.getUpperBndryPad(axis), 0);
-    TEST_EQUALITY_CONST(mdMap.getBndryPadSize(axis), 0);
+    TEST_EQUALITY(      mdMap.getCommDim(axis)      , commDims[axis]       );
+    TEST_EQUALITY(      mdMap.getGlobalDim(axis)    , dims[axis]           );
+    TEST_EQUALITY_CONST(globalBounds.start()        , 0                    );
+    TEST_EQUALITY(      globalBounds.stop()         , dims[axis]           );
+    TEST_EQUALITY(      globalRankBounds.start()    , axisRank    *localDim);
+    TEST_EQUALITY(      globalRankBounds.stop()     , (axisRank+1)*localDim);
+    TEST_EQUALITY(      mdMap.getLocalDim(axis)     , localDim             );
+    TEST_EQUALITY_CONST(localBounds.start()         , 0                    );
+    TEST_EQUALITY(      localBounds.stop()          , localDim             );
+    TEST_EQUALITY_CONST(localInteriorBounds.start() , intStart             );
+    TEST_EQUALITY(      localInteriorBounds.stop()  , intStop              );
+    TEST_EQUALITY_CONST(mdMap.getLowerPadSize(axis) , 0                    );
+    TEST_EQUALITY_CONST(mdMap.getUpperPadSize(axis) , 0                    );
+    TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis)  , 0                    );
+    TEST_EQUALITY_CONST(mdMap.getLowerBndryPad(axis), 0                    );
+    TEST_EQUALITY_CONST(mdMap.getUpperBndryPad(axis), 0                    );
+    TEST_EQUALITY_CONST(mdMap.getBndryPadSize(axis) , 0                    );
   }
 
   // This data will only be used if HAVE_EPETRA or HAVE_TPETRA is defined
