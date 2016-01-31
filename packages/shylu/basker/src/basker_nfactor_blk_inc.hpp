@@ -684,11 +684,11 @@ namespace BaskerNS
 			    store[j] = i1+1;
 			    done = BASKER_FALSE;
 		    
-			    //#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+			    #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 			    printf("additng: %d %d %d \n",
 				   inc_lvl, L.inc_lvl(i1),
 				   inc_lvl+L.inc_lvl(i1)+1);
-			    //#endif
+			    #endif
 			   
 			    inc_lvl = inc_lvl + L.inc_lvl(i1)+1;
 			   

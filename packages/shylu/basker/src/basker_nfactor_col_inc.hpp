@@ -181,10 +181,10 @@ namespace BaskerNS
       for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
-	//#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_COL2
 	printf("lower_update, kid: %d k: %d \n",
 	       kid, k);
-	//#endif
+	#endif
 
 	//printf("test: %d \n", LU(U_col)(U_row).scol);
        
@@ -632,11 +632,11 @@ namespace BaskerNS
 	    //we might get this to unroll!!!
 	    if(t != BASKER_MAX_IDX)
               {
-		//#ifdef BASKER_DEBUG_NFACTOR_COL
+		#ifdef BASKER_DEBUG_NFACTOR_COL
 		if(kid>=0)
 		  printf("kid: %d adding x[%d] to U inc_lvl: %d\n", kid, j+brow, INC_LVL_TEMP(j+brow));
 	       
-                //#endif
+                #endif
 
  		U.row_idx(unnz) = t-brow;
 		U.val(unnz) = X(j);
@@ -1025,11 +1025,9 @@ namespace BaskerNS
 
      	X(B_row) += B.val(i);
 
-	printf("Added B(%d) %g fill-in: %d \n",
-	       B_row, X(B_row), stack[B_row]);
+	//printf("Added B(%d) %g fill-in: %d \n",
+	//     B_row, X(B_row), stack[B_row]);
 	
-	//BASKER_ASSERT(stack[B_row] == 0, "fill-in wrong");
-	//INC_LVL_TEMP(B_row+gbrow) = 0;
 
       }//end for over all nnz
       }//DUMMY (Do we need this?)
@@ -1385,10 +1383,10 @@ namespace BaskerNS
    INC_LVL_TEMP(maxindex+brow) = BASKER_MAX_IDX;
    lnnz++;
 
-   //#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+   #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
    printf("add L(%d) 1.0 lvl: %d \n",
 	  maxindex+brow, L.inc_lvl(lnnz));
-   //#endif
+   #endif
 
    Entry lastU = (Entry) 0.0;
   

@@ -58,11 +58,8 @@ enum BASKER_ERROR_CODE
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
-      {printf("\n\n%s\n\n", s);  \
-    exit(EXIT_FAILURE);   \
-}				 \
+      {printf("\n\n%s\n\n", s);  \				 
     ASSERT(a);                   \
-    assert(!a);  \
   } 
 
 

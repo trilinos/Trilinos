@@ -126,15 +126,15 @@ namespace BaskerNS
     
     if(btf_tabs_offset != 0)
       {
-    //for(Int l=1; l<=4; l++)
-    for(Int l=1; l <= tree.nlvls; l++)
+    for(Int l=1; l<=0; l++)
+    //for(Int l=1; l <= tree.nlvls; l++)
       {
 
 	//#ifdef BASKER_OLD_BARRIER
 	//Int lthreads = pow(2,l);
 	//Int lnteams = num_threads/lthreads;
 	//#else
-	Int lthreads = 2;
+	Int lthreads = 1;
 	Int lnteams = num_threads/lthreads;
 	//#endif
 
