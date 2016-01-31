@@ -821,7 +821,8 @@ namespace ROL {
     TRUSTREGION_FLAG_NPOSPREDPOS,
     TRUSTREGION_FLAG_NPOSPREDNEG,
     TRUSTREGION_FLAG_QMINSUFDEC,
-    TRUSTREGION_FLAG_NAN 
+    TRUSTREGION_FLAG_NAN,
+    TRUSTREGION_FLAG_UNDEFINED 
   };
  
 
@@ -829,16 +830,22 @@ namespace ROL {
     std::string retString;
     switch(trf) {
       case TRUSTREGION_FLAG_SUCCESS:  
+        retString = "Both Actual and Predicted Reductions are Positive";
         break;
       case TRUSTREGION_FLAG_POSPREDNEG: 
+        retString = "Actual Reduction is Positive and Predicted Reduction is Negative (impossible)";
         break;
       case TRUSTREGION_FLAG_NPOSPREDPOS: 
+        retString = "Actual Reduction is Nonpositive and Predicted Reduction is Positive";
         break;
       case TRUSTREGION_FLAG_NPOSPREDNEG:
+        retString = "Actual Reduction is Nonpositive and  Predicted Reduction is Negative (impossible)";
         break;
       case TRUSTREGION_FLAG_QMINSUFDEC:
+        retString = "Sufficient Decrease of the Quadratic Model Not Met (bound constraints only)";
         break;
       case TRUSTREGION_FLAG_NAN:
+        retString = "Actual and/or Predicted Reduction is a NaN";
         break;
       default:
         retString = "INVALID ETrustRegionFlag";       
@@ -889,6 +896,9 @@ namespace ROL {
     }
     return TRUSTREGION_CAUCHYPOINT;
   }
+
+
+
 
   /** \enum   ROL::ETestObjectives
       \brief  Enumeration of test objective functions.

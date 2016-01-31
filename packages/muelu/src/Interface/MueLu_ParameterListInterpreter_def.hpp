@@ -256,6 +256,7 @@ namespace MueLu {
     }
 
     // Set verbosity parameter
+    VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
     {
       std::map<std::string,MsgType> verbMap;
       verbMap["none"]    = None;
@@ -270,7 +271,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
                                  "Invalid verbosity level: \"" << verbosityLevel << "\"");
       this->verbosity_ = verbMap[verbosityLevel];
-      this->SetVerbLevel(this->verbosity_);
+      VerboseObject::SetDefaultVerbLevel(this->verbosity_);
     }
 
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
@@ -389,6 +390,7 @@ namespace MueLu {
       }
     }
 
+    VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

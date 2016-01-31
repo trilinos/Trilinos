@@ -101,7 +101,10 @@ namespace Xpetra {
 
     //! Basic constuctor.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true)
-      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), NumVectors, zeroOut))) {  }
+      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), NumVectors, zeroOut))) {
+      // TAW 1/30/2016: even though Tpetra allows numVecs == 0, Epetra does not. Introduce exception to keep behavior of Epetra and Tpetra consistent.
+      TEUCHOS_TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument, "Xpetra::TpetraMultiVector(map,numVecs,zeroOut): numVecs = " << NumVectors << " < 1.");
+    }
 
     //! Copy constructor (performs a deep copy).
     TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
@@ -109,11 +112,17 @@ namespace Xpetra {
 
     //! Create multivector by copying two-dimensional array of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Scalar > &A, size_t LDA, size_t NumVectors)
-      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), A, LDA, NumVectors))) {  }
+      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), A, LDA, NumVectors))) {
+      // TAW 1/30/2016: even though Tpetra allows numVecs == 0, Epetra does not. Introduce exception to keep behavior of Epetra and Tpetra consistent.
+      TEUCHOS_TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument, "Xpetra::TpetraMultiVector(map,A,LDA,numVecs): numVecs = " << NumVectors << " < 1.");
+    }
 
     //! Create multivector by copying array of views of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors)
-      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), ArrayOfPtrs, NumVectors))) {  }
+      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), ArrayOfPtrs, NumVectors))) {
+      // TAW 1/30/2016: even though Tpetra allows numVecs == 0, Epetra does not. Introduce exception to keep behavior of Epetra and Tpetra consistent.
+      TEUCHOS_TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument, "Xpetra::TpetraMultiVector(map,ArrayOfPtrs,numVecs): numVecs = " << NumVectors << " < 1.");
+    }
 
 
     //! Destructor (virtual for memory safety of derived classes).
