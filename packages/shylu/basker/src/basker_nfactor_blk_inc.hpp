@@ -2076,7 +2076,7 @@ namespace BaskerNS
    )
   {
 
-    if((kid == 2) || (kid == 3))
+    //if((kid == 2) || (kid == 3))
       {
     printf("============t_pop_col_fill called kid: %d============\n", kid);
     printf("populating B: %d %d X: %d %d kid: %d \n",
@@ -2111,7 +2111,7 @@ namespace BaskerNS
 	const Int j = M.row_idx(jj);
 	
 	//#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
-	if((kid==2)||(kid==3))
+	//if((kid==2)||(kid==3))
 	  {
 	printf("Populating original(%d) = %d to %d kid: %d \n",
 	       jj+M.srow, stack[j], 0, kid);
@@ -2125,7 +2125,7 @@ namespace BaskerNS
 
     //A debug test
     //#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
-    if((kid==2)||(kid == 3))
+    //if((kid==2)||(kid == 3))
       {
     printf("DEBUG fill-in pattern:\n");
     for(Int i = 0; i < M.nrow; i++)
@@ -2153,7 +2153,7 @@ namespace BaskerNS
    )
   {
 
-    if((kid==2)||(kid==3))
+    //if((kid==2)||(kid==3))
     printf("Reduce col fill called, kid: %d \n",
 	   kid);
 
@@ -2198,7 +2198,7 @@ namespace BaskerNS
 	    	//over all nnnz found
 	    for(Int jj = 0; jj < LL(my_idx)(blk).nrow; ++jj)
 	      {
-		if(kid==3)
+		//if(kid==3)
 		  {
 		    printf("checking: %d %d %dkid: %d \n",
 			   jj, stack[jj], stackL[jj], kid);
@@ -2206,7 +2206,7 @@ namespace BaskerNS
 		if((stack[jj] != BASKER_MAX_IDX)&&
 		   (stackL[jj] != BASKER_MAX_IDX))
 		  {
-		    if((kid==2)||(kid==3))
+		    //if((kid==2)||(kid==3))
 		      {
 		    printf("Copy fillto leader: %d %d kid: %d\n",
 		  	   stack[jj], stackL[jj], kid);
@@ -2218,7 +2218,7 @@ namespace BaskerNS
 		  }//if stack(j) != BASKER_MAX_IDX
 		else if(stack[jj] != BASKER_MAX_IDX)
 		  {
-		     if((kid==2)||(kid==3))
+		    //if((kid==2)||(kid==3))
 		      {
 		    printf("Copy2 fillto leader: %d %d kid: %d\n",
 		  	   stack[jj], stackL[jj], kid);
@@ -2229,7 +2229,7 @@ namespace BaskerNS
 		  }
 		else
 		  {
-		     if((kid==2)||(kid==3))
+		    //if((kid==2)||(kid==3))
 		      {
 		    printf("Copy3 fillto leader: %d %d kid: %d\n",
 		  	   stack[jj], stackL[jj], kid);
@@ -2301,8 +2301,8 @@ namespace BaskerNS
 	Int X_col            = S(0)(leader_id);
 	Int X_row            = l+1;
     
-	//printf("=***== fill MY ID: %d LEADER ID: %d ===** \n",
-	//     kid, leader_id);
+	printf("=***== fill MY ID: %d LEADER ID: %d ===** \n",
+	     kid, leader_id);
 
 	if(kid == leader_id)
 	  {

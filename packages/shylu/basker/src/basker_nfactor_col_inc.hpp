@@ -176,15 +176,15 @@ namespace BaskerNS
     printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
     
     printf("\n\n lvl: %d kid: %d  \n\n", lvl, kid);
-    if(lvl < 2)
+    //if(lvl < 2)
       {
-	//for(Int k=0; k < 2; ++k)
-	for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
+	//for(Int k=0; k < 1; ++k)
+      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
 	//#ifdef BASKER_DEBUG_NFACTOR_COL2
 	printf("\n*******lower_update, kid: %d k: %d \n",
-	       kid, k);
+	       kid, k+LU(U_col)(U_row).scol);
 	//#endif
 
 	//printf("test: %d \n", LU(U_col)(U_row).scol);
@@ -199,7 +199,7 @@ namespace BaskerNS
 	    
 	    #ifdef BASKER_DEBUG_NFACTOR_COL2
 	    printf("\n lower factor, kid: %d k: %d \n",
-		   kid, k);
+		   kid, k+LU(U_col)(U_row).scol);
 	    #endif
 	    
 	    t_lower_col_factor_inc_lvl(kid, team_leader, 
@@ -285,7 +285,7 @@ namespace BaskerNS
 	 printf("========FILL IN KID: %d =======\n", kid);
 	 t_add_orig_fill(kid, lvl, l, k, lower); 
 	 printf("=======AFFERT FILL_IN KID: %d ====\n", kid);
-
+	 printf("\n\n");
 	
 	//Barrier--Start
 	my_leader = find_leader_inc_lvl(kid,sl);
@@ -1174,11 +1174,11 @@ namespace BaskerNS
     Int col_idx_offset = 0; //can we get rid of now?
     
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    //#ifdef BASKER_DEBUG_NFACTOR_COL
     printf("LOWER_COL_FACTOR kid: %d \n", kid);
     printf("kid %d using L: %d %d  U: %d %d  X %d \n",
 	   kid, L_col, L_row, U_col, U_row, X_col);
-    #endif
+    //#endif
     //end get needed variables
 
     BASKER_MATRIX        &L = LL(L_col)(L_row);
@@ -1198,7 +1198,7 @@ namespace BaskerNS
 	printf("After matrix print \n");
       }
     #endif
-    //B.print();
+    B.print();
 
 
     INT_1DARRAY  ws       = LL(X_col)(l+1).iws;
