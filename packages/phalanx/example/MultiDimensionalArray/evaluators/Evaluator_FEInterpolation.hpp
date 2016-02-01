@@ -46,7 +46,11 @@
 #define PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
 
 #include "Phalanx_config.hpp"
+#ifdef  PHX_ENABLE_KOKKOS_AMT
+#include "Evaluator_TaskBase.hpp"
+#else
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#endif
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
 /** \brief Finite Element Interpolation Evaluator
@@ -56,8 +60,13 @@
 
 */
 template<typename EvalT, typename Traits>
-class FEInterpolation : public PHX::EvaluatorWithBaseImpl<Traits>,
-			public PHX::EvaluatorDerived<EvalT, Traits>  {
+class FEInterpolation :
+#ifdef PHX_ENABLE_KOKKOS_AMT
+  public PHX_example::TaskBase<Traits,FEInterpolation<EvalT,Traits>>,
+#else
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+#endif
+  public PHX::EvaluatorDerived<EvalT, Traits> {
   
 public:
   
@@ -70,6 +79,13 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void operator () (const int i) const;
+
+#ifdef PHX_ENABLE_KOKKOS_AMT
+  Kokkos::Experimental::Future<void,PHX::Device::execution_space>
+    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+	       const std::size_t& num_adjacencies,
+	       typename Traits::EvalData d) override;
+#endif
   
 private:
 

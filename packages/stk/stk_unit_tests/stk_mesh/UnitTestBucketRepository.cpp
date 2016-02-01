@@ -33,12 +33,13 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
 #include <utility>                      // for pair
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -46,7 +47,6 @@
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, OrdinalVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include <unit_tests/BulkDataTester.hpp>
 
 TEST(BucketRepositoryTest, createBuckets)
 {

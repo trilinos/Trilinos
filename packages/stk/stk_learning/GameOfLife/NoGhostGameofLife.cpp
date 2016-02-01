@@ -7,7 +7,7 @@
 #include "NoGhostGameofLife.hpp"
 #include <stddef.h>                     // for size_t
 #include <utility>                      // for pair
-#include "GameOfLife/EntityKeyHash.hpp"  // for hash
+#include "stk_mesh/base/HashEntityAndEntityKey.hpp"  // for hash
 #include "GameOfLife/GameofLifeMesh.hpp"  // for GameofLifeMesh, etc
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker

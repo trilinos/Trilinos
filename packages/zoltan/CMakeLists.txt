@@ -98,17 +98,15 @@ TRIBITS_EXCLUDE_FILES(
   test/ch_degenerate
   test/ch_degenerateAA
   test/ch_drake
-  test/ch_ewgt
   test/ch_grid20x19
   test/ch_hammond
   test/ch_hammond2
+  test/ch_hughes
   test/ch_nograph
   test/ch_onedbug
   test/ch_random
   test/ch_serial
   test/ch_slac
-  test/ch_vwgt
-  test/ch_vwgt2
   test/hg_cage10
   test/hg_diag500_4
   test/hg_ewgt

@@ -215,12 +215,18 @@ namespace Tacho {
     }
 #endif
 
+    const size_t max_concurrency = 16384;
+    cout << "CholPerformance:: max concurrency = " << max_concurrency << endl;
+
+    const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+    cout << "CholPerformance:: max task size   = " << max_task_size << endl;
+
     if (!skip_serial) {
-#ifdef __USE_FIXED_TEAM_SIZE__
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   team_size);
+
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
@@ -255,40 +261,12 @@ namespace Tacho {
       cout << "CholPerformance:: Serial factorize the matrix::time = " << t_factor_seq << endl;
     }
 
-//     {
-// #ifdef __USE_FIXED_TEAM_SIZE__
-//       typename TaskFactoryType::policy_type policy(max_task_dependence);
-// #else
-//       typename TaskFactoryType::policy_type policy(max_task_dependence, nthreads);
-// #endif
-//       TaskFactoryType::setPolicy(&policy);
-
-//       CrsTaskViewType U(&UU);
-//       U.fillRowViewArray();
-
-//       cout << "CholPerformance:: Team factorize the matrix:: team_size = " << nthreads << endl;
-//       {
-//         timer.reset();
-        
-//         auto future = TaskFactoryType::Policy().create(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
-//                                                        ::TaskFunctor<CrsTaskViewType>(U), 0);
-//         TaskFactoryType::Policy().spawn(future);
-//         Kokkos::Experimental::wait(TaskFactoryType::Policy());
-        
-//         t_factor_team = timer.seconds();
-        
-//         if (verbose)
-//           cout << UU << endl;
-//       }
-//       cout << "CholPerformance:: Team factorize the matrix::time = " << t_factor_team << endl;
-//     }
-
     {
-#ifdef __USE_FIXED_TEAM_SIZE__
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   team_size);
+
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
@@ -322,7 +300,6 @@ namespace Tacho {
 #else
       cout << "CholPerformance:: task scale [seq/task] = " << t_factor_seq/t_factor_task << endl;    
 #endif
-      //cout << "CholPerformance:: team scale [seq/team] = " << t_factor_seq/t_factor_team << endl;    
     }
 
     return r_val;

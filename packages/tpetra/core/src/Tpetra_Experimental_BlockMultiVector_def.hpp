@@ -318,7 +318,7 @@ replaceLocalValuesImpl (const LO localRowIndex,
   const LO strideX = 1;
   const_little_vec_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                getBlockSize (), strideX);
-  X_dst.assign (X_src);
+  deep_copy (X_dst, X_src);
 }
 
 
@@ -364,7 +364,7 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
   const LO strideX = 1;
   const_little_vec_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                getBlockSize (), strideX);
-  X_dst.update (STS::one (), X_src);
+  AXPY (STS::one (), X_src, X_dst);
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -407,7 +407,7 @@ getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const
     return false;
   } else {
     little_vec_type X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = reinterpret_cast<Scalar*> (X_ij.getRawPtr ());
+    vals = reinterpret_cast<Scalar*> (X_ij.ptr_on_device ());
     return true;
   }
 }
@@ -422,7 +422,7 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) con
     return false;
   } else {
     little_vec_type X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = reinterpret_cast<Scalar*> (X_ij.getRawPtr ());
+    vals = reinterpret_cast<Scalar*> (X_ij.ptr_on_device ());
     return true;
   }
 }
@@ -510,7 +510,7 @@ copyAndPermute (const Tpetra::SrcDistObject& src,
   const LO numSame = static_cast<LO> (numSameIDs);
   for (LO j = 0; j < numVecs; ++j) {
     for (LO lclRow = 0; lclRow < numSame; ++lclRow) {
-      getLocalBlock (lclRow, j).assign (srcAsBmv.getLocalBlock (lclRow, j));
+      deep_copy (getLocalBlock (lclRow, j), srcAsBmv.getLocalBlock (lclRow, j));
     }
   }
 
@@ -520,7 +520,7 @@ copyAndPermute (const Tpetra::SrcDistObject& src,
   const LO numPermuteLIDs = static_cast<LO> (permuteToLIDs.size ());
   for (LO j = 0; j < numVecs; ++j) {
     for (LO k = numSame; k < numPermuteLIDs; ++k) {
-      getLocalBlock (permuteToLIDs[k], j).assign (srcAsBmv.getLocalBlock (permuteFromLIDs[k], j));
+      deep_copy (getLocalBlock (permuteToLIDs[k], j), srcAsBmv.getLocalBlock (permuteFromLIDs[k], j));
     }
   }
 }
@@ -568,7 +568,7 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
         little_vec_type X_dst (curExportPtr, blockSize, 1);
         little_vec_type X_src = srcAsBmv.getLocalBlock (meshLid, j);
 
-        X_dst.assign (X_src);
+        deep_copy (X_dst, X_src);
       }
     }
   } catch (std::exception& e) {
@@ -623,11 +623,11 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
       little_vec_type X_dst = getLocalBlock (meshLid, j);
 
       if (CM == INSERT || CM == REPLACE) {
-        X_dst.assign (X_src);
+        deep_copy (X_dst, X_src);
       } else if (CM == ADD) {
-        X_dst.update (STS::one (), X_src);
+        AXPY (STS::one (), X_src, X_dst);
       } else if (CM == ABSMAX) {
-        X_dst.absmax (X_src);
+        Impl::absMax (X_dst, X_src);
       }
     }
   }
@@ -637,14 +637,91 @@ template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 putScalar (const Scalar& val)
 {
-  getMultiVectorView ().putScalar (val);
+  mv_.putScalar (val);
 }
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 scale (const Scalar& val)
 {
-  getMultiVectorView ().scale (val);
+  mv_.scale (val);
+}
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+update (const Scalar& alpha,
+        const BlockMultiVector<Scalar, LO, GO, Node>& X,
+        const Scalar& beta)
+{
+  mv_.update (alpha, X.mv_, beta);
+}
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+blockWiseMultiply (const Scalar& alpha,
+                   const Kokkos::View<const impl_scalar_type***,
+                     device_type, Kokkos::MemoryUnmanaged>& D,
+                   const BlockMultiVector<Scalar, LO, GO, Node>& X)
+{
+  using Kokkos::ALL;
+  const impl_scalar_type zero = static_cast<impl_scalar_type> (STS::zero ());
+  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
+  const LO numVecs = mv_.getNumVectors ();
+
+  if (alpha == STS::zero ()) {
+    this->putScalar (STS::zero ());
+  }
+  else { // alpha != 0
+    for (LO i = 0; i < numVecs; ++i) {
+      for (LO k = 0; k < lclNumMeshRows; ++k) {
+        auto D_curBlk = Kokkos::subview (D, k, ALL (), ALL ());
+        auto X_curBlk = X.getLocalBlock (k, i);
+        auto Y_curBlk = this->getLocalBlock (k, i);
+        // Y_curBlk := alpha * D_curBlk * X_curBlk.
+        // Recall that GEMV does an update (+=) of the last argument.
+        Tpetra::Experimental::FILL (Y_curBlk, zero);
+        Tpetra::Experimental::GEMV (alpha, D_curBlk, X_curBlk, Y_curBlk);
+      }
+    }
+  }
+}
+
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+blockJacobiUpdate (const Scalar& alpha,
+                   const Kokkos::View<const impl_scalar_type***,
+                     device_type, Kokkos::MemoryUnmanaged>& D,
+                   const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                   BlockMultiVector<Scalar, LO, GO, Node>& Z,
+                   const Scalar& beta)
+{
+  using Kokkos::ALL;
+  const impl_scalar_type zero = static_cast<impl_scalar_type> (STS::zero ());
+  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
+  const LO numVecs = mv_.getNumVectors ();
+
+  if (alpha == STS::zero ()) { // Y := beta * Y
+    this->scale (beta);
+  }
+  else { // alpha != 0
+    Z.update (STS::one (), X, -STS::one ());
+    for (LO i = 0; i < numVecs; ++i) {
+      for (LO k = 0; k < lclNumMeshRows; ++k) {
+        auto D_curBlk = Kokkos::subview (D, k, ALL (), ALL ());
+        auto Z_curBlk = Z.getLocalBlock (k, i);
+        auto Y_curBlk = this->getLocalBlock (k, i);
+        // Y_curBlk := beta * Y_curBlk + alpha * D_curBlk * Z_curBlk
+        if (beta == STS::zero ()) {
+          Tpetra::Experimental::FILL (Y_curBlk, zero);
+        }
+        else if (beta != STS::one ()) {
+          Tpetra::Experimental::SCAL (beta, Y_curBlk);
+        }
+        Tpetra::Experimental::GEMV (alpha, D_curBlk, Z_curBlk, Y_curBlk);
+      }
+    }
+  }
 }
 
 } // namespace Experimental

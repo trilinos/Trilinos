@@ -37,6 +37,7 @@ namespace Tacho {
   int exampleTriSolveByBlocks(const string file_input,
                               const OrdinalType nrhs,
                               const OrdinalType nb,
+                              const int nthreads,
                               const int max_task_dependence,
                               const int team_size, 
                               const bool verbose) {
@@ -142,11 +143,17 @@ namespace Tacho {
     }
     cout << "TriSolveByBlocks:: reorder the matrix and partition right hand side::time = " << t << endl;
 
-#ifdef __USE_FIXED_TEAM_SIZE__
-    typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-    typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
-#endif
+    const size_t max_concurrency = 16384;
+    cout << "TriSolveByBlocks:: max concurrency = " << max_concurrency << endl;
+
+    const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+    cout << "TriSolveByBlocks:: max task size   = " << max_task_size << endl;
+
+    typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                 max_task_size,
+                                                 max_task_dependence, 
+                                                 team_size);
+
     TaskFactoryType::setMaxTaskDependence(max_task_dependence);
     TaskFactoryType::setPolicy(&policy);
 

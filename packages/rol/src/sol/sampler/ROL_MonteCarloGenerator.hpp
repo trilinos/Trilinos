@@ -53,10 +53,10 @@ template<class Real>
 class MonteCarloGenerator : public SampleGenerator<Real> {
 private: 
   int  nSamp_;
-  bool use_normal_;
-  bool use_SA_;
-  bool adaptive_;
-  int  numNewSamps_;
+  const bool use_normal_;
+  const bool use_SA_;
+  const bool adaptive_;
+  const int  numNewSamps_;
   std::vector<std::vector<Real> > data_; 
 
   Real sum_val_;
@@ -64,10 +64,10 @@ private:
   Real sum_ng_;
   Real sum_ng2_;
   
-  bool useDist_;
-  std::vector<Teuchos::RCP<ROL::Distribution<Real> > > dist_;
+  const bool useDist_;
+  const std::vector<Teuchos::RCP<ROL::Distribution<Real> > > dist_;
 
-  Real ierf(Real input) {
+  Real ierf(Real input) const {
     std::vector<Real> coeff;
     Real c   = 1.0;
     Real tmp = c * (std::sqrt(M_PI)/2.0 * input);
@@ -193,20 +193,43 @@ private:
   }
 
 public:
-  MonteCarloGenerator( int nSamp, std::vector<Teuchos::RCP<Distribution<Real> > > &dist, 
-                       Teuchos::RCP<BatchManager<Real> > &bman, 
-                       bool use_SA = false, bool adaptive = false, int numNewSamps = 0 ) 
-    : SampleGenerator<Real>(bman), nSamp_(nSamp), use_normal_(false), use_SA_(use_SA), adaptive_(adaptive), 
-      numNewSamps_(numNewSamps), sum_val_(0.0), sum_val2_(0.0), sum_ng_(0.0), sum_ng2_(0.0), 
-      useDist_(true), dist_(dist) {
+  MonteCarloGenerator(const int nSamp,
+                      const std::vector<Teuchos::RCP<Distribution<Real> > > &dist, 
+                      const Teuchos::RCP<BatchManager<Real> > &bman, 
+                      const bool use_SA = false,
+                      const bool adaptive = false,
+                      const int numNewSamps = 0)
+    : SampleGenerator<Real>(bman),
+      nSamp_(nSamp),
+      use_normal_(false),
+      use_SA_(use_SA),
+      adaptive_(adaptive), 
+      numNewSamps_(numNewSamps),
+      sum_val_(0.0),
+      sum_val2_(0.0),
+      sum_ng_(0.0),
+      sum_ng2_(0.0), 
+      useDist_(true),
+      dist_(dist) {
     sample();
   }
 
-  MonteCarloGenerator( int nSamp, std::vector<std::vector<Real> > &bounds, 
-                       Teuchos::RCP<BatchManager<Real> > &bman,  
-                       bool use_SA = false, bool adaptive = false, int numNewSamps = 0 ) 
-    : SampleGenerator<Real>(bman), nSamp_(nSamp), use_normal_(false), use_SA_(use_SA), adaptive_(adaptive),
-      numNewSamps_(numNewSamps), sum_val_(0.0), sum_val2_(0.0), sum_ng_(0.0), sum_ng2_(0.0),
+  MonteCarloGenerator(const int nSamp,
+                            std::vector<std::vector<Real> > &bounds, 
+                      const Teuchos::RCP<BatchManager<Real> > &bman,  
+                      const bool use_SA = false,
+                      const bool adaptive = false,
+                      const int numNewSamps = 0)
+    : SampleGenerator<Real>(bman),
+      nSamp_(nSamp),
+      use_normal_(false),
+      use_SA_(use_SA),
+      adaptive_(adaptive),
+      numNewSamps_(numNewSamps),
+      sum_val_(0.0),
+      sum_val2_(0.0),
+      sum_ng_(0.0),
+      sum_ng2_(0.0),
       useDist_(false) {
     unsigned dim = bounds.size();
     data_.clear();
@@ -223,11 +246,23 @@ public:
     sample();
   }
 
-  MonteCarloGenerator( int nSamp, std::vector<Real> mean, std::vector<Real> std, 
-                       Teuchos::RCP<BatchManager<Real> > &bman,
-                       bool use_SA = false, bool adaptive = false, int numNewSamps = 0 )
-    : SampleGenerator<Real>(bman), nSamp_(nSamp), use_normal_(true), use_SA_(use_SA), adaptive_(adaptive),
-      numNewSamps_(numNewSamps), sum_val_(0.0), sum_val2_(0.0), sum_ng_(0.0), sum_ng2_(0.0), 
+  MonteCarloGenerator(const int nSamp,
+                      const std::vector<Real> &mean,
+                      const std::vector<Real> &std, 
+                      const Teuchos::RCP<BatchManager<Real> > &bman,
+                      const bool use_SA = false,
+                      const bool adaptive = false,
+                      const int numNewSamps = 0 )
+    : SampleGenerator<Real>(bman),
+      nSamp_(nSamp),
+      use_normal_(true),
+      use_SA_(use_SA),
+      adaptive_(adaptive),
+      numNewSamps_(numNewSamps),
+      sum_val_(0.0),
+      sum_val2_(0.0),
+      sum_ng_(0.0),
+      sum_ng2_(0.0), 
       useDist_(false) {
     unsigned dim = mean.size();
     data_.clear();

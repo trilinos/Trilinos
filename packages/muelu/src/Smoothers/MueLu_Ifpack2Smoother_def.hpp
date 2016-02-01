@@ -103,7 +103,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     this->Input(currentLevel, "A");
 
     if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
@@ -112,24 +112,43 @@ namespace MueLu {
         type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
         type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
         type_ == "LINESMOOTHING_BLOCKRELAXATION") {
-      this->Input(currentLevel, "CoarseNumZLayers");              // necessary for fallback criterion
-      this->Input(currentLevel, "LineDetection_VertLineIds"); // necessary to feed block smoother
-    } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
+      this->Input(currentLevel, "CoarseNumZLayers");            // necessary for fallback criterion
+      this->Input(currentLevel, "LineDetection_VertLineIds");   // necessary to feed block smoother
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
-    if (this->IsSetup() == true)
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
-
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
-    typedef Teuchos::ScalarTraits<SC> STS;
-    SC negone = -STS::one();
+    if      (type_ == "SCHWARZ")
+      SetupSchwarz(currentLevel);
 
-    SC lambdaMax = negone;
+    else if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+             type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+             type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
+             type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
+             type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+             type_ == "LINESMOOTHING_BLOCKRELAXATION" )
+      SetupLineSmoothing(currentLevel);
+
+    else if (type_ == "CHEBYSHEV")
+      SetupChebyshev(currentLevel);
+
+    else
+      SetupGeneric(currentLevel);
+
+    SmootherPrototype::IsSetup(true);
+
+    this->GetOStream(Statistics0) << description() << std::endl;
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Level& currentLevel) {
+    if (this->IsSetup() == true)
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called" << std::endl;
 
     // If we are doing "user" partitioning, we assume that what the user
     // really wants to do is make tiny little subdomains with one row
@@ -139,119 +158,142 @@ namespace MueLu {
     // looks like Vanka (grabbing all velocities associated with each
     // each pressure unknown). In addition, we put all Dirichlet points
     // as a little mini-domain.
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
 
     bool isBlockedMatrix = false;
     RCP<Matrix> merged2Mat;
-    if (type_ == "SCHWARZ") {
-      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
 
-      std::string sublistName = "subdomain solver parameters";
-      if (paramList.isSublist(sublistName)) {
-        ParameterList& subList = paramList.sublist(sublistName);
+    std::string sublistName = "subdomain solver parameters";
+    if (paramList.isSublist(sublistName)) {
+      ParameterList& subList = paramList.sublist(sublistName);
 
-        std::string partName  = "partitioner: type";
-        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
-          isBlockedMatrix = true;
+      std::string partName = "partitioner: type";
+      if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+        isBlockedMatrix = true;
 
-          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-          TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
-                                     "Matrix A must be of type BlockedCrsMatrix.");
+        RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+        TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
+                                   "Matrix A must be of type BlockedCrsMatrix.");
 
-          size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
-          size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
-          size_t numRows = A_->getNodeNumRows();
+        size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
+        size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
+        size_t numRows = A_->getNodeNumRows();
 
-          ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+        ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
 
-          size_t numBlocks = 0;
-          for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
-            blockSeeds[rowOfB] = numBlocks++;
+        size_t numBlocks = 0;
+        for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
+          blockSeeds[rowOfB] = numBlocks++;
 
-          RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-          TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
-                                     "Matrix A must be of type BlockedCrsMatrix.");
+        RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+        TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
+                                   "Matrix A must be of type BlockedCrsMatrix.");
 
-          RCP<CrsMatrix> mergedMat = bA2->Merge();
-          merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
+        RCP<CrsMatrix> mergedMat = bA2->Merge();
+        merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
 
-          // Add Dirichlet rows to the list of seeds
-          ArrayRCP<const bool> boundaryNodes;
-          boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
-          bool haveBoundary = false;
-          for (LO i = 0; i < boundaryNodes.size(); i++)
-            if (boundaryNodes[i]) {
-              // FIXME:
-              // 1. would not this [] overlap with some in the previos blockSeed loop?
-              // 2. do we need to distinguish between pressure and velocity Dirichlet b.c.
-              blockSeeds[i] = numBlocks;
-              haveBoundary = true;
-            }
-          if (haveBoundary)
-            numBlocks++;
+        // Add Dirichlet rows to the list of seeds
+        ArrayRCP<const bool> boundaryNodes;
+        boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
+        bool haveBoundary = false;
+        for (LO i = 0; i < boundaryNodes.size(); i++)
+          if (boundaryNodes[i]) {
+            // FIXME:
+            // 1. would not this [] overlap with some in the previos blockSeed loop?
+            // 2. do we need to distinguish between pressure and velocity Dirichlet b.c.
+            blockSeeds[i] = numBlocks;
+            haveBoundary = true;
+          }
+        if (haveBoundary)
+          numBlocks++;
 
-          subList.set("partitioner: map",         blockSeeds);
-          subList.set("partitioner: local parts", as<int>(numBlocks));
-        }
+        subList.set("partitioner: map",         blockSeeds);
+        subList.set("partitioner: local parts", as<int>(numBlocks));
       }
-    } // if (type_ == "SCHWARZ")
+    }
 
-    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
-        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
-        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCKRELAXATION" ) {
-      ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA;
+    if (isBlockedMatrix == true) tpA = Utilities::Op2NonConstTpetraRow(merged2Mat);
+    else                         tpA = Utilities::Op2NonConstTpetraRow(A_);
 
-      LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
-      if (CoarseNumZLayers > 0) {
-        Teuchos::ArrayRCP<LO> TVertLineIdSmoo = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
+    prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
+    SetPrecParameters();
+    prec_->initialize();
+    prec_->compute();
+  }
 
-        // determine number of local parts
-        LO maxPart = 0;
-        for(size_t k = 0; k < Teuchos::as<size_t>(TVertLineIdSmoo.size()); k++) {
-          if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
-        }
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupLineSmoothing(Level& currentLevel) {
+    if (this->IsSetup() == true)
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called" << std::endl;
 
-        size_t numLocalRows = A_->getNodeNumRows();
-        TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
+    ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
 
-        if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
-          myparamList.set("partitioner: type","user");
-          myparamList.set("partitioner: map",TVertLineIdSmoo);
-          myparamList.set("partitioner: local parts",maxPart+1);
-        } else {
-          // we assume a constant number of DOFs per node
-          size_t numDofsPerNode = numLocalRows / TVertLineIdSmoo.size();
+    LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
+    if (CoarseNumZLayers > 0) {
+      Teuchos::ArrayRCP<LO> TVertLineIdSmoo = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
 
-          // Create a new Teuchos::ArrayRCP<LO> of size numLocalRows and fill it with the corresponding information
-          Teuchos::ArrayRCP<LO> partitionerMap(numLocalRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
-          for (size_t blockRow = 0; blockRow < Teuchos::as<size_t>(TVertLineIdSmoo.size()); ++blockRow)
-            for (size_t dof = 0; dof < numDofsPerNode; dof++)
-              partitionerMap[blockRow * numDofsPerNode + dof] = TVertLineIdSmoo[blockRow];
-          myparamList.set("partitioner: type","user");
-          myparamList.set("partitioner: map",partitionerMap);
-          myparamList.set("partitioner: local parts",maxPart + 1);
-        }
+      // determine number of local parts
+      LO maxPart = 0;
+      for(size_t k = 0; k < Teuchos::as<size_t>(TVertLineIdSmoo.size()); k++) {
+        if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
+      }
 
-        if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
-            type_ == "LINESMOOTHING_BANDED RELAXATION" ||
-            type_ == "LINESMOOTHING_BANDEDRELAXATION")
-          type_ = "BANDEDRELAXATION";
-        else
-          type_ = "BLOCKRELAXATION";
+      size_t numLocalRows = A_->getNodeNumRows();
+      TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError,
+        "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
+
+      if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
+        myparamList.set("partitioner: type","user");
+        myparamList.set("partitioner: map",TVertLineIdSmoo);
+        myparamList.set("partitioner: local parts",maxPart+1);
       } else {
-        // line detection failed -> fallback to point-wise relaxation
-        this->GetOStream(Runtime0) << "Line detection failed: fall back to point-wise relaxation" << std::endl;
-        myparamList.remove("partitioner: type",false);
-        myparamList.remove("partitioner: map", false);
-        myparamList.remove("partitioner: local parts",false);
-        type_ = "RELAXATION";
+        // we assume a constant number of DOFs per node
+        size_t numDofsPerNode = numLocalRows / TVertLineIdSmoo.size();
+
+        // Create a new Teuchos::ArrayRCP<LO> of size numLocalRows and fill it with the corresponding information
+        Teuchos::ArrayRCP<LO> partitionerMap(numLocalRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+        for (size_t blockRow = 0; blockRow < Teuchos::as<size_t>(TVertLineIdSmoo.size()); ++blockRow)
+          for (size_t dof = 0; dof < numDofsPerNode; dof++)
+            partitionerMap[blockRow * numDofsPerNode + dof] = TVertLineIdSmoo[blockRow];
+        myparamList.set("partitioner: type","user");
+        myparamList.set("partitioner: map",partitionerMap);
+        myparamList.set("partitioner: local parts",maxPart + 1);
       }
 
-    } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
+      if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+          type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+          type_ == "LINESMOOTHING_BANDEDRELAXATION")
+        type_ = "BANDEDRELAXATION";
+      else
+        type_ = "BLOCKRELAXATION";
+    } else {
+      // line detection failed -> fallback to point-wise relaxation
+      this->GetOStream(Runtime0) << "Line detection failed: fall back to point-wise relaxation" << std::endl;
+      myparamList.remove("partitioner: type",false);
+      myparamList.remove("partitioner: map", false);
+      myparamList.remove("partitioner: local parts",false);
+      type_ = "RELAXATION";
+    }
 
-    if (type_ == "CHEBYSHEV") {
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA = Utilities::Op2NonConstTpetraRow(A_);
+
+    prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
+    SetPrecParameters();
+    prec_->initialize();
+    prec_->compute();
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupChebyshev(Level& currentLevel) {
+    if (this->IsSetup() == true)
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called" << std::endl;
+
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC negone = -STS::one();
+
+    SC lambdaMax = negone;
+    {
       std::string maxEigString   = "chebyshev: max eigenvalue";
       std::string eigRatioString = "chebyshev: ratio eigenvalue";
 
@@ -301,17 +343,14 @@ namespace MueLu {
       paramList.set(eigRatioString, ratio);
     }
 
-    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA;
-    if (isBlockedMatrix == true) tpA = Utilities::Op2NonConstTpetraRow(merged2Mat);
-    else                         tpA = Utilities::Op2NonConstTpetraRow(A_);
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA = Utilities::Op2NonConstTpetraRow(A_);
+
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
     SetPrecParameters();
     prec_->initialize();
     prec_->compute();
 
-    SmootherPrototype::IsSetup(true);
-
-    if (type_ == "CHEBYSHEV" && lambdaMax == negone) {
+    if (lambdaMax == negone) {
       typedef Tpetra::RowMatrix<SC, LO, GO, NO> MatrixType;
 
       Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
@@ -322,8 +361,19 @@ namespace MueLu {
       }
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
+  }
 
-    this->GetOStream(Statistics0) << description() << std::endl;
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& currentLevel) {
+    if (this->IsSetup() == true)
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called" << std::endl;
+
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA = Utilities::Op2NonConstTpetraRow(A_);
+
+    prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
+    SetPrecParameters();
+    prec_->initialize();
+    prec_->compute();
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

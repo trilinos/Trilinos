@@ -112,9 +112,14 @@ namespace Tacho {
     }
     
   public:
-
     KOKKOS_INLINE_FUNCTION
     void setLabel(const string label) { _label = label; }
+
+    KOKKOS_INLINE_FUNCTION
+    void setNumNonZeros() { 
+      if (_m) 
+        _nnz = _ap[_m];
+    }
 
     KOKKOS_INLINE_FUNCTION
     string Label() const { return _label; }

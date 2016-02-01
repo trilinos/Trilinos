@@ -64,7 +64,7 @@ FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_LIBRARY(
   stk_util_registry
-  DEPLIBS stk_util_env
+  DEPLIBS
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

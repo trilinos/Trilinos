@@ -1,0 +1,347 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2009 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import os ;
+import set ;
+import path ;
+
+local stk_util-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_util-root-inc = $(stk_util-root)/include ;
+} else {
+  stk_util-root-inc = $(stk_util-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <define>STK_BUILT_IN_SIERRA
+    <toolset>sun:<define>SUN10
+    <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
+    <include>$(stk_util-root-inc)
+  : usage-requirements
+    <define>STK_BUILT_IN_SIERRA
+    <toolset>sun:<define>SUN10
+    <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
+    <include>$(stk_util-root-inc)
+    <instrument>purify:<define>PURIFY_BUILD
+    <instrument>quantify:<define>PURIFY_BUILD
+  : build-dir $(stk_util-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  : stk_util_utest
+    stk_util_doc_test
+    stk_util_parallel_utest
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-jamfile
+                          install-user-include install-user-lib ;
+
+# This rule copies build-system related files for this product to the install-root.
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_util-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_util
+    <install-source-root>$(stk_util-root)
+  ;
+
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_util-root) : *.h *.hpp ]
+  : <location>$(install-root)/stk/stk_util/include <install-source-root>$(stk_util-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_util_parallel
+    stk_util_environment
+    stk_util_registry
+    stk_util_diag
+    stk_util_util
+    stk_util_unit_test_support
+    stk_util_use_case
+  : <location>$(install-root)/stk/stk_util/lib
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+import modules ;
+
+exe stk_util_doc_test
+  :
+    $(stk_util-root)/testsForDocumentation/UtilDocTestMain.cpp
+    [ glob $(stk_util-root)/testsForDocumentation/*.cpp ]
+    stk_util_parallel
+    stk_util_util
+    stk_util_environment
+    /sierra/unitTestUtils//comparisonUtils
+    stk_util_use_case
+    stk_util_diag
+    /tpl/boost-program-options//boost_program_options
+    /tpl/boost-regex//boost_regex
+    /mpi//mpi
+    /tpl/trilinos//tpi
+    /tpl/gtest//gtest
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_util_utest
+  :
+    $(stk_util-root)/unit_tests/UtilUnitTestMain.cpp
+    [ glob $(stk_util-root)/unit_tests/*.cpp ]
+    [ glob $(stk_util-root)/unit_tests/util/*.cpp ]
+    [ glob $(stk_util-root)/unit_tests/environment/*.cpp ]
+    [ glob $(stk_util-root)/unit_tests/diag/*.cpp ]
+    stk_util_parallel
+    stk_util_util
+    stk_util_environment
+    /sierra/unitTestUtils//comparisonUtils
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    stk_util_use_case
+    stk_util_diag
+    /tpl/boost-program-options//boost_program_options
+    /tpl/boost-regex//boost_regex
+    /mpi//mpi
+    /tpl/trilinos//tpi
+    /tpl/gtest//gtest
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_util_parallel_utest
+  :
+    $(stk_util-root)/unit_tests/parallel/UnitTestParallelMain.cpp
+    [ glob $(stk_util-root)/unit_tests/parallel/*.cpp ]
+    stk_util_parallel
+    stk_util_use_case
+    /sierra/unitTestUtils//comparisonUtils
+    stk_util_util
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /tpl/gtest//gtest
+    /tpl/boost-program-options//boost_program_options
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+lib stk_util_parallel
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_util-root)/stk_util/parallel/*.cpp ]
+    ]
+    stk_util_util
+    /mpi//mpi
+    /tpl/boost-program-options//boost_program_options
+    /tpl/boost-regex//boost_regex
+    /sierra/seacas//aprepro_lib
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_util-root)/lib/libstk_util_parallel.a
+    ]
+  ;
+
+
+# Run version script. This will generate stk_version.hpp, and
+# return the version to this script. If it doesn't do so, fail. We don't
+# want to generate a bad version for external customers.
+local version ;
+if ( $(use_git_version) = "yes" ) || ( [ os.name ] = NT ) {
+    if $(RTenv-arg) = "user" {
+        local v = [ SHELL "cat $(stk_util-root-inc)/stk_util/registry/stk_version.hpp" : exit-status ] ;
+        if $(v[2]) != 0
+          { # Assume here that stk_version.hpp caused the error and just fail.
+          EXIT ;
+          }
+        version = $(v[1]) ;
+    } else {
+        local v = [ SHELL "$(stk_util-root-inc)/stk_util/registry/stk_version_gen.sh" : exit-status ] ;
+        if $(v[2]) != 0
+          { # Assume here that stk_version_gen.sh reported the error and just fail.
+          EXIT ;
+          }
+        version = $(v[1]) ;
+    }
+}
+else
+{
+    local v = [ SHELL "echo \"// 4.29.0\" > $(stk_util-root-inc)/stk_util/registry/stk_version.hpp" : exit-status ] ;
+    version = 4.29.0 ;
+}
+
+lib stk_util_environment
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_util-root)/stk_util/environment/*.cpp ]
+    ]
+    /mpi//mpi
+    stk_util_util
+    stk_util_parallel
+    /tpl/boost-program-options//boost_program_options
+    /tpl/boost-regex//boost_regex
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+    ]
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_util-root)/lib/libstk_util_environment.a
+    ]
+  ;
+
+lib stk_util_registry
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_util-root)/stk_util/registry/*.cpp ]
+        $(stk_util-root)/stk_util/registry/stk_version.hpp
+    ]
+    stk_util_environment
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        <define>STK_VERSION=\"\\\"$(version)\\\"\"
+    ]
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_util-root)/lib/libstk_util_registry.a
+    ]
+  ;
+
+lib stk_util_use_case
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_util-root)/stk_util/use_cases/*.cpp ]
+    ]
+    stk_util_util
+    stk_util_diag
+    stk_util_parallel
+    stk_util_environment
+    /tpl/boost-program-options//boost_program_options
+    /tpl/boost-regex//boost_regex
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_util-root)/lib/libstk_util_use_case.a
+    ]
+  ;
+
+lib stk_util_diag
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_util-root)/stk_util/diag/*.cpp ]
+    ]
+    /mpi//mpi
+    stk_util_util
+    stk_util_parallel
+    stk_util_environment
+    /tpl/boost-program-options//boost_program_options
+    /tpl/boost-regex//boost_regex
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_util-root)/lib/libstk_util_diag.a
+    ]
+  ;
+
+lib stk_util_util
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_util-root)/stk_util/util/*.cpp ]
+    ]
+    /mpi//mpi
+    /tpl/boost-program-options//boost_program_options
+    /tpl/boost-regex//boost_regex
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_util-root)/lib/libstk_util_util.a
+    ]
+  ;
+
+lib stk_util_unit_test_support
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+    [ glob $(stk_util-root)/stk_util/unit_test_support/*.cpp ]
+    ]
+    stk_util_use_case
+    /mpi//mpi
+    /tpl/gtest//gtest
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_util-root)/lib/libstk_util_unit_test_support.a
+    ]
+  :
+  :
+    <include>/usr/netpub/valgrind-3.8.1/include&&$(stk_util-root)/stk_util/unit_test_support
+  ;

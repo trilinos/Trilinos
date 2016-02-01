@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
         /*---[ Begin Test of ROL::TpetraMultiVector methods ] ---*/
 
         // Create ROL vectors
-        ROL::TpetraMultiVector<RealT,LO,GO,Node> x(x_rcp);
+        ROL::TpetraMultiVector<RealT> x(x_rcp); // Testing default parameters here
         ROL::TpetraMultiVector<RealT,LO,GO,Node> y(y_rcp);
 
         // norm of x

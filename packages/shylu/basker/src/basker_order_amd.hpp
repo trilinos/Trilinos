@@ -15,58 +15,6 @@
 namespace BaskerNS
 {
 
-   //===============================AMD===================
-  
-  template <class Int>
-  BASKER_FINLINE
-  int amesos_amd
-  (
-   Int n,
-   Int *Ap, 
-   Int *Ai, 
-   Int *p, 
-   double *Control,
-   double *Info
-   )
-  {
-    return -1;
-  }//end amesos_amd()
-  
-
-  
-  template <>
-  BASKER_FINLINE
-  int amesos_amd<>
-  (
-   int n,
-   int *Ap,
-   int *Ai,
-   int *p,
-   double *Control,
-   double *Info
-   )
-  {
-    amesos_amd_order(n,Ap,Ai,p,Control,Info);
-    return 0;
-  }//end amesos_amd<int>
- 
-
-  template <>
-  BASKER_FINLINE
-  int amesos_amd<>
-  (
-   long n,
-   long  *Ap,
-   long *Ai,
-   long *p,
-   double   *Control,
-   double   *Info
-   )
-  {
-    amesos_amd_l_order(n,Ap,Ai,p,Control,Info);
-    return 0;
-  }//end amesos_amd<long int>
-  
 
     //==========================csymamd===================
 
@@ -137,8 +85,6 @@ namespace BaskerNS
     knobs[1] = 0;
     knobs[2] = 2;
 
-    printf("Test n: %d \n", n);
-
     amesos_csymamd_l(n, Ai, Ap,  p, knobs, stats, 
 		     &(calloc), &(free), 
 		     cmember, 0);
@@ -203,65 +149,13 @@ namespace BaskerNS
 		     &(temp_p(0)), &(cmember(0)));
 
 
-
-    //#ifdef BASKER_DEBUBG_ORDER_AMD
-    //printf("con perm: \n");
     for(Int i = 0; i < M.ncol; ++i)
       {
-
-	//printf("(%d, %d) ", 
-	//     i, temp_p(i));
-
 	p(temp_p(i)) = i;
-	//p(i) = temp_p(i);
-	
       }
-    //printf("\n");
 
-    //printf("perm: \n");
-    for(Int i =0; i < M.ncol; ++i)
-      {
-	//printf("(%d, %d) ", 
-	//     i, p(i));
-      }
-    //printf("\n");
-    //#endif
 
   }//end csymamd()
-
-
-
-  /*
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
-  int Basker<Int, Entry,Exe_Space>::my_amesos_csymamd
-  (
-   Int n, 
-   Int *Ap,
-   Int *Ai,
-   Int *p, 
-   Int *cmember
-   )
-  {
-    
-    double knobs[CCOLAMD_KNOBS];
-    long    stats[CCOLAMD_STATS];
-
-    //use default knob settings
-    amesos_ccolamd_l_set_defaults(knobs);
-    knobs[0] = 10;
-    knobs[1] = 0;
-    knobs[2] = 2;
-
-    amesos_csymamd_l(n, Ai, Ap,  p, knobs, stats, 
-		     &(calloc), &(free), 
-		     cmember, 0);
-
-    amesos_csymamd_l_report(stats);
-    
-    return 0;
-  }
-  */
 
  
   //======================COLAMD=======================
@@ -319,6 +213,252 @@ namespace BaskerNS
     return 0;
   }
   
+
+
+  template <class Int, class Entry, class Exe_Space>
+  void Basker<Int,Entry,Exe_Space>::blk_amd(BASKER_MATRIX &M, INT_1DARRAY p)
+  {
+    
+    //p == length(M)
+    //Scan over all blks
+    //Note, that this needs to be made parallel in the 
+    //future (Future Josh will be ok with this, right?)
+
+    //This is a horrible way to do this!!!!!
+    //KLU does this very nice, but they also make all the little blks
+    INT_1DARRAY temp_col;
+    MALLOC_INT_1DARRAY(temp_col, M.ncol+1);
+    INT_1DARRAY temp_row;
+    MALLOC_INT_1DARRAY(temp_row, M.nnz);
+
+
+    for(Int b = btf_tabs_offset; b < btf_nblks; b++)
+      {
+	Int blk_size = btf_tabs(b+1) - btf_tabs(b);
+	if(blk_size < 3)
+	  {
+	    
+	    //printf("debug, blk_size: %d \n", blk_size);
+	    for(Int ii = 0; ii < blk_size; ++ii)
+	      {
+		//printf("set %d \n", btf_tabs(b)+ii-M.scol);
+		p(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+	      }
+	    continue;
+	  }
+	
+	INT_1DARRAY tempp;
+	MALLOC_INT_1DARRAY(tempp, blk_size+1);
+	
+	
+	//Fill in temp matrix
+	Int nnz = 0;
+	Int column = 1;
+	temp_col(0) = 0;
+	for(Int k = btf_tabs(b); k < btf_tabs(b+1); k++)
+	  {
+	    for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
+	      {
+		if(M.row_idx(i) < btf_tabs(b))
+		  continue;
+		  
+		temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
+		nnz++;
+	      }// end over all row_idx
+	    temp_col(column) = nnz;
+	    column++;
+	  }//end over all columns k
+	
+	#ifdef BASKER_DEBUG_ORDER_AMD
+	printf("col_ptr: ");
+	for(Int i = 0 ; i < blk_size+1; i++)
+	  {
+	    printf("%d, ", temp_col(i));
+	  }
+	printf("\n");
+	printf("row_idx: ");
+	for(Int i = 0; i < nnz; i++)
+	  {
+	    printf("%d, ", temp_row(i));
+	  }
+	printf("\n");
+	#endif
+
+
+	BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
+					&(temp_row(0)),&(tempp(0)));
+
+
+	
+	#ifdef BASKER_DEBUG_ORDER_AMD
+	printf("blk: %d order: \n", b);
+	for(Int ii = 0; ii < blk_size; ii++)
+	  {
+	    printf("%d, ", tempp(ii));
+	  }
+	#endif
+
+				     
+	//Add to the bigger perm vector
+	for(Int ii = 0; ii < blk_size; ii++)
+	  {
+	    //printf("loc: %d val: %d \n", 
+	    //ii+btf_tabs(b), tempp(ii)+btf_tabs(b));
+
+	    p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+	  }
+
+
+	FREE_INT_1DARRAY(tempp);
+	
+      }//over all blk_tabs
+
+    #ifdef BASKER_DEBUG_AMD_ORDER
+    printf("blk amd final order\n");
+    for(Int ii = 0; ii < M.ncol; ii++)
+      {
+	printf("%d, ", p(ii));
+      }
+    printf("\n");
+    #endif
+
+    FREE_INT_1DARRAY(temp_col);
+    FREE_INT_1DARRAY(temp_row);
+    
+  }//end blk_amd()
+      
+
+  template <class Int, class Entry, class Exe_Space>
+  void Basker<Int,Entry,Exe_Space>::btf_blk_amd
+  (
+   BASKER_MATRIX &M, 
+   INT_1DARRAY p, 
+   INT_1DARRAY btf_nnz, 
+   INT_1DARRAY btf_work
+  )
+  {
+    
+    //p == length(M)
+    //Scan over all blks
+    //Note, that this needs to be made parallel in the 
+    //future (Future Josh will be ok with this, right?)
+
+    //This is a horrible way to do this!!!!!
+    //KLU does this very nice, but they also make all the little blks
+    INT_1DARRAY temp_col;
+    MALLOC_INT_1DARRAY(temp_col, M.ncol+1);
+    INT_1DARRAY temp_row;
+    MALLOC_INT_1DARRAY(temp_row, M.nnz);
+    //printf("Done with btf_blk_amd malloc \n");
+    //printf("blks: %d \n" , btf_nblks);
+
+
+    for(Int b = 0; b < btf_nblks; b++)
+      {
+	Int blk_size = btf_tabs(b+1) - btf_tabs(b);
+
+	//printf("blk: %d blk_size: %d \n",
+	//     b, blk_size);
+
+	if(blk_size < 3)
+	  {
+	    
+	    //printf("debug, blk_size: %d \n", blk_size);
+	    for(Int ii = 0; ii < blk_size; ++ii)
+	      {
+		//printf("set %d \n", btf_tabs(b)+ii-M.scol);
+		p(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+	      }
+	    btf_work(b) = blk_size*blk_size*blk_size;
+	    btf_nnz(b)  = (.5*(blk_size*blk_size) + blk_size);
+	    continue;
+	  }
+	
+	INT_1DARRAY tempp;
+	MALLOC_INT_1DARRAY(tempp, blk_size+1);
+	
+	
+	//Fill in temp matrix
+	Int nnz = 0;
+	Int column = 1;
+	temp_col(0) = 0;
+	for(Int k = btf_tabs(b); k < btf_tabs(b+1); k++)
+	  {
+	    for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
+	      {
+		if(M.row_idx(i) < btf_tabs(b))
+		  continue;
+		  
+		temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
+		nnz++;
+	      }// end over all row_idx
+	    temp_col(column) = nnz;
+	    column++;
+	  }//end over all columns k
+	
+	#ifdef BASKER_DEBUG_ORDER_AMD
+	printf("col_ptr: ");
+	for(Int i = 0 ; i < blk_size+1; i++)
+	  {
+	    printf("%d, ", temp_col(i));
+	  }
+	printf("\n");
+	printf("row_idx: ");
+	for(Int i = 0; i < nnz; i++)
+	  {
+	    printf("%d, ", temp_row(i));
+	  }
+	printf("\n");
+	#endif
+
+
+	double l_nnz = 0;
+	double lu_work = 0;
+	BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
+					&(temp_row(0)),&(tempp(0)), 
+					l_nnz, lu_work);
+
+
+	btf_nnz(b)  = l_nnz;
+	btf_work(b) = lu_work;
+       
+	
+	#ifdef BASKER_DEBUG_ORDER_AMD
+	printf("blk: %d order: \n", b);
+	for(Int ii = 0; ii < blk_size; ii++)
+	  {
+	    printf("%d, ", tempp(ii));
+	  }
+	#endif
+
+				     
+	//Add to the bigger perm vector
+	for(Int ii = 0; ii < blk_size; ii++)
+	  {
+	    //printf("loc: %d val: %d \n", 
+	    //ii+btf_tabs(b), tempp(ii)+btf_tabs(b));
+
+	    p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+	  }
+
+
+	FREE_INT_1DARRAY(tempp);
+	
+      }//over all blk_tabs
+
+    #ifdef BASKER_DEBUG_AMD_ORDER
+    printf("blk amd final order\n");
+    for(Int ii = 0; ii < M.ncol; ii++)
+      {
+	printf("%d, ", p(ii));
+      }
+    printf("\n");
+    #endif
+
+    FREE_INT_1DARRAY(temp_col);
+    FREE_INT_1DARRAY(temp_row);
+    
+  }//end blk_amd()
 
 }//end namespace BaskerNS
 

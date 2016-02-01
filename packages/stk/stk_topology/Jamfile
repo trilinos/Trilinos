@@ -1,0 +1,150 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2009 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local stk_topology-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_topology-root-inc = $(stk_topology-root)/include ;
+} else {
+  stk_topology-root-inc = $(stk_topology-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <include>$(stk_topology-root-inc)
+  : usage-requirements
+    <include>$(stk_topology-root-inc)
+  : build-dir $(stk_topology-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  : stk_topology_utest
+    stk_topology_doc_test
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-jamfile
+                          install-user-include install-user-lib ;
+
+# This rule copies build-system related files for this product to the install-root.
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_topology-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_topology
+    <install-source-root>$(stk_topology-root)
+  ;
+
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_topology-root)/stk_topology : *.h *.hpp *.tcc ]
+  : <location>$(install-root)/stk/stk_topology/include <install-source-root>$(stk_topology-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_topology
+  : <location>$(install-root)/stk/stk_topology/lib
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets
+ : stk_topology_utest
+   stk_topology_doc_test
+ ;
+
+#
+# SECTION 4: Build configuration
+#
+
+local xml-files =
+  ;
+
+lib stk_topology
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_topology-root)/stk_topology/*.cpp ]
+    ]
+    /sierra/stk_util//stk_util_environment
+  : 
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_topology-root)/lib/libstk_topology.a
+    ]
+  ;
+
+
+exe stk_topology_utest
+  :
+    [
+      glob $(stk_topology-root)/unit_tests/*.cpp 
+    ]
+    stk_topology
+    /sierra/seacas//ioinit
+    /sierra/stk_io//stk_io
+    /sierra/stk_util//stk_util_use_case
+    /tpl/gtest//gtest
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_topology_doc_test
+  :
+    [
+      glob $(stk_topology-root)/tests_for_documentation/*.cpp 
+    ]
+    stk_topology
+    /sierra/seacas//ioinit
+    /sierra/stk_io//stk_io
+    /sierra/stk_util//stk_util_use_case
+    /tpl/gtest//gtest
+  : <tag>@sierra-exec-tag
+  ;
+

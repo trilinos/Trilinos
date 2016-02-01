@@ -1,0 +1,200 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2009 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local stk_io-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_io-root-inc = $(stk_io-root)/include ;
+} else {
+  stk_io-root-inc = $(stk_io-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <define>STK_BUILT_IN_SIERRA
+    <include>$(stk_io-root-inc)
+  : usage-requirements
+    <include>$(stk_io-root-inc)
+  : build-dir $(stk_io-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+
+local xml-files =
+  ;
+
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  : stk_io_utest
+    stk_io_doc_test
+    stk_io_lowlevel_example
+    stk_io_topology
+    stk_io_mesh_read_write_example
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-jamfile
+                          install-user-include install-user-lib ;
+
+# This rule copies build-system related files for this product to the install-root.
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_io-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_io
+    <install-source-root>$(stk_io-root)
+  ;
+
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_io-root) : *.h *.hpp ]
+  : <location>$(install-root)/stk/stk_io/include <install-source-root>$(stk_io-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_io
+    stk_io_util
+  : <location>$(install-root)/stk/stk_io/lib
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+lib stk_io
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_io-root)/stk_io/*.cpp ]
+    ]
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_topology//stk_topology
+    /sierra/seacas//ioss
+    /sierra/seacas//ioinit
+    /tpl/trilinos//shards
+    /tpl/trilinos//teuchos
+  : 
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_io-root)/lib/libstk_io.a
+    ]
+  ;
+
+lib stk_io_util
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_io-root)/stk_io/util/*.cpp ]
+    ]
+    stk_io
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_parallel
+    /sierra/seacas//ioss
+    /tpl/trilinos//shards
+    /tpl/trilinos//teuchos
+  : 
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+       <file>$(stk_io-root)/lib/libstk_io_util.a
+    ]
+  ;
+
+exe stk_io_mesh_read_write_example
+  :
+    $(stk_io-root)/example/io_mesh_read_write_example.cpp
+    stk_io
+    /sierra/stk_util//stk_util_util
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_io_utest
+  :
+    $(stk_io-root)/unit_tests/UnitTestIOMain.cpp
+    [ glob $(stk_io-root)/unit_tests/*.cpp ]
+    stk_io
+    /sierra/stk_io//stk_io_util
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_util//stk_util_unit_test_support
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+  : <tag>@sierra-exec-tag
+    <include>$(stk_io-root)/unit_tests
+  ;
+
+exe stk_io_doc_test
+  :
+    $(stk_io-root)/testsForDocumentation/testIOMain.cpp
+    [ glob $(stk_io-root)/testsForDocumentation/*.cpp ]
+    stk_io
+    /sierra/stk_io//stk_io_util
+    /sierra/stk_util//stk_util_unit_test_support
+  : <tag>@sierra-exec-tag
+    <include>$(stk_io-root)/testsForDocumentation
+  ;
+
+exe stk_io_lowlevel_example
+  :
+    $(stk_io-root)/example/io_lowlevel_example.cpp
+    stk_io
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_io_topology
+  :
+    $(stk_io-root)/example/io_topology.cpp
+    stk_io
+    /sierra/stk_topology//stk_topology
+  : <tag>@sierra-exec-tag
+  ;
+

@@ -125,10 +125,10 @@ public:
 
   RCP<const NOX::Solver::Generic> getNOXSolver() const;
 
-private:
-
   //! Called to rebuild the solver if a new parameter list is set.
   void resetSolver();
+
+private:
 
   //! Builds status tests - first looks for parameter list to use, otherwise builds a default set of status tests.
   RCP<NOX::StatusTest::Generic>

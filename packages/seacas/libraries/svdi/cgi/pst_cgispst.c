@@ -40,12 +40,12 @@
 void    cgipst_();      /* tell linker to load driver */
 
 void
-cgispst()               /* make name external so linker will load file*/
+cgispst(void)               /* make name external so linker will load file*/
 {}
 
 
 void
-cgi_def_ini()
+cgi_def_ini(void)
 {
    anything*          devid;
 

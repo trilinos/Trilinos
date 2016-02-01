@@ -63,7 +63,7 @@
 #ifdef HAVE_AMESOS_PARAKLETE
 #include "Amesos_Paraklete.h"
 #endif
-#ifdef HAVE_AMESOS_MUMPS
+#if defined(HAVE_AMESOS_MUMPS) && defined(HAVE_MPI)
 #include "Amesos_Mumps.h"
 #endif
 #ifdef HAVE_AMESOS_SCALAPACK
@@ -616,7 +616,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 
       }
 #endif
-#ifdef HAVE_AMESOS_MUMPS
+#if defined(HAVE_AMESOS_MUMPS) && defined(HAVE_MPI)
     } else if ( SparseSolver == MUMPS ) { 
       Teuchos::ParameterList ParamList ;
       Amesos_Mumps mumps( Problem ) ; 

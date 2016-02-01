@@ -11,7 +11,6 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-#define __USE_FIXED_TEAM_SIZE__ 1
 typedef Kokkos::Serial exec_space;
 
 #include "example_chol_by_blocks.hpp"
@@ -49,7 +48,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleCholByBlocks
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, max_task_dependence, team_size, verbose);
+      (file_input, 1, max_task_dependence, team_size, verbose);
     
     Kokkos::finalize();
   }

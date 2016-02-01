@@ -137,13 +137,13 @@ namespace BaskerNS
 	 symmetric_sfactor();
        }
 
-     //#ifdef BASKER_DEBUG_SFACTOR
+     #ifdef BASKER_DEBUG_SFACTOR
      printf("\n\n\n");
      printf("----------------------------------\n");
      printf("Total NNZ: %d \n", global_nnz);
      printf("----------------------------------\n");
      printf("\n\n\n");
-     //#endif
+     #endif
           
 
      
@@ -198,7 +198,9 @@ namespace BaskerNS
 
     
      //Incomplete Factor Setup
-     #ifdef BASKER_INC_LVL
+     //#ifdef BASKER_INC_LVL
+     if(Options.incomplete == BASKER_TRUE)
+       {
      Int lvl_nnz = 1.2*global_nnz;
      MALLOC_INT_1DARRAY(INC_LVL_ARRAY, lvl_nnz);
      //init_value(INC_LVL_ARRAY, lvl_nnz, A.max_idx);
@@ -208,8 +210,10 @@ namespace BaskerNS
      MALLOC_INT_1DARRAY(INC_LVL_TEMP, A.nrow);
      //init_value(INC_LVL_TEMP, A.nrow, A.max_idx);
      init_value(INC_LVL_TEMP, A.nrow, BASKER_MAX_IDX);
-     #endif
-     
+     //#endif
+     printf("MALLOC TEMP SIZE: %d \n", A.nrow);
+
+       }
 
      return 0;
    }//end default_symb()
@@ -2570,14 +2574,17 @@ namespace BaskerNS
 			    lblk_size,
 			    btf_tabs[i],
 			    lblk_size,
-			    lblk_size*lblk_size);
+	  (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);    
+	//For pruning
+	LBTF(i-btf_tabs_offset).init_pend();
 	
 	UBTF[i-btf_tabs_offset].init_matrix("UBFT",
 			    btf_tabs[i],
 			    lblk_size,
 			    btf_tabs[i],
 			    lblk_size,
-			    lblk_size*lblk_size);
+	  (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);
+					    //(.5*lblk_size*lblk_size)+lblk_size);
 
 	//will have have to do the fill in nfactor
 
@@ -2594,8 +2601,8 @@ namespace BaskerNS
       {
 	BASKER_ASSERT(num_threads > 0, "sfactor num_threads");
 	MALLOC_THREAD_1DARRAY(thread_array, num_threads);
-	printf("thread array alloc\n");
-	printf("max_blk_size: %d \n", max_blk_size);
+	//printf("thread array alloc\n");
+	//printf("max_blk_size: %d \n", max_blk_size);
       }
 
 

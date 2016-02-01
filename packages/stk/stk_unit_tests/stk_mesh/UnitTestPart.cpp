@@ -31,16 +31,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
 #include <stddef.h>                     // for size_t
 #include <sstream>                      // for ostringstream, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/base/Part.hpp>       // for intersect, Part, contain, etc
+#include <stk_mesh/base/Part.hpp>       // for PartLess, intersect, Part, etc
 #include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
-#include <gtest/gtest.h>
 #include <string>                       // for string, char_traits
+#include <vector>                       // for vector
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/util/SortAndUnique.hpp"
+#include "stk_util/util/SortAndUnique.hpp"  // for sort_and_unique
 
 
 

@@ -67,8 +67,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.20f
-#define EX_API_VERS_NODOT 620
+#define EX_API_VERS 6.24f
+#define EX_API_VERS_NODOT 624
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -2008,6 +2008,11 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
 #define EX_NOTROOTID    -1002   /**< file id is not the root id; it is a subgroup id */
 #define EX_NULLENTITY   -1006   /**< null entity found                        */
 /* @} */
+
+/* Exodus error return codes - function return values:                      */
+#define EX_FATAL        -1      /* fatal error flag def                     */
+#define EX_NOERR         0      /* no error flag def                        */
+#define EX_WARN          1      /* warning flag def                         */
 
 #ifdef __cplusplus
 }                               /* close brackets on extern "C" declaration */

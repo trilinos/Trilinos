@@ -49,9 +49,6 @@
 #include <Ifpack2_Experimental_RBILUK.hpp>
 #include <Ifpack2_Utilities.hpp>
 #include <Ifpack2_RILUK.hpp>
-// Need to include this if using the "classic" version of Tpetra,
-// since it may not get included in that case.
-#include <Kokkos_ArithTraits.hpp>
 
 namespace Ifpack2 {
 
@@ -397,6 +394,7 @@ initAllValues (const block_crs_matrix_type& A)
 template<class MatrixType>
 void RBILUK<MatrixType>::compute ()
 {
+  typedef impl_scalar_type IST;
   const char prefix[] = "Ifpack2::Experimental::RBILUK::compute: ";
 
   // initialize() checks this too, but it's easier for users if the
@@ -417,10 +415,7 @@ void RBILUK<MatrixType>::compute ()
     initialize (); // Don't count this in the compute() time
   }
 
-  typedef typename Tpetra::Details::GetLapackType<impl_scalar_type>::lapack_scalar_type LST;
-  typedef typename Tpetra::Details::GetLapackType<impl_scalar_type>::lapack_type lapack_type;
 
-  lapack_type lapack;
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
@@ -448,8 +443,12 @@ void RBILUK<MatrixType>::compute ()
     const local_ordinal_type rowStride = blockSize_;
     const local_ordinal_type colStride = 1;
 
-    Teuchos::Array<int> ipiv(blockSize_);
-    Teuchos::Array<LST> work(1);
+    Teuchos::Array<int> ipiv_teuchos(blockSize_);
+    Kokkos::View<int*, Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged> ipiv (ipiv_teuchos.getRawPtr (), blockSize_);
+    Teuchos::Array<IST> work_teuchos(blockSize_);
+    Kokkos::View<IST*, Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged> work (work_teuchos.getRawPtr (), blockSize_);
 
     size_t num_cols = U_block_->getColMap()->getNodeNumElements();
     Teuchos::Array<int> colflag(num_cols);
@@ -523,7 +522,7 @@ void RBILUK<MatrixType>::compute ()
 
 
       scalar_type diagmod = STM::zero (); // Off-diagonal accumulator
-      diagModBlock.fill(diagmod);
+      Tpetra::Experimental::deep_copy (diagModBlock, diagmod);
 
       for (local_ordinal_type jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
@@ -532,7 +531,10 @@ void RBILUK<MatrixType>::compute ()
         Tpetra::Experimental::COPY (currentVal, multiplier);
 
         const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
-        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (matTmp.ptr_on_device ()), blockSize_);
+        // alpha = 1, beta = 0
+        Tpetra::Experimental::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
+                                    STS::zero (), matTmp);
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (matTmp.ptr_on_device ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
 
@@ -547,7 +549,9 @@ void RBILUK<MatrixType>::compute ()
             if (kk > -1) {
               little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
               little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+                                          STM::one (), kkval);
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -558,10 +562,14 @@ void RBILUK<MatrixType>::compute ()
             little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
             if (kk > -1) {
               little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+                                          STM::one (), kkval);
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
             else {
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+                                          STM::one (), diagModBlock);
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -589,29 +597,19 @@ void RBILUK<MatrixType>::compute ()
 //      }
 //      else
       {
-
-        LST* const d_raw = reinterpret_cast<LST*> (dmat.ptr_on_device ());
-        int lapackInfo;
+        int lapackInfo = 0;
         for (int k = 0; k < blockSize_; ++k) {
           ipiv[k] = 0;
         }
 
-        lapack.GETRF(blockSize_, blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), &lapackInfo);
+        Tpetra::Experimental::GETF2 (dmat, ipiv, lapackInfo);
+        //lapack.GETRF(blockSize_, blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
           "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETRF.");
 
-        int lwork = -1;
-        lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
-          "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
-
-        typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type ImplMagnitudeType;
-        ImplMagnitudeType worksize = Kokkos::Details::ArithTraits<impl_scalar_type>::magnitude(work[0]);
-        lwork = static_cast<int>(worksize);
-        work.resize(lwork);
-        lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
+        Tpetra::Experimental::GETRI (dmat, ipiv, work, lapackInfo);
+        //lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
           "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
@@ -620,7 +618,9 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type j = 0; j < NumU; ++j) {
         little_block_type currentVal(&InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
         // scale U by the diagonal inverse
-        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(matTmp.ptr_on_device ()), blockSize_);
+        Tpetra::Experimental::GEMM ("N", "N", STS::one (), dmat, currentVal,
+                                    STS::zero (), matTmp);
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(matTmp.ptr_on_device ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
       }

@@ -73,6 +73,7 @@
 using namespace std;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
+using Teuchos::ArrayRCP;
 
 /*********************************************************/
 /*                     Typedefs                          */
@@ -189,9 +190,12 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+  typedef inputAdapter_t::part_t part_t;
+  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
-  inputAdapter_t ia(*CommT, "region");
-  ia.print(me);
+  inputAdapter_t *ia = new inputAdapter_t(*CommT, "region");
+  ia->print(me);
 
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
@@ -281,24 +285,46 @@ int main(int narg, char *arg[]) {
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";
 
-    Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
+    Zoltan2::PartitioningProblem<inputAdapter_t> problem(ia, &params, CommT);
 
     // call the partitioner
     if (me == 0) cout << "Calling the partitioner ... \n\n";
 
     problem.solve();
 
-    if (me) {
+    // An environment.  This is usually created by the problem.
+
+    RCP<const Zoltan2::Environment> env = problem.getEnvironment();
+
+    RCP<const base_adapter_t> bia = 
+      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+
+    // create metric object (also usually created by a problem)
+
+    RCP<quality_t> metricObject = 
+      rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
+
+    RCP<quality_t> graphMetricObject;
+
+    if (action == "scotch") {
+      graphMetricObject = rcp(new quality_t(env, CommT, bia,
+					    &problem.getSolution()));
+    }
+
+    if (!me) {
+      metricObject->printMetrics(cout);
       problem.printMetrics(cout);
 
-      if (action == "scotch")
+      if (action == "scotch") {
+	graphMetricObject->printGraphMetrics(cout);
         problem.printGraphMetrics(cout);
+      }
     }
   }
   else {
     if (me == 0) cout << "Creating coloring problem ... \n\n";
 
-    Zoltan2::ColoringProblem<inputAdapter_t> problem(&ia, &params);
+    Zoltan2::ColoringProblem<inputAdapter_t> problem(ia, &params);
 
     // call the partitioner
     if (me == 0) cout << "Calling the coloring algorithm ... \n\n";

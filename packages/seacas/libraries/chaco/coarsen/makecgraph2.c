@@ -268,4 +268,7 @@ makecgraph2 (
     }
 
     make_cgraph_time += seconds() - time;
+    sfree(links);
+    sfree(eweights);
+    sfree(edges);
 }

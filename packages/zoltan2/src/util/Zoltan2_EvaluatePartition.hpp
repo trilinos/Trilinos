@@ -90,18 +90,19 @@ public:
       \param problemComm  the problem communicator
       \param ia the problem input adapter
       \param soln  the solution
-      \param modelType the model type
-      \param model the model
+      \param useDegreeAsWeight whether to use vertex degree as vertex weight
+      \param graphModel the graph model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const Adapter> &ia, 
-    const RCP<const PartitioningSolution<Adapter> > &soln,
-    enum ModelType modelType = MAX_NUM_MODEL_TYPES,
-    const RCP<const Model<Adapter> > &model = Teuchos::null);
+    const RCP<const typename Adapter::base_adapter_t> &ia, 
+    const PartitioningSolution<Adapter> *soln,
+    bool useDegreeAsWeight,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+		    Teuchos::null);
 
   /*! \brief Constructor
       \param env   the problem environment
@@ -116,7 +117,7 @@ public:
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
-    const RCP<const PartitioningSolution<Adapter> > &soln,
+    const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
 
@@ -208,10 +209,10 @@ template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const Adapter> &ia, 
-  const RCP<const PartitioningSolution<Adapter> > &soln,
-  enum ModelType modelType,
-  const RCP<const Model<Adapter> > &model):
+  const RCP<const typename Adapter::base_adapter_t> &ia, 
+  const PartitioningSolution<Adapter> *soln,
+  bool useDegreeAsWeight,
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_()
 {
@@ -237,12 +238,16 @@ template <typename Adapter>
   } 
 
   try{
-    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, modelType,
-			   model, numGlobalParts_, numNonEmpty_, metrics_);
+    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln,
+			   useDegreeAsWeight, graphModel, numGlobalParts_,
+			   numNonEmpty_,metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
+  if (soln)
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
+  else
+    targetGlobalParts_ = problemComm->getSize();
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
   env->debug(DETAILED_STATUS, std::string("Exiting EvaluatePartition"));
@@ -253,7 +258,7 @@ template <typename Adapter>
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const typename Adapter::base_adapter_t> &ia, 
-  const RCP<const PartitioningSolution<Adapter> > &soln,
+  const PartitioningSolution<Adapter> *soln,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0),
     graphMetrics_(),  graphMetricsConst_()
@@ -284,7 +289,7 @@ template <typename Adapter>
   // Parts to which objects are assigned.
 
   const part_t *parts;
-  if (soln != Teuchos::null) {
+  if (soln) {
     parts = soln->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set",
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
@@ -315,7 +320,9 @@ template <typename Adapter>
     Z2_FORWARD_EXCEPTIONS;
   }
 
+  if (soln)
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
+  else targetGlobalParts_ = problemComm->getSize();
 
   env->timerStop(MACRO_TIMERS, "Computing graph metrics");
   env->debug(DETAILED_STATUS,

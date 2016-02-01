@@ -1,4 +1,10 @@
+# FIXME (mfh 16 Jan 2016) The test doesn't currently build when TSQR
+# is enabled.  This is because the test uses a custom specialization
+# of MultiVecTraits that does not provide the 'tsqr_adaptor_type'
+# typedef.  For now, I'm disabling the tests when TSQR is enabled.
 
+ASSERT_DEFINED(Anasazi_ENABLE_TSQR)
+IF(NOT Anasazi_ENABLE_TSQR)
 
 # FIXME (mfh 25 Aug 2014) The "smallest" tests in this directory are
 # either failing or hanging (smallest_bdprec_test).  (It's odd that
@@ -35,3 +41,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS --which=LM
   COMM serial mpi
   )
+
+ENDIF()

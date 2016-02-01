@@ -4,7 +4,7 @@ IFS=$'\n'
 
 classListDir=../ClassList/
 
-for i in LO-GO-NO SC-LO-GO-NO SC-LO-GO
+for i in LO-GO-NO SC-LO-GO-NO
   do
 
   classList=$classListDir/$i.classList

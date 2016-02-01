@@ -33,7 +33,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
 #include <assert.h>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -831,7 +831,9 @@ namespace {
     if (field_name == "element_side_raw") return;
     if (field_name == "ids_raw") return;
     if (field_name == "node_connectivity_status") return;
+    if (field_name == "entity_processor_raw") return;
     if (field_name == "owning_processor") return;
+    if (ige->type() == Ioss::SIDEBLOCK && field_name == "ids") return;
     ige->get_field_data(field_name, &data[0], isize);
     oge->put_field_data(field_name, &data[0], isize);
   }

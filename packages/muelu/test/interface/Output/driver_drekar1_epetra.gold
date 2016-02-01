@@ -1,10 +1,14 @@
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- chebyshev: degree = 2
- chebyshev: ratio eigenvalue = 20
- chebyshev: min eigenvalue = 1
- chebyshev: zero starting solution = 1
- chebyshev: eigenvalue max iterations = 10
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  chebyshev: degree = 2
+  chebyshev: ratio eigenvalue = 20
+  chebyshev: min eigenvalue = 1
+  chebyshev: zero starting solution = 1
+  chebyshev: eigenvalue max iterations = 10
 
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -93,11 +97,15 @@ Level 1
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- chebyshev: degree = 2
- chebyshev: ratio eigenvalue = 20   [unused]
- chebyshev: min eigenvalue = 1
- chebyshev: zero starting solution = 1
- chebyshev: eigenvalue max iterations = 10
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  chebyshev: degree = 2
+  chebyshev: ratio eigenvalue = 20   [unused]
+  chebyshev: min eigenvalue = 1
+  chebyshev: zero starting solution = 1
+  chebyshev: eigenvalue max iterations = 10
 
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -186,11 +194,15 @@ Level 2
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- chebyshev: degree = 2
- chebyshev: ratio eigenvalue = 20   [unused]
- chebyshev: min eigenvalue = 1
- chebyshev: zero starting solution = 1
- chebyshev: eigenvalue max iterations = 10
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  chebyshev: degree = 2
+  chebyshev: ratio eigenvalue = 20   [unused]
+  chebyshev: min eigenvalue = 1
+  chebyshev: zero starting solution = 1
+  chebyshev: eigenvalue max iterations = 10
 
 Level 3
  Build (MueLu::RebalanceTransferFactory)
@@ -278,7 +290,10 @@ Level 3
  Computing Ac (MueLu::RebalanceAcFactory)
  repartition: use subcommunicators = 1   [default]
 
- Setup Smoother (MueLu::AmesosSmoother{type = Klu})
+ Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother ->
   [empty list]
 
@@ -301,6 +316,6 @@ Smoother (level 1) both : MueLu::IfpackSmoother{type = Chebyshev}
 
 Smoother (level 2) both : MueLu::IfpackSmoother{type = Chebyshev}
 
-Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Klu}
+Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
 Smoother (level 3) post : no smoother
 

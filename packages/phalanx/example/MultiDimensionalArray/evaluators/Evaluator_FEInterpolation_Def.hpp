@@ -79,15 +79,15 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(val_grad_qp,fm);
   this->utils.setFieldData(dummy,fm);
 
-  num_nodes = Teuchos::as<PHX::index_size_type>(val_node.dimension_1());
-  num_qp = Teuchos::as<PHX::index_size_type>(val_grad_qp.dimension_1());
-  num_dim = Teuchos::as<PHX::index_size_type>(val_grad_qp.dimension_2());
+  num_nodes = static_cast<PHX::index_size_type>(val_node.dimension_1());
+  num_qp = static_cast<PHX::index_size_type>(val_grad_qp.dimension_1());
+  num_dim = static_cast<PHX::index_size_type>(val_grad_qp.dimension_2());
 }
 //**********************************************************************
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void FEInterpolation<EvalT, Traits>::operator () (const int i) const
-{
+{  
   for (PHX::index_size_type qp = 0; qp < num_qp; ++qp) {
     val_qp(i,qp) = 0.0;
 
@@ -112,5 +112,20 @@ evaluateFields(typename Traits::EvalData cell_data)
   grad_phi = cell_it->getBasisFunctionGradients();
   Kokkos::parallel_for(cell_data.num_cells, *this);  
 }
+//**********************************************************************
+#ifdef  PHX_ENABLE_KOKKOS_AMT
+template<typename EvalT, typename Traits>
+Kokkos::Experimental::Future<void,PHX::Device::execution_space>
+FEInterpolation<EvalT, Traits>::
+createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+	   const std::size_t& num_adjacencies,
+	   typename Traits::EvalData cell_data)
+{
+  std::vector<MyCell>::iterator cell_it = cell_data.begin;
+  phi = cell_it->getBasisFunctions();
+  grad_phi = cell_it->getBasisFunctionGradients();
+  return policy.create_team(PHX_example::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(cell_data.num_cells,*this),num_adjacencies);
+}
+#endif
 
 //**********************************************************************

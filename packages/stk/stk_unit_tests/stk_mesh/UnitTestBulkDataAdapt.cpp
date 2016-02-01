@@ -31,15 +31,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for ASSERT_TRUE, AssertHelper, etc
 #include <stddef.h>                     // for size_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
-#include <gtest/gtest.h>
-#include <string>                       // for string, char_traits
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <string>                       // for string, allocator, etc
 #include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityId, etc

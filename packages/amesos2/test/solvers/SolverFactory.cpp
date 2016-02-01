@@ -101,7 +101,7 @@ namespace {
     using std::endl;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
     typedef Tpetra::Map<LO,GO,NT> map_type;
-    typedef Teuchos::ScalarTraits<SC> STS;
+    //typedef Teuchos::ScalarTraits<SC> STS; // unused
 
     Teuchos::OSTab tab0 (out);
     out << "Create test matrix with " << gblNumRows << " row(s)" << endl;

@@ -31,38 +31,31 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <stdlib.h>                     // for exit
-#include <exception>                    // for exception
-#include <iostream>                     // for ostringstream, etc
-#include <iterator>                     // for distance
-#include <map>                          // for _Rb_tree_const_iterator, etc
-#include <stdexcept>                    // for logic_error, runtime_error
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <gtest/gtest.h>
-#include <string>                       // for string, basic_string, etc
-#include <utility>                      // for pair
-#include <vector>                       // for vector, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
+#include <iostream>                     // for basic_ostream::operator<<
+#include <set>                          // for set, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
+#include <string>                       // for string
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector
+#include "BulkDataTester.hpp"           // for BulkDataTester
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<
+#include "stk_mesh/base/EntityLess.hpp"  // for EntityLess
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
-#include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
-#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, BucketVector, etc
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/util/PairIter.hpp"   // for PairIter
-#include "stk_io/StkMeshIoBroker.hpp"
-#include "stk_unit_test_utils/ioUtils.hpp"
-#include "BulkDataTester.hpp"
+#include "stk_unit_test_utils/ioUtils.hpp"  // for fill_mesh_using_stk_io
 
 
 TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
@@ -106,6 +99,10 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 9));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 10));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 11));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 12));
 
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
 
@@ -153,6 +150,10 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
     else if (procId==1)
     {
         std::vector<stk::mesh::EntityKey> gold_keys;
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 9));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 10));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 11));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 12));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
 
         ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
@@ -193,6 +194,10 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
         EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 6), 2));
         EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 7), 2));
         EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 8), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 9), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 10), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 11), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 12), 2));
         EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2), 2));
     }
     else if (procId == 2)
@@ -202,6 +207,10 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 9));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 10));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 11));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 12));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
 
         for (size_t i=0;i<gold_keys.size();++i)

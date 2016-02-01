@@ -87,6 +87,15 @@ int check_for_connected_nodes(const BulkData& mesh);
 bool check_permutations_on_all(stk::mesh::BulkData& mesh);
 void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
 
+class GlobalIdEntitySorter : public EntitySorterBase
+{
+public:
+    virtual void sort(stk::mesh::BulkData &bulk, EntityVector& entityVector) const
+    {
+        std::sort(entityVector.begin(), entityVector.end(), EntityLess(bulk));
+    }
+};
+
 
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureGeneral(

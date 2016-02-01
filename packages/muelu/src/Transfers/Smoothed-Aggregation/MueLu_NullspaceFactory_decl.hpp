@@ -113,9 +113,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    NullspaceFactory(const std::string & nspName = "Nullspace")
-      /*: nspName_(nspName)*/
-    {
+    NullspaceFactory(const std::string & nspName = "Nullspace") {
       SetParameter("Fine level nullspace", ParameterEntry(nspName));
     }
 
@@ -150,9 +148,6 @@ namespace MueLu {
     //@}
 
   private:
-
-    //! name of nullspace vector on finest level
-    //std::string nspName_;
 
   }; //class NullspaceFactory
 

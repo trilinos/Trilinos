@@ -33,35 +33,21 @@
 
 
 
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <stdlib.h>                     // for exit
-#include <exception>                    // for exception
-#include <iostream>                     // for ostringstream, etc
-#include <iterator>                     // for distance
-#include <map>                          // for _Rb_tree_const_iterator, etc
-#include <stdexcept>                    // for logic_error, runtime_error
-#include <algorithm>                    // for sort
-#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <gtest/gtest.h>
-#include <string>                       // for string, basic_string, etc
-#include <utility>                      // for pair
-#include <vector>                       // for vector, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
-#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
+#include <unistd.h>                     // for unlink
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
-#include "stk_mesh/base/CoordinateSystems.hpp"
-#include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_io/StkMeshIoBroker.hpp"
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Types.hpp"      // for EntityId, EntityIdVector
+namespace stk { namespace mesh { class Part; } }
 
 //====================
 extern int gl_argc;

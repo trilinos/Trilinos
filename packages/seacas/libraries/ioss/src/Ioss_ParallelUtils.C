@@ -51,7 +51,7 @@ namespace {
   MPI_Datatype mpi_type(double /*dummy*/)  {return MPI_DOUBLE;}
   MPI_Datatype mpi_type(int /*dummy*/)     {return MPI_INT;}
   MPI_Datatype mpi_type(unsigned int /*dummy*/)     {return MPI_UNSIGNED;}
-  MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG;}
+  MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG_INT;}
 }
 #endif
 

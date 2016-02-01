@@ -701,11 +701,17 @@ template <typename LO, typename GO>
 bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::string & block) const
 {
   std::map<std::string,int>::const_iterator fitr = fieldNameToAID_.find(field);
-  if(fitr==fieldNameToAID_.end())
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid field name");
+  if(fitr==fieldNameToAID_.end()) {
+    std::stringstream ss;
+    printFieldInformation(ss);
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid field name. DOF information is:\n"+ss.str());
+  }
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(block);
-  if(bitr==blockNameToID_.end())
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  if(bitr==blockNameToID_.end()) {
+    std::stringstream ss;
+    printFieldInformation(ss);
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name. DOF information is:\n"+ss.str());
+  }
   int fid=fitr->second;
   int bid=bitr->second;
 

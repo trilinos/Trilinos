@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: usblk.f,v 1.2 1999/01/25 16:38:51 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE USBLK (IFLD, INTYP, CFIELD, IFIELD,
      &   NEWTYP, NELBLK, IDELB, BLKTYP, *)

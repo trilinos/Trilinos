@@ -53,20 +53,19 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
+#include <MueLu_Exceptions.hpp>
 #include <MueLu_MasterList.hpp>
 #include <MueLu_ParameterListUtils.hpp>
-#include <MueLu_Exceptions.hpp>
 
 namespace MueLu {
-  
+
   /*!
     @class ML2MueLuParameterTranslator class.
     @brief Class that accepts ML-style parameters and builds a MueLu parameter list (easy input deck)
-    
+
     This interpreter class is meant to make the transition from ML to MueLu easier.
   */
   class ML2MueLuParameterTranslator {
-
   public:
     //! @name Constructors/Destructors.
     //@{
@@ -81,7 +80,7 @@ namespace MueLu {
 
     //!@name Parameter translation from ML to MueLu
     //@{
-    
+
     /// @brief: Translate ML parameters to MueLu parameter XML string
     ///
     /// @param [in] paramList_in: ML parameter list
@@ -89,7 +88,7 @@ namespace MueLu {
     static std::string translate(Teuchos::ParameterList & paramList, const std::string& defaultVals="") {
       return SetParameterList(paramList, defaultVals);
     }
-    
+
     /// @brief: Translate ML parameters to MueLu parameter XML string
     ///
     /// @param [in] xmlFileName: file name with ML xml parameters
@@ -98,35 +97,35 @@ namespace MueLu {
       Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
       return SetParameterList(*paramList, defaultVals);
     }
-   
+
     //@}
-  
+
   private:
 
     //! @name Parameter handling
     //@{
-    
+
     /// @brief: Interpret parameter list
     ///
     /// @param [in] paramList_in: ML parameter list
     /// @return std::string with MueLu XML parameters
-    static std::string SetParameterList(const Teuchos::ParameterList & paramList_in, const std::string& defaultVals);  
-    
-    
+    static std::string SetParameterList(const Teuchos::ParameterList & paramList_in, const std::string& defaultVals);
+
+
     /// @brief: Helper function which translates ML smoother/solver paramters to MueLu XML string
     ///
-    /// @param [in] paramList: reference to Teuchos::ParameterList containing the ML smoother/solver parameters. 
+    /// @param [in] paramList: reference to Teuchos::ParameterList containing the ML smoother/solver parameters.
     /// @param [in,out] adaptingParamList: reference to Teuchos::ParameterList containing the ML smoother/solver parameters. Note that the processed parameters are removed from the ParameterList. It can be used to detect non-interpreted ML parameters.
     /// @param [in] pname: currently processed parameter TODO
     /// @param [in] value: currently processed value TODO
     static std::string GetSmootherFactory(const Teuchos::ParameterList& paramList, Teuchos::ParameterList& adaptingParamList, const std::string& pname, const std::string& value);
-    
+
     //@}
 
     //
     // helper routines
     //
-    
+
     // trim from start
     static inline std::string &ltrim(std::string &s) {
       s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
@@ -145,13 +144,13 @@ namespace MueLu {
     }
 
     //! @name Member variables
-    //@{     
+    //@{
     //std::string xmlString_;   ///! string containing MueLu XML parameters corresponding to ML parameters
     //@}
 
   }; // class MLParameterListInterpreter
-  
-  
+
+
 } // end namespace MueLu
-  
+
 #endif /* MUELU_ML2MUELUPARAMETERTRANSLATOR_HPP  */

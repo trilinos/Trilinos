@@ -56,14 +56,14 @@ namespace ROL {
 template <class Real>
 class MomentObjective : public Objective<Real> {
 private:
-  std::vector<std::vector<std::pair<size_t, Real> > > moments_;
+  std::vector<std::vector<std::pair<int, Real> > > moments_;
   Teuchos::RCP<BatchManager<Real> > bman_;
-  size_t dimension_;
-  size_t numMoments_;
+  int dimension_;
+  int numMoments_;
   const bool optProb_;
   const bool optAtom_;
 
-  Real momentValue(const size_t dim, const Real power, const Real moment,
+  Real momentValue(const int dim, const Real power, const Real moment,
                    const ProbabilityVector<Real> &prob,
                    const AtomVector<Real>        &atom) const {
     const int numSamples = prob.getNumMyAtoms();
@@ -73,11 +73,12 @@ private:
       val += xwt * ((power==1) ? xpt : std::pow(xpt,power));
     }
     bman_->sumAll(&val,&sum,1);
-    return 0.5*std::pow((sum-moment)/moment,2);
+    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    return 0.5*std::pow((sum-moment)/denom,2);
   }
 
   void momentGradient(std::vector<Real> &gradx, std::vector<Real> &gradp,  Real &scale,
-                const size_t dim, const Real power, const Real moment,
+                const int dim, const Real power, const Real moment,
                 const ProbabilityVector<Real> &prob,
                 const AtomVector<Real>        &atom) const {
     const int numSamples = prob.getNumMyAtoms();
@@ -93,13 +94,14 @@ private:
     }
     bman_->sumAll(&psum,&scale,1);
     scale -= moment;
-    scale /= std::pow(moment,2);
+    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    scale /= std::pow(denom,2);
   }
 
   void momentHessVec(std::vector<Real> &hvx1, std::vector<Real> &hvx2, std::vector<Real> &hvx3,
                      std::vector<Real> &hvp1, std::vector<Real> &hvp2,
                      Real &scale1, Real &scale2, Real &scale3,
-               const size_t dim, const Real power, const Real moment,
+               const int dim, const Real power, const Real moment,
                const ProbabilityVector<Real> &prob,
                const AtomVector<Real>        &atom,
                const ProbabilityVector<Real> &vprob,
@@ -111,7 +113,6 @@ private:
     std::vector<Real> psum(3,0.0), scale(3,0.0);
     Real xpt = 0., xwt = 0., vpt = 0., vwt = 0.;
     Real xpow0 = 0., xpow1 = 0., xpow2 = 0.;
-    const Real moment2 = std::pow(moment,2);
     for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim];  xwt = prob.getProbability(k);
       vpt = (*vatom.getAtom(k))[dim]; vwt = vprob.getProbability(k);
@@ -129,13 +130,16 @@ private:
       hvp2[k] = power * xpow1 * vpt;
     }
     bman_->sumAll(&psum[0],&scale[0],3);
-    scale1 = scale[0] * power/moment2;
-    scale2 = (scale[1] - moment)/moment2 ;
-    scale3 = scale[2]/moment2;
+    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    Real denom2 = denom*denom;
+    //const Real moment2 = std::pow(moment,2);
+    scale1 = scale[0] * power/denom2;
+    scale2 = (scale[1] - moment)/denom2 ;
+    scale3 = scale[2]/denom2;
   }
 
 public:
-  MomentObjective(const std::vector<std::vector<std::pair<size_t, Real> > > &moments,
+  MomentObjective(const std::vector<std::vector<std::pair<int, Real> > > &moments,
                   const Teuchos::RCP<BatchManager<Real> > &bman,
                   const bool optProb = true, const bool optAtom = true)
     : Objective<Real>(), moments_(moments), bman_(bman),
@@ -145,16 +149,16 @@ public:
   }
 
   MomentObjective(const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
-                  const std::vector<size_t>                             &order,
+                  const std::vector<int>                             &order,
                   const Teuchos::RCP<BatchManager<Real> > &bman,
                   const bool optProb = true, const bool optAtom = true)
     : Objective<Real>(), bman_(bman), optProb_(optProb), optAtom_(optAtom) {
     numMoments_ = order.size();
     dimension_  = dist.size();
-    std::vector<std::pair<size_t,Real> > data(numMoments_);
+    std::vector<std::pair<int,Real> > data(numMoments_);
     moments_.clear(); moments_.resize(dimension_);
-    for (size_t d = 0; d < dimension_; d++) {
-      for (size_t i = 0; i < numMoments_; i++) {
+    for (int d = 0; d < dimension_; d++) {
+      for (int i = 0; i < numMoments_; i++) {
         data[i] = std::make_pair(order[i],dist[d]->moment(order[i]));
       }
       moments_[d].assign(data.begin(),data.end());
@@ -166,10 +170,10 @@ public:
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     Real val = 0.;
-    std::vector<std::pair<size_t, Real> > data;
-    for (size_t d = 0; d < dimension_; d++) {
+    std::vector<std::pair<int, Real> > data;
+    for (int d = 0; d < dimension_; d++) {
       data = moments_[d];
-      for (size_t m = 0; m < numMoments_; m++) {
+      for (int m = 0; m < numMoments_; m++) {
         val += momentValue(d,(Real)data[m].first,data[m].second,prob,atom);
       }
     }
@@ -184,12 +188,12 @@ public:
     int numSamples = prob.getNumMyAtoms();
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
     Real scale = 0.;
-    std::vector<std::pair<size_t, Real> > data;
+    std::vector<std::pair<int, Real> > data;
     std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
-    for (size_t d = 0; d < dimension_; d++) {
+    for (int d = 0; d < dimension_; d++) {
       data = moments_[d];
-      for (size_t m = 0; m < numMoments_; m++) {
+      for (int m = 0; m < numMoments_; m++) {
         momentGradient(gradx,gradp,scale,d,(Real)data[m].first,data[m].second,prob,atom);
         for (int k = 0; k < numSamples; k++) {
           (val_pt[k])[d] += scale*gradx[k];
@@ -222,12 +226,12 @@ public:
     std::vector<Real> hvx1(numSamples,0.), hvx2(numSamples,0.), hvx3(numSamples,0.);
     std::vector<Real> hvp1(numSamples,0.), hvp2(numSamples,0.);
     Real scale1 = 0., scale2 = 0., scale3 = 0.;
-    std::vector<std::pair<size_t, Real> > data;
+    std::vector<std::pair<int, Real> > data;
     std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
-    for (size_t d = 0; d < dimension_; d++) {
+    for (int d = 0; d < dimension_; d++) {
       data = moments_[d];
-      for (size_t m = 0; m < numMoments_; m++) {
+      for (int m = 0; m < numMoments_; m++) {
         momentHessVec(hvx1,hvx2,hvx3,hvp1,hvp2,scale1,scale2,scale3,
                       d,(Real)data[m].first,data[m].second,prob,atom,vprob,vatom);
         for (int k = 0; k < numSamples; k++) {

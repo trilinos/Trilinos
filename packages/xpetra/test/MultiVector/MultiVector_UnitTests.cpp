@@ -498,8 +498,8 @@ namespace {
     const size_t numVecs  = 7;
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
         Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
-
-/*#ifdef HAVE_XPETRA_EPETRA
+    //Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Xpetra::UseEpetra, INVALID, numLocal, 0, comm, node);
+#ifdef HAVE_XPETRA_EPETRA
     if(mylib==Xpetra::UseEpetra) {
       RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > emap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       RCP<Epetra_MultiVector> mvec = Teuchos::rcp(new Epetra_MultiVector(emap->getEpetra_Map(),numVecs));
@@ -509,7 +509,7 @@ namespace {
       TEST_EQUALITY(xmv->getNumVectors(), numVecs);
       //TEST_EQUALITY_CONST(xv->getNumVectors(), 1);
     }
-#endif*/
+#endif
   }
 
   ////
@@ -612,6 +612,7 @@ namespace {
     // multivector has two vectors, each proc having two values per vector
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
         Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
+
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
@@ -2530,6 +2531,38 @@ namespace {
 #endif
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, Constructor_Epetra, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
+  {
+#ifdef HAVE_XPETRA_EPETRA
+
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+    {
+      TEST_NOTHROW(M(10, 0, comm));
+      TEST_NOTHROW(MV(Teuchos::rcp(new M(10, 0, comm)), 3));
+    }
+
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
+    {
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode> mm;
+      TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode> mx;
+      TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
+    }
+#endif
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
+    {
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode> mm;
+      TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode> mx;
+      TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
+    }
+#endif
+
+#endif
+  }
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, Typedefs,        M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
@@ -2589,21 +2622,23 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, Multiply                   , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, BadCombinations            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructorsTpetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT(      Vector, AssignmentDeepCopies       , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
 
-// List of tests which run only with Tpetra
+// List of tests which run only with Epetra
 #define XP_EPETRA_MULTIVECTOR_INSTANT(S,LO,GO,N) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructorsEpetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Constructor_Epetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
 
 // list of all tests which run both with Epetra and Tpetra
 // TODO: move more lists from the upper list to this list
 #define XP_MULTIVECTOR_INSTANT(S,LO,GO,N) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT(      Vector, AssignmentDeepCopies , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, basic                , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, AssignmentDeepCopies , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, GetVector            , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstNumVecs      , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstAA           , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Typedefs             , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, basic                , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+
 
 
 
@@ -2628,16 +2663,19 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
 
 #if defined(HAVE_XPETRA_EPETRA)
 
-// FIXME (mfh 28 Nov 2015) If Tpetra is enabled, but Tpetra does not
-// build Serial, then the code inside the #ifdef ... #endif causes
-// linker errors.
-#ifdef HAVE_TPETRA_SERIAL
-typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+#include "Xpetra_Map.hpp" // defines EpetraNode
+typedef Xpetra::EpetraNode EpetraNode;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
 XP_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
 XP_EPETRA_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
-#endif // HAVE_TPETRA_SERIAL
-
+#endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+XPETRA_EPETRA_TYPES(double,int,LongLong,EpetraNode)
+XP_MULTIVECTOR_INSTANT(double,int,LongLong,EpetraNode)
+XP_EPETRA_MULTIVECTOR_INSTANT(double,int,LongLong,EpetraNode)
+#endif
 #endif
 
 }

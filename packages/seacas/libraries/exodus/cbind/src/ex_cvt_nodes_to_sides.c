@@ -517,7 +517,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 
       /* determine number of nodes per side */
       if (((((int64_t*)num_nodes_per_set)[k] % ((int64_t*)num_elem_per_set)[k]) == 0) &&
-	  (same_elem_type[k])) {  /* all side set elements are same type */
+	  (same_elem_type[k] == EX_TRUE)) {  /* all side set elements are same type */
 	node_ctr += ((int64_t*)num_nodes_per_set)[k] /((int64_t*)num_elem_per_set)[k];
       } else {
 	node_ctr += elem_blk_parms[j].num_nodes_per_side[0];

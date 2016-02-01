@@ -58,11 +58,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMap_kokkos, StandardCase, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-
-    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
-
-    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
-
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
     Level fineLevel;
@@ -94,25 +91,9 @@ namespace MueLuTests {
     TEST_EQUALITY(myCoarseMap->getMaxLocalIndex()     == 9, true);
   }
 
-#define UNIT_TEST_GROUP(SC,LO,GO,NO) \
+#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoarseMap_kokkos, StandardCase, SC, LO, GO, NO)
 
-#ifdef HAVE_MUELU_TPETRA
-  #include <TpetraCore_config.h>
-  #include <TpetraCore_ETIHelperMacros.h>
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP)
-#endif
-
-  // Uncomment after rebasing on top of TOBIAS patches
-// #ifdef HAVE_MUELU_EPETRA
-// #  if (defined(HAVE_MUELU_TPETRA) && !defined(HAVE_MUELU_TPETRA_INST_INT_INT)) || (!defined(HAVE_MUELU_TPETRA))
-// #error Why are we here?
-  // typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> node_type;
-  // UNIT_TEST_GROUP(double, int, int, node_type);
-// #  endif
-// #endif
+#include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests

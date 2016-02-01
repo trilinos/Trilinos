@@ -1085,7 +1085,7 @@ bool Equal_Values(const double *values, size_t count, double *value)
 				 int fno, const string &name, bool *diff_flag)
     {
       const double *vals = NULL;
-      if (idx >= 0 && (fno == 1 || !interface.summary_flag)) {
+      if (fno == 1 || !interface.summary_flag) {
 	filen.Load_Nodal_Results(time_step, idx);
 	vals = filen.Get_Nodal_Results(idx);
     
@@ -1105,7 +1105,7 @@ bool Equal_Values(const double *values, size_t count, double *value)
 				 int fno, const string &name, bool *diff_flag)
     {
       const double *vals = NULL;
-      if (idx >= 0 && (fno == 1 || !interface.summary_flag)) {
+      if (fno == 1 || !interface.summary_flag) {
 	vals = filen.Get_Nodal_Results(t.step1, t.step2, t.proportion, idx);
     
 	if (vals != NULL) {
@@ -1163,30 +1163,44 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 		    int out_file_id, std::vector<MinMaxData> &mm_glob, double *gvals)
   {
     bool diff_flag = false;
+    if (interface.glob_var_names.empty()) {
+      return diff_flag;
+    }
   
     // Global variables.
     file1.Load_Global_Results(step1);
     const double* vals1 = file1.Get_Global_Results();
+    if (vals1 == NULL) {
+      std::cout << "\tERROR: Could not find global variables on file 1\n";
+      exit(1);
+    }
+
     const double* vals2 = NULL;
     if (!interface.summary_flag) {
       file2.Load_Global_Results(t2.step1, t2.step2, t2.proportion);
       vals2 = file2.Get_Global_Results();
+      if (vals2 == NULL) {
+	std::cout << "\tERROR: Could not find global variables on file 2\n";
+	exit(1);
+      }
     }
     
     // ----------------------------------------------------------------------
     // Output file containing differences...
     if (out_file_id >= 0) {
-      if (!interface.glob_var_names.empty()) {
-	SMART_ASSERT(gvals != 0);
-	for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
-	  const string& name = (interface.glob_var_names)[out_idx];
-	  int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
-	  int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
-	  SMART_ASSERT(idx1 >= 0 && idx2 >= 0);
-	  gvals[out_idx] = FileDiff(vals1[idx1], vals2[idx2], interface.output_type);
+      SMART_ASSERT(gvals != 0);
+      for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
+	const string& name = (interface.glob_var_names)[out_idx];
+	int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
+	int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
+	if (idx1 < 0 || idx2 < 0 || vals1 == NULL || vals2 == NULL) {
+	  std::cerr << "ERROR: Unable to find global variable named '"
+		    << name << "' on database.\n";
+	  exit(1);
 	}
-	ex_put_glob_vars(out_file_id, t2.step1, interface.glob_var_names.size(), gvals);
+	gvals[out_idx] = FileDiff(vals1[idx1], vals2[idx2], interface.output_type);
       }
+      ex_put_glob_vars(out_file_id, t2.step1, interface.glob_var_names.size(), gvals);
       return diff_flag;
     }
 
@@ -1196,7 +1210,11 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
 	const string& name = (interface.glob_var_names)[out_idx];
 	int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
-	SMART_ASSERT(idx1 >= 0);
+	if (idx1 < 0) {
+	  std::cerr << "ERROR: Unable to find global variable named '"
+		    << name << "' on database.\n";
+	  exit(1);
+	}
       
 	mm_glob[out_idx].spec_min_max(vals1[idx1], step1);
       }
@@ -1213,7 +1231,11 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       const string& name = (interface.glob_var_names)[out_idx];
       int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
       int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
-      SMART_ASSERT(idx1 >= 0 && idx2 >= 0);
+      if (idx1 < 0 || idx2 < 0) {
+	std::cerr << "ERROR: Unable to find global variable named '"
+		  << name << "' on database.\n";
+	exit(1);
+      }
       
       if (Invalid_Values(&vals1[idx1], 1)) {
 	std::cout << "\tERROR: NaN found for variable " << name << " in file 1\n";
@@ -1259,13 +1281,27 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	const string& name = (interface.node_var_names)[n_idx];
 	int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
 	int idx2 = find_string(file2.Nodal_Var_Names(), name, interface.nocase_var_names);
-	SMART_ASSERT(idx1 >= 0 && idx2 >= 0);
+	if (idx1 < 0 || idx2 < 0) {
+	  std::cerr << "ERROR: Unable to find nodal variable named '"
+		    << name << "' on database.\n";
+	  exit(1);
+	}
       
 	const double* vals1 = get_nodal_values(file1, step1, idx1, 1,
 					       name, &diff_flag);
 	const double* vals2 = get_nodal_values(file2, step2, idx2, 2,
 					       name, &diff_flag);
       
+	if (vals1 == NULL) {
+	  std::cout << "\tERROR: Could not find nodal variables on file 1\n";
+	  exit(1);
+	}
+
+	if (vals2 == NULL) {
+	  std::cout << "\tERROR: Could not find nodal variables on file 2\n";
+	  exit(1);
+	}
+
 	size_t ncount = file1.Num_Nodes();
 	for (size_t n = 0; n < ncount; ++n) {
         
@@ -1290,9 +1326,18 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       for (unsigned n_idx = 0; n_idx < interface.node_var_names.size(); ++n_idx) {
 	const string& name = (interface.node_var_names)[n_idx];
 	int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
-	SMART_ASSERT(idx1 >= 0);
+	if (idx1 < 0) {
+	  std::cerr << "ERROR: Unable to find nodal variable named '"
+		    << name << "' on database.\n";
+	  exit(1);
+	}
 	const double* vals1 = get_nodal_values(file1, step1, idx1, 1,
 					       name, &diff_flag);
+
+	if (vals1 == NULL) {
+	  std::cout << "\tERROR: Could not find nodal variables on file 1\n";
+	  exit(1);
+	}
 
 	size_t ncount = file1.Num_Nodes();
 	for (size_t n = 0; n < ncount; ++n) {
@@ -1314,10 +1359,28 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       const string& name = (interface.node_var_names)[n_idx];
       int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
       int idx2 = find_string(file2.Nodal_Var_Names(), name, interface.nocase_var_names);
-      SMART_ASSERT(idx1 >= 0 && idx2 >= 0);
+      if (idx1 < 0 || idx2 < 0) {
+	std::cerr << "ERROR: Unable to find nodal variable named '"
+		  << name << "' on database.\n";
+	exit(1);
+      }
       
       const double* vals1 = get_nodal_values(file1, step1, idx1, 1, name, &diff_flag);
       const double* vals2 = get_nodal_values(file2, t2,    idx2, 2, name, &diff_flag);
+
+      if (vals1 == NULL) {
+	std::cout << "\tERROR: Could not find nodal variable "
+		  << name << " on file 1\n";
+	diff_flag = true;
+	continue;
+      }
+
+      if (vals2 == NULL) {
+	std::cout << "\tERROR: Could not find nodal variable "
+		  << name << " on file 2\n";
+	diff_flag = true;
+	continue;
+      }
 
       DiffData max_diff;
       Norm norm;
@@ -1400,7 +1463,11 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       int vidx2 = 0;
       if (!interface.summary_flag)
 	vidx2 = find_string(file2.Elmt_Var_Names(), name, interface.nocase_var_names);
-      SMART_ASSERT(vidx1 >= 0 && vidx2 >= 0);
+      if (vidx1 < 0 || vidx2 < 0) {
+	std::cerr << "ERROR: Unable to find element variable named '"
+		  << name << "' on database.\n";
+	exit(1);
+      }
       
       Norm norm;
     
@@ -1420,6 +1487,9 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  global_elmt_index += eblock1->Size();
 	  continue;
 	}
+	if (eblock1->Size() == 0) {
+	  continue;
+	}
         
 	Exo_Block<INT>* eblock2 = NULL;
 	int b2 = b;
@@ -1437,14 +1507,19 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
         
 	eblock1->Load_Results(step1, vidx1);
 	const double* vals1 = eblock1->Get_Results(vidx1);
+	if (vals1 == NULL) {
+	  std::cout << "\tERROR: Could not find variable "
+		    << name << " in block "
+		    << eblock1->Id() << ", file 1\n";
+	  diff_flag = true;
+	  continue;
+	}
         
-	if (vals1 != NULL) {
-	  if (Invalid_Values(vals1, eblock1->Size())) {
-	    std::cout << "\tERROR: NaN found for variable "
-		      << name << " in block "
-		      << eblock1->Id() << ", file 1\n";
-	    diff_flag = true;
-	  }
+	if (Invalid_Values(vals1, eblock1->Size())) {
+	  std::cout << "\tERROR: NaN found for variable "
+		    << name << " in block "
+		    << eblock1->Id() << ", file 1\n";
+	  diff_flag = true;
 	}
 
 	double v2 = 0;
@@ -1460,13 +1535,19 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  eblock2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
 	  vals2 = eblock2->Get_Results(vidx2);
 
-	  if (vals2 != NULL) {
-	    if (Invalid_Values(vals2, eblock2->Size())) {
-	      std::cout << "\tERROR: NaN found for variable "
-			<< name << " in block "
-			<< eblock2->Id() << ", file 2\n";
-	      diff_flag = true;
-	    }
+	  if (vals2 == NULL) {
+	    std::cout << "\tERROR: Could not find variable "
+		      << name << " in block "
+		      << eblock2->Id() << ", file 2\n";
+	    diff_flag = true;
+	    continue;
+	  }
+
+	  if (Invalid_Values(vals2, eblock2->Size())) {
+	    std::cout << "\tERROR: NaN found for variable "
+		      << name << " in block "
+		      << eblock2->Id() << ", file 2\n";
+	    diff_flag = true;
 	  }
 	}
         
@@ -1594,13 +1675,20 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       int vidx2 = 0;
       if (!interface.summary_flag)
 	vidx2 = find_string(file2.NS_Var_Names(), name, interface.nocase_var_names);
-      SMART_ASSERT(vidx1 >= 0 && vidx2 >= 0);
+      if (vidx1 < 0 || vidx2 < 0) {
+	std::cerr << "ERROR: Unable to find nodeset variable named '"
+		  << name << "' on database.\n";
+	exit(1);
+      }
       
       DiffData max_diff;
       Norm norm;
 
       for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
 	Node_Set<INT>* nset1 = file1.Get_Node_Set_by_Index(b);
+	if (nset1->Size() == 0) {
+	  continue;
+	}
 	if (!nset1->is_valid_var(vidx1)) {
 	  continue;
 	}
@@ -1619,13 +1707,19 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	nset1->Load_Results(step1, vidx1);
 	const double* vals1 = nset1->Get_Results(vidx1);
         
-	if (vals1 != NULL) {
-	  if (Invalid_Values(vals1, nset1->Size())) {
-	    std::cout << "\tERROR: NaN found for variable "
-		      << name << " in nodeset "
-		      << nset1->Id() << ", file 1\n";
-	    diff_flag = true;
-	  }
+	if (vals1 == NULL) {
+	  std::cout << "\tERROR: Could not find variable "
+		    << name << " in nodeset "
+		    << nset1->Id() << ", file 1\n";
+	  diff_flag = true;
+	  continue;
+	}
+
+	if (Invalid_Values(vals1, nset1->Size())) {
+	  std::cout << "\tERROR: NaN found for variable "
+		    << name << " in nodeset "
+		    << nset1->Id() << ", file 1\n";
+	  diff_flag = true;
 	}
 
 	double v2 = 0;
@@ -1635,13 +1729,19 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  nset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
 	  vals2 = (double*)nset2->Get_Results(vidx2);
 
-	  if (vals2 != NULL) {
-	    if (Invalid_Values(vals2, nset2->Size())) {
-	      std::cout << "\tERROR: NaN found for variable "
-			<< name << " in nodeset "
-			<< nset2->Id() << ", file 2\n";
-	      diff_flag = true;
-	    }
+	  if (vals2 == NULL) {
+	    std::cout << "\tERROR: Could not find variable "
+		      << name << " in nodeset "
+		      << nset2->Id() << ", file 2\n";
+	    diff_flag = true;
+	    continue;
+	  }
+
+	  if (Invalid_Values(vals2, nset2->Size())) {
+	    std::cout << "\tERROR: NaN found for variable "
+		      << name << " in nodeset "
+		      << nset2->Id() << ", file 2\n";
+	    diff_flag = true;
 	  }
 	}
         
@@ -1762,12 +1862,19 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       int vidx2 = 0;
       if (!interface.summary_flag)
 	vidx2 = find_string(file2.SS_Var_Names(), name, interface.nocase_var_names);
-      SMART_ASSERT(vidx1 >= 0 && vidx2 >= 0);
+      if (vidx1 < 0 || vidx2 < 0) {
+	std::cerr << "ERROR: Unable to find sideset variable named '"
+		  << name << "' on database.\n";
+	exit(1);
+      }
       
       DiffData max_diff;
       for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
 	Side_Set<INT>* sset1 = file1.Get_Side_Set_by_Index(b);
 	SMART_ASSERT(sset1 != NULL);	
+	if (sset1->Size() == 0) {
+	  continue;
+	}
 	if (!sset1->is_valid_var(vidx1)) {
 	  continue;
 	}
@@ -1784,13 +1891,19 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	sset1->Load_Results(step1, vidx1);
 	const double* vals1 = sset1->Get_Results(vidx1);
         
-	if (vals1 != NULL) {
-	  if (Invalid_Values(vals1, sset1->Size())) {
-	    std::cout << "\tERROR: NaN found for variable "
-		      << name << " in sideset "
-		      << sset1->Id() << ", file 1\n";
-	    diff_flag = true;
-	  }
+	if (vals1 == NULL) {
+	  std::cout << "\tERROR: Could not find variable "
+		    << name << " in sideset "
+		    << sset1->Id() << ", file 1\n";
+	  diff_flag = true;
+	  continue;
+	}
+
+	if (Invalid_Values(vals1, sset1->Size())) {
+	  std::cout << "\tERROR: NaN found for variable "
+		    << name << " in sideset "
+		    << sset1->Id() << ", file 1\n";
+	  diff_flag = true;
 	}
 
 	double v2 = 0;
@@ -1799,13 +1912,19 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  sset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
 	  vals2 = (double*)sset2->Get_Results(vidx2);
 
-	  if (vals2 != NULL) {
-	    if (Invalid_Values(vals2, sset2->Size())) {
-	      std::cout << "\tERROR: NaN found for variable "
-			<< name << " in sideset "
-			<< sset2->Id() << ", file 2\n";
-	      diff_flag = true;
-	    }
+	  if (vals2 == NULL) {
+	    std::cout << "\tERROR: Could not find variable "
+		      << name << " in sideset "
+		      << sset2->Id() << ", file 2\n";
+	    diff_flag = true;
+	    continue;
+	  }
+
+	  if (Invalid_Values(vals2, sset2->Size())) {
+	    std::cout << "\tERROR: NaN found for variable "
+		      << name << " in sideset "
+		      << sset2->Id() << ", file 2\n";
+	    diff_flag = true;
 	  }
 	}
         
@@ -1888,8 +2007,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
 	  sprintf(buf,
 		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d)",
-		  name_length,
-		  name.c_str(),
+		  name_length, name.c_str(),
 		  interface.ss_var[e_idx].abrstr(),
 		  max_diff.val1, max_diff.val2,
 		  max_diff.diff, max_diff.blk,
@@ -1935,6 +2053,14 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
     
     const double* vals1 = sset1->Distribution_Factors();
         
+    if (vals1 == NULL) {
+      std::cout << "\tERROR: Could not distribution factors "
+		" in sideeset "
+		<< sset1->Id() << ", file 1\n";
+      diff_flag = true;
+      continue;
+    }
+
     double value1 = 0.0;
     double value2 = 0.0;
     bool same1 = false;
@@ -1942,31 +2068,35 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
 	
     size_t ecount = sset1->Size();
 
-    if (vals1 != NULL) {
-      std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(ecount-1);
-      if (Invalid_Values(vals1, range1.second)) {
-	std::cout << "\tERROR: NaN found for distribution factors in sideset "
-		  << sset1->Id() << ", file 1\n";
-	diff_flag = true;
-      }
-
-	  // See if all df are the same value:
-	  same1 = Equal_Values(vals1, range1.second, &value1);
+    std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(ecount-1);
+    if (Invalid_Values(vals1, range1.second)) {
+      std::cout << "\tERROR: NaN found for distribution factors in sideset "
+		<< sset1->Id() << ", file 1\n";
+      diff_flag = true;
     }
+
+    // See if all df are the same value:
+    same1 = Equal_Values(vals1, range1.second, &value1);
 
     double* vals2 = (double*)sset2->Distribution_Factors();
 
-    if (vals2 != NULL) {
-      std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(sset2->Size()-1);
-      if (Invalid_Values(vals2, range2.second)) {
-	std::cout << "\tERROR: NaN found for distribution factors in sideset "
-		  << sset2->Id() << ", file 2\n";
-	diff_flag = true;
-      }
-	
-      // See if all df are the same value:
-      same2 = Equal_Values(vals2, range2.second, &value2);
+    if (vals2 == NULL) {
+      std::cout << "\tERROR: Could not distribution factors "
+		" in sideeset "
+		<< sset2->Id() << ", file 2\n";
+      diff_flag = true;
+      continue;
     }
+
+    std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(sset2->Size()-1);
+    if (Invalid_Values(vals2, range2.second)) {
+      std::cout << "\tERROR: NaN found for distribution factors in sideset "
+		<< sset2->Id() << ", file 2\n";
+      diff_flag = true;
+    }
+	
+    // See if all df are the same value:
+    same2 = Equal_Values(vals2, range2.second, &value2);
         
     if (same1 && same2 && (value1 == value2)) {
       continue;
@@ -1978,7 +2108,7 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
 	std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(e);
 	SMART_ASSERT(range1.second - range1.first == range2.second - range2.first);
 
-	for (size_t i=0; i < range1.second-range1.first; i++) {
+	for (INT i=0; i < range1.second-range1.first; i++) {
 	  double v1 = vals1[range1.first+i];
 	  double v2 = vals2[range2.first+i];
 
@@ -2097,26 +2227,38 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
       eblock1->Load_Attributes(idx1);
       const double* vals1 = eblock1->Get_Attributes(idx1);
         
-      if (vals1 != NULL) {
-	if (Invalid_Values(vals1, eblock1->Size())) {
-	  std::cout << "\tERROR: NaN found for attribute "
-		    << name << " in block "
-		    << eblock1->Id() << ", file 1\n";
-	  diff_flag = true;
-	}
+      if (vals1 == NULL) {
+	std::cout << "\tERROR: Could not find element attribute "
+		  << name << " in block "
+		  << eblock1->Id() << ", file 1\n";
+	diff_flag = true;
+	continue;
+      }
+
+      if (Invalid_Values(vals1, eblock1->Size())) {
+	std::cout << "\tERROR: NaN found for attribute "
+		  << name << " in block "
+		  << eblock1->Id() << ", file 1\n";
+	diff_flag = true;
       }
       
       // Without mapping, get result for this block.
       eblock2->Load_Attributes(idx2);
       const double* vals2 = eblock2->Get_Attributes(idx2);
 
-      if (vals2 != NULL) {
-	if (Invalid_Values(vals2, eblock2->Size())) {
-	  std::cout << "\tERROR: NaN found for attribute "
-		    << name << " in block "
-		    << eblock2->Id() << ", file 2\n";
-	  diff_flag = true;
-	}
+      if (vals2 == NULL) {
+	std::cout << "\tERROR: Could not find element attribute "
+		  << name << " in block "
+		  << eblock2->Id() << ", file 2\n";
+	diff_flag = true;
+	continue;
+      }
+
+      if (Invalid_Values(vals2, eblock2->Size())) {
+	std::cout << "\tERROR: NaN found for attribute "
+		  << name << " in block "
+		  << eblock2->Id() << ", file 2\n";
+	diff_flag = true;
       }
         
       size_t ecount =  eblock1->Size();

@@ -1,0 +1,22 @@
+<ParameterList name="Inputs">
+  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Geometry">
+
+    <!-- === rectangle === --> 
+    <Parameter name="Width"             type="double"  value="3.0"  />
+    <Parameter name="Height"            type="double"  value="1.0"  />
+    <Parameter name="X0"                type="double"  value="0.0"  />
+    <Parameter name="Y0"                type="double"  value="0.0"  />
+    <Parameter name="NX"                type="int"     value="3"    />
+    <Parameter name="NY"                type="int"     value="1"    />
+
+    <!-- === backward facing step channel === --> 
+    <Parameter name="Channel width"	 type="double"  value="8.0" />
+    <Parameter name="Channel height"     type="double"  value="1.0" />
+    <Parameter name="Step width"         type="double"  value="1.0" />
+    <Parameter name="Step height"        type="double"  value="0.5" />
+    <Parameter name="Observation width"  type="double"  value="3.0" />
+    <Parameter name="Refinement level"   type="int"     value="1"   />
+
+  </ParameterList>
+</ParameterList>

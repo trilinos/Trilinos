@@ -32,11 +32,10 @@
 // 
 
 //BEGIN
-#include <gtest/gtest.h>
-
-#include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/environment/memory_util.hpp>
+#include <gtest/gtest.h>                // for TEST
+#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
 #include <stk_util/environment/perf_util.hpp>
+
 
 namespace stk {
 

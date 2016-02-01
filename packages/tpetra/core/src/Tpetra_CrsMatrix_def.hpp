@@ -2674,96 +2674,16 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    const char tfecfFuncName[] = "getLocalDiagOffsets";
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasColMap (), std::runtime_error,
-      ": This method requires that the matrix have a column Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      staticGraph_.is_null (), std::runtime_error,
-      ": This method requires that the matrix have a graph.");
-
-    const map_type& rowMap = * (this->getRowMap ());
-    const map_type& colMap = * (this->getColMap ());
-
-    const size_t myNumRows = getNodeNumRows ();
-    if (static_cast<size_t> (offsets.size ()) != myNumRows) {
-      offsets.resize (static_cast<size_t> (myNumRows));
-    }
-
-#ifdef HAVE_TPETRA_DEBUG
-    bool allRowMapDiagEntriesInColMap = true;
-    bool allDiagEntriesFound = true;
-#endif // HAVE_TPETRA_DEBUG
-
-    for (size_t r = 0; r < myNumRows; ++r) {
-      const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
-      const LocalOrdinal rlid = colMap.getLocalElement (rgid);
-
-#ifdef HAVE_TPETRA_DEBUG
-      if (rlid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-        allRowMapDiagEntriesInColMap = false;
-      }
-#endif // HAVE_TPETRA_DEBUG
-
-      if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-        const RowInfo rowinfo = staticGraph_->getRowInfo (r);
-        if (rowinfo.numEntries > 0) {
-          offsets[r] = staticGraph_->findLocalIndex (rowinfo, rlid);
-        }
-        else {
-          offsets[r] = Teuchos::OrdinalTraits<size_t>::invalid ();
-#ifdef HAVE_TPETRA_DEBUG
-          allDiagEntriesFound = false;
-#endif // HAVE_TPETRA_DEBUG
-        }
-      }
-    }
-
-#ifdef HAVE_TPETRA_DEBUG
-    using Teuchos::reduceAll;
-    using std::endl;
-
-    const bool localSuccess =
-      allRowMapDiagEntriesInColMap && allDiagEntriesFound;
-    int localResults[3];
-    localResults[0] = allRowMapDiagEntriesInColMap ? 1 : 0;
-    localResults[1] = allDiagEntriesFound ? 1 : 0;
-    // min-all-reduce will compute least rank of all the processes
-    // that didn't succeed.
-    localResults[2] =
-      ! localSuccess ? getComm ()->getRank () : getComm ()->getSize ();
-    int globalResults[3];
-    globalResults[0] = 0;
-    globalResults[1] = 0;
-    globalResults[2] = 0;
-    reduceAll<int, int> (* (getComm ()), Teuchos::REDUCE_MIN,
-                         3, localResults, globalResults);
-    if (globalResults[0] == 0 || globalResults[1] == 0) {
-      std::ostringstream os; // build error message
-      const bool both =
-        globalResults[0] == 0 && globalResults[1] == 0;
-      os << ": At least one process (including Process " << globalResults[2]
-         << ") had the following issue" << (both ? "s" : "") << ":" << endl;
-      if (globalResults[0] == 0) {
-        os << "  - The column Map does not contain at least one diagonal entry "
-          "of the matrix." << endl;
-      }
-      if (globalResults[1] == 0) {
-        os << "  - There is a row on that / those process(es) that does not "
-          "contain a diagonal entry." << endl;
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, os.str());
-    }
-#endif // HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getLocalDiagOffsets: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (staticGraph_.is_null (), std::runtime_error, "The matrix has no graph.");
+    staticGraph_->getLocalDiagOffsets (offsets);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& dvec) const
+  getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag) const
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
@@ -2786,34 +2706,24 @@ namespace Tpetra {
     // isCompatible() requires an all-reduce, and thus this check
     // should only be done in debug mode.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! dvec.getMap ()->isCompatible (rowMap), std::runtime_error,
+      ! diag.getMap ()->isCompatible (rowMap), std::runtime_error,
       ": The input Vector's Map must be compatible with the CrsMatrix's row "
       "Map.  You may check this by using Map's isCompatible method: "
-      "dvec.getMap ()->isCompatible (A.getRowMap ());");
+      "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
 
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    dual_view_type lclVec = dvec.getDualView ();
-    lclVec.template modify<host_execution_space> ();
-    typedef typename dual_view_type::t_host host_view_type;
-    host_view_type lclVecHost = lclVec.h_view;
-
-    // 1-D subview of lclVecHost.  All the "typename" stuff ensures
-    // that we get the same layout and memory traits as the original
-    // 2-D view.
-    typedef typename Kokkos::View<impl_scalar_type*,
-      typename host_view_type::array_layout,
-      typename host_view_type::device_type,
-      typename host_view_type::memory_traits>
-      host_view_1d_type;
-    host_view_1d_type lclVecHost1d =
-      Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
+    diag.template modify<host_execution_space> ();
+    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
+    // 1-D subview of the first (and only) column of lclVecHost.
+    auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
     // Find the diagonal entries and put them in lclVecHost1d.
-    const size_t myNumRows = getNodeNumRows ();
-    for (size_t r = 0; r < myNumRows; ++r) {
+    const LocalOrdinal myNumRows =
+      static_cast<LocalOrdinal> (this->getNodeNumRows ());
+    for (LocalOrdinal r = 0; r < myNumRows; ++r) {
       lclVecHost1d(r) = STS::zero (); // default value if no diag entry
       const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
       const LocalOrdinal rlid = colMap.getLocalElement (rgid);
@@ -2832,17 +2742,18 @@ namespace Tpetra {
         }
       }
     }
-    lclVec.template sync<execution_space> (); // sync changes back to device
+    diag.template sync<execution_space> (); // sync changes back to device
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag,
-                    const Teuchos::ArrayView<const size_t>& offsets) const
+                    const Kokkos::View<const size_t*, device_type,
+                      Kokkos::MemoryUnmanaged>& offsets) const
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
+    typedef impl_scalar_type IST;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> vec_type;
     typedef typename vec_type::dual_view_type dual_view_type;
     typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
@@ -2861,37 +2772,76 @@ namespace Tpetra {
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    dual_view_type lclVec = diag.getDualView ();
-    lclVec.template modify<host_execution_space> ();
-    typedef typename dual_view_type::t_host host_view_type;
-    host_view_type lclVecHost = lclVec.h_view;
-
-    // 1-D subview of lclVecHost.  All the "typename" stuff ensures
-    // that we get the same layout and memory traits as the original
-    // 2-D view.
-    typedef typename Kokkos::View<impl_scalar_type*,
-      typename host_view_type::array_layout,
-      typename host_view_type::device_type,
-      typename host_view_type::memory_traits>
-      host_view_1d_type;
-    host_view_1d_type lclVecHost1d =
-      Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
+    //
+    // NOTE (mfh 21 Jan 2016): The host kernel here assumes UVM.  Once
+    // we write a device kernel, it will not need to assume UVM.
+    diag.template modify<host_execution_space> ();
+    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
+    // 1-D subview of the first (and only) column of lclVecHost.
+    auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
     // Find the diagonal entries and put them in lclVecHost1d.
-    const size_t myNumRows = getNodeNumRows ();
-    Kokkos::parallel_for ( Kokkos::RangePolicy<host_execution_space>( 0, myNumRows), [&] (const size_t& i) {
-      lclVecHost1d(i) = STS::zero (); // default value if no diag entry
-      if (offsets[i] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        ArrayView<const LocalOrdinal> ind;
-        ArrayView<const Scalar> val;
-        // NOTE (mfh 02 Jan 2015) This technically does not assume
-        // UVM, since the get{Global,Local}RowView methods are
-        // supposed to return views of host data.
-        this->getLocalRowView (i, ind, val);
-        lclVecHost1d(i) = static_cast<impl_scalar_type> (val[offsets[i]]);
+    const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
+    typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
+    const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
+
+    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
+      lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
+      if (offsets(lclRow) != INV) {
+        auto curRow = lclMatrix_.template rowConst<size_t> (lclRow);
+        lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(offsets(lclRow)));
       }
     });
-    lclVec.template sync<execution_space> (); // sync changes back to device
+    diag.template sync<execution_space> (); // sync changes back to device
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const
+  {
+    typedef LocalOrdinal LO;
+    typedef impl_scalar_type IST;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> vec_type;
+    typedef typename vec_type::dual_view_type dual_view_type;
+    typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
+
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getLocalDiagCopy: ";
+    const map_type& rowMap = * (this->getRowMap ());
+    // isCompatible() requires an all-reduce, and thus this check
+    // should only be done in debug mode.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! diag.getMap ()->isCompatible (rowMap), std::runtime_error,
+      "The input Vector's Map must be compatible with (in the sense of Map::"
+      "isCompatible) the CrsMatrix's row Map.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // For now, we fill the Vector on the host and sync to device.
+    // Later, we may write a parallel kernel that works entirely on
+    // device.
+    diag.template modify<host_execution_space> ();
+    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
+    // 1-D subview of the first (and only) column of lclVecHost.
+    auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
+
+    Kokkos::View<const size_t*, Kokkos::HostSpace,
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      h_offsets (offsets.getRawPtr (), offsets.size ());
+    // Find the diagonal entries and put them in lclVecHost1d.
+    const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
+    typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
+    const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
+
+    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
+      lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
+      if (h_offsets[lclRow] != INV) {
+        auto curRow = lclMatrix_.template rowConst<size_t> (lclRow);
+        lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
+      }
+    });
+    diag.template sync<execution_space> (); // sync changes back to device
   }
 
 
@@ -2941,9 +2891,10 @@ namespace Tpetra {
     ArrayRCP<const Scalar> vectorVals = xp->getData (0);
     ArrayView<impl_scalar_type> rowValues = null;
 
-    const size_t lclNumRows = this->getNodeNumRows ();
-    for (size_t i = 0; i < lclNumRows; ++i) {
-      const RowInfo rowinfo = staticGraph_->getRowInfo (static_cast<LocalOrdinal> (i));
+    const LocalOrdinal lclNumRows =
+      static_cast<LocalOrdinal> (this->getNodeNumRows ());
+    for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
+      const RowInfo rowinfo = staticGraph_->getRowInfo (i);
       rowValues = this->getViewNonConst (rowinfo);
       const impl_scalar_type scaleValue = static_cast<impl_scalar_type> (vectorVals[i]);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
@@ -2995,12 +2946,13 @@ namespace Tpetra {
     ArrayRCP<const Scalar> vectorVals = xp->getData (0);
     ArrayView<impl_scalar_type> rowValues = null;
 
-    const size_t lclNumRows = this->getNodeNumRows ();
-    for (size_t i = 0; i < lclNumRows; ++i) {
-      const RowInfo rowinfo = staticGraph_->getRowInfo (static_cast<LocalOrdinal> (i));
+    const LocalOrdinal lclNumRows =
+      static_cast<LocalOrdinal> (this->getNodeNumRows ());
+    for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
+      const RowInfo rowinfo = staticGraph_->getRowInfo (i);
       rowValues = this->getViewNonConst (rowinfo);
       ArrayView<const LocalOrdinal> colInds;
-      getCrsGraph ()->getLocalRowView (static_cast<LocalOrdinal> (i), colInds);
+      getCrsGraph ()->getLocalRowView (i, colInds);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
         rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
       }
@@ -3042,9 +2994,10 @@ namespace Tpetra {
           }
         }
         else {
-          const size_t numRows = getNodeNumRows ();
-          for (size_t r = 0; r < numRows; ++r) {
-            RowInfo rowInfo = myGraph_->getRowInfo (r);
+          const LocalOrdinal numRows =
+            static_cast<LocalOrdinal> (this->getNodeNumRows ());
+          for (LocalOrdinal r = 0; r < numRows; ++r) {
+            const RowInfo rowInfo = myGraph_->getRowInfo (r);
             const size_type numEntries =
               static_cast<size_type> (rowInfo.numEntries);
             ArrayView<const impl_scalar_type> A_r =
@@ -3109,9 +3062,10 @@ namespace Tpetra {
       // We can't just call sortEntries() here, because that fails if
       // the matrix has a const graph.  We want to use the given graph
       // in that case.
-      const size_t lclNumRows = theGraph.getNodeNumRows ();
-      for (size_t row = 0; row < lclNumRows; ++row) {
-        RowInfo rowInfo = theGraph.getRowInfo (row);
+      const LocalOrdinal lclNumRows =
+        static_cast<LocalOrdinal> (theGraph.getNodeNumRows ());
+      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
+        const RowInfo rowInfo = theGraph.getRowInfo (row);
         Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
         theGraph.template sortRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }
@@ -3755,9 +3709,10 @@ namespace Tpetra {
       isStaticGraph (), std::runtime_error, "Tpetra::CrsMatrix::sortEntries: "
       "Cannot sort with static graph.");
     if (! myGraph_->isSorted ()) {
-      const size_t lclNumRows = this->getNodeNumRows ();
-      for (size_t row = 0; row < lclNumRows; ++row) {
-        RowInfo rowInfo = myGraph_->getRowInfo (row);
+      const LocalOrdinal lclNumRows =
+        static_cast<LocalOrdinal> (this->getNodeNumRows ());
+      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
+        const RowInfo rowInfo = myGraph_->getRowInfo (row);
         Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
         myGraph_->template sortRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }
@@ -3775,9 +3730,10 @@ namespace Tpetra {
       isStaticGraph (), std::runtime_error, "Tpetra::CrsMatrix::"
       "mergeRedundantEntries: Cannot merge with static graph.");
     if (! myGraph_->isMerged ()) {
-      const size_t lclNumRows = this->getNodeNumRows ();
-      for (size_t row = 0; row < lclNumRows; ++row) {
-        RowInfo rowInfo = myGraph_->getRowInfo (row);
+      const LocalOrdinal lclNumRows =
+        static_cast<LocalOrdinal> (this->getNodeNumRows ());
+      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
+        const RowInfo rowInfo = myGraph_->getRowInfo (row);
         Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
         myGraph_->template mergeRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }

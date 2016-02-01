@@ -45,12 +45,13 @@
 // MP includes
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
-// Belos adapter
-#include "Belos_TpetraAdapter_MP_Vector.hpp"
+// Belos adapters
+#include "Belos_Tpetra_MP_Vector.hpp"
 
 // Ifpack2 includes
 #include "Ifpack2_Krylov.hpp"
 
+#if defined(HAVE_STOKHOS_ENSEMBLE_REDUCT)
 namespace Ifpack2 {
 
   //! Specialization of BelosScalarType to MP types
@@ -60,5 +61,6 @@ namespace Ifpack2 {
   };
 
 }
+#endif
 
 #endif // IFPACK2_KRYLOV_MP_VECTOR_HPP

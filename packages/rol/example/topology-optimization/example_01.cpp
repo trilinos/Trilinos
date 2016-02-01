@@ -472,7 +472,7 @@ public:
     }
   }
 
-  void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+  void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
 
     using Teuchos::RCP;
 
@@ -500,8 +500,7 @@ public:
       (*up)[i] = U(i);
     }
     // Compute residual
-    //Teuchos::RCP<ROL::Vector<Real> > c = u.clone();
-    //this->value(*c,u,z,tol);
+    this->value(c,u,z,tol);
     //std::cout << " IN SOLVE: ||c(u,z)|| = " << c->norm() << "\n";
   }
 

@@ -109,8 +109,6 @@ int main (int argc, char **argv)
    ex_inquire(exoid,EX_INQ_API_VERS, &idum, &version, cdum);
    printf ("EXODUSII API; version %4.2f\n", version);
 
-   /* ncopts = NC_VERBOSE; */
-
 /* read database parameters */
 
    error = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem,

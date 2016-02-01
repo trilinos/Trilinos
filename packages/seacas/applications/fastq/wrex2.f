@@ -72,9 +72,11 @@ C
 
       integer lcon(9)
       integer lbar(3)
+      integer lquad(4)
 
       data lcon /1,3,5,7,2,4,6,8,9/
       data lbar /1,3,2/
+      data lquad /1,2,3,4/
 
       QAREC(1) = '        '
       QAREC(2) = '        '
@@ -185,7 +187,7 @@ C... 3 node beam/truss
             call expelc(iunit, matmap(1,i), ia(klink), ierr)
 C... 4 node quad or 2 node beam/truss
          ELSE
-            call trnlnk(ia(klink), nxk, nnxk, idum, inode,
+            call trnlnk(ia(klink), nxk, nnxk, lquad, inode,
      &           matmap(2,i), matmap(3,i), .FALSE.)
             call expelc(iunit, matmap(1,i), ia(klink), ierr)
          ENDIF

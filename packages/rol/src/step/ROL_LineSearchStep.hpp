@@ -164,9 +164,9 @@ private:
 
   std::vector<bool> useInexact_; ///< Flags for inexact objective function, gradient, and Hessian evaluation
 
-  bool softUp_;
-
   bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
+
+  int verbosity_;
 
 public:
 
@@ -194,7 +194,7 @@ public:
       ekv_(KRYLOV_CG),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), softUp_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -209,8 +209,6 @@ public:
     useInexact_.push_back(Glist.get("Inexact Objective Function", false));
     useInexact_.push_back(Glist.get("Inexact Gradient", false));
     useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Changing Objective Functions
-    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Krylov Object
     ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
@@ -229,6 +227,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -254,7 +253,7 @@ public:
       ekv_(KRYLOV_CG),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), softUp_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -268,8 +267,6 @@ public:
     useInexact_.push_back(Glist.get("Inexact Objective Function", false));
     useInexact_.push_back(Glist.get("Inexact Gradient", false));
     useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Changing Objective Functions
-    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Krylov Object
     ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
@@ -288,6 +285,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -314,7 +312,7 @@ public:
       ekv_(KRYLOV_CG),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), softUp_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -329,8 +327,6 @@ public:
     useInexact_.push_back(Glist.get("Inexact Objective Function", false));
     useInexact_.push_back(Glist.get("Inexact Gradient", false));
     useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Changing Objective Functions
-    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Krylov Object
     ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
@@ -345,6 +341,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -370,7 +367,7 @@ public:
       ekv_(KRYLOV_USERDEFINED),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), softUp_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -385,8 +382,6 @@ public:
     useInexact_.push_back(Glist.get("Inexact Objective Function", false));
     useInexact_.push_back(Glist.get("Inexact Gradient", false));
     useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Changing Objective Functions
-    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Secant Object
     esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
     useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
@@ -400,6 +395,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -428,7 +424,7 @@ public:
       ekv_(KRYLOV_CG),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), softUp_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -441,8 +437,6 @@ public:
     useInexact_.push_back(Glist.get("Inexact Objective Function", false));
     useInexact_.push_back(Glist.get("Inexact Gradient", false));
     useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Changing Objective Functions
-    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Krylov Object
     ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
@@ -457,6 +451,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
@@ -633,12 +628,6 @@ public:
     // Update iterate
     algo_state.iter++;
     x.axpy(1.0, s);
-    if ( softUp_ ) {
-      obj.update(x,true,algo_state.iter);
-      algo_state.value = obj.value(x,tol);
-      algo_state.nfval++;
-    }
-
     // Compute new gradient
     if ( edesc_ == DESCENT_SECANT || 
         (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
@@ -680,6 +669,19 @@ public:
   */
   std::string printHeader( void ) const  {
     std::stringstream hist;
+
+    if( verbosity_>0 ) {
+      if( edesc_ == DESCENT_NEWTONKRYLOV ) {
+        hist << std::string(109,'-') <<  "\n"; 
+        hist << "Krylov solver flags (flagCG)" << "\n";
+        for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_TRRADEX; ++flag ) {
+          hist << "  " << std::to_string(flag) << " - "
+          << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n";
+        }
+      }
+      hist << std::string(109,'-') << "\n";
+    }
+
     hist << "  ";
     hist << std::setw(6) << std::left << "iter";  
     hist << std::setw(15) << std::left << "value";

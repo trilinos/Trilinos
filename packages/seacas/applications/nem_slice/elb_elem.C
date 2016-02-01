@@ -41,6 +41,11 @@
 #include "elb_err.h"                    // for error_report, Gen_Error
 #include "elb_util.h"                   // for in_list
 
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
+#define TOPTR(x) (x.empty() ? NULL : &x[0])
+#endif
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1405,7 +1410,7 @@ int get_side_id_hex_tet(const E_Type  etype,      /* The element type */
   const char *func_name="get_side_id_hex";
 
   int nnodes, lcnt, i1, i2;
-  int loc_node_ids[MAX_SIDE_NODES];
+  std::vector<int> loc_node_ids(MAX_SIDE_NODES);
 
   nnodes = get_elem_info(NNODES, etype);
 
@@ -1427,24 +1432,24 @@ int get_side_id_hex_tet(const E_Type  etype,      /* The element type */
   case TET10:
   case TET8:
     /* SIDE 1 */
-    if(in_list(1, lcnt, loc_node_ids) >= 0 &&
-       in_list(2, lcnt, loc_node_ids) >= 0 &&
-       in_list(4, lcnt, loc_node_ids) >= 0) return 1;
+    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+       in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+       in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) return 1;
 
     /* SIDE 2 */
-    if(in_list(2, lcnt, loc_node_ids) >= 0 &&
-       in_list(3, lcnt, loc_node_ids) >= 0 &&
-       in_list(4, lcnt, loc_node_ids) >= 0) return 2;
+    if(in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+       in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+       in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) return 2;
 
     /* SIDE 3 */
-    if(in_list(1, lcnt, loc_node_ids) >= 0 &&
-       in_list(3, lcnt, loc_node_ids) >= 0 &&
-       in_list(4, lcnt, loc_node_ids) >= 0) return 3;
+    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+       in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+       in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) return 3;
 
     /* SIDE 4 */
-    if(in_list(1, lcnt, loc_node_ids) >= 0 &&
-       in_list(2, lcnt, loc_node_ids) >= 0 &&
-       in_list(3, lcnt, loc_node_ids) >= 0) return 4;
+    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+       in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+       in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0) return 4;
 
     break;
 
@@ -1453,50 +1458,50 @@ int get_side_id_hex_tet(const E_Type  etype,      /* The element type */
   case HEX27:
     /* SIDE 1 */
     nnodes = 0;
-    if(in_list(1, lcnt, loc_node_ids) >= 0) nnodes++; 
-    if(in_list(2, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(5, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(6, lcnt, loc_node_ids) >= 0) nnodes++;
+    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++; 
+    if(in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
     if (nnodes > 2) return 1;
 
     /* SIDE 2 */
     nnodes = 0;
-    if(in_list(2, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(3, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(6, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(7, lcnt, loc_node_ids) >= 0) nnodes++;
+    if(in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
     if (nnodes > 2) return 2;
 
     /* SIDE 3 */
     nnodes = 0;
-    if(in_list(3, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(4, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(7, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(8, lcnt, loc_node_ids) >= 0) nnodes++;
+    if(in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
     if (nnodes > 2) return 3;
 
     /* SIDE 4 */
     nnodes = 0;
-    if(in_list(1, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(4, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(5, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(8, lcnt, loc_node_ids) >= 0) nnodes++;
+    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
     if (nnodes > 2) return 4;
 
     /* SIDE 5 */
     nnodes = 0;
-    if(in_list(1, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(2, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(3, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(4, lcnt, loc_node_ids) >= 0) nnodes++;
+    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
     if (nnodes > 2) return 5;
 
     /* SIDE 6 */
     nnodes = 0;
-    if(in_list(5, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(6, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(7, lcnt, loc_node_ids) >= 0) nnodes++;
-    if(in_list(8, lcnt, loc_node_ids) >= 0) nnodes++;
+    if(in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
+    if(in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
     if (nnodes > 2) return 6;
 
     break;

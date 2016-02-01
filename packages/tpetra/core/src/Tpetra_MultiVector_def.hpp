@@ -133,10 +133,6 @@ namespace { // (anonymous)
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type dual_view_type;
     const char* label = "MV::DualView";
 
-#if 0
-    (void) zeroOut;
-    return dual_view_type (label, lclNumRows, numCols);
-#else
     if (zeroOut) {
       return dual_view_type (label, lclNumRows, numCols);
     }
@@ -168,7 +164,6 @@ namespace { // (anonymous)
 
       return dual_view_type (d_view, h_view);
     }
-#endif // 0
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
@@ -185,8 +180,14 @@ namespace { // (anonymous)
     // Kokkos::Serial.  That's why we go through the trouble of asking
     // Kokkos::DualView what _its_ space is.  That seems to work
     // around this default execution space issue.
+    //
+    // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
+    // a memory space, rather than an execution space, as the first
+    // argument of VerifyExecutionCanAccessMemorySpace.
     typedef typename Kokkos::Impl::if_c<
-      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<ExecSpace, Kokkos::HostSpace>::value,
+      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+        typename ExecSpace::memory_space,
+        Kokkos::HostSpace>::value,
       typename ExecSpace::device_type,
       typename Kokkos::DualView<T*, ExecSpace>::host_mirror_space>::type host_exec_space;
     typedef Kokkos::LayoutLeft array_layout;
@@ -267,9 +268,6 @@ namespace Tpetra {
                const bool zeroOut) : /* default is true */
     base_type (map)
   {
-   TEUCHOS_TEST_FOR_EXCEPTION(
-     numVecs < 1, std::invalid_argument, "Tpetra::MultiVector::MultiVector"
-     "(map,numVecs,zeroOut): numVecs = " << numVecs << " < 1.");
     const size_t lclNumRows = this->getLocalLength ();
     view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
     origView_ = view_;
@@ -895,6 +893,11 @@ namespace Tpetra {
       // column multivector be a subview of another multi-vector, in which case
       // sourceMV.whichVectors_[0] != 0 ?  I think we have to handle that case
       // separately.
+      //
+      // mfh 18 Jan 2016: In answer to ETP's comment above:
+      // MultiVector treats single-column MultiVectors created using a
+      // "nonconstant stride constructor" as a special case, and makes
+      // them constant stride (by making whichVectors_ have length 0).
       if (sourceMV.isConstantStride ()) {
         KokkosRefactor::Details::pack_array_single_column(
           exports,
@@ -3630,36 +3633,35 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceLocalValue (LocalOrdinal MyRow,
-                     size_t VectorIndex,
+  replaceLocalValue (const LocalOrdinal lclRow,
+                     const size_t col,
                      const impl_scalar_type& ScalarValue) const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
     const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      MyRow < minLocalIndex || MyRow > maxLocalIndex,
+      lclRow < minLocalIndex || lclRow > maxLocalIndex,
       std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: row index " << MyRow
+      "Tpetra::MultiVector::replaceLocalValue: row index " << lclRow
       << " is invalid.  The range of valid row indices on this process "
       << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
       << ", " << maxLocalIndex << "].");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(VectorIndex),
+      vectorIndexOutOfRange(col),
       std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: vector index " << VectorIndex
+      "Tpetra::MultiVector::replaceLocalValue: vector index " << col
       << " of the multivector is invalid.");
 #endif
-    const size_t colInd = isConstantStride () ?
-      VectorIndex : whichVectors_[VectorIndex];
-    view_.h_view (MyRow, colInd) = ScalarValue;
+    const size_t colInd = isConstantStride () ? col : whichVectors_[col];
+    view_.h_view (lclRow, colInd) = ScalarValue;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoLocalValue (const LocalOrdinal localRow,
+  sumIntoLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
                      const impl_scalar_type& value,
                      const bool atomic) const
@@ -3668,9 +3670,9 @@ namespace Tpetra {
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
     const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      localRow < minLocalIndex || localRow > maxLocalIndex,
+      lclRow < minLocalIndex || lclRow > maxLocalIndex,
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: row index " << localRow
+      "Tpetra::MultiVector::sumIntoLocalValue: row index " << lclRow
       << " is invalid.  The range of valid row indices on this process "
       << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
       << ", " << maxLocalIndex << "].");
@@ -3682,10 +3684,10 @@ namespace Tpetra {
 #endif
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     if (atomic) {
-      Kokkos::atomic_add (& (view_.h_view(localRow, colInd)), value);
+      Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
     }
     else {
-      view_.h_view (localRow, colInd) += value;
+      view_.h_view (lclRow, colInd) += value;
     }
   }
 
@@ -3693,26 +3695,26 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceGlobalValue (GlobalOrdinal GlobalRow,
-                      size_t VectorIndex,
+  replaceGlobalValue (const GlobalOrdinal gblRow,
+                      const size_t col,
                       const impl_scalar_type& ScalarValue) const
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
-    const LocalOrdinal MyRow = this->map_->getLocalElement (GlobalRow);
+    const LocalOrdinal MyRow = this->map_->getLocalElement (gblRow);
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
       std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: Global row index " << GlobalRow
+      "Tpetra::MultiVector::replaceGlobalValue: Global row index " << gblRow
       << "is not present on this process "
       << this->getMap ()->getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange (VectorIndex), std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: Vector index " << VectorIndex
+      vectorIndexOutOfRange (col), std::runtime_error,
+      "Tpetra::MultiVector::replaceGlobalValue: Vector index " << col
       << " of the multivector is invalid.");
 #endif // HAVE_TPETRA_DEBUG
-    this->replaceLocalValue (MyRow, VectorIndex, ScalarValue);
+    this->replaceLocalValue (MyRow, col, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -3756,42 +3758,6 @@ namespace Tpetra {
     col_dual_view_type X_col =
       Kokkos::subview (view_, Kokkos::ALL (), col);
     return Kokkos::Compat::persistingView (X_col.d_view);
-  }
-
-  template <class Scalar,
-            class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node,
-            const bool classic>
-  KokkosClassic::MultiVector<Scalar, Node>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalMV () const
-  {
-    using Teuchos::ArrayRCP;
-    typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
-
-    // This method creates the KokkosClassic object on the fly.  Thus,
-    // it's OK to leave this in place for backwards compatibility.
-    ArrayRCP<Scalar> data;
-    if (getLocalLength () == 0 || getNumVectors () == 0) {
-      data = Teuchos::null;
-    }
-    else {
-      ArrayRCP<impl_scalar_type> dataTmp = (getLocalLength() > 0) ?
-        Kokkos::Compat::persistingView (view_.d_view) :
-        Teuchos::null;
-      data = Teuchos::arcp_reinterpret_cast<Scalar> (dataTmp);
-    }
-    size_t stride[8];
-    origView_.stride (stride);
-    const size_t LDA =
-      origView_.dimension_1 () > 1 ? stride[1] : origView_.dimension_0 ();
-
-    KMV kmv (this->getMap ()->getNode ());
-    kmv.initializeValues (getLocalLength (), getNumVectors (),
-                          data, LDA, getOrigNumLocalRows (),
-                          getOrigNumLocalCols ());
-    return kmv;
   }
 
   template <class Scalar,

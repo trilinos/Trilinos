@@ -16,4 +16,3 @@
 #  )
 
 ADD_SUBDIRECTORY(Simple)
-ADD_SUBDIRECTORY(EditCrsMatrix)

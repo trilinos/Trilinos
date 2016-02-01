@@ -47,7 +47,9 @@
 /* src/Epetra_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define the Fortran name mangling to be used for the BLAS */
-#define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#ifndef F77_BLAS_MANGLE
+ #define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
 
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
@@ -55,10 +57,14 @@
 
 /* Define to a macro mangling the given C identifier (in lower and upper
    case), which must not contain underscores, for linking with Fortran. */
-#define F77_FUNC@F77_FUNC@
+#ifndef F77_FUNC
+ #define F77_FUNC@F77_FUNC@
+#endif
 
 /* As F77_FUNC, but for C identifiers containing underscores. */
-#define F77_FUNC_@F77_FUNC_@
+#ifndef F77_FUNC_
+ #define F77_FUNC_@F77_FUNC_@
+#endif
 
 /* Define if F77 and FC dummy `main' functions are identical. */
 #cmakedefine FC_DUMMY_MAIN_EQ_F77

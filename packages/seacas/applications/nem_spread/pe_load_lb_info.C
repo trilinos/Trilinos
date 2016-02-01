@@ -656,8 +656,7 @@ in mesh file",yo);
   }
 
   /* Read the QA Records */
-  error = ex_inquire(lb_exoid, EX_INQ_QA, &num_qa_rec, NULL, NULL);
-  check_exodus_error(error, "ex_inquire");
+  num_qa_rec = ex_inquire_int(lb_exoid, EX_INQ_QA);
   if(num_qa_rec > 0) {
     length_qa = 4 * num_qa_rec;
     qa_record_ptr = (char **)array_alloc(__FILE__, __LINE__, 1, length_qa,
@@ -672,8 +671,7 @@ in mesh file",yo);
   }
 
   /* Read the Info Records */
-  error = ex_inquire(lb_exoid, EX_INQ_INFO, &num_inf_rec, NULL,  NULL);
-  check_exodus_error(error, "ex_inquire");
+  num_inf_rec = ex_inquire_int(lb_exoid, EX_INQ_INFO);
   if(num_inf_rec > 0) {
     inf_record_ptr = (char **)array_alloc(__FILE__, __LINE__, 1, num_inf_rec,
 					  sizeof(char *));

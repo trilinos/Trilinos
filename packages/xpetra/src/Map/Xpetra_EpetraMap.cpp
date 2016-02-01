@@ -53,7 +53,6 @@ namespace Xpetra {
 
   template<class GlobalOrdinal, class Node>
   const Epetra_Map & toEpetra(const Map<int,GlobalOrdinal, Node> &map) {
-    // TODO: throw exception
     const EpetraMapT<GlobalOrdinal, Node> & epetraMap = dynamic_cast<const EpetraMapT<GlobalOrdinal, Node> &>(*map.getMap());
     return epetraMap.getEpetra_Map();
   }
@@ -64,40 +63,40 @@ namespace Xpetra {
     return epetraMap->getEpetra_Map();
   }
 
-
-//  template<class GlobalOrdinal>
-//   const RCP<const Map<int,GlobalOrdinal> > toXpetra(const RCP<const Epetra_Map>& map) {
-//     return rcp(new EpetraMapT(map));
-//   }
-
   template<class GlobalOrdinal, class Node>
   const RCP< const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &map) {
     RCP<const Epetra_BlockMap> m = rcp(new Epetra_BlockMap(map));
     return rcp( new EpetraMapT<GlobalOrdinal, Node>(m) );
   }
-  //
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_SERIAL
+#include "TpetraCore_config.h"
+#if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
+    (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
+  template const RCP< const Map<int, int, Xpetra::EpetraNode > > toXpetra<int, Xpetra::EpetraNode>(const Epetra_BlockMap &map);
+  template const Epetra_Map & toEpetra<int, Xpetra::EpetraNode >(const RCP< const Map<int, int, Xpetra::EpetraNode > > &map);
+  template const Epetra_Map & toEpetra<int, Xpetra::EpetraNode >(const Map< int, int, Xpetra::EpetraNode> & map);
+#endif
+#ifdef HAVE_TPETRA_INST_SERIAL
 //template class EpetraMapT<int, Kokkos::Compat::KokkosSerialWrapperNode >;
 template const RCP< const Map<int, int, Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosSerialWrapperNode>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosSerialWrapperNode >(const RCP< const Map<int, int, Kokkos::Compat::KokkosSerialWrapperNode > > & map);
 template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosSerialWrapperNode >(const Map< int, int, Kokkos::Compat::KokkosSerialWrapperNode> & map);
 #endif
-#ifdef HAVE_XPETRA_PTHREAD
+#ifdef HAVE_TPETRA_INST_PTHREAD
 //template class EpetraMapT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
 template const RCP< const Map<int, int, Kokkos::Compat::KokkosThreadsWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosThreadsWrapperNode>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosThreadsWrapperNode >(const RCP< const Map<int, int, Kokkos::Compat::KokkosThreadsWrapperNode > > &map);
 template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosThreadsWrapperNode >(const Map< int, int, Kokkos::Compat::KokkosThreadsWrapperNode> & map);
 #endif
-#ifdef HAVE_XPETRA_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
 //template class EpetraMapT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 template const RCP< const Map<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const RCP< const Map<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > > &map);
 template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const Map< int, int, Kokkos::Compat::KokkosOpenMPWrapperNode> & map);
 #endif
-#ifdef HAVE_XPETRA_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 //template class EpetraMapT<int, default_node_type >;
 template const RCP< const Map<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_BlockMap &map);
@@ -106,7 +105,7 @@ template const Epetra_Map & toEpetra<int, default_node_type >(const Map< int, in
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+typedef Xpetra::EpetraNode default_node_type;
 template const RCP< const Map<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<int, default_node_type >(const RCP< const Map<int, int, default_node_type > > &map);
 template const Epetra_Map & toEpetra<int, default_node_type >(const Map< int, int, default_node_type> & map);
@@ -115,25 +114,33 @@ template const Epetra_Map & toEpetra<int, default_node_type >(const Map< int, in
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_SERIAL
+#include "TpetraCore_config.h"
+#if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
+    (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
+template const RCP< const Map<int, long long, Xpetra::EpetraNode > > toXpetra<long long, Xpetra::EpetraNode>(const Epetra_BlockMap &map);
+template const Epetra_Map & toEpetra<long long, Xpetra::EpetraNode >(const RCP< const Map<int, long long, Xpetra::EpetraNode > > &map);
+template const Epetra_Map & toEpetra<long long, Xpetra::EpetraNode >(const Map< int, long long, Xpetra::EpetraNode> & map);
+#endif
+
+#ifdef HAVE_TPETRA_INST_SERIAL
 //template class EpetraMapT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
 template const RCP< const Map<int, long long, Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode >(const RCP< const Map<int, long long, Kokkos::Compat::KokkosSerialWrapperNode > > & map);
 template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode >(const Map< int, long long, Kokkos::Compat::KokkosSerialWrapperNode> & map);
 #endif
-#ifdef HAVE_XPETRA_PTHREAD
+#ifdef HAVE_TPETRA_INST_PTHREAD
 //template class EpetraMapT<long long, Kokkos::Compat::KokkosThreadsWrapperNode>;
 template const RCP< const Map<int, long long, Kokkos::Compat::KokkosThreadsWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosThreadsWrapperNode>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosThreadsWrapperNode >(const RCP< const Map<int, long long, Kokkos::Compat::KokkosThreadsWrapperNode > > &map);
 template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosThreadsWrapperNode >(const Map< int, long long, Kokkos::Compat::KokkosThreadsWrapperNode> & map);
 #endif
-#ifdef HAVE_XPETRA_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
 //template class EpetraMapT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 template const RCP< const Map<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const RCP< const Map<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > > &map);
 template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const Map< int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> & map);
 #endif
-#ifdef HAVE_XPETRA_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 //template class EpetraMapT<long long, default_node_type >;
 template const RCP< const Map<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_BlockMap &map);
@@ -142,7 +149,7 @@ template const Epetra_Map & toEpetra<long long, default_node_type >(const Map< i
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+typedef Xpetra::EpetraNode default_node_type;
 template const RCP< const Map<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<long long, default_node_type >(const RCP< const Map<int, long long, default_node_type > > &map);
 template const Epetra_Map & toEpetra<long long, default_node_type >(const Map< int, long long, default_node_type> & map);

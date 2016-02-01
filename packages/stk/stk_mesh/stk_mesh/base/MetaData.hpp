@@ -667,12 +667,12 @@ const std::vector<std::string>& entity_rank_names();
 template< class field_type >
 field_type & put_field( field_type & field ,
                         const Part & part ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
                         const Selector & selector ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 /** \brief Declare a field to exist for a given entity type and Part. The
  *         extra unsigned arguments specify the size of a dimension. So,
@@ -683,27 +683,27 @@ template< class field_type >
 field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
                         const Selector & selector ,
                         unsigned     n1 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
                         const Selector & selector ,
                         unsigned     n1 ,
                         unsigned     n2 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -711,7 +711,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         unsigned     n3 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -719,7 +719,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         unsigned     n3 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -728,7 +728,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n2 ,
                         unsigned     n3 ,
                         unsigned     n4 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -738,7 +738,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n3 ,
                         unsigned     n4 ,
                         unsigned     n5 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -749,7 +749,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n4 ,
                         unsigned     n5 ,
                         unsigned     n6 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field( field_type & field ,
@@ -761,7 +761,7 @@ field_type & put_field( field_type & field ,
                         unsigned     n5 ,
                         unsigned     n6 ,
                         unsigned     n7 ,
-                        const void* init_value = NULL);
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 
 template< class field_type >
 field_type & put_field_on_entire_mesh_with_initial_value(field_type & field, const typename FieldTraits<field_type>::data_type *initial_value)
@@ -922,7 +922,7 @@ inline
 field_type & put_field(
   field_type & field ,
   const Part & part ,
-  const void* init_value)
+  const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
@@ -945,7 +945,7 @@ inline
 field_type & put_field(
   field_type & field ,
   const Selector & selector ,
-  const void* init_value)
+  const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
 {
   typedef FieldTraits< field_type > Traits ;
   typedef typename Traits::Helper   Helper ;
@@ -968,7 +968,7 @@ inline
 field_type & put_field( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1;
   unsigned firstDimension = n1;
@@ -982,7 +982,7 @@ inline
 field_type & put_field( field_type &field ,
                         const Selector &selector ,
                         unsigned    n1 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1;
   unsigned firstDimension = n1;
@@ -997,7 +997,7 @@ field_type & put_field( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1*n2;
   unsigned firstDimension = n1;
@@ -1012,7 +1012,7 @@ field_type & put_field( field_type &field ,
                         const Selector &selector ,
                         unsigned    n1 ,
                         unsigned    n2 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1*n2;
   unsigned firstDimension = n1;
@@ -1028,7 +1028,7 @@ field_type & put_field( field_type &field ,
                         unsigned    n1 ,
                         unsigned    n2 ,
                         unsigned    n3 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1*n2*n3;
   unsigned firstDimension = n1;
@@ -1044,7 +1044,7 @@ field_type & put_field( field_type &field ,
                         unsigned    n1 ,
                         unsigned    n2 ,
                         unsigned    n3 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1*n2*n3;
   unsigned firstDimension = n1;
@@ -1061,7 +1061,7 @@ field_type & put_field( field_type &field ,
                         unsigned    n2 ,
                         unsigned    n3 ,
                         unsigned    n4 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1*n2*n3*n4;
   unsigned firstDimension = n1;
@@ -1079,7 +1079,7 @@ field_type & put_field( field_type &field ,
                         unsigned    n3 ,
                         unsigned    n4 ,
                         unsigned    n5 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1*n2*n3*n4*n5;
   unsigned firstDimension = n1;
@@ -1098,7 +1098,7 @@ field_type & put_field( field_type &field ,
                         unsigned    n4 ,
                         unsigned    n5 ,
                         unsigned    n6 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1*n2*n3*n4*n5*n6;
   unsigned firstDimension = n1;
@@ -1118,7 +1118,7 @@ field_type & put_field( field_type &field ,
                         unsigned    n5 ,
                         unsigned    n6 ,
                         unsigned    n7 ,
-                        const void* init_value )
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
 {
   unsigned numScalarsPerEntity = n1*n2*n3*n4*n5*n6*n7;
   unsigned firstDimension = n1;

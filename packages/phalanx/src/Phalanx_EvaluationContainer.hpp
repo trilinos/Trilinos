@@ -83,6 +83,16 @@ namespace PHX {
 
     void evaluateFields(typename Traits::EvalData d);
 
+#ifdef PHX_ENABLE_KOKKOS_AMT
+    /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
+
+      @param threads_per_task The number of threads used for data parallelism within a single task.
+      @param d User defined data
+     */
+    void evaluateFieldsTaskParallel(const int& threads_per_task,
+				    typename Traits::EvalData d);
+#endif
+
     void preEvaluate(typename Traits::PreEvalData d);
 
     void postEvaluate(typename Traits::PostEvalData d);
@@ -97,6 +107,8 @@ namespace PHX {
     const std::string evaluationType() const;
 
     void print(std::ostream& os) const;
+
+    void analyzeGraph(double& speedup, double& parallelizability) const;
 
   protected:
 

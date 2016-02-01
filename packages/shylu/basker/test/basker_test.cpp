@@ -31,13 +31,13 @@ int main(int argc, char* argv[])
   typedef void*          Exe_Space;
   #endif
     
-  //std::string fname = std::string(argv[1]);
+  std::string fname = std::string(argv[1]);
   //std::string rhsname = std::string(argv[2]);
   //Int numthreads = atoi(argv[3]);
 
-  std::string fname = "matrix1.mtx";
-  
-  Int numthreads = atoi(argv[1]);
+  //std::string fname = "matrix1.mtx";
+ 
+  Int numthreads = atoi(argv[2]);
 
   cout << "using " << numthreads << "threads" << endl;
 
@@ -49,6 +49,8 @@ int main(int argc, char* argv[])
   //omp_set_num_threads(numthreads);
   cout << "-------------- USING OMP---------------" << endl;
   #endif
+
+  {
 
   #ifdef BASKER_KOKKOS
   cout << "true: " << true << endl;
@@ -186,13 +188,13 @@ int main(int argc, char* argv[])
   */
 
   //Before Init
-  {
+  //{
   int result = 0;
   BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
   //----Basker - Options
   mybasker.Options.no_pivot  = true;
   mybasker.Options.symmetric = false;
-  mybasker.Options.realloc   = false;
+  mybasker.Options.realloc   = true;
   mybasker.Options.btf       = true;
  
 
@@ -202,16 +204,18 @@ int main(int argc, char* argv[])
   cout << "--------------Done SFactor------------------" << endl;
   mybasker.Factor(m,n,nnz,col_ptr,row_idx,vals);
   cout << "--------------Done NFactor-----------------" << endl;
-  //mybasker.DEBUG_PRINT();
-  //cout << "--------------Done Print----------------------"<<endl;
+  mybasker.DEBUG_PRINT();
+  cout << "--------------Done Print----------------------"<<endl;
   mybasker.SolveTest();
   //mybasker.Solve(y,x);
   cout << "--------------Done Solve----------------------"<<endl;
-
-
-  }//After
+  mybasker.Finalize();
+  cout << "--------------Called Finalize-----------------"<<endl;
+ 
+  //}//After
   //Kokkos::fence();
 
+  }
   //#ifdef BASKER_KOKKOS
   Kokkos::finalize();
   //#endif

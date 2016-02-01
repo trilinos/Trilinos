@@ -193,6 +193,7 @@ namespace Iogn {
 
     get_step_times();
 
+    add_transient_fields(this_region);
     get_nodeblocks();
     get_elemblocks();
     get_nodesets();
@@ -265,10 +266,16 @@ namespace Iogn {
     return num_to_get;
   }
 
-  int64_t DatabaseIO::get_field_internal(const Ioss::Region* /* reg */, const Ioss::Field& /* field */,
-                                         void */* data */, size_t /* data_size */) const
+  int64_t DatabaseIO::get_field_internal(const Ioss::Region* region,
+					 const Ioss::Field& field,
+					 void *data, size_t data_size) const
   {
-    return -1;
+    Ioss::Field::RoleType role = field.get_role();
+    if (role == Ioss::Field::TRANSIENT) {
+      // Fill the field with arbitrary data...
+      ((double*)data)[0] = (double)rand();
+    }
+    return 1;
   }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
@@ -495,7 +502,7 @@ namespace Iogn {
     size_t entity_count = cs->get_property("entity_count").get_int();
 
     // Return the <entity (node or face), processor> pair
-    if (field.get_name() == "entity_processor") {
+    if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
 
       // Check type -- node or face
       std::string type = cs->get_property("entity_type").get_string();
@@ -515,6 +522,10 @@ namespace Iogn {
             entity_proc[j++] = entities[i];
             entity_proc[j++] = procs[i];
           }
+
+	  if (field.get_name() == "entity_processor_raw") {
+	    map_global_to_local(get_node_map(), 2*entity_count, 2, entity_proc);
+	  }
         } else {
           int64_t* entity_proc = static_cast<int64_t*>(data);
 
@@ -523,7 +534,12 @@ namespace Iogn {
             entity_proc[j++] = entities[i];
             entity_proc[j++] = procs[i];
           }
+
+	  if (field.get_name() == "entity_processor_raw") {
+	    map_global_to_local(get_node_map(), 2*entity_count, 2, entity_proc);
+	  }
         }
+
       } else {
         std::ostringstream errmsg;
         errmsg << "Invalid commset type " << type;

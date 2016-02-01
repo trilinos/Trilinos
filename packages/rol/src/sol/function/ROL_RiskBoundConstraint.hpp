@@ -67,18 +67,19 @@ public:
     if ( type == "CVaR" || type == "HMCR" ||
          type == "Log-Exponential Quadrangle" ||
          type == "Quantile-Based Quadrangle" ||
+         type == "Smoothed Worst-Case Quadrangle" ||
          type == "Truncated Mean Quadrangle" ) {
       augmented_ = true;
     }
-    if ( !(bc_->isActivated()) ) {
+    if ( bc == Teuchos::null || (bc != Teuchos::null && !bc->isActivated()) ) {
       BoundConstraint<Real>::deactivate();
     }
   }
 
-  RiskBoundConstraint(Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null,
-                const bool augmented = false,
-                const Real lower = ROL_NINF,
-                const Real upper = ROL_INF)
+  RiskBoundConstraint(const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null,
+                      const bool augmented = false,
+                      const Real lower = ROL_NINF,
+                      const Real upper = ROL_INF)
     : bc_(bc), augmented_(augmented) {
     lower_ = std::min(lower,upper);
     upper_ = std::max(lower,upper);
@@ -88,7 +89,7 @@ public:
   }
 
   RiskBoundConstraint(const std::string name,
-                      Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
+                      const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
     : bc_(bc), augmented_(true), lower_(ROL_NINF), upper_(ROL_INF) {
     if ( name == "BPOE" ) { lower_ = 0.; }
   }

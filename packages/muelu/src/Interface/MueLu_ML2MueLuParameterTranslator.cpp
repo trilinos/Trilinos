@@ -57,26 +57,28 @@ namespace MueLu {
 
   std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::ParameterList& paramList, Teuchos::ParameterList& adaptingParamList, const std::string& pname, const std::string& value) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION(pname != "coarse: type" && pname != "coarse: list" && pname != "smoother: type" && pname.find("smoother: list",0) != 0, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): Only \"coarse: type\", \"smoother: type\" or \"smoother: list\" (\"coarse: list\") are supported as ML parameters for transformation of smoother/solver parameters to MueLu");
+    TEUCHOS_TEST_FOR_EXCEPTION(pname != "coarse: type" && pname != "coarse: list" && pname != "smoother: type" && pname.find("smoother: list",0) != 0,
+      Exceptions::RuntimeError,
+      "MueLu::MLParameterListInterpreter::Setup(): Only \"coarse: type\", \"smoother: type\" or \"smoother: list\" (\"coarse: list\") are "
+      "supported as ML parameters for transformation of smoother/solver parameters to MueLu");
 
     // string stream containing the smoother/solver xml parameters
     std::stringstream mueluss;
 
     // Check whether we are dealing with coarse level (solver) parameters or level smoother parameters
     std::string mode = "smoother:";
-    if (pname.find("coarse:",0) == 0)
+    if (pname.find("coarse:", 0) == 0)
       mode = "coarse:";
 
     // check whether pre and/or post smoothing
     std::string PreOrPost = "both";
-    if (paramList.isParameter(mode + " pre or post") )
-    {
+    if (paramList.isParameter(mode + " pre or post"))
       PreOrPost = paramList.get<std::string>(mode + " pre or post");
-    }
 
-    //std::cout << "PreOrPost=" << PreOrPost << " pname=" << pname << " value=" << value << std::endl;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(mode=="coarse:" && PreOrPost != "both", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): The parameter \"coarse: pre or post\" is not supported by MueLu. It does not make sense for direct solvers. For iterative solvers you obtain the same effect by increasing, e.g., the number of sweeps for the coarse grid smoother. Please remove it from your parameters.");
+    TEUCHOS_TEST_FOR_EXCEPTION(mode == "coarse:" && PreOrPost != "both", Exceptions::RuntimeError,
+      "MueLu::MLParameterListInterpreter::Setup(): The parameter \"coarse: pre or post\" is not supported by MueLu. "
+      "It does not make sense for direct solvers. For iterative solvers you obtain the same effect by increasing, "
+      "e.g., the number of sweeps for the coarse grid smoother. Please remove it from your parameters.");
 
     // select smoother type
     std::string valuestr = value; // temporary variable
@@ -84,27 +86,40 @@ namespace MueLu {
     if ( valuestr == "jacobi" || valuestr == "gauss-seidel" || valuestr == "symmetric gauss-seidel" ) {
       std::string my_name;
       if ( PreOrPost == "both" ) my_name = "\"" + pname + "\"";
-      else my_name = "\"smoother: " + PreOrPost + " type\"";
+      else                       my_name = "\"smoother: " + PreOrPost + " type\"";
       mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"RELAXATION\"/>" << std::endl;
+
     } else if ( valuestr == "ifpack" ) {
       std::string my_name = "\"" + pname + "\"";
       if ( paramList.isParameter("smoother: ifpack type") ) {
-        if ( paramList.get<std::string>("smoother: ifpack type") == "ILU" ) { mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"ILU\"/>" << std::endl; adaptingParamList.remove("smoother: ifpack type",false); }
-        if ( paramList.get<std::string>("smoother: ifpack type") == "ILUT" ) { mueluss << "<Parameter name=" << my_name << " type\" type=\"string\" value=\"ILUT\"/>" << std::endl; adaptingParamList.remove("smoother: ifpack type",false); }
+        if ( paramList.get<std::string>("smoother: ifpack type") == "ILU" ) {
+          mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"ILU\"/>" << std::endl;
+          adaptingParamList.remove("smoother: ifpack type",false);
+        }
+        if ( paramList.get<std::string>("smoother: ifpack type") == "ILUT" ) {
+          mueluss << "<Parameter name=" << my_name << " type\" type=\"string\" value=\"ILUT\"/>" << std::endl;
+          adaptingParamList.remove("smoother: ifpack type",false);
+        }
       }
+
     } else if ( valuestr == "chebyshev" ) {
        std::string my_name = "\"" + pname + "\"";
        mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"CHEBYSHEV\"/>" << std::endl;
+
     } else if (valuestr.length() > strlen("amesos") && valuestr.substr(0, strlen("amesos")) == "amesos") {  /* catch Amesos-* */
       std::string solverType = valuestr.substr(strlen("amesos")+1);  /* ("amesos-klu" -> "klu") */
 
       bool valid = false;
       const int  validatorSize = 5;
       std::string validator[validatorSize] = {"superlu", "superludist", "klu", "umfpack"};
-      for (int i=0; i < validatorSize; i++) { if (validator[i] == solverType) valid = true; }
-      TEUCHOS_TEST_FOR_EXCEPTION(!valid, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown smoother type. '" << solverType << "' not supported.");
+      for (int i=0; i < validatorSize; i++)
+        if (validator[i] == solverType)
+          valid = true;
+      TEUCHOS_TEST_FOR_EXCEPTION(!valid, Exceptions::RuntimeError,
+        "MueLu::MLParameterListInterpreter: unknown smoother type. '" << solverType << "' not supported.");
 
       mueluss << "<Parameter name=\"" << pname << "\" type=\"string\" value=\"" << solverType << "\"/>" << std::endl;
+
     } else {
       // TODO error message
       std::cout << "error in " << __FILE__ << ":" << __LINE__ << " could not find valid smoother/solver" << std::endl;
@@ -165,7 +180,6 @@ namespace MueLu {
 
     return mueluss.str();
   }
-
 
   std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::ParameterList & paramList_in, const std::string& defaultVals) {
     Teuchos::ParameterList paramList = paramList_in;
@@ -232,7 +246,7 @@ namespace MueLu {
     mueluss << "<ParameterList name=\"MueLu\">" << std::endl;
 
     // loop over all ML parameters in provided parameter list
-    for (ParameterList::ConstIterator param=paramListWithSubList.begin(); param!=paramListWithSubList.end(); ++param) {
+    for (ParameterList::ConstIterator param = paramListWithSubList.begin(); param != paramListWithSubList.end(); ++param) {
 
       // extract ML parameter name
       const std::string & pname=paramListWithSubList.name(param);
@@ -312,9 +326,6 @@ namespace MueLu {
 
 
       }
-
-
-
     } // for
 
     mueluss << "</ParameterList>" << std::endl;

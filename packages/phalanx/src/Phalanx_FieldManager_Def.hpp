@@ -194,6 +194,19 @@ evaluateFields(typename Traits::EvalData d)
 }
 
 // **************************************************************
+#ifdef PHX_ENABLE_KOKKOS_AMT
+template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+evaluateFieldsTaskParallel(const int& threads_per_task,
+			   typename Traits::EvalData d)
+{
+  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsTaskParallel(threads_per_task,d);
+}
+#endif
+
+// **************************************************************
 template<typename Traits>
 template<typename EvalT>
 inline
@@ -297,6 +310,16 @@ void PHX::FieldManager<Traits>::print(std::ostream& os) const
   typename SCTM::const_iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it)
     os << (*it);
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+analyzeGraph(double& s, double& p) const
+{
+  m_eval_containers.template getAsObject<EvalT>()->analyzeGraph(s,p);
 }
 
 // **************************************************************

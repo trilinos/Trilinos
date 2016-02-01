@@ -26,9 +26,9 @@
 #
 #  $ ./checkin-test-cee-compute011.sh --do-all
 #
-# (This pushes after successful tests have been run)
-#
 #  $ ./checkin-test-cee-compute011.sh --push
+
+EXTRA_ARGS=$@
 
 for word in "$@"
 do
@@ -53,11 +53,11 @@ done
 #
 BASE=/projects/albany
 BOOSTDIR=$BASE
-COMPILER_PATH=/sierra/sntools/SDK/compilers/gcc/4.8.2-RHEL6/bin
-MPI_BASE_DIR=/sierra/sntools/SDK/mpi/openmpi/1.6.4-gcc-4.8.2-RHEL6
+COMPILER_PATH=/sierra/sntools/SDK/compilers/gcc/5.2.0-RHEL6
+MPI_BASE_DIR=/sierra/sntools/SDK/mpi/openmpi/1.8.8-gcc-5.2.0-RHEL6
 NETCDF=$BASE
 HDFDIR=$BASE
-MKL_PATH=/sierra/sntools/SDK/compilers/intel
+MKL_PATH=/sierra/sntools/SDK/compilers/intel/composer_xe_2016.1.150
 LABLAS_LIBRARIES="-L$MKL_PATH/lib/intel64 -Wl,--start-group $MKL_PATH/mkl/lib/intel64/libmkl_intel_lp64.a $MKL_PATH/mkl/lib/intel64/libmkl_core.a $MKL_PATH/mkl/lib/intel64/libmkl_sequential.a -Wl,--end-group -lpthread -ldl"
 
 echo "
@@ -101,9 +101,6 @@ echo "
 -DTPL_ENABLE_MPI:BOOL=ON
 -DMPI_BASE_DIR:PATH=$MPI_BASE_DIR
 -DTPL_ENABLE_GLM=OFF
--DTrilinos_ENABLE_Piro:BOOL=OFF
--DTrilinos_ENABLE_Stokhos:BOOL=OFF
--DTrilinos_ENABLE_PyTrilinos:BOOL=OFF
 -D Amesos2_ENABLE_KLU2:BOOL=ON
 -D TPL_ENABLE_Netcdf:BOOL=ON
 -D TPL_ENABLE_HDF5:BOOL=ON
@@ -121,12 +118,10 @@ echo "
 
 echo "
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
--DCMAKE_CXX_COMPILER:STRING=$COMPILER_PATH/g++
--DCMAKE_C_COMPILER:STRING=$COMPILER_PATH/gcc
--DCMAKE_Fortran_COMPILER:STRING=$COMPILER_PATH/gfortran
+-DCMAKE_CXX_COMPILER:STRING=$COMPILER_PATH/bin/g++
+-DCMAKE_C_COMPILER:STRING=$COMPILER_PATH/bin/gcc
+-DCMAKE_Fortran_COMPILER:STRING=$COMPILER_PATH/bin/gfortran
 " > SERIAL_RELEASE.config
-
-EXTRA_ARGS=$@
 
 #../../checkin-test.py \
 #--make-options="-j 16" \
@@ -139,10 +134,7 @@ EXTRA_ARGS=$@
 
 ../../checkin-test.py \
 --make-options="-j 32" \
---st-extra-builds=MPI_RELEASE_SS \
---ctest-options="-j 16" \
---ctest-timeout=1200 \
+--ctest-options="-j 1" \
 --send-email-to="" \
---no-eg-git-version-check \
 $EXTRA_ARGS
 

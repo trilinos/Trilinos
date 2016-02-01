@@ -6,7 +6,6 @@
  */
 
 #include "GameofLife.hpp"
-#include "GameOfLife/EntityKeyHash.hpp"  // for hash
 #include "GameOfLife/GameofLifeMesh.hpp"  // for GameofLifeMesh
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker

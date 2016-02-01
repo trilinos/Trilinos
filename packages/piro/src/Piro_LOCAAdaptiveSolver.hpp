@@ -50,7 +50,7 @@
 #include "LOCA.H"
 #include "LOCA_Thyra.H"
 #include "LOCA_Thyra_SaveDataStrategy.H"
-#include "LOCA_Thyra_AdaptiveSolutionManager.H"
+#include "Thyra_AdaptiveSolutionManager.hpp"
 
 #include "LOCA_AdaptiveStepper.H"
 
@@ -70,7 +70,7 @@ public:
   LOCAAdaptiveSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
+      const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
       const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy);
 
   ~LOCAAdaptiveSolver();
@@ -95,7 +95,7 @@ private:
 
   Teuchos::RCP<LOCA::GlobalData> globalData_;
   mutable LOCA::ParameterVector paramVector_;
-  const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> solMgr_;
+  const Teuchos::RCP<Thyra::AdaptiveSolutionManager> solMgr_;
   Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTests_;
   Teuchos::RCP<NOX::StatusTest::Generic> noxStatusTests_;
   NOX::Utils utils_;
@@ -112,7 +112,7 @@ Teuchos::RCP<LOCAAdaptiveSolver<Scalar> >
 observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-    const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
+    const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer);
 
 } // namespace Piro

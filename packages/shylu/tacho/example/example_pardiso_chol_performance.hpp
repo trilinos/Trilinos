@@ -5,12 +5,15 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
+#include "ShyLUTacho_config.h"
+
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
 #include "dense_matrix_base.hpp"
 
 #ifdef HAVE_SHYLUTACHO_MKL
+#include "mkl_service.h"
 #include "example_pardiso.hpp"
 
 namespace Tacho {
@@ -36,39 +39,49 @@ namespace Tacho {
 
     int r_val = 0;
 
-    Kokkos::Impl::Timer timer;
+    // mkl nthreads setting 
+    mkl_set_dynamic(0);
+    mkl_set_num_threads(nthreads);
 
-    Pardiso<value_type, AlgoChol::ExternalPardiso> pardiso(nthreads);
+    Kokkos::Impl::Timer timer;
+    double t = 0.0;
+    Pardiso pardiso;
 
     cout << "PardisoCholPerformance:: init" << endl;
     {
       timer.reset();
-      r_val = pardiso.init();
-      const double t = timer.seconds();
+      r_val = pardiso.init<value_type,AlgoChol::ExternalPardiso>();
+      t = timer.seconds();
       
       if (r_val) 
         cout << "PardisoCholPerformance:: Pardiso init error = " << r_val 
              << pardiso.showErrorCode(cout) << endl;
-      cout << "PardisoCholPerformance:: init ::time = " << t << endl;
     }
+    cout << "PardisoCholPerformance:: init ::time = " << t << endl;
     
     cout << "PardisoCholPerformance:: import input file = " << file_input << endl;
     CrsMatrixBaseType AA("AA");
     {
       timer.reset();
 
+      CrsMatrixBaseType Atmp("Atmp");
       ifstream in;
       in.open(file_input);
       if (!in.good()) {
         cout << "Failed in open the file: " << file_input << endl;
         return ++r_val;
       }
-      AA.importMatrixMarket(in);
-      
-      const double t = timer.seconds();
+      Atmp.importMatrixMarket(in);
 
-      if (verbose)
+      AA.copy(Uplo::Upper, Atmp);
+      //AA.copy(Atmp);
+
+      t = timer.seconds();
+
+      if (verbose) {
+        cout << Atmp << endl;
         cout << AA << endl;
+      }
     }
     cout << "PardisoCholPerformance:: import input file::time = " << t << endl;
 
@@ -89,7 +102,7 @@ namespace Tacho {
     {
       timer.reset();
       r_val = pardiso.run(Pardiso::Analyze);
-      const double t = timer.seconds();
+      t = timer.seconds();
       
       if (r_val) 
         cout << "PardisoCholPerformance:: Pardiso analyze error = " << r_val 
@@ -104,7 +117,7 @@ namespace Tacho {
       {
         timer.reset();
         r_val = pardiso.run(Pardiso::Factorize);
-        const double t = timer.seconds();
+        t = timer.seconds();
         
         if (r_val) 
           cout << "PardisoCholPerformance:: Pardiso factorize error = " << r_val 
@@ -120,7 +133,7 @@ namespace Tacho {
       {
         timer.reset();
         r_val = pardiso.run(Pardiso::Solve);
-        const double t = timer.seconds();
+        t = timer.seconds();
         
         if (r_val) 
           cout << "PardisoCholPerformance:: Pardiso solve error = " << r_val 
@@ -135,7 +148,7 @@ namespace Tacho {
     {
       timer.reset();
       r_val = pardiso.run(Pardiso::ReleaseAll);
-      const double t = timer.seconds();
+      t = timer.seconds();
 
       if (r_val) 
         cout << "PardisoCholPerformance:: release error = " << r_val 

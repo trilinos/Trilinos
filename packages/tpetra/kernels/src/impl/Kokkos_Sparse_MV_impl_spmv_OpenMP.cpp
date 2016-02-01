@@ -48,6 +48,8 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_OPENMP
 
+KOKKOSSPARSE_IMPL_SPMV_MV_DEF( int, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_MV_DEF( long, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 KOKKOSSPARSE_IMPL_SPMV_MV_DEF( double, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_OPENMP

@@ -177,6 +177,9 @@ public:
   typedef LO local_ordinal_type;
   //! The type of global indices.
   typedef GO global_ordinal_type;
+  //! The Kokkos Device type.
+  typedef typename Node::device_type device_type;
+
   //! The Kokkos Node type.
   typedef Node node_type;
 
@@ -337,6 +340,82 @@ public:
 
   //! Multiply all entries in place by the given value \c val.
   void scale (const Scalar& val);
+
+  /// \brief Update: <tt>this = beta*this + alpha*X</tt>.
+  ///
+  /// Update this BlockMultiVector with scaled values of X.  If beta
+  /// is zero, overwrite \c *this unconditionally, even if it contains
+  /// NaN entries.  It is legal for the input X to alias this
+  /// MultiVector.
+  void
+  update (const Scalar& alpha,
+          const BlockMultiVector<Scalar, LO, GO, Node>& X,
+          const Scalar& beta);
+
+  /// \brief <tt>*this := alpha * D * X</tt>, where D is a block
+  ///   diagonal matrix.
+  ///
+  /// Compute <tt>*this := alpha * D * X</tt>, where D is a block
+  /// diagonal matrix, stored as a 3-D Kokkos::View.  This method is
+  /// the block analog of Tpetra::MultiVector::elementWiseMultiply,
+  /// and is likewise useful for implementing (block) Jacobi.
+  ///
+  /// \param alpha [in] Coefficient by which to scale the result.  We
+  ///   treat alpha = 0 as a special case, following the BLAS rules.
+  ///   That is, if alpha = 0, this method does \c this->putScalar(0).
+  /// \param D [in] Block diagonal, as a 3-D Kokkos::View.  The
+  ///   leftmost index indicates which block, the middle index the row
+  ///   within a block, and the rightmost index the column within a
+  ///   block.
+  /// \param pivots [in] Pivots (from LU factorization of the blocks)
+  /// \param X [in] Input Block(Multi)Vector; may alias \c *this.
+  ///
+  /// D is really the inverse of some BlockCrsMatrix's block diagonal.
+  /// You may compute the inverse of each block however you like.  One
+  /// way is to use GETRF, then GETRI.
+  void
+  blockWiseMultiply (const Scalar& alpha,
+                     const Kokkos::View<const impl_scalar_type***,
+                       device_type, Kokkos::MemoryUnmanaged>& D,
+                     const BlockMultiVector<Scalar, LO, GO, Node>& X);
+
+  /// \brief Block Jacobi update \f$Y = \beta * Y + \alpha D (X - Z)\f$.
+  ///
+  /// This method computes the block Jacobi update
+  /// \f$Y = \beta * Y + \alpha D (X - Z)\f$, where Y is
+  /// <tt>*this<\tt>, D the (explicitly stored) inverse block
+  /// diagonal of a BlockCrsMatrix A, and \f$Z = A*Y\f$.
+  /// The method may use Z as scratch space.
+  ///
+  /// Folks who optimize sparse matrix-vector multiply kernels tend
+  /// not to write special-purpose kernels like this one.  Thus, this
+  /// kernel consolidates all the other code that block Jacobi needs,
+  /// while exploiting the existing sparse matrix-vector multiply
+  /// kernel in BlockCrsMatrix.  That consolidation minimizes
+  /// thread-parallel kernel launch overhead.
+  ///
+  /// \param alpha [in] Coefficient of the "block scaled" term.  We
+  ///   treat alpha = 0 as a special case, following the BLAS rules.
+  ///   That is, if alpha = 0, this method does Y = beta * Y.
+  /// \param D [in] Block diagonal, as a 3-D Kokkos::View.  The
+  ///   leftmost index indicates which block, the middle index the row
+  ///   within a block, and the rightmost index the column within a
+  ///   block.
+  /// \param X [in] The first of two block (multi)vectors whose
+  ///   difference is "block scaled"
+  /// \param Z [in/out] On input: The second of two block
+  ///   (multi)vectors whose difference is "block scaled."  This
+  ///   method may use Z as scratch space.
+  /// \param beta [in] Coefficient of Y.  We treat beta = 0 as a
+  ///   special case, following the BLAS rules.  That is, if beta = 0,
+  ///   the initial contents of Y are ignored.
+  void
+  blockJacobiUpdate (const Scalar& alpha,
+                     const Kokkos::View<const impl_scalar_type***,
+                       device_type, Kokkos::MemoryUnmanaged>& D,
+                     const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                     BlockMultiVector<Scalar, LO, GO, Node>& Z,
+                     const Scalar& beta);
 
   //@}
   //! \name Fine-grained data access

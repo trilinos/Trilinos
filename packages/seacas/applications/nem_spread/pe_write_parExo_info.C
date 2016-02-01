@@ -510,13 +510,14 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
     time_t  time_val = time(NULL);
     char *ct_ptr   = asctime(localtime(&time_val));
     char tm_date[30];
-    strcpy(tm_date, ct_ptr);
+    strncpy(tm_date, ct_ptr,30);
 
     /* Break string with null characters */
     tm_date[3]  = '\0';
     tm_date[7]  = '\0';
     tm_date[10] = '\0';
     tm_date[19] = '\0';
+    tm_date[29] = '\0';
 
     char qa_date[MAX_STR_LENGTH+1];
     char qa_time[MAX_STR_LENGTH+1];
@@ -524,8 +525,8 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
     char qa_vers[MAX_STR_LENGTH+1];
     sprintf(qa_date, "%s %s %s", &tm_date[8], &tm_date[4], &tm_date[20]);
     sprintf(qa_time, "%s", &tm_date[11]);
-    strcpy(qa_name, UTIL_NAME);
-    strcpy(qa_vers, VER_STR);
+    strncpy(qa_name, UTIL_NAME, MAX_STR_LENGTH);
+    strncpy(qa_vers, VER_STR, MAX_STR_LENGTH);
 
     if(qa_date[strlen(qa_date)-1] == '\n')
       qa_date[strlen(qa_date)-1] = '\0';
@@ -603,7 +604,7 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   char    cTitle[MAX_LINE_LENGTH+1];
 
   if (proc_for == 0)
-    strcpy(cTitle, GeomTitle);
+    strncpy(cTitle, GeomTitle, MAX_LINE_LENGTH);
   else
     sprintf(cTitle, "Parallel Mesh File for Processor %d", proc_for);
 

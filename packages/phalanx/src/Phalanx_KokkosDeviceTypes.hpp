@@ -14,7 +14,7 @@
 
 //#include <Kokkos_Cuda.hpp>
 namespace PHX { typedef Kokkos::Cuda Device; 
-                typedef Kokkos::LayoutLeft Layout;}
+                typedef Kokkos::LayoutRight Layout;}
   
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
   

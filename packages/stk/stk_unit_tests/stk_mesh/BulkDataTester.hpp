@@ -41,22 +41,24 @@
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/base/EntityLess.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+
 #include "BucketTester.hpp"
 
 namespace stk { namespace mesh { namespace unit_test {
 
-inline int does_entity_exist_in_list(std::vector<stk::mesh::shared_entity_type>& shared_entity_map, stk::mesh::shared_entity_type &sentity)
+inline int does_entity_exist_in_list(const std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, const stk::mesh::shared_entity_type &shared_entity_from_other_proc)
 {
     int matching_index = -1;
-    for (size_t i=0;i<shared_entity_map.size();++i)
+    stk::topology topo2 = shared_entity_from_other_proc.topology;
+    size_t num_nodes2 = shared_entity_from_other_proc.nodes.size();
+    for (size_t i=0;i<shared_entities_this_proc.size();++i)
     {
-        stk::topology topo1 = shared_entity_map[i].topology;
-        stk::topology topo2 = sentity.topology;
-        size_t num_nodes1 = shared_entity_map[i].nodes.size();
-        size_t num_nodes2 = sentity.nodes.size();
+        stk::topology topo1 = shared_entities_this_proc[i].topology;
+        size_t num_nodes1 = shared_entities_this_proc[i].nodes.size();
         if (topo1 == topo2 && num_nodes1 == num_nodes2)
         {
-            bool sameType = topo1.equivalent(shared_entity_map[i].nodes, sentity.nodes).first;
+            bool sameType = topo1.equivalent(shared_entities_this_proc[i].nodes, shared_entity_from_other_proc.nodes).first;
             if (sameType)
             {
                 matching_index = i;
@@ -293,7 +295,8 @@ public:
 
     void my_delete_shared_entities_which_are_no_longer_in_owned_closure()
     {
-        delete_shared_entities_which_are_no_longer_in_owned_closure();
+        stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
+        delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing);
     }
 
     void my_ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send)
@@ -321,18 +324,15 @@ public:
         markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
     }
 
-    void my_fillSharedEntities(stk::mesh::Ghosting& ghost_id,
-                            stk::mesh::BulkData &mesh,
-                            std::vector<shared_entity_type> & shared_entity_map,
-                            std::vector<std::vector<shared_entity_type> > &shared_entities)
+    void my_fillSharedEntities(std::vector<shared_entity_type> & shared_entity_map, std::vector<std::vector<shared_entity_type> > &shared_entities)
     {
-        fillSharedEntities(ghost_id, mesh, shared_entity_map, shared_entities);
+        fillVectorOfSharedEntitiesByProcessor(shared_entity_map, shared_entities);
     }
 
     void my_unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm,
             std::vector<stk::mesh::shared_entity_type> & shared_entity_map)
     {
-        unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatAlsoHaveEntity(comm, shared_entity_map);
+        unpackEntityFromOtherProcAndUpdateInfoIfSharedLocally(comm, shared_entity_map);
     }
 
     void my_internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity)
@@ -364,93 +364,79 @@ public:
     {
     }
 
+    BulkDataFaceSharingTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
+        BulkDataTester(mesh_meta_data, comm, auto_aura_option)
+    {
+    }
+
     ~BulkDataFaceSharingTester(){}
 
-    void change_connectivity_for_edge_or_face(stk::mesh::Entity edgeOrFace, std::vector<stk::mesh::EntityKey>& node_keys)
+    unsigned get_index_of_side_in_element_bucket(stk::mesh::Entity element, stk::mesh::Entity side);
+
+    stk::mesh::Permutation get_permutation(stk::mesh::Entity element, const stk::mesh::EntityVector& nodes);
+
+    stk::mesh::EntityVector convert_keys_to_entities(const std::vector<stk::mesh::EntityKey>& node_keys);
+
+    void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
+
+    void change_entity_key_and_nodes(const std::vector<shared_entity_type> & potentially_shared_sides);
+
+    virtual void change_entity_key_and_update_sharing_info(std::vector<shared_entity_type> & potentially_shared_sides);
+
+    void update_shared_entity_this_proc2(EntityKey global_key_other_proc, shared_entity_type& shared_entity, int proc_id, const std::vector<EntityKey>& nodes);
+
+    virtual void check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc,
+            int proc_id, const stk::mesh::shared_entity_type &shared_entity_other_proc);
+
+    virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes) {}
+
+    stk::mesh::EntityRank side_rank() const { return mesh_meta_data().side_rank(); }
+    Part &get_topology_root_part(stk::topology topology) const
     {
-        stk::mesh::EntityVector nodes(node_keys.size());
-        for (size_t i=0;i<nodes.size();++i)
-        {
-            nodes[i] = this->get_entity(node_keys[i]);
-        }
-
-        unsigned edges_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-        unsigned elements_edge_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-        unsigned num_elems = this->num_elements(edgeOrFace);
-        const stk::mesh::Entity *elements = this->begin_elements(edgeOrFace);
-        for (unsigned i=0;i<num_elems;++i)
-        {
-            edges_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
-            std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
-                          stk::mesh::get_ordinal_and_permutation(*this, elements[i], stk::topology::EDGE_RANK, nodes);
-            stk::mesh::Permutation new_permutation = ordinalAndPermutation.second;
-
-            stk::mesh::unit_test::BucketTester& bucket_edge = static_cast<stk::mesh::unit_test::BucketTester&>(this->bucket(edgeOrFace));
-
-            bucket_edge.my_change_exisiting_connectivity(this->bucket_ordinal(edgeOrFace), &nodes[0]);
-            bucket_edge.my_change_exisiting_permutation_for_connected_element(this->bucket_ordinal(edgeOrFace), edges_element_offset, new_permutation);
-
-            unsigned num_edges_or_faces = this->num_connectivity(elements[i], this->entity_rank(edgeOrFace));
-            const stk::mesh::Entity* entities = this->begin(elements[i], this->entity_rank(edgeOrFace));
-            for(unsigned j=0;j<num_edges_or_faces;++j)
-            {
-                if (entities[j]==edgeOrFace)
-                {
-                    elements_edge_offset = static_cast<stk::mesh::ConnectivityOrdinal>(j);
-                    break;
-                }
-            }
-
-            stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(this->bucket(elements[i]));
-            bucket_elem.my_change_exisiting_permutation_for_connected_edge(this->bucket_ordinal(elements[i]), elements_edge_offset, new_permutation);
-        }
+        return mesh_meta_data().get_topology_root_part(topology);
     }
 
-    virtual void resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(std::vector<shared_entity_type> & shared_entity_map)
-    {
-       for(size_t i = 0, e = shared_entity_map.size(); i < e; ++i)
-       {
-           Entity entity = get_entity(shared_entity_map[i].local_key);
-           if(shared_entity_map[i].need_update_nodes)
-           {
-               if(shared_entity_map[i].global_key != shared_entity_map[i].local_key)
-               {
-                   my_internal_change_entity_key(shared_entity_map[i].local_key, shared_entity_map[i].global_key, entity);
-               }
-               change_connectivity_for_edge_or_face(entity, shared_entity_map[i].nodes);
+protected:
 
-           }
-           for(size_t j = 0; j < shared_entity_map[i].sharing_procs.size(); j++)
-           {
-               entity_comm_map_insert(entity, EntityCommInfo(stk::mesh::BulkData::SHARED, shared_entity_map[i].sharing_procs[j]));
-           }
-       }
-    }
-
-    virtual void is_entity_shared(std::vector<stk::mesh::shared_entity_type>& shared_entity_map, int proc_id, stk::mesh::shared_entity_type &sentity)
-    {
-        int matching_index = does_entity_exist_in_list(shared_entity_map, sentity);
-        bool entitiesAreTheSame = matching_index >= 0;
-
-        if( entitiesAreTheSame )
-        {
-            Entity entity = this->get_entity(shared_entity_map[matching_index].local_key);
-            shared_entity_map[matching_index].sharing_procs.push_back(proc_id);
-            if(proc_id < this->parallel_rank())
-            {
-                shared_entity_map[matching_index].global_key = sentity.global_key;
-                shared_entity_map[matching_index].nodes = sentity.nodes;
-                shared_entity_map[matching_index].need_update_nodes = true;
-            }
-            this->internal_mark_entity(entity, BulkData::IS_SHARED);
-        }
-    }
-
-    virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes)
-    {
-        // do not do any sorting
-    }
+    void create_and_connect_shared_face_on_this_proc(const stk::mesh::shared_entity_type &shared_entity_other_proc, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id);
+    void connect_side_from_other_proc_to_local_elements(const stk::mesh::EntityVector& elements, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
+            stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id);
 };
+
+class BulkDataElemGraphFaceSharingTester : public BulkDataFaceSharingTester
+{
+public:
+    BulkDataElemGraphFaceSharingTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
+        BulkDataFaceSharingTester(mesh_meta_data, comm)
+    {
+    }
+
+    BulkDataElemGraphFaceSharingTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
+        BulkDataFaceSharingTester(mesh_meta_data, comm, auto_aura_option)
+    {
+    }
+
+    ~BulkDataElemGraphFaceSharingTester(){}
+
+    virtual void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
+
+    stk::mesh::Part& locally_owned_part() const { return mesh_meta_data().locally_owned_part(); }
+    stk::mesh::EntityVector get_local_sides() const;
+    bool entityWasCreatedThisModCycle(stk::mesh::Entity entity) const { return state(entity)==stk::mesh::Created; }
+    stk::topology get_entity_topology(stk::mesh::Entity entity) const { return bucket(entity).topology(); }
+    bool is_entity_owned(stk::mesh::Entity entity) const { return bucket(entity).owned(); }
+
+protected:
+    void determine_if_side_is_shared_across_proc_boundary_and_add(const stk::mesh::EntityVector& elements, stk::mesh::Entity side,
+            const stk::mesh::ElemElemGraph& egraph, std::vector<shared_entity_type>& shared_entities);
+    void use_elem_elem_graph_to_determine_shared_entities(std::vector<shared_entity_type>& shared_entities);
+    void fill_shared_entities_that_need_fixing(const stk::mesh::EntityVector& sides, const stk::mesh::ElemElemGraph& egraph, std::vector<shared_entity_type>& shared_entities);
+    void add_side_if_remote_element_connection_exists(int num_connected_elems, stk::mesh::Entity element, stk::mesh::Entity side, const stk::mesh::ElemElemGraph& egraph,
+            std::vector<shared_entity_type>& shared_entities);
+    void mark_entities_as_shared(const std::vector<shared_entity_type>& entities);
+};
+
+
 
 } } } // namespace stk mesh unit_test
 

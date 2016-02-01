@@ -12,7 +12,7 @@
 #include <unordered_map>                // for unordered_map
 #include <unordered_set>                // for unordered_set
 #include <vector>                       // for vector
-#include "EntityKeyHash.hpp"            // for hash
+#include "stk_mesh/base/HashEntityAndEntityKey.hpp"            // for hash
 #include "GameofLifeMesh.hpp"           // for ScalarIntField
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey

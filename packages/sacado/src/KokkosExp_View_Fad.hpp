@@ -42,10 +42,13 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 
-#include <Kokkos_Core_fwd.hpp>
+// Make sure the user really wants these View specializations
+#include "Sacado_ConfigDefs.h"
+#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
+#include "Kokkos_Core.hpp"
 #include <Kokkos_Macros.hpp>
 #include <Sacado_ConfigDefs.h>
 
@@ -82,7 +85,7 @@ namespace Kokkos {
 template< class DT, class ... DP >
 void deep_copy(
   const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::array_type::value_type & value
+  const typename Sacado::ScalarType< typename View<DT,DP...>::value_type >::type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
@@ -111,12 +114,12 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  static_assert(
-    Sacado::StaticSize< typename View<DT,DP...>::value_type >::value
-    ||
-    std::is_same< Kokkos::Impl::ActiveExecutionMemorySpace
-                , Kokkos::HostSpace >::value
-    , "Deep copy from a FAD type must be statically sized or host space" );
+  // static_assert(
+  //   Sacado::StaticSize< typename View<DT,DP...>::value_type >::value
+  //   ||
+  //   std::is_same< Kokkos::Impl::ActiveExecutionMemorySpace
+  //               , Kokkos::HostSpace >::value
+  //   , "Deep copy from a FAD type must be statically sized or host space" );
 
   Kokkos::Experimental::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
@@ -147,6 +150,33 @@ void deep_copy( const View<DT,DP...> & dst ,
   Kokkos::deep_copy(
     typename View<DT,DP...>::array_type( dst ) ,
     typename View<ST,SP...>::array_type( src ) );
+}
+
+// Whether a given type is a view with Sacado FAD scalar type
+template <typename view_type>
+struct is_view_fad { static const bool value = false; };
+
+template <typename T, typename ... P>
+struct is_view_fad< View<T,P...> > {
+  typedef View<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFad >::value;
+};
+
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar(const view_type& view) {
+  return 0;
+}
+
+template <typename T, typename ... P>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_fad< View<T,P...> >::value, unsigned >::type
+dimension_scalar(const View<T,P...>& view) {
+  return view.implementation_map().dimension_scalar();
 }
 
 } // namespace Kokkos
@@ -204,15 +234,15 @@ public:
 
   // Generate "flattened" multidimensional array specification type.
   typedef typename
-    ViewDataType< scalar_type , scalar_dimension >::type array_scalar_type ;
+    ViewDataType< scalar_type , scalar_dimension >::type scalar_array_type ;
 
   typedef typename
     ViewDataType< const_scalar_type , scalar_dimension >::type
-      const_array_scalar_type ;
+      const_scalar_array_type ;
 
   typedef typename
     ViewDataType< non_const_scalar_type , scalar_dimension >::type
-      non_const_array_scalar_type ;
+      non_const_scalar_array_type ;
 };
 
 } // namespace Impl
@@ -384,6 +414,10 @@ public:
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_6() const { return 0 ; }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const { return 0 ; }
 
+  // Size of sacado scalar dimension
+  KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
+    { return m_fad_size+1; }
+
   //----------------------------------------
   // Range of mapping
 
@@ -474,49 +508,34 @@ public:
 
   //----------------------------------------
 
-  /** \brief  Span, in bytes, of the potentially non-contiguous referenced memory */
-  KOKKOS_INLINE_FUNCTION constexpr size_t memory_span() const
-  {
-    return m_offset.span() * sizeof(fad_value_type);
-  }
-
   /** \brief  Span, in bytes, of the required memory */
-  template< bool AllowPadding >
   KOKKOS_INLINE_FUNCTION
-  static constexpr size_t memory_span
-    ( const std::integral_constant<bool,AllowPadding> &
-    , const size_t N0 , const size_t N1 , const size_t N2 , const size_t N3
-    , const size_t N4 , const size_t N5 , const size_t N6 , const size_t N7
-    )
+  static constexpr size_t memory_span( typename Traits::array_layout const & layout )
     {
       // Do not introduce padding...
-      return offset_type( std::integral_constant< unsigned , 0 >()
-                        , N0, N1, N2, N3, N4, N5, N6, N7
-                        ).span() * sizeof(fad_value_type);
+      typedef std::integral_constant< unsigned , 0 >  padding ;
+      return offset_type( padding() , layout ).span() * sizeof(fad_value_type);
     }
 
   //----------------------------------------
 
-  ~ViewMapping() = default ;
-  ViewMapping() = default ;
+  KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
+  KOKKOS_INLINE_FUNCTION ViewMapping() : m_handle(0) , m_offset() , m_fad_size(0) {}
 
-  ViewMapping( const ViewMapping & ) = default ;
-  ViewMapping & operator = ( const ViewMapping & ) = default ;
+  KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
+  KOKKOS_INLINE_FUNCTION  ViewMapping & operator = ( const ViewMapping & ) = default ;
 
-  ViewMapping( ViewMapping && ) = default ;
-  ViewMapping & operator = ( ViewMapping && ) = default ;
+  KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
+  KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
-  template< bool AllowPadding >
   KOKKOS_INLINE_FUNCTION
   ViewMapping
     ( pointer_type ptr
-    , const std::integral_constant<bool,AllowPadding> &
-    , const size_t N0 , const size_t N1 , const size_t N2 , const size_t N3
-    , const size_t N4 , const size_t N5 , const size_t N6 , const size_t N7
+    , typename Traits::array_layout const & layout
     )
     : m_handle( reinterpret_cast< handle_type >( ptr ) )
     , m_offset( std::integral_constant< unsigned , 0 >()
-              , N0, N1, N2, N3, N4, N5, N6, N7 )
+              , layout )
     // Query m_offset, not input, in case of static dimension
     , m_fad_size(
        ( Rank == 0 ? m_offset.dimension_0() :
@@ -530,8 +549,69 @@ public:
     {}
 
   //----------------------------------------
+  /*  Allocate and construct mapped array.
+   *  Allocate via shared allocation record and
+   *  return that record for allocation tracking.
+   */
+  template< class ... P >
+  SharedAllocationRecord<> *
+  allocate_shared( ViewAllocProp< P... > const & prop
+                 , typename Traits::array_layout const & layout )
+  {
+    typedef ViewAllocProp< P... > alloc_prop ;
+
+    typedef typename alloc_prop::execution_space  execution_space ;
+    typedef typename Traits::memory_space         memory_space ;
+    typedef ViewValueFunctor< execution_space , fad_value_type > functor_type ;
+    typedef SharedAllocationRecord< memory_space , functor_type > record_type ;
+
+    // Disallow padding
+    typedef std::integral_constant< unsigned , 0 > padding ;
+
+    m_offset = offset_type( padding(), layout );
+    m_fad_size = ( Rank == 0 ? m_offset.dimension_0() :
+                   ( Rank == 1 ? m_offset.dimension_1() :
+                     ( Rank == 2 ? m_offset.dimension_2() :
+                       ( Rank == 3 ? m_offset.dimension_3() :
+                         ( Rank == 4 ? m_offset.dimension_4() :
+                           ( Rank == 5 ? m_offset.dimension_5() :
+                             ( Rank == 6 ? m_offset.dimension_6() :
+                               m_offset.dimension_7() ))))))) - 1 ;
+
+    const size_t alloc_size = m_offset.span() * sizeof(fad_value_type);
+
+    // Create shared memory tracking record with allocate memory from the memory space
+    record_type * const record =
+      record_type::allocate( ( (ViewAllocProp<void,memory_space> const &) prop ).value
+                           , ( (ViewAllocProp<void,std::string>  const &) prop ).value
+                           , alloc_size );
+
+    //  Only set the the pointer and initialize if the allocation is non-zero.
+    //  May be zero if one of the dimensions is zero.
+    if ( alloc_size ) {
+
+      m_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
+
+      if ( alloc_prop::initialize ) {
+        // Assume destruction is only required when construction is requested.
+        // The ViewValueFunctor has both value construction and destruction operators.
+        record->m_destroy = functor_type( ( (ViewAllocProp<void,execution_space> const &) prop).value
+                                        , (fad_value_type *) m_handle
+                                        , m_offset.span()
+                                        );
+
+        // Construct values
+        record->m_destroy.construct_shared_allocation();
+      }
+    }
+
+    return record ;
+  }
+
+  //----------------------------------------
   // If the View is to construct or destroy the elements.
 
+  /*
   template< class ExecSpace >
   void construct( const ExecSpace & space ) const
     {
@@ -547,6 +627,7 @@ public:
 
       (void) FunctorType( space , m_handle , m_offset.span() , FunctorType::DESTROY );
     }
+  */
 
 };
 
@@ -641,10 +722,10 @@ public:
         "View assignment must have compatible layout" );
 
       static_assert(
-        std::is_same< typename DstTraits::array_scalar_type
-                    , typename SrcTraits::array_scalar_type >::value ||
-        std::is_same< typename DstTraits::array_scalar_type
-                    , typename SrcTraits::const_array_scalar_type >::value ,
+        std::is_same< typename DstTraits::scalar_array_type
+                    , typename SrcTraits::scalar_array_type >::value ||
+        std::is_same< typename DstTraits::scalar_array_type
+                    , typename SrcTraits::const_scalar_array_type >::value ,
         "View assignment must have same value type or const = non-const" );
 
       static_assert(
@@ -812,22 +893,24 @@ public:
 
 namespace Teuchos {
 
-template< typename Ordinal , class SendViewType , class RecvViewType >
-void reduceAll
+template< typename Ordinal , class SD , class ... SP , class RD , class ... RP >
+typename std::enable_if<Kokkos::is_view_fad< Kokkos::View<SD,SP...> >::value &&
+                        Kokkos::is_view_fad< Kokkos::View<RD,RP...> >::value
+                       >::type
+reduceAll
   ( const Comm<Ordinal>& comm,
-    typename std::enable_if<
-      Kokkos::Experimental::Impl::
-        is_ViewSpecializeSacadoFad< SendViewType , RecvViewType >::value ,
-      const EReductionType >::type reductType ,
+    const EReductionType reductType ,
     const Ordinal count,
-    const SendViewType & sendBuffer ,
-    const RecvViewType & recvBuffer )
+    const Kokkos::View<SD,SP...> & sendBuffer ,
+    const Kokkos::View<RD,RP...> & recvBuffer )
 {
   // We can't implement reduceAll by extracting the underlying array (since we
   // can't reduce across the derivative dimension) and we can't just extract
   // a pointer due to ViewFad.  In principle we could handle ViewFad in the
   // serializer, but for the time being we just copy the view's into local
   // buffers (on the host).
+  typedef Kokkos::View<SD,SP...> SendViewType;
+  typedef Kokkos::View<RD,RP...> RecvViewType;
   typedef typename SendViewType::value_type send_value_type;
   typedef typename RecvViewType::value_type recv_value_type;
 
@@ -866,26 +949,26 @@ void reduceAll
 }
 
 
-template< typename Ordinal , typename Serializer
-        , class SendViewType , class RecvViewType >
-void
+template< typename Ordinal , typename Serializer ,
+          class SD , class ... SP , class RD , class ... RP >
+typename std::enable_if<Kokkos::is_view_fad< Kokkos::View<SD,SP...> >::value &&
+                        Kokkos::is_view_fad< Kokkos::View<RD,RP...> >::value
+                       >::type
 reduceAll
   ( const Comm<Ordinal>& comm,
     const Serializer& serializer,
-    typename std::enable_if<(
-      Kokkos::Experimental::Impl::is_ViewSpecializeSacadoFad< SendViewType >::value
-      &&
-      Kokkos::Experimental::Impl::is_ViewSpecializeSacadoFad< RecvViewType >::value
-      ), const EReductionType >::type reductType ,
+    const EReductionType reductType ,
     const Ordinal count,
-    const SendViewType & sendBuffer ,
-    const RecvViewType & recvBuffer )
+    const Kokkos::View<SD,SP...> & sendBuffer ,
+    const Kokkos::View<RD,RP...> & recvBuffer )
 {
   // We can't implement reduceAll by extracting the underlying array (since we
   // can't reduce across the derivative dimension) and we can't just extract
   // a pointer due to ViewFad.  In principle we could handle ViewFad in the
   // serializer, but for the time being we just copy the view's into local
   // buffers (on the host).
+  typedef Kokkos::View<SD,SP...> SendViewType;
+  typedef Kokkos::View<RD,RP...> RecvViewType;
   typedef typename SendViewType::value_type send_value_type;
   typedef typename RecvViewType::value_type recv_value_type;
 
@@ -923,34 +1006,34 @@ reduceAll
 }
 
 
-template<typename Ordinal, class view_type >
-void broadcast
+template<typename Ordinal, class D, class ... P  >
+typename std::enable_if<Kokkos::is_view_fad< Kokkos::View<D,P...> >::value>::type
+broadcast
   ( const Comm<Ordinal>& comm,
-    typename std::enable_if<(
-      Kokkos::Experimental::Impl::is_ViewSpecializeSacadoFad< view_type >::value
-      ), const int >::type rootRank ,
+    const int rootRank ,
     const Ordinal count,
-    const view_type & buffer)
+    const Kokkos::View<D,P...>& buffer)
 {
+  typedef Kokkos::View<D,P...> view_type;
   typename view_type::array_type array_buffer = buffer;
-  Ordinal array_count = count * buffer.storage_size();
+  Ordinal array_count = count * Kokkos::dimension_scalar(buffer);
   broadcast( comm, rootRank, array_count, array_buffer );
 }
 
 template<typename Ordinal,
          typename Serializer ,
-         class view_type >
-void broadcast
+         class D, class ... P >
+typename std::enable_if<Kokkos::is_view_fad< Kokkos::View<D,P...> >::value>::type
+broadcast
   ( const Comm<Ordinal>& comm,
     const Serializer& serializer,
-    typename std::enable_if<(
-      Kokkos::Experimental::Impl::is_ViewSpecializeSacadoFad< view_type >::value
-      ), const int >::type rootRank ,
+    const int rootRank ,
     const Ordinal count,
-    const view_type & buffer)
+    const Kokkos::View<D,P...>& buffer)
 {
+  typedef Kokkos::View<D,P...> view_type;
   typename view_type::array_type array_buffer = buffer;
-  Ordinal array_count = count * buffer.storage_size();
+  Ordinal array_count = count * Kokkos::dimension_scalar(buffer);
   broadcast( comm, *(serializer.getValueSerializer()), rootRank,
              array_count, array_buffer );
 }
@@ -963,5 +1046,6 @@ void broadcast
 
 #endif
 
-#endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */
+#endif
 
+#endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */

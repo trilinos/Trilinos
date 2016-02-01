@@ -61,8 +61,11 @@ public:
   typedef typename val_type::ordinal_type ordinal_type;
   typedef ArithTraits<base_value_type> BAT;
 
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
   typedef typename BAT::mag_type mag_type;
-  //typedef val_type mag_type;
+#else
+  typedef val_type mag_type;
+#endif
 
   static const bool is_specialized = true;
   static const bool is_signed = BAT::is_signed;
@@ -83,11 +86,16 @@ public:
     return res;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) {
-    //return std::abs(x);
     const ordinal_type sz = x.size();
-    mag_type n = mag_type(0);
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+    mag_type n = mag_type(0.0);
     for (ordinal_type i=0; i<sz; ++i)
       n += BAT::abs( x.fastAccessCoeff(i) );
+#else
+    mag_type n(sz, 0.0);
+    for (ordinal_type i=0; i<sz; ++i)
+      n.fastAccessCoeff(i) = BAT::abs( x.fastAccessCoeff(i) );
+#endif
     return n;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {

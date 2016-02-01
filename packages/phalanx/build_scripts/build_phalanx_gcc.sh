@@ -19,7 +19,6 @@ cmake \
 -D Phalanx_ENABLE_TESTS:BOOL=ON \
 -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \
 -D Phalanx_EXPLICIT_TEMPLATE_INSTANTIATION=ON \
--D Phalanx_ENABLE_NEW_DFS_ALGORITHM:BOOL=ON \
 -D Phalanx_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD:BOOL=OFF \
 -D HAVE_INTREPID_KOKKOSCORE:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \
@@ -27,8 +26,6 @@ cmake \
 -D TPL_ENABLE_HWLOC:BOOL=ON \
 -D HWLOC_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/hwloc/include" \
 -D HWLOC_LIBRARY_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/hwloc/lib" \
--D TPL_ENABLE_Boost:BOOL=OFF \
--D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/boost/include" \
 -D TPL_BLAS_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/blas/libblas.a" \
 -D TPL_LAPACK_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/lapack/liblapack.a" \
 -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicxx" \

@@ -52,6 +52,7 @@
 #include "ROL_CVaR.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_HMCR.hpp"
+#include "ROL_KLDivergence.hpp"
 #include "ROL_MeanDeviationFromTarget.hpp"
 #include "ROL_MeanDeviation.hpp"
 #include "ROL_MeanVarianceFromTarget.hpp"
@@ -61,7 +62,10 @@
 // Risk Quadrangle Risk Measure Implementations
 #include "ROL_LogExponentialQuadrangle.hpp"
 #include "ROL_LogQuantileQuadrangle.hpp"
+#include "ROL_MixedQuantileQuadrangle.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
+#include "ROL_QuantileRadiusQuadrangle.hpp"
+#include "ROL_SmoothedWorstCaseQuadrangle.hpp"
 #include "ROL_TruncatedMeanQuadrangle.hpp"
 
 namespace ROL {
@@ -70,6 +74,7 @@ namespace ROL {
     RISKMEASURE_CVAR = 0,
     RISKMEASURE_EXPUTILITY,
     RISKMEASURE_HMCR,
+    RISKMEASURE_KLDIVERGENCE,
     RISKMEASURE_MEANDEVIATIONFROMTARGET, 
     RISKMEASURE_MEANDEVIATION,
     RISKMEASURE_MEANVARIANCEFROMTARGET,
@@ -77,7 +82,10 @@ namespace ROL {
     RISKMEASURE_MOREAUYOSIDACVAR,
     RISKMEASURE_LOGEXPONENTIALQUADRANGLE,
     RISKMEASURE_LOGQUANTILEQUADRANGLE,
+    RISKMEASURE_MIXEDQUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILEQUADRANGLE,
+    RISKMEASURE_QUANTILERADIUSQUADRANGLE,
+    RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE,
     RISKMEASURE_TRUNCATEDMEANQUADRANGLE,
     RISKMEASURE_LAST
   };
@@ -91,6 +99,8 @@ namespace ROL {
              retString = "Exponential Utility";                     break;
       case RISKMEASURE_HMCR:
              retString = "HMCR";                                    break;
+      case RISKMEASURE_KLDIVERGENCE:
+             retString = "KL Divergence";                           break;
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
              retString = "Mean Plus Deviation From Target";         break;
       case RISKMEASURE_MEANDEVIATION:
@@ -105,8 +115,14 @@ namespace ROL {
              retString = "Log-Exponential Quadrangle";              break;
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
              retString = "Log-Quantile Quadrangle";                 break;
+      case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:
+             retString = "Mixed-Quantile Quadrangle";               break;
       case RISKMEASURE_QUANTILEQUADRANGLE:
              retString = "Quantile-Based Quadrangle";               break;
+      case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
+             retString = "Quantile-Radius Quadrangle";              break;
+      case RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
+             retString = "Smoothed Worst-Case Quadrangle";          break;
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
              retString = "Truncated Mean Quadrangle";               break;
       case RISKMEASURE_LAST:
@@ -120,6 +136,8 @@ namespace ROL {
   inline int isValidRiskMeasure(ERiskMeasure ed) {
     return( (ed == RISKMEASURE_CVAR) ||
             (ed == RISKMEASURE_EXPUTILITY) ||
+            (ed == RISKMEASURE_HMCR) ||
+            (ed == RISKMEASURE_KLDIVERGENCE) ||
             (ed == RISKMEASURE_MEANDEVIATIONFROMTARGET) ||
             (ed == RISKMEASURE_MEANDEVIATION) ||
             (ed == RISKMEASURE_MEANVARIANCEFROMTARGET) ||
@@ -127,7 +145,10 @@ namespace ROL {
             (ed == RISKMEASURE_MOREAUYOSIDACVAR) ||
             (ed == RISKMEASURE_LOGEXPONENTIALQUADRANGLE) ||
             (ed == RISKMEASURE_LOGQUANTILEQUADRANGLE) ||
+            (ed == RISKMEASURE_MIXEDQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
+            (ed == RISKMEASURE_QUANTILERADIUSQUADRANGLE) ||
+            (ed == RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) ||
             (ed == RISKMEASURE_TRUNCATEDMEANQUADRANGLE) );
   }
 
@@ -172,6 +193,8 @@ namespace ROL {
              return Teuchos::rcp(new ExpUtility<Real>);
       case RISKMEASURE_HMCR:
              return Teuchos::rcp(new HMCR<Real>(parlist));
+      case RISKMEASURE_KLDIVERGENCE:
+             return Teuchos::rcp(new KLDivergence<Real>(parlist));
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
              return Teuchos::rcp(new MeanDeviationFromTarget<Real>(parlist));
       case RISKMEASURE_MEANDEVIATION:
@@ -186,8 +209,14 @@ namespace ROL {
              return Teuchos::rcp(new LogExponentialQuadrangle<Real>);
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
              return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:
+             return Teuchos::rcp(new MixedQuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_QUANTILEQUADRANGLE:
              return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
+             return Teuchos::rcp(new QuantileRadiusQuadrangle<Real>(parlist));
+      case RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
+             return Teuchos::rcp(new SmoothedWorstCaseQuadrangle<Real>(parlist));
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
              return Teuchos::rcp(new TruncatedMeanQuadrangle<Real>(parlist));
       default:

@@ -1,6 +1,6 @@
 """
 
-exodus.py v 1.02 (beta) is a python wrapper of some of the exodus II library
+exodus.py v 1.03 (beta) is a python wrapper of some of the exodus II library
 
 Copyright (c) 2013, 2014 Sandia Corporation. Under the terms of
 Contract DE-AC04-94AL85000 with Sandia Corporation, the
@@ -39,10 +39,10 @@ POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.02 (beta)"
+EXODUS_PY_VERSION = "1.03 (beta)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.02 (beta), a python wrapper of some of the exodus II library.
+You are using exodus.py v 1.03 (beta), a python wrapper of some of the exodus II library.
 Copyright (c) 2013,2014 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000
 with Sandia Corporation, the U.S. Government retains certain rights in this software.
 """
@@ -78,7 +78,7 @@ def getExodusVersion():
   found.
   """
   err_msg = "When searching for the path that contains exodusII.h:\n\n"
-  for line in open(getAccessPath(err_msg) + '/inc/exodusII.h'):
+  for line in open(getAccessPath(err_msg) + '/include/exodusII.h'):
     fields = line.split()
     if (len(fields) == 3 and
         fields[0] == '#define' and
@@ -102,7 +102,7 @@ def getAccessPath(err_msg=""):
       err_msg += "exodus.py to find the ExodusII and NetCDF installations.\n\n"
       err_msg += "Try finding the exodusII.h header file on your system and then \n"
       err_msg += "set the ACCESS environment variable such that exodusII.h is \n"
-      err_msg += "located at '$ACCESS/inc/exodusII.h'.\n\n"
+      err_msg += "located at '$ACCESS/include/exodusII.h'.\n\n"
       err_msg += "Also make sure you have loaded the sierra module file \n"
       err_msg += "For example 'module load sierra' \n\n"
       raise Exception, err_msg
@@ -121,7 +121,7 @@ def getAccessPath(err_msg=""):
       err_msg += "installations.\n\n"
       err_msg += "Try finding the exodusII.h header file on your system and \n"
       err_msg += "then set the ACCESS environment variable such that exodusII.h \n"
-      err_msg += "is located at '$ACCESS/inc/exodusII.h'.\n"
+      err_msg += "is located at '$ACCESS/include/exodusII.h'.\n"
       raise Exception, err_msg
     if not os.path.isdir(accessPth):
       err_msg += "The path where exodus.py is trying to find the ExodusII and \n"
@@ -129,7 +129,7 @@ def getAccessPath(err_msg=""):
       err_msg += "This appears to be a nonexistant path.\n\n"
       err_msg += "Try finding the exodusII.h header file on your system and \n"
       err_msg += "then set the ACCESS environment variable such that exodusII.h \n"
-      err_msg += "is located at '$ACCESS/inc/exodusII.h'.\n"
+      err_msg += "is located at '$ACCESS/include/exodusII.h'.\n"
       raise Exception, err_msg
 
   return accessPth

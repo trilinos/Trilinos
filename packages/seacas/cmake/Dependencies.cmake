@@ -1,4 +1,5 @@
-SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Exodus      libraries/exodus        SS  REQUIRED
   Exodus_for  libraries/exodus_for    SS  REQUIRED
   Nemesis     libraries/nemesis       SS  REQUIRED
@@ -7,9 +8,11 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Aprepro_lib libraries/aprepro_lib   SS  REQUIRED
   Supes       libraries/supes         SS  REQUIRED
   Suplib      libraries/suplib        SS  REQUIRED
+  SuplibCpp   libraries/suplib_cpp    SS  REQUIRED
   SVDI        libraries/svdi          SS  OPTIONAL
   PLT         libraries/plt           SS  OPTIONAL
   Algebra     applications/algebra    SS  REQUIRED
+  Aprepro-orig applications/aprepro-orig    SS  OPTIONAL
   Aprepro     applications/aprepro    SS  REQUIRED
   Blot        applications/blot       SS  OPTIONAL
   Conjoin     applications/conjoin    SS  REQUIRED
@@ -19,8 +22,8 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Exodiff     applications/exodiff    SS  REQUIRED
   Exomatlab   applications/exomatlab  SS  REQUIRED
   Exotxt      applications/exotxt     SS  REQUIRED
+  Exo_format  applications/exo_format SS  REQUIRED
   Ex1ex2v2    applications/ex1ex2v2   SS  OPTIONAL
-  Ex2ex1v2    applications/ex2ex1v2   SS  OPTIONAL
   Fastq       applications/fastq      SS  OPTIONAL
   Gjoin       applications/gjoin      SS  REQUIRED
   Gen3D       applications/gen3d      SS  REQUIRED
@@ -35,13 +38,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Nemspread   applications/nem_spread SS  REQUIRED
   Numbers     applications/numbers    SS  REQUIRED
   Txtexo      applications/txtexo     SS  REQUIRED
-  )
+  Ex2ex1v2    applications/ex2ex1v2   SS  OPTIONAL
+)
 
-SET(LIB_REQUIRED_DEP_PACKAGES)
-SET(LIB_OPTIONAL_DEP_PACKAGES)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS)
 SET(LIB_OPTIONAL_DEP_TPLS MPI)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)

@@ -94,6 +94,8 @@ private:
     return ip;
   }
 
+  using ROL::EqualityConstraint_SimOpt<Real>::update;
+
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
     for (unsigned i=0; i<u.size(); i++) {
       u[i] += alpha*s[i];
@@ -198,57 +200,6 @@ public:
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     this->compute_residual(*cp,*up,*zp);
   }
-
-  void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > up =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(u)).getVector());
-    up->assign(up->size(),z.norm()/up->size());
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    // Compute residual and residual norm
-    std::vector<Real> r(up->size(),0.0);
-    this->compute_residual(r,*up,*zp);
-    Real rnorm = this->compute_norm(r);
-    // Define tolerances
-    Real rtol  = 1.e2*ROL::ROL_EPSILON;
-    Real maxit = 500;
-    // Initialize Jacobian storage
-    std::vector<Real> d(this->nx_,0.0);
-    std::vector<Real> dl(this->nx_-1,0.0);
-    std::vector<Real> du(this->nx_-1,0.0);
-    // Iterate Newton's method
-    Real alpha = 1.0, tmp = 0.0;
-    std::vector<Real> s(this->nx_,0.0);
-    std::vector<Real> utmp(this->nx_,0.0);
-    for (int i=0; i<maxit; i++) {
-      //std::cout << i << "  " << rnorm << "\n";
-      // Get Jacobian
-      this->compute_pde_jacobian(dl,d,du,*up);
-      // Solve Newton system
-      this->linear_solve(s,dl,d,du,r);
-      // Perform line search
-      tmp = rnorm;
-      alpha = 1.0;
-      utmp.assign(up->begin(),up->end());
-      this->update(utmp,s,-alpha);
-      this->compute_residual(r,utmp,*zp);
-      rnorm = this->compute_norm(r); 
-      while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON) ) {
-        alpha /= 2.0;
-        utmp.assign(up->begin(),up->end());
-        this->update(utmp,s,-alpha);
-        this->compute_residual(r,utmp,*zp);
-        rnorm = this->compute_norm(r); 
-      }
-      // Update iterate
-      up->assign(utmp.begin(),utmp.end());
-      if ( rnorm < rtol ) {
-        break;
-      }
-    }
-  }
-
-
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                        const ROL::Vector<Real> &z, Real &tol) {

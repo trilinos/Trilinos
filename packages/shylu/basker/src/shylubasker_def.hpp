@@ -12,6 +12,7 @@
 #include "basker_tree.hpp"
 #include "basker_sfactor.hpp"
 #include "basker_nfactor.hpp"
+#include "basker_nfactor_inc.hpp"
 #include "basker_solve_rhs.hpp"
 #include "basker_util.hpp"
 #include "basker_stats.hpp"
@@ -36,21 +37,22 @@ namespace BaskerNS
   Basker<Int, Entry, Exe_Space>::Basker()
   {   
     //Presetup flags
-    matrix_flag    = false;
-    order_flag     = false;
-    tree_flag      = false;
-    symb_flag      = false;
-    factor_flag    = false;
-    workspace_flag = false;
-    rhs_flag       = false;
-    solve_flag     = false;
-    nd_flag        = false;
-    amd_flag       = false;
-
+    matrix_flag    = BASKER_FALSE;
+    order_flag     = BASKER_FALSE;
+    tree_flag      = BASKER_FALSE;
+    symb_flag      = BASKER_FALSE;
+    factor_flag    = BASKER_FALSE;
+    workspace_flag = BASKER_FALSE;
+    rhs_flag       = BASKER_FALSE;
+    solve_flag     = BASKER_FALSE;
+    nd_flag        = BASKER_FALSE;
+    amd_flag       = BASKER_FALSE;
 
     //Default number of threads
     num_threads = 1;
-    global_nnz = 0;
+    global_nnz  = 0;
+
+    btf_total_work = 0;
 
   }//end Basker()
   
@@ -59,9 +61,86 @@ namespace BaskerNS
   Basker<Int ,Entry, Exe_Space>::~Basker()
   {
     
-
-  
   }//end ~Basker()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::Finalize()
+  {
+
+    
+    //finalize all matrices
+    A.Finalize();
+    At.Finalize(); //??? is At even used
+    BTF_A.Finalize();
+    BTF_C.Finalize();
+    BTF_B.Finalize();
+    BTF_D.Finalize();
+    BTF_E.Finalize();
+
+   
+    //finalize array of 2d matrics
+    FREE_MATRIX_VIEW_2DARRAY(AV, tree.nblks);
+    FREE_MATRIX_VIEW_2DARRAY(AL, tree.nblks);
+    FREE_MATRIX_2DARRAY(AVM, tree.nblks);
+    FREE_MATRIX_2DARRAY(ALM, tree.nblks);
+    
+    FREE_MATRIX_2DARRAY(LL, tree.nblks);
+    FREE_MATRIX_2DARRAY(LU, tree.nblks);
+   
+    FREE_INT_1DARRAY(LL_size);
+    FREE_INT_1DARRAY(LU_size);
+    
+    //BTF structure
+    FREE_INT_1DARRAY(btf_tabs);
+    FREE_INT_1DARRAY(btf_blk_work);
+    FREE_INT_1DARRAY(btf_blk_nnz);
+    FREE_MATRIX_1DARRAY(LBTF);
+    FREE_MATRIX_1DARRAY(UBTF);
+   
+
+    
+    //Thread Array
+    FREE_THREAD_1DARRAY(thread_array);
+    basker_barrier.Finalize();
+    
+    
+    //S (Check on this)
+    FREE_INT_2DARRAY(S, tree.nblks);
+    
+    //Permuations
+    FREE_INT_1DARRAY(gperm);
+    FREE_INT_1DARRAY(gpermi);
+    if(match_flag == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(order_match_array);
+        match_flag = BASKER_FALSE;
+      }
+    if(btf_flag == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(order_btf_array);
+        btf_flag = BASKER_FALSE;
+      }
+    if(nd_flag == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(order_scotch_array);
+        nd_flag == BASKER_FALSE;
+      }
+    if(amd_flag == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(order_csym_array);
+        amd_flag == BASKER_FALSE;
+      }
+    
+    //Structures
+    part_tree.Finalize();
+    tree.Finalize();
+    stree.Finalize();
+    stats.Finalize();
+
+    /*
+    */
+  }//end Finalize()
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -114,7 +193,7 @@ namespace BaskerNS
 	return -1;
       }
 
-    basker_barrier.init(num_threads, 16, tree.nlvls );
+    basker_barrier.init(num_threads, 16, tree.nlvls);
 
     order_flag = true;
     return 0;
@@ -226,8 +305,9 @@ namespace BaskerNS
       }
     else
       {
-	//printf("btf_order called \n");
-	btf_order();
+	printf("btf_order called \n");
+	//btf_order();
+	btf_order2();
 	if(btf_tabs_offset != 0)
 	  {
 	    basker_barrier.init(num_threads, 16, tree.nlvls );
@@ -272,7 +352,6 @@ namespace BaskerNS
     Kokkos::Impl::Timer timer;
     #endif
     
-    //factor_tree(option);
     factor_notoken(option);
     
     #ifdef BASKER_KOKKOS_TIME
@@ -294,14 +373,23 @@ namespace BaskerNS
       {
 	return BASKER_ERROR;
       }
-    err = sfactor_copy();
+    //err = sfactor_copy();
+    err = sfactor_copy2();
     //printf("Done with sfactor_copy: %d \n", err);
     if(err == BASKER_ERROR)
       {
 	return BASKER_ERROR;
       }
     //printf("before notoken\n");
-    err = factor_notoken(0);
+
+    if(Options.incomplete == BASKER_FALSE)    
+      {
+	err = factor_notoken(0);
+      }
+    else
+      {
+	err = factor_inc_lvl(0);
+      }
     if(err == BASKER_ERROR)
       {
 	return BASKER_ERROR;
@@ -313,6 +401,13 @@ namespace BaskerNS
     return 0;
 
   }//end Factor()
+
+  template <class Int, class Entry, class Exe_Space>
+  int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int Options)
+  {
+    factor_inc_lvl(Options);
+    return 0;
+  }
 
 
   //Interface for solve.... only doing paralllel solve righ now.
@@ -333,6 +428,16 @@ namespace BaskerNS
     solve_interface(x,b);
     return 0;
   }//Solve(Entry *, Entry *);
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::Solve(Int nrhs,
+                                         Entry *b,
+                                         Entry *x)
+  {
+    solve_interface(nrhs,x,b);
+    return 0;
+  }
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -377,54 +482,73 @@ namespace BaskerNS
   //Return nnz of L
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::GetLnnz(Int *Lnnz)
+  int Basker<Int, Entry, Exe_Space>::GetLnnz(Int &Lnnz)
   {
-    (*Lnnz) = get_Lnnz();
-    if(*Lnnz == 0)
-      return -1;
+    (Lnnz) = get_Lnnz();
+    if(Lnnz == 0)
+      return BASKER_ERROR;
     else
-      return 0;
+      return BASKER_SUCCESS;
   }//end GetLnnz();
 
   //Return nnz of U
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::GetUnnz(Int *Unnz)
+  int Basker<Int, Entry, Exe_Space>::GetUnnz(Int &Unnz)
   {
-    (*Unnz) = get_Unnz();
-    if(*Unnz == 0)
-      return -1;
+    (Unnz) = get_Unnz();
+    if(Unnz == 0)
+      return BASKER_ERROR;
     else
-      return 0;
+      return BASKER_SUCCESS;
   }//end GetUnnz()
 
   //Returns assembled L
   template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::GetL(Int *n, Int *nnz,
+  int Basker<Int,Entry,Exe_Space>::GetL(Int &n, Int &nnz,
            Int **col_ptr, Int **row_idx,
            Entry **val)
   {
-    int err = get_L(n,nnz,col_ptr, row_idx, val);
-    return err;
+    get_L(n,nnz,col_ptr, row_idx, val);
+    
+    return BASKER_SUCCESS;
   }//end GetL()
   
   //returns assembles U
   template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::GetU(Int *n, Int *nnz,
+  int Basker<Int,Entry,Exe_Space>::GetU(Int &n, Int &nnz,
            Int **col_ptr, Int **row_idx,
            Entry **val)
   {
-    int err = get_U(n, nnz, col_ptr, row_idx, val);
-    return err;
+    get_U(n, nnz, col_ptr, row_idx, val);
+    return BASKER_SUCCESS;
   }//end GetU()
 
   //returns global P
   template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::GetP(Int **p)
+  int Basker<Int,Entry,Exe_Space>::GetPerm(Int **lp, Int **rp)
   {
-    int err = get_p(p);
-    return err;
-  }//end GetP()
+    INT_1DARRAY lp_array;
+    MALLOC_INT_1DARRAY(lp_array, gn);
+    INT_1DARRAY rp_array;
+    MALLOC_INT_1DARRAY(rp_array, gn);
+    
+    get_total_perm(lp_array, rp_array);
+
+    (*lp) = new Int[gn];
+    (*rp) = new Int[gn];
+    
+    for(Int i = 0; i < gn; ++i)
+      {
+	(*lp)[i] = lp_array(i);
+	(*rp)[i] = rp_array(i);
+      }
+    
+    FREE_INT_1DARRAY(lp_array);
+    FREE_INT_1DARRAY(rp_array);
+
+    return BASKER_SUCCESS;
+  }//end GetPerm()
 
   //Timer Information function
   template <class Int, class Entry, class Exe_Space>

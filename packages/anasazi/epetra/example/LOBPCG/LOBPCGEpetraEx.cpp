@@ -125,32 +125,44 @@ main (int argc, char *argv[])
       Indices[1] = nx;
       NumEntries = 2;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     else if (MyGlobalElements[i] == nx*(nx-1)) {
       Indices[0] = nx*(nx-1)+1;
       Indices[1] = nx*(nx-2);
       NumEntries = 2;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     else if (MyGlobalElements[i] == nx-1) {
       Indices[0] = nx-2;
       NumEntries = 1;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
       Indices[0] = 2*nx-1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     else if (MyGlobalElements[i] == NumGlobalElements-1) {
       Indices[0] = NumGlobalElements-2;
       NumEntries = 1;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
       Indices[0] = nx*(nx-1)-1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     else if (MyGlobalElements[i] < nx) {
       Indices[0] = MyGlobalElements[i]-1;
@@ -158,7 +170,9 @@ main (int argc, char *argv[])
       Indices[2] = MyGlobalElements[i]+nx;
       NumEntries = 3;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     else if (MyGlobalElements[i] > nx*(nx-1)) {
       Indices[0] = MyGlobalElements[i]-1;
@@ -166,7 +180,9 @@ main (int argc, char *argv[])
       Indices[2] = MyGlobalElements[i]-nx;
       NumEntries = 3;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     else if (MyGlobalElements[i]%nx == 0) {
       Indices[0] = MyGlobalElements[i]+1;
@@ -174,18 +190,24 @@ main (int argc, char *argv[])
       Indices[2] = MyGlobalElements[i]+nx;
       NumEntries = 3;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     else if ((MyGlobalElements[i]+1)%nx == 0) {
       Indices[0] = MyGlobalElements[i]-nx;
       Indices[1] = MyGlobalElements[i]+nx;
       NumEntries = 2;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
       Indices[0] = MyGlobalElements[i]-1;
       NumEntries = 1;
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     else {
       Indices[0] = MyGlobalElements[i]-1;
@@ -194,16 +216,22 @@ main (int argc, char *argv[])
       Indices[3] = MyGlobalElements[i]+nx;
       NumEntries = 4;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-      assert( info==0 );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+         << info << " != 0." );
     }
     // Put in the diagonal entry
     int info = A->InsertGlobalValues(MyGlobalElements[i], 1, &diag, &MyGlobalElements[i]);
-    assert( info==0 );
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (info != 0, std::runtime_error, "InsertGlobalValues returned info = "
+       << info << " != 0." );
   }
 
   // Finish up
   int info = A->FillComplete ();
-  assert( info==0 );
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (info != 0, std::runtime_error, "A->FillComplete() returned info = "
+     << info << " != 0." );
   A->SetTracebackMode (1); // Shutdown Epetra Warning tracebacks
 
   // Create a identity matrix for the temporary mass matrix
@@ -213,11 +241,15 @@ main (int argc, char *argv[])
     Indices[0] = i;
     NumEntries = 1;
     info = M->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
-    assert( info==0 );
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (info != 0, std::runtime_error, "M->InsertGlobalValues() returned info = "
+       << info << " != 0." );
   }
   // Finish up
   info = M->FillComplete ();
-  assert( info==0 );
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (info != 0, std::runtime_error, "M->FillComplete() returned info = "
+     << info << " != 0." );
   M->SetTracebackMode (1); // Shutdown Epetra Warning tracebacks
 
   //************************************

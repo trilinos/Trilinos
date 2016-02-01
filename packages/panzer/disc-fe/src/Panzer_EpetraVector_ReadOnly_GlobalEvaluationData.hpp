@@ -88,7 +88,7 @@ public:
      * ghosted map that are not in the unique map.
      *
      * This must be called before initialize. Also note that no attempt to synchronize
-     * these values a crossed processor is made. So its up to the user to be consistent.
+     * these values a cross a processor is made. So its up to the user to be consistent.
      */
    void useConstantValues(const std::vector<int> & indices,double value);
 

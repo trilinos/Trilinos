@@ -33,7 +33,7 @@
 
 #ifndef __IBMCPP__
 #include <gtest/gtest.h>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -49,8 +49,6 @@
 #include <stk_performance_test_includes/hex_refine_info.hpp>
 
 #include <iostream>
-
-#include <boost/range.hpp>
 
 using namespace stk::mesh;
 
@@ -73,7 +71,7 @@ void create_entities( BulkData & bulk,
   unsigned nid_start = 1 + refine_info.node_id_offset();
   unsigned nid_end = nid_start + refine_info.num_nodes();
 
-  boost::unordered_map<unsigned, Entity> node_map;
+  std::unordered_map<unsigned, Entity> node_map;
 
   for(unsigned nid=nid_start; nid<nid_end; ++nid) {
     Entity e = bulk.declare_entity(stk::topology::NODE_RANK, nid, node_parts);

@@ -1,6 +1,9 @@
 #ifndef MUELU_CONFIG_HPP
 #define MUELU_CONFIG_HPP
-#cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+
+#ifndef F77_BLAS_MANGLE
+ #cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
 
 /* Options */
 
@@ -55,6 +58,8 @@
 
 #cmakedefine HAVE_MUELU_STRATIMIKOS
 
+#cmakedefine HAVE_MUELU_TEKO
+
 #cmakedefine HAVE_MUELU_ZOLTAN
 
 #cmakedefine HAVE_MUELU_ZOLTAN2
@@ -76,6 +81,8 @@
 #cmakedefine HAVE_MUELU_PTHREAD
 #cmakedefine HAVE_MUELU_OPENMP
 #cmakedefine HAVE_MUELU_CUDA
+
+#cmakedefine HAVE_MUELU_BROKEN_TESTS
 
 /*  
  If deprecated warnings are on, and the compiler supports them, then

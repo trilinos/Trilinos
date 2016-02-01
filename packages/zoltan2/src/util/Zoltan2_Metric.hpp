@@ -1206,11 +1206,12 @@ template <typename scalar_t, typename part_t>
  *   \param comm  The problem communicator.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
- *   \param modelType the model type
- *   \param model the model
+ *   \param useDegreeAsWeight whether vertex degree is ever used as vertex
+ *           weight.
  *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
+ *   \param graphModel the graph model.
  *   \param numParts on return is the global number of parts in the solution
  *   \param numNonemptyParts on return is the global number of parts to which 
  *                                objects are assigned.
@@ -1236,10 +1237,10 @@ template <typename Adapter>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     multiCriteriaNorm mcNorm,
-    const RCP<const Adapter> &ia,
-    const RCP<const PartitioningSolution<Adapter> > &solution,
-    enum ModelType modelType,
-    const RCP<const Model<Adapter> > &model,
+    const RCP<const typename Adapter::base_adapter_t> &ia,
+    const PartitioningSolution<Adapter> *solution,
+    bool useDegreeAsWeight,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
     ArrayRCP<MetricValues<typename Adapter::scalar_t> > &metrics)
@@ -1247,8 +1248,10 @@ template <typename Adapter>
   env->debug(DETAILED_STATUS, "Entering objectMetrics");
 
   typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef StridedData<lno_t, scalar_t> sdata_t;
 
   // Local number of objects.
@@ -1258,7 +1261,7 @@ template <typename Adapter>
   // Parts to which objects are assigned.
 
   const part_t *parts;
-  if (solution != Teuchos::null) {
+  if (solution) {
     parts = solution->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
@@ -1281,22 +1284,48 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
-    for (int i=0; i < nWeights; i++){
-      int stride;
-      const scalar_t *wgt;
-      ia->getWeightsView(wgt, stride, i); 
-      ArrayRCP<const scalar_t> wgtArray(wgt, 0, stride*numLocalObjects, false);
-      weights[i] = sdata_t(wgtArray, stride);
+    if (useDegreeAsWeight) {
+      ArrayView<const gno_t> Ids;
+      ArrayView<sdata_t> vwgts;
+      if (graphModel == Teuchos::null) {
+	std::bitset<NUM_MODEL_FLAGS> modelFlags;
+	RCP<GraphModel<base_adapter_t> > graph;
+	graph = rcp(new GraphModel<base_adapter_t>(ia, env, comm, modelFlags));
+	graph->getVertexList(Ids, vwgts);
+      } else {
+	graphModel->getVertexList(Ids, vwgts);
+      }
+      scalar_t *wgt = new scalar_t[numLocalObjects];
+      for (int i=0; i < nWeights; i++){
+	for (size_t j=0; j < numLocalObjects; j++) {
+	  wgt[j] = vwgts[i][j];
+	}
+	ArrayRCP<const scalar_t> wgtArray(wgt,0,numLocalObjects,false);
+	weights[i] = sdata_t(wgtArray, 1);
+      }
+    } else {
+      for (int i=0; i < nWeights; i++){
+	const scalar_t *wgt;
+	int stride;
+	ia->getWeightsView(wgt, stride, i); 
+	ArrayRCP<const scalar_t> wgtArray(wgt,0,stride*numLocalObjects,false);
+	weights[i] = sdata_t(wgtArray, stride);
+      }
     }
   }
 
   // Relative part sizes, if any, assigned to the parts.
 
-  part_t targetNumParts = solution->getTargetGlobalNumberOfParts();
+  part_t targetNumParts = comm->getSize();
+
+  if (solution)
+    targetNumParts = solution->getTargetGlobalNumberOfParts();
+
   scalar_t *psizes = NULL;
 
   ArrayRCP<ArrayRCP<scalar_t> > partSizes(numCriteria);
   for (int dim=0; dim < numCriteria; dim++){
+    if (solution)
     if (solution->criteriaHasUniformPartSizes(dim) != true){
       psizes = new scalar_t [targetNumParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);

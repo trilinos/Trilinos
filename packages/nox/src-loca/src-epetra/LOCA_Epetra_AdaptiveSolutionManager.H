@@ -62,6 +62,7 @@ class AdaptiveSolutionManager : public NOX::Epetra::AdaptiveSolutionManager
 public:
 
   AdaptiveSolutionManager (
+           const int number_of_time_derivatives,
            const Teuchos::RCP<const Epetra_Map>& map_,
            const Teuchos::RCP<const Epetra_Map>& overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph>& overlapJacGraph_);

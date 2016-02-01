@@ -80,6 +80,8 @@ kl_init (
 
     if (*bucket_ptrs == NULL || *dvals == NULL || *tops == NULL ||
 	*listspace == NULL || spacel == NULL || spaceb == NULL) {
+        sfree(spacel);
+	sfree(spaceb);
 	return(1);
     }
 

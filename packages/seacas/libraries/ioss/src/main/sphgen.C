@@ -32,7 +32,7 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <stddef.h>
 #include <cmath>
 #include <stdlib.h>

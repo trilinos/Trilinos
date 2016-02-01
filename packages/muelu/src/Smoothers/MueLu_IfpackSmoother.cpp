@@ -128,7 +128,7 @@ namespace MueLu {
   void IfpackSmoother<Node>::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "MueLu::IfpackSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::IfpackSmoother::Setup(): Setup() has already been called" << std::endl;
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -345,24 +345,11 @@ namespace MueLu {
 
 } // namespace MueLu
 
-// ETI
 // The IfpackSmoother is only templated on the Node, since it is an Epetra only object
 // Therefore we do not need the full ETI instantiations as we do for the other MueLu
 // objects which are instantiated on all template parameters.
-#if defined(HAVE_MUELU_SERIAL)
-template class MueLu::IfpackSmoother<Kokkos::Compat::KokkosSerialWrapperNode >;
+#if defined(HAVE_MUELU_EPETRA)
+template class MueLu::IfpackSmoother<Xpetra::EpetraNode>;
 #endif
-
-//#if defined(HAVE_MUELU_PTHREAD)
-//template class MueLu::IfpackSmoother<Kokkos::Compat::KokkosThreadsWrapperNode >;
-//#endif
-
-//#if defined(HAVE_MUELU_OPENMP)
-//template class MueLu::IfpackSmoother<Kokkos::Compat::KokkosOpenMPWrapperNode >;
-//#endif
-
-//#if defined(HAVE_MUELU_CUDA)
-//template class MueLu::IfpackSmoother<Kokkos::Compat::KokkosCudaWrapperNode >;
-//#endif
 
 #endif

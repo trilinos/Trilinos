@@ -15,6 +15,11 @@ namespace Tacho {
   class CrsMatrixHelper {
   public:
 
+    template<typename CrsFlatBase>
+    KOKKOS_INLINE_FUNCTION    
+    static int
+    filterZeros(CrsFlatBase &flat);
+    
     /// \brief Transform a scalar flat matrix to hierarchical matrix of matrices 1x1; testing only.
     template<typename CrsFlatBase,
              typename CrsHierBase>

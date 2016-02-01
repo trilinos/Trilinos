@@ -65,7 +65,7 @@
 #include <stdexcept>
 #include <limits>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/Timer.hpp>
@@ -1018,9 +1018,9 @@ sierraTimerSet()
 }
 
 
-boost::shared_ptr<SierraRootTimer> sierraRootTimer()
+std::shared_ptr<SierraRootTimer> sierraRootTimer()
 {
-  static boost::shared_ptr<SierraRootTimer> s_sierraRootTimer(new SierraRootTimer());
+  static std::shared_ptr<SierraRootTimer> s_sierraRootTimer(new SierraRootTimer());
   if ( ! s_sierraRootTimer ) {
     s_sierraRootTimer.reset(new SierraRootTimer());
   }

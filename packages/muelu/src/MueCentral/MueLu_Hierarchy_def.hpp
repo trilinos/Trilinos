@@ -414,6 +414,9 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(levelManagers_.size() != numLevels, Exceptions::RuntimeError,
                                "Hierarchy::SetupRe: " << Levels_.size() << " levels, but  " << levelManagers_.size() << " level factory managers");
 
+    const int startLevel = 0;
+    Clear(startLevel);
+
 #ifdef HAVE_MUELU_DEBUG
       // Reset factories' data used for debugging
       for (int i = 0; i < numLevels; i++)
@@ -422,7 +425,7 @@ namespace MueLu {
 #endif
 
     int levelID;
-    for (levelID = 0; levelID < numLevels;) {
+    for (levelID = startLevel; levelID < numLevels;) {
       bool r = Setup(levelID,
                      (levelID != 0 ? levelManagers_[levelID-1] : Teuchos::null),
                      levelManagers_[levelID],
@@ -618,8 +621,11 @@ namespace MueLu {
           postSmoo->Apply(X, B, zeroGuess);
           emptySolve = false;
         }
-        if (emptySolve == true)
+        if (emptySolve == true) {
           GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
+          // Coarse operator is identity
+          X.update(one, B, zero);
+        }
 
       } else {
         // On intermediate levels, we do cycles

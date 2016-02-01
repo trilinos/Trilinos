@@ -130,8 +130,6 @@ int main (int argc, char **argv)
 
    }
 
-   /* ncopts = NC_VERBOSE; */
-
 /* initialize file with parameters */
 
    num_dim = 3;
@@ -1288,9 +1286,9 @@ int main (int argc, char **argv)
    whole_time_step = 1;
    num_time_steps = 10;
 
-   glob_var_vals = (float *) calloc (num_glo_vars, sizeof(CPU_word_size));
-   nodal_var_vals = (float *) calloc (num_nodes, sizeof(CPU_word_size));
-   elem_var_vals = (float *) calloc (4, sizeof(CPU_word_size));
+   glob_var_vals = (float *) calloc (num_glo_vars, sizeof(float));
+   nodal_var_vals = (float *) calloc (num_nodes, sizeof(float));
+   elem_var_vals = (float *) calloc (4, sizeof(float));
 
    for (i=0; i<num_time_steps; i++)
    {

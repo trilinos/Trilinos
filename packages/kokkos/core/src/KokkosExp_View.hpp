@@ -240,9 +240,9 @@ public:
   //------------------------------------
   // Compatible array of trivial type traits:
 
-  typedef typename data_analysis::array_scalar_type            array_scalar_type ;
-  typedef typename data_analysis::const_array_scalar_type      const_array_scalar_type ;
-  typedef typename data_analysis::non_const_array_scalar_type  non_const_array_scalar_type ;
+  typedef typename data_analysis::scalar_array_type            scalar_array_type ;
+  typedef typename data_analysis::const_scalar_array_type      const_scalar_array_type ;
+  typedef typename data_analysis::non_const_scalar_array_type  non_const_scalar_array_type ;
 
   //------------------------------------
   // Value type traits:
@@ -371,7 +371,6 @@ class View ;
 //----------------------------------------------------------------------------
 
 #include <impl/KokkosExp_ViewMapping.hpp>
-#include <impl/KokkosExp_ViewAllocProp.hpp>
 #include <impl/KokkosExp_ViewArray.hpp>
 
 //----------------------------------------------------------------------------
@@ -404,10 +403,12 @@ constexpr Kokkos::Experimental::Impl::AllowPadding_t
  */
 template< class ... Args >
 inline
-Kokkos::Experimental::Impl::ViewAllocProp< Args ... >
-view_alloc( Args ... args )
+Impl::ViewAllocProp< typename Impl::ViewAllocProp< void , Args >::type ... >
+view_alloc( Args const & ... args )
 {
-  return Kokkos::Experimental::Impl::ViewAllocProp< Args ... >( args ... );
+  return
+    Impl::ViewAllocProp< typename Impl::ViewAllocProp< void , Args >::type ... >
+      ( args... );
 }
 
 } /* namespace Experimental */
@@ -445,7 +446,7 @@ public:
 
   //----------------------------------------
   /** \brief  Compatible view of array of scalar types */
-  typedef View< typename traits::array_scalar_type ,
+  typedef View< typename traits::scalar_array_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > 
@@ -472,7 +473,7 @@ public:
     HostMirror ;
 
   //----------------------------------------
-  // Domain dimensions
+  // Domain rank and extents
 
   enum { Rank = map_type::Rank };
 
@@ -482,6 +483,22 @@ public:
   extent( const iType & r ) const
     { return m_map.extent(r); }
 
+  template< typename iType >
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename std::enable_if< std::is_integral<iType>::value , int >::type
+  extent_int( const iType & r ) const
+    { return static_cast<int>(m_map.extent(r)); }
+
+  //----------------------------------------
+  /*  Deprecate all 'dimension' functions in favor of
+   *  ISO/C++ vocabulary 'extent'.
+   */
+
+  template< typename iType >
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename std::enable_if< std::is_integral<iType>::value , size_t >::type
+  dimension( const iType & r ) const { return extent( r ); }
+
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const { return m_map.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const { return m_map.dimension_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_2() const { return m_map.dimension_2(); }
@@ -490,6 +507,8 @@ public:
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_5() const { return m_map.dimension_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_6() const { return m_map.dimension_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_7() const { return m_map.dimension_7(); }
+
+  //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION constexpr size_t size() const { return m_map.dimension_0() *
                                                                 m_map.dimension_1() *
@@ -1090,39 +1109,112 @@ public:
 
       typedef typename Mapping::type DstType ;
 
-      static_assert( Kokkos::Experimental::Impl::ViewMapping< View , DstType , void >::is_assignable
+      static_assert( Kokkos::Experimental::Impl::ViewMapping< traits , typename DstType::traits , void >::is_assignable
         , "Subview construction requires compatible view and subview arguments" );
 
       Mapping::assign( m_map, src_view.m_map, arg0 , args... );
     }
 
   //----------------------------------------
-  // Allocation according to allocation properties
-
-private:
-
-  // Must call destructor for non-trivial types
-  template< class ExecSpace >
-  struct DestroyFunctor {
-    map_type  m_map ;
-    ExecSpace m_space ;
-
-    void destroy_shared_allocation() { m_map.destroy( m_space ); }
-  };
-
-public:
+  // Allocation tracking properties
 
   KOKKOS_INLINE_FUNCTION
-  int use_count() const { return m_track.use_count(); }
+  int use_count() const
+    { return m_track.use_count(); }
 
   inline
-  const std::string label() const { return m_track.template get_label< typename traits::memory_space >(); }
+  const std::string label() const
+    { return m_track.template get_label< typename traits::memory_space >(); }
 
-  // Disambiguate from subview constructor.
-  template< class Prop >
+  //----------------------------------------
+  // Allocation according to allocation properties and array layout
+
+  template< class ... P >
   explicit inline
-  View( const Prop & arg_prop
-      , typename std::enable_if< ! is_view<Prop>::value ,
+  View( const Impl::ViewAllocProp< P ... > & arg_prop
+      , const typename traits::array_layout & arg_layout
+      )
+    : m_track()
+    , m_map()
+    {
+      // Append layout and spaces if not input
+      typedef Impl::ViewAllocProp< P ... > alloc_prop_input ;
+
+      // use 'std::integral_constant<unsigned,I>' for non-types
+      // to avoid duplicate class error.
+      typedef Impl::ViewAllocProp
+        < P ...
+        , typename std::conditional
+            < alloc_prop_input::has_label
+            , std::integral_constant<unsigned,0>
+            , typename std::string
+            >::type
+        , typename std::conditional
+            < alloc_prop_input::has_memory_space
+            , std::integral_constant<unsigned,1>
+            , typename traits::device_type::memory_space
+            >::type
+        , typename std::conditional
+            < alloc_prop_input::has_execution_space
+            , std::integral_constant<unsigned,2>
+            , typename traits::device_type::execution_space
+            >::type
+        > alloc_prop ;
+
+      static_assert( traits::is_managed
+                   , "View allocation constructor requires managed memory" );
+
+      if ( alloc_prop::initialize &&
+           ! alloc_prop::execution_space::is_initialized() ) {
+        // If initializing view data then
+        // the execution space must be initialized.
+        Kokkos::Impl::throw_runtime_exception("Constructing View and initializing data with uninitialized execution space");
+      }
+
+      // Copy the input allocation properties with possibly defaulted properties
+      alloc_prop prop( arg_prop );
+
+      Kokkos::Experimental::Impl::SharedAllocationRecord<> *
+        record = m_map.allocate_shared( prop , arg_layout );
+
+      // Setup and initialization complete, start tracking
+      m_track.assign_allocated_record_to_uninitialized( record );
+    }
+
+  // Simple dimension-only layout
+  template< class ... P >
+  explicit inline
+  View( const Impl::ViewAllocProp< P ... > & arg_prop
+      , const size_t arg_N0 = 0
+      , const size_t arg_N1 = 0
+      , const size_t arg_N2 = 0
+      , const size_t arg_N3 = 0
+      , const size_t arg_N4 = 0
+      , const size_t arg_N5 = 0
+      , const size_t arg_N6 = 0
+      , const size_t arg_N7 = 0
+      )
+    : View( arg_prop
+          , typename traits::array_layout
+              ( arg_N0 , arg_N1 , arg_N2 , arg_N3
+              , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
+          )
+    {}
+
+  // Label and layout
+  template< typename Label >
+  explicit inline
+  View( const Label & arg_label
+      , const typename traits::array_layout & arg_layout
+      )
+    : View( Impl::ViewAllocProp< std::string >( arg_label ) , arg_layout )
+    {}
+
+  // Label and layout, must disambiguate from subview constructor.
+  template< typename Label >
+  explicit inline
+  View( const Label & arg_label
+      , typename std::enable_if< Kokkos::Experimental::Impl::is_view_label<Label>::value ,
         const size_t >::type arg_N0 = 0
       , const size_t arg_N1 = 0
       , const size_t arg_N2 = 0
@@ -1132,102 +1224,40 @@ public:
       , const size_t arg_N6 = 0
       , const size_t arg_N7 = 0
       )
-    : m_track()
-    , m_map()
-    {
-      // Merge the < execution_space , memory_space > into the properties.
-      typedef Kokkos::Experimental::Impl::ViewAllocProp< typename traits::device_type , Prop >  alloc_prop ;
+    : View( Impl::ViewAllocProp< std::string >( arg_label )
+          , typename traits::array_layout
+              ( arg_N0 , arg_N1 , arg_N2 , arg_N3
+              , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
+          )
+    {}
 
-      typedef typename alloc_prop::execution_space  execution_space ;
-      typedef typename traits::memory_space         memory_space ;
-      typedef DestroyFunctor< execution_space >     destroy_functor ;
-      typedef Kokkos::Experimental::Impl::SharedAllocationRecord< memory_space , destroy_functor >  record_type ;
-
-      static_assert( traits::is_managed , "View allocation constructor requires managed memory" );
-
-      const alloc_prop prop( arg_prop );
-
-      // If initializing view data then the execution space must be initialized.
-      if ( prop.initialize.value && ! prop.execution.is_initialized() ) {
-        Kokkos::Impl::throw_runtime_exception("Constructing View and initializing data with uninitialized execution space");
-      }
-
-      // Query the mapping for byte-size of allocation.
-      const size_t alloc_size = map_type::memory_span( prop.allow_padding
-                                                     , arg_N0 , arg_N1 , arg_N2 , arg_N3
-                                                     , arg_N4 , arg_N5 , arg_N6 , arg_N7 );
-
-      // Allocate memory from the memory space.
-      record_type * const record = record_type::allocate( prop.memory , prop.label , alloc_size );
-
-      // Construct the mapping object prior to start of tracking
-      // to assign destroy functor and possibly initialize.
-      m_map = map_type( reinterpret_cast< pointer_type >( record->data() )
-                      , prop.allow_padding
-                      , arg_N0 , arg_N1 , arg_N2 , arg_N3
-                      , arg_N4 , arg_N5 , arg_N6 , arg_N7 );
-
-      // If constructing the plan for destructing as well
-      // Copy the destroy functor into the allocation record
-      // before initiating tracking.
-      if ( prop.initialize.value ) {
-        m_map.construct( prop.execution );
-
-        record->m_destroy.m_map   = m_map ;
-        record->m_destroy.m_space = prop.execution ;
-      }
-
-      // Setup and initialization complete, start tracking
-      m_track.assign_allocated_record_to_uninitialized( record );
-    }
-
-  template< class Prop >
+  // For backward compatibility
   explicit inline
-  View( const Prop & arg_prop
+  View( const ViewAllocateWithoutInitializing & arg_prop
       , const typename traits::array_layout & arg_layout
       )
-    : m_track()
-    , m_map()
-    {
-      // Merge the < execution_space , memory_space > into the properties.
-      typedef Kokkos::Experimental::Impl::ViewAllocProp< typename traits::device_type , Prop >  alloc_prop ;
+    : View( Impl::ViewAllocProp< std::string , Kokkos::Experimental::Impl::WithoutInitializing_t >( arg_prop.label , Kokkos::Experimental::WithoutInitializing )
+          , arg_layout
+          )
+    {}
 
-      typedef typename alloc_prop::execution_space  execution_space ;
-      typedef typename traits::memory_space         memory_space ;
-      typedef DestroyFunctor< execution_space >     destroy_functor ;
-      typedef Kokkos::Experimental::Impl::SharedAllocationRecord< memory_space , destroy_functor >  record_type ;
-
-      static_assert( traits::is_managed , "View allocation constructor requires managed memory" );
-
-      const alloc_prop prop( arg_prop );
-
-      // If initializing view data then the execution space must be initialized.
-      if ( prop.initialize.value && ! prop.execution.is_initialized() ) {
-        Kokkos::Impl::throw_runtime_exception("Constructing View and initializing data with uninitialized execution space");
-      }
-
-      // Query the mapping for byte-size of allocation.
-      const size_t alloc_size = map_type::memory_span( prop.allow_padding , arg_layout );
-
-      // Allocate memory from the memory space.
-      record_type * const record = record_type::allocate( prop.memory , prop.label , alloc_size );
-
-      // Construct the mapping object prior to start of tracking
-      // to assign destroy functor and possibly initialize.
-      m_map = map_type( reinterpret_cast< pointer_type >( record->data() ) , prop.allow_padding , arg_layout );
-
-      // Copy the destroy functor into the allocation record before initiating tracking.
-
-      if ( prop.initialize.value ) {
-        m_map.construct( prop.execution );
-
-        record->m_destroy.m_map   = m_map ;
-        record->m_destroy.m_space = prop.execution ;
-      }
-
-      // Setup and initialization complete, start tracking
-      m_track.assign_allocated_record_to_uninitialized( record );
-    }
+  explicit inline
+  View( const ViewAllocateWithoutInitializing & arg_prop
+      , const size_t arg_N0 = 0
+      , const size_t arg_N1 = 0
+      , const size_t arg_N2 = 0
+      , const size_t arg_N3 = 0
+      , const size_t arg_N4 = 0
+      , const size_t arg_N5 = 0
+      , const size_t arg_N6 = 0
+      , const size_t arg_N7 = 0
+      )
+    : View( Impl::ViewAllocProp< std::string , Kokkos::Experimental::Impl::WithoutInitializing_t >( arg_prop.label , Kokkos::Experimental::WithoutInitializing )
+          , typename traits::array_layout
+              ( arg_N0 , arg_N1 , arg_N2 , arg_N3
+              , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
+          )
+    {}
 
   //----------------------------------------
   // Memory span required to wrap these dimensions.
@@ -1241,12 +1271,13 @@ public:
                                      , const size_t arg_N7 = 0
                                      )
     {
-      return map_type::memory_span( std::integral_constant<bool,false>()
-                                  , arg_N0 , arg_N1 , arg_N2 , arg_N3
-                                  , arg_N4 , arg_N5 , arg_N6 , arg_N7 );
+      return map_type::memory_span(
+        typename traits::array_layout
+          ( arg_N0 , arg_N1 , arg_N2 , arg_N3
+          , arg_N4 , arg_N5 , arg_N6 , arg_N7 ) );
     }
 
-  explicit inline
+  explicit KOKKOS_INLINE_FUNCTION
   View( pointer_type arg_ptr
       , const size_t arg_N0 = 0
       , const size_t arg_N1 = 0
@@ -1258,17 +1289,19 @@ public:
       , const size_t arg_N7 = 0
       )
     : m_track() // No memory tracking
-    , m_map( arg_ptr , std::integral_constant<bool,false>()
-           , arg_N0 , arg_N1 , arg_N2 , arg_N3
-           , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
+    , m_map( arg_ptr
+           , typename traits::array_layout
+              ( arg_N0 , arg_N1 , arg_N2 , arg_N3
+              , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
+           )
     {}
 
-  explicit inline
+  explicit KOKKOS_INLINE_FUNCTION
   View( pointer_type arg_ptr
       , typename traits::array_layout & arg_layout
       )
     : m_track() // No memory tracking
-    , m_map( arg_ptr , std::integral_constant<bool,false>(), arg_layout )
+    , m_map( arg_ptr , arg_layout )
     {}
 
   //----------------------------------------
@@ -1284,9 +1317,10 @@ public:
                      const size_t arg_N6 = 0 ,
                      const size_t arg_N7 = 0 )
   {
-    return map_type::memory_span( std::integral_constant<bool,false>()
-                                , arg_N0 , arg_N1 , arg_N2 , arg_N3
-                                , arg_N4 , arg_N5 , arg_N6 , arg_N7 );
+    return map_type::memory_span(
+           typename traits::array_layout
+            ( arg_N0 , arg_N1 , arg_N2 , arg_N3
+            , arg_N4 , arg_N5 , arg_N6 , arg_N7 ) );
   }
 
   explicit KOKKOS_INLINE_FUNCTION
@@ -1302,12 +1336,14 @@ public:
     : m_track() // No memory tracking
     , m_map( reinterpret_cast<pointer_type>(
        arg_space.get_shmem(
-         map_type::memory_span( std::integral_constant<bool,false>()
-                              , arg_N0 , arg_N1 , arg_N2 , arg_N3
-                              , arg_N4 , arg_N5 , arg_N6 , arg_N7 ) ) )
-         , std::integral_constant<bool,false>() 
-         , arg_N0 , arg_N1 , arg_N2 , arg_N3
-         , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
+         map_type::memory_span(
+           typename traits::array_layout
+            ( arg_N0 , arg_N1 , arg_N2 , arg_N3
+            , arg_N4 , arg_N5 , arg_N6 , arg_N7 ) ) ) )
+         , typename traits::array_layout
+            ( arg_N0 , arg_N1 , arg_N2 , arg_N3
+            , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
+       )
     {}
 };
 

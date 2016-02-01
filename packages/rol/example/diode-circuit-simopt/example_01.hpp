@@ -134,12 +134,12 @@ private:
       Real fval_tmp = 0.0;
       Real alpha = 1.0;
       for ( int i = 0; i < MAXIT; i++ ) {
-	if ( std::fabs(fval) < TOL ) {
-          // std::cout << "converged with |fval| = " << std::fabs(fval) << " and TOL = " << TOL << "\n";
+	if ( std::abs(fval) < TOL ) {
+          // std::cout << "converged with |fval| = " << std::abs(fval) << " and TOL = " << TOL << "\n";
           break;
         }
         dfval = diodeI(IN,Vsrc,Is,Rs);
-        if( std::fabs(dfval) < EPS ){
+        if( std::abs(dfval) < EPS ){
           std::cout << "denominator is too small" << std::endl;
           break;
         }
@@ -147,7 +147,7 @@ private:
         alpha    = 1.0;
         IN_tmp   = IN - alpha*fval/dfval;
         fval_tmp = diode(IN_tmp,Vsrc,Is,Rs);
-        while ( std::fabs(fval_tmp) >= (1.0-1.e-4*alpha)*std::fabs(fval) ) {
+        while ( std::abs(fval_tmp) >= (1.0-1.e-4*alpha)*std::abs(fval) ) {
           alpha   /= 2.0;
           IN_tmp   = IN - alpha*fval/dfval;
           fval_tmp = diode(IN_tmp,Vsrc,Is,Rs);
@@ -159,7 +159,7 @@ private:
         IN   = IN_tmp;
         fval = fval_tmp;
     	// if ( i == MAXIT-1){
-    	//   std::cout << "did not converge  " << std::fabs(fval) << "\n";
+    	//   std::cout << "did not converge  " << std::abs(fval) << "\n";
     	// }
       }
       return IN;
@@ -207,8 +207,9 @@ public:
     }
   }
   
-  void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+  void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     solve_circuit(u,z);
+    value(c,u,z,tol);
   }
   
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
@@ -807,12 +808,12 @@ public:
 //       Real fval_tmp = 0.0;
 //       Real alpha = 1.0;
 //       for ( int i = 0; i < MAXIT; i++ ) {
-// 	if ( std::fabs(fval) < TOL ) {
-//           // std::cout << "converged with |fval| = " << std::fabs(fval) << " and TOL = " << TOL << "\n";
+// 	if ( std::abs(fval) < TOL ) {
+//           // std::cout << "converged with |fval| = " << std::abs(fval) << " and TOL = " << TOL << "\n";
 //           break;
 //         }
 //         dfval = diodeI(IN,Vsrc,Is,Rs);
-//         if( std::fabs(dfval) < EPS ){
+//         if( std::abs(dfval) < EPS ){
 //           std::cout << "denominator is too small" << std::endl;
 //           break;
 //         }
@@ -820,7 +821,7 @@ public:
 //         alpha    = 1.0;
 //         IN_tmp   = IN - alpha*fval/dfval;
 //         fval_tmp = diode(IN_tmp,Vsrc,Is,Rs);
-//         while ( std::fabs(fval_tmp) >= (1.0-1.e-4*alpha)*std::fabs(fval) ) {
+//         while ( std::abs(fval_tmp) >= (1.0-1.e-4*alpha)*std::abs(fval) ) {
 //           alpha   /= 2.0;
 //           IN_tmp   = IN - alpha*fval/dfval;
 //           fval_tmp = diode(IN_tmp,Vsrc,Is,Rs);
@@ -832,7 +833,7 @@ public:
 //         IN   = IN_tmp;
 //         fval = fval_tmp;
 //     	// if ( i == MAXIT-1){
-//     	//   std::cout << "did not converge  " << std::fabs(fval) << "\n";
+//     	//   std::cout << "did not converge  " << std::abs(fval) << "\n";
 //     	// }
 //       }
 //       return IN;

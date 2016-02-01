@@ -110,7 +110,6 @@ private:
     BulkDataSyncState m_sync_state;
     size_t m_sync_count;
     bool m_did_any_shared_entity_change_parts;
-
 };
 
 }}} // end namepsace stk mesh impl

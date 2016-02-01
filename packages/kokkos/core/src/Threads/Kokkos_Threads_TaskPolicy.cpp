@@ -74,17 +74,23 @@ namespace Kokkos {
 namespace Experimental {
 
 TaskPolicy< Kokkos::Threads >::TaskPolicy
-  ( const unsigned arg_default_dependence_capacity
-  , const unsigned arg_team_size
+  ( const unsigned arg_task_max_count
+  , const unsigned arg_task_max_size
+  , const unsigned arg_task_default_dependence_capacity
+  , const unsigned arg_task_team_size
   )
-  : m_default_dependence_capacity( arg_default_dependence_capacity )
-  , m_team_size( arg_team_size )
+  : m_space( Kokkos::Threads::memory_space()
+           , arg_task_max_size
+           , arg_task_max_size * arg_task_max_count
+           )
+  , m_default_dependence_capacity( arg_task_default_dependence_capacity )
+  , m_team_size( arg_task_team_size )
 {
   const int threads_total    = Threads::thread_pool_size(0);
   const int threads_per_numa = Threads::thread_pool_size(1);
   const int threads_per_core = Threads::thread_pool_size(2);
 
-  if ( 0 == arg_team_size ) {
+  if ( 0 == m_team_size ) {
     // If a team task then claim for execution until count is zero
     // Issue: team collectives cannot assume which pool members are in the team.
     // Issue: team must only span a single NUMA region.
@@ -153,18 +159,6 @@ namespace Impl {
 void Task::throw_error_verify_type()
 {
   Kokkos::Impl::throw_runtime_exception("TaskMember< Threads >::verify_type ERROR");
-}
-
-void Task::deallocate( void * ptr )
-{
-  free( ptr );
-}
-
-void * Task::allocate( const unsigned n )
-{
-  void * const ptr = malloc(n);
-
-  return ptr ;
 }
 
 Task::~TaskMember()

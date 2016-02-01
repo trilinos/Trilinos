@@ -70,9 +70,10 @@ namespace Belos {
   /** \brief MueLuOpFailure is thrown when a return value from an MueLu
    * call on an Xpetra::Operator or MueLu::Hierarchy is non-zero.
    */
-  class MueLuOpFailure : public BelosError {public:
-    MueLuOpFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
+  class MueLuOpFailure : public BelosError {
+  public:
+    MueLuOpFailure(const std::string& what_arg) : BelosError(what_arg) {}
+  };
 
   //TODO: doc
   template <class Scalar,
@@ -127,6 +128,7 @@ namespace Belos {
       if (!Hierarchy_.is_null())
         Hierarchy_->Iterate(x, y, 1, true);
     }
+    //@}
 
 #ifdef HAVE_MUELU_TPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
@@ -165,21 +167,26 @@ namespace Belos {
 #endif
   };
 
+#ifdef HAVE_MUELU_EPETRA
   template <>
-  class MueLuOp<double, int, int> :
-    public OperatorT<Xpetra::MultiVector<double, int, int> >
+  class MueLuOp<double, int, int, Xpetra::EpetraNode> :
+    public OperatorT<Xpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
 #ifdef HAVE_MUELU_TPETRA
-    , public OperatorT<Tpetra::MultiVector<double, int, int> >
+    // FIXME: guard
+#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+    , public OperatorT<Tpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
+#endif
 #endif
 #ifdef HAVE_MUELU_EPETRA
     , public OperatorT<Epetra_MultiVector>
     , public Belos::Operator<double>
 #endif
   {
-    typedef double                                                          Scalar;
-    typedef int                                                             LocalOrdinal;
-    typedef int                                                             GlobalOrdinal;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type  Node;
+    typedef double             Scalar;
+    typedef int                LocalOrdinal;
+    typedef int                GlobalOrdinal;
+    typedef Xpetra::EpetraNode Node;
 
   public:
 
@@ -210,6 +217,8 @@ namespace Belos {
     }
 
 #ifdef HAVE_MUELU_TPETRA
+#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans != NOTRANS, MueLuOpFailure,
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners.");
@@ -233,6 +242,7 @@ namespace Belos {
         Hierarchy_->Iterate(tX, tY, 1, true);
       }
     }
+#endif
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
@@ -279,6 +289,7 @@ namespace Belos {
     RCP<MueLu::AMGXOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AMGX_;
 #endif
   };
+#endif
 
 } // namespace Belos
 

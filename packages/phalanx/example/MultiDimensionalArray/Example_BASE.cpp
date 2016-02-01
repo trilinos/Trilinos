@@ -266,6 +266,10 @@ int main(int argc, char *argv[])
       fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint,Dim>(energy_flux);
       fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint>(source);
 
+      // Get host arrays to copy from device back to host
+      auto host_energy_flux = Kokkos::create_mirror_view(energy_flux.get_kokkos_view());
+      auto host_source = Kokkos::create_mirror_view(source.get_kokkos_view());
+
       RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time");
 
       fm.preEvaluate<MyTraits::Residual>(NULL);
@@ -273,22 +277,28 @@ int main(int argc, char *argv[])
 	TimeMonitor t(*eval_time);
 
 	for (std::size_t i = 0; i < worksets.size(); ++i) {
+#ifdef PHX_ENABLE_KOKKOS_AMT
+	  fm.evaluateFieldsTaskParallel<MyTraits::Residual>(1,worksets[i]);
+#else
 	  fm.evaluateFields<MyTraits::Residual>(worksets[i]);
-	  
-	  // Use values: in this example, move values into local arrays
+#endif	  
+	  // Use values: in this example, move values into local host arrays
+	  Kokkos::deep_copy(host_energy_flux,energy_flux.get_kokkos_view());
+	  Kokkos::deep_copy(host_source,source.get_kokkos_view());
+
 	  for (size_type cell = 0; cell < energy_flux.dimension(0); ++cell) {
 	    for (size_type ip = 0; ip < energy_flux.dimension(1); ++ip) {
 	      for (size_type dim = 0; dim < energy_flux.dimension(2); ++dim) {
 		std::size_t index = cell * energy_flux.dimension(0) +
 		  ip * energy_flux.dimension(1) + dim;
-		local_energy_flux_at_qp[index] =  energy_flux(cell,ip,dim);
+		local_energy_flux_at_qp[index] =  host_energy_flux(cell,ip,dim);
 	      }
 	    }
 	  }
 	  for (size_type cell = 0; cell < energy_flux.dimension(0); ++cell) {
 	    for (size_type ip = 0; ip < energy_flux.dimension(1); ++ip) {
 	      std::size_t index = cell * energy_flux.dimension(0) + ip;
-	      local_source_at_qp[index] =  source(cell,ip);
+	      local_source_at_qp[index] =  host_source(cell,ip);
 	    }
 	  }
 
@@ -322,25 +332,35 @@ int main(int argc, char *argv[])
       fm.getFieldData<JacScalarT,MyTraits::Jacobian,Cell,QuadPoint>(j_source);
       RCP<Time> eval_time2 = TimeMonitor::getNewTimer("Evaluation Time Jacobian");
 
+      auto host_j_energy_flux = Kokkos::create_mirror_view(j_energy_flux.get_kokkos_view());
+      auto host_j_source = Kokkos::create_mirror_view(j_source.get_kokkos_view());
+
       fm.preEvaluate<MyTraits::Jacobian>(NULL);
       {
         TimeMonitor t(*eval_time2);
 
         for (std::size_t i = 0; i < worksets.size(); ++i) {
+#ifdef PHX_ENABLE_KOKKOS_AMT
+	  fm.evaluateFieldsTaskParallel<MyTraits::Jacobian>(1,worksets[i]);
+#else
           fm.evaluateFields<MyTraits::Jacobian>(worksets[i]);
+#endif
+	  Kokkos::deep_copy(host_j_energy_flux,j_energy_flux.get_kokkos_view());
+	  Kokkos::deep_copy(host_j_source,j_source.get_kokkos_view());
+
            for (size_type cell = 0; cell < j_energy_flux.dimension(0); ++cell) {
             for (size_type ip = 0; ip < j_energy_flux.dimension(1); ++ip) {
               for (size_type dim = 0; dim < j_energy_flux.dimension(2); ++dim) {
                 std::size_t index = cell * j_energy_flux.dimension(0) +
                   ip * j_energy_flux.dimension(1) + dim;
-                j_local_energy_flux_at_qp[index] =  j_energy_flux(cell,ip,dim);
+                j_local_energy_flux_at_qp[index] =  host_j_energy_flux(cell,ip,dim);
               }
             }
           }
           for (size_type cell = 0; cell < j_energy_flux.dimension(0); ++cell) {
             for (size_type ip = 0; ip < j_energy_flux.dimension(1); ++ip) {
               std::size_t index = cell * j_energy_flux.dimension(0) + ip;
-              j_local_source_at_qp[index] =  j_source(cell,ip);
+              j_local_source_at_qp[index] =  host_j_source(cell,ip);
             }
           }
 
@@ -349,7 +369,16 @@ int main(int argc, char *argv[])
        }
       fm.postEvaluate<MyTraits::Jacobian>(NULL);
 
-
+      double scalability = 0.0;
+      double parallelizability = 1.0;
+      fm.analyzeGraph<MyTraits::Residual>(scalability,parallelizability);
+      std::cout << "Residual Scalability = " << scalability << std::endl;
+      std::cout << "Residual Parallelizability = " 
+		<< parallelizability << std::endl;
+      fm.analyzeGraph<MyTraits::Jacobian>(scalability,parallelizability);
+      std::cout << "Residual Scalability = " << scalability << std::endl;
+      std::cout << "Residual Parallelizability = " 
+		<< parallelizability << std::endl;
     }
     
     // *********************************************************************

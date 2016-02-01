@@ -3,16 +3,11 @@
 
 #include "basker_types.hpp"
 #include "basker_vector.hpp"
-//#include "basker_thread.hpp"
-
-#include <assert.h>
 
 namespace BaskerNS
 {
-  
-  //-----------------------------basker - thread-----------------------------------//
 
-      //-----------------------------basker - thread-----------------------------------//
+  //-------------basker - thread------------//
   template <class Int, class Entry, class Exe_Space>
   struct basker_thread
   {
@@ -24,8 +19,35 @@ namespace BaskerNS
       iws_mult = 5; //Note:come back and reduce
       ews_mult = 2; //Note:come back and reduce
 
+
+      error_type   = BASKER_ERROR_NOERROR;
+      error_blk    = BASKER_MAX_IDX;
+      error_subblk = BASKER_MAX_IDX;
+      error_info   = BASKER_MAX_IDX;
+      
+
       init_ops();
+    }//end basker_thread
+    
+    BASKER_INLINE
+    ~basker_thread()
+    {
+      Finalize();
+    }//end ~basker_thread
+
+    BASKER_INLINE
+    void Finalize()
+    {
+      //Note,
+      //basker thread is always used in a array so not need.
+      //Added for completeness/OpenMP
+      #ifndef BASKER_KOKKOS
+      FREE_INT_1DARRAY(iws);
+      FREE_ENTRY_1DARRAY(ews);
+      C.Finalize();
+      #endif
     }
+
      
     //arrays
     Int iws_size;
@@ -37,7 +59,15 @@ namespace BaskerNS
 
     //Each thread gets a column matrix
     BASKER_MATRIX C;
+    
+    //Manage realloc 
+    Int error_type; //Remalloc, pivot, etc
+    Int error_blk;
+    Int error_subblk;
+    Int error_info; //number 
 
+
+    //----------------Depracted----------
     //volatile int **token;
     Int ** volatile token;
 
@@ -78,41 +108,7 @@ namespace BaskerNS
 
   };
 
-
-
-  /* moved to basker_thread.hpp
-  template <class Int, class Entry, class Exe_Space>
-  struct basker_thread
-  {
-    BASKER_INLINE
-    basker_thread()
-    {
-      token = 0;
-      iws_size = 0;
-      ews_size = 0;
-      iws_mult = 5; //Note:come back and reduce
-      ews_mult = 2; //Note:come back and reduce
-    }
-    
-    //token used for syncing columns 
-    int token;
-    
-    //arrays
-    Int iws_size;
-    Int ews_size;
-    Int iws_mult;
-    Int ews_mult;
-    INT_1DARRAY iws;
-    ENTRY_1DARRAY ews;
-
-    //Each thread gets a column matrix
-    BASKER_MATRIX C;
-
-  };
-
-
-  */
-  //-----------------------------------Basker-Tree-------------------------------//
+  //------------------------Basker-Tree-------------------------------//
   //Used to store information about the tree
   template <class Int, class Entry, class Exe_Space >
   struct  basker_tree
@@ -124,6 +120,35 @@ namespace BaskerNS
       nblks = 0;
 
     }
+    BASKER_INLINE
+    ~basker_tree()
+    {
+      //Finalize();
+    }//end ~basker_tree
+
+    BASKER_INLINE
+    void Finalize()
+    {
+      //printf("basker_tree Finalize todo \n");
+      if(nroots > 0)
+        {
+          FREE_INT_1DARRAY(roots);
+        }
+      if(nblks > 0)
+        {
+          FREE_INT_1DARRAY(permtab);
+          FREE_INT_1DARRAY(ipermtab);
+          FREE_INT_1DARRAY(row_tabs);
+          FREE_INT_1DARRAY(col_tabs);
+          FREE_INT_1DARRAY(lvlset);
+          FREE_INT_1DARRAY(treetab);
+          FREE_INT_1DARRAY(lvltreetabs);
+          FREE_INT_1DARRAY(treeptr);
+          FREE_INT_1DARRAY(rowptr);
+          FREE_INT_1DARRAY(child);
+          FREE_INT_1DARRAY(sibling);
+        }
+    }//end Finalize();
 
     BASKER_INLINE
     void basic_convert(Int _m, Int *_perm, Int _nblks,
@@ -131,8 +156,7 @@ namespace BaskerNS
 		       Int *_row_tabs, Int *_col_tabs,
 		       Int *_treetab)
     {
-      //typedef BaskerNS::Basker<Int,Entry,Exe_Space> BS;
-      
+          
       nblks = _nblks;
       //For now defaulting parts to 2
       //nparts = _parts;
@@ -176,12 +200,6 @@ namespace BaskerNS
       for(Int i=0; i < nblks+1; i++)
         {std::cout << treetab[i] << " " ;}
       std::cout << " > " << std::endl;
-      /*
-      std::cout << "rowptr: < ";
-      for(Int i=0; i < nblks; i++)
-        {std::cout << rowptr[i] << " ";}
-      std::cout << " > " << std::endl;
-      */
       std::cout << std::endl;
     }
     
@@ -219,15 +237,15 @@ namespace BaskerNS
 
     basker_symbolic_tree()
     {
-      parent_flg = 0;
-      post_flg = 0;
-      col_ptr_flg = 0;
-      left_most_flg = 0;
-      row_counts_flg = 0;
-      col_counts_flg = 0;
-      WS_flg = 0;
-      S_col_flg = 0;
-      S_row_flg = 0;
+      parent_flg       = 0;
+      post_flg         = 0;
+      col_ptr_flg      = 0;
+      left_most_flg    = 0;
+      row_counts_flg   = 0;
+      col_counts_flg   = 0;
+      WS_flg           = 0;
+      S_col_flg        = 0;
+      S_row_flg        = 0;
       L_row_counts_flg = 0;
       L_col_counts_flg = 0;
       U_row_counts_flg = 0;
@@ -236,6 +254,79 @@ namespace BaskerNS
       S_row_counts_flg = 0;
 
     }
+
+    ~basker_symbolic_tree()
+    {
+      //Finalize();
+    }//end ~basker_symbolic_tree
+
+    BASKER_INLINE
+    void Finalize()
+    {
+      //This can be removed to use only in sfactor stage than delete
+      //printf("basker_symbolic_tree finalize todo \n");
+      if(parent_flg > 0)
+        {
+          FREE_INT_1DARRAY(parent);
+        }
+      if(post_flg > 0)
+        {
+          FREE_INT_1DARRAY(post);
+        }
+      if(col_ptr_flg > 0)
+        {
+          FREE_INT_1DARRAY(col_ptr);
+        }
+      if(left_most_flg > 0)
+        {
+          FREE_INT_1DARRAY(left_most);
+        }
+      if(row_counts_flg > 0)
+        {
+          FREE_INT_1DARRAY(row_counts);
+        }
+      if(col_counts_flg > 0)
+        {
+          FREE_INT_1DARRAY(col_counts);
+        }
+      if(WS_flg > 0)
+        {
+          FREE_INT_1DARRAY(WS);
+        }
+      if(S_col_flg > 0)
+        {
+          FREE_INT_1DARRAY(S_col);
+        }
+      if(S_row_flg > 0)
+        {
+          FREE_INT_1DARRAY(S_row);
+        }
+      if(L_row_counts_flg > 0)
+        {
+          FREE_INT_1DARRAY(L_row_counts);
+        }
+      if(L_col_counts_flg > 0)
+        {
+          FREE_INT_1DARRAY(L_col_counts);
+        }
+      if(U_row_counts_flg > 0)
+        {
+          FREE_INT_1DARRAY(U_row_counts);
+        }
+      if(U_col_counts_flg > 0)
+        {
+          FREE_INT_1DARRAY(U_col_counts);
+        }
+      if(S_col_counts_flg > 0)
+        {
+          FREE_INT_1DARRAY(S_col_counts);
+        }
+      if(S_row_counts_flg > 0)
+        {
+          FREE_INT_1DARRAY(S_row_counts);
+        }
+ 
+    }//end Finalize()
     
     BASKER_INLINE
     void init_parent(Int size)
@@ -613,8 +704,13 @@ namespace BaskerNS
       //Pivot
       no_pivot   = BASKER_FALSE;
       pivot_tol  = .0001; 
+      pivot_bias = 1.001;
+
+      //BTF Options
+      btf_prune_size = (BASKER_INT)BASKER_BTF_PRUNE_SIZE;
 
       //Incomplete Factorization Options
+      incomplete = BASKER_FALSE;
       inc_lvl    = 0;
       inc_tol    = 0.0001;
  
@@ -642,8 +738,13 @@ namespace BaskerNS
     //Pivot Options
     BASKER_BOOL  no_pivot;
     BASKER_ENTRY pivot_tol;  //Not Used
+    BASKER_ENTRY pivot_bias;
+
+    //BTF Options
+    BASKER_INT   btf_prune_size;
   
     //Incomplete Factorization Options
+    BASKER_BOOL  incomplete;
     BASKER_INT   inc_lvl;
     BASKER_ENTRY inc_tol;    //Not Used
    

@@ -372,6 +372,7 @@ void run(const UserInputForTests &uinput,
   if (rank == 0)
     cout << "Problem solved." << endl;
   
+#define KDDKDD
 #ifdef KDDKDD
   {
   const base_t::gno_t *kddIDs = NULL;

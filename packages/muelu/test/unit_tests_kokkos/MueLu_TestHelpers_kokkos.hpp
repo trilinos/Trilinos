@@ -106,7 +106,7 @@ namespace MueLuTests {
   using Teuchos::rcpFromRef;
   using Teuchos::rcp_implicit_cast;
 
-# include <MueLu_TestHelpers_Common.hpp>
+# include <MueLu_TestHelpers_Common_kokkos.hpp>
 
   namespace TestHelpers_kokkos {
 
@@ -363,7 +363,6 @@ namespace MueLuTests {
           lclColInds[0] = lclRowInd;
           bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
         }
-        bcrsmatrix->computeDiagonalGraph(); // Needs to get done to smooth for some reason
 
         RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
         Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
@@ -425,7 +424,10 @@ namespace MueLuTests {
 
 // Macro to skip a test when UnderlyingLib==Epetra or Tpetra
 #define MUELU_TEST_ONLY_FOR(UnderlyingLib) \
-  if (TestHelpers_kokkos::Parameters::getLib() == UnderlyingLib)
+  if (TestHelpers_kokkos::Parameters::getLib() != UnderlyingLib) { \
+    out << "Skipping test for " << ((TestHelpers_kokkos::Parameters::getLib()==Xpetra::UseEpetra) ? "Epetra" : "Tpetra") << std::endl; \
+    return; \
+  }
 
 // Macro to skip a test when Epetra is used with Ordinal != int
 #define MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal) \

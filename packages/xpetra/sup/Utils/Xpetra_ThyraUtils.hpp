@@ -47,17 +47,17 @@
 #ifndef XPETRA_THYRAUTILS_HPP
 #define XPETRA_THYRAUTILS_HPP
 
+#include "Xpetra_ConfigDefs.hpp"
 #ifdef HAVE_XPETRA_THYRA
 
 #include <typeinfo>
-
-#include "Xpetra_ConfigDefs.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#include "Epetra_config.h"
 #include "Epetra_CombineMode.h"
 #endif
 
@@ -74,9 +74,7 @@
 #include <Thyra_LinearOpBase.hpp>
 #include <Thyra_DetachedMultiVectorView.hpp>
 
-//#include <Thyra_LinearOpBase.hpp>
 #ifdef HAVE_XPETRA_TPETRA
-//#include <Thyra_TpetraLinearOp.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 #include <Thyra_TpetraVector.hpp>
 #include <Thyra_TpetraVectorSpace.hpp>
@@ -136,11 +134,6 @@ public:
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::as;
     typedef Thyra::VectorSpaceBase<Scalar> ThyVecSpaceBase;
-#ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-    typedef Thyra::VectorBase<Scalar> ThyVecBase;
-#endif
-#endif
     typedef Thyra::ProductVectorSpaceBase<Scalar> ThyProdVecSpaceBase;
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node> MapFactory;
@@ -181,47 +174,28 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fullMap));
       return fullMap;
     } else {
+#ifdef HAVE_XPETRA_TPETRA
       // STANDARD CASE: no product map
-      // Epetra/Tpetra specific code to access the underlying map data
-
       // check whether we have a Tpetra based Thyra operator
-      bool bIsTpetra = false;
-#ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       Teuchos::RCP<const Thyra::TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetra_vsc = Teuchos::rcp_dynamic_cast<const Thyra::TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(vectorSpace);
-      bIsTpetra = Teuchos::is_null(tpetra_vsc) ? false : true;
-#endif
-#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(tpetra_vsc)==true, Xpetra::Exceptions::RuntimeError, "toXpetra failed to convert provided vector space to Thyra::TpetraVectorSpace. This is the general implementation for Tpetra only.");
 
-      // check whether we have an Epetra based Thyra operator
-      bool bIsEpetra = !bIsTpetra; // note: this is a little bit fragile!
+      typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> TpMap;
+      typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpVector;
+      typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
+      typedef Thyra::VectorBase<Scalar> ThyVecBase;
+      RCP<ThyVecBase> rgVec = Thyra::createMember<Scalar>(vectorSpace, std::string("label"));
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgVec));
+      RCP<const TpVector> rgTpetraVec = TOE::getTpetraVector(rgVec);
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgTpetraVec));
+      RCP<const TpMap> rgTpetraMap = rgTpetraVec->getMap();
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgTpetraMap));
 
-#ifdef HAVE_XPETRA_TPETRA
-      if(bIsTpetra) {
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-        typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> TpMap;
-        typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpVector;
-        typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
-        RCP<ThyVecBase> rgVec = Thyra::createMember<Scalar>(vectorSpace, std::string("label"));
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgVec));
-        RCP<const TpVector> rgTpetraVec = TOE::getTpetraVector(rgVec);
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgTpetraVec));
-        RCP<const TpMap> rgTpetraMap = rgTpetraVec->getMap();
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgTpetraMap));
-
-        RCP<Map> rgXpetraMap = Xpetra::toXpetraNonConst(rgTpetraMap);
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
-        return rgXpetraMap;
+      RCP<Map> rgXpetraMap = Xpetra::toXpetraNonConst(rgTpetraMap);
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
+      return rgXpetraMap;
 #else
-        throw Xpetra::Exceptions::RuntimeError("Tpetra with LO=GO=int is not enabled. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
-#endif
-      }
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-      if(bIsEpetra) {
-        TEUCHOS_TEST_FOR_EXCEPTION(bIsTpetra==false, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double and LO=GO=int");
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::VectorSpace to Xpetra::Map. This is the general implementation for Tpetra only, but Tpetra is disabled.");
 #endif
     } // end standard case (no product map)
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::VectorSpace to Xpetra::Map.");
@@ -236,21 +210,11 @@ public:
     using Teuchos::as;
     typedef Thyra::VectorSpaceBase<Scalar> ThyVecSpaceBase;
     typedef Thyra::SpmdVectorSpaceBase<Scalar> ThySpmdVecSpaceBase;
-    //typedef Thyra::VectorBase<Scalar> ThyVecBase;
-#ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-    typedef Thyra::SpmdMultiVectorBase<Scalar> ThySpmdMultVecBase;
-#endif
-#endif
-    //typedef Thyra::ProductVectorSpaceBase<Scalar> ThyProdVecSpaceBase;
     typedef Thyra::ProductMultiVectorBase<Scalar> ThyProdMultVecBase;
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-    //typedef Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node> MapFactory;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > MultiVector;
     typedef Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorFactory;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyUtils;
-    //typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> TpMap;
-    //typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpVector;
 
     // return value
     RCP<MultiVector> xpMultVec = Teuchos::null;
@@ -285,32 +249,25 @@ public:
       return xpMultVec;
     } else {
       // STANDARD CASE: no product vector
-      // Epetra/Tpetra specific code to access the underlying map data
-      bool bIsTpetra = false;
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> ConverterT;
       typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpMultVec;
       typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpTpMultVec;
       typedef Thyra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyTpMultVec;
+      typedef Thyra::SpmdMultiVectorBase<Scalar> ThySpmdMultVecBase;
 
       RCP<const ThySpmdMultVecBase> thyraSpmdMultiVector = rcp_dynamic_cast<const ThySpmdMultVecBase>(v);
       RCP<const ThyTpMultVec> thyraTpetraMultiVector = rcp_dynamic_cast<const ThyTpMultVec>(thyraSpmdMultiVector);
-      if(thyraTpetraMultiVector != Teuchos::null) {
-        bIsTpetra = true;
-        const RCP<const TpMultVec> tpMultVec = ConverterT::getConstTpetraMultiVector(v);
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpMultVec));
-        RCP<TpMultVec> tpNonConstMultVec = Teuchos::rcp_const_cast<TpMultVec>(tpMultVec);
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpNonConstMultVec));
-        xpMultVec = rcp(new XpTpMultVec(tpNonConstMultVec));
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
-        return xpMultVec;
-      }
-#endif
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-      TEUCHOS_TEST_FOR_EXCEPTION(bIsTpetra==false, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double and LO=GO=int");
+      TEUCHOS_TEST_FOR_EXCEPTION(thyraTpetraMultiVector == Teuchos::null, Xpetra::Exceptions::RuntimeError, "toXpetra failed to convert provided multi vector to Thyra::TpetraMultiVector. This is the general implementation for Tpetra only.");
+      const RCP<const TpMultVec> tpMultVec = ConverterT::getConstTpetraMultiVector(v);
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpMultVec));
+      RCP<TpMultVec> tpNonConstMultVec = Teuchos::rcp_const_cast<TpMultVec>(tpMultVec);
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpNonConstMultVec));
+      xpMultVec = rcp(new XpTpMultVec(tpNonConstMultVec));
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
+      return xpMultVec;
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector. This is the general implementation for Tpetra only, but Teptra is disabled.");
 #endif
     } // end standard case
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector.");
@@ -647,14 +604,18 @@ public:
 
 }; // end Utils class
 
-// TODO check we have to specialize Node, too
-// spcialization for SC=double and LO=GO=int
-template <class Node>
-class ThyraUtils<double, int, int, Node> {
+
+// full specialization for Epetra support
+// Note, that Thyra only has support for Epetra (not for Epetra64)
+#ifdef HAVE_XPETRA_EPETRA
+template <>
+class ThyraUtils<double, int, int, EpetraNode> {
 public:
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
+  typedef EpetraNode Node;
+
 private:
 #undef XPETRA_THYRAUTILS_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -664,7 +625,7 @@ public:
   static Teuchos::RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> >
   toXpetra(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >& vectorSpace, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0) {
 
-    Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = toXpetra(vectorSpace);
+    Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toXpetra(vectorSpace,comm);
 
     if(stridedBlockId == -1) {
       TEUCHOS_TEST_FOR_EXCEPT(map->getNodeNumElements() % stridingInfo.size() != 0);
@@ -729,7 +690,8 @@ public:
       // check whether we have a Tpetra based Thyra operator
       bool bIsTpetra = false;
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
       Teuchos::RCP<const Thyra::TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetra_vsc = Teuchos::rcp_dynamic_cast<const Thyra::TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(vectorSpace);
       bIsTpetra = Teuchos::is_null(tpetra_vsc) ? false : true;
 #endif
@@ -740,7 +702,8 @@ public:
 
 #ifdef HAVE_XPETRA_TPETRA
       if(bIsTpetra) {
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
         typedef Thyra::VectorBase<Scalar> ThyVecBase;
         typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> TpMap;
         typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpVector;
@@ -756,15 +719,14 @@ public:
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
         return rgXpetraMap;
 #else
-        throw Xpetra::Exceptions::RuntimeError("Tpetra with LO=GO=int is not enabled. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
+        throw Xpetra::Exceptions::RuntimeError("Problem AAA. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
       }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if(bIsEpetra) {
-        // TODO check for product vector space!
-        RCP<const Epetra_Map> epMap = Teuchos::null;
+        //RCP<const Epetra_Map> epMap = Teuchos::null;
         RCP<const Epetra_Map>
         epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(vectorSpace,"epetra_map");
         if(!Teuchos::is_null(epetra_map)) {
@@ -834,7 +796,9 @@ public:
       // Epetra/Tpetra specific code to access the underlying map data
       bool bIsTpetra = false;
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
+
       //typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> TpMap;
       //typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpVector;
       typedef Thyra::SpmdMultiVectorBase<Scalar> ThySpmdMultVecBase;
@@ -895,7 +859,9 @@ public:
     // check whether we have a Tpetra based Thyra operator
     bool bIsTpetra = false;
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
+
     Teuchos::RCP<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetra_op = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(op);
     bIsTpetra = Teuchos::is_null(tpetra_op) ? false : true;
 
@@ -981,7 +947,9 @@ public:
 
 #ifdef HAVE_XPETRA_TPETRA
     if(isTpetra(op)) {
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
+
       typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
       Teuchos::RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getConstTpetraOperator(op);
       // we should also add support for the const versions!
@@ -1002,7 +970,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(ret));
       return ret;
 #else
-      throw Xpetra::Exceptions::RuntimeError("Tpetra with LO=GO=int is not enabled. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Problem BBB. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -1036,7 +1004,9 @@ public:
 
 #ifdef HAVE_XPETRA_TPETRA
     if(isTpetra(op)) {
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
+
       typedef Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOE;
       Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraOp = TOE::getTpetraOperator(op);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(TpetraOp));
@@ -1050,7 +1020,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraCrsMat));
       return xTpetraCrsMat;
 #else
-      throw Xpetra::Exceptions::RuntimeError("Tpetra with LO=GO=int is not enabled. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Problem CCC. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -1078,7 +1048,8 @@ public:
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > thyraMap = Teuchos::null;
 #ifdef HAVE_XPETRA_TPETRA
     if(map->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
       Teuchos::RCP<const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > tpetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map);
       if (tpetraMap == Teuchos::null)
         throw Exceptions::BadCast("Xpetra::ThyraUtils::toThyra: Cast from Xpetra::Map to Xpetra::TpetraMap failed");
@@ -1086,7 +1057,7 @@ public:
       RCP<Thyra::TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > thyraTpetraMap = Thyra::tpetraVectorSpace<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpMap);
       thyraMap = thyraTpetraMap;
 #else
-      throw Xpetra::Exceptions::RuntimeError("Tpetra with LO=GO=int is not enabled. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Problem DDD. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -1179,7 +1150,9 @@ public:
 #ifdef HAVE_XPETRA_TPETRA
     Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(tpetraMat!=Teuchos::null) {
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
+
       Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xTpCrsMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpCrsMat));
       Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpCrsMat = xTpCrsMat->getTpetra_CrsMatrix();
@@ -1193,7 +1166,7 @@ public:
       thyraOp = Thyra::createConstLinearOp(tpOperator);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
 #else
-      throw Xpetra::Exceptions::RuntimeError("Tpetra with LO=GO=int is not enabled. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Problem EEE. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -1201,7 +1174,7 @@ public:
 #ifdef HAVE_XPETRA_EPETRA
     Teuchos::RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(mat);
     if(epetraMat!=Teuchos::null) {
-      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  >(mat);
+      Teuchos::RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  > xEpCrsMat = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpCrsMat));
       Teuchos::RCP<const Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrix();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
@@ -1222,7 +1195,9 @@ public:
 #ifdef HAVE_XPETRA_TPETRA
     Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(tpetraMat!=Teuchos::null) {
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
+     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
+
       Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xTpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpCrsMat));
       Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpCrsMat = xTpCrsMat->getTpetra_CrsMatrixNonConst();
@@ -1236,7 +1211,7 @@ public:
       thyraOp = Thyra::createLinearOp(tpOperator);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
 #else
-      throw Xpetra::Exceptions::RuntimeError("Tpetra with LO=GO=int is not enabled. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Problem FFF. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -1258,53 +1233,10 @@ public:
   }
 
   static Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-  toThyra(const Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& mat) {
+  toThyra(const Teuchos::RCP<Xpetra::BlockedCrsMatrix<double, int, int, EpetraNode> >& mat);
 
-    int nRows = mat->Rows();
-    int nCols = mat->Cols();
-
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock = mat->getMatrix(0,0);
-
-    bool bTpetra = false;
-    bool bEpetra = false;
-#ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock);
-    if(tpetraMat!=Teuchos::null) bTpetra = true;
-#else
-    bTpetra = false;
-#endif
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock);
-    if(epetraMat!=Teuchos::null) bEpetra = true;
-#endif
-
-    TEUCHOS_TEST_FOR_EXCEPT(bTpetra == bEpetra); // we only allow Epetra OR Tpetra
-
-    // create new Thyra blocked operator
-    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> > blockMat =
-        Thyra::defaultBlockedLinearOp<Scalar>();
-
-    blockMat->beginBlockFill(nRows,nCols);
-
-    for (int r=0; r<nRows; ++r) {
-      for (int c=0; c<nCols; ++c) {
-        Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock =
-            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(mat->getMatrix(r,c));
-        std::stringstream label; label << "A" << r << c;
-        blockMat->setBlock(r,c,thBlock);
-      }
-    }
-
-    blockMat->endBlockFill();
-
-    return blockMat;
-  }
-
-}; // end Utils class (specialization for SC=double and LO=GO=int)
-
+}; // specialization on SC=double, LO=GO=int and NO=EpetraNode
+#endif // HAVE_XPETRA_EPETRA
 } // end namespace Xpetra
 
 #define XPETRA_THYRAUTILS_SHORT

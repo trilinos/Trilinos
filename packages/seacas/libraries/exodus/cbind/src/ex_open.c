@@ -200,7 +200,7 @@ int ex_open_int (const char  *path,
 #endif
 	  exerrval = status;
 	}
-	sprintf(errmsg,"Error: failed to open %s read only",path);
+	snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to open %s read only",path);
 	ex_err("ex_open",errmsg,exerrval); 
 	return(EX_FATAL);
       } 
@@ -209,7 +209,7 @@ int ex_open_int (const char  *path,
     if ((status = nc_open (path, NC_WRITE|NC_SHARE, &exoid)) != NC_NOERR) {
       /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
       exerrval = status;
-      sprintf(errmsg,"Error: failed to open %s write only",path);
+      snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to open %s write only",path);
       ex_err("ex_open",errmsg,exerrval); 
       return(EX_FATAL);
     } 

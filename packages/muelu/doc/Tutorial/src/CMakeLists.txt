@@ -17,10 +17,9 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     ${PACKAGE_NAME}_ENABLE_Galeri       AND
     ${PACKAGE_NAME}_ENABLE_Ifpack
    )
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     tutorial_laplace2d
     SOURCES laplace2d.cpp
-    NUM_MPI_PROCS 2
     COMM mpi serial
   )
 
@@ -40,10 +39,9 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     xml/n2_easy_agg.xml xml/n2_easy_agg2.xml xml/n2_easy_agg3.xml xml/n2_easy_export.xml
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     tutorial_recirc2d
     SOURCES recirc2d.cpp
-    NUM_MPI_PROCS 2
     COMM mpi serial
     )
 
@@ -51,10 +49,9 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     SOURCE_FILES xml/s3a.xml xml/s3b.xml xml/s3c.xml xml/s3b1.xml xml/s3b2.xml xml/s3b3.xml
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     tutorial_recirc2d_api
     SOURCES recirc2d_api.cpp
-    NUM_MPI_PROCS 2
     COMM mpi serial
     )
 

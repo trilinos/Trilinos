@@ -72,6 +72,12 @@ namespace Amesos2 {
  * Additionally, ETI is best if ON, since MUMPS has limited supported types
  *
  *
+ *
+ * Serial MUMPS
+ * Note: serial mumps is supported. 
+ * However, one must link provided seqlib mpi that comes with mumps
+ * -DTrilinos_EXTRA_LIN_FLAGS="-I/../libseq -L/.../libseq -lmpiseq
+ *
  * \ingroup amesos2_solver_interfaces
  */
 template <class Matrix,class Vector>

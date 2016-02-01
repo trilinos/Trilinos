@@ -6,7 +6,7 @@ Instructions for converting a unit test to use ETI.
    and
    #include <MueLu_UseShortNames.hpp>
 
-   and add 
+   and add
 
    #include <Teuchos_ScalarTraits.hpp>
 
@@ -17,7 +17,8 @@ Instructions for converting a unit test to use ETI.
 
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
 
 3) Replace
      TEUCHOS_UNIT_TEST

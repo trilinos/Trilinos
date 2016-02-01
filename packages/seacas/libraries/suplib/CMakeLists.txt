@@ -107,12 +107,7 @@ SET(SOURCES
   add_to_log.c
   addlog.c
   getline.c
-  GetLongOpt.C
-  adler.C
-  smart_assert.C
-  timer.C
-  to_string.C
-  SL_tokenize.C
+  adler.c
   )
 
 TRIBITS_ADD_LIBRARY(

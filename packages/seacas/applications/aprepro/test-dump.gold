@@ -1,0 +1,4 @@
+
+$   Variable = Value
+$  {svar      	= "String"} (immutable)
+$  {var       	= 42} (immutable)

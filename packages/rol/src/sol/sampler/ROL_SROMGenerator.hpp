@@ -70,34 +70,78 @@ private:
   // Vector of distributions (size = dimension of space)
   std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
 
-  const size_t dimension_;
-  size_t numSamples_;
-  size_t numMySamples_;
-  size_t numNewSamples_;
+  const int dimension_;
+  int numSamples_;
+  int numMySamples_;
+  int numNewSamples_;
   bool adaptive_;
   bool print_;
+
+  Real ptol_;
+  Real atol_;
 
   void pruneSamples(const ProbabilityVector<Real> &prob,
                     const AtomVector<Real>        &atom) {
     // Remove points with zero weight
     std::vector<std::vector<Real> > pts;
     std::vector<Real> wts;
-    for (size_t i = 0; i < numMySamples_; i++) {
-      if ( prob.getProbability(i) > ROL_EPSILON ) {
+    for (int i = 0; i < numMySamples_; i++) {
+      if ( prob.getProbability(i) > ptol_ ) {
         pts.push_back(*(atom.getAtom(i)));
         wts.push_back(prob.getProbability(i));
       }
     }
     numMySamples_ = wts.size();
+    // Remove atoms that are within atol of each other
+    Real err = 0.0;
+    std::vector<Real> pt;
+    std::vector<int> ind;
+    for (int i = 0; i < numMySamples_; i++) {
+      pt = pts[i]; ind.clear();
+      for (int j = i+1; j < numMySamples_; j++) {
+        err = 0.0;
+        for (int d = 0; d < dimension_; d++) {
+          err += std::pow(pt[d] - pts[j][d],2);
+        }
+        err = std::sqrt(err);
+        if ( err < atol_ ) {
+          ind.push_back(j);
+          for (int d = 0; d < dimension_; d++) {
+            pts[i][d] += pts[j][d];
+            wts[i]    += wts[j];
+          }
+        }
+      }
+      if ( ind.size() > 0 ) {
+        for (int d = 0; d < dimension_; d++) {
+          pts[i][d] /= (Real)(ind.size()+1);
+        }
+        for (int k = ind.size()-1; k >= 0; k--) {
+          pts.erase(pts.begin()+ind[k]);
+          wts.erase(wts.begin()+ind[k]);
+        }
+      }
+      numMySamples_ = wts.size();
+    }
+    // Renormalize weights
+    Real psum = 0.0, sum = 0.0;
+    for (int i = 0; i < numMySamples_; i++) {
+      psum += wts[i];
+    }
+    SampleGenerator<Real>::sumAll(&psum,&sum,1);
+    for (int i = 0; i < numMySamples_; i++) {
+      wts[i] /= sum;
+    }
+    // Set points and weights
     SampleGenerator<Real>::setPoints(pts);
     SampleGenerator<Real>::setWeights(wts);
   }
 
 public:
 
-  SROMGenerator(Teuchos::ParameterList                                &parlist,
-                Teuchos::RCP<BatchManager<Real> >                     &bman,
-                const std::vector<Teuchos::RCP<Distribution<Real> > > &dist)
+  SROMGenerator(Teuchos::ParameterList                          &parlist,
+          const Teuchos::RCP<BatchManager<Real> >               &bman,
+          const std::vector<Teuchos::RCP<Distribution<Real> > > &dist)
     : SampleGenerator<Real>(bman), parlist_(parlist), dist_(dist),
       dimension_(dist.size()) {
     // Get SROM sublist
@@ -106,19 +150,22 @@ public:
     adaptive_      = list.get("Adaptive Sampling",false);
     numNewSamples_ = list.get("Number of New Samples Per Adaptation",0);
     print_         = list.get("Output to Screen",false);
+    ptol_          = list.get("Probability Tolerance",1.e2*std::sqrt(ROL_EPSILON));
+    atol_          = list.get("Atom Tolerance",1.e2*std::sqrt(ROL_EPSILON));
     print_        *= !SampleGenerator<Real>::batchID();
     // Compute batch local number of samples
-    size_t rank    = (size_t)SampleGenerator<Real>::batchID();
-    size_t nProc   = (size_t)SampleGenerator<Real>::numBatches();
-    size_t frac    = numSamples_ / nProc;
-    size_t rem     = numSamples_ % nProc;
+    int rank    = (int)SampleGenerator<Real>::batchID();
+    int nProc   = (int)SampleGenerator<Real>::numBatches();
+    int frac    = numSamples_ / nProc;
+    int rem     = numSamples_ % nProc;
     numMySamples_  = frac + ((rank < rem) ? 1 : 0);
     // Initialize vectors
     Teuchos::RCP<ProbabilityVector<Real> > prob, prob_lo, prob_hi, prob_eq;
     Teuchos::RCP<AtomVector<Real> > atom, atom_lo, atom_hi, atom_eq;
     Teuchos::RCP<Vector<Real> > x, x_lo, x_hi, x_eq;
     initialize_vectors(prob,prob_lo,prob_hi,prob_eq,atom,atom_lo,atom_hi,atom_eq,x,x_lo,x_hi,x_eq,bman);
-    StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
+    Teuchos::RCP<Vector<Real> > l
+      = Teuchos::rcp(new StdVector<Real>(Teuchos::rcp(new std::vector<Real>(1,0.))));
     bool optProb = false, optAtom = true;
     for ( int i = 0; i < 2; i++ ) {
       if ( i == 0 ) { optProb = false; optAtom = true;  }
@@ -142,11 +189,12 @@ public:
       if ( print_ && optProb ) { std::cout << "\nCheck ScalarLinearEqualityConstraint\n"; }
       check_constraint(*x,con,bman,optProb);
       // Solve optimization problems to sample
-      bool useAugLag = true;
       Teuchos::RCP<Algorithm<Real> > algo;
-      initialize_optimizer(algo,parlist,optProb,useAugLag);
+      initialize_optimizer(algo,list,optProb);
       if ( optProb ) {
-        algo->run(*x,l,*obj,*con,*bnd,print_);
+        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(&list,false);
+        ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,l,plist);
+        algo->run(optProblem,print_);
       }
       else {
         algo->run(*x,*obj,*bnd,print_);
@@ -165,11 +213,11 @@ private:
     typw.resize(numMySamples_,(Real)(numSamples_*numSamples_));
     typx.resize(numMySamples_*dimension_,0.);
     Real mean = 1., var = 1.;
-    for (size_t j = 0; j < dimension_; j++) {
+    for (int j = 0; j < dimension_; j++) {
       mean = std::abs(dist_[j]->moment(1));
       var  = dist_[j]->moment(2) - mean*mean;
       mean = ((mean > ROL_EPSILON) ? mean : std::sqrt(var));
-      for (size_t i = 0; i < numMySamples_; i++) {
+      for (int i = 0; i < numMySamples_; i++) {
         typx[i*dimension_ + j] = 1./(mean*mean);
       }
     }
@@ -197,10 +245,11 @@ private:
     std::vector<Real> wt_lo(numMySamples_,0.), wt_hi(numMySamples_,1.);
     std::vector<Real> pt_eq(dimension_*numMySamples_,0.), wt_eq(numMySamples_,1.);
     Real lo = 0., hi = 0.;
-    for ( size_t j = 0; j < dimension_; j++) {
+    srand(12345*SampleGenerator<Real>::batchID());
+    for ( int j = 0; j < dimension_; j++) {
       lo = dist_[j]->lowerBound();
       hi = dist_[j]->upperBound();
-      for (size_t i = 0; i < numMySamples_; i++) {
+      for (int i = 0; i < numMySamples_; i++) {
         pt[i*dimension_ + j] = dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX);
         //pt[i*dimension_ + j] = dist_[j]->invertCDF(0);;
         pt_lo[i*dimension_ + j] = lo;
@@ -254,9 +303,9 @@ private:
     // Build moment matching objective function
     Teuchos::Array<int> tmp_order
       = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
-    std::vector<size_t> order(tmp_order.size(),0);
+    std::vector<int> order(tmp_order.size(),0);
     for ( int i = 0; i < tmp_order.size(); i++) {
-      order[i] = static_cast<size_t>(tmp_order[i]);
+      order[i] = static_cast<int>(tmp_order[i]);
     }
     obj_vec.push_back(Teuchos::rcp(new MomentObjective<Real>(dist,order,bman,optProb,optAtom)));
     // Build linear combination objective function
@@ -269,16 +318,18 @@ private:
 
   void initialize_optimizer(Teuchos::RCP<Algorithm<Real> > &algo,
                             Teuchos::ParameterList         &parlist,
-                            const bool optProb,
-                            const bool useAugLag = true) const {
+                            const bool optProb) const {
+    std::string type = parlist.sublist("Step").get("Type","Trust Region");
     if ( optProb ) {
-      if ( !useAugLag ) {
+      if ( type == "Moreau Yosida" ) {
         algo = Teuchos::rcp(new Algorithm<Real>("Moreau-Yosida Penalty",parlist,false));
       }
-      else {
+      else if ( type == "Augmented Lagrangian" ) {
         algo = Teuchos::rcp(new Algorithm<Real>("Augmented Lagrangian",parlist,false));
       }
-      //algo_ = Teuchos::rcp(new Algorithm<Real>("Interior Point",parlist_,false));
+      else {
+        algo = Teuchos::rcp(new Algorithm<Real>("Interior Point",parlist,false));
+      }
     }
     else {
       algo = Teuchos::rcp(new Algorithm<Real>("Trust Region",parlist,false));
@@ -294,9 +345,9 @@ private:
     get_scaling_vectors(typw,typx);
     // Set random direction
     std::vector<Real> pt(dimension_*numMySamples_,0.), wt(numMySamples_,0.);
-    for (size_t i = 0; i < numMySamples_; i++) {
+    for (int i = 0; i < numMySamples_; i++) {
       wt[i] = (optProb ? (Real)rand()/(Real)RAND_MAX : 0);
-      for ( size_t j = 0; j < dimension_; j++) {
+      for ( int j = 0; j < dimension_; j++) {
         pt[i*dimension_ + j] = (optAtom ? dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX) : 0);
       }
     }
@@ -325,9 +376,9 @@ private:
       get_scaling_vectors(typw,typx);
       // Set random direction
       std::vector<Real> pt(dimension_*numMySamples_,0.), wt(numMySamples_,0.);
-      for (size_t i = 0; i < numMySamples_; i++) {
+      for (int i = 0; i < numMySamples_; i++) {
         wt[i] = (Real)rand()/(Real)RAND_MAX;
-        for ( size_t j = 0; j < dimension_; j++) {
+        for ( int j = 0; j < dimension_; j++) {
           pt[i*dimension_ + j] = dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX);
         }
       }

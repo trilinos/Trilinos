@@ -32,16 +32,18 @@ namespace Tacho {
     typedef typename DenseExecViewTypeA::value_type        value_type;
 
     if (member.team_rank() == 0) {
+      Teuchos::BLAS<ordinal_type,value_type> blas;
+
       // should be square
       const ordinal_type n = C.NumRows();
       const ordinal_type k = A.NumRows();
 
-      Teuchos::BLAS<ordinal_type,value_type>::HERK(Teuchos::UPPER_TRI, Teuchos::CONJ_TRANS,
-                                                   n, k,
-                                                   alpha,
-                                                   A.ValuePtr(), A.BaseObject->ColStride(),
-                                                   beta,
-                                                   C.ValuePtr(), C.BaseObject->ColStride());
+      blas.HERK(Teuchos::UPPER_TRI, Teuchos::CONJ_TRANS,
+                n, k,
+                alpha,
+                A.ValuePtr(), A.BaseObject()->ColStride(),
+                beta,
+                C.ValuePtr(), C.BaseObject()->ColStride());
     }
     return 0;
   }

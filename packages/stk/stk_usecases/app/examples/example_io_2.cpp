@@ -35,7 +35,7 @@
 #include <assert.h>
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
 #include <stk_mesh/base/Field.hpp>
@@ -349,6 +349,7 @@ namespace app {
   void process_surface_entity(const Ioss::SideSet* io, stk::mesh::BulkData & bulk)
   {
     assert(io->type() == Ioss::SIDESET);
+    const int64_t ten = 10;
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
     const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
@@ -357,18 +358,15 @@ namespace app {
     for (int i=0; i < block_count; i++) {
       Ioss::SideBlock *block = io->get_block(i);
       if (stk::io::include_entity(block)) {
-	std::vector<int> side_ids ;
-	std::vector<int> elem_side ;
 
 	stk::mesh::Part * const fb_part = meta.get_part(block->name());
 
-	block->get_field_data("ids", side_ids);
+	std::vector<int> elem_side ;
 	block->get_field_data("element_side", elem_side);
 
-	assert(side_ids.size() * 2 == elem_side.size());
 	stk::mesh::PartVector add_parts( 1 , fb_part );
 
-	int side_count = side_ids.size();
+        int side_count = elem_side.size() / 2;
 	std::vector<stk::mesh::Entity> sides(side_count);
 	for(int is=0; is<side_count; ++is) {
 
@@ -382,8 +380,9 @@ namespace app {
 	  // subsetted out of the analysis mesh. Only process if
 	  // non-null.
 	  if (bulk.is_valid(elem)) {
+	    int64_t side_id = ten * elem_side[is*2+0] + elem_side[is*2+1];
 	    stk::mesh::Entity side =
-	      stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
+	      stk::mesh::declare_element_side(bulk, side_id, elem, side_ordinal);
 	    bulk.change_entity_parts( side, add_parts );
 	    sides[is] = side;
 	  } else {

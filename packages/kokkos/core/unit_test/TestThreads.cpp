@@ -46,6 +46,10 @@
 #include <Kokkos_Macros.hpp>
 
 #if defined( KOKKOS_HAVE_PTHREAD )
+#ifdef KOKKOS_LAMBDA
+#undef KOKKOS_LAMBDA
+#endif
+#define KOKKOS_LAMBDA [=]
 
 #include <Kokkos_Core.hpp>
 
@@ -70,13 +74,18 @@
 #include <TestAggregate.hpp>
 #include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestTaskPolicy.hpp>
+#include <TestMemoryPool.hpp>
+
+
 #include <TestCXX11.hpp>
 #include <TestCXX11Deduction.hpp>
 #include <TestTeamVector.hpp>
 #include <TestMemorySpaceTracking.hpp>
 #include <TestTemplateMetaFunctions.hpp>
 
-#include <TestTaskPolicy.hpp>
+
+#include <TestPolicyConstruction.hpp>
 
 namespace Test {
 
@@ -146,6 +155,11 @@ TEST_F( threads , dispatch )
 
 TEST_F( threads , impl_shared_alloc ) {
   test_shared_alloc< Kokkos::HostSpace , Kokkos::Threads >();
+}
+
+TEST_F( threads, policy_construction) {
+  TestRangePolicyConstruction< Kokkos::Threads >();
+  TestTeamPolicyConstruction< Kokkos::Threads >();
 }
 
 TEST_F( threads , impl_view_mapping ) {
@@ -221,15 +235,21 @@ TEST_F( threads, view_aggregate ) {
 
 TEST_F( threads , range_tag )
 {
-  TestRange< Kokkos::Threads >::test_for(1000);
-  TestRange< Kokkos::Threads >::test_reduce(1000);
-  TestRange< Kokkos::Threads >::test_scan(1000);
+  TestRange< Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >::test_for(1000);
+  TestRange< Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >::test_reduce(1000);
+  TestRange< Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >::test_scan(1000);
+  TestRange< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >::test_for(1001);
+  TestRange< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >::test_reduce(1001);
+  TestRange< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >::test_scan(1001);
+  TestRange< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >::test_dynamic_policy(1000);
 }
 
 TEST_F( threads , team_tag )
 {
-  TestTeamPolicy< Kokkos::Threads >::test_for(1000);
-  TestTeamPolicy< Kokkos::Threads >::test_reduce(1000);
+  TestTeamPolicy< Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >::test_for(1000);
+  TestTeamPolicy< Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >::test_reduce(1000);
+  TestTeamPolicy< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >::test_for(1000);
+  TestTeamPolicy< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >::test_reduce(1000);
 }
 
 TEST_F( threads, long_reduce) {
@@ -241,11 +261,17 @@ TEST_F( threads, double_reduce) {
 }
 
 TEST_F( threads, team_long_reduce) {
-  TestReduceTeam< long ,   Kokkos::Threads >( 100000 );
+  TestReduceTeam< long ,   Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >( 3 );
+  TestReduceTeam< long ,   Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >( 3 );
+  TestReduceTeam< long ,   Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >( 100000 );
+  TestReduceTeam< long ,   Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >( 100000 );
 }
 
 TEST_F( threads, team_double_reduce) {
-  TestReduceTeam< double ,   Kokkos::Threads >( 100000 );
+  TestReduceTeam< double ,   Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >( 3 );
+  TestReduceTeam< double ,   Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >( 3 );
+  TestReduceTeam< double ,   Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >( 100000 );
+  TestReduceTeam< double ,   Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >( 100000 );
 }
 
 TEST_F( threads, long_reduce_dynamic ) {
@@ -261,12 +287,14 @@ TEST_F( threads, long_reduce_dynamic_view ) {
 }
 
 TEST_F( threads, team_shared_request) {
-  TestSharedTeam< Kokkos::Threads >();
+  TestSharedTeam< Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >();
+  TestSharedTeam< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >();
 }
 
-#if defined(KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA) && !defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA) 
 TEST_F( threads, team_lambda_shared_request) {
-  TestLambdaSharedTeam< Kokkos::Threads >();
+  TestLambdaSharedTeam< Kokkos::HostSpace, Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >();
+  TestLambdaSharedTeam< Kokkos::HostSpace, Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >();
 }
 #endif
 
@@ -384,8 +412,10 @@ TEST_F( threads , scan )
 
 TEST_F( threads , team_scan )
 {
-  TestScanTeam< Kokkos::Threads >( 10 );
-  TestScanTeam< Kokkos::Threads >( 10000 );
+  TestScanTeam< Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >( 10 );
+  TestScanTeam< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >( 10 );
+  TestScanTeam< Kokkos::Threads , Kokkos::Schedule<Kokkos::Static> >( 10000 );
+  TestScanTeam< Kokkos::Threads , Kokkos::Schedule<Kokkos::Dynamic> >( 10000 );
 }
 
 //----------------------------------------------------------------------------
@@ -398,6 +428,12 @@ TEST_F( threads , compiler_macros )
 TEST_F( threads , memory_space )
 {
   TestMemorySpace< Kokkos::Threads >();
+}
+
+TEST_F( threads , memory_pool )
+{
+  bool val = TestMemoryPool::test_mempool< Kokkos::Threads >( 32, 8000000 );
+  ASSERT_TRUE( val );
 }
 
 //----------------------------------------------------------------------------
@@ -454,5 +490,4 @@ TEST_F( threads , task_team )
 }
 
 } // namespace Test
-
 #endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

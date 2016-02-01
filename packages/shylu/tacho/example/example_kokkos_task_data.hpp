@@ -96,7 +96,10 @@ namespace Tacho {
 
     Kokkos::Impl::Timer timer;    
 
-    policy_type policy(max_task_dependence, team_size);
+    policy_type policy(ntasks,
+                       sizeof(simple_task_type),
+                       max_task_dependence, 
+                       team_size);
 
     const int nsize = ntasks*SMALL;
     array_type a("TaskDataExample::a", nsize);

@@ -35,8 +35,6 @@
 #include <iostream>
 
 
-
-
 namespace stk {
 namespace mesh {
 

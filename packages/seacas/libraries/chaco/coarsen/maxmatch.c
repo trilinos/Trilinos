@@ -59,8 +59,9 @@ maxmatch (
     int       maxmatch1(), maxmatch2(), maxmatch3(), maxmatch4();
     int       maxmatch5(), maxmatch9();
 
-    if (MATCH_TYPE == 1) {	/* Dumb, fast routine. */
-	nmerged = maxmatch1(graph, nvtxs, mflag, using_ewgts);
+    if (MATCH_TYPE == 1 || (MATCH_TYPE == 5 && coords == NULL)) {
+      /* Dumb, fast routine. */
+        nmerged = maxmatch1(graph, nvtxs, mflag, using_ewgts);
     }
 
     else if (MATCH_TYPE == 2) {	/* More random but somewhat slower. */
@@ -74,8 +75,8 @@ maxmatch (
     else if (MATCH_TYPE == 4) {	/* Truly random but very slow. */
 	nmerged = maxmatch4(graph, nvtxs, nedges, mflag, using_ewgts);
     }
-    else if (MATCH_TYPE == 5) {	/* Geometric nearness. */
-	nmerged = maxmatch5(graph, nvtxs, mflag, igeom, coords);
+    else if (MATCH_TYPE == 5 && coords != NULL) {	/* Geometric nearness. */
+        nmerged = maxmatch5(graph, nvtxs, mflag, igeom, coords);
     }
 
     else if (MATCH_TYPE == 9) {	/* Minimum degree of merged vertex */

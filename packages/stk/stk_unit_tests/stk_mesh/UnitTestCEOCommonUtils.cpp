@@ -1,21 +1,21 @@
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <gtest/gtest.h>
-#include "stk_mesh/base/FieldTraits.hpp"
-#include "stk_mesh/base/Field.hpp"
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
-#include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
-#include "stk_util/util/PairIter.hpp"   // for PairIter
-#include "stk_topology/topology.hpp"    // for topology, etc
-#include "BulkDataTester.hpp"
-#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_mesh/base/Types.hpp"
-#include "Setup8Quad4ProcMesh.hpp"
 #include "UnitTestCEOCommonUtils.hpp"
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_TRUE
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <sstream>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <string>                       // for char_traits, operator<<
+#include "BulkDataTester.hpp"           // for BulkDataTester
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityCommDatabase.hpp"  // for EntityCommDatabase
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<, etc
+#include "stk_mesh/base/FEMHelpers.hpp"  // for declare_element
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, get_cell_topology, etc
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityId, etc
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace CEOUtils
 {

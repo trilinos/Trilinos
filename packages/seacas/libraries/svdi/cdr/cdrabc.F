@@ -34,7 +34,7 @@ C
       block data cdrabc
       integer*4 machin(3),maclen
       integer*4 kidsiz,kjobid(4),kusrsz,kusrid(4),kszrou
-      integer*4 kjrout(4),ksecur,kjtime(3),kjdate(3)
+      integer*4 kjrout(4),ksecur,kjtime(4),kjdate(4)
       common /vcjob/ kidsiz,kjobid,kusrsz,kusrid,kszrou,
      1               kjrout,ksecur,kjtime,kjdate,machin,maclen
 

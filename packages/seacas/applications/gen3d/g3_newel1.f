@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: newel1.f,v 1.6 2001/01/03 14:36:38 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE NEWEL1 (BLKTYP, NUMELB, NELB3, NRSTRT, NREND,
      &   NUMLNK, NUMLN3, NUMATR, NATRDM, NUMNP, NUMNP3,
@@ -98,50 +97,50 @@ C   --(1-2-3-4-5-6-7-8), repeat for each plate/slice
 C   --Find smallest element offset for block
 
       JELOFF = IXEL(1)
-      DO 10 IEL = 1, NUMELB
-         JELOFF = MIN (JELOFF, IXEL(IEL))
-   10 CONTINUE
+      DO IEL = 1, NUMELB
+        JELOFF = MIN (JELOFF, IXEL(IEL))
+      end do
       JELOFF = JELOFF - 1
 
-      DO 50 IEL = 1, NUMELB
+      DO IEL = 1, NUMELB
          JEL = IXEL(IEL) - JELOFF
 
          IF (IELCOL(IEL) .EQ. 0) THEN
 
 C         --Handle non-center elements
 
-            DO 30 NR = NRSTRT, NREND
-               IF (NUMLNK .EQ. 2) THEN
+            DO NR = NRSTRT, NREND
+              IF (NUMLNK .EQ. 2) THEN
 C ... Bars to shells
-                     INP1 = LINK(2,IEL)
-                     INP2 = LINK(1,IEL)
-                     JNP1 = IXNP(INP1)
-                     JNP2 = IXNP(INP2)
-                     IF (NR .LT. NNREPL) THEN
-                        LINK3(1,JEL) = JNP1 + NR 
-                        LINK3(2,JEL) = JNP1 + NR - 1
-                        LINK3(3,JEL) = JNP2 + NR - 1
-                        LINK3(4,JEL) = JNP2 + NR 
-                     ELSE
-                        LINK3(1,JEL) = JNP1 
-                        LINK3(2,JEL) = JNP1 + NR - 1
-                        LINK3(3,JEL) = JNP2 + NR - 1
-                        LINK3(4,JEL) = JNP2 
-                     END IF
-               ELSE
-                  DO 20 J = 1, NUMLNK
-                     INP = LINK(J,IEL)
-                     JNP = IXNP(INP)
-                     IF (NR .LT. NNREPL) THEN
-                        LINK3(J,JEL) = JNP + NR
-                     ELSE
-                        LINK3(J,JEL) = JNP
-                     END IF
-                     LINK3(J+NUMLNK,JEL) = JNP + NR-1
- 20               CONTINUE
-               END IF
-               JEL = JEL + INCEL(IEL)
- 30         CONTINUE
+                INP1 = LINK(2,IEL)
+                INP2 = LINK(1,IEL)
+                JNP1 = IXNP(INP1)
+                JNP2 = IXNP(INP2)
+                IF (NR .LT. NNREPL) THEN
+                  LINK3(1,JEL) = JNP1 + NR 
+                  LINK3(2,JEL) = JNP1 + NR - 1
+                  LINK3(3,JEL) = JNP2 + NR - 1
+                  LINK3(4,JEL) = JNP2 + NR 
+                ELSE
+                  LINK3(1,JEL) = JNP1 
+                  LINK3(2,JEL) = JNP1 + NR - 1
+                  LINK3(3,JEL) = JNP2 + NR - 1
+                  LINK3(4,JEL) = JNP2 
+                END IF
+              ELSE
+                DO J = 1, NUMLNK
+                  INP = LINK(J,IEL)
+                  JNP = IXNP(INP)
+                  IF (NR .LT. NNREPL) THEN
+                    LINK3(J,JEL) = JNP + NR
+                  ELSE
+                    LINK3(J,JEL) = JNP
+                  END IF
+                  LINK3(J+NUMLNK,JEL) = JNP + NR-1
+                end do
+              END IF
+              JEL = JEL + INCEL(IEL)
+            end do
 
          ELSE
 
@@ -149,7 +148,7 @@ C         --Handle center element, different for corner elements
 C         --NOTE: assumes LINK(IX1,i) and LINK(IX4,i) in same column
 C         --   and LINK(IX2,i) and LINK(IX3,i) in next column
 
-            IF (NUMLNK .EQ. 2) THEN
+            IF (NUMLNK .NE. 4) THEN
                CALL PRTERR('FATAL',
      $              'Option not implemented in NEWEL1')
                STOP 'Unimplemented Option'
@@ -166,7 +165,7 @@ C         --   and LINK(IX2,i) and LINK(IX3,i) in next column
             JNP4 = IXNP(INP4)
             I1 = 0
             I2 = 0
-            DO 40 NR = 1, NREL(IEL)
+            DO NR = 1, NREL(IEL)
                IF (NR .EQ. NCORN) THEN
                   I3 = I2 + 2
                   IF (ROT360 .AND. I3 .GE. NRNP(INP2)) I3 = 0
@@ -195,19 +194,19 @@ C         --   and LINK(IX2,i) and LINK(IX3,i) in next column
                   I2 = I2 + 1
                END IF
                JEL = JEL + 1
-   40       CONTINUE
+             end do
          END IF
-   50 CONTINUE
+       end do
 
 C   --Attributes - repeat attributes for the next plates/slices
 
-      DO 70 IEL = 1, NUMELB
-         JEL = IXEL(IEL) - JELOFF
-         DO 60 NR = NRSTRT, NREND
-            CALL CPYREA (NUMATR, ATRIB(1,IEL), ATRIB3(1,JEL))
-            JEL = JEL + INCEL(IEL)
-   60    CONTINUE
-   70 CONTINUE
+      DO IEL = 1, NUMELB
+        JEL = IXEL(IEL) - JELOFF
+        DO NR = NRSTRT, NREND
+          CALL CPYREA (NUMATR, ATRIB(1,IEL), ATRIB3(1,JEL))
+          JEL = JEL + INCEL(IEL)
+        end do
+      end do
 
       RETURN
       END

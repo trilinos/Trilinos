@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: ixlink.f,v 1.3 1999/05/21 13:50:17 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE IXLINK (NCEN, IELROW, LINK, XN, YN, IROT)
 C=======================================================================

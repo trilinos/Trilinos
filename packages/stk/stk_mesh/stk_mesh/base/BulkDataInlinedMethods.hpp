@@ -473,6 +473,18 @@ bool BulkData::in_receive_ghost( EntityKey key ) const
 }
 
 inline
+bool BulkData::in_receive_custom_ghost( EntityKey key ) const
+{
+  const std::vector<Ghosting*> & ghosts= ghostings();
+  for (size_t i=ghosts.size()-1;i>AURA;--i)
+  {
+      if ( in_receive_ghost(*ghosts[i], key) )
+          return true;
+  }
+  return false;
+}
+
+inline
 bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 {
   const int owner_rank = internal_entity_comm_map_owner(key);
@@ -935,6 +947,9 @@ inline bool BulkData::internal_set_parallel_owner_rank_but_not_comm_lists(Entity
   entity_setter_debug_check(entity);
 
   int & nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
+
+  m_modSummary.track_set_parallel_owner_rank_but_not_comm_lists(entity, nonconst_processor_rank, in_owner_rank);
+
   if ( in_owner_rank != nonconst_processor_rank ) {
     nonconst_processor_rank = in_owner_rank;
 

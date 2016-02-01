@@ -20,30 +20,47 @@
 #define BASKER_FALSE          false
 #define BASKER_NO_OP          ((void)0)
 #define BASKER_MAX_IDX        -1         //What we check against
-#define BASKER_ERROR          -1         //What we return with an error
+#define BASKER_ERROR          -1         //Return error no recov
+#define BASKER_ERROR_RETRY    -2
+#define BASKER_SUCCESS        0
+
 
 #define BASKER_EPSILON       1e-6
 
+//Error Codes
+enum BASKER_ERROR_CODE 
+{
+  BASKER_ERROR_NOERROR,     //No error
+  BASKER_ERROR_SINGULAR,    //Singular during factorization
+  BASKER_ERROR_REMALLOC,    //Need to be realloc
+  BASKER_ERROR_NOMALLOC,    //Failed with nomalloc option
+  BASKER_ERROR_OTHER
+};
 
 //MACRO BTF METHOD
 #define BASKER_BTF_MAX_PERCENT  1.00
 #define BASKER_BTF_LARGE        500  //Made smaller for unit test
-//#define BASKER_BTF_LARGE        100
+#define BASKER_BTF_IMBALANCE     0.10
+#define BASKER_BTF_SMALL         100
+#define BASKER_BTF_NNZ_OVER      1.20
+#define BASKER_BTF_PRUNE_SIZE    100
 
 //MACRO SYSTEM FUNCTIONS
 #ifdef BASKER_DEBUG
+#include <assert.h>
 #define ASSERT(a)             assert(a)
 #else
-#define ASSERT(a)             BASKER_NO_OP
-//#define   ASSERT(a)           assert(a)
+//#define ASSERT(a)             BASKER_NO_OP
+#include <assert.h>
+#define ASSERT(a)           assert(a)
 #endif
 
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
-      {printf("\n\n%s\n\n", s);} \
+      {printf("\n\n%s\n\n", s);}  \				 
     ASSERT(a);                   \
-  } 
+  }
 
 
 //Note:  Should see if Kokkos has a fast memory cpy in place of for-loop
@@ -139,7 +156,7 @@
   }
 //RESIZE (with copy)
 #define RESIZE_1DARRAY(a,os,s)           Kokkos::resize(a,s)
-#define RESIZE_2DARRAY(a,os1,os2s1,s2)   Kokkos::resize(a,s1,s2)
+#define RESIZE_2DARRAY(a,os1,os2,s1,s2)   Kokkos::resize(a,s1,s2)
 #define RESIZE_INT_1DARRAY(a,os,s)       RESIZE_1DARRAY(a,os,s)
 #define RESIZE_ENTRY_1DARRAY(a,os,s)     RESIZE_1DARRAY(a,os,s)
 //REALLOC (no copy)
@@ -183,7 +200,7 @@
 
 #define FREE_ENTRY_1DARRAY(a)    \
   { \
-    a = ENTRY_1DRRAY(); \
+    a = ENTRY_1DARRAY(); \
   }
 
 #define FREE_ENTRY_2DARRAY(a,n)                  \

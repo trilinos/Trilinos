@@ -36,11 +36,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  checkParametrizedSimOptSolve
+  SOURCES test_05.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   solDataCopy
   SOURCE_FILES
-    input.xml
-    test_02.xml
+    input_01.xml
+    input_02.xml
+    input_03.xml
+    input_04.xml
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 )

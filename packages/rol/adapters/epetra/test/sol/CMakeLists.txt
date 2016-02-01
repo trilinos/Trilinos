@@ -22,7 +22,8 @@ IF(${PROJECT_NAME}_ENABLE_Epetra)
     TRIBITS_COPY_FILES_TO_BINARY_DIR(
       solEpetraDataCopy
       SOURCE_FILES
-        input.xml
+        input_01.xml
+        input_02.xml
       SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
       DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
     )

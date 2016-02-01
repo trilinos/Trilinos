@@ -39,12 +39,12 @@
 void    cgimet_();      /* tell linker to load driver */
 
 void
-cgismet()               /* make name external so linker will load file*/
+cgismet(void)               /* make name external so linker will load file*/
 {}
 
 
 void
-cgi_def_ini()
+cgi_def_ini(void)
 {
    anything*          devid;
 

@@ -43,49 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "MueLu_ExplicitInstantiation.hpp"
+
+
 
 #include "MueLu_HierarchyHelpers_def.hpp"
 
-#include "TpetraCore_ETIHelperMacros.h"
+#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
+  template class MueLu::TopRAPFactory<SC,LO,GO,NO>; \
+  template class MueLu::TopSmootherFactory<SC,LO,GO,NO>; \
+  template class MueLu::HierarchyUtils<SC,LO,GO,NO>;
 
-#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
-        template class MueLu::TopRAPFactory<S,LO,GO,N>; \
-        template class MueLu::TopSmootherFactory<S,LO,GO,N>; \
-        template class MueLu::HierarchyUtils<S,LO,GO,N>;
+#include "MueLu_ETI_4arg.hpp"
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
-
-#ifdef HAVE_MUELU_EPETRA
-#ifndef HAVE_MUELU_TPETRA_INST_INT_INT
-#ifdef HAVE_TPETRA_INST_CUDA_DEFAULT
-    template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosCudaWrapperNode >;
-    template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosCudaWrapperNode >;
-    template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosCudaWrapperNode >;
-#elseif HAVE_TPETRA_INST_OPENMP_DEFAULT
-    template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
-    template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
-    template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
-
-#elseif HAVE_TPETRA_INST_SERIAL_DEFAULT
-    template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
-    template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
-    template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
-
-#elseif HAVE_TPETRA_INST_PTHREAD_DEFAULT
-    template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
-    template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
-    template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
-
-#else
-    // use Serial Node as default if Tpetra is disabled??
-  template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
-  template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
-  template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
-
-#endif // end IF ELSEIF ...
-
-#endif // end ifndef HAVE_MUELU_TPETRA_INST_INT_INT
-#endif // end ifdef HAVE_MUELU_EPETRA

@@ -160,13 +160,14 @@ namespace MueLu {
     RCP<const Map> colMap = A->getColMap();
 
     const size_t numRows  = rowMap->getNodeNumElements();
+    const size_t NSDim    = fineNullspace->getNumVectors();
 
     typedef Teuchos::ScalarTraits<SC> STS;
     const SC zero    = STS::zero();
     const SC one     = STS::one();
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-    auto     aggGraph = aggregates->GetGraph(); // FIXME
+    auto     aggGraph = aggregates->GetGraph();
     auto     aggRows  = aggGraph.row_map;
     auto     aggCols  = aggGraph.entries;
     const GO numAggs  = aggregates->GetNumAggregates();
@@ -181,7 +182,17 @@ namespace MueLu {
 
     // For now, do a simple translation
     // FIXME: only type is correct here, everything else is not
-    Kokkos::View<LO*, DeviceType> aggToRowMapLO("agg2row_map", numAggs);
+    Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", NSDim*aggCols.size()); // initialized to 0
+    if (NSDim == 1) {
+      for (LO i = 0; i < aggCols.size(); i++)
+        agg2RowMapLO(i) = aggCols(i);
+    } else {
+      for (LO i = 0; i < aggCols.size(); i++)
+        for (LO k = 0; k < NSDim; k++) {
+          // FIXME: this should be the proper transformation with indexBase and offsets
+          agg2RowMapLO(i*NSDim+k) = aggCols(i)*NSDim+k;
+        }
+    }
 #else
     ArrayRCP<LO> aggStart;
     ArrayRCP<LO> aggToRowMapLO;
@@ -197,10 +208,25 @@ namespace MueLu {
     }
 #endif
 
-    const size_t NSDim = fineNullspace->getNumVectors();
+    // TODO
+    // Use TeamPolicy with scratch_memory_space for local QR
+    // Something along the lines:
+    //
+    //   typedef TeamPolicy<ExecutionSpace>::member_type team_t;
+    //   struct functor() {
+    //     inline unsigned team_shmem_size( int team_size ) const {
+    //       return view_type::shmem_size( team_size, 10, 3 );
+    //     }
+    //     KOKKOS_INLINE_FUNCTION
+    //     void operator() (const team_t& team) const {
+    //       view_type matrices(team.team_shmem(), team.team_size(), 10, 3);
+    //       auto matrix = subview(matrices, team.team_rank(), Kokkos::ALL(), Kokkos::ALL());
+    //     }
+    //   }
+
     coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
-    // Pull out the nullspace vectors so that we can have random access.
+    // Pull out the nullspace vectors so that we can have random access
     auto fineNS   = fineNullspace  ->template getLocalView<DeviceType>();
     auto coarseNS = coarseNullspace->template getLocalView<DeviceType>();
 
@@ -214,7 +240,7 @@ namespace MueLu {
     // Stage 0: initialize auxilary arrays
     // The main thing to notice is initialization of vals with INVALID. These
     // values will later be used to compress the arrays
-    typename rows_type::non_const_type rowsAux("Ptent_aux_rows", numRows+1), rows("Ptent_rows");
+    typename rows_type::non_const_type rowsAux("Ptent_aux_rows", numRows+1),    rows("Ptent_rows", numRows+1);
     typename cols_type::non_const_type colsAux("Ptent_aux_cols", nnzEstimate);
     typename vals_type::non_const_type valsAux("Ptent_aux_vals", nnzEstimate);
 
@@ -230,7 +256,7 @@ namespace MueLu {
     status_type status("status");
 
     // Stage 1: construct auxilary arrays.
-    // The constructed arrays may have gaps in them (vals(j) == INAVLID)
+    // The constructed arrays may have gaps in them (vals(j) == INVALID)
     // Run one thread per aggregate.
     typename AppendTrait<decltype(fineNS), Kokkos::RandomAccess>::type fineNSRandom = fineNS;
     typename AppendTrait<status_type,      Kokkos::Atomic>      ::type statusAtomic = status;
@@ -245,19 +271,20 @@ namespace MueLu {
         // QR routine. Trivial in 1D.
         if (goodMap) {
           // Calculate QR by hand
-          typedef Kokkos::ArithTraits<SC>  ATS;
+          typedef Kokkos::ArithTraits<SC>     ATS;
           typedef typename ATS::magnitudeType Magnitude;
 
           Magnitude norm = ATS::magnitude(zero);
           for (size_t k = 0; k < aggSize; k++) {
-            Magnitude dnorm = ATS::magnitude(fineNSRandom(aggToRowMapLO(aggRows(agg)+k),0));
-            if (dnorm == zero) {
-              // This will result in a zero in a row of tentative prolongator, which is bad
-              // Terminate the execution
-              statusAtomic(1) = true;
-              return;
-            }
+            Magnitude dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
             norm += dnorm*dnorm;
+          }
+          norm = sqrt(norm);
+
+          if (norm == zero) {
+            // zero column; terminate the execution
+            statusAtomic(1) = true;
+            return;
           }
 
           // R = norm
@@ -265,8 +292,8 @@ namespace MueLu {
 
           // Q = localQR(:,0)/norm
           for (LO k = 0; k < aggSize; k++) {
-            LO localRow = aggToRowMapLO(aggRows(agg)+k);
-            SC localVal = fineNSRandom(aggToRowMapLO(aggRows(agg)+k),0) / norm;
+            LO localRow = agg2RowMapLO(aggRows(agg)+k);
+            SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0) / norm;
 
             size_t rowStart = rowsAux(localRow);
             colsAux(rowStart) = agg;
@@ -274,6 +301,7 @@ namespace MueLu {
 
             // Store true number of nonzeros per row
             rows(localRow+1) = 1;
+            rowNnz          += 1;
           }
 
         } else {
@@ -290,8 +318,8 @@ namespace MueLu {
           std::ostringstream oss;
           oss << "MueLu::TentativePFactory::MakeTentative: ";
           switch(i) {
-            case 0: oss << "!goodMap is not implemented";
-            case 1: oss << "fine level NS part has a zero column";
+            case 0: oss << "!goodMap is not implemented";               break;
+            case 1: oss << "fine level NS part has a zero column";      break;
           }
           throw Exceptions::RuntimeError(oss.str());
         }
@@ -313,7 +341,7 @@ namespace MueLu {
         if (goodMap) {
           for (size_t j = 0; j < NSDim; j++)
             for (LO k = 0; k < aggSize; k++)
-              localQR(k,j) = fineNSRandom(aggToRowMapLO(aggRows(agg)+k), j);
+              localQR(k,j) = fineNSRandom(agg2RowMapLO(aggRows(agg)+k), j);
         } else {
           statusAtomic(0) = true;
           return;
@@ -434,9 +462,9 @@ namespace MueLu {
         // FIXME: What happens if maps are block maps?
         for (LO j = 0; j < aggSize; j++) {
 #if 1
-          LO localRow = (goodMap ? aggToRowMapLO(aggRows(agg)+j) : -1);
+          LO localRow = (goodMap ? agg2RowMapLO(aggRows(agg)+j) : -1);
 #else
-          LO localRow = (goodMap ? aggToRowMapLO[aggRows(agg)+j] : rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j]));
+          LO localRow = (goodMap ? agg2RowMapLO[aggRows(agg)+j] : rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j]));
 #endif
 
           size_t rowStart = rowsAux(localRow), lnnz = 0;
@@ -469,7 +497,7 @@ namespace MueLu {
 #endif
     }
 
-    // Stage 3: compress the arrays
+    // Stage 2: compress the arrays
     ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
     Kokkos::parallel_scan("TentativePF:Build:compress_rows", numRows+1, scanFunctor);
 
@@ -490,7 +518,7 @@ namespace MueLu {
 
     GetOStream(Runtime1) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
 
-    // Stage 4: construct Xpetra::Matrix
+    // Stage 3: construct Xpetra::Matrix
     // FIXME: For now, we simply copy-paste arrays. The proper way to do that
     // would be to construct a Kokkos CrsMatrix, and then construct
     // Xpetra::Matrix out of that.
@@ -501,7 +529,7 @@ namespace MueLu {
     ArrayRCP<LO>      jaPtent;
     ArrayRCP<SC>     valPtent;
 
-    PtentCrs->allocateAllValues(nnzEstimate, iaPtent, jaPtent, valPtent);
+    PtentCrs->allocateAllValues(nnz, iaPtent, jaPtent, valPtent);
 
     ArrayView<size_t> ia  = iaPtent();
     ArrayView<LO>     ja  = jaPtent();

@@ -94,7 +94,7 @@ C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
       LOGICAL EXODUS, NONQUD, ALLONE
       LOGICAL SMOOTH, SWPSS, USRSUB, CENTRD
 
-      LOGICAL ISATRB, EXECUT
+      LOGICAL ISATRB, EXECUT, L64BIT
 
       LOGICAL RENEL, DELEL, DELNP
 
@@ -124,36 +124,39 @@ C     --A - the dynamic numeric memory base array
       IF (NERR .GT. 0) GOTO 40
 
 C .. Get filename from command line.  If not specified, emit error message
-      SYNTAX = 'Syntax is: "grepos [-name_length len] file_in file_out"'
+      SYNTAX =
+     *  'Syntax is: "grepos [-name_length len] [-64] file_in file_out"'
       NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filenames not specified.')
         CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
         GOTO 60
-      else if (narg .gt. 4) then
-        CALL PRTERR ('FATAL', 'Too many arguments specified.')
-        CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
-        GOTO 60
       end if
 
-C ... Parse name_length option
+C ... Parse options...
       name_len = 0
-      iarg = 1
-      if (narg .eq. 4) then
-        CALL get_argument(iarg,FILIN, LNAM)
-        if (filin(:lnam) .eq. '-name_length') then
-          CALL get_argument(iarg+1,FILIN, LNAM)
-          read (filin(:lnam), '(i10)') name_len
-          iarg = iarg + 2
-        else
-          SCRATCH = 'Unrecognized command option "'//FILIN(:LNAM)//'"'
-          CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
-          CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
-          GOTO 60
-        end if
+      l64bit = .false.
+      if (narg .gt. 2) then
+        iarg = 1
+        do
+          CALL get_argument(iarg,FILIN, LNAM)
+          if (filin(:lnam) .eq. '-name_length') then
+            CALL get_argument(iarg+1,FILIN, LNAM)
+            read (filin(:lnam), '(i10)') name_len
+            iarg = iarg + 2
+          else if (filin(:lnam) .eq. '-64') then
+            l64bit = .true.
+            iarg = iarg + 1
+          else
+            SCRATCH = 'Unrecognized command option "'//FILIN(:LNAM)//'"'
+            CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
+            CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
+          end if
+          if (i .gt. narg-2) exit
+        end do
       end if
-C     --Open the input database and read the initial variables
 
+C     --Open the input database and read the initial variables
       NDBIN = 9
       NDBOUT = 10
       
@@ -161,7 +164,7 @@ C     --Open the input database and read the initial variables
       IOWS   = 0
 
       FILIN  = ' '
-      CALL get_argument(iarg,FILIN, LNAM)
+      CALL get_argument(narg-1,FILIN, LNAM)
       NDBIN = exopen(filin(:lnam), EXREAD, CMPSIZ, IOWS, vers, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Database "'//FILIN(:LNAM)//'" does not exist.'
@@ -1001,16 +1004,26 @@ C     can only map sideset variables if the sidesets are the same...
 C     --Open the output database
       
       FILOUT = ' '
-      CALL get_argument(iarg+1,FILOUT, LFIL)
+      CALL get_argument(narg,FILOUT, LFIL)
       CMPSIZ = 0
       IOWS   = iowdsz()
-      ndbout = excre(filout(:lfil), EXCLOB, CMPSIZ, IOWS, IERR)
+      MODE = EXCLOB
+      if (l64bit) then
+        MODE = MODE + EX_ALL_INT64_DB + EX_ALL_INT64_API
+      end if
+      ndbout = excre(filout(:lfil), MODE, CMPSIZ, IOWS, IERR)
       if (ierr .lt. 0) then
          call exopts (EXVRBS, ierr1)
          call exerr('grepos', 'Error from excre', ierr)
          go to 50
       endif
       call exmxnm(ndbout, maxnam, ierr)
+
+      if (l64bit) then
+C ... Compress the output
+        call exsetopt(ndbout, EX_OPT_COMPRESSION_LEVEL, 1, ierr)
+        call exsetopt(ndbout, EX_OPT_COMPRESSION_SHUFFLE, 1, ierr)
+      end if
 
 C     --Write the QA records
       CALL DBOQA (NDBOUT, QAINFO, NQAREC, c(kqarec),

@@ -86,7 +86,6 @@ namespace Tacho {
       t_import = 0.0,
       t_reorder = 0.0,
       t_solve_seq = 0.0,
-      //t_solve_team = 0.0,
       t_solve_task = 0.0;
     const int start = -2;
 
@@ -146,13 +145,19 @@ namespace Tacho {
     }
     cout << "TriSolvePerformance:: reorder the matrix and partition right hand side::time = " << t_reorder << endl;
 
+    const size_t max_concurrency = 16384;
+    cout << "TriSolvePerformance:: max concurrency = " << max_concurrency << endl;
+
+    const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+    cout << "TriSolvePerformance:: max task size   = " << max_task_size << endl;
+
     if (!skip_serial) {
       __INIT_DENSE_MATRIX__(BB, 1.0);
-#ifdef __USE_FIXED_TEAM_SIZE__
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   1);
+
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
@@ -204,55 +209,13 @@ namespace Tacho {
       cout << "TriSolvePerformance:: Serial forward and backward solve of the matrix::time = " << t_solve_seq << endl;
     }
     
-    
-//     {
-//       __INIT_DENSE_MATRIX__(BB, 1.0);
-// #ifdef __USE_FIXED_TEAM_SIZE__
-//       typename TaskFactoryType::policy_type policy(max_task_dependence);
-// #else
-//       typename TaskFactoryType::policy_type policy(max_task_dependence, nthreads);
-// #endif
-//       TaskFactoryType::setPolicy(&policy);
-      
-//       CrsTaskViewType U(&UU);
-//       DenseTaskViewType B(&BB);
-//       U.fillRowViewArray();
-      
-//       {
-//         timer.reset();
-        
-//         {
-//           auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
-//                                                               ::TaskFunctor<CrsTaskViewType,DenseTaskViewType>
-//                                                               (Diag::NonUnit, U, B), 0);
-
-//           TaskFactoryType::Policy().spawn(future);
-//           Kokkos::Experimental::wait(TaskFactoryType::Policy());
-//         }
-//         {
-//           auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
-//                                                               ::TaskFunctor<CrsTaskViewType,DenseTaskViewType>
-//                                                               (Diag::NonUnit, U, B), 0);
-
-//           TaskFactoryType::Policy().spawn(future);
-//           Kokkos::Experimental::wait(TaskFactoryType::Policy());
-//         }
-
-//         t_solve_team = timer.seconds();
-
-//         if (verbose)
-//           cout << BB << endl;
-//       }
-//       cout << "TriSolvePerformance:: Team forward and backward solve of the matrix::time = " << t_solve_team << endl;
-//     }
-    
     {
       __INIT_DENSE_MATRIX__(BB, 1.0);
-#ifdef __USE_FIXED_TEAM_SIZE__
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   team_size);
+
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
@@ -299,7 +262,6 @@ namespace Tacho {
 
     if (!skip_serial) {
       cout << "TriSolvePerformance:: task scale [seq/task] = " << t_solve_seq/t_solve_task << endl;
-      //cout << "TriSolvePerformance:: team scale [seq/team] = " << t_solve_seq/t_solve_team << endl;
     }
 
     return r_val;

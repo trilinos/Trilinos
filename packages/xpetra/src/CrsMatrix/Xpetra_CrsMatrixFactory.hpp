@@ -199,17 +199,17 @@ namespace Xpetra {
 
   };
 
-  // Specializations on SerialNode (mainly for Epetra)
-#ifdef HAVE_XPETRA_SERIAL
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
 
-  // Specializtion for SC=double, LO=int, GO=int and Node=Serial
+  // Specializtion for SC=double, LO=int, GO=int and Node=EpetraNode
   // Used both for Epetra and Tpetra
   template <>
-  class CrsMatrixFactory<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class CrsMatrixFactory<double, int, int, EpetraNode> {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -221,20 +221,12 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (rowMap->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, maxNumEntriesPerRow, pftype, plist) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsMatrixFactory<int,int>", "TpetraCrsMatrix<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(rowMap, maxNumEntriesPerRow, pftype, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -243,20 +235,12 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (rowMap->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, NumEntriesPerRowToAlloc, pftype, plist) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsMatrixFactory<int,int>", "TpetraCrsMatrix<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(rowMap, NumEntriesPerRowToAlloc, pftype, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -266,20 +250,12 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (rowMap->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, maxNumEntriesPerRow, pftype, plist) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsMatrixFactory<int,int>", "TpetraCrsMatrix<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(rowMap, colMap, maxNumEntriesPerRow, pftype, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -289,20 +265,12 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (rowMap->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsMatrixFactory<int,int>", "TpetraCrsMatrix<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -312,20 +280,12 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (graph->getRowMap()->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(graph, plist) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsMatrixFactory<int,int>", "TpetraCrsMatrix<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (graph->getRowMap()->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(graph, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -336,20 +296,12 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (sourceMatrix->getRowMap()->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(sourceMatrix,importer,domainMap,rangeMap,params) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsMatrixFactory<int,int>", "TpetraCrsMatrix<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (sourceMatrix->getRowMap()->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(sourceMatrix,importer,domainMap,rangeMap,params) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -359,20 +311,12 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (sourceMatrix->getRowMap()->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(sourceMatrix,exporter,domainMap,rangeMap,params) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsMatrixFactory<int,int>", "TpetraCrsMatrix<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (sourceMatrix->getRowMap()->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(sourceMatrix,exporter,domainMap,rangeMap,params) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -386,35 +330,29 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (rowMap->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, lclMatrix, params));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsMatrixFactory<int,int>", "TpetraCrsMatrix<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<int,Node>(rowMap, colMap, lclMatrix, params) );
-#endif
-#endif
+
       XPETRA_FACTORY_END;
     }
 #endif
 
   };
+#endif
 
-  // Specializtion for SC=double, LO=int, GO=long long and Node=Serial
-  // Used both for Epetra and Tpetra
-#ifdef HAVE_XPETRA_INT_LONG_LONG
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+
   template <>
-  class CrsMatrixFactory<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class CrsMatrixFactory<double, int, long long, EpetraNode> {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -430,12 +368,8 @@ namespace Xpetra {
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, maxNumEntriesPerRow, pftype, plist) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<long long, Node>(rowMap, maxNumEntriesPerRow, pftype, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -448,12 +382,8 @@ namespace Xpetra {
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, NumEntriesPerRowToAlloc, pftype, plist) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<long long, Node>(rowMap, NumEntriesPerRowToAlloc, pftype, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -467,12 +397,8 @@ namespace Xpetra {
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, maxNumEntriesPerRow, pftype, plist) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<long long, Node>(rowMap, colMap, maxNumEntriesPerRow, pftype, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -486,12 +412,8 @@ namespace Xpetra {
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<long long, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -505,12 +427,8 @@ namespace Xpetra {
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(graph, plist) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (graph->getRowMap()->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<long long, Node>(graph, plist) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -523,15 +441,10 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
       if (sourceMatrix->getRowMap()->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(sourceMatrix,importer,domainMap,rangeMap,params) );
-
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (sourceMatrix->getRowMap()->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<long long, Node>(sourceMatrix,importer,domainMap,rangeMap,params) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -543,15 +456,10 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
       if (sourceMatrix->getRowMap()->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(sourceMatrix,exporter,domainMap,rangeMap,params) );
-
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (sourceMatrix->getRowMap()->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<long long, Node>(sourceMatrix,exporter,domainMap,rangeMap,params) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -569,19 +477,15 @@ namespace Xpetra {
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, lclMatrix, params));
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrixT<long long, Node>(rowMap, colMap, lclMatrix, params) );
-#endif
-#endif
       XPETRA_FACTORY_END;
     }
 #endif
 
   };
-#endif // HAVE_XPETRA_INT_LONG_LONG
-#endif // HAVE_XPETRA_SERIAL
+#endif
+
 }
 
 #define XPETRA_CRSMATRIXFACTORY_SHORT

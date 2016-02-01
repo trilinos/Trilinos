@@ -74,13 +74,12 @@ namespace Xpetra {
   const RCP< const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &);
   //
 
-  // common definition of EpetraMapT
-  template<class EpetraGlobalOrdinal, class Node>
+  // stub implementation for EpetraMapT
+  template<class GlobalOrdinal, class Node>
   class EpetraMapT
-    : public virtual Map<int, EpetraGlobalOrdinal, Node>
+    : public virtual Map<int, GlobalOrdinal, Node>
   {
     typedef int LocalOrdinal;
-    typedef EpetraGlobalOrdinal GlobalOrdinal;
 
   public:
     typedef int local_ordinal_type;
@@ -105,12 +104,14 @@ namespace Xpetra {
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
                const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMap only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Constructor with a user-defined contiguous distribution.
     EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=defaultArgNode()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMap only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
@@ -119,7 +120,8 @@ namespace Xpetra {
         GlobalOrdinal indexBase,
         const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
         const Teuchos::RCP< Node > &node = defaultArgNode()) {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMap only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //@}
@@ -200,10 +202,8 @@ namespace Xpetra {
 
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
+      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return KokkosClassic::Details::getNode<Node>(); // TODO fix this (just returns Teuchos::null)
-      //typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
-      //return default_node_type;
     }
 
     //@}
@@ -242,7 +242,8 @@ namespace Xpetra {
     //! EpetraMapT constructor to wrap a Epetra_Map object
     EpetraMapT(const Teuchos::RCP<const Epetra_BlockMap> &map)
       : map_(map) {
-      TEUCHOS_TEST_FOR_EXCEPTION(!map->GlobalIndicesIsType<GlobalOrdinal>(), std::runtime_error, "Xpetra::EpetraMapT: GlobalOrdinal mismatch.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Get the library used by this object (Epetra or Epetra?)
@@ -260,18 +261,15 @@ namespace Xpetra {
     RCP<const Epetra_BlockMap> map_;
   }; // EpetraMapT class
 
-// Specializations for Epetra (and Tpetra) using the Serial Node
-#ifdef HAVE_XPETRA_SERIAL
-
-  // specialization on GO=int and Node=Serial
+  // specialization on GO=int and EpetraNode
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   template<>
-  class EpetraMapT<int, Kokkos::Compat::KokkosSerialWrapperNode>
-    : public virtual Map<int, int, Kokkos::Compat::KokkosSerialWrapperNode>
+  class EpetraMapT<int, EpetraNode>
+    : public virtual Map<int, int, EpetraNode>
   {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   public:
     typedef LocalOrdinal local_ordinal_type;
@@ -533,7 +531,7 @@ namespace Xpetra {
 
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
+      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return KokkosClassic::Details::getNode<Node>(); // TODO fix this
     }
 
@@ -696,15 +694,15 @@ namespace Xpetra {
 }; // EpetraMapT class
 #endif // #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 
-// specialization on GO=long long and Node=Serial
+// specialization on GO=long long and EpetraNode
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
   template<>
-  class EpetraMapT<long long, Kokkos::Compat::KokkosSerialWrapperNode>
-    : public virtual Map<int, long long, Kokkos::Compat::KokkosSerialWrapperNode>
+  class EpetraMapT<long long, EpetraNode>
+    : public virtual Map<int, long long, EpetraNode>
   {
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   public:
     typedef LocalOrdinal local_ordinal_type;
@@ -966,7 +964,7 @@ namespace Xpetra {
 
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
+      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return KokkosClassic::Details::getNode<Node>();
     }
 
@@ -1128,7 +1126,6 @@ namespace Xpetra {
     RCP<const Epetra_BlockMap> map_;
 }; // EpetraMapT class
 #endif // #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-#endif // HAVE_XPETRA_SERIAL
 
 } // Xpetra namespace
 

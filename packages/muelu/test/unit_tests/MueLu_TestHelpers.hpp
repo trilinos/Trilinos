@@ -334,17 +334,16 @@ namespace MueLuTests {
           lib = TestHelpers::Parameters::getLib();
 
         // This only works for Tpetra
-        if(lib!=Xpetra::UseTpetra) return Op;
+        if (lib!=Xpetra::UseTpetra) return Op;
+
+#if defined(HAVE_MUELU_TPETRA)
+#ifdef HAVE_MUELU_BROKEN_TESTS
+        // Thanks for the code, Travis!
 
         // Make the graph
         RCP<Matrix> FirstMatrix = BuildMatrix(matrixList,lib);
         RCP<const Xpetra::CrsGraph<LO,GO,NO> > Graph = FirstMatrix->getCrsGraph();
 
-#if defined(HAVE_MUELU_TPETRA)
-        // TAW: Oct 11 2015: The following code only works if GO=LO=int is enabled in Tpetra
-        //                   The computeDiagonalGraph routine is not contained in the Xpetra::CrsMatrix interface!
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
-        // Thanks for the code, Travis!
         int blocksize = 3;
         RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
         RCP<const Tpetra::CrsGraph<LO,GO,NO> > TTGraph = TGraph->getTpetra_CrsGraph();
@@ -369,7 +368,6 @@ namespace MueLuTests {
           lclColInds[0] = lclRowInd;
           bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
         }
-        bcrsmatrix->computeDiagonalGraph(); // Needs to get done to smooth for some reason
 
         RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
         Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));

@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -51,10 +51,18 @@
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Piro_config.hpp"
 
+#ifdef ALBANY_BUILD
+#include "Kokkos_DefaultNode.hpp"
+#endif
 
 namespace Piro {
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
+          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
+#else
 template<typename Scalar>
+#endif
 class InvertMassMatrixDecorator
     : public Thyra::ModelEvaluatorDefaultBase<Scalar>
 {
@@ -65,7 +73,7 @@ class InvertMassMatrixDecorator
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  InvertMassMatrixDecorator( 
+  InvertMassMatrixDecorator(
                 Teuchos::RCP<Teuchos::ParameterList> stratParams,
                 Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
                 bool massMatrixIsConstant=true,
@@ -80,7 +88,7 @@ class InvertMassMatrixDecorator
 
   /** \name Overridden from Thyra::ModelEvaluator . */
   //@{
-  
+
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
 
   Teuchos::ArrayView<const std::string> get_g_names(int j) const;
@@ -92,17 +100,17 @@ class InvertMassMatrixDecorator
   Teuchos::RCP< Thyra::LinearOpBase< Scalar > > create_W_op () const;
   /** \brief . */
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
-  
+
   Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > create_W_prec() const;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  
+
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgsImpl() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
- 
-  void reportFinalPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint, const bool wasSolved);  
+
+  void reportFinalPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint, const bool wasSolved);
 
   void evalModelImpl(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,

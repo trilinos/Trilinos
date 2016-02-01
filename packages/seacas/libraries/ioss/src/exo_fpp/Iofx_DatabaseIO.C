@@ -46,6 +46,9 @@
 #include <stddef.h>
 #include <sys/select.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <tokenize.h>
 #include <algorithm>
 #include <cctype>
@@ -86,10 +89,6 @@
 #include "Ioss_State.h"
 #include "Ioss_VariableType.h"
 
-#ifdef HAVE_MPI    
-#include "Ioss_FileInfo.h"
-#endif
-
 // ========================================================================
 // Static internal helper functions
 // ========================================================================
@@ -98,8 +97,6 @@ namespace {
 
   const std::string SEP() {return std::string("@");} // Separator for attribute offset storage
   const std::string SCALAR()     {return std::string("scalar");}
-  const std::string VECTOR3D()   {return std::string("vector_3d");}
-  const std::string SYM_TENSOR() {return std::string("sym_tensor_33");}
 
   const char *complex_suffix[] = {".re", ".im"};
 
@@ -128,6 +125,11 @@ namespace {
   template <typename T>
   void compute_internal_border_maps(T* entities, T* internal, size_t count, size_t entity_count)
   {
+    // Construct the node/element map (internal vs. border).
+    // Border nodes/elements are those in the communication map (use entities array)
+    // Internal nodes/elements are the rest.  Allocate array to hold all nodes/elements,
+    // initialize all to '1', then zero out the nodes/elements in 'entities'.
+    // Iterate through array again and consolidate all '1's
     for (size_t ij=0; ij < count; ij++)
       internal[ij] = 1;
     for (size_t J=0; J < entity_count; J++)
@@ -307,11 +309,23 @@ namespace Iofx {
           exodusFilePtr = ex_create(decoded_filename.c_str(), mode,
                                     &cpu_word_size, &dbRealWordSize);
           if (exodusFilePtr < 0) {
-            dbState = Ioss::STATE_INVALID;
-            // NOTE: Code will not continue past this call...
-            std::ostringstream errmsg;
-            errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
-            IOSS_ERROR(errmsg);
+            if (myProcessor == 0){
+              Ioss::FileInfo path = Ioss::FileInfo(decoded_filename);
+              Ioss::Utils::create_path(path.pathname());
+            }
+#ifdef HAVE_MPI
+            if (dbUsage != Ioss::WRITE_HISTORY) {
+              MPI_Barrier(util().communicator());
+            }
+#endif
+            exodusFilePtr = ex_create(decoded_filename.c_str(), mode, &cpu_word_size, &dbRealWordSize);
+            if (exodusFilePtr < 0) {
+              dbState = Ioss::STATE_INVALID;
+              // NOTE: Code will not continue past this call...
+              std::ostringstream errmsg;
+              errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
+              IOSS_ERROR(errmsg);
+            }
           }
         }
       }
@@ -2990,40 +3004,18 @@ namespace Iofx {
                 int* sids = reinterpret_cast<int*>(&sides[0]);
 
                 size_t j=0;
-		int64_t int_max = std::numeric_limits<int>::max();
                 if (field.get_name() == "entity_processor") {
                   const Ioss::MapContainer &map = get_map(EX_ELEM_BLOCK).map;
 
                   for (ssize_t i=0; i < entity_count; i++) {
-                    int local_id = ents[i];
-		    int64_t comb_64 = (int64_t)10 * map[local_id] + sids[i];
-		    if (comb_64 > int_max) {
-		      std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
-		      std::ostringstream errmsg;
-		      errmsg << "ERROR: Process " << Ioss::SerializeIO::getRank()
-			     << " in routine 'get_field_internal(const Ioss::CommSet* cs,...'"
-			     << " has exceeded the integer bounds for entity " << map[local_id]
-			     << ", local side id " << sids[i] << "\n. Try using 64-bit mode to read the file '"
-			     << decoded_filename << "'.\n";
-		      IOSS_ERROR(errmsg);
-		    }
-                    entity_proc[j++] = (int)comb_64;
+                    entity_proc[j++] = map[ents[i]];
+		    entity_proc[j++] = sids[i];
                     entity_proc[j++] = pros[i];
                   }
-                } else {
+                } else { // "entity_processor_raw"
                   for (ssize_t i=0; i < entity_count; i++) {
-		    int64_t comb_64 = (int64_t)10 * ents[i] + sids[i];
-		    if (comb_64 > int_max) {
-		      std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
-		      std::ostringstream errmsg;
-		      errmsg << "ERROR: Process " << Ioss::SerializeIO::getRank()
-			     << " in routine 'get_field_internal(const Ioss::CommSet* cs,...'"
-			     << " has exceeded the integer bounds for entity " << ents[i]
-			     << ", local side id " << sids[i] << "\n. Try using 64-bit mode to read the file '"
-			     << decoded_filename << "'.\n";
-		      IOSS_ERROR(errmsg);
-		    }
-                    entity_proc[j++] = (int)comb_64;
+                    entity_proc[j++] = ents[i];
+		    entity_proc[j++] = sids[i];
                     entity_proc[j++] = pros[i];
                   }
                 }
@@ -3038,13 +3030,14 @@ namespace Iofx {
                   const Ioss::MapContainer &map = get_map(EX_ELEM_BLOCK).map;
 
                   for (ssize_t i=0; i < entity_count; i++) {
-                    int64_t local_id = ents[i];
-                    entity_proc[j++] = (int64_t)10*map[local_id]+sids[i];
+                    entity_proc[j++] = map[ents[i]];
+                    entity_proc[j++] = sids[i];
                     entity_proc[j++] = pros[i];
                   }
-                } else {
+                } else { // "entity_processor_raw"
                   for (ssize_t i=0; i < entity_count; i++) {
-                    entity_proc[j++] = (int64_t)10*ents[i]+sids[i];
+                    entity_proc[j++] = ents[i];
+                    entity_proc[j++] = sids[i];
                     entity_proc[j++] = pros[i];
                   }
                 }
@@ -4832,10 +4825,8 @@ namespace Iofx {
             int* pro = (int*)&procs[0];
             int j=0;
             for (size_t i=0; i < entity_count; i++) {
-              // Assume klugy side id generation.
-              int global_id = entity_proc[j] / 10;
-              ent[i] = elemMap.global_to_local(global_id);
-              sid[i] = entity_proc[j++] % 10;
+              ent[i] = elemMap.global_to_local(entity_proc[j++]);
+              sid[i] = entity_proc[j++];
               pro[i] = entity_proc[j++];
             }
           } else {
@@ -4845,10 +4836,8 @@ namespace Iofx {
             int64_t* pro = (int64_t*)&procs[0];
             int64_t j=0;
             for (size_t i=0; i < entity_count; i++) {
-              // Assume klugy side id generation.
-              int64_t global_id = entity_proc[j] / 10;
-              ent[i] = elemMap.global_to_local(global_id);
-              sid[i] = entity_proc[j++] % 10;
+              ent[i] = elemMap.global_to_local(entity_proc[j++]);
+              sid[i] = entity_proc[j++];
               pro[i] = entity_proc[j++];
             }
           }

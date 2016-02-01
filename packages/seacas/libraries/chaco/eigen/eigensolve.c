@@ -93,7 +93,7 @@ eigensolve (
     int       step;		/* current step in RQI counting */
     int       nstep;		/* number of uncoarsening levels between RQIs */
     int       version;		/* which version of sel. orth. to use */
-    int       nsets;		/* number of sets to divide into */
+    int       nsets=0;		/* number of sets to divide into */
     double   *g;		/* rhs n-vector in the extended eigenproblem */
     double   *ptr;		/* loops through yvec */
     double    w1, w2;		/* desired weights of two sets */
@@ -128,7 +128,6 @@ eigensolve (
 
 
     active = NULL;
-    normal = FALSE;
 
     /* Autoset (if necessary) some parameters for the eigen calculation */
     autoset_maxitns = FALSE;
@@ -163,7 +162,6 @@ eigensolve (
 	if (LANCZOS_CONVERGENCE_MODE == 1) {
 	    active = smalloc(nvtxs * sizeof(int));
 	}
-	nsets = 1 << ndims;
 
 	w1 = goal[0];
 	w2 = goal[1];
@@ -299,7 +297,6 @@ eigensolve (
 		else {
 		    /* this should have been caught earlier ... */
 		    version = 2;
-		    solver_flag = 3;
 		}
 		if (LANCZOS_CONVERGENCE_MODE == 1) {
 		    active = smalloc(nvtxs * sizeof(int));

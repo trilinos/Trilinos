@@ -139,15 +139,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestLowerTriangularBlockCrsMatr
   }
   IFPACK2RBILUK_REPORT_GLOBAL_ERR( "create_triangular_matrix" );
 
-  try {
-    bcrsmatrix->computeDiagonalGraph ();
-  } catch (std::exception& e) {
-    lclSuccess = 0;
-    errStrm << "Process " << myRank << ": computeDiagonalGraph() threw exception: "
-            << e.what () << endl;
-  }
-  IFPACK2RBILUK_REPORT_GLOBAL_ERR( "computeDiagonalGraph()" );
-
   RCP<prec_type> prec;
   try {
     RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
@@ -241,7 +232,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatr
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,false> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph();
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
   prec_type prec (const_bcrsmatrix);
@@ -296,7 +286,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Sc
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_full_local_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph();
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
   prec_type prec (const_bcrsmatrix);
@@ -356,7 +345,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
     tif_utest::create_banded_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc, rbandwidth);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_banded_block_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize, rbandwidth));
-  bcrsmatrix->computeDiagonalGraph();
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
   Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (const_bcrsmatrix);
@@ -406,12 +394,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-
   typedef Tpetra::Experimental::LittleBlock<Scalar,LocalOrdinal> little_block_type;
   typedef Tpetra::Experimental::LittleVector<Scalar,LocalOrdinal> little_vec_type;
+  typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
-
-  Ifpack2::Experimental::BlockMatrixOperations<Scalar,Scalar> blockOps;
 
   const int blockSize = 5;
   const int blockMatSize = blockSize*blockSize;
@@ -483,16 +469,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   bMatrix[23] = 4;
   bMatrix[24] = -5;
 
-  blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize);
+  little_block_type A (aMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+  little_block_type B (bMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+  little_block_type C (cMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+  little_block_type I (identityMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+
+  Tpetra::Experimental::GEMM ("N", "N", STS::one (), A, I, STS::zero (), C);
+  //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize);
 
   for (int k = 0; k < blockMatSize; ++k)
   {
     TEST_FLOATING_EQUALITY(aMatrix[k], cMatrix[k], 1e-14);
   }
 
-  blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), aMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, -1.0, 1.0);
-  blockOps.square_matrix_matrix_multiply(identityMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
-  blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), bMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
+  Tpetra::Experimental::GEMM ("N", "N", -STS::one (), A, A, STS::one (), C);
+  //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), aMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, -1.0, 1.0);
+
+  Tpetra::Experimental::GEMM ("N", "N", STS::one (), I, I, STS::one (), C);
+  //blockOps.square_matrix_matrix_multiply(identityMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
+
+  Tpetra::Experimental::GEMM ("N", "N", STS::one (), A, B, STS::one (), C);
+  //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), bMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
 
   exactMatrix[0] = -8.00000000000000;
   exactMatrix[1] = 18.0000000000000;
@@ -525,46 +522,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
     TEST_FLOATING_EQUALITY(exactMatrix[k], cMatrix[k], 1e-14);
   }
 
-  typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
-  typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
-
-  lapack_type lapack;
-
   const LocalOrdinal rowStride = blockSize;
   const LocalOrdinal colStride = 1;
 
   little_block_type dMat(cMatrix.getRawPtr(),blockSize,rowStride,colStride);
-  LST * d_raw = dMat.getRawPtr();
+  Teuchos::Array<int> ipiv_teuchos(blockSize);
+  Kokkos::View<int*, Kokkos::HostSpace,
+    Kokkos::MemoryUnmanaged> ipiv (ipiv_teuchos.getRawPtr (), blockSize);
 
-  Teuchos::Array<int> ipiv(blockSize);
-  Teuchos::Array<Scalar> work(1);
+  Teuchos::Array<Scalar> work_teuchos (blockSize);
+  Kokkos::View<impl_scalar_type*, Kokkos::HostSpace,
+    Kokkos::MemoryUnmanaged> work (work_teuchos.getRawPtr (), blockSize);
+
   int lapackInfo;
   for (int k = 0; k < blockSize; ++k) {
     ipiv[k] = 0;
   }
 
-  lapack.GETRF(blockSize, blockSize, d_raw, blockSize, ipiv.getRawPtr(), &lapackInfo);
+  Tpetra::Experimental::GETF2 (dMat, ipiv, lapackInfo);
   TEUCHOS_TEST_FOR_EXCEPTION(
     lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
-    "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETRF.");
+    "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETF2.");
 
-  int lwork = -1;
-  lapack.GETRI(blockSize, d_raw, blockSize, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
-    "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
-
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type ImplMagnitudeType;
-  ImplMagnitudeType worksize = Kokkos::Details::ArithTraits<Scalar>::magnitude(work[0]);
-#else
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ImplMagnitudeType;
-  ImplMagnitudeType worksize = Teuchos::ScalarTraits<Scalar>::magnitude(work[0]);
-#endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
-  lwork = static_cast<int>(worksize);
-  work.resize(lwork);
-  lapack.GETRI(blockSize, d_raw, blockSize, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
+  Tpetra::Experimental::GETRI (dMat, ipiv, work, lapackInfo);
   TEUCHOS_TEST_FOR_EXCEPTION(
     lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
     "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
@@ -582,12 +562,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   little_vec_type bval(onevec.getRawPtr(),blockSize,1);
   little_vec_type xval(computeSolution.getRawPtr(),blockSize,1);
 
-  xval.matvecUpdate(1.0,dMat,bval);
+  //xval.matvecUpdate(1.0,dMat,bval);
+  Tpetra::Experimental::GEMV (1.0, dMat, bval, xval);
 
   for (int i = 0; i < blockSize; ++i)
     TEST_FLOATING_EQUALITY(exactSolution[i], computeSolution[i], 1e-13);
-
-
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
@@ -617,7 +596,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Sca
 
   RCP<block_crs_matrix_type> bcrsmatrix;
   bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph ();
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
   Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (const_bcrsmatrix);

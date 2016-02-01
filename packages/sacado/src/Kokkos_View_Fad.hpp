@@ -39,7 +39,11 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
 
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
 #include "KokkosExp_View_Fad.hpp"
+
+#else
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -902,6 +906,29 @@ create_mirror( const View<T,L,D,M,Impl::ViewSpecializeSacadoFad> & src )
                          dims[7] );
 }
 
+// Whether a given type is a view with Sacado FAD scalar type
+template <typename view_type>
+struct is_view_fad { static const bool value = false; };
+
+template <typename T, typename L, typename D, typename M>
+struct is_view_fad< View<T,L,D,M,Impl::ViewSpecializeSacadoFad> > {
+  static const bool value = true;
+};
+
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar(const view_type& view) {
+  return 0;
+}
+
+template <typename T, typename L, typename D, typename M>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar(const View<T,L,D,M,Impl::ViewSpecializeSacadoFad>& view) {
+  return view.storage_size();
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -1016,6 +1043,8 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+#endif
 
 #endif
 

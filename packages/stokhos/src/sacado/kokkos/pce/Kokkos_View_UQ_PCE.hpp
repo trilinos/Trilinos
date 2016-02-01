@@ -62,6 +62,10 @@ namespace Kokkos {
 
 }
 
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+#include "KokkosExp_View_UQ_PCE_Contiguous.hpp"
+#else
 #include "Kokkos_View_UQ_PCE_Contiguous.hpp"
+#endif
 
 #endif /* #ifndef KOKKOS_VIEW_UQ_PCE_HPP */

@@ -45,7 +45,6 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "KokkosClassic_DefaultNode_config.h"
-#include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
@@ -106,7 +105,7 @@ namespace Details {
 #endif
 
     //! \brief Return a pointer to the default node.
-    static RCP<DefaultNodeType> getDefaultNode();
+    static Teuchos::RCP<DefaultNodeType> getDefaultNode();
   };
 
 } // namespace KokkosClassic

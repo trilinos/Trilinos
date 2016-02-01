@@ -6,13 +6,19 @@ IF(Kokkos_ENABLE_OpenMP)
         NOEXEPREFIX
         SOURCES basker_test.cpp
      )
+
+     TRIBITS_ADD_EXECUTABLE(
+        basker_test_inc
+	NOEXEPREFIX
+	SOURCES basker_test_inc.cpp 
+     )
          
      ##Single threaded test
      TRIBITS_ADD_ADVANCED_TEST(
          basker_test_1
          TEST_0 EXEC basker_test
              NOEXEPREFIX
-              ARGS 1
+              ARGS matrix1.mtx 1
           FAIL_REGULAR_EXPRESSION "FAILED"
           COMM serial mpi
           OVERALL_NUM_MPI_PROCS 1
@@ -23,7 +29,7 @@ IF(Kokkos_ENABLE_OpenMP)
          basker_test_4
          TEST_0 EXEC basker_test
              NOEXEPREFIX
-              ARGS 4
+              ARGS matrix1.mtx 4
           FAIL_REGULAR_EXPRESSION "FAILED"
           COMM serial mpi
           OVERALL_NUM_MPI_PROCS 1

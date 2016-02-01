@@ -2,8 +2,36 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Development version (12.5)
+Development version (12.7)
 --------------------------
+
+* Got rid of KokkosClassic::DefaultArithmetic
+
+Stokhos was using this, so we had left it in place in previous
+releases for backwards compatibility.  Now that no other packages
+depend on it, we have gotten rid of it for good.  Its functionality
+has been replaced by various functions in TpetraKernels.
+
+The original idea behind DefaultArithmetic, as suggested in the name,
+was that users could swap out this "default" implementation of
+multivector operations with their own implementations.  This is
+generally less useful than swapping out the implementation of sparse
+matrix kernels (like sparse matrix-vector multiply or sparse
+triangular solve).  As a result, Tpetra never had an implementation
+(since at least January 2010) of multivector operations other than
+DefaultArithmetic.
+
+Trilinos 12.6
+-------------
+
+* Better CUDA testing
+
+We added more nightly test builds with CUDA enabled (for running on
+NVIDIA GPUs).  The builds test various combinations of CUDA with
+different compiler versions and host thread parallelism options
+(OpenMP, Pthreads, serial).  CUDA + GCC 4.7.2 is currently the
+best-tested option, but we're using these tests to improve support for
+other options.
 
 * CrsMatrix, MultiVector, Vector: Added 'atomic' option to sumInto
 

@@ -391,12 +391,15 @@ private:
   /// compute() sets this to point to userInvDiag_.
   Teuchos::RCP<const V> D_;
 
+  //! The type of diagOffsets_ (see below).
+  typedef Kokkos::View<size_t*, typename MV::node_type::device_type> offsets_type;
+
   /// \brief Precomputed offsets of local diagonal entries of the matrix.
   ///
   /// These are only used if the matrix has a const ("static") graph.
   /// In that case, the offsets of the diagonal entries will never
   /// change, even if the values of the diagonal entries change.
-  Teuchos::ArrayRCP<size_t> diagOffsets_;
+  offsets_type diagOffsets_;
 
   /// \brief Whether we have precomputed offsets of diagonal entries.
   ///

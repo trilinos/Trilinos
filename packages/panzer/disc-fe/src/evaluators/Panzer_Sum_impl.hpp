@@ -99,9 +99,73 @@ PHX_POST_REGISTRATION_SETUP(Sum,worksets,fm)
   cell_data_size = sum.size() / sum.fieldTag().dataLayout().dimension(0);
 }
 
+
+//**********************************************************************
+template<typename EvalT, typename TRAITS>
+template<unsigned int RANK>
+KOKKOS_INLINE_FUNCTION
+void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
+  const size_t num_vals = values.size();
+
+
+  if (RANK == 1 )
+  {
+    for (std::size_t iv = 0; iv < num_vals; ++iv)
+      sum(i) += scalars[iv]*(values[iv](i));
+  }
+  else if (RANK == 2)
+  {
+    const size_t dim_1 = sum.dimension(1);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t iv = 0; iv < num_vals; ++iv)
+        sum(i,j) += scalars[iv]*(values[iv](i,j));
+  }
+  else if (RANK == 3)
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t k = 0; k < dim_2; ++k)
+        for (std::size_t iv = 0; iv < num_vals; ++iv)
+          sum(i,j,k) += scalars[iv]*(values[iv](i,j,k));
+  }
+  else if (RANK == 4)
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t k = 0; k < dim_2; ++k)
+        for (std::size_t l = 0; l < dim_3; ++l)
+          for (std::size_t iv = 0; iv < num_vals; ++iv)
+            sum(i,j,k,l) += scalars[iv]*(values[iv](i,j,k,l));
+  }
+  else if (RANK == 5)
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t k = 0; k < dim_2; ++k)
+        for (std::size_t l = 0; l < dim_3; ++l)
+          for (std::size_t m = 0; m < dim_4; ++m)
+            for (std::size_t iv = 0; iv < num_vals; ++iv)
+              sum(i,j,k,l,m) += scalars[iv]*(values[iv](i,j,k,l,m));
+  }
+  else if (RANK == 6)
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4),dim_5 = sum.dimension(5);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t k = 0; k < dim_2; ++k)
+        for (std::size_t l = 0; l < dim_3; ++l)
+          for (std::size_t m = 0; m < dim_4; ++m)
+            for (std::size_t n = 0; n < dim_5; ++n)
+              for (std::size_t iv = 0; iv < num_vals; ++iv)
+                sum(i,j,k,l,m,n) += scalars[iv]*(values[iv](i,j,k,l,m,n));
+  }
+}
+
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Sum,workset)
-{ 
+{   
+
+  sum.deep_copy(ScalarT(0.0));
+
 #if PANZER_USE_FAST_SUM 
   sum.deep_copy(ScalarT(0.0));
   for (std::size_t j = 0; j < values.size(); ++j) {
@@ -115,18 +179,42 @@ PHX_EVALUATE_FIELDS(Sum,workset)
       *sum_it += scalars[j]*(*values_it);
   }
 #else
-  sum.deep_copy(ScalarT(0.0));
-  std::size_t length = 1;
-  for (std::size_t i=0; i<sum.rank(); ++i)
-    length *= sum.dimension(i);
-  Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
-    for (std::size_t j = 0; j < values.size(); ++j)
-      sum[i] += scalars[j]*(values[j][i]);
-  });
+  size_t rank = sum.rank();
+  const size_t num_vals = values.size();
+  const size_t length = sum.dimension(0);
+  if (rank == 1 )
+  {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PanzerSumTag<1> >(0, length), *this);
+  }
+  else if (rank == 2)
+  {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PanzerSumTag<2> >(0, length), *this);
+  }
+  else if (rank == 3)
+  {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PanzerSumTag<3> >(0, length), *this);
+  }
+  else if (rank == 4)
+  {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PanzerSumTag<4> >(0, length), *this);
+  }
+  else if (rank == 5)
+  {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PanzerSumTag<5> >(0, length), *this);
+  }
+  else if (rank == 6)
+  {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PanzerSumTag<6> >(0, length), *this);
+  }
+  else
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR: rank of sum is higher than supported");
+  }
+
 #endif
 }
 
-//**********************************************************************
+
 //**********************************************************************
 
 template<typename EvalT, typename TRAITS,typename Tag0>
@@ -175,10 +263,9 @@ void SumStatic<EvalT,TRAITS,Tag0,void,void>::
 evaluateFields(typename TRAITS::EvalData d)
 {
   sum.deep_copy(ScalarT(0.0));
-  Kokkos::parallel_for( sum.dimension(0), KOKKOS_LAMBDA (const int i){
+  for (std::size_t i = 0; i < sum.dimension_0(); ++i)
     for (std::size_t d = 0; d < values.size(); ++d)
       sum(i) += (values[d])(i);
-  });
 }
 
 //**********************************************************************

@@ -12,7 +12,7 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/TimerHowToParallel.cpp")
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     util_DocTest
     SOURCES ${SOURCES}
-    DEPLIBS stk_util_parallel stk_util_diag
+    DEPLIBS
     COMM serial mpi
     NUM_MPI_PROCS 1
     )

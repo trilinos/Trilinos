@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
 //  int numTests=4;
   int numTests=3;
 #else

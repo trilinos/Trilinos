@@ -47,6 +47,61 @@
 
 namespace {
 
+  template<class ViewType1,
+           class ViewType2,
+           const int rank1 = ViewType1::rank,
+           const int rank2 = ViewType2::rank>
+  struct LittleEqual {
+    static bool equal (const ViewType1& X, const ViewType2& Y) {
+      return false; // default
+    }
+  };
+
+  template<class ViewType1,
+           class ViewType2>
+  struct LittleEqual<ViewType1, ViewType2, 2, 2> {
+    static bool equal (const ViewType1& X, const ViewType2& Y)
+    {
+      if (X.dimension_0 () != Y.dimension_0 () ||
+          X.dimension_1 () != Y.dimension_1 ()) {
+        return false;
+      }
+      for (int j = 0; j < X.dimension_1 (); ++j) {
+        for (int i = 0; i < X.dimension_0 (); ++i) {
+          if (X(i,j) != Y(i,j)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+  };
+
+  template<class ViewType1,
+           class ViewType2>
+  struct LittleEqual<ViewType1, ViewType2, 1, 1> {
+    static bool equal (const ViewType1& X, const ViewType2& Y)
+    {
+      if (X.dimension_0 () != Y.dimension_0 ()) {
+        return false;
+      }
+      for (int i = 0; i < X.dimension_0 (); ++i) {
+        if (X(i) != Y(i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+  };
+
+  template<class ViewType1,
+           class ViewType2,
+           const int rank1 = ViewType1::rank,
+           const int rank2 = ViewType2::rank>
+  bool equal (const ViewType1& X, const ViewType2& Y) {
+    return LittleEqual<ViewType1, ViewType2, rank1, rank2>::equal (X, Y);
+  }
+
   //
   // UNIT TESTS
   //
@@ -176,7 +231,7 @@ namespace {
     // corresponding entries of X_mv yet; we'll do that below.
     Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
     little_vec_type zeroLittleVector (zeroArray.getRawPtr (), blockSize, 1);
-    TEST_ASSERT( X_5_1.equal (zeroLittleVector) && zeroLittleVector.equal (X_5_1) );
+    TEST_ASSERT( equal (X_5_1, zeroLittleVector) && equal (zeroLittleVector, X_5_1) );
 
     // Put some data in the block.  This will help us test whether the
     // corresponding entries in the MultiVector, and only those
@@ -184,26 +239,31 @@ namespace {
     for (LO i = 0; i < blockSize; ++i) {
       X_5_1(i) = static_cast<Scalar> (i + 1); // all are nonzero
     }
-    TEST_ASSERT( ! X_5_1.equal (zeroLittleVector) && ! zeroLittleVector.equal (X_5_1) );
+    TEST_ASSERT( ! equal (X_5_1, zeroLittleVector) && ! equal (zeroLittleVector, X_5_1) );
 
     // Make sure that getLocalBlock() returns a read-and-write view,
     // not a deep copy.  Do this by calling getLocalBlock(5,1) again,
     // and testing that changes to X_5_1 are reflected in the result.
     little_vec_type X_5_1_new = X.getLocalBlock (5, colToModify);
-    TEST_ASSERT( X_5_1_new.equal (X_5_1) && X_5_1.equal (X_5_1_new) );
-    TEST_ASSERT( ! X_5_1_new.equal (zeroLittleVector) && ! zeroLittleVector.equal (X_5_1_new) );
+    TEST_ASSERT( equal (X_5_1_new, X_5_1) && equal (X_5_1, X_5_1_new) );
+    TEST_ASSERT( ! equal (X_5_1_new, zeroLittleVector) &&
+                 ! equal (zeroLittleVector, X_5_1_new) );
 
     // Make sure that all blocks other than block 5 still contain zeros.
-    for (LO localMeshIndex = 0; localMeshIndex < static_cast<LO> (numLocalMeshPoints); ++localMeshIndex) {
+    for (LO localMeshIndex = 0;
+         localMeshIndex < static_cast<LO> (numLocalMeshPoints);
+         ++localMeshIndex) {
       for (LO curCol = 0; curCol < numVecs; ++curCol) {
         little_vec_type X_cur = X.getLocalBlock (localMeshIndex, curCol);
         if (curCol != colToModify) {
-          TEST_ASSERT( X_cur.equal (zeroLittleVector) && zeroLittleVector.equal (X_cur) );
-          TEST_ASSERT( ! X_cur.equal (X_5_1) && ! X_5_1.equal (X_cur) );
+          TEST_ASSERT( equal (X_cur, zeroLittleVector) &&
+                       equal (zeroLittleVector, X_cur) );
+          TEST_ASSERT( ! equal (X_cur, X_5_1) && ! equal (X_5_1, X_cur) );
         }
         if (localMeshIndex != 5) {
-          TEST_ASSERT( X_cur.equal (zeroLittleVector) && zeroLittleVector.equal (X_cur) );
-          TEST_ASSERT( ! X_cur.equal (X_5_1) && ! X_5_1.equal (X_cur) );
+          TEST_ASSERT( equal (X_cur, zeroLittleVector) &&
+                       equal (zeroLittleVector, X_cur) );
+          TEST_ASSERT( ! equal (X_cur, X_5_1) && ! equal (X_5_1, X_cur) );
         }
       }
     }
@@ -348,15 +408,19 @@ namespace {
            localMeshRow < meshMap.getMaxLocalIndex (); ++localMeshRow) {
         little_vec_type Y_cur = Y.getLocalBlock (localMeshRow, col);
         if (col != colToModify) {
-          TEST_ASSERT( Y_cur.equal (zeroLittleVector) && zeroLittleVector.equal (Y_cur) );
-          TEST_ASSERT( ! Y_cur.equal (X_overlap) && ! X_overlap.equal (Y_cur) );
+          TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&
+                       equal (zeroLittleVector, Y_cur) );
+          TEST_ASSERT( ! equal (Y_cur, X_overlap) &&
+                       ! equal (X_overlap, Y_cur) );
         }
         if (localMeshRow != meshMap.getMinLocalIndex ()) {
-          TEST_ASSERT( Y_cur.equal (zeroLittleVector) && zeroLittleVector.equal (Y_cur) );
-          TEST_ASSERT( ! Y_cur.equal (X_overlap) && ! X_overlap.equal (Y_cur) );
+          TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&
+                       equal (zeroLittleVector, Y_cur) );
+          TEST_ASSERT( ! equal (Y_cur, X_overlap) &&
+                       ! equal (X_overlap, Y_cur) );
         }
         if (col == colToModify && localMeshRow == meshMap.getMinLocalIndex ()) {
-          TEST_ASSERT( Y_cur.equal (X_overlap) && X_overlap.equal (Y_cur) );
+          TEST_ASSERT( equal (Y_cur, X_overlap) && equal (X_overlap, Y_cur) );
         }
       }
     }

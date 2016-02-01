@@ -34,9 +34,9 @@ class Response_ExtremeValue : public ResponseMESupport_Default<EvalT>
 public:
    typedef typename EvalT::ScalarT ScalarT;
 
-   Response_ExtremeValue(const std::string & responseName,MPI_Comm comm,
+   Response_ExtremeValue(const std::string & responseName,MPI_Comm comm,bool useMax,
                        const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linObjFact=Teuchos::null)
-     : ResponseMESupport_Default<EvalT>(responseName,comm), value(0.0), linObjFactory_(linObjFact)
+     : ResponseMESupport_Default<EvalT>(responseName,comm), value(0.0), linObjFactory_(linObjFact), useMax_(useMax)
    {
      if(linObjFactory_!=Teuchos::null) {
        // requires thyra object factory
@@ -61,9 +61,9 @@ public:
 
    virtual void initializeResponse()  
    { if(useMax_)
-       value =  std::numeric_limits<ScalarT>::max();
-     else
        value = -std::numeric_limits<ScalarT>::max();
+     else
+       value =  std::numeric_limits<ScalarT>::max();
        
      if(ghostedContainer_!=Teuchos::null) ghostedContainer_->initialize(); }
 

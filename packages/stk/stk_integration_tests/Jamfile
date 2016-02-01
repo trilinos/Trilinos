@@ -1,0 +1,103 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2010 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <include>$(stk_integration_tests-root)
+    <define>STK_BUILT_IN_SIERRA
+  : usage-requirements
+    <include>$(stk_integration_tests-root)
+  : build-dir $(stk_integration_tests-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  : stk_mesh_integration_tests
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-jamfile ;
+
+# This rule copies build-system related files for this product to the install-root.
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_integration_tests-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_integration_tests
+    <install-source-root>$(stk_integration_tests-root)
+  ;
+
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+
+local xml-files =
+  ;
+
+exe stk_mesh_integration_tests
+  :
+    $(stk_integration_tests-root)/stk_mesh/IntegrationTestMain.cpp
+    [ glob 
+        $(stk_integration_tests-root)/stk_mesh/*.cpp 
+        $(stk_integration_tests-root)/stk_mesh_doc/*.cpp 
+        $(stk_integration_tests-root)/stk_mesh/face_creation/skin_mesh/*.cpp  
+        $(stk_integration_tests-root)/stk_mesh/face_creation/user_created/*.cpp
+        $(stk_integration_tests-root)/stk_mesh/face_creation/user_support/*.cpp
+    ]
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_mesh//stk_mesh_fixtures
+    /sierra/stk_io//stk_io
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /tpl/trilinos//teuchos
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;

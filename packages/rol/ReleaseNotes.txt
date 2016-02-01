@@ -5,6 +5,73 @@
 
 Rapid Optimization Library (ROL)
 
+RELEASE TAG: Trilinos 12.6
+------------
+Released as part of Trilinos 12.6, January 2016.
+(3rd public release)
+
+
+ENHANCEMENTS:
+-------------
+  x  Default template parameters for ROL::TpetraMultiVector.
+  x  StdVector, TpetraMultiVector, and PartitionedVector now do
+     dimensional compatibility checks.
+  x  More unary and binary elementwise functions added.
+
+
+NEW FEATURES:
+-------------
+
+Methods:
+  x  InteriorPointStep class, and classes it uses (e.g. PenalizedObjective,
+     InequalityConstraint, and CompositeConstraint) to solve Interior Point
+     problems with the CompositeStep SQP solver with successive penalty
+     reduction.
+  x  Standalone GMRES solver in the Krylov directory.
+  x  Mixed quantile risk measure.
+  x  New risk measure corresponding to Kullback-Liebler based
+     distributionally robust optimization.
+  x  SROM SampleGenerator:  The associated samples are determined
+     by solving an optimization problem.  Current objective functions
+     correspond to moment matching and the squared L2 error between
+     distribution functions.
+  x  The PDE-OPT Application Development Kit (ADK) enables the rapid
+     prototyping of large-scale risk-averse optimization problems with
+     PDE constraints. The PDE-OPT ADK comprises three key modules:
+       -- degree-of-freedom manager, which enables the use of an arbitrary
+          number of simulation, control, and design fields based on finite
+          element discretizations, on 1D, 2D and 3D meshes;
+       -- finite element assembly loops and data structures that enable the
+          development of a variety of multiphysics components, built on
+          Intrepid for local finite element computations and Tpetra for
+          parallel linear algebra data structures;
+       -- interface between the physics module and the SimOpt programming
+          interface.
+
+Infrastructure:
+  x  OptimizationProblem class unifies Algorithm::run interface.
+  x  StochasticProblem allows for the construction of a general
+     stochastic objective function based on input parameters.
+  x  Generalized CVaRVector to RiskVector.  This allows for a very general
+     treatment of risk-averse optimization problems.
+  x  Risk measure factory.
+  x  Default solve implementation for EqualityConstraint_SimOpt.
+  x  BoundConstraint capability for Interior Point problems with and
+     without Equality Constraints.
+
+
+BUG FIXES:
+----------
+  x  None.
+
+********************************
+*
+*
+*
+********************************
+
+Rapid Optimization Library (ROL)
+
 RELEASE TAG: Trilinos 12.4
 ------------
 Released as part of Trilinos 12.4, October 2015.

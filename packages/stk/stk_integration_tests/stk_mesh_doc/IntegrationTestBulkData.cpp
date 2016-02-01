@@ -193,6 +193,7 @@ TEST(IntegrationTest, PartChangeGenerated)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+    if (stkMeshBulkData.parallel_size() != 4) return;
     stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
     stk::mesh::PartVector add_parts;
     add_parts.push_back(&partToAdd);
@@ -233,6 +234,7 @@ TEST(IntegrationTest, ShellPartChangeCylinder)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+    if (stkMeshBulkData.parallel_size() != 4) return;
     stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
     stk::mesh::PartVector add_parts;
     add_parts.push_back(&partToAdd);
@@ -281,6 +283,7 @@ TEST(IntegrationTest, ShellPartChange2Hexes2Shells)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+    if (stkMeshBulkData.parallel_size() != 4) return;
     stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
     stk::mesh::PartVector add_parts;
     add_parts.push_back(&partToAdd);

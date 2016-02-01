@@ -58,6 +58,23 @@
 #include "Stokhos_MueLu_MP_Vector.hpp"
 #endif
 
+namespace Kokkos {
+namespace Example {
+namespace FENL {
+
+template <typename S>
+typename S::value_type
+scalar_norm(const Sacado::MP::Vector<S>& x) {
+  typename S::value_type z = 0.0;
+  for (typename S::ordinal_type i=0; i<x.size(); ++i)
+    z += x.fastAccessCoeff(i)*x.fastAccessCoeff(i);
+  z = std::sqrt(z);
+  return z;
+}
+
+} /* namespace FENL */
+} /* namespace Example */
+} /* namespace Kokkos */
 
 #include <fenl.hpp>
 #include <fenl_impl.hpp>
@@ -67,6 +84,28 @@ namespace Example {
 namespace FENL {
 
 #if defined( KOKKOS_HAVE_CUDA )
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+template <typename ViewType>
+struct LocalViewTraits<
+  ViewType,
+  typename std::enable_if< std::is_same<typename ViewType::execution_space,
+                                        Kokkos::Cuda>::value &&
+                           Kokkos::is_view_mp_vector<ViewType>::value
+                         >::type > {
+  typedef ViewType view_type;
+  typedef typename Kokkos::LocalMPVectorView<view_type,1>::type local_view_type;
+  typedef typename local_view_type::value_type local_value_type;
+  static const bool use_team = true;
+
+  KOKKOS_INLINE_FUNCTION
+  static local_view_type create_local_view(const view_type& v,
+                                           const unsigned local_rank)
+  {
+    return Kokkos::partition<1>(v, local_rank);
+  }
+};
+#else
 template <typename ViewType>
 struct LocalViewTraits<
   ViewType,
@@ -90,6 +129,7 @@ struct LocalViewTraits<
     return local_v;
   }
 };
+#endif
 
 // Compute DeviceConfig struct's based on scalar type
 template <typename StorageType>
@@ -114,6 +154,106 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
 #endif
 
 } /* namespace FENL */
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Specialization for Sacado::MP::Vector
+   */
+  template <class Storage, class ... P>
+  class GetMeanValsFunc< Kokkos::View< Sacado::MP::Vector<Storage>*,
+                                       P... > > {
+  public:
+    typedef Sacado::MP::Vector<Storage> Scalar;
+    typedef Kokkos::View< Scalar*, P... > ViewType;
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::execution_space execution_space;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals_) :
+      vals(vals_), vec_size(Kokkos::dimension_scalar(vals))
+    {
+      const size_type nnz = vals.dimension_0();
+      mean_vals = ViewType("mean-values", nnz, 1);
+      Kokkos::parallel_for( nnz, *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type i) const
+    {
+      typename Scalar::value_type s = 0.0;
+      for (size_type j=0; j<vec_size; ++j)
+        s += vals(i).fastAccessCoeff(j);
+      mean_vals(i) = s;
+    }
+
+    MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+    ViewType vals;
+    const size_type vec_size;
+  };
+
+#else
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Specialization for Sacado::MP::Vector
+   */
+  template <class Storage, class Layout, class Memory, class Device>
+  class GetMeanValsFunc< Kokkos::View< Sacado::MP::Vector<Storage>*,
+                                       Layout, Memory, Device > > {
+  public:
+    typedef Sacado::MP::Vector<Storage> Scalar;
+    typedef Kokkos::View< Scalar*, Layout, Memory, Device > ViewType;
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::execution_space execution_space;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals_) :
+      vals(vals_), vec_size(vals.sacado_size())
+    {
+      const size_type nnz = vals.dimension_0();
+      mean_vals = ViewType("mean-values", nnz, 1);
+      Kokkos::parallel_for( nnz, *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type i) const
+    {
+      typename Scalar::value_type s = 0.0;
+      for (size_type j=0; j<vec_size; ++j)
+        s += vals(i).fastAccessCoeff(j);
+      mean_vals(i) = s;
+    }
+
+    MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+    ViewType vals;
+    const size_type vec_size;
+  };
+
+#endif
+
+template <typename S, typename V, typename O>
+struct ExtractEnsembleIts;
+
+template <typename S, typename V, typename O>
+struct ExtractEnsembleIts<Sacado::MP::Vector<S>,V,O> {
+  typedef Sacado::MP::Vector<S> Sc;
+
+  static std::vector<int>
+  apply(const Belos::SolverManager<Sc,V,O>& solver) {
+    const Belos::PseudoBlockCGSolMgr<Sc, V, O>* cg_solver =
+      dynamic_cast<const Belos::PseudoBlockCGSolMgr<Sc, V, O>*>(&solver);
+    if (cg_solver != 0)
+      return cg_solver->getResidualStatusTest()->getEnsembleIterations();
+    return std::vector<int>();
+  }
+};
+
 } /* namespace Example */
 } /* namespace Kokkos */
 

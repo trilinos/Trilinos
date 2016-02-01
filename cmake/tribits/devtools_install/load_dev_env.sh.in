@@ -7,7 +7,6 @@ export TRIBITS_DEV_ENV_BASE=@DEV_ENV_BASE@
 # A) Common tools independent of the compiler
 export PATH=${TRIBITS_DEV_ENV_BASE}/common_tools:$PATH
 export PATH=${TRIBITS_DEV_ENV_BASE}/common_tools/cmake-@CMAKE_VERSION@/bin:$PATH
-export PATH=${TRIBITS_DEV_ENV_BASE}/common_tools/git-@GIT_VERSION@/bin:$PATH
 export PATH=${TRIBITS_DEV_ENV_BASE}/common_tools/autoconf-@AUTOCONF_VERSION@/bin:$PATH
 
 # B) GCC compiler stack base dir

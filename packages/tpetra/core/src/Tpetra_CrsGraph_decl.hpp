@@ -55,7 +55,6 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
 
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 
@@ -1001,6 +1000,63 @@ namespace Tpetra {
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
 
+    /// \brief Get offsets of the diagonal entries in the graph.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method.  It may disappear or change at any time.
+    /// \warning This method must be called collectively.  We reserve
+    ///   the right to do extra checking in a debug build that will
+    ///   require collectives.
+    ///
+    /// This method helps users optimize
+    /// Tpetra::CrsMatrix::getLocalDiagCopy and
+    /// Tpetra::Experimental::BlockCrsMatrix::getLocalDiagCopy, for
+    /// several calls when the graph's structure does not change.  The
+    /// method fills an array of offsets of the local diagonal entries
+    /// in the matrix.  getLocalDiagCopy uses the offsets to extract
+    /// the diagonal entries directly, without needing to search for
+    /// them using Map lookups and search in each row of the graph.
+    ///
+    /// The output array's contents are not defined in any other
+    /// context other than for use in getLocalDiagCopy.  For example,
+    /// you should not rely on \c offsets(i) being the index of the
+    /// diagonal entry in the views returned by
+    /// Tpetra::CrsMatrix::getLocalRowView.  This may be the case, but
+    /// it need not be.  (For example, we may choose to optimize the
+    /// lookups down to the optimized storage level, in which case the
+    /// offsets will be computed with respect to the underlying
+    /// storage format, rather than with respect to the views.)
+    ///
+    /// Changes to the graph's structure, or calling fillComplete on
+    /// the graph (if its structure is not already fixed), may make
+    /// the output array's contents invalid.  "Invalid" means that you
+    /// must call this method again to recompute the offsets.
+    ///
+    /// \pre The graph must have a column Map.
+    /// \pre All diagonal entries of the graph must be populated on
+    ///   this process.  Results are undefined otherwise.
+    /// \pre <tt>offsets.dimension_0() >= this->getNodeNumRows()</tt>
+    ///
+    /// \param offsets [out] Output array of offsets.  This method
+    ///   does NOT allocate the array; the caller must allocate.  Must
+    ///   have getNodeNumRows() entries on the calling process.  (This
+    ///   may be different on different processes.)
+    void
+    getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, Kokkos::MemoryUnmanaged>& offsets) const;
+
+    /// \brief Backwards compatibility overload of the above method.
+    ///
+    /// This method takes a Teuchos::ArrayRCP instead of a
+    /// Kokkos::View.  It also reallocates the output array if it is
+    /// not long enough.
+    ///
+    /// \param offsets [out] Output array of offsets.  This method
+    ///   reallocates the array if it is not long enough.  This is why
+    ///   the method takes the array by reference.
+    void
+    getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
+
     /// \brief Get an upper bound on the number of entries that can be
     ///   stored in each row.
     ///
@@ -1102,7 +1158,8 @@ namespace Tpetra {
                     const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
                     const bool sortIndicesInEachRow = true);
 
-    /// \brief Replace the current domain Map and Import with the given parameters.
+    /// \brief Replace the current domain Map and Import with the
+    ///   given parameters.
     ///
     /// \warning This method is ONLY for use by experts.
     /// \warning We make NO promises of backwards compatibility.
@@ -1118,7 +1175,8 @@ namespace Tpetra {
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                  const Teuchos::RCP<const import_type>& newImporter);
 
-    /// \brief Remove processes owning zero rows from the Maps and their communicator.
+    /// \brief Remove processes owning zero rows from the Maps and
+    ///   their communicator.
     ///
     /// \warning This method is ONLY for use by experts.  We highly
     ///   recommend using the nonmember function of the same name
@@ -2181,7 +2239,7 @@ namespace Tpetra {
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
-    RowInfo getRowInfo (const size_t myRow) const;
+    RowInfo getRowInfo (const LocalOrdinal myRow) const;
 
     /// \brief Get information about the locally owned row with global
     ///   index gblRow.
@@ -2355,12 +2413,17 @@ namespace Tpetra {
                        device_type, Kokkos::MemoryUnmanaged>& colInds,
                      const size_t hint = 0) const;
 
+  public:
     /// \brief Get the local graph.
+    ///
+    /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
+    ///   IMPLEMENTATION DETAIL.  DO NOT CALL THIS FUNCTION!!!
     ///
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
     local_graph_type getLocalGraph () const;
 
+  protected:
     //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
     TPETRA_DEPRECATED local_graph_type getLocalGraph_Kokkos () const;
 

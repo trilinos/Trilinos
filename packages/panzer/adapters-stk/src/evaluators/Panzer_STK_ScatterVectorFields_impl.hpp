@@ -78,7 +78,8 @@ ScatterVectorFields(const std::string & scatterName,
 
   spatialDimension_ = pointRule->spatial_dimension;
 
-  // pointField_ = PHX::MDField<Sconst calarT,Cell,IP,Dim>(pointRule->getName()+"_point_coords",pointRule->dl_vector);
+  // this evaluator assumes you are evaluating at the cell centroid only
+  TEUCHOS_ASSERT(pointRule->num_points==1);
 
   // build dependent fields
   names_ = names;
@@ -115,56 +116,32 @@ template < >
 void ScatterVectorFields<panzer::Traits::Residual,panzer::Traits>::
 evaluateFields(panzer::Traits::EvalData workset)
 {
-   panzer::MDFieldArrayFactory af("",true);
+  panzer::MDFieldArrayFactory af("",true);
 
-   std::vector<std::string> dimStrings(3);
-   dimStrings[0] = "X";
-   dimStrings[1] = "Y";
-   dimStrings[2] = "Z";
+  std::vector<std::string> dimStrings(3);
+  dimStrings[0] = "X";
+  dimStrings[1] = "Y";
+  dimStrings[2] = "Z";
 
-   // for convenience pull out some objects from workset
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
-   std::string blockId = this->wda(workset).block_id;
+  // for convenience pull out some objects from workset
+  const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  std::string blockId = this->wda(workset).block_id;
 
-/*
-   std::cout << "Point Field " << std::endl;
-   for(int i=0; i<pointField_.dimension(0);i++) { // cell
-      std::cout << "   ";
-      for(int j=0; j<pointField_.dimension(1);j++) {// IP
-         std::cout << pointField_(i,j,0) << " " << pointField_(i,j,1) << std::endl;
-      }
-   }    
+  for(int d=0;d<spatialDimension_;d++) {
+    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
+      PHX::MDField<const ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & field = scatterFields_[fieldIndex];
+      std::string fieldName = names_[fieldIndex]+dimStrings[d];
 
-   for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
-      PHX::MDField<ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & field = scatterFields_[fieldIndex];
-      std::cout << "Field \"" << field.fieldTag().name() << "\"" << std::endl;
-      for(int i=0; i<field.dimension(0);i++) { // cell
-         std::cout << "   ";
-         for(int j=0; j<field.dimension(1);j++) {// IP
-            std::cout << field(i,j,0) << " " << field(i,j,1) << std::endl;
-         }
-      }    
-   }
-*/
+      PHX::MDField<double,panzer::Cell,panzer::NODE> cellValue 
+          = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
 
-   for(int d=0;d<spatialDimension_;d++) {
-      for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
-         PHX::MDField<const ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & field = scatterFields_[fieldIndex];
-         std::string fieldName = names_[fieldIndex]+dimStrings[d];
+      for(unsigned i=0; i<field.dimension(0);i++) 
+        cellValue(i,0) = field(i,0,d);
 
-         PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
-
-         // write to double field
-         for(unsigned i=0; i<field.dimension(0);i++) { // cell
-            for(unsigned j=0; j<field.dimension(1);j++) // IP
-               average(i,0) += field(i,j,d);         // insert dimension
-            average(i,0) /= field.dimension(1);
-         }
-      
-         // add in vector value at d^th point
-         mesh_->setCellFieldData(fieldName,blockId,localCellIds,average);
-      }
-   }
+      // add in vector value at d^th dimension
+      mesh_->setCellFieldData(fieldName,blockId,localCellIds,cellValue);
+    }
+  }
 }
 
 } // end panzer_stk

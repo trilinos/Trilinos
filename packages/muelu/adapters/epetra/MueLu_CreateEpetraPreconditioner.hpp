@@ -19,7 +19,7 @@
 
 //! @file
 //! @brief Various adapters that will create a MueLu preconditioner that is an Epetra_Operator.
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
 namespace MueLu {
 
   /*!
@@ -38,10 +38,10 @@ namespace MueLu {
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null)
   {
-    typedef double                                                              SC;
-    typedef int                                                                 LO;
-    typedef int                                                                 GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode                             NO;
+    typedef double              SC;
+    typedef int                 LO;
+    typedef int                 GO;
+    typedef Xpetra::EpetraNode  NO;
 
     using   Teuchos::ParameterList;
 
@@ -160,10 +160,10 @@ namespace MueLu {
   }
 
   void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& inA, MueLu::EpetraOperator& Op) {
-    typedef double                                                              SC;
-    typedef int                                                                 LO;
-    typedef int                                                                 GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode                             NO;
+    typedef double             SC;
+    typedef int                LO;
+    typedef int                GO;
+    typedef Xpetra::EpetraNode NO;
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
     typedef Xpetra::Operator<SC,LO,GO,NO>   Operator;

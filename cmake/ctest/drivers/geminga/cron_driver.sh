@@ -60,6 +60,29 @@ module unload valgrind
 module unload gcc
 module unload openmpi
 # ===========================================================================
+export CTEST_CONFIGURATION="broken"
+module load openmpi/1.10.0
+module load gcc/5.2.0
+module load valgrind/3.10.1
+
+# Remove colors (-fdiagnostics-color) from OMPI flags
+# It may result in non-XML characters on the Dashboard
+export OMPI_CFLAGS=`echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`
+export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
+
+echo "Configuration = $CTEST_CONFIGURATION"
+env
+
+export OMP_NUM_THREADS=2
+
+# Machine independent cron_driver:
+SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
+$SCRIPT_DIR/../cron_driver.py
+
+module unload valgrind
+module unload gcc
+module unload openmpi
+# ===========================================================================
 export CTEST_CONFIGURATION="nvcc_wrapper"
 module load openmpi/1.10.0
 module load gcc/4.9.2

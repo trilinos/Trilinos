@@ -571,7 +571,7 @@ int symmlq_(integer *n,
   chdcopy_(n, &b[1], &c__1, &y[1], &c__1);
   chdcopy_(n, &b[1], &c__1, &r1[1], &c__1);
   if (*precon) {
-    msolve_(n, &r1[1], &y[1], a, &vwsqrt[1], &work[1]);
+    msolve_(n, &r1[1], &y[1]);
   }
   /*     if ( goodb  ) then */
   /*        b1  = y(1) */
@@ -581,7 +581,7 @@ int symmlq_(integer *n,
   beta1 = ch_ddot_(n, &r1[1], &c__1, &y[1], &c__1);
   /*     See if msolve is symmetric. */
   if (*checka && *precon) {
-    msolve_(n, &y[1], &r2[1], a, &vwsqrt[1], &work[1]);
+    msolve_(n, &y[1], &r2[1]);
     s = ch_ddot_(n, &y[1], &c__1, &y[1], &c__1);
     t = ch_ddot_(n, &r1[1], &c__1, &r2[1], &c__1);
     z = (d__1 = s - t, abs(d__1));
@@ -636,7 +636,7 @@ int symmlq_(integer *n,
   chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
   chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
   if (*precon) {
-    msolve_(n, &r2[1], &y[1], a, &vwsqrt[1], &work[1]);
+    msolve_(n, &r2[1], &y[1]);
   }
   oldb = beta1;
   beta = ch_ddot_(n, &r2[1], &c__1, &y[1], &c__1);
@@ -809,7 +809,7 @@ int symmlq_(integer *n,
   chdcopy_(n, &r2[1], &c__1, &r1[1], &c__1);
   chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
   if (*precon) {
-    msolve_(n, &r2[1], &y[1], a, &vwsqrt[1], &work[1]);
+    msolve_(n, &r2[1], &y[1]);
   }
   oldb = beta;
   beta = ch_ddot_(n, &r2[1], &c__1, &y[1], &c__1);
@@ -879,7 +879,7 @@ int symmlq_(integer *n,
     bstep /= beta1;
     chdcopy_(n, &b[1], &c__1, &y[1], &c__1);
     if (*precon) {
-      msolve_(n, &b[1], &y[1], a, &vwsqrt[1], &work[1]);
+      msolve_(n, &b[1], &y[1]);
     }
     chdaxpy_(n, &bstep, &y[1], &c__1, &x[1], &c__1);
   }

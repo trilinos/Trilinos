@@ -804,6 +804,99 @@ namespace ROL {
     return retString;
   }
   
+  /** \enum  ROL::ETrustRegionFlag 
+      \brief Enumation of flags used by trust-region solvers.
+
+      \arg TRUSTREGION_FLAG_SUCCESS        Actual and predicted reductions are positive 
+      \arg TRUSTREGION_FLAG_POSPREDNEG     Reduction is positive, predicted negative (impossible)
+      \arg TRUSTREGION_FLAG_NPOSPREDPOS    Reduction is nonpositive, predicted positive
+      \arg TRUSTREGION_FLAG_NPOSPREDNEG    Reduction is nonpositive, predicted negative (impossible)
+      \arg TRUSTREGION_FLAG_QMINSUFDEC     Insufficient decrease of the quadratic model (bound constraint only)
+      \arg TRUSTREGION_FLAG_NAN            Actual and/or predicted reduction is NaN
+
+  */
+  enum ETrustRegionFlag {
+    TRUSTREGION_FLAG_SUCCESS = 0,
+    TRUSTREGION_FLAG_POSPREDNEG,
+    TRUSTREGION_FLAG_NPOSPREDPOS,
+    TRUSTREGION_FLAG_NPOSPREDNEG,
+    TRUSTREGION_FLAG_QMINSUFDEC,
+    TRUSTREGION_FLAG_NAN,
+    TRUSTREGION_FLAG_UNDEFINED 
+  };
+ 
+
+  inline std::string ETrustRegionFlagToString(ETrustRegionFlag trf) {
+    std::string retString;
+    switch(trf) {
+      case TRUSTREGION_FLAG_SUCCESS:  
+        retString = "Both Actual and Predicted Reductions are Positive";
+        break;
+      case TRUSTREGION_FLAG_POSPREDNEG: 
+        retString = "Actual Reduction is Positive and Predicted Reduction is Negative (impossible)";
+        break;
+      case TRUSTREGION_FLAG_NPOSPREDPOS: 
+        retString = "Actual Reduction is Nonpositive and Predicted Reduction is Positive";
+        break;
+      case TRUSTREGION_FLAG_NPOSPREDNEG:
+        retString = "Actual Reduction is Nonpositive and Predicted Reduction is Negative (impossible)";
+        break;
+      case TRUSTREGION_FLAG_QMINSUFDEC:
+        retString = "Sufficient Decrease of the Quadratic Model Not Met (bound constraints only)";
+        break;
+      case TRUSTREGION_FLAG_NAN:
+        retString = "Actual and/or Predicted Reduction is a NaN";
+        break;
+      default:
+        retString = "INVALID ETrustRegionFlag";       
+    }
+    return retString;
+  }
+
+
+  /** \enum  ROL::ECGFlag 
+      \brief Enumation of flags used by conjugate gradient methods.
+
+    \arg CG_FLAG_SUCCESS     Residual Tolerance Met
+    \arg CG_FLAG_ITEREXCEED  Iteration Limit Exceeded
+    \arg CG_FLAG_NEGCURVE    Negative Curvature Detected
+    \arh CG_FLAG_TRRADEX     Trust-Region Radius Exceeded
+
+  */
+  enum ECGFlag {
+    CG_FLAG_SUCCESS = 0,
+    CG_FLAG_ITEREXCEED,
+    CG_FLAG_NEGCURVE,
+    CG_FLAG_TRRADEX,
+    CG_FLAG_UNDEFINED 
+  };
+
+
+  inline std::string ECGFlagToString(ECGFlag cgf) {
+    std::string retString;
+    switch(cgf) {
+      case CG_FLAG_SUCCESS:
+        retString = "Residual Tolerance Met";
+        break;
+      case CG_FLAG_ITEREXCEED:
+        retString = "Iteration Limit Exceeded";
+        break;
+      case CG_FLAG_NEGCURVE:
+        retString = "Negative Curvature Detected";
+        break;
+      case CG_FLAG_TRRADEX:   
+        retString = "Trust-Region Radius Exceeded";
+        break;
+      default:
+        retString = "INVALID ECGFlag";  
+    }
+    return retString;
+  }
+  
+
+
+
+
   /** \brief  Verifies validity of a TrustRegion enum.
     
       \param  tr  [in]  - enum of the TrustRegion
@@ -846,6 +939,9 @@ namespace ROL {
     }
     return TRUSTREGION_CAUCHYPOINT;
   }
+
+
+
 
   /** \enum   ROL::ETestObjectives
       \brief  Enumeration of test objective functions.

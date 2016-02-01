@@ -48,11 +48,8 @@ namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } 
 
 namespace stk {
 namespace mesh {
-
-namespace utest {
-}
-
 namespace impl {
+
 
 class BucketRepository
 {
@@ -95,7 +92,8 @@ public:
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const;
 
   void set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting);
-  void internal_sort_bucket_entities();
+  void internal_default_sort_bucket_entities();
+  void internal_custom_sort_bucket_entities(const EntitySorterBase& sorter);
 
   void optimize_buckets();
 

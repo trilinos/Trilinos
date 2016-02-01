@@ -87,7 +87,7 @@ private:
   void solve_state_equation(const ROL::Vector<Real> &x, Real &tol, bool flag = true, int iter = -1) { 
     // Solve state equation if not done already
     if (!is_state_computed_ || !storage_) {
-      con_->solve(*state_,x,tol);
+      con_->solve(*dualadjoint_,*state_,x,tol);
       // Update full objective function
       obj_->update(*state_,x,flag,iter);
       // Update equality constraint

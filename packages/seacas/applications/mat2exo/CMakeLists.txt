@@ -18,7 +18,7 @@ TRIBITS_ADD_EXECUTABLE(
   ${CODE}
   NOEXEPREFIX
   NOEXESUFFIX
-  SOURCES mat2exo.c
+  SOURCES mat2exo.C
   COMM serial mpi
   )
 install_executable(${CODE})

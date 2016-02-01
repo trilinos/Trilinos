@@ -1,17 +1,26 @@
-#include <gtest/gtest.h>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_TRUE, etc
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/ModificationObserver.hpp>
-#include <stk_unit_test_utils/ioUtils.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
+#include <vector>                       // for vector, vector<>::reference
+#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Types.hpp"      // for EntityRank, EntityProc, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size
+namespace stk { namespace mesh { class Ghosting; } }
 
 namespace
 {
 
-class CommInfoObserver : public stk::mesh::ModificationObserver
+class MockCommInfoObserver : public stk::mesh::ModificationObserver
 {
 public:
-    CommInfoObserver()
+    MockCommInfoObserver()
     : commInfoWasChangedByRank(stk::topology::NUM_RANKS, false)
     {
     }
@@ -45,7 +54,7 @@ protected:
     {
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk, MPI_COMM_WORLD);
 
-        observer = new CommInfoObserver();
+        observer = new MockCommInfoObserver();
         bulk.register_observer(observer);
 
         bulk.modification_begin();
@@ -129,7 +138,7 @@ private:
 private:
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk;
-    CommInfoObserver *observer;
+    MockCommInfoObserver *observer;
     stk::mesh::Ghosting *ghost;
 };
 

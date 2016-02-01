@@ -44,7 +44,7 @@ namespace stk { namespace topology_detail {
 #pragma hd_warning_disable
 #endif
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
-BOOST_GPU_ENABLED inline
+inline
 typename boost::enable_if_c< (Topology::num_permutations > 0u), std::pair<bool,unsigned> >::type
 equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 {
@@ -63,7 +63,7 @@ equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 #pragma hd_warning_disable
 #endif
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
-BOOST_GPU_ENABLED inline
+inline
 typename boost::enable_if_c< (Topology::num_permutations == 0u), std::pair<bool,unsigned> >::type
 equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 {
@@ -76,7 +76,7 @@ equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 #pragma hd_warning_disable
 #endif
 template <typename Topology, typename NodeArray, typename Node>
-BOOST_GPU_ENABLED inline
+inline
 typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
 lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bool only_positive_permutations, Node)
 {
@@ -123,7 +123,7 @@ lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bo
 #pragma hd_warning_disable
 #endif
 template <typename Topology, typename NodeArray, typename Node>
-BOOST_GPU_ENABLED inline
+inline
 typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
 lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const NodeArray &nodes, const NodeArray &element_nodes, Node)
 {
@@ -178,7 +178,7 @@ lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const No
 #pragma hd_warning_disable
 #endif
 template <typename Topology, typename NodeArray, typename Node>
-BOOST_GPU_ENABLED inline
+inline
 typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type
 lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const NodeArray &, const NodeArray &, Node)
 { return 0; }
@@ -187,7 +187,7 @@ lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const No
 #pragma hd_warning_disable
 #endif
 template <typename Topology, typename NodeArray, typename Node>
-BOOST_GPU_ENABLED inline
+inline
 typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type
 lexicographical_smallest_permutation_helper(Topology, const NodeArray &, bool , Node)
 { return 0; }

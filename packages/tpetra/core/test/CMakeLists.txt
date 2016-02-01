@@ -16,6 +16,7 @@ ADD_SUBDIRECTORIES(
   inout
   Map
   MatrixMatrix
+  Merge
   MultiVector
   MultiVectorFiller
   PerformanceCGSolve

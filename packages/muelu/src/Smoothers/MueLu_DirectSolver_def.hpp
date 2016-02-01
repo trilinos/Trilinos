@@ -83,6 +83,8 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
     } catch (Exceptions::RuntimeError& e) {
       errorTpetra_ = e.what();
+    } catch (Exceptions::BadCast& e) {
+      errorTpetra_ = e.what();
     }
     triedTpetra_ = true;
 #endif
@@ -164,7 +166,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "MueLu::DirectSolver::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::DirectSolver::Setup(): Setup() has already been called" << std::endl;
 
     int oldRank = s_->SetProcRankVerbose(this->GetProcRankVerbose());
 

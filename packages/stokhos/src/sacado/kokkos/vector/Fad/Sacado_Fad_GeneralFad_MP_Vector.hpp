@@ -416,6 +416,7 @@ namespace Sacado {
         }
 
         this->val() += x.val();
+        return *this;
       }
 
       //! Subtraction-assignment operator with GeneralFad right-hand-side

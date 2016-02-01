@@ -95,7 +95,7 @@ namespace Tacho {
                      const ordinal_type j) const { return _a[i*_rs + j*_cs]; }
 
     KOKKOS_INLINE_FUNCTION
-    value_type* ValuePtr() const { return &_a; }
+    value_type* ValuePtr() const { return &_a[0]; }
     
     /// \brief Default constructor.
     DenseMatrixBase() 

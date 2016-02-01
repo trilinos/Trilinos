@@ -42,54 +42,16 @@
 #ifndef KOKKOS_CONFIGDEFS_HPP
 #define KOKKOS_CONFIGDEFS_HPP
 
-#include <TpetraClassic_config.h>
-// mem management
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
-
-// TODO (mfh 07 Feb 2013) We want to move this into CMake.
-#if defined(__GNUC__)
-#  define KOKKOSCLASSIC_RESTRICT __restrict
-#elif defined(__INTEL_COMPILER)
-#  define KOKKOSCLASSIC_RESTRICT restrict
-#else
-#  define KOKKOSCLASSIC_RESTRICT
-#endif // __GNUC__
+#include "TpetraClassic_config.h"
 
 //! Namespace for Kokkos classes and methods
 namespace KokkosClassic {
-  // import Teuchos memory management classes into Kokkos
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::arcp;
-  using Teuchos::arcpFromArrayView;
-  using Teuchos::rcpFromRef;
-  using Teuchos::null;
-  using Teuchos::arcp_reinterpret_cast;
-  using Teuchos::Array;
-  using Teuchos::ParameterList;
-}
-
-//! Namespace for Kokkos example classes
-namespace KokkosExamples {
-}
-
-
-namespace KokkosClassic {
-
-//! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
-enum ESweepDirection {
-  Forward = 0,
-  Backward
-};
-
+  //! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
+  enum ESweepDirection {
+    Forward = 0,
+    Backward
+  };
 } // namespace KokkosClassic
-
 
 namespace Kokkos {
   namespace Compat {

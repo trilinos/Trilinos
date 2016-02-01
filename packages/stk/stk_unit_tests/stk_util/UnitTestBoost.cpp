@@ -42,28 +42,7 @@
 #include <memory>                       // for shared_ptr
 #include "boost/functional/hash/hash.hpp"  // for hash
 #include "boost/smart_ptr/shared_array.hpp"  // for shared_array
-#include "boost/unordered/unordered_set.hpp"  // for unordered_set, etc
-namespace boost { template <class T> struct hash; }
-
-namespace boost {
-
-template <>
-struct hash<ci_string>
-{
-  std::size_t operator()(const ci_string &s) const {
-    std::size_t seed = 0;
-    
-    for(ci_string::const_iterator first = s.begin(); first != s.end(); ++first) {
-      boost::hash<char> hasher;
-      seed ^= hasher(std::tolower(*first)) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-    }
-    
-    return seed;
-  }
-};
   
-} // namespace boost
-
 TEST(UnitTestBoost, testUnit)
 {
   {  
@@ -78,24 +57,8 @@ TEST(UnitTestBoost, testUnit)
     ASSERT_EQ( dptr2.get(), d2);
   }
   
-  boost::unordered_set<int> int_set;
-
-  int_set.insert(5);
-
-  ASSERT_EQ( int_set.size(), (boost::unordered_set<int>::size_type)1 );
-
-  boost::unordered_set<ci_string> ci_string_set;
-
-  ci_string_set.insert("Test");
-  std::pair<boost::unordered_set<ci_string>::iterator, bool> res = ci_string_set.insert("test");
-
-  ASSERT_EQ( ci_string_set.size(), (boost::unordered_set<ci_string>::size_type)1 );
-  ASSERT_EQ( res.second, false );
-
   ci_string s("This is a test");
 
   ASSERT_TRUE( s == "this is a test" );
-  
-  std::cout << s << std::endl;
 }
 

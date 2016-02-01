@@ -2,7 +2,6 @@
 #define BASKER_MATRIX_DECL_HPP
 
 /*Basker Includes*/
-//#include "basker_decl.hpp"
 #include "basker_types.hpp"
 
 /*System Includes*/
@@ -39,7 +38,7 @@ namespace BaskerNS
     BASKER_INLINE
     ~BaskerMatrix();
 
-    /*
+    /*  We might want to define this in the future.
     BASKER_INLINE
     BaskerMatrix<Int,Entry,Exe_Space>& operator= (const BaskerMatrix<Int,Entry,Exe_Space>&);
     */
@@ -54,14 +53,18 @@ namespace BaskerNS
     BASKER_INLINE
     void init_matrix(string _label, Int _sr, Int _m, 
                     Int _sc, Int _n, Int _nnz);
+
+    //finalize, used to delete any array structure that where created
+    BASKER_INLINE
+    void Finalize();
+
+    //
     BASKER_INLINE
     int copy_values(Int _sr, Int _m, Int _sc, Int _n, Int _nnz,
 		    Int *_col_ptr, Int *_row_idx, Entry *_val);
     BASKER_INLINE
     int copy_values(Int _m, Int _n, Int _nnz,
 		    Int *_col_ptr, Int *_row_idx, Entry *_val);
-
-
 
     BASKER_INLINE
     void init_col();
@@ -80,16 +83,18 @@ namespace BaskerNS
     BASKER_INLINE
     int fill();
 
-    BASKER_BOOL v_fill;
+    BASKER_INLINE
+    void init_inc_lvl();
 
-    //malloc perm
-    //BASKER_INLINE
-    //int malloc_perm();
+
+
+    //****Deprecated*******
     BASKER_INLINE
     void malloc_perm(Int n);
     BASKER_INLINE
     void init_perm();
 
+    //****Deprecated*****
     //malloc union_bit
     BASKER_INLINE
     void malloc_union_bit();
@@ -104,7 +109,6 @@ namespace BaskerNS
     BASKER_INLINE
     void init_vectors(Int _m, Int _n, Int _nnz);
 
-
     //information
     BASKER_INLINE
     void info();
@@ -114,7 +118,13 @@ namespace BaskerNS
     void print();
 
 
+    //Note: These need to be reordered to make better use of 
+    //Class size.
+
     string label;
+
+
+    BASKER_BOOL v_fill;
 
     Int srow, scol;
     Int erow, ecol;
@@ -123,18 +133,21 @@ namespace BaskerNS
     INT_1DARRAY   col_ptr;
     INT_1DARRAY   row_idx;
     ENTRY_1DARRAY val;
+
+    //**Deprecated***
     INT_1DARRAY   lpinv;
 
+    //***Deprecated***
     BOOL_1DARRAY union_bit;
    
-    
-
-    #ifdef BASKER_INC_LVL
+   
+    //#ifdef BASKER_INC_LVL
+    BASKER_BOOL   inc_lvl_flg;
     INT_1DARRAY   inc_lvl;
-    #endif
+    //#endif
 
-  
     #ifdef BASKER_2DL
+    BASKER_BOOL   w_fill;
     ENTRY_1DARRAY ews;
     INT_1DARRAY   iws;
     Int           iws_size;
@@ -144,13 +157,11 @@ namespace BaskerNS
     Int           p_size;
     #endif
     
-
     Entry tpivot;
 
+    //***Deprecated***
     //Remove..... will not be used in future ver
     static const Int max_idx = (Int) -1;
-    //static const Int max_idx = std::numeric_limits<Int>::max();
-    // static Int max_idx = std::numeric_limits<Int>::max();
     
     //Used for end
     INT_1DARRAY pend;

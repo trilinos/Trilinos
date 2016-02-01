@@ -1525,7 +1525,7 @@ size_t ex_header_size(int exoid)
 /* type = 1 for integer, 2 for real, 3 for character */
 void ex_compress_variable(int exoid, int varid, int type)
 {
-#if !defined(NOT_NETCDF4)
+#if defined(ENABLE_NETCDF4)
 
   struct ex_file_item* file = ex_find_file_item(exoid);
 

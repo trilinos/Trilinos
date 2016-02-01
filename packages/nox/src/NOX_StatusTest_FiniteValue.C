@@ -168,10 +168,10 @@ bool NOX::StatusTest::FiniteValue::NOX_isnan(double x) const
 {
 #if defined(HAVE_NAN_SUPPORT)
   if (isnan(x))
-#elif defined(FINITE_VALUE_HAVE_GLOBAL_ISNAN)
-  if (isnan(x))
 #elif defined(FINITE_VALUE_HAVE_STD_ISNAN)
   if (std::isnan(x))
+#elif defined(FINITE_VALUE_HAVE_GLOBAL_ISNAN)
+  if (isnan(x))
 #else
   if (x != x)
 #endif
@@ -184,10 +184,10 @@ bool NOX::StatusTest::FiniteValue::NOX_isinf(double x) const
 {
 #ifdef HAVE_INF_SUPPORT
   if (isinf(x))
-#elif defined(FINITE_VALUE_HAVE_GLOBAL_ISINF)
-  if (isinf(x))
 #elif defined(FINITE_VALUE_HAVE_STD_ISINF)
   if (std::isinf(x))
+#elif defined(FINITE_VALUE_HAVE_GLOBAL_ISINF)
+  if (isinf(x))
 #else
   // Use IEEE 754 definition: Inf * 0 = NaN
   double z = 0.0 * x;

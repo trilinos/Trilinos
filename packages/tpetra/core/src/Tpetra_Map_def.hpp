@@ -502,10 +502,8 @@ namespace Tpetra {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      Kokkos::DualView<GO*, device_type> lgMap ("lgMap", numLocalElements_);
-      typedef typename Kokkos::DualView<GO*, device_type>::t_host::memory_space host_memory_space;
-      auto lgMap_host = lgMap.template view<host_memory_space> ();
-      lgMap.template modify<host_memory_space> ();
+      Kokkos::View<GO*, Kokkos::LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
+      auto lgMap_host = Kokkos::create_mirror_view (lgMap);
 
       firstContiguousGID_ = entryList[0];
       lastContiguousGID_ = firstContiguousGID_+1;
@@ -561,10 +559,8 @@ namespace Tpetra {
         }
       }
 
-      // In the code above, we filled in lgMap on host.
-      // Now, sync it back to device.
-      typedef typename Kokkos::DualView<GO*, device_type>::t_dev::memory_space device_memory_space;
-      lgMap.template sync<device_memory_space> ();
+      // We filled lgMap on host above; now sync back to device.
+      Kokkos::deep_copy (lgMap, lgMap_host);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
@@ -697,7 +693,10 @@ namespace Tpetra {
     else {
       // This is a host Kokkos::View access, with no RCP or ArrayRCP
       // involvement.  As a result, it is thread safe.
-      return lgMap_.h_view[localIndex];
+      //
+      // NOTE (mfh 12 Jan 2016) This assumes UVM, if lgMap_ is a CUDA
+      // device View.
+      return lgMap_[localIndex];
     }
   }
 
@@ -737,7 +736,7 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   getLocalMap () const
   {
-    return local_map_type (glMap_, lgMap_.d_view, getIndexBase (),
+    return local_map_type (glMap_, lgMap_, getIndexBase (),
                            getMinGlobalIndex (), getMaxGlobalIndex (),
                            firstContiguousGID_, lastContiguousGID_,
                            getNodeNumElements (), isContiguous ());
@@ -780,7 +779,7 @@ namespace Tpetra {
     }
     else if (! isContiguous () && ! map.isContiguous () &&
              lgMap_.dimension_0 () != 0 && map.lgMap_.dimension_0 () != 0 &&
-             lgMap_.d_view.ptr_on_device () == map.lgMap_.d_view.ptr_on_device ()) {
+             lgMap_.ptr_on_device () == map.lgMap_.ptr_on_device ()) {
       // Noncontiguous Maps whose global index lists are nonempty and
       // have the same pointer must be the same (and therefore
       // contiguous).
@@ -869,7 +868,7 @@ namespace Tpetra {
         }
         return true;
       }
-      else if (this->lgMap_.d_view.ptr_on_device () == map.lgMap_.d_view.ptr_on_device ()) {
+      else if (this->lgMap_.ptr_on_device () == map.lgMap_.ptr_on_device ()) {
         // Pointers to LID->GID "map" (actually just an array) are the
         // same, and the number of GIDs are the same.
         return this->getNodeNumElements () == map.getNodeNumElements ();
@@ -965,14 +964,13 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
   {
     typedef GlobalOrdinal GO; // convenient abbreviation
-    typedef Kokkos::DualView<GO*, device_type> dual_view_type;
-    typedef typename dual_view_type::t_dev::memory_space device_memory_space;
-    typedef typename dual_view_type::t_host::memory_space host_memory_space;
+    typedef Kokkos::View<GO*, Kokkos::LayoutLeft, device_type> lg_view_type;
 
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global
     // mapping.
-    const bool needToCreateLocalToGlobalMapping = lgMap_.dimension_0 () == 0 && numLocalElements_ > 0;
+    const bool needToCreateLocalToGlobalMapping =
+      lgMap_.dimension_0 () == 0 && numLocalElements_ > 0;
 
     if (needToCreateLocalToGlobalMapping) {
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -987,26 +985,24 @@ namespace Tpetra {
       typedef typename Teuchos::ArrayRCP<GO>::size_type size_type;
       const size_type numElts = static_cast<size_type> (getNodeNumElements ());
 
-      dual_view_type lgMap ("lgMap", numElts);
-      lgMap.template modify<host_memory_space> ();
-
+      lg_view_type lgMap ("lgMap", numElts);
       if (numElts != 0) {
-        auto lgMap_host = lgMap.template view<host_memory_space> ();
+        auto lgMap_host = Kokkos::create_mirror_view (lgMap);
         GO gid = minMyGID_;
         for (size_type k = 0; k < numElts; ++k, ++gid) {
           lgMap_host[k] = gid;
         }
+        // We filled lgMap on host; now, sync it back to device.
+        Kokkos::deep_copy (lgMap, lgMap_host);
       }
-
-      // We filled in lgMap on host.  Now, sync it back to device.
-      lgMap.template sync<device_memory_space> ();
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
     }
 
-    const GO* lgMapHostRawPtr =
-      lgMap_.template view<host_memory_space> ().ptr_on_device ();
+    // NOTE (mfh 12 Jan 2016) This assumes UVM, if lgMap is a CUDA
+    // device View.
+    const GO* lgMapHostRawPtr = lgMap_.ptr_on_device ();
     // The third argument forces ArrayView not to try to track memory
     // in a debug build.  We have to use it because the memory does
     // not belong to a Teuchos memory management class.

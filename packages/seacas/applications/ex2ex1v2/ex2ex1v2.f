@@ -293,7 +293,7 @@ C   --Read the element blocks
          endif
          namelb(ielb) = name(:8)
 
-         call getin (a(knelb+ielb-1),num)
+         call getin (ia(knelb+ielb-1),num)
          if (numlnk .gt. 0) then
            CALL MDLONG ('LINK', KLINK, num*numlnk)
            CALL EXGELC (netid, a(kidelb+ielb-1), 
@@ -787,7 +787,7 @@ c
                      call exerr('ex2ex1v2', 'Error from exgev', exlmsg)
                      goto 140
                   endif
-                  call getin (a(knelb+k-1),num)
+                  call getin (ia(knelb+k-1),num)
                   ielo = ielo+num
                 end if
 240           continue

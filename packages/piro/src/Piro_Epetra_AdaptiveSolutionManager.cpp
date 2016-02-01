@@ -56,7 +56,8 @@ Piro::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager(
            const Teuchos::RCP<const Epetra_Map> &map_,
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_) :
-  LOCA::Epetra::AdaptiveSolutionManager(map_, overlapMap_, overlapJacGraph_),
+  LOCA::Epetra::AdaptiveSolutionManager(appParams->sublist("Discretization").get<int>("Number Of Time Derivatives"),
+      map_, overlapMap_, overlapJacGraph_),
   createPrec(false),
   adaptiveMesh(false)
 {

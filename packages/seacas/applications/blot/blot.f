@@ -172,6 +172,7 @@ C      --These parameters define the mesh display (see MSHLIN of /MSHOPT/)
 
       include 'light.blk'
       include 'icrnbw.blk'
+      include 'legopt.blk'
 
       include 'argparse.inc'
       
@@ -292,11 +293,13 @@ C   --Open database file
         CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
         CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "blot.dev [-basename basename] [-ps_option num]'//
-     *    ' [-nomap node|element|all] filename"')
+     *    ' [-nomap node|element|all] [-show_filename] filename"')
         GOTO 170
       END IF
       EXODUS = .FALSE.
 
+      CALL INISTR (3, ' ', CAPTN(1,1))
+      CALL INISTR (3, ' ', CAPTN(1,2))
       call exinq(ndb, EXDBMXUSNM, namlen, rdum, cdum, ierr)
       call exmxnm(ndb, namlen, ierr)
 
@@ -319,21 +322,35 @@ C ... By default, map both nodes and elements
       mapnd = .true.
 
       if (narg .gt. 1) then
-        do i=1, narg-1, 2
-          CALL get_argument(i+0,option, lo)
-          CALL get_argument(i+1,value,  lv)
-          if (option(:lo) .eq. '-hardcopy' .or.
+        i = 1
+        do
+          CALL get_argument(i,option, lo)
+          i = i + 1
+          if (option(:lo) .eq. '--show_filename' .or.
+     *      option(:lo) .eq. '-show_filename') then
+            captn(3,1) = dbname(:lfil)
+            captn(3,2) = dbname(:lfil)
+
+          else if (option(:lo) .eq. '-hardcopy' .or.
      *      option(:lo) .eq. '--hardcopy' .or.
      *      option(:lo) .eq. '-basename' .or.
      *      option(:lo) .eq. '--basename') then
+            CALL get_argument(i,value,  lv)
+            i = i + 1
             basenam = value(:lv)
+
           else if (option(:lo) .eq. '-ps_option' .or.
      *        option(:lo) .eq. '--ps_option') then
+            CALL get_argument(i,value,  lv)
+            i = i + 1
             if (lv .le. 2) then
               bltans = value(:lv)
             end if
+
           else if (option(:lo) .eq. '-nomap' .or.
      *        option(:lo) .eq. '--nomap') then
+            CALL get_argument(i,value,  lv)
+            i = i + 1
             if (value(1:1) .eq. 'n' .or. value(1:1) .eq. 'N')
      *        mapnd = .false.
             if (value(1:1) .eq. 'e' .or. value(1:1) .eq. 'E')
@@ -343,6 +360,7 @@ C ... By default, map both nodes and elements
               mapel = .false.
             end if
           end if
+          if (i .gt. narg) exit
         end do
       end if
       

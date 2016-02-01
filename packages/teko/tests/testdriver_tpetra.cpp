@@ -57,6 +57,8 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "Kokkos_Core.hpp"
+
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
    #include "mpi.h"
@@ -107,6 +109,9 @@ int main(int argc,char * argv[])
 {
    // calls MPI_Init and MPI_Finalize
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+   Kokkos::initialize(argc,argv);
+
 
    // build MPI/Serial communicators
    #ifdef HAVE_MPI
@@ -179,5 +184,8 @@ int main(int argc,char * argv[])
 
    if(not status)
       *termout << "Teko tests failed" << std::endl; 
+
+   Kokkos::finalize();
+
    return status ? 0 : -1;
 }

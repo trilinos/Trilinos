@@ -2,12 +2,14 @@
  Amesos2 TODO List
 ===================
 
-- Finish KLU2 so it works for all types. May require third template parameter.
-- Wish list: CholMod, UMFPACK, SuiteSparseQR, Pastix, MUMPS
-- Test Pardiso with Swiss version
+- Wish list: UMFPACK, SuiteSparseQR, Pastix 
 
 OLD TODO (some of these have been fixed)
 ========================================
+
+- Finish KLU2 so it works for all types. May require third template parameter.
+
+- MUMPS Support
 
  - Remove Amesos2_ENABLE_XXXX configure options in CMakeLists.txt
    because they are auto-generated from the Dependencies file. (DONE)

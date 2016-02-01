@@ -117,7 +117,8 @@ void ex_err(const char *module_name,
   else if (exoptval & EX_VERBOSE) /* check see if we really want to hear this */
   {
     fprintf(stderr, "Exodus Library Warning/Error: [%s]\n\t%s\n",module_name,message);
-    fprintf(stderr, "\t%s\n", nc_strerror(err_num));
+    if (err_num < 0)
+      fprintf(stderr, "\t%s\n", nc_strerror(err_num));
   } 
   /* save the error message for replays */
   strcpy(last_errmsg, message);

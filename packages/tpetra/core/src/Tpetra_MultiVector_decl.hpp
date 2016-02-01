@@ -56,17 +56,14 @@
 #include "Tpetra_Map_decl.hpp"
 
 #include "Kokkos_DualView.hpp"
-#include "Kokkos_MultiVector.hpp"
 
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_Range1D.hpp"
 
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
-#include "Tpetra_KokkosRefactor_DistObject.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include <type_traits>
 
@@ -788,44 +785,71 @@ namespace Tpetra {
 #endif // KOKKOS_HAVE_SERIAL
 
   public:
-    /// \brief Replace value, using global (row) index.
+    /// \brief Replace value in host memory, using global row index.
     ///
-    /// Replace the current value at row \c globalRow (a global index)
+    /// Replace the current value at row \c gblRow (a global index)
     /// and column \c col with the given value.  The column index is
     /// zero based.
     ///
     /// This method affects the host memory version of the data.  If
-    /// the \c DeviceType template parameter is a device that has two
-    /// memory spaces, and you want to modify the non-host version of
-    /// the data, you must access the DualView directly by calling
-    /// getDualView().  Please see modify(), sync(), and the
-    /// discussion of DualView semantics elsewhere in the
-    /// documentation.
+    /// \c device_type is a Kokkos device that has two memory spaces,
+    /// and you want to modify the non-host version of the data, you
+    /// must access the DualView directly by calling getDualView().
+    /// Please see modify(), sync(), and the discussion of DualView
+    /// semantics elsewhere in the documentation.  You are responsible
+    /// for calling modify() and sync(), if needed; this method
+    /// doesn't do that.
     ///
-    /// \pre \c globalRow must be a valid global element on this
-    ///   process, according to the row Map.
+    /// This method does not have an "atomic" option like
+    /// sumIntoGlobalValue.  This is deliberate.  Replacement is not
+    /// commutative, unlike += (modulo rounding error).  Concurrent
+    /// calls to replaceGlobalValue on different threads that modify
+    /// the same entry/ies have undefined results.  (It's not just
+    /// that one thread might win; it's that the value might get
+    /// messed up.)
+    ///
+    /// \param gblRow [in] Global row index of the entry to modify.
+    ///   This <i>must</i> be a valid global row index on the calling
+    ///   process with respect to the MultiVector's Map.
+    /// \param col [in] Column index of the entry to modify.
+    /// \param value [in] Incoming value to add to the entry.
     void
-    replaceGlobalValue (GlobalOrdinal globalRow,
-                        size_t col,
+    replaceGlobalValue (const GlobalOrdinal gblRow,
+                        const size_t col,
                         const impl_scalar_type& value) const;
 
     /// \brief Like the above replaceGlobalValue, but only enabled if
     ///   T differs from impl_scalar_type.
     ///
-    /// This method only exists if the template parameter T and
-    /// impl_scalar_type differ.  If C++11 is enabled, we further require
-    /// that it be possible to convert T to impl_scalar_type.
-    ///
-    /// This method is mainly useful for backwards compatibility, when
-    /// Scalar differs from impl_scalar_type.
+    /// This method only exists if its template parameter \c T and
+    /// impl_scalar_type differ, and if it is syntactically possible
+    /// to convert \c T to impl_scalar_type.  This method is mainly
+    /// useful for backwards compatibility, when the Scalar template
+    /// parameter differs from impl_scalar_type.  That is commonly
+    /// only the case when Scalar is std::complex<U> for some type U.
     ///
     /// This method affects the host memory version of the data.  If
-    /// the \c DeviceType template parameter is a device that has two
-    /// memory spaces, and you want to modify the non-host version of
-    /// the data, you must access the DualView directly by calling
-    /// getDualView().  Please see modify(), sync(), and the
-    /// discussion of DualView semantics elsewhere in the
-    /// documentation.
+    /// \c device_type is a Kokkos device that has two memory spaces,
+    /// and you want to modify the non-host version of the data, you
+    /// must access the DualView directly by calling getDualView().
+    /// Please see modify(), sync(), and the discussion of DualView
+    /// semantics elsewhere in the documentation.  You are responsible
+    /// for calling modify() and sync(), if needed; this method
+    /// doesn't do that.
+    ///
+    /// This method does not have an "atomic" option like
+    /// sumIntoGlobalValue.  This is deliberate.  Replacement is not
+    /// commutative, unlike += (modulo rounding error).  Concurrent
+    /// calls to replaceGlobalValue on different threads that modify
+    /// the same entry/ies have undefined results.  (It's not just
+    /// that one thread might win; it's that the value might get
+    /// messed up.)
+    ///
+    /// \param gblRow [in] Global row index of the entry to modify.
+    ///   This <i>must</i> be a valid global row index on the calling
+    ///   process with respect to the MultiVector's Map.
+    /// \param col [in] Column index of the entry to modify.
+    /// \param value [in] Incoming value to add to the entry.
     template<typename T>
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
     replaceGlobalValue (GlobalOrdinal globalRow,
@@ -835,21 +859,22 @@ namespace Tpetra {
       replaceGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value));
     }
 
-    /// \brief Add value to existing value, using global (row) index.
+    /// \brief Update (+=) a value in host memory, using global row index.
     ///
-    /// Add the given value to the existing value at row \c globalRow
-    /// (a global index) and column \c col.  The column index is zero
+    /// Add the given value to the existing value at row \c gblRow (a
+    /// global index) and column \c col.  The column index is zero
     /// based.
     ///
     /// This method affects the host memory version of the data.  If
-    /// the \c DeviceType template parameter is a device that has two
-    /// memory spaces, and you want to modify the non-host version of
-    /// the data, you must access the DualView directly by calling
-    /// getDualView().  Please see modify(), sync(), and the
-    /// discussion of DualView semantics elsewhere in the
-    /// documentation.
+    /// \c device_type is a Kokkos device that has two memory spaces,
+    /// and you want to modify the non-host version of the data, you
+    /// must access the DualView directly by calling getDualView().
+    /// Please see modify(), sync(), and the discussion of DualView
+    /// semantics elsewhere in the documentation.  You are responsible
+    /// for calling modify() and sync(), if needed; this method
+    /// doesn't do that.
     ///
-    /// \param globalRow [in] Global row index of the entry to modify.
+    /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
     ///   process with respect to the MultiVector's Map.
     /// \param col [in] Column index of the entry to modify.
@@ -858,7 +883,7 @@ namespace Tpetra {
     ///   class' execution space is not Kokkos::Serial, then this is
     ///   true by default, else it is false by default.
     void
-    sumIntoGlobalValue (const GlobalOrdinal globalRow,
+    sumIntoGlobalValue (const GlobalOrdinal gblRow,
                         const size_t col,
                         const impl_scalar_type& value,
                         const bool atomic = useAtomicUpdatesByDefault) const;
@@ -866,144 +891,176 @@ namespace Tpetra {
     /// \brief Like the above sumIntoGlobalValue, but only enabled if
     ///   T differs from impl_scalar_type.
     ///
-    /// This method only exists if the template parameter T and
-    /// impl_scalar_type differ.  If C++11 is enabled, we further require
-    /// that it be possible to convert T to impl_scalar_type.
-    ///
-    /// This method is mainly useful for backwards compatibility, when
-    /// Scalar differs from impl_scalar_type.
+    /// This method only exists if its template parameter \c T and
+    /// impl_scalar_type differ, and if it is syntactically possible
+    /// to convert \c T to impl_scalar_type.  This method is mainly
+    /// useful for backwards compatibility, when the Scalar template
+    /// parameter differs from impl_scalar_type.  That is commonly
+    /// only the case when Scalar is std::complex<U> for some type U.
     ///
     /// This method affects the host memory version of the data.  If
-    /// the \c DeviceType template parameter is a device that has two
-    /// memory spaces, and you want to modify the non-host version of
-    /// the data, you must access the DualView directly by calling
-    /// getDualView().  Please see modify(), sync(), and the
-    /// discussion of DualView semantics elsewhere in the
-    /// documentation.
+    /// \c device_type is a Kokkos device that has two memory spaces,
+    /// and you want to modify the non-host version of the data, you
+    /// must access the DualView directly by calling getDualView().
+    /// Please see modify(), sync(), and the discussion of DualView
+    /// semantics elsewhere in the documentation.  You are responsible
+    /// for calling modify() and sync(), if needed; this method
+    /// doesn't do that.
     ///
-    /// \param globalRow [in] Global row index of the entry to modify.
+    /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
     ///   process with respect to the MultiVector's Map.
     /// \param col [in] Column index of the entry to modify.
-    /// \param value [in] Incoming value to add to the entry.
+    /// \param val [in] Incoming value to add to the entry.
     /// \param atomic [in] Whether to use an atomic update.  If this
     ///   class' execution space is not Kokkos::Serial, then this is
     ///   true by default, else it is false by default.
     template<typename T>
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
-    sumIntoGlobalValue (const GlobalOrdinal globalRow,
+    sumIntoGlobalValue (const GlobalOrdinal gblRow,
                         const size_t col,
-                        const T& value,
+                        const T& val,
                         const bool atomic = useAtomicUpdatesByDefault) const
     {
-      sumIntoGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value), atomic);
+      sumIntoGlobalValue (gblRow, col, static_cast<impl_scalar_type> (val), atomic);
     }
 
-    /// \brief Replace value, using local (row) index.
+    /// \brief Replace value in host memory, using local (row) index.
     ///
-    /// Replace the current value at row \c localRow (a local index)
-    /// and column \c col with the given value.  The column index is
-    /// zero based.
+    /// Replace the current value at row \c lclRow (a local index) and
+    /// column \c col with the given value.  The column index is zero
+    /// based.
     ///
     /// This method affects the host memory version of the data.  If
-    /// the \c DeviceType template parameter is a device that has two
-    /// memory spaces, and you want to modify the non-host version of
-    /// the data, you must access the DualView directly by calling
-    /// getDualView().  Please see modify(), sync(), and the
-    /// discussion of DualView semantics elsewhere in the
-    /// documentation.
+    /// \c device_type is a Kokkos device that has two memory spaces,
+    /// and you want to modify the non-host version of the data, you
+    /// must access the DualView directly by calling getDualView().
+    /// Please see modify(), sync(), and the discussion of DualView
+    /// semantics elsewhere in the documentation.  You are responsible
+    /// for calling modify() and sync(), if needed; this method
+    /// doesn't do that.
     ///
-    /// \pre \c localRow must be a valid local element on this
-    ///   process, according to the row Map.
+    /// This method does not have an "atomic" option like
+    /// sumIntoLocalValue.  This is deliberate.  Replacement is not
+    /// commutative, unlike += (modulo rounding error).  Concurrent
+    /// calls to replaceLocalValue on different threads that modify
+    /// the same entry/ies have undefined results.  (It's not just
+    /// that one thread might win; it's that the value might get
+    /// messed up.)
+    ///
+    /// \param lclRow [in] Local row index of the entry to modify.
+    ///   Must be a valid local index in this MultiVector's Map on the
+    ///   calling process.
+    /// \param col [in] Column index of the entry to modify.
+    /// \param value [in] Incoming value to add to the entry.
     void
-    replaceLocalValue (LocalOrdinal localRow,
-                       size_t col,
+    replaceLocalValue (const LocalOrdinal lclRow,
+                       const size_t col,
                        const impl_scalar_type& value) const;
 
     /// \brief Like the above replaceLocalValue, but only enabled if
     ///   T differs from impl_scalar_type.
     ///
-    /// This method only exists if the template parameter T and
-    /// impl_scalar_type differ.  If C++11 is enabled, we further require
-    /// that it be possible to convert T to impl_scalar_type.
-    ///
-    /// This method is mainly useful for backwards compatibility, when
-    /// Scalar differs from impl_scalar_type.
+    /// This method only exists if its template parameter \c T and
+    /// impl_scalar_type differ, and if it is syntactically possible
+    /// to convert \c T to impl_scalar_type.  This method is mainly
+    /// useful for backwards compatibility, when the Scalar template
+    /// parameter differs from impl_scalar_type.  That is commonly
+    /// only the case when Scalar is std::complex<U> for some type U.
     ///
     /// This method affects the host memory version of the data.  If
-    /// the \c DeviceType template parameter is a device that has two
-    /// memory spaces, and you want to modify the non-host version of
-    /// the data, you must access the DualView directly by calling
-    /// getDualView().  Please see modify(), sync(), and the
-    /// discussion of DualView semantics elsewhere in the
-    /// documentation.
+    /// \c device_type is a Kokkos device that has two memory spaces,
+    /// and you want to modify the non-host version of the data, you
+    /// must access the DualView directly by calling getDualView().
+    /// Please see modify(), sync(), and the discussion of DualView
+    /// semantics elsewhere in the documentation.  You are responsible
+    /// for calling modify() and sync(), if needed; this method
+    /// doesn't do that.
+    ///
+    /// This method does not have an "atomic" option like
+    /// sumIntoLocalValue.  This is deliberate.  Replacement is not
+    /// commutative, unlike += (modulo rounding error).  Concurrent
+    /// calls to replaceLocalValue on different threads that modify
+    /// the same entry/ies have undefined results.  (It's not just
+    /// that one thread might win; it's that the value might get
+    /// messed up.)
+    ///
+    /// \param lclRow [in] Local row index of the entry to modify.
+    ///   Must be a valid local index in this MultiVector's Map on the
+    ///   calling process.
+    /// \param col [in] Column index of the entry to modify.
+    /// \param val [in] Incoming value to add to the entry.
     template<typename T>
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
-    replaceLocalValue (LocalOrdinal localRow,
-                       size_t col,
-                       const T& value) const
+    replaceLocalValue (const LocalOrdinal lclRow,
+                       const size_t col,
+                       const T& val) const
     {
-      replaceLocalValue (localRow, col, static_cast<impl_scalar_type> (value));
+      replaceLocalValue (lclRow, col, static_cast<impl_scalar_type> (val));
     }
 
-    /// \brief Add value to existing value, using local (row) index.
+    /// \brief Update (+=) a value in host memory, using local row index.
     ///
     /// Add the given value to the existing value at row \c localRow
     /// (a local index) and column \c col.  The column index is zero
     /// based.
     ///
     /// This method affects the host memory version of the data.  If
-    /// the \c DeviceType template parameter is a device that has two
-    /// memory spaces, and you want to modify the non-host version of
-    /// the data, you must access the DualView directly by calling
-    /// getDualView().  Please see modify(), sync(), and the
-    /// discussion of DualView semantics elsewhere in the
-    /// documentation.
+    /// \c device_type is a Kokkos device that has two memory spaces,
+    /// and you want to modify the non-host version of the data, you
+    /// must access the DualView directly by calling getDualView().
+    /// Please see modify(), sync(), and the discussion of DualView
+    /// semantics elsewhere in the documentation.  You are responsible
+    /// for calling modify() and sync(), if needed; this method
+    /// doesn't do that.
     ///
-    /// \param localRow [in] Local row index of the entry to modify.
+    /// \param lclRow [in] Local row index of the entry to modify.
+    ///   Must be a valid local index in this MultiVector's Map on the
+    ///   calling process.
     /// \param col [in] Column index of the entry to modify.
-    /// \param value [in] Incoming value to add to the entry.
+    /// \param val [in] Incoming value to add to the entry.
     /// \param atomic [in] Whether to use an atomic update.  If this
     ///   class' execution space is not Kokkos::Serial, then this is
     ///   true by default, else it is false by default.
     void
-    sumIntoLocalValue (const LocalOrdinal localRow,
+    sumIntoLocalValue (const LocalOrdinal lclRow,
                        const size_t col,
-                       const impl_scalar_type& value,
+                       const impl_scalar_type& val,
                        const bool atomic = useAtomicUpdatesByDefault) const;
 
     /// \brief Like the above sumIntoLocalValue, but only enabled if
     ///   T differs from impl_scalar_type.
     ///
-    /// This method only exists if the template parameter T and
-    /// impl_scalar_type differ.  If C++11 is enabled, we further require
-    /// that it be possible to convert T to impl_scalar_type.
-    ///
-    /// This method is mainly useful for backwards compatibility, when
-    /// Scalar differs from impl_scalar_type.
+    /// This method only exists if its template parameter \c T and
+    /// impl_scalar_type differ, and if it is syntactically possible
+    /// to convert \c T to impl_scalar_type.  This method is mainly
+    /// useful for backwards compatibility, when the Scalar template
+    /// parameter differs from impl_scalar_type.  That is commonly
+    /// only the case when Scalar is std::complex<U> for some type U.
     ///
     /// This method affects the host memory version of the data.  If
-    /// the \c DeviceType template parameter is a device that has two
-    /// memory spaces, and you want to modify the non-host version of
-    /// the data, you must access the DualView directly by calling
-    /// getDualView().  Please see modify(), sync(), and the
-    /// discussion of DualView semantics elsewhere in the
-    /// documentation.
+    /// \c device_type is a Kokkos device that has two memory spaces,
+    /// and you want to modify the non-host version of the data, you
+    /// must access the DualView directly by calling getDualView().
+    /// Please see modify(), sync(), and the discussion of DualView
+    /// semantics elsewhere in the documentation.  You are responsible
+    /// for calling modify() and sync(), if needed; this method
+    /// doesn't do that.
     ///
-    /// \param localRow [in] Local row index of the entry to modify.
+    /// \param lclRow [in] Local row index of the entry to modify.
     /// \param col [in] Column index of the entry to modify.
-    /// \param value [in] Incoming value to add to the entry.
+    /// \param val [in] Incoming value to add to the entry.
     /// \param atomic [in] Whether to use an atomic update.  If this
     ///   class' execution space is not Kokkos::Serial, then this is
     ///   true by default, else it is false by default.
     template<typename T>
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
-    sumIntoLocalValue (LocalOrdinal localRow,
-                       size_t col,
-                       const T& value,
+    sumIntoLocalValue (const LocalOrdinal lclRow,
+                       const size_t col,
+                       const T& val,
                        const bool atomic = useAtomicUpdatesByDefault) const
     {
-      sumIntoLocalValue (localRow, col, static_cast<impl_scalar_type> (value), atomic);
+      sumIntoLocalValue (lclRow, col, static_cast<impl_scalar_type> (val), atomic);
     }
 
     //! Set all values in the multivector with the given value.
@@ -1011,10 +1068,12 @@ namespace Tpetra {
 
     /// \brief Set all values in the multivector with the given value.
     ///
-    /// This method only exists if the template parameter \c T and
-    /// impl_scalar_type differ.  If C++11 is enabled, we further
-    /// require that it be possible to convert \c T to
-    /// impl_scalar_type.
+    /// This method only exists if its template parameter \c T and
+    /// impl_scalar_type differ, and if it is syntactically possible
+    /// to convert \c T to impl_scalar_type.  This method is mainly
+    /// useful for backwards compatibility, when the Scalar template
+    /// parameter differs from impl_scalar_type.  That is commonly
+    /// only the case when Scalar is std::complex<U> for some type U.
     template<typename T>
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
     putScalar (const T& value)
@@ -1029,8 +1088,7 @@ namespace Tpetra {
     ///   available.  Do not expect repeatable results.
     ///
     /// \note Behavior of this method may or may not depend on
-    ///   external use of the C library routines \c srand() and \c
-    ///   rand().
+    ///   external use of the C library routines srand() and rand().
     ///
     /// \warning This method does <i>not</i> promise to use a
     ///   distributed-memory parallel pseudorandom number generator.
@@ -1114,33 +1172,37 @@ namespace Tpetra {
     /// \pre isDistributed() == false
     void reduce();
 
-    /// \brief Assign the contents of \c source to this multivector (deep copy).
-    ///
-    /// \pre The two multivectors must have the same communicator.
-    /// \pre The input multivector's Map must be compatible with this
-    ///      multivector's Map.  That is, \code
-    ///      this->getMap ()->isCompatible (source.getMap ());
-    ///      \endcode
-    /// \pre The two multivectors must have the same number of columns.
-    ///
-    /// \note This method must always be called as a collective
-    ///   operation on all processes over which the multivector is
-    ///   distributed.  This is because the method reserves the right
-    ///   to check for compatibility of the two Maps, at least in
-    ///   debug mode.
+    //! Shallow copy: assign \c source to \c *this.
     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&
     operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source);
 
     //@}
 
-    //! @name Data Copy and View get methods
-    /** These methods are used to get the data underlying the MultiVector. They return data in one of three forms:
-      - a MultiVector with a subset of the columns of the target MultiVector
-      - a raw C pointer or array of raw C pointers
-      - one of the Teuchos memory management classes
-      Not all of these methods are valid for a particular MultiVector. For instance, calling a method that accesses a
-      view of the data in a 1-D format (i.e., get1dView) requires that the target MultiVector has constant stride.
-     */
+    //! @name Get a copy or view of a subset of rows and/or columns
+    ///
+    /// The following methods get either a (deep) copy or a view
+    /// (shallow copy) of a subset of rows and/or columns of the
+    /// MultiVector.  They return one of the following:
+    ///
+    /// <ul>
+    /// <li> Another MultiVector </li>
+    /// <li> A Kokkos::View or Kokkos::DualView </li>
+    /// <li> A Teuchos::ArrayRCP (see the Teuchos Memory Management Classes) </li>
+    /// </ul>
+    ///
+    /// We prefer use of Kokkos classes to Teuchos Memory Management
+    /// Classes.  In particular, Teuchos::ArrayRCP reference counts
+    /// are not thread safe, while Kokkos::View (and Kokkos::DualView)
+    /// reference counts are thread safe.
+    ///
+    /// Not all of these methods are valid for a particular
+    /// MultiVector. For instance, calling a method that accesses a
+    /// view of the data in a 1-D format (i.e., get1dView) requires
+    /// that the target MultiVector have constant stride.
+    ///
+    /// This category of methods also includes sync(), modify(), and
+    /// getLocalView(), which help MultiVector implement DualView
+    /// semantics.
     //@{
 
     //! Return a MultiVector with copies of selected columns.
@@ -1308,20 +1370,10 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst ();
 
-    /// \brief A view of the underlying KokkosClassic::MultiVector object.
-    ///
-    /// \brief This method is for expert users only.
-    ///   It may change or be removed at any time.
-    ///
-    /// \note To Tpetra developers: This object's value type is Scalar
-    ///   and not impl_scalar_type, precisely because it supports a
-    ///   backwards compatibility use case.
-    KokkosClassic::MultiVector<Scalar, Node> getLocalMV () const;
-
     /// \brief Get the Kokkos::DualView which implements local storage.
     ///
     /// Instead of getting the Kokkos::DualView, we highly recommend
-    /// calling the templated view() method, that returns a
+    /// calling the templated getLocalView() method, that returns a
     /// Kokkos::View of the MultiVector's data in a given memory
     /// space.  Since that MultiVector itself implements DualView
     /// semantics, it's much better to use MultiVector's interface to

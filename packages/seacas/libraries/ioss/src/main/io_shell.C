@@ -39,7 +39,7 @@
 #include <Ioss_Utils.h>
 #include <Ioss_ParallelUtils.h>
 #include <assert.h>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <cstring>
@@ -103,7 +103,6 @@ namespace {
   double time_read = 0.0;
   double time_write = 0.0;
 
-  void show_usage(const std::string &prog);
   void show_step(int istep, double time);
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);
@@ -1001,6 +1000,7 @@ namespace {
     if (field_name == "node_connectivity_status") return;
     if (field_name == "owning_processor") return;
     if (field_name == "entity_processor_raw") return;
+    if (ige->type() == Ioss::SIDEBLOCK && field_name == "ids") return;
 
     if (data.size() < isize) {
       std::cerr << "Field: " << field_name << "\tIsize = " << isize << "\tdata size = " << data.size() << "\n";

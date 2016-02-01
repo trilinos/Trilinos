@@ -54,40 +54,6 @@ namespace Ifpack2 {
 
 namespace Experimental {
 
-template <class scalar_type, class impl_scalar_type>
-struct BlockMatrixOperations
-{
-
-  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-
-  typedef Teuchos::ScalarTraits<magnitude_type> STM;
-
-  void square_matrix_matrix_multiply(const impl_scalar_type * a, const impl_scalar_type * b, impl_scalar_type * c,
-      const int nrows, const impl_scalar_type alpha = STM::one(), const impl_scalar_type beta = STM::zero() ) const
-  {
-    for (int i = 0; i < nrows*nrows; ++i)
-      c[i] = beta*c[i];
-
-    for (int i = 0; i < nrows; ++i)
-    {
-
-      const int ioffset = i*nrows;
-      for (int k = 0; k < nrows; ++k)
-      {
-        const int koffset = k*nrows;
-        const impl_scalar_type val = alpha*a[ioffset+k];
-        for (int j = 0; j < nrows; ++j)
-        {
-          c[ioffset+j] += val*b[koffset+j];
-        }
-      }
-    }
-
-  }
-
-
-};
-
 /** \class RBILUK
 \brief ILU(k) factorization of a given Tpetra::Experimental::BlockCrsMatrix.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
@@ -164,7 +130,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 {
  public:
 
-  //! @name Public type definitions. 
+  //! @name Public type definitions.
   //@{
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
@@ -370,32 +336,6 @@ private:
 
   //! The inverse of the diagonal
   Teuchos::RCP<block_crs_matrix_type> D_block_inverse_;
-
-  BlockMatrixOperations<scalar_type,impl_scalar_type> blockMatOpts;
-
-  void square_matrix_matrix_multiply(const impl_scalar_type * a, const impl_scalar_type * b, impl_scalar_type * c,
-      const int nrows, const impl_scalar_type alpha = STM::one(), const impl_scalar_type beta = STM::zero() ) const
-  {
-    for (int i = 0; i < nrows*nrows; ++i)
-      c[i] = beta*c[i];
-
-    for (int i = 0; i < nrows; ++i)
-    {
-
-      const int ioffset = i*nrows;
-      for (int k = 0; k < nrows; ++k)
-      {
-        const int koffset = k*nrows;
-        const impl_scalar_type val = alpha*a[ioffset+k];
-        for (int j = 0; j < nrows; ++j)
-        {
-          c[ioffset+j] += val*b[koffset+j];
-        }
-      }
-    }
-
-  }
-
 };
 
 

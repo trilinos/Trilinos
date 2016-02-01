@@ -308,9 +308,27 @@ public:
    *        have to.
    */
   MDVector(const MDVector< Scalar, Node > & parent,
-           int axis,
-           const Slice & slice,
-           int bndryPad = 0);
+           int                              axis,
+           const Slice &                    slice,
+           int                              bndryPad = 0);
+
+  /** \brief Parent/array of slices sub-vector constructor
+   *
+   * \param parent [in] an MDVector, from which this sub-vector will
+   *        be derived.
+   *
+   * \param slices [in] an array of Slices of global axis indexes that
+   *        defines the sub-vector.  These slices must not include
+   *        indexes from the boundary padding along each axis.
+   *
+   * \param bndryPad [in] The boundary padding of the new sub-vector.
+   *        These may include indexes from the boundary padding of the
+   *        parent MDVector, but they do not have to.
+   */
+  MDVector(const MDVector< Scalar, Node > &    parent,
+           const Teuchos::ArrayView< Slice > & slices,
+           const Teuchos::ArrayView< int > &   bndryPad =
+             Teuchos::ArrayView< int >());
 
   /** \brief Assignment operator
    *
@@ -473,7 +491,16 @@ public:
    */
   dim_type getLocalDim(int axis, bool withCommPad=false) const;
 
-  /** \brief Get the local dimension along the specified axis
+  /** \brief Get the local loop bounds along every axis
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.  For this method, padding is included in the bounds.
+   */
+  Teuchos::ArrayView< const Slice > getLocalBounds() const;
+
+  /** \brief Get the local looping bounds along the specified axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -487,6 +514,25 @@ public:
    * value.
    */
   Slice getLocalBounds(int axis, bool withPad=false) const;
+
+  /** \brief Get the local interior looping bounds along the specified
+   *         axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * Local interior loop bounds are the same as local loop bounds
+   * without padding, except that for non-periodic axes the global end
+   * points of the given axis are excluded. For periodic axes, the
+   * local interior loop bounds are exactly the same as local loop
+   * bounds without padding.
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.
+   */
+  Slice getLocalInteriorBounds(int axis) const;
 
   /** \brief Return true if there is any padding stored locally
    *
@@ -1544,6 +1590,41 @@ MDVector(const MDVector< Scalar, Node > & parent,
 
 template< class Scalar,
           class Node >
+MDVector< Scalar, Node >::
+MDVector(const MDVector< Scalar, Node > & parent,
+         const Teuchos::ArrayView< Slice > & slices,
+         const Teuchos::ArrayView< int > & bndryPad)
+{
+  setObjectLabel("Domi::MDVector");
+
+  // Temporarily store the number of dimensions
+  int numDims = parent.numDims();
+
+  // Sanity check on dimensions
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (slices.size() != numDims),
+    InvalidArgument,
+    "number of slices = " << slices.size() << " != parent MDVector number of "
+    "dimensions = " << numDims);
+
+  // Apply the single-Slice constructor to each axis in succession
+  MDVector< Scalar, Node > tempMDVector1(parent);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int bndryPadding = (axis < bndryPad.size()) ? bndryPad[axis] : 0;
+    MDVector< Scalar, Node > tempMDVector2(tempMDVector1,
+                                           axis,
+                                           slices[axis],
+                                           bndryPadding);
+    tempMDVector1 = tempMDVector2;
+  }
+  *this = tempMDVector1;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
 MDVector< Scalar, Node > &
 MDVector< Scalar, Node >::
 operator=(const MDVector< Scalar, Node > & source)
@@ -1716,11 +1797,33 @@ getLocalDim(int axis, bool withCommPad) const
 
 template< class Scalar,
           class Node >
+Teuchos::ArrayView< const Slice >
+MDVector< Scalar, Node >::
+getLocalBounds() const
+{
+  return _mdMap->getLocalBounds();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
 Slice
 MDVector< Scalar, Node >::
 getLocalBounds(int axis, bool withCommPad) const
 {
   return _mdMap->getLocalBounds(axis, withCommPad);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+Slice
+MDVector< Scalar, Node >::
+getLocalInteriorBounds(int axis) const
+{
+  return _mdMap->getLocalInteriorBounds(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -2407,7 +2510,7 @@ MDArrayView< Scalar >
 MDVector< Scalar, Node >::
 getUpperPadDataNonConst(int axis)
 {
-  dim_type n   = getLocalDim(axis,true);
+  dim_type n  = getLocalDim(axis,true);
   int     pad = getUpperPadSize(axis);
   Slice   slice;
   if (pad) slice = Slice(n-pad,n);
@@ -2426,7 +2529,7 @@ MDArrayView< const Scalar >
 MDVector< Scalar, Node >::
 getUpperPadData(int axis) const
 {
-  dim_type n   = getLocalDim(axis,true);
+  dim_type n  = getLocalDim(axis,true);
   int     pad = getUpperPadSize(axis);
   Slice   slice;
   if (pad) slice = Slice(n-pad,n);
@@ -2766,10 +2869,10 @@ startUpdateCommPad(int axis)
   if (_sendMessages.empty())
     initializeMessages();
 
+#ifdef HAVE_MPI
   int rank    = _teuchosComm->getRank();
   int numProc = _teuchosComm->getSize();
   int tag;
-#ifdef HAVE_MPI
   // Since HAVE_MPI is defined, we know that _teuchosComm points to a
   // const Teuchos::MpiComm< int >.  We downcast, extract and
   // dereference so that we can get access to the MPI_Comm used to
@@ -3226,7 +3329,7 @@ writeBinary(const std::string & filename,
 #else
 
   // Get the number of dimensions
-  int ndims = _mdMap->numDims();
+  // int ndims = _mdMap->numDims();
 
   // Initialize the data file
   datafile = fopen(filename.c_str(), "w");

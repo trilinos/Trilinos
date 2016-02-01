@@ -100,13 +100,13 @@ class Norm
       l2_norm_2 += val2*val2;
     }
     
-    double l1_norm_d;
     double l1_norm_1;
     double l1_norm_2;
+    double l1_norm_d;
     
-    double l2_norm_d;
     double l2_norm_1;
     double l2_norm_2;
+    double l2_norm_d;
 };
 
 #endif

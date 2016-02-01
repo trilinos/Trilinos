@@ -136,7 +136,7 @@ int       input_graph(FILE *fin, char *inname, int **start, int **adjacency, int
 	option = read_int(fin, &end_flag);
     }
     while (!end_flag)
-	j = read_int(fin, &end_flag);
+      (void)read_int(fin, &end_flag);
 
     using_ewgts = option - 10 * (option / 10);
     option /= 10;
@@ -338,7 +338,6 @@ int       input_graph(FILE *fin, char *inname, int **start, int **adjacency, int
 		    }
 		    skip_flag = TRUE;
 		    if (!ignore_me) {
-			ignore_me = TRUE;
 			++ignored;
 		    }
 		}

@@ -86,18 +86,31 @@ namespace Tacho {
     ordinal_type  NumCols() const { return _n; }
 
     KOKKOS_INLINE_FUNCTION
+    bool hasNumNonZeros() const { 
+      const ordinal_type m = NumRows();
+      for (ordinal_type i=0;i<m;++i) {
+        row_view_type row;
+        row.setView(*this, i);
+        if (row.NumNonZeros()) return true;
+      }
+      return false;
+    }
+
+    KOKKOS_INLINE_FUNCTION
     size_type countNumNonZeros() const { 
       size_type nnz = 0;
       const ordinal_type m = NumRows();
-
       for (ordinal_type i=0;i<m;++i) {
         row_view_type row;
         row.setView(*this, i);
         nnz += row.NumNonZeros();
       }
-
       return nnz; 
     }
+
+    virtual bool hasDenseFlatBase() const { return false; }
+    virtual bool hasDenseHierBase() const { return false; }
+    virtual bool isDenseFlatBaseValid() const { return false; }
 
     CrsMatrixView()
       : _base(NULL),
@@ -145,8 +158,14 @@ namespace Tacho {
            << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); "
            << " NumNonZeros = " << countNumNonZeros() << ";";
       else 
-        os << "-- Base object is null --";
-      
+        os << "-- Base object is null --;";
+
+      if (hasDenseFlatBase()) 
+        os << " DenseFlatBase::" << (isDenseFlatBaseValid() ? "Valid  " : "Invalid");
+
+      if (hasDenseHierBase()) 
+        os << " DenseHierBase::created";
+
       return os;
     }
 

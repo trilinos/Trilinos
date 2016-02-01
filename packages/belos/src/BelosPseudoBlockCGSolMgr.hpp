@@ -129,6 +129,9 @@ namespace Belos {
       base_type ()
     {}
     virtual ~PseudoBlockCGSolMgr () {}
+
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >
+    getResidualStatusTest() const { return Teuchos::null; }
   };
 
 
@@ -230,6 +233,10 @@ namespace Belos {
       \note Only works if "Estimate Condition Number" is set on parameterlist
     */
     ScalarType getConditionEstimate() const {return condEstimate_;}
+
+    //! Return the residual status test
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >
+    getResidualStatusTest() const { return convTest_; }
 
     //@}
 

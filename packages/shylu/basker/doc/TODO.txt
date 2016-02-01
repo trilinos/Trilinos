@@ -1,56 +1,29 @@
 BASKER TODO
 
 * Things to do
-** Complex numbers
-   ** factor
-   ** numerical orderings
 ** Full btf
    ** Fix double BTF structure
    ** Fix btf balance (not hard coded)
 ** Threaded solve
    ** Multivector
-** Pivot update
-** AMD on small blks
-** Kokkos Realloc segfaulting ??
-   -Issue with kokkos, will be fixed in kokkos refactor
 ** Thread working array size (without ND)
-** Sfactor pivot option
+** Sfactor pivot option 
+   **ATA for Large BTF
 ** Sfactor for large btf serial blocks
-
-
-***FIX converting error
-
-* Done
-** Subtree SFactor (Finish code) - Done
-** Fixed dense row in basker_tree.cpp
-** Added symmetric option
-** Added no pivot option
-** Added Incomplete factor based on lvl (only in nfactor not sfactor)
-** New check BASKER_MAX_IDX
-** Updated with own basker thread barrier
-** Using multiple threads to update upper-offdiag
-** Using multiple threads to update lower-offdiag
-** Local idx
-** Symmetric pruning
+** Solve with new 1perm
+** Move ND schedule S into tree
+** Fix column incomplete lvl-based factorization
+** Error manager for off-diag submatrices
+** Split solver classes
 
 * Bugs
 ** Scotch segfault on large problem ??
    - This is do to not handeling scotch from the top-down
    - Need to make a bottle up
-** Kokkos Realloc segfaulting ??
-   -Issue with kokkos, will be fixed in kokkos refactor
-** Kokkos does not like a Malloc of size 0
-   - Will segfault when trying to clean up
-   - Need to go back through all code and fix up
-
 
 * Nice to have
 ** Redo matrix data structure
 ** Fix A+A' options of etree
-
-* For IPDPS Paper
-** Remove last p2p communication (Done)
-** Three blk diag BTF A B C, sym only B (Done, but need to add to normal BTF interface)
 
 * Simple ---TODO--- 
 ** Dense BLAS for Root
@@ -145,7 +118,6 @@ Possible changes
 * can we schedule ontehr things during the serial U factor?
   - look at dag for a set prune
   - possible tasking
-
 
 
 **Warning**

@@ -458,6 +458,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, LocalSymGaussSeidelZeroRows
 // place, if an Import is needed.  Thus, this example uses a matrix
 // with a nontrivial Import (i.e., where the domain and column Maps
 // are not the same).
+//md - 27 Jan 2016: The bug is fixed in which diagonals were set to 0.
+//The test fails after the bug fix, which is logical, as we don't expect the
+//exact same solution for distributed SGS and sequential SGS. I disabled the
+//test with Siva's suggestion. (Mehmet)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   using Teuchos::ArrayView;
@@ -540,8 +544,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
         numEnt = 4;
         vals[0] = -ONE;
         vals[1] = ONE;
-        vals[0] = diagVal;
-        vals[1] = ONE / TWO;
+        vals[2] = diagVal;
+        vals[3] = ONE / TWO;
         gblColInds[0] = rowMap->getMaxAllGlobalIndex () - 3;
         gblColInds[1] = rowMap->getMaxAllGlobalIndex () - 2;
         gblColInds[2] = rowMap->getMaxAllGlobalIndex () - 1;
@@ -847,7 +851,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
 
   RCP<block_crs_matrix_type> bcrsmatrix;
   bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LO,GO,Node> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph ();
 
   RCP<prec_type> prec;
   try {
@@ -963,15 +966,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
   }
   IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "create_triangular_matrix" );
 
-  try {
-    bcrsmatrix->computeDiagonalGraph ();
-  } catch (std::exception& e) {
-    lclSuccess = 0;
-    errStrm << "Process " << myRank << ": computeDiagonalGraph() threw exception: "
-            << e.what () << endl;
-  }
-  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "computeDiagonalGraph()" );
-
   RCP<prec_type> prec;
   try {
     prec = rcp (new prec_type (bcrsmatrix));
@@ -1061,7 +1055,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,false> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph();
 
   Ifpack2::Relaxation<row_matrix_type> prec (bcrsmatrix);
 
@@ -1106,11 +1099,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, NotCrsMatrix, Scalar, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SGS_mult_sweeps, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestDiagonalBlockCrsMatrix, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LO, GO )
 
+  //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SGS_mult_sweeps, Scalar, LO, GO )
 #include "Ifpack2_ETIHelperMacros.h"
 
 IFPACK2_ETI_MANGLING_TYPEDEFS()

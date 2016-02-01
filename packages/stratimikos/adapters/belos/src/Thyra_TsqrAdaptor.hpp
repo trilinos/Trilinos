@@ -42,29 +42,19 @@
 #ifndef __Thyra_TsqrAdaptor_hpp
 #define __Thyra_TsqrAdaptor_hpp
 
-#include <BelosConfigDefs.hpp>
+#include "BelosConfigDefs.hpp"
 
 // BelosThyraAdapter.hpp only includes this file if HAVE_BELOS_TSQR is
 // defined.  Thus, it's OK to include TSQR header files here.
 
-#include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#include <Tsqr.hpp> // full (internode + intranode) TSQR
-#include <Tsqr_DistTsqr.hpp> // internode TSQR
-// Subclass of TSQR::MessengerBase, implemented using Teuchos
-// communicator template helper functions
-#include <Tsqr_TeuchosMessenger.hpp>
-#include <Kokkos_DefaultNode.hpp>
-
-//#include <Thyra_DetachedMultiVectorView.hpp>
-#include <Thyra_MultiVectorBase.hpp>
-//#include <Thyra_MultiVectorStdOps.hpp>
-#include <Thyra_SpmdVectorSpaceBase.hpp>
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
 
 #ifdef HAVE_MPI
-#  include <Teuchos_DefaultMpiComm.hpp>
+#  include "Teuchos_DefaultMpiComm.hpp"
 #endif // HAVE_MPI
-#include <Teuchos_DefaultSerialComm.hpp>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#include "Teuchos_DefaultSerialComm.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <stdexcept>
 
@@ -98,38 +88,22 @@ namespace Thyra {
     typedef Thyra::MultiVectorBase<Scalar> MV;
     typedef Scalar scalar_type;
     typedef int ordinal_type; // MultiVectorBase really does use int for this
-    typedef KokkosClassic::DefaultNode::DefaultNodeType node_type; // FIXME (mfh 18 Jun 2013) Would be better to defer to the MV subclass
     typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-  private:
-    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
-    typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
-    typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
-
-  public:
     /// \brief Constructor (that accepts a parameter list).
     ///
     /// \param plist [in] List of parameters for configuring TSQR.
     ///   The specific parameter keys that are read depend on the TSQR
     ///   implementation.  For details, call \c getValidParameters()
     ///   and examine the documentation embedded therein.
-    TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-      nodeTsqr_ (new node_tsqr_type),
-      distTsqr_ (new dist_tsqr_type),
-      tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
-      ready_ (false)
+    TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& /* plist */)
     {
       throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
     //! Constructor (that uses default parameters).
-    TsqrAdaptor () :
-      nodeTsqr_ (new node_tsqr_type),
-      distTsqr_ (new dist_tsqr_type),
-      tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
-      ready_ (false)
+    TsqrAdaptor ()
     {
       throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
@@ -137,34 +111,13 @@ namespace Thyra {
     Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-
-      if (defaultParams_.is_null()) {
-        RCP<ParameterList> params = parameterList ("TSQR implementation");
-        params->set ("NodeTsqr", *(nodeTsqr_->getValidParameters ()));
-        params->set ("DistTsqr", *(distTsqr_->getValidParameters ()));
-        defaultParams_ = params;
-      }
-      return defaultParams_;
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
     void
-    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& /* plist */)
     {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-      using Teuchos::sublist;
-
-      RCP<ParameterList> params = plist.is_null() ?
-        parameterList (*getValidParameters ()) : plist;
-      nodeTsqr_->setParameterList (sublist (params, "NodeTsqr"));
-      distTsqr_->setParameterList (sublist (params, "DistTsqr"));
-
-      this->setMyParamList (params);
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
     /// \brief Compute QR factorization [Q,R] = qr(A,0).
@@ -189,18 +142,12 @@ namespace Thyra {
     ///   instance's constructor.  Otherwise, the result of this
     ///   method is undefined.
     void
-    factorExplicit (MV& A,
-                    MV& Q,
-                    dense_matrix_type& R,
-                    const bool forceNonnegativeDiagonal=false)
+    factorExplicit (MV& /* A */,
+                    MV& /* Q */,
+                    dense_matrix_type& /* R */,
+                    const bool /* forceNonnegativeDiagonal */ = false)
     {
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-
-      prepareTsqr (Q); // Finish initializing TSQR.
-      KMV A_view = getNonConstView (A);
-      KMV Q_view = getNonConstView (Q);
-      tsqr_->factorExplicit (A_view, Q_view, R, false,
-                             forceNonnegativeDiagonal);
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
     /// \brief Rank-revealing decomposition
@@ -234,40 +181,14 @@ namespace Thyra {
     ///
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
     int
-    revealRank (MV& Q,
-                dense_matrix_type& R,
-                const magnitude_type& tol)
+    revealRank (MV& /* Q */,
+                dense_matrix_type& /* R */,
+                const magnitude_type& /* tol */)
     {
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-
-      prepareTsqr (Q); // Finish initializing TSQR.
-
-      // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> object in Q
-      // to make sure it is the same communicator as the one we are
-      // using in our dist_tsqr_type implementation.
-      KMV Q_view = getNonConstView (Q);
-      return tsqr_->revealRank (Q_view, R, tol, false);
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
   private:
-    //! Kokkos Node instance.
-    Teuchos::RCP<node_type> node_;
-
-    //! The intranode TSQR implementation instance.
-    Teuchos::RCP<node_tsqr_type> nodeTsqr_;
-
-    //! The internode TSQR implementation instance.
-    Teuchos::RCP<dist_tsqr_type> distTsqr_;
-
-    //! The (full) TSQR implementation instance.
-    Teuchos::RCP<tsqr_type> tsqr_;
-
-    //! Default parameter list.  Initialized by \c getValidParameters().
-    mutable Teuchos::RCP<const Teuchos::ParameterList> defaultParams_;
-
-    //! Whether TSQR has been fully initialized.
-    bool ready_;
-
     /// \brief Attempt to get a communicator out of the given multivector.
     ///
     /// This only works if the multivector's range (VectorSpaceBase)
@@ -348,20 +269,16 @@ namespace Thyra {
     ///
     /// \note It's OK to call this method more than once; it is idempotent.
     void
-    prepareNodeTsqr (const MV& X)
+    prepareNodeTsqr (const MV& /* X */)
     {
-      (void) X; // silence compiler warning about unused argument
-
-      if (node_.is_null ()) { // Create Kokkos Node instance on demand
-        node_ = Teuchos::rcp (new node_type);
-      }
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, node_);
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
     /// \brief Finish internode TSQR initialization.
     ///
-    /// \param X [in] A valid Thyra::MultiVectorBase instance whose
-    ///   communicator wrapper we will use to prepare TSQR.
+    /// Input X is a valid Thyra::MultiVectorBase instance whose
+    /// communicator wrapper we will use to prepare TSQR.  It is not
+    /// modified.
     ///
     /// \note It's OK to call this method more than once; it is idempotent.
     ///
@@ -370,17 +287,9 @@ namespace Thyra {
     /// we don't know how to extract a communicator from it.  If it
     /// fails in this way, it will throw std::runtime_error.
     void
-    prepareDistTsqr (const MV& X)
+    prepareDistTsqr (const MV& /* X */)
     {
-      using Teuchos::RCP;
-      using Teuchos::rcp_implicit_cast;
-      typedef TSQR::TeuchosMessenger<scalar_type> mess_type;
-      typedef TSQR::MessengerBase<scalar_type> base_mess_type;
-
-      RCP<const Teuchos::Comm<int> > comm = getComm (X);
-      RCP<mess_type> mess (new mess_type (comm));
-      RCP<base_mess_type> messBase = rcp_implicit_cast<base_mess_type> (mess);
-      distTsqr_->init (messBase);
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
     /// \brief Finish TSQR initialization.
@@ -403,44 +312,9 @@ namespace Thyra {
     ///   All multivector objects used with this adapter must have the
     ///   same communicator and Kokkos Node instance (if applicable).
     void
-    prepareTsqr (const MV& X)
+    prepareTsqr (const MV& /* X */)
     {
-      if (! ready_) {
-        prepareDistTsqr (X);
-        prepareNodeTsqr (X);
-        ready_ = true;
-      }
-    }
-
-    /// \brief Extract a nonconstant view of X's data.
-    ///
-    /// TSQR represents the local (to each MPI process) part of a
-    /// multivector as a KokkosClassic::MultiVector (KMV), which gives a
-    /// nonconstant view of the original multivector's data.  This
-    /// class method tells TSQR how to get the KMV from the input
-    /// multivector.  The KMV is not a persistent view of the data;
-    /// its scope is contained within the scope of the multivector.
-    ///
-    /// \warning TSQR does not currently support multivectors with
-    ///   nonconstant stride.  If A has nonconstant stride, this
-    ///   method will throw an exception.
-    KokkosClassic::MultiVector<scalar_type, node_type>
-    getNonConstView (MV& X)
-    {
-      // TODO (mfh 18 Jun 2013) Check whether X is constant stride.
-      // TODO (mfh 18 Jun 2013) Extract a view of X's data.
-
-      return KokkosClassic::MultiVector<scalar_type, node_type> (node_);
-
-      // TODO (mfh 18 Jun 2013) Here is the start of code to extract a
-      // nonconstant view of X's data.
-
-      // KokkosClassic::MultiVector<scalar_type, node_type> kmv (node);
-      // const size_t numRows = ???;
-      // const size_t numCols = ???;
-      // const size_t stride = ???;
-      // kmv.initializeValues (numRows, numCols, values, stride);
-      // return kmv;
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
   };
 

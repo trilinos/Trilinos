@@ -46,7 +46,7 @@
 #if defined(HAVE_STOKHOS_KOKKOSALGORITHMS)
 
 #include "Sacado_MP_Vector.hpp"
-#include "Kokkos_View_MP_Vector_Contiguous.hpp"
+#include "Kokkos_View_MP_Vector.hpp"
 #include "Kokkos_Random.hpp"
 
 //----------------------------------------------------------------------------
