@@ -108,6 +108,8 @@ namespace Tacho {
                                NULL);CHKERR(ierr);  // edge load array (optional)
       ierr = SCOTCH_graphCheck(&_graph);CHKERR(ierr);
     }
+    GraphHelper_Scotch(const GraphHelper_Scotch &b) = default;
+
     virtual~GraphHelper_Scotch() {
       SCOTCH_graphFree(&_graph);
     }

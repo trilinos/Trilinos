@@ -58,9 +58,16 @@ namespace Tacho {
     }
     cout << "CholDirectSolver:: import input file::time = " << t_import << endl;
 
-    DenseMatrixBaseType BB("BB", AA.NumRows(), nrhs), XX("XX", AA.NumRows(), nrhs);
+    DenseMatrixBaseType BB("BB", AA.NumRows(), nrhs);
+    {
+      const value_type one(1);
+      for (ordinal_type j=0;j<BB.NumCols();++j)
+        for (ordinal_type i=0;i<BB.NumRows();++i) 
+          BB.Value(i,j) = one;
+    }
 
-    DirectSolverType solver("DirectSolver", AA, BB, XX);
+    DirectSolverType solver("DirectSolver", AA);
+    solver.setB(BB);
 
     timer.reset();
     solver.setDefaultParameters(nthreads);

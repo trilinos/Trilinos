@@ -76,7 +76,7 @@ namespace Tacho {
     policy_type _policy;
 
     CrsMatrixBaseType _AA, _PA, _UU;
-    DenseMatrixBaseType _BB, _XX;
+    DenseMatrixBaseType _BB;
 
     GraphHelperType _S;
 
@@ -89,19 +89,21 @@ namespace Tacho {
     size_type _mb, _nb;
 
     CrsHierMatrixBaseType _HU;
-    DenseHierMatrixBaseType _HB, _HX;
+    DenseHierMatrixBaseType _HB;
 
   public:
     DirectSolver(const string label,
-                 const CrsMatrixBaseType   AA,
-                 const DenseMatrixBaseType BB,
-                 const DenseMatrixBaseType XX)
+                 const CrsMatrixBaseType AA)
       : _label(label),
         _AA(AA),
-        _BB(BB),
-        _XX(XX),
+        _BB(),
         _S(AA, 0)
     { }
+
+    DirectSolver(const DirectSolver &b) = default;
+
+    KOKKOS_INLINE_FUNCTION
+    void setB(const DenseMatrixBaseType BB) { _BB = BB; }
 
     KOKKOS_INLINE_FUNCTION
     void setLabel(const string label) { _label = label; }
@@ -109,6 +111,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     string Label() const { return _label; }
 
+    KOKKOS_INLINE_FUNCTION
     void setDefaultParameters(const ordinal_type nthreads) {
       // task policy
       _max_concurrency = 1024;
@@ -126,6 +129,7 @@ namespace Tacho {
       _nb = 128;
     }
 
+    KOKKOS_INLINE_FUNCTION
     int init() {
       _policy = policy_type(_max_concurrency,
                             _max_task_size,
@@ -165,11 +169,6 @@ namespace Tacho {
                                    _S.RangeVector(),
                                    _nb);
 
-      DenseMatrixHelper::flat2hier(_XX, _HX,
-                                   _S.NumBlocks(),
-                                   _S.RangeVector(),
-                                   _nb);
-
       return 0;
     }
 
@@ -186,17 +185,17 @@ namespace Tacho {
 
     int solve() {
       CrsHierTaskViewType TU(&_HU);
-      DenseHierTaskViewType TB(&_HB), TX(&_HX);
+      DenseHierTaskViewType TB(&_HB);
 
       auto future_forward_solve = TaskFactoryType::Policy().create_team
         (TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
          ::TaskFunctor<CrsHierTaskViewType,DenseHierTaskViewType>
-         (Diag::NonUnit, TU, TX), 0);
+         (Diag::NonUnit, TU, TB), 0);
 
       auto future_backward_solve = TaskFactoryType::Policy().create_team
         (TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
          ::TaskFunctor<CrsHierTaskViewType,DenseHierTaskViewType>
-         (Diag::NonUnit, TU, TX), 1);
+         (Diag::NonUnit, TU, TB), 1);
 
       TaskFactoryType::Policy().spawn(future_forward_solve);
       TaskFactoryType::Policy().add_dependence(future_backward_solve, future_forward_solve);
