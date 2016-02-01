@@ -83,12 +83,15 @@ namespace Tacho {
       setMatrixType<ValueType,Algo>();
       setDefaultParameters();
 
+      // load default param
+      pardisoinit(_pt,  &_mtype, _iparm);
+
+      // overload default parameters
+
       // setParameter( 1, 1); // default param: 0 - default, 1 - user provided
       // setParameter( 2, 0); // reordering: 0 - mindegreem, 2 - nd, 3 - parallel nd
       // setParameter(27, 1); // mat check: 0 - no, 1 - check
       setParameter(35, 1); // row and col index: 0 - fortran, 1 - CXX
-
-      pardisoinit(_pt,  &_mtype, _iparm);
 
       return ierr;
     }
