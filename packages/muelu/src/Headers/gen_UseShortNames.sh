@@ -57,6 +57,14 @@ echo "#ifdef MUELU_PARAMETERLISTINTERPRETER_SHORT" >> MueLu_UseShortNamesScalar.
 echo "typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;" >> MueLu_UseShortNamesScalar.hpp
 echo "#endif" >> MueLu_UseShortNamesScalar.hpp
 
+# AmesosSmoother and IfpackSmoother are special (they need only one template parameter)
+echo "#ifdef MUELU_AMESOSSMOOTHER_SHORT" >> MueLu_UseShortNamesOrdinal.hpp
+echo "typedef MueLu::AmesosSmoother<Node> AmesosSmoother;" >> MueLu_UseShortNamesOrdinal.hpp
+echo "#endif" >> MueLu_UseShortNamesOrdinal.hpp
+echo "#ifdef MUELU_IFPACKSMOOTHER_SHORT" >> MueLu_UseShortNamesOrdinal.hpp
+echo "typedef MueLu::IfpackSmoother<Node> IfpackSmoother;" >> MueLu_UseShortNamesOrdinal.hpp
+echo "#endif" >> MueLu_UseShortNamesOrdinal.hpp
+
 # Add the matlab utilities to end of file
 echo "#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT" >> MueLu_UseShortNamesScalar.hpp
 echo "typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;" >> MueLu_UseShortNamesScalar.hpp
