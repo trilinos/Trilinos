@@ -256,6 +256,7 @@ install install-user-lib
     ioex_fac
     iopx
     iofx
+    iocgns
     iopg
     iohb
     iogn
@@ -283,6 +284,7 @@ install install-user-lib
     ioex_fac
     iopx
     iofx
+    iocgns
     iopg
     iohb
     iogn
@@ -415,6 +417,7 @@ lib ioex
     ioss
     exodus
     /tpl/netcdf//netcdf
+    /tpl/cgns//cgns
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -456,6 +459,7 @@ lib iopx
     /tpl/parmetis//parmetis
     exodus
     /tpl/netcdf//netcdf
+    /tpl/cgns//cgns
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -475,6 +479,7 @@ lib iofx
     ioex
     exodus
     /tpl/netcdf//netcdf
+    /tpl/cgns//cgns
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -498,6 +503,24 @@ lib iopg
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libiopg.a
+    ]
+  ;
+
+lib iocgns
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/ioss/src/cgns/*.C ]
+    ]
+    ioss
+    /mpi//mpi
+    /tpl/cgns//cgns
+  : 
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libiocgns.a
     ]
   ;
 
@@ -545,6 +568,7 @@ lib ioinit
     ioex
     iopx
     iofx
+    iocgns
     iopg
     iohb
     iogn
@@ -552,7 +576,7 @@ lib ioinit
     iotr
     iovs
     /mpi//mpi
-  : 
+  : <define>USE_CGNS
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
