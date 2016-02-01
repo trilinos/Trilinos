@@ -92,6 +92,13 @@ namespace Tacho {
     DenseHierMatrixBaseType _HB;
 
   public:
+    DirectSolver() 
+      : _label("DirectSolver"),
+        _AA(),
+        _BB(),
+        _S()
+    { }
+
     DirectSolver(const string label,
                  const CrsMatrixBaseType AA)
       : _label(label),

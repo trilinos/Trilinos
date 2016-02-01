@@ -60,6 +60,8 @@ namespace Tacho {
 
     ordinal_type NumBlocks() const { return _cblk; }
 
+    GraphHelper_Scotch() = default;
+
     GraphHelper_Scotch(const CrsMatrixType& A, 
                        const int seed = GraphHelper::DefaultRandomSeed) {
 
