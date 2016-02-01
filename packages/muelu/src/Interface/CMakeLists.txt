@@ -70,6 +70,28 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/ NOSIERRABJAM)
 INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
+IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
+
+  # new ETI system which autogenerates splitted cpp files
+  # not used by default since it might slow down the compilation process
+  SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES )
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::ParameterListInterpreter)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::MLParameterListInterpreter)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FactoryFactory)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::AdaptiveSaMLParameterListInterpreter)
+
+  MUELU_PROCESS_ETI_TEMPLATE(
+    "../Utils/ExplicitInstantiation"
+    "${MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES}"
+    "ExplicitInstantiation/CLASS_FILE_NAME"
+    MueLuInterface_ETI_SC_LO_GO_NO_SRC
+    0)
+  LIST(APPEND SOURCES ${MueLuInterface_ETI_SC_LO_GO_NO_SRC})
+
+ELSE()
+
+# Old pseudo ETI system for muelu-interface: just use the cpp files that are contained in the respository
+
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
@@ -77,6 +99,8 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
+
+ENDIF() # split cpp files
 
 #
 # Define the targets for package's library(s)
