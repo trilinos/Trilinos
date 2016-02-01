@@ -670,7 +670,8 @@ namespace BaskerNS
     void t_populate_col_fill(const Int kid,
 			     const Int blkcol, const Int blkrow,
 			     const Int X_col, const Int X_row,
-			     Int k);
+			     const Int k, 
+			     const BASKER_BOOL lower );
 
     BASKER_INLINE
     void t_reduce_col_fill(const Int kid, const Int lvl,
@@ -818,7 +819,8 @@ namespace BaskerNS
 				     Entry pivot);
     
     void t_add_orig_fill(const Int kid, const Int lvl,
-			 const Int l, const Int k);
+			 const Int l, const Int k, 
+			 const BASKER_BOOL lower);
 
 
     

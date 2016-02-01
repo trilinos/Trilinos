@@ -58,9 +58,9 @@ enum BASKER_ERROR_CODE
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
-      {printf("\n\n%s\n\n", s);  \				 
+      {printf("\n\n%s\n\n", s);}  \				 
     ASSERT(a);                   \
-  } 
+  }
 
 
 //Note:  Should see if Kokkos has a fast memory cpy in place of for-loop

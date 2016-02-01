@@ -52,7 +52,7 @@ namespace BaskerNS
       #endif
 
       //if(kid==12 || kid==13 || kid==14 || kid==15)
-      //if(kid == 1)
+      //if(kid == 0 || kid ==1 )
 	{
       #ifdef BASKER_KOKKOS
        basker->t_nfactor_sep2_inc_lvl(kid, lvl, team_leader, thread);
@@ -93,10 +93,10 @@ namespace BaskerNS
      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	//#ifdef BASKER_DEBUG_NFACTOR_COL2
 	printf("UPPER, kid: %d k: %d \n",
 	       kid, k);
-	#endif
+	//#endif
 	
 	t_upper_col_factor_inc_lvl(kid, team_leader, 
 				   lvl, 0, 
@@ -126,7 +126,7 @@ namespace BaskerNS
     for(Int l = 1; l < (lvl); ++l)
       {
 	
-	//for(Int k = 0; k < 1; ++k)
+	//for(Int k = 2; k < 3; ++k)
 	for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
 	  {
 	    
@@ -149,7 +149,7 @@ namespace BaskerNS
 		printf("\n\n\n SEP UPPER, kid: %d \n\n",
 		       kid);
 		#endif
-
+		
 		t_upper_col_factor_inc_lvl(kid, team_leader, 
 				   lvl, l, 
 				   k,
@@ -173,18 +173,19 @@ namespace BaskerNS
     t_basker_barrier_inc_lvl(thread, kid, my_leader,
 		     b_size, 6, LU(U_col)(U_row).scol, 0);
 
-    //printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
+    printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
     
-    //if(lvl < 2)
+    printf("\n\n lvl: %d kid: %d  \n\n", lvl, kid);
+    if(lvl < 2)
       {
 	//for(Int k=0; k < 2; ++k)
-      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
+	for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
-	printf("lower_update, kid: %d k: %d \n",
+	//#ifdef BASKER_DEBUG_NFACTOR_COL2
+	printf("\n*******lower_update, kid: %d k: %d \n",
 	       kid, k);
-	#endif
+	//#endif
 
 	//printf("test: %d \n", LU(U_col)(U_row).scol);
        
@@ -276,8 +277,15 @@ namespace BaskerNS
 	
 		
 	//This will do the correct symb-spmv
+	printf("=======SFACTOR KID:%d ======\n", kid);
 	t_upper_col_ffactor_offdiag2_inc_lvl(kid, lvl, sl,
 					     l, k, lower);
+
+
+	 printf("========FILL IN KID: %d =======\n", kid);
+	 t_add_orig_fill(kid, lvl, l, k, lower); 
+	 printf("=======AFFERT FILL_IN KID: %d ====\n", kid);
+
 	
 	//Barrier--Start
 	my_leader = find_leader_inc_lvl(kid,sl);
@@ -290,6 +298,7 @@ namespace BaskerNS
 	//Copy to leader
 	if(kid%((Int)pow(2,sl))==0)
 	  {
+	    printf("=========REDUCE KID: %d \n", kid);
 	    t_reduce_col_fill(kid,
 			      lvl, sl, l, k, lower);
 	  }
@@ -303,7 +312,7 @@ namespace BaskerNS
 	//Barrier--End
 
       }//end-for sl (sublevel)
-    t_add_orig_fill(kid, lvl, l, k); 
+   
     //printf("Done with scopy. kid: %d \n", kid);
 
 
@@ -491,12 +500,12 @@ namespace BaskerNS
 	Bp = &(thread_array[kid].C);
       }
     BASKER_MATRIX    &B = *Bp;
-    //B.print();
+    // B.print();
 
     INT_1DARRAY ws     = LL(X_col)(X_row).iws;
     const Int ws_size  = LL(X_col)(X_row).iws_size;
     ENTRY_1DARRAY X    = LL(X_col)(X_row).ews;
-
+  
     const Int brow = U.srow;
     const Int bcol = U.scol;
 
@@ -632,10 +641,9 @@ namespace BaskerNS
 	    //we might get this to unroll!!!
 	    if(t != BASKER_MAX_IDX)
               {
-		#ifdef BASKER_DEBUG_NFACTOR_COL
-		if(kid>=0)
-		  printf("kid: %d adding x[%d] to U inc_lvl: %d\n", kid, j+brow, INC_LVL_TEMP(j+brow));
-	       
+                #ifdef BASKER_DEBUG_NFACTOR_COL
+		if(kid==0)
+		  printf("kid: %d adding x[%d] %g to U inc_lvl: %d\n", kid, j+brow, X(j), INC_LVL_TEMP(j+brow));
                 #endif
 
  		U.row_idx(unnz) = t-brow;

@@ -11,7 +11,7 @@
 #include "basker_matrix_view_def.hpp"
 
 #include "basker_nfactor_blk_inc.hpp"
-#include "basker_nfactor_col_inc.hpp"
+//#include "basker_nfactor_col_inc.hpp"
 
 #include "basker_error_manager.hpp"
 
@@ -122,12 +122,12 @@ namespace BaskerNS
    
     //---------------------------Sep--------------------------//
 
-
+    /*
     
     if(btf_tabs_offset != 0)
       {
-    for(Int l=1; l<=0; l++)
-    //for(Int l=1; l <= tree.nlvls; l++)
+	//for(Int l=1; l<=1; l++)
+    for(Int l=1; l <= tree.nlvls; l++)
       {
 
 	//#ifdef BASKER_OLD_BARRIER
@@ -137,6 +137,9 @@ namespace BaskerNS
 	Int lthreads = 1;
 	Int lnteams = num_threads/lthreads;
 	//#endif
+
+	
+	printf("\n\n   ============ SEP: %d ======\n\n",l);
 
 	#ifdef BASKER_KOKKOS
 	Kokkos::Impl::Timer  timer_inner_sep;
@@ -169,6 +172,7 @@ namespace BaskerNS
     #endif
       }
 
+    */
     //-------------------------End Sep----------------//
 
 
