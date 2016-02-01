@@ -85,15 +85,6 @@ SparseGraph extract_coincident_sides(stk::mesh::Graph &graph, const std::vector<
     return extractedCoincidentSides;
 }
 
-void append_extracted_coincident_sides(stk::mesh::Graph &graph,
-                                       const std::vector<stk::topology> &topologies,
-                                       const std::vector<impl::LocalId> &elemIds,
-                                       stk::mesh::impl::SparseGraph &coincidentEdges)
-{
-    for(impl::LocalId elemId : elemIds)
-        extract_coincident_sides_for_element(graph, topologies, elemId, coincidentEdges);
-}
-
 
 
 

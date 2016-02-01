@@ -130,6 +130,7 @@ public:
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,
                               std::vector<stk::mesh::sharing_info> &shared_modified);
+    void write_graph(std::ostream& out) const;
 
 protected:
     void fill_graph();
@@ -224,6 +225,7 @@ private:
     void add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id);
     void add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem_to_add);
     stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
+    stk::mesh::impl::DeletedElementInfoVector filter_delete_elements_argument(const stk::mesh::impl::DeletedElementInfoVector& elements_to_delete_argument) const;
     impl::ElemSideToProcAndFaceId get_element_side_ids_to_communicate() const;
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts);
@@ -243,7 +245,6 @@ private:
     void add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides);
     std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId, int numElemSides);
 
-    void write_graph() const;
 private:
     void update_all_local_neighbors(const stk::mesh::Entity elemToSend,
                                     const int destination_proc,
@@ -263,10 +264,9 @@ private:
                                             stk::mesh::Entity element,
                                             stk::mesh::impl::LocalId localId);
     void extract_coincident_edges_and_fix_chosen_side_ids();
-    void extract_coincident_edges_and_fix_chosen_side_ids_for_specified_elems(const stk::mesh::EntityVector &elems);
     std::vector<impl::LocalId> get_local_ids_for_element_entities(const stk::mesh::EntityVector &elems);
     std::vector<int> get_exposed_sides(stk::mesh::impl::LocalId localId, int numElemSides);
-    void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge, stk::mesh::Entity e) const;
+    void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge) const;
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

@@ -48,6 +48,19 @@ struct parallel_info
         m_chosen_side_id(chosen_face_id), m_part_ordinals(part_ords){}
 };
 
+inline
+std::ostream& operator<<(std::ostream& out, const parallel_info& info)
+{
+    out << "(other_proc=" << info.m_other_proc
+            << ", perm=" << info.m_permutation
+            << ", remote_top=" << info.m_remote_element_toplogy
+            << ", in_body=" << (info.m_in_body_to_be_skinned?"true":"false")
+            << ", is_air=" << (info.m_is_air?"true":"false")
+            << ", chosen_side_id=" << info.m_chosen_side_id
+            << ")";
+    return out;
+}
+
 struct ConnectedElementData
 {
     int m_procId;
