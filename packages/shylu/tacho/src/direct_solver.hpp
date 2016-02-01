@@ -171,11 +171,6 @@ namespace Tacho {
       for (ordinal_type k=0;k<_HU.NumNonZeros();++k)
         _HU.Value(k).fillRowViewArray();
 
-      DenseMatrixHelper::flat2hier(_BB, _HB,
-                                   _S.NumBlocks(),
-                                   _S.RangeVector(),
-                                   _nb);
-
       return 0;
     }
 
@@ -191,6 +186,11 @@ namespace Tacho {
     }
 
     int solve() {
+      DenseMatrixHelper::flat2hier(_BB, _HB,
+                                   _S.NumBlocks(),
+                                   _S.RangeVector(),
+                                   _nb);
+
       CrsHierTaskViewType TU(&_HU);
       DenseHierTaskViewType TB(&_HB);
 
