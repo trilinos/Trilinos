@@ -119,6 +119,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ## *.cpp files have to be generated for. Contains basically all MueLu 
   ## classes (with some exceptions, though).
   ##
+  GLOBAL_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
 
   ##
@@ -126,6 +127,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ## *.cpp files have to be generated for. Contains basically all MueLu 
   ## classes (with some exceptions, though).
   ##
+  GLOBAL_SET ( MUELU_LO_GO_NO_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_LO_GO_NO_classes.cmake)
 
   MUELU_PROCESS_ETI_TEMPLATE(

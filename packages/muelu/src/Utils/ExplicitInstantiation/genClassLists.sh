@@ -7,7 +7,6 @@ classListDir=../ClassList/
 rm -Rf ETI_LO_GO_NO_classes.cmake
 rm -Rf ETI_SC_LO_GO_NO_classes.cmake
 
-echo "GLOBAL_SET ( MUELU_LO_GO_NO_ETI_CLASSES  )" > ETI_LO_GO_NO_classes.cmake
   classList=$classListDir/LO-GO-NO.classList
   #for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
   for className in `cat $classList | grep -v ^\# | sed 's/ //'`
@@ -22,9 +21,6 @@ echo "GLOBAL_SET ( MUELU_LO_GO_NO_ETI_CLASSES  )" > ETI_LO_GO_NO_classes.cmake
 
   done
 
-  echo >> ")" >> ETI_LO_GO_NO_classes.cmake
-
-echo "GLOBAL_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES  )" > ETI_SC_LO_GO_NO_classes.cmake
 
   classList=$classListDir/SC-LO-GO-NO.classList
   for className in `cat $classList | grep -v ^\# | sed 's/ //'`
@@ -40,4 +36,3 @@ echo "GLOBAL_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES  )" > ETI_SC_LO_GO_NO_classes.cma
 
   done
 
-  echo >> ")" >> ETI_SC_LO_GO_NO_classes.cmake

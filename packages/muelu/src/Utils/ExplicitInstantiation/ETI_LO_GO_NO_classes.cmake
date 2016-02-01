@@ -1,4 +1,3 @@
-GLOBAL_SET ( MUELU_LO_GO_NO_ETI_CLASSES  )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::Aggregates )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::Aggregates_kokkos-.?if.defined[HAVE_MUELU_KOKKOS_REFACTOR] )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::AggregationPhase1Algorithm )
@@ -30,4 +29,3 @@ APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::RepartitionInterface )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::UncoupledAggregationFactory )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::UncoupledAggregationFactory_kokkos-.?if.defined[HAVE_MUELU_KOKKOS_REFACTOR] )
 APPEND_SET(MUELU_LO_GO_NO_ETI_CLASSES MueLu::UserAggregationFactory )
-
