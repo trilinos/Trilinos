@@ -148,6 +148,7 @@ public:
       //check the colors of neighbors
       for (row_index_type j = nbegin; j < nend; ++j){
         row_index_type n = h_adj(j);
+        if (n >= nv) continue;
         //set the banned_color of the color of the neighbor vertex to my vertex index.
         //the entries in the banned_color array that has my vertex index will be the set of prohibeted colors.
         banned_colors[colors(n)] = i;
@@ -528,6 +529,7 @@ private:
     if (this->_use_color_set == 2) {
 
       functorGreedyColor_IMPLOG gc(
+          this->nv,
           xadj_, adj_,
           vertex_colors_,  current_vertexList_,
           current_vertexListLength_, chunkSize_);
@@ -537,6 +539,7 @@ private:
     // VBCS algorithm
     else if (this->_use_color_set == 1){
       functorGreedyColor_IMP gc(
+          this->nv,
           xadj_, adj_,
           vertex_colors_, vertex_color_set, current_vertexList_,
           current_vertexListLength_, chunkSize_);
@@ -548,6 +551,7 @@ private:
     {
 
       functorGreedyColor  gc(
+          this->nv,
           xadj_, adj_,
           vertex_colors_,
           current_vertexList_, current_vertexListLength_, chunkSize_);
@@ -582,6 +586,7 @@ private:
       //If edge filtering is applied
 
       functorGreedyColor_IMPLOG_EF gc(
+          this->nv,
           xadj_, adj_,
           vertex_colors_, current_vertexList_,
           current_vertexListLength_, chunkSize_);
@@ -592,6 +597,7 @@ private:
     // VBCS algorithm
     else if (this->_use_color_set == 1){
       functorGreedyColor_IMP_EF gc(
+          this->nv,
           xadj_, adj_,
           vertex_colors_, vertex_color_set, current_vertexList_,
           current_vertexListLength_, chunkSize_);
@@ -602,6 +608,7 @@ private:
     {
 
       functorGreedyColor_EF  gc(
+          this->nv,
           xadj_, adj_,
           vertex_colors_,
           current_vertexList_, current_vertexListLength_, chunkSize_);
@@ -638,22 +645,22 @@ private:
     row_index_type numUncolored = 0;
     if (this->_conflictlist == 0){
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
-        functorFindConflicts_No_Conflist conf( xadj_, adj_, vertex_colors_);
+        functorFindConflicts_No_Conflist conf( this->nv, xadj_, adj_, vertex_colors_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
       else {
-        functorFindConflicts_No_Conflist_IMP conf(xadj_, adj_,vertex_colors_, vertex_color_set_);
+        functorFindConflicts_No_Conflist_IMP conf(this->nv, xadj_, adj_,vertex_colors_, vertex_color_set_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
     }
     else if (this->_conflictlist == 2){ //IF PPS
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         // Check for conflicts. Compute numUncolored == numConflicts.
-        functorFindConflicts_PPS conf(xadj_, adj_,vertex_colors_,current_vertexList_,next_iteration_recolorList_);
+        functorFindConflicts_PPS conf(this->nv, xadj_, adj_,vertex_colors_,current_vertexList_,next_iteration_recolorList_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
       else {
-        functorFindConflicts_PPS_IMP conf(
+        functorFindConflicts_PPS_IMP conf(this->nv,
             xadj_, adj_,vertex_colors_, vertex_color_set_,
             current_vertexList_,next_iteration_recolorList_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
@@ -685,13 +692,13 @@ private:
     else { //IF ATOMIC
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         // Check for conflicts. Compute numUncolored == numConflicts.
-        functorFindConflicts_Atomic conf(
+        functorFindConflicts_Atomic conf(this->nv,
             xadj_, adj_,vertex_colors_,current_vertexList_,
             next_iteration_recolorList_, next_iteration_recolorListLength_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
       else {
-        functorFindConflicts_Atomic_IMP conf(
+        functorFindConflicts_Atomic_IMP conf(this->nv,
             xadj_, adj_,vertex_colors_, vertex_color_set_,
             current_vertexList_,next_iteration_recolorList_, next_iteration_recolorListLength_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
@@ -767,7 +774,7 @@ public:
    * Functor for VBBIT algorithms speculative coloring with edge filtering.
    */
   struct functorGreedyColor_IMPLOG_EF {
-
+    row_index_type nv;
     const_row_index_view_type _idx; //rowmap
     non_const_nonzero_index_view_type _adj; //entries
     color_view_type _colors; // vertex colors
@@ -776,12 +783,13 @@ public:
     row_index_type _chunkSize;
 
     functorGreedyColor_IMPLOG_EF(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         non_const_nonzero_index_view_type adj,
         color_view_type colors,
         row_index_temp_work_view_type vertexList,
         row_index_type vertexListLength,
-        row_index_type chunkSize) :_idx(xadj), _adj(adj), _colors(colors),
+        row_index_type chunkSize) :nv(nv_), _idx(xadj), _adj(adj), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
@@ -817,7 +825,7 @@ public:
           // Check nbors, fill forbidden array.
           for (row_index_type j=xadjbegin; j<my_xadj_end; ++j){
             row_index_type n  = _adj(j);
-            if (n == i) continue; // Skip self-loops
+            if (n == i || n >= nv) continue; // Skip self-loops
             color_type c = _colors(n);
 
             color_type color_offset = c-offset;
@@ -871,6 +879,8 @@ public:
    * Functor for VBBIT algorithms speculative coloring without edge filtering.
    */
   struct functorGreedyColor_IMPLOG {
+
+    row_index_type nv;
     const_row_index_view_type _idx;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -879,12 +889,13 @@ public:
     row_index_type _chunkSize;
 
     functorGreedyColor_IMPLOG(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
         color_view_type colors,
         row_index_temp_work_view_type vertexList,
         row_index_type vertexListLength,
-        row_index_type chunkSize) :
+        row_index_type chunkSize) : nv(nv_),
           _idx(xadj), _adj(adj), _colors(colors),
           _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
@@ -912,7 +923,7 @@ public:
           // Check nbors, fill forbidden array.
           for (row_index_type j=xadjbegin; j<my_xadj_end; ++j){
             row_index_type n  = _adj(j);
-            if (n == i) continue; // Skip self-loops
+            if (n == i || n >= nv) continue; // Skip self-loops
             color_type c = _colors(n);
             color_type color_offset = c-offset;
             //if color is in the current range
@@ -952,6 +963,8 @@ public:
    * Functor for VBCS algorithms speculative coloring with edge filtering.
    */
   struct functorGreedyColor_IMP_EF {
+
+    row_index_type nv;
     const_row_index_view_type _xadj;
     non_const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -961,12 +974,13 @@ public:
     row_index_type _chunkSize;
 
     functorGreedyColor_IMP_EF(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         non_const_nonzero_index_view_type adj,
         color_view_type colors, row_index_temp_work_view_type color_set,
         row_index_temp_work_view_type vertexList,
         row_index_type vertexListLength,
-        row_index_type chunkSize):
+        row_index_type chunkSize): nv(nv_),
           _xadj(xadj), _adj(adj),
           _colors(colors), _color_set(color_set),
           _vertexList(vertexList), _vertexListLength(vertexListLength),
@@ -993,7 +1007,7 @@ public:
 
           for (row_index_type j = xadj_begin; j < xadj_end && ~ban_colors; ++j){
             row_index_type n = _adj(j);
-            if (n == i) continue; // Skip self-loops
+            if (n == i|| n >= nv) continue; // Skip self-loops
 
             row_index_type neighbor_color_set = _color_set(n);
             //only if the neigbor has the same color set
@@ -1031,6 +1045,8 @@ public:
    * Functor for VBCS algorithms speculative coloring without edge filtering.
    */
   struct functorGreedyColor_IMP {
+
+    row_index_type nv;
     const_row_index_view_type _xadj;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -1041,6 +1057,7 @@ public:
 
 
     functorGreedyColor_IMP(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
         color_view_type colors,
@@ -1048,7 +1065,7 @@ public:
         row_index_temp_work_view_type vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize
-    ) :
+    ) : nv (nv_),
       _xadj(xadj), _adj(adj),
       _colors(colors), _color_set(color_set),
       _vertexList(vertexList), _vertexListLength(vertexListLength),
@@ -1075,7 +1092,7 @@ public:
           color_type ban_colors = 0;
           for (row_index_type j = xadj_begin; j < xadj_end ;++j){
             row_index_type n = _adj(j);
-            if (n == i) continue; // Skip self-loops
+            if (n == i|| n >= nv) continue; // Skip self-loops
             if ( my_color_set == _color_set(n)){
               ban_colors = ban_colors | _colors(n);
               if (~ban_colors == 0){
@@ -1104,6 +1121,7 @@ public:
    * Functor for VB algorithm speculative coloring with edge filtering.
    */
   struct functorGreedyColor_EF {
+    row_index_type nv;
     const_row_index_view_type _idx;
     non_const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -1112,13 +1130,14 @@ public:
     row_index_type _chunkSize;
 
     functorGreedyColor_EF(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         non_const_nonzero_index_view_type adj,
         color_view_type colors,
         row_index_temp_work_view_type vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize
-    ) :
+    ) : nv (nv_),
       _idx(xadj), _adj(adj), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
@@ -1164,7 +1183,7 @@ public:
           // Check nbors, fill forbidden array.
           for (row_index_type j=xadjbegin; j<my_xadj_end; ++j){
             row_index_type n  = _adj(j);
-            if (n == i) {
+            if (n == i|| n >= nv) {
               continue; // Skip self-loops
             }
             color_type c= _colors(n);
@@ -1208,6 +1227,7 @@ public:
    * Functor for VB algorithm speculative coloring without edge filtering.
    */
   struct functorGreedyColor {
+    row_index_type nv;
     const_row_index_view_type _idx;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -1216,13 +1236,14 @@ public:
     row_index_type _chunkSize;
 
     functorGreedyColor(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
         color_view_type colors,
         row_index_temp_work_view_type vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize
-    ) :
+    ) : nv (nv_),
       _idx(xadj), _adj(adj), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
@@ -1264,7 +1285,7 @@ public:
 
           // Check nbors, fill forbidden array.
           for (row_index_type j=_idx(i); j<_idx(i+1); j++){
-            if (_adj(j) == i) continue; // Skip self-loops
+            if (_adj(j) == i|| _adj(j)  >= nv) continue; // Skip self-loops
             color_type c= _colors(_adj(j));
             // Removed option to leave potentially conflicted vertices uncolored.
             //if (c== -1){ // Nbor is being colored at same time
@@ -1299,14 +1320,17 @@ public:
    * Finds conflicts without creating a new worklist
    */
   struct functorFindConflicts_No_Conflist {
+
+    row_index_type nv;
     const_row_index_view_type _idx;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
 
     functorFindConflicts_No_Conflist(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
-        color_view_type colors) :
+        color_view_type colors) : nv (nv_),
           _idx(xadj), _adj(adj),_colors(colors)
     {
     }
@@ -1325,7 +1349,7 @@ public:
 
         if (
 #ifndef DEGREECOMP
-            ii < neighbor &&
+            ii < neighbor && neighbor < nv &&
 #endif
             _colors(neighbor) == my_color
 #ifdef DEGREECOMP
@@ -1347,6 +1371,7 @@ public:
    * Finds conflicts by marking the work vertices to be used later for creation of new worklist with PPS
    */
   struct functorFindConflicts_PPS {
+    row_index_type nv;
     const_row_index_view_type _idx;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -1356,11 +1381,13 @@ public:
 
 
     functorFindConflicts_PPS(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
         color_view_type colors,
         row_index_temp_work_view_type vertexList,
         row_index_temp_work_view_type recolorList) :
+          nv (nv_),
           _idx(xadj), _adj(adj), _colors(colors),
           _vertexList(vertexList),
           _recolorList(recolorList){}
@@ -1381,7 +1408,7 @@ public:
         row_index_type neighbor = _adj(j);
         if (
 #ifndef DEGREECOMP
-            i < neighbor &&
+            i < neighbor && neighbor < nv &&
 #endif
             _colors(neighbor) == my_color
 #ifdef DEGREECOMP
@@ -1403,6 +1430,7 @@ public:
    * Finds conflicts and creates new worklist using atomic operations.
    */
   struct functorFindConflicts_Atomic {
+    row_index_type nv;
     const_row_index_view_type _idx;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -1412,13 +1440,14 @@ public:
 
 
     functorFindConflicts_Atomic(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
         color_view_type colors,
         row_index_temp_work_view_type vertexList,
         row_index_temp_work_view_type recolorList,
         single_dim_index_view_type recolorListLength
-    ) :
+    ) : nv (nv_),
       _idx(xadj), _adj(adj), _colors(colors),
       _vertexList(vertexList),
       _recolorList(recolorList),
@@ -1440,7 +1469,7 @@ public:
         row_index_type neighbor = _adj(j);
         if (
 #ifndef DEGREECOMP
-            i < neighbor &&
+            i < neighbor && neighbor < nv &&
 #endif
             _colors(neighbor) == my_color
 #ifdef DEGREECOMP
@@ -1465,6 +1494,7 @@ public:
    */
   struct functorFindConflicts_No_Conflist_IMP {
 
+    row_index_type nv;
     const_row_index_view_type _xadj;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -1472,11 +1502,12 @@ public:
 
 
     functorFindConflicts_No_Conflist_IMP(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
         color_view_type colors,
         row_index_temp_work_view_type color_sets
-    ) :
+    ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets){}
 
     KOKKOS_INLINE_FUNCTION
@@ -1500,7 +1531,7 @@ public:
           row_index_type neighbor = _adj(j);
           if (
 #ifndef DEGREECOMP
-              ii < neighbor &&
+              ii < neighbor && neighbor < nv &&
 #endif
               _colors(neighbor) == my_color && my_color_set == _color_sets(neighbor)
 #ifdef DEGREECOMP
@@ -1524,6 +1555,7 @@ public:
    * VBCS: Finds conflicts by marking the work vertices to be used later for creation of new worklist with PPS
    */
   struct functorFindConflicts_PPS_IMP {
+    row_index_type nv;
     const_row_index_view_type _xadj;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -1532,13 +1564,14 @@ public:
     row_index_temp_work_view_type _recolorList;
 
     functorFindConflicts_PPS_IMP(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
         color_view_type colors,
         row_index_temp_work_view_type color_sets,
         row_index_temp_work_view_type vertexList,
         row_index_temp_work_view_type recolorList
-    ) :
+    ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets),
       _vertexList(vertexList),
       _recolorList(recolorList){}
@@ -1565,7 +1598,7 @@ public:
           row_index_type neighbor = _adj(j);
           if (
 #ifndef DEGREECOMP
-              i < neighbor &&
+              i < neighbor && neighbor < nv &&
 #endif
               _colors(neighbor) == my_color && my_color_set == _color_sets(neighbor)
 #ifdef DEGREECOMP
@@ -1590,6 +1623,7 @@ public:
    */
   struct functorFindConflicts_Atomic_IMP {
 
+    row_index_type nv;
     const_row_index_view_type _xadj;
     const_nonzero_index_view_type _adj;
     color_view_type _colors;
@@ -1600,6 +1634,7 @@ public:
 
 
     functorFindConflicts_Atomic_IMP(
+        row_index_type nv_,
         const_row_index_view_type xadj,
         const_nonzero_index_view_type adj,
         color_view_type colors,
@@ -1607,7 +1642,7 @@ public:
         row_index_temp_work_view_type vertexList,
         row_index_temp_work_view_type recolorList,
         single_dim_index_view_type recolorListLength
-    ) :
+    ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets),
       _vertexList(vertexList),
       _recolorList(recolorList),
@@ -1636,7 +1671,7 @@ public:
           row_index_type neighbor = _adj(j);
           if (
 #ifndef DEGREECOMP
-              i < neighbor &&
+              i < neighbor && neighbor < nv &&
 #endif
               _colors(neighbor) == my_color && my_color_set == _color_sets(neighbor)
 #ifdef DEGREECOMP
