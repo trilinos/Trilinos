@@ -843,8 +843,8 @@ namespace BaskerNS
 	    for(Int r = 0; r < LU_size[l]; r++)
             {
               BASKER_MATRIX &myU = LU[l][r];
-              printf("nnz: %d %d  in k: %d r: %d \n",
-                     myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
+              //printf("nnz: %d %d  in k: %d r: %d \n",
+              //     myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
               //over each nnz in column (k) of local U
               for(Int j = myU.col_ptr[k]; j < myU.col_ptr[k+1]; j++)
                 {
