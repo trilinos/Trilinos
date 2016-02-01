@@ -839,7 +839,7 @@ namespace ROL {
         retString = "Actual Reduction is Nonpositive and Predicted Reduction is Positive";
         break;
       case TRUSTREGION_FLAG_NPOSPREDNEG:
-        retString = "Actual Reduction is Nonpositive and  Predicted Reduction is Negative (impossible)";
+        retString = "Actual Reduction is Nonpositive and Predicted Reduction is Negative (impossible)";
         break;
       case TRUSTREGION_FLAG_QMINSUFDEC:
         retString = "Sufficient Decrease of the Quadratic Model Not Met (bound constraints only)";
