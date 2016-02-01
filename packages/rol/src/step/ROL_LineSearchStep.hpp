@@ -671,11 +671,26 @@ public:
     std::stringstream hist;
 
     if( verbosity_>0 ) {
-      if( edesc_ == DESCENT_NEWTONKRYLOV ) {
-        hist << std::string(109,'-') <<  "\n"; 
-        hist << "Krylov solver flags (flagCG)" << "\n";
+       hist << std::string(109,'-') <<  "\n"; 
+ 
+       hist << "Linesearch status output definitions\n\n";
+
+       hist << "  iter     - Number of iterates (steps taken) \n";        
+       hist << "  value    - Objective function value \n";        
+       hist << "  gnorm    - Norm of the gradient\n";
+       hist << "  snorm    - Norm of the step (update to optimization vector)\n";      
+       hist << "  #fval    - Cumulative number of times the objective function was evaluated\n";
+       hist << "  #grad    - Number of times the gradient was computed\n";
+       hist << "  ls_#fval - Number of objective function evaluations during this linesearch step\n";
+       hist << "  ls_#grad - Number of gradient evaluations during this linesearch step\n";
+
+       if( edesc_ == DESCENT_NEWTONKRYLOV ) {
+      
+        hist << "\n";
+        hist << "  iterCG   - Number of Krylov iterations used to compute search direction\n";
+        hist << "  flagCG   - Krylov solver flag" << "\n";
         for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_TRRADEX; ++flag ) {
-          hist << "  " << std::to_string(flag) << " - "
+          hist << "    " << std::to_string(flag) << " - "
           << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n";
         }
       }

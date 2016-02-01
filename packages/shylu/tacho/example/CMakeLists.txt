@@ -207,33 +207,44 @@ ENDIF()
 
 # Complete Cholesky
 # =================
-TRIBITS_ADD_EXECUTABLE(
-  chol_direct_plain_serial
-  NOEXEPREFIX
-  SOURCES example_chol_direct_plain_serial.cpp
-  COMM serial mpi
-)
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE(
+    chol_direct_plain_serial
+    NOEXEPREFIX
+    SOURCES example_chol_direct_plain_serial.cpp
+    COMM serial mpi
+  )
+ENDIF()
 
-TRIBITS_ADD_EXECUTABLE(
-  chol_direct_plain_pthread
-  NOEXEPREFIX
-  SOURCES example_chol_direct_plain_pthread.cpp
-  COMM serial mpi
-)
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    chol_direct_plain_pthread
+    NOEXEPREFIX
+    SOURCES example_chol_direct_plain_pthread.cpp
+    COMM serial mpi
+  )
 
-TRIBITS_ADD_EXECUTABLE(
-  chol_direct_nested_dense_block_pthread
-  NOEXEPREFIX
-  SOURCES example_chol_direct_nested_dense_block_pthread.cpp
-  COMM serial mpi
-)
+  TRIBITS_ADD_EXECUTABLE(
+    chol_direct_nested_dense_block_pthread
+    NOEXEPREFIX
+    SOURCES example_chol_direct_nested_dense_block_pthread.cpp
+    COMM serial mpi 
+  )
 
-TRIBITS_ADD_EXECUTABLE(
-  chol_direct_nested_dense_by_blocks_pthread
-  NOEXEPREFIX
-  SOURCES example_chol_direct_nested_dense_by_blocks_pthread.cpp
-  COMM serial mpi
-)
+  TRIBITS_ADD_EXECUTABLE(
+    chol_direct_nested_dense_by_blocks_pthread
+    NOEXEPREFIX
+    SOURCES example_chol_direct_nested_dense_by_blocks_pthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    chol_direct_solver_pthread
+    NOEXEPREFIX
+    SOURCES example_chol_direct_solver_pthread.cpp
+    COMM serial mpi
+  )
+ENDIF()
 
 # Temporary
 # =========

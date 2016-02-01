@@ -60,6 +60,8 @@ namespace Tacho {
 
     ordinal_type NumBlocks() const { return _cblk; }
 
+    GraphHelper_Scotch() = default;
+
     GraphHelper_Scotch(const CrsMatrixType& A, 
                        const int seed = GraphHelper::DefaultRandomSeed) {
 
@@ -108,6 +110,8 @@ namespace Tacho {
                                NULL);CHKERR(ierr);  // edge load array (optional)
       ierr = SCOTCH_graphCheck(&_graph);CHKERR(ierr);
     }
+    GraphHelper_Scotch(const GraphHelper_Scotch &b) = default;
+
     virtual~GraphHelper_Scotch() {
       SCOTCH_graphFree(&_graph);
     }
@@ -274,6 +278,8 @@ namespace Tacho {
     }
 
     int pruneTree(const ordinal_type cut) {
+      if (cut <=0 ) return 0;
+
       ordinal_type_array work = ordinal_type_array(_label+"::WorkArray", _cblk+1);
       for (ordinal_type iter=0;iter<cut && _cblk > 1;++iter) {
         // horizontal merging 

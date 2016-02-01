@@ -590,7 +590,7 @@ public:
     if(verbosity_>0) {
       hist << std::string(114,'-') << "\n"; 
 
-      hist << "Trust-Region status output definitions" << "\n\n";
+      hist << "Trust-Region status output definitions\n\n";
        
       hist << "  iter    - Number of iterates (steps taken) \n";        
       hist << "  value   - Objective function value \n";        
