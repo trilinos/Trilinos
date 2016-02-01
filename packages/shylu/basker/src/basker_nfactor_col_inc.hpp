@@ -479,11 +479,11 @@ namespace BaskerNS
     const Int X_row = l; //X_row = lower(L)
     const Int col_idx_offset = 0; //we might be able to remove
   
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    //#ifdef BASKER_DEBUG_NFACTOR_COL
     if(kid >= 0)
     printf("kid %d, upper using L: %d %d  U: %d %d  X %d %d\n",
 	   kid, L_col, L_row, U_col, U_row, X_col, X_row);
-    #endif
+    //#endif
     //end get needed variables//
 
     BASKER_MATRIX        &L = LL(L_col)(L_row);
@@ -500,7 +500,11 @@ namespace BaskerNS
 	Bp = &(thread_array[kid].C);
       }
     BASKER_MATRIX    &B = *Bp;
-    // B.print();
+    if(kid ==2)
+      {
+	printf("2====KID === 2\n");
+    B.print();
+      }
 
     INT_1DARRAY ws     = LL(X_col)(X_row).iws;
     const Int ws_size  = LL(X_col)(X_row).iws_size;
@@ -627,13 +631,13 @@ namespace BaskerNS
 	 pattern[i] = 0;
 	 t = gperm(j+brow);
 	 
-	 #ifdef BASKER_DEBUG_NFACTOR_COL
+	 //#ifdef BASKER_DEBUG_NFACTOR_COL
 	 if(kid>=0)
 	   {
 	     printf("considering j: %d t:%d val: %e, kid: %d \n",
 		  j, t, X[j], kid);
 	   }
-         #endif
+         //#endif
 
 	 //old zero checek
 	  {	    
@@ -641,10 +645,12 @@ namespace BaskerNS
 	    //we might get this to unroll!!!
 	    if(t != BASKER_MAX_IDX)
               {
-                #ifdef BASKER_DEBUG_NFACTOR_COL
-		if(kid==0)
-		  printf("kid: %d adding x[%d] %g to U inc_lvl: %d\n", kid, j+brow, X(j), INC_LVL_TEMP(j+brow));
-                #endif
+                //#ifdef BASKER_DEBUG_NFACTOR_COL
+		if(kid==2)
+		{
+		printf("U add kid: %d adding x[%d %d] %g to U inc_lvl: %d\n", kid, k+U.scol, j+U.srow, X(j), INC_LVL_TEMP(j+brow));
+		}
+                //#endif
 
  		U.row_idx(unnz) = t-brow;
 		U.val(unnz) = X(j);

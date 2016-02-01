@@ -11,7 +11,7 @@
 #include "basker_matrix_view_def.hpp"
 
 #include "basker_nfactor_blk_inc.hpp"
-//#include "basker_nfactor_col_inc.hpp"
+#include "basker_nfactor_col_inc.hpp"
 
 #include "basker_error_manager.hpp"
 
@@ -122,7 +122,7 @@ namespace BaskerNS
    
     //---------------------------Sep--------------------------//
 
-    /*
+    
     
     if(btf_tabs_offset != 0)
       {
@@ -172,7 +172,7 @@ namespace BaskerNS
     #endif
       }
 
-    */
+   
     //-------------------------End Sep----------------//
 
 
