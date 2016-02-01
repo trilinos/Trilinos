@@ -142,6 +142,7 @@ namespace PHX {
   public:
 
     typedef DataT value_type;
+    typedef DataT& reference_type;
 
     typedef typename KokkosDimentionType<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::type kokkos_data_type;
     typedef typename Kokkos::View <kokkos_data_type, PHX::Device> array_type;
@@ -271,6 +272,7 @@ namespace PHX {
      void dimensions(std::vector<size_type>& dims);
     */
     template<typename iType>
+    KOKKOS_FORCEINLINE_FUNCTION 
     void dimensions(std::vector<iType>& dims);
    
     KOKKOS_FORCEINLINE_FUNCTION 
@@ -311,13 +313,9 @@ namespace PHX {
   // *************************************
 
   // temporary for bracket op support
-  template <typename T, typename L, typename D, typename M, typename S>
-  KOKKOS_FORCEINLINE_FUNCTION 
-  unsigned getSacadoSize(const Kokkos::View<T,L,D,M,S>& view);
-  
-  template <typename T, typename L, typename D, typename M>
-  KOKKOS_FORCEINLINE_FUNCTION 
-  unsigned getSacadoSize(const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewSpecializeSacadoFad>& view);
+  template <typename ViewType>
+  KOKKOS_FORCEINLINE_FUNCTION
+  unsigned getSacadoSize(const ViewType& view);
 
   template<typename DataT>
   class MDField<DataT,void,void,void,void,void,void,void,void> {
@@ -325,6 +323,7 @@ namespace PHX {
   public:
 
     typedef DataT value_type;
+    typedef DataT& reference_type;
  
     typedef typename Kokkos::View <DataT*******, PHX::Device> array_type;
       
@@ -498,6 +497,20 @@ namespace PHX {
 			   void, void, void, void, void, void>& h);
   
 } 
+
+namespace Intrepid2 {
+
+  template<typename field>
+  struct is_mdfield;
+
+  template<typename DataT,
+	   typename Tag0 , typename Tag1 , typename Tag2 , 
+	   typename Tag3 , typename Tag4 , typename Tag5 ,
+	   typename Tag6 , typename Tag7 >
+  struct is_mdfield<PHX::MDField<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, Tag6, Tag7> >{ 
+    enum {value=true};
+  };
+}
 
 #include "Phalanx_MDField_Def.hpp"
 

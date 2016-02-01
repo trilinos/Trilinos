@@ -208,6 +208,13 @@ ENDIF()
 # Complete Cholesky
 # =================
 TRIBITS_ADD_EXECUTABLE(
+  chol_direct_plain_serial
+  NOEXEPREFIX
+  SOURCES example_chol_direct_plain_serial.cpp
+  COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE(
   chol_direct_plain_pthread
   NOEXEPREFIX
   SOURCES example_chol_direct_plain_pthread.cpp
@@ -218,6 +225,13 @@ TRIBITS_ADD_EXECUTABLE(
   chol_direct_nested_dense_block_pthread
   NOEXEPREFIX
   SOURCES example_chol_direct_nested_dense_block_pthread.cpp
+  COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE(
+  chol_direct_nested_dense_by_blocks_pthread
+  NOEXEPREFIX
+  SOURCES example_chol_direct_nested_dense_by_blocks_pthread.cpp
   COMM serial mpi
 )
 

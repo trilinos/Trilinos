@@ -43,6 +43,7 @@ namespace Tacho {
                              const int nrhs,
                              const int nb, 
                              const int nthreads,
+                             const int max_concurrency,
                              const int max_task_dependence,
                              const int team_size,
                              const int league_size,
@@ -103,6 +104,10 @@ namespace Tacho {
       }
       AA.importMatrixMarket(in);
       t_import = timer.seconds();
+
+      cout << "CholDirectPlain:: input nnz = " << AA.NumNonZeros() << endl;
+      CrsMatrixHelper::filterZeros(AA);
+      cout << "CholDirectPlain:: resized nnz = " << AA.NumNonZeros() << endl;
     }
     cout << "CholDirectPlain:: import input file::time = " << t_import << endl;
 
@@ -132,7 +137,7 @@ namespace Tacho {
         timer.reset();
         F.createNonZeroPattern(Uplo::Upper, UU);
         t_symbolic = timer.seconds();
-        cout << "CholDirectPlain:: AA (nnz) = " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
+        cout << "CholDirectPlain:: AA (nrow, nnz) = " << AA.NumRows() << ", " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
       }
       cout << "CholDirectPlain:: symbolic factorization::time = " << t_symbolic << endl;            
 
@@ -144,8 +149,13 @@ namespace Tacho {
                                    S.TreeVector());
 
         // fill internal meta data for sparse blocs
-        for (ordinal_type k=0;k<HU.NumNonZeros();++k)
+        size_type nnz = 0;
+        for (ordinal_type k=0;k<HU.NumNonZeros();++k) {
           HU.Value(k).fillRowViewArray();
+          nnz += HU.Value(k).countNumNonZeros();
+        }
+        if (nnz != UU.NumNonZeros()) 
+          ERROR(">> 2D Blocks do not cover the flat matrix");
 
         DenseMatrixHelper::flat2hier(BB, HB,
                                      S.NumBlocks(),
@@ -164,12 +174,17 @@ namespace Tacho {
 
 
     {
+      cout << "CholDirectPlain:: max concurrency = " << max_concurrency << endl;
+
+      const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+      cout << "CholDirectPlain:: max task size   = " << max_task_size << endl;
+
       // Policy setup
-#ifdef __USE_FIXED_TEAM_SIZE__ 
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   team_size);
+
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);

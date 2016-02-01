@@ -347,27 +347,23 @@ public:
   /// \param Solution [in/out] On input: the initial guess / current
   ///   approximate solution.  On output: the new approximate
   ///   solution.
-  /// \param factoredDiagonal [in] Block diagonal, whose blocks have
-  ///   been factored using LU with partial pivoting, and have the
-  ///   same format as that produced by LAPACK's _GETRF routine.
-  /// \param factorizationPivots [in] Pivots from the block
-  ///   factorizations
+  /// \param D_inv [in] Block diagonal, the explicit inverse of this
+  ///   matrix's block diagonal (possibly modified for algorithmic
+  ///   reasons).
   /// \param omega [in] (S)SOR relaxation coefficient
   /// \param direction [in] Forward, Backward, or Symmetric.
   ///
-  /// One may access block i in \c factoredDiagonal using the
+  /// One may access block i in \c D_inv using the
   /// following code:
   /// \code
-  /// auto D_ii = Kokkos::subview(factoredDiagonal, j, Kokkos::ALL(), Kokkos::ALL());
+  /// auto D_ii = Kokkos::subview(D_inv, i, Kokkos::ALL(), Kokkos::ALL());
   /// \endcode
   /// The resulting block is b x b, where <tt>b = this->getBlockSize()</tt>.
   void
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& Residual,
                           BlockMultiVector<Scalar, LO, GO, Node>& Solution,
                     const Kokkos::View<impl_scalar_type***, device_type,
-                          Kokkos::MemoryUnmanaged>& factoredDiagonal,
-                    const Kokkos::View<int**, device_type,
-                          Kokkos::MemoryUnmanaged>& factorizationPivots,
+                          Kokkos::MemoryUnmanaged>& D_inv,
                     const Scalar& omega,
                     const ESweepDirection direction) const;
 

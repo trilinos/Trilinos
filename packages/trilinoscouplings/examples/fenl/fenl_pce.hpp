@@ -55,3 +55,82 @@
 #include <fenl.hpp>
 #include <fenl_functors_pce.hpp>
 #include <fenl_impl.hpp>
+
+namespace Kokkos {
+namespace Example {
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Specialization for Sacado::UQ::PCE
+   */
+  template <class Storage, class ... P>
+  class GetMeanValsFunc< Kokkos::View< Sacado::UQ::PCE<Storage>*,
+                                       P... > > {
+  public:
+    typedef Sacado::UQ::PCE<Storage> Scalar;
+    typedef Kokkos::View< Scalar*, P... > ViewType;
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::execution_space execution_space;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals_) : vals(vals_)
+    {
+      const size_type nnz = vals.dimension_0();
+      mean_vals =
+        Kokkos::make_view<ViewType>("mean-values", Kokkos::cijk(vals), nnz, 1);
+      Kokkos::parallel_for( nnz, *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type i) const
+    {
+      mean_vals(i) = vals(i).fastAccessCoeff(0);
+    }
+
+     MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+    ViewType vals;
+  };
+
+#else
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Specialization for Sacado::UQ::PCE
+   */
+  template <class Storage, class Layout, class Memory, class Device>
+  class GetMeanValsFunc< Kokkos::View< Sacado::UQ::PCE<Storage>*,
+                                       Layout, Memory, Device > > {
+  public:
+    typedef Sacado::UQ::PCE<Storage> Scalar;
+    typedef Kokkos::View< Scalar*, Layout, Memory, Device > ViewType;
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::execution_space execution_space;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals_) : vals(vals_)
+    {
+      const size_type nnz = vals.dimension_0();
+      mean_vals = ViewType("mean-values", vals.cijk(), nnz, 1);
+      Kokkos::parallel_for( nnz, *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type i) const
+    {
+      mean_vals(i) = vals(i).fastAccessCoeff(0);
+    }
+
+     MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+    ViewType vals;
+  };
+
+#endif
+
+}
+}

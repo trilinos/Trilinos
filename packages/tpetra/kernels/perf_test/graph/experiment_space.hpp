@@ -6,10 +6,10 @@
 #define REPEAT 5
 typedef Kokkos::Cuda MyExecSpace;
 typedef Kokkos::Cuda MyMemorySpace;
-typedef Kokkos::Cuda MyEdgeMemorySpace;
+typedef Kokkos::CudaUVMSpace MyEdgeMemorySpace;
 
-typedef Kokkos::Cuda TemporaryWorkSpace;
-typedef Kokkos::Cuda PersistentWorkSpace;
+typedef Kokkos::CudaHostPinnedSpace TemporaryWorkSpace;
+typedef Kokkos::CudaUVMSpace PersistentWorkSpace;
 
 #ifdef CUDAPINNEDSPACE
   typedef Kokkos::CudaHostPinnedSpace MyEdgeMemorySpace;

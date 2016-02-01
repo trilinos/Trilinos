@@ -143,8 +143,9 @@ struct MDFieldKokkos{
     return view6(1,0,0,0,0,0);
    if (rank==7)
     return view7(1,0,0,0,0,0,0);
-   if (rank==8)
-    return view8(1,0,0,0,0,0,0,0);
+
+   // if (rank==8)
+   return view8(1,0,0,0,0,0,0,0);
   } 
 
  int dimension(int i)
@@ -243,8 +244,8 @@ struct MDFieldKokkos{
      return view8.dimension_7();
   }
 
-
- 
+  // Should never get here
+  return 0;
  }
 
 };

@@ -70,8 +70,8 @@ namespace { // (anonymous)
         comm->barrier ();                                               \
         comm->barrier ();                                               \
       }                                                                 \
+      return;                                                           \
     }                                                                   \
-    return;                                                             \
   } while (false)
 
   //

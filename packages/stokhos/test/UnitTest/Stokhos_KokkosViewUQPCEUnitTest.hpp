@@ -119,7 +119,7 @@ checkPCEView(const ViewType& v, Teuchos::FancyOStream& out) {
   // instead of last
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !view_type::is_contiguous) {
+  if (is_right) {
     num_rows = h_a.dimension_0();
     num_cols = h_a.dimension_1();
   }
@@ -128,7 +128,7 @@ checkPCEView(const ViewType& v, Teuchos::FancyOStream& out) {
     num_cols = h_a.dimension_0();
   }
   bool success = true;
-  if (is_right || !view_type::is_contiguous) {
+  if (is_right) {
     for (size_type i=0; i<num_rows; ++i) {
       for (size_type j=0; j<num_cols; ++j) {
         scalar_type val = h_a(i,j);
@@ -162,14 +162,14 @@ checkConstantPCEView(const ViewType& v,
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
   typedef typename view_type::HostMirror host_view_type;
-  typedef typename host_view_type::intrinsic_scalar_type scalar_type;
+  typedef typename Kokkos::IntrinsicScalarType<host_view_type>::type scalar_type;
 
   // Copy to host
   host_view_type h_v = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(h_v, v);
 
   const size_type num_rows = h_v.dimension_0();
-  const size_type num_cols = h_v.sacado_size();
+  const size_type num_cols = Kokkos::dimension_scalar(h_v);
 
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
@@ -207,6 +207,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Size, Storage, Layout )
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
+  //typedef size_t size_type;
   typedef typename PCE::cijk_type Cijk;
 
   // Build Cijk tensor
@@ -216,7 +217,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Size, Storage, Layout )
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   TEUCHOS_TEST_EQUALITY(v.size(), num_rows, out, success);
 }
 
@@ -239,13 +240,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy, Storage, Layout )
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   host_view_type h_v = Kokkos::create_mirror_view(v);
   host_array_type h_a = h_v;
 
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !ViewType::is_contiguous) {
+  if (is_right) {
     for (size_type i=0; i<num_rows; ++i)
       for (size_type j=0; j<num_cols; ++j)
         h_a(i,j) = generate_pce_coefficient<Scalar>(
@@ -280,7 +281,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_NonContiguous, Stor
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
 
   Teuchos::Array<PCE> a(num_rows);
   for (size_type i=0; i<num_rows; ++i) {
@@ -289,7 +290,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_NonContiguous, Stor
       a[i].fastAccessCoeff(j) = generate_pce_coefficient<Scalar>(
         num_rows, num_cols, i, j);
   }
-  HostViewType ha(a.getRawPtr(), cijk, num_rows, num_cols);
+  // HostViewType ha(a.getRawPtr(), cijk, num_rows, num_cols);
+  HostViewType ha =
+    Kokkos::make_view<HostViewType>(a.getRawPtr(), cijk, num_rows, num_cols);
   Kokkos::deep_copy(v, ha);
 
   success = checkPCEView(v, out);
@@ -311,7 +314,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantScalar, Sto
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   Scalar val = 1.2345;
 
   Kokkos::deep_copy( v, val );
@@ -336,7 +339,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE, Storag
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   Scalar val = 1.2345;
 
   Kokkos::deep_copy( v, PCE(val) );
@@ -361,7 +364,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE2, Stora
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   PCE val(cijk);
   for (size_type j=0; j<num_cols; ++j)
     val.fastAccessCoeff(j) =
@@ -391,8 +394,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_PCE, DeepCopy_Subview_Range, Stor
   const size_type num_rows2 = global_num_rows*2;
   const size_type num_cols = 5;
   const size_type num_pce = cijk.dimension();
-  ViewType v1("view1", cijk, num_rows1, num_cols);
-  ViewType v2("view2", cijk, num_rows2, num_cols);
+  ViewType v1 = Kokkos::make_view<ViewType>("view1", cijk, num_rows1, num_cols);
+  ViewType v2 = Kokkos::make_view<ViewType>("view2", cijk, num_rows2, num_cols);
 
   for (size_type j=0; j<num_cols; ++j) {
     std::pair<size_type,size_type> rows( 0, num_rows1 );
@@ -442,12 +445,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_HostArray, Storage,
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   host_array_type h_a = Kokkos::create_mirror_view(v);
 
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !ViewType::is_contiguous) {
+  if (is_right) {
     for (size_type i=0; i<num_rows; ++i)
       for (size_type j=0; j<num_cols; ++j)
         h_a(i,j) = generate_pce_coefficient<Scalar>(
@@ -483,7 +486,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_DeviceArray, Storag
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   host_view_type h_v = Kokkos::create_mirror_view(v);
   host_array_type h_a = h_v;
   array_type a = v;
@@ -515,13 +518,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Unmanaged, Storage, Layout )
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   host_view_type h_v = Kokkos::create_mirror_view(v);
   host_array_type h_a = h_v;
 
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !ViewType::is_contiguous) {
+  if (is_right) {
     for (size_type i=0; i<num_rows; ++i)
       for (size_type j=0; j<num_cols; ++j)
         h_a(i,j) = generate_pce_coefficient<Scalar>(
@@ -536,7 +539,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Unmanaged, Storage, Layout )
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  ViewType v2( v.ptr_on_device(), cijk, num_rows, num_cols);
+  ViewType v2 =
+    Kokkos::make_view<ViewType>( v.ptr_on_device(), cijk, num_rows, num_cols );
 
   success = checkPCEView(v2, out);
 }
@@ -586,7 +590,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
 
   const size_type num_rows = 11;
   const size_type num_cols = cijk.dimension();
-  ViewType v("view", cijk, num_rows, num_cols);
+  ViewType v = Kokkos::make_view<ViewType>("view", cijk, num_rows, num_cols);
   Scalar val = 1.2345;
 
   (void) Test::PCEAtomicFunctor<ViewType>( v , val );

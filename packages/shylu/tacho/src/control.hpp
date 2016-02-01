@@ -27,7 +27,7 @@ namespace Tacho {
   template<> struct Control<AlgoChol::ByBlocks,Variant::One> {
     // chol var 1 : nested data parallel for is applied in the second inner loop
     // chol var 2 : nested data parallel for is applied in the most inner loop
-    static constexpr int Chol[2] = { AlgoChol::UnblockedOpt,     Variant::One };
+    static constexpr int Chol[2] = { AlgoChol::UnblockedOpt,     Variant::Two };
     static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked, Variant::One };
     static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked, Variant::One };
     static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked, Variant::One };

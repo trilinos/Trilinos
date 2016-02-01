@@ -289,7 +289,7 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     if (flat_map == Teuchos::null) {
       const LocalOrdinal pce_size =
-        vec.template getLocalView<Device>().sacado_size();
+        Kokkos::dimension_scalar(vec.template getLocalView<Device>());
       flat_map = create_flat_map(*(vec.getMap()), pce_size);
     }
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > const_flat_map = flat_map;
@@ -313,7 +313,7 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     if (flat_map == Teuchos::null) {
       const LocalOrdinal pce_size =
-        vec.template getLocalView<Device>().sacado_size();
+        Kokkos::dimension_scalar(vec.template getLocalView<Device>());
       flat_map = create_flat_map(*(vec.getMap()), pce_size);
     }
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > const_flat_map = flat_map;
@@ -356,7 +356,7 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     if (flat_map == Teuchos::null) {
       const LocalOrdinal pce_size =
-        vec.template getLocalView<Device>().sacado_size();
+        Kokkos::dimension_scalar(vec.template getLocalView<Device>());
       flat_map = create_flat_map(*(vec.getMap()), pce_size);
     }
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > const_flat_map = flat_map;
@@ -399,7 +399,7 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     if (flat_map == Teuchos::null) {
       const LocalOrdinal pce_size =
-        vec.template getLocalView<Device>().sacado_size();
+        Kokkos::dimension_scalar(vec.template getLocalView<Device>());
       flat_map = create_flat_map(*(vec.getMap()), pce_size);
     }
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > const_flat_map = flat_map;
@@ -431,7 +431,7 @@ namespace Stokhos {
 
     const LocalOrdinal block_size = cijk.dimension();
     const LocalOrdinal matrix_pce_size =
-      mat.getLocalMatrix().values.sacado_size();
+      Kokkos::dimension_scalar(mat.getLocalMatrix().values);
 
     // Create flat matrix
     RCP<FlatMatrix> flat_mat = rcp(new FlatMatrix(flat_graph));

@@ -27,6 +27,8 @@ namespace Tacho {
 
     // scotch main data structure
     SCOTCH_Graph _graph;
+    SCOTCH_Num _strat;
+    int _level;
 
     // scotch input has no diagonal contribution
     ordinal_type _base,_m;
@@ -80,6 +82,8 @@ namespace Tacho {
       _tree  = ordinal_type_array(_label+"::TreeArray", _m);
 
       // create a graph structure without diagonals
+      _strat = 0;
+      _level = 0;
       A.convertGraph(_nnz, _rptr, _cidx);
 
       int ierr = 0;
@@ -108,6 +112,14 @@ namespace Tacho {
       SCOTCH_graphFree(&_graph);
     }
 
+    void setStratGraph(const SCOTCH_Num strat = 0) {
+      _strat = strat;
+    }
+
+    void setTreeLevel(const int level = 0) {
+      _level = level;
+    }
+
     int computeOrdering(const ordinal_type treecut = 0,
                         const ordinal_type minblksize = 0) {
       int ierr = 0;
@@ -119,15 +131,18 @@ namespace Tacho {
       ordinal_type *tree  = _tree.ptr_on_device();
       
       {
-        const int level = max(1, int(log2(_m)-treecut)); // level = log2(_nnz)+10;
+        const int level = (_level ? _level : max(1, int(log2(_m)-treecut))); // level = log2(_nnz)+10;
         SCOTCH_Strat stradat;
-        SCOTCH_Num straval = (SCOTCH_STRATLEVELMAX   |
-                              SCOTCH_STRATLEVELMIN   |
-                              SCOTCH_STRATLEAFSIMPLE |
-                              SCOTCH_STRATSEPASIMPLE);
+        SCOTCH_Num straval = (_strat ? _strat : (SCOTCH_STRATLEVELMAX));//   |
+                              //SCOTCH_STRATLEVELMIN   |
+                              //SCOTCH_STRATLEAFSIMPLE |
+                              //SCOTCH_STRATSEPASIMPLE);
         
         ierr = SCOTCH_stratInit(&stradat);CHKERR(ierr);
-        ierr = SCOTCH_stratGraphOrderBuild (&stradat, straval, level, 0.2);CHKERR(ierr);
+
+        // if both are zero, do not run strategy
+        if (!_strat && !_level)
+          ierr = SCOTCH_stratGraphOrderBuild (&stradat, straval, level, 0.2);CHKERR(ierr);
         
         ierr = SCOTCH_graphOrder(&_graph,
                                  &stradat,

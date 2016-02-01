@@ -272,7 +272,7 @@ namespace BaskerNS
 		//Fix when this all happens in the future
 		if(Options.incomplete == BASKER_TRUE)
 		  {
-		LL(b)(row).init_inc_lvl();
+		    LL(b)(row).init_inc_lvl();
 		  }
 		LL(b)(row).fill();
 		LL(b)(row).init_pend();
@@ -295,7 +295,7 @@ namespace BaskerNS
 		   LU[b][LU_size[b]-1].nnz);
 	    
 
-	    LU(b)(LU_size(b)-1).init_matrix("Uoffdig",
+	    LU(b)(LU_size(b)-1).init_matrix("Udiag",
 				   LU(b)(LU_size(b)-1).srow,
 				   LU(b)(LU_size(b)-1).nrow,
 				   LU(b)(LU_size(b)-1).scol,
@@ -327,10 +327,6 @@ namespace BaskerNS
 		  }
 
 
-
-
-
-		
 		printf("Init U: %d %d lvl: %d l: %d kid: %d nnz: %ld \n",
 		       U_col, U_row, lvl, l, kid, 
 		       LU[U_col][U_row].nnz);
@@ -344,6 +340,11 @@ namespace BaskerNS
 					LU(U_col)(U_row).nnz);
 		
 		LU(U_col)(U_row).fill();
+	       
+		if(Options.incomplete == BASKER_TRUE)
+		  {
+		    LU(U_col)(U_row).init_inc_lvl();
+		  }
 
 	      }//over inner lvls
 	  }//if KID
@@ -842,8 +843,8 @@ namespace BaskerNS
 	    for(Int r = 0; r < LU_size[l]; r++)
             {
               BASKER_MATRIX &myU = LU[l][r];
-              //printf("nnz: %d %d  in k: %d r: %d \n",
-              //       myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
+              printf("nnz: %d %d  in k: %d r: %d \n",
+                     myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
               //over each nnz in column (k) of local U
               for(Int j = myU.col_ptr[k]; j < myU.col_ptr[k+1]; j++)
                 {

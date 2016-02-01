@@ -245,7 +245,7 @@ namespace {
     IST curScalingFactor = one;
     for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
       auto D_cur = subview (D_host, whichBlk, ALL (), ALL ());
-      Kokkos::deep_copy (D_cur, prototypeBlock);
+      Tpetra::Experimental::COPY (prototypeBlock, D_cur); // copy into D_cur
       Tpetra::Experimental::SCAL (curScalingFactor, D_cur);
       curScalingFactor += one;
     }
@@ -453,7 +453,7 @@ namespace {
     IST curScalingFactor = one;
     for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
       auto D_cur = subview (D_host, whichBlk, ALL (), ALL ());
-      Kokkos::deep_copy (D_cur, prototypeBlock);
+      Tpetra::Experimental::COPY (prototypeBlock, D_cur); // copy into D_cur
       Tpetra::Experimental::SCAL (curScalingFactor, D_cur);
       curScalingFactor += one;
     }

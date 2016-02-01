@@ -43,9 +43,11 @@ namespace Tacho {
   int exampleCholDirectNestedDenseBlock(const string file_input,
                                         const int prunecut,
                                         const int seed,
+                                        const int mb,
                                         const int nrhs,
                                         const int nb, 
                                         const int nthreads,
+                                        const int max_concurrency,
                                         const int max_task_dependence,
                                         const int team_size,
                                         const int league_size,
@@ -70,8 +72,13 @@ namespace Tacho {
     typedef DenseMatrixView<DenseMatrixBaseType> DenseMatrixViewType;
     typedef TaskView<DenseMatrixViewType,TaskFactoryType> DenseTaskViewType;
 
+    typedef DenseMatrixBase<DenseTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> DenseHierMatrixBaseType;
+    
+    typedef DenseMatrixView<DenseHierMatrixBaseType> DenseHierMatrixViewType;
+    typedef TaskView<DenseHierMatrixViewType,TaskFactoryType> DenseHierTaskViewType;
+
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
-    typedef CrsMatrixViewExt<CrsMatrixViewType,DenseTaskViewType> CrsMatrixViewExtType;
+    typedef CrsMatrixViewExt<CrsMatrixViewType,DenseTaskViewType,DenseHierTaskViewType> CrsMatrixViewExtType;
     typedef TaskView<CrsMatrixViewExtType,TaskFactoryType> CrsTaskViewType;
     
     typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> CrsHierMatrixBaseType;
@@ -79,10 +86,6 @@ namespace Tacho {
     typedef CrsMatrixView<CrsHierMatrixBaseType> CrsHierMatrixViewType;
     typedef TaskView<CrsHierMatrixViewType,TaskFactoryType> CrsHierTaskViewType;
 
-    typedef DenseMatrixBase<DenseTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> DenseHierMatrixBaseType;
-    
-    typedef DenseMatrixView<DenseHierMatrixBaseType> DenseHierMatrixViewType;
-    typedef TaskView<DenseHierMatrixViewType,TaskFactoryType> DenseHierTaskViewType;
 
     int r_val = 0;
 
@@ -150,9 +153,14 @@ namespace Tacho {
         for (ordinal_type k=0;k<HU.NumNonZeros();++k) {
           CrsTaskViewType &block = HU.Value(k);
           block.fillRowViewArray();
-          if (block.OffsetRows() == block.OffsetCols() &&
-              block.NumRows()    == block.NumCols()) 
-           block.createDenseMatBase();
+          const ordinal_type
+            offm = block.OffsetRows(),
+            offn = block.OffsetCols(),
+            m    = block.NumRows(),
+            n    = block.NumCols();
+
+          if (offm == offn && m == n && m > mb) 
+            block.createDenseFlatBase();
         }
 
         DenseMatrixHelper::flat2hier(BB, HB,
@@ -172,12 +180,17 @@ namespace Tacho {
 
 
     {
+      cout << "CholDirectNestedDenseBlock:: max concurrency = " << max_concurrency << endl;
+
+      const size_t max_task_size = 3*sizeof(CrsTaskViewType)+128;
+      cout << "CholDirectNestedDenseBlock:: max task size   = " << max_task_size << endl;
+
       // Policy setup
-#ifdef __USE_FIXED_TEAM_SIZE__ 
-      typename TaskFactoryType::policy_type policy(max_task_dependence);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
-#endif
+      typename TaskFactoryType::policy_type policy(max_concurrency,
+                                                   max_task_size,
+                                                   max_task_dependence, 
+                                                   team_size);
+
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);

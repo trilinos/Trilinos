@@ -617,6 +617,8 @@ namespace BaskerNS
 	  U.col_ptr(k+1) = unnz;
           cu_utop = unnz;
 
+	  //printf("U_col: %d \n",
+	  //	 U.col_ptr(k));
 
 	  #ifdef BASKER_2DL
 	  //-----------------------Update offdiag-------------//
@@ -1349,13 +1351,13 @@ namespace BaskerNS
     const Int   p_size  = LL(X_col)(X_row).p_size;
    
 
-    //#ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_BLK
     if(kid == 8 )
       {
     printf("t_move_offdiag_L, kid: %d L %d % X %d %d p_size: %d \n",
 	   kid, blkcol,blkrow, X_col, blkrow,  p_size);
       }
-    //#endif
+    #endif
 
    
     Int *color   = &(ws(0));
@@ -1455,9 +1457,9 @@ namespace BaskerNS
     //Preload with A
     if(A_option == BASKER_TRUE)
       {
-	//#ifdef BASKER_DEBUG_NFACTROR_BLK
+	#ifdef BASKER_DEBUG_NFACTROR_BLK
 	printf("t_back_solve, A_OPTION TRUE \n");
-	//#endif
+	#endif
 	//for(Int i = view_offset; i < B.m_offset; i++)
 	//printf("t_b_s_off debug, kid: %d k: %d bcol: %d col_ptr: %d \n",
 	//     kid, k, bcol, B.col_ptr[k-bcol]);
@@ -1493,6 +1495,7 @@ namespace BaskerNS
 
  
 
+    //printf("x_offset: %d \n", x_offset);
 
     for(Int i = 0 ; i < x_size; ++i)
       {

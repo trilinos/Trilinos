@@ -388,7 +388,7 @@ setFieldData(const PHX::any& a)
   // any object is always the non-const data type.  To correctly cast
   // the any object to the Kokkos::View, need to pull the const off
   // the scalar type if this MDField has a const scalar type.
-  typedef Kokkos::View<typename array_type::non_const_array_intrinsic_type,PHX::Device> non_const_view;
+  typedef Kokkos::View<typename array_type::non_const_data_type,PHX::Device> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     m_field_data = tmp;
@@ -802,18 +802,12 @@ setFieldTag(const PHX::Tag<DataT>& v)
 #endif
   m_tag = v;
 }
- 
 
 //**********************************************************************
-template <typename T, typename L, typename D, typename M, typename S>
-unsigned PHX::getSacadoSize(const Kokkos::View<T,L,D,M,S>& view) {
-  return 1;
-}
-
-//**********************************************************************
-template <typename T, typename L, typename D, typename M>
-unsigned PHX::getSacadoSize(const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewSpecializeSacadoFad>& view) {
-  return view.storage_size();
+template <typename ViewType>
+unsigned PHX::getSacadoSize(const ViewType& view)
+{
+  return Kokkos::dimension_scalar(view);
 }
 
 //**********************************************************************
@@ -838,13 +832,13 @@ setFieldData(const PHX::any& a)
   m_dimension_rank_size(7) = 0;  // rank
   m_dimension_rank_size(8) = 0;  // size
 
-  typedef Kokkos::View<typename array_type1::non_const_array_intrinsic_type,PHX::Device> non_const_view1;
-  typedef Kokkos::View<typename array_type2::non_const_array_intrinsic_type,PHX::Device> non_const_view2;
-  typedef Kokkos::View<typename array_type3::non_const_array_intrinsic_type,PHX::Device> non_const_view3;
-  typedef Kokkos::View<typename array_type4::non_const_array_intrinsic_type,PHX::Device> non_const_view4;
-  typedef Kokkos::View<typename array_type5::non_const_array_intrinsic_type,PHX::Device> non_const_view5;
-  typedef Kokkos::View<typename array_type6::non_const_array_intrinsic_type,PHX::Device> non_const_view6;
-  typedef Kokkos::View<typename array_type7::non_const_array_intrinsic_type,PHX::Device> non_const_view7;
+  typedef Kokkos::View<typename array_type1::non_const_data_type,PHX::Device> non_const_view1;
+  typedef Kokkos::View<typename array_type2::non_const_data_type,PHX::Device> non_const_view2;
+  typedef Kokkos::View<typename array_type3::non_const_data_type,PHX::Device> non_const_view3;
+  typedef Kokkos::View<typename array_type4::non_const_data_type,PHX::Device> non_const_view4;
+  typedef Kokkos::View<typename array_type5::non_const_data_type,PHX::Device> non_const_view5;
+  typedef Kokkos::View<typename array_type6::non_const_data_type,PHX::Device> non_const_view6;
+  typedef Kokkos::View<typename array_type7::non_const_data_type,PHX::Device> non_const_view7;
   try {
 
     if (m_tag.dataLayout().rank() == 1) {

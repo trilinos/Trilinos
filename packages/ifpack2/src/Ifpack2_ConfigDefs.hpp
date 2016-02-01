@@ -83,7 +83,9 @@ namespace Ifpack2 {
     enum RelaxationType {
       JACOBI, //!< Jacobi
       GS,     //!< Gauss-Seidel
-      SGS     //!< Symmetric Gauss-Seidel
+      SGS,     //!< Symmetric Gauss-Seidel
+      MTGS,   //!< Multicore Gauss-Seidel
+      MTSGS   //!< Multicore Symmetric Gauss-Seidel
     };
   } // namespace Details
 

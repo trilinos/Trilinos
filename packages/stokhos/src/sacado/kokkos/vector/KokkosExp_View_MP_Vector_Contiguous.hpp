@@ -161,11 +161,11 @@ struct is_view_mp_vector< View<T,P...> > {
                   Experimental::Impl::ViewMPVectorContiguous >::value;
 };
 
-template <typename view_type>
+template <typename T, typename ... P>
 KOKKOS_INLINE_FUNCTION
 constexpr typename
-std::enable_if< is_view_mp_vector<view_type>::value, unsigned >::type
-dimension_scalar(const view_type& view) {
+std::enable_if< is_view_mp_vector< View<T,P...> >::value, unsigned >::type
+dimension_scalar(const View<T,P...>& view) {
   return view.implementation_map().dimension_scalar();
 }
 
@@ -173,7 +173,7 @@ template <typename D, typename ... P>
 struct FlatArrayType< View<D,P...>,
                       typename std::enable_if< is_view_mp_vector< View<D,P...> >::value >::type > {
   typedef View<D,P...> view_type;
-  typedef typename view_type::dimension dimension;
+  typedef typename view_type::traits::dimension dimension;
   typedef typename view_type::array_type::value_type flat_value_type;
   typedef typename Kokkos::Experimental::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
   typedef View<flat_data_type,P...> type;

@@ -94,6 +94,7 @@ int main (int argc, char *argv[]) {
        minblksize,
        prunecut,
        seed,
+       nthreads,
        max_task_dependence, team_size,
        fill_level, league_size,
        team_interface,

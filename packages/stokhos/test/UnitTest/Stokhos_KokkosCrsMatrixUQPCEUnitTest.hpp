@@ -218,7 +218,7 @@ bool compareRank1(const vector_type& y,
   size_type num_rows = y.dimension_0();
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
-    for (size_type j=0; j<y.sacado_size(); ++j) {
+    for (size_type j=0; j<Kokkos::dimension_scalar(y); ++j) {
       scalar_type diff = std::abs( hy(i).fastAccessCoeff(j) - hy_exp(i).fastAccessCoeff(j) );
       scalar_type tol = rel_tol*std::abs(hy_exp(i).fastAccessCoeff(j)) + abs_tol;
       bool s = diff < tol;
@@ -256,7 +256,7 @@ bool compareRank2(const vector_type& y,
 
  for (size_type col = 0; col < num_cols; ++col){
  for (size_type i=0; i<num_rows; ++i) {
-    for (size_type j=0; j<y.sacado_size(); ++j) {
+   for (size_type j=0; j<Kokkos::dimension_scalar(y); ++j) {
       scalar_type diff = std::abs( hy(i,col).fastAccessCoeff(j) - hy_exp(i,col).fastAccessCoeff(j) );
       scalar_type tol = rel_tol*std::abs(hy_exp(i,col).fastAccessCoeff(j)) + abs_tol;
       bool s = diff < tol;
@@ -297,7 +297,7 @@ buildDiagonalMatrix(typename MatrixType::ordinal_type nrow,
   matrix_graph_type matrix_graph =
     Kokkos::create_staticcrsgraph<matrix_graph_type>("graph", graph);
   matrix_values_type matrix_values =
-    matrix_values_type("values", cijk, graph_length, pce_size);
+    Kokkos::make_view<matrix_values_type>("values", cijk, graph_length, pce_size);
 
   MatrixType matrix("matrix", nrow, matrix_values, matrix_graph);
   return matrix;
@@ -341,9 +341,9 @@ struct ReplaceDiagonalValuesKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = host_matrix_values.sacado_size();
+    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
-    value_type val_expected(matrix.values.cijk());
+    value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {
       val_expected = row;
       bool s = compareVecs(host_matrix_values(row),
@@ -391,9 +391,9 @@ struct AddDiagonalValuesKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = host_matrix_values.sacado_size();
+    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
-    value_type val_expected(matrix.values.cijk());
+    value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {
       val_expected = row;
       bool s = compareVecs(host_matrix_values(row),
@@ -442,9 +442,9 @@ struct AddDiagonalValuesAtomicKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type pce_size = host_matrix_values.sacado_size();
+    const ordinal_type pce_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
-    value_type val_expected(matrix.values.cijk());
+    value_type val_expected(Kokkos::cijk(matrix.values));
     for (ordinal_type row=0; row<nrow; ++row) {
       value_type val;
       if (row == 0)
@@ -582,9 +582,9 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   // regardless of LayoutLeft/Right
 
   block_vector_type x =
-    block_vector_type("x", cijk, fem_length, stoch_length_aligned);
+    Kokkos::make_view<block_vector_type>("x", cijk, fem_length, stoch_length_aligned);
   block_vector_type y =
-    block_vector_type("y", cijk, fem_length, stoch_length_aligned);
+    Kokkos::make_view<block_vector_type>("y", cijk, fem_length, stoch_length_aligned);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -612,7 +612,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
-    matrix_values_type(
+    Kokkos::make_view<matrix_values_type>(
       Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
@@ -768,12 +768,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   const ordinal_type fem_graph_length = generate_fem_graph( nGrid, fem_graph );
 
   block_vector_type x =
-    block_vector_type("x", cijk, fem_length, stoch_length_aligned);
+    Kokkos::make_view<block_vector_type>("x", cijk, fem_length, stoch_length_aligned);
   block_vector_type y =
-    block_vector_type("y", cijk, fem_length, stoch_length_aligned);
+    Kokkos::make_view<block_vector_type>("y", cijk, fem_length, stoch_length_aligned);
 
   block_vector_type y_expected =
-    block_vector_type("y", cijk, fem_length, stoch_length_aligned);
+    Kokkos::make_view<block_vector_type>("y", cijk, fem_length, stoch_length_aligned);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -805,7 +805,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
-    matrix_values_type(
+    Kokkos::make_view<matrix_values_type>(
       Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
@@ -834,9 +834,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos::deep_copy( y_expected, hy_expected );
 
   /*
-  //Generate same matrix with stochastic dim = x.sacado_size() (i.e. not = 1)
+  //Generate same matrix with stochastic dim = Kokkos::dimension_scalar(x) (i.e. not = 1)
   matrix_values_type full_matrix_values =
-    matrix_values_type(
+    Kokkos::make_view<matrix_values_type>(
       Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type full_matrix(
     "block_matrix", fem_length, full_matrix_values, matrix_graph);
@@ -916,12 +916,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   const ordinal_type fem_graph_length = generate_fem_graph( nGrid, fem_graph );
 
   block_vector_type x =
-    block_vector_type("x", cijk, fem_length, num_cols, stoch_length_aligned);
+    Kokkos::make_view<block_vector_type>("x", cijk, fem_length, num_cols, stoch_length_aligned);
   block_vector_type y =
-    block_vector_type("y", cijk, fem_length, num_cols, stoch_length_aligned);
+    Kokkos::make_view<block_vector_type>("y", cijk, fem_length, num_cols, stoch_length_aligned);
 
   block_vector_type y_expected =
-    block_vector_type("y_expected", cijk, fem_length, num_cols, stoch_length_aligned);
+    Kokkos::make_view<block_vector_type>("y_expected", cijk, fem_length, num_cols, stoch_length_aligned);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -949,7 +949,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
-    matrix_values_type(
+    Kokkos::make_view<matrix_values_type>(
       Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1));
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
@@ -982,9 +982,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos::deep_copy( y_expected, hy_expected );
 
   /*
-  //Generate same matrix with stochastic dim = x.sacado_size() (i.e. not = 1)
+  //Generate same matrix with stochastic dim = Kokkos::dimension_scalar(x) (i.e. not = 1)
   matrix_values_type full_matrix_values =
-    matrix_values_type(
+    Kokkos::make_view<matrix_values_type>(
       Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type full_matrix(
     "block_matrix", fem_length, full_matrix_values, matrix_graph);

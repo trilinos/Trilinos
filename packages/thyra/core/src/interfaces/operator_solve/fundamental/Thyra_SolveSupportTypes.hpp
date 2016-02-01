@@ -472,7 +472,7 @@ std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solv
   if(solveStatus.extraParameters.get()) {
     *out << "\n";
     Teuchos::OSTab tab3(out);
-    solveStatus.extraParameters->print(*out, 1000, true);
+    solveStatus.extraParameters->print(*out, 10, true);
   }
   else {
     *out << " NONE\n";

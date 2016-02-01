@@ -590,8 +590,29 @@ namespace BaskerNS
 			 Int X_col, Int X_row,
 			 Int k , Entry pivot);
 
+     BASKER_INLINE
+    int t_dense_move_offdiag_L_inc_lvl(Int kid, 
+			 Int blkcol, Int blkrow,
+			 Int X_col, Int X_row,
+			 Int k , Entry pivot);
+
+
+      BASKER_INLINE
+    int t_dense_move_offdiag_L_inc_lvl_old(Int kid, 
+			 Int blkcol, Int blkrow,
+			 Int X_col, Int X_row,
+			 Int k , Entry pivot);
+
+
+
     BASKER_INLINE
     int t_move_offdiag_L(Int kid, 
+			 Int blkcol, Int blkrow,
+			 Int X_col, Int X_row,
+			 Int k , Entry pivot);
+
+    BASKER_INLINE
+    int t_move_offdiag_L_inc_lvl(Int kid, 
 			 Int blkcol, Int blkrow,
 			 Int X_col, Int X_row,
 			 Int k , Entry pivot);
@@ -609,6 +630,8 @@ namespace BaskerNS
 			     INT_1DARRAY x_indx,
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
+
+
      BASKER_INLINE
     int t_dense_back_solve_offdiag_inc_lvl(Int kid,
 			     Int blkcol, Int blkrow,
@@ -616,8 +639,44 @@ namespace BaskerNS
 			     Int k, Int &view_offset,
 			     ENTRY_1DARRAY x,
 			     INT_1DARRAY x_indx,
+			     INT_1DARRAY x_fill,
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
+
+
+     BASKER_INLINE
+    int t_dense_back_solve_offdiag_inc_lvl_old(Int kid,
+			     Int blkcol, Int blkrow,
+			     Int X_col, Int X_row,
+			     Int k, Int &view_offset,
+			     ENTRY_1DARRAY x,
+			     INT_1DARRAY x_indx,
+			     INT_1DARRAY x_fill,
+			     Int x_size, Int x_offset,
+			     BASKER_BOOL A_option);
+
+    BASKER_INLINE
+    int t_lower_col_offdiag_find_fill(Int kid,
+				      Int blkcol, Int blkrow,
+				      Int X_col, Int X_row,
+				      Int k,
+				      ENTRY_1DARRAY x,
+				      INT_1DARRAY x_idx,
+				      INT_1DARRAY x_fill,
+				      Int x_size, Int x_offset);
+
+
+    BASKER_INLINE
+    void t_populate_col_fill(const Int kid,
+			     const Int blkcol, const Int blkrow,
+			     const Int X_col, const Int X_row,
+			     const Int k, 
+			     const BASKER_BOOL lower );
+
+    BASKER_INLINE
+    void t_reduce_col_fill(const Int kid, const Int lvl,
+			   const Int sl, const Int l,
+			   const Int k, const BASKER_BOOL lower);
 
     BASKER_INLINE
     int t_back_solve_offdiag(Int kid,
@@ -638,7 +697,7 @@ namespace BaskerNS
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
     BASKER_INLINE
-    int t_back_solve_offdiag_inc_lvl(Int kid,
+    int t_back_solve_offdiag_inc_lvl(Int kid, Int pbrow,
 			     Int blkcol, Int blkrow,
 			     Int X_col, Int X_row,
 			     Int k, Int &view_offset,
@@ -690,13 +749,31 @@ namespace BaskerNS
 				     const Int l,
 				     const Int k, 
 				     const BASKER_BOOL lower);
-   
+
+    void t_upper_col_ffactor_offdiag2_inc_lvl(const Int kid,
+				     const Int lvl, 
+				     const Int sl,
+				     const Int l,
+				     const Int k, 
+				     const BASKER_BOOL lower);
+
+
+
      void t_upper_col_factor_offdiag2_inc_lvl(const Int kid,
 				     const Int lvl, 
 				     const Int sl,
 				     const Int l,
 				     const Int k, 
 				     const BASKER_BOOL lower);
+
+    int t_lower_col_diag_find_fill(Int kid, 
+				   Int blkcol, Int blkrow,
+				   Int X_col, Int X_row,
+				   Int k,
+				   ENTRY_1DARRAY x,
+				   INT_1DARRAY x_idx,
+				   INT_1DARRAY x_fill,
+				   Int x_size, Int x_offset);
    
 
 
@@ -740,6 +817,11 @@ namespace BaskerNS
 				     const Int l,
 				     const Int k,
 				     Entry pivot);
+    
+    void t_add_orig_fill(const Int kid, const Int lvl,
+			 const Int l, const Int k, 
+			 const BASKER_BOOL lower);
+
 
     
 

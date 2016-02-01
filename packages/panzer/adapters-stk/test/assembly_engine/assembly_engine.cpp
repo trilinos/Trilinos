@@ -388,7 +388,7 @@ namespace panzer {
     using Teuchos::RCP;
 
     PHX::InitializeKokkosDevice();
-
+    {
     // build global communicator
     Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
   
@@ -514,7 +514,7 @@ namespace panzer {
     tLinearOp = Thyra::constTpetraLinearOp<double,int,panzer::Ordinal64>(rangeSpace, domainSpace, baseOp);
     tVector = Thyra::constTpetraVector<double,int,panzer::Ordinal64>(Thyra::tpetraVectorSpace<double,int,panzer::Ordinal64>(baseOp->getRangeMap()).getConst(),
                                                        globalCont->get_f().getConst());
-
+    }
     PHX::FinalizeKokkosDevice();
   }
 

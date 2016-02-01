@@ -145,7 +145,7 @@ private:
   bool useProjectedGrad_;        ///< Flag whether to use the projected gradient criticality measure.
 
   std::vector<bool> useInexact_; ///< Contains flags for inexact (0) objective function, (1) gradient, (2) Hessian.
-  int               TRflag_  ;   ///< Trust-region exit flag.
+  ETrustRegionFlag  TRflag_  ;   ///< Trust-region exit flag.
   int               TR_nfval_;   ///< Trust-region function evaluation counter.
   int               TR_ngrad_;   ///< Trust-region gradient evaluation counter.
   int               CGflag_;     ///< Truncated CG termination flag.
@@ -160,6 +160,8 @@ private:
   Real              scale1_; ///< Scale for inexact gradient computation.
 
   Real              scaleEps_;
+
+  int               verbosity_;
 
   /** \brief Update gradient to iteratively satisfy inexactness condition.
 
@@ -245,12 +247,12 @@ public:
       etr_(TRUSTREGION_DOGLEG), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
       useProjectedGrad_(false),
-      TRflag_(0), TR_nfval_(0), TR_ngrad_(0),
+      TRflag_(TRUSTREGION_FLAG_SUCCESS), TR_nfval_(0), TR_ngrad_(0),
       CGflag_(0), CGiter_(0),
       delMax_(1.e4),
       alpha_init_(1.), max_fval_(20),
       scale0_(1.), scale1_(1.),
-      scaleEps_(1.) {
+      scaleEps_(1.), verbosity_(0) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     // Trust-Region Parameters
     step_state->searchSize = parlist.sublist("Step").sublist("Trust Region").get("Initial Radius", -1.0);
@@ -276,6 +278,7 @@ public:
     secant_ = SecantFactory<Real>(parlist);
     // Scale for epsilon active sets
     scaleEps_ = parlist.sublist("General").get("Scale for Epsilon Active Sets",1.0);
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -294,7 +297,7 @@ public:
       etr_(TRUSTREGION_DOGLEG), esec_(SECANT_USERDEFINED),
       useSecantHessVec_(false), useSecantPrecond_(false),
       useProjectedGrad_(false),
-      TRflag_(0), TR_nfval_(0), TR_ngrad_(0),
+      TRflag_(TRUSTREGION_FLAG_SUCCESS), TR_nfval_(0), TR_ngrad_(0),
       CGflag_(0), CGiter_(0),
       delMax_(1.e4),
       alpha_init_(1.), max_fval_(20),
@@ -500,7 +503,7 @@ public:
 
     // Update trust-region information;
     // Performs a hard update on the objective function
-    TRflag_   = 0;
+    TRflag_   = TRUSTREGION_FLAG_SUCCESS;
     TR_nfval_ = 0;
     TR_ngrad_ = 0;
     Real fold = algo_state.value;
@@ -514,7 +517,8 @@ public:
 
     // If step is accepted ...
     // Compute new gradient and update secant storage
-    if ( TRflag_ == 0 || TRflag_ == 1 ) {  
+    if ( TRflag_ == TRUSTREGION_FLAG_SUCCESS || 
+         TRflag_ == TRUSTREGION_FLAG_POSPREDNEG ) {  
       // Perform line search (smoothing) to ensure decrease 
       if ( con.isActivated() ) {
         // Compute new gradient
@@ -582,6 +586,29 @@ public:
   */
   std::string printHeader( void ) const  {
     std::stringstream hist;
+
+    if(verbosity_>0) {
+      hist << std::string(114,'-') << "\n"; 
+      hist << "Trust-Region flag definitions (tr_flag)" << "\n";
+      for( int flag = TRUSTREGION_FLAG_SUCCESS; flag != TRUSTREGION_FLAG_UNDEFINED; ++flag ) {
+        hist << "  " << std::to_string(flag) << " - " 
+             << ETrustRegionFlagToString(static_cast<ETrustRegionFlag>(flag)) << "\n";
+          
+      } 
+
+      if( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+        hist << std::string(114,'-') << "\n"; 
+        hist << "Trust-Region Truncated CG flags (flagCG)" << "\n";
+        for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
+          hist << "  " << std::to_string(flag) << " - "
+               << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n"; 
+        }            
+      }
+
+      hist << std::string(114,'-') << "\n"; 
+    }
+
+
     hist << "  ";
     hist << std::setw(6)  << std::left << "iter";
     hist << std::setw(15) << std::left << "value";

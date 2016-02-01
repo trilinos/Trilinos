@@ -193,7 +193,7 @@ namespace BaskerNS
 	return -1;
       }
 
-    basker_barrier.init(num_threads, 16, tree.nlvls );
+    basker_barrier.init(num_threads, 16, tree.nlvls);
 
     order_flag = true;
     return 0;
@@ -406,6 +406,7 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int Options)
   {
     factor_inc_lvl(Options);
+    return 0;
   }
 
 

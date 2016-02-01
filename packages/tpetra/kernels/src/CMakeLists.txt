@@ -15,6 +15,14 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 
 #-----------------------------------------------------------------------------
+#To bind the experimental Kernels Graph subpackage, comment out below:
+#SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph)
+#APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+#APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
+#SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph/impl)
+#APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+#APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 TRIBITS_ADD_LIBRARY(
   tpetrakernels
@@ -29,18 +37,3 @@ TRIBITS_ADD_LIBRARY(
 # be OK.
 #
 
-#To bind the experimental Kernels Graph subpackage, comment out below:
-
-#SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph)
-#APPEND_GLOB(EXPERIMENTALHEADERS ${DIR}/*.hpp)
-#APPEND_GLOB(EXPERIMENTALSOURCES ${DIR}/*.cpp)
-
-#SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph/impl)
-#APPEND_GLOB(EXPERIMENTALHEADERS ${DIR}/*.hpp)
-#APPEND_GLOB(EXPERIMENTALSOURCES ${DIR}/*.cpp)
-
-#TRIBITS_ADD_LIBRARY(
-#  tpetrakernelsExperimental
-#  HEADERS ${EXPERIMENTALHEADERS}
-#  SOURCES ${EXPERIMENTALSOURCES}
-#  )

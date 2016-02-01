@@ -39,7 +39,11 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
 
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
 #include "KokkosExp_View_Fad.hpp"
+
+#else
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -913,9 +917,15 @@ struct is_view_fad< View<T,L,D,M,Impl::ViewSpecializeSacadoFad> > {
 
 template <typename view_type>
 KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_fad<view_type>::value, unsigned >::type
+constexpr unsigned
 dimension_scalar(const view_type& view) {
+  return 0;
+}
+
+template <typename T, typename L, typename D, typename M>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar(const View<T,L,D,M,Impl::ViewSpecializeSacadoFad>& view) {
   return view.storage_size();
 }
 
@@ -1033,6 +1043,8 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+#endif
 
 #endif
 
