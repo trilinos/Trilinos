@@ -94,6 +94,11 @@ namespace Tacho {
       this->setView(A, i);
     }
 
+    CrsRowView(const CrsMatBaseType &A, 
+               const ordinal_type i) {
+      this->setView(A, i);
+    }
+
     void setView(const CrsMatrixView<CrsMatBaseType> &A, 
                  const ordinal_type i) {
       _offn = A.OffsetCols();
@@ -108,6 +113,15 @@ namespace Tacho {
       _aj  = lower_bound(cols, next, _offn);
       _ajn = lower_bound(_aj,  next, _offn+_n);
       _ax  = &vals[_aj - cols];
+    }
+
+    void setView(const CrsMatBaseType &A, 
+                 const ordinal_type i) {
+      _offn = 0;
+      _n    = A.NumCols();
+      _aj   = A.ColsInRow(i);
+      _ajn  = A.ColsInRow(i+1);
+      _ax   = A.ValuesInRow(i);
     }
 
     ostream& showMe(ostream &os) const {                                                

@@ -591,10 +591,20 @@ public:
       hist << std::string(114,'-') << "\n"; 
       hist << "Trust-Region flag definitions (tr_flag)" << "\n";
       for( int flag = TRUSTREGION_FLAG_SUCCESS; flag != TRUSTREGION_FLAG_UNDEFINED; ++flag ) {
-        hist << std::to_string(flag) << " - " 
+        hist << "  " << std::to_string(flag) << " - " 
              << ETrustRegionFlagToString(static_cast<ETrustRegionFlag>(flag)) << "\n";
           
       } 
+
+      if( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+        hist << std::string(114,'-') << "\n"; 
+        hist << "Trust-Region Truncated CG flags (flagCG)" << "\n";
+        for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
+          hist << "  " << std::to_string(flag) << " - "
+               << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n"; 
+        }            
+      }
+
       hist << std::string(114,'-') << "\n"; 
     }
 

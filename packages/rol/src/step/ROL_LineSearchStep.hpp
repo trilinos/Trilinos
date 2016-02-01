@@ -166,6 +166,8 @@ private:
 
   bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
 
+  int verbosity_;
+
 public:
 
   virtual ~LineSearchStep() {}
@@ -192,7 +194,7 @@ public:
       ekv_(KRYLOV_CG),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -225,6 +227,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -250,7 +253,7 @@ public:
       ekv_(KRYLOV_CG),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -282,6 +285,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -308,7 +312,7 @@ public:
       ekv_(KRYLOV_CG),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -337,6 +341,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -362,7 +367,7 @@ public:
       ekv_(KRYLOV_USERDEFINED),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -390,6 +395,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   /** \brief Constructor.
@@ -418,7 +424,7 @@ public:
       ekv_(KRYLOV_CG),
       ls_nfval_(0), ls_ngrad_(0),
       useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false) {
+      useProjectedGrad_(false), verbosity_(0) {
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     // Initialize Linesearch Object
@@ -445,6 +451,7 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
@@ -662,6 +669,19 @@ public:
   */
   std::string printHeader( void ) const  {
     std::stringstream hist;
+
+    if( verbosity_>0 ) {
+      if( edesc_ == DESCENT_NEWTONKRYLOV ) {
+        hist << std::string(109,'-') <<  "\n"; 
+        hist << "Krylov solver flags (flagCG)" << "\n";
+        for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_TRRADEX; ++flag ) {
+          hist << "  " << std::to_string(flag) << " - "
+          << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n";
+        }
+      }
+      hist << std::string(109,'-') << "\n";
+    }
+
     hist << "  ";
     hist << std::setw(6) << std::left << "iter";  
     hist << std::setw(15) << std::left << "value";

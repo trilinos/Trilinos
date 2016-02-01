@@ -368,14 +368,14 @@ int main(int argc, char* argv[]) {
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
       return main_<double,int,long,Node>(clp, argc, argv);
 #else
-#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+#  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)           && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
       return main_<double,int,int,Node> (clp, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
+#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)     && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
       return main_<double,int,long,Node>(clp, argc, argv);
-#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
       return main_<double,int,long long,Node>(clp, argc, argv);
 #  else
-      throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+      throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation for Tpetra");
 #  endif
 #endif
 
