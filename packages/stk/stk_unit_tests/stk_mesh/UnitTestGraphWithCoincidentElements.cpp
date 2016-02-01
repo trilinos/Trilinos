@@ -145,7 +145,10 @@ public:
     virtual ~MockIdMapper() {}
     virtual stk::mesh::EntityId localToGlobal(stk::mesh::impl::LocalId local) const
     {
-        return globalIds[local];
+        if(local<0)
+            return -local;
+        else
+            return globalIds[local];
     }
     virtual stk::mesh::impl::LocalId globalToLocal(stk::mesh::EntityId global) const
     {

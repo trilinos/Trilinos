@@ -110,8 +110,8 @@ void ParallelInfoForGraphEdges::erase_parallel_info_for_graph_edge(const GraphEd
 impl::ParallelGraphInfo::const_iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge) const
 {
     impl::ParallelGraphInfo::const_iterator iter = m_parallel_graph_info.find(graphEdge);
-    ThrowRequireMsg( iter != m_parallel_graph_info.end(), "ERROR: Proc " << m_procRank << " failed to find parallel graph info for remote element "
-                     <<convert_negative_local_id_to_remote_global_id(graphEdge.elem2)<<">");
+    ThrowRequireMsg( iter != m_parallel_graph_info.end(), "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
+                     << graphEdge << ".");
     return iter;
 }
 

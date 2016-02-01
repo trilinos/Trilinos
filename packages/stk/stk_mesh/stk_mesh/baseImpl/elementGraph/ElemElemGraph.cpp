@@ -94,6 +94,8 @@ void ElemElemGraph::fill_from_mesh()
 
 void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids()
 {
+    std::cerr << stk::parallel_machine_rank(MPI_COMM_WORLD) << " Graph before: " << std::endl;
+    write_graph();
     m_coincidentGraph = impl::extract_coincident_sides(m_graph, m_element_topologies);
     impl::BulkDataIdMapper idMapper(m_bulk_data, m_local_id_to_element_entity, m_entity_to_local_id);
     make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(m_graph,
@@ -101,6 +103,9 @@ void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids()
                                            m_coincidentGraph,
                                            idMapper,
                                            m_bulk_data.parallel());
+    std::cerr << stk::parallel_machine_rank(MPI_COMM_WORLD) << " Graph after: " << std::endl;
+    write_graph();
+    std::cerr << std::endl << std::endl << std::endl;
 }
 
 void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids_for_specified_elems(const stk::mesh::EntityVector &elems)
