@@ -589,25 +589,39 @@ public:
 
     if(verbosity_>0) {
       hist << std::string(114,'-') << "\n"; 
-      hist << "Trust-Region flag definitions (tr_flag)" << "\n";
+
+      hist << "Trust-Region status output definitions" << "\n\n";
+       
+      hist << "  iter    - Number of iterates (steps taken) \n";        
+      hist << "  value   - Objective function value \n";        
+      hist << "  gnorm   - Norm of the gradient\n";
+      hist << "  snorm   - Norm of the step (update to optimization vector)\n";  
+      hist << "  delta   - Trust-Region radius\n";
+      hist << "  #fval   - Number of times the objective function was evaluated\n";
+      hist << "  #grad   - Number of timesthe gradient was computed\n";
+      
+        
+      
+      hist << "\n";
+      hist << "  tr_flag - Trust-Region flag" << "\n";
       for( int flag = TRUSTREGION_FLAG_SUCCESS; flag != TRUSTREGION_FLAG_UNDEFINED; ++flag ) {
-        hist << "  " << std::to_string(flag) << " - " 
+        hist << "    " << std::to_string(flag) << " - " 
              << ETrustRegionFlagToString(static_cast<ETrustRegionFlag>(flag)) << "\n";
           
       } 
 
       if( etr_ == TRUSTREGION_TRUNCATEDCG ) {
-        hist << std::string(114,'-') << "\n"; 
-        hist << "Trust-Region Truncated CG flags (flagCG)" << "\n";
+        hist << "\n";
+        hist << "  iterCG - Number of Krylov iterations\n\n";
+        hist << "  flagGC - Trust-Region Truncated CG flag" << "\n";
         for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
-          hist << "  " << std::to_string(flag) << " - "
+          hist << "    " << std::to_string(flag) << " - "
                << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n"; 
         }            
       }
 
       hist << std::string(114,'-') << "\n"; 
     }
-
 
     hist << "  ";
     hist << std::setw(6)  << std::left << "iter";

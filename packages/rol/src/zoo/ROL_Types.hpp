@@ -830,22 +830,22 @@ namespace ROL {
     std::string retString;
     switch(trf) {
       case TRUSTREGION_FLAG_SUCCESS:  
-        retString = "Both Actual and Predicted Reductions are Positive";
+        retString = "Both actual and predicted reductions are positive (success)";
         break;
       case TRUSTREGION_FLAG_POSPREDNEG: 
-        retString = "Actual Reduction is Positive and Predicted Reduction is Negative (impossible)";
+        retString = "Actual reduction is positive and predicted reduction is negative (impossible)";
         break;
       case TRUSTREGION_FLAG_NPOSPREDPOS: 
-        retString = "Actual Reduction is Nonpositive and Predicted Reduction is Positive";
+        retString = "Actual reduction is nonpositive and predicted reduction is positive";
         break;
       case TRUSTREGION_FLAG_NPOSPREDNEG:
-        retString = "Actual Reduction is Nonpositive and Predicted Reduction is Negative (impossible)";
+        retString = "Actual reduction is nonpositive and predicted reduction is negative (impossible)";
         break;
       case TRUSTREGION_FLAG_QMINSUFDEC:
-        retString = "Sufficient Decrease of the Quadratic Model Not Met (bound constraints only)";
+        retString = "Sufficient decrease of the quadratic model not met (bound constraints only)";
         break;
       case TRUSTREGION_FLAG_NAN:
-        retString = "Actual and/or Predicted Reduction is a NaN";
+        retString = "Actual and/or predicted reduction is a NaN";
         break;
       default:
         retString = "INVALID ETrustRegionFlag";       
@@ -876,16 +876,16 @@ namespace ROL {
     std::string retString;
     switch(cgf) {
       case CG_FLAG_SUCCESS:
-        retString = "Residual Tolerance Met";
+        retString = "Residual tolerance met";
         break;
       case CG_FLAG_ITEREXCEED:
-        retString = "Iteration Limit Exceeded";
+        retString = "Iteration limit exceeded";
         break;
       case CG_FLAG_NEGCURVE:
-        retString = "Negative Curvature Detected";
+        retString = "Negative curvature detected";
         break;
       case CG_FLAG_TRRADEX:   
-        retString = "Trust-Region Radius Exceeded";
+        retString = "Trust-Region radius exceeded";
         break;
       default:
         retString = "INVALID ECGFlag";  
