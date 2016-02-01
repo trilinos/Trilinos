@@ -854,6 +854,49 @@ namespace ROL {
   }
 
 
+  /** \enum  ROL::ECGFlag 
+      \brief Enumation of flags used by conjugate gradient methods.
+
+    \arg CG_FLAG_SUCCESS     Residual Tolerance Met
+    \arg CG_FLAG_ITEREXCEED  Iteration Limit Exceeded
+    \arg CG_FLAG_NEGCURVE    Negative Curvature Detected
+    \arh CG_FLAG_TRRADEX     Trust-Region Radius Exceeded
+
+  */
+  enum ECGFlag {
+    CG_FLAG_SUCCESS = 0,
+    CG_FLAG_ITEREXCEED,
+    CG_FLAG_NEGCURVE,
+    CG_FLAG_TRRADEX,
+    CG_FLAG_UNDEFINED 
+  };
+
+
+  inline std::string ECGFlagToString(ECGFlag cgf) {
+    std::string retString;
+    switch(cgf) {
+      case CG_FLAG_SUCCESS:
+        retString = "Residual Tolerance Met";
+        break;
+      case CG_FLAG_ITEREXCEED:
+        retString = "Iteration Limit Exceeded";
+        break;
+      case CG_FLAG_NEGCURVE:
+        retString = "Negative Curvature Detected";
+        break;
+      case CG_FLAG_TRRADEX:   
+        retString = "Trust-Region Radius Exceeded";
+        break;
+      default:
+        retString = "INVALID ECGFlag";  
+    }
+    return retString;
+  }
+  
+
+
+
+
   /** \brief  Verifies validity of a TrustRegion enum.
     
       \param  tr  [in]  - enum of the TrustRegion
