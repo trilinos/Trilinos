@@ -43,16 +43,19 @@ for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
   cat $tmpl | sed "s/\$TMPL_UPPERCASECLASS/$uppercaseClassName/g" | sed "s/\$TMPL_CLASS/$className/g" >> MueLu_UseShortNamesScalar.hpp
 done
 
-# Add Utils, Utils2 at the end of the file
-
-#echo "#ifdef MUELU_UTILITIES_KOKKOS_SHORT" >> MueLu_UseShortNamesScalar.hpp
-#echo "typedef MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils_kokkos;" >> MueLu_UseShortNamesScalar.hpp
-#echo "typedef MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2_kokkos;" >> MueLu_UseShortNamesScalar.hpp
-#echo "#endif" >> MueLu_UseShortNamesScalar.hpp
-#
-#echo "#ifdef MUELU_UTILITIES_SHORT" >> MueLu_UseShortNamesScalar.hpp
-#echo "typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;" >> MueLu_UseShortNamesScalar.hpp
-#echo "#endif" >> MueLu_UseShortNamesScalar.hpp
+# add classes from muelu-interface library to short names
+echo "#ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;" >> MueLu_UseShortNamesScalar.hpp
+echo "#endif" >> MueLu_UseShortNamesScalar.hpp
+echo "#ifdef MUELU_FACTORYFACTORY_SHORT" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::FactoryFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FactoryFactory;" >> MueLu_UseShortNamesScalar.hpp
+echo "#endif" >> MueLu_UseShortNamesScalar.hpp
+echo "#ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;" >> MueLu_UseShortNamesScalar.hpp
+echo "#endif" >> MueLu_UseShortNamesScalar.hpp
+echo "#ifdef MUELU_PARAMETERLISTINTERPRETER_SHORT" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;" >> MueLu_UseShortNamesScalar.hpp
+echo "#endif" >> MueLu_UseShortNamesScalar.hpp
 
 # Add the matlab utilities to end of file
 echo "#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT" >> MueLu_UseShortNamesScalar.hpp
