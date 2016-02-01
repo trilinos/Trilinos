@@ -417,7 +417,6 @@ lib ioex
     ioss
     exodus
     /tpl/netcdf//netcdf
-    /tpl/cgns//cgns
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -459,7 +458,6 @@ lib iopx
     /tpl/parmetis//parmetis
     exodus
     /tpl/netcdf//netcdf
-    /tpl/cgns//cgns
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -479,7 +477,6 @@ lib iofx
     ioex
     exodus
     /tpl/netcdf//netcdf
-    /tpl/cgns//cgns
   : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -568,7 +565,6 @@ lib ioinit
     ioex
     iopx
     iofx
-    iocgns
     iopg
     iohb
     iogn
@@ -576,7 +572,7 @@ lib ioinit
     iotr
     iovs
     /mpi//mpi
-  : <define>USE_CGNS
+  : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -1759,8 +1755,10 @@ exe io_shell
     ioss
     iotr
     ioxf
+    iocgns
     /mpi//mpi
-  : <tag>@sierra-exec-tag
+  : <define>USE_CGNS
+    <tag>@sierra-exec-tag
   ;
 
 exe io_info
@@ -1773,8 +1771,10 @@ exe io_info
     ioss
     iotr
     ioxf
+    iocgns
     /mpi//mpi
-  : <tag>@sierra-exec-tag
+  : <define>USE_CGNS
+    <tag>@sierra-exec-tag
   ;
 
 exe shell_to_hex
