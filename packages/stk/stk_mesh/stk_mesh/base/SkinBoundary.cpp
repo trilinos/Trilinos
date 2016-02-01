@@ -124,5 +124,12 @@ bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlo
     return is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart);
 }
 
+bool check_interior_block_boundary_sides(BulkData &bulkData, const Selector &skinnedBlock, Part &skinnedPart)
+{
+    std::vector<SideSetEntry> skinnedSideSet; //  = ElemElemGraph(bulkData, skinnedBlock).extract_interior_skin_sideset(  );
+    stk::mesh::EntityVector sidesetSides = get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet);
+    return is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart);
+}
+
 } // namespace mesh
 } // namespace stk

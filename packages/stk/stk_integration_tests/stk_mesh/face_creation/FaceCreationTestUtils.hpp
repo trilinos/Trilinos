@@ -33,10 +33,17 @@ struct TestCase
 
 typedef std::vector<TestCase> TestCaseData;
 
-inline stk::mesh::Part & run_skin_mesh(stk::mesh::BulkData& bulkData, stk::mesh::Selector blocksToSkin)
+inline stk::mesh::Part & run_skin_exposed_mesh(stk::mesh::BulkData& bulkData, stk::mesh::Selector blocksToSkin)
 {
     stk::mesh::Part &skin = bulkData.mesh_meta_data().declare_part("skin", bulkData.mesh_meta_data().side_rank());
     EXPECT_NO_FATAL_FAILURE(stk::mesh::create_exposed_boundary_sides(bulkData, blocksToSkin, skin));
+    return skin;
+}
+
+inline stk::mesh::Part & run_skin_interior_mesh(stk::mesh::BulkData& bulkData, stk::mesh::Selector blocksToSkin)
+{
+    stk::mesh::Part &skin = bulkData.mesh_meta_data().declare_part("interior", bulkData.mesh_meta_data().side_rank());
+    EXPECT_NO_FATAL_FAILURE(stk::mesh::create_interior_block_boundary_sides(bulkData, blocksToSkin, skin));
     return skin;
 }
 

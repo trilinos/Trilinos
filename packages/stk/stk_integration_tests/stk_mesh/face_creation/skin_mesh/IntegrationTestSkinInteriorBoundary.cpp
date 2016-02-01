@@ -50,6 +50,22 @@ const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
     {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}}
 };
 
+const SideTestUtil::TestCaseData createInteriorBoundaryForOneBlockTestCases =
+{
+  /* filename, max#procs, #side,  sideset */
+    {"AB.e",      2,        5,    {{1, 5}}},
+    {"Ae.e",      2,        1,    {{1, 5}}},
+    {"Aef.e",     3,        1,    {{1, 5}}},
+    {"AeB.e",     3,        2,    {{1, 5}}},
+    {"AefB.e",    4,        2,    {{1, 5}}},
+    {"ef.e",      2,        0,    {{1, 0}}},
+
+    {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}}},
+
+    {"Tg.e",      2,        0,    {}},
+    {"ZY.e",      2,        1,    {{1, 5}}}
+};
+
 class InteriorBlockBoundaryTester : public SideTestUtil::SideCreationTester
 {
 public:
@@ -58,8 +74,7 @@ protected:
     virtual void test_side_creation(stk::mesh::BulkData& bulkData,
                                     const SideTestUtil::TestCase& testCase)
     {
-        stk::mesh::Part& skinnedPart = bulkData.mesh_meta_data().declare_part("interior");
-        create_interior_block_boundary_sides(bulkData, bulkData.mesh_meta_data().universal_part(), skinnedPart);
+        stk::mesh::Part& skinnedPart = SideTestUtil::run_skin_interior_mesh(bulkData, get_things_to_skin(bulkData));
         expect_interior_sides_connected_as_specified_in_test_case(bulkData, testCase, skinnedPart);
     }
 
@@ -69,6 +84,21 @@ protected:
     {
         SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase, skinnedPart);
         SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
+        //EXPECT_TRUE(stk::mesh::check_interior_boundary_sides(bulkData, get_things_to_skin(bulkData), skinnedPart));
+    }
+
+    virtual stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)
+    {
+        return bulkData.mesh_meta_data().universal_part();
+    }
+};
+
+class OneBlockInteriorBlockBoundaryTester : public InteriorBlockBoundaryTester
+{
+protected:
+    virtual stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)
+    {
+        return *bulkData.mesh_meta_data().get_part("block_1");
     }
 };
 
@@ -80,6 +110,16 @@ TEST(InteriorBlockBoundaryTest, run_all_test_cases_aura)
 TEST(InteriorBlockBoundaryTest, DISABLED_run_all_test_cases_no_aura)
 {
     InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(CreateInteriorBoundaryForSingleBlockTest, DISABLED_run_all_test_cases_aura)
+{
+    OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockTestCases, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(CreateExposedBoundaryForSingleBlockTest, DISABLED_run_all_test_cases_no_aura)
+{
+    OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 }

@@ -33,7 +33,7 @@ protected:
     {
         setup_empty_mesh(auraOption);
         stk::unit_test_util::read_from_serial_file_and_decompose("ARA.e", get_bulk(), "cyclic");
-        stk::mesh::Part& skinnedPart = SideTestUtil::run_skin_mesh(get_bulk(), get_things_to_skin(get_bulk()));
+        stk::mesh::Part& skinnedPart = SideTestUtil::run_skin_exposed_mesh(get_bulk(), get_things_to_skin(get_bulk()));
         run_modification(skinnedPart);
         EXPECT_FALSE(stk::mesh::check_exposed_boundary_sides(get_bulk(), get_things_to_skin(get_bulk()), skinnedPart));
     }
