@@ -104,6 +104,10 @@ namespace Tacho {
       }
       AA.importMatrixMarket(in);
       t_import = timer.seconds();
+
+      cout << "CholDirectPlain:: input nnz = " << AA.NumNonZeros() << endl;
+      CrsMatrixHelper::filterZeros(AA);
+      cout << "CholDirectPlain:: resized nnz = " << AA.NumNonZeros() << endl;
     }
     cout << "CholDirectPlain:: import input file::time = " << t_import << endl;
 

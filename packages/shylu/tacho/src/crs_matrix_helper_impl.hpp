@@ -11,6 +11,56 @@
 namespace Tacho {
 
   using namespace std;
+  
+  template<typename CrsFlatBase>
+  KOKKOS_INLINE_FUNCTION
+  int
+  CrsMatrixHelper::filterZeros(CrsFlatBase &flat) {
+    typedef typename CrsFlatBase::ordinal_type           ordinal_type;
+    typedef typename CrsFlatBase::size_type              size_type;
+    typedef typename CrsFlatBase::value_type             value_type;
+    
+    typedef typename CrsFlatBase::ordinal_type_array_ptr ordinal_type_array_ptr;
+    typedef typename CrsFlatBase::value_type_array_ptr   value_type_array_ptr;
+    
+    size_type nz = 0;
+    const value_type zero(0);
+    
+    for (ordinal_type k=0;k<flat.NumNonZeros();++k) 
+      nz += (flat.Value(k) == zero) ;
+    
+    if (nz) {
+      CrsFlatBase resized(flat.Label() + "::ZeroFiltered", 
+                          flat.NumRows(),
+                          flat.NumCols(),
+                          flat.NumNonZeros() - nz);
+      
+      ordinal_type_array_ptr rows = resized.RowPtr(); rows[0] = 0;
+      ordinal_type_array_ptr cols = resized.ColPtr();
+      value_type_array_ptr vals = resized.ValuePtr();    
+      
+      size_type nnz = 0;
+      for (ordinal_type i=0;i<flat.NumRows();++i) {
+        const ordinal_type nnz_in_row = flat.NumNonZerosInRow(i);
+        const ordinal_type_array_ptr cols_in_row = flat.ColsInRow(i);
+        const value_type_array_ptr vals_in_row = flat.ValuesInRow(i);
+        
+        for (ordinal_type j=0;j<nnz_in_row;++j) {
+          if (vals_in_row[j] != zero) {
+            cols[nnz] = cols_in_row[j];
+            vals[nnz] = vals_in_row[j];
+            ++nnz;
+          }
+        }
+        rows[i+1] = nnz;
+      }
+      flat = resized;
+      resized.setNumNonZeros();
+    }
+
+    return 0;
+  }
+
 
   template<typename CrsFlatBase,
            typename CrsHierBase>
