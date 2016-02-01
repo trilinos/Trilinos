@@ -672,13 +672,14 @@ public:
 
     if( verbosity_>0 ) {
       if( edesc_ == DESCENT_NEWTONKRYLOV ) {
-        hist << std::string(114,'-') <<  "\n"; 
+        hist << std::string(109,'-') <<  "\n"; 
+        hist << "Krylov solver flags (flagCG)" << "\n";
         for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_TRRADEX; ++flag ) {
           hist << "  " << std::to_string(flag) << " - "
           << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n";
         }
       }
-      hist << std::string(114,'-') << "\n";
+      hist << std::string(109,'-') << "\n";
     }
 
     hist << "  ";
