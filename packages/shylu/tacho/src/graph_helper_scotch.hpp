@@ -274,6 +274,8 @@ namespace Tacho {
     }
 
     int pruneTree(const ordinal_type cut) {
+      if (cut <=0 ) return 0;
+
       ordinal_type_array work = ordinal_type_array(_label+"::WorkArray", _cblk+1);
       for (ordinal_type iter=0;iter<cut && _cblk > 1;++iter) {
         // horizontal merging 
