@@ -2191,7 +2191,7 @@ void fill_side_ordinals(size_t element_side_index, const std::vector<SideSetEntr
         ordinals.push_back(skinnedSideSet[j].side);
         j++;
     }
-    while(skinnedSideSet[j].element==skinnedSideSet[element_side_index].element && j<skinnedSideSet.size());
+    while(j<skinnedSideSet.size() && skinnedSideSet[j].element==skinnedSideSet[element_side_index].element);
 }
 
 std::vector<int> ElemElemGraph::get_side_ordinals_of_element(size_t element_side_index, const std::vector<SideSetEntry> &skinnedSideSet)
