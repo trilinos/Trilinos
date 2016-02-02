@@ -922,28 +922,30 @@ namespace Tpetra {
                      const Teuchos::ArrayView<LocalOrdinal>& indices,
                      size_t& NumIndices) const;
 
-    //! Extract a const, non-persisting view of global indices in a specified row of the graph.
-    /*!
-      \param GlobalRow - (In) Global row number for which indices are desired.
-      \param Indices   - (Out) Global column indices corresponding to values.
-      \pre <tt>isLocallyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
-
-      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-    */
+    /// \brief Get a const, non-persisting view of the given global
+    ///   row's global column indices, as a Teuchos::ArrayView.
+    ///
+    /// \param GlobalRow [in] Global index of the row.
+    /// \param Indices [out] Global column indices in the row.  If the
+    ///   given row is not a valid row index on the calling process,
+    ///   then the result has no entries (its size is zero).
+    ///
+    /// \pre <tt>! isLocallyIndexed()</tt>
+    /// \post <tt>Indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
     void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       Teuchos::ArrayView<const GlobalOrdinal>& Indices) const;
 
-    //! Extract a const, non-persisting view of local indices in a specified row of the graph.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices  - (Out) Global column indices corresponding to values.
-      \pre <tt>isGloballyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
-
-      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
-    */
+    /// \brief Get a const, non-persisting view of the given local
+    ///   row's local column indices, as a Teuchos::ArrayView.
+    ///
+    /// \param LocalRow [in] Local index of the row.
+    /// \param indices [out] Local column indices in the row.  If the
+    ///   given row is not a valid row index on the calling process,
+    ///   then the result has no entries (its size is zero).
+    ///
+    /// \pre <tt>! isGloballyIndexed()</tt>
+    /// \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
     void
     getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal>& indices) const;
