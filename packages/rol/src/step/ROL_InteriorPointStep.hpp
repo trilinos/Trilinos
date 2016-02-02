@@ -91,6 +91,8 @@ private:
   Real stol_;           // Status test step tolerance
   int subproblemIter_;  // Status test maximum number of iterations
 
+  int verbosity_;       // Adjust level of detail in printing step information
+
 public:
  
   ~InteriorPointStep() {}
@@ -109,6 +111,8 @@ public:
 
     using Teuchos::ParameterList;
     
+    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
+
     // List of general Interior Point parameters
     ParameterList& iplist  = parlist.sublist("Step").sublist("Interior Point");
 
@@ -302,6 +306,27 @@ public:
   */
   std::string printHeader( void ) const {
     std::stringstream hist;
+
+    if( verbosity_ > 0 ) {
+
+      hist << std::string(116,'-') << "\n";
+      hist << "Interior Point status output definitions\n\n";
+   
+      hist << "  IPiter  - Number of interior point steps taken\n";
+      hist << "  CSiter  - Number of Composite Steps taken in each subproblem\n";
+      hist << "  penalty - Penalty parameter multiplying the barrier objective\n";
+      hist << "  fval    - Number of objective evaluations\n";
+      hist << "  cnorm   - Norm of the composite constraint\n";
+      hist << "  gLnorm  - Norm of the Lagrangian's gradient\n";
+      hist << "  snorm   - Norm of step (update to optimzation and slack vector)\n";
+      hist << "  #fval   - Number of objective function evaluations\n";
+      hist << "  #grad   - Number of gradient evaluations\n";
+      hist << "  #cval   - Number of composite constraint evaluations\n"; 
+      hist << std::string(116,'-') << "\n";
+      
+     
+    }
+
     hist << "  ";
     hist << std::setw(9)  << std::left  << "IPiter";
     hist << std::setw(9)  << std::left  << "CSiter";
