@@ -96,6 +96,10 @@ namespace Tacho {
     static constexpr int Gemm[2] = { AlgoGemm::ExternalBlas,   Variant::One };
   };
 
+  template<> struct Control<AlgoGemm::DenseByBlocks,Variant::One> {
+    static constexpr int Gemm[2] = { AlgoGemm::ExternalBlas, Variant::One };
+  };
+
 }
 
 #endif
