@@ -257,6 +257,13 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES example_dense_gemm_by_blocks_pthread.cpp
     COMM serial mpi
   )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_chol_by_blocks_pthread
+    NOEXEPREFIX
+    SOURCES example_dense_chol_by_blocks_pthread.cpp 
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)

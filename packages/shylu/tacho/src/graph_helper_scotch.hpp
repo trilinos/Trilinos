@@ -137,7 +137,8 @@ namespace Tacho {
       {
         const int level = (_level ? _level : max(1, int(log2(_m)-treecut))); // level = log2(_nnz)+10;
         SCOTCH_Strat stradat;
-        SCOTCH_Num straval = (_strat ? _strat : (SCOTCH_STRATLEVELMAX));//   |
+        SCOTCH_Num straval = _strat;
+                              //(SCOTCH_STRATLEVELMAX));//   |
                               //SCOTCH_STRATLEVELMIN   |
                               //SCOTCH_STRATLEAFSIMPLE |
                               //SCOTCH_STRATSEPASIMPLE);
@@ -156,6 +157,16 @@ namespace Tacho {
                                  range,
                                  tree);CHKERR(ierr);
         SCOTCH_stratExit(&stradat);
+      }
+
+      {
+        // assume there are multiple roots 
+        range[_cblk+1] = range[_cblk]; // dummy range
+        tree[_cblk] = -1;              // dummy root
+        for (ordinal_type i=0;i<_cblk;++i)
+          if (tree[i] == -1)           // multiple roots becomes children of the hummy root
+            tree[i] = tree[_cblk];
+        ++_cblk;                       // include the dummy root
       }
 
       // provided blksize is greater than 0, reorder internally
