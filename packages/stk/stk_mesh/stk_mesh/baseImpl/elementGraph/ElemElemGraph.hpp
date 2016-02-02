@@ -144,13 +144,8 @@ protected:
     void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
-    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm,
-                             const stk::mesh::EntityVector & elements_to_ignore);
-
-
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
                                                                     stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector,
-                                                                    const stk::mesh::EntityVector & elements_to_ignore,
                                                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);

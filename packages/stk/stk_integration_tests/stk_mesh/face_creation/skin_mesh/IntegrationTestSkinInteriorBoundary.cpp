@@ -123,7 +123,7 @@ TEST(InteriorBlockBoundaryTest, run_all_test_cases_aura)
     InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
 
-TEST(InteriorBlockBoundaryTest, DISABLED_run_all_test_cases_no_aura)
+TEST(InteriorBlockBoundaryTest, run_all_test_cases_no_aura)
 {
     InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
@@ -133,7 +133,7 @@ TEST(CreateInteriorBoundaryForSingleBlockTest, run_all_test_cases_aura)
     OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
 
-TEST(CreateExposedBoundaryForSingleBlockTest, DISABLED_run_all_test_cases_no_aura)
+TEST(CreateExposedBoundaryForSingleBlockTest, run_all_test_cases_no_aura)
 {
     OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }

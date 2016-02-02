@@ -155,27 +155,6 @@ protected:
 
 };
 
-class ElementBlockPartTest: public LoadMesh
-{
-protected:
-    virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        TestCaseData test_cases = get_test_cases();
-        for(const TestCaseDatum& testCase : test_cases)
-        {
-            test_element_blocks(testCase, auraOption);
-        }
-    }
-
-    void test_element_blocks(const TestCaseDatum& testCase, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        std::vector<stk::mesh::Part*> element_blocks;
-        EXPECT_NO_FATAL_FAILURE(input_from_file(testCase.first, auraOption));
-        stk::mesh::impl::get_element_blocks(get_meta(), element_blocks);
-        EXPECT_EQ(testCase.second, element_blocks.size());
-    }
-};
-
 class TwoElementMesh: public LoadMesh
 {
 public:
@@ -226,16 +205,6 @@ protected:
     }
 };
 
-TEST_F(ElementBlockPartTest, is_element_block_no_aura)
-{
-    run_test(stk::mesh::BulkData::NO_AUTO_AURA);
-}
-
-
-TEST_F(ElementBlockPartTest, is_element_block_aura)
-{
-    run_test(stk::mesh::BulkData::AUTO_AURA);
-}
 
 TEST_F(TwoElementsInSameBlock, test_difference_with_aura)
 {
