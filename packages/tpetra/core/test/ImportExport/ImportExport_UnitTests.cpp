@@ -392,11 +392,10 @@ namespace {
     // This is intentional
     RCP<const Comm<int> > comm = getDefaultComm();
     Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    typedef Tpetra::Map<LO,GO> Tpetra_Map;
-    typedef Tpetra::Import<LO,GO> Tpetra_Import;
-    typedef Tpetra::Vector<int, LO, GO> IntVector;
+    typedef Tpetra::Map<LO,GO,Node> Tpetra_Map;
+    typedef Tpetra::Import<LO,GO,Node> Tpetra_Import;
+    typedef Tpetra::Vector<int, LO, GO,Node> IntVector;
     
-
     int NumProcs = comm->getSize();
     int MyPID    = comm->getRank();
     
@@ -408,17 +407,17 @@ namespace {
     if(MyPID==0) num_per_proc=7;
     else num_per_proc=6;
     
-    int from_gids_p0[7] = {0,1,2,3,4,5,6};
-    int to_gids_p0[7]   = {0,4,8,12,16,20,24};
+    GO from_gids_p0[7] = {0,1,2,3,4,5,6};
+    GO to_gids_p0[7]   = {0,4,8,12,16,20,24};
     
-    int from_gids_p1[6] = {7,8,9,10,11,12};
-    int to_gids_p1[6]   = {1,5,9,13,17,21};
+    GO from_gids_p1[6] = {7,8,9,10,11,12};
+    GO to_gids_p1[6]   = {1,5,9,13,17,21};
     
-    int from_gids_p2[6] = {13,14,15,16,17,18};
-    int to_gids_p2[6]   = {2,6,10,14,18,22};
+    GO from_gids_p2[6] = {13,14,15,16,17,18};
+    GO to_gids_p2[6]   = {2,6,10,14,18,22};
     
-    int from_gids_p3[6] = {19,20,21,22,23,24};
-    int to_gids_p3[6]   = {3,7,11,15,19,23};
+    GO from_gids_p3[6] = {19,20,21,22,23,24};
+    GO to_gids_p3[6]   = {3,7,11,15,19,23};
     
     // Correctness check array
     int who_owns[25];
@@ -430,15 +429,15 @@ namespace {
       who_owns[to_gids_p3[i]] = 3;
     }
     
-    int *from_ptr, *to_ptr;
+    GO *from_ptr, *to_ptr;
     if(MyPID==0)      {from_ptr=&from_gids_p0[0]; to_ptr=&to_gids_p0[0];}
     else if(MyPID==1) {from_ptr=&from_gids_p1[0]; to_ptr=&to_gids_p1[0];}
     else if(MyPID==2) {from_ptr=&from_gids_p2[0]; to_ptr=&to_gids_p2[0];}
     else if(MyPID==3) {from_ptr=&from_gids_p3[0]; to_ptr=&to_gids_p3[0];}
     else exit(-1);
     
-    Teuchos::ArrayView<int> myfromgids(from_ptr,num_per_proc);
-    Teuchos::ArrayView<int> mytogids(to_ptr,num_per_proc);
+    Teuchos::ArrayView<GO> myfromgids(from_ptr,num_per_proc);
+    Teuchos::ArrayView<GO> mytogids(to_ptr,num_per_proc);
     
     // FromMap (from.getRowMap() from Zoltan2)
     RCP<Tpetra_Map> FromMap = rcp(new Tpetra_Map(INVALID,myfromgids,0,comm));
