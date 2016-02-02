@@ -2269,6 +2269,21 @@ namespace Tpetra {
     Teuchos::ArrayView<LocalOrdinal>
     getLocalViewNonConst (const RowInfo rowinfo);
 
+    /// \brief Get a pointer to the local column indices of a locally
+    ///   owned row, using the result of getRowInfo.
+    ///
+    /// \param lclInds [out] Pointer to the local column indices of
+    ///   the given row.
+    /// \param numEnt [out] Number of entries in the given row.
+    /// \param rowinfo [in] Result of getRowInfo(lclRow) for the row
+    ///   \c lclRow to view.
+    ///
+    /// \return 0 if successful, else a nonzero error code.
+    LocalOrdinal
+    getLocalViewRawConst (const LocalOrdinal*& lclInds,
+                          LocalOrdinal& numEnt,
+                          const RowInfo& rowinfo) const;
+
   private:
 
     /// \brief Get a const nonowned view of the local column indices
@@ -2311,6 +2326,22 @@ namespace Tpetra {
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<GlobalOrdinal>
     getGlobalViewNonConst (const RowInfo rowinfo);
+
+    /// \brief Get a pointer to the global column indices of a locally
+    ///   owned row, using the result of getRowInfoFromGlobalRowIndex.
+    ///
+    /// \param gblInds [out] Pointer to the global column indices of
+    ///   the given row.
+    /// \param numEnt [out] Number of entries in the given row.
+    /// \param rowinfo [in] Result of
+    ///   getRowInfoFromGlobalRowIndex(gblRow) for the row to view,
+    ///   whose global row index is \c gblRow.
+    ///
+    /// \return 0 if successful, else a nonzero error code.
+    LocalOrdinal
+    getGlobalViewRawConst (const GlobalOrdinal*& gblInds,
+                           LocalOrdinal& numEnt,
+                           const RowInfo& rowinfo) const;
 
     /// \brief Find the column offset corresponding to the given
     ///   (local) column index.
