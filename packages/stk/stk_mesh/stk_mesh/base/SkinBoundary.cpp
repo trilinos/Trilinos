@@ -84,14 +84,14 @@ bool check_global_truth_value(bool truthValue, MPI_Comm communicator)
     return (0 != globalResult);
 }
 
-stk::mesh::EntityVector get_locally_owned_skinned_sides(BulkData &bulkData, Part& skinnedPart)
+stk::mesh::EntityVector get_locally_owned_skinned_sides(BulkData &bulkData, const Part& skinnedPart)
 {
     stk::mesh::EntityVector skinnedSides;
     stk::mesh::get_selected_entities(skinnedPart & bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(bulkData.mesh_meta_data().side_rank()), skinnedSides);
     return skinnedSides;
 }
 
-bool is_sideset_equivalent_to_skin(BulkData &bulkData, stk::mesh::EntityVector &sidesetSides, Part& skinnedPart)
+bool is_sideset_equivalent_to_skin(BulkData &bulkData, stk::mesh::EntityVector &sidesetSides, const Part& skinnedPart)
 {
     stk::mesh::EntityVector skinnedSides = get_locally_owned_skinned_sides(bulkData, skinnedPart);
     stk::util::sort_and_unique(sidesetSides);
@@ -117,19 +117,13 @@ stk::mesh::EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData,
 }
 
 
-bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart)
+bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, const Part& skinnedPart)
 {
-    std::vector<SideSetEntry> skinnedSideSet = ElemElemGraph(bulkData, skinnedBlock).extract_skinned_sideset(  );
+    std::vector<SideSetEntry> skinnedSideSet = ElemElemGraph(bulkData, skinnedBlock).extract_skinned_sideset();
     stk::mesh::EntityVector sidesetSides = get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet);
     return is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart);
 }
 
-bool check_interior_block_boundary_sides(BulkData &bulkData, const Selector &skinnedBlock, Part &skinnedPart)
-{
-    std::vector<SideSetEntry> skinnedSideSet; //  = ElemElemGraph(bulkData, skinnedBlock).extract_interior_skin_sideset(  );
-    stk::mesh::EntityVector sidesetSides = get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet);
-    return is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart);
-}
 
 } // namespace mesh
 } // namespace stk

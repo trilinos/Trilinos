@@ -159,7 +159,7 @@ protected:
     virtual void test_side_creation(stk::mesh::BulkData& bulkData,
                                     const SideTestUtil::TestCase& testCase)
     {
-        stk::mesh::Part& skinnedPart = SideTestUtil::run_skin_exposed_mesh(bulkData, get_things_to_skin(bulkData));
+        stk::mesh::Part& skinnedPart = SideTestUtil::run_skin_mesh(bulkData, get_things_to_skin(bulkData));
         expect_exposed_sides_connected_as_specified_in_test_case(bulkData, testCase, skinnedPart);
     }
 

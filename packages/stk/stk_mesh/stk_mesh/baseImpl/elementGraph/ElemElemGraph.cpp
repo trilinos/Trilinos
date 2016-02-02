@@ -2125,14 +2125,6 @@ void ElemElemGraph::create_interior_block_boundary_sides(const stk::mesh::PartVe
 {
     std::vector<SideSetEntry> skinnedSideSet = extract_interior_sideset();
     stk::util::sort_and_unique(skinnedSideSet, SideSetEntryLess(m_bulk_data), SideSetEntryEquals(m_bulk_data));
-
-//    std::cerr << "Trying to create sides ";
-//    for(size_t i=0;i<skinnedSideSet.size();++i)
-//    {
-//        std::cerr << " (" << m_bulk_data.identifier(skinnedSideSet[i].element) << ", " << skinnedSideSet[i].side << ") ,";
-//    }
-//    std::cerr << std::endl;
-
     std::vector<stk::mesh::sharing_info> sharedModified;
     create_side_entities_given_sideset(skinnedSideSet, skinParts, sharedModified);
 }
@@ -2140,7 +2132,8 @@ void ElemElemGraph::create_interior_block_boundary_sides(const stk::mesh::PartVe
 std::vector<SideSetEntry> ElemElemGraph::extract_interior_sideset()
 {
     std::vector<SideSetEntry> skinnedSideSet;
-    const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, m_skinned_selector);
+    const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, m_bulk_data.mesh_meta_data().locally_owned_part());
+
     for(const stk::mesh::Bucket* bucket : buckets)
     {
         if(bucket->owned())
@@ -2154,17 +2147,25 @@ std::vector<SideSetEntry> ElemElemGraph::extract_interior_sideset()
                     const stk::mesh::GraphEdge & graphEdge = m_graph.get_edge_for_element(elementId, j);
                     stk::mesh::EntityId otherEntityId;
                     stk::mesh::Entity otherElement;
+                    bool isElement1InSelector = m_skinned_selector(bucket);
+                    bool isElement2InSelector = false;
+
                     bool isParallelEdge = graphEdge.elem2<0;
                     if(isParallelEdge)
                     {
                         otherEntityId = -graphEdge.elem2;
-                        otherElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, otherEntityId);
+                        otherElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, otherEntityId); // this assumes AURA for now
+                        impl::parallel_info &parallel_edge_info = m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge);
+                        isElement2InSelector = parallel_edge_info.m_in_body_to_be_skinned;
                     }
                     else
                     {
                         otherElement = m_local_id_to_element_entity[graphEdge.elem2];
                         otherEntityId = m_bulk_data.identifier(otherElement);
+                        isElement2InSelector = m_skinned_selector(m_bulk_data.bucket(otherElement));
                     }
+
+                    if(!isElement1InSelector && !isElement2InSelector) continue;
 
                     if(m_bulk_data.identifier(element) < otherEntityId || isParallelEdge)
                     {
