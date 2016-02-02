@@ -51,6 +51,8 @@ namespace Ioss {
     bool is_element()                 const {return true;}
     int order()               const;
 
+    ElementShape shape() const {return ElementShape::WEDGE;}
+
     int number_corner_nodes() const;
     int number_nodes()        const;
     int number_edges()        const;
