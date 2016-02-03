@@ -308,7 +308,8 @@ namespace Belos {
     //      
 
     // Storage for QR factorization of the least squares system.
-    Teuchos::SerialDenseMatrix<int,ScalarType> alpha_, rho_, rho_old_;
+    // Teuchos::SerialDenseMatrix<int,ScalarType> alpha_, rho_, rho_old_;
+    std::vector<ScalarType> alpha_, rho_, rho_old_;
     std::vector<MagnitudeType> tau_, cs_, theta_;
     
     // 
@@ -355,9 +356,9 @@ namespace Belos {
     lp_(problem), 
     om_(printer),
     stest_(tester),
-    alpha_(1,1),
-    rho_(1,1),
-    rho_old_(1,1),
+    alpha_(1),
+    rho_(1),
+    rho_old_(1),
     tau_(1),
     cs_(1),
     theta_(1),
@@ -405,10 +406,9 @@ namespace Belos {
           TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
                              "Belos::TFQMRIter::setStateSize(): linear problem does not specify multivectors to clone from.");
           R_ = MVT::Clone( *tmp, 1 );
-	  AU_ = MVT::Clone( *tmp, 1 );
 	  D_ = MVT::Clone( *tmp, 1 );
-	  solnUpdate_ = MVT::Clone( *tmp, 1 );
           V_ = MVT::Clone( *tmp, 1 );
+	  solnUpdate_ = MVT::Clone( *tmp, 1 );
         }
 
         // State storage has now been initialized.
@@ -469,7 +469,7 @@ namespace Belos {
       //
       theta_[0] = MTzero;
       MVT::MvNorm( *R_, tau_ );                         // tau = ||r_0||
-      MVT::MvTransMv( one, *Rtilde_, *R_, rho_old_ );   // rho = (r_tilde, r0)
+      MVT::MvDot( *R_, *Rtilde_, rho_old_ );            // rho = (r_tilde, r0)
     }
     else {
 
@@ -521,8 +521,8 @@ namespace Belos {
       //--------------------------------------------------------
       //
       if (iter_%2 == 0) {
-	MVT::MvTransMv( STone, *Rtilde_, *V_, alpha_ );      //   alpha = rho / (r_tilde, v) 
-	alpha_(0,0) = rho_old_(0,0)/alpha_(0,0);
+	MVT::MvDot( *V_, *Rtilde_, alpha_ );      //   alpha = rho / (r_tilde, v) 
+	alpha_[0] = rho_old_[0]/alpha_[0];
       }
       //
       //--------------------------------------------------------
@@ -530,14 +530,14 @@ namespace Belos {
       //   w = w - alpha*Au
       //--------------------------------------------------------
       //
-      MVT::MvAddMv( STone, *W_, -alpha_(0,0), *AU_, *W_ );
+      MVT::MvAddMv( STone, *W_, -alpha_[0], *AU_, *W_ );
       //
       //--------------------------------------------------------
       // Update d.
       //   d = u + (theta^2/alpha)eta*d
       //--------------------------------------------------------
       //
-      MVT::MvAddMv( STone, *U_, (theta_[0]*theta_[0]/alpha_(0,0))*eta, *D_, *D_ );
+      MVT::MvAddMv( STone, *U_, (theta_[0]*theta_[0]/alpha_[0])*eta, *D_, *D_ );
       //
       //--------------------------------------------------------
       // Update u if we need to.
@@ -548,7 +548,7 @@ namespace Belos {
       //
       if (iter_%2 == 0) {
         // Compute new U.
-	MVT::MvAddMv( STone, *U_, -alpha_(0,0), *V_, *U_ );
+	MVT::MvAddMv( STone, *U_, -alpha_[0], *V_, *U_ );
 
 	// Update Au for the next iteration.
 	lp_->apply( *U_, *AU_ );                       
@@ -563,7 +563,7 @@ namespace Belos {
       // cs = 1.0 / sqrt(1.0 + theta^2)
       cs_[0] = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[0]*theta_[0]);  
       tau_[0] *= theta_[0]*cs_[0];     // tau = tau * theta * cs
-      eta = cs_[0]*cs_[0]*alpha_(0,0);     // eta = cs^2 * alpha
+      eta = cs_[0]*cs_[0]*alpha_[0];     // eta = cs^2 * alpha
       
       //
       //--------------------------------------------------------
@@ -579,9 +579,9 @@ namespace Belos {
 	// Compute the new rho, beta if we need to.
 	//--------------------------------------------------------
 	//
-	MVT::MvTransMv( STone, *Rtilde_, *W_, rho_ );     // rho = (r_tilde, w)
-	beta = rho_(0,0)/rho_old_(0,0);                   // beta = rho / rho_old
-	rho_old_(0,0) = rho_(0,0);                        // rho_old = rho
+	MVT::MvDot( *W_, *Rtilde_, rho_ );                // rho = (r_tilde, w)
+	beta = rho_[0]/rho_old_[0];                       // beta = rho / rho_old
+	rho_old_[0] = rho_[0];                            // rho_old = rho
 	//
 	//--------------------------------------------------------
 	// Update u, v, and Au if we need to.

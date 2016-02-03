@@ -47,7 +47,7 @@
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosTFQMRSolMgr.hpp"
+#include "BelosPseudoBlockTFQMRSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
   try {
     bool proc_verbose = false;
     int frequency = -1;  // how often residuals are printed by solver
+    int blocksize = 1;
     int numrhs = 1;
     std::string filename("mhd1280b.cua");
     MT tol = 1.0e-5;  // relative residual tolerance
@@ -110,7 +111,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-    cmdp.setOption("tol",&tol,"Relative residual tolerance used by TFQMR solver.");
+    cmdp.setOption("tol",&tol,"Relative residual tolerance used by pseudo-block TFQMR solver.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return EXIT_FAILURE;
@@ -159,7 +160,7 @@ int main(int argc, char *argv[]) {
     // ********Other information used by block solver***********
     // *****************(can be user specified)******************
     //
-    int maxits = dim; // maximum number of iterations to run
+    int maxits = dim/blocksize; // maximum number of iterations to run
     //
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
@@ -198,7 +199,7 @@ int main(int argc, char *argv[]) {
     // *************Start the TFQMR iteration***********************
     // *******************************************************************
     //
-    Belos::TFQMRSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
+    Belos::PseudoBlockTFQMRSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
 
     //
     // **********Print out information about problem*******************
@@ -207,7 +208,8 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << dim << std::endl;
       std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-      std::cout << "Max number of TFQMR iterations: " << maxits << std::endl;
+      std::cout << "Block size used by solver: " << blocksize << std::endl;
+      std::cout << "Max number of pseudo-block TFQMR iterations: " << maxits << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
