@@ -12,7 +12,7 @@ typedef int    size_type;
 
 typedef Kokkos::OpenMP exec_space;
 
-#include "example_dense_gemm_mkl.hpp"
+#include "example_dense_chol_mkl.hpp"
 
 using namespace Tacho;
 
@@ -42,9 +42,6 @@ int main (int argc, char *argv[]) {
   int minc = 1000;
   clp.setOption("minc", &minc, "Increment of m");
 
-  int k = 1024;
-  clp.setOption("k", &k, "A(mmax,k) or A(k,mmax) according to transpose flags");
-
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -59,15 +56,19 @@ int main (int argc, char *argv[]) {
     exec_space::print_configuration(cout, true);
 
 #ifdef HAVE_SHYLUTACHO_MKL
-    cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << endl;
     mkl_set_num_threads(nthreads);
-    r_val = exampleDenseGemmMKL
+    r_val = exampleDenseCholMKL
       <value_type,ordinal_type,size_type,exec_space,void>
-      (mmin, mmax, minc, k,
+      (mmin, mmax, minc, 
+       verbose);
+
+    r_val = exampleDenseCholMKL
+      <value_type,ordinal_type,size_type,exec_space,void>
+      (mmin, mmax, minc, 
        verbose);
 #else
     r_val = -1;
-    cout << "DenseGemmByBlocks:: MKL is NOT configured in Trilinos" << endl;
+    cout << "MKL is NOT configured in Trilinos" << endl;
 #endif
 
     exec_space::finalize();

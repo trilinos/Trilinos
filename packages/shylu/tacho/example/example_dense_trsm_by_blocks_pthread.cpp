@@ -1,6 +1,7 @@
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Threads.hpp>
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -10,9 +11,9 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::OpenMP exec_space;
+typedef Kokkos::Threads exec_space;
 
-#include "example_dense_gemm_mkl.hpp"
+#include "example_dense_trsm_by_blocks.hpp"
 
 using namespace Tacho;
 
@@ -30,20 +31,38 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
+  int max_concurrency = 1024;
+  clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
+
+  int max_task_dependence = 3;
+  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
+
+  int team_size = 1;
+  clp.setOption("team-size", &team_size, "Team size");
+
+  int mkl_nthreads = 1;
+  clp.setOption("mkl-nthreads", &mkl_nthreads, "MKL threads for nested parallelism");
+
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
   int mmin = 1000;
-  clp.setOption("mmin", &mmin, "C(mmin,mmin)");
+  clp.setOption("mmin", &mmin, "A(mmin,mmin)");
 
   int mmax = 8000;
-  clp.setOption("mmax", &mmax, "C(mmax,mmax)");
+  clp.setOption("mmax", &mmax, "A(mmax,mmax)");
 
   int minc = 1000;
   clp.setOption("minc", &minc, "Increment of m");
 
   int k = 1024;
-  clp.setOption("k", &k, "A(mmax,k) or A(k,mmax) according to transpose flags");
+  clp.setOption("k", &k, "B(mmax,k)");
+
+  int mb = 256;
+  clp.setOption("mb", &mb, "Blocksize");
+
+  bool check = true;
+  clp.setOption("enable-check", "disable-check", &check, "Flag for check solution");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -58,18 +77,14 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
 
-#ifdef HAVE_SHYLUTACHO_MKL
-    cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << endl;
-    mkl_set_num_threads(nthreads);
-    r_val = exampleDenseGemmMKL
+    cout << "DenseTrsmByBlocks:: ConjTranspose" << endl;
+    r_val = exampleDenseTrsmByBlocks
       <value_type,ordinal_type,size_type,exec_space,void>
-      (mmin, mmax, minc, k,
+      (mmin, mmax, minc, k, mb,
+       max_concurrency, max_task_dependence, team_size, mkl_nthreads,
+       check,
        verbose);
-#else
-    r_val = -1;
-    cout << "DenseGemmByBlocks:: MKL is NOT configured in Trilinos" << endl;
-#endif
-
+    
     exec_space::finalize();
   }
 

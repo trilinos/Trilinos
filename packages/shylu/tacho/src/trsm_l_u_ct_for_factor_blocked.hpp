@@ -20,7 +20,7 @@ namespace Tacho {
   KOKKOS_INLINE_FUNCTION
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-       AlgoTrsm::ForFactorBlockedVar1>
+       AlgoTrsm::ForFactorBlocked,Variant::One>
   ::invoke(typename CrsExecViewTypeA::policy_type &policy,
            const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
@@ -97,7 +97,7 @@ namespace Tacho {
   KOKKOS_INLINE_FUNCTION
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-       AlgoTrsm::ForFactorBlockedVar2>
+       AlgoTrsm::ForFactorBlocked,Variant::Two>
   ::invoke(typename CrsExecViewTypeA::policy_type &policy,
            const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,

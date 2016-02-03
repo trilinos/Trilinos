@@ -6,7 +6,6 @@
 /// \brief Incomplete Cholesky factorization front interface.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-// basic utils
 #include "util.hpp"
 #include "control.hpp"
 #include "partition.hpp"

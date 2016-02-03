@@ -12,7 +12,7 @@ typedef int    size_type;
 
 typedef Kokkos::OpenMP exec_space;
 
-#include "example_dense_gemm_mkl.hpp"
+#include "example_dense_trsm_mkl.hpp"
 
 using namespace Tacho;
 
@@ -34,16 +34,16 @@ int main (int argc, char *argv[]) {
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
   int mmin = 1000;
-  clp.setOption("mmin", &mmin, "C(mmin,mmin)");
+  clp.setOption("mmin", &mmin, "A(mmin,mmin)");
 
   int mmax = 8000;
-  clp.setOption("mmax", &mmax, "C(mmax,mmax)");
+  clp.setOption("mmax", &mmax, "A(mmax,mmax)");
 
   int minc = 1000;
   clp.setOption("minc", &minc, "Increment of m");
 
   int k = 1024;
-  clp.setOption("k", &k, "A(mmax,k) or A(k,mmax) according to transpose flags");
+  clp.setOption("k", &k, "B(mmax,k)");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -59,9 +59,9 @@ int main (int argc, char *argv[]) {
     exec_space::print_configuration(cout, true);
 
 #ifdef HAVE_SHYLUTACHO_MKL
-    cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << endl;
+    cout << "DenseTrsmByBlocks:: ConjTranspose" << endl;
     mkl_set_num_threads(nthreads);
-    r_val = exampleDenseGemmMKL
+    r_val = exampleDenseTrsmMKL
       <value_type,ordinal_type,size_type,exec_space,void>
       (mmin, mmax, minc, k,
        verbose);

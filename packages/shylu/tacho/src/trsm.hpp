@@ -6,11 +6,17 @@
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "util.hpp"
+#include "control.hpp"
+#include "partition.hpp"
+
 namespace Tacho {
 
   using namespace std;
 
-  template<int ArgSide,int ArgUplo, int ArgTrans, int ArgAlgo>
+  template<int ArgSide,int ArgUplo, int ArgTrans, int ArgAlgo,
+           int ArgVariant = Variant::One,
+           template<int,int> class ControlType = Control>
   struct Trsm {
 
     // data-parallel interface

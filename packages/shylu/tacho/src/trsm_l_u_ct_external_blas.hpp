@@ -7,6 +7,8 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
 
+#include "Teuchos_BLAS.hpp"
+
 namespace Tacho {
 
   using namespace std;

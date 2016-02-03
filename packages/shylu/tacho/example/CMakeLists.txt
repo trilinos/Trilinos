@@ -259,6 +259,13 @@ IF(Kokkos_ENABLE_Pthread)
   )
 
   TRIBITS_ADD_EXECUTABLE(
+    dense_trsm_by_blocks_pthread
+    NOEXEPREFIX
+    SOURCES example_dense_trsm_by_blocks_pthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
     dense_chol_by_blocks_pthread
     NOEXEPREFIX
     SOURCES example_dense_chol_by_blocks_pthread.cpp 
@@ -272,6 +279,20 @@ IF(TPL_ENABLE_MKL)
     dense_gemm_mkl_openmp
     NOEXEPREFIX
     SOURCES example_dense_gemm_mkl_openmp.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_trsm_mkl_openmp
+    NOEXEPREFIX
+    SOURCES example_dense_trsm_mkl_openmp.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_chol_mkl_openmp
+    NOEXEPREFIX
+    SOURCES example_dense_chol_mkl_openmp.cpp
     COMM serial mpi
   )
 ENDIF()

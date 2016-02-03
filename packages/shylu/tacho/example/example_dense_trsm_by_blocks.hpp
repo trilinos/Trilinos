@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __EXAMPLE_DENSE_GEMM_BY_BLOCKS_HPP__
-#define __EXAMPLE_DENSE_GEMM_BY_BLOCKS_HPP__
+#ifndef __EXAMPLE_DENSE_TRSM_BY_BLOCKS_HPP__
+#define __EXAMPLE_DENSE_TRSM_BY_BLOCKS_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -17,7 +17,7 @@
 #include "task_view.hpp"
 #include "task_factory.hpp"
 
-#include "gemm.hpp"
+#include "trsm.hpp"
 #include "dense_flop.hpp"
 
 #ifdef HAVE_SHYLUTACHO_MKL
@@ -28,15 +28,13 @@ namespace Tacho {
 
   using namespace std;
 
-  template<int ArgTransA,
-           int ArgTransB,
-           typename ValueType,
+  template<typename ValueType,
            typename OrdinalType,
            typename SizeType = OrdinalType,
            typename SpaceType = void,
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
-  int exampleDenseGemmByBlocks(const OrdinalType mmin,
+  int exampleDenseTrsmByBlocks(const OrdinalType mmin,
                                const OrdinalType mmax,
                                const OrdinalType minc,
                                const OrdinalType k,
@@ -70,10 +68,9 @@ namespace Tacho {
     double t = 0.0;
 
     cout << "DenseGemmByBlocks:: test matrices "
-         <<":: mmin = " << mmin << " , mmax = " << mmax << " , minc = " << minc << " , k = "<< k << " , mb = " << mb << endl;
+         <<":: mmin = " << mmin << " , mmax = " << mmax << " , minc = " << minc << " , k = "<< k << endl;
 
     const size_t max_task_size = (3*sizeof(DenseTaskViewType)+196); // when 128 error
-    //cout << "max task size = "<< max_task_size << endl;
     typename TaskFactoryType::policy_type policy(max_concurrency,
                                                  max_task_size,
                                                  max_task_dependence, 
@@ -89,61 +86,59 @@ namespace Tacho {
     for (ordinal_type m=mmin;m<=mmax;m+=minc) {
       os.str("");
 
-      DenseMatrixBaseType AA, BB, CC("CC", m, m), CB("CB", m, m);
-
-      if (ArgTransA == Trans::NoTranspose) 
-        AA = DenseMatrixBaseType("AA", m, k); 
-      else 
-        AA = DenseMatrixBaseType("AA", k, m);
+      DenseMatrixBaseType AA("AA", m, m), BB("BB", m, k), BC("BC", m, k);
       
-      if (ArgTransB == Trans::NoTranspose) 
-        BB = DenseMatrixBaseType("BB", k, m);
-      else 
-        BB = DenseMatrixBaseType("BB", m, k);
-      
-      for (ordinal_type j=0;j<AA.NumCols();++j)
-        for (ordinal_type i=0;i<AA.NumRows();++i)
+      // setup upper triangular
+      for (ordinal_type j=0;j<AA.NumCols();++j) {
+        AA.Value(j,j) = 10.0;
+        for (ordinal_type i=0;i<j;++i)
           AA.Value(i,j) = 2.0*((value_type)rand()/(RAND_MAX)) - 1.0;
-      
+      }
+
+      // setup one and right hand side is going to be overwritten by the product of AB
       for (ordinal_type j=0;j<BB.NumCols();++j)
         for (ordinal_type i=0;i<BB.NumRows();++i)
-          BB.Value(i,j) = 2.0*((value_type)rand()/(RAND_MAX)) - 1.0;
-      
-      for (ordinal_type j=0;j<CC.NumCols();++j)
-        for (ordinal_type i=0;i<CC.NumRows();++i)
-          CC.Value(i,j) = 2.0*((value_type)rand()/(RAND_MAX)) - 1.0;
-      CB.copy(CC);
+          BB.Value(i,j) = 1.0;
 
-      const double flop = get_flop_gemm<value_type>(m, m, k);
+      Teuchos::BLAS<ordinal_type,value_type> blas;
+
+      blas.GEMM(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,
+                m, k, m,
+                1.0,
+                AA.ValuePtr(), AA.ColStride(),
+                BB.ValuePtr(), BB.ColStride(),
+                0.0,
+                BC.ValuePtr(), BC.ColStride());
+      BB.copy(BC);
+
+      const double flop = get_flop_trsm_upper<value_type>(m, k);
 
 #ifdef HAVE_SHYLUTACHO_MKL
       mkl_set_num_threads(mkl_nthreads);
 #endif
-
-      os << "DenseGemmByBlocks:: m = " << m << " n = " << m << " k = " << k;
+      os << "DenseTrsmByBlocks:: m = " << m << " k = " << k;
       if (check) {
         timer.reset();
-        DenseTaskViewType A(&AA), B(&BB), C(&CB);
-        Gemm<ArgTransA,ArgTransB,AlgoGemm::ExternalBlas>::invoke
+        DenseTaskViewType A(&AA), B(&BC);
+        Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ExternalBlas>::invoke
           (TaskFactoryType::Policy(),
            TaskFactoryType::Policy().member_single(),
-           1.0, A, B, 1.0, C);
+           Diag::NonUnit, 1.0, A, B);
         t = timer.seconds();
         os << ":: Serial Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
       }
 
       {
-        DenseHierMatrixBaseType HA, HB, HC;
+        DenseHierMatrixBaseType HA, HB;
         DenseMatrixHelper::flat2hier(AA, HA, mb, mb);
         DenseMatrixHelper::flat2hier(BB, HB, mb, mb);
-        DenseMatrixHelper::flat2hier(CC, HC, mb, mb);
 
-        DenseHierTaskViewType TA(&HA), TB(&HB), TC(&HC);
+        DenseHierTaskViewType TA(&HA), TB(&HB);
         timer.reset();
         auto future = TaskFactoryType::Policy().create_team
-          (typename Gemm<ArgTransA,ArgTransB,AlgoGemm::DenseByBlocks,Variant::One>
-           ::template TaskFunctor<value_type,DenseHierTaskViewType,DenseHierTaskViewType,DenseHierTaskViewType>
-           (1.0, TA, TB, 1.0, TC), 0);
+          (Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::DenseByBlocks,Variant::One>
+           ::TaskFunctor<value_type,DenseHierTaskViewType,DenseHierTaskViewType>
+           (Diag::NonUnit, 1.0, TA, TB), 0);
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());
         t = timer.seconds();       
@@ -153,10 +148,10 @@ namespace Tacho {
       if (check) {
         typedef typename Teuchos::ScalarTraits<value_type>::magnitudeType real_type; 
         real_type err = 0.0, norm = 0.0;
-        for (ordinal_type j=0;j<CC.NumCols();++j)
-          for (ordinal_type i=0;i<CC.NumRows();++i) {
-            const real_type diff = abs(CC.Value(i,j) - CB.Value(i,j));
-            const real_type val  = CB.Value(i,j);
+        for (ordinal_type j=0;j<BB.NumCols();++j)
+          for (ordinal_type i=0;i<BB.NumRows();++i) {
+            const real_type diff = abs(BB.Value(i,j) - BC.Value(i,j));
+            const real_type val  = BC.Value(i,j);
             err  += diff*diff;
             norm += val*val;
           }
