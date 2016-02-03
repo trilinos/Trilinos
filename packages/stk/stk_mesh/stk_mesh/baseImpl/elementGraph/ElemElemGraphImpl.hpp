@@ -43,11 +43,7 @@ struct parallel_info
     stk::mesh::EntityId m_chosen_side_id;
     std::vector<PartOrdinal> m_part_ordinals;
 
-    parallel_info(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false) :
-        m_other_proc(proc), m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_in_body_to_be_skinned(inPart), m_is_air(isInAir),
-        m_chosen_side_id(chosen_face_id) {}
-
-    parallel_info(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir, const std::vector<stk::mesh::PartOrdinal>& part_ords) :
+    parallel_info(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false, const std::vector<stk::mesh::PartOrdinal>& part_ords = std::vector<stk::mesh::PartOrdinal>()) :
         m_other_proc(proc), m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_in_body_to_be_skinned(inPart), m_is_air(isInAir),
         m_chosen_side_id(chosen_face_id), m_part_ordinals(part_ords){}
 };
@@ -87,6 +83,7 @@ struct SharedEdgeInfo
     bool m_isInPart;
     bool m_isInAir;
     stk::topology m_remoteElementTopology;
+    std::vector<stk::mesh::PartOrdinal> m_partOrdinals;
 };
 
 struct ShellConnectivityData

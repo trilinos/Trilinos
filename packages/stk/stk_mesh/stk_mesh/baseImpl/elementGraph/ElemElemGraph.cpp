@@ -582,7 +582,9 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
                                         chosen_side_id,
                                         receivedSharedEdge.m_remoteElementTopology,
                                         receivedSharedEdge.m_isInPart,
-                                        receivedSharedEdge.m_isInAir);
+                                        receivedSharedEdge.m_isInAir,
+                                        receivedSharedEdge.m_partOrdinals);
+
             m_parallelInfoForGraphEdges.insert_parallel_info_for_graph_edge(graphEdge, parInfo);
             break;
         }
@@ -626,6 +628,7 @@ void add_shared_edge(const impl::ConnectedElementData& elemData, stk::mesh::Enti
     sharedEdgeInfo.m_isInPart = elemData.m_isInPart;
     sharedEdgeInfo.m_remoteElementTopology = elem_topology;
     sharedEdgeInfo.m_isInAir = elemData.m_isAir;
+    sharedEdgeInfo.m_partOrdinals = elemData.m_part_ordinals;
     newlySharedEdges.push_back(sharedEdgeInfo);
 }
 
@@ -1780,7 +1783,13 @@ impl::parallel_info ElemElemGraph::create_parallel_info(stk::mesh::Entity connec
     stk::mesh::EntityId faceId = m_sideIdPool.get_available_id();
     stk::topology elemTopology = m_bulk_data.bucket(elemToSend).topology();
     bool inBodyToBeSkinned = m_skinned_selector(m_bulk_data.bucket(connected_element));
-    return impl::parallel_info(destination_proc, permutation, faceId, elemTopology, inBodyToBeSkinned);
+    bool isAir = false;
+    if(m_air_selector != nullptr)
+    {
+        isAir = (*m_air_selector)(m_bulk_data.bucket(elemToSend));
+    }
+    std::vector<stk::mesh::PartOrdinal> partOrdinals = stk::mesh::impl::get_element_block_part_ordinals(elemToSend, m_bulk_data);
+    return impl::parallel_info(destination_proc, permutation, faceId, elemTopology, inBodyToBeSkinned, isAir, partOrdinals);
 }
 
 stk::mesh::Permutation ElemElemGraph::get_permutation_given_neighbors_node_ordering(stk::mesh::Entity neighborElem,
