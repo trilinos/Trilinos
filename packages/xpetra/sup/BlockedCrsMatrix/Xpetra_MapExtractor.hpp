@@ -350,7 +350,7 @@ namespace Xpetra {
     /// the full map
     const RCP<const Map> getFullMap() const { return fullmap_; }
 
-    /// returns map index in map extractor which contains GID or -1 otherwise
+    /// returns map index in map extractor which contains GID
     size_t getMapIndexForGID(GlobalOrdinal gid) const {
       for (size_t i = 0; i < NumMaps(); i++)
         if (getMap(i)->isNodeGlobalElement(gid) == true)
