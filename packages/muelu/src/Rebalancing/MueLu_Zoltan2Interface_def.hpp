@@ -77,11 +77,11 @@ namespace MueLu {
  RCP<const ParameterList> Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< int >                      ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
+    validParamList->set< int >                      ("rowWeight",                 0, "Default weight to rows (total weight = nnz + rowWeight");
 
-    validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >   ("Coordinates",            Teuchos::null, "Factory of the coordinates");
-    validParamList->set< RCP<const ParameterList> > ("ParameterList",          Teuchos::null, "Zoltan2 parameters");
+    validParamList->set< RCP<const FactoryBase> >   ("A",             Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >   ("Coordinates",   Teuchos::null, "Factory of the coordinates");
+    validParamList->set< RCP<const ParameterList> > ("ParameterList", Teuchos::null, "Zoltan2 parameters");
 
     return validParamList;
   }
