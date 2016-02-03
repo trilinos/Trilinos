@@ -2843,11 +2843,11 @@ namespace Tpetra {
     typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasColMap (), std::runtime_error,
-      "This method requires that the matrix have a column Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       staticGraph_.is_null (), std::runtime_error,
       "This method requires that the matrix have a graph.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! hasColMap (), std::runtime_error,
+      "This method requires that the matrix have a column Map.");
     const map_type& rowMap = * (this->getRowMap ());
     const map_type& colMap = * (this->getColMap ());
 
@@ -2856,7 +2856,7 @@ namespace Tpetra {
     // should only be done in debug mode.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! diag.getMap ()->isCompatible (rowMap), std::runtime_error,
-      ": The input Vector's Map must be compatible with the CrsMatrix's row "
+      "The input Vector's Map must be compatible with the CrsMatrix's row "
       "Map.  You may check this by using Map's isCompatible method: "
       "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
@@ -2872,25 +2872,77 @@ namespace Tpetra {
     // Find the diagonal entries and put them in lclVecHost1d.
     const LocalOrdinal myNumRows =
       static_cast<LocalOrdinal> (this->getNodeNumRows ());
-    for (LocalOrdinal r = 0; r < myNumRows; ++r) {
-      lclVecHost1d(r) = STS::zero (); // default value if no diag entry
-      const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
-      const LocalOrdinal rlid = colMap.getLocalElement (rgid);
 
-      if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-        const RowInfo rowinfo = staticGraph_->getRowInfo (r);
-        if (rowinfo.numEntries > 0) {
-          const size_t j = staticGraph_->findLocalIndex (rowinfo, rlid);
-          if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
-            // NOTE (mfh 02 Jan 2015) This technically does not assume
-            // UVM, since getView and getViewNonConst are supposed to
-            // return views of host data.
-            ArrayView<const impl_scalar_type> view = this->getView (rowinfo);
-            lclVecHost1d(r) = view[j];
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, keep a count of the local number of errors.
+    // Use a global ordinal, because in a debug build, we'll sum this
+    // across all processes.
+    GlobalOrdinal lclNumErrs = 0;
+#endif // HAVE_TPETRA_DEBUG
+
+    // NOTE (mfh 03 Feb 2016) We use the host execution space here,
+    // because the lambda's body calls methods that aren't yet
+    // suitable for marking as CUDA device functions.
+    typedef Kokkos::RangePolicy<host_execution_space, LocalOrdinal> policy_type;
+    policy_type range (0, myNumRows);
+    // NOTE (mfh 03 Feb 2016) We use [=] here rather than
+    // KOKKOS_LAMBDA, because the lambda's body calls methods that
+    // aren't yet suitable for marking as CUDA device functions.
+
+    // In a debug build, keep a count of the local number of errors
+    // (hence parallel_reduce).  In a release build, don't count
+    // errors (hence parallel_for).
+#ifdef HAVE_TPETRA_DEBUG
+    Kokkos::parallel_reduce (range, [=] (const LocalOrdinal& r, GlobalOrdinal& errCount) {
+#else
+    Kokkos::parallel_for (range, [=] (const LocalOrdinal& r) {
+#endif // HAVE_TPETRA_DEBUG
+        lclVecHost1d(r) = STS::zero (); // default value if no diag entry
+        const GlobalOrdinal gblInd = rowMap.getGlobalElement (r);
+        const LocalOrdinal lclColInd = colMap.getLocalElement (gblInd);
+
+        if (lclColInd != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+          const RowInfo rowinfo = staticGraph_->getRowInfo (r);
+          if (rowinfo.numEntries > 0) {
+            const size_t j = staticGraph_->findLocalIndex (rowinfo, lclColInd);
+            if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+              // NOTE (mfh 03 Feb 2016) This may assume UVM.
+              const impl_scalar_type* curVals;
+              LocalOrdinal numEnt;
+              const LocalOrdinal err =
+                this->getViewRawConst (curVals, numEnt, rowinfo);
+              if (err == 0) {
+                // Even in a release build, if an error occurs, don't
+                // attempt to write to memory.
+                lclVecHost1d(r) = curVals[j];
+              }
+#ifdef HAVE_TPETRA_DEBUG
+              else {
+                ++errCount;
+              }
+#endif // HAVE_TPETRA_DEBUG
+            }
           }
         }
-      }
+#ifdef HAVE_TPETRA_DEBUG
+      }, lclNumErrs); // reduction result goes at the end
+#else
+      }); // don't count errors in a release build
+#endif // HAVE_TPETRA_DEBUG
+
+#ifdef HAVE_TPETRA_DEBUG
+    if (! this->getComm ().is_null ()) {
+      using Teuchos::reduceAll;
+      GlobalOrdinal gblNumErrs = 0;
+      reduceAll<int, GlobalOrdinal> (* (this->getComm ()), Teuchos::REDUCE_SUM,
+                                     lclNumErrs, Teuchos::outArg (gblNumErrs));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (gblNumErrs != 0, std::logic_error, "Something went wrong on "
+         << gblNumErrs << " out of " << this->getComm ()->getSize ()
+         << " process(es).");
     }
+#endif // HAVE_TPETRA_DEBUG
+
     diag.template sync<execution_space> (); // sync changes back to device
   }
 
