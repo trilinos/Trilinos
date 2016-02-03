@@ -400,7 +400,7 @@ namespace {
     int MyPID    = comm->getRank();
     
     // This problem only works on 4 procs
-    if(NumProcs!=4) TEST_EQUALITY(true,true);
+    if(NumProcs!=4) {TEST_EQUALITY(true,true);return;}
     
     // Problem setup
     int num_per_proc;
