@@ -1636,7 +1636,7 @@ void Relaxation<MatrixType>::MTGaussSeidel (
   typedef global_ordinal_type GlobalOrdinal;
   typedef node_type Node;
 
-  typedef Scalar ST;
+  //typedef Scalar ST;
   const char prefix[] = "Ifpack2::Relaxation::(reordered)MTGaussSeidel: ";
   const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
 
@@ -1906,8 +1906,8 @@ void Relaxation<MatrixType>::MTGaussSeidel (
         KokkosKernels::Experimental::Util::print_1Dview(Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), Kokkos::ALL (), 0));
         std::cout << std::endl;
      */
-    typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev device_view_type;
+    //typedef typename MV::dual_view_type dual_view_type;
+    //typedef typename dual_view_type::t_dev device_view_type;
     //device_view_type KernelB = Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), 0, Kokkos::ALL ());
     //std::cout << " 5" << std::endl;
     //scalar_nonzero_view_t KernelXcolMap = Kokkos::subview(X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), 0, Kokkos::ALL ());

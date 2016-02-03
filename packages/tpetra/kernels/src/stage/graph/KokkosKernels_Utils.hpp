@@ -27,7 +27,7 @@ void get_suggested_vector_team_size(
 #if defined( KOKKOS_HAVE_SERIAL )
   if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
     suggested_vector_size_ =  1;
-    suggested_team_size_ = max_allowed_team_size;
+    suggested_team_size_ = 1;
     return;
   }
 #endif
@@ -35,7 +35,7 @@ void get_suggested_vector_team_size(
 #if defined( KOKKOS_HAVE_PTHREAD )
   if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
     suggested_vector_size_ =  1;
-    suggested_team_size_ =  max_allowed_team_size;
+    suggested_team_size_ =  1;
     return;
   }
 #endif
@@ -43,7 +43,7 @@ void get_suggested_vector_team_size(
 #if defined( KOKKOS_HAVE_OPENMP )
   if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
     suggested_vector_size_ =  1;
-    suggested_team_size_ = max_allowed_team_size;
+    suggested_team_size_ = 1;
   }
 #endif
 
@@ -78,7 +78,7 @@ void get_suggested_vector_team_size(
 #if defined( KOKKOS_HAVE_QTHREAD)
   if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
     suggested_vector_size_ = 1;
-    suggested_team_size_ = max_allowed_team_size;
+    suggested_team_size_ = 1;
   }
 #endif
 
@@ -167,7 +167,6 @@ struct FillSymmetricEdgesHashMap{
     }
     idx row_begin = xadj[ii];
     idx row_end = xadj[ii + 1];
-
     Kokkos::parallel_for(
         Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
         [&] (idx i) {
@@ -198,6 +197,7 @@ struct FillSymmetricEdgesHashMap{
       }
 
     });
+
   }
 };
 
@@ -444,7 +444,7 @@ struct Reverse_Map_Init{
         forward_map(forward_map_), reverse_map_xadj(reverse_xadj_){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const reverse_type &ii) const {
+  void operator()(const size_t &ii) const {
     forward_type fm = forward_map[ii];
     Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), 1);
   }
@@ -480,7 +480,7 @@ struct Fill_Reverse_Map{
         forward_map(forward_map_), reverse_map_xadj(reverse_map_xadj_), reverse_map_adj(reverse_map_adj){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const reverse_type &ii) const {
+  void operator()(const size_t &ii) const {
     forward_type c = forward_map[ii];
     const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(c - 1)), 1);
     reverse_map_adj(future_index) = ii;
@@ -495,7 +495,7 @@ struct InclusiveParallelPrefixSum{
   InclusiveParallelPrefixSum(array_type arr_): array_sum(arr_){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const idx ii, size_t& update, const bool final) const {
+  void operator()(const size_t ii, size_t& update, const bool final) const {
     update += array_sum(ii);
     if (final) {
       array_sum(ii) = idx (update);
@@ -516,7 +516,7 @@ struct ExclusiveParallelPrefixSum{
   ExclusiveParallelPrefixSum(array_type arr_): array_sum(arr_){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const idx ii, size_t& update, const bool final) const {
+  void operator()(const size_t ii, size_t& update, const bool final) const {
 
     idx val = array_sum(ii);
     if (final) {
@@ -539,7 +539,7 @@ struct PropogataMaxValstoZeros{
   PropogataMaxValstoZeros(array_type arr_): array_sum(arr_){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const idx ii, idx& update, const bool final) const {
+  void operator()(const size_t ii, idx& update, const bool final) const {
 
     idx value = array_sum(ii);
     if (value != 0) {
@@ -623,7 +623,7 @@ struct PermuteVector{
         old_vector(old_vector_), new_vector(new_vector_),old_to_new_mapping(old_to_new_mapping_), mapping_size(old_to_new_mapping_.dimension_0()){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const idx &ii) const {
+  void operator()(const size_t &ii) const {
 
     idx mapping = ii;
     if (ii < mapping_size) mapping = old_to_new_mapping[ii];
@@ -651,7 +651,7 @@ struct ZeroVector{
   ZeroVector(value_array_type myview_): myview(myview_){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const int i ) const {
+  void operator()( const size_t i ) const {
     myview(i) = 0;
   }
 };
@@ -677,7 +677,7 @@ struct MarkDuplicateSortedKeyValuePairs{
     keys(keys_), vals(vals_), prefix_sum(prefix_sum_), overall_size(overall_size_){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const int &i, typename v3::value_type &num_result) const {
+  void operator()(const size_t &i, typename v3::value_type &num_result) const {
     typename v1::value_type my_key = keys(i);
     typename v2::value_type my_val = vals(i);
 
@@ -705,7 +705,7 @@ struct FillSymmetricCSR{
         out_xadj(out_xadj_), out_adj(out_adj_){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const int &i) const {
+  void operator()(const size_t &i) const {
     typename v3::value_type my_pos = prefix_sum(i);
 
     if (i + 1 >= array_size){
@@ -757,7 +757,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy ;
   typedef typename team_policy::member_type team_member_t ;
 
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  //typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
   //TODO: Should change this to temporary memory space?
   typedef Kokkos::UnorderedMap< Kokkos::pair<idx, idx> , void , MyExecSpace> hashmap_t;
@@ -856,10 +856,11 @@ void symmetrize_graph_symbolic_hashmap(
     out_lno_nnz_view_t &sym_adj
     ){
 
+
   typedef typename in_lno_row_view_t::non_const_value_type idx;
 
-
   idx nnz = adj.dimension_0();
+
 
   //idx_out_edge_array_type tmp_srcs("tmpsrc", nnz * 2);
   //idx_out_edge_array_type tmp_dsts("tmpdst",nnz * 2);
@@ -867,7 +868,7 @@ void symmetrize_graph_symbolic_hashmap(
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy ;
   typedef typename team_policy::member_type team_member_t ;
 
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  //typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
   //TODO: Should change this to temporary memory space?
   typedef Kokkos::UnorderedMap< Kokkos::pair<idx, idx> , void , MyExecSpace> hashmap_t;
@@ -898,7 +899,7 @@ void symmetrize_graph_symbolic_hashmap(
         vector_size,
         teamSizeMax,
         xadj.dimension_0() - 1, nnz);
-    //std::cout << "max_allowed_team_size:" << max_allowed_team_size << " vs:" << vector_size << " tsm:" << teamSizeMax<< std::endl;
+
 
     Kokkos::parallel_for(
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),

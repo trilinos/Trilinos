@@ -20,9 +20,9 @@ namespace Graph{
 
 enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL};
 
-template <class row_index_view_type_,
-          class nonzero_index_view_type_,
-          class nonzero_value_view_type_,
+template <class lno_row_view_t_,
+          class lno_nnz_view_t_,
+          class scalar_nnz_view_t_,
           class ExecutionSpace,
           class TemporaryMemorySpace,
           class PersistentMemorySpace>
@@ -32,66 +32,66 @@ public:
   typedef TemporaryMemorySpace HandleTempMemorySpace;
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
-  typedef row_index_view_type_ in_row_index_view_type;
-  typedef nonzero_index_view_type_ in_nonzero_index_view_type;
-  typedef nonzero_value_view_type_ in_nonzero_value_view_type;
+  typedef lno_row_view_t_ in_lno_row_view_t;
+  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+  typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
 
-  typedef typename in_row_index_view_type::non_const_value_type row_index_type;
-  typedef typename in_row_index_view_type::array_layout row_view_array_layout;
-  typedef typename in_row_index_view_type::device_type row_view_device_type;
-  typedef typename in_row_index_view_type::memory_traits row_view_memory_traits;
-  typedef typename in_row_index_view_type::HostMirror row_host_view_type; //Host view type
+  typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+  typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
+  typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
+  typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
+  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
   //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
-  typedef typename in_nonzero_index_view_type::non_const_value_type nonzero_index_type;
-  typedef typename in_nonzero_index_view_type::array_layout nonzero_index_view_array_layout;
-  typedef typename in_nonzero_index_view_type::device_type nonzero_index_view_device_type;
-  typedef typename in_nonzero_index_view_type::memory_traits nonzero_index_view_memory_traits;
-  typedef typename in_nonzero_index_view_type::HostMirror nonzero_index_host_view_type; //Host view type
+  typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
+  typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
+  typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
+  typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
+  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
   //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
-  typedef typename in_nonzero_value_view_type::non_const_value_type nonzero_value_type;
-  typedef typename in_nonzero_value_view_type::array_layout nonzero_value_view_array_layout;
-  typedef typename in_nonzero_value_view_type::device_type nonzero_value_view_device_type;
-  typedef typename in_nonzero_value_view_type::memory_traits nonzero_value_view_memory_traits;
-  typedef typename in_nonzero_value_view_type::HostMirror nonzero_value_host_view_type; //Host view type
+  typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
+  typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
+  typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
+  typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
+  typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
 
 
-  typedef typename in_row_index_view_type::const_data_type const_row_data_type;
-  typedef typename in_row_index_view_type::non_const_data_type non_const_row_data_type;
-  typedef typename in_row_index_view_type::memory_space row_view_memory_space;
-  typedef typename Kokkos::View<const_row_data_type, row_view_array_layout,
-      row_view_memory_space, row_view_memory_traits> const_row_index_view_type;
-  typedef typename Kokkos::View<non_const_row_data_type, row_view_array_layout,
-      row_view_memory_space, row_view_memory_traits> non_const_row_index_view_type;
+  typedef typename in_lno_row_view_t::const_data_type const_row_lno_t;
+  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_lno_t;
 
-
-
-  typedef typename in_nonzero_index_view_type::const_data_type const_nonzero_index_data_type;
-  typedef typename in_nonzero_index_view_type::non_const_data_type non_const_nonzero_index_data_type;
-  typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
-  typedef typename Kokkos::View<const_nonzero_index_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> const_nonzero_index_view_type;
-  typedef typename Kokkos::View<non_const_nonzero_index_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> non_const_nonzero_index_view_type;
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
 
 
-  typedef typename in_nonzero_value_view_type::const_data_type const_nonzero_value_data_type;
-  typedef typename in_nonzero_value_view_type::non_const_data_type non_const_nonzero_value_data_type;
-  typedef typename in_nonzero_value_view_type::memory_space nonzero_value_view_memory_space;
-  typedef typename Kokkos::View<const_nonzero_value_data_type, nonzero_value_view_array_layout,
-      nonzero_value_view_memory_space, nonzero_value_view_memory_traits> const_nonzero_value_view_type;
-  typedef typename Kokkos::View<non_const_nonzero_value_data_type, nonzero_value_view_array_layout,
-      nonzero_value_view_memory_space, nonzero_value_view_memory_traits> non_const_nonzero_value_view_type;
 
 
-  typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> row_index_temp_work_view_type;
-  typedef typename Kokkos::View<row_index_type *, HandlePersistentMemorySpace> row_index_persistent_work_view_type;
-  typedef typename row_index_persistent_work_view_type::HostMirror row_index_persistent_host_view_type; //Host view type
+  typedef typename in_lno_nnz_view_t::const_data_type const_nnz_lno_t;
+  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nnz_lno_t;
+  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
+  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
 
-  typedef typename Kokkos::View<nonzero_value_type *, HandleTempMemorySpace> nonzero_value_temp_work_view_type;
-  typedef typename Kokkos::View<nonzero_value_type *, HandlePersistentMemorySpace> nonzero_value_persistent_work_view_type;
+
+
+  typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t;
+  typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
+  typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
+  typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
+
+
+  typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_lno_temp_work_view_t;
+  typedef typename Kokkos::View<row_lno_t *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
+  typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
+
+  typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
+  typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
+
+
+  typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
+  typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
+  typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
+
 
 #ifdef KERNELS_HAVE_CUSPARSE
   struct cuSparseHandleType{
@@ -276,7 +276,7 @@ private:
       int max_allowed_team_size,
       int &suggested_vector_size_,
       int &suggested_team_size_,
-      row_index_type nr, row_index_type nnz){
+      row_lno_t nr, row_lno_t nnz){
     //suggested_team_size_ =  this->suggested_team_size = 1;
     //suggested_vector_size_=this->suggested_vector_size = 1;
     //return;
