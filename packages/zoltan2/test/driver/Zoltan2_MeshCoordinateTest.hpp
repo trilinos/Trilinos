@@ -85,8 +85,7 @@ void MeshCoordinateTest::Run(const ParameterList &params,
     
     problem.solve();
     
-    if (comm->getRank()  == 0)
-        problem.printMetrics(cout);
+    //if (comm->getRank() == 0) problem.printMetrics(cout); VJL:  not requested
     
     this->success = true;
     
