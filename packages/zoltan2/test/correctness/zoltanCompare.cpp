@@ -372,7 +372,7 @@ int run(
   
   Teuchos::ParameterList params;
   params.set("timer_output_stream" , "std::cout");
-  params.set("compute_metrics", "true");
+  //params.set("compute_metrics", "true");
   // params.set("debug_level" , "verbose_detailed_status");
 
   params.set("algorithm", "zoltan");
@@ -424,7 +424,7 @@ int run(
 					       &problem->getSolution(),false));
   if (me == 0){
     metricObject->printMetrics(cout);
-    problem->printMetrics(cout);
+    //problem->printMetrics(cout);
   }
   problem->printTimers();
 
