@@ -317,7 +317,7 @@ int main(int narg, char *arg[]) {
 
       if (action == "scotch") {
 	graphMetricObject->printGraphMetrics(cout);
-        problem.printGraphMetrics(cout);
+        //problem.printGraphMetrics(cout);
       }
     }
   }
