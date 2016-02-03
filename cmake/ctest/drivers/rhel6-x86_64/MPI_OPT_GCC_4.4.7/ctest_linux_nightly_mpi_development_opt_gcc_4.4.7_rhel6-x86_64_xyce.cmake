@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.linux.gcc-4.4.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.4.7.cmake")
 
 #
 # Set the options specific to this build case
