@@ -332,7 +332,14 @@ public:
   }
 
   static bool isEpetra(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > & op){
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(op));
+
+#ifdef HAVE_XPETRA_EPETRA
+    Teuchos::RCP<const Thyra::EpetraLinearOp> epetraOp = Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
+    return !epetraOp.is_null();
+#else
     return false;
+#endif
   }
 
   static bool isBlockedOperator(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > & op){
