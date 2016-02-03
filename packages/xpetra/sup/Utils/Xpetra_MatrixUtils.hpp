@@ -81,11 +81,7 @@ class MatrixUtils {
 
 public:
 
-  /** Given CrsMatrix objects A, B and C, form the product C = A*B.
-    In a parallel setting, A and B need not have matching distributions,
-    but C needs to have the same row-map as A (if transposeA is false).
-    At this time C=AT*B and C=A*BT are known to not work. However,
-    C=A*B and C=AT*BT are known to work, Kurtis Nusbaum 03/24/2011
+  /** Given a matrix A split it into a nxm blocked matrix using the map extractors.
 
     @param input Input matrix, must already have had 'FillComplete()' called.
     @param rangeMapExtractor MapExtractor object describing the splitting of rows of the output block matrix
