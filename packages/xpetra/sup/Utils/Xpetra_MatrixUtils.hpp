@@ -101,13 +101,17 @@ public:
     RCP<const Map> fullRangeMap  = rangeMapExtractor->getFullMap();
     RCP<const Map> fullDomainMap = domainMapExtractor->getFullMap();
 
-    /*TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap.getMaxAllGlobalIndex() != input.getRowMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
-    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap.getGlobalNumElements() != input.getRowMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
-    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap.getNodeNumElements() != input.getRowMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getMaxAllGlobalIndex() != input.getRowMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getGlobalNumElements() != input.getRowMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getNodeNumElements()   != input.getRowMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getMaxAllGlobalIndex() != input.getRangeMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getGlobalNumElements() != input.getRangeMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getNodeNumElements()   != input.getRangeMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
 
-    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap.getMaxAllGlobalIndex() != input.getColMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
-    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap.getGlobalNumElements() != input.getColMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
-    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap.getNodeNumElements() != input.getColMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")*/
+    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getMaxAllGlobalIndex() != input.getColMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getMaxAllGlobalIndex() != input.getDomainMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getGlobalNumElements() != input.getDomainMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getNodeNumElements()   != input.getDomainMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
 
     std::vector<Teuchos::RCP<CrsMatrix> > subMatrices(numRows*numCols, Teuchos::null);
 
@@ -118,17 +122,18 @@ public:
       }
     }
 
-#if 1
-
-    // 1) loop over all rows of input matrix
+    // loop over all rows of input matrix
     for (size_t rr = 0; rr < input.getRowMap()->getNodeNumElements(); rr++) {
 
       GlobalOrdinal growid = input.getRowMap()->getGlobalElement(rr); // LID -> GID (column)
 
       // Find the block id in range map extractor that belongs to same global row id.
       // We assume the global ids to be unique in the map extractor
-      // TODO what about thyra mode? There we generate our global GIDs but they are ordered
-      // by the way how the submaps are ordered.
+      // The MapExtractor objects may be constructed using the thyra mode. However, we use
+      // global GID ids (as we have a single input matrix). The only problematic thing could
+      // be that the GIDs of the input matrix are inconsistent with the GIDs in the map extractor.
+      // Note, that for the Thyra mode the GIDs in the map extractor are generated using the ordering
+      // of the blocks.
       size_t rowBlockId = rangeMapExtractor->getMapIndexForGID(growid);
 
       // extract matrix entries from input matrix
@@ -171,73 +176,6 @@ public:
     }
 
     return bA;
-
-#else
-    // loop over all block rows
-    for (size_t r = 0; r < numRows; r++) {
-      Teuchos::RCP<const Map> blockRowMap = rangeMapExtractor->getMap(r);
-
-
-      // loop over all rows within block row
-      for (size_t rr = 0; rr < blockRowMap->getNodeNumElements(); rr++) {
-        std::vector<Teuchos::Array<GlobalOrdinal> > blockColIdx (numCols, Teuchos::Array<GlobalOrdinal>());
-        std::vector<Teuchos::Array<Scalar> >        blockColVals(numCols, Teuchos::Array<Scalar>());
-
-        // we need global ids since we might jump over rows in the input matrix!
-        GlobalOrdinal growid = input.getRowMap()->getGlobalElement(rr); // LID -> GID (column)
-
-        size_t nnz = input.getNodeMaxNumRowEntries();
-
-        Teuchos::ArrayView<const GlobalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> vals;
-        input.getGlobalRowView(growid, indices, vals);
-
-        //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Xpetra::Exceptions::RuntimeError, "Xpetra::MatrixUtils::Split: number of nonzeros not equal to number of indices? Error.");
-
-        // loop through all entries in current row
-        for(size_t i=0; i<(size_t)indices.size(); i++) {
-          GlobalOrdinal gcolid = indices[i];
-          for (size_t c = 0; c < numCols; c++) {
-            Teuchos::RCP<const Map> blockDomainMap = domainMapExtractor->getMap(c);
-            if(blockDomainMap->isNodeGlobalElement(gcolid)) {
-              Scalar gcolval = vals[i];
-              blockColIdx[c].push_back(gcolid);
-              blockColVals[c].push_back(gcolval);
-            }
-          }
-        }
-
-        for (size_t c = 0; c < numCols; c++) {
-          std::cout << "BLOCK " << c << std::endl;
-          for(size_t s = 0; s < blockColIdx[c].size(); s++) {
-            Teuchos::Array<GlobalOrdinal> bci = blockColIdx[c];
-            std::cout << "PROC " << input.getRowMap()->getComm()->getRank() << " colid " << bci[s] << " -> " << c << std::endl;
-          }
-          subMatrices[r*numCols+c]->insertGlobalValues(growid,blockColIdx[c].view(0,blockColIdx[c].size()),blockColVals[c].view(0,blockColVals[c].size()));
-          std::cout << "added matrix entries row " << rr << " block column " << c << std::endl;
-
-          //blockColIdx.clear();
-          //blockColVals.clear();
-        }
-      }
-
-      for (size_t c = 0; c < numCols; c++) {
-        subMatrices[r*numCols+c]->fillComplete(domainMapExtractor->getMap(c), blockRowMap);
-      }
-    }
-
-    Teuchos::RCP<BlockedCrsMatrix> bA = Teuchos::rcp(new BlockedCrsMatrix(
-        rangeMapExtractor, domainMapExtractor, 10 /*input.getRowMap()->getNodeMaxNumRowEntries()*/));
-
-
-    for (size_t r = 0; r < numRows; r++) {
-      for (size_t c = 0; c < numCols; c++) {
-        bA->setMatrix(r,c,subMatrices[r*numCols+c]);
-      }
-    }
-
-    return bA;
-#endif
   }
 
 };
