@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
   }
 
   if (rank == 0){
-    scalar_t imb = problem1->getWeightImbalance();
+    scalar_t imb;// = problem1->getWeightImbalance();
     metricObject1->getWeightImbalance(imb, 0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
   }
 
   if (rank == 0){
-    scalar_t imb = problem2->getWeightImbalance();
+    scalar_t imb;// = problem2->getWeightImbalance();
     metricObject2->getWeightImbalance(imb, 0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
   }
 
   if (rank == 0){
-    scalar_t imb = problem3->getWeightImbalance();
+    scalar_t imb;// = problem3->getWeightImbalance();
     metricObject3->getWeightImbalance(imb, 0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
   if (rank == 0){
     metricObject3->printMetrics(cout);
     //problem3->printMetrics(cout);
-    scalar_t imb = problem3->getWeightImbalance();
+    scalar_t imb;// = problem3->getWeightImbalance();
     metricObject3->getWeightImbalance(imb, 0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
   if (rank == 0){
     metricObject3->printMetrics(cout);
     //problem3->printMetrics(cout);
-    scalar_t imb = problem3->getWeightImbalance();
+    scalar_t imb;// = problem3->getWeightImbalance();
     metricObject3->getWeightImbalance(imb, 0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
   }
 
   if (rank == 0){
-    scalar_t imb = problem1->getWeightImbalance();
+    scalar_t imb;// = problem1->getWeightImbalance();
     metricObject1->getWeightImbalance(imb, 0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
