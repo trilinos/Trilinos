@@ -251,7 +251,7 @@ public:
   void initialize_symbolic(){
     //std::cout << std::endl<< std::endl<< std::endl<< std::endl<< std::endl<< std::endl;
     typename HandleType::GraphColoringHandleType *gchandle = this->handle->get_graph_coloring_handle();
-   std::cout  << " numRows:" << num_rows << " cols:" << num_cols <<  std::endl;
+
 
     if (gchandle == NULL){
 
