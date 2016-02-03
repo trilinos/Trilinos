@@ -406,6 +406,7 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int Options)
   {
     factor_inc_lvl(Options);
+    return 0;
   }
 
 

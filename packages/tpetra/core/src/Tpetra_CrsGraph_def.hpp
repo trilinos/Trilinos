@@ -1432,23 +1432,18 @@ namespace Tpetra {
   getRowInfo (const LocalOrdinal myRow) const
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "getRowInfo";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! rowMap_->isNodeLocalElement (myRow), std::logic_error,
-      ": The given (local) row index myRow = " << myRow
-      << " does not belong to the graph's row Map.  "
-      "This probably indicates a bug in Tpetra::CrsGraph or Tpetra::CrsMatrix.  "
-      "Please report this bug to the Tpetra developers.");
+    const char tfecfFuncName[] = "getRowInfo: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasRowInfo (), std::logic_error,
-      ": Late catch! Graph does not have row info anymore.  "
+      "Late catch! Graph does not have row info anymore.  "
       "Error should have been caught earlier.  "
       "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     RowInfo ret;
-    if (! hasRowInfo () || rowMap_.is_null () || ! rowMap_->isNodeLocalElement (myRow)) {
+    if (! hasRowInfo () || rowMap_.is_null () ||
+        ! rowMap_->isNodeLocalElement (myRow)) {
       ret.localRow = STINV;
       ret.allocSize = 0;
       ret.numEntries = 0;
@@ -2592,6 +2587,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    const char tfecfFuncName[] = "getLocalRowCopy: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       isGloballyIndexed () && ! hasColMap (), std::runtime_error,
@@ -2600,48 +2596,36 @@ namespace Tpetra {
       "for columns yet, so it doesn't make sense to call this method.  If the "
       "graph doesn't have a column Map yet, you should call fillComplete on "
       "it first.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasRowInfo(), std::runtime_error,
-      "Tpetra::CrsGraph::getLocalRowCopy: graph row information was deleted "
-      "at fillComplete().");
+      "Graph row information was deleted at fillComplete.");
+#endif // HAVE_TPETRA_DEBUG
 
-    if (! getRowMap ()->isNodeLocalElement (localRow)) {
-      numEntries = 0;
-      return;
-    }
-
-    const RowInfo rowinfo = this->getRowInfo (localRow);
+    // This does the right thing (reports an empty row) if the input
+    // row is invalid.
+    const RowInfo rowinfo = getRowInfo (localRow);
+    // No side effects on error.
     const size_t theNumEntries = rowinfo.numEntries;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (indices.size ()) < theNumEntries,
-      std::runtime_error,
-      "Tpetra::CrsGraph::getLocalRowCopy: The given row " << localRow << " has "
-      << theNumEntries << " entries, but indices.size() = " << indices.size ()
-      << ", which does not suffice to store the row's indices.");
-
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (indices.size ()) < theNumEntries, std::runtime_error,
+      "Specified storage (size==" << indices.size () << ") does not suffice "
+      "to hold all " << theNumEntries << " entry/ies for this row.");
     numEntries = theNumEntries;
 
-    if (isLocallyIndexed ()) {
-      ArrayView<const LO> lview = getLocalView (rowinfo);
-      std::copy (lview.begin (), lview.begin () + numEntries, indices.begin ());
-    }
-    else if (isGloballyIndexed ()) {
-      ArrayView<const GO> gview = getGlobalView (rowinfo);
-      const map_type& colMap = * (this->getColMap ());
-      for (size_t j = 0; j < numEntries; ++j) {
-        indices[j] = colMap.getLocalElement (gview[j]);
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (isLocallyIndexed ()) {
+        ArrayView<const LO> lview = getLocalView (rowinfo);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          indices[j] = lview[j];
+        }
       }
-    }
-    else {
-      // If the graph on the calling process is neither locally nor
-      // globally indexed, that means it owns no column indices.
-      //
-      // FIXME (mfh 21 Oct 2013) It's not entirely clear to me whether
-      // we can reach this branch, given the checks above.  However,
-      // if that is the case, it should still be correct to call this
-      // function if the calling process owns no column indices.
-      numEntries = 0;
+      else if (isGloballyIndexed ()) {
+        ArrayView<const GO> gview = getGlobalView (rowinfo);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          indices[j] = colMap_->getLocalElement (gview[j]);
+        }
+      }
     }
   }
 
@@ -2651,40 +2635,39 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalRowCopy (GlobalOrdinal globalRow,
                     const Teuchos::ArrayView<GlobalOrdinal>& indices,
-                    size_t& NumIndices) const
+                    size_t& numEntries) const
   {
     using Teuchos::ArrayView;
     const char tfecfFuncName[] = "getGlobalRowCopy: ";
-    // we either currently store global indices, or we have a column
-    // map with which to transcribe our local indices for the user
-    const LocalOrdinal lrow = rowMap_->getLocalElement (globalRow);
-
-    // FIXME (mfh 22 Aug 2014) Instead of throwing an exception,
-    // should just set NumIndices=0 and return.  In that case, the
-    // calling process owns no entries in that row, so the right thing
-    // to do is to return an empty copy.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lrow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
-      std::runtime_error,
-      "GlobalRow (== " << globalRow << ") does not belong to this process.");
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasRowInfo (), std::runtime_error,
-      "Graph row information was deleted at fillComplete().");
-    const RowInfo rowinfo = this->getRowInfo (lrow);
-    NumIndices = rowinfo.numEntries;
+      "Graph row information was deleted at fillComplete.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // This does the right thing (reports an empty row) if the input
+    // row is invalid.
+    const RowInfo rowinfo = getRowInfoFromGlobalRowIndex (globalRow);
+    const size_t theNumEntries = rowinfo.numEntries;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (indices.size ()) < NumIndices, std::runtime_error,
+      static_cast<size_t> (indices.size ()) < theNumEntries, std::runtime_error,
       "Specified storage (size==" << indices.size () << ") does not suffice "
-      "to hold all entries for this row (NumIndices == " << NumIndices << ").");
-    if (isLocallyIndexed ()) {
-      ArrayView<const LocalOrdinal> lview = this->getLocalView (rowinfo);
-      for (size_t j = 0; j < NumIndices; ++j) {
-        indices[j] = colMap_->getGlobalElement (lview[j]);
+      "to hold all " << theNumEntries << " entry/ies for this row.");
+    numEntries = theNumEntries; // first side effect
+
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (isLocallyIndexed ()) {
+        ArrayView<const LocalOrdinal> lview = getLocalView (rowinfo);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          indices[j] = colMap_->getGlobalElement (lview[j]);
+        }
       }
-    }
-    else if (isGloballyIndexed ()) {
-      ArrayView<const GlobalOrdinal> gview = this->getGlobalView (rowinfo);
-      std::copy (gview.begin (), gview.begin () + NumIndices, indices.begin ());
+      else if (isGloballyIndexed ()) {
+        ArrayView<const GlobalOrdinal> gview = getGlobalView (rowinfo);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          indices[j] = gview[j];
+        }
+      }
     }
   }
 
@@ -2701,25 +2684,33 @@ namespace Tpetra {
       "currently stored as global indices, so we cannot return a view with "
       "local column indices, whether or not the graph has a column Map.  If "
       "the graph _does_ have a column Map, use getLocalRowCopy() instead.");
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasRowInfo (), std::runtime_error, "Graph row information was "
       "deleted at fillComplete().");
+#endif // HAVE_TPETRA_DEBUG
+
+    // This does the right thing (reports an empty row) if the input
+    // row is invalid.
+    const RowInfo rowInfo = getRowInfo (localRow);
     indices = Teuchos::null;
-    if (rowMap_->isNodeLocalElement (localRow)) {
-      const RowInfo rowinfo = this->getRowInfo (localRow);
-      if (rowinfo.numEntries > 0) {
-        indices = this->getLocalView (rowinfo);
-        // getLocalView returns a view of the _entire_ row, including
-        // any extra space at the end (which 1-D unpacked storage
-        // might have, for example).  That's why we have to take a
-        // subview of the returned view.
-        indices = indices (0, rowinfo.numEntries);
-      }
+    if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowInfo.numEntries > 0) {
+      indices = this->getLocalView (rowInfo);
+      // getLocalView returns a view of the _entire_ row, including
+      // any extra space at the end (which 1-D unpacked storage
+      // might have, for example).  That's why we have to take a
+      // subview of the returned view.
+      indices = indices (0, rowInfo.numEntries);
     }
+
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (indices.size ()) != this->getNumEntriesInLocalRow (localRow),
-      std::logic_error, ": Violated stated post-conditions. Please contact Tpetra team.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       getNumEntriesInLocalRow (localRow), std::logic_error, "indices.size() "
+       "= " << indices.size () << " != getNumEntriesInLocalRow(localRow=" <<
+       localRow << ") = " << getNumEntriesInLocalRow (localRow) <<
+       ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }
 
@@ -2735,28 +2726,28 @@ namespace Tpetra {
       isLocallyIndexed (), std::runtime_error, "The graph's indices are "
       "currently stored as local indices, so we cannot return a view with "
       "global column indices.  Use getGlobalRowCopy() instead.");
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasRowInfo (), std::runtime_error,
       "Graph row information was deleted at fillComplete().");
+#endif // HAVE_TPETRA_DEBUG
 
-    // isNodeGlobalElement() requires a global to local lookup anyway,
-    // and getLocalElement() returns invalid() if the element wasn't found.
-    const LocalOrdinal localRow = rowMap_->getLocalElement (globalRow);
+    // This does the right thing (reports an empty row) if the input
+    // row is invalid.
+    const RowInfo rowInfo = getRowInfoFromGlobalRowIndex (globalRow);
     indices = Teuchos::null;
-    if (localRow != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-      const RowInfo rowInfo = this->getRowInfo (localRow);
-      if (rowInfo.numEntries > 0) {
-        indices = (this->getGlobalView (rowInfo)) (0, rowInfo.numEntries);
-      }
+    if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowInfo.numEntries > 0) {
+      indices = (this->getGlobalView (rowInfo)) (0, rowInfo.numEntries);
     }
+
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (indices.size ()) != this->getNumEntriesInGlobalRow (globalRow),
-      std::logic_error,
-      "Violated stated postconditions: indices.size() = " << indices.size ()
-      << " != getNumEntriesInGlobalRow(globalRow=" << globalRow
-      << ") = " << this->getNumEntriesInGlobalRow (globalRow)
-      << ".  Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) != getNumEntriesInGlobalRow (globalRow),
+       std::logic_error, "indices.size() = " << indices.size ()
+       << " != getNumEntriesInGlobalRow(globalRow=" << globalRow << ") = "
+       << getNumEntriesInGlobalRow (globalRow)
+       << ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }
 

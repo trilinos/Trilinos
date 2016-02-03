@@ -60,6 +60,8 @@ namespace Tacho {
 
     ordinal_type NumBlocks() const { return _cblk; }
 
+    GraphHelper_Scotch() = default;
+
     GraphHelper_Scotch(const CrsMatrixType& A, 
                        const int seed = GraphHelper::DefaultRandomSeed) {
 
@@ -108,6 +110,8 @@ namespace Tacho {
                                NULL);CHKERR(ierr);  // edge load array (optional)
       ierr = SCOTCH_graphCheck(&_graph);CHKERR(ierr);
     }
+    GraphHelper_Scotch(const GraphHelper_Scotch &b) = default;
+
     virtual~GraphHelper_Scotch() {
       SCOTCH_graphFree(&_graph);
     }
@@ -133,7 +137,8 @@ namespace Tacho {
       {
         const int level = (_level ? _level : max(1, int(log2(_m)-treecut))); // level = log2(_nnz)+10;
         SCOTCH_Strat stradat;
-        SCOTCH_Num straval = (_strat ? _strat : (SCOTCH_STRATLEVELMAX));//   |
+        SCOTCH_Num straval = _strat;
+                              //(SCOTCH_STRATLEVELMAX));//   |
                               //SCOTCH_STRATLEVELMIN   |
                               //SCOTCH_STRATLEAFSIMPLE |
                               //SCOTCH_STRATSEPASIMPLE);
@@ -152,6 +157,16 @@ namespace Tacho {
                                  range,
                                  tree);CHKERR(ierr);
         SCOTCH_stratExit(&stradat);
+      }
+
+      {
+        // assume there are multiple roots 
+        range[_cblk+1] = range[_cblk]; // dummy range
+        tree[_cblk] = -1;              // dummy root
+        for (ordinal_type i=0;i<_cblk;++i)
+          if (tree[i] == -1)           // multiple roots becomes children of the hummy root
+            tree[i] = tree[_cblk];
+        ++_cblk;                       // include the dummy root
       }
 
       // provided blksize is greater than 0, reorder internally
@@ -274,6 +289,8 @@ namespace Tacho {
     }
 
     int pruneTree(const ordinal_type cut) {
+      if (cut <=0 ) return 0;
+
       ordinal_type_array work = ordinal_type_array(_label+"::WorkArray", _cblk+1);
       for (ordinal_type iter=0;iter<cut && _cblk > 1;++iter) {
         // horizontal merging 

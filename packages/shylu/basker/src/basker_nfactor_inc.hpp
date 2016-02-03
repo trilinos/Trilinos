@@ -122,21 +122,26 @@ namespace BaskerNS
    
     //---------------------------Sep--------------------------//
 
-
+    
     
     if(btf_tabs_offset != 0)
       {
-    //for(Int l=1; l<=4; l++)
-    for(Int l=1; l <= tree.nlvls; l++)
+        //for(Int l=1; l<=1; l++)
+       for(Int l=1; l <= tree.nlvls; l++)
       {
 
+        //Come back for syncs
+        
 	//#ifdef BASKER_OLD_BARRIER
-	//Int lthreads = pow(2,l);
-	//Int lnteams = num_threads/lthreads;
-	//#else
-	Int lthreads = 2;
+	Int lthreads = pow(2,l);
 	Int lnteams = num_threads/lthreads;
+	//#else
+	//Int lthreads = 1;
+	//Int lnteams = num_threads/lthreads;
 	//#endif
+
+	
+	//printf("\n\n   ============ SEP: %d ======\n\n",l);
 
 	#ifdef BASKER_KOKKOS
 	Kokkos::Impl::Timer  timer_inner_sep;
@@ -169,6 +174,7 @@ namespace BaskerNS
     #endif
       }
 
+   
     //-------------------------End Sep----------------//
 
 

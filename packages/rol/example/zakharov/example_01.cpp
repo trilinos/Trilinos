@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     updateParametersFromXmlFile(paramfile,parlist.ptr());
 
    // Define algorithm.
-    ROL::Algorithm<RealT> algo("Line Search",*parlist);
+    ROL::Algorithm<RealT> algo("Trust-Region",*parlist);
 
     // Iteration vector.
     RCP<vector> x_rcp = rcp( new vector(dim, 0.0) );

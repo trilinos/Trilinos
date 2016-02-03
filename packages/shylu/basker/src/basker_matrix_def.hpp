@@ -32,6 +32,7 @@ namespace BaskerNS
     p_size  = 0;
     w_fill  = BASKER_FALSE;
     #endif
+    inc_lvl_flg = BASKER_FALSE;
     //printf("matrix init\n");
   }//end BaskerMatrix()
 
@@ -49,6 +50,7 @@ namespace BaskerNS
     p_size  = 0;
     w_fill  = BASKER_FALSE;
     #endif
+    inc_lvl_flg = BASKER_FALSE;
   }//end BaskerMatrix(label)
 
   template <class Int, class Entry, class Exe_Space>

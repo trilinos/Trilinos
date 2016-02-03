@@ -51,8 +51,8 @@
 #include <Ifpack2_Utilities.hpp>
 #include <Ifpack2_Relaxation_decl.hpp>
 
-//#define MD_EXPERIMENTAL
-#ifdef MD_EXPERIMENTAL
+//#define IFPACK2_MD_EXPERIMENTAL
+#ifdef IFPACK2_MD_EXPERIMENTAL
 #include <KokkosKernels_GaussSeidel.hpp>
 #endif
 
@@ -559,10 +559,13 @@ applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordi
 template<class MatrixType>
 void Relaxation<MatrixType>::initialize ()
 {
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::initialize: "
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
     "input matrix before calling this method.");
+  Teuchos::TimeMonitor timeMon (*Time_, true);
+
 
   if (A_.is_null ()) {
     hasBlockCrsMatrix_ = false;
@@ -577,11 +580,40 @@ void Relaxation<MatrixType>::initialize ()
       hasBlockCrsMatrix_ = true;
     }
   }
+#ifdef IFPACK2_MD_EXPERIMENTAL
+    //KokkosKernels GaussSiedel Initialization.
+    if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
+      const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          crsMat == NULL, std::runtime_error, "Ifpack2::Relaxation::compute: "
+          "MT methods works for CRSMatrix Only.");
 
+      this->kh = Teuchos::rcp(new KernelHandle());
+      if (kh->get_gs_handle() == NULL){
+        kh->create_gs_handle();
+      }
+      kokkos_csr_matrix kcsr = crsMat->getLocalMatrix ();
+
+      bool is_symmetric = false;
+      if (PrecType_ == Ifpack2::Details::MTSGS){
+        is_symmetric = true;
+      }
+      KokkosKernels::Experimental::Graph::gauss_seidel_symbolic
+          <KernelHandle, lno_row_view_t, lno_nonzero_view_t>
+          (kh.getRawPtr(), A_->getNodeNumRows(),
+              A_->getNodeNumCols(),
+              kcsr.graph.row_map,
+              kcsr.graph.entries,
+              is_symmetric);
+
+    }
+
+#endif
   // Initialization for Relaxation is trivial, so we say it takes zero time.
-  //InitializeTime_ += Time_->totalElapsedTime ();
+  InitializeTime_ += Time_->totalElapsedTime ();
   ++NumInitialize_;
   isInitialized_ = true;
+
 }
 
 template<class MatrixType>
@@ -1078,7 +1110,7 @@ void Relaxation<MatrixType>::compute ()
       Importer_ = A_->getGraph ()->getImporter ();
       Diagonal_->template sync<device_type> ();
     }
-#ifdef MD_EXPERIMENTAL
+#ifdef IFPACK2_MD_EXPERIMENTAL
     //KokkosKernels GaussSiedel Initialization.
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
       const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
@@ -1086,27 +1118,16 @@ void Relaxation<MatrixType>::compute ()
           crsMat == NULL, std::runtime_error, "Ifpack2::Relaxation::compute: "
           "MT methods works for CRSMatrix Only.");
 
-      this->kh = rcp(new KernelHandle());
-      if (kh->get_gs_handle() == NULL){
-        kh->create_gs_handle();
-      }
       kokkos_csr_matrix kcsr = crsMat->getLocalMatrix ();
-      /*
-      std::cout << "initing kcsr.graph.row_map:" << kcsr.graph.row_map.dimension_0()
-                << " A_->getNodeNumRows():" << A_->getNodeNumRows()
-                << " entries:" << entries.dimension_0()
-                << " vals:" << vals.dimension_0()
-                << std::endl;
-       */
 
-      //TODO: Symbolic should go under initialize.
-      KokkosKernels::Experimental::Graph::gauss_seidel_symbolic
-          <KernelHandle, lno_row_view_t, lno_nonzero_view_t>
-          (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(), kcsr.graph.row_map, kcsr.graph.entries, false);
-
+      bool is_symmetric = false;
+      if (PrecType_ == Ifpack2::Details::MTSGS){
+        is_symmetric = true;
+      }
       KokkosKernels::Experimental::Graph::gauss_seidel_numeric
         <KernelHandle, lno_row_view_t, lno_nonzero_view_t, scalar_nonzero_view_t>
-        (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(), kcsr.graph.row_map, kcsr.graph.entries, kcsr.values, false);
+        (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(), kcsr.graph.row_map,
+            kcsr.graph.entries, kcsr.values, is_symmetric);
     }
 #endif
   } // end TimeMonitor scope
@@ -1598,13 +1619,12 @@ void Relaxation<MatrixType>::MTGaussSeidel (
     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
-    const Teuchos::ArrayView<local_ordinal_type>& rowIndices,
     const scalar_type& dampingFactor,
     const Tpetra::ESweepDirection direction,
     const int numSweeps,
     const bool zeroInitialGuess) const
 {
-#ifdef MD_EXPERIMENTAL
+#ifdef IFPACK2_MD_EXPERIMENTAL
   using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1859,10 +1879,10 @@ void Relaxation<MatrixType>::MTGaussSeidel (
     }
 
 
-    if (rowIndices.is_null ()) {
+    //if (rowIndices.is_null ()) {
 
 
-      /*
+    /*
         std::cout   << "X_colMap->getNumVectors:" << X_colMap->getNumVectors()
                     <<" X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ()->dimension_0():"
                     <<  X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> ().dimension_0()
@@ -1885,15 +1905,15 @@ void Relaxation<MatrixType>::MTGaussSeidel (
         std::cout << std::endl;
         KokkosKernels::Experimental::Util::print_1Dview(Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), Kokkos::ALL (), 0));
         std::cout << std::endl;
-       */
-      typedef typename MV::dual_view_type dual_view_type;
-      typedef typename dual_view_type::t_dev device_view_type;
-      //device_view_type KernelB = Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), 0, Kokkos::ALL ());
-      //std::cout << " 5" << std::endl;
-      //scalar_nonzero_view_t KernelXcolMap = Kokkos::subview(X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), 0, Kokkos::ALL ());
-      //std::cout << " 6" << std::endl;
+     */
+    typedef typename MV::dual_view_type dual_view_type;
+    typedef typename dual_view_type::t_dev device_view_type;
+    //device_view_type KernelB = Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), 0, Kokkos::ALL ());
+    //std::cout << " 5" << std::endl;
+    //scalar_nonzero_view_t KernelXcolMap = Kokkos::subview(X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), 0, Kokkos::ALL ());
+    //std::cout << " 6" << std::endl;
 
-      /*
+    /*
 
         crsMat->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
@@ -1906,58 +1926,58 @@ void Relaxation<MatrixType>::MTGaussSeidel (
         crsMat->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
                                                  KokkosClassic::Backward);
-       */
+     */
 
 
-      for (size_t indVec = 0; indVec < NumVectors; ++indVec){
-        if (direction == Tpetra::Symmetric) {
-          KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply
-          (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
-              kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
-              Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-              Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-              zero_x_vector, update_y_vector);
-        }
-        else if (direction == Tpetra::Forward) {
-          KokkosKernels::Experimental::Graph::forward_sweep_gauss_seidel_apply
-          (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
-              kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
-              Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
-              Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-              zero_x_vector, update_y_vector);
-        }
-        else if (direction == Tpetra::Backward) {
-          KokkosKernels::Experimental::Graph::backward_sweep_gauss_seidel_apply
-          (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
-              kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
-              Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
-              Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
-              zero_x_vector, update_y_vector);
-        }
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::invalid_argument,
-              prefix << "The 'direction' enum does not have any of its valid "
-              "values: Forward, Backward, or Symmetric.");
-        }
+    for (size_t indVec = 0; indVec < NumVectors; ++indVec){
+      if (direction == Tpetra::Symmetric) {
+        KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply
+        (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+            kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
+            Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
+            Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
+            zero_x_vector, update_y_vector);
       }
-
-      if (NumVectors > 1){
-        update_y_vector = true;
+      else if (direction == Tpetra::Forward) {
+        KokkosKernels::Experimental::Graph::forward_sweep_gauss_seidel_apply
+        (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+            kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
+            Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
+            Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
+            zero_x_vector, update_y_vector);
+      }
+      else if (direction == Tpetra::Backward) {
+        KokkosKernels::Experimental::Graph::backward_sweep_gauss_seidel_apply
+        (kh.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+            kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
+            Kokkos::subview(X_colMap->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec ),
+            Kokkos::subview(B_in->template getLocalView<MyExecSpace> (), Kokkos::ALL (), indVec),
+            zero_x_vector, update_y_vector);
       }
       else {
-        update_y_vector = false;
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::invalid_argument,
+            prefix << "The 'direction' enum does not have any of its valid "
+            "values: Forward, Backward, or Symmetric.");
       }
+    }
 
-      /*
+    if (NumVectors > 1){
+      update_y_vector = true;
+    }
+    else {
+      update_y_vector = false;
+    }
+
+    /*
         std::cout << "after" << std::endl;
         KokkosKernels::Experimental::Util::print_1Dview(Kokkos::subview(X_colMap->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), Kokkos::ALL (), 0));
         std::cout << std::endl;
         KokkosKernels::Experimental::Util::print_1Dview(Kokkos::subview(B_in->template getLocalView<Kokkos::CudaUVMSpace::memory_space> (), Kokkos::ALL (), 0));
         std::cout << std::endl;
-       */
+     */
 
-      /*
+    /*
       else {
         crsMat->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
                                                           D, rowIndices,
@@ -1969,8 +1989,8 @@ void Relaxation<MatrixType>::MTGaussSeidel (
                                                           KokkosClassic::Backward);
 
       }
-       */
-    }
+     */
+    //}
   }
 
   if (copyBackOutput) {
@@ -2005,7 +2025,7 @@ void Relaxation<MatrixType>::ApplyInverseMTSGS_CrsMatrix (
   this->MTGaussSeidel (
       crsMat,
       X, B,
-      *Diagonal_, rowIndices,
+      *Diagonal_,
       DampingFactor_,
       direction, NumSweeps_,
       ZeroStartingSolution_);
@@ -2040,7 +2060,7 @@ void Relaxation<MatrixType>::ApplyInverseMTGS_CrsMatrix (
   this->MTGaussSeidel (
       crsMat,
       X, B,
-      *Diagonal_, rowIndices,
+      *Diagonal_,
       DampingFactor_,
       direction, NumSweeps_,
       ZeroStartingSolution_);

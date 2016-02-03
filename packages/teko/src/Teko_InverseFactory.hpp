@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -84,10 +84,10 @@ public:
    virtual InverseLinearOp buildInverse(const LinearOp & linearOp) const = 0;
 
    /** \brief Build a preconditioned inverse operator
-     * 
+     *
      * Build the inverse operator using this factory and a user specified
      * preconditioning operator. The default behavior is to call buildInverse
-     * ignoring the preconditioner. 
+     * ignoring the preconditioner.
      *
      * \param[in] linearOp Linear operator needing to be inverted.
      * \param[in] precOp Preconditioning operator
@@ -175,10 +175,10 @@ public:
    virtual std::string toString() const = 0;
 
    /** \brief Request the additional parameters this preconditioner factory
-     *        needs. 
+     *        needs.
      *
      * Request the additonal parameters needed by this preconditioner factory.
-     * The parameter list will have a set of fields that can be filled with 
+     * The parameter list will have a set of fields that can be filled with
      * the requested values. These fields include all requirements, even those
      * of the sub-solvers if there are any.  Once correctly filled the object
      * can be updated by calling the updateRequestedParameters with the filled
@@ -190,7 +190,7 @@ public:
      */
    virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const
    { return Teuchos::null; }
-   
+
    /** \brief Update this object with the fields from a parameter list.
      *
      * Update the requested fields using a parameter list. This method is
@@ -212,7 +212,7 @@ public:
    { callbackHandler_ = rh; }
 
    //! Get the request handler with pointers to the appropriate callbacks
-   Teuchos::RCP<RequestHandler> getRequestHandler() const 
+   Teuchos::RCP<RequestHandler> getRequestHandler() const
    { return callbackHandler_; }
 
 protected:
@@ -223,17 +223,17 @@ protected:
 class StaticOpInverseFactory : public InverseFactory {
 public:
    //! \name Constructors
-   //@{ 
-   
+   //@{
+
    /** \brief Constructor that takes a linear operator and
      *        uses it as a static inverse
      *
      * Constructor that takes a linear operator and
      * uses it as a static inverse
-     * 
+     *
      * \param[in] inv Linear operator to use as the inverse.
      */
-   StaticOpInverseFactory(const LinearOp inv) 
+   StaticOpInverseFactory(const LinearOp inv)
       : inverse_(inv) {}
 
    //! Copy constructor
@@ -242,6 +242,9 @@ public:
    //@}
 
    virtual ~StaticOpInverseFactory() {}
+
+   using InverseFactory::buildInverse;
+   using InverseFactory::rebuildInverse;
 
    /** \brief Build an inverse operator
      *
@@ -255,7 +258,7 @@ public:
      *          of <code>linearOp</code>.
      */
    virtual InverseLinearOp buildInverse(const LinearOp & linearOp) const
-   { return Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(inverse_); }
+   { return Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(this->inverse_); }
 
    /** \brief Pass in an already constructed inverse operator. Update
      *        the inverse operator based on the new source operator.
@@ -380,7 +383,7 @@ Teuchos::RCP<InverseFactory> invFactoryFromParamList(const Teuchos::ParameterLis
   * Get a valid parameter list for the inverse factory class. This will
   * specify the set of parameters for each possible "inverse".
   *
-  * \note It is preferred that the <code>InverseLibrary</code> is used 
+  * \note It is preferred that the <code>InverseLibrary</code> is used
   *       to get paramter lists for <code>InverseFactory</code> construction.
   *
   * \returns A parameter list is returned that is suitable to be passed

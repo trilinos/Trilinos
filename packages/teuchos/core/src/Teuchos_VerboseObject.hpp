@@ -94,12 +94,6 @@ public:
     const RCP<FancyOStream> &oStream = Teuchos::null
     );
 
-  /** \brief Calls <tt>initializeVerboseObject()</tt>.
-   */
-  virtual void initializeVerboseObjectBase(
-    const RCP<FancyOStream> &oStream = Teuchos::null
-    );
-
   /** \brief The output stream for <tt>*this</tt> object.
    *
    * This function is supposed by called by general clients to set the output
@@ -164,6 +158,12 @@ public:
   //@}
 
 protected:
+
+  /** \brief Calls <tt>initializeVerboseObject()</tt>.
+   */
+  void initializeVerboseObjectBase(
+    const RCP<FancyOStream> &oStream = Teuchos::null
+    );
 
   /** \brief Function that is called whenever the verbosity state
    * is updated.
@@ -256,18 +256,6 @@ public:
     const RCP<FancyOStream> &oStream  = Teuchos::null
     );
 
-  /// \brief Initialize the VerboseObject.
-  ///
-  /// \param verbLevel [in] Initial verbosity level.
-  /// \param oStream [in/out] Initial output stream.
-  ///
-  /// \note \c verbLevel must be the same as the default value for
-  ///   <tt>defaultVerbLevel_</tt>.
-  virtual void initializeVerboseObject(
-    const EVerbosityLevel verbLevel = VERB_DEFAULT,
-    const RCP<FancyOStream> &oStream  = Teuchos::null
-    );
-
   /** \brief Set this object's verbosity level.
    *
    * This function is supposed by called by general clients to set the output
@@ -293,6 +281,20 @@ public:
   virtual EVerbosityLevel getVerbLevel() const;
 
   //@}
+
+protected:
+
+  /// \brief Initialize the VerboseObject.
+  ///
+  /// \param verbLevel [in] Initial verbosity level.
+  /// \param oStream [in/out] Initial output stream.
+  ///
+  /// \note \c verbLevel must be the same as the default value for
+  ///   <tt>defaultVerbLevel_</tt>.
+  void initializeVerboseObject(
+    const EVerbosityLevel verbLevel = VERB_DEFAULT,
+    const RCP<FancyOStream> &oStream  = Teuchos::null
+    );
 
 private:
 

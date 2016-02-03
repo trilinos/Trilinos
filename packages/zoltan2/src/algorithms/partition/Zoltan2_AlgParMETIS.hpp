@@ -269,37 +269,53 @@ void AlgParMETIS<Adapter>::partition(
     for (pm_idx_t dim = 0; dim < pm_nCon; dim++)
       pm_imbTols[dim] = pm_real_t(tolerance);
 
-    // Other ParMETIS parameters?
     std::string parmetis_method("PARTKWAY");
+    pe = pl.getEntryPtr("partitioning_approach");
+    if (pe){
+      std::string approach;
+      approach = pe->getValue<std::string>(&approach);
+      if ((approach == "repartition") || (approach == "maximize_overlap"))
+        parmetis_method = "REFINE_KWAY";
+      // TODO:  AdaptiveRepart
+    }
+
+    // Other ParMETIS parameters?
     pm_idx_t pm_wgtflag = 2*(nVwgt > 0) + (nEwgt > 0);
     pm_idx_t pm_numflag = 0;
+    pm_idx_t pm_edgecut = -1;
+    pm_idx_t pm_options[METIS_NOPTIONS];
+    pm_options[0] = 1;   // Use non-default options for some ParMETIS options
+    for (int i = 0; i < METIS_NOPTIONS; i++) 
+      pm_options[i] = 0; // Default options
+    pm_options[2] = 15;  // Matches default value used in Zoltan
   
     pm_idx_t pm_nPart;
     TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nPart, numGlobalParts);
 
     if (parmetis_method == "PARTKWAY") {
-
-      pm_idx_t pm_edgecut = -1;
-      pm_idx_t pm_options[METIS_NOPTIONS];
-      pm_options[0] = 1;   // Use non-default options for some ParMETIS options
-      for (int i = 0; i < METIS_NOPTIONS; i++) 
-        pm_options[i] = 0; // Default options
-      pm_options[2] = 15;  // Matches default value used in Zoltan
-
       ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
                            &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
                            pm_partsizes, pm_imbTols, pm_options,
                            &pm_edgecut, pm_partList, &mpicomm);
     }
     else if (parmetis_method == "ADAPTIVE_REPART") {
-      // Get object sizes
-      std::cout << "NOT READY FOR ADAPTIVE_REPART YET" << std::endl;
+      // Get object sizes:  pm_vsize
+      std::cout << "NOT READY FOR ADAPTIVE_REPART YET; NEED VSIZE" << std::endl;
       exit(-1);
+      //pm_real_t itr = 100.;  // Same default as in Zoltan
+      //ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
+      //                           pm_vsize, pm_ewgts, &pm_wgtflag,
+      //                           &pm_numflag, &pm_nCon, &pm_nPart,
+      //                           pm_partsizes, pm_imbTols,
+      //                           &itr, pm_options,
+      //                           &pm_edgecut, pm_partList, &mpicomm);
     }
-    else if (parmetis_method == "PART_GEOM") {
-      // Get coordinate info, too.
-      std::cout << "NOT READY FOR PART_GEOM YET" << std::endl;
-      exit(-1);
+    else if (parmetis_method == "REFINE_KWAY") {
+      ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
+                             pm_ewgts,
+                             &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
+                             pm_partsizes, pm_imbTols,
+                             pm_options, &pm_edgecut, pm_partList, &mpicomm);
     }
 
     // Clean up 

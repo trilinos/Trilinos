@@ -821,7 +821,8 @@ namespace ROL {
     TRUSTREGION_FLAG_NPOSPREDPOS,
     TRUSTREGION_FLAG_NPOSPREDNEG,
     TRUSTREGION_FLAG_QMINSUFDEC,
-    TRUSTREGION_FLAG_NAN 
+    TRUSTREGION_FLAG_NAN,
+    TRUSTREGION_FLAG_UNDEFINED 
   };
  
 
@@ -829,22 +830,71 @@ namespace ROL {
     std::string retString;
     switch(trf) {
       case TRUSTREGION_FLAG_SUCCESS:  
+        retString = "Both actual and predicted reductions are positive (success)";
         break;
       case TRUSTREGION_FLAG_POSPREDNEG: 
+        retString = "Actual reduction is positive and predicted reduction is negative (impossible)";
         break;
       case TRUSTREGION_FLAG_NPOSPREDPOS: 
+        retString = "Actual reduction is nonpositive and predicted reduction is positive";
         break;
       case TRUSTREGION_FLAG_NPOSPREDNEG:
+        retString = "Actual reduction is nonpositive and predicted reduction is negative (impossible)";
         break;
       case TRUSTREGION_FLAG_QMINSUFDEC:
+        retString = "Sufficient decrease of the quadratic model not met (bound constraints only)";
         break;
       case TRUSTREGION_FLAG_NAN:
+        retString = "Actual and/or predicted reduction is a NaN";
         break;
       default:
         retString = "INVALID ETrustRegionFlag";       
     }
     return retString;
   }
+
+
+  /** \enum  ROL::ECGFlag 
+      \brief Enumation of flags used by conjugate gradient methods.
+
+    \arg CG_FLAG_SUCCESS     Residual Tolerance Met
+    \arg CG_FLAG_ITEREXCEED  Iteration Limit Exceeded
+    \arg CG_FLAG_NEGCURVE    Negative Curvature Detected
+    \arh CG_FLAG_TRRADEX     Trust-Region Radius Exceeded
+
+  */
+  enum ECGFlag {
+    CG_FLAG_SUCCESS = 0,
+    CG_FLAG_ITEREXCEED,
+    CG_FLAG_NEGCURVE,
+    CG_FLAG_TRRADEX,
+    CG_FLAG_UNDEFINED 
+  };
+
+
+  inline std::string ECGFlagToString(ECGFlag cgf) {
+    std::string retString;
+    switch(cgf) {
+      case CG_FLAG_SUCCESS:
+        retString = "Residual tolerance met";
+        break;
+      case CG_FLAG_ITEREXCEED:
+        retString = "Iteration limit exceeded";
+        break;
+      case CG_FLAG_NEGCURVE:
+        retString = "Negative curvature detected";
+        break;
+      case CG_FLAG_TRRADEX:   
+        retString = "Trust-Region radius exceeded";
+        break;
+      default:
+        retString = "INVALID ECGFlag";  
+    }
+    return retString;
+  }
+  
+
+
 
 
   /** \brief  Verifies validity of a TrustRegion enum.
@@ -889,6 +939,9 @@ namespace ROL {
     }
     return TRUSTREGION_CAUCHYPOINT;
   }
+
+
+
 
   /** \enum   ROL::ETestObjectives
       \brief  Enumeration of test objective functions.

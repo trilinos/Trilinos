@@ -505,9 +505,6 @@ Vector<T, N>
 ConjugateGradientStep<FN, T, N>::
 step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const &)
 {
-  Index const
-  dimension = soln.get_dimension();
-
   // Newton line search.
   NewtonLineSearch<T, N>
   newton_ls;

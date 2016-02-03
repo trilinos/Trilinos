@@ -324,6 +324,15 @@ void AlgZoltan<Adapter>::partition(
     zz->Set_Param("IMBALANCE_TOL", str);
   }
   
+  pe = pl.getEntryPtr("partitioning_approach");
+  if (pe){
+    std::string approach;
+    approach = pe->getValue<std::string>(&approach);
+    if (approach == "partition")
+      zz->Set_Param("LB_APPROACH", "PARTITION");
+    else
+      zz->Set_Param("LB_APPROACH", "REPARTITION");
+  }
 
   // Look for zoltan_parameters sublist; pass all zoltan parameters to Zoltan
   try {

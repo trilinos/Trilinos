@@ -74,7 +74,6 @@ namespace Tacho {
       Atmp.importMatrixMarket(in);
 
       AA.copy(Uplo::Upper, Atmp);
-      //AA.copy(Atmp);
 
       t = timer.seconds();
 

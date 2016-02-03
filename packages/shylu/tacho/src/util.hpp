@@ -28,8 +28,8 @@
 /// sparse matrix factorization with task-data parallelism e.g., parameter
 /// classes, error handling, ostream << overloading.
 ///
-/// Note: The reference of the "static const int" members in the enum-like 
-/// classes should not be used as function arguments but their values only. 
+/// Note: The reference of the "static const int" members in the enum-like
+/// classes should not be used as function arguments but their values only.
 
 
 using namespace std;
@@ -38,7 +38,7 @@ namespace Tacho {
 
 #ifndef MAX_TEAM_SIZE
 #define MAX_TEAM_SIZE 8
-#endif  
+#endif
 
 #undef CHKERR
 #define CHKERR(ierr)                                                    \
@@ -60,17 +60,17 @@ namespace Tacho {
 #undef CtrlDetail
 #define CtrlDetail(name,algo,variant,component) \
   CtrlComponent(name,algo,variant,component,0),CtrlComponent(name,algo,variant,component,1),name
-  
+
   /// \class GraphHelper
   class GraphHelper {
   public:
     static const int DefaultRandomSeed = -1;
   };
 
-  
+
   /// \class Partition
   /// \brief Matrix partition parameters.
-  class Partition { 
+  class Partition {
   public:
     static const int Top         = 101;
     static const int Bottom      = 102;
@@ -135,7 +135,7 @@ namespace Tacho {
   };
 
   /// \class AlgoChol
-  /// \brief Algorithmic variants in sparse factorization and sparse BLAS operations. 
+  /// \brief Algorithmic variants in sparse factorization and sparse BLAS operations.
   class AlgoChol {
   public:
     // One side factorization on flat matrices
@@ -168,8 +168,8 @@ namespace Tacho {
     // B and C are dense matrices and used for solve phase
     static const int ForTriSolveBlocked = 2011;
 
-    // use an external BLAS library
-    static const int ExternalBlas = 2021;
+    static const int DenseByBlocks = 2021;
+    static const int ExternalBlas = 2031;
   };
 
   class AlgoTrsm : public AlgoGemm {
@@ -180,19 +180,16 @@ namespace Tacho {
     static const int ForFactorBlockedVar2 = AlgoGemm::ForFactorBlocked;
 
     // data parallel for multiple rhs -- default
-    static const int ForTriSolveBlockedVar1 = AlgoGemm::ForTriSolveBlocked;  
+    static const int ForTriSolveBlockedVar1 = AlgoGemm::ForTriSolveBlocked;
     // data parallel for single rhs
     static const int ForTriSolveBlockedVar2 = 2012;
-
-    // use an external BLAS library
-    static const int ExternalBlas = 2021;
   };
 
   typedef AlgoGemm AlgoHerk;
 
   /// \brief Interface for overloaded stream operators.
-  template<typename T> 
-  inline 
+  template<typename T>
+  inline
   ostream& operator<<(ostream &os, const unique_ptr<T> &p) {
     return p->showMe(os);
   }
@@ -209,10 +206,10 @@ namespace Tacho {
   };
 
   /// \brief Implementation of the overloaded stream operator.
-  inline 
+  inline
   ostream& operator<<(ostream &os, const Disp &disp) {
     return disp.showMe(os);
-  }  
+  }
 
   template<typename T> struct NumericTraits {};
 

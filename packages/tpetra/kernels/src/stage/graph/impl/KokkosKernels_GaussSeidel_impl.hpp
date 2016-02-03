@@ -222,7 +222,7 @@ public:
       const_nonzero_index_view_type entries_,
       const_nonzero_value_view_type values_):
         num_rows(num_rows_), num_cols(num_cols_),
-        handle(handle_), row_map(row_map_), entries(entries_), values(values_), is_symmetric(false){}
+        handle(handle_), row_map(row_map_), entries(entries_), values(values_), is_symmetric(true){}
 
 
   GaussSeidel(HandleType *handle_,
@@ -230,7 +230,7 @@ public:
       row_index_type num_cols_,
       const_row_index_view_type row_map_,
       const_nonzero_index_view_type entries_,
-      bool is_symmetric_ = false):
+      bool is_symmetric_ = true):
         num_rows(num_rows_), num_cols(num_cols_),
         handle(handle_),
         row_map(row_map_),
@@ -273,29 +273,40 @@ public:
     row_index_type nnz = adj.dimension_0();
     //std::cout << "initialize_symbolic start" << std::endl;
     {
-      if (!is_symmetric || num_rows < num_cols){
+      if (!is_symmetric){
 
-        row_index_temp_work_view_type tmp_xadj;
-        row_index_temp_work_view_type tmp_adj;
+        if (gchandle->get_coloring_type() == KokkosKernels::Experimental::Graph::COLORING_EB){
 
-        KokkosKernels::Experimental::Util::symmetrize_graph_symbolic
-        < const_row_index_view_type, const_nonzero_index_view_type,
-        row_index_temp_work_view_type, row_index_temp_work_view_type,
-        MyExecSpace>
-        (num_rows, xadj, adj, tmp_xadj, tmp_adj );
-        //std::cout << "symmetrize_graph_symbolic " << std::endl;
+          gchandle->symmetrize_and_calculate_lower_diagonal_edge_list(num_rows, xadj, adj);
+          graph_color_symbolic <HandleType, const_row_index_view_type, const_nonzero_index_view_type>
+              (this->handle, num_rows, num_rows, xadj , adj);
+        }
+        else {
 
-        graph_color_symbolic <HandleType, row_index_temp_work_view_type, row_index_temp_work_view_type> (this->handle, num_rows, num_rows, tmp_xadj , tmp_adj);
+          row_index_temp_work_view_type tmp_xadj;
+          row_index_temp_work_view_type tmp_adj;
+
+          KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
+          < const_row_index_view_type, const_nonzero_index_view_type,
+          row_index_temp_work_view_type, row_index_temp_work_view_type,
+          MyExecSpace>
+          (num_rows, xadj, adj, tmp_xadj, tmp_adj );
+          //std::cout << "symmetrize_graph_symbolic " << std::endl;
+
+          graph_color_symbolic <HandleType, row_index_temp_work_view_type, row_index_temp_work_view_type> (this->handle, num_rows, num_rows, tmp_xadj , tmp_adj);
+        }
       }
       //std::cout << "graph_color_symbolic STARTTTTTT num_rows:" << num_rows  << " tmp_adj:" << tmp_adj.dimension_0() << " adj:" << adj.dimension_0()<< std::endl;
 
       else {
+
         graph_color_symbolic <HandleType, const_row_index_view_type, const_nonzero_index_view_type> (this->handle, num_rows, num_rows, xadj , adj);
       }
       //std::cout << "graph_color_symbolic ENDDDDDDDDDD num_rows:" << num_rows << std::endl;
     }
 
     row_index_type numColors = gchandle->get_num_colors();
+
 
     typename HandleType::GraphColoringHandleType::color_view_type colors =  gchandle->get_vertex_colors();
 
@@ -470,9 +481,7 @@ public:
   void initialize_numeric(){
 
     if (this->handle->get_gs_handle()->is_symbolic_called() == false){
-
       this->initialize_symbolic();
-
     }
     //else
     {

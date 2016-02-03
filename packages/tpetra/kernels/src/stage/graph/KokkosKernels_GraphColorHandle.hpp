@@ -1,7 +1,7 @@
 
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
-
+#include "KokkosKernels_Utils.hpp"
 #ifndef _GRAPHCOLORHANDLE_HPP
 #define _GRAPHCOLORHANDLE_HPP
 //#define VERBOSE
@@ -239,15 +239,19 @@ private:
 
   template<typename v1, typename v2, typename v3>
   struct CountLowerTriangle{
+    row_index_type nv;
     v1 xadj;
     v2 adj;
     v3 lower_xadj_counts;
 
     CountLowerTriangle(
+        row_index_type nv_,
         v1 xadj_,
         v2 adj_,
         v3 lower_xadj_counts_
-        ): xadj(xadj_), adj(adj_), lower_xadj_counts(lower_xadj_counts_){}
+        ): nv(nv_),
+            xadj(xadj_), adj(adj_),
+            lower_xadj_counts(lower_xadj_counts_){}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const row_index_type &i, row_index_type &new_num_edge) const {
@@ -257,7 +261,7 @@ private:
       row_index_type new_edge_count = 0;
       for (row_index_type j = xadj_begin; j < xadj_end; ++j){
         row_index_type n = adj(j);
-        if (i < n){
+        if (i < n && n < nv){
           new_edge_count += 1;
         }
       }
@@ -283,6 +287,7 @@ private:
 
   template<typename v1, typename v2, typename v3, typename v4>
   struct FillLowerTriangle{
+    row_index_type nv;
     v1 xadj;
     v2 adj;
     v3 lower_xadj_counts;
@@ -290,12 +295,15 @@ private:
     v4 lower_dsts;
 
     FillLowerTriangle(
+        row_index_type nv_,
         v1 xadj_,
         v2 adj_,
         v3 lower_xadj_counts_,
         v4 lower_srcs_,
         v4 lower_dsts_
-        ): xadj(xadj_), adj(adj_), lower_xadj_counts(lower_xadj_counts_),
+        ):  nv(nv_),
+            xadj(xadj_), adj(adj_),
+            lower_xadj_counts(lower_xadj_counts_),
             lower_srcs(lower_srcs_), lower_dsts(lower_dsts_) {}
 
     KOKKOS_INLINE_FUNCTION
@@ -306,7 +314,7 @@ private:
 
       for (row_index_type j = xadj_begin; j < xadj_end; ++j){
         row_index_type n = adj(j);
-        if (i < n){
+        if (i < n && n < nv){
           row_index_type position = lower_xadj_counts(i)++;
           lower_srcs(position) = i;
           lower_dsts(position) = n;
@@ -314,6 +322,24 @@ private:
       }
     }
   };
+
+  template <typename row_index_view_type, typename nonzero_view_type>
+  void symmetrize_and_calculate_lower_diagonal_edge_list(
+      row_index_type nv,
+      row_index_view_type xadj, nonzero_view_type adj){
+
+    KokkosKernels::Experimental::Util::symmetrize_and_get_lower_diagonal_edge_list
+    <row_index_view_type, nonzero_view_type, row_index_persistent_work_view_type, HandleExecSpace>
+      (
+        nv,
+        xadj,
+        adj,
+        lower_triangle_src,
+        lower_triangle_dst);
+
+    size_of_edge_list = lower_triangle_src.dimension_0();
+
+  }
 
 
   template <typename row_index_view_type, typename nonzero_view_type>
@@ -338,7 +364,7 @@ private:
       typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
       if (nv > 0) {
         Kokkos::parallel_reduce(my_exec_space(0,nv),
-            CountLowerTriangle<row_index_view_type, nonzero_view_type, row_index_temp_work_view_type> (xadj, adj, lower_count), new_num_edge);
+            CountLowerTriangle<row_index_view_type, nonzero_view_type, row_index_temp_work_view_type> (nv, xadj, adj, lower_count), new_num_edge);
       }
 
       //std::cout << "nv:" << nv << " ne:" << ne << " new_num_edge:" << new_num_edge << std::endl;
@@ -348,7 +374,7 @@ private:
       Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_index_temp_work_view_type>(lower_count));
       Kokkos::parallel_for(my_exec_space(0,nv), FillLowerTriangle
           <row_index_view_type, nonzero_view_type,
-          row_index_temp_work_view_type,row_index_persistent_work_view_type> (xadj, adj, lower_count, half_src, half_dst));
+          row_index_temp_work_view_type,row_index_persistent_work_view_type> (nv, xadj, adj, lower_count, half_src, half_dst));
       src = lower_triangle_src = half_src;
       dst = lower_triangle_dst = half_dst;
       num_out_edges = size_of_edge_list = new_num_edge;
