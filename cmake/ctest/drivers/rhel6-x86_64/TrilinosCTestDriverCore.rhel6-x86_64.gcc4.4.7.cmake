@@ -54,7 +54,7 @@
 # @HEADER
 
   
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosCTestDriverCore.cmake")
 
 #
 # Platform/compiler specific options for trilinos-test using gcc
