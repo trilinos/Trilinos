@@ -99,6 +99,7 @@ public:
     stk::mesh::EntityId get_available_side_id();
 
     stk::mesh::SideConnector get_side_connector();
+    stk::mesh::impl::CoincidentSideExtractor get_coincident_side_extractor();
 
     const stk::mesh::BulkData& get_mesh() const;
 

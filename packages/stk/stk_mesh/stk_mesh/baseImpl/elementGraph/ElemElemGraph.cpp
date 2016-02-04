@@ -94,7 +94,7 @@ void ElemElemGraph::fill_from_mesh()
 
 void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids()
 {
-    m_coincidentGraph = impl::extract_coincident_sides(m_graph, m_element_topologies);
+    m_coincidentGraph = get_coincident_side_extractor().extract_coincident_sides();
     impl::BulkDataIdMapper idMapper(m_bulk_data, m_local_id_to_element_entity, m_entity_to_local_id);
     make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(m_graph,
                                            m_parallelInfoForGraphEdges,
@@ -999,6 +999,11 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
 stk::mesh::SideConnector ElemElemGraph::get_side_connector()
 {
     return stk::mesh::SideConnector(m_bulk_data, m_graph, m_coincidentGraph, m_local_id_to_element_entity, m_entity_to_local_id);
+}
+
+stk::mesh::impl::CoincidentSideExtractor ElemElemGraph::get_coincident_side_extractor()
+{
+    return stk::mesh::impl::CoincidentSideExtractor(m_bulk_data, m_graph, m_element_topologies, m_local_id_to_element_entity, m_parallelInfoForGraphEdges);
 }
 
 void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::EntityVector & local_elements_attached_to_side_nodes,

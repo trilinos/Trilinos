@@ -194,6 +194,7 @@ typedef std::map<GraphEdge, parallel_info, GraphEdgeLessByElem2> ParallelGraphIn
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
 typedef std::vector<ConnectedElementData> ConnectedElementDataVector;
+typedef std::vector<GraphEdge> GraphEdgeVector;
 
 NAMED_PAIR( EntitySidePair , stk::mesh::Entity , entity , unsigned , side_id )
 NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , side_id )
