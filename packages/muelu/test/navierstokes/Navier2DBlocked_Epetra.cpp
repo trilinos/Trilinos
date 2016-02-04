@@ -284,7 +284,6 @@ int main(int argc, char *argv[]) {
     RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpack11Type, ifpack11List, 0) );
     smoProto11->SetFactory("A", A11Fact);
     RCP<SmootherFactory> Smoo11Fact = rcp( new SmootherFactory(smoProto11) );
-    Smoo11Fact->SetFactory("A",A11Fact);
 
     ////////////////////////////////////////// prepare null space for A11
     RCP<MultiVector> nullspace11 = MultiVectorFactory::Build(xstridedvelmap, 2);  // this is a 2D standard null space
