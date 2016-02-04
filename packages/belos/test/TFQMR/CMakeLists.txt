@@ -22,6 +22,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       SOURCES test_pseudo_tfqmr_complex_hb.cpp 
       ARGS
         "--verbose --filename=mhd1280b.cua"
+        "--verbose --num-rhs=5 --filename=mhd1280b.cua"
       )
 
     ASSERT_DEFINED(Anasazi_SOURCE_DIR)

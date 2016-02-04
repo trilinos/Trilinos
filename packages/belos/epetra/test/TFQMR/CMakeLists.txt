@@ -39,7 +39,10 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     SOURCES test_pseudo_ptfqmr_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
     ARGS
+      "--verbose --left-prec"
       "--verbose --left-prec --num-rhs=10"
+      "--verbose --right-prec"
+      "--verbose --right-prec --num-rhs=10"
     STANDARD_PASS_OUTPUT 
   )
 
