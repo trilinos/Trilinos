@@ -249,10 +249,11 @@ template< typename KernelHandle>
 inline
 void pcgsolve( //const ImportType & import,
               KernelHandle &kh
-            ,  const CrsMatrix <typename KernelHandle::nonzero_value_type , typename KernelHandle::row_index_type, typename KernelHandle::HandleExecSpace >      & A
-            , const Kokkos::View <typename KernelHandle::nonzero_value_type *,
+            ,  const CrsMatrix <typename KernelHandle::nnz_scalar_t ,
+            typename KernelHandle::row_lno_t, typename KernelHandle::HandleExecSpace >      & A
+            , const Kokkos::View <typename KernelHandle::nnz_scalar_t *,
                                   typename KernelHandle::HandleExecSpace> & b
-            , const Kokkos::View <typename KernelHandle::nonzero_value_type * ,
+            , const Kokkos::View <typename KernelHandle::nnz_scalar_t * ,
                                   typename KernelHandle::HandleExecSpace > & x
             , const size_t  maximum_iteration = 200
             , const double  tolerance = std::numeric_limits<double>::epsilon()
@@ -262,7 +263,7 @@ void pcgsolve( //const ImportType & import,
 {
   typedef typename KernelHandle::HandleExecSpace Space;
   //typedef typename KernelHandle::nonzero_value_type MScalar;
-  typedef typename KernelHandle::nonzero_value_type VScalar;
+  typedef typename KernelHandle::nnz_scalar_t VScalar;
   //typedef typename KernelHandle::row_index_type Idx_Type;
   //typedef typename KernelHandle::idx_array_type idx_array_type;
   typedef typename Kokkos::View< VScalar * , Space >  VectorType ;

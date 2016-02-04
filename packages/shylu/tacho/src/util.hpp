@@ -50,13 +50,16 @@ namespace Tacho {
 #define ERROR(msg)                                                      \
   { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl << msg << endl; }
 
+  // control id
 #undef  Ctrl
 #define Ctrl(name,algo,variant) name<algo,variant>
 
+  // control leaf
 #undef CtrlComponent
 #define CtrlComponent(name,algo,variant,component,id)                  \
   Ctrl(name,algo,variant)::component[id]
 
+  // control recursion
 #undef CtrlDetail
 #define CtrlDetail(name,algo,variant,component) \
   CtrlComponent(name,algo,variant,component,0),CtrlComponent(name,algo,variant,component,1),name
@@ -160,7 +163,7 @@ namespace Tacho {
   // aliasing name space
   typedef AlgoChol AlgoTriSolve;
 
-  class AlgoGemm {
+  class AlgoBlasLeaf {
   public:
     // One side factorization on flat matrices
     static const int ForFactorBlocked = 2001;
@@ -168,24 +171,23 @@ namespace Tacho {
     // B and C are dense matrices and used for solve phase
     static const int ForTriSolveBlocked = 2011;
 
-    static const int DenseByBlocks = 2021;
-    static const int ExternalBlas = 2031;
+    static const int ExternalBlas = 2021;
   };
 
-  class AlgoTrsm : public AlgoGemm {
+  class AlgoGemm : public AlgoBlasLeaf {
   public:
-    // data parallel for b1t
-    static const int ForFactorBlockedVar1 = 2002;
-    // data parallel for a1t -- default
-    static const int ForFactorBlockedVar2 = AlgoGemm::ForFactorBlocked;
-
-    // data parallel for multiple rhs -- default
-    static const int ForTriSolveBlockedVar1 = AlgoGemm::ForTriSolveBlocked;
-    // data parallel for single rhs
-    static const int ForTriSolveBlockedVar2 = 2012;
+    static const int DenseByBlocks = 2101;
   };
 
-  typedef AlgoGemm AlgoHerk;
+  class AlgoTrsm : public AlgoBlasLeaf {
+  public:
+    static const int DenseByBlocks = 2201;
+  };
+
+  class AlgoHerk : public AlgoBlasLeaf {
+  public:
+    static const int DenseByBlocks = 2301;
+  };
 
   /// \brief Interface for overloaded stream operators.
   template<typename T>

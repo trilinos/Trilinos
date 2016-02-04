@@ -435,7 +435,7 @@ namespace MueLuTests {
 
     int blockSize=3;
 
-    int nx = blockSize*comm->getSize();
+    GO nx = blockSize*comm->getSize();
     RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
 
     std::vector<size_t> stridingInfo;

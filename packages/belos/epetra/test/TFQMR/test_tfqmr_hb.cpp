@@ -74,7 +74,6 @@ int main(int argc, char *argv[]) {
     bool proc_verbose = false;
     int frequency = -1;  // how often residuals are printed by solver
     int numrhs = 1;  // total number of right-hand sides to solve for
-    int blocksize = 1;  // blocksize used by solver
     int maxiters = -1;  // maximum number of iterations for solver to use
     std::string filename("orsirr1.hb");
     double tol = 1.0e-5;  // relative residual tolerance
@@ -85,8 +84,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by TFQMR solver.");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-    cmdp.setOption("block-size",&blocksize,"Block size to be used by TFQMR solver.");
-    cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
+    cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem size).");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
@@ -127,10 +125,9 @@ int main(int argc, char *argv[]) {
     //
     const int NumGlobalElements = B->GlobalLength();
     if (maxiters == -1)
-      maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
+      maxiters = NumGlobalElements; // maximum number of iterations to run
     //
     ParameterList belosList;
-    belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
     if (verbose) {
@@ -163,7 +160,6 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
       std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-      std::cout << "Block size used by solver: " << blocksize << std::endl;
       std::cout << "Max number of TFQMR iterations: " << maxiters << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
