@@ -46,8 +46,14 @@ int main (int argc, char *argv[]) {
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
 
-  bool reorder = false;
-  clp.setOption("enable-reorder", "disable-reorder", &reorder, "Flag for reordering a matrix");
+  bool scotch = true;
+  clp.setOption("enable-scotch", "disable-scotch", &scotch, "Flag for Scotch");
+
+  bool camd = true;
+  clp.setOption("enable-camd", "disable-camd", &camd, "Flag for CAMD");
+
+  bool symbolic = true;
+  clp.setOption("enable-symbolic", "disable-symbolic", &symbolic, "Flag for sybolic factorization");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -64,7 +70,9 @@ int main (int argc, char *argv[]) {
 
     r_val = exampleSymbolicFactor
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, treecut, minblksize, seed, fill_level, league_size, reorder, verbose);
+      (file_input, treecut, minblksize, seed, 
+       fill_level, league_size, 
+       scotch, camd, symbolic, verbose);
 
     exec_space::finalize();
   }

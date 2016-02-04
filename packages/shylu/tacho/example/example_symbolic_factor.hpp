@@ -8,6 +8,7 @@
 #include "util.hpp"
 
 #include "graph_helper_scotch.hpp"
+#include "graph_helper_camd.hpp"
 #include "crs_matrix_base.hpp"
 
 #include "symbolic_factor_helper.hpp"
@@ -28,14 +29,17 @@ namespace Tacho {
                             const int seed,
                             const int fill_level,
                             const int league_size,
-                            const bool reorder,
+                            const bool scotch,
+                            const bool camd,
+                            const bool symbolic,
                             const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
-    typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
+    typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType_Scotch;
+    typedef GraphHelper_CAMD<CrsMatrixBaseType> GraphHelperType_CAMD;
     typedef SymbolicFactorHelper<CrsMatrixBaseType> SymbolicFactorHelperType;
 
     int r_val = 0;
@@ -64,36 +68,58 @@ namespace Tacho {
     cout << "SymbolicFactor:: import input file::time = " << t << endl;
 
     CrsMatrixBaseType PA("Permuted AA");
-    GraphHelperType S(AA, seed);
-    if (reorder) {
+    GraphHelperType_Scotch S(AA, seed);
+
+    S.setStratGraph(SCOTCH_STRATLEVELMAX   |
+                    SCOTCH_STRATLEVELMIN   |
+                    SCOTCH_STRATLEAFSIMPLE |
+                    SCOTCH_STRATSEPASIMPLE);
+    ordinal_type level = int(log2(double(AA.NumRows()))) - treecut;
+    cout << "SymbolicFactor:: Scotch level = " << level<< endl;
+    S.setTreeLevel(max(level, 1));
+
+    if (scotch) {
       timer.reset();
-
       S.computeOrdering(treecut, minblksize);
-
       PA.copy(S.PermVector(), S.InvPermVector(), AA);
-
       t = timer.seconds();
 
       if (verbose)
         cout << S << endl
              << PA << endl;
+
+      cout << "SymbolicFactor:: Scotch reorder the matrix::time = " << t << endl;
     } else {
       PA = AA;
-
       t = 0.0;
     }
-    cout << "SymbolicFactor:: reorder the matrix::time = " << t << endl;
+
+
+    CrsMatrixBaseType CA("Constrained AMD");
+    GraphHelperType_CAMD C(PA, S.NumBlocks(), S.RangeVector());
+    if (scotch && camd) {
+      timer.reset();
+      C.computeOrdering();
+      CA.copy(C.PermVector(), C.InvPermVector(), PA);
+      t = timer.seconds();
+
+      if (verbose)
+        cout << C << endl
+             << CA << endl;
+
+      cout << "SymbolicFactor:: CAMD reorder the matrix::time = " << t << endl;
+    } else {
+      CA = PA;
+      t = 0.0;
+    }
 
 
     CrsMatrixBaseType UU("UU");
-    {
+    if (symbolic) {
       timer.reset();
-
-      SymbolicFactorHelperType symbolic(PA, league_size);
+      SymbolicFactorHelperType symbolic(CA, league_size);
       symbolic.createNonZeroPattern(fill_level, Uplo::Upper, UU);
-
       t = timer.seconds();
-
       cout << "SymbolicFactor:: UU nnz = " << UU.NumNonZeros() << endl;
 
       if (verbose) {

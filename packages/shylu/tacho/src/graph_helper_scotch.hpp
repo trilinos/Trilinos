@@ -13,14 +13,14 @@ namespace Tacho {
 
   using namespace std;
 
-  template<class CrsMatrixType>
+  template<class CrsMatBaseType>
   class GraphHelper_Scotch : public Disp {
   public:
-    typedef typename CrsMatrixType::ordinal_type ordinal_type;
-    typedef typename CrsMatrixType::size_type    size_type;
+    typedef typename CrsMatBaseType::ordinal_type ordinal_type;
+    typedef typename CrsMatBaseType::size_type    size_type;
 
-    typedef typename CrsMatrixType::ordinal_type_array ordinal_type_array;
-    typedef typename CrsMatrixType::size_type_array    size_type_array;
+    typedef typename CrsMatBaseType::ordinal_type_array ordinal_type_array;
+    typedef typename CrsMatBaseType::size_type_array    size_type_array;
 
   private:
     string _label;
@@ -62,7 +62,7 @@ namespace Tacho {
 
     GraphHelper_Scotch() = default;
 
-    GraphHelper_Scotch(const CrsMatrixType& A, 
+    GraphHelper_Scotch(const CrsMatBaseType A, 
                        const int seed = GraphHelper::DefaultRandomSeed) {
 
       _label = "GraphHelper_Scotch::" + A.Label();
@@ -146,9 +146,11 @@ namespace Tacho {
         ierr = SCOTCH_stratInit(&stradat);CHKERR(ierr);
 
         // if both are zero, do not run strategy
-        if (!_strat && !_level)
+        if (_strat || _level) {
+          cout << "GraphHelper_Scotch:: User provide a strategy and/or level" << endl
+               << "                     strategy = " << _strat << ", level =  " << _level << endl;
           ierr = SCOTCH_stratGraphOrderBuild (&stradat, straval, level, 0.2);CHKERR(ierr);
-        
+        }
         ierr = SCOTCH_graphOrder(&_graph,
                                  &stradat,
                                  perm,
@@ -165,7 +167,7 @@ namespace Tacho {
         tree[_cblk] = -1;              // dummy root
         for (ordinal_type i=0;i<_cblk;++i)
           if (tree[i] == -1)           // multiple roots becomes children of the hummy root
-            tree[i] = tree[_cblk];
+            tree[i] = (_cblk+1);
         ++_cblk;                       // include the dummy root
       }
 
@@ -391,7 +393,7 @@ namespace Tacho {
          << "    # of NonZeros  = " << _nnz << endl;
 
       if (_is_ordered)
-        os << " -- Elimination tree -- " << endl
+        os << " -- Ordering -- " << endl
            << "    CBLK   = " << _cblk << endl
            << "  PERM     PERI     RANG     TREE" << endl;
 
