@@ -1,5 +1,5 @@
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>     
+#include <impl/Kokkos_Timer.hpp>
 
 #include <Kokkos_TaskPolicy.hpp>
 #include <impl/Kokkos_Serial_TaskPolicy.hpp>
@@ -115,7 +115,14 @@ int main (int argc, char *argv[]) {
   {
     timer.reset();
 
-    GraphHelperType S(AA);
+    GraphHelperType::size_type_array rptr(AA.Label()+"Graph::RowPtrArray", AA.NumRows() + 1);
+    GraphHelperType::ordinal_type_array cidx(AA.Label()+"Graph::ColIndexArray", AA.NumNonZeros());
+
+    AA.convertGraph(rptr, cidx);
+    GraphHelperType S(AA.Label()+"ScotchHelper",
+                      AA.NumRows(),
+                      rptr,
+                      cidx);
     S.computeOrdering(treecut, minblksize);
 
     cout << "CholByBlocks::graphviz:: "
@@ -133,7 +140,7 @@ int main (int argc, char *argv[]) {
                                S.TreeVector());
 
     cout << "CholByBlocks::graphviz:: "
-         << "# of nnz in Hier = " << HH.NumNonZeros() 
+         << "# of nnz in Hier = " << HH.NumNonZeros()
          << endl;
 
     t = timer.seconds();
