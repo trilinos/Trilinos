@@ -56,6 +56,8 @@
 namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
+
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   // implementation of "toThyra" for full specialization on SC=double, LO=GO=int and NO=EpetraNode
   // We need the specialization in the cpp file due to a circle dependency in the .hpp files for BlockedCrsMatrix
   Teuchos::RCP<Thyra::LinearOpBase<double> >
@@ -105,7 +107,9 @@ namespace Xpetra {
 
     return blockMat;
   }
+# endif //#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
   // implementation of "toThyra" for full specialization on SC=double, LO=int, GO=long long and NO=EpetraNode
   // We need the specialization in the cpp file due to a circle dependency in the .hpp files for BlockedCrsMatrix
   Teuchos::RCP<Thyra::LinearOpBase<double> >
@@ -155,6 +159,8 @@ namespace Xpetra {
 
     return blockMat;
   }
+#endif // #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+
 #endif
 
 } // namespace Xpetra
