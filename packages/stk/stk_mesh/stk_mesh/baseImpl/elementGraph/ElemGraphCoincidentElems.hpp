@@ -59,6 +59,9 @@ private:
     bool are_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge);
     bool are_local_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge);
     bool are_parallel_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge);
+    bool do_side_nodes_for_graph_edge_have_same_polarity(const stk::mesh::GraphEdge &graphEdge,
+                                                         const stk::mesh::EntityVector &sideNodesElement1,
+                                                         const stk::mesh::EntityVector &sideNodesElement2);
     void fill_partially_coincident_sides(stk::mesh::impl::LocalId elemId, GraphEdgeVector &partiallyCoincidentSides);
     int count_shared_sides(stk::mesh::impl::LocalId elem1, stk::mesh::impl::LocalId elem2);
     bool are_elements_coincident(int numSides, stk::mesh::impl::LocalId elem1, stk::mesh::impl::LocalId elem2);

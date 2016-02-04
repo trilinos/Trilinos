@@ -42,6 +42,16 @@ bool CoincidentSideExtractor::are_parallel_graph_edge_elements_partially_coincid
     return false && same_polarity;
 }
 
+bool CoincidentSideExtractor::do_side_nodes_for_graph_edge_have_same_polarity(const stk::mesh::GraphEdge &graphEdge,
+                                                                              const stk::mesh::EntityVector &sideNodesElement1,
+                                                                              const stk::mesh::EntityVector &sideNodesElement2)
+{
+    stk::topology side1Topology = m_topologies[graphEdge.elem1].side_topology(graphEdge.side1);
+    std::pair<bool,unsigned> result = side1Topology.equivalent(sideNodesElement1, sideNodesElement2);
+    bool same_polarity = result.second < side1Topology.num_positive_permutations();
+    return result.first && same_polarity;
+}
+
 bool CoincidentSideExtractor::are_local_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge)
 {
     stk::mesh::EntityVector sideNodesElement1 = get_side_nodes(graphEdge.elem1, graphEdge.side1);
@@ -50,10 +60,7 @@ bool CoincidentSideExtractor::are_local_graph_edge_elements_partially_coincident
     if(sideNodesElement1.size() != sideNodesElement2.size())
         return false;
 
-    stk::topology side1Topology = m_topologies[graphEdge.elem1].side_topology(graphEdge.side1);
-    std::pair<bool,unsigned> result = side1Topology.equivalent(sideNodesElement1, sideNodesElement2);
-    bool same_polarity = result.second < side1Topology.num_positive_permutations();
-    return result.first && same_polarity;
+    return do_side_nodes_for_graph_edge_have_same_polarity(graphEdge, sideNodesElement1, sideNodesElement2);
 }
 
 bool CoincidentSideExtractor::are_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge)
