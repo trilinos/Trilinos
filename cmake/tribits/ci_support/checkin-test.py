@@ -77,6 +77,7 @@ recommended that one uses this script to push since it will amend the last
 commit message with a (minimal) summary of the builds and tests run with
 results and/or send out a summary email about the builds/tests performed.
 
+
 QUICKSTART
 -----------
 
@@ -192,7 +193,11 @@ section below):
   NOTE: The commands 'cmake', 'ctest', and 'make' must be in your default path
   before running this script.
 
+  NOTE: Defaults like -j4 can be set using a local-checkin-test-defaults.py
+  file (see below).
+
 For more details on using this script, see the detailed documentation below.
+
 
 DETAILED DOCUMENTATION
 -----------------------
@@ -572,6 +577,29 @@ If that is not sufficient, send email to your development support team to ask
 for help.
 
 
+LOCAL DEFAULT COMMAND LINE DEFAULTS
+-----------------------------------
+
+If the file local-checkin-test-defaults.py exists in the current directory,
+then it will be read in and will change the project defaults for the
+command-line arguments.  For example, a valid local-checkin-test-defaults.py
+file would look like:
+
+  defaults = [
+    "-j10",
+    "--no-rebase",
+    "--ctest-options=-E '(PackageA_Test1|PackageB_Test2)'"
+    ]
+
+Any of the project's checkin-test.py command-line argument defaults can be
+changed in this way.  The updated defaults can be observed by running:
+
+  ./checkin-test.py --show-defaults
+
+Any command-line arguments explicitly passed in will override these local
+defaults.
+
+
 HANDLING OF PT, ST, AND EX CODE IN BUILT-IN AND EXTRA BUILDS:
 -------------------------------------------------------------
 
@@ -848,10 +876,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     default="BASIC",
     help="." \
     +" Change the test categories.  Can be 'BASIC', 'CONTINUOUS', " \
-      " 'NIGHTLY', or 'WEEKLY' (default 'BASIC')." )
+      " 'NIGHTLY', or 'HEAVY' (default set by project, see --show-defaults)." )
 
   clp.add_option(
-    "-j", dest="overallNumProcs", type="string", default="",
+    "-j", "--parallel", dest="overallNumProcs", type="string", default="",
     help="The options to pass to make and ctest (e.g. -j4)." )
 
   clp.add_option(
@@ -1287,13 +1315,33 @@ def loadConfigurationFile(filepath):
     raise Exception('The file %s does not exist.' % filepath)
 
 
+def getLocalCmndLineArgs():
+  localDefaults = []
+  checkinTestDir = os.getcwd()
+  localProjectDefaultsBaseName = "local-checkin-test-defaults"
+  localProjectDefaultsFile = checkinTestDir+"/"+localProjectDefaultsBaseName+".py"
+  #print "localProjectDefaultsFile = '"+localProjectDefaultsFile+"'"
+  if os.path.exists(localProjectDefaultsFile):
+    sys_path_old = sys.path
+    try:
+      sys.path = [checkinTestDir] + sys_path_old
+      if debugDump:
+        print "\nLoading local default command-line args from "+localProjectDefaultsFile+"..."
+        print "\nsys.path =", sys.path
+      localDefaults = __import__(localProjectDefaultsBaseName).defaults
+    finally:
+      sys.path = sys_path_old
+      if debugDump:
+        print "\nsys.path =", sys.path
+  return localDefaults
+
+
 def locateAndLoadConfiguration(path_hints = []):
   """
-  Locate and load a module called
-  checkin_test_project_configuration.py. The path_hints argument can
-  be used to provide location hints at which to locate the
-  file. Returns a configuration dictionary. If the module is not
-  found, this dictionary will be empty.
+  Locate and load a module called checkin_test_project_configuration.py. The
+  path_hints argument can be used to provide location hints at which to locate
+  the file. Returns a configuration dictionary. If the module is not found,
+  this dictionary will be empty.
   """
   for path in path_hints:
     candidate = os.path.join(path, "project-checkin-test-config.py")
@@ -1340,8 +1388,16 @@ def main(cmndLineArgs):
           configuration = locateAndLoadConfiguration([arg.split('=')[1]])
       if not configuration:
         configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
+      localCmndLineArgs = getLocalCmndLineArgs()
+      if localCmndLineArgs:
+        if debugDump:
+          print "\ncmndLineArgs =", cmndLineArgs
+          print "\nlocalCmndLineArgs =", localCmndLineArgs
+        cmndLineArgs = localCmndLineArgs + cmndLineArgs
+        if debugDump:
+          print "\ncmndLineArgs =", cmndLineArgs
       if debugDump:
-        print "\nConfiguration loaded from configuration file =", configuration 
+        print "\nConfiguration loaded from configuration file =", configuration
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
     except SystemExit, e:
       # In Python 2.6, SystemExit inherits Exception, but for proper exit

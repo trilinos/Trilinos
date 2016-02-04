@@ -4301,12 +4301,12 @@ scenario as described in the section `Nested Layers of TriBITS Project
 Testing`_.
 
 The currently allowed values for the *Test Test Category* are ``BASIC``,
-``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``, and ``PERFORMANCE``.  Tests are
+``CONTINUOUS``, ``NIGHTLY``, ``HEAVY``, and ``PERFORMANCE``.  Tests are
 enabled based on their assigned test test category matching the categories set
 in the CMake cache variable `${PROJECT_NAME}_TEST_CATEGORIES`_.  The test test
-categories ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, and ``WEEKLY`` are subsets
+categories ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, and ``HEAVY`` are subsets
 of each other.  That is, a ``BASIC`` test is automatically included in the set
-of ``CONTINUOUS``, ``NIGHTLY``, and ``WEEKLY`` tests (as set using
+of ``CONTINUOUS``, ``NIGHTLY``, and ``HEAVY`` tests (as set using
 ``${PROJECT_NAME}_TEST_CATEGORIES``).
 
 The different test test categories are described below in more detail:
@@ -4317,7 +4317,7 @@ The different test test categories are described below in more detail:
   every developer that works on the project and so must be protected at all
   times and are therefore included in `Pre-Push CI Testing`_.  Tests marked as
   ``BASIC`` are enabled for the values of ``${PROJECT_NAME}_TEST_CATEGORIES``
-  of ``BASIC``, ``CONTINUOUS``, ``NIGHT``, and ``WEEKLY``.  The category
+  of ``BASIC``, ``CONTINUOUS``, ``NIGHT``, and ``HEAVY``.  The category
   ``BASIC`` is the default test test category given to all test executables
   and tests that don't specify the ``CATEGORIES`` argument.
 
@@ -4328,7 +4328,7 @@ The different test test categories are described below in more detail:
   `Post-Push CI Testing`_, `Nightly Testing`_, and other types of testing.
   Tests marked as ``CONTINUOUS`` are enabled for the values of
   ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``CONTINUOUS``, ``NIGHT``, and
-  ``WEEKLY``.  A test may be marked ``CONTINUOUS`` and not ``BASIC`` for a few
+  ``HEAVY``.  A test may be marked ``CONTINUOUS`` and not ``BASIC`` for a few
   different reasons.  For example, the code needed to run the test may take
   too long to build or the test itself may take too long to run in order to
   afford including it in `Pre-Push CI Testing`_.
@@ -4344,17 +4344,15 @@ The different test test categories are described below in more detail:
   represent "offline" so that they don't influence the daily development cycle
   for the project but instead are addressed in a "secondary feedback loop".
   Tests marked as ``NIGHTLY`` are enabled for the values of
-  ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``NIGHT``, and ``WEEKLY``.
+  ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``NIGHT``, and ``HEAVY``.
 
-.. _Test Test Category WEEKLY:
+.. _Test Test Category HEAVY:
 
-* Tests marked **WEEKLY** are usually reserved for very expensive tests that
-  are too expensive to run nightly.  ``WEEKLY`` tests may only be run once a
-  week (see `Weekly Testing`_) but may be run on shorter or longer time
-  intervals depending on circumstances (e.g. the availability of test machines
-  and free processes, just how expensive all of the tests actually are, etc.).
-  Tests marked as ``WEEKLY`` are enabled only for the value of
-  ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``WEEKLY``.
+* Tests marked **HEAVY** are usually reserved for very expensive tests that
+  are too expensive to run nightly.  ``HEAVY`` tests require more testing
+  resources and therefore may only be run on a fully optimzied build and/or
+  run less frequently.  Tests marked as ``HEAVY`` are enabled only for the
+  value of ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``HEAVY``.
 
 .. _Test Test Category PERFORMANCE:
 
@@ -4391,7 +4389,7 @@ The standard TriBITS-defined project testing processes are:
 * `Pre-Push CI Testing`_
 * `Post-Push CI Testing`_
 * `Nightly Testing`_
-* `Weekly Testing`_
+* `Heavy Testing`_
 * `Performance Testing`_
 
 .. ToDo: Discuss why we would want to create standardized test cases?  The
@@ -4508,16 +4506,16 @@ Test Test Category         ``NIGHTLY``         (`Test Test Category NIGHTLY`_)
 
 The nightly builds comprise the basic "heart beat" for the project.
 
-.. _Weekly Testing:
+.. _Heavy Testing:
 
-**Weekly Testing**
+**Heavy Testing**
 
-*Weekly Testing* builds are just an extension to the `Nightly Testing`_ builds
-that add on more expensive tests marked using the `Test Test Category
-WEEKLY`_.  For projects that define weekly tests and weekly builds, individual
-test cases can typically take 24 hours or longer to run so they can't even be
-run every day in nightly testing.  What standard weekly builds have in common
-is that they tend to select repositories, SE packages and code, and individual
+*Heavy Testing* builds are just an extension to the `Nightly Testing`_ builds
+that add on more expensive tests marked using the `Test Test Category HEAVY`_.
+For projects that define heavy tests and heavy builds, individual test cases
+may be alloed to take 24 hours or longer to run so they can't even be run
+every day in nightly testing.  What standard heavy builds have in common is
+that they tend to select repositories, SE packages and code, and individual
 tests using the following test-related classifications:
 
 =========================  ==================  ====================================
@@ -4525,14 +4523,14 @@ tests using the following test-related classifications:
 =========================  ==================  ====================================
 Repository Test Classif.   ``Nightly``         (`Repository Test Nightly`_)
 SE Package Test Group      ``PT`` & ``ST``     (`PT`_ and `ST`_)
-Test Test Category         ``WEEKLY``          (`Test Test Category WEEKLY`_)
+Test Test Category         ``HEAVY``           (`Test Test Category HEAVY`_)
 =========================  ==================  ====================================
 
 Project developer teams should strive to limit the number of test cases that
-are marked as ``WEEKLY`` since these tests will *not* get run nightly and
-developers will tend to never enable them when doing more extensive testing
-using ``--st-extra-builds`` with the `checkin-test.py`_ script in extended
-pre-push testing.
+are marked as ``HEAVY`` since these tests will typically *not* get run in very
+may builds or may not be run every day and developers will tend to never
+enable them when doing more extensive testing using ``--st-extra-builds`` with
+the `checkin-test.py`_ script in extended pre-push testing.
 
 .. _Performance Testing:
 
@@ -7703,7 +7701,7 @@ These options are described below.
   The justification for having the default `Test Test Category`_ be
   ``NIGHTLY`` instead of ``BASIC`` is that when someone is enabling a package
   to develop on it or install it, we want them by default to be seeing the
-  full version of the test suite (shy of the `Test Test Category WEEKLY`_
+  full version of the test suite (shy of the `Test Test Category HEAVY`_
   tests which can be very expensive) for the packages they are explicitly
   enabling.  Typically they will not be enabling forward/`downstream`_
   dependent packages so the cost of running the test suite should not be too
