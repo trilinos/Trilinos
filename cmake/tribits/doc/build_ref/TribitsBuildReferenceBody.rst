@@ -837,6 +837,16 @@ which sets the paths where the MPI executables (e.g. mpiCC, mpicc, mpirun,
 mpiexec) can be found.  By default this is set to ``${MPI_BASE_DIR}/bin`` if
 ``MPI_BASE_DIR`` is set.
 
+**NOTE:** TriBITS uses the MPI compiler wrappers (e.g. mpiCC, mpicc, mpic++,
+mpif90, etc.) which is more standard with other builds systems for HPC
+computing using MPI (and the way that MPI implementations were meant to be
+used).  But directly using the MPI compiler wrappers as the direct compilers
+is inconsistent with the way that the standard CMake module ``FindMPI.cmake``
+which tries to "unwrap" the compiler wrappers and grab out the raw underlying
+compilers and the raw compiler and linker command-line arguments.  In this
+way, TriBITS is more consistent with standard usage in the HPC community but
+is less consistent with CMake (see "HISTORICAL NOTE" below).
+
 There are several different different variations for configuring with MPI
 support:
 
@@ -889,6 +899,17 @@ a) **Configuring build using MPI compiler wrappers:**
   set the MPI compilers irrespective of the xSDK mode, then one should set
   cmake cache variables ``CMAKE_[C,CXX,Fortran]_COMPILER`` to the absolute
   path of the MPI compiler wrappers.
+
+  **HISTORICAL NOTE:** The TriBITS system has its own custom MPI integration
+  support and does not (currently) use the standard CMake module
+  ``FindMPI.cmake``.  This custom support for MPI was added to TriBITS in 2008
+  when it was found the built-in ``FindMPI.cmake`` module was not sufficient
+  for the needs of Trilinos and the approach taken by the module (still in use
+  as of CMake 3.4.x) which tries to unwrap the raw compilers and grab the list
+  of include directories, link libraries, etc, was not sufficiently portable
+  for the systems where Trilinos needed to be used.  But earlier versions of
+  TriBITS used the ``FindMPI.cmake`` module and that is why the CMake cache
+  variables ``MPI_[C,CXX,Fortran]_COMPILER`` are defined and still supported.
 
 b) **Configuring to build using raw compilers and flags/libraries:**
 
@@ -1369,13 +1390,13 @@ To turn on a set a given set of tests by test category, set::
 
   -D <Project>_TEST_CATEGORIES="<CATEGORY0>;<CATEGORY1>;..." 
 
-Valid categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``
-and ``PERFORMANCE``.  ``BASIC`` tests get built and run for pre-push testing,
-CI testing, and nightly testing.  ``CONTINUOUS`` tests are for post-push
-testing and nightly testing.  ``NIGHTLY`` tests are for nightly testing only.
-``WEEKLY`` tests are for more expensive tests that are run approximately
-weekly.  ``PERFORMANCE`` tests a special category used only for performance
-testing.
+Valid categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``HEAVY`` and
+``PERFORMANCE``.  ``BASIC`` tests get built and run for pre-push testing, CI
+testing, and nightly testing.  ``CONTINUOUS`` tests are for post-push testing
+and nightly testing.  ``NIGHTLY`` tests are for nightly testing only.
+``HEAVY`` tests are for more expensive tests that require larger number of MPI
+processes and llonger run times.  ``PERFORMANCE`` tests a special category
+used only for performance testing.
 
 
 Disabling specific tests
