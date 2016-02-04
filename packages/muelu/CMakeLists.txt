@@ -119,8 +119,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable MueLu code refactored to use Kokkos."
   NO)
 
-IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_KokkosRefactor)
-  MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_KokkosRefactor:BOOL=ON).")
+IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
 ENDIF()
 
 # Define HAVE_MUELU_STRATIMIKOS if Stratimikos package is enabled
