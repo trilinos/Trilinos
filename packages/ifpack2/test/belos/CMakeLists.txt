@@ -31,6 +31,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   nos1.rsa
   test_2_ILUT_nos1_hb.xml 
   test_2_RILUK_nos1_hb.xml
+  test_2_RILUK_Experimental_nos1_hb.xml
   test_4_ILUT_nos1_hb.xml 
   test_4_RILUK_nos1_hb.xml
   test_SGS_calore1_mm.xml 
@@ -318,6 +319,7 @@ TRIBITS_ADD_TEST(
 #   NUM_MPI_PROCS 1
 #   STANDARD_PASS_OUTPUT
 # )
+
 
 TRIBITS_ADD_TEST(
   tif_belos Ifpack2BelosCopyFiles
