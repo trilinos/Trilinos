@@ -136,7 +136,14 @@ int main (int argc, char *argv[]) {
   {
     timer.reset();
 
-    GraphHelperType S(AA);
+    typename GraphHelperType::size_type_array rptr(AA.Label()+"Graph::RowPtrArray", AA.NumRows() + 1);
+    typename GraphHelperType::ordinal_type_array cidx(AA.Label()+"Graph::ColIndexArray", AA.NumNonZeros());
+
+    AA.convertGraph(rptr, cidx);
+    GraphHelperType S(AA.Label()+"ScotchHelper",
+                      AA.NumRows(),
+                      rptr,
+                      cidx);
     S.computeOrdering();
 
     cout << "TriSolveByBlocks::graphviz:: "

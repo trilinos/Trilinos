@@ -551,8 +551,7 @@ namespace Tacho {
       return 0;
     }
 
-    int convertGraph(size_type &nnz,
-                     size_type_array rptr,
+    int convertGraph(size_type_array rptr,
                      ordinal_type_array cidx) const {
       ordinal_type ii = 0;
       size_type jj = 0;
@@ -564,7 +563,7 @@ namespace Tacho {
           if (i != _aj[j])
             cidx[jj++] = _aj[j];
       }
-      rptr[ii] = nnz = jj;
+      rptr[ii] = jj;
 
       return 0;
     }

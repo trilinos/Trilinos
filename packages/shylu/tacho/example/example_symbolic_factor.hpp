@@ -67,8 +67,17 @@ namespace Tacho {
     }
     cout << "SymbolicFactor:: import input file::time = " << t << endl;
 
-    CrsMatrixBaseType PA("Permuted AA");
-    GraphHelperType_Scotch S(AA, seed);
+    CrsMatrixBaseType PA("AA after Scotch");
+
+    typename GraphHelperType_Scotch::size_type_array rptr(AA.Label()+"Graph::RowPtrArray", AA.NumRows() + 1);      
+    typename GraphHelperType_Scotch::ordinal_type_array cidx(AA.Label()+"Graph::ColIndexArray", AA.NumNonZeros()); 
+                                                                                                              
+    AA.convertGraph(rptr, cidx);                                                                            
+    GraphHelperType_Scotch S(AA.Label()+"ScotchHelper",                                                            
+                             AA.NumRows(),                                                                         
+                             rptr,                                                                                 
+                             cidx,
+                             seed);  
 
     S.setStratGraph(SCOTCH_STRATLEVELMAX   |
                     SCOTCH_STRATLEVELMIN   |
@@ -95,8 +104,14 @@ namespace Tacho {
     }
 
 
-    CrsMatrixBaseType CA("Constrained AMD");
-    GraphHelperType_CAMD C(PA, S.NumBlocks(), S.RangeVector());
+    CrsMatrixBaseType CA("AA after CAMD");
+    GraphHelperType_CAMD C("AfterScotch",
+                           S.NumRows(),
+                           S.NumNonZeros(),
+                           S.RowPtrVector(),
+                           S.ColIndexVector(),
+                           S.NumBlocks(), 
+                           S.RangeVector());
     if (scotch && camd) {
       timer.reset();
       C.computeOrdering();

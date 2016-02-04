@@ -12,7 +12,7 @@
 #include "crs_row_view.hpp"
 
 #include "graph_helper_scotch.hpp"
-#include "symbolic_factor_helper.hpp" 
+#include "symbolic_factor_helper.hpp"
 #include "crs_matrix_helper.hpp"
 
 namespace Tacho {
@@ -40,7 +40,7 @@ namespace Tacho {
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
-    typedef SymbolicFactorHelper<CrsMatrixBaseType> SymbolicFactorHelperType;  
+    typedef SymbolicFactorHelper<CrsMatrixBaseType> SymbolicFactorHelperType;
 
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
     typedef CrsMatrixBase<CrsMatrixViewType,ordinal_type,size_type,SpaceType,MemoryTraits> CrsHierMatrixBaseType;
@@ -50,7 +50,7 @@ namespace Tacho {
     Kokkos::Impl::Timer timer;
     double t = 0.0;
 
-    cout << "StatByBlocks:: import input file = " << file_input << endl;        
+    cout << "StatByBlocks:: import input file = " << file_input << endl;
     CrsMatrixBaseType AA("AA");
     {
       timer.reset();
@@ -71,54 +71,62 @@ namespace Tacho {
     cout << "StatByBlocks:: import input file::time = " << t << endl;
 
 
-    CrsMatrixBaseType UU("UU");     
-    CrsHierMatrixBaseType HU("HU"); 
+    CrsMatrixBaseType UU("UU");
+    CrsHierMatrixBaseType HU("HU");
     {
       CrsMatrixBaseType PA("Permuted AA");
-      GraphHelperType S(AA, seed);
+      typename GraphHelperType::size_type_array rptr(AA.Label()+"Graph::RowPtrArray", AA.NumRows() + 1);
+      typename GraphHelperType::ordinal_type_array cidx(AA.Label()+"Graph::ColIndexArray", AA.NumNonZeros());
+
+      AA.convertGraph(rptr, cidx);
+      GraphHelperType S(AA.Label()+"ScotchHelper",
+                        AA.NumRows(),
+                        rptr,
+                        cidx,
+                        seed);
       {
         timer.reset();
-        
+
         S.computeOrdering(treecut, minblksize);
         S.pruneTree(prunecut);
 
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
-        
+
         t = timer.seconds();
 
         if (verbose)
           cout << S << endl;
       }
-      cout << "StatByBlocks:: reorder the matrix::time = " << t << endl;            
+      cout << "StatByBlocks:: reorder the matrix::time = " << t << endl;
 
       {
         SymbolicFactorHelperType F(PA, league_size);
         timer.reset();
-        
+
         F.createNonZeroPattern(fill_level, Uplo::Upper, UU);
-        
+
         t = timer.seconds();
         cout << "StatByBlocks:: AA (nnz) = " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
       }
-      cout << "StatByBlocks:: symbolic factorization::time = " << t << endl;            
+      cout << "StatByBlocks:: symbolic factorization::time = " << t << endl;
 
       {
         timer.reset();
-      
+
         CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HU,
                                    S.NumBlocks(),
                                    S.RangeVector(),
                                    S.TreeVector());
-      
+
         for (ordinal_type k=0;k<HU.NumNonZeros();++k)
           HU.Value(k).fillRowViewArray();
-        
+
         t = timer.seconds();
         cout << "StatByBlocks:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
       }
-      cout << "StatByBlocks:: construct hierarchical matrix::time = " << t << endl;            
+      cout << "StatByBlocks:: construct hierarchical matrix::time = " << t << endl;
     }
-    
+
     {
       cout << endl;
       cout << " -- Flat matrix: UU --" << endl;
@@ -131,16 +139,16 @@ namespace Tacho {
       cout << "    # of Cols     = " << HU.NumCols() << endl;
       cout << "    # of Nonzeros = " << HU.NumNonZeros() << endl;
       cout << endl;
-      cout << " -- Blocks of HU --" << endl;      
+      cout << " -- Blocks of HU --" << endl;
 
       map<size_type,size_type> histogram;
 
       if (HU.NumNonZeros()) {
-        
-        size_type 
-          nnz_min = HU.Value(0).countNumNonZeros(), 
-          nnz_max = nnz_min, 
-          nnz_sum = 0, 
+
+        size_type
+          nnz_min = HU.Value(0).countNumNonZeros(),
+          nnz_max = nnz_min,
+          nnz_sum = 0,
           nnz_ave = 0;
 
         size_type nnz_cnt = 0;

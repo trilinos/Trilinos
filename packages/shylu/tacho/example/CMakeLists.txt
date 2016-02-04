@@ -240,12 +240,12 @@ IF(Kokkos_ENABLE_Pthread)
     COMM serial mpi
   )
 
-  TRIBITS_ADD_EXECUTABLE(
-    chol_direct_solver_pthread
-    NOEXEPREFIX
-    SOURCES example_chol_direct_solver_pthread.cpp
-    COMM serial mpi
-  )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   chol_direct_solver_pthread
+  #   NOEXEPREFIX
+  #   SOURCES example_chol_direct_solver_pthread.cpp
+  #   COMM serial mpi
+  # )
 ENDIF()
 
 # Dense Linear Algebra
