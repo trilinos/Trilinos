@@ -984,6 +984,14 @@ namespace BaskerNS
     BASKER_INLINE
     void matrix_transpose(BASKER_MATRIX_VIEW &, 
 			 BASKER_MATRIX &);
+    BASKER_INLINE
+    void matrix_transpose(const Int sm_, const Int m_,
+			  const Int sn_, const Int n_,
+			  const Int nnz_,
+			  Int *col_ptr,
+			  Int *row_idx,
+			  Entry *val,
+			  BASKER_MATRIX &AT);
    
     /*basker_solve_rhs.hpp*/
     BASKER_INLINE
