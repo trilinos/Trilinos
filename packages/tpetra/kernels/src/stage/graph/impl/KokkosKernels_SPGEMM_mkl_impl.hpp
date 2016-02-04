@@ -26,9 +26,9 @@ namespace Impl{
   typename in_nonzero_value_view_type>
   void mkl_apply(
       KernelHandle *handle,
-      typename KernelHandle::row_index_type m,
-      typename KernelHandle::row_index_type n,
-      typename KernelHandle::row_index_type k,
+      typename KernelHandle::row_lno_t m,
+      typename KernelHandle::row_lno_t n,
+      typename KernelHandle::row_lno_t k,
       in_row_index_view_type row_mapA,
       in_nonzero_index_view_type entriesA,
       in_nonzero_value_view_type valuesA,
@@ -44,10 +44,10 @@ namespace Impl{
 
 #ifdef KERNELS_HAVE_MKL
 
-    typedef typename KernelHandle::row_index_type idx;
+    typedef typename KernelHandle::row_lno_t idx;
     typedef in_row_index_view_type idx_array_type;
 
-    typedef typename KernelHandle::nonzero_value_type value_type;
+    typedef typename KernelHandle::nnz_scalar_t value_type;
 
 
     typedef typename in_row_index_view_type::device_type device1;

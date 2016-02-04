@@ -11,13 +11,13 @@ namespace Experimental{
 
 namespace Graph{
 
-template <class KernelHandle,typename in_row_index_view_type, typename in_nonzero_index_view_type>
+template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
 void graph_color_symbolic(
     KernelHandle *handle,
-    typename KernelHandle::row_index_type num_rows,
-    typename KernelHandle::row_index_type num_cols,
-    in_row_index_view_type row_map,
-    in_nonzero_index_view_type entries,
+    typename KernelHandle::row_lno_t num_rows,
+    typename KernelHandle::row_lno_t num_cols,
+    lno_row_view_t_ row_map,
+    lno_nnz_view_t_ entries,
     bool is_symmetric = true){
 
   Kokkos::Impl::Timer timer;
@@ -26,11 +26,13 @@ void graph_color_symbolic(
 
   ColoringAlgorithm algorithm = gch->get_coloring_type();
 
-  typedef typename KernelHandle::GraphColoringHandleType::color_view_type color_view_type;
+  typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
+
   color_view_type colors_out = color_view_type("Graph Colors", num_rows);
 
+
   typedef typename Impl::GraphColor
-      <typename KernelHandle::GraphColoringHandleType, in_row_index_view_type, in_nonzero_index_view_type> BaseGraphColoring;
+      <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
   BaseGraphColoring *gc = NULL;
 
 
@@ -46,7 +48,7 @@ void graph_color_symbolic(
   case COLORING_VBCS:
 
     typedef typename Impl::GraphColor_VB
-        <typename KernelHandle::GraphColoringHandleType, in_row_index_view_type, in_nonzero_index_view_type> VBGraphColoring;
+        <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoring;
     gc = new VBGraphColoring(
         num_rows, entries.dimension_0(),
         row_map, entries, gch);
@@ -54,7 +56,7 @@ void graph_color_symbolic(
   case COLORING_EB:
 
     typedef typename Impl::GraphColor_EB
-        <typename KernelHandle::GraphColoringHandleType, in_row_index_view_type, in_nonzero_index_view_type> EBGraphColoring;
+        <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
 
     gc = new EBGraphColoring(num_rows, entries.dimension_0(),row_map, entries, gch);
     break;

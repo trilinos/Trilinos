@@ -599,8 +599,8 @@ private:
   typedef typename kokkos_csr_matrix::StaticCrsGraphType::row_map_type lno_row_view_t;
   typedef typename kokkos_csr_matrix::StaticCrsGraphType::entries_type lno_nonzero_view_t;
   typedef typename kokkos_csr_matrix::values_type scalar_nonzero_view_t;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type::memory_space TemporaryWorkSpace;
-  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type::memory_space PersistentWorkSpace;
+  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type TemporaryWorkSpace;
+  typedef typename kokkos_csr_matrix::StaticCrsGraphType::device_type PersistentWorkSpace;
   typedef typename kokkos_csr_matrix::StaticCrsGraphType::execution_space MyExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
       <lno_row_view_t,lno_nonzero_view_t, scalar_nonzero_view_t,

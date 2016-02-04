@@ -7,8 +7,8 @@
 #define MAXVAL 1
 
 //#define CUDACONFIG
-#define CUDAVARIOUS
-//#define OPENMP
+//#define CUDAVARIOUS
+#define OPENMP
 
 
 #ifdef CUDACONFIG

@@ -90,7 +90,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
       "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
       "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
   "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
-  "-DTPL_ENABLE_HWLOC:BOOL=ON"
+  "-DTPL_ENABLE_HWLOC:BOOL=OFF"
 
   ### PACKAGES CONFIGURATION ###
   "-DMueLu_ENABLE_Experimental:BOOL=ON"

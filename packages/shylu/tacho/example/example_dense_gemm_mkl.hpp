@@ -49,7 +49,13 @@ namespace Tacho {
     cout << "DenseGemmMKL:: test matrices "
          <<":: mmin = " << mmin << " , mmax = " << mmax << " , minc = " << minc << " , k = "<< k << endl;
 
+    ostringstream os;
+    os.precision(3);
+    os << scientific;
+        
     for (ordinal_type m=mmin;m<=mmax;m+=minc) {
+      os.str("");
+
       DenseMatrixBaseType AA("AA", mmax, k), BB("BB", k, mmax), CC("CC", m, m);
 
       for (ordinal_type j=0;j<AA.NumCols();++j)
@@ -66,6 +72,7 @@ namespace Tacho {
 
       const double flop = get_flop_gemm<value_type>(m, m, k);
 
+      os << "DenseGemmMKL:: m = " << m << " n = " << m << " k = " << k;
       {
         timer.reset();
         Teuchos::BLAS<ordinal_type,value_type> blas;
@@ -82,8 +89,9 @@ namespace Tacho {
                   1.0,
                   CC.ValuePtr(), CC.ColStride());
         t = timer.seconds();
-        cout << "DenseGemmMKL:: Performance = " << (flop/t/1.0e9) << " [GFLOPs]" << endl;
+        os << ":: MKL Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
       }
+      cout << os.str() << endl;
     }
 
     return r_val;

@@ -219,7 +219,7 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
-    params.set("compute_metrics","yes");
+    //params.set("compute_metrics","yes");
   }
   else if (action == "zoltan_rcb") {
     do_partitioning = true;
@@ -270,7 +270,7 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
     zparams.set("LB_METHOD","HYPERGRAPH");
-    params.set("compute_metrics","yes");
+    //params.set("compute_metrics","yes");
 
   }
 
@@ -313,11 +313,11 @@ int main(int narg, char *arg[]) {
 
     if (!me) {
       metricObject->printMetrics(cout);
-      problem.printMetrics(cout);
+      //problem.printMetrics(cout);
 
       if (action == "scotch") {
 	graphMetricObject->printGraphMetrics(cout);
-        problem.printGraphMetrics(cout);
+        //problem.printGraphMetrics(cout);
       }
     }
   }

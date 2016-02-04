@@ -6,11 +6,17 @@
 /// \brief Sparse hermitian rank one update on given sparse patterns.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "util.hpp"
+#include "control.hpp"
+#include "partition.hpp"
+
 namespace Tacho {
 
   using namespace std;
 
-  template<int ArgUplo, int ArgTrans, int ArgAlgo>
+  template<int ArgUplo, int ArgTrans, int ArgAlgo,
+           int ArgVariant = Variant::One,
+           template<int,int> class ControlType = Control>
   struct Herk {
 
     // data-parallel interface

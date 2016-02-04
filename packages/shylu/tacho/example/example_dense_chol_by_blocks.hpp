@@ -109,15 +109,17 @@ namespace Tacho {
 #ifdef HAVE_SHYLUTACHO_MKL
       mkl_set_num_threads(1);
 #endif
-
+      int ierr = 0;
       if (check) {
         timer.reset();
         DenseTaskViewType A(&AB);
-        Chol<Uplo::Upper,AlgoChol::ExternalLapack>::invoke
+        ierr = Chol<Uplo::Upper,AlgoChol::ExternalLapack>::invoke
           (TaskFactoryType::Policy(),
            TaskFactoryType::Policy().member_single(),
            A);
         t = timer.seconds();
+        if (ierr) 
+          ERROR(">> Fail to perform Cholesky (serial) : no reference solution -> no numeric error information");
         cout << "DenseCholByBlocks:: Serial Performance = " << (flop/t/1.0e9) << " [GFLOPs]" << endl;
       }
 
@@ -136,7 +138,7 @@ namespace Tacho {
         cout << "DenseCholByBlocks:: Parallel Performance = " << (flop/t/1.0e9) << " [GFLOPs]" << endl;
       }
 
-      if (check) {
+      if (!ierr && check) {
         typedef typename Teuchos::ScalarTraits<value_type>::magnitudeType real_type;
         real_type err = 0.0, norm = 0.0;
         for (ordinal_type j=0;j<AA.NumCols();++j)

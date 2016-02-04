@@ -501,6 +501,55 @@ namespace Tacho {
       
       return 0;
     }
+    
+    int exportMatrixMarket(ofstream &file,
+                           const string comment,
+                           const int uplo = 0) {
+      streamsize prec = file.precision();
+      file.precision(8);
+      file << scientific;
+
+      file << "%%MatrixMarket matrix coordinate "
+           << (is_fundamental<value_type>::value ? "real " : "complex ")
+           << ((uplo == Uplo::Upper || uplo == Uplo::Lower) ? "symmetric " : "general ")
+           << endl;
+
+      file << comment << endl;
+      
+      // cnt nnz
+      size_type nnz = 0;
+      for (ordinal_type i=0;i<_m;++i) {
+        const size_type jbegin = _ap[i], jend = _ap[i+1];
+        for (size_type j=jbegin;j<jend;++j) {
+          if (uplo == Uplo::Upper && i <= _aj[j]) ++nnz;
+          if (uplo == Uplo::Lower && i >= _aj[j]) ++nnz;
+          if (!uplo) ++nnz;
+        }
+      }
+      file << _m << " " << _n << " " << nnz << endl;
+
+      const int w = 10;
+      for (ordinal_type i=0;i<_m;++i) {
+        const size_type jbegin = _ap[i], jend = _ap[i+1];
+        for (size_type j=jbegin;j<jend;++j) {
+          bool flag = false;
+          if (uplo == Uplo::Upper && i <= _aj[j]) flag = true;
+          if (uplo == Uplo::Lower && i >= _aj[j]) flag = true;
+          if (!uplo) flag = true;
+          if (flag) {
+            value_type val = _ax[j];
+            file << setw(w) << (     i+1) << "  " 
+                 << setw(w) << (_aj[j]+1) << "  " 
+                 << setw(w) <<    val << endl;
+          }
+        }
+      }
+
+      file.unsetf(ios::scientific);
+      file.precision(prec);
+
+      return 0;
+    }
 
     int convertGraph(size_type &nnz,
                      size_type_array rptr,
