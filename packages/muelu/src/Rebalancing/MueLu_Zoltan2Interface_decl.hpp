@@ -60,6 +60,10 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
+#if defined(HAVE_MUELU_ZOLTAN)
+#include "MueLu_ZoltanInterface.hpp"
+#endif
+
 namespace MueLu {
 
   /*!
@@ -76,7 +80,6 @@ namespace MueLu {
             class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Zoltan2Interface : public SingleLevelFactoryBase {
-
 #undef MUELU_ZOLTAN2INTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -96,12 +99,12 @@ namespace MueLu {
 
     //! @name Input
     //@{
-    void DeclareInput(Level & level) const;
+    void DeclareInput(Level& currentLevel) const;
     //@}
 
     //! @name Build methods.
     //@{
-    void Build(Level &level) const;
+    void Build(Level& currentLevel) const;
 
     //@}
 
@@ -114,6 +117,66 @@ namespace MueLu {
 
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+
+#if defined(HAVE_MUELU_ZOLTAN)
+  // Stub partial specialization of Zoltan2Interface for EpetraNode
+  // Use ZoltanInterface instead of Zoltan2Interface
+  template<>
+  class Zoltan2Interface<double,int,int,Xpetra::EpetraNode> : public SingleLevelFactoryBase {
+    typedef double              Scalar;
+    typedef int                 LocalOrdinal;
+    typedef int                 GlobalOrdinal;
+    typedef Xpetra::EpetraNode  Node;
+#undef MUELU_ZOLTAN2INTERFACE_SHORT
+#include "MueLu_UseShortNames.hpp"
+  public:
+    Zoltan2Interface() {
+      level_           = rcp(new Level());
+      zoltanInterface_ = rcp(new ZoltanInterface());
+
+      level_->SetLevelID(1);
+    }
+    virtual ~Zoltan2Interface() {
+      zoltanInterface_ = Teuchos::null;
+      level_           = Teuchos::null;
+    }
+    RCP<const ParameterList> GetValidParameterList() const {
+      RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+      validParamList->set< RCP<const FactoryBase> >   ("A",             Teuchos::null, "Factory of the matrix A");
+      validParamList->set< RCP<const FactoryBase> >   ("Coordinates",   Teuchos::null, "Factory of the coordinates");
+      validParamList->set< RCP<const ParameterList> > ("ParameterList", Teuchos::null, "Zoltan2 parameters");
+
+      return validParamList;
+    };
+    void DeclareInput(Level& currentLevel) const {
+      Input(currentLevel, "A");
+      Input(currentLevel, "Coordinates");
+    };
+    void Build(Level& currentLevel) const {
+      this->GetOStream(Warnings0) << "Tpetra does not support <double,int,int,EpetraNode> instantiation, "
+          "switching Zoltan2Interface to ZoltanInterface" << std::endl;
+
+      typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> dMultiVector;
+
+      // Put the data into a fake level
+      level_->Set("A",                    Get<RCP<Matrix> >      (currentLevel, "A"));
+      level_->Set("Coordinates",          Get<RCP<dMultiVector> >(currentLevel, "Coordinates"));
+      level_->Set("number of partitions", currentLevel.Get<GO>("number of partitions"));
+
+      level_->Request("Partition", zoltanInterface_.get());
+      zoltanInterface_->Build(*level_);
+
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition;
+      level_->Get("Partition", decomposition, zoltanInterface_.get());
+      Set(currentLevel, "Partition", decomposition);
+    };
+
+  private:
+    RCP<Level>           level_;            // fake Level
+    RCP<ZoltanInterface> zoltanInterface_;
+  };
+#else
   // Stub partial specialization of Zoltan2Interface for EpetraNode
   template<>
   class Zoltan2Interface<double,int,int,Xpetra::EpetraNode> : public SingleLevelFactoryBase {
@@ -124,6 +187,8 @@ namespace MueLu {
     void DeclareInput(Level& level) const {};
     void Build(Level &level) const {};
   };
+#endif // HAVE_MUELU_ZOLTAN
+
 #endif
 
 #endif // HAVE_MUELU_EPETRA

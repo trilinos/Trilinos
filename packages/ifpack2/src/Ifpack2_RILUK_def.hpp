@@ -46,6 +46,10 @@
 #include "Ifpack2_LocalFilter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
+#ifdef IFPACK2_ILUK_EXPERIMENTAL
+#include <shylubasker_def.hpp>
+#endif
+
 namespace Ifpack2 {
 
 template<class MatrixType>
@@ -55,6 +59,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     isAllocated_ (false),
     isInitialized_ (false),
     isComputed_ (false),
+    isExperimental_ (false),
     numInitialize_ (0),
     numCompute_ (0),
     numApply_ (0),
@@ -74,6 +79,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     isAllocated_ (false),
     isInitialized_ (false),
     isComputed_ (false),
+    isExperimental_ (false), 
     numInitialize_ (0),
     numCompute_ (0),
     numApply_ (0),
@@ -353,6 +359,32 @@ setParameters (const Teuchos::ParameterList& params)
     // Accept the default value.
   }
 
+  //Experimental 
+  //Note: just following RILUK original style. 
+  //Do not think catch is the method for this. JDB
+#ifdef IFPACK2_ILUK_EXPERIMENTAL
+  try {
+    isExperimental_ = params.get<bool> ("fact: iluk experimental");
+  }
+  catch (InvalidParameterType&) {
+    //Use default
+  }
+  catch (InvalidParameterName&) {
+    //Use default
+  }
+ 
+  try {
+    basker_threads = params.get<int> ("fact: iluk experimental threads");
+  }
+  catch (InvalidParameterType&) {
+    basker_threads = 1;
+  }
+  catch (InvalidParameterName&) {
+    basker_threads = 1;
+  }
+
+#endif 
+  
   // "Commit" the values only after validating all of them.  This
   // ensures that there are no side effects if this routine throws an
   // exception.
@@ -503,9 +535,31 @@ void RILUK<MatrixType>::initialize ()
                                                             LevelOfFill_, 0));
     }
 
-    Graph_->initialize ();
-    allocate_L_and_U ();
-    initAllValues (*A_local_crs_);
+    if(!isExperimental_)
+      {
+	Graph_->initialize ();
+	allocate_L_and_U ();
+	initAllValues (*A_local_crs_);
+      }
+    else
+      {
+#ifdef IFPACK2_ILUK_EXPERIMENTAL
+	myBasker = rcp( new BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP>);
+	myBasker->Options.no_pivot   = true;
+	myBasker->Options.symmetric  = false;
+	myBasker->Options.realloc    = true;
+	myBasker->Options.btf        = false;
+	myBasker->Options.incomplete = true;
+	myBasker->Options.inc_lvl    = LevelOfFill_;
+	myBasker->SetThreads(basker_threads);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(
+      0==1, std::logic_error, "Ifpack2::RILUK::initialize: "
+      "Using experimental ILUK without compiling experimental "
+      "Try again with -DIFPACK2_ILUK_EXPERIMENAL.");
+#endif
+      }
+    
   } // Stop timing
 
   isInitialized_ = true;
@@ -694,7 +748,8 @@ void RILUK<MatrixType>::compute ()
   }
 
   Teuchos::Time timer ("RILUK::compute");
-  { // Start timing
+  { //Start timing
+    if(! isExperimental_) {
     isComputed_ = false;
 
     L_->resumeFill ();
@@ -836,7 +891,35 @@ void RILUK<MatrixType>::compute ()
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! U_->isUpperTriangular (), std::runtime_error,
       "Ifpack2::RILUK::compute: U isn't lower triangular.");
-  } // Stop timing
+  } 
+  else{
+#ifdef IFPACK2_ILUK_EXPERIMENTAL
+    //We might want to set early so use less memory
+    Teuchos::ArrayRCP<const size_t> r_ptr;
+    Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
+    Teuchos::ArrayRCP<const scalar_type>         val;
+    A_local_crs_->getAllValues(r_ptr, c_idx, val);
+    Teuchos::ArrayRCP<local_ordinal_type> rl_ptr(r_ptr.size()+1);
+    
+    for(int btemp = 0; btemp < r_ptr.size(); btemp++)
+      rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
+   
+    myBasker->Symbolic(
+		       ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
+		       ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
+		       ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
+		       (rl_ptr.getRawPtr()),
+		       (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
+		       (const_cast<scalar_type *>(val.getRawPtr()))
+		       );
+     myBasker->Factor_Inc(0);
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+       0==1, std::runtime_error,
+       "Ifpack2::RILUK::compute: experimental not enabled");
+#endif
+  }//end -- if experimental
+  }//end timing
 
   isComputed_ = true;
   ++numCompute_;
@@ -896,6 +979,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
   Teuchos::Time timer ("RILUK::apply");
   { // Start timing
+    if(!isExperimental_){
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
@@ -951,7 +1035,25 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Y.update (alpha, Y_tmp, beta);
       }
     }
-  } // Stop timing
+  } 
+  else
+    {
+#ifdef IFPACK2_ILUK_EXPERIMENTAL
+      Teuchos::ArrayRCP<const scalar_type> XX;
+      Teuchos::ArrayRCP<const scalar_type> YY;
+      XX = X.get1dView();
+      YY = Y.get1dView();
+      
+      myBasker->Solve(((local_ordinal_type)X.getNumVectors()), 
+		      (const_cast<scalar_type *>(XX.getRawPtr())),
+		      (const_cast<scalar_type *>(YY.getRawPtr())));
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(
+      0==1, std::runtime_error, 
+      "Ifpack2::RILUK::apply: Experimental no enabled");
+#endif
+    }//end isExperimental
+  }//end timing
 
 #ifdef HAVE_IFPACK2_DEBUG
   {

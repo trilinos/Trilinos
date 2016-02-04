@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
   comm->barrier();
 
   if (rank == 0){
-    problem.printMetrics(cout);
+    //problem.printMetrics(cout); VJL:  metrics not requested
     cout << "PASS" << endl;
   }
 

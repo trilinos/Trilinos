@@ -59,6 +59,7 @@ int main (int argc, char *argv[]) {
     exec_space::print_configuration(cout, true);
 
 #ifdef HAVE_SHYLUTACHO_MKL
+    cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << endl;
     mkl_set_num_threads(nthreads);
     r_val = exampleDenseGemmMKL
       <value_type,ordinal_type,size_type,exec_space,void>
@@ -66,7 +67,7 @@ int main (int argc, char *argv[]) {
        verbose);
 #else
     r_val = -1;
-    cout << "MKL is NOT configured in Trilinos" << endl;
+    cout << "DenseGemmByBlocks:: MKL is NOT configured in Trilinos" << endl;
 #endif
 
     exec_space::finalize();

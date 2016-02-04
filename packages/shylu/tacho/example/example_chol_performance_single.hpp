@@ -66,7 +66,7 @@ namespace Tacho {
 
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
-    
+
     typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> CrsHierMatrixBaseType;
 
     typedef CrsMatrixView<CrsHierMatrixBaseType> CrsHierMatrixViewType;
@@ -79,15 +79,15 @@ namespace Tacho {
     int r_val = 0;
 
     Kokkos::Impl::Timer timer;
-    double 
+    double
       t_import = 0.0,
       t_reorder = 0.0,
       t_symbolic = 0.0,
       t_flat2hier = 0.0,
       t_factor_seq = 0.0,
       t_factor_task = 0.0;
-    
-    cout << "CholPerformance:: import input file = " << file_input << endl;        
+
+    cout << "CholPerformance:: import input file = " << file_input << endl;
     CrsMatrixBaseType AA("AA");
     {
       timer.reset();
@@ -107,21 +107,29 @@ namespace Tacho {
     }
     cout << "CholPerformance:: import input file::time = " << t_import << endl;
 
-    cout << "CholPerformance:: reorder the matrix" << endl;        
+    cout << "CholPerformance:: reorder the matrix" << endl;
     CrsMatrixBaseType PA("Permuted AA");
     CrsMatrixBaseType UU("UU");     // permuted base upper triangular matrix
     CrsHierMatrixBaseType HU("HU"); // hierarchical matrix of views
 
     {
-      GraphHelperType S(AA, seed);
+      typename GraphHelperType::size_type_array rptr(AA.Label()+"Graph::RowPtrArray", AA.NumRows() + 1);
+      typename GraphHelperType::ordinal_type_array cidx(AA.Label()+"Graph::ColIndexArray", AA.NumNonZeros());
+
+      AA.convertGraph(rptr, cidx);
+      GraphHelperType S(AA.Label()+"ScotchHelper",
+                        AA.NumRows(),
+                        rptr,
+                        cidx,
+                        seed);
       {
         timer.reset();
-        
+
         S.computeOrdering(treecut, minblksize);
         S.pruneTree(prunecut);
-        
+
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
-        
+
         t_reorder = timer.seconds();
 
         if (verbose)
@@ -129,7 +137,7 @@ namespace Tacho {
                << PA << endl;
       }
 
-      cout << "CholPerformance:: reorder the matrix::time = " << t_reorder << endl;            
+      cout << "CholPerformance:: reorder the matrix::time = " << t_reorder << endl;
       {
         SymbolicFactorHelperType F(PA, league_size);
         if (vtune_symbolic) {
@@ -152,22 +160,22 @@ namespace Tacho {
           cout << F << endl
                << UU << endl;
       }
-      cout << "CholPerformance:: symbolic factorization::time = " << t_symbolic << endl;            
+      cout << "CholPerformance:: symbolic factorization::time = " << t_symbolic << endl;
       {
         timer.reset();
         CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HU,
                                    S.NumBlocks(),
                                    S.RangeVector(),
                                    S.TreeVector());
-        
+
         for (ordinal_type k=0;k<HU.NumNonZeros();++k)
           HU.Value(k).fillRowViewArray();
-        
+
         t_flat2hier = timer.seconds();
-        
+
         cout << "CholPerformance:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
       }
-      cout << "CholPerformance:: construct hierarchical matrix::time = " << t_flat2hier << endl;            
+      cout << "CholPerformance:: construct hierarchical matrix::time = " << t_flat2hier << endl;
     }
 
     // copy of UU
@@ -183,7 +191,7 @@ namespace Tacho {
     if (!skip_serial) {
       typename TaskFactoryType::policy_type policy(max_concurrency,
                                                    max_task_size,
-                                                   max_task_dependence, 
+                                                   max_task_dependence,
                                                    1);
 
       TaskFactoryType::setUseTeamInterface(team_interface);
@@ -201,7 +209,7 @@ namespace Tacho {
           __itt_resume();
 #endif
         }
-        timer.reset();          
+        timer.reset();
         {
           Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
             ::invoke(TaskFactoryType::Policy(),
@@ -223,12 +231,12 @@ namespace Tacho {
     {
       typename TaskFactoryType::policy_type policy(max_concurrency,
                                                    max_task_size,
-                                                   max_task_dependence, 
+                                                   max_task_dependence,
                                                    team_size);
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
-      
+
       cout << "CholPerformance:: ByBlocks factorize the matrix:: team_size = " << team_size << endl;
       CrsHierTaskViewType H(&HU);
       {
@@ -246,19 +254,19 @@ namespace Tacho {
           Kokkos::Experimental::wait(TaskFactoryType::Policy());
         }
         t_factor_task += timer.seconds();
-        if (vtune_task) {        
+        if (vtune_task) {
 #ifdef HAVE_SHYLUTACHO_VTUNE
         __itt_pause();
 #endif
         }
         if (verbose)
           cout << UU << endl;
-      }  
+      }
       cout << "CholPerformance:: ByBlocks factorize the matrix::time = " << t_factor_task << endl;
     }
-    
+
     if (!skip_serial) {
-      cout << "CholPerformance:: task scale [seq/task] = " << t_factor_seq/t_factor_task << endl;    
+      cout << "CholPerformance:: task scale [seq/task] = " << t_factor_seq/t_factor_task << endl;
     }
 
     return r_val;

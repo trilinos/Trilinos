@@ -396,7 +396,6 @@ namespace Belos {
     // If the subspace has not be initialized before or has changed sizes, generate it using the LHS or RHS from lp_.
     if (Teuchos::is_null(R_) || MVT::GetNumberVecs(*R_)!=numRHS_) {
       R_ = MVT::Clone( *tmp, numRHS_ );
-      AU_ = MVT::Clone( *tmp, numRHS_ );
       D_ = MVT::Clone( *tmp, numRHS_ );
       V_ = MVT::Clone( *tmp, numRHS_ );
       solnUpdate_ = MVT::Clone( *tmp, numRHS_ );
@@ -415,7 +414,7 @@ namespace Belos {
     std::string errstr("Belos::PseudoBlockTFQMRIter::initialize(): Specified multivectors must have a consistent length and width.");
 
     // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType STone = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType STzero = Teuchos::ScalarTraits<ScalarType>::zero();
     const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
@@ -427,7 +426,7 @@ namespace Belos {
       // Copy basis vectors from newstate into V
       if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.R, STzero, *newstate.R, *R_ );
+        MVT::MvAddMv( STone, *newstate.R, STzero, *newstate.R, *R_ );
       }
 
       // Compute initial vectors
@@ -436,8 +435,8 @@ namespace Belos {
       W_ = MVT::CloneCopy( *R_ );
       U_ = MVT::CloneCopy( *R_ );
       Rtilde_ = MVT::CloneCopy( *R_ );
-      MVT::MvInit( *D_ );
-      MVT::MvInit( *solnUpdate_ );
+      MVT::MvInit( *D_, STzero );
+      MVT::MvInit( *solnUpdate_, STzero );
       // Multiply the current residual by Op and store in V_
       //       V_ = Op * R_ 
       //
@@ -447,9 +446,12 @@ namespace Belos {
       // Compute initial scalars: theta, eta, tau, rho_old
       //
       for (int i=0; i<numRHS_; i++)
+      {
+        alpha_[i] = STone;
         theta_[i] = MTzero;
+      }
       MVT::MvNorm( *R_, tau_ );                         // tau = ||r_0||
-      MVT::MvDot( *Rtilde_, *R_, rho_old_ );            // rho = (r_tilde, r0)
+      MVT::MvDot( *R_, *Rtilde_, rho_old_ );            // rho = (r_tilde, r0)
     }
     else {
 
@@ -497,7 +499,7 @@ namespace Belos {
       //--------------------------------------------------------
       //
       if (iter_%2 == 0) {
-	MVT::MvDot( *Rtilde_, *V_, alpha_ );      //   alpha = rho / (r_tilde, v) 
+	MVT::MvDot( *V_, *Rtilde_, alpha_ );      //   alpha = rho / (r_tilde, v) 
         for (int i=0; i<numRHS_; i++)
 	  alpha_[i] = rho_old_[i]/alpha_[i];
       }
@@ -582,7 +584,7 @@ namespace Belos {
 	// Compute the new rho, beta if we need to.
 	//--------------------------------------------------------
 	//
-	MVT::MvDot( *Rtilde_, *W_, rho_ );         // rho = (r_tilde, w)
+	MVT::MvDot( *W_, *Rtilde_, rho_ );         // rho = (r_tilde, w)
       
         for (int i=0; i<numRHS_; ++i) {
 	  beta[i] = rho_[i]/rho_old_[i];           // beta = rho / rho_old

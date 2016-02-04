@@ -54,7 +54,7 @@
 # @HEADER
 
   
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosCTestDriverCore.cmake")
 
 #
 # Platform/compiler specific options for trilinos-test using gcc
@@ -67,9 +67,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
   
-  SET_DEFAULT( CTEST_BUILD_FLAGS "-j8 -i" )
+  SET_DEFAULT( CTEST_BUILD_FLAGS "-j3 -i" )
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "3" )
 
   SET( CTEST_COVERAGE_COMMAND /usr/bin/gcov )
   SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )

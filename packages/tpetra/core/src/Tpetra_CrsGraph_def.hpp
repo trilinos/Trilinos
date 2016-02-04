@@ -1220,6 +1220,44 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalViewRawConst (const LocalOrdinal*& lclInds,
+                        LocalOrdinal& numEnt,
+                        const RowInfo& rowinfo) const
+  {
+    lclInds = NULL;
+    numEnt = 0;
+
+    if (rowinfo.allocSize != 0) {
+      if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
+#ifdef HAVE_TPETRA_DEBUG
+        if (rowinfo.offset1D + rowinfo.allocSize >
+            static_cast<size_t> (k_lclInds1D_.dimension_0 ())) {
+          return static_cast<LocalOrdinal> (-1);
+        }
+#endif // HAVE_TPETRA_DEBUG
+        lclInds = &k_lclInds1D_[rowinfo.offset1D];
+        numEnt = rowinfo.allocSize;
+      }
+      else { // 2-D storage
+#ifdef HAVE_TPETRA_DEBUG
+        if (rowinfo.localRow >= static_cast<size_t> (lclInds2D_.size ())) {
+          return static_cast<LocalOrdinal> (-1);
+        }
+#endif // HAVE_TPETRA_DEBUG
+        // Use a const reference so we don't touch the ArrayRCP's ref
+        // count, since ArrayRCP's ref count is not thread safe.
+        const auto& curRow = lclInds2D_[rowinfo.localRow];
+        if (! curRow.empty ()) {
+          lclInds = curRow.getRawPtr ();
+          numEnt = curRow.size ();
+        }
+      }
+    }
+    return static_cast<LocalOrdinal> (0);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<LocalOrdinal>
@@ -1396,6 +1434,44 @@ namespace Tpetra {
       }
     }
     return view;
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getGlobalViewRawConst (const GlobalOrdinal*& gblInds,
+                         LocalOrdinal& numEnt,
+                         const RowInfo& rowinfo) const
+  {
+    gblInds = NULL;
+    numEnt = 0;
+
+    if (rowinfo.allocSize != 0) {
+      if (k_gblInds1D_.dimension_0 () != 0) { // 1-D storage
+#ifdef HAVE_TPETRA_DEBUG
+        if (rowinfo.offset1D + rowinfo.allocSize >
+            static_cast<size_t> (k_gblInds1D_.dimension_0 ())) {
+          return static_cast<LocalOrdinal> (-1);
+        }
+#endif // HAVE_TPETRA_DEBUG
+        gblInds = &k_gblInds1D_[rowinfo.offset1D];
+        numEnt = rowinfo.allocSize;
+      }
+      else {
+#ifdef HAVE_TPETRA_DEBUG
+        if (rowinfo.localRow >= static_cast<size_t> (gblInds2D_.size ())) {
+          return static_cast<LocalOrdinal> (-1);
+        }
+#endif // HAVE_TPETRA_DEBUG
+        const auto& curRow = gblInds2D_[rowinfo.localRow];
+        if (! curRow.empty ()) {
+          gblInds = curRow.getRawPtr ();
+          numEnt = curRow.size ();
+        }
+      }
+    }
+    return static_cast<LocalOrdinal> (0);
   }
 
 

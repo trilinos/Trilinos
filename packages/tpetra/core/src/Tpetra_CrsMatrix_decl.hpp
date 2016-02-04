@@ -3392,6 +3392,52 @@ namespace Tpetra {
 
     // matrix data accessors
 
+    /// \brief Const pointer to all entries (including extra space) in
+    ///   the given row.
+    ///
+    /// Unlike getGlobalRowView(), this method returns
+    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
+    /// this method is <i>not</i> part of the public interface of
+    /// CrsMatrix.
+    ///
+    /// \param vals [out] On output: Const pointer to all entries,
+    ///   including any extra space, in the given row.  \c numEnt
+    ///   includes the empty space, if any.
+    /// \param numEnt [out] Number of available entries in the row.
+    ///   "Available" includes extra empty space, if any.
+    /// \param rowinfo [in] Result of getRowInfo (for a local row
+    ///   index) or getRowInfoFromGlobalRowIndex (for a global row
+    ///   index) for the row.
+    ///
+    /// \return Zero if no error, else a nonzero error code.
+    LocalOrdinal
+    getViewRawConst (const impl_scalar_type*& vals,
+                     LocalOrdinal& numEnt,
+                     const RowInfo& rowinfo) const;
+
+    /// \brief Nonconst pointer to all entries (including extra space)
+    ///   in the given row.
+    ///
+    /// Unlike getGlobalRowView(), this method returns
+    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
+    /// this method is <i>not</i> part of the public interface of
+    /// CrsMatrix.
+    ///
+    /// \param vals [out] On output: Const pointer to all entries,
+    ///   including any extra space, in the given row.  \c numEnt
+    ///   includes the empty space, if any.
+    /// \param numEnt [out] Number of available entries in the row.
+    ///   "Available" includes extra empty space, if any.
+    /// \param rowinfo [in] Result of getRowInfo (for a local row
+    ///   index) or getRowInfoFromGlobalRowIndex (for a global row
+    ///   index) for the row.
+    ///
+    /// \return Zero if no error, else a nonzero error code.
+    LocalOrdinal
+    getViewRaw (impl_scalar_type*& vals,
+                LocalOrdinal& numEnt,
+                const RowInfo& rowinfo) const;
+
     /// \brief Constant view of all entries (including extra space) in
     ///   the given row.
     ///

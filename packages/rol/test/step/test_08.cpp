@@ -98,6 +98,8 @@ int main(int argc, char *argv[]) {
     RealT factor = 0.1;        // Penalty reduction factor
 
     // Set solver parameters
+    parlist->sublist("General").set("Print Verbosity",1);
+    
     parlist->sublist("Step").sublist("Interior Point").set("Initial Barrier Penalty",mu);
     parlist->sublist("Step").sublist("Interior Point").set("Minimium Barrier Penalty",1e-8);
     parlist->sublist("Step").sublist("Interior Point").set("Barrier Penalty Reduction Factor",factor);
