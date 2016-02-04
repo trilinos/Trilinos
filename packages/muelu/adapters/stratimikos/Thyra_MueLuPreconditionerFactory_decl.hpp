@@ -615,10 +615,9 @@ namespace Thyra {
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
   }; // end specialization for Epetra
 
+#endif // HAVE_MUELU_EPETRA
 
 } // namespace Thyra
-
-#endif // HAVE_MUELU_EPETRA
 
 #endif // #ifdef HAVE_MUELU_STRATIMIKOS
 
