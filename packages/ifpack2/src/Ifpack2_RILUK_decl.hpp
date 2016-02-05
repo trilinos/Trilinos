@@ -670,9 +670,6 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   new_riluk->Athresh_ = Athresh_;
   new_riluk->Rthresh_ = Rthresh_;
 
-  new_riluk->isExperimental_ = isExperimental_;
-
-  //Do we need to copy CCS arrays?
 
   return new_riluk;
 }
