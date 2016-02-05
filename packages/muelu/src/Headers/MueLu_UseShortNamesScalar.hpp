@@ -95,6 +95,9 @@ typedef MueLu::FakeSmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> Fak
 #ifdef MUELU_FILTEREDAFACTORY_SHORT
 typedef MueLu::FilteredAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FilteredAFactory;
 #endif
+#ifdef MUELU_FILTEREDAFACTORY_KOKKOS_SHORT
+typedef MueLu::FilteredAFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> FilteredAFactory_kokkos;
+#endif
 #ifdef MUELU_GENERICRFACTORY_SHORT
 typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRFactory;
 #endif

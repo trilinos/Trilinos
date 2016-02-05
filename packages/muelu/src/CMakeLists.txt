@@ -161,25 +161,3 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-
-# for debugging
-#MESSAGE("")
-#MESSAGE("**************** in muelu src ***********")
-#MESSAGE("")
-#MESSAGE("HEADERS = ${HEADERS}")
-#MESSAGE("")
-#MESSAGE("SOURCES = ${SOURCES}")
-
-#MESSAGE("INCLUDE_DIRECTORIES = ")
-#get_directory_property(output INCLUDE_DIRECTORIES)
-#message(STATUS ${output})
-
-#MESSAGE("")
-#MESSAGE("**************** in muelu src ***********")
-#MESSAGE("")
-#MESSAGE("HEADERS_INTERFACE = ${HEADERS_INTERFACE}")
-#MESSAGE("")
-#MESSAGE("SOURCES_INTERFACE = ${SOURCES_INTERFACE}")
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
