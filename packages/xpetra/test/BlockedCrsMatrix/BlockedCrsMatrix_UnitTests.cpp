@@ -187,12 +187,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, SplitMatrix, M, MA, Scalar,
   }
 
   const Teuchos::RCP<const MapClass> map1 = MapFactoryClass::Build (lib,
-      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+      Teuchos::OrdinalTraits<GO>::invalid(),
       gids1.view(0,gids1.size()),
       0,
       comm);
   const Teuchos::RCP<const MapClass> map2 = MapFactoryClass::Build (lib,
-      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+      Teuchos::OrdinalTraits<GO>::invalid(),
       gids2.view(0,gids2.size()),
       0,
       comm);
@@ -223,7 +223,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, SplitMatrix, M, MA, Scalar,
   A->apply(*rnd, *exp);
   bOp->apply(*rnd, *res);
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-14, out, success);
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-13, out, success);
   TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-14, out, success);
 }
 
