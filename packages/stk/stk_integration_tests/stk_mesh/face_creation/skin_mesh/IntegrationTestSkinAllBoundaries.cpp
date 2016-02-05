@@ -64,7 +64,7 @@ protected:
                                                           const SideTestUtil::TestCase& testCase,
                                                           const stk::mesh::Part &skinnedPart)
     {
-        SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase, skinnedPart);
+        SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);
         SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
     }
 };

@@ -10,9 +10,16 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
+
+namespace stk {
+namespace mesh {
+    EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet);
+    bool is_sideset_equivalent_to_skin(BulkData &bulkData, EntityVector &sidesetSides, const Part& skinnedPart);
+}}
 
 namespace SideTestUtil
 {
@@ -81,13 +88,50 @@ inline void expect_global_num_sides_correct(const stk::mesh::BulkData& bulkData,
     EXPECT_EQ(testCase.globalNumSides, countsPerRank[bulkData.mesh_meta_data().side_rank()]) << testCase.filename;
 }
 
-inline void expect_global_num_sides_in_part(const stk::mesh::BulkData& bulkData, const TestCase& testCase, const stk::mesh::Part &skinnedPart)
+inline void expect_global_num_sides_in_part(const stk::mesh::BulkData& bulkData, size_t goldGlobalNumSides, const stk::mesh::Part &part)
 {
-    unsigned numLocalSkinnedSides = stk::mesh::count_selected_entities(skinnedPart & bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(bulkData.mesh_meta_data().side_rank()));
-    unsigned numGlobalSkinnedSides = 0;
-    stk::all_reduce_sum(bulkData.parallel(), &numLocalSkinnedSides, &numGlobalSkinnedSides, 1);
-    EXPECT_EQ(testCase.globalNumSides, numGlobalSkinnedSides);
+    unsigned numLocalSides = stk::mesh::count_selected_entities(part & bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(bulkData.mesh_meta_data().side_rank()));
+    unsigned numGlobalSides = 0;
+    stk::all_reduce_sum(bulkData.parallel(), &numLocalSides, &numGlobalSides, 1);
+    EXPECT_EQ(goldGlobalNumSides, numGlobalSides) << "in part " << part.name();
 }
+
+inline void expect_exposed_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
+                                                                     const SideTestUtil::TestCase& testCase,
+                                                                     stk::mesh::Selector skinnedThings,
+                                                                     stk::mesh::Part &skinnedPart)
+{
+    SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);
+    SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
+    EXPECT_TRUE(stk::mesh::check_exposed_boundary_sides(bulkData, skinnedThings, skinnedPart));
+}
+
+// ------ move all this code to skinboundary.cpp ------------------------------------------------------------------------------------------------------------------------
+inline bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, const stk::mesh::Part &skinnedPart)
+{
+    std::vector<stk::mesh::SideSetEntry> skinnedSideSet= stk::mesh::ElemElemGraph(bulkData, skinnedBlock).extract_interior_sideset();
+    stk::mesh::EntityVector sidesetSides = stk::mesh::get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet);
+    return stk::mesh::is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart);
+}
+
+inline void create_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, stk::mesh::Part &partToPutSidesInto)
+{
+    const stk::mesh::PartVector interiorSkinPart{&partToPutSidesInto};
+    stk::mesh::ElemElemGraph graph(bulkData, blocksToConsider);
+    graph.create_interior_block_boundary_sides( interiorSkinPart );
+}
+// ------ end move all this code to skinboundary.cpp --------------------------------------------------------------------------------------------------------------------
+
+inline void expect_interior_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
+                                                                      const SideTestUtil::TestCase& testCase,
+                                                                      stk::mesh::Selector skinnedThings,
+                                                                      const stk::mesh::Part &skinnedPart)
+{
+    SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);
+    SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
+    EXPECT_TRUE(check_interior_block_boundary_sides(bulkData, skinnedThings, skinnedPart));
+}
+
 
 class SideCreationTester
 {

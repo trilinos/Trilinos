@@ -24,16 +24,8 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 #include "../FaceCreationTestUtils.hpp"
 
-namespace stk {
-namespace mesh {
-EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet);
-bool is_sideset_equivalent_to_skin(BulkData &bulkData, EntityVector &sidesetSides, const Part& skinnedPart);
-}}
-
 namespace
 {
-
-
 
 const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
 {
@@ -77,17 +69,8 @@ protected:
     {
 
         stk::mesh::Part &skinnedPart = bulkData.mesh_meta_data().declare_part("interior", bulkData.mesh_meta_data().side_rank());
-        create_interior_block_boundary_sides(bulkData, get_things_to_skin(bulkData), skinnedPart);
-        expect_interior_sides_connected_as_specified_in_test_case(bulkData, testCase, skinnedPart);
-    }
-
-    void expect_interior_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
-                                                                   const SideTestUtil::TestCase& testCase,
-                                                                   const stk::mesh::Part &skinnedPart)
-    {
-        SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase, skinnedPart);
-        SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
-        EXPECT_TRUE(check_interior_block_boundary_sides(bulkData, get_things_to_skin(bulkData), skinnedPart));
+        SideTestUtil::create_interior_block_boundary_sides(bulkData, get_things_to_skin(bulkData), skinnedPart);
+        SideTestUtil::expect_interior_sides_connected_as_specified_in_test_case(bulkData, testCase, get_things_to_skin(bulkData), skinnedPart);
     }
 
     virtual stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)
