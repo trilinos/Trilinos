@@ -35,22 +35,44 @@ public:
         return are_local_graph_edge_elements_partially_coincident(graphEdge);
     }
 
-    virtual void report_partially_coincident_sides(std::ostream &stream,
-                                                   const GraphEdgeVector& partiallyCoincidentSides)
+    virtual void report_coincident_sides(std::ostream &stream,
+                                         const GraphEdgeVector& coincidentSides)
     {
-        std::ostringstream os;
-        os << "There are " << partiallyCoincidentSides.size() << " partially co-incident edges" << std::endl;
-        for(const auto &graphEdge : partiallyCoincidentSides)
+#if 0
+        if(coincidentSides.size() > 0)
         {
-            os << "     (" << m_bulkData.identifier(m_localIdToElementEntity[graphEdge.elem1])
-               << "," << graphEdge.side1
-               << ")  is partially co-incident with "
-               << "(" << m_bulkData.identifier(m_localIdToElementEntity[graphEdge.elem2])
-               << "," << graphEdge.side2
-               << ")"
-               << std::endl;
+            std::ostringstream os;
+            os << "There are " << coincidentSides.size() << " co-incident edges" << std::endl;
+            for(const auto &graphEdge : coincidentSides)
+            {
+                os << "     (" << m_bulkData.identifier(m_localIdToElementEntity[graphEdge.elem1])
+                       << "," << graphEdge.side1
+                       << ")  is co-incident with "
+                       << "(" << m_bulkData.identifier(m_localIdToElementEntity[graphEdge.elem2])
+                       << "," << graphEdge.side2
+                       << ")"
+                       << std::endl;
+            }
+            stream << os.str();
         }
-        stream << os.str();
+#else
+        if(coincidentSides.size() > 0)
+        {
+            std::ostringstream os;
+            os << "There are " << coincidentSides.size() << " co-incident edges" << std::endl;
+            for(const auto &graphEdge : coincidentSides)
+            {
+                os << "     (" << graphEdge.elem1
+                        << "," << graphEdge.side1
+                        << ")  is co-incident with "
+                        << "(" << graphEdge.elem2
+                        << "," << graphEdge.side2
+                        << ")"
+                        << std::endl;
+            }
+            stream << os.str();
+        }
+#endif
     }
 
 private:
@@ -93,8 +115,6 @@ private:
 
         return do_side_nodes_for_graph_edge_have_same_polarity(graphEdge, sideNodesElement1, sideNodesElement2);
     }
-
-
 
     stk::mesh::BulkData &m_bulkData;
     const std::vector<stk::topology> &m_topologies;

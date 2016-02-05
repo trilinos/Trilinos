@@ -10,6 +10,7 @@
 #include <stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemGraphCoincidentElems.hpp>
 #include "stk_mesh/baseImpl/elementGraph//ElemElemGraphImpl.hpp"
+#include "stk_mesh/baseImpl/elementGraph/FullyCoincidentElementDetector.hpp"
 
 namespace
 {
@@ -78,6 +79,7 @@ void test_extracting_coincident_hex8s(stk::mesh::Graph &graph, const std::vector
 {
     std::vector<stk::topology> topologies = {stk::topology::HEX_8, stk::topology::HEX_8};
     MockCoincidenceDetector detector;
+    //stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
     stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
     stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
 
@@ -105,6 +107,7 @@ void test_extracting_coincident_hex8s_with_adjacent_hex(stk::mesh::Graph &graph)
 {
     std::vector<stk::topology> topologies = {stk::topology::HEX_8, stk::topology::HEX_8, stk::topology::HEX_8};
     MockCoincidenceDetector detector;
+    //stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
     stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
     stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
     expect_coincident_edges_removed_others_remain(graph, extractedCoincidentElements);
@@ -196,6 +199,7 @@ TEST(CoincidentElements, CorrectFaceId)
 
         std::vector<stk::topology> topologies = {stk::topology::HEX_8, stk::topology::HEX_8};
         MockCoincidenceDetector detector;
+        //stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
         stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
         stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
 
