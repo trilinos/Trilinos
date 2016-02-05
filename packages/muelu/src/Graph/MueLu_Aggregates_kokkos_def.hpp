@@ -111,7 +111,7 @@ namespace MueLu {
       auto procWinner   = procWinner_  ->template getLocalView<DeviceType>();
 
       typename AppendTrait<decltype(aggregateSizes_), Kokkos::Atomic>::type aggregateSizesAtomic = aggregateSizes;
-      Kokkos::parallel_for("Aggregates:ComputeAggregateSizes:for", procWinner.size(), KOKKOS_LAMBDA(const LO k) {
+      Kokkos::parallel_for("MueLu:MueLu:Aggregates:ComputeAggregateSizes:for", procWinner.size(), KOKKOS_LAMBDA(const LO k) {
         if (procWinner(k, 0) == myPID)
           aggregateSizesAtomic(vertex2AggId(k, 0))++;
       });

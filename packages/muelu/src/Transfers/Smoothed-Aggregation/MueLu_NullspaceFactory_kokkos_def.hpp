@@ -142,7 +142,7 @@ namespace MueLu {
 
         SC one = Teuchos::ScalarTraits<SC>::one();
         for (int i = 0; i < numPDEs; i++) {
-          Kokkos::parallel_for("NullspaceF:Build:for", numBlocks, KOKKOS_LAMBDA(const int j) {
+          Kokkos::parallel_for("MueLu:NullspaceF:Build:for", numBlocks, KOKKOS_LAMBDA(const int j) {
             nullspaceView(j*numPDEs + i, i) = one;
           });
         }
