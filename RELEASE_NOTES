@@ -136,6 +136,32 @@ Tpetra
 
     This fixes Bug 6450 (which was a feature request).
 
+Zoltan
+
+  - Minor code cleanup and bug fixes.
+
+  - New Zoltan_Get_Fn interface returning pointers to callback functions.
+    See zoltan/src/include/zoltan.h for details.
+
+  - Closest stand-alone Zoltan release is v3.83.  
+    http://www.cs.sandia.gov/Zoltan
+
+Zoltan2
+
+  -  New interface to graph partitioning third-party library PuLP (Partitioning
+     using Label Propagation).  PuLP is currently single-node, multi-threaded
+     with OpenMP.  Work for the next release will include extension to 
+     MPI+OpenMP.
+
+  -  Improved handling of TPL data types, especially in the Zoltan interface.
+
+  -  Interface from MatrixAdapter to Zoltan hypergraph algorithms implemented.
+
+  -  Consistent handling of Tpetra explicitly instantiated types; in particular,
+     enabled builds without GlobalOrdinal=int and without Epetra.
+
+  -  PartitioningSolutionQuality class is being refactored and renamed 
+     EvaluatePartition; work will continue to next release.
 
 
 ###############################################################################
