@@ -69,7 +69,7 @@ protected:
     {
 
         stk::mesh::Part &skinnedPart = bulkData.mesh_meta_data().declare_part("interior", bulkData.mesh_meta_data().side_rank());
-        SideTestUtil::create_interior_block_boundary_sides(bulkData, get_things_to_skin(bulkData), skinnedPart);
+        stk::mesh::create_interior_block_boundary_sides(bulkData, get_things_to_skin(bulkData), skinnedPart);
         SideTestUtil::expect_interior_sides_connected_as_specified_in_test_case(bulkData, testCase, get_things_to_skin(bulkData), skinnedPart);
     }
 

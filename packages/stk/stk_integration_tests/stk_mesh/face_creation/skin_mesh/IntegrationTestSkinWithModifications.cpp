@@ -90,7 +90,7 @@ private:
     }
     void test_interior_block_boundary(const SideTestUtil::TestCase& testCase)
     {
-        SideTestUtil::create_interior_block_boundary_sides(get_bulk(), get_things_to_skin(), *boundaryPart);
+        stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_things_to_skin(), *boundaryPart);
         SideTestUtil::expect_interior_sides_connected_as_specified_in_test_case(get_bulk(), testCase, get_things_to_skin(), *boundaryPart);
         destroy_sides_in_boundary_part();
     }
