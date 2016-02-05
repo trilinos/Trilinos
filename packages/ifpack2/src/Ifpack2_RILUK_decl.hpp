@@ -585,7 +585,7 @@ protected:
 
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
   Teuchos::RCP< BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP> >
-  myBasker; 
+  myBasker;
   local_ordinal_type basker_threads;
 #endif
 
@@ -670,7 +670,7 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   new_riluk->Athresh_ = Athresh_;
   new_riluk->Rthresh_ = Rthresh_;
 
-  new_riluk->isExperimental_ = isExperimental;
+  new_riluk->isExperimental_ = isExperimental_;
 
   //Do we need to copy CCS arrays?
 
