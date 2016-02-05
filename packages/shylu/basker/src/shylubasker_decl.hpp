@@ -61,6 +61,10 @@ namespace BaskerNS
     int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr,
 		 Int *row_idx, Entry *val);
     BASKER_INLINE
+    int Symbolic(Int nrow, Int ncol, Int nnz, 
+		 size_t *col_ptr,
+		 Int *row_idx, Entry *val);
+    BASKER_INLINE
     int Factor(Int option);
     BASKER_INLINE
     int Factor(Int nrow, Int ncol, Int nnz, Int *col_ptr,
@@ -460,6 +464,27 @@ namespace BaskerNS
 
     BASKER_INLINE
     int factor_inc_lvl(Int Option);
+
+    /*basker_sfactor_inc.hpp*/
+    BASKER_INLINE
+    int sfactor_inc();
+    BASKER_INLINE
+    void sfactor_nd_estimate();
+    BASKER_INLINE
+    void sfactor_nd_dom_estimate(BASKER_MATRIX &M,
+				 BASKER_MATRIX &LM,
+				 BASKER_MATRIX &UM);
+    BASKER_INLINE
+    void sfactor_nd_lower_estimate(BASKER_MATRIX &M,
+				   BASKER_MATRIX &ML);
+    BASKER_INLINE
+    void sfactor_nd_upper_estimate(BASKER_MATRIX &M,
+				   BASKER_MATRIX &UM);
+    BASKER_INLINE
+    void sfactor_nd_sep_estimate(BASKER_MATRIX &M,
+				 BASKER_MATRIX &ML,
+				 BASKER_MATRIX &MU);
+
 
 
     /*basker_nfactor.hpp*/
