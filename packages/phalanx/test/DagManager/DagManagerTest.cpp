@@ -134,8 +134,6 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  
-  PHX::InitializeKokkosDevice();
 
   DagManager<MyTraits> em;
 
@@ -201,8 +199,6 @@ TEUCHOS_UNIT_TEST(dag, cyclic)
   em.requireField(tag);
 
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::circular_dag_exception);
-
-  PHX::FinalizeKokkosDevice();
 }
 
 // Catch multiple evaluators that evaluate the same field
@@ -211,8 +207,6 @@ TEUCHOS_UNIT_TEST(dag, duplicate_evaluators)
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  
-  PHX::InitializeKokkosDevice();
 
   DagManager<MyTraits> em("duplicate_evaluators");
   em.setDefaultGraphvizFilenameForErrors("error_duplicate_evaluators.dot");
@@ -225,7 +219,6 @@ TEUCHOS_UNIT_TEST(dag, duplicate_evaluators)
   registerDagNodes(em,false,true,false,false);
 #endif
 
-  PHX::FinalizeKokkosDevice();
 }
 
 // Catch missing required field 
@@ -234,8 +227,6 @@ TEUCHOS_UNIT_TEST(dag, missing_req_field)
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  
-  PHX::InitializeKokkosDevice();
 
   DagManager<MyTraits> em("missing_req_field");
   em.setDefaultGraphvizFilenameForErrors("error_missing_req_field.dot");
@@ -249,8 +240,6 @@ TEUCHOS_UNIT_TEST(dag, missing_req_field)
   em.requireField(tag);
 
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
-
-  PHX::FinalizeKokkosDevice();
 }
 
 // Catch missing evalautor in subtree 
@@ -259,8 +248,6 @@ TEUCHOS_UNIT_TEST(dag, missing_evaluator)
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  
-  PHX::InitializeKokkosDevice();
     
   DagManager<MyTraits> em("missing_evaluator");
   em.setDefaultGraphvizFilenameForErrors("error_missing_evaluator.dot");
@@ -274,8 +261,6 @@ TEUCHOS_UNIT_TEST(dag, missing_evaluator)
   em.requireField(tag);
 
   TEST_THROW(em.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
-
-  PHX::FinalizeKokkosDevice();
 }
 
 // Test the analyzeGraph computation for speedup and parallelization
@@ -286,8 +271,6 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph)
   using namespace PHX;
   using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
 
-  PHX::InitializeKokkosDevice();
-  
   // Perfectly parallel test
   DagManager<MyTraits> dag("analyze_graph");
 
@@ -346,8 +329,6 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph)
   double tol = 1000.0 * Teuchos::ScalarTraits<double>::eps();
   TEST_FLOATING_EQUALITY(speedup,3.0,tol);
   TEST_FLOATING_EQUALITY(parallelizability,1.0,tol);
-
-  PHX::FinalizeKokkosDevice();
 }
 
 // Test the analyzeGraph computation for speedup and parallelization
@@ -357,8 +338,6 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph2)
   using namespace Teuchos;
   using namespace PHX;
   using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
-  
-  PHX::InitializeKokkosDevice();
 
   // Perfectly parallel test
   DagManager<MyTraits> dag("analyze_graph2");
@@ -441,7 +420,4 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph2)
   TEST_FLOATING_EQUALITY(speedup,s_gold,tol);
   double p_gold = (1. - 1./s_gold)/(1. - 1./4.);
   TEST_FLOATING_EQUALITY(parallelizability,p_gold,tol);
-
-  
-  PHX::FinalizeKokkosDevice();
 }
