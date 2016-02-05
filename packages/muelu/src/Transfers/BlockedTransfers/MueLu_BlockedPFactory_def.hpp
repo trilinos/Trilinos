@@ -173,15 +173,24 @@ namespace MueLu {
       //fullDomainMapVector.erase(std::unique(fullDomainMapVector.begin(), fullDomainMapVector.end()), fullDomainMapVector.end());
     }
 
-    // check if sub block map is strided
-    // if it is a strided partial sub map then we have to sort all the GIDs of the full range map
-    RCP<const StridedMap>   stridedSubBlockPRangeMap = rcp_dynamic_cast<const StridedMap>(subBlockPRangeMaps[0]);
-    if(stridedSubBlockPRangeMap != Teuchos::null && stridedSubBlockPRangeMap->isStrided() == true) {
+    RCP<const MapExtractor> rangeAMapExtractor = A->getRangeMapExtractor();
+    RCP<const MapExtractor> domainAMapExtractor = A->getDomainMapExtractor();
+
+    // check if GIDs for full maps have to be sorted:
+    // For the Thyra mode ordering they do not have to be sorted since the GIDs are
+    // numbered as 0...n1,0...,n2 (starting with zero for each subblock). The MapExtractor
+    // generates unique GIDs during the construction.
+    // For Xpetra style, the GIDs have to be reordered. Such that one obtains a ordered
+    // list of GIDs in an increasing ordering. In Xpetra, the GIDs are all unique through
+    // out all submaps.
+    bool bDoSortRangeGIDs  = rangeAMapExtractor->getThyraMode()  ? false : true;
+    bool bDoSortDomainGIDs = domainAMapExtractor->getThyraMode() ? false : true;
+
+    if(bDoSortRangeGIDs) {
       sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
       fullRangeMapVector.erase(std::unique(fullRangeMapVector.begin(), fullRangeMapVector.end()), fullRangeMapVector.end());
     }
-    RCP<const StridedMap>   stridedSubBlockPDomainMap = rcp_dynamic_cast<const StridedMap>(subBlockPDomainMaps[0]);
-    if(stridedSubBlockPDomainMap != Teuchos::null && stridedSubBlockPDomainMap->isStrided() == true) {
+    if(bDoSortDomainGIDs) {
       sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
       fullDomainMapVector.erase(std::unique(fullDomainMapVector.begin(), fullDomainMapVector.end()), fullDomainMapVector.end());
     }
@@ -203,7 +212,7 @@ namespace MueLu {
     // Build full range map.
     // If original range map has striding information, then transfer it to the
     // new range map
-    RCP<const MapExtractor> rangeAMapExtractor = A->getRangeMapExtractor();
+
     RCP<const StridedMap>   stridedRgFullMap = rcp_dynamic_cast<const StridedMap>(rangeAMapExtractor->getFullMap());
     RCP<const Map >         fullRangeMap = Teuchos::null;
 
@@ -229,7 +238,6 @@ namespace MueLu {
                             A->getRangeMap()->getComm());
     }
 
-    RCP<const MapExtractor> domainAMapExtractor = A->getDomainMapExtractor();
     Teuchos::ArrayView<GO> fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
     Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
     Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
