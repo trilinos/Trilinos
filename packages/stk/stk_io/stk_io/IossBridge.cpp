@@ -416,6 +416,15 @@ namespace stk {
     void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName)
     {
       mesh::MetaData & meta = mesh::MetaData::get(part);
+      stk::mesh::PartVector pv = meta.get_parts();
+      for (unsigned ii = 0; ii < pv.size(); ++ii)
+        {
+          if (get_alternate_part_name(*pv[ii]) == altPartName && &part != pv[ii])
+            {
+              throw std::runtime_error(std::string("stk::io::set_alternate_part_name found another part with the same ")
+                                       +"alternate part name attribute, part= "+part.name() +" altPartName= " +altPartName+" other part= " +pv[ii]->name());
+            }
+        }
       const IossAlternatePartName *altName = part.attribute<IossAlternatePartName>();
       if (!altName)
         {
@@ -452,7 +461,6 @@ namespace stk {
     std::string getPartName(stk::mesh::Part& part)
     {
       std::string apn = get_alternate_part_name(part);
-      //if (1) return part.name();
       if (apn.length())
         {
           std::cout << "apn= " << apn << " part= " << part.name() << std::endl;
@@ -1807,7 +1815,6 @@ namespace stk {
         const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
         const std::string& name = block->name();
         mesh::Part* part = getPart( meta_data, name);
-        std::cout << "tmp srk name= " << name << " part= " << part->name() << std::endl;
 
         assert(part != NULL);
         std::vector<mesh::Entity> elements;
@@ -1869,10 +1876,7 @@ namespace stk {
       {
         const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
         const std::string& name = ns->name();
-        //stk::mesh::Part* part = meta_data.get_part(name);
         mesh::Part* part = getPart( meta_data, name);
-
-        if (part) std::cout << "tmp srk output_node_set name= " << name << " part= " << part->name() << std::endl;
 
         // If part is null, then it is possible that this nodeset is a "viz nodeset" which
         // means that it is a nodeset containing the nodes of an element block.
@@ -1881,7 +1885,6 @@ namespace stk {
         if (part == NULL) {
           if (ns->property_exists(base_stk_part_name)) {
             std::string base_name = ns->get_property(base_stk_part_name).get_string();
-            //part = meta_data.get_part(base_name);
             part = getPart( meta_data, name);
           }
           if (part == NULL) {
@@ -1892,7 +1895,6 @@ namespace stk {
             throw std::runtime_error( msg.str() );
           }
         }
-        std::cout << "tmp srk output_node_set name= " << name << " part= " << part->name() << std::endl;
 
         std::vector<stk::mesh::Entity> nodes ;
         size_t num_nodes = get_entities(*part, stk::topology::NODE_RANK, bulk, nodes, true, subset_selector);
@@ -1981,7 +1983,6 @@ namespace stk {
         for (size_t i=0; i < block_count; i++) {
           Ioss::SideBlock *block = ss->get_block(i);
           if (stk::io::include_entity(block)) {
-            //stk::mesh::Part * part = meta_data.get_part(block->name());
             stk::mesh::Part * part = getPart(meta_data, block->name());
             stk::io::write_side_data_to_ioss<INT>(*block, part, bulk, subset_selector);
           }
