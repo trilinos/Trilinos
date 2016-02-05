@@ -77,6 +77,10 @@ typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
 typedef Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixMatrix;
 #endif
 
+#ifdef XPETRA_MATRIXUTILS_SHORT
+typedef Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixUtils;
+#endif
+
 #ifdef XPETRA_OPERATOR_SHORT
 typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> Operator;
 #endif

@@ -240,12 +240,12 @@ IF(Kokkos_ENABLE_Pthread)
     COMM serial mpi
   )
 
-  TRIBITS_ADD_EXECUTABLE(
-    chol_direct_solver_pthread
-    NOEXEPREFIX
-    SOURCES example_chol_direct_solver_pthread.cpp
-    COMM serial mpi
-  )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   chol_direct_solver_pthread
+  #   NOEXEPREFIX
+  #   SOURCES example_chol_direct_solver_pthread.cpp
+  #   COMM serial mpi
+  # )
 ENDIF()
 
 # Dense Linear Algebra
@@ -255,6 +255,13 @@ IF(Kokkos_ENABLE_Pthread)
     dense_gemm_by_blocks_pthread
     NOEXEPREFIX
     SOURCES example_dense_gemm_by_blocks_pthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_trsm_by_blocks_pthread
+    NOEXEPREFIX
+    SOURCES example_dense_trsm_by_blocks_pthread.cpp
     COMM serial mpi
   )
 
@@ -272,6 +279,20 @@ IF(TPL_ENABLE_MKL)
     dense_gemm_mkl_openmp
     NOEXEPREFIX
     SOURCES example_dense_gemm_mkl_openmp.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_trsm_mkl_openmp
+    NOEXEPREFIX
+    SOURCES example_dense_trsm_mkl_openmp.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_chol_mkl_openmp
+    NOEXEPREFIX
+    SOURCES example_dense_chol_mkl_openmp.cpp
     COMM serial mpi
   )
 ENDIF()

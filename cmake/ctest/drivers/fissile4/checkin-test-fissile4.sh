@@ -10,11 +10,18 @@
 # (e.g. .bash_profile) or you can source it manually whenever you need to set
 # up to build VERA software.
 #
-# NOTE: This script should not be directly modifed by typical CASL
+# NOTE: This script should not be directly modified by typical CASL
 # developers except, perhaps to add new extra builds.
-
-EXTRA_ARGS=$@
-
+#
+# NOTE: You can pass through arguments with spaces using quotes like:
+#
+#   --ctest-options="-E '(Test1|Test2)'"
+#
+# and it will preserve the spaces correctly.  If you want to pass along
+# quotes, you have to escape them like:
+#
+#   --ctest-options="-E \"(Test1|Test2)\""
+#
 # The default location for this directory tree is:
 #
 #  Trilinos.base
@@ -83,18 +90,30 @@ echo "
 -DTrilinos_ENABLE_DEBUG:BOOL=OFF
 " > MPI_RELEASE.config
 
+# Create local defaults file if one does not exist
+_LOCAL_CHECKIN_TEST_DEFAULTS=local-checkin-test-defaults.py
+if [ -f $_LOCAL_CHECKIN_TEST_DEFAULTS ] ; then
+  echo "File $_LOCAL_CHECKIN_TEST_DEFAULTS already exists, leaving it!"
+else
+  echo "Creating default file $_LOCAL_CHECKIN_TEST_DEFAULTS!"
+  echo "
+defaults = [
+  \"-j16\",
+  \"--ctest-timeout=180\",
+  \"--st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST\",
+  \"--disable-packages=$DISABLE_PACKAGES\",
+  \"--skip-case-no-email\",
+  \"--ctest-options=\\\"-E '(MueLu_ParameterListInterpreterEpetra|MueLu_ParameterListInterpreterTpetra)'\\\"\",
+  ]
+  " > $_LOCAL_CHECKIN_TEST_DEFAULTS
+fi
+
 #
 # Invocation
 #
 
 $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
--j16 \
---ctest-timeout=180 \
---st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST \
---disable-packages=$DISABLE_PACKAGES \
---skip-case-no-email \
---ctest-options="-E '(MueLu_ParameterListInterpreterEpetra|MueLu_ParameterListInterpreterTpetra)'" \
-$EXTRA_ARGS
+"$@"
 
 
 # --ctest-options="-E '(Piro_AnalysisDriver|Stokhos_Linear2D_Diffusion_GMRES_KLR|Panzer_STK_ResponseLibraryTest|MueLu_|Amesos2_|Rythmos_ImplicitRK_UnitTest_MPI_1|SEACASExodus_exodus_unit_tests|Intrepid_test_Discretization_Basis_HGRAD_TRI_Cn_FEM_Test_02_MPI_1|Intrepid_test_Discretization_Basis_HDIV_TET_In_FEM_Test_02_MPI_1|Intrepid_test_Discretization_Basis_HGRAD_TET_Cn_FEM_Test_02_MPI_1|Sundance_BesselTest2D_MPI_1|ThyraTpetraAdapters_TpetraThyraWrappersUnitTests_serial|Ifpack2_RILUKSingleProcessUnitTests)'"

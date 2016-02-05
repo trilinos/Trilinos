@@ -41,7 +41,7 @@ namespace Tacho {
                              const int prunecut,
                              const int seed,
                              const int nrhs,
-                             const int nb, 
+                             const int nb,
                              const int nthreads,
                              const int max_concurrency,
                              const int max_task_dependence,
@@ -65,7 +65,7 @@ namespace Tacho {
 
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
-    
+
     typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> CrsHierMatrixBaseType;
 
     typedef CrsMatrixView<CrsHierMatrixBaseType> CrsHierMatrixViewType;
@@ -77,22 +77,22 @@ namespace Tacho {
     typedef TaskView<DenseMatrixViewType,TaskFactoryType> DenseTaskViewType;
 
     typedef DenseMatrixBase<DenseTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> DenseHierMatrixBaseType;
-    
+
     typedef DenseMatrixView<DenseHierMatrixBaseType> DenseHierMatrixViewType;
     typedef TaskView<DenseHierMatrixViewType,TaskFactoryType> DenseHierTaskViewType;
 
     int r_val = 0;
 
     Kokkos::Impl::Timer timer;
-    double 
+    double
       t_import = 0.0,
       t_reorder = 0.0,
       t_symbolic = 0.0,
       t_flat2hier = 0.0,
-      t_factor = 0.0, 
+      t_factor = 0.0,
       t_solve = 0.0;
-    
-    cout << "CholDirectPlain:: import input file = " << file_input << endl;        
+
+    cout << "CholDirectPlain:: import input file = " << file_input << endl;
     CrsMatrixBaseType AA("AA");
     {
       timer.reset();
@@ -121,8 +121,17 @@ namespace Tacho {
     DenseHierMatrixBaseType HB("HB"), HX("HX");
 
     {
-      cout << "CholDirectPlain:: reorder the matrix" << endl;        
-      GraphHelperType S(AA, seed);
+      cout << "CholDirectPlain:: reorder the matrix" << endl;
+
+      typename GraphHelperType::size_type_array rptr(AA.Label()+"Graph::RowPtrArray", AA.NumRows() + 1);
+      typename GraphHelperType::ordinal_type_array cidx(AA.Label()+"Graph::ColIndexArray", AA.NumNonZeros());
+
+      AA.convertGraph(rptr, cidx);
+      GraphHelperType S(AA.Label()+"ScotchHelper",
+                        AA.NumRows(),
+                        rptr,
+                        cidx,
+                        seed);
       {
         timer.reset();
         S.computeOrdering();
@@ -130,7 +139,7 @@ namespace Tacho {
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
         t_reorder = timer.seconds();
       }
-      cout << "CholDirectPlain:: reorder the matrix::time = " << t_reorder << endl;            
+      cout << "CholDirectPlain:: reorder the matrix::time = " << t_reorder << endl;
 
       {
         SymbolicFactorHelperType F(PA, league_size);
@@ -139,7 +148,7 @@ namespace Tacho {
         t_symbolic = timer.seconds();
         cout << "CholDirectPlain:: AA (nrow, nnz) = " << AA.NumRows() << ", " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
       }
-      cout << "CholDirectPlain:: symbolic factorization::time = " << t_symbolic << endl;            
+      cout << "CholDirectPlain:: symbolic factorization::time = " << t_symbolic << endl;
 
       {
         timer.reset();
@@ -154,22 +163,22 @@ namespace Tacho {
           HU.Value(k).fillRowViewArray();
           nnz += HU.Value(k).countNumNonZeros();
         }
-        if (nnz != UU.NumNonZeros()) 
+        if (nnz != UU.NumNonZeros())
           ERROR(">> 2D Blocks do not cover the flat matrix");
 
         DenseMatrixHelper::flat2hier(BB, HB,
                                      S.NumBlocks(),
                                      S.RangeVector(),
-                                     nb);        
+                                     nb);
 
         DenseMatrixHelper::flat2hier(XX, HX,
                                      S.NumBlocks(),
                                      S.RangeVector(),
-                                     nb);        
+                                     nb);
         t_flat2hier = timer.seconds();
         cout << "CholDirectPlain:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
       }
-      cout << "CholDirectPlain:: construct hierarchical matrix::time = " << t_flat2hier << endl;            
+      cout << "CholDirectPlain:: construct hierarchical matrix::time = " << t_flat2hier << endl;
     }
 
 
@@ -182,18 +191,18 @@ namespace Tacho {
       // Policy setup
       typename TaskFactoryType::policy_type policy(max_concurrency,
                                                    max_task_size,
-                                                   max_task_dependence, 
+                                                   max_task_dependence,
                                                    team_size);
 
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
-      
+
       CrsTaskViewType A(&PA), U(&UU);
       DenseTaskViewType X(&XX), B(&BB);
-      
-      A.fillRowViewArray();      
-      U.fillRowViewArray();      
+
+      A.fillRowViewArray();
+      U.fillRowViewArray();
 
       CrsHierTaskViewType TU(&HU);
       DenseHierTaskViewType TB(&HB), TX(&HX);
@@ -204,17 +213,17 @@ namespace Tacho {
         for (int j=0;j<nrhs;++j)
           for (int i=0;i<m;++i)
             X.Value(i,j) = (j+1);
-        
+
         Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
           ::invoke(TaskFactoryType::Policy(),
                    TaskFactoryType::Policy().member_single(),
                    1.0, A, X, 0.0, B);
-        XX.copy(BB);        
+        XX.copy(BB);
       }
-      
+
       if (serial) {
         cout << "CholDirectPlain:: Serial factorize the matrix" << endl;
-        timer.reset();          
+        timer.reset();
         Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
           ::invoke(TaskFactoryType::Policy(),
                    TaskFactoryType::Policy().member_single(),
@@ -223,7 +232,7 @@ namespace Tacho {
         cout << "CholDirectPlain:: Serial factorize the matrix::time = " << t_factor << endl;
       } else {
         cout << "CholDirectPlain:: ByBlocks factorize the matrix:: team_size = " << team_size << endl;
-        timer.reset();    
+        timer.reset();
         auto future = TaskFactoryType::Policy().create_team
           (Chol<Uplo::Upper,AlgoChol::ByBlocks>
            ::TaskFunctor<CrsHierTaskViewType>(TU), 0);
@@ -236,7 +245,7 @@ namespace Tacho {
       if (solve) {
         if (serial) {
           cout << "CholDirectPlain:: Serial forward/backward solve" << endl;
-          timer.reset();          
+          timer.reset();
           TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
             ::invoke(TaskFactoryType::Policy(),
                      TaskFactoryType::Policy().member_single(),
@@ -249,22 +258,22 @@ namespace Tacho {
           cout << "CholDirectPlain:: Serial forward/backward solve::time = " << t_solve << endl;
         } else {
           cout << "CholDirectPlain:: ByBlocks forward/backward solve" << endl;
-          timer.reset();          
+          timer.reset();
           auto future_forward_solve = TaskFactoryType::Policy().create_team
             (TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
              ::TaskFunctor<CrsHierTaskViewType,DenseHierTaskViewType>
              (Diag::NonUnit, TU, TX), 0);
-          
+
           TaskFactoryType::Policy().spawn(future_forward_solve);
-          
+
           auto future_backward_solve = TaskFactoryType::Policy().create_team
             (TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
              ::TaskFunctor<CrsHierTaskViewType,DenseHierTaskViewType>
              (Diag::NonUnit, TU, TX), 1);
-          
+
           TaskFactoryType::Policy().add_dependence(future_backward_solve, future_forward_solve);
           TaskFactoryType::Policy().spawn(future_backward_solve);
-          
+
           Kokkos::Experimental::wait(TaskFactoryType::Policy());
           t_solve = timer.seconds();
           cout << "CholDirectPlain:: ByBlocks forward/backward solve::time = " << t_solve << endl;

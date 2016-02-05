@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-    cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
+    cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem size).");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
@@ -152,12 +152,12 @@ int main(int argc, char *argv[]) {
     RCP<Belos::EpetraPrecOp> Prec = rcp( new Belos::EpetraPrecOp( ilukFactors ) );
 
     //
-    // ********Other information used by block solver***********
+    // ********Other information used by solver***********
     // *****************(can be user specified)******************
     //
     const int NumGlobalElements = Map.NumGlobalElements();
     if (maxiters == -1)
-      maxiters = NumGlobalElements - 1; // maximum number of iterations to run
+      maxiters = NumGlobalElements; // maximum number of iterations to run
     //
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed

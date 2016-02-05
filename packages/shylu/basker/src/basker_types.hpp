@@ -24,6 +24,7 @@
 #define BASKER_ERROR_RETRY    -2
 #define BASKER_SUCCESS        0
 
+#define BASKER_RESTART       2
 
 #define BASKER_EPSILON       1e-6
 
@@ -44,6 +45,15 @@ enum BASKER_ERROR_CODE
 #define BASKER_BTF_SMALL         100
 #define BASKER_BTF_NNZ_OVER      1.20
 #define BASKER_BTF_PRUNE_SIZE    100
+
+
+//MACRO INC FILL (this will become dynamic in the future)
+#define BASKER_FILL_LESTIMATE      1.20
+#define BASKER_FILL_UESTIMATE      1.20
+#define BASKER_FILL_LLOWERESTIMATE 1.30
+#define BASKER_FILL_UUPPERESTIMATE 1.30
+#define BASKER_FILL_LSEPESTIMATE   2.00
+#define BASKER_FILL_USEPESTIMATE   2.00
 
 //MACRO SYSTEM FUNCTIONS
 #ifdef BASKER_DEBUG

@@ -70,7 +70,7 @@ namespace Tacho {
     double t = 0.0;
 
     cout << "DenseGemmByBlocks:: test matrices "
-         <<":: mmin = " << mmin << " , mmax = " << mmax << " , minc = " << minc << " , k = "<< k << endl;
+         <<":: mmin = " << mmin << " , mmax = " << mmax << " , minc = " << minc << " , k = "<< k << " , mb = " << mb << endl;
 
     const size_t max_task_size = (3*sizeof(DenseTaskViewType)+196); // when 128 error
     //cout << "max task size = "<< max_task_size << endl;
@@ -81,8 +81,14 @@ namespace Tacho {
     
     TaskFactoryType::setMaxTaskDependence(max_task_dependence);
     TaskFactoryType::setPolicy(&policy);
-    
+
+    ostringstream os;
+    os.precision(3);
+    os << scientific;
+
     for (ordinal_type m=mmin;m<=mmax;m+=minc) {
+      os.str("");
+
       DenseMatrixBaseType AA, BB, CC("CC", m, m), CB("CB", m, m);
 
       if (ArgTransA == Trans::NoTranspose) 
@@ -113,7 +119,8 @@ namespace Tacho {
 #ifdef HAVE_SHYLUTACHO_MKL
       mkl_set_num_threads(mkl_nthreads);
 #endif
-      
+
+      os << "DenseGemmByBlocks:: m = " << m << " n = " << m << " k = " << k;
       if (check) {
         timer.reset();
         DenseTaskViewType A(&AA), B(&BB), C(&CB);
@@ -122,7 +129,7 @@ namespace Tacho {
            TaskFactoryType::Policy().member_single(),
            1.0, A, B, 1.0, C);
         t = timer.seconds();
-        cout << "DenseGemmByBlocks:: Serial Performance = " << (flop/t/1.0e9) << " [GFLOPs]" << endl;
+        os << ":: Serial Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
       }
 
       {
@@ -140,8 +147,8 @@ namespace Tacho {
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());
         t = timer.seconds();       
-        cout << "DenseGemmByBlocks:: Parallel Performance = " << (flop/t/1.0e9) << " [GFLOPs]" << endl;
-      }
+        os << ":: Parallel Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
+      } 
 
       if (check) {
         typedef typename Teuchos::ScalarTraits<value_type>::magnitudeType real_type; 
@@ -153,8 +160,9 @@ namespace Tacho {
             err  += diff*diff;
             norm += val*val;
           }
-        cout << "DenseGemmByBlocks:: Check result::err = " << sqrt(err) << ", norm = " << sqrt(norm) << endl;
+        os << ":: Check result ::err = " << sqrt(err) << ", norm = " << sqrt(norm);
       }
+      cout << os.str() << endl;
     }
 
     return r_val;

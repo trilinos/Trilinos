@@ -389,22 +389,10 @@ namespace BaskerNS
 
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
-
-	      //printf("no pivot\n");
 	      maxindex = k;
-	      //pivot = X[k-brow];
 	      pivot    = X(k);
-	      //printf("sym pivot: %f \n", pivot);
 	    }
       
-	  /*
-	  if(k != maxindex)
-	    {
-	      printf("k: %d pivot: %d %g \n",
-		     k+1 , maxindex+1, pivot);
-	    }
-	  */
-
           ucnt = ws_size - top - lcnt +1;
           //if((maxindex == L.max_idx) || (pivot == 0))
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
@@ -427,7 +415,7 @@ namespace BaskerNS
 
 	  gperm(maxindex+brow) = k+brow;
 	  gpermi(k+brow) = maxindex + brow;
-          //printf("TAG1 maxindex=%d %d k=%d brow:%d  pivot: %f \n", maxindex, maxindex+brow, k+brow, brow, pivot);
+
           #ifdef BASKER_DEBUG_NFACTOR
           //if(maxindex != k)
           //  {

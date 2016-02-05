@@ -102,7 +102,6 @@ int main(int argc, char *argv[]) {
   try {
     bool proc_verbose = false;
     int frequency = -1;  // how often residuals are printed by solver
-    int blocksize = 1;
     int numrhs = 1;
     std::string filename("mhd1280b.cua");
     MT tol = 1.0e-5;  // relative residual tolerance
@@ -160,7 +159,7 @@ int main(int argc, char *argv[]) {
     // ********Other information used by block solver***********
     // *****************(can be user specified)******************
     //
-    int maxits = dim/blocksize; // maximum number of iterations to run
+    int maxits = dim; // maximum number of iterations to run
     //
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
@@ -208,7 +207,6 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << dim << std::endl;
       std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-      std::cout << "Block size used by solver: " << blocksize << std::endl;
       std::cout << "Max number of TFQMR iterations: " << maxits << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;

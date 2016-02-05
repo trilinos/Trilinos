@@ -74,7 +74,7 @@ namespace Tacho {
         future_type f = task_factory_type
           ::create(policy, 
                    typename Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-                   CtrlComponent(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm,0)>
+                   CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
                    ::template TaskFunctor<double,value_type,value_type>(Diag::NonUnit, 1.0, aa, bb));
         
         // trsm dependence
@@ -129,7 +129,7 @@ namespace Tacho {
               future_type f = task_factory_type
                 ::create(policy, 
                          typename Herk<Uplo::Upper,Trans::ConjTranspose,
-                         CtrlComponent(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk,0)>
+                         CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
                          ::template TaskFunctor<double,value_type,value_type>(-1.0, aa, 1.0, cc));
             
               // dependence
@@ -151,7 +151,7 @@ namespace Tacho {
               future_type f = task_factory_type
                 ::create(policy, 
                          typename Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-                         CtrlComponent(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm,0)>
+                         CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
                          ::template TaskFunctor<double,value_type,value_type,value_type>(-1.0, aa, bb, 1.0, cc));
             
               // dependence

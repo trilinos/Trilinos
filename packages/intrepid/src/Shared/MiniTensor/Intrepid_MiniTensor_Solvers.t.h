@@ -199,19 +199,29 @@ bool
 Minimizer<T, N>::
 continueSolve() const
 {
+  // Regardless of other criteria, if the residual is zero stop solving.
   bool const
-  exceeds_max_iter = num_iter >= max_num_iter;
+  zero_resi = (abs_error > 0.0 == false);
 
+  if (zero_resi == true) return false;
+
+  // Minimum iterations takes precedence over maximum iterations and
+  // convergence. Continue solving if not exceeded.
   bool const
   exceeds_min_iter = num_iter >= min_num_iter;
 
-  bool const
-  is_max_or_converged = exceeds_max_iter == false && converged == false;
+  if (exceeds_min_iter == false) return true;
 
-  // Regardless of what we just determined, continue solving if
-  // we have not exceeded the minimum number of iterations.
+  // Maximum iterations takes precedence over convergence.
+  // Stop solving if exceeded.
   bool const
-  continue_solve = is_max_or_converged == true || exceeds_min_iter == false;
+  exceeds_max_iter = num_iter >= max_num_iter;
+
+  if (exceeds_max_iter == true) return false;
+
+  // Last check for convergence.
+  bool const
+  continue_solve = (converged == false);
 
   return continue_solve;
 }

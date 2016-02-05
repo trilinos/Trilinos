@@ -25,33 +25,33 @@ namespace Impl{
  *  e.g. no vertex having same color shares an edge.
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
  */
-template <typename HandleType, typename in_row_index_view_type_, typename in_nonzero_index_view_type_>
+template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
 class GraphColor {
 public:
 
-  typedef in_row_index_view_type_ in_row_index_view_type;
-  typedef in_nonzero_index_view_type_ in_nonzero_index_view_type;
-  typedef typename HandleType::color_view_type color_view_type;
+  typedef lno_row_view_t_ in_lno_row_view_t;
+  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+  typedef typename HandleType::color_view_t color_view_t;
 
-  typedef typename in_row_index_view_type::non_const_value_type row_index_type;
-  typedef typename in_row_index_view_type::array_layout row_view_array_layout;
-  typedef typename in_row_index_view_type::device_type row_view_device_type;
-  typedef typename in_row_index_view_type::memory_traits row_view_memory_traits;
-  typedef typename in_row_index_view_type::HostMirror row_host_view_type; //Host view type
+  typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
+  typedef typename in_lno_row_view_t::array_layout row_view_array_layout;
+  typedef typename in_lno_row_view_t::device_type row_view_device_type;
+  typedef typename in_lno_row_view_t::memory_traits row_view_memory_traits;
+  typedef typename in_lno_row_view_t::HostMirror row_host_view_type; //Host view type
   //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
-  typedef typename in_nonzero_index_view_type::non_const_value_type nonzero_index_type;
-  typedef typename in_nonzero_index_view_type::array_layout nonzero_index_view_array_layout;
-  typedef typename in_nonzero_index_view_type::device_type nonzero_index_view_device_type;
-  typedef typename in_nonzero_index_view_type::memory_traits nonzero_index_view_memory_traits;
-  typedef typename in_nonzero_index_view_type::HostMirror nonzero_index_host_view_type; //Host view type
+  typedef typename in_lno_nnz_view_t::non_const_value_type nonzero_index_type;
+  typedef typename in_lno_nnz_view_t::array_layout nonzero_index_view_array_layout;
+  typedef typename in_lno_nnz_view_t::device_type nonzero_index_view_device_type;
+  typedef typename in_lno_nnz_view_t::memory_traits nonzero_index_view_memory_traits;
+  typedef typename in_lno_nnz_view_t::HostMirror nonzero_index_host_view_type; //Host view type
   //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
-  typedef typename HandleType::color_type color_type;
+  typedef typename HandleType::color_t color_type;
   typedef typename HandleType::color_view_array_layout color_view_array_layout;
-  typedef typename HandleType::color_view_device_type color_view_device_type;
+  typedef typename HandleType::color_view_device_t color_view_device_type;
   typedef typename HandleType::color_view_memory_traits color_view_memory_traits;
-  typedef typename HandleType::color_host_view_type color_host_view_type; //Host view type
+  typedef typename HandleType::color_host_view_t color_host_view_type; //Host view type
 
   typedef typename HandleType::HandleExecSpace MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
@@ -59,31 +59,24 @@ public:
 
 
 
-  typedef typename in_row_index_view_type::const_data_type const_row_data_type;
-  typedef typename in_row_index_view_type::non_const_data_type non_const_row_data_type;
-  typedef typename in_row_index_view_type::memory_space row_view_memory_space;
-  typedef typename Kokkos::View<const_row_data_type, row_view_array_layout,
-      row_view_memory_space, row_view_memory_traits> const_row_index_view_type;
-  typedef typename Kokkos::View<non_const_row_data_type, row_view_array_layout,
-      row_view_memory_space, row_view_memory_traits> non_const_row_index_view_type;
+  typedef typename in_lno_row_view_t::const_data_type const_row_data_type;
+  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_data_type;
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
 
 
-  typedef typename in_nonzero_index_view_type::const_data_type const_nonzero_index_data_type;
-  typedef typename in_nonzero_index_view_type::non_const_data_type non_const_nonzero_index_data_type;
-  typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
-  typedef typename Kokkos::View<const_nonzero_index_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> const_nonzero_index_view_type;
-  typedef typename Kokkos::View<non_const_nonzero_index_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> non_const_nonzero_index_view_type;
-
+  typedef typename in_lno_nnz_view_t::const_data_type const_nonzero_index_data_type;
+  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nonzero_index_data_type;
+  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
+  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
 
 protected:
   row_index_type nv; //# vertices
   row_index_type ne; //# edges
-  const_row_index_view_type xadj; //rowmap
-  const_nonzero_index_view_type adj; // entries
-  const_nonzero_index_view_type kok_src, kok_dst; //Edge list storage of the graph
+  const_lno_row_view_t xadj; //rowmap
+  const_lno_nnz_view_t adj; // entries
+  const_lno_nnz_view_t kok_src, kok_dst; //Edge list storage of the graph
   HandleType *cp;
 
 public:
@@ -99,8 +92,8 @@ public:
   GraphColor(
       row_index_type nv_,
       row_index_type ne_,
-      const_row_index_view_type row_map,
-      const_nonzero_index_view_type entries,
+      const_lno_row_view_t row_map,
+      const_lno_nnz_view_t entries,
       HandleType *coloring_handle):
         nv (nv_), ne(ne_),xadj(row_map), adj (entries),
         kok_src(), kok_dst(), cp(coloring_handle){}
@@ -119,10 +112,11 @@ public:
    * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
    */
   virtual void color_graph(
-      color_view_type d_colors,
+      color_view_t d_colors,
       int &num_phases){
 
     num_phases = 1;
+
 
     color_host_view_type colors = Kokkos::create_mirror_view (d_colors);
     row_host_view_type h_xadj = Kokkos::create_mirror_view (this->xadj);
@@ -134,14 +128,18 @@ public:
 
 
 
+
     //create a ban color array to keep track of
     //which colors have been taking by the neighbor vertices.
     row_index_type *banned_colors = new row_index_type[this->nv];
+
+
     for (row_index_type i = 0; i < this->nv; ++i) banned_colors[i] = 0;
 
     color_type max_color = 0;
     //traverse vertices greedily
     for (row_index_type i = 0; i < this->nv; ++i){
+
       row_index_type nbegin = h_xadj(i);
       row_index_type nend = h_xadj(i + 1);
       //std::cout << "nb:" << nbegin << " ne:" << nend << std::endl;
@@ -180,28 +178,28 @@ public:
  *  Best on GPUs among the vertex based algorithms.
  *  VBCS: Speculative parallel vertex based using color set implementation.
  */
-template <typename HandleType, typename in_row_index_view_type_, typename in_nonzero_index_view_type_>
-class GraphColor_VB:public GraphColor <HandleType,in_row_index_view_type_,in_nonzero_index_view_type_>{
+template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
+class GraphColor_VB:public GraphColor <HandleType,lno_row_view_t_,lno_nnz_view_t_>{
 public:
 
   typedef long long int ban_type;
 
-  typedef in_row_index_view_type_ in_row_index_view_type;
-  typedef in_nonzero_index_view_type_ in_nonzero_index_view_type;
-  typedef typename HandleType::color_view_type color_view_type;
+  typedef lno_row_view_t_ in_lno_row_view_t;
+  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+  typedef typename HandleType::color_view_t color_view_type;
 
-  typedef typename in_row_index_view_type::non_const_value_type row_index_type;
-  typedef typename in_row_index_view_type::array_layout row_view_array_layout;
-  typedef typename in_row_index_view_type::device_type row_view_device_type;
-  typedef typename in_row_index_view_type::memory_traits row_view_memory_traits;
-  typedef typename in_row_index_view_type::HostMirror row_host_view_type; //Host view type
+  typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
+  typedef typename in_lno_row_view_t::array_layout row_view_array_layout;
+  typedef typename in_lno_row_view_t::device_type row_view_device_type;
+  typedef typename in_lno_row_view_t::memory_traits row_view_memory_traits;
+  typedef typename in_lno_row_view_t::HostMirror row_host_view_type; //Host view type
   //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
-  typedef typename in_nonzero_index_view_type::non_const_value_type nonzero_index_type;
-  typedef typename in_nonzero_index_view_type::array_layout nonzero_index_view_array_layout;
-  typedef typename in_nonzero_index_view_type::device_type nonzero_index_view_device_type;
-  typedef typename in_nonzero_index_view_type::memory_traits nonzero_index_view_memory_traits;
-  typedef typename in_nonzero_index_view_type::HostMirror nonzero_index_host_view_type; //Host view type
+  typedef typename in_lno_nnz_view_t::non_const_value_type nonzero_index_type;
+  typedef typename in_lno_nnz_view_t::array_layout nonzero_index_view_array_layout;
+  typedef typename in_lno_nnz_view_t::device_type nonzero_index_view_device_type;
+  typedef typename in_lno_nnz_view_t::memory_traits nonzero_index_view_memory_traits;
+  typedef typename in_lno_nnz_view_t::HostMirror nonzero_index_host_view_type; //Host view type
   //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
   typedef typename color_view_type::non_const_value_type color_type;
@@ -220,28 +218,24 @@ public:
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  typedef typename Kokkos::View<row_index_type *, row_view_array_layout, MyTempMemorySpace> row_index_temp_work_view_type;
-  typedef typename Kokkos::View<row_index_type *, row_view_array_layout, MyPersistentMemorySpace> row_index_persistent_work_view_type;
+  typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
+  typedef typename HandleType::row_lno_persistent_work_view_t row_lno_persistent_work_view_t;
 
 
 
-  typedef typename in_row_index_view_type::const_data_type const_row_data_type;
-  typedef typename in_row_index_view_type::non_const_data_type non_const_row_data_type;
-  typedef typename in_row_index_view_type::memory_space row_view_memory_space;
-  typedef typename Kokkos::View<const_row_data_type, row_view_array_layout,
-      row_view_memory_space, row_view_memory_traits> const_row_index_view_type;
-  typedef typename Kokkos::View<non_const_row_data_type, row_view_array_layout,
-      row_view_memory_space, row_view_memory_traits> non_const_row_index_view_type;
+  typedef typename in_lno_row_view_t::const_data_type const_row_data_type;
+  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_data_type;
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
 
 
-  typedef typename in_nonzero_index_view_type::const_data_type const_nonzero_index_data_type;
-  typedef typename in_nonzero_index_view_type::non_const_data_type non_const_nonzero_index_data_type;
-  typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
-  typedef typename Kokkos::View<const_nonzero_index_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> const_nonzero_index_view_type;
-  typedef typename Kokkos::View<non_const_nonzero_index_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> non_const_nonzero_index_view_type;
+  typedef typename in_lno_nnz_view_t::const_data_type const_nonzero_index_data_type;
+  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nonzero_index_data_type;
+  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
+  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
+
+
 
 protected:
 
@@ -277,9 +271,9 @@ public:
    */
   GraphColor_VB(
       row_index_type nv_, row_index_type ne_,
-      const_row_index_view_type row_map, const_nonzero_index_view_type entries,
+      const_lno_row_view_t row_map, const_lno_nnz_view_t entries,
       HandleType *coloring_handle):
-    GraphColor<HandleType,in_row_index_view_type_,in_nonzero_index_view_type_>(nv_, ne_, row_map, entries, coloring_handle),
+    GraphColor<HandleType,lno_row_view_t_,lno_nnz_view_t_>(nv_, ne_, row_map, entries, coloring_handle),
     _serialConflictResolution(coloring_handle->get_serial_conflict_resolution()),
     _ticToc(coloring_handle->get_tictoc()),
     _conflictlist(),
@@ -348,46 +342,46 @@ public:
 
     //if the edge filtering is selected, then we do swaps on the adj array.
     //to not to touch the given one, we copy the adj array.
-    non_const_nonzero_index_view_type adj_copy;
+    non_const_lno_nnz_view_t adj_copy;
 
     //if we use edge-filtering, we perform swaps.
     //We need to copy the adjacency array so that we dont harm the original one.
     if (this->_edge_filtering){
-      adj_copy = non_const_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("adj copy"), this->ne);
+      adj_copy = non_const_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("adj copy"), this->ne);
       Kokkos::deep_copy(adj_copy, this->adj);
     }
 
     //if color set algorithm is used, we need one more array to represent the range.
-    row_index_temp_work_view_type vertex_color_set;
+    row_lno_temp_work_view_t vertex_color_set;
     if (this->_use_color_set == 1){
-      vertex_color_set = row_index_temp_work_view_type("colorset", this->nv);
+      vertex_color_set = row_lno_temp_work_view_t("colorset", this->nv);
     }
 
     //the conflictlist
-    row_index_temp_work_view_type current_vertexList =
-        row_index_temp_work_view_type(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
+    row_lno_temp_work_view_t current_vertexList =
+        row_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
 
     //init vertexList sequentially.
-    Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<row_index_temp_work_view_type> (current_vertexList));
+    Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<row_lno_temp_work_view_t> (current_vertexList));
 
 
     // the next iteration's conflict list
-    row_index_temp_work_view_type next_iteration_recolorList;
+    row_lno_temp_work_view_t next_iteration_recolorList;
     // the size of the current conflictlist
 
     //the size of the next iteration's conflictlist
     single_dim_index_view_type next_iteration_recolorListLength;
     //if parallel prefix sum is selected instead of atomic operations,
     //we need one more work array to do the prefix sum.
-    row_index_temp_work_view_type pps_work_view;
+    row_lno_temp_work_view_t pps_work_view;
 
     // if a conflictlist is used
     if (this->_conflictlist > 0){
       // Vertices to recolor. Will swap with vertexList.
-      next_iteration_recolorList = row_index_temp_work_view_type(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
+      next_iteration_recolorList = row_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
       next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
       if (this->_conflictlist == 2) {
-        pps_work_view = row_index_temp_work_view_type("pps_view", this->nv);
+        pps_work_view = row_lno_temp_work_view_t("pps_view", this->nv);
       }
     }
 
@@ -468,7 +462,7 @@ public:
       if (this->_serialConflictResolution) break; // Break after first iteration.
       if (this->_conflictlist && swap_work_arrays && (iter + 1< this->_max_num_iterations)){
         // Swap recolorList and vertexList
-        row_index_temp_work_view_type temp = current_vertexList;
+        row_lno_temp_work_view_t temp = current_vertexList;
         current_vertexList = next_iteration_recolorList;
         next_iteration_recolorList = temp;
         current_vertexListLength = numUncolored;
@@ -514,11 +508,11 @@ private:
    *  \param current_vertexListLength_: size of current conflictlist
    */
   void colorGreedy(
-      const_row_index_view_type xadj_,
-      const_nonzero_index_view_type adj_,
+      const_lno_row_view_t xadj_,
+      const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
-      row_index_temp_work_view_type vertex_color_set,
-      row_index_temp_work_view_type current_vertexList_,
+      row_lno_temp_work_view_t vertex_color_set,
+      row_lno_temp_work_view_t current_vertexList_,
       row_index_type current_vertexListLength_) {
 
     row_index_type chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
@@ -569,11 +563,11 @@ private:
    *  \param current_vertexListLength_: size of current conflictlist
    */
   void  colorGreedyEF(
-      const_row_index_view_type xadj_,
-      non_const_nonzero_index_view_type adj_,
+      const_lno_row_view_t xadj_,
+      non_const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
-      row_index_temp_work_view_type vertex_color_set,
-      row_index_temp_work_view_type current_vertexList_,
+      row_lno_temp_work_view_t vertex_color_set,
+      row_lno_temp_work_view_t current_vertexList_,
       row_index_type current_vertexListLength_) {
 
     row_index_type chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
@@ -631,15 +625,15 @@ private:
    */
   row_index_type findConflicts(
       bool &swap_work_arrays,
-      const_row_index_view_type xadj_,
-      const_nonzero_index_view_type adj_,
+      const_lno_row_view_t xadj_,
+      const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
-      row_index_temp_work_view_type vertex_color_set_,
-      row_index_temp_work_view_type current_vertexList_,
+      row_lno_temp_work_view_t vertex_color_set_,
+      row_lno_temp_work_view_t current_vertexList_,
       row_index_type current_vertexListLength_,
-      row_index_temp_work_view_type next_iteration_recolorList_,
+      row_lno_temp_work_view_t next_iteration_recolorList_,
       single_dim_index_view_type next_iteration_recolorListLength_,
-      row_index_temp_work_view_type pps_work_view) {
+      row_lno_temp_work_view_t pps_work_view) {
 
     swap_work_arrays = true;
     row_index_type numUncolored = 0;
@@ -679,11 +673,11 @@ private:
         MyExecSpace::fence();
 
         Kokkos::parallel_scan (my_exec_space(0, current_vertexListLength_),
-            parallel_prefix_sum<row_index_temp_work_view_type>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
+            parallel_prefix_sum<row_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
 
         MyExecSpace::fence();
         Kokkos::parallel_for (my_exec_space(0, current_vertexListLength_),
-            create_new_work_array<row_index_temp_work_view_type>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
+            create_new_work_array<row_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
       }
       else {
         swap_work_arrays = false;
@@ -720,16 +714,16 @@ private:
    */
   void  resolveConflicts(
       row_index_type nv,
-      const_row_index_view_type xadj_,
-      const_nonzero_index_view_type adj_,
+      const_lno_row_view_t xadj_,
+      const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
-      row_index_temp_work_view_type current_vertexList_,
+      row_lno_temp_work_view_t current_vertexList_,
       row_index_type current_vertexListLength_) {
 
     color_type *forbidden = new color_type[nv];
     row_index_type i=0;
     row_index_type end = nv;
-    typename row_index_temp_work_view_type::HostMirror h_recolor_list;
+    typename row_lno_temp_work_view_t::HostMirror h_recolor_list;
 
     if (this->_conflictlist){
       end = current_vertexListLength_;
@@ -737,8 +731,8 @@ private:
       Kokkos::deep_copy (h_recolor_list, current_vertexList_);
     }
     color_host_view_type h_colors = Kokkos::create_mirror_view (vertex_colors_);
-    typename const_row_index_view_type::HostMirror h_idx = Kokkos::create_mirror_view (xadj_);
-    typename const_nonzero_index_view_type::HostMirror h_adj = Kokkos::create_mirror_view (adj_);
+    typename const_lno_row_view_t::HostMirror h_idx = Kokkos::create_mirror_view (xadj_);
+    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (adj_);
 
 
     Kokkos::deep_copy (h_colors, vertex_colors_);
@@ -775,19 +769,19 @@ public:
    */
   struct functorGreedyColor_IMPLOG_EF {
     row_index_type nv;
-    const_row_index_view_type _idx; //rowmap
-    non_const_nonzero_index_view_type _adj; //entries
+    const_lno_row_view_t _idx; //rowmap
+    non_const_lno_nnz_view_t _adj; //entries
     color_view_type _colors; // vertex colors
-    row_index_temp_work_view_type _vertexList; // conflictlist
+    row_lno_temp_work_view_t _vertexList; // conflictlist
     row_index_type _vertexListLength;
     row_index_type _chunkSize;
 
     functorGreedyColor_IMPLOG_EF(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        non_const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        non_const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type vertexList,
+        row_lno_temp_work_view_t vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize) :nv(nv_), _idx(xadj), _adj(adj), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
@@ -881,19 +875,19 @@ public:
   struct functorGreedyColor_IMPLOG {
 
     row_index_type nv;
-    const_row_index_view_type _idx;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _idx;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _vertexList;
+    row_lno_temp_work_view_t _vertexList;
     row_index_type _vertexListLength;
     row_index_type _chunkSize;
 
     functorGreedyColor_IMPLOG(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type vertexList,
+        row_lno_temp_work_view_t vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize) : nv(nv_),
           _idx(xadj), _adj(adj), _colors(colors),
@@ -965,20 +959,20 @@ public:
   struct functorGreedyColor_IMP_EF {
 
     row_index_type nv;
-    const_row_index_view_type _xadj;
-    non_const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _xadj;
+    non_const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _color_set ;
-    row_index_temp_work_view_type _vertexList;
+    row_lno_temp_work_view_t _color_set ;
+    row_lno_temp_work_view_t _vertexList;
     row_index_type _vertexListLength;
     row_index_type _chunkSize;
 
     functorGreedyColor_IMP_EF(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        non_const_nonzero_index_view_type adj,
-        color_view_type colors, row_index_temp_work_view_type color_set,
-        row_index_temp_work_view_type vertexList,
+        const_lno_row_view_t xadj,
+        non_const_lno_nnz_view_t adj,
+        color_view_type colors, row_lno_temp_work_view_t color_set,
+        row_lno_temp_work_view_t vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize): nv(nv_),
           _xadj(xadj), _adj(adj),
@@ -1047,22 +1041,22 @@ public:
   struct functorGreedyColor_IMP {
 
     row_index_type nv;
-    const_row_index_view_type _xadj;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _xadj;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _color_set ;
-    row_index_temp_work_view_type _vertexList;
+    row_lno_temp_work_view_t _color_set ;
+    row_lno_temp_work_view_t _vertexList;
     row_index_type _vertexListLength;
     row_index_type _chunkSize;
 
 
     functorGreedyColor_IMP(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type color_set,
-        row_index_temp_work_view_type vertexList,
+        row_lno_temp_work_view_t color_set,
+        row_lno_temp_work_view_t vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize
     ) : nv (nv_),
@@ -1122,19 +1116,19 @@ public:
    */
   struct functorGreedyColor_EF {
     row_index_type nv;
-    const_row_index_view_type _idx;
-    non_const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _idx;
+    non_const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _vertexList;
+    row_lno_temp_work_view_t _vertexList;
     row_index_type _vertexListLength;
     row_index_type _chunkSize;
 
     functorGreedyColor_EF(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        non_const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        non_const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type vertexList,
+        row_lno_temp_work_view_t vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize
     ) : nv (nv_),
@@ -1228,19 +1222,19 @@ public:
    */
   struct functorGreedyColor {
     row_index_type nv;
-    const_row_index_view_type _idx;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _idx;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _vertexList;
+    row_lno_temp_work_view_t _vertexList;
     row_index_type _vertexListLength;
     row_index_type _chunkSize;
 
     functorGreedyColor(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type vertexList,
+        row_lno_temp_work_view_t vertexList,
         row_index_type vertexListLength,
         row_index_type chunkSize
     ) : nv (nv_),
@@ -1322,14 +1316,14 @@ public:
   struct functorFindConflicts_No_Conflist {
 
     row_index_type nv;
-    const_row_index_view_type _idx;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _idx;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
 
     functorFindConflicts_No_Conflist(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors) : nv (nv_),
           _idx(xadj), _adj(adj),_colors(colors)
     {
@@ -1372,21 +1366,21 @@ public:
    */
   struct functorFindConflicts_PPS {
     row_index_type nv;
-    const_row_index_view_type _idx;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _idx;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _vertexList;
-    row_index_temp_work_view_type _recolorList;
+    row_lno_temp_work_view_t _vertexList;
+    row_lno_temp_work_view_t _recolorList;
 
 
 
     functorFindConflicts_PPS(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type vertexList,
-        row_index_temp_work_view_type recolorList) :
+        row_lno_temp_work_view_t vertexList,
+        row_lno_temp_work_view_t recolorList) :
           nv (nv_),
           _idx(xadj), _adj(adj), _colors(colors),
           _vertexList(vertexList),
@@ -1431,21 +1425,21 @@ public:
    */
   struct functorFindConflicts_Atomic {
     row_index_type nv;
-    const_row_index_view_type _idx;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _idx;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _vertexList;
-    row_index_temp_work_view_type _recolorList;
+    row_lno_temp_work_view_t _vertexList;
+    row_lno_temp_work_view_t _recolorList;
     single_dim_index_view_type _recolorListLength;
 
 
     functorFindConflicts_Atomic(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type vertexList,
-        row_index_temp_work_view_type recolorList,
+        row_lno_temp_work_view_t vertexList,
+        row_lno_temp_work_view_t recolorList,
         single_dim_index_view_type recolorListLength
     ) : nv (nv_),
       _idx(xadj), _adj(adj), _colors(colors),
@@ -1495,18 +1489,18 @@ public:
   struct functorFindConflicts_No_Conflist_IMP {
 
     row_index_type nv;
-    const_row_index_view_type _xadj;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _xadj;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _color_sets;
+    row_lno_temp_work_view_t _color_sets;
 
 
     functorFindConflicts_No_Conflist_IMP(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type color_sets
+        row_lno_temp_work_view_t color_sets
     ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets){}
 
@@ -1556,21 +1550,21 @@ public:
    */
   struct functorFindConflicts_PPS_IMP {
     row_index_type nv;
-    const_row_index_view_type _xadj;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _xadj;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _color_sets;
-    row_index_temp_work_view_type _vertexList;
-    row_index_temp_work_view_type _recolorList;
+    row_lno_temp_work_view_t _color_sets;
+    row_lno_temp_work_view_t _vertexList;
+    row_lno_temp_work_view_t _recolorList;
 
     functorFindConflicts_PPS_IMP(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type color_sets,
-        row_index_temp_work_view_type vertexList,
-        row_index_temp_work_view_type recolorList
+        row_lno_temp_work_view_t color_sets,
+        row_lno_temp_work_view_t vertexList,
+        row_lno_temp_work_view_t recolorList
     ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets),
       _vertexList(vertexList),
@@ -1624,23 +1618,23 @@ public:
   struct functorFindConflicts_Atomic_IMP {
 
     row_index_type nv;
-    const_row_index_view_type _xadj;
-    const_nonzero_index_view_type _adj;
+    const_lno_row_view_t _xadj;
+    const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_index_temp_work_view_type _color_sets;
-    row_index_temp_work_view_type _vertexList;
-    row_index_temp_work_view_type _recolorList;
+    row_lno_temp_work_view_t _color_sets;
+    row_lno_temp_work_view_t _vertexList;
+    row_lno_temp_work_view_t _recolorList;
     single_dim_index_view_type _recolorListLength;
 
 
     functorFindConflicts_Atomic_IMP(
         row_index_type nv_,
-        const_row_index_view_type xadj,
-        const_nonzero_index_view_type adj,
+        const_lno_row_view_t xadj,
+        const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_index_temp_work_view_type color_sets,
-        row_index_temp_work_view_type vertexList,
-        row_index_temp_work_view_type recolorList,
+        row_lno_temp_work_view_t color_sets,
+        row_lno_temp_work_view_t vertexList,
+        row_lno_temp_work_view_t recolorList,
         single_dim_index_view_type recolorListLength
     ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets),
@@ -1768,7 +1762,7 @@ public:
    */
   struct set_final_colors{
     color_view_type kokcol;
-    row_index_temp_work_view_type kokcolset; //the colors that are represented with bits, and the colors set that the color is in.
+    row_lno_temp_work_view_t kokcolset; //the colors that are represented with bits, and the colors set that the color is in.
     color_type color_size;
 
     /** \brief functor constructor.
@@ -1776,7 +1770,7 @@ public:
      * \param kokcolset_  the color set of the vertices. kokcolors_ and color_set_ together
      *      is used to represent the colors e.g. color_set_(v) * (numbits_in_idx-1) + set_bit_position_in_kokcolors_(v)
      */
-    set_final_colors(color_view_type kokcol_, row_index_temp_work_view_type kokcolset_
+    set_final_colors(color_view_type kokcol_, row_lno_temp_work_view_t kokcolset_
     ): kokcol(kokcol_),kokcolset(kokcolset_), color_size ( sizeof(color_type) * 8){}
 
     KOKKOS_INLINE_FUNCTION
@@ -1814,7 +1808,7 @@ public:
 
   typedef in_row_index_view_type_ in_row_index_view_type;
   typedef in_nonzero_index_view_type_ in_nonzero_index_view_type;
-  typedef typename HandleType::color_view_type color_view_type;
+  typedef typename HandleType::color_view_t color_view_type;
 
   typedef typename in_row_index_view_type::non_const_value_type row_index_type;
   typedef typename in_row_index_view_type::array_layout row_view_array_layout;
@@ -1848,8 +1842,8 @@ public:
   typedef typename single_dim_index_view_type::HostMirror single_dim_index_host_view_type; //Host view type
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  typedef typename HandleType::row_index_temp_work_view_type row_index_temp_work_view_type;
-  typedef typename HandleType::row_index_persistent_work_view_type row_index_persistent_work_view_type;
+  typedef typename HandleType::row_lno_temp_work_view_t row_index_temp_work_view_type;
+  typedef typename HandleType::row_lno_persistent_work_view_t row_index_persistent_work_view_type;
 
   typedef typename Kokkos::View<color_type *, color_view_array_layout, MyTempMemorySpace> color_temp_work_view_type;
 
@@ -1859,21 +1853,14 @@ public:
 
   typedef typename in_row_index_view_type::const_data_type const_row_data_type;
   typedef typename in_row_index_view_type::non_const_data_type non_const_row_data_type;
-  typedef typename in_row_index_view_type::memory_space row_view_memory_space;
-  typedef typename Kokkos::View<const_row_data_type, row_view_array_layout,
-      row_view_memory_space, row_view_memory_traits> const_row_index_view_type;
-  typedef typename Kokkos::View<non_const_row_data_type, row_view_array_layout,
-      row_view_memory_space, row_view_memory_traits> non_const_row_index_view_type;
-
+  typedef typename in_row_index_view_type::const_type const_lno_row_view_t;
+  typedef typename in_row_index_view_type::non_const_type non_const_row_index_view_type;
 
 
   typedef typename in_nonzero_index_view_type::const_data_type const_nonzero_index_data_type;
   typedef typename in_nonzero_index_view_type::non_const_data_type non_const_nonzero_index_data_type;
-  typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
-  typedef typename Kokkos::View<const_nonzero_index_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> const_nonzero_index_view_type;
-  typedef typename Kokkos::View<non_const_nonzero_index_data_type, nonzero_index_view_array_layout,
-      nonzero_index_view_memory_space, nonzero_index_view_memory_traits> non_const_nonzero_index_view_type;
+  typedef typename in_nonzero_index_view_type::const_type const_nonzero_index_view_type;
+  typedef typename in_nonzero_index_view_type::non_const_type non_const_nonzero_index_view_type;
 public:
 
   /**
@@ -1885,7 +1872,7 @@ public:
    */
   GraphColor_EB(row_index_type nv_,
                 row_index_type ne_,
-                const_row_index_view_type row_map,
+                const_lno_row_view_t row_map,
                 const_nonzero_index_view_type entries,
                 HandleType *coloring_handle):
     GraphColor<HandleType,in_row_index_view_type_,in_nonzero_index_view_type_>(nv_, ne_, row_map, entries, coloring_handle)
