@@ -44,7 +44,12 @@ namespace stk
 {
 namespace mesh
 {
-//void check_interior_block_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto);
+void create_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, stk::mesh::Part &partToPutSidesInto)
+{
+    const stk::mesh::PartVector interiorSkinPart{&partToPutSidesInto};
+    stk::mesh::ElemElemGraph graph(bulkData, blocksToConsider);
+    graph.create_interior_block_boundary_sides( interiorSkinPart );
+}
 
 void create_all_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto)
 {
@@ -122,6 +127,13 @@ bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlo
     std::vector<SideSetEntry> skinnedSideSet = ElemElemGraph(bulkData, skinnedBlock).extract_skinned_sideset();
     stk::mesh::EntityVector sidesetSides = get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet);
     return is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart);
+}
+
+bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, const stk::mesh::Part &skinnedPart)
+{
+    std::vector<stk::mesh::SideSetEntry> skinnedSideSet= stk::mesh::ElemElemGraph(bulkData, skinnedBlock).extract_interior_sideset();
+    stk::mesh::EntityVector sidesetSides = stk::mesh::get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet);
+    return stk::mesh::is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart);
 }
 
 
