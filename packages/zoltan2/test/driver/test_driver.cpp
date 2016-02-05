@@ -393,6 +393,12 @@ void run(const UserInputForTests &uinput,
   
   // calculate pass fail based on imbalance
   if(rank == 0) cout << "Comparing metrics...\n" << endl;
+
+  // An environment.  This is usually created by the problem.
+
+  RCP<const Zoltan2::Environment> env =
+    reinterpret_cast<basic_problem_t *>(problem)->getEnvironment();
+
   if(problem_parameters.isParameter("Metrics"))
   {
     if(rank == 0)

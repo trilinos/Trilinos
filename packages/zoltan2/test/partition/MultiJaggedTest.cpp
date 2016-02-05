@@ -626,8 +626,10 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     vector <int> stride;
 
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
+    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+    typedef inputAdapter_t::base_adapter_t base_adapter_t;
     //inputAdapter_t ia(coordsConst);
-    inputAdapter_t ia(coordsConst,weights, stride);
+    inputAdapter_t *ia = new inputAdapter_t(coordsConst,weights, stride);
 
     Teuchos::RCP<Teuchos::ParameterList> params ;
 
@@ -668,7 +670,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia,
+        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(ia,
                                                    params.getRawPtr(),
                                                    comm);
     }
@@ -678,7 +680,21 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         problem->solve();
     }
     CATCH_EXCEPTIONS_AND_RETURN("solve()")
+
+    // An environment.  This is usually created by the problem.
+
+    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+
+    RCP<const base_adapter_t> bia =
+      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+
+    // create metric object (also usually created by a problem)
+
+    RCP<quality_t> metricObject = 
+      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+
     if (comm->getRank() == 0){
+      metricObject->printMetrics(cout);
         problem->printMetrics(cout);
     }
     problem->printTimers();
@@ -730,7 +746,9 @@ int testFromDataFile(
 
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-    inputAdapter_t ia(coordsConst);
+    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+    typedef inputAdapter_t::base_adapter_t base_adapter_t;
+    inputAdapter_t *ia = new inputAdapter_t(coordsConst);
 
     Teuchos::RCP <Teuchos::ParameterList> params ;
 
@@ -772,7 +790,7 @@ int testFromDataFile(
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, 
+        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(ia, 
                                                    params.getRawPtr(),
                                                    comm);
     }
@@ -864,7 +882,20 @@ int testFromDataFile(
             << " part " << zparts[i] << endl;
     }
 
+    // An environment.  This is usually created by the problem.
+
+    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+
+    RCP<const base_adapter_t> bia =
+      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+
+    // create metric object (also usually created by a problem)
+
+    RCP<quality_t> metricObject =
+      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+
     if (comm->getRank() == 0){
+      metricObject->printMetrics(cout);
         problem->printMetrics(cout);
         cout << "testFromDataFile is done " << endl;
     }
