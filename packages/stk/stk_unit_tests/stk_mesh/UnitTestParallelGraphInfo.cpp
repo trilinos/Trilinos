@@ -140,8 +140,6 @@ stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkDat
 
 void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraphTester& graph)
 {
-    std::vector<int64_t> idsTrue;
-    std::vector<int64_t> idsFalse;
     for(int i=0;i<bulkData.parallel_size();++i)
     {
         while(comm.recv_buffer(i).remaining())
