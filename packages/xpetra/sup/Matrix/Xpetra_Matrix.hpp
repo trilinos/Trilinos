@@ -419,7 +419,7 @@ namespace Xpetra {
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     /*!
       \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices  - (Out) Global column indices corresponding to values.
+      \param Indices  - (Out) Local column indices corresponding to values.
       \param Values   - (Out) Row values
       \pre <tt>isGloballyIndexed() == false</tt>
       \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>

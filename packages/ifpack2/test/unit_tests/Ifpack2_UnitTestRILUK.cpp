@@ -123,6 +123,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
   GlobalOrdinal lof=1;
   params.set("fact: iluk level-of-fill", lof);
   params.set("fact: iluk level-of-overlap", 0);
+#ifdef IFPACK2_ILUK_EXPERIMENTAL
+  params.set("fact: iluk experimental", true);
+  params.set("fact: iluk experimental threads" , 2);
+#endif
+
 
   prec.setParameters(params);
   prec.initialize();

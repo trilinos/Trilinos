@@ -74,12 +74,13 @@ namespace Tacho {
       _n = _A.NumCols();
 
       // allocate memory for input crs matrix
-      _in._nnz   = _A.NumNonZeros();
+      _in._nnz = _A.NumNonZeros();
       _in._ap  = size_type_array(_label+"::Input::RowPtrArray", _m+1);
       _in._aj  = ordinal_type_array(_label+"::Input::ColIndexArray", _in._nnz);
 
       // adjust graph structure; A is assumed to have a graph without its diagonal
-      A.convertGraph(_in._nnz, _in._ap, _in._aj);
+      A.convertGraph(_in._ap, _in._aj);
+      _in._nnz = _in._ap[_m];
 
       // league size
       _lsize = lsize;
