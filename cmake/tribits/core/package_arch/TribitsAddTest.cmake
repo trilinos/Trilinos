@@ -228,17 +228,17 @@ INCLUDE(TribitsAddTestHelpers)
 #   ``CATEGORIES <category0> <category1> ...``
 #
 #     If specified, gives the specific categories of the test.  Valid test
-#     categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``
+#     categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``HEAVY``
 #     and ``PERFORMANCE``.  If not specified, the default category is
 #     ``BASIC``.  When the test category does not match
 #     ``${PROJECT_NAME}_TEST_CATEGORIES``, then the test is **not** added.
 #     When ``CATEGORIES`` contains ``BASIC`` it will match
 #     ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``CONTINUOUS``,
-#     ``NIGHTLY``, and ``WEEKLY``.  When ``CATEGORIES`` contains
+#     ``NIGHTLY``, and ``HEAVY``.  When ``CATEGORIES`` contains
 #     ``CONTINUOUS`` it will match ``${PROJECT_NAME}_TEST_CATEGORIES`` equal
-#     to ``CONTINUOUS``, ``NIGHTLY``, and ``WEEKLY``.  When ``CATEGORIES``
+#     to ``CONTINUOUS``, ``NIGHTLY``, and ``HEAVY``.  When ``CATEGORIES``
 #     contains ``NIGHTLY`` it will match ``${PROJECT_NAME}_TEST_CATEGORIES``
-#     equal to ``NIGHTLY`` and ``WEEKLY``.  When ``CATEGORIES`` contains
+#     equal to ``NIGHTLY`` and ``HEAVY``.  When ``CATEGORIES`` contains
 #     ``PERFORMANCE`` it will match
 #     ``${PROJECT_NAME}_TEST_CATEGORIES=PERFORMANCE`` only.
 #
@@ -329,7 +329,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     **WARNING:** Rather than just increasing the timeout for an expensive
 #     test, please try to either make the test run faster or relegate the test
 #     to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
-#     ``WEEKLY`` for extremely expensive tests).  Expensive tests are one of
+#     ``HEAVY`` for extremely expensive tests).  Expensive tests are one of
 #     the worse forms of technical debt that a project can have!
 #
 #   ``ADDED_TESTS_NAMES_OUT <testsNames>``

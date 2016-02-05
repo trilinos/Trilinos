@@ -14,3 +14,9 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES vector.cpp
   COMM serial mpi
 )
+
+TRIBITS_ADD_EXECUTABLE(
+  localView
+  SOURCES localView.cpp
+  COMM serial mpi
+)
