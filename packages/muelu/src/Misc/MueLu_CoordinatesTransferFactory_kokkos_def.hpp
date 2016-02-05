@@ -149,12 +149,12 @@ namespace MueLu {
     // Fill in coarse coordinates
     typename AppendTrait<decltype(coarseCoordsView), Kokkos::Atomic>::type coarseCoordsViewAtomic = coarseCoordsView;
     for (size_t j = 0; j < fineCoords->getNumVectors(); j++) {
-      Kokkos::parallel_for("CoordinatesTransferF:Build:coord", vertex2AggID.size(), KOKKOS_LAMBDA(const LO lnode) {
+      Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", vertex2AggID.size(), KOKKOS_LAMBDA(const LO lnode) {
         if (procWinner(lnode, 0) == myPID)
           coarseCoordsViewAtomic(vertex2AggID(lnode, 0),j) += fineCoordsView(lnode,j);
       });
 
-      Kokkos::parallel_for("CoordinatesTransferF:Build:agg", numAggs, KOKKOS_LAMBDA(const LO agg) {
+      Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:agg", numAggs, KOKKOS_LAMBDA(const LO agg) {
         coarseCoordsView(agg,j) /= aggSizes[agg];
       });
     }
