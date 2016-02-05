@@ -61,24 +61,6 @@
 
 namespace Stratimikos {
 
-  void enableMueLu(DefaultLinearSolverBuilder &builder, const std::string &stratName) {
-#if (defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_TPETRA)) || \
-    (defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_SERIAL))
-    const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
-                               "Stratimikos::enableMueLu cannot add \"" + stratName +"\" because it is already included in builder!");
-
-    typedef Thyra::PreconditionerFactoryBase<double>                  Base;
-    typedef Thyra::MueLuPreconditionerFactory<double, int, int> Impl;
-    builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Stratimikos::enableMueLu cannot add \"" + stratName +"\" because MueLu is compiled without support for "
-      "GO=int and/or NO=Serial.\n Add support for GO=int and NO=Serial in Tpetra or compile only for Epetra.");
-#endif
-  }
-
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 #if 0
   void enableMueLuTpetraQ2Q1(DefaultLinearSolverBuilder &builder, const std::string &stratName) {
