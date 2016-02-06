@@ -69,6 +69,7 @@ namespace BaskerNS
     if(btf_tabs_offset != 0)
       {
 
+	Int domain_restart = 0;
 	kokkos_nfactor_domain_inc_lvl <Int,Entry,Exe_Space>
 	  domain_nfactor(this);
 	Kokkos::parallel_for(TeamPolicy(num_threads,1), 
@@ -84,12 +85,15 @@ namespace BaskerNS
 	init_value(thread_start, num_threads+1, 
 		   (Int) BASKER_MAX_IDX);
 	int nt = nfactor_domain_error(thread_start);
-	if(nt == BASKER_SUCCESS)
+	if((nt == BASKER_SUCCESS) ||
+	   (nt == BASKER_ERROR)   ||
+	   (domain_restart > BASKER_RESTART))
 	  {
 	    break;
 	  }
 	else
 	  {
+	    domain_restart++;
 	    printf("restart \n");
 	    kokkos_nfactor_domain_remalloc <Int, Entry, Exe_Space>
 	      diag_nfactor_remalloc(this, thread_start);
@@ -126,25 +130,29 @@ namespace BaskerNS
     
     if(btf_tabs_offset != 0)
       {
-	//for(Int l=1; l<=1; l++)
-    for(Int l=1; l <= tree.nlvls; l++)
+        //for(Int l=1; l<=1; l++)
+       for(Int l=1; l <= tree.nlvls; l++)
       {
 
+        //Come back for syncs
+        
 	//#ifdef BASKER_OLD_BARRIER
-	//Int lthreads = pow(2,l);
-	//Int lnteams = num_threads/lthreads;
-	//#else
-	Int lthreads = 1;
+	Int lthreads = pow(2,l);
 	Int lnteams = num_threads/lthreads;
+	//#else
+	//Int lthreads = 1;
+	//Int lnteams = num_threads/lthreads;
 	//#endif
 
-	
-	printf("\n\n   ============ SEP: %d ======\n\n",l);
+	Int sep_restart = 0;
 
+	//printf("\n\n   ============ SEP: %d ======\n\n",l);
+
+	
 	#ifdef BASKER_KOKKOS
 	Kokkos::Impl::Timer  timer_inner_sep;
 	#ifdef BASKER_NO_LAMBDA
-       
+	
 	kokkos_nfactor_sep2_inc_lvl <Int, Entry, Exe_Space>
 	  sep_nfactor(this,l);
 	

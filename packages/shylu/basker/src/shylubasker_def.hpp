@@ -11,6 +11,7 @@
 #include "basker_matrix_view_def.hpp"
 #include "basker_tree.hpp"
 #include "basker_sfactor.hpp"
+#include "basker_sfactor_inc.hpp"
 #include "basker_nfactor.hpp"
 #include "basker_nfactor_inc.hpp"
 #include "basker_solve_rhs.hpp"
@@ -329,7 +330,14 @@ namespace BaskerNS
       }
     else
       {
-	sfactor();
+	if(Options.incomplete == BASKER_FALSE)
+	  {
+	    sfactor();
+	  }
+	else
+	  {
+	    sfactor_inc();
+	  }
 	symb_flag = BASKER_TRUE;
       }
 

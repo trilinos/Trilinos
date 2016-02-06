@@ -244,10 +244,10 @@ namespace MueLu {
     typename cols_type::non_const_type colsAux("Ptent_aux_cols", nnzEstimate);
     typename vals_type::non_const_type valsAux("Ptent_aux_vals", nnzEstimate);
 
-    Kokkos::parallel_for("TentativePF:BuildPuncoupled:for1", numRows+1, KOKKOS_LAMBDA(const LO row) {
+    Kokkos::parallel_for("MueLu:TentativePF:BuildPuncoupled:for1", numRows+1, KOKKOS_LAMBDA(const LO row) {
       rowsAux(row) = row*NSDim;
     });
-    Kokkos::parallel_for("TentativePF:BuildUncoupled:for2", nnzEstimate, KOKKOS_LAMBDA(const LO j) {
+    Kokkos::parallel_for("MueLu:TentativePF:BuildUncoupled:for2", nnzEstimate, KOKKOS_LAMBDA(const LO j) {
       colsAux(j) = INVALID;
       valsAux(j) = zero;
     });
@@ -263,7 +263,7 @@ namespace MueLu {
     if (NSDim == 1) {
       // 1D is special, as it is the easiest. We don't even need to the QR,
       // just normalize an array. Plus, no worries abot small aggregates.
-      Kokkos::parallel_reduce("TentativePF:BuildUncoupled:main_loop", numAggs, KOKKOS_LAMBDA(const GO agg, size_t& rowNnz) {
+      Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_loop", numAggs, KOKKOS_LAMBDA(const GO agg, size_t& rowNnz) {
         LO aggSize = aggRows(agg+1) - aggRows(agg);
 
         // Extract the piece of the nullspace corresponding to the aggregate, and
@@ -327,7 +327,7 @@ namespace MueLu {
     } else {
       throw Exceptions::RuntimeError("Ignore NSDim > 1 for now");
 #if 0
-      Kokkos::parallel_reduce("TentativePF:BuildUncoupled:main_loop", numAggs, KOKKOS_LAMBDA(const GO agg, size_t& nnz) {
+      Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_loop", numAggs, KOKKOS_LAMBDA(const GO agg, size_t& nnz) {
         LO aggSize = aggRows(agg+1) - aggRows(agg);
 
         Xpetra::global_size_t offset = agg*NSDim;
@@ -499,12 +499,12 @@ namespace MueLu {
 
     // Stage 2: compress the arrays
     ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
-    Kokkos::parallel_scan("TentativePF:Build:compress_rows", numRows+1, scanFunctor);
+    Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", numRows+1, scanFunctor);
 
     // The real cols and vals are constructed using calculated (not estimated) nnz
     typename cols_type::non_const_type cols("Ptent_cols", nnz);
     typename vals_type::non_const_type vals("Ptent_vals", nnz);
-    Kokkos::parallel_for("TentativePF:Build:compress_cols_vals", numRows, KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", numRows, KOKKOS_LAMBDA(const LO i) {
       LO rowStart = rows(i);
 
       size_t lnnz = 0;

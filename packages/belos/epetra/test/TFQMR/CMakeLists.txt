@@ -4,6 +4,15 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    pseudo_tfqmr_hb
+    SOURCES test_pseudo_tfqmr_hb.cpp createEpetraProblem.cpp
+    COMM serial mpi
+    ARGS
+      "--verbose --filename=orsirr1_scaled.hb"
+    STANDARD_PASS_OUTPUT 
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     tfqmr_hb
     SOURCES test_tfqmr_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -30,7 +39,10 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     SOURCES test_pseudo_ptfqmr_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
     ARGS
+      "--verbose --left-prec"
       "--verbose --left-prec --num-rhs=10"
+      "--verbose --right-prec"
+      "--verbose --right-prec --num-rhs=10"
     STANDARD_PASS_OUTPUT 
   )
 

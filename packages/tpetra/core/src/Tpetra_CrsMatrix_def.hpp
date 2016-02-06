@@ -2208,6 +2208,60 @@ namespace Tpetra {
     }
   }
 
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getViewRawConst (const impl_scalar_type*& vals,
+                   LocalOrdinal& numEnt,
+                   const RowInfo& rowinfo) const
+  {
+    if (k_values1D_.dimension_0 () != 0 && rowinfo.allocSize > 0) {
+#ifdef HAVE_TPETRA_DEBUG
+      if (rowinfo.offset1D + rowinfo.allocSize > k_values1D_.dimension_0 ()) {
+        vals = NULL;
+        numEnt = 0;
+        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+      }
+#endif // HAVE_TPETRA_DEBUG
+      vals = k_values1D_.ptr_on_device () + rowinfo.offset1D;
+      numEnt = rowinfo.allocSize;
+    }
+    else if (! values2D_.is_null ()) {
+#ifdef HAVE_TPETRA_DEBUG
+      if (rowinfo.localRow >= static_cast<size_t> (values2D_.size ())) {
+        vals = NULL;
+        numEnt = 0;
+        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+      }
+#endif // HAVE_TPETRA_DEBUG
+      // Use const reference so that we don't update ArrayRCP's
+      // reference count, which is not thread safe.
+      const auto& curRow = values2D_[rowinfo.localRow];
+      vals = curRow.getRawPtr ();
+      numEnt = curRow.size ();
+    }
+    else {
+      vals = NULL;
+      numEnt = 0;
+    }
+
+    return static_cast<LocalOrdinal> (0);
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getViewRaw (impl_scalar_type*& vals,
+              LocalOrdinal& numEnt,
+              const RowInfo& rowinfo) const
+  {
+    const impl_scalar_type* valsConst;
+    const LocalOrdinal err = this->getViewRawConst (valsConst, numEnt, rowinfo);
+    vals = const_cast<impl_scalar_type*> (valsConst);
+    return err;
+  }
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Kokkos::View<const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::impl_scalar_type*,
                typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
@@ -2306,8 +2360,7 @@ namespace Tpetra {
   {
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
+    const char tfecfFuncName[] = "getLocalRowCopy: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       isGloballyIndexed () && ! hasColMap (), std::runtime_error,
@@ -2316,52 +2369,101 @@ namespace Tpetra {
       "for columns yet, so it doesn't make sense to call this method.  If the "
       "matrix doesn't have a column Map yet, you should call fillComplete on "
       "it first.");
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! staticGraph_->hasRowInfo (), std::runtime_error,
       "Tpetra::CrsMatrix::getLocalRowCopy: The graph's row information was "
       "deleted at fillComplete().");
-
-    if (! this->getRowMap ()->isNodeLocalElement (localRow)) {
-      // The calling process owns no entries in this row.
-      numEntries = 0;
-      return;
-    }
+#endif // HAVE_TPETRA_DEBUG
 
     const RowInfo rowinfo = staticGraph_->getRowInfo (localRow);
     const size_t theNumEntries = rowinfo.numEntries;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) < theNumEntries ||
+       static_cast<size_t> (values.size ()) < theNumEntries,
+       std::runtime_error, "Row with local index " << localRow << " has " <<
+       theNumEntries << " entry/ies, but indices.size() = " <<
+       indices.size () << " and values.size() = " << values.size () << ".");
+    numEntries = theNumEntries; // first side effect
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (indices.size ()) < theNumEntries ||
-      static_cast<size_t> (values.size ()) < theNumEntries,
-      std::runtime_error,
-      "Tpetra::CrsMatrix::getLocalRowCopy: The given row " << localRow
-      << " has " << theNumEntries << " entries.  One or both of the given "
-      "ArrayViews are not long enough to store that many entries.  indices "
-      "can store " << indices.size() << " entries and values can store "
-      << values.size() << " entries.");
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (staticGraph_->isLocallyIndexed ()) {
+        const LocalOrdinal* curLclInds;
+        const impl_scalar_type* curVals;
+        LocalOrdinal numSpots; // includes both current entries and extra space
 
-    numEntries = theNumEntries;
+        // If we got this far, rowinfo should be correct and should
+        // refer to a valid local row.  Thus, these error checks are
+        // superfluous, but we retain them in a debug build.
+#ifdef HAVE_TPETRA_DEBUG
+        int err =
+          staticGraph_->getLocalViewRawConst (curLclInds, numSpots, rowinfo);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (err != static_cast<LocalOrdinal> (0), std::logic_error,
+           "staticGraph_->getLocalViewRawConst returned nonzero error code "
+           << err << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (numSpots) < theNumEntries, std::logic_error,
+           "numSpots = " << numSpots << " < theNumEntries = " << theNumEntries
+           << ".");
+        const LocalOrdinal numSpotsBefore = numSpots;
+        err = getViewRawConst (curVals, numSpots, rowinfo);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (err != static_cast<LocalOrdinal> (0), std::logic_error,
+           "getViewRaw returned nonzero error code " << err << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numSpotsBefore != numSpots, std::logic_error,
+           "numSpotsBefore = " << numSpotsBefore << " != numSpots = "
+           << numSpots << ".");
+#else
+        (void) staticGraph_->getLocalViewRawConst (curLclInds, numSpots, rowinfo);
+        (void) getViewRawConst (curVals, numSpots, rowinfo);
+#endif // HAVE_TPETRA_DEBUG
 
-    if (staticGraph_->isLocallyIndexed ()) {
-      ArrayView<const LO> indrowview = staticGraph_->getLocalView (rowinfo);
-      ArrayView<const Scalar> valrowview =
-        av_reinterpret_cast<const Scalar> (this->getView (rowinfo));
-      std::copy (indrowview.begin (), indrowview.begin () + numEntries, indices.begin ());
-      std::copy (valrowview.begin (), valrowview.begin () + numEntries, values.begin ());
-    }
-    else if (staticGraph_->isGloballyIndexed ()) {
-      ArrayView<const GO> indrowview = staticGraph_->getGlobalView (rowinfo);
-      ArrayView<const Scalar> valrowview =
-        av_reinterpret_cast<const Scalar> (this->getView (rowinfo));
-      std::copy (valrowview.begin (), valrowview.begin () + numEntries, values.begin ());
-
-      const map_type& colMap = * (this->getColMap ());
-      for (size_t j=0; j < numEntries; ++j) {
-        indices[j] = colMap.getLocalElement (indrowview[j]);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = curLclInds[j];
+        }
       }
-    }
-    else {
-      numEntries = 0;
+      else if (staticGraph_->isGloballyIndexed ()) {
+        const map_type& colMap = * (staticGraph_->colMap_);
+        const GlobalOrdinal* curGblInds;
+        const impl_scalar_type* curVals;
+        LocalOrdinal numSpots; // includes both current entries and extra space
+
+        // If we got this far, rowinfo should be correct and should
+        // refer to a valid local row.  Thus, these error checks are
+        // superfluous, but we retain them in a debug build.
+#ifdef HAVE_TPETRA_DEBUG
+        int err =
+          staticGraph_->getGlobalViewRawConst (curGblInds, numSpots, rowinfo);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (err != static_cast<LocalOrdinal> (0), std::logic_error,
+           "staticGraph_->getGlobalViewRawConst returned nonzero error code "
+           << err << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (numSpots) < theNumEntries, std::logic_error,
+           "numSpots = " << numSpots << " < theNumEntries = " << theNumEntries
+           << ".");
+        const LocalOrdinal numSpotsBefore = numSpots;
+        err = getViewRawConst (curVals, numSpots, rowinfo);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (err != static_cast<LocalOrdinal> (0), std::logic_error,
+           "getViewRawConst returned nonzero error code " << err << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numSpotsBefore != numSpots, std::logic_error,
+           "numSpotsBefore = " << numSpotsBefore << " != numSpots = "
+           << numSpots << ".");
+#else
+        (void) staticGraph_->getGlobalViewRawConst (curGblInds, numSpots, rowinfo);
+        (void) getViewRawConst (curVals, numSpots, rowinfo);
+#endif //HAVE_TPETRA_DEBUG
+
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = colMap.getLocalElement (curGblInds[j]);
+        }
+      }
     }
   }
 
@@ -2375,58 +2477,97 @@ namespace Tpetra {
   {
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-
     const char tfecfFuncName[] = "getGlobalRowCopy: ";
-    const LocalOrdinal lrow = getRowMap ()->getLocalElement (globalRow);
-    if (lrow == OTL::invalid ()) {
-      // The calling process owns no entries in this row.
-      numEntries = 0;
-      return;
-    }
 
-    const RowInfo rowinfo = staticGraph_->getRowInfo (lrow);
+    const RowInfo rowinfo =
+      staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
     const size_t theNumEntries = rowinfo.numEntries;
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (indices.size ()) < theNumEntries ||
       static_cast<size_t> (values.size ()) < theNumEntries,
-      std::runtime_error,
-      "The given row " << globalRow << ", corresponding to local row " << lrow
-      << ", has " << theNumEntries << " entries.  One or both of the given "
-      "ArrayView input arguments are not long enough to store that many "
-      "entries.  indices.size() = " << indices.size() << ", values.size() = "
-      << values.size () << ", but the number of entries in the row is "
-      << theNumEntries << ".");
+      std::runtime_error, "Row with global index " << globalRow << " has "
+      << theNumEntries << " entry/ies, but indices.size() = " <<
+      indices.size () << " and values.size() = " << values.size () << ".");
+    numEntries = theNumEntries; // first side effect
 
-    // Don't "commit" the value until we know that the input arrays are valid.
-    numEntries = theNumEntries;
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (staticGraph_->isLocallyIndexed ()) {
+        const map_type& colMap = * (staticGraph_->colMap_);
+        const LocalOrdinal* curLclInds;
+        const impl_scalar_type* curVals;
+        LocalOrdinal numSpots; // includes both current entries and extra space
 
-    if (staticGraph_->isGloballyIndexed ()) {
-      ArrayView<const GO> indrowview = staticGraph_->getGlobalView (rowinfo);
-      ArrayView<const Scalar> valrowview =
-        av_reinterpret_cast<const Scalar> (this->getView (rowinfo));
-      std::copy (indrowview.begin (), indrowview.begin () + numEntries, indices.begin ());
-      std::copy (valrowview.begin (), valrowview.begin () + numEntries, values.begin ());
-    }
-    else if (staticGraph_->isLocallyIndexed ()) {
-      ArrayView<const LO> indrowview = staticGraph_->getLocalView(rowinfo);
-      ArrayView<const Scalar> valrowview =
-        av_reinterpret_cast<const Scalar> (this->getView (rowinfo));
-      std::copy (valrowview.begin (), valrowview.begin () + numEntries, values.begin ());
-      for (size_t j = 0; j < numEntries; ++j) {
-        indices[j] = getColMap ()->getGlobalElement (indrowview[j]);
-      }
-    }
-    else {
+        // If we got this far, rowinfo should be correct and should
+        // refer to a valid local row.  Thus, these error checks are
+        // superfluous, but we retain them in a debug build.
 #ifdef HAVE_TPETRA_DEBUG
-      // should have fallen in one of the above if indices are allocated
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        staticGraph_->indicesAreAllocated (), std::logic_error,
-        "Internal logic error. Please contact Tpetra team.");
-#endif // HAVE_TPETRA_DEBUG
-      numEntries = 0;
+        int err =
+          staticGraph_->getLocalViewRawConst (curLclInds, numSpots, rowinfo);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (err != static_cast<LocalOrdinal> (0), std::logic_error,
+           "staticGraph_->getLocalViewRawConst returned nonzero error code "
+           << err << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (numSpots) < theNumEntries, std::logic_error,
+           "numSpots = " << numSpots << " < theNumEntries = " << theNumEntries
+           << ".");
+        const LocalOrdinal numSpotsBefore = numSpots;
+        err = getViewRawConst (curVals, numSpots, rowinfo);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (err != static_cast<LocalOrdinal> (0), std::logic_error,
+           "getViewRaw returned nonzero error code " << err << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numSpotsBefore != numSpots, std::logic_error,
+           "numSpotsBefore = " << numSpotsBefore << " != numSpots = "
+           << numSpots << ".");
+#else
+        (void) staticGraph_->getLocalViewRawConst (curLclInds, numSpots, rowinfo);
+        (void) getViewRawConst (curVals, numSpots, rowinfo);
+#endif //HAVE_TPETRA_DEBUG
+
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = colMap.getGlobalElement (curLclInds[j]);
+        }
+      }
+      else if (staticGraph_->isGloballyIndexed ()) {
+        const GlobalOrdinal* curGblInds;
+        const impl_scalar_type* curVals;
+        LocalOrdinal numSpots; // includes both current entries and extra space
+
+        // If we got this far, rowinfo should be correct and should
+        // refer to a valid local row.  Thus, these error checks are
+        // superfluous, but we retain them in a debug build.
+#ifdef HAVE_TPETRA_DEBUG
+        int err =
+          staticGraph_->getGlobalViewRawConst (curGblInds, numSpots, rowinfo);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (err != static_cast<LocalOrdinal> (0), std::logic_error,
+           "staticGraph_->getGlobalViewRawConst returned nonzero error code "
+           << err << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (numSpots) < theNumEntries, std::logic_error,
+           "numSpots = " << numSpots << " < theNumEntries = " << theNumEntries
+           << ".");
+        const LocalOrdinal numSpotsBefore = numSpots;
+        err = getViewRawConst (curVals, numSpots, rowinfo);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (err != static_cast<LocalOrdinal> (0), std::logic_error,
+           "getViewRawConst returned nonzero error code " << err << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numSpotsBefore != numSpots, std::logic_error,
+           "numSpotsBefore = " << numSpotsBefore << " != numSpots = "
+           << numSpots << ".");
+#else
+        (void) staticGraph_->getGlobalViewRawConst (curGblInds, numSpots, rowinfo);
+        (void) getViewRawConst (curVals, numSpots, rowinfo);
+#endif //HAVE_TPETRA_DEBUG
+
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = curGblInds[j];
+        }
+      }
     }
   }
 
@@ -2440,8 +2581,8 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
-
     const char tfecfFuncName[] = "getLocalRowView: ";
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isGloballyIndexed (), std::runtime_error, "The matrix currently stores "
       "its indices as global indices, so you cannot get a view with local "
@@ -2450,42 +2591,37 @@ namespace Tpetra {
       "a view with global column indices by calling getGlobalRowCopy().");
     indices = Teuchos::null;
     values = Teuchos::null;
-#ifdef HAVE_TPETRA_DEBUG
-    size_t numEntries = 0;
-#endif // HAVE_TPETRA_DEBUG
-    if (getRowMap ()->isNodeLocalElement (localRow)) {
-      const RowInfo rowinfo = staticGraph_->getRowInfo (localRow);
-#ifdef HAVE_TPETRA_DEBUG
-      numEntries = rowinfo.numEntries;
-#endif // HAVE_TPETRA_DEBUG
-      if (rowinfo.numEntries > 0) {
-        ArrayView<const LO> indTmp = staticGraph_->getLocalView (rowinfo);
-        ArrayView<const Scalar> valTmp =
-          av_reinterpret_cast<const Scalar> (this->getView (rowinfo));
-        indices = indTmp (0, rowinfo.numEntries);
-        values = valTmp (0, rowinfo.numEntries);
-      }
+    const RowInfo rowinfo = staticGraph_->getRowInfo (localRow);
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowinfo.numEntries > 0) {
+      ArrayView<const LO> indTmp = staticGraph_->getLocalView (rowinfo);
+      ArrayView<const Scalar> valTmp =
+        av_reinterpret_cast<const Scalar> (this->getView (rowinfo));
+      indices = indTmp (0, rowinfo.numEntries);
+      values = valTmp (0, rowinfo.numEntries);
     }
 
 #ifdef HAVE_TPETRA_DEBUG
     const char suffix[] = ".  This should never happen.  Please report this "
       "bug to the Tpetra developers.";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        static_cast<size_t>(indices.size ()) != static_cast<size_t>(values.size ()), std::logic_error,
-      "At the end of this method, for local row " << localRow << ", "
-      "indices.size() = " << indices.size () << " != values.size () = "
-      << values.size () << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        static_cast<size_t>(indices.size ()) != static_cast<size_t>(numEntries), std::logic_error,
-      "At the end of this method, for local row " << localRow << ", "
-      "indices.size() = " << indices.size () << " != numEntries = "
-      << numEntries << suffix);
-    const size_t expectedNumEntries = this->getNumEntriesInLocalRow (localRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      numEntries != expectedNumEntries, std::logic_error,
-      "At the end of this method, for local row " << localRow << ", numEntries"
-      " = " << numEntries << " != getNumEntriesInLocalRow(localRow)"
-      " = "<< expectedNumEntries << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       static_cast<size_t> (values.size ()), std::logic_error,
+       "At the end of this method, for local row " << localRow << ", "
+       "indices.size() = " << indices.size () << " != values.size () = "
+       << values.size () << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       static_cast<size_t> (rowinfo.numEntries), std::logic_error,
+       "At the end of this method, for local row " << localRow << ", "
+       "indices.size() = " << indices.size () << " != rowinfo.numEntries = "
+       << rowinfo.numEntries << suffix);
+    const size_t expectedNumEntries = getNumEntriesInLocalRow (localRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (rowinfo.numEntries != expectedNumEntries, std::logic_error, "At the end "
+       "of this method, for local row " << localRow << ", rowinfo.numEntries = "
+       << rowinfo.numEntries << " != getNumEntriesInLocalRow(localRow) = " <<
+       expectedNumEntries << suffix);
 #endif // HAVE_TPETRA_DEBUG
   }
 
@@ -2507,25 +2643,38 @@ namespace Tpetra {
       "with global column indices.  Use getGlobalRowCopy() instead.");
     indices = Teuchos::null;
     values  = Teuchos::null;
-    const LocalOrdinal lrow = getRowMap ()->getLocalElement (globalRow);
-    if (lrow != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-      // getRowInfo() requires a local row index, whether or not
-      // storage has been optimized.
-      const RowInfo rowinfo = staticGraph_->getRowInfo(lrow);
-      if (rowinfo.numEntries > 0) {
-        ArrayView<const GO> indTmp = staticGraph_->getGlobalView (rowinfo);
-        ArrayView<const Scalar> valTmp =
-          av_reinterpret_cast<const Scalar> (this->getView (rowinfo));
-        indices = indTmp (0, rowinfo.numEntries);
-        values = valTmp (0, rowinfo.numEntries);
-      }
+    const RowInfo rowinfo =
+      staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowinfo.numEntries > 0) {
+      ArrayView<const GO> indTmp = staticGraph_->getGlobalView (rowinfo);
+      ArrayView<const Scalar> valTmp =
+        av_reinterpret_cast<const Scalar> (this->getView (rowinfo));
+      indices = indTmp (0, rowinfo.numEntries);
+      values = valTmp (0, rowinfo.numEntries);
     }
+
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (indices.size ()) != this->getNumEntriesInGlobalRow (globalRow) ||
-      indices.size () != values.size (),
-      std::logic_error,
-      "Violated stated post-conditions. Please contact Tpetra team.");
+    const char suffix[] = ".  This should never happen.  Please report this "
+      "bug to the Tpetra developers.";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       static_cast<size_t> (values.size ()), std::logic_error,
+       "At the end of this method, for global row " << globalRow << ", "
+       "indices.size() = " << indices.size () << " != values.size () = "
+       << values.size () << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       static_cast<size_t> (rowinfo.numEntries), std::logic_error,
+       "At the end of this method, for global row " << globalRow << ", "
+       "indices.size() = " << indices.size () << " != rowinfo.numEntries = "
+       << rowinfo.numEntries << suffix);
+    const size_t expectedNumEntries = getNumEntriesInGlobalRow (globalRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (rowinfo.numEntries != expectedNumEntries, std::logic_error, "At the end "
+       "of this method, for global row " << globalRow << ", rowinfo.numEntries "
+       "= " << rowinfo.numEntries << " != getNumEntriesInGlobalRow(globalRow) ="
+       " " << expectedNumEntries << suffix);
 #endif // HAVE_TPETRA_DEBUG
   }
 
@@ -2694,11 +2843,11 @@ namespace Tpetra {
     typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasColMap (), std::runtime_error,
-      "This method requires that the matrix have a column Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       staticGraph_.is_null (), std::runtime_error,
       "This method requires that the matrix have a graph.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! hasColMap (), std::runtime_error,
+      "This method requires that the matrix have a column Map.");
     const map_type& rowMap = * (this->getRowMap ());
     const map_type& colMap = * (this->getColMap ());
 
@@ -2707,7 +2856,7 @@ namespace Tpetra {
     // should only be done in debug mode.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! diag.getMap ()->isCompatible (rowMap), std::runtime_error,
-      ": The input Vector's Map must be compatible with the CrsMatrix's row "
+      "The input Vector's Map must be compatible with the CrsMatrix's row "
       "Map.  You may check this by using Map's isCompatible method: "
       "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
@@ -2723,25 +2872,77 @@ namespace Tpetra {
     // Find the diagonal entries and put them in lclVecHost1d.
     const LocalOrdinal myNumRows =
       static_cast<LocalOrdinal> (this->getNodeNumRows ());
-    for (LocalOrdinal r = 0; r < myNumRows; ++r) {
-      lclVecHost1d(r) = STS::zero (); // default value if no diag entry
-      const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
-      const LocalOrdinal rlid = colMap.getLocalElement (rgid);
 
-      if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-        const RowInfo rowinfo = staticGraph_->getRowInfo (r);
-        if (rowinfo.numEntries > 0) {
-          const size_t j = staticGraph_->findLocalIndex (rowinfo, rlid);
-          if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
-            // NOTE (mfh 02 Jan 2015) This technically does not assume
-            // UVM, since getView and getViewNonConst are supposed to
-            // return views of host data.
-            ArrayView<const impl_scalar_type> view = this->getView (rowinfo);
-            lclVecHost1d(r) = view[j];
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, keep a count of the local number of errors.
+    // Use a global ordinal, because in a debug build, we'll sum this
+    // across all processes.
+    GlobalOrdinal lclNumErrs = 0;
+#endif // HAVE_TPETRA_DEBUG
+
+    // NOTE (mfh 03 Feb 2016) We use the host execution space here,
+    // because the lambda's body calls methods that aren't yet
+    // suitable for marking as CUDA device functions.
+    typedef Kokkos::RangePolicy<host_execution_space, LocalOrdinal> policy_type;
+    policy_type range (0, myNumRows);
+    // NOTE (mfh 03 Feb 2016) We use [=] here rather than
+    // KOKKOS_LAMBDA, because the lambda's body calls methods that
+    // aren't yet suitable for marking as CUDA device functions.
+
+    // In a debug build, keep a count of the local number of errors
+    // (hence parallel_reduce).  In a release build, don't count
+    // errors (hence parallel_for).
+#ifdef HAVE_TPETRA_DEBUG
+    Kokkos::parallel_reduce (range, [=] (const LocalOrdinal& r, GlobalOrdinal& errCount) {
+#else
+    Kokkos::parallel_for (range, [=] (const LocalOrdinal& r) {
+#endif // HAVE_TPETRA_DEBUG
+        lclVecHost1d(r) = STS::zero (); // default value if no diag entry
+        const GlobalOrdinal gblInd = rowMap.getGlobalElement (r);
+        const LocalOrdinal lclColInd = colMap.getLocalElement (gblInd);
+
+        if (lclColInd != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+          const RowInfo rowinfo = staticGraph_->getRowInfo (r);
+          if (rowinfo.numEntries > 0) {
+            const size_t j = staticGraph_->findLocalIndex (rowinfo, lclColInd);
+            if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+              // NOTE (mfh 03 Feb 2016) This may assume UVM.
+              const impl_scalar_type* curVals;
+              LocalOrdinal numEnt;
+              const LocalOrdinal err =
+                this->getViewRawConst (curVals, numEnt, rowinfo);
+              if (err == 0) {
+                // Even in a release build, if an error occurs, don't
+                // attempt to write to memory.
+                lclVecHost1d(r) = curVals[j];
+              }
+#ifdef HAVE_TPETRA_DEBUG
+              else {
+                ++errCount;
+              }
+#endif // HAVE_TPETRA_DEBUG
+            }
           }
         }
-      }
+#ifdef HAVE_TPETRA_DEBUG
+      }, lclNumErrs); // reduction result goes at the end
+#else
+      }); // don't count errors in a release build
+#endif // HAVE_TPETRA_DEBUG
+
+#ifdef HAVE_TPETRA_DEBUG
+    if (! this->getComm ().is_null ()) {
+      using Teuchos::reduceAll;
+      GlobalOrdinal gblNumErrs = 0;
+      reduceAll<int, GlobalOrdinal> (* (this->getComm ()), Teuchos::REDUCE_SUM,
+                                     lclNumErrs, Teuchos::outArg (gblNumErrs));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (gblNumErrs != 0, std::logic_error, "Something went wrong on "
+         << gblNumErrs << " out of " << this->getComm ()->getSize ()
+         << " process(es).");
     }
+#endif // HAVE_TPETRA_DEBUG
+
     diag.template sync<execution_space> (); // sync changes back to device
   }
 

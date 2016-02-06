@@ -598,7 +598,7 @@ public:
       hist << "  snorm   - Norm of the step (update to optimization vector)\n";  
       hist << "  delta   - Trust-Region radius\n";
       hist << "  #fval   - Number of times the objective function was evaluated\n";
-      hist << "  #grad   - Number of timesthe gradient was computed\n";
+      hist << "  #grad   - Number of times the gradient was computed\n";
       
         
       

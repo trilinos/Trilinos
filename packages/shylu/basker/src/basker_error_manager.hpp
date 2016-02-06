@@ -24,6 +24,8 @@
 
 namespace BaskerNS
 {
+
+  //===========DOMAIN ERROR HANDLE==========//
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::nfactor_domain_error
@@ -140,8 +142,10 @@ namespace BaskerNS
     return BASKER_SUCCESS;
   }//end nfactor_domain_error
 
+ 
 
 
+  //========BTF ERROR HANDLE==============//
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::nfactor_diag_error

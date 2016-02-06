@@ -193,11 +193,12 @@ int main(int argc, char* argv[])
   BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
   //----Basker - Options
   mybasker.Options.no_pivot   = true;
-  mybasker.Options.symmetric  = false;
+  mybasker.Options.symmetric  = true;
   mybasker.Options.realloc    = true;
   mybasker.Options.btf        = true;
   mybasker.Options.incomplete = true;
-  mybasker.Options.inc_lvl    = 1;
+  mybasker.Options.inc_lvl    = 0;
+  mybasker.Options.user_fill  = 0;
 
   mybasker.SetThreads(numthreads);
   cout << "--------------Done Setting Threads----------" << endl;

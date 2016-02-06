@@ -1,3 +1,15 @@
+Zoltan release notes for Trilinos v12.6
+
+Minor code cleanup and bug fixes.
+
+New Zoltan_Get_Fn interface returning pointers to callback functions.
+See zoltan/src/include/zoltan.h for details.
+
+Closest stand-alone Zoltan release is v3.83.  
+http://www.cs.sandia.gov/Zoltan
+
+-----------------------
+
 Zoltan release notes for Trilinos v11.8
 
 Revised Scotch TPL specification in Trilinos' CMake environment to link

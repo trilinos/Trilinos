@@ -61,6 +61,10 @@ namespace BaskerNS
     int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr,
 		 Int *row_idx, Entry *val);
     BASKER_INLINE
+    int Symbolic(Int nrow, Int ncol, Int nnz, 
+		 size_t *col_ptr,
+		 Int *row_idx, Entry *val);
+    BASKER_INLINE
     int Factor(Int option);
     BASKER_INLINE
     int Factor(Int nrow, Int ncol, Int nnz, Int *col_ptr,
@@ -461,6 +465,27 @@ namespace BaskerNS
     BASKER_INLINE
     int factor_inc_lvl(Int Option);
 
+    /*basker_sfactor_inc.hpp*/
+    BASKER_INLINE
+    int sfactor_inc();
+    BASKER_INLINE
+    void sfactor_nd_estimate();
+    BASKER_INLINE
+    void sfactor_nd_dom_estimate(BASKER_MATRIX &M,
+				 BASKER_MATRIX &LM,
+				 BASKER_MATRIX &UM);
+    BASKER_INLINE
+    void sfactor_nd_lower_estimate(BASKER_MATRIX &M,
+				   BASKER_MATRIX &ML);
+    BASKER_INLINE
+    void sfactor_nd_upper_estimate(BASKER_MATRIX &M,
+				   BASKER_MATRIX &UM);
+    BASKER_INLINE
+    void sfactor_nd_sep_estimate(BASKER_MATRIX &M,
+				 BASKER_MATRIX &ML,
+				 BASKER_MATRIX &MU);
+
+
 
     /*basker_nfactor.hpp*/
     BASKER_INLINE
@@ -654,6 +679,17 @@ namespace BaskerNS
 			     INT_1DARRAY x_fill,
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
+    
+    BASKER_INLINE
+    void t_dom_lower_col_offdiag_find_fill(const Int kid, const Int pbrow,
+                                           const Int blkcol, const Int blkrow,
+                                           const Int X_col, const Int X_row,
+                                           const Int k,
+                                           INT_1DARRAY x_idx,
+                                           const Int x_size,
+                                           const Int x_offset,
+                                           const BASKER_BOOL A_option);
+
 
     BASKER_INLINE
     int t_lower_col_offdiag_find_fill(Int kid,
@@ -705,6 +741,17 @@ namespace BaskerNS
 			     INT_1DARRAY x_indx,
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
+     BASKER_INLINE
+    int t_back_solve_offdiag_inc_lvl_old(Int kid, Int pbrow,
+			     Int blkcol, Int blkrow,
+			     Int X_col, Int X_row,
+			     Int k, Int &view_offset,
+			     ENTRY_1DARRAY x,
+			     INT_1DARRAY x_indx,
+			     Int x_size, Int x_offset,
+			     BASKER_BOOL A_option);
+
+
 
     BASKER_INLINE
     int t_dense_blk_col_copy_atomic(Int kid,
@@ -962,6 +1009,14 @@ namespace BaskerNS
     BASKER_INLINE
     void matrix_transpose(BASKER_MATRIX_VIEW &, 
 			 BASKER_MATRIX &);
+    BASKER_INLINE
+    void matrix_transpose(const Int sm_, const Int m_,
+			  const Int sn_, const Int n_,
+			  const Int nnz_,
+			  Int *col_ptr,
+			  Int *row_idx,
+			  Entry *val,
+			  BASKER_MATRIX &AT);
    
     /*basker_solve_rhs.hpp*/
     BASKER_INLINE

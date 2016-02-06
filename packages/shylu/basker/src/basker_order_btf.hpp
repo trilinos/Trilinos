@@ -575,6 +575,16 @@ namespace BaskerNS
 	return 0;
       }
 
+    //Short circuit for incomplete
+    if(Options.incomplete == BASKER_TRUE)
+      {
+	printf("Short Ciruit incomplete\n");
+	BTF_A = A;
+	btf_nblks = 1;
+	btf_tabs_offset = 1;
+	return 0;
+      }
+
     //Step 1.
     //Find total work estimate
     Int total_work_estimate = 0;

@@ -113,6 +113,16 @@ namespace Tacho {
     void setB(const DenseMatrixBaseType BB) { _BB = BB; }
 
     KOKKOS_INLINE_FUNCTION
+    void permuteB(const bool is_inverse = false) { 
+      DenseMatrixBaseType tmp;
+      tmp.copy(_BB);
+      auto p = (is_inverse ? _S.PermVector() : _S.InvPermVector());
+      for (ordinal_type j=0;j<_BB.NumCols();++j)
+        for (ordinal_type i=0;i<_BB.NumRows();++i) 
+          _BB.Value(p[i], j) = tmp.Value(i, j); 
+    }
+
+    KOKKOS_INLINE_FUNCTION
     void setLabel(const string label) { _label = label; }
 
     KOKKOS_INLINE_FUNCTION

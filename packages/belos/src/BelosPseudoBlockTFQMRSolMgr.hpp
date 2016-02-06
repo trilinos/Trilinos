@@ -744,7 +744,7 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
 
       // Set the new state and initialize the solver.
       PseudoBlockTFQMRIterState<ScalarType,MV> newstate;
-      newstate.R = R_0;
+      newstate.Rtilde = R_0;
       block_tfqmr_iter->initializeTFQMR(newstate);
 
       while(1) {
@@ -776,7 +776,7 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
 
             // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
             int have = 0;
-            std::vector<int> unconvIdx(currRHSIdx.size());
+            std::vector<int> unconvIdx( currRHSIdx.size() );
             for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
               bool found = false;
               for (unsigned int j=0; j<convIdx.size(); ++j) {
@@ -786,10 +786,12 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
                 }
               }
               if (!found) {
+                unconvIdx[have] = i;
                 currIdx2[have] = currIdx2[i];
                 currRHSIdx[have++] = currRHSIdx[i];
               }
             }
+            unconvIdx.resize(have);
             currRHSIdx.resize(have);
             currIdx2.resize(have);
 
@@ -798,12 +800,29 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
 
             // Get the current residual vector.
             // Set the new state and initialize the solver.
-            R_0 = MVT::Clone( *(problem_->getInitPrecResVec()), currRHSIdx.size() );
-            problem_->computeCurrPrecResVec( &*R_0 );
+            PseudoBlockTFQMRIterState<ScalarType,MV> currentState = block_tfqmr_iter->getState();
 
             // Set the new state and initialize the solver.
             PseudoBlockTFQMRIterState<ScalarType,MV> defstate;
-            defstate.R = R_0;
+
+            // Copy over the vectors.
+            defstate.Rtilde = MVT::CloneView( *currentState.Rtilde, unconvIdx);
+            defstate.U = MVT::CloneView( *currentState.U, unconvIdx );
+            defstate.AU = MVT::CloneView( *currentState.AU, unconvIdx );
+            defstate.V = MVT::CloneView( *currentState.V, unconvIdx );
+            defstate.W = MVT::CloneView( *currentState.W, unconvIdx );
+            defstate.D = MVT::CloneView( *currentState.D, unconvIdx );
+
+            // Copy over the scalars.
+            for (std::vector<int>::iterator uIter = unconvIdx.begin();  uIter != unconvIdx.end(); uIter++)
+            {
+              defstate.alpha.push_back( currentState.alpha[ *uIter ] );
+              defstate.eta.push_back( currentState.eta[ *uIter ] );
+              defstate.rho.push_back( currentState.rho[ *uIter ] );
+              defstate.tau.push_back( currentState.tau[ *uIter ] );
+              defstate.theta.push_back( currentState.theta[ *uIter ] );
+            }
+ 
             block_tfqmr_iter->initializeTFQMR(defstate);
 	  }
 	  ////////////////////////////////////////////////////////////////////////////////////

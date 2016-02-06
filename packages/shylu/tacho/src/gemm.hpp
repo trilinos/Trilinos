@@ -6,11 +6,17 @@
 /// \brief Sparse matrix-matrix multiplication on given sparse patterns.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "util.hpp"
+#include "control.hpp"
+#include "partition.hpp"
+
 namespace Tacho {
 
   using namespace std;
 
-  template<int ArgTransA, int ArgTransB, int ArgAlgo>
+  template<int ArgTransA, int ArgTransB, int ArgAlgo,
+           int ArgVariant = Variant::One,
+           template<int,int> class ControlType = Control>
   struct Gemm {
 
     // data-parallel interface
@@ -66,13 +72,13 @@ namespace Tacho {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke(_policy, _policy.member_single(), 
+        r_val = Gemm::invoke(_policy, _policy.member_single(),
                              _alpha, _A, _B, _beta, _C);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Gemm::invoke(_policy, member, 
+        r_val = Gemm::invoke(_policy, member,
                              _alpha, _A, _B, _beta, _C);
       }
 

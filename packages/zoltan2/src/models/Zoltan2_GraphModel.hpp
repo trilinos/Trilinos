@@ -375,7 +375,7 @@ GraphModel<Adapter>::GraphModel(
     typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
     shared_GetVertexCoords<adapterWithCoords_t>(ia->getCoordinateInput());
   }
-  print();
+  // print();
 }
 
 
@@ -460,7 +460,7 @@ GraphModel<Adapter>::GraphModel(
     typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
     shared_GetVertexCoords<adapterWithCoords_t>(ia->getCoordinateInput());
   }
-  print();
+  // print();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -579,7 +579,7 @@ GraphModel<Adapter>::GraphModel(
   shared_GetVertexCoords<adapterWithCoords_t>(&(*ia));
 
   env_->timerStop(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
-  print();
+  // print();
 }
 
 

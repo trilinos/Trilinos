@@ -28,8 +28,8 @@
 /// sparse matrix factorization with task-data parallelism e.g., parameter
 /// classes, error handling, ostream << overloading.
 ///
-/// Note: The reference of the "static const int" members in the enum-like 
-/// classes should not be used as function arguments but their values only. 
+/// Note: The reference of the "static const int" members in the enum-like
+/// classes should not be used as function arguments but their values only.
 
 
 using namespace std;
@@ -38,7 +38,7 @@ namespace Tacho {
 
 #ifndef MAX_TEAM_SIZE
 #define MAX_TEAM_SIZE 8
-#endif  
+#endif
 
 #undef CHKERR
 #define CHKERR(ierr)                                                    \
@@ -50,27 +50,30 @@ namespace Tacho {
 #define ERROR(msg)                                                      \
   { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl << msg << endl; }
 
+  // control id
 #undef  Ctrl
 #define Ctrl(name,algo,variant) name<algo,variant>
 
+  // control leaf
 #undef CtrlComponent
 #define CtrlComponent(name,algo,variant,component,id)                  \
   Ctrl(name,algo,variant)::component[id]
 
+  // control recursion
 #undef CtrlDetail
 #define CtrlDetail(name,algo,variant,component) \
   CtrlComponent(name,algo,variant,component,0),CtrlComponent(name,algo,variant,component,1),name
-  
+
   /// \class GraphHelper
   class GraphHelper {
   public:
     static const int DefaultRandomSeed = -1;
   };
 
-  
+
   /// \class Partition
   /// \brief Matrix partition parameters.
-  class Partition { 
+  class Partition {
   public:
     static const int Top         = 101;
     static const int Bottom      = 102;
@@ -135,7 +138,7 @@ namespace Tacho {
   };
 
   /// \class AlgoChol
-  /// \brief Algorithmic variants in sparse factorization and sparse BLAS operations. 
+  /// \brief Algorithmic variants in sparse factorization and sparse BLAS operations.
   class AlgoChol {
   public:
     // One side factorization on flat matrices
@@ -160,7 +163,7 @@ namespace Tacho {
   // aliasing name space
   typedef AlgoChol AlgoTriSolve;
 
-  class AlgoGemm {
+  class AlgoBlasLeaf {
   public:
     // One side factorization on flat matrices
     static const int ForFactorBlocked = 2001;
@@ -168,31 +171,27 @@ namespace Tacho {
     // B and C are dense matrices and used for solve phase
     static const int ForTriSolveBlocked = 2011;
 
-    // use an external BLAS library
     static const int ExternalBlas = 2021;
   };
 
-  class AlgoTrsm : public AlgoGemm {
+  class AlgoGemm : public AlgoBlasLeaf {
   public:
-    // data parallel for b1t
-    static const int ForFactorBlockedVar1 = 2002;
-    // data parallel for a1t -- default
-    static const int ForFactorBlockedVar2 = AlgoGemm::ForFactorBlocked;
-
-    // data parallel for multiple rhs -- default
-    static const int ForTriSolveBlockedVar1 = AlgoGemm::ForTriSolveBlocked;  
-    // data parallel for single rhs
-    static const int ForTriSolveBlockedVar2 = 2012;
-
-    // use an external BLAS library
-    static const int ExternalBlas = 2021;
+    static const int DenseByBlocks = 2101;
   };
 
-  typedef AlgoGemm AlgoHerk;
+  class AlgoTrsm : public AlgoBlasLeaf {
+  public:
+    static const int DenseByBlocks = 2201;
+  };
+
+  class AlgoHerk : public AlgoBlasLeaf {
+  public:
+    static const int DenseByBlocks = 2301;
+  };
 
   /// \brief Interface for overloaded stream operators.
-  template<typename T> 
-  inline 
+  template<typename T>
+  inline
   ostream& operator<<(ostream &os, const unique_ptr<T> &p) {
     return p->showMe(os);
   }
@@ -209,10 +208,10 @@ namespace Tacho {
   };
 
   /// \brief Implementation of the overloaded stream operator.
-  inline 
+  inline
   ostream& operator<<(ostream &os, const Disp &disp) {
     return disp.showMe(os);
-  }  
+  }
 
   template<typename T> struct NumericTraits {};
 

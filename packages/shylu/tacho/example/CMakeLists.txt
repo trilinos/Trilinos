@@ -194,8 +194,9 @@ IF(TPL_ENABLE_HYPRE)
   )
 ENDIF()
 
-# Pardiso 
+# Pardiso
 # =======
+IF(Kokkos_ENABLE_OpenMP)
 IF(TPL_ENABLE_MKL)
   TRIBITS_ADD_EXECUTABLE(
     pardiso_chol_performance_openmp
@@ -203,6 +204,7 @@ IF(TPL_ENABLE_MKL)
     SOURCES example_pardiso_chol_performance_openmp.cpp
     COMM serial mpi
   )
+ENDIF()
 ENDIF()
 
 # Complete Cholesky
@@ -228,7 +230,7 @@ IF(Kokkos_ENABLE_Pthread)
     chol_direct_nested_dense_block_pthread
     NOEXEPREFIX
     SOURCES example_chol_direct_nested_dense_block_pthread.cpp
-    COMM serial mpi 
+    COMM serial mpi
   )
 
   TRIBITS_ADD_EXECUTABLE(
@@ -238,13 +240,64 @@ IF(Kokkos_ENABLE_Pthread)
     COMM serial mpi
   )
 
+  # TRIBITS_ADD_EXECUTABLE(
+  #   chol_direct_solver_pthread
+  #   NOEXEPREFIX
+  #   SOURCES example_chol_direct_solver_pthread.cpp
+  #   COMM serial mpi
+  # )
+ENDIF()
+
+# Dense Linear Algebra
+# ====================
+IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
-    chol_direct_solver_pthread
+    dense_gemm_by_blocks_pthread
     NOEXEPREFIX
-    SOURCES example_chol_direct_solver_pthread.cpp
+    SOURCES example_dense_gemm_by_blocks_pthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_trsm_by_blocks_pthread
+    NOEXEPREFIX
+    SOURCES example_dense_trsm_by_blocks_pthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_chol_by_blocks_pthread
+    NOEXEPREFIX
+    SOURCES example_dense_chol_by_blocks_pthread.cpp 
     COMM serial mpi
   )
 ENDIF()
+
+IF(Kokkos_ENABLE_OpenMP)
+IF(TPL_ENABLE_MKL)
+  TRIBITS_ADD_EXECUTABLE(
+    dense_gemm_mkl_openmp
+    NOEXEPREFIX
+    SOURCES example_dense_gemm_mkl_openmp.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_trsm_mkl_openmp
+    NOEXEPREFIX
+    SOURCES example_dense_trsm_mkl_openmp.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    dense_chol_mkl_openmp
+    NOEXEPREFIX
+    SOURCES example_dense_chol_mkl_openmp.cpp
+    COMM serial mpi
+  )
+ENDIF()
+ENDIF()
+
 
 # Temporary
 # =========

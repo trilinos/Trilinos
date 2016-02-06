@@ -549,4 +549,136 @@ private:
 
 }; // MeshManager_Rectangle
 
+
+template<class Real>
+class MeshManager_Interval : public MeshManager<Real> {
+
+/* Interval geometry [X0,X0+width] */
+
+private:
+  Real width_;    // Interval width
+  Real X0_;       // x coordinate left corner
+
+  int nx_;      
+
+  int numCells_;  
+  int numNodes_;
+  int numEdges_;
+
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > meshSideSets_;
+
+public:   
+
+  MeshManager_Interval(Teuchos::ParameterList &parlist) {
+
+    // Geometry data
+    width_    = parlist.sublist("Geometry").get("Width", 1.0);
+    X0_       = parlist.sublist("Geometry").get("X0", 0.0);
+  
+    // Mesh data
+    nx_       = parlist.sublist("Geometry").get("NX",10);
+
+    numCells_ = nx_;
+    numNodes_ = nx_+1;
+    numEdges_ = 2;
+
+    // Compute and store mesh data structures
+    computeNodes();
+    computeCellToNodeMap();
+    computeCellToEdgeMap();
+    computeSideSets();
+
+  }
+   
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+    return meshNodes_;
+  }
+
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+    return meshCellToNodeMap_; 
+  }
+
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+    return meshCellToEdgeMap_;
+  }
+
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets() const {
+    return meshSideSets_;
+  }
+
+  int getNumCells() const {
+    return numCells_;
+  }
+  
+  int getNumNodes() const {
+    return numNodes_;
+  } // getNumNodes
+
+
+  int getNumEdges() const {
+    return numEdges_;
+  } // getNumEdges
+
+
+private: 
+
+  void computeNodes() {
+  
+    meshNodes_ = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numNodes_,1) );
+    Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
+
+    Real dx = width_ / nx_;
+
+    for( int i=0; i<nx_; ++i ) {
+      nodes(i, 0) = X0_ + i*dx;
+    }  
+  } // computeNodes
+
+
+  void computeCellToNodeMap() {
+  
+    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_,2));
+    Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
+
+    for( int i=0; i<nx_; ++i ) {
+      ctn(i,0) = i;
+      ctn(i,1) = i+1;
+    }
+  } // computeCellToNodeMap
+
+
+  void computeCellToEdgeMap() {
+
+    meshCellToEdgeMap_ = Teuchos::rcp( new Intrepid::FieldContainer<int>(numCells_,1) );
+    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
+
+    for( int i=0; i<nx_; ++i ) {
+      cte(i,0) = i;
+    }
+
+  }
+
+ 
+  void computeSideSets() {
+    
+    using std::vector;
+    using Intrepid::FieldContainer;
+
+    meshSideSets_ = Teuchos::rcp(new vector<vector<FieldContainer<int> > >(1));
+    int numSides = 2;
+
+    (*meshSideSets_)[0].resize(numSides);
+    (*meshSideSets_)[0][0](0) = 0;
+    (*meshSideSets_)[0][1](0) = numCells_+1;
+
+  } // computeSideSets
+   
+
+
+}; // MeshManager_Interval
+
 #endif

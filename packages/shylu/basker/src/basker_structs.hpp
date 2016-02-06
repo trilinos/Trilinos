@@ -713,6 +713,7 @@ namespace BaskerNS
       incomplete = BASKER_FALSE;
       inc_lvl    = 0;
       inc_tol    = 0.0001;
+      user_fill  = 0.001;
  
     }
 
@@ -747,7 +748,8 @@ namespace BaskerNS
     BASKER_BOOL  incomplete;
     BASKER_INT   inc_lvl;
     BASKER_ENTRY inc_tol;    //Not Used
-   
+    BASKER_ENTRY user_fill;
+    
     
     /* ---- todo add more ----*/
   }; // end bask_options

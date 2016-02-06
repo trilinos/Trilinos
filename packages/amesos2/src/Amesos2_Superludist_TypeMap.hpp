@@ -79,14 +79,14 @@ extern "C" {
 #include "superlu_ddefs.h"	// double-precision real definitions
   }
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX)  && !defined(__clang__)
   namespace Z {
 #include "superlu_zdefs.h"     // double-precision complex definitions
   }
 #endif  // HAVE_TEUCHOS_COMPLEX
 
 } // end extern "C"
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX)  && !defined(__clang__)
 
   // Declare and specialize a std::binary_funtion class for
   // multiplication of SLUD types
@@ -120,7 +120,7 @@ extern "C" {
   };
 #endif	// HAVE_TEUCHOS_COMPLEX
 } // end namespace SLUD
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX)  && !defined(__clang__)
 
 
 /* ==================== Conversion ==================== */
@@ -225,7 +225,7 @@ struct TypeMap<Superludist,double>
   typedef SLUD::D::SOLVEstruct_t SOLVEstruct_t;
 };
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && !defined(__clang__)
 template <>
 struct TypeMap<Superludist,std::complex<double> >
 {

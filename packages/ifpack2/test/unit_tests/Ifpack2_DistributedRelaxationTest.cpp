@@ -170,56 +170,47 @@ int main( int argc, char* argv[] )
 
 
   prec.setParameters (params);
-  std::cout << "init seq" << std::endl;
+
   prec.initialize () ;
-  std::cout << "compute seq" << std::endl;
   prec.compute () ;
-  std::cout << "seq done" << std::endl;
 
   prec_mt.setParameters (params_mt);
-  std::cout << "init mt" << std::endl;
+
   prec_mt.initialize () ;
-  std::cout << "compute mt" << std::endl;
+
   prec_mt.compute () ;
-  std::cout << "mt done" << std::endl;
 
-
-
-
-  for (int i = 0; i < max_num_iter; ++i){
-    prec.apply (Y_result, X_seek);
-    vec_type X_diff(X_seek, Teuchos::Copy);
-    X_diff.update (1, X_wanted, -1);
-    double normInf = X_diff.normInf ();
-    std::cout << "i:" << i << " norm:" << normInf << std::endl;
-
-
-    if (normInf < min_norm) break;
-  }
-  std::cout << "Sequential Flops:" << prec.getApplyFlops ()
-                << " App Time:" <<  prec.getApplyTime ()
-                << " Comp Time:" <<  prec.getComputeTime ()
-                << " Comp Time:" <<  prec.getComputeTime ()
-                << " Init Time:" <<  prec.getInitializeTime ()
-                  << std::endl;
-
-  std::cout << "rank:" << rank << " numMyElements:" << numMyElements << std::endl;
   X_seek.putScalar(0);
   for (int i = 0; i < max_num_iter; ++i){
     prec_mt.apply (Y_result, X_seek);
     vec_type X_diff(X_seek, Teuchos::Copy);
     X_diff.update (1, X_wanted, -1);
     double normInf = X_diff.normInf ();
+    if (i % 10 == 0)
     std::cout << "i:" << i << " norm:" << normInf << std::endl;
-
     if (normInf < min_norm) break;
   }
   std::cout << "MT Flops:" << prec_mt.getApplyFlops ()
                     << " App Time:" <<  prec_mt.getApplyTime ()
                     << " Comp Time:" <<  prec_mt.getComputeTime ()
-                    << " Comp Time:" <<  prec_mt.getComputeTime ()
                     << " Init Time:" <<  prec_mt.getInitializeTime ()
                       << std::endl;
 
+
+  X_seek.putScalar(0);
+  for (int i = 0; i < max_num_iter; ++i){
+    prec.apply (Y_result, X_seek);
+    vec_type X_diff(X_seek, Teuchos::Copy);
+    X_diff.update (1, X_wanted, -1);
+    double normInf = X_diff.normInf ();
+    if (i % 10 == 0)
+    std::cout << "i:" << i << " norm:" << normInf << std::endl;
+    if (normInf < min_norm) break;
+  }
+  std::cout << "Sequential Flops:" << prec.getApplyFlops ()
+                << " App Time:" <<  prec.getApplyTime ()
+                << " Comp Time:" <<  prec.getComputeTime ()
+                << " Init Time:" <<  prec.getInitializeTime ()
+                  << std::endl;
   return 0;
 }
