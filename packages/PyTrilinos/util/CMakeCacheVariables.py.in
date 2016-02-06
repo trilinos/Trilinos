@@ -66,9 +66,9 @@ Available function:
     
 """
 
-__version__ = 1.0
+__version__ = 1.1
 __author__  = "Bill Spotz"
-__date__    = "Oct 24 2010"
+__date__    = "Feb 4 2016"
 
 import optparse
 import os
@@ -123,7 +123,7 @@ def main():
 
     # Version
     if options.version:
-        print "CMakeCacheVariables.py version", __version__
+        print("CMakeCacheVariables.py version" + __version__)
         exit()
     
     # Process the filename
@@ -131,7 +131,7 @@ def main():
 
     # Output the variable names and values
     if options.out_type == "python":
-        print dict
+        print(dict)
     elif options.out_type == "cmake":
         varNames = dict.keys()
         varNames.sort()
@@ -150,7 +150,7 @@ def main():
                     varType = "FILEPATH"
             else:
                 varType  = "STRING"
-            print "%s:%s=%s" % (varName, varType, varValue)
+            print("%s:%s=%s" % (varName, varType, varValue))
 
 #############################################################################
 # If called from the command line, call main()
