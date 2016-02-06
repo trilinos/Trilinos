@@ -90,7 +90,7 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
   *ierr = ZOLTAN_OK;
 
   size_t mynObj = adp->getLocalNumIDs();
-   
+
   const gno_t *myids = NULL;
   adp->getIDsView(myids);
   for (size_t i = 0; i < mynObj; i++) {
