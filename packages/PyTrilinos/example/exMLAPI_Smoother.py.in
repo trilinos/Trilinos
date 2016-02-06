@@ -60,7 +60,8 @@
 
 #
 # System imports
-from   optparse import *
+from   __future__ import print_function
+from   optparse   import *
 import sys
 
 #
@@ -243,8 +244,8 @@ def main():
         diff = x - x_exact
         norm = diff * (A[0] * diff)
         if Comm.MyPID() == 0:
-            print "iter ", i, " ||x - x_exact||_A = ", norm
-    print "End Result: TEST PASSED"
+            print("iter ", i, " ||x - x_exact||_A = ", norm)
+    print("End Result: TEST PASSED")
 
 ################################################################################
 

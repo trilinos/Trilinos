@@ -118,7 +118,7 @@ def main():
   # Creates the solver using the Amesos' factory
   type = "Amesos_Lapack"
   if factory.Query(type) == False:
-    raise "Selected solver (%s) not supported" % (type)
+    raise NotImplementedError("Selected solver (%s) not supported" % (type))
   solver = factory.Create(type, problem)
 
   # Setting parameters using a Python dictionary. The list of supported
@@ -139,11 +139,11 @@ def main():
   for i in range(0, numLocalRows):
     error = error + abs(LHS[i] - i)
   if iAmRoot:
-    print "Using %s, ||x - x_ex||_1 = %e" % (type, error)
+    print("Using %s, ||x - x_ex||_1 = %e" % (type, error))
 
   # Exit with a code that indicates the total number of successes
   failures = comm.SumAll(ierr)
-  if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+  if failures == 0 and iAmRoot: print("End Result: TEST PASSED")
   sys.exit(failures)
 
 if __name__ == "__main__":

@@ -45,11 +45,12 @@
 
 #
 # System imports
+from   __future__ import print_function
+from   optparse   import *
 import sys
 
 #
 # Parse the command-line arguments
-from optparse import *
 parser = OptionParser()
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
@@ -113,15 +114,15 @@ def main():
   Solver.SetAztecOption(AztecOO.AZ_output, 16)
   Solver.Iterate(1550, 1e-5)
 
-  print Prec
+  print(Prec)
 
   # Computes the 2-norm of the true residual
   LHS.Update(1.0, Exact, -1.0)
   norm = LHS.Norm2() / RHS.Norm2()
   if iAmRoot:
-    print "After solution of the linear system:"
-    print "||x - x_exact||_2 / ||b||_2 = ", norm
+    print("After solution of the linear system:")
+    print("||x - x_exact||_2 / ||b||_2 = ", norm)
 
 if __name__ == "__main__":
   main()
-  if iAmRoot: print "End Result: TEST PASSED"
+  if iAmRoot: print("End Result: TEST PASSED")
