@@ -896,7 +896,7 @@ int testFromDataFile(
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-        problem->printMetrics(cout);
+      //problem->printMetrics(cout);
         cout << "testFromDataFile is done " << endl;
     }
 
