@@ -130,7 +130,7 @@ namespace { // (anonymous)
   {
     // Set default values of command-line options.
 
-    opts.numTrials = 10;
+    opts.numTrials = 250;
     opts.lclNumRows = 10000;
     opts.numEntPerRow = 10;
     // This example lives in Tpetra, and has the option to use Epetra,
