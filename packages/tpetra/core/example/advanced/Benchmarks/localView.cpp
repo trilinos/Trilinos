@@ -461,6 +461,7 @@ main (int argc, char* argv[])
   using Teuchos::reduceAll;
   using Teuchos::outArg;
   using Teuchos::TimeMonitor;
+  using std::endl;
 
   // RAII protection for MPI_Initialize / MPI_Finalize.  This first
   // calls MPI_Initialize (if building with MPI).  At the end of this
@@ -492,8 +493,23 @@ main (int argc, char* argv[])
     }
   }
 
+  out << "Command-line options:" << endl;
+  {
+    Teuchos::OSTab tab1 (out); // push one tab in this scope
+    out << "numTrials: " << opts.numTrials << endl
+        << "lclNumRows: " << opts.lclNumRows << endl
+        << "numEntPerRow: " << opts.numEntPerRow << endl
+        << "testEpetra: " << opts.testEpetra << endl
+        << "testEpetraLen: " << opts.testEpetraLen << endl
+        << "testTpetra: " << opts.testTpetra << endl
+        << "testTpetraLen: " << opts.testTpetraLen << endl
+        << "testKokkos: " << opts.testKokkos << endl
+        << endl;
+  }
+
   // The benchmark is supposed to be self-checking.
   const size_t expectedTotalLclNumEnt =
+    static_cast<size_t> (opts.numTrials) *
     static_cast<size_t> (opts.lclNumRows) *
     static_cast<size_t> (opts.numEntPerRow);
 
@@ -532,7 +548,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Epetra ExtractMyRowView validation FAILED" << std::endl;
+    out << "Epetra ExtractMyRowView validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+        << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -563,7 +581,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Epetra NumMyEntries validation FAILED" << std::endl;
+    out << "Epetra NumMyEntries validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+        << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -592,7 +612,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Tpetra validation FAILED" << std::endl;
+    out << "Tpetra::CrsMatrix::getLocalRowView validation FAILED.  On my "
+      "process, totalLclNumEnt = " << totalLclNumEnt << " != "
+      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -617,7 +639,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Tpetra validation FAILED" << std::endl;
+    out << "Tpetra::CrsMatrix::getNumEntriesInLocalRow validation FAILED.  On "
+      "my process, totalLclNumEnt = " << totalLclNumEnt << " != "
+      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -646,7 +670,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Kokkos sequential loop validation FAILED" << std::endl;
+    out << "Kokkos sequential loop validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != "
+      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -665,12 +691,15 @@ main (int argc, char* argv[])
 
       for (int trial = 0; trial < opts.numTrials; ++trial) {
         policy_type range (0, static_cast<LO> (opts.lclNumRows));
+
+        size_t curTotalLclNumEnt = 0;
         parallel_reduce ("loop", range,
                          KOKKOS_LAMBDA (const LO& lclRow, size_t& count) {
             auto rowView = A_lcl.template row<LO> (lclRow);
             auto length  = rowView.length;
             count += static_cast<size_t> (length);
-          });
+          }, curTotalLclNumEnt);
+        totalLclNumEnt += curTotalLclNumEnt;
       }
     }
   }
@@ -678,7 +707,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Kokkos parallel loop validation FAILED" << std::endl;
+    out << "Kokkos host parallel loop validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != "
+      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
   }
 
   TimeMonitor::report (comm.ptr (), out);
