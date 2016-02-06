@@ -188,7 +188,6 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 #     def testConstructor12(self):
 #         "Test Epetra.BlockMap uniform linear constructor, min GID < index base"
 #         self.myGlobalEls[0] = self.indexBase-1
-#         print self.myGlobalEls
 #         self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
 #                           self.myGlobalEls, self.elSizeConst, self.indexBase,
 #                           self.comm)
@@ -588,14 +587,14 @@ if __name__ == "__main__":
     comm.SetTracebackMode(0)    # Turn off errors printed to stderr
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-       "\n***********************\nTesting Epetra.BlockMap\n***********************\n"
+    if iAmRoot: print("\n***********************\nTesting Epetra.BlockMap\n"
+                      "***********************\n", file=sys.stderr)
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

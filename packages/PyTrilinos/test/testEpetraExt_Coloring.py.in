@@ -45,6 +45,7 @@
 
 #
 # System imports
+from   __future__ import print_function
 from   numpy    import *
 from   optparse import *
 import sys
@@ -91,9 +92,6 @@ class ColoringTestCase(unittest.TestCase):
         "Test EpetraExt CrsGraph-to-MapColoring transform"
         mapColoring  = EpetraExt.CrsGraph_MapColoring(False)
         colorMap     = mapColoring(self.crsg)
-        #for p in range(self.comm.NumProc()):
-        #    if p == self.comm.MyPID(): print colorMap
-        #    self.comm.Barrier()
         numColors    = colorMap.NumColors()
         defaultColor = colorMap.DefaultColor()
         self.assertEqual(numColors   , 3)
@@ -124,14 +122,15 @@ if __name__ == "__main__":
     iAmRoot = comm.MyPID() == 0
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-       "\n**************************\nTesting EpetraExt.Coloring\n**************************\n"
+    if iAmRoot:
+        print("\n**************************\nTesting EpetraExt.Coloring\n"
+              "**************************\n", file=sys.stderr)
     verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

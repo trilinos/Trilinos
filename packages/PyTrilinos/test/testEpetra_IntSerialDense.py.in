@@ -45,6 +45,7 @@
 
 #
 # System imports
+from   __future__ import print_function
 from   numpy    import *
 import sys
 import unittest
@@ -591,16 +592,15 @@ if __name__ == "__main__":
     comm.SetTracebackMode(0)    # Turn off Epetra errors printed to stderr
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-       "\n*****************************" \
-       "\nTesting Epetra.IntSerialDense" \
-       "\n*****************************\n"
+    if iAmRoot:
+        print("\n*****************************\nTesting Epetra.IntSerialDense\n"
+              "*****************************\n", file=sys.stderr)
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
     # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
 
     # Some versions of python don't properly delete suite upon exit
     del suite

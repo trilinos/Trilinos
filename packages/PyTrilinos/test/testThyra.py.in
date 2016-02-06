@@ -45,7 +45,8 @@
 
 #
 # System imports
-from   optparse import *
+from   __future__ import print_function
+from   optparse   import *
 import sys
 import unittest
 
@@ -95,12 +96,13 @@ if __name__ == "__main__":
     iAmRoot = comm.MyPID() == 0
 
     # Run the test suite
-    if iAmRoot: print >>sys.stderr, \
-       "\n*******************\nTesting Thyra\n*******************\n"
+    if iAmRoot:
+        print("\n*******************\nTesting Thyra\n*******************\n",
+              file=sys.stderr)
     verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
-    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
     sys.exit(errsPlusFails)
