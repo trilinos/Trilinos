@@ -45,17 +45,28 @@
 
 #
 # System imports
-import sys
-
-#try:
+from   __future__ import print_function
+from   optparse import *
 import setpath
-import LOCA
-print dir(LOCA)
-#except ImportError:
-#    from PyTrilinos import LOCA
-#    print >>sys.stderr, "Using system-installed LOCA"
-
+import sys
 import unittest
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+LOCA = fromPyTrilinosImport('LOCA' , options.testharness)
 
 ################################################################################
 
@@ -142,13 +153,14 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(ParameterVectorTestCase ))
 
     # Create a communicator
-    #comm = Epetra.PyComm()
+    comm = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
 
     # Run the test suite
-    #if comm.MyPID() == 0:
-    print >>sys.stderr, \
-          "\n****************************\nTesting LOCA.ParameterVector\n****************************\n"
-    verbosity = options.verbosity #* int(comm.MyPID() == 0)
+    if iAmRoot:
+        print("\n****************************\nTesting LOCA.ParameterVector\n"
+              "****************************\n", file=sys.stderr)
+    verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
