@@ -559,14 +559,18 @@ main (int argc, char* argv[])
     typedef int LO;
 
     auto timer = TimeMonitor::getNewCounter ("Epetra NumMyEntries");
-    RCP<const Epetra_CrsMatrix> A = getEpetraMatrix (comm, opts);
+    RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
+       "This should never happen.");
+    const Epetra_CrsMatrix& A = *A_ptr;
     { // Start timing after matrix creation
       TimeMonitor timeMon (*timer);
 
       const LO lclNumRows = opts.lclNumRows;
       for (int trial = 0; trial < opts.numTrials; ++trial) {
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          const size_t len = static_cast<size_t> (A->NumMyEntries (lclRow));
+          const size_t len = static_cast<size_t> (A.NumMyEntries (lclRow));
           totalLclNumEnt += len;
         }
       }
@@ -587,12 +591,54 @@ main (int argc, char* argv[])
   }
 
   totalLclNumEnt = 0;
+  if (opts.testEpetraLen) {
+#ifdef HAVE_TPETRACORE_EPETRA
+    typedef int LO;
+
+    auto timer = TimeMonitor::getNewCounter ("Epetra NumMyRowEntries");
+    RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
+       "This should never happen.");
+    const Epetra_CrsMatrix& A = *A_ptr;
+    { // Start timing after matrix creation
+      TimeMonitor timeMon (*timer);
+
+      const LO lclNumRows = opts.lclNumRows;
+      for (int trial = 0; trial < opts.numTrials; ++trial) {
+        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+          int numEnt;
+          (void) A.NumMyRowEntries (lclRow, numEnt); // ignore error code
+          totalLclNumEnt += static_cast<size_t> (numEnt);
+        }
+      }
+    }
+#else
+    // We've already checked this case when checking the command-line arguments.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, "Epetra not enabled; should never get here!");
+#endif // HAVE_TPETRACORE_EPETRA
+  }
+  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+  gblSuccess = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess != 1) {
+    out << "Epetra NumMyRowEntries validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+        << expectedTotalLclNumEnt << "." << endl;
+  }
+
+  totalLclNumEnt = 0;
   if (opts.testTpetra) {
     typedef Tpetra::CrsMatrix<>::scalar_type SC;
     typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
 
     auto timer = TimeMonitor::getNewCounter ("Tpetra getLocalRowView");
-    RCP<const Tpetra::CrsMatrix<> > A = getTpetraMatrix (comm, opts);
+    RCP<const Tpetra::CrsMatrix<> > A_ptr = getTpetraMatrix (comm, opts);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_ptr.is_null (), std::logic_error, "getTpetraMatrix returned null!  "
+       "This should never happen.");
+    const Tpetra::CrsMatrix<>& A = *A_ptr;
     { // Start timing after matrix creation
       TimeMonitor timeMon (*timer);
 
@@ -601,7 +647,7 @@ main (int argc, char* argv[])
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           Teuchos::ArrayView<const LO> ind;
           Teuchos::ArrayView<const SC> val;
-          A->getLocalRowView (lclRow, ind, val);
+          A.getLocalRowView (lclRow, ind, val);
           const size_t len = static_cast<size_t> (ind.size ());
           totalLclNumEnt += len;
         }
@@ -622,14 +668,18 @@ main (int argc, char* argv[])
     typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
 
     auto timer = TimeMonitor::getNewCounter ("Tpetra getNumEntriesInLocalRow");
-    RCP<const Tpetra::CrsMatrix<> > A = getTpetraMatrix (comm, opts);
+    RCP<const Tpetra::CrsMatrix<> > A_ptr = getTpetraMatrix (comm, opts);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_ptr.is_null (), std::logic_error, "getTpetraMatrix returned null!  "
+       "This should never happen.");
+    const Tpetra::CrsMatrix<>& A = *A_ptr;
     { // Start timing after matrix creation
       TimeMonitor timeMon (*timer);
 
       for (int trial = 0; trial < opts.numTrials; ++trial) {
         const LO lclNumRows = opts.lclNumRows;
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          const size_t len = A->getNumEntriesInLocalRow (lclRow);
+          const size_t len = A.getNumEntriesInLocalRow (lclRow);
           totalLclNumEnt += len;
         }
       }
