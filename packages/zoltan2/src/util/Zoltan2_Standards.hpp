@@ -118,6 +118,14 @@ typedef size_t global_size_t;
 
 }
 
+// Workarounds for Purify; it doesn't like the standard string operations
+#ifdef HAVE_ZOLTAN2_PURIFY
+#define strcmp Zoltan_strcmp
+#define strncmp Zoltan_strncmp
+#define strcasecmp Zoltan_strcasecmp
+#define strncasecmp Zoltan_strncasecmp
+#endif
+
 // For debugging
 #define HELLO
 //#define HELLO printf("HELLO from %s:%i\n", __FILE__, __LINE__); // Turn on for debug 
