@@ -55,9 +55,9 @@ std::vector<GraphEdge> Graph::get_edges_for_element_side(impl::LocalId elem, int
     return edges;
 }
 
-const GraphEdgesForElement& Graph::get_edges_for_element(size_t index) const
+const GraphEdgesForElement& Graph::get_edges_for_element(impl::LocalId elem) const
 {
-    return m_graphEdges[index];
+    return m_graphEdges[elem];
 }
 
 void Graph::add_edge(const GraphEdge &graphEdge)

@@ -23,6 +23,17 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 #include "../FaceCreationTestUtils.hpp"
 
+void create_all_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, stk::mesh::Part &partToPutSidesInto)
+{
+   // once done, move into SkinBoundary.hpp
+}
+
+void check_all_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, stk::mesh::Part &partToPutSidesInto)
+{
+   // once done, move into SkinBoundary.hpp
+}
+
+
 namespace
 {
 
@@ -56,7 +67,7 @@ protected:
                                     const SideTestUtil::TestCase& testCase)
     {
         stk::mesh::Part& skinnedPart = bulkData.mesh_meta_data().declare_part("interior");
-        stk::mesh::create_all_boundary_sides(bulkData, bulkData.mesh_meta_data().universal_part(), skinnedPart);
+        create_all_boundary_sides(bulkData, bulkData.mesh_meta_data().universal_part(), skinnedPart);
         expect_sides_connected_as_specified_in_test_case(bulkData, testCase, skinnedPart);
     }
 

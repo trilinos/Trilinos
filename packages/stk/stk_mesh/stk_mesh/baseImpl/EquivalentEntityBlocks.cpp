@@ -19,7 +19,7 @@ bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, s
     return blockOrdinalsForEntity1==blockOrdinalsForEntity2;
 }
 
-bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals)
+bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, const std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals)
 {
     std::vector<stk::mesh::PartOrdinal> blockOrdinalsForEntity1 = get_element_block_part_ordinals(entity1, bulkData);
     return blockOrdinalsForEntity1 == other_element_part_ordinals;

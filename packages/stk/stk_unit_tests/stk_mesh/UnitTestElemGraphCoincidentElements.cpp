@@ -6,6 +6,7 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 
 namespace
 {
@@ -266,8 +267,7 @@ TEST_F(HexShellShell, Skin)
     {
         setup_hex_shell_shell_on_procs({0, 1, 0});
 
-        stk::mesh::ElemElemGraph elemElemGraph(get_bulk(), get_meta().universal_part());
-        elemElemGraph.skin_mesh({});
+        stk::mesh::create_exposed_boundary_sides(get_bulk(), get_meta().universal_part(), {});
 
         stk::mesh::Selector ownedOrShared = get_meta().locally_owned_part() | get_meta().globally_shared_part();
 

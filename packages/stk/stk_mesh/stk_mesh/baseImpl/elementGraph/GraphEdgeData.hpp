@@ -28,17 +28,17 @@ public:
     {
         return graphEdges.size();
     }
-    const GraphEdge & get_edge_at_index(size_t index) const
+    const GraphEdge & get_edge_at_index(impl::LocalId elem) const
     {
-        return graphEdges[index];
+        return graphEdges[elem];
     }
     void push_back(const GraphEdge &graphEdge)
     {
         graphEdges.push_back(graphEdge);
     }
-    void erase_at_index(size_t index)
+    void erase_at_index(impl::LocalId elem)
     {
-        graphEdges.erase(graphEdges.begin() + index);
+        graphEdges.erase(graphEdges.begin() + elem);
     }
     void clear()
     {
@@ -57,7 +57,7 @@ public:
     size_t get_num_edges() const;
     size_t get_num_edges_for_element(impl::LocalId elem) const;
     const GraphEdge & get_edge_for_element(impl::LocalId elem1, size_t index) const;
-    const GraphEdgesForElement& get_edges_for_element(size_t index) const;
+    const GraphEdgesForElement& get_edges_for_element(impl::LocalId elem) const;
     std::vector<GraphEdge> get_edges_for_element_side(impl::LocalId elem, int side) const;
 
     void add_edge(const GraphEdge &graphEdge);

@@ -64,7 +64,7 @@ protected:
 private:
     void test_exposed_boundary(const SideTestUtil::TestCase& testCase)
     {
-        stk::mesh::create_exposed_boundary_sides(get_bulk(), get_things_to_skin(), *boundaryPart);
+        stk::mesh::create_exposed_boundary_sides(get_bulk(), get_things_to_skin(), stk::mesh::PartVector{boundaryPart});
         SideTestUtil::expect_exposed_sides_connected_as_specified_in_test_case(get_bulk(), testCase, get_things_to_skin(), *boundaryPart);
         destroy_sides_in_boundary_part();
     }
@@ -90,7 +90,7 @@ private:
     }
     void test_interior_block_boundary(const SideTestUtil::TestCase& testCase)
     {
-        stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_things_to_skin(), *boundaryPart);
+        stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_things_to_skin(), stk::mesh::PartVector{boundaryPart});
         SideTestUtil::expect_interior_sides_connected_as_specified_in_test_case(get_bulk(), testCase, get_things_to_skin(), *boundaryPart);
         destroy_sides_in_boundary_part();
     }

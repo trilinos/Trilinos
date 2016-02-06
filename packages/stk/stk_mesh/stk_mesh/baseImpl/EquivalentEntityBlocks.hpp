@@ -15,7 +15,7 @@ namespace mesh {
 namespace impl {
 
 bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, stk::mesh::Entity entity2);
-bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals);
+bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, const std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals);
 bool is_element_block(const stk::mesh::Part &part);
 std::vector<PartOrdinal> get_element_block_part_ordinals(stk::mesh::Entity element, const stk::mesh::BulkData& bulkData);
 
