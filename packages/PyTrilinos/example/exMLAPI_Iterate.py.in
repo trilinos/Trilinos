@@ -246,7 +246,7 @@ def main():
   }
   ML.Iterate(Matrix, LHS, RHS, Prec, List)
 
-  if comm.MyPID() == 0: print "End Result: TEST PASSED"
+  if comm.MyPID() == 0: print("End Result: TEST PASSED")
 
 ################################################################################
 
