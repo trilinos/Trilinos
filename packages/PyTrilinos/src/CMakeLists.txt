@@ -258,7 +258,8 @@ LIST(APPEND CMAKE_SWIG_FLAGS -noproxydel)
 
 #
 # Determine the install directory
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print sys.version[:3]"
+EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+                        "import sys; print(sys.version[:3])"
   OUTPUT_VARIABLE PYTHON_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
