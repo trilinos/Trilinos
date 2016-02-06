@@ -87,6 +87,7 @@ ENDIF()
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/xpetra)
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_XpetraOperator_decl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_CreateXpetraPreconditioner.hpp
 )
 
 #

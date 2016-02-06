@@ -11,6 +11,7 @@
 #include <MueLu_EpetraOperator.hpp>
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_Hierarchy.hpp>
+#include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_MasterList.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
@@ -50,75 +51,16 @@ namespace MueLu {
     typedef Hierarchy<SC,LO,GO,NO>                  Hierarchy;
     typedef HierarchyManager<SC,LO,GO,NO>           HierarchyManager;
 
-    bool hasParamList = paramListIn.numParams();
-
-    RCP<HierarchyManager> mueLuFactory;
-    ParameterList paramList = paramListIn;
-
-    std::string syntaxStr = "parameterlist: syntax";
-    if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
-      paramList.remove(syntaxStr);
-      mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(paramList));
-
-    } else {
-      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList,Xpetra::toXpetra(inA->Comm())));
-    }
-
-    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
-    H->setlib(Xpetra::UseEpetra);
-
-    // Wrap A
     RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(inA);
-    H->GetLevel(0)->Set("A", A);
-
-    // Wrap coordinates if available
+    RCP<MultiVector> coordinates = Teuchos::null;
     if (inCoords != Teuchos::null) {
-      RCP<MultiVector> coordinates = EpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inCoords);
-      H->GetLevel(0)->Set("Coordinates", coordinates);
+      coordinates = EpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inCoords);
     }
-
-    // Wrap nullspace if available, otherwise use constants
-    RCP<MultiVector> nullspace;
+    RCP<MultiVector> nullspace = Teuchos::null;
     if (inNullspace != Teuchos::null) {
       nullspace = EpetraMultiVector_To_XpetraMultiVector<SC, LO, GO, NO>(inNullspace);
-
-    } else {
-      int nPDE = MasterList::getDefault<int>("number of equations");
-      if (paramList.isSublist("Matrix")) {
-        // Factory style parameter list
-        const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
-        if (operatorList.isParameter("PDE equations"))
-          nPDE = operatorList.get<int>("PDE equations");
-
-      } else if (paramList.isParameter("number of equations")) {
-        // Easy style parameter list
-        nPDE = paramList.get<int>("number of equations");
-      }
-
-      nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
-      if (nPDE == 1) {
-        nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
-
-      } else {
-        for (int i = 0; i < nPDE; i++) {
-          Teuchos::ArrayRCP<SC> nsData = nullspace->getDataNonConst(i);
-          for (int j = 0; j < nsData.size(); j++) {
-            GO GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
-
-            if ((GID-i) % nPDE == 0)
-              nsData[j] = Teuchos::ScalarTraits<SC>::one();
-          }
-        }
-      }
     }
-    H->GetLevel(0)->Set("Nullspace", nullspace);
-
-    Teuchos::ParameterList nonSerialList,dummyList;
-    ExtractNonSerializableData(paramList, dummyList, nonSerialList);    
-    HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
-
-    mueLuFactory->SetupHierarchy(*H);
-
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A,paramListIn,coordinates,nullspace);
     return rcp(new EpetraOperator(H));
   }
 
