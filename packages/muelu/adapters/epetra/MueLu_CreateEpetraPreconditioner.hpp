@@ -60,7 +60,7 @@ namespace MueLu {
     if (inNullspace != Teuchos::null) {
       nullspace = EpetraMultiVector_To_XpetraMultiVector<SC, LO, GO, NO>(inNullspace);
     }
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A,paramListIn,coordinates,nullspace);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,paramListIn,coordinates,nullspace);
     return rcp(new EpetraOperator(H));
   }
 

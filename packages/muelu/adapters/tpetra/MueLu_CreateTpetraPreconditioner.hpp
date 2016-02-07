@@ -98,7 +98,7 @@ namespace MueLu {
       nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inNullspace);
     }
 
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A,inParamList,coordinates,nullspace);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,inParamList,coordinates,nullspace);
     return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
   }
 
