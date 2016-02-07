@@ -782,9 +782,13 @@ namespace Tpetra {
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
     size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
 
-    //! Returns the current number of entries on this node in the specified local row.
-    /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
-    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
+    /// \brief Get the number of entries in the given row (local index).
+    ///
+    /// \return The number of entries in the given row, specified by
+    ///   local index, on the calling MPI process.  If the specified
+    ///   local row index is invalid on the calling process, return
+    ///   <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>.
+    size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const;
 
     //! \brief Returns the total number of indices allocated for the graph, across all rows on this node.
     /*! This is the allocation available to the user. Actual allocation may be larger, for example, after
