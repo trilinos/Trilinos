@@ -446,7 +446,8 @@ def ScalarTraits(scalarType):
     elif scalarType == 'Q': return ScalarTraitsUlongLong()
     elif scalarType == 'f': return ScalarTraitsFloat()
     elif scalarType == 'd': return ScalarTraitsDouble()
-    raise NotImplementedError, "ScalarTraits for " + repr(scalarType) + " not supported"
+    raise NotImplementedError("ScalarTraits for " + repr(scalarType) +
+                              " not supported")
 %}
 
 //////////////////////////////////////////
@@ -512,8 +513,8 @@ def DirectSerializationTraits(scalarType):
     elif scalarType == 'Q': return DirectSerializationTraitsUlongLong()
     elif scalarType == 'f': return DirectSerializationTraitsFloat()
     elif scalarType == 'd': return DirectSerializationTraitsDouble()
-    raise NotImplementedError, "DirectSerializationTraits for " + repr(scalarType) + \
-	  " not supported"
+    raise NotImplementedError("DirectSerializationTraits for " +
+                              repr(scalarType) + " not supported")
 
 def SerializationTraits(scalarType):
     """
@@ -548,6 +549,6 @@ def SerializationTraits(scalarType):
     elif scalarType == 'Q': return SerializationTraitsUlongLong()
     elif scalarType == 'f': return SerializationTraitsFloat()
     elif scalarType == 'd': return SerializationTraitsDouble()
-    raise NotImplementedError, "SerializationTraits for " + repr(scalarType) + \
-	  " not supported"
+    raise NotImplementedError("SerializationTraits for " + repr(scalarType) +
+                              " not supported")
 %}
