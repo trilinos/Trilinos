@@ -185,23 +185,20 @@ namespace Tpetra {
     }
 #endif // HAVE_TPETRA_DEBUG
 
-    // Allocate k_numAllocPerRow_ (upper bound on number of entries
-    // per row).  We get a host view of the data, as an ArrayRCP.
-    // Create a nonowning Kokkos::View of it, copy into
-    // k_numAllocPerRow, and sync.  Then assign to k_numAllocPerRow_
-    // (which is a const view, so we can't copy into it directly).
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space>
-      dual_view_type;
-    typedef typename dual_view_type::host_mirror_space host_type;
-    typedef Kokkos::View<const size_t*, Kokkos::LayoutLeft, host_type,
-      Kokkos::MemoryUnmanaged> in_view_type;
+    // Deep-copy the input (ArrayRCP, therefore host accessible) into
+    // k_numAllocPerRow_.  The latter is a const View, so we have to
+    // copy into a nonconst View first, then assign.
+    typedef decltype (k_numAllocPerRow_) out_view_type;
+    typedef typename out_view_type::non_const_type nc_view_type;
+    typedef Kokkos::View<const size_t*,
+                         typename nc_view_type::array_layout,
+                         Kokkos::HostSpace,
+                         Kokkos::MemoryUnmanaged> in_view_type;
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
-    dual_view_type k_numAllocPerRow ("Tpetra::CrsGraph::numAllocPerRow",
-                                     lclNumRows);
-    k_numAllocPerRow.template modify<host_type> ();
-    Kokkos::deep_copy (k_numAllocPerRow.h_view, numAllocPerRowIn);
-    k_numAllocPerRow.template sync<execution_space> ();
-    k_numAllocPerRow_ = k_numAllocPerRow;
+    nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
+                                    lclNumRows);
+    Kokkos::deep_copy (numAllocPerRowOut, numAllocPerRowIn);
+    k_numAllocPerRow_ = numAllocPerRowOut;
 
     resumeFill (params);
     checkInternalState ();
@@ -218,7 +215,7 @@ namespace Tpetra {
     , nodeNumEntries_ (0)
     , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , pftype_ (pftype)
-    , k_numAllocPerRow_ (numEntPerRow)
+    , k_numAllocPerRow_ (numEntPerRow.h_view)
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
                       Details::STORAGE_1D_UNPACKED :
@@ -272,7 +269,7 @@ namespace Tpetra {
     , nodeNumEntries_ (0)
     , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , pftype_ (pftype)
-    , k_numAllocPerRow_ (numEntPerRow)
+    , k_numAllocPerRow_ (numEntPerRow.h_view)
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
                       Details::STORAGE_1D_UNPACKED :
@@ -362,23 +359,20 @@ namespace Tpetra {
     }
 #endif // HAVE_TPETRA_DEBUG
 
-    // Allocate k_numAllocPerRow_ (upper bound on number of entries
-    // per row).  We get a host view of the data, as an ArrayRCP.
-    // Create a nonowning Kokkos::View of it, copy into
-    // k_numAllocPerRow, and sync.  Then assign to k_numAllocPerRow_
-    // (which is a const view, so we can't copy into it directly).
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space>
-      dual_view_type;
-    typedef typename dual_view_type::host_mirror_space host_type;
-    typedef Kokkos::View<const size_t*, Kokkos::LayoutLeft, host_type,
-      Kokkos::MemoryUnmanaged> in_view_type;
+    // Deep-copy the input (ArrayRCP, therefore host accessible) into
+    // k_numAllocPerRow_.  The latter is a const View, so we have to
+    // copy into a nonconst View first, then assign.
+    typedef decltype (k_numAllocPerRow_) out_view_type;
+    typedef typename out_view_type::non_const_type nc_view_type;
+    typedef Kokkos::View<const size_t*,
+                         typename nc_view_type::array_layout,
+                         Kokkos::HostSpace,
+                         Kokkos::MemoryUnmanaged> in_view_type;
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
-    dual_view_type k_numAllocPerRow ("Tpetra::CrsGraph::numAllocPerRow",
-                                     lclNumRows);
-    k_numAllocPerRow.template modify<host_type> ();
-    Kokkos::deep_copy (k_numAllocPerRow.h_view, numAllocPerRowIn);
-    k_numAllocPerRow.template sync<execution_space> ();
-    k_numAllocPerRow_ = k_numAllocPerRow;
+    nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
+                                    lclNumRows);
+    Kokkos::deep_copy (numAllocPerRowOut, numAllocPerRowIn);
+    k_numAllocPerRow_ = numAllocPerRowOut;
 
     resumeFill (params);
     checkInternalState ();
@@ -1031,13 +1025,12 @@ namespace Tpetra {
           << ".");
         // FIXME hack until we get parallel_scan in kokkos
         //
-        // FIXME (mfh 11 Aug 2014) This assumes UVM, since k_rowPtrs_
-        // is currently a device View.  Should instead use a DualView.
-        typename Kokkos::DualView<const size_t*, execution_space>::t_host h_numAllocPerRow =
-          k_numAllocPerRow_.h_view; // use a host view for now, since we compute on host
+        // NOTE (mfh 07 Feb 2016) k_numAllocPerRow_ is a host View.
+        // If replacing the code below with a parallel_scan, take note
+        // of whether the execution space can access it.
         bool anyInvalidAllocSizes = false;
         for (size_t i = 0; i < numRows; ++i) {
-          size_t allocSize = h_numAllocPerRow(i);
+          size_t allocSize = k_numAllocPerRow_(i);
           if (allocSize == Teuchos::OrdinalTraits<size_t>::invalid ()) {
             anyInvalidAllocSizes = true;
             allocSize = 0;
@@ -1092,10 +1085,6 @@ namespace Tpetra {
       //  DYNAMIC ALLOCATION PROFILE
       //
 
-      // Use the host view of k_numAllocPerRow_, since we have to
-      // allocate 2-D storage on the host.
-      typename Kokkos::DualView<const size_t*, execution_space>::t_host h_numAllocPerRow =
-        k_numAllocPerRow_.h_view;
       const bool useNumAllocPerRow = (k_numAllocPerRow_.dimension_0 () != 0);
 
       if (lg == LocalIndices) {
@@ -1103,7 +1092,7 @@ namespace Tpetra {
         nodeNumAllocated_ = 0;
         for (size_t i = 0; i < numRows; ++i) {
           const size_t howMany = useNumAllocPerRow ?
-            h_numAllocPerRow(i) : numAllocForAllRows_;
+            k_numAllocPerRow_(i) : numAllocForAllRows_;
           nodeNumAllocated_ += howMany;
           if (howMany > 0) {
             lclInds2D_[i].resize (howMany);
@@ -1115,7 +1104,7 @@ namespace Tpetra {
         nodeNumAllocated_ = 0;
         for (size_t i = 0; i < numRows; ++i) {
           const size_t howMany = useNumAllocPerRow ?
-            h_numAllocPerRow(i) : numAllocForAllRows_;
+            k_numAllocPerRow_(i) : numAllocForAllRows_;
           nodeNumAllocated_ += howMany;
           if (howMany > 0) {
             gblInds2D_[i].resize (howMany);
@@ -1137,7 +1126,7 @@ namespace Tpetra {
 
     // done with these
     numAllocForAllRows_ = 0;
-    k_numAllocPerRow_ = Kokkos::DualView<const size_t*, execution_space> ();
+    k_numAllocPerRow_ = decltype (k_numAllocPerRow_) ();
     indicesAreAllocated_ = true;
     checkInternalState ();
   }
@@ -1560,7 +1549,7 @@ namespace Tpetra {
       // This will make k_numAllocPerRow_ obsolete.
       const bool useNumAllocPerRow = (k_numAllocPerRow_.dimension_0 () != 0);
       if (useNumAllocPerRow) {
-        ret.allocSize = k_numAllocPerRow_.h_view(myRow);
+        ret.allocSize = k_numAllocPerRow_(myRow); // this is a host View
       } else {
         ret.allocSize = numAllocForAllRows_;
       }
@@ -1637,7 +1626,7 @@ namespace Tpetra {
       // This will make k_numAllocPerRow_ obsolete.
       const bool useNumAllocPerRow = (k_numAllocPerRow_.dimension_0 () != 0);
       if (useNumAllocPerRow) {
-        ret.allocSize = k_numAllocPerRow_.h_view(myRow);
+        ret.allocSize = k_numAllocPerRow_(myRow); // this is a host View
       } else {
         ret.allocSize = numAllocForAllRows_;
       }
@@ -3152,7 +3141,7 @@ namespace Tpetra {
     // It makes sense to clear them out here, because at the end of
     // this method, the graph is allocated on the calling process.
     numAllocForAllRows_ = 0;
-    k_numAllocPerRow_ = Kokkos::DualView<const size_t*, execution_space> ();
+    k_numAllocPerRow_ = decltype (k_numAllocPerRow_) ();
 
     checkInternalState ();
   }
@@ -3242,11 +3231,9 @@ namespace Tpetra {
       if (k_numAllocPerRow_.dimension_0 () != 0) {
         // This is a shallow copy; the ArrayRCP wraps the View in a
         // custom destructor, which ensures correct deallocation if
-        // that is the only reference to the View.
-        //
-        // NOTE (mfh 07 Feb 2016) Does this assume UVM?
-        // FIXME (mfh 07 Feb 2016) Do we need to sync to host?
-        numEntriesPerRow = Kokkos::Compat::persistingView (k_numAllocPerRow_.h_view);
+        // that is the only reference to the View.  Furthermore, this
+        // View is a host View, so this doesn't assume UVM.
+        numEntriesPerRow = Kokkos::Compat::persistingView (k_numAllocPerRow_);
         allRowsSame = false; // conservatively; we don't check the array
       }
       else {
@@ -3862,7 +3849,7 @@ namespace Tpetra {
     // lazily on first insert.  That will make both
     // numAllocForAllRows_ and k_numAllocPerRow_ obsolete.
     numAllocForAllRows_  = 0;
-    k_numAllocPerRow_    = Kokkos::DualView<const size_t*, execution_space> ();
+    k_numAllocPerRow_    = decltype (k_numAllocPerRow_) ();
     indicesAreAllocated_ = true;
 
     // Constants from makeIndicesLocal
