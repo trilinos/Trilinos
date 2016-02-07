@@ -61,7 +61,7 @@ namespace MueLu {
     typedef Xpetra::MultiVector<SC,LO,GO,NO>            MultiVector;
     typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
     typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
-    typedef HierarchyManager<SC,LO,GO,NO>               HierarchyManager;
+    //typedef HierarchyManager<SC,LO,GO,NO>               HierarchyManager;  // not used
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
 
@@ -89,7 +89,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "CreateTpetraPreconditioner: only Tpetra CrsMatrix and BlockCrsMatrix types are supported.");
     }
 
-    RCP<MultiVector> coordinates = Teuchos::null;
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
     if (inCoords != Teuchos::null) {
       coordinates = TpetraMultiVector_To_XpetraMultiVector<double,LO,GO,NO>(inCoords);
     }
