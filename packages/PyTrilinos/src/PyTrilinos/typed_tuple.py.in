@@ -51,8 +51,8 @@ def typed_tuple(elementType):
     def init(self, *args):
         for it in self:
             if not isinstance(it, self.elementType):
-                raise TypeError, 'elements must be of type "%s", but received %s' \
-                      % (self.elementType.__name__, str(type(it)))
+                raise TypeError('elements must be of type "%s", but received %s'
+                                % (self.elementType.__name__, str(type(it))))
     # Class name
     name = 'tuple_of_' + elementType.__name__
     # Class docstring
