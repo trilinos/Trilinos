@@ -15,7 +15,6 @@
 
 #include <MueLu.hpp>
 
-#include <MueLu_EpetraOperator.hpp>
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_MasterList.hpp>
