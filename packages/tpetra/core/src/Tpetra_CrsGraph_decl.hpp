@@ -2595,9 +2595,6 @@ namespace Tpetra {
     /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
-    ///
-    /// [we may delete this to save memory on fillComplete, if "Delete
-    /// Row Pointers" is specified.]
     typename local_graph_type::row_map_type::const_type k_rowPtrs_;
 
     //@}
