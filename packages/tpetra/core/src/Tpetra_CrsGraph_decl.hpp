@@ -2631,15 +2631,17 @@ namespace Tpetra {
     /// for that row.
     Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal> > gblInds2D_;
 
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space> t_numRowEntries_;
-
     /// \brief The number of local entries in each locally owned row.
     ///
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
     ///
+    /// This is a host View because it is only ever read or modified
+    /// on the host.
+    ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-    t_numRowEntries_ k_numRowEntries_;
+    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, execution_space>::HostMirror
+    k_numRowEntries_;
 
     //@}
 

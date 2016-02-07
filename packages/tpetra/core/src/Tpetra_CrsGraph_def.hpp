@@ -1128,17 +1128,11 @@ namespace Tpetra {
     indicesAreLocal_  = (lg == LocalIndices);
     indicesAreGlobal_ = (lg == GlobalIndices);
 
-    if (numRows > 0) {
+    if (numRows > 0) { // reallocate k_numRowEntries_ & fill w/ 0s
+      typedef decltype (k_numRowEntries_) row_entries_type;
       k_numRowEntries_ =
-        t_numRowEntries_ ("Tpetra::CrsGraph::numRowEntries", numRows);
-
-      // Fill with zeros on the host.  k_numRowEntries_ is a DualView.
-      //
-      // TODO (mfh 05 Aug 2014) Write a device kernel for this.
-      k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
-      size_t* const hostPtr = k_numRowEntries_.h_view.ptr_on_device ();
-      std::fill (hostPtr, hostPtr + numRows, static_cast<size_t> (0));
-      k_numRowEntries_.template sync<execution_space> ();
+        row_entries_type ("Tpetra::CrsGraph::numRowEntries", numRows);
+      Kokkos::deep_copy (k_numRowEntries_, static_cast<size_t> (0));
     }
 
     // done with these
@@ -1538,7 +1532,7 @@ namespace Tpetra {
         if (k_numRowEntries_.dimension_0 () == 0) {
           ret.numEntries = ret.allocSize;
         } else {
-          ret.numEntries = k_numRowEntries_.h_view(myRow);
+          ret.numEntries = k_numRowEntries_(myRow); // this is a host View
         }
       }
       else {
@@ -1549,7 +1543,7 @@ namespace Tpetra {
         else {
           ret.allocSize = gblInds2D_[myRow].size ();
         }
-        ret.numEntries = k_numRowEntries_.h_view(myRow);
+        ret.numEntries = k_numRowEntries_(myRow); // this is a host View
       }
     }
     else if (nodeNumAllocated_ == 0) {
@@ -1615,7 +1609,7 @@ namespace Tpetra {
         if (k_numRowEntries_.dimension_0 () == 0) {
           ret.numEntries = ret.allocSize;
         } else {
-          ret.numEntries = k_numRowEntries_.h_view(myRow);
+          ret.numEntries = k_numRowEntries_(myRow); // this is a host View
         }
       }
       else {
@@ -1626,7 +1620,7 @@ namespace Tpetra {
         else {
           ret.allocSize = gblInds2D_[myRow].size ();
         }
-        ret.numEntries = k_numRowEntries_.h_view(myRow);
+        ret.numEntries = k_numRowEntries_(myRow); // this is a host View
       }
     }
     else if (nodeNumAllocated_ == 0) {
@@ -1753,12 +1747,8 @@ namespace Tpetra {
       }
     }
 
-    // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
-    // but for now, for correctness, do the modify-sync cycle here.
-    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
-    k_numRowEntries_.h_view(rowinfo.localRow) += numNewInds;
-    k_numRowEntries_.template sync<execution_space> ();
-
+    // k_numRowEntries_ is a host View.
+    k_numRowEntries_(rowinfo.localRow) += numNewInds;
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
     return numNewInds;
@@ -1803,12 +1793,8 @@ namespace Tpetra {
                 gblInds2D_[myRow].begin()+rowInfo.numEntries);
     }
 
-    // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
-    // but for now, for correctness, do the modify-sync cycle here.
-    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
-    k_numRowEntries_.h_view(myRow) += numNewInds;
-    k_numRowEntries_.template sync<execution_space> ();
-
+    // k_numRowEntries_ is a host View.
+    k_numRowEntries_(myRow) += numNewInds;
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
 
@@ -1871,12 +1857,8 @@ namespace Tpetra {
                  lclInds2D_[myRow].begin () + rowInfo.numEntries);
     }
 
-    // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
-    // but for now, for correctness, do the modify-sync cycle here.
-    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
-    k_numRowEntries_.h_view(myRow) += numNewInds;
-    k_numRowEntries_.template sync<execution_space> ();
-
+    // k_numRowEntries_ is a host View.
+    k_numRowEntries_(myRow) += numNewInds;
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
 #ifdef HAVE_TPETRA_DEBUG
@@ -2061,12 +2043,8 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPT( isStorageOptimized () && mergedEntries != rowinfo.numEntries );
 #endif // HAVE_TPETRA_DEBUG
 
-    // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
-    // but for now, for correctness, do the modify-sync cycle here.
-    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
-    k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
-    k_numRowEntries_.template sync<execution_space> ();
-
+    // k_numRowEntries_ is a host View.
+    k_numRowEntries_(rowinfo.localRow) = mergedEntries;
     nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
   }
 
@@ -2128,12 +2106,8 @@ namespace Tpetra {
       << std::endl << "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-    // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
-    // but for now, for correctness, do the modify-sync cycle here.
-    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
-    k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
-    k_numRowEntries_.template sync<execution_space> ();
-
+    // k_numRowEntries_ is a host View.
+    k_numRowEntries_(rowinfo.localRow) = mergedEntries;
     nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
   }
 
@@ -3121,14 +3095,9 @@ namespace Tpetra {
     clearGlobalConstants ();
 
     if (k_numRowEntries_.dimension_0 () != 0) {
-      const size_t oldNumEntries = k_numRowEntries_.h_view (lrow);
+      const size_t oldNumEntries = k_numRowEntries_(lrow); // host View
       nodeNumEntries_ -= oldNumEntries;
-
-      // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
-      // but for now, for correctness, do the modify-sync cycle here.
-      k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
-      k_numRowEntries_.h_view(lrow) = 0;
-      k_numRowEntries_.template sync<execution_space> ();
+      k_numRowEntries_(lrow) = 0; // host View
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3271,6 +3240,12 @@ namespace Tpetra {
 
     if (! this->indicesAreAllocated ()) {
       if (k_numAllocPerRow_.dimension_0 () != 0) {
+        // This is a shallow copy; the ArrayRCP wraps the View in a
+        // custom destructor, which ensures correct deallocation if
+        // that is the only reference to the View.
+        //
+        // NOTE (mfh 07 Feb 2016) Does this assume UVM?
+        // FIXME (mfh 07 Feb 2016) Do we need to sync to host?
         numEntriesPerRow = Kokkos::Compat::persistingView (k_numAllocPerRow_.h_view);
         allRowsSame = false; // conservatively; we don't check the array
       }
@@ -3280,7 +3255,11 @@ namespace Tpetra {
       }
     }
     else if (k_numRowEntries_.dimension_0 () != 0) {
-      numEntriesPerRow = Kokkos::Compat::persistingView (k_numRowEntries_.h_view);
+      // This is a shallow copy; the ArrayRCP wraps the View in a
+      // custom destructor, which ensures correct deallocation if that
+      // is the only reference to the View.  Furthermore, this View is
+      // a host View, so this doesn't assume UVM.
+      numEntriesPerRow = Kokkos::Compat::persistingView (k_numRowEntries_);
       allRowsSame = false; // conservatively; we don't check the array
     }
     else if (this->nodeNumAllocated_ == 0) {
@@ -3967,7 +3946,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef ArrayRCP<size_t>::size_type size_type;
-    typedef t_numRowEntries_ row_entries_type;
+    typedef decltype (k_numRowEntries_) row_entries_type;
     typedef typename local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_graph_type::entries_type::non_const_type lclinds_1d_type;
@@ -3984,11 +3963,10 @@ namespace Tpetra {
     lclinds_1d_type k_inds;
 
     // The number of entries in each locally owned row.  This is a
-    // DualView.  2-D storage lives on host and is currently not
+    // host View.  2-D storage lives on host and is currently not
     // thread-safe for parallel kernels even on host, so we have to
     // work sequentially with host storage in that case.
-    row_entries_type k_numRowEnt = k_numRowEntries_;
-    typename row_entries_type::t_host h_numRowEnt = k_numRowEnt.h_view;
+    typename row_entries_type::const_type h_numRowEnt = k_numRowEntries_;
 
     bool requestOptimizedStorage = true;
     if (! params.is_null () && ! params->get ("Optimize Storage", true)) {
@@ -4003,11 +3981,11 @@ namespace Tpetra {
       // (k_inds) and then copy from 2-D storage (lclInds2D_) into 1-D
       // storage (k_inds).
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (k_numRowEnt.dimension_0 ()) != lclNumRows,
+        static_cast<size_t> (h_numRowEnt.dimension_0 ()) != lclNumRows,
         std::logic_error, "Tpetra::CrsGraph::fillLocalGraph (called from "
         "fillComplete or expertStaticFillComplete): For the DynamicProfile "
-        "branch, k_numRowEnt has the wrong length.  "
-        "k_numRowEnt.dimension_0() = " << k_numRowEnt.dimension_0 ()
+        "branch, h_numRowEnt has the wrong length.  "
+        "h_numRowEnt.dimension_0() = " << h_numRowEnt.dimension_0 ()
         << " != getNodeNumRows() = " << lclNumRows << "");
 
       // Pack the row offsets into k_ptrs, by doing a sum-scan of
@@ -4116,11 +4094,11 @@ namespace Tpetra {
         // bound on the number of entries in each row, but didn't fill
         // all those entries.
         TEUCHOS_TEST_FOR_EXCEPTION(
-          static_cast<size_t> (k_numRowEnt.dimension_0 ()) != lclNumRows,
+          static_cast<size_t> (h_numRowEnt.dimension_0 ()) != lclNumRows,
           std::logic_error, "Tpetra::CrsGraph::fillLocalGraph (called from "
           "fillComplete or expertStaticFillComplete): In StaticProfile "
-          "unpacked branch, k_numRowEnt has the wrong length.  "
-          "k_numRowEnt.dimension_0() = " << k_numRowEnt.dimension_0 ()
+          "unpacked branch, h_numRowEnt has the wrong length.  "
+          "h_numRowEnt.dimension_0() = " << h_numRowEnt.dimension_0 ()
           << " != getNodeNumRows() = " << lclNumRows << "");
 
         if (k_rowPtrs_.dimension_0 () != 0) {
@@ -4781,7 +4759,9 @@ namespace Tpetra {
     const map_type& colMap = * (this->getColMap ());
 
     if (isGloballyIndexed () && lclNumRows > 0) {
-      typename t_numRowEntries_::t_host h_numRowEnt = k_numRowEntries_.h_view;
+      typedef decltype (k_numRowEntries_) row_entries_type;
+      typedef typename row_entries_type::const_type const_row_entries_type;
+      const_row_entries_type h_numRowEnt = k_numRowEntries_;
 
       // allocate data for local indices
       if (getProfileType () == StaticProfile) {
