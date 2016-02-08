@@ -16,6 +16,12 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 TRIBITS_ADD_EXECUTABLE(
+  blockCrsMatrixMatVec
+  SOURCES blockCrsMatrixMatVec.cpp
+  COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE(
   localView
   SOURCES localView.cpp
   COMM serial mpi
