@@ -22,7 +22,7 @@ export TDD_CTEST_TEST_TYPE=${JENKINS_JOB_TYPE}
 # Machine specific environment
 #
 module load python/2.7.10
-module load cmake/3.4.2
+module load cmake/3.4.1
 module load git/2.2.2
 
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1
