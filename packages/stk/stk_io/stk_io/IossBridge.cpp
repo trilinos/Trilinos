@@ -1885,7 +1885,7 @@ namespace stk {
         if (part == NULL) {
           if (ns->property_exists(base_stk_part_name)) {
             std::string base_name = ns->get_property(base_stk_part_name).get_string();
-            part = getPart( meta_data, name);
+            part = getPart( meta_data, base_name);
           }
           if (part == NULL) {
             std::ostringstream msg ;
