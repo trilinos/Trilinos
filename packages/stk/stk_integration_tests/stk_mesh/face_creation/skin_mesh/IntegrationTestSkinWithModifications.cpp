@@ -61,6 +61,23 @@ protected:
             get_bulk().destroy_entity(elem);
         get_bulk().modification_end();
     }
+
+    void create_shells_13_and_14()
+    {
+        create_shell_13();
+        create_shell_14();
+    }
+
+    void create_shell_13()
+    {
+        shell13 = create_shell_with_id(shellId1);
+    }
+
+    void create_shell_14()
+    {
+        shell14 = create_shell_with_id(shellId2);
+    }
+
 private:
     void test_exposed_boundary(const SideTestUtil::TestCase& testCase)
     {
@@ -115,27 +132,49 @@ protected:
     const SideTestUtil::TestCase AAInterior =   {"AA.e",   2,  0, {}};
     const SideTestUtil::TestCase AeAInterior =  {"AeA.e",  3,  2, {{1, 5}, {shellId1, 0}, {shellId1, 1}, {2, 4}}};
     const SideTestUtil::TestCase AefAInterior = {"AefA.e", 3,  2, {{1, 5}, {shellId1, 0}, {shellId1, 1}, {shellId2, 0}, {shellId2, 1}, {2, 4}}};
+    stk::mesh::Entity shell13;
+    stk::mesh::Entity shell14;
 private:
     stk::mesh::Part *boundaryPart;
 };
 
-TEST_F(SkinWithModification, BuildUpThenTearDownWithAura)
+TEST_F(SkinWithModification, TestAddingOneShell)
 {
     if(stk::parallel_machine_size(get_comm()) <= 2)
     {
-        test_skinning(AAExterior, AAInterior);
-
-        stk::mesh::Entity shell13 = create_shell_with_id(shellId1);
+        create_shell_13();
         test_skinning(AeAExterior, AeAInterior);
+    }
+}
 
-        stk::mesh::Entity shell14 = create_shell_with_id(shellId2);
+TEST_F(SkinWithModification, TestAddingTwoShells)
+{
+    if(stk::parallel_machine_size(get_comm()) <= 2)
+    {
+        create_shells_13_and_14();
         test_skinning(AefAExterior, AefAInterior);
+    }
+}
 
+TEST_F(SkinWithModification, TestAddTwoShellThenDeleteOne)
+{
+    if(stk::parallel_machine_size(get_comm()) <= 2)
+    {
+        create_shells_13_and_14();
         destroy_element(shell14);
         test_skinning(AeAExterior, AeAInterior);
+    }
+}
 
+TEST_F(SkinWithModification, TestAddTwoShellThenDeleteBoth)
+{
+    if(stk::parallel_machine_size(get_comm()) <= 2)
+    {
+        create_shells_13_and_14();
+        destroy_element(shell14);
         destroy_element(shell13);
         test_skinning(AAExterior, AAInterior);
     }
 }
+
 }
