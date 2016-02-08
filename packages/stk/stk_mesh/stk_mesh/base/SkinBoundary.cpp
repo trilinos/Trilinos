@@ -56,10 +56,8 @@ void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToS
     ElemElemGraph elemElemGraph(bulkData, blocksToSkin, air);
     SkinMeshUtil skinMesh(bulkData, elemElemGraph, partToPutSidesInto, blocksToSkin, air);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
-    stk::util::sort_and_unique(skinnedSideSet, SideSetEntryLess(bulkData), SideSetEntryEquals(bulkData));
-    std::vector<stk::mesh::sharing_info> sharedModified;
-    FaceCreator faceCreator(bulkData, elemElemGraph);
-    faceCreator.create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto, sharedModified);
+
+    FaceCreator(bulkData, elemElemGraph).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
 }
 
 void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto)
@@ -73,10 +71,8 @@ void create_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const s
     stk::mesh::ElemElemGraph graph(bulkData, blocksToConsider);
     SkinMeshUtil skinMesh(bulkData, graph, partToPutSidesInto, blocksToConsider);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_interior_sideset();
-    stk::util::sort_and_unique(skinnedSideSet, SideSetEntryLess(bulkData), SideSetEntryEquals(bulkData));
-    std::vector<stk::mesh::sharing_info> sharedModified;
-    FaceCreator faceCreator(bulkData, graph);
-    faceCreator.create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto, sharedModified);
+
+    FaceCreator(bulkData, graph).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////

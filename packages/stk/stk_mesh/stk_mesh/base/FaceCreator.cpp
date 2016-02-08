@@ -48,8 +48,9 @@ size_t FaceCreator::create_face_entities_per_element(size_t element_side_index, 
     return ordinals.size();
 }
 
-void FaceCreator::create_side_entities_given_sideset(const std::vector<SideSetEntry> &skinnedSideSet, const stk::mesh::PartVector& skinParts, std::vector<stk::mesh::sharing_info>& sharedModified)
+void FaceCreator::create_side_entities_given_sideset(const std::vector<SideSetEntry> &skinnedSideSet, const stk::mesh::PartVector& skinParts)
 {
+    std::vector<stk::mesh::sharing_info> sharedModified;
     m_bulkData.modification_begin();
     for(size_t i=0;i<skinnedSideSet.size();)
         i += create_face_entities_per_element(i, skinnedSideSet, skinParts, sharedModified);

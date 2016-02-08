@@ -125,8 +125,8 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
 {
     std::vector<SideSetEntry> skinnedSideSet;
 
-    const stk::mesh::BulkData& bulk_data = eeGraph.get_mesh();
-    const stk::mesh::BucketVector& buckets = bulk_data.get_buckets(stk::topology::ELEM_RANK, bulk_data.mesh_meta_data().locally_owned_part());
+    const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
+    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
 
     for(size_t i=0;i<buckets.size();++i)
     {
@@ -144,6 +144,8 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
             }
         }
     }
+
+    stk::util::sort_and_unique(skinnedSideSet, SideSetEntryLess(bulkData), SideSetEntryEquals(bulkData));
 
     return skinnedSideSet;
 }
@@ -201,6 +203,9 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
             }
         }
     }
+
+    stk::util::sort_and_unique(skinnedSideSet, SideSetEntryLess(bulkData), SideSetEntryEquals(bulkData));
+
     return skinnedSideSet;
 }
 
