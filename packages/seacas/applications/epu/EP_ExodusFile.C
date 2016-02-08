@@ -266,11 +266,11 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si, int cycle)
 					    cycle, si.subcycle());
   }
 
-  // See if output file should be opened in the large model format...
-  // Did user specify it via -large_model argument...
+  // See if output file should be opened in netcdf4 format...
+  // Did user specify it via -netcdf4 or -large_model argument...
   int mode = 0;
   
-  if (si.large_model()) {
+  if (si.use_netcdf4()) {
     mode |= EX_NETCDF4;
   } else if (ex_large_model(fileids_[0]) == 1) {
     mode |= EX_LARGE_MODEL;

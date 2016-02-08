@@ -34,7 +34,7 @@
  */
 #include <assert.h>                     // for assert
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for fprintf, printf, NULL, etc
+#include <stdio.h>                      // for fprintf, printf, nullptr, etc
 #include <stdlib.h>                     // for exit, free, malloc
 #include <string.h>                     // for strcpy, strlen, memset, etc
 #include <time.h>                       // for asctime, localtime, time, etc
@@ -54,7 +54,7 @@ template <typename INT> struct NODE_COMM_MAP;
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
 #else
-#define TOPTR(x) (x.empty() ? NULL : &x[0])
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
 #endif
 
 namespace {
@@ -374,12 +374,12 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
 
   /* Convert Elem_Map to local element numbering */
   reverse_map(globals.Elem_Map[iproc], 0, itotal_elems,
-	      &globals.GElems[iproc][0], (INT*)NULL, itotal_elems,
+	      &globals.GElems[iproc][0], (INT*)nullptr, itotal_elems,
 	      &globals.Elem_Map[iproc][0]);
   /* Convert element IDs in the comm map to local numbering */
   for(int i0=0; i0 < ecomm_cnt; i0++) {
     reverse_map(e_comm_map[i0].elem_ids, 0, e_comm_map[i0].elem_cnt,
-		&globals.GElems[iproc][0], (INT*)NULL, itotal_elems,
+		&globals.GElems[iproc][0], (INT*)nullptr, itotal_elems,
 		e_comm_map[i0].elem_ids);
   }
 
@@ -507,7 +507,7 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
 
   if (iproc == 0) {
     /* Generate a QA record for the utility */
-    time_t  time_val = time(NULL);
+    time_t  time_val = time(nullptr);
     char *ct_ptr   = asctime(localtime(&time_val));
     char tm_date[30];
     strncpy(tm_date, ct_ptr,30);
@@ -587,7 +587,7 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   }
 
   if (globals.Num_Coordinate_Frames > 0) {
-    T *Coordinate_Frame_Coordinates = NULL;
+    T *Coordinate_Frame_Coordinates = nullptr;
     Coordinate_Frame_Coordinates = globals.Coordinate_Frame_Coordinates;
     if (ex_put_coordinate_frames(mesh_exoid, globals.Num_Coordinate_Frames,
 				 globals.Coordinate_Frame_Ids,
@@ -654,9 +654,9 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   total_out_time    += PIO_Time_Array[7];
 
   /* Assign the coordinates to the coord_vector */
-  T *x_coord=NULL;
-  T *y_coord=NULL;
-  T *z_coord=NULL;
+  T *x_coord=nullptr;
+  T *y_coord=nullptr;
+  T *z_coord=nullptr;
   if (itotal_nodes > 0) {
     switch(globals.Num_Dim) {
     case 3:
@@ -704,9 +704,9 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
     exit(1);
   }
 
-  /* If non-NULL, output the global node id map which preserves
+  /* If non-nullptr, output the global node id map which preserves
      the global node ids in the original mesh */
-  if (globals.Proc_Global_Node_Id_Map[iproc] != NULL) {
+  if (globals.Proc_Global_Node_Id_Map[iproc] != nullptr) {
     bytes_out += itotal_nodes * sizeof(INT);
     if (ex_put_map_param(mesh_exoid, 1, 0) < 0) {
       fprintf(stderr, "[%s]: ERROR, unable to define global node map parameters!\n",
@@ -740,7 +740,7 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
 
   /*
    * Generate a list of the global element blocks, some of which may be
-   * NULL on a given processor.
+   * nullptr on a given processor.
    */
   {
     /*
@@ -907,9 +907,9 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
       exit(1);
     }
 
-    /* If non-NULL, output the global element id map which preserves
+    /* If non-nullptr, output the global element id map which preserves
        the global element ids in the original mesh */
-    if (globals.Proc_Global_Elem_Id_Map[iproc] != NULL) {
+    if (globals.Proc_Global_Elem_Id_Map[iproc] != nullptr) {
       bytes_out += globals.Num_Internal_Elems[iproc] * globals.Num_Border_Elems[iproc] * sizeof(INT);
       if (ex_put_map_param(mesh_exoid, 0, 1) < 0) {
 	fprintf(stderr, "[%s]: ERROR, unable to define global map parameters!\n",
@@ -996,7 +996,7 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
 		 mesh_exoid);
 	}
 	if(ex_put_conn(mesh_exoid, EX_ELEM_BLOCK, globals.Proc_Elem_Blk_Ids[iproc][ilocal],
-		       proc_local_conn, NULL, NULL) < 0) {
+		       proc_local_conn, nullptr, nullptr) < 0) {
 	  fprintf(stderr, "[%s]: ERROR, unable to output connectivity\n",
 		  yo);
 	  ex_close(mesh_exoid);
@@ -1051,7 +1051,7 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
     iMaxLen = PEX_MAX(globals.Proc_NS_Count[iproc][i1], iMaxLen);
 
   /* Renumber Node set node lists to use local node numbers */
-  INT *proc_local_ns = NULL;
+  INT *proc_local_ns = nullptr;
   if(globals.Proc_Num_Node_Sets[iproc] > 0) {
     proc_local_ns = (INT *)array_alloc(__FILE__, __LINE__, 1,
                                        globals.Proc_NS_List_Length[iproc],
@@ -1068,7 +1068,7 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   PIO_Time_Array[16] = 0.0;
   PIO_Time_Array[17] = 0.0;
 
-  /* Fill in the information for the NULL node sets */
+  /* Fill in the information for the nullptr node sets */
   size_t cnt = 0;
   for(int i1=0; i1 < globals.Num_Node_Set; i1++) {
     bool ifound = false;
@@ -1140,14 +1140,14 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
     safe_free((void **) &proc_local_ns);
 
   /* Renumber element SS to use local element numbers */
-  INT *proc_local_ss = NULL;
+  INT *proc_local_ss = nullptr;
   if(globals.Proc_Num_Side_Sets[iproc] > 0) {
     proc_local_ss = (INT *)array_alloc(__FILE__, __LINE__, 1,
                                        globals.Proc_SS_Elem_List_Length[iproc],
                                        sizeof(INT));
     reverse_map(&globals.Proc_SS_Elem_List[iproc][0], 0,
 		globals.Proc_SS_Elem_List_Length[iproc],
-		&globals.GElems[iproc][0], (INT*)NULL,
+		&globals.GElems[iproc][0], (INT*)nullptr,
 		globals.Num_Internal_Elems[iproc]+globals.Num_Border_Elems[iproc],
 		proc_local_ss);
   }
@@ -1308,27 +1308,27 @@ int NemSpread<T,INT>::write_var_param(int mesh_exoid, int max_name_length,
 			       num_sset, local_sstt); 
   check_exodus_error(error, "ex_put_all_var_param");
 
-  if (gv_names != NULL) {
+  if (gv_names != nullptr) {
     bytes_out += Restart_Info.NVar_Glob * max_name_length;
     error = ex_put_variable_names(mesh_exoid, EX_GLOBAL, num_glob, gv_names);
     check_exodus_error(error, "ex_put_var_names");
   }
-  if (nv_names != NULL) {
+  if (nv_names != nullptr) {
     bytes_out += num_node * max_name_length;
     error = ex_put_variable_names(mesh_exoid, EX_NODAL, num_node, nv_names);
     check_exodus_error(error, "ex_put_var_names");
   }
-  if (ev_names != NULL) {
+  if (ev_names != nullptr) {
     bytes_out += Restart_Info.NVar_Elem * max_name_length;
     error = ex_put_variable_names(mesh_exoid, EX_ELEM_BLOCK, num_elem, ev_names);
     check_exodus_error(error, "ex_put_var_names");
   }
-  if (ns_names != NULL) {
+  if (ns_names != nullptr) {
     bytes_out += Restart_Info.NVar_Nset * max_name_length;
     error = ex_put_variable_names(mesh_exoid, EX_NODE_SET, num_nset, ns_names);
     check_exodus_error(error, "ex_put_var_names");
   }
-  if (ss_names != NULL) {
+  if (ss_names != nullptr) {
     bytes_out += Restart_Info.NVar_Sset * max_name_length;
     error = ex_put_variable_names(mesh_exoid, EX_SIDE_SET, num_sset, ss_names);
     check_exodus_error(error, "ex_put_var_names");
@@ -1545,7 +1545,7 @@ void reverse_map(INT *global, int p01, size_t gsize,
   gds_iqsort(global, tmp_index, gsize);
 
   size_t i3 = 0;
-  if (index != NULL) {
+  if (index != nullptr) {
     for(size_t i2 = 0; i2 < gsize; i2++) {
       INT gval = global[tmp_index[i2]] + p01;
       

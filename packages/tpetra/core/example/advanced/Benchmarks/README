@@ -1,0 +1,17 @@
+This directory contains some Tpetra benchmarks.
+
+blockCrsMatrixMatVec.cpp measures performance of
+Tpetra::Experimental::BlockCrsMatrix::apply (sparse matrix-vector
+multiply for BlockCrsMatrix, a block sparse matrix whose blocks are
+small dense matrices, all with the same dimensions).
+
+import.cpp measures performance of MPI communication operations
+involving Tpetra::Vector.
+
+localView.cpp measures performance of various ways to get the number
+of entries in a row of a Tpetra::CrsMatrix.  It mainly measures
+virtual method call overhead.
+
+vector.cpp measures performance of various computational kernels
+involving Tpetra::Vector.
+

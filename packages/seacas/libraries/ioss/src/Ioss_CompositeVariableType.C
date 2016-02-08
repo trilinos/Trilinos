@@ -52,7 +52,7 @@ std::string CompositeVariableType::composite_name(const std::string &base, int c
 VariableType*
 CompositeVariableType::composite_variable_type(const VariableType *inst, int copies)
 {
-  VariableType* comp_inst = NULL;
+  VariableType* comp_inst = nullptr;
 
   // See if we already constructed this composite type...
   std::string composite_type = CompositeVariableType::composite_name(inst->name(),copies);
@@ -74,7 +74,7 @@ CompositeVariableType::CompositeVariableType(const VariableType *base_type, int 
 {}
 
 CompositeVariableType::CompositeVariableType(const std::string& my_name, int number_components, bool delete_me)
-  : VariableType(my_name, number_components, delete_me), baseType(NULL), copies_(0)
+  : VariableType(my_name, number_components, delete_me), baseType(nullptr), copies_(0)
 {}
 
 std::string CompositeVariableType::label(int which, const char suffix_sep) const

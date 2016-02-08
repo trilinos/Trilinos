@@ -37,7 +37,7 @@
 #include <Ioss_FileInfo.h>              // for FileInfo
 #include <ctype.h>                      // for tolower
 #include <stddef.h>                     // for size_t
-#include <stdlib.h>                     // for NULL, exit, strtod, etc
+#include <stdlib.h>                     // for nullptr, exit, strtod, etc
 #include <string.h>                     // for strcmp
 #include <algorithm>                    // for sort, transform
 #include <iostream>                     // for operator<<, basic_ostream, etc
@@ -72,10 +72,10 @@ void SystemInterface::enroll_options()
 		 "\t\tbasename of the input file with suffix '.m'");
 
   options_.enroll("help", GetLongOption::NoValue,
-		  "Print this summary and exit", 0);
+		  "Print this summary and exit", nullptr);
 
   options_.enroll("version", GetLongOption::NoValue,
-		  "Print version and exit", NULL);
+		  "Print version and exit", nullptr);
 
   options_.enroll("field_suffix", GetLongOption::MandatoryValue,
 		  "Character used to separate a field component suffix from the field name.\n"
@@ -83,14 +83,14 @@ void SystemInterface::enroll_options()
 		  "\t\tDefault = none (field_x, field_y, field_z are different fields)", "none");
   
   options_.enroll("minimum_time", GetLongOption::MandatoryValue,
-		  "Minimum timestep for which to transfer data to matlab file.", 0);
+		  "Minimum timestep for which to transfer data to matlab file.", nullptr);
   
   options_.enroll("maximum_time", GetLongOption::MandatoryValue,
-		  "Maximum timestep for which to transfer data to matlab file.", 0);
+		  "Maximum timestep for which to transfer data to matlab file.", nullptr);
   
   options_.enroll("list", GetLongOption::MandatoryValue,
 		  "List global, nodal, element, nodeset, or sideset variables.\n\t\tEnter 'all' to list all types.\n"
-		  "\t\tCode exits after listing variable names.", NULL);
+		  "\t\tCode exits after listing variable names.", nullptr);
   
   options_.enroll("gvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of global variables to be output or ALL or NONE.",
@@ -101,26 +101,26 @@ void SystemInterface::enroll_options()
 		  "(Not Yet Implemented) Comma-separated list of element variables to be output or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain blocks by appending a\n"
 		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
-		  0);
+		  nullptr);
 
   options_.enroll("nvar", GetLongOption::MandatoryValue,
 		  "(Not Yet Implemented) Comma-separated list of nodal variables to be output or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain nodes by appending a\n"
 		  "\t\tcolon followed by the node id.  E.g. -nvar disp:10:20",
-		  0);
+		  nullptr);
 
   options_.enroll("nsetvar", GetLongOption::MandatoryValue,
 		  "(Not Yet Implemented) Comma-separated list of nodeset variables to be output or ALL or NONE.",
-		  0);
+		  nullptr);
 
   options_.enroll("ssetvar", GetLongOption::MandatoryValue,
 		  "(Not Yet Implemented) Comma-separated list of sideset variables to be output or ALL or NONE.",
-		  0);
+		  nullptr);
 #endif
 
   options_.enroll("copyright", GetLongOption::NoValue,
 		  "Show copyright and license data.",
-		  NULL);
+		  nullptr);
 }
 
 bool SystemInterface::parse_options(int argc, char **argv)
@@ -131,7 +131,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   // Get options from environment variable also...
   char *options = getenv("exomatlab");
-  if (options != NULL) {
+  if (options != nullptr) {
     std::cerr << "\nThe following options were specified via the EXOMATLAB_OPTIONS environment variable:\n"
 	      << "\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
@@ -163,7 +163,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("list");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       listVars_ = true;
       parse_variable_names(temp, &varsToList_);
     }
@@ -199,14 +199,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("minimum_time");
-    if (temp != NULL)
-      minimumTime_  = strtod(temp, NULL);
+    if (temp != nullptr)
+      minimumTime_  = strtod(temp, nullptr);
   }
   
   {
     const char *temp = options_.retrieve("maximum_time");
-    if (temp != NULL)
-      maximumTime_  = strtod(temp, NULL);
+    if (temp != nullptr)
+      maximumTime_  = strtod(temp, nullptr);
   }
   
   if (options_.retrieve("copyright")) {
@@ -290,10 +290,9 @@ namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list)
   {
     // Break into tokens separated by ","
-    if (tokens != NULL) {
+    if (tokens != nullptr) {
       std::string token_string(tokens);
-      StringVector var_list;
-      SLIB::tokenize(token_string, ",", var_list);
+      StringVector var_list = SLIB::tokenize(token_string, ",");
     
       // At this point, var_list is either a single string, or a
       // string separated from 1 or more ids with ":" delimiter.  For
@@ -303,15 +302,14 @@ namespace {
       // written for all elements.
       std::vector<std::string>::iterator I = var_list.begin();
       while (I != var_list.end()) {
-	StringVector name_id;
-	SLIB::tokenize(*I, ":", name_id);
+	StringVector name_id = SLIB::tokenize(*I, ":");
 	std::string var_name = LowerCase(name_id[0]);
 	if (name_id.size() == 1) {
 	  (*variable_list).push_back(std::make_pair(var_name,0));
 	} else {
 	  for (size_t i=1; i < name_id.size(); i++) {
 	    // Convert string to integer...
-	    int id = strtoul(name_id[i].c_str(), NULL, 0);
+	    int id = strtoul(name_id[i].c_str(), nullptr, 0);
 	    (*variable_list).push_back(std::make_pair(var_name,id));
 	  }
 	}

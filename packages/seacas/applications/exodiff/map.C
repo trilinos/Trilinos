@@ -72,7 +72,7 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
   //  ********************  elements  ********************  //
 
   // Load global ids (0-offset) into id array.
-  INT* id = new INT[num_elmts];
+  auto  id = new INT[num_elmts];
   {for (size_t e = 0; e < num_elmts; ++e) id[e] = e;}
   
   // Get map storage.
@@ -81,7 +81,7 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
   elmt_map = new INT[num_elmts];  SMART_ASSERT(elmt_map != 0);
   
   // Create storage for midpoints.
-  double *x2 = 0, *y2 = 0, *z2 = 0;
+  double *x2 = nullptr, *y2 = nullptr, *z2 = nullptr;
   x2 = new double[num_elmts];  SMART_ASSERT(x2 != 0);
   if (dim > 1) { y2 = new double[num_elmts];  SMART_ASSERT(y2 != 0); }
   if (dim > 2) { z2 = new double[num_elmts];  SMART_ASSERT(z2 != 0); }
@@ -335,10 +335,10 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
   file2.Free_Nodal_Coordinates();
   file2.Free_Elmt_Blocks();
   
-  if (x2 != 0) delete [] x2;
-  if (y2 != 0) delete [] y2;
-  if (z2 != 0) delete [] z2;
-  if (id != 0) delete [] id;
+  if (x2 != nullptr) delete [] x2;
+  if (y2 != nullptr) delete [] y2;
+  if (z2 != nullptr) delete [] z2;
+  if (id != nullptr) delete [] id;
 
   interface.coord_tol.type = save_tolerance_type;
 }
@@ -361,7 +361,7 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
 //  ********************  elements  ********************  //
 
   // Load global ids (0-offset) into id array.
-  INT* id2 = new INT[num_elmts2];
+  auto  id2 = new INT[num_elmts2];
   {for (size_t e = 0; e < num_elmts2; ++e) id2[e] = e;}
   
   // Get map storage.
@@ -371,7 +371,7 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
   {for (size_t i = 0; i < num_elmts1; ++i) elmt_map[i] = -1; }
 
   // Create storage for midpoints.
-  double *x2 = 0, *y2 = 0, *z2 = 0;
+  double *x2 = nullptr, *y2 = nullptr, *z2 = nullptr;
   x2 = new double[num_elmts2];  SMART_ASSERT(x2 != 0);
   if (dim > 1) { y2 = new double[num_elmts2];  SMART_ASSERT(y2 != 0); }
   if (dim > 2) { z2 = new double[num_elmts2];  SMART_ASSERT(z2 != 0); }
@@ -596,10 +596,10 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
   file2.Free_Nodal_Coordinates();
   file2.Free_Elmt_Blocks();
   
-  if (x2 != 0) delete [] x2;
-  if (y2 != 0) delete [] y2;
-  if (z2 != 0) delete [] z2;
-  if (id2 != 0) delete [] id2;
+  if (x2 != nullptr) delete [] x2;
+  if (y2 != nullptr) delete [] y2;
+  if (z2 != nullptr) delete [] z2;
+  if (id2 != nullptr) delete [] id2;
 
   interface.coord_tol.type = save_tolerance_type;
 }
@@ -684,7 +684,7 @@ void Compute_FileId_Maps(INT*& node_map, INT*& elmt_map,
     
     if (!internal_compute_maps(node_map, node_id_map1, node_id_map2, num_nodes, "node")) {
       delete [] node_map;
-      node_map = 0;
+      node_map = nullptr;
     }
   }
   
@@ -699,7 +699,7 @@ void Compute_FileId_Maps(INT*& node_map, INT*& elmt_map,
 
     if (!internal_compute_maps(elmt_map, elem_id_map1, elem_id_map2, num_elmts, "element")) {
       delete [] elmt_map;
-      elmt_map = 0;
+      elmt_map = nullptr;
     }
   }
 }
@@ -751,7 +751,7 @@ bool Check_Maps(const INT *node_map, const INT *elmt_map, const ExoII_Read<INT>&
     return false;
   }
   
-  if (node_map != NULL) {
+  if (node_map != nullptr) {
     for (size_t ijk = 0; ijk < file1.Num_Nodes(); ++ijk) {
       if ((INT)ijk != node_map[ijk]) {
 	return false;
@@ -759,7 +759,7 @@ bool Check_Maps(const INT *node_map, const INT *elmt_map, const ExoII_Read<INT>&
     }
   }
 
-  if (elmt_map != NULL) {
+  if (elmt_map != nullptr) {
     for (size_t ijk = 0; ijk < file1.Num_Elmts(); ++ijk) {
       if ((INT)ijk != elmt_map[ijk]) {
 	return false;
@@ -780,7 +780,7 @@ namespace {
     // elements.
 
     size_t num_nodes = file1.Num_Nodes();
-    INT* mapped_2 = new INT[num_nodes];
+    auto  mapped_2 = new INT[num_nodes];
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
@@ -809,7 +809,7 @@ namespace {
     // unmapped node will have a '-1' entry in 'node_map' and a file2
     // unmapped node will have a '-1' entry in 'mapped_2'.  Reuse the
     // 'mapped_2' array to hold the list.
-    INT* mapped_1 = new INT[count_1];
+    auto  mapped_1 = new INT[count_1];
     size_t count_2 = 0;
     count_1 = 0;
     for (size_t i=0; i <num_nodes; i++) {
@@ -998,7 +998,7 @@ double Find_Min_Coord_Sep(ExoII_Read<INT>& file)
   const double* y = (double*)file.Y_Coords();
   const double* z = (double*)file.Z_Coords();
   
-  INT *indx = new INT[num_nodes];
+  auto indx = new INT[num_nodes];
   for (size_t i=0; i < num_nodes; i++) {
     indx[i] = i;
   }
@@ -1099,7 +1099,7 @@ bool Compare_Maps(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *nod
   bool diff = false;
   size_t warn_count = 0;
   
-  if (node_map != NULL) {
+  if (node_map != nullptr) {
     // There is a map between file1 and file2, but all nodes are
     // used in both files.
     for (size_t i=0; i < num_nodes1; i++) {
@@ -1137,7 +1137,7 @@ bool Compare_Maps(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *nod
   }
 
   warn_count = 0;
-  if (elmt_map != NULL) {
+  if (elmt_map != nullptr) {
     // There is a map between file1 and file2, but all elements are
     // used in both files.
     for (size_t i=0; i < num_elmts1; i++) {

@@ -42,7 +42,7 @@
 #include "elb_graph.h"
 #include <assert.h>                     // for assert
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf, printf, NULL
+#include <stdio.h>                      // for sprintf, printf, nullptr
 #include <stdlib.h>                     // for free, malloc
 #include <string.h>                     // for strcat, strcpy
 #include <sstream>                      // for operator<<, ostringstream, etc
@@ -180,8 +180,8 @@ namespace {
     size_t nhold = 0;
     int sid = 0;
     
-    INT *pt_list=NULL;
-    INT *hold_elem=NULL;
+    INT *pt_list=nullptr;
+    INT *hold_elem=nullptr;
     INT side_nodes[MAX_SIDE_NODES+2];
     INT mirror_nodes[MAX_SIDE_NODES+2];
 
@@ -703,11 +703,11 @@ namespace {
     /* Adjust for a mesh with spheres */
     if(problem->type == ELEMENTAL && sphere->num) {
       /* Decrement adjacency entries */
-      for(size_t cnt1=0; cnt1 < graph->adj.size(); cnt1++) {
+      for(auto & elem : graph->adj) {
 	for(size_t ecnt=0; ecnt < mesh->num_el_blks; ecnt++) {
-	  if(graph->adj[cnt1] >= sphere->begin[ecnt] &&
-	     graph->adj[cnt1] < sphere->end[ecnt]) {
-	    graph->adj[cnt1] -= sphere->adjust[ecnt];
+	  if(elem >= sphere->begin[ecnt] &&
+	     elem < sphere->end[ecnt]) {
+	    elem -= sphere->adjust[ecnt];
 	    break;
 	  }
 	}

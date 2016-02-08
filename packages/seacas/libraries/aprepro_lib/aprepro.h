@@ -105,48 +105,48 @@ namespace SEAMS {
 
       value() :
 	var(0),
-	fnctptr(NULL),
-	fnctptr_d(NULL),
-	fnctptr_c(NULL),
-	fnctptr_dc(NULL),
-	fnctptr_cd(NULL),
-	fnctptr_cc(NULL),
-	fnctptr_dd(NULL),
-	fnctptr_ddd(NULL),
-	fnctptr_ccd(NULL),
-	fnctptr_dddd(NULL),
-	fnctptr_ddddc(NULL),
-	fnctptr_dddddd(NULL),
-	fnctptr_a(NULL),
-	svar(NULL),
-	strfnct(NULL),
-	strfnct_c(NULL),
-	strfnct_d(NULL),
-	strfnct_a(NULL),
-	strfnct_dd(NULL),
-	strfnct_ccc(NULL),
-	strfnct_dcc(NULL),
-	strfnct_dcccc(NULL),
-	avar(NULL),
-	arrfnct_c(NULL),
-	arrfnct_cc(NULL),
-	arrfnct_cd(NULL),
-	arrfnct_dd(NULL),
-	arrfnct_d(NULL),
-	arrfnct_a(NULL) {}
+	fnctptr(nullptr),
+	fnctptr_d(nullptr),
+	fnctptr_c(nullptr),
+	fnctptr_dc(nullptr),
+	fnctptr_cd(nullptr),
+	fnctptr_cc(nullptr),
+	fnctptr_dd(nullptr),
+	fnctptr_ddd(nullptr),
+	fnctptr_ccd(nullptr),
+	fnctptr_dddd(nullptr),
+	fnctptr_ddddc(nullptr),
+	fnctptr_dddddd(nullptr),
+	fnctptr_a(nullptr),
+	svar(nullptr),
+	strfnct(nullptr),
+	strfnct_c(nullptr),
+	strfnct_d(nullptr),
+	strfnct_a(nullptr),
+	strfnct_dd(nullptr),
+	strfnct_ccc(nullptr),
+	strfnct_dcc(nullptr),
+	strfnct_dcccc(nullptr),
+	avar(nullptr),
+	arrfnct_c(nullptr),
+	arrfnct_cc(nullptr),
+	arrfnct_cd(nullptr),
+	arrfnct_dd(nullptr),
+	arrfnct_d(nullptr),
+	arrfnct_a(nullptr) {}
     } value;
     symrec *next;
 
     symrec(const char *my_name, int my_type, bool is_internal = false)
       : name(my_name), syntax(my_name), info("UNDEFINED"), type(my_type),
-	isInternal(is_internal), next(NULL)
+	isInternal(is_internal), next(nullptr)
     {
       value.var = 0;
     }
 
     symrec(const std::string &my_name, int my_type, bool is_internal = false)
       : name(my_name), syntax(my_name), info("UNDEFINED"), type(my_type),
-	isInternal(is_internal), next(NULL)
+	isInternal(is_internal), next(nullptr)
     {
       value.var = 0;
     }
@@ -279,7 +279,7 @@ namespace SEAMS {
      */
     bool parse_file(const std::string& filename);
 
-    void statistics(std::ostream *out = NULL) const;
+    void statistics(std::ostream *out = nullptr) const;
     
     aprepro_options ap_options;
     std::stack<file_rec> ap_file_list;

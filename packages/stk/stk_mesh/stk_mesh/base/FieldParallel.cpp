@@ -37,6 +37,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/util/PairIter.hpp>   // for PairIter
+#include <stk_util/util/SortAndUnique.hpp>   // for PairIter
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
@@ -281,10 +282,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool
       if (f->entity_rank() != first_field_rank) {
           const std::vector<int>& sharing_procs = mesh.all_sharing_procs(f->entity_rank());
           for(int p : sharing_procs) {
-              std::vector<int>::iterator iter = std::lower_bound(comm_procs.begin(), comm_procs.end(), p);
-              if (iter == comm_procs.end() || *iter != p) {
-                  comm_procs.insert(iter, p);
-              }
+              stk::util::insert_keep_sorted_and_unique(p, comm_procs);
           }
       }
   }
@@ -298,14 +296,13 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool
         ThrowRequireMsg(f.type_is<T>(),
                       "Please don't mix fields with different primitive types in the same parallel assemble operation");
 
-        const std::vector<BucketIndices>& bktIndicesVec = mesh.volatile_fast_shared_comm_map(f.entity_rank())[proc];
-        for(size_t i=0; i<bktIndicesVec.size(); ++i) {
-            const BucketIndices& bktIndices = bktIndicesVec[i];
-            unsigned bucket = bktIndices.bucket_id;
+        const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[proc];
+        for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
+            unsigned bucket = bktIndices.bucket_info[i].bucket_id;
             const int num_bytes_per_entity = field_bytes_per_entity( f , bucket );
             if (num_bytes_per_entity > 0) {
                 const int num_Ts_per_field = num_bytes_per_entity / sizeof(T);
-                reserve_len += bktIndices.ords.size()*num_Ts_per_field;
+                reserve_len += bktIndices.bucket_info[i].num_entities_this_bucket*num_Ts_per_field;
             }
         }
     }
@@ -313,25 +310,29 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool
 
     for (size_t j = 0 ; j < fields.size() ; ++j ) {
         const FieldBase& f = *fields[j];
-        const std::vector<BucketIndices>& bktIndicesVec = mesh.volatile_fast_shared_comm_map(f.entity_rank())[proc];
+        const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[proc];
 
-        for(size_t i=0; i<bktIndicesVec.size(); ++i) {
-            const BucketIndices& bktIndices = bktIndicesVec[i];
-            unsigned bucket = bktIndices.bucket_id;
+        const std::vector<unsigned>& ords = bktIndices.ords;
+        unsigned offset = 0;
+
+        for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
+            unsigned bucket = bktIndices.bucket_info[i].bucket_id;
+            unsigned num_entities = bktIndices.bucket_info[i].num_entities_this_bucket;
             const int num_bytes_per_entity = field_bytes_per_entity( f , bucket );
             if (num_bytes_per_entity > 0) {
                 const int num_Ts_per_field = num_bytes_per_entity / sizeof(T);
                 const T* data = reinterpret_cast<T*>(stk::mesh::field_data( f , bucket));
 
-                const std::vector<unsigned>& ords = bktIndices.ords;
-
-                for (unsigned ord : ords) {
-                    const unsigned idx = ord*num_Ts_per_field;
+                for (unsigned iord=0; iord<num_entities; ++iord) {
+                    const unsigned idx = ords[offset++]*num_Ts_per_field;
 
                     for (int d = 0; d < num_Ts_per_field; ++d) {
                       send_data.push_back(data[idx+d]);
                     }
                 }
+            }
+            else {
+                offset += num_entities;
             }
         }
     }
@@ -344,19 +345,20 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool
     unsigned offset = 0;
     for (size_t j = 0 ; j < fields.size() ; ++j ) {
         const FieldBase& f = *fields[j] ;
-        const std::vector<BucketIndices>& bktIndicesVec = mesh.volatile_fast_shared_comm_map(f.entity_rank())[iproc];
+        const BucketIndices& bktIndices = mesh.volatile_fast_shared_comm_map(f.entity_rank())[iproc];
+        const std::vector<unsigned>& ords = bktIndices.ords;
 
-        for(size_t i=0; i<bktIndicesVec.size(); ++i) {
-            const BucketIndices& bktIndices = bktIndicesVec[i];
-            unsigned bucket = bktIndices.bucket_id;
-            const std::vector<unsigned>& ords = bktIndices.ords;
+        size_t ords_offset = 0;
+        for(size_t i=0; i<bktIndices.bucket_info.size(); ++i) {
+            unsigned bucket = bktIndices.bucket_info[i].bucket_id;
+            unsigned num_entities = bktIndices.bucket_info[i].num_entities_this_bucket;
             const int num_bytes_per_entity = field_bytes_per_entity( f , bucket );
             if (num_bytes_per_entity > 0) {
                 const int num_Ts_per_field = num_bytes_per_entity / sizeof(T);
                 T* data = reinterpret_cast<T*>(stk::mesh::field_data( f , bucket));
 
-                for (unsigned ord : ords) {
-                    const unsigned idx = ord*num_Ts_per_field;
+                for (unsigned iord=0; iord<num_entities; ++iord) {
+                    const unsigned idx = ords[ords_offset++]*num_Ts_per_field;
 
                     for (int d = 0; d < num_Ts_per_field; ++d) {
                       data[idx+d] = do_op(data[idx+d], recv_data[offset + d]);
@@ -364,19 +366,12 @@ void parallel_op_impl(const BulkData& mesh, std::vector<FieldBase*> fields, bool
                     offset += num_Ts_per_field;
                 }
             }
+            else {
+                ords_offset += num_entities;
+            }
         }
     }
   };
-
-  const int parallel_size = mesh.parallel_size();
-
-  std::vector<std::vector<T> > send_data(parallel_size);
-  std::vector<std::vector<T> > recv_data(parallel_size);
-
-  for(size_t p=0; p<comm_procs.size(); ++p) {
-    msgPacker(comm_procs[p], send_data[comm_procs[p]]);
-    recv_data[comm_procs[p]].resize(send_data.size());
-  }
 
   MPI_Comm comm = mesh.parallel();
   parallel_data_exchange_sym_pack_unpack<T>(comm, comm_procs, msgPacker, msgUnpacker, deterministic);

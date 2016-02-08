@@ -170,7 +170,7 @@ namespace Iovs {
     this->debugLevel = 0;
     if(props.exists("CATALYST_DEBUG_LEVEL"))
       {
-      this->enableLogging = props.get("CATALYST_DEBUG_LEVEL").get_int();
+      this->debugLevel = props.get("CATALYST_DEBUG_LEVEL").get_int();
       }
 
     this->catalyst_output_directory = "";
@@ -1295,8 +1295,7 @@ namespace {
 
   int64_t extract_id(const std::string &name_id)
    {
-     std::vector<std::string> tokens;
-     Ioss::tokenize(name_id,"_",tokens);
+     std::vector<std::string> tokens = Ioss::tokenize(name_id,"_");
 
      if (tokens.size() == 1)
        return 0;

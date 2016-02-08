@@ -32,7 +32,7 @@
 // 
 
 #include "side_set.h"
-#include <cstdlib>                      // for NULL, exit
+#include <cstdlib>                      // for nullptr, exit
 #include <iostream>                     // for operator<<, endl, ostream, etc
 #include <vector>                       // for vector
 #include "ED_SystemInterface.h"         // for SystemInterface, interface
@@ -47,22 +47,22 @@ template <typename INT>
 Side_Set<INT>::Side_Set()
   : Exo_Entity(),
     num_dist_factors(0),
-    elmts(NULL),
-    sides(NULL),
-    sideIndex(NULL),
-    dfIndex(NULL),
-    dist_factors(NULL)
+    elmts(nullptr),
+    sides(nullptr),
+    sideIndex(nullptr),
+    dfIndex(nullptr),
+    dist_factors(nullptr)
 { }
 
 template <typename INT>
 Side_Set<INT>::Side_Set(int file_id, size_t id)
   : Exo_Entity(file_id, id),
     num_dist_factors(0),
-    elmts(NULL),
-    sides(NULL),
-    sideIndex(NULL),
-    dfIndex(NULL),
-    dist_factors(NULL)
+    elmts(nullptr),
+    sides(nullptr),
+    sideIndex(nullptr),
+    dfIndex(nullptr),
+    dist_factors(nullptr)
 {
   SMART_ASSERT((int)id != EX_INVALID_ID);
 }
@@ -71,11 +71,11 @@ template <typename INT>
 Side_Set<INT>::Side_Set(int file_id, size_t id, size_t ns, size_t ndf)
   : Exo_Entity(file_id, id, ns),
     num_dist_factors(ndf),
-    elmts(NULL),
-    sides(NULL),
-    sideIndex(NULL),
-    dfIndex(NULL),
-    dist_factors(NULL)
+    elmts(nullptr),
+    sides(nullptr),
+    sideIndex(nullptr),
+    dfIndex(nullptr),
+    dist_factors(nullptr)
 {
   SMART_ASSERT(id > 0);
 }
@@ -101,9 +101,9 @@ void Side_Set<INT>::entity_load_params()
   std::vector<ex_set> sets(1);
   sets[0].id = id_;
   sets[0].type = EX_SIDE_SET;
-  sets[0].entry_list = NULL;
-  sets[0].extra_list = NULL;
-  sets[0].distribution_factor_list = NULL;
+  sets[0].entry_list = nullptr;
+  sets[0].extra_list = nullptr;
+  sets[0].distribution_factor_list = nullptr;
 
   int err = ex_get_sets(fileId, 1, &sets[0]);
   
@@ -120,11 +120,11 @@ void Side_Set<INT>::entity_load_params()
 template <typename INT>
  void Side_Set<INT>::apply_map(const INT *elmt_map)
 {
-  SMART_ASSERT(elmt_map != NULL);
-  if (elmts != NULL) {
-    delete [] elmts;     elmts = NULL;
-    delete [] sides;     sides = NULL;
-    delete [] sideIndex; sideIndex = NULL;
+  SMART_ASSERT(elmt_map != nullptr);
+  if (elmts != nullptr) {
+    delete [] elmts;     elmts = nullptr;
+    delete [] sides;     sides = nullptr;
+    delete [] sideIndex; sideIndex = nullptr;
   }
   load_sides(elmt_map);
 }
@@ -133,7 +133,7 @@ template <typename INT>
 void Side_Set<INT>::load_sides(const INT *elmt_map) const
 {
   int err = 0;
-  if ((elmts == NULL || sides == NULL) && numEntity > 0)
+  if ((elmts == nullptr || sides == nullptr) && numEntity > 0)
     {
       elmts = new INT[numEntity];  SMART_ASSERT(elmts != 0);
       sides = new INT[numEntity];  SMART_ASSERT(sides != 0);
@@ -147,7 +147,7 @@ void Side_Set<INT>::load_sides(const INT *elmt_map) const
 	exit(1);
       }
 
-      if (elmt_map != NULL) {
+      if (elmt_map != nullptr) {
 	for (size_t i=0; i < numEntity; i++) {
 	  elmts[i] = 1+elmt_map[elmts[i]-1];
 	}
@@ -177,10 +177,10 @@ void Side_Set<INT>::load_sides(const INT *elmt_map) const
 template <typename INT>
 void Side_Set<INT>::load_df() const
 {
-  if (elmts == NULL)
+  if (elmts == nullptr)
     load_sides();
   
-  if (dist_factors != NULL)
+  if (dist_factors != nullptr)
     return;  // Already loaded.
   
   dfIndex = new INT[numEntity+1]; SMART_ASSERT(dfIndex != 0);
@@ -253,7 +253,7 @@ size_t Side_Set<INT>::Side_Index(size_t position) const
 template <typename INT>
 const double* Side_Set<INT>::Distribution_Factors() const
 {
-  if (dist_factors == NULL)
+  if (dist_factors == nullptr)
     load_df();
   return dist_factors;
 }
@@ -261,10 +261,10 @@ const double* Side_Set<INT>::Distribution_Factors() const
 template <typename INT>
 std::pair<INT,INT> Side_Set<INT>::Distribution_Factor_Range(size_t side) const
 {
-  if (dfIndex == NULL) {
+  if (dfIndex == nullptr) {
     load_df();
   }
-  if (dfIndex == NULL) {
+  if (dfIndex == nullptr) {
     std::cout << "ERROR: Failed to get distribution factors for sideset " << id_
 	      << ". !  Aborting..." << std::endl;
     exit(1);

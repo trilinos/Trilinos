@@ -53,10 +53,10 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database,
   
 {
   // The 'true' means it is ok for the factory to return
-  // NULL.  This is done here just so we can output a better
+  // nullptr.  This is done here just so we can output a better
   // error message.
   topology_ = ElementTopology::factory(entity_type, true);
-  if (topology_ == NULL) {
+  if (topology_ == nullptr) {
     std::ostringstream errmsg;
     errmsg << "ERROR: The topology type '" << entity_type << "' is not supported"
 	   << " on " << name() << " in file " << io_database->get_filename();

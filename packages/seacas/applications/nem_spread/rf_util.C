@@ -34,7 +34,7 @@
  */
 
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for printf, fprintf, NULL, etc
+#include <stdio.h>                      // for printf, fprintf, nullptr, etc
 #include <stdlib.h>                     // for exit
 #include "rf_allo.h"                    // for array_alloc
 
@@ -119,7 +119,7 @@ int break_message_up (size_t unit_size, size_t num_units, size_t max_bytes,
 
   if (num_units <= 0) {
     num_mesg = 0;
-    *start_pos = NULL;
+    *start_pos = nullptr;
     return (num_mesg);
   }
 

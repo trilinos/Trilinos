@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     }
     else if (std::strcmp("--thickness", argv[i]) == 0) {
       i++;
-      globals.thickness = std::strtod(argv[i++], NULL);
+      globals.thickness = std::strtod(argv[i++], nullptr);
     }
 
     // Found an option.  See if it has an argument...
@@ -265,7 +265,7 @@ namespace {
     //========================================================================
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
 						    (MPI_Comm)MPI_COMM_WORLD);
-    if (dbi == NULL || !dbi->ok()) {
+    if (dbi == nullptr || !dbi->ok()) {
       std::cerr  << "ERROR: Could not open database '" << inpfile
 		 << "' of type '" << input_type << "'\n";
       std::exit(EXIT_FAILURE);
@@ -279,7 +279,7 @@ namespace {
     //========================================================================
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(output_type, outfile, Ioss::WRITE_RESTART,
 						    (MPI_Comm)MPI_COMM_WORLD);
-    if (dbo == NULL || !dbo->ok()) {
+    if (dbo == nullptr || !dbo->ok()) {
       std::cerr  << "ERROR: Could not create output database '" << outfile
 		 << "' of type '" << output_type << "'\n";
       std::exit(EXIT_FAILURE);

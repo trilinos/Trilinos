@@ -171,15 +171,15 @@ int max_string_length(const vector<string> &names)
 
 void to_lower( string & s )
 {
-  for (unsigned i = 0; i < s.size(); ++i)
-    s[i] = tolower(s[i]);
+  for (auto & elem : s)
+    elem = tolower(elem);
 }
 
 char first_character( const string & s )
 {
-  for (unsigned i = 0; i < s.size(); ++i)
-    if ( ! isspace( (int)(s[i]) ) )
-      return s[i];
+  for (auto & elem : s)
+    if ( ! isspace( (int)(elem) ) )
+      return elem;
   
   return 0;
 }

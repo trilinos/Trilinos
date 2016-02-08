@@ -48,8 +48,9 @@ namespace Excn {
   typedef std::vector<int64_t>  Int64Vector;
   typedef std::vector<char> DistVector;
 
-  struct Mesh
+  class Mesh
   {
+  public:
     Mesh() :   dimensionality(0), nodeCount(0), elementCount(0),
 	       blockCount(0), nodesetCount(0), sidesetCount(0),
 	       needNodeMap(true), needElementMap(true) {}
@@ -86,8 +87,9 @@ namespace Excn {
 
   };
   
-  struct Block
+  class Block
   {
+  public:
     Block() : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0),
 	      offset_(0), position_(0)
     {
@@ -131,8 +133,9 @@ namespace Excn {
   };
   
   template <typename INT>
-  struct NodeSet
+  class NodeSet
   {
+  public:
     NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(-1), name_("") {}
     
     ex_entity_id id;
@@ -164,8 +167,9 @@ namespace Excn {
   
   typedef std::pair<int64_t,int64_t> Side;
   template <typename INT>
-  struct SideSet
+  class SideSet
   {
+  public:
     SideSet() : id(0), sideCount(0), dfCount(0), offset_(-1), position_(-1), name_("") {}
     
     ex_entity_id id;
@@ -187,8 +191,9 @@ namespace Excn {
     }
   };
   
-  struct CommunicationMap
+  class CommunicationMap
   {
+  public:
     CommunicationMap() : id(0), entityCount(0), type('U') {}
     CommunicationMap(int the_id, int64_t count, char the_type) :
       id(the_id), entityCount(count), type(the_type) {}
@@ -197,8 +202,9 @@ namespace Excn {
     char type; // 'n' for node, 'e' for element
   };
 
-  struct CommunicationMetaData
+  class CommunicationMetaData
   {
+  public:
     CommunicationMetaData() : processorId(0), processorCount(0),
 	 globalNodes(0), globalElements(0),
 	 nodesInternal(0), nodesBorder(0), nodesExternal(0),

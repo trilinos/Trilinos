@@ -44,11 +44,13 @@ namespace stk { namespace mesh {
  * API interface to skin the boundary.
  *
  */
-void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, Part& partToPutSidesInto);
-void create_interior_block_boundary_sides(BulkData&, const Selector& blocksToConsider, Part& partToPutSidesInto);
-void create_all_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto);
+void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto);
+void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, stk::mesh::Selector* air);
 
-bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart);
+void create_interior_block_boundary_sides(BulkData&, const Selector& blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto);
+
+bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, stk::mesh::Part& skinnedPart);
+bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part &skinnedPart);
 
 }} // namespace stk::mesh
 #endif

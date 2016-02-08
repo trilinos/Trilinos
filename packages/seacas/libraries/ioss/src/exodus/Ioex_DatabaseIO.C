@@ -359,7 +359,7 @@ namespace Ioex {
     std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
     
     int ierr = ex_put_qa(get_file_pointer(), num_qa_records+1,
-			 myProcessor == 0 ? qa[0].qa_record : NULL);
+			 myProcessor == 0 ? qa[0].qa_record : nullptr);
     if (ierr < 0)
       Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -411,7 +411,7 @@ namespace Ioex {
       info[i][max_line_length] = '\0'; // Once more for good luck...
     }
 
-    int ierr = ex_put_info(get_file_pointer(), total_lines, myProcessor == 0 ? info : NULL);
+    int ierr = ex_put_info(get_file_pointer(), total_lines, myProcessor == 0 ? info : nullptr);
     if (ierr < 0)
       Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -509,13 +509,13 @@ namespace Ioex {
       }
 
       size_t number_sides = element_side.size() / 2;
-      Ioss::ElementBlock *block = NULL;
+      Ioss::ElementBlock *block = nullptr;
       for (size_t iel = 0; iel < number_sides; iel++) {
 	int64_t elem_id = element_side[2*iel];  // Vector contains both element and side.
 	elem_id = elemMap.global_to_local(elem_id);
-	if (block == NULL || !block->contains(elem_id)) {
+	if (block == nullptr || !block->contains(elem_id)) {
 	  block = get_region()->get_element_block(elem_id);
-	  assert(block != NULL);
+	  assert(block != nullptr);
 	  int block_order = block->get_property("original_block_order").get_int();
 	  block_ids[block_order] = 1;
 	}
@@ -623,18 +623,17 @@ namespace Ioex {
       // the values for the first block are first, followed by
       // next block, ...
       size_t offset = 0;
-      typename std::vector<T*>::const_iterator I;
-      for (I=blocks.begin(); I != blocks.end(); ++I) {
+      for (auto &block : blocks) {
 	// Get names of all transient and reduction fields...
 	Ioss::NameList results_fields;
-	(*I)->field_describe(Ioss::Field::TRANSIENT, &results_fields);
-	(*I)->field_describe(Ioss::Field::REDUCTION, &results_fields);
+	block->field_describe(Ioss::Field::TRANSIENT, &results_fields);
+	block->field_describe(Ioss::Field::REDUCTION, &results_fields);
 
 	Ioss::NameList::const_iterator IF;
 	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
 	  std::string field_name = *IF;
 
-	  Ioss::Field field = (*I)->get_field(field_name);
+	  Ioss::Field field = block->get_field(field_name);
 	  const Ioss::VariableType *var_type = field.transformed_storage();
 	  Ioss::Field::BasicType ioss_type = field.get_type();
 
@@ -958,7 +957,7 @@ namespace Ioex {
 	}
 
 	int offset = position*nvar;
-	int *local_truth = NULL;
+	int *local_truth = nullptr;
 	if (!truth_table.empty())
 	  local_truth = &truth_table[offset];
 
@@ -967,9 +966,8 @@ namespace Ioex {
 	Ioex::get_fields(count, names, nvar, Ioss::Field::TRANSIENT,
 			 get_field_separator(), local_truth, fields);
 
-	std::vector<Ioss::Field>::const_iterator IF;
-	for (IF = fields.begin(); IF != fields.end(); ++IF) {
-	  entity->field_add(*IF);
+	for (auto &field : fields) {
+	  entity->field_add(field);
 	}
 
 	for (int i=0; i < nvar; i++) {
@@ -1019,14 +1017,11 @@ namespace Ioex {
     {
       int index = 0;
       Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
-      Ioss::SideSetContainer::const_iterator I;
-      for (I=sidesets.begin(); I != sidesets.end(); ++I) {
-	Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
-	Ioss::SideBlockContainer::const_iterator J;
-
-	for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
-	  glob_index = gather_names(EX_SIDE_SET, m_variables[EX_SIDE_SET], *J, glob_index, true);
-	  index = gather_names(EX_SIDE_SET, m_variables[EX_SIDE_SET], *J, index, false);
+      for (auto &sideset : sidesets) {
+	Ioss::SideBlockContainer side_blocks = sideset->get_side_blocks();
+	for (auto &block : side_blocks) {
+	  glob_index = gather_names(EX_SIDE_SET, m_variables[EX_SIDE_SET], block, glob_index, true);
+	  index = gather_names(EX_SIDE_SET, m_variables[EX_SIDE_SET], block, index, false);
 	}
       }
       assert(index == static_cast<int>(m_variables[EX_SIDE_SET].size()));
@@ -1091,9 +1086,9 @@ namespace Ioex {
     typename std::vector<T*>::const_iterator I;
 
     int index = 0;
-    for (I=entities.begin(); I != entities.end(); ++I) {
-      glob_index = gather_names(type, m_variables[type], *I, glob_index, true);
-      index = gather_names(type, m_variables[type], *I, index, false);
+    for (auto &entity : entities) {
+      glob_index = gather_names(type, m_variables[type], entity, glob_index, true);
+      index = gather_names(type, m_variables[type], entity, index, false);
     }
     assert(index == static_cast<int>(m_variables[type].size()));
     generate_block_truth_table(m_variables[type], m_truthTable[type], entities,
@@ -1130,10 +1125,7 @@ namespace Ioex {
     }
 
     int save_index = 0;
-    Ioss::NameList::const_iterator IF;
-
-    for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-      std::string name = *IF;
+    for (auto &name : results_fields) {
 
       if (has_disp && name == disp_name && new_index != 0) {
 	save_index = new_index;
@@ -1200,25 +1192,22 @@ namespace Ioex {
     Ioss::SideSetContainer::const_iterator I;
 
     char field_suffix_separator = get_field_separator();
-    for (I=sidesets.begin(); I != sidesets.end(); ++I) {
-      Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
-      Ioss::SideBlockContainer::const_iterator J;
+    for (auto &sideset : sidesets) {
+      Ioss::SideBlockContainer side_blocks = sideset->get_side_blocks();
 
-      for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+      for (auto &block : side_blocks) {
 	// See if this sideblock has a corresponding entry in the sideset list.
-	if ((*J)->property_exists("invalid"))
+	if (block->property_exists("invalid"))
 	  continue;
 
 	// Get names of all transient and reduction fields...
 	Ioss::NameList results_fields;
-	(*J)->field_describe(Ioss::Field::TRANSIENT, &results_fields);
-	(*J)->field_describe(Ioss::Field::REDUCTION, &results_fields);
+	block->field_describe(Ioss::Field::TRANSIENT, &results_fields);
+	block->field_describe(Ioss::Field::REDUCTION, &results_fields);
 
 	Ioss::NameList::const_iterator IF;
-	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	  std::string field_name = *IF;
-
-	  Ioss::Field field = (*J)->get_field(field_name);
+	for (auto &field_name : results_fields) {
+	  Ioss::Field field = block->get_field(field_name);
 	  const Ioss::VariableType *var_type = field.transformed_storage();
 	  Ioss::Field::BasicType ioss_type = field.get_type();
 
@@ -1263,18 +1252,15 @@ namespace Ioex {
       // Push into a char** array...
       std::vector<char*> var_names(var_count);
       std::vector<std::string> variable_names(var_count);
-      VariableNameMap::const_iterator J  = variables.begin();
-      VariableNameMap::const_iterator JE = variables.end();
-      while (J != JE) {
-	size_t index = (*J).second;
+      for (auto &variable : variables) {
+	size_t index = variable.second;
 	assert(index > 0 && index <= var_count);
-	variable_names[index-1] = (*J).first;
+	variable_names[index-1] = variable.first;
 	if (uppercase_names)
 	  variable_names[index-1] = Ioss::Utils::uppercase(variable_names[index-1]);
 	else if (lowercase_names)
 	  variable_names[index-1] = Ioss::Utils::lowercase(variable_names[index-1]);
 	var_names[index-1] = (char*)variable_names[index-1].c_str();
-	++J;
       }
 
       int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
@@ -1335,7 +1321,7 @@ namespace Ioex {
     bool do_flush = true;
     if (dbUsage == Ioss::WRITE_HISTORY || !isParallel) {
       assert (myProcessor == 0);
-      time_t cur_time = time(NULL);
+      time_t cur_time = time(nullptr);
       if (cur_time - timeLastFlush >= 10) {
 	timeLastFlush = cur_time;
 	do_flush = true;
@@ -1378,7 +1364,7 @@ namespace Ioex {
     // Always create a variable "attribute" which contains a single
     // field for all attributes...
 
-    assert(block != NULL);
+    assert(block != nullptr);
     if (attribute_count > 0) {
       std::string block_name = block->name();
       size_t my_element_count = block->get_property("entity_count").get_int();
@@ -1445,12 +1431,10 @@ namespace Ioex {
       if (attributes_named) {
 	std::vector<Ioss::Field> attributes;
 	Ioex::get_fields(my_element_count, names, attribute_count,
-			 Ioss::Field::ATTRIBUTE, field_suffix_separator, NULL,
+			 Ioss::Field::ATTRIBUTE, field_suffix_separator, nullptr,
 			 attributes);
 	int offset = 1;
-	std::vector<Ioss::Field>::const_iterator IF;
-	for (IF = attributes.begin(); IF != attributes.end(); ++IF) {
-	  Ioss::Field field = *IF;
+	for (auto &field : attributes) {
 	  if (block->field_exists(field.get_name())) {
 	    std::ostringstream errmsg;
 	    errmsg << "ERROR: In block '" << block->name() << "', attribute '" << field.get_name()
@@ -1642,10 +1626,7 @@ namespace {
     // the field "attribute" always exists to contain all attributes
     // and its name should not be used even if it is the only
     // attribute field.
-    typename std::vector<T*>::const_iterator I;
-    for (I=entities.begin(); I != entities.end(); ++I) {
-      Ioss::GroupingEntity *ge = *I;
-
+    for (auto &ge : entities) {
       std::string ge_name = ge->name();
       int attribute_count = ge->get_property("attribute_count").get_int();
       if (attribute_count > 0) {
@@ -1659,9 +1640,7 @@ namespace {
 	Ioss::NameList results_fields;
 	ge->field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
 
-	Ioss::NameList::const_iterator IF;
-	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	  std::string field_name = *IF;
+	for (auto &field_name : results_fields) {
 	  const Ioss::Field &field = ge->get_fieldref(field_name);
 	  assert(field.get_index() != 0);
 
@@ -1703,9 +1682,7 @@ namespace {
     bool all_attributes_indexed = true;
     bool some_attributes_indexed = false;
 
-    Ioss::NameList::const_iterator IF;
-    for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-      std::string field_name = *IF;
+    for (auto &field_name : results_fields) {
       const Ioss::Field &field = block->get_fieldref(field_name);
 
       if (field_name == "attribute") {
@@ -1777,8 +1754,7 @@ namespace {
     if (!all_attributes_indexed && !some_attributes_indexed) {
       // Index was not set for any of the attributes; set them all...
       size_t offset = 1;
-      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	std::string field_name = *IF;
+      for (auto &field_name : results_fields) {
 	const Ioss::Field &field = block->get_fieldref(field_name);
 
 	if (field_name == "attribute") {
@@ -1811,8 +1787,7 @@ namespace {
 	first_undefined = i;
     }
     if (last_defined < first_undefined) {
-      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	std::string field_name = *IF;
+      for (auto &field_name : results_fields) {
 	const Ioss::Field &field = block->get_fieldref(field_name);
 
 	if (field_name == "attribute") {
@@ -1833,8 +1808,7 @@ namespace {
 
     // Take the easy way out... Just reindex all attributes.
     size_t offset = 1;
-    for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-      std::string field_name = *IF;
+    for (auto &field_name : results_fields) {
       const Ioss::Field &field = block->get_fieldref(field_name);
 
       if (field_name == "attribute") {

@@ -36,7 +36,7 @@
 #include <assert.h>                     // for assert
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for for_each
-#include <cstring>                      // for NULL
+#include <cstring>                      // for nullptr
 #include <map>                          // for _Rb_tree_iterator, etc
 #include <ostream>                      // for operator<<, basic_ostream, etc
 #include <string>                       // for string, char_traits, etc
@@ -104,7 +104,7 @@ Ioss::ElementTopology* Ioss::ElementTopology::factory(const std::string& type, b
 {
   std::string ltype = Ioss::Utils::lowercase(type);
   
-  Ioss::ElementTopology* inst = NULL;
+  Ioss::ElementTopology* inst = nullptr;
   Ioss::ElementTopologyMap::iterator iter = registry().find(ltype);
 
   if (iter == registry().end()) {
@@ -151,7 +151,7 @@ Ioss::ElementTopology* Ioss::ElementTopology::factory(unsigned int unique_id)
     if (Ioss::Utils::hash((*I).second->name()) == unique_id)
       return (*I).second;
   }
-  return NULL;
+  return nullptr;
 }
 
 unsigned int Ioss::ElementTopology::get_unique_id(const std::string& type)
@@ -298,7 +298,7 @@ Ioss::ElementTopology* Ioss::ElementTopology::boundary_type(int face_number) con
   if (is_element()) {
     if (parametric_dimension() == 2) {
       // A shell has faces and edges in its boundary...
-      if (face_number == 0) return NULL;
+      if (face_number == 0) return nullptr;
       
       assert(spatial_dimension() == 3);
       if (face_number > number_faces()) {
@@ -315,5 +315,5 @@ Ioss::ElementTopology* Ioss::ElementTopology::boundary_type(int face_number) con
       return edge_type(face_number);
     }
   }    
-  return NULL;
+  return nullptr;
 }

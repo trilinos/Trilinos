@@ -32,7 +32,7 @@
 // 
 
 #include "exo_block.h"
-#include <cstdlib>                      // for exit, NULL
+#include <cstdlib>                      // for exit, nullptr
 #include <iostream>                     // for operator<<, endl, ostream, etc
 #include <string>                       // for string, char_traits
 #include "exodusII.h"                   // for ex_block, etc
@@ -46,14 +46,14 @@ template <typename INT>
 Exo_Block<INT>::Exo_Block()
   : Exo_Entity(),
     num_nodes_per_elmt(-1),
-    conn(NULL)
+    conn(nullptr)
 { }
 
 template <typename INT>
 Exo_Block<INT>::Exo_Block(int file_id, size_t exo_block_id)
   : Exo_Entity(file_id, exo_block_id),
     num_nodes_per_elmt(-1),
-    conn(NULL)
+    conn(nullptr)
 {
   SMART_ASSERT(file_id >= 0);
   SMART_ASSERT((int)exo_block_id > EX_INVALID_ID);
@@ -70,7 +70,7 @@ Exo_Block<INT>::Exo_Block(int file_id,
   : Exo_Entity(file_id, id, num_e),
     elmt_type(type),
     num_nodes_per_elmt(num_npe),
-    conn(NULL)
+    conn(nullptr)
 {
   SMART_ASSERT(id > 0);
   SMART_ASSERT(elmt_type != "");
@@ -127,13 +127,13 @@ string Exo_Block<INT>::Load_Connectivity()
   if (fileId < 0) return "ERROR:  Invalid file id!";
   if (id_ == EX_INVALID_ID) return "ERROR:  Must initialize block parameters first!";
   
-  if (conn) delete [] conn;  conn = 0;
+  if (conn) delete [] conn;  conn = nullptr;
   
   if (numEntity && num_nodes_per_elmt)
   {
     conn = new INT[ (size_t)numEntity * num_nodes_per_elmt ];  SMART_ASSERT(conn != 0);
     
-    int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, conn, 0, 0);
+    int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, conn, nullptr, nullptr);
     if (err < 0) {
       std::cout << "Exo_Block<INT>::Load_Connectivity()  ERROR: Call to ex_get_conn"
            << " returned error value!  Block id = " << id_ << std::endl;
@@ -155,7 +155,7 @@ template <typename INT>
 string Exo_Block<INT>::Free_Connectivity()
 {
   SMART_ASSERT(Check_State());
-  if (conn) delete [] conn;  conn = 0;
+  if (conn) delete [] conn;  conn = nullptr;
   return "";
 }
 
@@ -164,7 +164,7 @@ const INT* Exo_Block<INT>::Connectivity(size_t elmt_index) const
 {
   SMART_ASSERT(Check_State());
   
-  if (!conn || elmt_index >= numEntity) return 0;
+  if (!conn || elmt_index >= numEntity) return nullptr;
   
   return &conn[(size_t)elmt_index * num_nodes_per_elmt];
 }
@@ -179,7 +179,7 @@ string Exo_Block<INT>::Give_Connectivity(size_t& num_e, size_t& npe, INT*& recv_
   npe = num_nodes_per_elmt;
   recv_conn = conn;
   
-  conn = 0;  // Transfers responsibility of deleting to the receiving pointer.
+  conn = nullptr;  // Transfers responsibility of deleting to the receiving pointer.
   
   return "";
 }

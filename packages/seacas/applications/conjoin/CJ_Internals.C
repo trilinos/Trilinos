@@ -107,10 +107,6 @@ Excn::Redefine::~Redefine()
 
 Excn::Internals::Internals(int exoid, int maximum_name_length)
   : exodusFilePtr(exoid),
-    nodeMapVarID(),
-    elementMapVarID(),
-    commIndexVar(0),
-    elemCommIndexVar(0),
     maximumNameLength(maximum_name_length)
 {}
 
@@ -158,13 +154,13 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh,
   // nonzero element count are in the correct order.
   size_t last_offset = 0;
   bool order_ok = true;
-  for (size_t i=0; i < blocks.size(); i++) {
-    if (blocks[i].elementCount > 0) {
-      if (blocks[i].offset_ < last_offset) {
+  for (auto & block : blocks) {
+    if (block.elementCount > 0) {
+      if (block.offset_ < last_offset) {
 	order_ok = false;
 	break;
       }
-      last_offset = blocks[i].offset_;
+      last_offset = block.offset_;
     }
   }
   
@@ -225,7 +221,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh,
     }
   	 
     size_t name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
-    char **names = new char* [max_entity];
+    auto names = new char* [max_entity];
     for (size_t i=0; i < max_entity; i++) {
       names[i] = new char [name_size+1];
     }

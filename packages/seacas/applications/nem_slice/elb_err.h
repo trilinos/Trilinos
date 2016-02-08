@@ -47,8 +47,8 @@ struct error_message
   int   line_no;
   std::string filename;
   
-  error_message(int l, const std::string &msg, int ln, const std::string &file) :
-    level(l), err_mesg(msg), line_no(ln), filename(file)
+  error_message(int l, std::string msg, int ln, std::string file) :
+    level(l), err_mesg(std::move(msg)), line_no(ln), filename(std::move(file))
   {}
 };
 

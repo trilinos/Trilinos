@@ -40,7 +40,7 @@
 #include <Ioss_FieldManager.h>          // for FieldManager, NameList
 #include <Ioss_PropertyManager.h>       // for PropertyManager
 #include <Ioss_State.h>                 // for State
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t, nullptr
 #include <stdint.h>                     // for int64_t
 #include <string>                       // for string
 #include <vector>                       // for vector
@@ -172,7 +172,7 @@ namespace Ioss {
     int put_field_data(const std::string& field_name, std::vector<Complex> &data) const;
 
     Ioss::Field::BasicType field_int_type() const {
-      if (get_database() == NULL || get_database()->int_byte_size_api() == 4)
+      if (get_database() == nullptr || get_database()->int_byte_size_api() == 4)
 	return Ioss::Field::INTEGER;
       else
 	return Ioss::Field::INT64;

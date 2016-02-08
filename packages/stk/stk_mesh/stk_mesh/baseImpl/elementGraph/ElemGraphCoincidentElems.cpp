@@ -95,32 +95,55 @@ void append_extracted_coincident_sides(stk::mesh::Graph &graph,
 }
 
 
+
+
+
+
+
+typedef std::map<stk::mesh::impl::ElementSidePair, std::vector<stk::mesh::GraphEdge>> ElemSideAndEdges;
+
+void choose_consistent_face_ids_on_procs_that_own_coincident_elements(const stk::mesh::Graph& graph,
+                                                 stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
+                                                 const stk::mesh::impl::SparseGraph& extractedCoincidentElements,
+                                                 const IdMapper &idMapper,
+                                                 ElemSideAndEdges& elemSidesAndEdges,
+                                                 MPI_Comm comm);
+
+void update_chosen_ids_on_other_procs_for_edges_with_coincident_elements(const ElemSideAndEdges &elemSidesAndEdges,
+                                        const stk::mesh::Graph &graph,
+                                        const stk::mesh::impl::SparseGraph &coincidentEdges,
+                                        stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
+                                        const IdMapper& idMapper,
+                                        MPI_Comm comm);
+
+
+
+// AefB.e: A and B are ANCE, e is MCE, f is SCE ( e is MCE because it has smallest id of stacked elements e,f )
+// master coincident element        MCE
+// slave coincident element         SCE
+// adjacent non-coincident element  ANCE
+
+void make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(const stk::mesh::Graph &graph,
+                                            stk::mesh::ParallelInfoForGraphEdges &parInfosForEdges,
+                                            const stk::mesh::impl::SparseGraph &coincidentEdges,
+                                            const IdMapper &idMapper,
+                                            MPI_Comm comm)
+{
+    ElemSideAndEdges elemSidesAndEdges;
+    choose_consistent_face_ids_on_procs_that_own_coincident_elements(graph, parInfosForEdges, coincidentEdges, idMapper, elemSidesAndEdges, comm);
+    update_chosen_ids_on_other_procs_for_edges_with_coincident_elements(elemSidesAndEdges, graph, coincidentEdges, parInfosForEdges, idMapper, comm);
+}
+
+void pack_graph_edge_and_chosen_side_id_to_proc(stk::CommSparse& commSparse, int otherProc, const stk::mesh::GraphEdge& graphEdge, stk::mesh::EntityId chosenSideId)
+{
+    commSparse.send_buffer(otherProc).pack<stk::mesh::EntityId>(graphEdge.elem1);
+    commSparse.send_buffer(otherProc).pack<int>(graphEdge.side1);
+    commSparse.send_buffer(otherProc).pack<stk::mesh::EntityId>(graphEdge.elem2);
+    commSparse.send_buffer(otherProc).pack<int>(graphEdge.side2);
+    commSparse.send_buffer(otherProc).pack<stk::mesh::EntityId>(chosenSideId);
+}
+
 typedef std::map<stk::mesh::GraphEdge, stk::mesh::impl::parallel_info *, GraphEdgeLessByElem2> GraphEdgeToParInfoMap;
-
-void pack_graph_edge_and_chosen_side_id(stk::CommSparse& commSparse,
-                                        const stk::mesh::GraphEdge& graphEdge,
-                                        const parallel_info* parInfo,
-                                        const IdMapper& idMapper)
-{
-    stk::mesh::EntityId elem1GlobalId = idMapper.localToGlobal(graphEdge.elem1);
-    commSparse.send_buffer(parInfo->m_other_proc).pack<stk::mesh::EntityId>(-graphEdge.elem2);
-    commSparse.send_buffer(parInfo->m_other_proc).pack<int>(graphEdge.side2);
-    commSparse.send_buffer(parInfo->m_other_proc).pack<stk::mesh::EntityId>(elem1GlobalId);
-    commSparse.send_buffer(parInfo->m_other_proc).pack<int>(graphEdge.side1);
-    commSparse.send_buffer(parInfo->m_other_proc).pack<stk::mesh::EntityId>(parInfo->m_chosen_side_id);
-}
-
-void pack_changed_edges_and_chosen_side_ids(stk::CommSparse& commSparse,
-                                            const GraphEdgeToParInfoMap& changedEdgesAndParInfos,
-                                            const IdMapper& idMapper)
-{
-    for(const GraphEdgeToParInfoMap::value_type& changedEdgeAndParInfo : changedEdgesAndParInfos)
-    {
-        const stk::mesh::GraphEdge& graphEdge = changedEdgeAndParInfo.first;
-        const parallel_info* parInfo = changedEdgeAndParInfo.second;
-        pack_graph_edge_and_chosen_side_id(commSparse, graphEdge, parInfo, idMapper);
-    }
-}
 
 void unpack_local_elem_side(stk::CommSparse& commSparse,
                             int procId,
@@ -174,22 +197,68 @@ void unpack_changed_edges_and_chosen_side_ids(stk::CommSparse &commSparse,
     update_chosen_side_id_for_graph_edge(parallelInfoForGraphEdges, recvGraphEdge, chosenSideId);
 }
 
-void fix_chosen_side_ids_on_other_procs(const GraphEdgeToParInfoMap &changedEdgesAndParInfos,
+int get_elem2_proc_id(const stk::mesh::GraphEdge& graphEdge,
+                      const stk::mesh::impl::ElementSidePair& MCEAndSide,
+                      stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges)
+{
+    int elem2Proc = -1;
+    if(!stk::mesh::impl::is_local_element(graphEdge.elem2))
+    {
+        stk::mesh::GraphEdge MCEtoElem2(MCEAndSide.first, MCEAndSide.second, graphEdge.elem2, graphEdge.side2);
+        stk::mesh::impl::parallel_info& MCEtoElem2ParInfo = parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(MCEtoElem2);
+        elem2Proc = MCEtoElem2ParInfo.m_other_proc;
+    }
+    return elem2Proc;
+}
+
+void pack_changed_edges_and_chosen_side_ids(stk::CommSparse& commSparse,
+                                            const ElemSideAndEdges& elemSidesAndEdges,
+                                            stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
+                                            const IdMapper& idMapper)
+{
+    for(const ElemSideAndEdges::value_type& MCEsideAndEdges : elemSidesAndEdges)
+    {
+        const stk::mesh::impl::ElementSidePair& MCEAndSide = MCEsideAndEdges.first;
+        const std::vector<stk::mesh::GraphEdge>& edgesForThisSide = MCEsideAndEdges.second;
+        for(const stk::mesh::GraphEdge& graphEdge : edgesForThisSide)
+        {
+            if(!stk::mesh::impl::is_local_element(graphEdge.elem1))
+            {
+                stk::mesh::GraphEdge MCEtoElem1(MCEAndSide.first, MCEAndSide.second, graphEdge.elem1, graphEdge.side1);
+                stk::mesh::impl::parallel_info& MCEtoElem1ParInfo = parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(MCEtoElem1);
+                int elem1Proc = MCEtoElem1ParInfo.m_other_proc;
+                int elem2Proc = get_elem2_proc_id(graphEdge, MCEAndSide, parallelInfoForGraphEdges);
+                if(elem1Proc != elem2Proc)
+                {
+                    stk::mesh::GraphEdge edgeOnOtherProc(idMapper.localToGlobal(graphEdge.elem1),
+                                                         graphEdge.side1,
+                                                         idMapper.localToGlobal(graphEdge.elem2),
+                                                         graphEdge.side2);
+                    pack_graph_edge_and_chosen_side_id_to_proc(commSparse, elem1Proc, edgeOnOtherProc, MCEtoElem1ParInfo.m_chosen_side_id);
+                }
+            }
+        }
+    }
+}
+
+void update_chosen_ids_on_other_procs_for_edges_with_coincident_elements(const ElemSideAndEdges &elemSidesAndEdges,
+                                        const stk::mesh::Graph &graph,
+                                        const stk::mesh::impl::SparseGraph &coincidentEdges,
                                         stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
                                         const IdMapper& idMapper,
                                         MPI_Comm comm)
 {
     stk::CommSparse commSparse(comm);
     stk::pack_and_communicate(commSparse,
-        [&commSparse, &changedEdgesAndParInfos, &idMapper]()
+        [&commSparse, &elemSidesAndEdges, &parallelInfoForGraphEdges, &idMapper]()
         {
-            pack_changed_edges_and_chosen_side_ids(commSparse, changedEdgesAndParInfos, idMapper);
+            pack_changed_edges_and_chosen_side_ids(commSparse, elemSidesAndEdges, parallelInfoForGraphEdges, idMapper);
         });
     stk::unpack_communications(commSparse,
-       [&commSparse, &idMapper, &parallelInfoForGraphEdges](int procId)
-       {
+        [&commSparse, &idMapper, &parallelInfoForGraphEdges](int procId)
+        {
             unpack_changed_edges_and_chosen_side_ids(commSparse, procId, idMapper, parallelInfoForGraphEdges);
-       });
+        });
 }
 
 void add_graph_edge_and_par_info(const stk::mesh::GraphEdge& parallelGraphEdge,
@@ -199,40 +268,6 @@ void add_graph_edge_and_par_info(const stk::mesh::GraphEdge& parallelGraphEdge,
     stk::mesh::impl::parallel_info& parInfoThisElem =
             parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(parallelGraphEdge);
     parInfos.insert(std::make_pair(parallelGraphEdge, &parInfoThisElem));
-}
-
-bool are_graph_edges_for_same_side(const stk::mesh::GraphEdge& parallelGraphEdge, const stk::mesh::GraphEdge& coincidentGraphEdge)
-{
-    return parallelGraphEdge.elem1 == coincidentGraphEdge.elem1 && parallelGraphEdge.side1 == coincidentGraphEdge.side1;
-}
-
-void add_coincident_graph_edges_and_par_infos(const stk::mesh::GraphEdge& parallelGraphEdge,
-                                              const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem,
-                                              stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
-                                              GraphEdgeToParInfoMap& parInfos)
-{
-    for(const stk::mesh::GraphEdge& coincidentGraphEdge : coincidentEdgesForElem)
-    {
-        if(are_graph_edges_for_same_side(parallelGraphEdge, coincidentGraphEdge) &&
-                impl::is_local_element(coincidentGraphEdge.elem2))
-        {
-            stk::mesh::GraphEdge otherElemGraphEdge(coincidentGraphEdge.elem2,
-                                                    coincidentGraphEdge.side2,
-                                                    parallelGraphEdge.elem2,
-                                                    parallelGraphEdge.side2);
-            add_graph_edge_and_par_info(otherElemGraphEdge, parallelInfoForGraphEdges, parInfos);
-        }
-    }
-}
-
-GraphEdgeToParInfoMap get_coincident_parallel_infos(const stk::mesh::GraphEdge& parallelGraphEdge,
-                                                    const std::vector<stk::mesh::GraphEdge> &coincidentEdgesForElem,
-                                                    stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges)
-{
-    GraphEdgeToParInfoMap parInfos;
-    add_graph_edge_and_par_info(parallelGraphEdge, parallelInfoForGraphEdges, parInfos);
-    add_coincident_graph_edges_and_par_infos(parallelGraphEdge, coincidentEdgesForElem, parallelInfoForGraphEdges, parInfos);
-    return parInfos;
 }
 
 stk::mesh::EntityId get_min_chosen_side_id(const GraphEdgeToParInfoMap &coincidentParInfos)
@@ -245,71 +280,138 @@ stk::mesh::EntityId get_min_chosen_side_id(const GraphEdgeToParInfoMap &coincide
 }
 
 void update_chosen_side_id_for_coincident_graph_edges(const GraphEdgeToParInfoMap &coincidentParInfos,
-                                                      stk::mesh::EntityId chosenSideId,
-                                                      GraphEdgeToParInfoMap& changedEdgesAndProcs)
+                                                      stk::mesh::EntityId chosenSideId)
 {
     for(const GraphEdgeToParInfoMap::value_type &graphEdgeAndParInfo : coincidentParInfos)
+        graphEdgeAndParInfo.second->m_chosen_side_id = chosenSideId;
+}
+
+
+
+void fill_par_infos_for_edges(const std::vector<stk::mesh::GraphEdge>& edges, stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges, GraphEdgeToParInfoMap &coincidentParInfos)
+{
+    for(const stk::mesh::GraphEdge& edge : edges)
+        if(stk::mesh::impl::is_local_element(edge.elem1) && !stk::mesh::impl::is_local_element(edge.elem2))
+            add_graph_edge_and_par_info(edge, parallelInfoForGraphEdges, coincidentParInfos);
+}
+
+std::vector<stk::mesh::GraphEdge> getMCEtoANCEedges(const stk::mesh::Graph& graph,
+                                                    const stk::mesh::impl::LocalId MCE,
+                                                    int sideIndex)
+{
+    std::vector<stk::mesh::GraphEdge> MCEtoANCEedges;
+    for(const stk::mesh::GraphEdge& MCEtoANCEedge : graph.get_edges_for_element(MCE))
+        if(MCEtoANCEedge.side1 == sideIndex)
+            MCEtoANCEedges.push_back(MCEtoANCEedge);
+    return MCEtoANCEedges;
+}
+
+std::vector<stk::mesh::GraphEdge> getMCEtoSCEedges(const std::vector<stk::mesh::GraphEdge>& allMCEtoSCEedges, int sideIndex)
+{
+    std::vector<stk::mesh::GraphEdge> MCEtoSCEedges;
+    for(const stk::mesh::GraphEdge& MCEtoSCEedge : allMCEtoSCEedges)
+        if(MCEtoSCEedge.side1 == sideIndex)
+            MCEtoSCEedges.push_back(MCEtoSCEedge);
+    return MCEtoSCEedges;
+}
+
+std::vector<stk::mesh::GraphEdge> getANCEtoSCEedges(const std::vector<stk::mesh::GraphEdge>& MCEtoANCEedges,
+                                                    const std::vector<stk::mesh::GraphEdge>& MCEtoSCEedges)
+{
+    std::vector<stk::mesh::GraphEdge> ANCEtoSCEedges;
+    for(const stk::mesh::GraphEdge& MCEtoANCE : MCEtoANCEedges)
+        for(const stk::mesh::GraphEdge& MCEtoSCE : MCEtoSCEedges)
+            ANCEtoSCEedges.push_back(stk::mesh::GraphEdge(MCEtoANCE.elem2, MCEtoANCE.side2, MCEtoSCE.elem2, MCEtoSCE.side2));
+    return ANCEtoSCEedges;
+}
+
+void appendSCEtoSCEedges(const std::vector<stk::mesh::GraphEdge>& MCEtoSCEedges,
+                         std::vector<stk::mesh::GraphEdge> &collectedEdges)
+{
+    for(const stk::mesh::GraphEdge& MCEtoSCE1 : MCEtoSCEedges)
     {
-        if(graphEdgeAndParInfo.second->m_chosen_side_id != chosenSideId)
+        for(const stk::mesh::GraphEdge& MCEtoSCE2 : MCEtoSCEedges)
         {
-            changedEdgesAndProcs.insert(graphEdgeAndParInfo);
-            graphEdgeAndParInfo.second->m_chosen_side_id = chosenSideId;
+            if(MCEtoSCE1.elem2 != MCEtoSCE2.elem2)
+            {
+                collectedEdges.push_back(stk::mesh::GraphEdge(MCEtoSCE1.elem2, MCEtoSCE1.side2, MCEtoSCE2.elem2, MCEtoSCE2.side2));
+                collectedEdges.push_back(stk::mesh::GraphEdge(MCEtoSCE2.elem2, MCEtoSCE2.side2, MCEtoSCE1.elem2, MCEtoSCE1.side2));
+            }
         }
     }
 }
 
-void update_chosen_side_ids_for_remote_graph_edge(const stk::mesh::GraphEdge& graphEdge,
-                                                  stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
-                                                  const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem,
-                                                  GraphEdgeToParInfoMap& changedEdgesAndParInfos)
+void appendTransposeEdges(const std::vector<stk::mesh::GraphEdge>& graphEdges, std::vector<stk::mesh::GraphEdge> &collectedEdges)
 {
-    GraphEdgeToParInfoMap coincidentParInfos = get_coincident_parallel_infos(graphEdge,
-                                                                             coincidentEdgesForElem,
-                                                                             parallelInfoForGraphEdges);
-    stk::mesh::EntityId chosenSideId = get_min_chosen_side_id(coincidentParInfos);
-    update_chosen_side_id_for_coincident_graph_edges(coincidentParInfos, chosenSideId, changedEdgesAndParInfos);
+    for(const stk::mesh::GraphEdge& graphEdge : graphEdges)
+        collectedEdges.push_back(stk::mesh::GraphEdge(graphEdge.elem2, graphEdge.side2, graphEdge.elem1, graphEdge.side1));
 }
 
-void update_chosen_side_ids(const stk::mesh::Graph& graph,
+int get_num_sides_of_coincident_element(const std::vector<stk::mesh::GraphEdge>& allMCEtoSCEedges)
+{
+    int maxSideId = -1;
+    for(const stk::mesh::GraphEdge& MCEtoSCEedge : allMCEtoSCEedges)
+        maxSideId = std::max(maxSideId, MCEtoSCEedge.side1);
+    return maxSideId + 1;
+}
+
+void match_chosen_ids_for_edges_this_proc(const stk::mesh::Graph& graph,
                             stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
-                            const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem,
-                            const stk::mesh::impl::LocalId elemId,
-                            GraphEdgeToParInfoMap& changedEdgesAndParInfos)
+                            const std::vector<stk::mesh::GraphEdge>& allMCEtoSCEedges,
+                            const stk::mesh::impl::LocalId MCE,
+                            const IdMapper &idMapper,
+                            ElemSideAndEdges& elemSidesAndEdges,
+                            MPI_Comm comm)
 {
-    for(const stk::mesh::GraphEdge& graphEdge : graph.get_edges_for_element(elemId))
+    int numMCEsides = get_num_sides_of_coincident_element(allMCEtoSCEedges);
+
+    for(int sideIndex = 0; sideIndex < numMCEsides; sideIndex++)
     {
-        if(!stk::mesh::impl::is_local_element(graphEdge.elem2))
-        {
-            update_chosen_side_ids_for_remote_graph_edge(graphEdge,
-                                                         parallelInfoForGraphEdges,
-                                                         coincidentEdgesForElem,
-                                                         changedEdgesAndParInfos);
-        }
+        std::vector<stk::mesh::GraphEdge> MCEtoANCEedges = getMCEtoANCEedges(graph, MCE, sideIndex);
+        std::vector<stk::mesh::GraphEdge> MCEtoSCEedges = getMCEtoSCEedges(allMCEtoSCEedges, sideIndex);
+        std::vector<stk::mesh::GraphEdge> ANCEtoSCEedges = getANCEtoSCEedges(MCEtoANCEedges, MCEtoSCEedges);
+
+        std::vector<stk::mesh::GraphEdge> allEdgesForThisSide;
+        allEdgesForThisSide.insert(allEdgesForThisSide.end(), MCEtoANCEedges.begin(), MCEtoANCEedges.end());
+        allEdgesForThisSide.insert(allEdgesForThisSide.end(), MCEtoSCEedges.begin(), MCEtoSCEedges.end());
+        allEdgesForThisSide.insert(allEdgesForThisSide.end(), ANCEtoSCEedges.begin(), ANCEtoSCEedges.end());
+        appendTransposeEdges(MCEtoANCEedges, allEdgesForThisSide);
+        appendTransposeEdges(MCEtoSCEedges, allEdgesForThisSide);
+        appendTransposeEdges(ANCEtoSCEedges, allEdgesForThisSide);
+        appendSCEtoSCEedges(MCEtoSCEedges, allEdgesForThisSide);
+
+        GraphEdgeToParInfoMap coincidentParInfos;
+        fill_par_infos_for_edges(allEdgesForThisSide, parallelInfoForGraphEdges, coincidentParInfos);
+
+        stk::mesh::EntityId chosenSideId = get_min_chosen_side_id(coincidentParInfos);
+        update_chosen_side_id_for_coincident_graph_edges(coincidentParInfos, chosenSideId);
+
+        elemSidesAndEdges[stk::mesh::impl::ElementSidePair(MCE, sideIndex)] = allEdgesForThisSide;
     }
 }
 
-void update_chosen_side_ids_for_coincident_elems(const stk::mesh::Graph& graph,
+bool is_master_coincident_element(const stk::mesh::impl::LocalId elemId, const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem, const IdMapper &idMapper)
+{
+    for(const stk::mesh::GraphEdge& graphEdge : coincidentEdgesForElem)
+        if(idMapper.localToGlobal(elemId) > idMapper.localToGlobal(graphEdge.elem2))
+            return false;
+    return true;
+}
+
+void choose_consistent_face_ids_on_procs_that_own_coincident_elements(const stk::mesh::Graph& graph,
                                                  stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
                                                  const stk::mesh::impl::SparseGraph& extractedCoincidentElements,
-                                                 GraphEdgeToParInfoMap& changedEdgesAndParInfos)
+                                                 const IdMapper &idMapper,
+                                                 ElemSideAndEdges& elemSidesAndEdges,
+                                                 MPI_Comm comm)
 {
     for(const stk::mesh::impl::SparseGraph::value_type& extractedEdgesForElem : extractedCoincidentElements)
     {
-        const stk::mesh::impl::LocalId elemId = extractedEdgesForElem.first;
+        const stk::mesh::impl::LocalId possibleMCE = extractedEdgesForElem.first;
         const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem = extractedEdgesForElem.second;
-        update_chosen_side_ids(graph, parallelInfoForGraphEdges, coincidentEdgesForElem, elemId, changedEdgesAndParInfos);
+        if(is_master_coincident_element(possibleMCE, coincidentEdgesForElem, idMapper))
+            match_chosen_ids_for_edges_this_proc(graph, parallelInfoForGraphEdges, coincidentEdgesForElem, possibleMCE, idMapper, elemSidesAndEdges, comm);
     }
-}
-
-void choose_face_id_for_coincident_elements(const stk::mesh::Graph &graph,
-                                            stk::mesh::ParallelInfoForGraphEdges &parInfosForEdges,
-                                            const stk::mesh::impl::SparseGraph &coincidentEdges,
-                                            const IdMapper &idMapper,
-                                            MPI_Comm comm)
-{
-    GraphEdgeToParInfoMap changedEdgesAndParInfos;
-    update_chosen_side_ids_for_coincident_elems(graph, parInfosForEdges, coincidentEdges, changedEdgesAndParInfos);
-    fix_chosen_side_ids_on_other_procs(changedEdgesAndParInfos, parInfosForEdges, idMapper, comm);
 }
 
 }}} // end namespaces stk mesh impl

@@ -33,10 +33,10 @@
 
 
 #include "util.h"
-#include <cstring>                      // for NULL, memset
+#include <cstring>                      // for nullptr, memset
 
 char **get_name_array(int size, int length) {
-  char **names = NULL;
+  char **names = nullptr;
   if (size > 0) {
     names = new char* [size];
     for (int i=0; i < size; i++) {
@@ -52,5 +52,5 @@ void free_name_array(char **names, int size) {
     delete [] names[i];
   }
   delete [] names;
-  names = NULL;
+  names = nullptr;
 }

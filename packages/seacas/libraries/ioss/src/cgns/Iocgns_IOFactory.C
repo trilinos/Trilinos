@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cgns/Iocgns_IOFactory.h>
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for nullptr
 #include <cgns/Iocgns_DatabaseIO.h>     // for DatabaseIO
 #include <string>                       // for string
 #include "Ioss_DBUsage.h"               // for DatabaseUsage
@@ -55,6 +55,6 @@ namespace Iocgns {
 				       Ioss::DatabaseUsage db_usage,
 				       MPI_Comm communicator,
 				       const Ioss::PropertyManager &properties) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator, properties); }
+  { return new DatabaseIO(nullptr, filename, db_usage, communicator, properties); }
 
 }

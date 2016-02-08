@@ -1,3 +1,71 @@
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
+// This benchmark exercises different ways of finding the number of
+// entries in each row of a sparse matrix.  It uses three different
+// data structures: Epetra_CrsMatrix (in the Epetra package),
+// Tpetra::CrsMatrix (in this, the TpetraCore subpackage of the Tpetra
+// package), and KokkosSparse::CrsMatrix (in the TpetraKernels
+// subpackage of the Tpetra package).
+//
+// Both Epetra and Tpetra are meant for all users.  KokkosSparse is
+// meant for developers and expert users.  Epetra is the older sparse
+// linear algebra library, which supports only MPI and a little bit of
+// OpenMP parallelism.  Tpetra is newer and supports both MPI and
+// thread parallelism.  Tpetra uses the Kokkos programming model for
+// thread parallelism and data structures.  Furthermore,
+// Tpetra::CrsMatrix uses KokkosSparse::CrsMatrix to store the sparse
+// matrix, after it has been constructed.
+//
+// All three data structures use compressed sparse row (CSR) storage
+// for the sparse matrix.  KokkosSparse::CrsMatrix is really just CSR,
+// and is only a local data structure; it does not do MPI
+// communication or know about MPI.  The Epetra and Tpetra data
+// structures both do MPI communication.  They also support different
+// ways to create and modify a sparse matrix, which means that they
+// are not _just_ CSR; they have other data structures which they
+// enable or disable as needed.  In particular, Tpetra::CrsMatrix
+// _uses_ KokkosSparse::CrsMatrix inside.  Thus, it's not fair to
+// compare KokkosSparse::CrsMatrix directly to the Epetra and Tpetra
+// data structures; one should properly compare Epetra to Tpetra.
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -27,24 +95,47 @@
 
 namespace { // (anonymous)
 
+  // Options to read in from the command line
   struct CmdLineOpts {
+    // Do the benchmark this many times in a single timing loop, in
+    // case the timer's granularity is too coarse to capture run time
+    // to adequate precision.
     int numTrials;
+    // Local (per MPI process) number of rows in the sparse matrix.
     int lclNumRows;
+    // Number of entries per row in the sparse matrix.  This benchmark
+    // doesn't care so much about the matrix's actual structure.
     int numEntPerRow;
+    // Whether to test Epetra_CrsMatrix::ExtractMyRowView
     bool testEpetra;
+    // Whether to test Epetra_CrsMatrix::NumMyEntries
     bool testEpetraLen;
+    // Whether to test Tpetra::CrsMatrix::getLocalRowView
     bool testTpetra;
+    // Whether to test Tpetra::CrsMatrix::getNumEntriesInLocalRow
     bool testTpetraLen;
+    // Whether to test KokkosSparse::CrsMatrix methods
     bool testKokkos;
   };
 
+  // Use a utility from the Teuchos package of Trilinos to set up
+  // command-line options for reading, and set default values of
+  // command-line options.  clp is an output argument containing the
+  // set-up options.  It retains pointers to fields in 'opts'.
+  // Reading the command-line options will update those fields in
+  // place.
   void
   setCmdLineOpts (CmdLineOpts& opts,
                   Teuchos::CommandLineProcessor& clp)
   {
-    opts.numTrials = 10;
+    // Set default values of command-line options.
+
+    opts.numTrials = 250;
     opts.lclNumRows = 10000;
     opts.numEntPerRow = 10;
+    // This example lives in Tpetra, and has the option to use Epetra,
+    // but it does not require Epetra.  Users are not allowed to ask
+    // for the Epetra benchmarks to run if Epetra is not available.
 #ifdef HAVE_TPETRACORE_EPETRA
     const bool testEpetraDefault = true;
 #else
@@ -57,11 +148,11 @@ namespace { // (anonymous)
     opts.testKokkos = true;
 
     clp.setOption ("numTrials", &(opts.numTrials),
-                   "Number of trials per timing loop");
+                   "Number of trials per timing loop (to increase timer precision)");
     clp.setOption ("lclNumRows", &(opts.lclNumRows), "Number of rows in the "
                    "matrix per MPI process");
     clp.setOption ("numEntPerRow", &(opts.numEntPerRow),
-                   "Number of entries per row");
+                   "Number of entries per row of the matrix");
     clp.setOption ("testEpetra", "skipEpetra", &(opts.testEpetra),
                    "Whether to test Epetra_CrsMatrix::ExtractMyRowView");
     clp.setOption ("testEpetraLen", "skipEpetraLen", &(opts.testEpetraLen),
@@ -70,10 +161,19 @@ namespace { // (anonymous)
                    "Whether to test Tpetra::CrsMatrix::getLocalRowView");
     clp.setOption ("testTpetraLen", "skipTpetraLen", &(opts.testTpetraLen),
                    "Whether to test Tpetra::CrsMatrix::getNumEntriesInLocalRow");
+    clp.setOption ("testKokkos", "skipKokkos", &(opts.testKokkos),
+                   "Whether to test KokkosSparse::CrsMatrix");
   }
 
-  // Return 0 if successful, 1 if help printed (indicates that the
-  // application shouldn't run), and -1 on error.
+  // Actually read the command-line options from the command line,
+  // using the argc and argv arguments to main().  Use the clp output
+  // argument of setCmdLineOpts.  The options actually get written to
+  // the same CmdLineOpts struct instance that was passed into
+  // setCmdLineOpts above.
+  //
+  // Return 0 if successful, 1 if help printed due to the user
+  // specifying the "--help" option (indicates that the application
+  // shouldn't run), and -1 on error.
   int
   parseCmdLineOpts (Teuchos::CommandLineProcessor& clp, int argc, char* argv[])
   {
@@ -92,8 +192,12 @@ namespace { // (anonymous)
     }
   }
 
-  // Return 0 if all correct, else return nonzero.  Print informative
-  // error messages to the given output stream \c out.
+  // Check the command-line options that were read in by
+  // parseCmdLineOpts.  Return 0 if all correct, else return nonzero,
+  // using the LAPACK error reporting convention of the negative of
+  // the argument in its original order (starting with 1) as the error
+  // code.  Print informative error messages to the given output
+  // stream \c out.
   int
   checkCmdLineOpts (std::ostream& out, const CmdLineOpts& opts)
   {
@@ -123,6 +227,9 @@ namespace { // (anonymous)
     return err;
   }
 
+  // Return a pointer (RCP is like std::shared_ptr) to an output
+  // stream.  It prints on Process 0 of the given MPI communicator,
+  // but ignores all output on other MPI processes.
   Teuchos::RCP<Teuchos::FancyOStream>
   getOutputStream (const Teuchos::Comm<int>& comm)
   {
@@ -130,13 +237,18 @@ namespace { // (anonymous)
 
     const int myRank = comm.getRank ();
     if (myRank == 0) {
+      // Process 0 of the given communicator prints to std::cout.
       return getFancyOStream (Teuchos::rcpFromRef (std::cout));
     }
     else {
+      // A "black hole output stream" ignores all output directed to it.
       return getFancyOStream (Teuchos::rcp (new Teuchos::oblackholestream ()));
     }
   }
 
+  // Get a Tpetra::CrsMatrix for use in benchmarks.  This method takes
+  // parameters that come from the command-line options read in by
+  // parseCmdLineOpts.
   Teuchos::RCP<Tpetra::CrsMatrix<> >
   getTpetraMatrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    const CmdLineOpts& opts)
@@ -157,27 +269,43 @@ namespace { // (anonymous)
       static_cast<GST> (comm->getSize ());
     const GO indexBase = 0;
 
+    // A Map describes a distribution of data over MPI processes.
+    // This "row Map" will describe the distribution of rows of the
+    // sparse matrix that we will create.
     RCP<const map_type> rowMap =
       rcp (new map_type (gblNumRows, static_cast<size_t> (lclNumRows),
                          indexBase, comm));
     const GO gblNumCols = static_cast<GO> (rowMap->getGlobalNumElements ());
+    // Create the graph structure of the sparse matrix.
     RCP<graph_type> G =
       rcp (new graph_type (rowMap, opts.numEntPerRow,
                            Tpetra::StaticProfile));
-
+    // Fill in the graph structure of the sparse matrix.
     Teuchos::Array<GO> gblColInds (opts.numEntPerRow);
-    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) { // for each of my rows
       const GO gblInd = rowMap->getGlobalElement (lclRow);
+      // Just put some entries in the graph.  The actual column
+      // indices don't matter so much, as long as they make the
+      // resulting matrix square and don't go out of bounds.
       for (LO k = 0; k < static_cast<LO> (opts.numEntPerRow); ++k) {
         const GO curColInd = (gblInd + static_cast<GO> (3*k)) % gblNumCols;
         gblColInds[k] = curColInd;
       }
       G->insertGlobalIndices (gblInd, gblColInds ());
     }
+    // Make the graph ready for use by a matrix.
     G->fillComplete ();
 
+    // Create the sparse matrix.  Tpetra and Epetra have many ways to
+    // create a sparse matrix.  The most efficient way and preferred
+    // is to use a previously fill-complete graph.  This constrains
+    // the matrix's structure never to change (the input graph is
+    // const), which lets Tpetra and Epetra make assumptions that
+    // speed up changing entries of the matrix.
     RCP<matrix_type> A = rcp (new matrix_type (G));
 
+    // Fill the matrix with values.  Their values don't matter for
+    // this benchmark.
     Teuchos::Array<SC> vals (opts.numEntPerRow);
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const GO gblInd = rowMap->getGlobalElement (lclRow);
@@ -190,12 +318,15 @@ namespace { // (anonymous)
       }
       A->replaceGlobalValues (gblInd, gblColInds (), vals ());
     }
+    // We're done changing entries of the sparse matrix.
     A->fillComplete ();
 
-    return A;
+    return A; // return is a shallow copy (RCP is like std::shared_ptr)
   }
 
-
+  // Convert from a Teuchos::Comm MPI communicator wrapper (used by
+  // Tpetra classes) to an Epetra communicator wrapper (used by Epetra
+  // classes).
   Teuchos::RCP<const Epetra_Comm>
   makeEpetraComm (const Teuchos::Comm<int>& comm)
   {
@@ -203,6 +334,8 @@ namespace { // (anonymous)
     using Teuchos::rcp;
     using Teuchos::rcp_implicit_cast;
 
+    // Trilinos uses MPI, but does not require it.  We want to be able
+    // to build and run this benchmark whether or not MPI is enabled.
 #ifdef HAVE_TEUCHOS_MPI
     const Teuchos::MpiComm<int>* mpiComm =
       dynamic_cast<const Teuchos::MpiComm<int>* > (&comm);
@@ -232,7 +365,11 @@ namespace { // (anonymous)
 #endif // HAVE_TEUCHOS_MPI
   }
 
-
+  // Get an Epetra_CrsMatrix for use in benchmarks.  This method takes
+  // parameters that come from the command-line options read in by
+  // parseCmdLineOpts.  Epetra and Tpetra are similar enough that
+  // reading the comments in getTpetraMatrix() above should help you
+  // understand what this function does inside.
   Teuchos::RCP<Epetra_CrsMatrix>
   getEpetraMatrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    const CmdLineOpts& opts)
@@ -324,13 +461,21 @@ main (int argc, char* argv[])
   using Teuchos::reduceAll;
   using Teuchos::outArg;
   using Teuchos::TimeMonitor;
+  using std::endl;
 
+  // RAII protection for MPI_Initialize / MPI_Finalize.  This first
+  // calls MPI_Initialize (if building with MPI).  At the end of this
+  // scope / when main() returns or throws an exception, it calls
+  // MPI_Finalize (if building with MPI).
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
+  // Think of this as a wrapped version of MPI_COMM_WORLD.
   auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
+  // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream (*comm);
   Teuchos::FancyOStream& out = *pOut;
 
+  // Read command-line options into the 'opts' struct.
   CmdLineOpts opts;
   {
     Teuchos::CommandLineProcessor clp;
@@ -348,7 +493,23 @@ main (int argc, char* argv[])
     }
   }
 
+  out << "Command-line options:" << endl;
+  {
+    Teuchos::OSTab tab1 (out); // push one tab in this scope
+    out << "numTrials: " << opts.numTrials << endl
+        << "lclNumRows: " << opts.lclNumRows << endl
+        << "numEntPerRow: " << opts.numEntPerRow << endl
+        << "testEpetra: " << opts.testEpetra << endl
+        << "testEpetraLen: " << opts.testEpetraLen << endl
+        << "testTpetra: " << opts.testTpetra << endl
+        << "testTpetraLen: " << opts.testTpetraLen << endl
+        << "testKokkos: " << opts.testKokkos << endl
+        << endl;
+  }
+
+  // The benchmark is supposed to be self-checking.
   const size_t expectedTotalLclNumEnt =
+    static_cast<size_t> (opts.numTrials) *
     static_cast<size_t> (opts.lclNumRows) *
     static_cast<size_t> (opts.numEntPerRow);
 
@@ -387,7 +548,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Epetra ExtractMyRowView validation FAILED" << std::endl;
+    out << "Epetra ExtractMyRowView validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+        << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -396,14 +559,18 @@ main (int argc, char* argv[])
     typedef int LO;
 
     auto timer = TimeMonitor::getNewCounter ("Epetra NumMyEntries");
-    RCP<const Epetra_CrsMatrix> A = getEpetraMatrix (comm, opts);
+    RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
+       "This should never happen.");
+    const Epetra_CrsMatrix& A = *A_ptr;
     { // Start timing after matrix creation
       TimeMonitor timeMon (*timer);
 
       const LO lclNumRows = opts.lclNumRows;
       for (int trial = 0; trial < opts.numTrials; ++trial) {
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          const size_t len = static_cast<size_t> (A->NumMyEntries (lclRow));
+          const size_t len = static_cast<size_t> (A.NumMyEntries (lclRow));
           totalLclNumEnt += len;
         }
       }
@@ -418,7 +585,47 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Epetra NumMyEntries validation FAILED" << std::endl;
+    out << "Epetra NumMyEntries validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+        << expectedTotalLclNumEnt << "." << endl;
+  }
+
+  totalLclNumEnt = 0;
+  if (opts.testEpetraLen) {
+#ifdef HAVE_TPETRACORE_EPETRA
+    typedef int LO;
+
+    auto timer = TimeMonitor::getNewCounter ("Epetra NumMyRowEntries");
+    RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
+       "This should never happen.");
+    const Epetra_CrsMatrix& A = *A_ptr;
+    { // Start timing after matrix creation
+      TimeMonitor timeMon (*timer);
+
+      const LO lclNumRows = opts.lclNumRows;
+      for (int trial = 0; trial < opts.numTrials; ++trial) {
+        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+          int numEnt;
+          (void) A.NumMyRowEntries (lclRow, numEnt); // ignore error code
+          totalLclNumEnt += static_cast<size_t> (numEnt);
+        }
+      }
+    }
+#else
+    // We've already checked this case when checking the command-line arguments.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, "Epetra not enabled; should never get here!");
+#endif // HAVE_TPETRACORE_EPETRA
+  }
+  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+  gblSuccess = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess != 1) {
+    out << "Epetra NumMyRowEntries validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+        << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -427,7 +634,11 @@ main (int argc, char* argv[])
     typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
 
     auto timer = TimeMonitor::getNewCounter ("Tpetra getLocalRowView");
-    RCP<const Tpetra::CrsMatrix<> > A = getTpetraMatrix (comm, opts);
+    RCP<const Tpetra::CrsMatrix<> > A_ptr = getTpetraMatrix (comm, opts);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_ptr.is_null (), std::logic_error, "getTpetraMatrix returned null!  "
+       "This should never happen.");
+    const Tpetra::CrsMatrix<>& A = *A_ptr;
     { // Start timing after matrix creation
       TimeMonitor timeMon (*timer);
 
@@ -436,7 +647,7 @@ main (int argc, char* argv[])
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           Teuchos::ArrayView<const LO> ind;
           Teuchos::ArrayView<const SC> val;
-          A->getLocalRowView (lclRow, ind, val);
+          A.getLocalRowView (lclRow, ind, val);
           const size_t len = static_cast<size_t> (ind.size ());
           totalLclNumEnt += len;
         }
@@ -447,7 +658,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Tpetra validation FAILED" << std::endl;
+    out << "Tpetra::CrsMatrix::getLocalRowView validation FAILED.  On my "
+      "process, totalLclNumEnt = " << totalLclNumEnt << " != "
+      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -455,14 +668,18 @@ main (int argc, char* argv[])
     typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
 
     auto timer = TimeMonitor::getNewCounter ("Tpetra getNumEntriesInLocalRow");
-    RCP<const Tpetra::CrsMatrix<> > A = getTpetraMatrix (comm, opts);
+    RCP<const Tpetra::CrsMatrix<> > A_ptr = getTpetraMatrix (comm, opts);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_ptr.is_null (), std::logic_error, "getTpetraMatrix returned null!  "
+       "This should never happen.");
+    const Tpetra::CrsMatrix<>& A = *A_ptr;
     { // Start timing after matrix creation
       TimeMonitor timeMon (*timer);
 
       for (int trial = 0; trial < opts.numTrials; ++trial) {
         const LO lclNumRows = opts.lclNumRows;
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          const size_t len = A->getNumEntriesInLocalRow (lclRow);
+          const size_t len = A.getNumEntriesInLocalRow (lclRow);
           totalLclNumEnt += len;
         }
       }
@@ -472,7 +689,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Tpetra validation FAILED" << std::endl;
+    out << "Tpetra::CrsMatrix::getNumEntriesInLocalRow validation FAILED.  On "
+      "my process, totalLclNumEnt = " << totalLclNumEnt << " != "
+      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -488,7 +707,7 @@ main (int argc, char* argv[])
       for (int trial = 0; trial < opts.numTrials; ++trial) {
         const LO lclNumRows = opts.lclNumRows;
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          auto rowView = A_lcl.template row<LO> (lclRow);
+          auto rowView = A_lcl.row<LO> (lclRow);
           auto len = rowView.length;
 
           (void) rowView;
@@ -501,7 +720,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Kokkos sequential loop validation FAILED" << std::endl;
+    out << "Kokkos sequential loop validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != "
+      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
   }
 
   totalLclNumEnt = 0;
@@ -520,12 +741,15 @@ main (int argc, char* argv[])
 
       for (int trial = 0; trial < opts.numTrials; ++trial) {
         policy_type range (0, static_cast<LO> (opts.lclNumRows));
+
+        size_t curTotalLclNumEnt = 0;
         parallel_reduce ("loop", range,
                          KOKKOS_LAMBDA (const LO& lclRow, size_t& count) {
-            auto rowView = A_lcl.template row<LO> (lclRow);
+            auto rowView = A_lcl.row<LO> (lclRow);
             auto length  = rowView.length;
             count += static_cast<size_t> (length);
-          });
+          }, curTotalLclNumEnt);
+        totalLclNumEnt += curTotalLclNumEnt;
       }
     }
   }
@@ -533,7 +757,9 @@ main (int argc, char* argv[])
   gblSuccess = 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess != 1) {
-    out << "Kokkos parallel loop validation FAILED" << std::endl;
+    out << "Kokkos host parallel loop validation FAILED.  On my process, "
+      "totalLclNumEnt = " << totalLclNumEnt << " != "
+      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
   }
 
   TimeMonitor::report (comm.ptr (), out);

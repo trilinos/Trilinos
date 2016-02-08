@@ -46,6 +46,7 @@ namespace Ioss {
     static void factory();
     ~Unknown();
 
+    ElementShape shape() const {return ElementShape::UNKNOWN;}
     int spatial_dimension()           const;
     int parametric_dimension()       const;
     int order()               const;

@@ -98,8 +98,8 @@ namespace {
       return;
     }
     const char *tokens = option.c_str();
-    if (tokens != NULL) {
-      if (strchr(tokens, ':') != NULL) {
+    if (tokens != nullptr) {
+      if (strchr(tokens, ':') != nullptr) {
 	// The string contains a separator
 
 	int vals[3];
@@ -108,7 +108,7 @@ namespace {
 	vals[2] = increment;
 
 	int j=0;
-	for (int i=0; i < 3; i++) {
+	for (auto & val : vals) {
 	  // Parse 'i'th field
 	  char tmp_str[128];;
 	  int k=0;
@@ -119,7 +119,7 @@ namespace {
 
 	  tmp_str[k] = '\0';
 	  if (strlen(tmp_str) > 0)
-	    vals[i] = strtol(tmp_str, NULL, 0);
+	    val = strtol(tmp_str, nullptr, 0);
 
 	  if (tokens[j++] == '\0') {
 	    break; // Reached end of string
@@ -130,7 +130,7 @@ namespace {
 	increment = vals[2];
       } else {
 	// Does not contain a separator, min == max
-	start = stop = strtol(tokens, NULL, 0);
+	start = stop = strtol(tokens, nullptr, 0);
       }
     }
   }
@@ -139,9 +139,9 @@ namespace {
   {
     int num_include = 0;
     int num_exclude = 0;
-    for (unsigned i = 0; i < names.size(); ++i) {
-      SMART_ASSERT(names[i] != "");
-      if (names[i][0] == '!')
+    for (auto & name : names) {
+      SMART_ASSERT(name != "");
+      if (name[0] == '!')
 	++num_exclude;
       else
 	++num_include;
@@ -316,10 +316,10 @@ void SystemInterface::enroll_options()
 		  "Print this summary and exit.\n"
 		  "\t\tEnter \"-help file\" for the syntax of the command file\n"
 		  "\t\t      \"-help tolerance\" for information on the supported tolerance options.",
-		  0, "usage");
+		  nullptr, "usage");
 
   options_.enroll("Help", GetLongOption::NoValue,
-		  "Print this summary and exit.\n", 0);
+		  "Print this summary and exit.\n", nullptr);
 
   options_.enroll("tolerance", GetLongOption::MandatoryValue,
 		  "Overrides the default tolerance of 1.0E-6.",
@@ -331,137 +331,137 @@ void SystemInterface::enroll_options()
 
   options_.enroll("TimeStepOffset", GetLongOption::MandatoryValue,
 		  "Timestep 'x+offset' in first file matches timestep 'x' in second file.",
-		  0);
+		  nullptr);
   options_.enroll("TA", GetLongOption::NoValue,
-		 "Automatic determination of timestep offset -- end at same step.", 0);
+		 "Automatic determination of timestep offset -- end at same step.", nullptr);
   options_.enroll("TM", GetLongOption::NoValue,
-		  "Automatic determination of timestep offset -- closest match to first step on file2.", 0);
+		  "Automatic determination of timestep offset -- closest match to first step on file2.", nullptr);
   options_.enroll("interpolate", GetLongOption::NoValue,
-		  "Interpolate times on file2 to match times on file1.", 0);
+		  "Interpolate times on file2 to match times on file1.", nullptr);
   options_.enroll("final_time_tolerance", GetLongOption::MandatoryValue,
 		  "Tolerance on matching of final times on database when interpolate option specified\n."
-		  "\t\tIf final times do not match within this tolerance, files are different.", 0);
+		  "\t\tIf final times do not match within this tolerance, files are different.", nullptr);
   options_.enroll("quiet", GetLongOption::NoValue,
 		  "Quiet.  Only errors will be sent to stdout.  Comparison mode will echo\n"
-		  "\t\t\"exodiff: Files are the same.\" or \"exodiff: Files are different.\"", 0);
+		  "\t\t\"exodiff: Files are the same.\" or \"exodiff: Files are different.\"", nullptr);
 
   // Tolerance type options...
   options_.enroll("absolute", GetLongOption::NoValue,
-		  "Default tolerance is absolute difference. |a-b| > tolerance", 0);
+		  "Default tolerance is absolute difference. |a-b| > tolerance", nullptr);
   options_.enroll("relative", GetLongOption::NoValue,
-		  "Default tolerance is relative difference. |a-b| > max(|a|,|b|)*tolerance", 0);
+		  "Default tolerance is relative difference. |a-b| > max(|a|,|b|)*tolerance", nullptr);
   options_.enroll("combined", GetLongOption::NoValue,
-		  "Default tolerance is combined difference. (-help tolerance for info)", 0);
+		  "Default tolerance is combined difference. (-help tolerance for info)", nullptr);
   options_.enroll("ulps_float", GetLongOption::NoValue,
 		  "Default tolerance if number of ulps (units last position) of difference\n"
-		  "\t\twhen values converted to floats.", 0);
+		  "\t\twhen values converted to floats.", nullptr);
   options_.enroll("ulps_double", GetLongOption::NoValue,
-		  "Default tolerance is number of ulps (units last position) of difference.", 0);
+		  "Default tolerance is number of ulps (units last position) of difference.", nullptr);
   options_.enroll("eigen_absolute", GetLongOption::NoValue,
-		  "Default tolerance is absolute differences of the absolute value of the values.", 0);
+		  "Default tolerance is absolute differences of the absolute value of the values.", nullptr);
   options_.enroll("eigen_relative", GetLongOption::NoValue,
-		  "Default tolerance is relative differences of the absolute value of the values.", 0);
+		  "Default tolerance is relative differences of the absolute value of the values.", nullptr);
   options_.enroll("eigen_combined", GetLongOption::NoValue,
-		  "Default tolerance is combined differences of the absolute value of the values.", 0);
+		  "Default tolerance is combined differences of the absolute value of the values.", nullptr);
   options_.enroll("ignore", GetLongOption::NoValue,
-		  "Default tolerance is ignored (turn off all checking by default).", 0);
+		  "Default tolerance is ignored (turn off all checking by default).", nullptr);
 
   options_.enroll("show_all_diffs", GetLongOption::NoValue,
-		  "Show all differences for all variables, not just the maximum.", 0);
+		  "Show all differences for all variables, not just the maximum.", nullptr);
 
   options_.enroll("map", GetLongOption::NoValue,
 		  "Invokes a matching algorithm to create a mapping between the\n"
 		  "\t\tnodes and elements of the two files.  The topology must still be\n"
-		  "\t\tthe same (within tolerance), but can be ordered differently.", 0);
+		  "\t\tthe same (within tolerance), but can be ordered differently.", nullptr);
   options_.enroll("partial", GetLongOption::NoValue,
 		  "Invokes a matching algorithm similar to the -m option.  However \n"
 		  "\t\tthis option ignores unmatched nodes and elements.  This allows \n"
-		  "\t\tcomparison of files that only partially overlap.", 0);
+		  "\t\tcomparison of files that only partially overlap.", nullptr);
   options_.enroll("match_ids", GetLongOption::NoValue,
 		  "Invokes a matching algorithm using the node and element global id\n"
-		  "\t\tmaps in the two files.", 0);
+		  "\t\tmaps in the two files.", nullptr);
   options_.enroll("match_file_order", GetLongOption::NoValue,
 		  "Invokes a matching algorithm using the node and element position\n"
-		  "\t\torder in the two files.", 0);
+		  "\t\torder in the two files.", nullptr);
   options_.enroll("match_by_name", GetLongOption::NoValue,
-		  "Match element blocks, nodesets, and sidesets by name instead of by id.", 0);
+		  "Match element blocks, nodesets, and sidesets by name instead of by id.", nullptr);
   options_.enroll("show_unmatched", GetLongOption::NoValue,
-		  "If the -partial switch is given, this prints out the elements that did not match.", 0);
+		  "If the -partial switch is given, this prints out the elements that did not match.", nullptr);
   options_.enroll("dumpmap", GetLongOption::NoValue,
-		  "If the -map switch is given, this prints out the resulting map.", 0);
+		  "If the -map switch is given, this prints out the resulting map.", nullptr);
   options_.enroll("nsmap", GetLongOption::NoValue,
 		  "Creates a map between the nodeset nodes in the two files\n"
-		  "\t\tif they include the same nodes, but are in different order.", 0);
+		  "\t\tif they include the same nodes, but are in different order.", nullptr);
   options_.enroll("ssmap", GetLongOption::NoValue,
 		  "Creates a map between the sideset faces in the two files\n"
-		  "\t\tif they include the same sides, but are in different order.", 0);
+		  "\t\tif they include the same sides, but are in different order.", nullptr);
   options_.enroll("no_nsmap", GetLongOption::NoValue,
-		  "Compare nodeset nodes based on file order only", 0);
+		  "Compare nodeset nodes based on file order only", nullptr);
   options_.enroll("no_ssmap", GetLongOption::NoValue,
-		  "Compare sideset faces based on file order only", 0);
+		  "Compare sideset faces based on file order only", nullptr);
   options_.enroll("pedantic", GetLongOption::NoValue,
-		  "Be more picky about what is a difference.", 0);
+		  "Be more picky about what is a difference.", nullptr);
   options_.enroll("short", GetLongOption::NoValue,
 		  "Short block type compare.  Forces element block type strings to\n"
 		  "\t\tbe compared only up to the shortest string length.  For example,\n"
-		  "\t\t\"HEX\" and \"HEX8\" will be considered the same. (default)", 0);
+		  "\t\t\"HEX\" and \"HEX8\" will be considered the same. (default)", nullptr);
   options_.enroll("no_short", GetLongOption::NoValue,
 		  "Do not do short block type compare.  Forces element block\n"
 		  "\t\ttype strings to fully match. For example, \"HEX\" and \"HEX8\"\n"
-		  "\t\twill be considered different.", 0);
+		  "\t\twill be considered different.", nullptr);
   options_.enroll("ignore_case", GetLongOption::NoValue,
-		  "Ignore case.  Variable names are compared case in-sensitive (default).", 0);
+		  "Ignore case.  Variable names are compared case in-sensitive (default).", nullptr);
   options_.enroll("case_sensitive", GetLongOption::NoValue,
-		  "Variable names are compared case sensitive.", 0);
+		  "Variable names are compared case sensitive.", nullptr);
   options_.enroll("ignore_maps", GetLongOption::NoValue,
 		  "Output node and element diff summaries using file local implicit ids\n"
-		  "\t\tinstead of global ids.", 0);
+		  "\t\tinstead of global ids.", nullptr);
   options_.enroll("ignore_nans", GetLongOption::NoValue,
-		  "Don't check data for NaNs", 0);
+		  "Don't check data for NaNs", nullptr);
   options_.enroll("ignore_dups", GetLongOption::NoValue,
 		  "If two elements/nodes are in the same location in match or partial\n"
-		  "                  match case, just return first match instead of aborting.", 0);
+		  "                  match case, just return first match instead of aborting.", nullptr);
   options_.enroll("ignore_attributes", GetLongOption::NoValue,
-		  "Don't compare element attribute values.", 0);
+		  "Don't compare element attribute values.", nullptr);
   options_.enroll("ignore_sideset_df", GetLongOption::NoValue,
-		  "Don't compare sideset distribution factors.", 0);
+		  "Don't compare sideset distribution factors.", nullptr);
   options_.enroll("64-bit", GetLongOption::NoValue,
 		  "True if forcing the use of 64-bit integers for the output file",
-		  NULL);
+		  nullptr);
   options_.enroll("nosymmetric_name_check", GetLongOption::NoValue,
 		  "No symmetric variable name checking.  By default, a warning will\n"
 		  "\t\tbe produced if a name that is not to be excluded is contained\n"
 		  "\t\tin the second file given on the command line but not the first.\n"
-		  "\t\tThis \"symmetric\" check can be turned off with this option.", 0);
+		  "\t\tThis \"symmetric\" check can be turned off with this option.", nullptr);
   options_.enroll("allow_name_mismatch", GetLongOption::NoValue,
 		  "Allow a variable name that is in the first database to not be in the\n"
-		  "\t\tsecond database", 0);
+		  "\t\tsecond database", nullptr);
   options_.enroll("x", GetLongOption::MandatoryValue,
 		  "Exclude time steps.  Does not consider the time steps given in the list of integers.\n"
 		  "\t\tThe format is comma-separated and ranged integers (with no spaces), such as \"1,5-9,28\".\n"
-		  "\t\tThe first time step is the number '1'.", 0);
+		  "\t\tThe first time step is the number '1'.", nullptr);
   options_.enroll("exclude", GetLongOption::MandatoryValue,
 		  "Exclude time steps.  Does not consider the time steps given in the list of integers.\n"
 		  "\t\tThe format is comma-separated and ranged integers (with no spaces), such as \"1,5-9,28\".\n"
-		  "\t\tThe first time step is the number '1'.", 0);
+		  "\t\tThe first time step is the number '1'.", nullptr);
   options_.enroll("steps",  GetLongOption::MandatoryValue,
 		  "Specify subset of steps to consider. Syntax is beg:end:increment,\n"
-		  "\t\tEnter '-steps last' for just the last step. If only beg set, end=beg", 0);
+		  "\t\tEnter '-steps last' for just the last step. If only beg set, end=beg", nullptr);
   options_.enroll("explicit",  GetLongOption::MandatoryValue,
 		  "Specify an explicit match of a step on database 1 with a step on database 2.\n"
 		  "\t\tSyntax is '-explicit db1_step:db2_step' where 'db*_step' is either\n"
 		  "\t\tthe 1-based step number or 'last' for the last step on the database.\n"
-		  "\t\tExample: '-explicit 42:last' to match step 42 on database 1 with last step on database 2", 0);
+		  "\t\tExample: '-explicit 42:last' to match step 42 on database 1 with last step on database 2", nullptr);
   options_.enroll("norms", GetLongOption::NoValue,
-		  "Calculate L1 and L2 norms of variable differences and output if > 0.0", 0);
+		  "Calculate L1 and L2 norms of variable differences and output if > 0.0", nullptr);
   options_.enroll("l2norms", GetLongOption::NoValue,
-		  "Calculate L2 norm of variable differences and output if > 0.0", 0);
+		  "Calculate L2 norm of variable differences and output if > 0.0", nullptr);
   options_.enroll("l1norms", GetLongOption::NoValue,
-		  "Calculate L1 norm of variable differences and output if > 0.0", 0);
+		  "Calculate L1 norm of variable differences and output if > 0.0", nullptr);
   options_.enroll("status", GetLongOption::NoValue,
-		  "Return exit status of 2 if the files are different. (default).", 0);
+		  "Return exit status of 2 if the files are different. (default).", nullptr);
   options_.enroll("ignore_status", GetLongOption::NoValue,
-		  "The exit status is always zero unless an error occurs.", 0);
+		  "The exit status is always zero unless an error occurs.", nullptr);
   options_.enroll("maxnames", GetLongOption::MandatoryValue,
 		  "There is a compiled limit of 1000 exodus names.\n"
 		  "\t\tThis option allows the maximum number to be changed.",
@@ -469,33 +469,33 @@ void SystemInterface::enroll_options()
   options_.enroll("use_old_floor", GetLongOption::NoValue,
 		  "use the older defintion of the floor tolerance.\n"
 		  "\t\tOLD: ignore if |a-b| < floor.\n"
-		  "\t\tNEW: ignore if |a| < floor && |b| < floor.", 0);
+		  "\t\tNEW: ignore if |a| < floor && |b| < floor.", nullptr);
   options_.enroll("summary", GetLongOption::NoValue,
 		  "Produce a summary in exodiff input format.\n"
 		  "\t\tThis will create output with max/min statistics on the data in the format\n"
-		  "\t\tof an exodiff input file.", 0);
+		  "\t\tof an exodiff input file.", nullptr);
   options_.enroll("min_coordinate_separation", GetLongOption::NoValue,
-		  "In summary mode, calculate the minimum distance between any two nodes", 0);
+		  "In summary mode, calculate the minimum distance between any two nodes", nullptr);
   options_.enroll("copyright", GetLongOption::NoValue,
-		  "Output copyright and license information.", 0);
+		  "Output copyright and license information.", nullptr);
   options_.enroll("version", GetLongOption::NoValue,
-		  "Output code version", 0);
+		  "Output code version", nullptr);
 
   options_.enroll("file", GetLongOption::MandatoryValue,
 		  "Use the given file to specify the variables to be considered and to\n"
-		  "\t\twhat tolerances. Enter \"-help file\" for the syntax of the command file", 0);
+		  "\t\twhat tolerances. Enter \"-help file\" for the syntax of the command file", nullptr);
   options_.enroll("m", GetLongOption::NoValue,
-		  "Backward-compatible option for -map", 0);
+		  "Backward-compatible option for -map", nullptr);
   options_.enroll("p", GetLongOption::NoValue,
-		  "Backward-compatible option for -partial.", 0);
+		  "Backward-compatible option for -partial.", nullptr);
   options_.enroll("s", GetLongOption::NoValue,
-		  "Backward-compatible option for -short", 0);
+		  "Backward-compatible option for -short", nullptr);
   options_.enroll("i", GetLongOption::NoValue,
-		  "Backward-compatible option for -ignore_case.", 0);
+		  "Backward-compatible option for -ignore_case.", nullptr);
   options_.enroll("f", GetLongOption::MandatoryValue,
-		  "Backward-compatible option for -file", 0);
+		  "Backward-compatible option for -file", nullptr);
   options_.enroll("T", GetLongOption::MandatoryValue,
-		  "Backward-compatible option for -TimeStepOffset", 0);
+		  "Backward-compatible option for -TimeStepOffset", nullptr);
 }
 
 void SystemInterface::Set_Max_Names(int size)
@@ -607,7 +607,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   // Get options from environment variable also...
   char *options = getenv("EXODIFF_OPTIONS");
-  if (options != NULL) {
+  if (options != nullptr) {
     std::cerr << "\nThe following options were specified via the EXODIFF_OPTIONS environment variable:\n"
 	      << "\t\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
@@ -679,21 +679,20 @@ bool SystemInterface::parse_options(int argc, char **argv)
     if (temp) {
       // temp should be of the form <ts1>:<ts2>  where ts# is either a timestep number
       // (1-based) or 'last'
-      std::vector<std::string> tokens;
-      SLIB::tokenize(temp, ":", tokens);
+      std::vector<std::string> tokens = SLIB::tokenize(temp, ":");
       if (tokens.size() == 2) {
 	if (case_strcmp(tokens[0], "last") == 0) {
 	  explicit_steps.first = -1;
 	} else {
 	  // Try to convert to integer...
-	  explicit_steps.first = strtol(tokens[0].c_str(), NULL, 0);
+	  explicit_steps.first = strtol(tokens[0].c_str(), nullptr, 0);
 	}
 
 	if (case_strcmp(tokens[1], "last") == 0) {
 	  explicit_steps.second = -1;
 	} else {
 	  // Try to convert to integer...
-	  explicit_steps.second = strtol(tokens[1].c_str(), NULL, 0);
+	  explicit_steps.second = strtol(tokens[1].c_str(), nullptr, 0);
 	}
       }
       else {

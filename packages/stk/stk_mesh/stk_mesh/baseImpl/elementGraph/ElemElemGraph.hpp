@@ -51,18 +51,6 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
                          std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
                          stk::mesh::Part *active_part=NULL);
 
-
-struct SideSetEntry
-{
-  SideSetEntry(stk::mesh::Entity in_element, stk::mesh::ConnectivityOrdinal in_side)
-    : element(in_element),
-      side(in_side)
-  {  }
-  
-  stk::mesh::Entity element;
-  stk::mesh::ConnectivityOrdinal side;
-};
-
 struct RemoteEdge;
 
 class ElemElemGraph
@@ -104,28 +92,52 @@ public:
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
-    void skin_mesh(const stk::mesh::PartVector& skin_parts);
-
     void fill_from_mesh();
     void create_parallel_graph_info_needed_once_entities_are_moved(const stk::mesh::EntityProcVec &elemProcPairsToMove,
                                          impl::ParallelGraphInfo &new_parallel_graph_entries);
     stk::mesh::EntityId get_available_side_id();
 
-    std::vector<SideSetEntry> extract_skinned_sideset( );
     stk::mesh::SideConnector get_side_connector();
+
+    const stk::mesh::BulkData& get_mesh() const;
+
+    const GraphEdgesForElement& get_edges_for_element(impl::LocalId elem) const
+    {
+        return m_graph.get_edges_for_element(elem);
+    }
+
+    stk::mesh::Entity get_entity_from_local_id(impl::LocalId elem) const
+    {
+        return m_local_id_to_element_entity[elem];
+    }
+
+    const impl::parallel_info&get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
+    {
+        return m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(edge);
+    }
+
+    const ParallelInfoForGraphEdges& get_parallel_info_for_graph_edges() const
+    {
+        return m_parallelInfoForGraphEdges;
+    }
+
+    const Graph& get_graph() const
+    {
+        return m_graph;
+    }
+
+    void create_side_entities(const std::vector<int> &exposedSides,
+                              impl::LocalId local_id,
+                              const stk::mesh::PartVector& skin_parts,
+                              std::vector<stk::mesh::sharing_info> &shared_modified);
 
 protected:
     void fill_graph();
     void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
-    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm,
-                             const stk::mesh::EntityVector & elements_to_ignore);
-
-
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
                                                                     stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector,
-                                                                    const stk::mesh::EntityVector & elements_to_ignore,
                                                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
@@ -205,6 +217,7 @@ protected:
     stk::mesh::SideIdPool m_sideIdPool;
     impl::SparseGraph m_coincidentGraph;
 private:
+
     void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
     void add_both_edges_between_local_elements(const GraphEdge& graphEdge);
@@ -213,7 +226,7 @@ private:
     stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
     impl::ElemSideToProcAndFaceId get_element_side_ids_to_communicate() const;
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
-    stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId id);
+    stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts);
 
     void create_remote_sides(stk::mesh::BulkData& bulk_data, const std::vector<RemoteEdge>& remote_edges, stk::mesh::EntityVector& skinned_elements, const stk::mesh::PartVector& skin_parts,
             const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
@@ -222,10 +235,6 @@ private:
     bool is_connected_element_air(const stk::mesh::GraphEdge &graphEdge);
     bool is_connected_element_in_body_to_be_skinned(const stk::mesh::GraphEdge &graphEdge);
     bool is_element_selected_and_can_have_side(const stk::mesh::BulkData &bulkData, const stk::mesh::Selector &selector, stk::mesh::Entity otherElement);
-    void create_side_entities(const std::vector<int> &exposedSides,
-                              impl::LocalId local_id,
-                              const stk::mesh::PartVector& skin_parts,
-                              std::vector<stk::mesh::sharing_info> &shared_modified);
     stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
                                                  stk::mesh::Entity element,
@@ -234,7 +243,6 @@ private:
     void add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides);
     std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId, int numElemSides);
 
-public:
     void write_graph() const;
 private:
     void update_all_local_neighbors(const stk::mesh::Entity elemToSend,

@@ -32,7 +32,7 @@
 // 
 
 
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t, nullptr
 #include <sys/time.h>                   // for timeval, gettimeofday
 #include <sys/types.h>                  // for int64_t
 #include <algorithm>                    // for max_element, min_element
@@ -57,7 +57,7 @@ namespace {
     return (size_t)ts.tv_sec * 1000000LL + (size_t)ts.tv_nsec / 1000LL;
 #else
     timeval ts;
-    gettimeofday(&ts, NULL);
+    gettimeofday(&ts, nullptr);
     return (size_t)ts.tv_sec * 1000000LL + (size_t)ts.tv_usec;
 #endif
   }

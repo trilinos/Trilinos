@@ -165,13 +165,15 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
+NAMED_PAIR(BucketInfo, unsigned, bucket_id, unsigned, num_entities_this_bucket);
+
 struct BucketIndices
 {
-  unsigned bucket_id;
+  std::vector<BucketInfo> bucket_info;
   std::vector<unsigned> ords;
 };
 
-typedef std::vector<std::vector<BucketIndices> > VolatileFastSharedCommMapOneRank;
+typedef std::vector<BucketIndices> VolatileFastSharedCommMapOneRank;
 typedef stk::topology::rank_t EntityRank ;
 
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
@@ -179,12 +181,10 @@ typedef std::map<std::pair<EntityRank, Selector>, BucketVector> SelectorBucketMa
 typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
 
 typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
-typedef std::map<EntityKey,int> NewOwnerMap;
 
 typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
 
-//typedef Ordinal EntityRank ;
 typedef Ordinal PartOrdinal;
 typedef Ordinal FieldOrdinal;
 typedef Ordinal RelationIdentifier;
@@ -321,10 +321,6 @@ inline std::ostream & operator<<(std::ostream &out, ConnectivityType type)
   }
   return out;
 }
-
-#define EXTRACT_BUCKET_ID(idx) ((idx) >> NUM_BUCKET_ORDINAL_BITS)
-
-#define EXTRACT_BUCKET_ORDINAL(idx) ((idx) & BUCKET_ORDINAL_MASK)
 
 enum ConnectivityOrdinal
 {

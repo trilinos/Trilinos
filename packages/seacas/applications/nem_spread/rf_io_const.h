@@ -52,7 +52,7 @@ struct Restart_Description {
   Restart_Description() :
     Flag(-1), Num_Times(-1), Time(0),
     NVar_Glob(-1), NVar_Elem(-1), NVar_Node(-1), NVar_Nset(-1), NVar_Sset(-1),
-    NV_Name(NULL), EV_Name(NULL), GV_Name(NULL), NSV_Name(NULL), SSV_Name(NULL)
+    NV_Name(nullptr), EV_Name(nullptr), GV_Name(nullptr), NSV_Name(nullptr), SSV_Name(nullptr)
   {}
 
   
