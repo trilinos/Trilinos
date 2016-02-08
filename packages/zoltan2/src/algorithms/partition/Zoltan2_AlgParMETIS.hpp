@@ -162,6 +162,7 @@ void AlgParMETIS<Adapter>::partition(
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
+  int me = problemComm->getRank();
   int np = problemComm->getSize();
 
   // Get vertex info
@@ -264,6 +265,16 @@ void AlgParMETIS<Adapter>::partition(
     const Teuchos::ParameterList &pl = env->getParameters();
     const Teuchos::ParameterEntry *pe = pl.getEntryPtr("imbalance_tolerance");
     if (pe) tolerance = pe->getValue<double>(&tolerance);
+    
+    // ParMETIS requires tolerance to be greater than 1.0; 
+    // fudge it if condition is not met
+    if (tolerance <= 1.0) {
+      if (me == 0)
+        std::cerr << "Warning:  ParMETIS requires imbalance_tolerance > 1.0; "
+                  << "to comply, Zoltan2 reset imbalance_tolerance to 1.01."
+                  << std::endl;
+      tolerance = 1.01;
+    }
 
     pm_real_t *pm_imbTols = new pm_real_t[pm_nCon];
     for (pm_idx_t dim = 0; dim < pm_nCon; dim++)
