@@ -37,7 +37,7 @@ namespace
 class SkinWithModification : public stk::unit_test_util::MeshFixture
 {
 protected:
-    SkinWithModification() : elemGraph(nullptr)
+    SkinWithModification() : elemGraph(nullptr), elemGraphUpdater(nullptr)
     {
     }
     void setup_for_skinning()
@@ -53,6 +53,7 @@ protected:
     ~SkinWithModification()
     {
         delete elemGraph;
+        delete elemGraphUpdater;
     }
     void test_skinning(const SideTestUtil::TestCase& exteriorTestCase,
                        const SideTestUtil::TestCase& interiorTestCase)
