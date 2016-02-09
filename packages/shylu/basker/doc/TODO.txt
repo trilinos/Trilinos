@@ -16,6 +16,23 @@ BASKER TODO
 ** Error manager for off-diag submatrices
 ** Split solver classes
 
+* New ones from Siva
+ ** Different node types:
+ ** Test with serial, works or not
+ ** Cuda , what is the right behavior ?
+ ** static_assert for unsupported node_types
+ ** setting option for everything that we want to control like maxh matching
+ ** Symbolic to initialize
+
+ ** Example directory is never compiled
+ ** Add tests with different xml files for different options
+ ** Option for ILUT
+
+ ** High priority (for incomplete factorizations probably) : maximum product of diagonals
+    (See preconditioning highly indefinite and nonsymmetric matrices (Benzi,
+    Haws and Tuma)
+
+
 * Bugs
 ** Scotch segfault on large problem ??
    - This is do to not handeling scotch from the top-down
