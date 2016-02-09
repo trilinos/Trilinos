@@ -224,7 +224,7 @@ namespace BaskerNS
 
     //changed col to row, error.
     //print to see issue
-    //printMTX("A_AMD.mtx", M);
+    //printMTX("A_TOTAL.mtx", M);
     
        
     break_into_parts2(M, nblks, btf_tabs);

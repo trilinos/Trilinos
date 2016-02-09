@@ -612,7 +612,7 @@ public:
 
       if( etr_ == TRUSTREGION_TRUNCATEDCG ) {
         hist << "\n";
-        hist << "  iterCG - Number of Krylov iterations\n\n";
+        hist << "  iterCG - Number of Truncated CG iterations\n\n";
         hist << "  flagGC - Trust-Region Truncated CG flag" << "\n";
         for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
           hist << "    " << std::to_string(flag) << " - "

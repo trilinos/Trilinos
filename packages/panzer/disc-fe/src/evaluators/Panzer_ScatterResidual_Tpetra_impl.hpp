@@ -52,6 +52,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -247,15 +248,21 @@ template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-  // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+  // this is the list of parameters and their names that this scatter has to account for
+  std::vector<std::string> activeParameters = 
+    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
-  if(tpetraContainer_==Teuchos::null) {
-    // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
-    tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+  dfdp_vectors_.clear();
+  for(std::size_t i=0;i<activeParameters.size();i++) {
+    RCP<typename LOC::VectorType> vec =
+      rcp_dynamic_cast<LOC>(d.gedc.getDataObject(activeParameters[i]),true)->get_f();
+    Teuchos::ArrayRCP<double> vec_array = vec->get1dViewNonConst();
+    dfdp_vectors_.push_back(vec_array);
   }
 }
 
@@ -264,18 +271,11 @@ template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   TEUCHOS_ASSERT(false);
-
-   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
    std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
-
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
-   Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -297,7 +297,9 @@ evaluateFields(typename TRAITS::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             LO lid = LIDs[offset];
-            r_array[lid] += (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
+            ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+            for(int d=0;d<value.size();d++)
+              dfdp_vectors_[d][lid] += value.fastAccessDx(d);
          }
       }
    }

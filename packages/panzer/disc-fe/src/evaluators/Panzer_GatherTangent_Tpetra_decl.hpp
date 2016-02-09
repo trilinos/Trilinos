@@ -98,7 +98,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherTangent_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherTangent_Tpetra<EvalT,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
   // for testing purposes
   const PHX::FieldTag & getFieldTag(int i) const

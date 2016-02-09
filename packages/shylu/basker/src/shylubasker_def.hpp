@@ -68,7 +68,6 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::Finalize()
   {
-
     
     //finalize all matrices
     A.Finalize();
@@ -78,7 +77,6 @@ namespace BaskerNS
     BTF_B.Finalize();
     BTF_D.Finalize();
     BTF_E.Finalize();
-
    
     //finalize array of 2d matrics
     FREE_MATRIX_VIEW_2DARRAY(AV, tree.nblks);
@@ -98,14 +96,11 @@ namespace BaskerNS
     FREE_INT_1DARRAY(btf_blk_nnz);
     FREE_MATRIX_1DARRAY(LBTF);
     FREE_MATRIX_1DARRAY(UBTF);
-   
-
-    
+       
     //Thread Array
     FREE_THREAD_1DARRAY(thread_array);
     basker_barrier.Finalize();
-    
-    
+       
     //S (Check on this)
     FREE_INT_2DARRAY(S, tree.nblks);
     
@@ -139,14 +134,13 @@ namespace BaskerNS
     stree.Finalize();
     stats.Finalize();
 
-    /*
-    */
   }//end Finalize()
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::InitMatrix(string filename)
-  {    
+  { 
+    //Note: jdb comeback to add trans option
     readMTX(filename, A);
     A.srow = 0;
     A.scol = 0;
@@ -160,6 +154,7 @@ namespace BaskerNS
 					       Int *col_ptr,
 					       Int *row_idx, Entry *val)
   {
+    //Note: jdb comeback to add trans option
     A.init_matrix("Original Matrix",
 		  nrow, ncol, nnz, col_ptr, row_idx, val);
     A.scol = 0;
@@ -288,10 +283,25 @@ namespace BaskerNS
       }
     else
       {
-	A.init_matrix("Original Matrix",
+
+	if(Options.transpose == BASKER_FALSE)
+	  {
+	    A.init_matrix("Original Matrix",
 		  nrow, ncol, nnz, col_ptr, row_idx, val);
-	A.scol = 0;
-	A.srow = 0;
+	    A.scol = 0;
+	    A.srow = 0;
+	  }
+	else
+	  {
+	    //Will transpose and put in A using little extra
+	    matrix_transpose(0, nrow,
+			     0, ncol,
+			     nnz,
+			     col_ptr,
+			     row_idx,
+			     val,
+			     A);
+	  }
 	sort_matrix(A);
 	matrix_flag = BASKER_TRUE;
       }
@@ -596,11 +606,13 @@ namespace BaskerNS
 
     #ifdef BASKER_2DL
     printL2D();
+    printLMTX();
     #else
     //printL();
     #endif
     std::cout << "L printed " << std::endl;
     printU();
+    printUMTX();
     std::cout << "U printed" << std::endl;
     //printRHS();
     std::cout << "RHS printed" << std::endl;

@@ -199,7 +199,7 @@ nonconstMultiVectorLinearOpWithSolve(
 {
   RCP<DefaultMultiVectorLinearOpWithSolve<Scalar> >
     mvlows = Teuchos::rcp(new DefaultMultiVectorLinearOpWithSolve<Scalar>());
-  mvlows->initialize(lows,multiVecRange,multiVecDomain);
+  mvlows->nonconstInitialize(lows,multiVecRange,multiVecDomain);
   return mvlows;
 }
 
