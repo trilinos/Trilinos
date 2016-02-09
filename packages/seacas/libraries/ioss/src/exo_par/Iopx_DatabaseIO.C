@@ -379,12 +379,12 @@ namespace Iopx {
           exodusFilePtr = ex_create_par(get_filename().c_str(), mode|par_mode,
                                         &cpu_word_size, &dbRealWordSize, util().communicator(), info);
           if (exodusFilePtr < 0) {
-            dbState = Ioss::STATE_INVALID;
-            // NOTE: Code will not continue past this call...
-            std::ostringstream errmsg;
-            errmsg << "ERROR: Cannot create specified file '" << get_filename() << "'";
-            IOSS_ERROR(errmsg);
-          }
+	    dbState = Ioss::STATE_INVALID;
+	    // NOTE: Code will not continue past this call...
+	    std::ostringstream errmsg;
+	    errmsg << "ERROR: Cannot create specified file '" << get_filename() << "'";
+	    IOSS_ERROR(errmsg);
+	  }
         }
         ex_set_max_name_length(exodusFilePtr, maximumNameLength);
       }

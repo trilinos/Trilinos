@@ -309,24 +309,12 @@ namespace Iofx {
           exodusFilePtr = ex_create(decoded_filename.c_str(), mode,
                                     &cpu_word_size, &dbRealWordSize);
           if (exodusFilePtr < 0) {
-            if (myProcessor == 0){
-              Ioss::FileInfo path = Ioss::FileInfo(decoded_filename);
-              Ioss::Utils::create_path(path.pathname());
-            }
-#ifdef HAVE_MPI
-            if (dbUsage != Ioss::WRITE_HISTORY) {
-              MPI_Barrier(util().communicator());
-            }
-#endif
-            exodusFilePtr = ex_create(decoded_filename.c_str(), mode, &cpu_word_size, &dbRealWordSize);
-            if (exodusFilePtr < 0) {
-              dbState = Ioss::STATE_INVALID;
-              // NOTE: Code will not continue past this call...
-              std::ostringstream errmsg;
-              errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
-              IOSS_ERROR(errmsg);
-            }
-          }
+	    dbState = Ioss::STATE_INVALID;
+	    // NOTE: Code will not continue past this call...
+	    std::ostringstream errmsg;
+	    errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
+	    IOSS_ERROR(errmsg);
+	  }
         }
       }
 
