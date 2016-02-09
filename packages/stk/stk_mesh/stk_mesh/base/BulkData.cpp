@@ -5018,60 +5018,83 @@ void BulkData::internal_resolve_send_ghost_membership()
     // StkTransitionBulkData derived class in Framework.
 }
 
-void add_bucket_and_ord(unsigned bucket_id, unsigned bucket_ord, std::vector<BucketIndices>& bktIndicesVec)
+void add_bucket_and_ord(unsigned bucket_id, unsigned bucket_ord, BucketIndices& bktIndices)
 {
-  if (bktIndicesVec.empty() || bktIndicesVec.back().bucket_id != bucket_id) {
-    bktIndicesVec.push_back(BucketIndices());
-    bktIndicesVec.back().bucket_id = bucket_id;
+  if (bktIndices.bucket_info.empty() || bktIndices.bucket_info.back().bucket_id != bucket_id) {
+    bktIndices.bucket_info.push_back(BucketInfo(bucket_id, 0u));
   }
 
-  bktIndicesVec.back().ords.push_back(bucket_ord);
+  bktIndices.bucket_info.back().num_entities_this_bucket += 1;
+  bktIndices.ords.push_back(bucket_ord);
 }
 
 void BulkData::internal_update_fast_comm_maps()
 {
-  if (parallel_size() > 1) {
-    EntityCommListInfoVector& all_comm = m_entity_comm_list;
+    if (parallel_size() > 1) {
+        EntityCommListInfoVector& all_comm = m_entity_comm_list;
 
-    // Flush previous map
-    const EntityRank num_ranks = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
-    m_all_sharing_procs.resize(num_ranks);
-    m_volatile_fast_shared_comm_map.resize(num_ranks);
-    for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
-      m_all_sharing_procs[r].clear();
-      m_volatile_fast_shared_comm_map[r].resize(parallel_size());
-      for (int proc = 0; proc < parallel_size(); ++proc) {
-        m_volatile_fast_shared_comm_map[r][proc].clear();
-      }
+        // Flush previous map
+        const EntityRank num_ranks = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
+        m_all_sharing_procs.resize(num_ranks);
+        m_volatile_fast_shared_comm_map.resize(num_ranks);
+        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
+            m_all_sharing_procs[r].clear();
+            m_volatile_fast_shared_comm_map[r].resize(parallel_size());
+            for (int proc = 0; proc < parallel_size(); ++proc) {
+                m_volatile_fast_shared_comm_map[r][proc].bucket_info.clear();
+                m_volatile_fast_shared_comm_map[r][proc].ords.clear();
+            }
+        }
+
+        // Assemble map, find all shared entities and pack into volatile fast map
+        std::vector<std::vector<unsigned> > shared_entity_counts(num_ranks);
+        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
+            shared_entity_counts[r].assign(parallel_size(), 0);
+        }
+
+        for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
+            EntityKey const key   = all_comm[i].key;
+            EntityRank const rank = key.rank();
+
+            if (all_comm[i].entity_comm != nullptr) {
+                PairIterEntityComm ec(all_comm[i].entity_comm->comm_map);
+                for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
+                    shared_entity_counts[rank][ec->proc]++;
+                }
+            }
+        }
+
+        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
+            for(int p=0; p<parallel_size(); ++p) {
+                if (shared_entity_counts[r][p] > 0) {
+                    m_volatile_fast_shared_comm_map[r][p].ords.reserve(shared_entity_counts[r][p]);
+                }
+            }
+        }
+
+        for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
+            Entity const e        = all_comm[i].entity;
+            EntityKey const key   = all_comm[i].key;
+            MeshIndex const& idx  = mesh_index(e);
+            all_comm[i].bucket = idx.bucket;
+            all_comm[i].bucket_ordinal = idx.bucket_ordinal;
+
+            EntityRank const rank = key.rank();
+
+            unsigned bucket_id  = idx.bucket->bucket_id();
+            unsigned bucket_ord = idx.bucket_ordinal;
+
+            if (all_comm[i].entity_comm != nullptr) {
+                PairIterEntityComm ec(all_comm[i].entity_comm->comm_map);
+                for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
+                    add_bucket_and_ord(bucket_id, bucket_ord, m_volatile_fast_shared_comm_map[rank][ec->proc]);
+                    stk::util::insert_keep_sorted_and_unique(ec->proc, m_all_sharing_procs[rank]);
+                }
+            }
+        }
     }
-
-    // Assemble map, find all shared entities and pack into volatile fast map
-    for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
-      Entity const e        = all_comm[i].entity;
-      EntityKey const key   = all_comm[i].key;
-      MeshIndex const& idx  = mesh_index(e);
-      all_comm[i].bucket = idx.bucket;
-      all_comm[i].bucket_ordinal = idx.bucket_ordinal;
-
-      EntityRank const rank = key.rank();
-
-      unsigned bucket_id  = idx.bucket->bucket_id();
-      unsigned bucket_ord = idx.bucket_ordinal;
-
-      if (all_comm[i].entity_comm != nullptr) {
-          PairIterEntityComm ec(all_comm[i].entity_comm->comm_map);
-          for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
-              add_bucket_and_ord(bucket_id, bucket_ord, m_volatile_fast_shared_comm_map[rank][ec->proc]);
-              stk::util::insert_keep_sorted_and_unique(ec->proc, m_all_sharing_procs[rank]);
-          }
-      }
-    }
-
-    // Need to shrink-to-fit these vectors?
-  }
 }
-
-
+ 
 
 namespace impl {
 

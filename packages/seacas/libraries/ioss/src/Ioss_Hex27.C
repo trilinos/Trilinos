@@ -169,7 +169,7 @@ Ioss::IntVector Ioss::Hex27::element_connectivity() const
 Ioss::ElementTopology* Ioss::Hex27::face_type(int face_number) const
 {
   // face_number == 0 returns topology for all faces if
-  // all faces are the same topology; otherwise, returns NULL
+  // all faces are the same topology; otherwise, returns nullptr
   // face_number is 1-based.
 
   assert(face_number >= 0 && face_number <= number_faces());
@@ -180,7 +180,7 @@ Ioss::ElementTopology* Ioss::Hex27::face_type(int face_number) const
 Ioss::ElementTopology* Ioss::Hex27::edge_type(int edge_number) const
 {
   // edge_number == 0 returns topology for all edges if
-  // all edges are the same topology; otherwise, returns NULL
+  // all edges are the same topology; otherwise, returns nullptr
   // edge_number is 1-based.
 
   assert(edge_number >= 0 && edge_number <= number_edges());

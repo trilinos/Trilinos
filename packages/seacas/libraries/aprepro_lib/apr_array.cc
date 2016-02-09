@@ -104,7 +104,7 @@ namespace SEAMS {
 
   array *array_add(const array *a, const array *b)
   {
-    array *array_data = new array(a->rows, a->cols);
+    auto array_data = new array(a->rows, a->cols);
     for (int i=0; i < a->rows*a->cols; i++) {
       array_data->data[i] = a->data[i] + b->data[i];
     }
@@ -113,7 +113,7 @@ namespace SEAMS {
 
   array *array_sub(const array *a, const array *b)
   {
-    array *array_data = new array(a->rows, a->cols);
+    auto array_data = new array(a->rows, a->cols);
 
     for (int i=0; i < a->rows*a->cols; i++) {
       array_data->data[i] = a->data[i] - b->data[i];
@@ -123,7 +123,7 @@ namespace SEAMS {
 
   array *array_scale(const array *a, double s)
   {
-    array *array_data = new array(a->rows, a->cols);
+    auto array_data = new array(a->rows, a->cols);
 
     for (int i=0; i < a->rows*a->cols; i++) {
       array_data->data[i] = a->data[i] * s;
@@ -137,7 +137,7 @@ namespace SEAMS {
     int ac = a->cols;
     int bc = b->cols;
 
-    array *array_data = new array(a->rows, b->cols);
+    auto array_data = new array(a->rows, b->cols);
 
     for (int i=0; i<b->cols; i++) {
       for (int j=0; j<a->rows; j++) {

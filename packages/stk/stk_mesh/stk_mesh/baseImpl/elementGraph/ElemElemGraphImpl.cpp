@@ -617,12 +617,13 @@ bool is_local_element(stk::mesh::impl::LocalId elemId)
     return (elemId >= 0);
 }
 
-void add_exposed_sides(LocalId elementId, size_t numElemSides,
+void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
                       const stk::mesh::Graph &graph, std::vector<int> &element_side_pairs)
 {
-    if (graph.get_num_edges_for_element(elementId) < numElemSides)
+    bool does_element_have_exposed_sides = ( graph.get_num_edges_for_element(elementId) < maxSidesThisElement );
+    if (does_element_have_exposed_sides)
     {
-        std::vector<int> elemSides(numElemSides, -1);
+        std::vector<int> elemSides(maxSidesThisElement, -1);
         for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
         {
             const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
@@ -630,11 +631,12 @@ void add_exposed_sides(LocalId elementId, size_t numElemSides,
             elemSides[sideId] = sideId;
         }
 
-        for(size_t sideId = 0; sideId < numElemSides; ++sideId)
+        for(size_t sideId = 0; sideId < maxSidesThisElement; ++sideId)
             if (elemSides[sideId] == -1)
                 element_side_pairs.push_back(sideId);
     }
 }
+
 
 }}} // end namespaces stk mesh impl
 

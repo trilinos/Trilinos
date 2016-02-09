@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	aprepro.add_variable(var, value, true);  // Make it immutable
       } 
       else {
-	double dval = strtod(value.c_str(), NULL);
+	double dval = strtod(value.c_str(), nullptr);
 	aprepro.add_variable(var, dval, true);
       }
     }
@@ -81,13 +81,13 @@ int main(int argc, char *argv[])
   if (input_files.empty()) {
     if (!quiet) {
       const char *comment = aprepro.getsym("_C_")->value.svar;
-      if (comment != NULL) {
+      if (comment != nullptr) {
 	std::cout << comment << " Algebraic Preprocessor -- Aprepro, version "
 		  << aprepro.version() << "\n";
       }
     }
     aprepro.ap_options.interactive = true;
-    bool result = aprepro.parse_stream(std::cin, "standard input");
+    aprepro.parse_stream(std::cin, "standard input");
   }
   else {
     std::fstream infile(input_files[0].c_str());

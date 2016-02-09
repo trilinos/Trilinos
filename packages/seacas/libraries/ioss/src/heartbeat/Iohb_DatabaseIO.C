@@ -79,7 +79,7 @@ namespace {
       const int length=256;
       static char time_string[length];
 
-      time_t calendar_time = time(NULL);
+      time_t calendar_time = time(nullptr);
       struct tm *local_time = localtime(&calendar_time);
 
       size_t error = strftime(time_string, length, format.c_str(), local_time);
@@ -105,7 +105,7 @@ namespace {
     // 'cerr', but that shouldn't be too much of a hardship.  [If it is,
     // we can devise a syntax as: 'FILE:cout' or do a './cout'
 
-    std::ostream *log_stream = NULL;
+    std::ostream *log_stream = nullptr;
     *needs_delete = false;
     if (filename == "cout" || filename == "stdout") {
       log_stream = &std::cout;
@@ -121,12 +121,12 @@ namespace {
       // something better here if we want to share streams among
       // different heartbeats or logging mechanisms.  Need perhaps a
       // 'logger' class which handles sharing and destruction...
-      std::ofstream *tmp = NULL;
+      std::ofstream *tmp = nullptr;
       if(append_file)
         tmp = new std::ofstream(filename.c_str(),std::ios::out | std::ios::app);
       else
         tmp = new std::ofstream(filename.c_str());
-      if (tmp != NULL && !tmp->is_open()) {
+      if (tmp != nullptr && !tmp->is_open()) {
 	delete tmp;
       } else {
 	log_stream = tmp;
@@ -154,7 +154,7 @@ namespace Iohb {
 				       Ioss::DatabaseUsage db_usage,
 				       MPI_Comm communicator,
 				       const Ioss::PropertyManager &props) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator, props); }
+  { return new DatabaseIO(nullptr, filename, db_usage, communicator, props); }
 
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
@@ -162,7 +162,7 @@ namespace Iohb {
 			 MPI_Comm communicator,
 			 const Ioss::PropertyManager &props) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
-    logStream(NULL), layout_(NULL), legend_(NULL),
+    logStream(nullptr), layout_(nullptr), legend_(nullptr),
     tsFormat("[%H:%M:%S]"), separator_(", "), precision_(5), fieldWidth_(0),
     showLabels(false), showLegend(true), appendOutput(false),
     addTimeField(false), initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
@@ -182,8 +182,8 @@ namespace Iohb {
   void DatabaseIO::initialize(const Ioss::Region *region) const
   {
     if (!initialized_) {
-      assert(layout_ == NULL);
-      assert(legend_ == NULL);
+      assert(layout_ == nullptr);
+      assert(legend_ == nullptr);
 
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 
@@ -205,7 +205,7 @@ namespace Iohb {
             &(new_this->streamNeedsDelete),
             append);
 
-        if (new_this->logStream == NULL) {
+        if (new_this->logStream == nullptr) {
 	  Ioss::FileInfo path = Ioss::FileInfo(get_filename());
 	  Ioss::Utils::create_path(path.pathname());
 	  new_this->logStream = open_stream(get_filename(),
@@ -214,7 +214,7 @@ namespace Iohb {
         }
       } else {
 	// All processors except processor 0
-	new_this->logStream = NULL;
+	new_this->logStream = nullptr;
       }
 
       // Pull variables from the regions property data...
@@ -306,20 +306,20 @@ namespace Iohb {
 
   bool   DatabaseIO::end_state(Ioss::Region */* region */, int /* state */, double /* time */)
   {
-    if (legend_ != NULL) {
+    if (legend_ != nullptr) {
       if (fileFormat == SPYHIS) {
-	time_t calendar_time = time(NULL);
+	time_t calendar_time = time(nullptr);
 	*logStream << "% Sierra SPYHIS Output " << ctime(&calendar_time);
       }
 
       *logStream << *legend_ << std::endl;
       delete legend_;
-      legend_ = NULL;
+      legend_ = nullptr;
     }
 
     *logStream << *layout_ << std::endl;
     delete layout_;
-    layout_ = NULL;
+    layout_ = nullptr;
     return true;
   }
 
@@ -398,7 +398,7 @@ namespace Iohb {
 
       int ncomp = field.transformed_storage()->component_count();
 
-      if (legend_ != NULL && layout_ != NULL) {
+      if (legend_ != nullptr && layout_ != nullptr) {
 	if (ncomp == 1) {
 	  legend_->add_legend(field.get_name());
 	}
@@ -412,22 +412,22 @@ namespace Iohb {
       }
 
       if (field.get_type() == Ioss::Field::STRING) {
-	// Assume that if layout_ is NULL, then we want special one-line output.
-	if (layout_ == NULL) {
+	// Assume that if layout_ is nullptr, then we want special one-line output.
+	if (layout_ == nullptr) {
 	  Layout layout(false, 0, separator_, fieldWidth_);
 	  layout.add_literal("-");
 	  layout.add_literal(time_stamp(tsFormat));
 	  layout.add_literal(" ");
 	  layout.add_literal(*(std::string*)data);
-	  if (logStream != NULL)
+	  if (logStream != nullptr)
 	    *logStream << layout << std::endl;
 	} else {
 	  layout_->add(field.get_name(), *(std::string*)data);
 	}
       } else {
-	if (layout_ == NULL) {
+	if (layout_ == nullptr) {
 	  std::ostringstream errmsg;
-	  errmsg << "INTERNAL ERROR: Unexpected NULL layout.\n";
+	  errmsg << "INTERNAL ERROR: Unexpected nullptr layout.\n";
 	  IOSS_ERROR(errmsg);
 	}
 	if (field.get_type() == Ioss::Field::INTEGER) {

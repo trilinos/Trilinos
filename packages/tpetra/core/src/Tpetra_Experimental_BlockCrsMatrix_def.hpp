@@ -345,15 +345,7 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   setAllToScalar (const Scalar& alpha)
   {
-    const LO numLocalMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
-    for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
-      const size_t meshBeg = ptr_[lclRow];
-      const size_t meshEnd = ptr_[lclRow+1];
-      for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
-        little_block_type A_cur = getNonConstLocalBlockFromAbsOffset (absBlkOff);
-        deep_copy (A_cur, static_cast<impl_scalar_type> (alpha));
-      }
-    }
+    Kokkos::deep_copy (valView_, alpha);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1135,7 +1127,7 @@ namespace Experimental {
         little_vec_type Y_cur = Y.getLocalBlock (lclRow, 0);
 
         if (beta == zero) {
-          deep_copy (Y_lcl, zero);
+          FILL (Y_lcl, zero);
         } else if (beta == one) {
           COPY (Y_cur, Y_lcl);
         } else {
@@ -1164,7 +1156,7 @@ namespace Experimental {
           little_vec_type Y_cur = Y.getLocalBlock (lclRow, j);
 
           if (beta == zero) {
-            deep_copy (Y_lcl, zero);
+            FILL (Y_lcl, zero);
           } else if (beta == one) {
             COPY (Y_cur, Y_lcl);
           } else {

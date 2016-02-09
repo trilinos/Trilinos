@@ -794,7 +794,6 @@ namespace Tpetra {
     using Teuchos::rcp;
     typedef ArrayRCP<size_t>::size_type size_type;
     typedef typename local_matrix_type::row_map_type row_map_type;
-    typedef typename Graph::t_numRowEntries_ row_entries_type;
     typedef typename Graph::local_graph_type::entries_type::non_const_type lclinds_1d_type;
     typedef typename local_matrix_type::values_type values_type;
 
@@ -828,11 +827,12 @@ namespace Tpetra {
     lclinds_1d_type k_lclInds1D_ = myGraph_->k_lclInds1D_;
 
     // The number of entries in each locally owned row.  This is a
-    // DualView.  2-D storage lives on host and is currently not
+    // host View.  2-D storage lives on host and is currently not
     // thread-safe for parallel kernels even on host, so we have to
     // work sequentially with host storage in that case.
-    row_entries_type k_numRowEnt = myGraph_->k_numRowEntries_;
-    typename row_entries_type::t_host h_numRowEnt = k_numRowEnt.h_view;
+    typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
+    typedef typename row_entries_type::const_type const_row_entries_type;
+    const_row_entries_type h_numRowEnt = myGraph_->k_numRowEntries_;
 
     if (getProfileType () == DynamicProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
@@ -845,11 +845,11 @@ namespace Tpetra {
       // (lclInds2D_ resp. values2D_) into 1-D storage (k_inds
       // resp. k_vals).
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (k_numRowEnt.dimension_0 ()) != lclNumRows,
+        static_cast<size_t> (h_numRowEnt.dimension_0 ()) != lclNumRows,
         std::logic_error, "Tpetra::CrsMatrix::fillLocalGraphAndMatrix (called "
         "from fillComplete or expertStaticFillComplete): For the "
-        "DynamicProfile branch, k_numRowEnt has the wrong length.  "
-        "k_numRowEnt.dimension_0() = " << k_numRowEnt.dimension_0 ()
+        "DynamicProfile branch, h_numRowEnt has the wrong length.  "
+        "h_numRowEnt.dimension_0() = " << h_numRowEnt.dimension_0 ()
         << " != getNodeNumRows() = " << lclNumRows << "");
 
       // Pack the row offsets into k_ptrs, by doing a sum-scan of
@@ -983,11 +983,11 @@ namespace Tpetra {
         // bound on the number of entries per row, but didn't fill all
         // those entries.
         TEUCHOS_TEST_FOR_EXCEPTION(
-          static_cast<size_t> (k_numRowEnt.dimension_0 ()) != lclNumRows,
+          static_cast<size_t> (h_numRowEnt.dimension_0 ()) != lclNumRows,
           std::logic_error, "Tpetra::CrsMatrix::fillLocalGraphAndMatrix (called"
           " from fillComplete or expertStaticFillComplete): In StaticProfile "
-          "unpacked branch, k_numRowEnt has the wrong length.  "
-          "k_numRowEnt.dimension_0() = " << k_numRowEnt.dimension_0 ()
+          "unpacked branch, h_numRowEnt has the wrong length.  "
+          "h_numRowEnt.dimension_0() = " << h_numRowEnt.dimension_0 ()
           << " != getNodeNumRows() = " << lclNumRows << ".");
 
         if (curRowOffsets.dimension_0 () != 0) {
@@ -1229,7 +1229,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef LocalOrdinal LO;
-    typedef typename Graph::t_numRowEntries_ row_entries_type;
     typedef typename Graph::local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_matrix_type::values_type values_type;
@@ -1280,11 +1279,12 @@ namespace Tpetra {
     }
 
     // The number of entries in each locally owned row.  This is a
-    // DualView.  2-D storage lives on host and is currently not
+    // host View.  2-D storage lives on host and is currently not
     // thread-safe for parallel kernels even on host, so we have to
     // work sequentially with host storage in that case.
-    row_entries_type k_numRowEnt = staticGraph_->k_numRowEntries_;
-    typename row_entries_type::t_host h_numRowEnt = k_numRowEnt.h_view;
+    typedef decltype (staticGraph_->k_numRowEntries_) row_entries_type;
+    typedef typename row_entries_type::const_type const_row_entries_type;
+    const_row_entries_type h_numRowEnt = staticGraph_->k_numRowEntries_;
 
     if (getProfileType() == DynamicProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.

@@ -36,7 +36,7 @@
 #include <sys/types.h>                  // for ssize_t
 #include <tokenize.h>                   // for tokenize
 #include <cmath>                        // for atan2, cos, sin
-#include <cstdlib>                      // for strtod, NULL, strtol, exit, etc
+#include <cstdlib>                      // for strtod, nullptr, strtol, exit, etc
 #include <cstring>                      // for memcpy
 #include <iomanip>                      // for operator<<, setw
 #include <iostream>                     // for operator<<, basic_ostream, etc
@@ -70,19 +70,16 @@ namespace Iogn {
     // Possible that the 'parameters' has the working directory path
     // prepended to the parameter list.  Strip off everything in front
     // of the last '/' (if any)...
-    std::vector<std::string> params;
-    Ioss::tokenize(parameters, "/", params);
+    std::vector<std::string> params = Ioss::tokenize(parameters, "/");
 
-    std::vector<std::string> groups;
-    Ioss::tokenize(params[params.size()-1], "|+", groups);
+    std::vector<std::string> groups = Ioss::tokenize(params[params.size()-1], "|+");
 
     // First 'group' is the interval specification -- IxJxK
-    std::vector<std::string> tokens;
-    Ioss::tokenize(groups[0], "x", tokens);
+    std::vector<std::string> tokens = Ioss::tokenize(groups[0], "x");
     assert(tokens.size() == 3);
-    numX = std::strtol(tokens[0].c_str(), NULL, 10);
-    numY = std::strtol(tokens[1].c_str(), NULL, 10);
-    numZ = std::strtol(tokens[2].c_str(), NULL, 10);
+    numX = std::strtol(tokens[0].c_str(), nullptr, 10);
+    numY = std::strtol(tokens[1].c_str(), nullptr, 10);
+    numZ = std::strtol(tokens[2].c_str(), nullptr, 10);
 
     if (numX <= 0 || numY <= 0 || numZ <= 0) {
       if (myProcessor == 0) {
@@ -227,8 +224,7 @@ namespace Iogn {
   void GeneratedMesh::parse_options(const std::vector<std::string> &groups)
   {
     for (size_t i=1; i < groups.size(); i++) {
-      std::vector<std::string> option;
-      Ioss::tokenize(groups[i], ":", option);
+      std::vector<std::string> option = Ioss::tokenize(groups[i], ":");
       // option[0] is the type of the option and option[1] is the argument to the option.
 
       if (option[0] == "shell") {
@@ -329,22 +325,20 @@ namespace Iogn {
       }
       else if (option[0] == "scale") {
         // Option of the form  "scale:xs,ys,zs
-        std::vector<std::string> tokens;
-        Ioss::tokenize(option[1], ",", tokens);
+        std::vector<std::string> tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 3);
-        sclX = std::strtod(tokens[0].c_str(), NULL);
-        sclY = std::strtod(tokens[1].c_str(), NULL);
-        sclZ = std::strtod(tokens[2].c_str(), NULL);
+        sclX = std::strtod(tokens[0].c_str(), nullptr);
+        sclY = std::strtod(tokens[1].c_str(), nullptr);
+        sclZ = std::strtod(tokens[2].c_str(), nullptr);
       }
 
       else if (option[0] == "offset") {
         // Option of the form  "offset:xo,yo,zo
-        std::vector<std::string> tokens;
-        Ioss::tokenize(option[1], ",", tokens);
+        std::vector<std::string> tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 3);
-        offX = std::strtod(tokens[0].c_str(), NULL);
-        offY = std::strtod(tokens[1].c_str(), NULL);
-        offZ = std::strtod(tokens[2].c_str(), NULL);
+        offX = std::strtod(tokens[0].c_str(), nullptr);
+        offY = std::strtod(tokens[1].c_str(), nullptr);
+        offZ = std::strtod(tokens[2].c_str(), nullptr);
       }
 
       else if (option[0] == "zdecomp") {
@@ -353,13 +347,12 @@ namespace Iogn {
         // for each processor.  The number of tokens must match
         // the number of processors.  Note that the new numZ will
         // be the sum of the intervals specified in this command.
-        std::vector<std::string> tokens;
-        Ioss::tokenize(option[1], ",", tokens);
+        std::vector<std::string> tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == processorCount);
         Int64Vector Zs;
         numZ = 0;
         for (size_t j = 0; j < processorCount; j++) {
-          Zs.push_back(std::strtol(tokens[j].c_str(), NULL, 10));
+          Zs.push_back(std::strtol(tokens[j].c_str(), nullptr, 10));
           numZ += Zs[j];
         }
         myNumZ = Zs[myProcessor];
@@ -371,33 +364,31 @@ namespace Iogn {
 
       else if (option[0] == "bbox") {
         // Bounding-Box Option of the form  "bbox:xmin,ymin,zmin,xmax,ymax,zmaxo
-        std::vector<std::string> tokens;
-        Ioss::tokenize(option[1], ",", tokens);
+        std::vector<std::string> tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 6);
-        double xmin = std::strtod(tokens[0].c_str(), NULL);
-        double ymin = std::strtod(tokens[1].c_str(), NULL);
-        double zmin = std::strtod(tokens[2].c_str(), NULL);
-        double xmax = std::strtod(tokens[3].c_str(), NULL);
-        double ymax = std::strtod(tokens[4].c_str(), NULL);
-        double zmax = std::strtod(tokens[5].c_str(), NULL);
+        double xmin = std::strtod(tokens[0].c_str(), nullptr);
+        double ymin = std::strtod(tokens[1].c_str(), nullptr);
+        double zmin = std::strtod(tokens[2].c_str(), nullptr);
+        double xmax = std::strtod(tokens[3].c_str(), nullptr);
+        double ymax = std::strtod(tokens[4].c_str(), nullptr);
+        double zmax = std::strtod(tokens[5].c_str(), nullptr);
 
         set_bbox(xmin, ymin, zmin,  xmax, ymax, zmax);
       }
 
       else if (option[0] == "rotate") {
         // Rotate Option of the form  "rotate:axis,angle,axis,angle,...
-        std::vector<std::string> tokens;
-        Ioss::tokenize(option[1], ",", tokens);
+        std::vector<std::string> tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() %2 == 0);
         for (size_t ir=0; ir < tokens.size();) {
           std::string axis = tokens[ir++];
-          double angle_degree = std::strtod(tokens[ir++].c_str(), NULL);
+          double angle_degree = std::strtod(tokens[ir++].c_str(), nullptr);
           set_rotation(axis, angle_degree);
         }
       }
 
       else if (option[0] == "times") {
-        timestepCount = std::strtol(option[1].c_str(), NULL, 10);
+        timestepCount = std::strtol(option[1].c_str(), nullptr, 10);
       }
 
       else if (option[0] == "tets") {
@@ -406,12 +397,11 @@ namespace Iogn {
 
       else if (option[0] == "variables") {
         // Variables Option of the form  "variables:global,10,element,100,..."
-        std::vector<std::string> tokens;
-        Ioss::tokenize(option[1], ",", tokens);
+        std::vector<std::string> tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() %2 == 0);
         for (size_t ir=0; ir < tokens.size();) {
           std::string type = tokens[ir++];
-          int count = std::strtol(tokens[ir++].c_str(), NULL, 10);
+          int count = std::strtol(tokens[ir++].c_str(), nullptr, 10);
           set_variable_count(type, count);
         }
         if (timestepCount == 0)
@@ -466,9 +456,9 @@ namespace Iogn {
           << "\tTimestep Count        = " << std::setw(9) << timestep_count() << "\n\n";
       if (doRotation) {
         std::cerr << "\tRotation Matrix: \n\t" << std::scientific ;
-        for (int ii=0; ii < 3; ii++) {
+        for (auto & elem : rotmat) {
           for (int jj=0; jj < 3; jj++) {
-            std::cerr << std::setw(14) << rotmat[ii][jj] << "\t";
+            std::cerr << std::setw(14) << elem[jj] << "\t";
           }
           std::cerr << "\n\t";
         }
@@ -1228,11 +1218,11 @@ namespace Iogn {
               hex_vert[6] = xp1yp1 + base+numX+2;
               hex_vert[7] = xp1yp1 + base+numX+1;
 
-              for (size_t tet = 0; tet < 6; tet++) {
-                connect[cnt++] = hex_vert[tet_vert[tet][0]];
-                connect[cnt++] = hex_vert[tet_vert[tet][1]];
-                connect[cnt++] = hex_vert[tet_vert[tet][2]];
-                connect[cnt++] = hex_vert[tet_vert[tet][3]];
+              for (auto & elem : tet_vert) {
+                connect[cnt++] = hex_vert[elem[0]];
+                connect[cnt++] = hex_vert[elem[1]];
+                connect[cnt++] = hex_vert[elem[2]];
+                connect[cnt++] = hex_vert[elem[3]];
               }
             }
           }
@@ -1280,10 +1270,10 @@ namespace Iogn {
               hex_vert[2] = base + xp1yp1 + (numX+1);
               hex_vert[3] = base + (numX+1);
 
-              for (size_t tet = 0; tet < 2; tet++) {
-                connect[cnt++] = hex_vert[tet_vert[tet][0]];
-                connect[cnt++] = hex_vert[tet_vert[tet][1]];
-                connect[cnt++] = hex_vert[tet_vert[tet][2]];
+              for (auto & elem : tet_vert) {
+                connect[cnt++] = hex_vert[elem[0]];
+                connect[cnt++] = hex_vert[elem[1]];
+                connect[cnt++] = hex_vert[elem[2]];
               }
             }
           }
@@ -1298,10 +1288,10 @@ namespace Iogn {
               hex_vert[2] = base + xp1yp1 + (numX+1);
               hex_vert[3] = base + xp1yp1;
 
-              for (size_t tet = 0; tet < 2; tet++) {
-                connect[cnt++] = hex_vert[tet_vert[tet][0]];
-                connect[cnt++] = hex_vert[tet_vert[tet][1]];
-                connect[cnt++] = hex_vert[tet_vert[tet][2]];
+              for (auto & elem : tet_vert) {
+                connect[cnt++] = hex_vert[elem[0]];
+                connect[cnt++] = hex_vert[elem[1]];
+                connect[cnt++] = hex_vert[elem[2]];
               }
             }
           }
@@ -1316,10 +1306,10 @@ namespace Iogn {
               hex_vert[2] = base + xp1yp1 + 1;
               hex_vert[3] = base + xp1yp1;
 
-              for (size_t tet = 0; tet < 2; tet++) {
-                connect[cnt++] = hex_vert[tet_vert[tet][0]];
-                connect[cnt++] = hex_vert[tet_vert[tet][1]];
-                connect[cnt++] = hex_vert[tet_vert[tet][2]];
+              for (auto & elem : tet_vert) {
+                connect[cnt++] = hex_vert[elem[0]];
+                connect[cnt++] = hex_vert[elem[1]];
+                connect[cnt++] = hex_vert[elem[2]];
               }
             }
           }
@@ -1334,10 +1324,10 @@ namespace Iogn {
               hex_vert[2] = base + xp1yp1 + 1;
               hex_vert[3] = base + 1;
 
-              for (size_t tet = 0; tet < 2; tet++) {
-                connect[cnt++] = hex_vert[tet_vert[tet][0]];
-                connect[cnt++] = hex_vert[tet_vert[tet][1]];
-                connect[cnt++] = hex_vert[tet_vert[tet][2]];
+              for (auto & elem : tet_vert) {
+                connect[cnt++] = hex_vert[elem[0]];
+                connect[cnt++] = hex_vert[elem[1]];
+                connect[cnt++] = hex_vert[elem[2]];
               }
             }
           }
@@ -1352,10 +1342,10 @@ namespace Iogn {
                 hex_vert[2] = base + numX + 2;
                 hex_vert[3] = base + 1;
   
-                for (size_t tet = 0; tet < 2; tet++) {
-                  connect[cnt++] = hex_vert[tet_vert[tet][0]];
-                  connect[cnt++] = hex_vert[tet_vert[tet][1]];
-                  connect[cnt++] = hex_vert[tet_vert[tet][2]];
+                for (auto & elem : tet_vert) {
+                  connect[cnt++] = hex_vert[elem[0]];
+                  connect[cnt++] = hex_vert[elem[1]];
+                  connect[cnt++] = hex_vert[elem[2]];
                 }
               }
             }
@@ -1371,10 +1361,10 @@ namespace Iogn {
                 hex_vert[2] = base + numX + 2;
                 hex_vert[3] = base + numX + 1;
   
-                for (size_t tet = 0; tet < 2; tet++) {
-                  connect[cnt++] = hex_vert[tet_vert[tet][0]];
-                  connect[cnt++] = hex_vert[tet_vert[tet][1]];
-                  connect[cnt++] = hex_vert[tet_vert[tet][2]];
+                for (auto & elem : tet_vert) {
+                  connect[cnt++] = hex_vert[elem[0]];
+                  connect[cnt++] = hex_vert[elem[1]];
+                  connect[cnt++] = hex_vert[elem[2]];
                 }
               }
             }

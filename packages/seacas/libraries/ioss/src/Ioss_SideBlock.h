@@ -70,7 +70,7 @@ namespace Ioss {
     Property get_implicit_property(const std::string& name) const;
 
     // For faceblock, edgeblock, if they are split by element block, then this
-    // will be non-NULL and is a pointer to the parent element block for this
+    // will be non-nullptr and is a pointer to the parent element block for this
     // faceblock or edgeblock. Has no meaning for other EntityBlock types or split
     // types.
     const ElementBlock *parent_element_block() const

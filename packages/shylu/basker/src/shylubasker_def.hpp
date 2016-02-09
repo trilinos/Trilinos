@@ -596,11 +596,13 @@ namespace BaskerNS
 
     #ifdef BASKER_2DL
     printL2D();
+    printLMTX();
     #else
     //printL();
     #endif
     std::cout << "L printed " << std::endl;
     printU();
+    printUMTX();
     std::cout << "U printed" << std::endl;
     //printRHS();
     std::cout << "RHS printed" << std::endl;

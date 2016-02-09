@@ -162,7 +162,7 @@ bool Ioss::VariableType::get_field_type_mapping(const std::string &field, std::s
 
 const Ioss::VariableType* Ioss::VariableType::factory(const std::string& raw_name, int copies)
 {
-  Ioss::VariableType* inst = NULL;
+  Ioss::VariableType* inst = nullptr;
   std::string name = Ioss::Utils::lowercase(raw_name);
   Ioss::VariableTypeMap::iterator iter = registry().find(name);
   if (iter == registry().end()) {
@@ -183,23 +183,20 @@ const Ioss::VariableType* Ioss::VariableType::factory(const std::string& raw_nam
   if (copies != 1) {
     inst = CompositeVariableType::composite_variable_type(inst, copies);
   }
-  assert(inst != NULL);
+  assert(inst != nullptr);
   return inst;
 }
 
 const Ioss::VariableType* Ioss::VariableType::factory(const std::vector<Ioss::Suffix> &suffices)
 {
   size_t size = suffices.size();
-  const Ioss::VariableType* ivt = NULL;
+  const Ioss::VariableType* ivt = nullptr;
   if (size <= 1)
-    return NULL; // All storage types must have at least 2 components.
-
-  Ioss::VariableTypeMap::const_iterator I  = registry().begin();
-  Ioss::VariableTypeMap::const_iterator IE = registry().end();
+    return nullptr; // All storage types must have at least 2 components.
 
   bool match = false;
-  while (I != IE) {
-    ivt = (*I++).second;
+  for (auto vtype : registry()) {
+    ivt = vtype.second;
     if ( ivt->suffix_count() == (int)size) {
       if (ivt->match(suffices)) {
 	match = true;
@@ -207,6 +204,7 @@ const Ioss::VariableType* Ioss::VariableType::factory(const std::vector<Ioss::Su
       }
     }
   }
+
   if (match == false) {
     match = true;
     // Check if the suffices form a sequence (1,2,3,...,N)
@@ -248,7 +246,7 @@ const Ioss::VariableType* Ioss::VariableType::factory(const std::vector<Ioss::Su
       // it would have been found above.
       ivt = new Ioss::ConstructedVariableType(size,true);
     } else {
-      ivt = NULL;
+      ivt = nullptr;
     }
   }
   return ivt;
@@ -300,7 +298,7 @@ bool Ioss::VariableType::build_variable_type(const std::string& raw_type)
   char const *lbrace =  std::strchr(typestr, '[');
   char const *rbrace = std::strrchr(typestr, ']');
 
-  if (lbrace == NULL || rbrace == NULL) return false;
+  if (lbrace == nullptr || rbrace == nullptr) return false;
 
   // Step 1:
   // First, we split off the basename (REAL/INTEGER) from the component count ([2])
@@ -311,15 +309,15 @@ bool Ioss::VariableType::build_variable_type(const std::string& raw_type)
   std::strcpy(typecopy, typestr);
 
   char *base = std::strtok(typecopy, "[]");
-  assert (base != NULL);
+  assert (base != nullptr);
   Ioss::VariableTypeMap::iterator iter = Ioss::VariableType::registry().find(base);
   if (iter == registry().end()) {
     delete [] typecopy;
     return false;
   }
 
-  char *countstr = std::strtok(NULL, "[]");
-  assert (countstr != NULL);
+  char *countstr = std::strtok(nullptr, "[]");
+  assert (countstr != nullptr);
   int count = std::atoi(countstr);
   if (count <= 0) {
     delete [] typecopy;

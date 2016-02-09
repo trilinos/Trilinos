@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "UnitTestSkinMeshUseCaseUtils.hpp"
+#include <stk_mesh/base/SkinBoundary.hpp>
 
 namespace {
 
@@ -111,8 +112,7 @@ TEST(ElementGraph, RefinedQuad)
         stk::mesh::Selector active_sel = active;
         stk::mesh::Selector air = !active;
 
-        stk::mesh::ElemElemGraph elem_elem_graph(mesh, active_sel, &air);
-        elem_elem_graph.skin_mesh(skin_parts);
+        stk::mesh::create_exposed_boundary_sides(mesh, active_sel, {}, &air);
 
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(mesh, mesh_counts);

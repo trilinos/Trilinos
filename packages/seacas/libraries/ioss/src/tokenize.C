@@ -34,28 +34,23 @@
 #include <tokenize.h>
 #include <algorithm>
 
-void Ioss::tokenize(const std::string& str, const std::string& separators,
-		    std::vector<std::string>& tokens)
+std::vector<std::string>
+Ioss::tokenize(const std::string& str, const std::string& separators)
 {
-  std::string curr_token = "";
-  for (size_t i = 0; i < str.length(); ++i) {
-    char curr_char = str[i];
-
-    // determine if current character is a separator
-    bool is_separator = std::find(separators.begin(), separators.end(), curr_char) != separators.end();
-
-    if (is_separator && curr_token != "") {
-      // we just completed a token
-      tokens.push_back(curr_token);
-      curr_token.clear();
+  std::vector<std::string> tokens;
+  auto first = std::begin(str);
+  while (first != std::end(str)) {
+    const auto second =
+      std::find_first_of(first, std::end(str),
+			 std::begin(separators), std::end(separators));
+    if (first != second) {
+      tokens.emplace_back(first, second);
     }
-    else if (!is_separator) {
-      curr_token += curr_char;
-    }
+    if (second == std::end(str))
+      break;
+    first = std::next(second);
   }
-  if (curr_token != "") {
-    tokens.push_back(curr_token);
-  }
+  return tokens;
 }
 
 #if 0
@@ -74,12 +69,10 @@ int main()
     cin.getline(s,128);
     std::string input_line(s);
     if (input_line != "quit") {
-      std::vector<std::string> tokens;
-      Ioss::tokenize(input_line, ": \t\r\v\n", tokens);
+      std::vector<std::string> tokens = Ioss::tokenize(input_line, ": \t\r\v\n");
       cout << "There were " << tokens.size() << " tokens in the line\n";
-      TokenList::const_iterator I = tokens.begin();
-      while (I != tokens.end()) {
-        cout << "'" << *I++ << "'\t";
+      for (auto token : tokens) {
+        cout << "'" << token << "'\t";
       }
       cout << '\n';
     } else {

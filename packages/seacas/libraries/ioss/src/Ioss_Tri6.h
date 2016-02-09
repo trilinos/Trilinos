@@ -46,6 +46,7 @@ namespace Ioss {
     static void factory();
     ~Tri6();
 
+    ElementShape shape() const {return ElementShape::TRI;}
     int spatial_dimension()           const;
     int parametric_dimension()       const;
     bool is_element()                 const {return true;}

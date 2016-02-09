@@ -33,7 +33,7 @@
 #include <Ioss_Tri4a.h>
 #include <Ioss_ElementVariableType.h>   // for ElementVariableType
 #include <assert.h>                     // for assert
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for nullptr
 #include "Ioss_CodeTypes.h"             // for IntVector
 #include "Ioss_ElementTopology.h"       // for ElementTopology
 
@@ -128,14 +128,14 @@ Ioss::IntVector Ioss::Tri4a::element_connectivity() const
 
 Ioss::ElementTopology* Ioss::Tri4a::face_type(int /* face_number */) const
 {
-  return (Ioss::ElementTopology*)NULL;
+  return (Ioss::ElementTopology*)nullptr;
 }
 
 Ioss::ElementTopology* Ioss::Tri4a::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
   if (edge_number == 0)
-    return NULL;
+    return nullptr;
   if (edge_number == 1)
     return Ioss::ElementTopology::factory("edge3");
   else

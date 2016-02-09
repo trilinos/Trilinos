@@ -101,8 +101,8 @@ void match_node_xyz(RegionVector &part_mesh,
 {
   // See if any omitted element blocks...
   bool has_omissions = false;
-  for (size_t p = 0; p < part_mesh.size(); p++) {
-    if (part_mesh[p]->get_property("block_omission_count").get_int() > 0) {
+  for (auto & elem : part_mesh) {
+    if (elem->get_property("block_omission_count").get_int() > 0) {
       has_omissions = true;
       break;
     }
@@ -234,8 +234,8 @@ namespace {
     double g_dismin =  FLT_MAX;
     double dismax = -FLT_MAX;
 
-    for (size_t i=0; i < i_inrange.size(); i++) {
-      INT ii = i_inrange[i];
+    for (auto ii : i_inrange) {
+      
       if (local_node_map[ii+i_offset] < 0)
 	continue;
 

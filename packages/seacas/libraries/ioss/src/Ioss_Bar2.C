@@ -33,7 +33,7 @@
 #include <Ioss_Bar2.h>
 #include <Ioss_ElementVariableType.h>   // for ElementVariableType
 #include <assert.h>                     // for assert
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for nullptr
 #include "Ioss_CodeTypes.h"             // for IntVector
 #include "Ioss_ElementTopology.h"       // for ElementTopology
 
@@ -141,7 +141,7 @@ Ioss::IntVector Ioss::Bar2::element_connectivity() const
 }
 
 Ioss::ElementTopology* Ioss::Bar2::face_type(int /* face_number */) const
-{ return (Ioss::ElementTopology*)NULL; }
+{ return (Ioss::ElementTopology*)nullptr; }
 
 Ioss::ElementTopology* Ioss::Bar2::edge_type(int /* edge_number */) const
 { return Ioss::ElementTopology::factory("edge2"); }

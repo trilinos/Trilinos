@@ -209,6 +209,7 @@ private:
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const LOC> tpetraContainer_;
+  std::vector< Teuchos::ArrayRCP<double> > dfdp_vectors_;
 
   //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
   bool checkApplyBC_;

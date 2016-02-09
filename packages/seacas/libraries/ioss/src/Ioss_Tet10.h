@@ -45,6 +45,7 @@ namespace Ioss {
     static void factory();
     ~Tet10();
 
+    ElementShape shape() const {return ElementShape::TET;}
     int spatial_dimension()           const;
     int parametric_dimension()       const;
     bool is_element()                 const {return true;}

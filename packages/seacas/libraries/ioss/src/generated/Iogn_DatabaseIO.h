@@ -88,8 +88,11 @@ namespace Iogn {
 	       const Ioss::PropertyManager &properties);
     ~DatabaseIO();
 
-    int64_t node_global_to_local(int64_t /* global */, bool /* must_exist */) const {return 0;}
-    int64_t element_global_to_local(int64_t /* global */) const {return 0;}
+    int64_t node_global_to_local(int64_t global, bool must_exist) const
+    {return nodeMap.global_to_local(global, must_exist);}
+
+    int64_t element_global_to_local(int64_t global) const
+    {return elemMap.global_to_local(global);}
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed

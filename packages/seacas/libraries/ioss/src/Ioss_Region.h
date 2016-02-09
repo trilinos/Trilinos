@@ -37,7 +37,7 @@
 #include <Ioss_EntityType.h>            // for EntityType, etc
 #include <Ioss_GroupingEntity.h>        // for GroupingEntity
 #include <Ioss_State.h>                 // for State
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t, nullptr
 #include <stdint.h>                     // for int64_t
 #include <functional>                   // for less
 #include <iosfwd>                       // for ostream
@@ -87,7 +87,7 @@ namespace Ioss {
   class Region : public GroupingEntity {
   public:
 
-    explicit Region(DatabaseIO *iodatabase = NULL, const std::string& name="");
+    explicit Region(DatabaseIO *iodatabase = nullptr, const std::string& name="");
 
     ~Region();
 
@@ -159,7 +159,7 @@ namespace Ioss {
     const CoordinateFrameContainer&  get_coordinate_frames() const;
 
     // Retrieve the Grouping Entity with the specified name.
-    // Returns NULL if the entity does not exist
+    // Returns nullptr if the entity does not exist
     GroupingEntity* get_entity(const std::string& name, EntityType io_type) const;
     GroupingEntity* get_entity(const std::string& name) const;
     NodeBlock*      get_node_block(const std::string& name) const;
@@ -197,18 +197,18 @@ namespace Ioss {
     void synchronize_id_and_name(const Region *from, bool synchronize_attribute_field_names=false);
 
     // Returns true if the passed in name refers to a known Entity
-    // defined on this region.  If true, then 'type' (if non-NULL) is
+    // defined on this region.  If true, then 'type' (if non-nullptr) is
     // filled in with the type of the entity; if false, then type (if
-    // non-NULL) is set to 'INVALID' This function is defined to
+    // non-nullptr) is set to 'INVALID' This function is defined to
     // consolidate several distinct implementations of this code in
     // client code. Because of this, the 'type' used in the client
     // code is repeated here instead of something more generic.
     bool is_valid_io_entity(const std::string& name, unsigned int io_type,
-			    std::string *type = NULL) const;
+			    std::string *type = nullptr) const;
 
     // Retrieve the element block that contains the specified element
     // The 'local_id' is the local database id (1-based), not the global id.
-    // returns NULL if no element block contains this element (local_id <= 0
+    // returns nullptr if no element block contains this element (local_id <= 0
     // or greater than number of elements in database)
     ElementBlock* get_element_block(size_t local_id) const;
 

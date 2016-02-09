@@ -256,6 +256,7 @@ install install-user-lib
     ioex_fac
     iopx
     iofx
+    iocgns
     iopg
     iohb
     iogn
@@ -283,6 +284,7 @@ install install-user-lib
     ioex_fac
     iopx
     iofx
+    iocgns
     iopg
     iohb
     iogn
@@ -498,6 +500,24 @@ lib iopg
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libiopg.a
+    ]
+  ;
+
+lib iocgns
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/ioss/src/cgns/*.C ]
+    ]
+    ioss
+    /mpi//mpi
+    /tpl/cgns//cgns
+  : 
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libiocgns.a
     ]
   ;
 
@@ -1735,8 +1755,10 @@ exe io_shell
     ioss
     iotr
     ioxf
+    iocgns
     /mpi//mpi
-  : <tag>@sierra-exec-tag
+  : <define>USE_CGNS
+    <tag>@sierra-exec-tag
   ;
 
 exe io_info
@@ -1749,8 +1771,10 @@ exe io_info
     ioss
     iotr
     ioxf
+    iocgns
     /mpi//mpi
-  : <tag>@sierra-exec-tag
+  : <define>USE_CGNS
+    <tag>@sierra-exec-tag
   ;
 
 exe shell_to_hex

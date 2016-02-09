@@ -50,7 +50,7 @@
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
 #else
-#define TOPTR(x) (x.empty() ? NULL : &x[0])
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
 #endif
 
 /* Macro for maximum value */
@@ -126,7 +126,7 @@ struct LB_Description
   std::vector<std::vector<INT> > e_cmap_neigh;
 
   LB_Description() :
-    type(-1), ignore_z(0), refine(-1), num_sects(-1), cnctd_dom(-1), outfile(-1), vertex2proc(NULL)
+    type(-1), ignore_z(0), refine(-1), num_sects(-1), cnctd_dom(-1), outfile(-1), vertex2proc(nullptr)
   {}
 };
 
@@ -159,7 +159,7 @@ struct Problem_Description
     type(-1), read_coords(-1), coarse_flag(-1), alloc_graph(-1), num_vertices(0), vis_out(-1),
     skip_checks(-1), face_adj(-1), partial_adj(0), global_mech(-1), local_mech(-1),
     find_cnt_domains(-1), mech_add_procs(-1), dsd_add_procs(-1), no_sph(-1),
-    groups(NULL), group_no(NULL), num_groups(-1), int64db(0), int64api(0)
+    groups(nullptr), group_no(nullptr), num_groups(-1), int64db(0), int64api(0)
   {}
 };
 
@@ -227,9 +227,9 @@ struct Mesh_Description
   
   Mesh_Description() :
     num_nodes(0), num_elems(0), num_dims(0), num_el_blks(0),
-    eb_cnts(NULL), num_node_sets(0), num_side_sets(0),
-    max_np_elem(0), ns_list_len(0), coords(NULL), elem_type(NULL),
-    connect(NULL)
+    eb_cnts(nullptr), num_node_sets(0), num_side_sets(0),
+    max_np_elem(0), ns_list_len(0), coords(nullptr), elem_type(nullptr),
+    connect(nullptr)
   {}
 };
 
@@ -242,7 +242,7 @@ struct Sphere_Info
   int  *end;
 
   Sphere_Info() :
-    num(0), adjust(NULL), begin(NULL), end(NULL)
+    num(0), adjust(nullptr), begin(nullptr), end(nullptr)
   {}
 };
 

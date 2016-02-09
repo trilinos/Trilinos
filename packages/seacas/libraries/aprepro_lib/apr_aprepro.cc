@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.25 (2015/11/24)";
+  const char* version_string = "4.26 (2016/01/28)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -66,8 +66,8 @@ namespace SEAMS {
   int   echo = true;
   
   Aprepro::Aprepro()
-    : lexer(NULL), infoStream(&std::cout), sym_table(HASHSIZE),
-      stringInteractive(false), stringScanner(NULL),
+    : lexer(nullptr), infoStream(&std::cout), sym_table(HASHSIZE),
+      stringInteractive(false), stringScanner(nullptr),
       errorStream(&std::cerr), warningStream(&std::cerr), 
       stateImmutable(false), doLoopSubstitution(true), doIncludeSubstitution(true),
       isCollectingLoop(false), inIfdefGetvar(false)
@@ -77,7 +77,7 @@ namespace SEAMS {
     aprepro = this;
 
     // Seed the random number generator...
-    time_t time_val = std::time ((time_t*)NULL);
+    time_t time_val = std::time ((time_t*)nullptr);
     srand((unsigned)time_val);
   }
 
@@ -89,13 +89,13 @@ namespace SEAMS {
     delete lexer;
     
     for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
-      for (symrec *ptr = sym_table[hashval]; ptr != NULL; ) {
+      for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ) {
 	symrec *save = ptr;
 	ptr = ptr->next;
 	delete save;
       }
     }
-    aprepro = NULL;
+    aprepro = nullptr;
     cleanup_memory();
   }
 
@@ -112,7 +112,7 @@ namespace SEAMS {
     std::istream *in_cpy = &in;
     ap_file_list.top().name = in_name;
 
-    Scanner *scanner = new Scanner(*this, in_cpy, &parsingResults);
+    auto scanner = new Scanner(*this, in_cpy, &parsingResults);
     this->lexer = scanner;
 
     if (!ap_options.include_file.empty()) {
@@ -142,8 +142,8 @@ namespace SEAMS {
   bool Aprepro::parse_strings(const std::vector<std::string> &input, const std::string& sname)
   {
     std::stringstream iss;
-    for (size_t i=0; i < input.size(); i++) {
-      iss << input[i] << '\n';
+    for (auto & elem : input) {
+      iss << elem << '\n';
     }
     return parse_stream(iss, sname);
   }
@@ -258,8 +258,8 @@ namespace SEAMS {
       smode = std::ios::out;
   
     /* See if file exists in current directory (or as specified) */
-    std::fstream *pointer = new std::fstream(file.c_str(), smode);
-    if ((pointer == NULL || pointer->bad() || !pointer->good()) && !ap_options.include_path.empty()) {
+    auto pointer = new std::fstream(file.c_str(), smode);
+    if ((pointer == nullptr || pointer->bad() || !pointer->good()) && !ap_options.include_path.empty()) {
       /* If there is an include path specified, try opening file there */
       std::string file_path(ap_options.include_path);
       file_path += "/";
@@ -268,7 +268,7 @@ namespace SEAMS {
     }
 
     /* If pointer still null, print error message */
-    if (pointer == NULL || pointer->bad() || !pointer->good()) {
+    if (pointer == nullptr || pointer->bad() || !pointer->good()) {
       error("Can't open " + file, false);
       exit(EXIT_FAILURE);
     }
@@ -282,9 +282,9 @@ namespace SEAMS {
     if (mode[0] == 'w')
       smode = std::ios::out;
 
-    std::fstream *pointer = new std::fstream(file.c_str(), smode);
+    auto pointer = new std::fstream(file.c_str(), smode);
 
-    if ((pointer == NULL || pointer->bad() || !pointer->good()) && !ap_options.include_path.empty()) {
+    if ((pointer == nullptr || pointer->bad() || !pointer->good()) && !ap_options.include_path.empty()) {
       /* If there is an include path specified, try opening file there */
       std::string file_path(ap_options.include_path);
       file_path += "/";
@@ -340,7 +340,7 @@ namespace SEAMS {
 
     if (is_function) {
       symrec *ptr = getsym(sym_name.c_str());
-      if (ptr != NULL) {
+      if (ptr != nullptr) {
 	if (ptr->type != parser_type) {
 	  error("Overloaded function " + sym_name + "does not return same type", false);
 	  exit(EXIT_FAILURE);
@@ -353,9 +353,9 @@ namespace SEAMS {
       }
     }
     
-    symrec *ptr = new symrec(sym_name, parser_type, is_internal);
-    if (ptr == NULL)
-      return NULL;
+    auto ptr = new symrec(sym_name, parser_type, is_internal);
+    if (ptr == nullptr)
+      return nullptr;
   
     unsigned hashval = hash_symbol (ptr->name.c_str());
     ptr->next = sym_table[hashval];
@@ -448,8 +448,8 @@ namespace SEAMS {
 	}
       }
       symrec *ptr = getsym("_C_");
-      if (ptr != NULL) {
-	char *tmp = NULL;
+      if (ptr != nullptr) {
+	char *tmp = nullptr;
 	new_string(comment.c_str(), &tmp);
 	ptr->value.svar = tmp;
       }
@@ -490,7 +490,7 @@ namespace SEAMS {
     if (check_valid_var(sym_name.c_str())) {
       SYMBOL_TYPE type = immutable ? IMMUTABLE_STRING_VARIABLE : STRING_VARIABLE;
       symrec *var = putsym(sym_name, type, false);
-      char *tmp = NULL;
+      char *tmp = nullptr;
       new_string(sym_value.c_str(), &tmp);
       var->value.svar = tmp;
     }
@@ -517,7 +517,7 @@ namespace SEAMS {
 
     for(unsigned int hashval = 0; hashval < HASHSIZE; hashval++)
       {
-	for(symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next)
+	for(symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next)
 	  {
 	    if(ptr->isInternal != doInternal)
 	      continue;
@@ -547,7 +547,7 @@ namespace SEAMS {
   {
     symrec *ptr = getsym(sym_name.c_str());
     bool is_valid_variable =
-      (ptr != NULL) && (!ptr->isInternal) &&
+      (ptr != nullptr) && (!ptr->isInternal) &&
       ((ptr->type == Parser::token::VAR) ||
        (ptr->type == Parser::token::SVAR) ||
        (ptr->type == Parser::token::AVAR) ||
@@ -565,7 +565,7 @@ namespace SEAMS {
 	if(ptr == hash_ptr)
 	  {
 	    // NOTE: If ptr is the only thing in the linked list, ptr->next will be
-	    // NULL, which is what we want in sym_table when we delete ptr.
+	    // nullptr, which is what we want in sym_table when we delete ptr.
 	    sym_table[hashval] = ptr->next;
 	    delete ptr;
 	  }
@@ -575,15 +575,15 @@ namespace SEAMS {
 	else
 	  {
 	    // Find the preceeding ptr (singly linked list).
-	    // NOTE: We don't have a check for NULL here because the fact that
+	    // NOTE: We don't have a check for nullptr here because the fact that
 	    // ptr != hash_ptr tells us that we must have more than one item in our
-	    // linked list, in which case hash_ptr->next will not be NULL until we
+	    // linked list, in which case hash_ptr->next will not be nullptr until we
 	    // reach the end of the list. hash_ptr->next should be equal to ptr
 	    // before that happens.
 	    while(hash_ptr->next != ptr)
 	      hash_ptr = hash_ptr->next;
 
-	    // NOTE: If ptr is at the end of the list ptr->next will be NULL, in
+	    // NOTE: If ptr is at the end of the list ptr->next will be nullptr, in
 	    // which case this will change hash_ptr to be the end of the list.
 	    hash_ptr->next = ptr->next;
 	    delete ptr;
@@ -597,11 +597,11 @@ namespace SEAMS {
 
   symrec *Aprepro::getsym (const char *sym_name) const
   {
-    symrec *ptr = NULL;
-    for (ptr = sym_table[hash_symbol (sym_name)]; ptr != NULL; ptr = ptr->next)
+    symrec *ptr = nullptr;
+    for (ptr = sym_table[hash_symbol (sym_name)]; ptr != nullptr; ptr = ptr->next)
       if (strcmp (ptr->name.c_str(), sym_name) == 0)
 	return ptr;
-    return NULL;
+    return nullptr;
   }
 
   void Aprepro::dumpsym (int type, bool doInternal) const
@@ -613,7 +613,7 @@ namespace SEAMS {
       (*infoStream) << "\n" << comment << "   Variable    = Value" << std::endl;
 
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
-	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
+	for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
 	  if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
 	    if (ptr->type == Parser::token::VAR)
 	      (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
@@ -640,7 +640,7 @@ namespace SEAMS {
     else if (type == Parser::token::FNCT || type == Parser::token::SFNCT || type == Parser::token::AFNCT) {
       (*infoStream) << "\nFunctions returning double:" << std::endl;
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
-	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
+	for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::FNCT) {
 	    (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
 	      ":  " << ptr->info << std::endl;
@@ -650,7 +650,7 @@ namespace SEAMS {
 
       (*infoStream) << "\nFunctions returning string:" << std::endl;
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
-	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
+	for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::SFNCT) {
 	    (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
 	      ":  " << ptr->info << std::endl;
@@ -660,7 +660,7 @@ namespace SEAMS {
       
       (*infoStream) << "\nFunctions returning array:" << std::endl;
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
-	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
+	for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::AFNCT) {
 	    (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
 	      ":  " << ptr->info << std::endl;
@@ -677,7 +677,7 @@ namespace SEAMS {
   void Aprepro::statistics(std::ostream *out) const
   {
     std::ostream *output = out;
-    if (output == NULL)
+    if (output == nullptr)
       output = &std::cout;
     
     symrec *ptr;
@@ -694,7 +694,7 @@ namespace SEAMS {
 
     for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
       int chain_len = 0;
-      for (ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next)
+      for (ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next)
 	chain_len++;
 
       hash_ratio += chain_len * (chain_len + 1.0);

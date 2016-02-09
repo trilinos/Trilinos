@@ -70,7 +70,7 @@ public:
   // File operations:
   
   std::string File_Name(const char*);
-  virtual std::string Open_File(const char* = 0);  // Default opens current file name.
+  virtual std::string Open_File(const char* = nullptr);  // Default opens current file name.
   std::string Close_File();
   std::string File_Name()    const { return file_name; }
   int     Open()         const { return (file_id >= 0); }
@@ -139,10 +139,10 @@ public:
   
   std::string Load_Nodal_Coordinates();
   const double* X_Coords() const { return nodes; }
-  const double* Y_Coords() const { if (dimension < 2) return 0;
-                                   return nodes == 0 ? 0: nodes + num_nodes; }
-  const double* Z_Coords() const { if (dimension < 3) return 0;
-                                   return nodes == 0 ? 0: nodes + 2*num_nodes; }
+  const double* Y_Coords() const { if (dimension < 2) return nullptr;
+                                   return nodes == nullptr ? nullptr: nodes + num_nodes; }
+  const double* Z_Coords() const { if (dimension < 3) return nullptr;
+                                   return nodes == nullptr ? nullptr: nodes + 2*num_nodes; }
   void Free_Nodal_Coordinates();
   
   // (First time step = 1.)

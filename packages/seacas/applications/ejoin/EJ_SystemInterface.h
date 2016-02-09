@@ -103,7 +103,6 @@ class SystemInterface
   
 
   int debugLevel_;
-  int screenWidth_;
   int stepMin_;
   int stepMax_;
   int stepInterval_;
@@ -112,7 +111,6 @@ class SystemInterface
   bool matchNodeIds_;
   bool matchNodeXYZ_;
   bool matchElemIds_;
-  bool matchElemXYZ_;
   bool disableFieldRecognition_;
   bool ints64bit_;
   

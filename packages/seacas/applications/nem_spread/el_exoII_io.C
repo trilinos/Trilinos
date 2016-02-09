@@ -35,7 +35,7 @@
 #include <iostream>
 #include <assert.h>                     // for assert
 #include <limits.h>                     // for INT_MAX
-#include <stdio.h>                      // for printf, fprintf, NULL, etc
+#include <stdio.h>                      // for printf, fprintf, nullptr, etc
 #include <stdlib.h>                     // for exit, free
 #include <string.h>                     // for strcpy, strrchr, strlen
 #include <sys/types.h>                  // for int64_t
@@ -59,7 +59,7 @@ template <typename T, typename INT> class Globals;
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
 #else
-#define TOPTR(x) (x.empty() ? NULL : &x[0])
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
 #endif
 
 #ifndef TRUE
@@ -199,9 +199,9 @@ void NemSpread<T,INT>::load_mesh()
 
   /* Local variables */
 
-  INT   *num_nodes_in_node_set = NULL;
+  INT   *num_nodes_in_node_set = nullptr;
   int    mesh_exoid = 0;
-  INT   *num_elem_in_ssets=NULL, *num_df_in_ssets=NULL, *num_df_in_nsets=NULL;
+  INT   *num_elem_in_ssets=nullptr, *num_df_in_ssets=nullptr, *num_df_in_nsets=nullptr;
   int    cpu_ws;
   const char  *yo = "load_mesh: ";
   float  version;
@@ -257,14 +257,14 @@ void NemSpread<T,INT>::load_mesh()
 
   /* Initialize */
   for(int iproc=0; iproc < 25*Proc_Info[2]; iproc++)
-    globals.GElem_Blks[iproc] = NULL;
+    globals.GElem_Blks[iproc] = nullptr;
 
   globals.Coor = (T ***)array_alloc(__FILE__, __LINE__, 1,Proc_Info[2],
 				    sizeof(T **));
 
   /* Initialize */
   for(int iproc=0; iproc <Proc_Info[2]; iproc++)
-    globals.Coor[iproc] = NULL;
+    globals.Coor[iproc] = nullptr;
 
   globals.Proc_Elem_Attr  = (T **) array_alloc(__FILE__, __LINE__, 1,
 					       3 *Proc_Info[2],
@@ -274,7 +274,7 @@ void NemSpread<T,INT>::load_mesh()
 
   /* Initialize */
   for(int iproc=0; iproc < 3*Proc_Info[2]; iproc++)
-    globals.Proc_Elem_Attr[iproc] = NULL;
+    globals.Proc_Elem_Attr[iproc] = nullptr;
 
   /* Check for a problem which has too many processors for a given mesh */
 
@@ -420,8 +420,8 @@ void NemSpread<T,INT>::load_mesh()
     Node_Set_Names     = (char **) array_alloc (__FILE__, __LINE__, 2, globals.Num_Node_Set,
 						max_name_length + 1, sizeof(char));
   } else {
-    Node_Set_Ids = NULL;
-    Node_Set_Names = NULL;
+    Node_Set_Ids = nullptr;
+    Node_Set_Names = nullptr;
   }
 
   if (globals.Num_Side_Set > 0) {
@@ -432,8 +432,8 @@ void NemSpread<T,INT>::load_mesh()
     Side_Set_Names     = (char **) array_alloc (__FILE__, __LINE__, 2, globals.Num_Side_Set,
 						max_name_length + 1, sizeof(char));
   } else {
-    Side_Set_Ids = NULL;
-    Side_Set_Names = NULL;
+    Side_Set_Ids = nullptr;
+    Side_Set_Names = nullptr;
   }
 
   /*
@@ -554,7 +554,7 @@ void NemSpread<T,INT>::load_mesh()
 
   /* Generate the parallel exodus file name */
   /* See if any '/' in the name.  IF present, isolate the basename of the file */
-  if (strrchr(Output_File_Base_Name, '/') != NULL) {
+  if (strrchr(Output_File_Base_Name, '/') != nullptr) {
 
     /* There is a path separator.  Get the portion after the
      * separator
@@ -755,7 +755,7 @@ void NemSpread<T,INT>::load_mesh()
 					Elem_Blk_Types[i],
 					&Num_Elem_In_Blk[i],
 					&Num_Nodes_Per_Elem[i],
-					NULL, NULL, 
+					nullptr, nullptr, 
 					&Num_Attr_Per_Elem[i]),
 			   "ex_get_elem_block");
 
@@ -770,7 +770,7 @@ void NemSpread<T,INT>::load_mesh()
 					       Elem_Blk_Ids[i], Elem_Blk_Attr_Names[i]),
 			     "ex_get_attr_names");
 	} else {
-	  Elem_Blk_Attr_Names[i] = NULL;
+	  Elem_Blk_Attr_Names[i] = nullptr;
 	}
       }
 
@@ -915,7 +915,7 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
       globals.Coor[iproc] = (T **) array_alloc(__FILE__, __LINE__,
 					       2, globals.Num_Dim, itotal_nodes, sizeof(T));
     } else {
-      globals.Coor[iproc] = NULL;
+      globals.Coor[iproc] = nullptr;
     }
   }
 
@@ -926,13 +926,13 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
   for (int idim = 0; idim < globals.Num_Dim; idim++) {
     switch(idim) {
     case 0:
-      check_exodus_error(ex_get_coord(exoid, coord, NULL, NULL), "ex_get_coord");
+      check_exodus_error(ex_get_coord(exoid, coord, nullptr, nullptr), "ex_get_coord");
       break;
     case 1:
-      check_exodus_error(ex_get_coord(exoid, NULL, coord, NULL), "ex_get_coord");
+      check_exodus_error(ex_get_coord(exoid, nullptr, coord, nullptr), "ex_get_coord");
       break;
     case 2:
-      check_exodus_error(ex_get_coord(exoid, NULL, NULL, coord), "ex_get_coord");
+      check_exodus_error(ex_get_coord(exoid, nullptr, nullptr, coord), "ex_get_coord");
       break;
     }
 	
@@ -1002,9 +1002,9 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 	extract_global_node_ids(global_node_ids, globals.Num_Node, iproc);
       }
     } else {
-      /* Should be NULL already, but make it more clear */
+      /* Should be nullptr already, but make it more clear */
       for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
-	globals.Proc_Global_Node_Id_Map[iproc] = NULL;
+	globals.Proc_Global_Node_Id_Map[iproc] = nullptr;
       }
     }
     safe_free((void **) &global_node_ids);
@@ -1059,7 +1059,7 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
      */
 
     {
-      INT    *proc_elem_blk = NULL;
+      INT    *proc_elem_blk = nullptr;
 
       /* Element blocks local to the current processor */
 
@@ -1212,11 +1212,11 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 
       /* Local variables */
 
-      T      *elem_attr = NULL;
+      T      *elem_attr = nullptr;
 #ifdef DEBUG
       size_t ielem_count;
 #endif
-      INT    *elem_blk = NULL, ipos;
+      INT    *elem_blk = nullptr, ipos;
       int error_flag = 0;
       size_t num_elem_per_message=0, num_attr_per_message=0, num_attr_left_over=0;
       size_t num_elem_messages=0, num_attr_messages=0, num_elem_left_over=0;
@@ -1347,7 +1347,7 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 					  Num_Attr_Per_Elem[ielem_blk]*
 					  num_attr_per_message, sizeof(T));
 	  else
-	    elem_attr = NULL;
+	    elem_attr = nullptr;
 
 	  /*
 	   * Read in the element connectivity list for the current element block,
@@ -1377,7 +1377,7 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 					     Elem_Blk_Ids[ielem_blk],
 					     (istart_elem + 1),
 					     num_to_get,
-					     elem_blk, NULL, NULL),
+					     elem_blk, nullptr, nullptr),
 			       "ex_get_n_conn");
 	    if(Debug_Flag >= 2)
 	      printf("\t\tread connectivity\n");
@@ -1513,9 +1513,9 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 	    extract_global_element_ids(global_ids, globals.Num_Elem, iproc);
 	  }
 	} else {
-	  /* Should be NULL already, but make it more clear */
+	  /* Should be nullptr already, but make it more clear */
 	  for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
-	    globals.Proc_Global_Elem_Id_Map[iproc] = NULL;
+	    globals.Proc_Global_Elem_Id_Map[iproc] = nullptr;
 	  }
 	}
 	safe_free((void **) &global_ids);
@@ -2284,7 +2284,7 @@ void NemSpread<T,INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set,
 
       /*
        * Note that the alloc is done based on globals.Num_Node_Set, rather than
-       * globals.Proc_Num_Node_Sets[] due to the fact that NULL entities are
+       * globals.Proc_Num_Node_Sets[] due to the fact that nullptr entities are
        * stored on processors not having a particular node set.
        */
       globals.Proc_NS_Ids[iproc]      =  (INT *) array_alloc(__FILE__, __LINE__, 1,
@@ -2308,14 +2308,14 @@ void NemSpread<T,INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set,
 							     sizeof(T));
       }
       else {
-	globals.Proc_NS_Dist_Fact[iproc] = NULL;
+	globals.Proc_NS_Dist_Fact[iproc] = nullptr;
       }
     }
     else {
-      globals.Proc_NS_Ids[iproc]      = NULL;
-      globals.Proc_NS_Count[iproc]    = NULL;
-      globals.Proc_NS_Pointers[iproc] = NULL;
-      globals.Proc_NS_List[iproc]     = NULL;
+      globals.Proc_NS_Ids[iproc]      = nullptr;
+      globals.Proc_NS_Count[iproc]    = nullptr;
+      globals.Proc_NS_Pointers[iproc] = nullptr;
+      globals.Proc_NS_List[iproc]     = nullptr;
     }
 
     /*
@@ -2919,7 +2919,7 @@ void NemSpread<T,INT>::read_side_sets(int exoid, INT *num_elem_in_ssets,
 
       /*
        * Note that the alloc is done based on globals.Num_Side_Set, rather than
-       * globals.Proc_Num_Side_Sets[] due to the fact that NULL entities are
+       * globals.Proc_Num_Side_Sets[] due to the fact that nullptr entities are
        * stored on processors not having a particular side set.
        */
       globals.Proc_SS_Ids[iproc] =  (INT *) array_alloc(__FILE__, __LINE__, 1,
@@ -2967,7 +2967,7 @@ void NemSpread<T,INT>::read_side_sets(int exoid, INT *num_elem_in_ssets,
 							   sizeof(T));
       }
       else {
-	globals.Proc_SS_Dist_Fact[iproc] = NULL;
+	globals.Proc_SS_Dist_Fact[iproc] = nullptr;
       }
     }
 

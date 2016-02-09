@@ -32,7 +32,6 @@ protected:
     {
         remove_elements(elemIdsToDelete);
         ASSERT_EQ(goldConnections.size(), goldNumGlobalConnectionsAfterDeletes);
-        elementGraph->write_graph();
         check_graph_connections_updated_after_deletions(goldConnections, goldNumGlobalConnectionsAfterDeletes);
     }
 

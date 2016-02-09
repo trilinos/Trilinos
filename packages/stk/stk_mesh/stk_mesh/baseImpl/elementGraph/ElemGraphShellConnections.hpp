@@ -20,7 +20,7 @@ struct GraphInfo
     {
     }
     stk::mesh::Graph &graph;
-    stk::mesh::ParallelInfoForGraphEdges &parGraphInfo;
+    const stk::mesh::ParallelInfoForGraphEdges &parGraphInfo;
     std::vector<stk::topology> &elementTopologies;
 };
 

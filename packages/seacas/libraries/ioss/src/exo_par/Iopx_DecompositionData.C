@@ -62,10 +62,6 @@
 #endif
 
 namespace {
-  MPI_Datatype mpi_type(double /*dummy*/)  {return MPI_DOUBLE;}
-  MPI_Datatype mpi_type(int /*dummy*/)     {return MPI_INT;}
-  MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG_INT;}
-
   template <typename T>
   bool is_sorted(const std::vector<T> &vec)
   {
@@ -87,126 +83,12 @@ namespace {
     }
   }
 
-  int power_2(int count)
-  {
-    // Return the power of two which is equal to or greater than 'count'
-    // count = 15 -> returns 16
-    // count = 16 -> returns 16
-    // count = 17 -> returns 32
-
-    // Use brute force...
-    int pow2 = 1;
-    while (pow2 < count) {
-      pow2 *= 2;
-    }
-    return pow2;
-  }
-
   void check_dynamic_cast(const void *ptr)
   {
-    if (ptr == NULL) {
-      std::cerr << "INTERNAL ERROR: Invalid dynamic cast returned NULL\n";
+    if (ptr == nullptr) {
+      std::cerr << "INTERNAL ERROR: Invalid dynamic cast returned nullptr\n";
       exit(EXIT_FAILURE);
     }
-  }
-
-  template <typename T>
-  int MY_Alltoallv64(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts, const std::vector<int64_t> &senddisp,
-                     std::vector<T> &recvbuf, const std::vector<int64_t> &recvcounts, const std::vector<int64_t> &recvdisp, MPI_Comm  comm)
-  {
-    int processor_count = 0;
-    int my_processor = 0;
-    MPI_Comm_size(comm, &processor_count);
-    MPI_Comm_rank(comm, &my_processor);
-
-    // Verify that all 'counts' can fit in an integer. Symmetric
-    // communication, so recvcounts are sendcounts on another processor.
-    for (int i=0; i < processor_count; i++) {
-      int snd_cnt = (int)sendcounts[i];
-      if ((int64_t)snd_cnt != sendcounts[i]) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
-               << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
-               << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
-        std::cerr << errmsg.str();
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    size_t pow_2=power_2(processor_count);
-
-    for(size_t i=1; i < pow_2; i++) {
-      MPI_Status status;
-
-      int tag = 24713;
-      size_t exchange_proc = i ^ my_processor;
-      if(exchange_proc < (size_t)processor_count){
-        int snd_cnt = (int)sendcounts[exchange_proc]; // Converts from int64_t to int as needed by mpi
-        int rcv_cnt = (int)recvcounts[exchange_proc];
-        if ((size_t)my_processor < exchange_proc) {
-          MPI_Send(&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)), exchange_proc, tag, comm);
-          MPI_Recv(&recvbuf[recvdisp[exchange_proc]], rcv_cnt, mpi_type(T(0)), exchange_proc, tag, comm, &status);
-        }
-        else {
-          MPI_Recv(&recvbuf[recvdisp[exchange_proc]], rcv_cnt, mpi_type(T(0)), exchange_proc, tag, comm, &status);
-          MPI_Send(&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)), exchange_proc, tag, comm);
-        }
-      }
-    }
-
-    // Take care of this processor's data movement...
-    std::copy(&sendbuf[senddisp[my_processor]],
-              &sendbuf[senddisp[my_processor]+sendcounts[my_processor]],
-              &recvbuf[recvdisp[my_processor]]);
-    return 0;
-  }
-
-  template <typename T>
-  int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcnts, const std::vector<int64_t> &senddisp, 
-                   std::vector<T> &recvbuf, const std::vector<int64_t> &recvcnts, const std::vector<int64_t> &recvdisp, MPI_Comm comm)
-  {
-    // Wrapper to handle case where send/recv counts and displacements are 64-bit integers.
-    // Two cases:
-    // 1) They are of type 64-bit integers, but only storing data in the 32-bit integer range.
-    //    -- if (sendcnts[#proc-1] + senddisp[#proc-1] < 2^31, then we are ok
-    // 2) They are of type 64-bit integers, and storing data in the 64-bit integer range.
-    //    -- call special alltoallv which does point-to-point sends
-    assert(is_sorted(senddisp));
-    assert(is_sorted(recvdisp));
-
-    int processor_count = 0;
-    MPI_Comm_size(comm, &processor_count);
-    size_t max_comm = sendcnts[processor_count-1] + senddisp[processor_count-1];
-    size_t one = 1;
-    if (max_comm < one<<31) {
-      // count and displacement data in range, need to copy to integer vector.
-      std::vector<int> send_cnt(sendcnts.begin(), sendcnts.end());
-      std::vector<int> send_dis(senddisp.begin(), senddisp.end());
-      std::vector<int> recv_cnt(recvcnts.begin(), recvcnts.end());
-      std::vector<int> recv_dis(recvdisp.begin(), recvdisp.end());
-      return MPI_Alltoallv(TOPTR(sendbuf), (int*)TOPTR(send_cnt), (int*)TOPTR(send_dis), mpi_type(T(0)),
-                           TOPTR(recvbuf), (int*)TOPTR(recv_cnt), (int*)TOPTR(recv_dis), mpi_type(T(0)), comm);
-    }
-    else {
-      // Same as if each processor sent a message to every other process with:
-      //     MPI_Send(sendbuf+senddisp[i]*sizeof(sendtype),sendcnts[i], sendtype, i, tag, comm);
-      // And received a message from each processor with a call to:
-      //     MPI_Recv(recvbuf+recvdisp[i]*sizeof(recvtype),recvcnts[i], recvtype, i, tag, comm);
-      return MY_Alltoallv64(sendbuf, sendcnts, senddisp, recvbuf, recvcnts, recvdisp, comm);
-
-    }
-  }
-
-  template <typename T>
-  int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int> &sendcnts, const std::vector<int> &senddisp, 
-                   std::vector<T> &recvbuf, const std::vector<int> &recvcnts, const std::vector<int> &recvdisp,
-                   MPI_Comm comm)
-  {
-    assert(is_sorted(senddisp));
-    assert(is_sorted(recvdisp));
-
-    return MPI_Alltoallv(TOPTR(sendbuf), (int*)TOPTR(sendcnts), (int*)TOPTR(senddisp), mpi_type(T(0)),
-                         TOPTR(recvbuf), (int*)TOPTR(recvcnts), (int*)TOPTR(recvdisp), mpi_type(T(0)), comm);
   }
 
   template <typename T>
@@ -214,8 +96,7 @@ namespace {
   {
     std::sort(vec.begin(), vec.end());
     vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
-    // shrink-to-fit...
-    std::vector<T>(vec).swap(vec);
+    vec.shrink_to_fit();
   }
 
   template <typename T>
@@ -297,9 +178,7 @@ namespace {
     *ierr = ZOLTAN_OK;
 
     if (lids) {
-      for (size_t i = 0; i < element_count; i++) {
-        lids[i] = i;
-      }
+      std::iota(lids, lids+element_count, 0);
     }
 
     if (wdim) {
@@ -381,16 +260,16 @@ namespace {
     for (size_t i=0; i < el_blocks.size(); i++) {
       std::string type = Ioss::Utils::lowercase(el_blocks[i].topologyType);
       Ioss::ElementTopology *topology = Ioss::ElementTopology::factory(type, false);
-      if (topology != NULL) {
+      if (topology != nullptr) {
         Ioss::ElementTopology *boundary = topology->boundary_type(0);
-        if (boundary != NULL) {
+        if (boundary != nullptr) {
           common_nodes = std::min(common_nodes, boundary->number_boundaries());
         } else {
           // Different topologies on some element faces...
           size_t nb = topology->number_boundaries();
           for (size_t b=1; b <= nb; b++) {
             boundary = topology->boundary_type(b);
-            if (boundary != NULL) {
+            if (boundary != nullptr) {
               common_nodes = std::min(common_nodes, boundary->number_boundaries());
             }
           }
@@ -735,8 +614,8 @@ namespace Iopx {
     exportElementCount[myProcessor] = 0;
 
     importElementCount.resize(processorCount+1);
-    MPI_Alltoall(TOPTR(exportElementCount), 1, mpi_type((INT)0),
-                 TOPTR(importElementCount), 1, mpi_type((INT)0), comm_);
+    MPI_Alltoall(TOPTR(exportElementCount), 1, Ioss::mpi_type((INT)0),
+                 TOPTR(importElementCount), 1, Ioss::mpi_type((INT)0), comm_);
 
     // Now fill the vectors with the elements ...
     size_t exp_size = std::accumulate(exportElementCount.begin(), exportElementCount.end(), 0);
@@ -762,8 +641,8 @@ namespace Iopx {
     std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
     generate_index(importElementIndex);
 
-    MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex, 
-                 importElementMap, importElementCount, importElementIndex, comm_);
+    Ioss::MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex, 
+		       importElementMap, importElementCount, importElementIndex, comm_);
 
 #if DEBUG_OUTPUT
     std::cerr << "Processor " << myProcessor << ":\t"
@@ -781,7 +660,7 @@ namespace Iopx {
                                                         idx_t *elem_partition)
   {
     idx_t wgt_flag = 0; // No weights
-    idx_t *elm_wgt = NULL;
+    idx_t *elm_wgt = nullptr;
     idx_t ncon = 1;
     idx_t num_flag = 0; // Use C-based numbering
     idx_t common_nodes = get_common_node_count(el_blocks, comm_);
@@ -816,8 +695,8 @@ namespace Iopx {
     }
     else if (method == "GEOM_KWAY" || method == "KWAY_GEOM") {
 
-      idx_t *dual_xadj = NULL;
-      idx_t *dual_adjacency = NULL;
+      idx_t *dual_xadj = nullptr;
+      idx_t *dual_adjacency = nullptr;
       int rc = ParMETIS_V3_Mesh2Dual(element_dist, pointer, adjacency,
                                      &num_flag, &common_nodes, &dual_xadj, &dual_adjacency, &comm_);
 
@@ -866,7 +745,7 @@ namespace Iopx {
   void DecompositionData<INT>::zoltan_decompose(const std::string &method)
   {
     float version = 0.0;
-    Zoltan_Initialize(0, NULL, &version);
+    Zoltan_Initialize(0, nullptr, &version);
 
     Zoltan zz(comm_);
 
@@ -892,14 +771,14 @@ namespace Iopx {
     int num_local  = 0;
     int num_import = 1;
     int  num_export = 1;
-    ZOLTAN_ID_PTR import_global_ids = NULL;
-    ZOLTAN_ID_PTR import_local_ids  = NULL;
-    ZOLTAN_ID_PTR export_global_ids = NULL;
-    ZOLTAN_ID_PTR export_local_ids  = NULL;
-    int *import_procs   = NULL;
-    int *import_to_part = NULL;
-    int *export_procs   = NULL;
-    int *export_to_part = NULL;
+    ZOLTAN_ID_PTR import_global_ids = nullptr;
+    ZOLTAN_ID_PTR import_local_ids  = nullptr;
+    ZOLTAN_ID_PTR export_global_ids = nullptr;
+    ZOLTAN_ID_PTR export_local_ids  = nullptr;
+    int *import_procs   = nullptr;
+    int *import_to_part = nullptr;
+    int *export_procs   = nullptr;
+    int *export_to_part = nullptr;
 
     num_local  = 1;
 
@@ -1023,8 +902,8 @@ namespace Iopx {
       }
     }
 
-    MPI_Alltoall(TOPTR(export_conn_size), 1, mpi_type((INT)0),
-                 TOPTR(import_conn_size), 1, mpi_type((INT)0), comm_);
+    MPI_Alltoall(TOPTR(export_conn_size), 1, Ioss::mpi_type((INT)0),
+                 TOPTR(import_conn_size), 1, Ioss::mpi_type((INT)0), comm_);
 
     // Now fill the vectors with the nodes ...
     size_t exp_size = std::accumulate(export_conn_size.begin(), export_conn_size.end(), 0);
@@ -1064,8 +943,8 @@ namespace Iopx {
     {
       std::vector<INT> import_conn(imp_size);
 
-      MY_Alltoallv(export_conn, export_conn_size, export_disp,
-                   import_conn, import_conn_size, import_disp, comm_);
+      Ioss::MY_Alltoallv(export_conn, export_conn_size, export_disp,
+			 import_conn, import_conn_size, import_disp, comm_);
 
       // Done with export_conn...
       std::vector<INT>().swap(export_conn);
@@ -1108,8 +987,8 @@ namespace Iopx {
     // Tell other processors how many nodes I will be importing from
     // them...
     importNodeCount[myProcessor] = 0;
-    MPI_Alltoall(TOPTR(importNodeCount), 1, mpi_type((INT)0),
-                 TOPTR(exportNodeCount), 1, mpi_type((INT)0), comm_);
+    MPI_Alltoall(TOPTR(importNodeCount), 1, Ioss::mpi_type((INT)0),
+                 TOPTR(exportNodeCount), 1, Ioss::mpi_type((INT)0), comm_);
 
     size_t import_sum = std::accumulate(importNodeCount.begin(), importNodeCount.end(), 0);
     size_t export_sum = std::accumulate(exportNodeCount.begin(), exportNodeCount.end(), 0);
@@ -1146,8 +1025,8 @@ namespace Iopx {
     std::copy(importNodeCount.begin(), importNodeCount.end(), importNodeIndex.begin());
     generate_index(importNodeIndex);
 
-    MY_Alltoallv(import_nodes,  importNodeCount, importNodeIndex, 
-                 exportNodeMap, exportNodeCount, exportNodeIndex, comm_);
+    Ioss::MY_Alltoallv(import_nodes,  importNodeCount, importNodeIndex, 
+		       exportNodeMap, exportNodeCount, exportNodeIndex, comm_);
 
     // Map that converts nodes from the global index (1-based) to a local-per-processor index (1-based)
     nodeGTL.swap(nodes);
@@ -1254,15 +1133,15 @@ namespace Iopx {
 
     // Tell other processors how many nodes/procs I am sending them...
     std::vector<INT> recv_comm_map_count(processorCount);
-    MPI_Alltoall(TOPTR(send_comm_map_count), 1, mpi_type((INT)0),
-                 TOPTR(recv_comm_map_count), 1, mpi_type((INT)0), comm_);
+    MPI_Alltoall(TOPTR(send_comm_map_count), 1, Ioss::mpi_type((INT)0),
+                 TOPTR(recv_comm_map_count), 1, Ioss::mpi_type((INT)0), comm_);
 
 
     std::vector<INT> recv_comm_map_disp(recv_comm_map_count);
     generate_index(recv_comm_map_disp);
     nodeCommMap.resize(recv_comm_map_disp[processorCount-1] + recv_comm_map_count[processorCount-1]);
-    MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, 
-                 nodeCommMap, recv_comm_map_count, recv_comm_map_disp, comm_);
+    Ioss::MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, 
+		       nodeCommMap, recv_comm_map_count, recv_comm_map_disp, comm_);
 
     // Map global 0-based index to local 1-based index.
     for (size_t i=0; i < nodeCommMap.size(); i+=2) {
@@ -1348,7 +1227,7 @@ namespace Iopx {
       }
       fileBlockIndex[b+1] = fileBlockIndex[b] + ebs[b].num_entry;
       el_blocks[b].topologyType = ebs[b].topology;
-      if (ebs[b].num_entry == 0 && (std::strcmp(ebs[b].topology, "NULL") == 0))
+      if (ebs[b].num_entry == 0 && (std::strcmp(ebs[b].topology, "nullptr") == 0))
         el_blocks[b].topologyType = "sphere";
         
       el_blocks[b].nodesPerEntity = ebs[b].num_nodes_per_entry;
@@ -1392,7 +1271,7 @@ namespace Iopx {
 #if DEBUG_OUTPUT
         std::cerr << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
 #endif
-        ex_get_partial_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), NULL, NULL);
+        ex_get_partial_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), nullptr, nullptr);
         size_t el = 0;
         for (size_t elem = 0; elem < overlap; elem++) {
           pointer.push_back(adjacency.size());
@@ -1463,9 +1342,9 @@ namespace Iopx {
       node_sets[i].id_ = ids[i];
       sets[i].id = ids[i];
       sets[i].type = EX_NODE_SET;
-      sets[i].entry_list = NULL;
-      sets[i].extra_list = NULL;
-      sets[i].distribution_factor_list = NULL;
+      sets[i].entry_list = nullptr;
+      sets[i].extra_list = nullptr;
+      sets[i].distribution_factor_list = nullptr;
     }
 
     ex_get_sets(exodusId, sets.size(), TOPTR(sets));
@@ -1498,7 +1377,7 @@ namespace Iopx {
       if (myProcessor == root) {
         size_t offset = 0;
         for (size_t i=0; i < set_count; i++) {
-          ex_get_set(exodusId, EX_NODE_SET, sets[i].id, &nodelist[offset], NULL);
+          ex_get_set(exodusId, EX_NODE_SET, sets[i].id, &nodelist[offset], nullptr);
           offset += sets[i].num_entry;
         }
         assert(offset == nodelist_size);
@@ -1608,9 +1487,9 @@ namespace Iopx {
       side_sets[i].id_ = ids[i];
       sets[i].id = ids[i];
       sets[i].type = EX_SIDE_SET;
-      sets[i].entry_list = NULL;
-      sets[i].extra_list = NULL;
-      sets[i].distribution_factor_list = NULL;
+      sets[i].entry_list = nullptr;
+      sets[i].extra_list = nullptr;
+      sets[i].distribution_factor_list = nullptr;
     }
 
     ex_get_sets(exodusId, sets.size(), TOPTR(sets));
@@ -1643,7 +1522,7 @@ namespace Iopx {
       if (myProcessor == root) {
         size_t offset = 0;
         for (size_t i=0; i < set_count; i++) {
-          ex_get_set(exodusId, EX_SIDE_SET, sets[i].id, &elemlist[offset], NULL);
+          ex_get_set(exodusId, EX_SIDE_SET, sets[i].id, &elemlist[offset], nullptr);
           offset += sets[i].num_entry;
         }
         assert(offset == elemlist_size);
@@ -1837,8 +1716,8 @@ namespace Iopx {
 
     // Tell each processor how many nodes worth of data to send to
     // every other processor...
-    MPI_Alltoall(TOPTR(recv_count), 1, mpi_type((INT)0),
-                 TOPTR(send_count), 1, mpi_type((INT)0), comm_);
+    MPI_Alltoall(TOPTR(recv_count), 1, Ioss::mpi_type((INT)0),
+                 TOPTR(send_count), 1, Ioss::mpi_type((INT)0), comm_);
 
     send_count[myProcessor] = 0;
 
@@ -1873,8 +1752,8 @@ namespace Iopx {
       }
     }
 
-    MY_Alltoallv(node_comm_recv, recv_count, recv_disp, 
-                 node_comm_send, send_count, send_disp, comm_);
+    Ioss::MY_Alltoallv(node_comm_recv, recv_count, recv_disp, 
+		       node_comm_send, send_count, send_disp, comm_);
 
     // At this point, 'node_comm_send' contains the list of nodes that I need to provide
     // coordinate data for.
@@ -1920,8 +1799,8 @@ namespace Iopx {
       recv_disp[i]  *= spatialDimension;
     }
 
-    MY_Alltoallv(coord_send, send_count, send_disp, 
-                 coord_recv, recv_count, recv_disp, comm_);
+    Ioss::MY_Alltoallv(coord_send, send_count, send_disp, 
+		       coord_recv, recv_count, recv_disp, comm_);
 
     // Don't need coord_send data anymore ... clean out the vector.
     std::vector<double>().swap(coord_send);
@@ -2093,8 +1972,8 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      MY_Alltoallv(export_data, exportNodeCount, exportNodeIndex,
-                   import_data, importNodeCount, importNodeIndex, comm_);
+      Ioss::MY_Alltoallv(export_data, exportNodeCount, exportNodeIndex,
+			 import_data, importNodeCount, importNodeIndex, comm_);
 
       // Copy the imported data into ioss_data...
       for (size_t i=0; i < importNodeMap.size(); i++) {
@@ -2134,8 +2013,8 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      MY_Alltoallv(export_data, export_count, export_disp, 
-                   import_data, import_count, import_disp, comm_);
+      Ioss::MY_Alltoallv(export_data, export_count, export_disp, 
+			 import_data, import_count, import_disp, comm_);
 
       // Copy the imported data into ioss_data...
       for (size_t i=0; i < importNodeMap.size(); i++) {
@@ -2176,8 +2055,8 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      MY_Alltoallv(export_data, exportElementCount, exportElementIndex, 
-                   import_data, importElementCount, importElementIndex, comm_);
+      Ioss::MY_Alltoallv(export_data, exportElementCount, exportElementIndex, 
+			 import_data, importElementCount, importElementIndex, comm_);
 
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
@@ -2219,8 +2098,8 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      MY_Alltoallv(export_data, export_count, export_disp, 
-                   import_data, import_count, import_disp, comm_);
+      Ioss::MY_Alltoallv(export_data, export_count, export_disp, 
+			 import_data, import_count, import_disp, comm_);
 
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
@@ -2248,21 +2127,21 @@ namespace Iopx {
     int ierr = 0;
     if (field.get_name() == "mesh_model_coordinates_x") {
       ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
-                                  TOPTR(tmp), NULL, NULL);
+                                  TOPTR(tmp), nullptr, nullptr);
       if (ierr >= 0)
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates_y") {
       ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
-                                  NULL, TOPTR(tmp), NULL);
+                                  nullptr, TOPTR(tmp), nullptr);
       if (ierr >= 0)
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates_z") {
       ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
-                                  NULL, NULL, TOPTR(tmp));
+                                  nullptr, nullptr, TOPTR(tmp));
       if (ierr >= 0)
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
@@ -2289,7 +2168,7 @@ namespace Iopx {
 
       for (size_t d = 0; d < spatialDimension; d++) {
         double* coord[3];
-        coord[0] = coord[1] = coord[2] = NULL;
+        coord[0] = coord[1] = coord[2] = nullptr;
         coord[d] = TOPTR(tmp);
         ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
                                     coord[0], coord[1], coord[2]);
@@ -2328,7 +2207,7 @@ namespace Iopx {
 
     assert(sizeof(INT) == exodus_byte_size_api(exodusId));
     std::vector<INT> file_conn(count * nnpe);
-    ex_get_partial_conn(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_conn), NULL, NULL);
+    ex_get_partial_conn(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_conn), nullptr, nullptr);
     communicate_block_data(TOPTR(file_conn), data, blk_seq, nnpe);
 
     for (size_t i=0; i < blk.iossCount * nnpe; i++) {
@@ -2368,8 +2247,8 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      MY_Alltoallv(exports, blk.exportCount, blk.exportIndex, 
-                   imports, blk.importCount, blk.importIndex, comm_);
+      Ioss::MY_Alltoallv(exports, blk.exportCount, blk.exportIndex, 
+			 imports, blk.importCount, blk.importIndex, comm_);
 
       // Map local and imported data to ioss_data.
       for (size_t i=0; i < blk.localMap.size(); i++) {
@@ -2399,8 +2278,8 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      MY_Alltoallv(exports, export_count, export_disp, 
-                   imports, import_count, import_disp, comm_);
+      Ioss::MY_Alltoallv(exports, export_count, export_disp, 
+			 imports, import_count, import_disp, comm_);
 
       // Map local and imported data to ioss_data.
       for (size_t i=0; i < blk.localMap.size(); i++) {
@@ -2898,12 +2777,12 @@ namespace Iopx {
       // Read the nodeset data from the file..
       if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
         file_data.resize(set.file_count());
-        ierr = ex_get_set(exodusId, type, id, TOPTR(file_data), NULL);
+        ierr = ex_get_set(exodusId, type, id, TOPTR(file_data), nullptr);
       } else if (field.get_name() == "sides") {
         // Sideset only...
         if (type == EX_SIDE_SET) {
           file_data.resize(set.file_count());
-          ierr = ex_get_set(exodusId, type, id, NULL, TOPTR(file_data));
+          ierr = ex_get_set(exodusId, type, id, nullptr, TOPTR(file_data));
         } else {
           return -1;
         }
@@ -2911,9 +2790,9 @@ namespace Iopx {
         ex_set set_param[1];
         set_param[0].id = id;
         set_param[0].type = type;
-        set_param[0].entry_list = NULL;
-        set_param[0].extra_list = NULL;
-        set_param[0].distribution_factor_list = NULL;
+        set_param[0].entry_list = nullptr;
+        set_param[0].extra_list = nullptr;
+        set_param[0].distribution_factor_list = nullptr;
         ierr = ex_get_sets(exodusId, 1, set_param);
 
         if (set_param[0].num_distribution_factor == 0) {
@@ -2982,9 +2861,9 @@ namespace Iopx {
         ex_set set_param[1];
         set_param[0].id = id;
         set_param[0].type = EX_SIDE_SET;
-        set_param[0].entry_list = NULL;
-        set_param[0].extra_list = NULL;
-        set_param[0].distribution_factor_list = NULL;
+        set_param[0].entry_list = nullptr;
+        set_param[0].extra_list = nullptr;
+        set_param[0].distribution_factor_list = nullptr;
         ex_get_sets(exodusId, 1, set_param);
         if (set_param[0].num_distribution_factor == 0) {
           // This should have been caught above.
@@ -3016,8 +2895,8 @@ namespace Iopx {
         ex_set set_param[1];
         set_param[0].id = id;
         set_param[0].type = EX_SIDE_SET;
-        set_param[0].entry_list = NULL;
-        set_param[0].extra_list = NULL;
+        set_param[0].entry_list = nullptr;
+        set_param[0].extra_list = nullptr;
         set_param[0].distribution_factor_list = TOPTR(file_data);
         ierr = ex_get_sets(exodusId, 1, set_param);
       }
@@ -3034,9 +2913,9 @@ namespace Iopx {
       ex_set set_param[1];
       set_param[0].id = id;
       set_param[0].type = EX_SIDE_SET;
-      set_param[0].entry_list = NULL;
-      set_param[0].extra_list = NULL;
-      set_param[0].distribution_factor_list = NULL;
+      set_param[0].entry_list = nullptr;
+      set_param[0].extra_list = nullptr;
+      set_param[0].distribution_factor_list = nullptr;
       ex_get_sets(exodusId, 1, set_param);
       df_count = set_param[0].num_distribution_factor;
     }
@@ -3085,8 +2964,8 @@ namespace Iopx {
       ex_set set_param[1];
       set_param[0].id = id;
       set_param[0].type = EX_SIDE_SET;
-      set_param[0].entry_list = NULL;
-      set_param[0].extra_list = NULL;
+      set_param[0].entry_list = nullptr;
+      set_param[0].extra_list = nullptr;
       set_param[0].distribution_factor_list = TOPTR(file_data);
       ex_get_sets(exodusId, 1, set_param);
     }
@@ -3218,8 +3097,8 @@ namespace Iopx {
     generate_index(rcv_offset);
     std::vector<int64_t> rcv_list(*rcv_offset.rbegin() + *rcv_count.rbegin());
 
-    MY_Alltoallv(snd_list, snd_count, snd_offset,
-                 rcv_list, rcv_count, rcv_offset, comm_);
+    Ioss::MY_Alltoallv(snd_list, snd_count, snd_offset,
+		       rcv_list, rcv_count, rcv_offset, comm_);
 
     // Iterate rcv_list and convert global ids to the global-implicit position...
     for (size_t i=0; i < rcv_list.size(); i++) {
@@ -3229,8 +3108,8 @@ namespace Iopx {
     }
 
     // Send the data back now...
-    MY_Alltoallv(rcv_list, rcv_count, rcv_offset,
-                 snd_list, snd_count, snd_offset, comm_);
+    Ioss::MY_Alltoallv(rcv_list, rcv_count, rcv_offset,
+		       snd_list, snd_count, snd_offset, comm_);
 
     // Fill in the remaining portions of the global_implicit_map...
     std::vector<int64_t> tmp_disp(snd_offset);

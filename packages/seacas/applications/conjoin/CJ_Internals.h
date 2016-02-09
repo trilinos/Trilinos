@@ -116,10 +116,6 @@ namespace Excn {
       int put_non_define_data(const std::vector<SideSet<INT> > &sidesets);
 
       int exodusFilePtr;
-      int nodeMapVarID[3];
-      int elementMapVarID[2];
-      int commIndexVar;
-      int elemCommIndexVar;
       int maximumNameLength;
     };
 }
