@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
-  time_t begin_time = time(NULL);
+  time_t begin_time = time(nullptr);
   std::string in_type = "exodusII";
 
   bool ok = false;
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
   catch (std::exception &e) {
     std::cerr << "ERROR: (EXOMATLAB) Standard exception: " << e.what() << std::endl;
   }
-  time_t end_time = time(NULL);
+  time_t end_time = time(nullptr);
   add_to_log(codename.c_str(), (int)(end_time - begin_time));
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -140,7 +140,7 @@ namespace {
     //========================================================================
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
 						    (MPI_Comm)MPI_COMM_WORLD);
-    if (dbi == NULL || !dbi->ok(true)) {
+    if (dbi == nullptr || !dbi->ok(true)) {
       return false;
     }
 
@@ -152,8 +152,8 @@ namespace {
 
     if (interface.list_vars()) {
       StringIdVector types_to_list = interface.vars_to_list();
-      for (size_t i=0; i < types_to_list.size(); i++) {
-	std::string type = types_to_list[i].first;
+      for (auto types : types_to_list) {
+	std::string type = types.first;
 
 	if (type == "all" || type == "global") {
 	  Ioss::NameList fields;
@@ -178,8 +178,8 @@ namespace {
       } else if (global_vars[0].first == "none") {
 	; // do nothing.  This will be used when nodal, element, ... supported
       } else {
-	for (size_t i=0; i < global_vars.size(); i++) {
-	  std::string field_name = global_vars[i].first;
+	for (auto & global_var : global_vars) {
+	  std::string field_name = global_var.first;
 	  if (region.field_exists(field_name)) {
 	    fields.push_back(field_name);
 	  } else {

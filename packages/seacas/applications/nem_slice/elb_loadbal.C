@@ -46,7 +46,7 @@
 #include <float.h>                      // for FLT_MAX
 #include <limits.h>                     // for INT_MAX
 #include <math.h>           /* Needed for ZPINCH_assign */
-#include <stdio.h>                      // for printf, NULL, fprintf, etc
+#include <stdio.h>                      // for printf, nullptr, fprintf, etc
 #include <stdlib.h>                     // for malloc, free, realloc, exit, etc
 #include <string.h>                     // for strcat, strcpy
 
@@ -177,31 +177,31 @@ int generate_loadbal(Machine_Description* machine,
                      int argc,
                      char *argv[])
 {
-  const char   *assignfile = NULL;
+  const char   *assignfile = nullptr;
 
   int     flag=0, arch=0, refine=0, num_level=0, totalproc=0, glob_method=0;
   int     start_proc = 0;
 
-  INT    *tmp_start=NULL, *tmp_adj=NULL;
-  int    *tmp_vwgts=NULL;
+  INT    *tmp_start=nullptr, *tmp_adj=nullptr;
+  int    *tmp_vwgts=nullptr;
   size_t tmp_nv;
   std::vector<int> nprocg, nelemg, nadjg;
   size_t  max_vtx, max_adj;
   int    group;
   std::vector<INT> elem_map;
   int     dim[1], tmpdim[3], tmp_arch, tmp_lev;
-  int    *tmp_v2p=NULL;
+  int    *tmp_v2p=nullptr;
 
-  float  *x_ptr=NULL, *y_ptr=NULL, *z_ptr=NULL;
-  float  *x_node_ptr=NULL, *y_node_ptr=NULL, *z_node_ptr=NULL;
+  float  *x_ptr=nullptr, *y_ptr=nullptr, *z_ptr=nullptr;
+  float  *x_node_ptr=nullptr, *y_node_ptr=nullptr, *z_node_ptr=nullptr;
   std::vector<float>  x_elem_ptr, y_elem_ptr, z_elem_ptr;
-  float  *tmp_x=NULL, *tmp_y=NULL, *tmp_z=NULL;
-  float  *tmp_ewgts=NULL;
+  float  *tmp_x=nullptr, *tmp_y=nullptr, *tmp_z=nullptr;
+  float  *tmp_ewgts=nullptr;
 
   long    seed=1;
-  double *goal=NULL;
+  double *goal=nullptr;
   double  time1, time2;
-  FILE   *fp=NULL;
+  FILE   *fp=nullptr;
 
   /* Variables used in Chaco */
   extern int FREE_GRAPH;
@@ -260,7 +260,7 @@ int generate_loadbal(Machine_Description* machine,
       }
     }
   else
-    x_node_ptr = y_node_ptr = z_node_ptr = NULL;
+    x_node_ptr = y_node_ptr = z_node_ptr = nullptr;
 
   /* now set the pointers that are being sent to Chaco */
   x_ptr = x_node_ptr;
@@ -352,7 +352,7 @@ int generate_loadbal(Machine_Description* machine,
   if(lb->type == INFILE) {
     assignfile = lb->file.c_str();
     fp = fopen(assignfile, "r");
-    if (fp == NULL) {
+    if (fp == nullptr) {
       Gen_Error(0, "fatal: could not open assignment file");
       return 0;
     }
@@ -457,7 +457,7 @@ int generate_loadbal(Machine_Description* machine,
     else
       flag = interface(problem->num_vertices, (int*)TOPTR(graph->start), (int*)TOPTR(graph->adj),
                        TOPTR(weight->vertices), TOPTR(weight->edges), x_ptr, y_ptr, z_ptr,
-                       (char*)assignfile, (char *)NULL, lb->vertex2proc, tmp_arch,
+                       (char*)assignfile, (char *)nullptr, lb->vertex2proc, tmp_arch,
                        tmp_lev, dim, goal, glob_method, refine,
                        solve->rqi_flag, solve->vmax, lb->num_sects,
                        solve->tolerance, seed);
@@ -531,21 +531,21 @@ int generate_loadbal(Machine_Description* machine,
 	goto cleanup;
       }
     }
-    if (x_ptr != NULL) {
+    if (x_ptr != nullptr) {
       tmp_x = (float *) malloc(max_vtx * sizeof(float));
       if (!tmp_x) {
         Gen_Error(0, "fatal: insufficient memory");
 	goto cleanup;
       }
     }
-    if (y_ptr != NULL) {
+    if (y_ptr != nullptr) {
       tmp_y = (float *) malloc(max_vtx * sizeof(float));
       if (!tmp_y) {
         Gen_Error(0, "fatal: insufficient memory");
 	goto cleanup;
       }
     }
-    if (z_ptr != NULL) {
+    if (z_ptr != nullptr) {
       tmp_z = (float *) malloc(max_vtx * sizeof(float));
       if (!tmp_z) {
         Gen_Error(0, "fatal: insufficient memory");
@@ -684,11 +684,11 @@ int generate_loadbal(Machine_Description* machine,
         flag = input_assign(fp, (char*)assignfile, tmp_nv, tmp_v2p);
       else if (lb->type == ZPINCH) {
         flag = ZPINCH_assign(machine, tmp_nv, tmp_x, tmp_y, tmp_z, tmp_v2p);
-        BALANCE_STATS(machine, NULL, tmp_nv, tmp_v2p);
+        BALANCE_STATS(machine, nullptr, tmp_nv, tmp_v2p);
       }
       else if (lb->type == BRICK) {
         flag = BRICK_assign(machine, tmp_nv, tmp_x, tmp_y, tmp_z,tmp_v2p);
-        BALANCE_STATS(machine, NULL, tmp_nv, tmp_v2p); 
+        BALANCE_STATS(machine, nullptr, tmp_nv, tmp_v2p); 
       }
 #ifdef USE_ZOLTAN
       else if (lb->type == ZOLTAN_RCB) {
@@ -753,7 +753,7 @@ int generate_loadbal(Machine_Description* machine,
         time1 = get_time();
         flag = interface(tmp_nv, (int*)tmp_start, (int*)tmp_adj,
                          tmp_vwgts, tmp_ewgts, tmp_x, tmp_y, tmp_z,
-                         (char*)assignfile, (char *)NULL, tmp_v2p, arch,
+                         (char*)assignfile, (char *)nullptr, tmp_v2p, arch,
                          num_level, tmpdim, goal, glob_method, refine,
                          solve->rqi_flag, solve->vmax, lb->num_sects,
                          solve->tolerance, seed);
@@ -786,9 +786,9 @@ int generate_loadbal(Machine_Description* machine,
   if(problem->read_coords == ELB_TRUE) {
     switch(mesh->num_dims) {
     case 1:
-      free(y_node_ptr); y_node_ptr = NULL; /* fall through */
+      free(y_node_ptr); y_node_ptr = nullptr; /* fall through */
     case 2:
-      free(z_node_ptr); z_node_ptr = NULL;
+      free(z_node_ptr); z_node_ptr = nullptr;
     }
   }
 
@@ -800,8 +800,8 @@ int generate_loadbal(Machine_Description* machine,
     }
     free (tmp_v2p);
     // FREE_GRAPH always 0 if nloops > 1
-    if (tmp_vwgts) { free (tmp_vwgts); tmp_vwgts = NULL; }
-    if (tmp_ewgts) { free (tmp_ewgts); tmp_ewgts = NULL; }
+    if (tmp_vwgts) { free (tmp_vwgts); tmp_vwgts = nullptr; }
+    if (tmp_ewgts) { free (tmp_ewgts); tmp_ewgts = nullptr; }
     if (tmp_x)     free (tmp_x);
     if (tmp_y)     free (tmp_y);
     if (tmp_z)     free (tmp_z);
@@ -931,7 +931,7 @@ int generate_loadbal(Machine_Description* machine,
     vec_free(weight->vertices);
     vec_free(weight->edges);
   }
-  if (fp != NULL) fclose(fp);
+  if (fp != nullptr) fclose(fp);
   return 1;
 
  cleanup:
@@ -2289,7 +2289,7 @@ namespace {
     double theta;              /* angle of (x,y) (polar coordinates) */
     double epsilon = 1e-07;    /* tolerance that allows a point to be in wedge */
 
-    if (ndot > 0 && (x == NULL || y == NULL || z == NULL || part == NULL)) {
+    if (ndot > 0 && (x == nullptr || y == nullptr || z == nullptr || part == nullptr)) {
       fprintf(stderr, "KDD -- Bad input to ZPINCH_assign.\n");
       fprintf(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
       exit(-1);
@@ -2462,7 +2462,7 @@ namespace {
      */
 
 
-    if (ndot > 0 && (x == NULL || y == NULL || z == NULL || part == NULL)) {
+    if (ndot > 0 && (x == nullptr || y == nullptr || z == nullptr || part == nullptr)) {
       fprintf(stderr, "KDD -- Bad input to BRICK_assign.\n");
       fprintf(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
       exit(-1);
@@ -2539,8 +2539,8 @@ namespace {
      * Using global data structure Zoltan_Data, initialized in ZOLTAN_RCB_assign.
      */
     *ierr = ZOLTAN_OK;
-    if (Zoltan_Data.z != NULL) return 3;
-    if (Zoltan_Data.y != NULL) return 2;
+    if (Zoltan_Data.z != nullptr) return 3;
+    if (Zoltan_Data.y != nullptr) return 2;
     return 1;
   }
 
@@ -2628,7 +2628,7 @@ namespace {
     Zoltan_Data.vwgt = vwgt;
     Zoltan_Data.x = x;
     Zoltan_Data.y = y;
-    Zoltan_Data.z = (ignore_z ? NULL : z);
+    Zoltan_Data.z = (ignore_z ? nullptr : z);
 
     /* Initialize Zoltan */
     ierr = Zoltan_Initialize(argc, argv, &ver);
@@ -2642,28 +2642,28 @@ namespace {
     /* Register Callback functions */
     /* Using global Zoltan_Data; could register it here instead as data field. */
     ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE,
-			     (ZOLTAN_VOID_FN *) zoltan_num_dim, NULL);
+			     (ZOLTAN_VOID_FN *) zoltan_num_dim, nullptr);
     if (ierr == ZOLTAN_FATAL) {
       fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n",
 	      __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE,
-			 (ZOLTAN_VOID_FN *) zoltan_num_obj, NULL);
+			 (ZOLTAN_VOID_FN *) zoltan_num_obj, nullptr);
     if (ierr == ZOLTAN_FATAL) {
       fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n",
 	      __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
-			 (ZOLTAN_VOID_FN *) zoltan_obj_list, NULL);
+			 (ZOLTAN_VOID_FN *) zoltan_obj_list, nullptr);
     if (ierr == ZOLTAN_FATAL) {
       fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n",
 	      __FILE__, __LINE__);
       goto End;
     }
     ierr = Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE,
-			 (ZOLTAN_VOID_FN *) zoltan_geom, NULL);
+			 (ZOLTAN_VOID_FN *) zoltan_geom, nullptr);
     if (ierr == ZOLTAN_FATAL) {
       fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n",
 	      __FILE__, __LINE__);
@@ -2751,7 +2751,7 @@ namespace {
   /*****************************************************************************/
   void BALANCE_STATS(
 		     Machine_Description* machine,  /* Machine MESH = nwedge * nslice  */
-		     int *wgt,            /* element weights; can be NULL if no weights  */
+		     int *wgt,            /* element weights; can be nullptr if no weights  */
 		     size_t ndot,             /* Length of x, y, z, and part (== # of elements) */
 		     int *part           /* Partition assignments for each element */
 		     )

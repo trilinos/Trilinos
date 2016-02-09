@@ -47,6 +47,12 @@ IF (${PROJECT_NAME}_ENABLE_Pamgen)
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_PURIFY
+  ${PACKAGE_NAME_UC}_PURIFY
+  "Enable work-arounds to purify bugs."
+  OFF )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
    ${PACKAGE_NAME}_ENABLE_UseZoltanComm
    ${PACKAGE_NAME_UC}_USEZOLTANCOMM
    "For migration in MJ, use Zoltan's comm package instead of Tpetra."

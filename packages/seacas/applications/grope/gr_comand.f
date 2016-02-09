@@ -35,7 +35,7 @@ C=======================================================================
      &     NAMECO, EBTYPE, EBNAME, ATNAME, 
      $     NAMIGV, NAMINV, NAMIEV, NAMINS, NAMISS,
      &     NAMOGV, NAMONV, NAMOEV, NAMONS, NAMOSS,
-     &     CORD, MAPEL, MAPND, DOMAPN, DOMAPE,
+     &     CORD, MAPEL, DBMAPEL, MAPND, DBMAPND, DOMAPN, DOMAPE,
      &     IDELB, NUMELB, LENE, NUMLNK, NUMATR, LINK, ATRIB,
      &     IDNPS, NNNPS, NDNPS, IXNNPS, IXDNPS, LTNNPS, FACNPS, NSNAME,
      &     IDESS, NEESS, NNESS, IXEESS, IXNESS, LTEESS, LTSESS, FACESS,
@@ -139,7 +139,9 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
      $     NAMONS(*), NAMOSS(*)
       REAL CORD(*)
       INTEGER MAPEL(*)
+      INTEGER DBMAPEL(*)
       INTEGER MAPND(*)
+      INTEGER DBMAPND(*)
       INTEGER IDELB(*), NUMELB(*)
       INTEGER LENE(0:*)
       INTEGER NUMLNK(*), NUMATR(*)
@@ -646,12 +648,12 @@ C *** EXODUS Print Commands ***
         ELSE IF (LISTYP .EQ. 'MAP') THEN
           CALL CKNONE (NUMEL, .FALSE., 'elements', *270)
 
-          CALL PRMAP ('*', NOUT, 'Element', NUMEL, MAPEL)
+          CALL PRMAP ('*', NOUT, 'Element', NUMEL, DBMAPEL)
 
         ELSE IF (LISTYP .EQ. 'NMAP' .OR. LISTYP .EQ. 'NODEMAP') THEN
           CALL CKNONE (NUMNP, .FALSE., 'nodes', *270)
 
-          CALL PRMAP ('*', NOUT, 'Node', NUMNP, MAPND)
+          CALL PRMAP ('*', NOUT, 'Node', NUMNP, DBMAPND)
 
         ELSE IF ((LISTYP .EQ. 'BLOCKS') .OR. (LISTYP .EQ. 'MATERIAL')
      &      .OR. (LISTYP .EQ. 'LINK') .OR. (LISTYP .EQ. 'CONNECTI')
@@ -890,17 +892,22 @@ C *** Miscellaneous Commmands ***
         call limits(ndim, numnp, cord)
 
       ELSE IF (VERB .EQ. 'MAP') THEN
-        CALL FFCHAR (IFLD, INTYP, CFIELD,'BOTH', WORD)
-        CALL FFONOF (IFLD, INTYP, CFIELD, MAPTMP, *270)
-        
-        IF (MATSTR(WORD, 'ELEMENTS', 1)) THEN
-          DOMAPE = MAPTMP
-        ELSE IF (MATSTR(WORD, 'NODES', 1)) THEN
-          DOMAPN = MAPTMP
-        ELSE IF (MATSTR(WORD, 'BOTH', 1)) THEN
-          DOMAPE = MAPTMP
-          DOMAPN = MAPTMP
-        END IF
+        call prterr('CMDERR',
+     *    'The map nodes|elements|both command is no longer'
+     *    // ' supported.  The mapping of nodes/elements is'
+     *    // ' selected at program startup with the -map '
+     *    // ' or -nomap option.')
+c$$$        CALL FFCHAR (IFLD, INTYP, CFIELD,'BOTH', WORD)
+c$$$        CALL FFONOF (IFLD, INTYP, CFIELD, MAPTMP, *270)
+c$$$        
+c$$$        IF (MATSTR(WORD, 'ELEMENTS', 1)) THEN
+c$$$          DOMAPE = MAPTMP
+c$$$        ELSE IF (MATSTR(WORD, 'NODES', 1)) THEN
+c$$$          DOMAPN = MAPTMP
+c$$$        ELSE IF (MATSTR(WORD, 'BOTH', 1)) THEN
+c$$$          DOMAPE = MAPTMP
+c$$$          DOMAPN = MAPTMP
+c$$$        END IF
         
       ELSE IF (VERB .EQ. 'MAXERRS') THEN
          CALL FFINTG (IFLD, INTYP, IFIELD,

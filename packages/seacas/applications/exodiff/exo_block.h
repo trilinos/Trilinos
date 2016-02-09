@@ -84,11 +84,11 @@ private:
   Exo_Block(const Exo_Block&);  // Not written.
   const Exo_Block& operator=(const Exo_Block&);  // Not written.
   
-  void entity_load_params();
+  void entity_load_params() override;
 
-  EXOTYPE exodus_type() const;
-  const char* label() const {return "Element Block";}
-  const char* short_label() const {return "block";}
+  EXOTYPE exodus_type() const override;
+  const char* label() const override {return "Element Block";}
+  const char* short_label() const override {return "block";}
 
   std::string elmt_type;
   int         num_nodes_per_elmt;

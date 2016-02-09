@@ -47,12 +47,6 @@
 #include <mpi.h>
 #include <Ioss_SerializeIO.h>
 
-namespace {
-  MPI_Datatype mpi_type(double /*dummy*/)  {return MPI_DOUBLE;}
-  MPI_Datatype mpi_type(int /*dummy*/)     {return MPI_INT;}
-  MPI_Datatype mpi_type(unsigned int /*dummy*/)     {return MPI_UNSIGNED;}
-  MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG_INT;}
-}
 #endif
 
 Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator)
@@ -62,8 +56,8 @@ Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator)
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value, bool sync_parallel) const
 {
 #ifdef HAVE_MPI
-  char *result_string = NULL;
-  char *broadcast_string = NULL;
+  char *result_string = nullptr;
+  char *broadcast_string = nullptr;
   int string_length = 0;
 
   int rank = parallel_rank();
@@ -98,12 +92,12 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
   return string_length > 0;
 #else
   char *result_string = std::getenv(name.c_str());
-  if (result_string != NULL) {
+  if (result_string != nullptr) {
     value = std::string(result_string);
   } else {
     value = std::string("");
   }
-  return (result_string != NULL);
+  return (result_string != nullptr);
 #endif
 }
 
@@ -122,7 +116,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_par
   // Return true if 'name' defined, no matter what the value.
   // Return false if 'name' not defined.
 #ifdef HAVE_MPI
-  char *result_string = NULL;
+  char *result_string = nullptr;
   int string_length = 0;
 
   int rank = Ioss::ParallelUtils::parallel_rank();
@@ -137,7 +131,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_par
   return string_length > 0;
 #else
   char *result_string = std::getenv(name.c_str());
-  return (result_string != NULL);
+  return (result_string != nullptr);
 #endif
 }
 

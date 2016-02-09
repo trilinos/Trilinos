@@ -199,12 +199,12 @@ template <typename T, typename INT>
 
   NemSpread() :
     int64db(0), int64api(0), force64db(false), io_ws(0),
-    Node_Set_Ids(NULL), Side_Set_Ids(NULL), Num_Elem_In_Blk(NULL), Num_Nodes_Per_Elem(NULL),
-    Num_Attr_Per_Elem(NULL), Elem_Blk_Ids(NULL), Elem_Blk_Types(NULL), Elem_Blk_Names(NULL),
-    Node_Set_Names(NULL), Side_Set_Names(NULL), Elem_Blk_Attr_Names(NULL), GM_Elem_Types(NULL),
-    Proc_Ids(NULL)
+    Node_Set_Ids(nullptr), Side_Set_Ids(nullptr), Num_Elem_In_Blk(nullptr), Num_Nodes_Per_Elem(nullptr),
+    Num_Attr_Per_Elem(nullptr), Elem_Blk_Ids(nullptr), Elem_Blk_Types(nullptr), Elem_Blk_Names(nullptr),
+    Node_Set_Names(nullptr), Side_Set_Names(nullptr), Elem_Blk_Attr_Names(nullptr), GM_Elem_Types(nullptr),
+    Proc_Ids(nullptr)
     {
-      Coord_Name[0] = Coord_Name[1] = Coord_Name[2] = NULL;
+      Coord_Name[0] = Coord_Name[1] = Coord_Name[2] = nullptr;
       Proc_Info[0] = Proc_Info[1] = Proc_Info[2] = Proc_Info[3] = Proc_Info[4] = Proc_Info[5] = 0;
     }
 

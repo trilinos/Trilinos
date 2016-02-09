@@ -46,7 +46,7 @@ extern "C" {
 }
 #include <netcdf.h>                     // for NC_NOERR, nc_def_var, etc
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf, NULL
+#include <stdio.h>                      // for sprintf, nullptr
 #include <stdlib.h>                     // for exit, EXIT_FAILURE
 #include <string.h>                     // for strlen, strncpy, strcpy, etc
 #include <ostream>                      // for operator<<, etc
@@ -914,8 +914,8 @@ int Internals::put_metadata(const Mesh &mesh,
   }
 
   size_t elem_count = 0;
-  for (size_t i=0; i < mesh.elemblocks.size(); i++) {
-    elem_count += mesh.elemblocks[i].entityCount;
+  for (auto & elem : mesh.elemblocks) {
+    elem_count += elem.entityCount;
   }
 
   if (elem_count > 0) {
@@ -953,8 +953,8 @@ int Internals::put_metadata(const Mesh &mesh,
   }
 
   size_t face_count = 0;
-  for (size_t i=0; i < mesh.faceblocks.size(); i++) {
-    face_count += mesh.faceblocks[i].entityCount;
+  for (auto & elem : mesh.faceblocks) {
+    face_count += elem.entityCount;
   }
 
   if (face_count > 0) {
@@ -991,8 +991,8 @@ int Internals::put_metadata(const Mesh &mesh,
   }
 
   size_t edge_count = 0;
-  for (size_t i=0; i < mesh.edgeblocks.size(); i++) {
-    edge_count += mesh.edgeblocks[i].entityCount;
+  for (auto & elem : mesh.edgeblocks) {
+    edge_count += elem.entityCount;
   }
 
   if (edge_count > 0) {
@@ -1117,7 +1117,7 @@ int Internals::put_metadata(const Mesh &mesh,
     // Define the file type variable...
     status=nc_inq_varid(exodusFilePtr, VAR_FILE_TYPE, &varid);
     if (status != NC_NOERR) {
-      status=nc_def_var(exodusFilePtr, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid);
+      status=nc_def_var(exodusFilePtr, VAR_FILE_TYPE, NC_INT, 0, nullptr, &varid);
       if (status != NC_NOERR) {
 	ex_opts(EX_VERBOSE);
 	sprintf(errmsg,
@@ -1168,7 +1168,7 @@ int Internals::put_metadata(const Mesh &mesh,
     {
       const char *vars[] = {VAR_ELBLK_IDS_GLOBAL,
 			    VAR_ELBLK_CNT_GLOBAL,
-			    NULL};
+			    nullptr};
       const nc_type types[] = {ids_type, bulk_type};
       
       status = define_variables(exodusFilePtr, (int)comm.globalElementBlocks, DIM_NUM_ELBLK_GLOBAL, vars, types);
@@ -1182,7 +1182,7 @@ int Internals::put_metadata(const Mesh &mesh,
       const char *vars[] = {VAR_NS_IDS_GLOBAL,
 			    VAR_NS_NODE_CNT_GLOBAL,
 			    VAR_NS_DF_CNT_GLOBAL,
-			    NULL};
+			    nullptr};
       const nc_type types[] = {ids_type, bulk_type, bulk_type};
 
       status = define_variables(exodusFilePtr, (int)comm.globalNodeSets, DIM_NUM_NS_GLOBAL, vars, types);
@@ -1196,7 +1196,7 @@ int Internals::put_metadata(const Mesh &mesh,
       const char *vars[] = {VAR_SS_IDS_GLOBAL,
 			    VAR_SS_SIDE_CNT_GLOBAL,
 			    VAR_SS_DF_CNT_GLOBAL,
-			    NULL};
+			    nullptr};
       const nc_type types[] = {ids_type, bulk_type, bulk_type};
 
       status = define_variables(exodusFilePtr, (int)comm.globalSideSets, DIM_NUM_SS_GLOBAL, vars, types);
@@ -1247,15 +1247,15 @@ int Internals::put_metadata(const Mesh &mesh,
     // Add the nodal communication map count
 
     size_t ncnt_cmap = 0;
-    for(size_t icm=0; icm < comm.nodeMap.size(); icm++) {
-      ncnt_cmap += comm.nodeMap[icm].entityCount;
+    for(auto & elem : comm.nodeMap) {
+      ncnt_cmap += elem.entityCount;
     }
 
     {
       const char *vars[] = {VAR_N_COMM_IDS,
 			    VAR_N_COMM_STAT,
 			    VAR_N_COMM_DATA_IDX,
-			    NULL};
+			    nullptr};
       const nc_type types[] = {ids_type, NC_INT, bulk_type};
       
       status = define_variables(exodusFilePtr, (int)comm.nodeMap.size(), DIM_NUM_N_CMAPS, vars, types);
@@ -1264,7 +1264,7 @@ int Internals::put_metadata(const Mesh &mesh,
     {
       const char *vars[] = {VAR_N_COMM_NIDS,
 			    VAR_N_COMM_PROC,
-			    NULL};
+			    nullptr};
       const nc_type types[] = {ids_type, NC_INT};
       
       // Add dimensions for all of the nodal communication maps
@@ -1274,14 +1274,14 @@ int Internals::put_metadata(const Mesh &mesh,
 
     // Add the nodal communication map count
     size_t ecnt_cmap = 0;
-    for (size_t icm=0; icm < comm.elementMap.size(); icm++)
-      ecnt_cmap += comm.elementMap[icm].entityCount;
+    for (auto & elem : comm.elementMap)
+      ecnt_cmap += elem.entityCount;
 
     {
       const char *vars[] = {VAR_E_COMM_IDS,
 			    VAR_E_COMM_STAT,
 			    VAR_E_COMM_DATA_IDX,
-			    NULL};
+			    nullptr};
       const nc_type types[] = {ids_type, NC_INT, bulk_type};
 
       status = define_variables(exodusFilePtr, (int)comm.elementMap.size(), DIM_NUM_E_CMAPS, vars, types);
@@ -1291,7 +1291,7 @@ int Internals::put_metadata(const Mesh &mesh,
       const char *vars[] = {VAR_E_COMM_EIDS,
 			    VAR_E_COMM_PROC,
 			    VAR_E_COMM_SIDS,
-			    NULL};
+			    nullptr};
       const nc_type types[] = {ids_type, NC_INT, bulk_type};
       status = define_variables(exodusFilePtr, ecnt_cmap, DIM_ECNT_CMAP, vars, types);
       if (status != EX_NOERR) return EX_FATAL;
@@ -1939,8 +1939,8 @@ int Internals::put_non_define_data(const CommunicationMetaData &comm)
     }
 
     size_t ncnt_cmap = 0;
-    for(size_t icm=0; icm < comm.nodeMap.size(); icm++) {
-      ncnt_cmap += comm.nodeMap[icm].entityCount;
+    for(auto & elem : comm.nodeMap) {
+      ncnt_cmap += elem.entityCount;
     }
 
     if (!comm.nodeMap.empty() && ncnt_cmap > 0) {
@@ -2004,8 +2004,8 @@ int Internals::put_non_define_data(const CommunicationMetaData &comm)
     }
     // Set the status of the elemental communication maps
     long long ecnt_cmap = 0;
-    for (size_t icm=0; icm < comm.elementMap.size(); icm++)
-      ecnt_cmap += comm.elementMap[icm].entityCount;
+    for (auto & elem : comm.elementMap)
+      ecnt_cmap += elem.entityCount;
 
     if (!comm.elementMap.empty() && ecnt_cmap > 0) {
 
@@ -3354,7 +3354,7 @@ namespace {
       }
 
       int i = 0;
-      while (var[i] != NULL) {
+      while (var[i] != nullptr) {
 	status=nc_def_var(exodusFilePtr, var[i], types[i], 1, dimid, &varid);
 	if (status != NC_NOERR) {
 	  ex_opts(EX_VERBOSE);

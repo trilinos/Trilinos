@@ -39,7 +39,7 @@
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 #include "elb_groups.h"
-#include <stdio.h>                      // for printf, sscanf, NULL
+#include <stdio.h>                      // for printf, sscanf, nullptr
 #include <stdlib.h>                     // for free, malloc
 #include <string.h>                     // for strchr, strlen
 #include <sys/types.h>                  // for ssize_t
@@ -133,7 +133,7 @@ int parse_groups(INT *el_blk_ids,
     scandescriptor(id, el_blk_ids, i, mesh->num_el_blks, prob);
     id = strchr(id, '/');
     i++;
-  } while (id != NULL);
+  } while (id != nullptr);
   last = i;
 
   /* set any remaining blocks to new group */

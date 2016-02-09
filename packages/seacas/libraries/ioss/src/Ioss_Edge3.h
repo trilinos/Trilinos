@@ -45,6 +45,7 @@ namespace Ioss {
     static void factory();
     ~Edge3();
 
+    ElementShape shape() const {return ElementShape::LINE;}
     int spatial_dimension()           const;
     int parametric_dimension()       const;
     int order()               const;

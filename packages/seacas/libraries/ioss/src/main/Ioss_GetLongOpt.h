@@ -20,7 +20,7 @@ namespace Ioss {
       const char *opt_value;	// If optional value and value not entered, assign opt_value to value
       Cell *next;		// pointer to the next cell
       
-      Cell() { option = description = value = opt_value = 0; next = 0; type = NoValue; }
+      Cell() { option = description = value = opt_value = nullptr; next = nullptr; type = NoValue; }
     };
   private:
     Cell *table;		// option table
@@ -43,7 +43,7 @@ namespace Ioss {
     
     int enroll(const char * const opt, const OptType t,
 	       const char * const desc, const char * const val,
-	       const char * const opt_val=NULL);
+	       const char * const opt_val=nullptr);
     const char *retrieve(const char * const opt) const;
     
     void usage(std::ostream &outfile = std::cout) const;

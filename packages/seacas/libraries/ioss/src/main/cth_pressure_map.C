@@ -236,23 +236,23 @@ int main(int argc, char *argv[])
     }
     else if (std::strcmp("--Final_Time_Delta", argv[i]) == 0) {
       i++;
-      globals.delta_time = std::strtod(argv[i++], NULL);
+      globals.delta_time = std::strtod(argv[i++], nullptr);
     }
     else if (std::strcmp("--Maximum_Time", argv[i]) == 0) {
       i++;
-      globals.maximum_time = std::strtod(argv[i++], NULL);
+      globals.maximum_time = std::strtod(argv[i++], nullptr);
     }
     else if (std::strcmp("--Minimum_Time", argv[i]) == 0) {
       i++;
-      globals.minimum_time = std::strtod(argv[i++], NULL);
+      globals.minimum_time = std::strtod(argv[i++], nullptr);
     }
     else if (std::strcmp("--Offset_Time", argv[i]) == 0) {
       i++;
-      globals.offset_time = std::strtod(argv[i++], NULL);
+      globals.offset_time = std::strtod(argv[i++], nullptr);
     }
     else if (std::strcmp("--Offset_Pressure", argv[i]) == 0) {
       i++;
-      globals.offset_pressure = std::strtod(argv[i++], NULL);
+      globals.offset_pressure = std::strtod(argv[i++], nullptr);
     }
 
     // Found an option.  See if it has an argument...
@@ -374,7 +374,7 @@ namespace {
     //========================================================================
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
 						    (MPI_Comm)MPI_COMM_WORLD);
-    if (dbi == NULL || !dbi->ok()) {
+    if (dbi == nullptr || !dbi->ok()) {
       std::cerr << "ERROR: Could not open database '" << inpfile
 			      << "' of type '" << input_type << "'\n";
       std::exit(EXIT_FAILURE);
@@ -388,7 +388,7 @@ namespace {
     //========================================================================
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(output_type, outfile, Ioss::WRITE_RESTART,
 						    (MPI_Comm)MPI_COMM_WORLD);
-    if (dbo == NULL || !dbo->ok()) {
+    if (dbo == nullptr || !dbo->ok()) {
       std::cerr << "ERROR: Could not create output database '" << outfile
 			      << "' of type '" << output_type << "'\n";
       std::exit(EXIT_FAILURE);
@@ -401,13 +401,13 @@ namespace {
     // Optional sideset file...
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
-    Ioss::DatabaseIO *dbs = NULL;
-    Ioss::Region     *ss_region = NULL;
+    Ioss::DatabaseIO *dbs = nullptr;
+    Ioss::Region     *ss_region = nullptr;
     if (globals.add_sset) {
       // Open the file containing the data which will be the new sideset...
       dbs = Ioss::IOFactory::create(input_type, ss_file, Ioss::READ_RESTART,
 				    (MPI_Comm)MPI_COMM_WORLD);
-      if (dbs == NULL || !dbs->ok()) {
+      if (dbs == nullptr || !dbs->ok()) {
 	std::cerr << "ERROR: Could not open database '" << ss_file
 				<< "' of type '" << input_type << "'\n";
 	std::exit(EXIT_FAILURE);
@@ -453,15 +453,15 @@ namespace {
     // Transfer MESH field_data from input to output...
     {
       Ioss::NodeBlock *nb = region.get_node_blocks()[0];
-      assert(nb != NULL);
+      assert(nb != nullptr);
 
-      if (nb != NULL) {
+      if (nb != nullptr) {
 	std::string name = nb->name();
 	if (globals.debug) std::cerr << name << ", ";
 
 	// Find the corresponding output element_block...
 	Ioss::NodeBlock *onb = output_region.get_node_block(name);
-	assert(onb != NULL);
+	assert(onb != nullptr);
 	transfer_field_data(nb, onb, Ioss::Field::MESH);
 	transfer_field_data(nb, onb, Ioss::Field::ATTRIBUTE);
       }
@@ -479,9 +479,9 @@ namespace {
 
 	// Find the corresponding output element_block...
 	Ioss::ElementBlock *oeb = output_region.get_element_block(name);
-	assert(oeb != NULL);
+	assert(oeb != nullptr);
 
-	if (oeb != NULL) {
+	if (oeb != nullptr) {
 	  transfer_field_data(*I, oeb, Ioss::Field::MESH);
 	  transfer_field_data(*I, oeb, Ioss::Field::ATTRIBUTE);
 	}
@@ -500,7 +500,7 @@ namespace {
 
 	// Find matching output nodeset
 	Ioss::NodeSet *ons = output_region.get_nodeset(name);
-	if (ons != NULL) {
+	if (ons != nullptr) {
 	  transfer_field_data(*I, ons, Ioss::Field::MESH);
 	  transfer_field_data(*I, ons, Ioss::Field::ATTRIBUTE);
 	}
@@ -519,7 +519,7 @@ namespace {
 
 	// Find matching output commset
 	Ioss::CommSet *ocs = output_region.get_commset(name);
-	if (ocs != NULL) {
+	if (ocs != nullptr) {
 	  transfer_field_data(*I, ocs, Ioss::Field::MESH);
 	  transfer_field_data(*I, ocs, Ioss::Field::ATTRIBUTE);
 	  transfer_field_data(*I, ocs, Ioss::Field::COMMUNICATION);
@@ -540,7 +540,7 @@ namespace {
 	// Find matching output sideset
 	Ioss::SideSet *ofs = output_region.get_sideset(name);
 
-	if (ofs != NULL) {
+	if (ofs != nullptr) {
 	  transfer_field_data(*I, ofs, Ioss::Field::MESH);
 	  transfer_field_data(*I, ofs, Ioss::Field::ATTRIBUTE);
 
@@ -553,7 +553,7 @@ namespace {
 	    if (globals.debug) std::cerr << fbname << ", ";
 	    Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 
-	    if (ofb != NULL) {
+	    if (ofb != nullptr) {
 	      transfer_field_data(*J, ofb, Ioss::Field::MESH, "", false);
 	      transfer_field_data(*J, ofb, Ioss::Field::ATTRIBUTE, "", false);
 	    }
@@ -889,7 +889,7 @@ namespace {
 	std::string name      = (*i)->name();
 	name = "ss"+name;
 	Ioss::SideBlock *fb = output_region.get_sideblock(name);
-	if (fb == NULL) {
+	if (fb == nullptr) {
 	  std::cerr << "INTERNAL ERROR: Could not find sideblock named '" << name << "'\n";
 	  std::exit(EXIT_FAILURE);
 	}
@@ -960,7 +960,7 @@ namespace {
 	  time_zero_field_data[name] = (double*)zdata;
 	  (*i)->get_field_data(cth_pressure, zdata, isize);
 	} else {
-	  time_zero_field_data[name] = (double*)NULL;
+	  time_zero_field_data[name] = (double*)nullptr;
 	}
 	++i;
       }
@@ -979,7 +979,7 @@ namespace {
 	std::string eb_name = (*i)->name();
 	std::string name = "ss" + eb_name;
 	Ioss::SideBlock *fb = output_region.get_sideblock(name);
-	if (fb == NULL) {
+	if (fb == nullptr) {
 	  std::cerr << "INTERNAL ERROR: Could not find sideblock named '" << name << "'\n";
 	  std::exit(EXIT_FAILURE);
 	}
@@ -1029,7 +1029,7 @@ namespace {
 	std::string eb_name = (*i)->name();
 	std::string name = "ss" + eb_name;
 	Ioss::SideBlock *fb = output_region.get_sideblock(name);
-	if (fb == NULL) {
+	if (fb == nullptr) {
 	  std::cerr << "INTERNAL ERROR: Could not find side block named '" << name << "'\n";
 	  std::exit(EXIT_FAILURE);
 	}
@@ -1044,7 +1044,7 @@ namespace {
 	    // Subtract the time zero pressures (stored in
 	    // time_zero_field_data) from each time step
 	    double* zdata = time_zero_field_data[eb_name];
-	    assert(zdata != NULL);
+	    assert(zdata != nullptr);
 
 	    int isize = (*i)->get_field(field_name).get_size();
 	    int count = (*i)->get_field(field_name).raw_count();
@@ -1113,7 +1113,7 @@ namespace {
 	std::string eb_name = (*i)->name();
 	std::string name = "ss" + eb_name;
 	Ioss::SideBlock *fb = output_region.get_sideblock(name);
-	if (fb == NULL) {
+	if (fb == nullptr) {
           std::ostringstream msg ;
 	  msg << " INTERNAL_ERROR: Could not find sideblock '" << name << "'\n";
 	  throw std::runtime_error( msg.str() );
@@ -1181,7 +1181,7 @@ namespace {
 	std::string name      = (*i)->name();
 	name = "ss"+name;
 	Ioss::SideBlock *fb = output_region.get_sideblock(name);
-	assert(fb != NULL);
+	assert(fb != nullptr);
 
 	if (globals.debug) std::cerr << name << ", ";
 
@@ -1249,7 +1249,7 @@ namespace {
       std::string name = (*eb).name();
 
       Ioss::ElementBlock *ebo = output_region.get_element_block(name);
-      if (ebo == NULL) {
+      if (ebo == nullptr) {
 	std::cerr << "INTERNAL ERROR: Could not find element block named '" << name << "'\n";
 	std::exit(EXIT_FAILURE);
       }

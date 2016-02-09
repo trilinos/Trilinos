@@ -67,7 +67,7 @@ int max_string_length(const std::vector<std::string> &names);
 void to_lower( std::string & s );
 
 //! Returns the first non-white space character of the string.  If the string
-//! is empty or all white space, a NULL char is returned.
+//! is empty or all white space, a nullptr char is returned.
 char first_character( const std::string & s );
 
 //! Searches the list of strings for a particular string value.  Letter case

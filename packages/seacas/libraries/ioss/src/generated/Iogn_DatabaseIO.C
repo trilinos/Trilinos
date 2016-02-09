@@ -129,7 +129,7 @@ namespace Iogn {
                                        Ioss::DatabaseUsage db_usage,
                                        MPI_Comm communicator,
                                        const Ioss::PropertyManager &props) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator, props); }
+  { return new DatabaseIO(nullptr, filename, db_usage, communicator, props); }
 
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
@@ -137,7 +137,7 @@ namespace Iogn {
                          MPI_Comm communicator,
                          const Ioss::PropertyManager &props) :
         Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
-        m_generatedMesh(NULL),  spatialDimension(3), nodeCount(0),
+        m_generatedMesh(nullptr),  spatialDimension(3), nodeCount(0),
         elementCount(0), nodeBlockCount(0),
         elementBlockCount(0), nodesetCount(0), sidesetCount(0),
         nodeMap("node"), elemMap("elem"), m_useVariableDf(true)
@@ -167,7 +167,7 @@ namespace Iogn {
 
   void DatabaseIO::read_meta_data()
   {
-    if(m_generatedMesh == NULL) {
+    if(m_generatedMesh == nullptr) {
       if (get_filename() == "external") {
 	std::ostringstream errmsg;
 	errmsg << "ERROR: (generated mesh) 'external' specified for mesh, but "
@@ -178,7 +178,7 @@ namespace Iogn {
       }
     }
 
-    assert(m_generatedMesh != NULL);
+    assert(m_generatedMesh != nullptr);
     
     Ioss::Region *this_region = get_region();
     this_region->property_add(Ioss::Property("global_node_count",    m_generatedMesh->node_count()));

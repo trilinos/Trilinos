@@ -52,6 +52,7 @@ namespace Ioss {
 
     static void make_super(const std::string &type);
     
+    ElementShape shape() const {return ElementShape::UNKNOWN;}
     int spatial_dimension()           const;
     int parametric_dimension()       const;
     bool is_element()                 const {return true;}

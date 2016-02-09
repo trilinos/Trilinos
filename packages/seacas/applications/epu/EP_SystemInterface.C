@@ -73,7 +73,7 @@ Excn::SystemInterface::SystemInterface()
     debugLevel_(0), screenWidth_(0),
     stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1), cycle_(-1), compressData_(0),
     sumSharedNodes_(false), addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
-    largeModel_(false), append_(false), intIs64Bit_(false), subcycleJoin_(false)
+    useNetcdf4_(false), append_(false), intIs64Bit_(false), subcycleJoin_(false), outputSharedNodes_(false)
 {
   enroll_options();
 }
@@ -85,28 +85,28 @@ void Excn::SystemInterface::enroll_options()
   options_.usage("[options] basename");
 
   options_.enroll("help", GetLongOption::NoValue,
-		  "Print this summary and exit", 0);
+		  "Print this summary and exit", nullptr);
 
   options_.enroll("version", GetLongOption::NoValue,
-		  "Print version and exit", NULL);
+		  "Print version and exit", nullptr);
 
   options_.enroll("auto", GetLongOption::NoValue,
 		  "Automatically set Root, Proc, Ext from filename 'Root/basename.ext.#p.00'.",
-		  NULL);
+		  nullptr);
   options_.enroll("map", GetLongOption::NoValue,
-		  "Map element ids to original order if possible [default]", NULL);
+		  "Map element ids to original order if possible [default]", nullptr);
 
   options_.enroll("nomap", GetLongOption::NoValue,
-		  "Do not map element ids to original order", NULL);
+		  "Do not map element ids to original order", nullptr);
 
   options_.enroll("extension", GetLongOption::MandatoryValue,
 		  "Exodus database extension for the input files", "e");
 
   options_.enroll("output_extension", GetLongOption::MandatoryValue,
-		  "Exodus database extension for the output file", NULL);
+		  "Exodus database extension for the output file", nullptr);
 
   options_.enroll("offset", GetLongOption::MandatoryValue,
-		  "Raid Offset", 0);
+		  "Raid Offset", nullptr);
 
   options_.enroll("raid_count", GetLongOption::MandatoryValue,
 		  "Number of raids", "0");
@@ -118,10 +118,10 @@ void Excn::SystemInterface::enroll_options()
 		  "Current Directory", ".");
 
   options_.enroll("Root_directory", GetLongOption::MandatoryValue,
-		  "Root directory", 0);
+		  "Root directory", nullptr);
 
   options_.enroll("Subdirectory", GetLongOption::MandatoryValue,
-		  "subdirectory containing input exodusII files", NULL);
+		  "subdirectory containing input exodusII files", nullptr);
 
   options_.enroll("width", GetLongOption::MandatoryValue,
 		  "Width of output screen, default = 80",
@@ -129,25 +129,29 @@ void Excn::SystemInterface::enroll_options()
   
   options_.enroll("add_processor_id", GetLongOption::NoValue,
 		  "Add 'processor_id' element variable to the output file",
-		  NULL);
+		  nullptr);
+
+  options_.enroll("netcdf4", GetLongOption::NoValue,
+		  "Create output database using the HDF5-based netcdf which allows for up to 2.1 GB nodes/elements",
+		  nullptr);
 
   options_.enroll("large_model", GetLongOption::NoValue,
-		  "Create output database using the HDF5-based netcdf which allows for up to 2.1 GB nodes/elements",
-		  NULL);
+		  "Create output database using the HDF5-based netcdf which allows for up to 2.1 GB nodes/elements (deprecated; use netcdf4 instead)",
+		  nullptr);
 
   options_.enroll("append", GetLongOption::NoValue,
 		  "Append to database instead of opening a new database.\n"
 		  "\t\tTimestep transfer will start after last timestep on database",
-		  NULL);
+		  nullptr);
 
   options_.enroll("64", GetLongOption::NoValue,
 		  "The output database will be written in the 64-bit integer mode",
-		  NULL);
+		  nullptr);
 
   options_.enroll("compress_data", GetLongOption::MandatoryValue,
 		  "The output database will be written using compression (netcdf-4 mode only).\n"
 		  "\t\tValue ranges from 0 (no compression) to 9 (max compression) inclusive.",
-		  0);
+		  nullptr);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
 		  "Specify subset of timesteps to transfer to output file.\n"
@@ -169,7 +173,7 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\tThe subparts can then be joined by a subsequent run of epu.\n"
 		  "\t\tUseful if the maximum number of open files is less\n"
 		  "\t\tthan the processor count.",
-		  0, "0");
+		  nullptr, "0");
 
   options_.enroll("cycle", GetLongOption::MandatoryValue,
 		  "Cycle number. If subcycle # is specified, then only execute\n"
@@ -179,44 +183,48 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("join_subcycles", GetLongOption::NoValue,
 		  "If -subcycle is specified, then after the subcycle files are processed,\n"
 		  "\t\trun epu one more time and join the subcycle files into a single file.",
-		  NULL);
+		  nullptr);
   
   options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
 		  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
 		  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
 		  "\t\tThe default behavior assumes that the values are equal.",
-		  NULL);
+		  nullptr);
   
   options_.enroll("gvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of global variables to be joined or ALL or NONE.",
-		  0);
+		  nullptr);
 
   options_.enroll("evar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of element variables to be joined or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain blocks by appending a\n"
 		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
-		  0);
+		  nullptr);
 
   options_.enroll("nvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of nodal variables to be joined or ALL or NONE.",
-		  0);
+		  nullptr);
 
   options_.enroll("nsetvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of nodeset variables to be joined or ALL or NONE.",
-		  0);
+		  nullptr);
 
   options_.enroll("ssetvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of sideset variables to be joined or ALL or NONE.",
-		  0);
+		  nullptr);
 
   options_.enroll("omit_nodesets", GetLongOption::NoValue,
 		  "Don't transfer nodesets to output file.",
-		  NULL);
+		  nullptr);
 
   options_.enroll("omit_sidesets", GetLongOption::NoValue,
 		  "Don't transfer sidesets to output file.",
-		  NULL);
+		  nullptr);
 
+  options_.enroll("output_shared_nodes",  GetLongOption::NoValue,
+		  "Output list of shared nodes and the processors they are shared with.",
+		  nullptr);
+  
   options_.enroll("debug", GetLongOption::MandatoryValue,
 		  "debug level (values are or'd)\n"
 		  "\t\t  1 = timing information.\n"
@@ -231,7 +239,7 @@ void Excn::SystemInterface::enroll_options()
 
   options_.enroll("copyright", GetLongOption::NoValue,
 		  "Show copyright and license data.",
-		  NULL);
+		  nullptr);
 }
 
 bool Excn::SystemInterface::parse_options(int argc, char **argv)
@@ -242,7 +250,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   // Get options from environment variable also...
   char *options = getenv("EPU_OPTIONS");
-  if (options != NULL) {
+  if (options != nullptr) {
     std::cout << "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
 	      << "\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
@@ -269,91 +277,91 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   
   {
     const char *temp = options_.retrieve("extension");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       inExtension_ = temp;
     }
   }
 
   {
     const char *temp = options_.retrieve("output_extension");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       outExtension_ = temp;
     }
   }
 
   {
     const char *temp = options_.retrieve("offset");
-    if (temp != NULL) {
-      raidOffset_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      raidOffset_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
     const char *temp = options_.retrieve("raid_count");
-    if (temp != NULL) {
-      raidCount_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      raidCount_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
     const char *temp = options_.retrieve("processor_count");
-    if (temp != NULL) {
-      processorCount_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      processorCount_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
     const char *temp = options_.retrieve("Part_count");
-    if (temp != NULL) {
-      partCount_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      partCount_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
     const char *temp = options_.retrieve("start_part");
-    if (temp != NULL) {
-      startPart_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      startPart_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
     const char *temp = options_.retrieve("current_directory");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       cwd_ = temp;
     }
   }
 
   {
     const char *temp = options_.retrieve("Root_directory");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       rootDirectory_ = temp;
     }
   }
 
   {
     const char *temp = options_.retrieve("Subdirectory");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       subDirectory_ = temp;
     }
   }
 
   {
     const char *temp = options_.retrieve("debug");
-    if (temp != NULL) {
-      debugLevel_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      debugLevel_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
     const char *temp = options_.retrieve("width");
-    if (temp != NULL) {
-      screenWidth_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      screenWidth_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
     const char *temp = options_.retrieve("steps");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       parse_step_option(temp);
     }
   }
@@ -390,7 +398,12 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("large_model")) {
-    largeModel_ = true;
+    useNetcdf4_ = true;
+    std::cerr << "\nWARNING: the -large_model option is deprecated; please use -netcdf4 instead.\n";
+  }
+
+  if (options_.retrieve("netcdf4")) {
+    useNetcdf4_ = true;
   }
 
   if (options_.retrieve("append")) {
@@ -403,8 +416,8 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("compress_data");
-    if (temp != NULL) {
-      compressData_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      compressData_ = strtol(temp, nullptr, 10);
     }
   }
 
@@ -418,15 +431,15 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("subcycle");
-    if (temp != NULL) {
-      subcycle_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      subcycle_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
     const char *temp = options_.retrieve("cycle");
-    if (temp != NULL) {
-      cycle_ = strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      cycle_ = strtol(temp, nullptr, 10);
     }
   }
 
@@ -452,6 +465,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     omitSidesets_ = true;
   } else {
     omitSidesets_ = false;
+  }
+  
+  if (options_.retrieve("output_shared_nodes")) {
+    outputSharedNodes_ = true;
   }
   
   if (options_.retrieve("copyright")) {
@@ -550,8 +567,8 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
   
   // Default is given in constructor above...
 
-  if (tokens != NULL) {
-    if (strchr(tokens, ':') != NULL) {
+  if (tokens != nullptr) {
+    if (strchr(tokens, ':') != nullptr) {
       // The string contains a separator
 
       int vals[3];
@@ -560,7 +577,7 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
       vals[2] = stepInterval_;
 
       int j=0;
-      for (int i=0; i < 3; i++) {
+      for (auto & val : vals) {
 	// Parse 'i'th field
 	char tmp_str[128];;
 	int k=0;
@@ -571,7 +588,7 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
 
 	tmp_str[k] = '\0';
 	if (strlen(tmp_str) > 0)
-	  vals[i] = strtoul(tmp_str, NULL, 0);
+	  val = strtoul(tmp_str, nullptr, 0);
 	
 	if (tokens[j++] == '\0') {
 	  break; // Reached end of string
@@ -584,7 +601,7 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
       stepMin_ = stepMax_ = -1;
     } else {
       // Does not contain a separator, min == max
-      stepMin_ = stepMax_ = strtol(tokens, NULL, 0);
+      stepMin_ = stepMax_ = strtol(tokens, nullptr, 0);
     }
   }
 } 
@@ -613,7 +630,7 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
     return false;
   
   std::string tmp = s.substr(ind+1); // Skip the '.'
-  processorCount_ = strtol(tmp.c_str(), NULL, 10);
+  processorCount_ = strtol(tmp.c_str(), nullptr, 10);
   if (processorCount_ <= 0) {
     std::cerr << "\nERROR: (EPU) Invalid processor count specified: '"
 	      << processorCount_ << "'. Must be greater than zero.\n";
@@ -676,10 +693,9 @@ namespace {
   
     // Value of num_vars includes optional add_processor_id
 
-    if (tokens != NULL) {
+    if (tokens != nullptr) {
       std::string token_string(tokens);
-      StringVector var_list;
-      SLIB::tokenize(token_string, ",", var_list);
+      StringVector var_list = SLIB::tokenize(token_string, ",");
     
       // At this point, var_list is either a single string, or a string
       // separated from 1 or more block ids with ":" delimiter.
@@ -687,17 +703,16 @@ namespace {
       // "sigxx" should be written only for blocks with id 1, 10, and
       // 100.  "sigxx" would indicate that the variable should be
       // written for all blocks.
-      std::vector<std::string>::iterator I = var_list.begin();
+      auto I = var_list.begin();
       while (I != var_list.end()) {
-	StringVector name_id;
-	SLIB::tokenize(*I, ":", name_id);
+	StringVector name_id = SLIB::tokenize(*I, ":");
 	std::string var_name = LowerCase(name_id[0]);
 	if (name_id.size() == 1) {
 	  (*variable_list).push_back(std::make_pair(var_name,0));
 	} else {
 	  for (size_t i=1; i < name_id.size(); i++) {
 	    // Convert string to integer...
-	    int id = strtoul(name_id[i].c_str(), NULL, 0);
+	    int id = strtoul(name_id[i].c_str(), nullptr, 0);
 	    (*variable_list).push_back(std::make_pair(var_name,id));
 	  }
 	}

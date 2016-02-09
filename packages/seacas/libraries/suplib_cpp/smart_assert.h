@@ -171,14 +171,14 @@ namespace Private {
     template<>
     struct is_null_finder< char*> {
         bool is( char * const & val) {
-            return val == 0;
+            return val == nullptr;
         }
     };
 
     template<>
     struct is_null_finder< const char*> {
         bool is( const char * const & val) {
-            return val == 0;
+            return val == nullptr;
         }
     };
 
@@ -199,7 +199,7 @@ struct Assert {
           needs_handling_( true) {
         context_.set_expr( expr);
 
-        if ( ( logger() == 0) || handlers().size() < 4) {
+        if ( ( logger() == nullptr) || handlers().size() < 4) {
             // used before main!
             Private::init_assert();
         }
@@ -243,25 +243,25 @@ struct Assert {
         return *this;
     }
 
-    Assert & level( int nLevel, const char * strMsg = 0) {
+    Assert & level( int nLevel, const char * strMsg = nullptr) {
         context_.set_level( nLevel);
         context_.set_level_msg( strMsg);
         return *this;
     }
 
-    Assert & warn( const char * strMsg = 0) {
+    Assert & warn( const char * strMsg = nullptr) {
         return level( lvl_warn, strMsg);
     }
 
-    Assert & debug( const char * strMsg = 0) {
+    Assert & debug( const char * strMsg = nullptr) {
         return level( lvl_debug, strMsg);
     }
 
-    Assert & error( const char * strMsg = 0) {
+    Assert & error( const char * strMsg = nullptr) {
         return level( lvl_error, strMsg);
     }
 
-    Assert & fatal( const char * strMsg = 0) {
+    Assert & fatal( const char * strMsg = nullptr) {
         return  level( lvl_fatal, strMsg);
     }
 

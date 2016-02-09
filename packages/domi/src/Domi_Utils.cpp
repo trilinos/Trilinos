@@ -81,8 +81,8 @@ regularizeCommDims(int numProcs,
     TEUCHOS_TEST_FOR_EXCEPTION(
       (block != numProcs),
       InvalidArgument,
-      "Product of axis processor sizes does not "
-      "equal total number of processors");
+      "Product of axis processor sizes (" << block << ") does not "
+      "equal total number of processors (" << numProcs << ")");
   }
   // For underspecified processor partitions, give the remainder to
   // the first unspecified axis and set all the rest to 1

@@ -87,7 +87,7 @@ namespace {
     errmsg << "Exodus error (" << exerrval << ")" << nc_strerror(exerrval) << " at line " << lineno
 	   << " in file epu.C. Please report to gdsjaar@sandia.gov if you need help.";
 
-    ex_err(NULL, NULL, EX_PRTLASTMSG);
+    ex_err(nullptr, nullptr, EX_PRTLASTMSG);
     std::cerr << errmsg.str() << "\n";
     exit(EXIT_FAILURE);
   }
@@ -111,7 +111,7 @@ namespace {
   }
 
   char **get_name_array(int size, int length) {
-    char **names = NULL;
+    char **names = nullptr;
     if (size > 0) {
       names = new char* [size];
       for (int i=0; i < size; i++) {
@@ -127,7 +127,7 @@ namespace {
       delete [] names[i];
     }
     delete [] names;
-    names = NULL;
+    names = nullptr;
   }
 
   template <typename INT>
@@ -303,7 +303,7 @@ int main(int argc, char* argv[])
   setlinebuf(stderr);
 #endif
   try {
-  time_t begin_time = time(NULL);
+  time_t begin_time = time(nullptr);
   SystemInterface::show_version();
 
   SystemInterface interface;
@@ -430,7 +430,7 @@ int main(int argc, char* argv[])
     
   }
 
-  time_t end_time = time(NULL);
+  time_t end_time = time(nullptr);
   add_to_log(argv[0], (int)(end_time-begin_time));
   return (error);
   }
@@ -450,7 +450,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
   int p; // file counter p=0..part_count-1
 
-  char* mytitle = new char[MAX_LINE_LENGTH + 1];
+  auto  mytitle = new char[MAX_LINE_LENGTH + 1];
   memset(mytitle, '\0', MAX_LINE_LENGTH+1);
 
   Mesh global;
@@ -563,6 +563,38 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (debug_level & 1)
       std::cout << time_stamp(tsFormat);
     std::cout << "Finished reading/writing Global Info\n";
+
+    if (interface.output_shared_nodes()) {
+      // Get list of all shared nodes...
+      std::vector<std::vector<INT>> shared(part_count);
+      std::vector<int> num_shared(global_node_map.size());
+    
+      for (auto & part : shared) {
+	part.resize(global_node_map.size());
+      }
+
+      for (int p = 0; p < part_count; p++) {
+	size_t node_count = local_mesh[p].nodeCount;
+	for (size_t i = 0; i < node_count; i++) {
+	  INT gloc = local_node_to_global[p][i];
+	  shared[p][gloc] = i+1;
+	  num_shared[gloc]++;
+	}
+      }
+
+      std::cout << "Node Sharing information: (Part:Local Node Id)\n";
+      for (size_t i=0; i < global_node_map.size(); i++) {
+	if (num_shared[i] > 1) {
+	  std::cout << "Global Node " << i+1 << ": ";
+	  for (int p=0; p < part_count; p++) {
+	    if (shared[p][i] >= 1) {
+	      std::cout << "\t" << p << ":" << shared[p][i];
+	    }
+	  }
+	  std::cout << "\n";
+	}
+      }
+    }
 
     // ****************************************************************************
     // Get Block information including element attributes
@@ -809,7 +841,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   std::vector<T> global_values(global_vars.count(IN));
   std::vector<T> output_global_values(global_vars.count(OUT));
 
-  T **master_nodal_values   = new T*[nodal_vars.count(OUT)];
+  auto master_nodal_values   = new T*[nodal_vars.count(OUT)];
   for (int i = 0; i < nodal_vars.count(OUT); i++) {
     master_nodal_values[i] = new T[global.nodeCount];
   }
@@ -1196,7 +1228,7 @@ namespace {
 
     // I. Get and store info strings, if they exist
     int num_info_records = ex_inquire_int(id,EX_INQ_INFO);
-    char **info_records = new char*[num_info_records+1];
+    auto info_records = new char*[num_info_records+1];
     int info_string_len = MAX_LINE_LENGTH;
 
     {
@@ -1232,7 +1264,7 @@ namespace {
     };
     
     int num_qa_records = ex_inquire_int(id, EX_INQ_QA);
-    qa_element *qaRecord = new qa_element[num_qa_records+1];
+    auto qaRecord = new qa_element[num_qa_records+1];
     for (int i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
 	qaRecord[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
@@ -1250,7 +1282,7 @@ namespace {
     strncpy(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH); // Code
     strncpy(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH); // Version
 
-    time_t date_time = time(NULL);
+    time_t date_time = time(nullptr);
     strftime( buffer, MAX_STR_LENGTH, "%Y/%m/%d", localtime(&date_time) );
 
     strncpy(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH);
@@ -1556,8 +1588,8 @@ namespace {
     SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
     int global_num_blocks = glob_blocks.size();
 
-    INT** linkage  = new INT*[global_num_blocks];
-    T** attributes = new T*[global_num_blocks];
+    auto  linkage  = new INT*[global_num_blocks];
+    auto  attributes = new T*[global_num_blocks];
 
     if (debug_level & 1)
       std::cout << time_stamp(tsFormat);
@@ -1584,7 +1616,7 @@ namespace {
       if (max_nodes > 0) {
 	linkage[b] = new INT[max_nodes];
       } else {
-	linkage[b] = NULL;
+	linkage[b] = nullptr;
       }
       INT *block_linkage = linkage[b];
 
@@ -1610,7 +1642,7 @@ namespace {
 	  std::vector<INT> local_linkage(maximum_nodes);
 	
 	  ex_entity_id bid = blocks[p][b].id;
-	  error = ex_get_conn(id, EX_ELEM_BLOCK, bid, TOPTR(local_linkage), 0, 0);
+	  error = ex_get_conn(id, EX_ELEM_BLOCK, bid, TOPTR(local_linkage), nullptr, nullptr);
 	  if (error < 0) {
 	    std::cerr << "ERROR: (EPU) Cannot get element block connectivity for block "
 		      << bid << " on part " << p+start_part << ".\n";
@@ -1666,8 +1698,8 @@ namespace {
       // Write out block info
       int id_out = ExodusFile::output();// output file identifier
 
-      if (linkage[b] != NULL) {
-	error = ex_put_conn(id_out, EX_ELEM_BLOCK, glob_blocks[b].id, linkage[b], 0, 0);
+      if (linkage[b] != nullptr) {
+	error = ex_put_conn(id_out, EX_ELEM_BLOCK, glob_blocks[b].id, linkage[b], nullptr, nullptr);
 	if (error < 0)
 	  exodus_error(__LINE__);
 	delete [] linkage[b];
@@ -1755,8 +1787,7 @@ namespace {
     // If the map is contiguous, then the global_id to global_position map is 1->1
   REMAP:
     if (is_contiguous && map_ids) {
-      typedef typename std::vector<INT>::iterator GMapIter;
-      GMapIter cur_pos = global_element_map.begin();
+      auto cur_pos = global_element_map.begin();
       size_t element_value;
       for (int p = 0; p < part_count; p++) {
 	size_t element_count = local_mesh[p].elementCount;
@@ -1764,7 +1795,7 @@ namespace {
 	  INT global_element = global_element_numbers[p][i];
 
 	  if (cur_pos == global_element_map.end() || *cur_pos != global_element) {
-	    GMapIter iter = std::lower_bound(global_element_map.begin(),
+	    auto iter = std::lower_bound(global_element_map.begin(),
 					     global_element_map.end(),
 					     global_element);
 	    SMART_ASSERT(iter != global_element_map.end());
@@ -1919,8 +1950,7 @@ namespace {
     // 'global id' and then 'global id' to global position. The
     // mapping is now a direct lookup instead of a lookup followed by
     // a reverse map.
-    typedef typename std::vector<INT>::iterator GMapIter;
-    GMapIter cur_pos = global_node_map.begin();
+    auto cur_pos = global_node_map.begin();
     INT nodal_value;
     for (int p = 0; p < part_count; p++) {
       size_t node_count = local_mesh[p].nodeCount;
@@ -1928,7 +1958,7 @@ namespace {
 	INT global_node = global_node_numbers[p][i];
 
 	if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
-	  GMapIter iter = std::lower_bound(global_node_map.begin(),
+	  auto iter = std::lower_bound(global_node_map.begin(),
 					   global_node_map.end(),
 					   global_node);
 	  SMART_ASSERT(iter != global_node_map.end());
@@ -1939,6 +1969,7 @@ namespace {
 	++cur_pos;
       }				
     }
+
   }
 
   void get_put_variable_names(int id, int out, Variables &vars,
@@ -2095,10 +2126,10 @@ namespace {
       // element blocks...
       std::string var_name = "";
       int var_count = 0;
-      for (size_t i=0; i < variable_list.size(); i++) {
-	if (var_name == variable_list[i].first)
+      for (auto & elem : variable_list) {
+	if (var_name == elem.first)
 	  continue;
-	var_name = variable_list[i].first;
+	var_name = elem.first;
 	bool found = false;
 	for (size_t j=0; j < exo_names.size() && !found; j++) {
 	  if (case_compare(exo_names[j], var_name) == 0) {
@@ -2107,15 +2138,15 @@ namespace {
 	  }
 	}
 	if (!found) {
-	  std::cerr << "ERROR: (EPU) Variable '" << variable_list[i].first
+	  std::cerr << "ERROR: (EPU) Variable '" << elem.first
 		    << "' is not valid." << std::endl;
 	  exit(EXIT_FAILURE);
 	}
       }
       // Count non-zero entries in var_index;
       int nz_count = 0;
-      for (size_t i=0; i < vars.index_.size(); i++) {
-	if (vars.index_[i] > 0)
+      for (auto & elem : vars.index_) {
+	if (elem > 0)
 	  nz_count++;
       }
       SMART_ASSERT(nz_count == var_count+extra)(nz_count)(var_count);
@@ -2195,8 +2226,8 @@ namespace {
       ExodusFile id(p);
       
       nodesets[p].resize(set_ids.size());
-      typename std::set<ex_entity_id>::const_iterator I  = set_ids.begin();
-      typename std::set<ex_entity_id>::const_iterator IE = set_ids.end();
+      auto I  = set_ids.begin();
+      auto IE = set_ids.end();
       
       // Get the ids again so we can map current order back to file order...
       int error = ex_get_ids(id, EX_NODE_SET, TOPTR(ids));
@@ -2208,9 +2239,9 @@ namespace {
       while (I != IE) {
 	sets[i].id = *I++;
 	sets[i].type = EX_NODE_SET;
-	sets[i].entry_list = NULL;
-	sets[i].extra_list = NULL;
-	sets[i].distribution_factor_list = NULL;
+	sets[i].entry_list = nullptr;
+	sets[i].extra_list = nullptr;
+	sets[i].distribution_factor_list = nullptr;
 	i++;
       }
       
@@ -2289,7 +2320,7 @@ namespace {
 	    ns_nodes.resize(size);
 	    ns_df.resize(size);
 	    
-	    int error = ex_get_set(id, EX_NODE_SET, nodesets[p][ns].id, TOPTR(ns_nodes), 0);
+	    int error = ex_get_set(id, EX_NODE_SET, nodesets[p][ns].id, TOPTR(ns_nodes), nullptr);
 	    if (error < 0)
 	      exodus_error(__LINE__);
 	    if (nodesets[p][ns].dfCount > 0) {
@@ -2346,7 +2377,7 @@ namespace {
 	    NodeSet<INT>  &nset = nodesets[p][ns];
 	    size_t nnodes = nset.entity_count();
 	    nset.nodeOrderMap.resize(nnodes);
-	    int error = ex_get_set(id, EX_NODE_SET, nset.id, TOPTR(nset.nodeOrderMap), NULL);
+	    int error = ex_get_set(id, EX_NODE_SET, nset.id, TOPTR(nset.nodeOrderMap), nullptr);
 	    if (error < 0)
 	      exodus_error(__LINE__);
 	    
@@ -2375,25 +2406,25 @@ namespace {
     if (debug_level & 32)
       std::cout << "\nOutput NodeSets:\n";
 
-    for (size_t ns = 0; ns < glob_sets.size(); ns++) {
-      int error = ex_put_set(exoid, EX_NODE_SET, glob_sets[ns].id, TOPTR(glob_sets[ns].nodeSetNodes), 0);
+    for (auto & glob_set : glob_sets) {
+      int error = ex_put_set(exoid, EX_NODE_SET, glob_set.id, TOPTR(glob_set.nodeSetNodes), nullptr);
       if (error < 0)
 	exodus_error(__LINE__);
-      if (glob_sets[ns].dfCount > 0) {
-	error = ex_put_node_set_dist_fact(exoid, glob_sets[ns].id, TOPTR(glob_sets[ns].distFactors));
+      if (glob_set.dfCount > 0) {
+	error = ex_put_node_set_dist_fact(exoid, glob_set.id, TOPTR(glob_set.distFactors));
 	if (error < 0)
 	  exodus_error(__LINE__);
       }
 
       // Done with the memory; clear out the vector containing the bulk data nodes and distFactors.
-      std::vector<INT>().swap(glob_sets[ns].nodeSetNodes);
-      DistVector().swap(glob_sets[ns].distFactors);
+      std::vector<INT>().swap(glob_set.nodeSetNodes);
+      DistVector().swap(glob_set.distFactors);
 
-      SMART_ASSERT(glob_sets[ns].nodeSetNodes.empty());
-      SMART_ASSERT(glob_sets[ns].distFactors.empty());
+      SMART_ASSERT(glob_set.nodeSetNodes.empty());
+      SMART_ASSERT(glob_set.distFactors.empty());
 
       if (debug_level & 32) {
-	glob_sets[ns].dump();
+	glob_set.dump();
       }
     }
   }
@@ -2445,8 +2476,8 @@ namespace {
 	ExodusFile id(p);
 
 	sets[p].resize(set_ids.size());
-	std::set<ex_entity_id>::const_iterator I  = set_ids.begin();
-	std::set<ex_entity_id>::const_iterator IE = set_ids.end();
+	auto I  = set_ids.begin();
+	auto IE = set_ids.end();
 
 	// Get the ids again so we can map current order back to file order...
 	int error = ex_get_ids(id, EX_SIDE_SET, TOPTR(ids));
@@ -2458,9 +2489,9 @@ namespace {
 	while (I != IE) {
 	  exosets[j].id = *I++;
 	  exosets[j].type = EX_SIDE_SET;
-	  exosets[j].entry_list = NULL;
-	  exosets[j].extra_list = NULL;
-	  exosets[j].distribution_factor_list = NULL;
+	  exosets[j].entry_list = nullptr;
+	  exosets[j].extra_list = nullptr;
+	  exosets[j].distribution_factor_list = nullptr;
 	  j++;
 	}
       
@@ -2539,10 +2570,10 @@ namespace {
     std::fill(df_offset.begin(), df_offset.end(), 0);
 
     {
-      for (size_t ss = 0; ss < glob_ssets.size(); ss++) {
-	glob_ssets[ss].elems.resize(glob_ssets[ss].entity_count());
-	glob_ssets[ss].sides.resize(glob_ssets[ss].entity_count());
-	glob_ssets[ss].distFactors.resize(glob_ssets[ss].dfCount * ExodusFile::io_word_size());
+      for (auto & glob_sset : glob_ssets) {
+	glob_sset.elems.resize(glob_sset.entity_count());
+	glob_sset.sides.resize(glob_sset.entity_count());
+	glob_sset.distFactors.resize(glob_sset.dfCount * ExodusFile::io_word_size());
       }
     }
 
@@ -2586,36 +2617,36 @@ namespace {
       std::cout << "\nOutput SideSets:\n";
 
     if (debug_level & 16) {
-      for (size_t ss = 0; ss < glob_ssets.size(); ss++) {
-	glob_ssets[ss].dump();
+      for (auto & glob_sset : glob_ssets) {
+	glob_sset.dump();
       }
     }
 
     if (!interface.append()) {
       // Now write the actual sideset data...
       int exoid = ExodusFile::output();// output file identifier
-      for (size_t ss = 0; ss < glob_ssets.size(); ss++) {
-	int error = ex_put_set(exoid, EX_SIDE_SET, glob_ssets[ss].id,
-			       const_cast<INT*>(&glob_ssets[ss].elems[0]),
-			       const_cast<INT*>(&glob_ssets[ss].sides[0]));
+      for (auto & glob_sset : glob_ssets) {
+	int error = ex_put_set(exoid, EX_SIDE_SET, glob_sset.id,
+			       const_cast<INT*>(&glob_sset.elems[0]),
+			       const_cast<INT*>(&glob_sset.sides[0]));
 	if (error < 0)
 	  exodus_error(__LINE__);
-	if (glob_ssets[ss].dfCount > 0) {
-	  error = ex_put_set_dist_fact(exoid, EX_SIDE_SET, glob_ssets[ss].id,
-					   reinterpret_cast<void*>(&glob_ssets[ss].distFactors[0]));
+	if (glob_sset.dfCount > 0) {
+	  error = ex_put_set_dist_fact(exoid, EX_SIDE_SET, glob_sset.id,
+					   reinterpret_cast<void*>(&glob_sset.distFactors[0]));
 	  if (error < 0)
 	    exodus_error(__LINE__);
 	}
       }
     }
 
-    for (size_t ss = 0; ss < glob_ssets.size(); ss++) {
-      std::vector<INT>().swap(glob_ssets[ss].elems);
-      std::vector<INT>().swap(glob_ssets[ss].sides);
-      DistVector().swap(glob_ssets[ss].distFactors);
-      SMART_ASSERT(glob_ssets[ss].elems.empty());
-      SMART_ASSERT(glob_ssets[ss].sides.empty());
-      SMART_ASSERT(glob_ssets[ss].distFactors.empty());
+    for (auto & glob_sset : glob_ssets) {
+      std::vector<INT>().swap(glob_sset.elems);
+      std::vector<INT>().swap(glob_sset.sides);
+      DistVector().swap(glob_sset.distFactors);
+      SMART_ASSERT(glob_sset.elems.empty());
+      SMART_ASSERT(glob_sset.sides.empty());
+      SMART_ASSERT(glob_sset.distFactors.empty());
     }
   }
 
@@ -2696,10 +2727,10 @@ namespace {
 
     std::string var_name = "";
     int out_position = -1;
-    for (size_t i=0; i < variable_names.size(); i++) {
-      if (variable_names[i].second > 0) {
-	if (var_name != variable_names[i].first) {
-	  var_name = variable_names[i].first;
+    for (auto & variable_name : variable_names) {
+      if (variable_name.second > 0) {
+	if (var_name != variable_name.first) {
+	  var_name = variable_name.first;
 	  // Find which exodus variable matches this name
 	  out_position = -1;
 	  for (size_t j = 0; j < exo_names.size(); j++) {
@@ -2722,7 +2753,7 @@ namespace {
 	// Find out which block corresponds to the specified id.
 	int block = -1;
 	for (size_t b = 0; b < global.count(vars.objectType); b++) {
-	  if (glob_blocks[b].id == variable_names[i].second) {
+	  if (glob_blocks[b].id == variable_name.second) {
 	    block = b;
 	    break;
 	  }
@@ -2730,16 +2761,16 @@ namespace {
 
 	if (block == -1) {
 	  std::cerr << "ERROR: (EPU) User-specified block id of "
-		    << variable_names[i].second
-		    << " for variable '" << variable_names[i].first
+		    << variable_name.second
+		    << " for variable '" << variable_name.first
 		    << "' does not exist.\n";
 	  exit(EXIT_FAILURE);
 	}
 
 	int truth_table_loc = block * vars.count(OUT) + out_position;
 	if (global.truthTable[vars.objectType][truth_table_loc] == 0) {
-	  std::cerr << "ERROR: (EPU) Variable '" << variable_names[i].first
-		    << "' does not exist on block " << variable_names[i].second
+	  std::cerr << "ERROR: (EPU) Variable '" << variable_name.first
+		    << "' does not exist on block " << variable_name.second
 		    << ".\n";
 	  exit(EXIT_FAILURE);
 	} else {
@@ -2852,7 +2883,7 @@ namespace {
   void add_info_record(char *info_record, int size)
   {
     // Add 'uname' output to the passed in character string.
-    // Maximum size of string is 'size' (not including terminating NULL)
+    // Maximum size of string is 'size' (not including terminating nullptr)
     // This is used as information data in the concatenated results file
     // to help in tracking when/where/... the file was created
     struct utsname sys_info;
@@ -2876,7 +2907,7 @@ namespace {
   inline bool is_whitespace(char c)
   {
     static char white_space[] = {' ', '\t', '\n', '\r', ',', '\0'};
-    return (strchr(white_space, c) != NULL);
+    return (strchr(white_space, c) != nullptr);
   }
 
   void compress_white_space(char *str)
@@ -2888,7 +2919,7 @@ namespace {
     int cnt = 0;
 
     // Don't process an empty string.
-    if (str == NULL)
+    if (str == nullptr)
       return;
 
     // Skip leading...
@@ -2923,12 +2954,12 @@ namespace {
       const int length=256;
       static char time_string[length];
 
-      time_t calendar_time = time(NULL);
+      time_t calendar_time = time(nullptr);
       struct tm *local_time = localtime(&calendar_time);
 
       int error = strftime(time_string, length, format.c_str(), local_time);
       if (error != 0) {
-        time_string[length-1] = (char)NULL;
+        time_string[length-1] = '\0';
         return std::string(time_string);
       } else {
         return std::string("[ERROR]");
@@ -3151,7 +3182,7 @@ namespace {
 	      glob_sets[b].entity_count() > 0) {
 	    master_values[ivar][b] = new T[glob_sets[b].entity_count()];
 	  } else {
-	    master_values[ivar][b] = 0;
+	    master_values[ivar][b] = nullptr;
 	  }
 	}
       }

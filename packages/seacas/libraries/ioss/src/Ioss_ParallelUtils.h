@@ -34,9 +34,15 @@
 #define IOSS_Ioss_ParallelUtils_h
 
 #include <Ioss_CodeTypes.h>             // for Int64Vector, IntVector
+#include <Ioss_Utils.h>
 #include <stddef.h>                     // for size_t
 #include <string>                       // for string
 #include <vector>                       // for vector
+#include <assert.h>
+
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 namespace Ioss {
 
@@ -117,5 +123,119 @@ namespace Ioss {
   private:
     MPI_Comm communicator_;
   };
+
+#ifdef HAVE_MPI
+  inline MPI_Datatype mpi_type(double /*dummy*/)  {return MPI_DOUBLE;}
+  inline MPI_Datatype mpi_type(int /*dummy*/)     {return MPI_INT;}
+  inline MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG_INT;}
+  inline MPI_Datatype mpi_type(unsigned int /*dummy*/)     {return MPI_UNSIGNED;}
+
+  inline int power_2(int count)
+  {
+    // Return the power of two which is equal to or greater than 'count'
+    // count = 15 -> returns 16
+    // count = 16 -> returns 16
+    // count = 17 -> returns 32
+
+    // Use brute force...
+    int pow2 = 1;
+    while (pow2 < count) {
+      pow2 *= 2;
+    }
+    return pow2;
+  }
+
+  template <typename T>
+  int MY_Alltoallv64(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts, const std::vector<int64_t> &senddisp,
+                     std::vector<T> &recvbuf, const std::vector<int64_t> &recvcounts, const std::vector<int64_t> &recvdisp, MPI_Comm  comm)
+  {
+    int processor_count = 0;
+    int my_processor = 0;
+    MPI_Comm_size(comm, &processor_count);
+    MPI_Comm_rank(comm, &my_processor);
+
+    // Verify that all 'counts' can fit in an integer. Symmetric
+    // communication, so recvcounts are sendcounts on another processor.
+    for (int i=0; i < processor_count; i++) {
+      int snd_cnt = (int)sendcounts[i];
+      if ((int64_t)snd_cnt != sendcounts[i]) {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
+               << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
+               << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
+        std::cerr << errmsg.str();
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    size_t pow_2=power_2(processor_count);
+
+    for(size_t i=1; i < pow_2; i++) {
+      MPI_Status status;
+
+      int tag = 24713;
+      size_t exchange_proc = i ^ my_processor;
+      if(exchange_proc < (size_t)processor_count){
+        int snd_cnt = (int)sendcounts[exchange_proc]; // Converts from int64_t to int as needed by mpi
+        int rcv_cnt = (int)recvcounts[exchange_proc];
+        if ((size_t)my_processor < exchange_proc) {
+          MPI_Send(&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)), exchange_proc, tag, comm);
+          MPI_Recv(&recvbuf[recvdisp[exchange_proc]], rcv_cnt, mpi_type(T(0)), exchange_proc, tag, comm, &status);
+        }
+        else {
+          MPI_Recv(&recvbuf[recvdisp[exchange_proc]], rcv_cnt, mpi_type(T(0)), exchange_proc, tag, comm, &status);
+          MPI_Send(&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)), exchange_proc, tag, comm);
+        }
+      }
+    }
+
+    // Take care of this processor's data movement...
+    std::copy(&sendbuf[senddisp[my_processor]],
+              &sendbuf[senddisp[my_processor]+sendcounts[my_processor]],
+              &recvbuf[recvdisp[my_processor]]);
+    return 0;
+  }
+
+  template <typename T>
+  int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcnts, const std::vector<int64_t> &senddisp, 
+                   std::vector<T> &recvbuf, const std::vector<int64_t> &recvcnts, const std::vector<int64_t> &recvdisp, MPI_Comm comm)
+  {
+    // Wrapper to handle case where send/recv counts and displacements are 64-bit integers.
+    // Two cases:
+    // 1) They are of type 64-bit integers, but only storing data in the 32-bit integer range.
+    //    -- if (sendcnts[#proc-1] + senddisp[#proc-1] < 2^31, then we are ok
+    // 2) They are of type 64-bit integers, and storing data in the 64-bit integer range.
+    //    -- call special alltoallv which does point-to-point sends
+    int processor_count = 0;
+    MPI_Comm_size(comm, &processor_count);
+    size_t max_comm = sendcnts[processor_count-1] + senddisp[processor_count-1];
+    size_t one = 1;
+    if (max_comm < one<<31) {
+      // count and displacement data in range, need to copy to integer vector.
+      std::vector<int> send_cnt(sendcnts.begin(), sendcnts.end());
+      std::vector<int> send_dis(senddisp.begin(), senddisp.end());
+      std::vector<int> recv_cnt(recvcnts.begin(), recvcnts.end());
+      std::vector<int> recv_dis(recvdisp.begin(), recvdisp.end());
+      return MPI_Alltoallv(TOPTR(sendbuf), TOPTR(send_cnt), TOPTR(send_dis), mpi_type(T(0)),
+                           TOPTR(recvbuf), TOPTR(recv_cnt), TOPTR(recv_dis), mpi_type(T(0)), comm);
+    }
+    else {
+      // Same as if each processor sent a message to every other process with:
+      //     MPI_Send(sendbuf+senddisp[i]*sizeof(sendtype),sendcnts[i], sendtype, i, tag, comm);
+      // And received a message from each processor with a call to:
+      //     MPI_Recv(recvbuf+recvdisp[i]*sizeof(recvtype),recvcnts[i], recvtype, i, tag, comm);
+      return MY_Alltoallv64(sendbuf, sendcnts, senddisp, recvbuf, recvcnts, recvdisp, comm);
+    }
+  }
+
+  template <typename T>
+  int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int> &sendcnts, const std::vector<int> &senddisp, 
+                   std::vector<T> &recvbuf, const std::vector<int> &recvcnts, const std::vector<int> &recvdisp,
+                   MPI_Comm comm)
+  {
+    return MPI_Alltoallv(TOPTR(sendbuf), (int*)TOPTR(sendcnts), (int*)TOPTR(senddisp), mpi_type(T(0)),
+                         TOPTR(recvbuf), (int*)TOPTR(recvcnts), (int*)TOPTR(recvdisp), mpi_type(T(0)), comm);
+  }
+#endif
 }
 #endif

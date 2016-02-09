@@ -782,9 +782,13 @@ namespace Tpetra {
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
     size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
 
-    //! Returns the current number of entries on this node in the specified local row.
-    /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
-    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
+    /// \brief Get the number of entries in the given row (local index).
+    ///
+    /// \return The number of entries in the given row, specified by
+    ///   local index, on the calling MPI process.  If the specified
+    ///   local row index is invalid on the calling process, return
+    ///   <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>.
+    size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const;
 
     //! \brief Returns the total number of indices allocated for the graph, across all rows on this node.
     /*! This is the allocation available to the user. Actual allocation may be larger, for example, after
@@ -2507,10 +2511,18 @@ namespace Tpetra {
     /// \brief The maximum number of entries to allow in each locally
     ///   owned row, per row.
     ///
-    /// This is an argument to some of the graph's constructors.
-    /// Either this or numAllocForAllRows_ is used, but not both.
-    /// allocateIndices, setAllIndices, and expertStaticFillComplete
-    /// all deallocate this array once they are done with it.
+    /// This comes in as an argument to some of the graph's
+    /// constructors.  Either this or numAllocForAllRows_ is used, but
+    /// not both.  allocateIndices(), setAllIndices(), and
+    /// expertStaticFillComplete() all deallocate this array once they
+    /// are done with it.
+    ///
+    /// This is a host View because it is only ever used on the host.
+    /// It has the HostMirror type for backwards compatibility; this
+    /// used to be a DualView with default layout, so making this a
+    /// HostMirror ensures that we can still take it directly by
+    /// assignment from the constructors that take DualView, without a
+    /// deep copy.
     ///
     /// This array <i>only</i> exists on a process before the graph's
     /// indices are allocated on that process.  After that point, it
@@ -2521,7 +2533,8 @@ namespace Tpetra {
     /// allocate, rather than doing lazy allocation at first insert.
     /// This will make both k_numAllocPerRow_ and numAllocForAllRows_
     /// obsolete.
-    Kokkos::DualView<const size_t*, Kokkos::LayoutLeft, execution_space> k_numAllocPerRow_;
+    typename Kokkos::View<const size_t*, execution_space>::HostMirror
+    k_numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
     ///
@@ -2582,9 +2595,6 @@ namespace Tpetra {
     /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
-    ///
-    /// [we may delete this to save memory on fillComplete, if "Delete
-    /// Row Pointers" is specified.]
     typename local_graph_type::row_map_type::const_type k_rowPtrs_;
 
     //@}
@@ -2627,15 +2637,17 @@ namespace Tpetra {
     /// for that row.
     Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal> > gblInds2D_;
 
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space> t_numRowEntries_;
-
     /// \brief The number of local entries in each locally owned row.
     ///
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
     ///
+    /// This is a host View because it is only ever read or modified
+    /// on the host.
+    ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-    t_numRowEntries_ k_numRowEntries_;
+    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, execution_space>::HostMirror
+    k_numRowEntries_;
 
     //@}
 

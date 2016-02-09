@@ -40,7 +40,7 @@
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include <iostream>
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for printf, NULL, fprintf, etc
+#include <stdio.h>                      // for printf, nullptr, fprintf, etc
 #include <stdlib.h>                     // for free, exit, malloc
 #include <string.h>                     // for strcmp
 
@@ -354,7 +354,7 @@ int internal_main(int argc, char *argv[], INT /* dummy */)
     }
   }
   else
-    mesh.coords = NULL;
+    mesh.coords = nullptr;
 
   mesh.elem_type = (E_Type *)array_alloc(1, mesh.num_elems, sizeof(E_Type));
   mesh.connect   = (INT **)array_alloc(2, mesh.num_elems,
@@ -745,7 +745,7 @@ namespace {
       printf("\tSPHERES are being treated as concentrated mass - connectivity exists\n");
     if (prob->skip_checks == 1)
       printf("\tWARNING: side id error checks turned off\n");
-    if (prob->groups != NULL)
+    if (prob->groups != nullptr)
       {
 	printf("\telement block groups defined\n");
 	printf("\tgroup string: \"%s\"\n", prob->groups);

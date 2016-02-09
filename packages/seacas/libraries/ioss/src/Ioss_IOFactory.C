@@ -32,7 +32,7 @@
 
 #include <Ioss_IOFactory.h>
 #include <Ioss_Utils.h>                 // for IOSS_ERROR
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for nullptr
 #include <map>                          // for _Rb_tree_iterator, etc
 #include <ostream>                      // for operator<<, basic_ostream, etc
 #include <string>                       // for char_traits, string, etc
@@ -53,7 +53,7 @@ Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
 					  MPI_Comm communicator,
 					  const Ioss::PropertyManager &properties)
 {
-  Ioss::DatabaseIO *db = NULL;
+  Ioss::DatabaseIO *db = nullptr;
   Ioss::IOFactoryMap::iterator iter = registry()->find(type);
   if (iter == registry()->end()) {
     if (registry()->empty()) {

@@ -39,6 +39,14 @@
 // ************************************************************************
 // @HEADER
 
+// This benchmark compares performance of common operations by
+// Epetra_Vector and Teptra::Vector.  Both Epetra and Tpetra implement
+// sparse matrix and dense vector data structures and computational
+// kernels for users and other Trilinos data structures.  Both
+// packages use MPI (Message Passing Interface) for distributed-memory
+// parallelism.  Tpetra additionally uses Kokkos for shared-memory
+// parallelism within an MPI process.
+
 #include <Tpetra_ConfigDefs.hpp>
 
 #ifdef HAVE_TPETRACORE_EPETRA

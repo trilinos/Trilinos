@@ -332,7 +332,7 @@ private:
 // Specialize the solver_traits template for SuperLU_DIST
 template <>
 struct solver_traits<Superludist> {
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && !defined(__clang__)
   typedef Meta::make_list3<double, std::complex<double>, SLUD::Z::doublecomplex> supported_scalars;
 #else
   typedef Meta::make_list1<double> supported_scalars;

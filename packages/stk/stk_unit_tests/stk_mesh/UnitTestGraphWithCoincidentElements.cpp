@@ -145,7 +145,10 @@ public:
     virtual ~MockIdMapper() {}
     virtual stk::mesh::EntityId localToGlobal(stk::mesh::impl::LocalId local) const
     {
-        return globalIds[local];
+        if(local<0)
+            return -local;
+        else
+            return globalIds[local];
     }
     virtual stk::mesh::impl::LocalId globalToLocal(stk::mesh::EntityId global) const
     {
@@ -184,7 +187,7 @@ TEST(CoincidentElements, CorrectFaceId)
             globalIds = {3};
 
         MockIdMapper idMapper(globalIds);
-        choose_face_id_for_coincident_elements(graph, parallelInfoForGraphEdges, extractedCoincidentElements, idMapper, comm);
+        make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(graph, parallelInfoForGraphEdges, extractedCoincidentElements, idMapper, comm);
 
         if(stk::parallel_machine_rank(comm) == 0)
         {

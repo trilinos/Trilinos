@@ -42,7 +42,7 @@
 #include <Ioss_PropertyManager.h>       // for PropertyManager
 #include <Ioss_State.h>                 // for State, State::STATE_INVALID
 #include <Ioss_SurfaceSplit.h>          // for SurfaceSplitType
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t, nullptr
 #include <stdint.h>                     // for int64_t
 #include <map>                          // for map
 #include <string>                       // for string
@@ -79,7 +79,7 @@ namespace Ioss {
     // If 'error_message' non-null, then put the warning message into the string and return it.
     // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
       //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    virtual bool ok(bool write_message = false, std::string *error_message=NULL, int *bad_count=NULL) const
+    virtual bool ok(bool write_message = false, std::string *error_message=nullptr, int *bad_count=nullptr) const
     {
       if (bad_count) *bad_count = 0;
       return dbState != Ioss::STATE_INVALID;

@@ -62,7 +62,7 @@
 
 #include <exodusII.h>                   // for ex_inquire_int, ex_put_var, etc
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf, NULL, printf, etc
+#include <stdio.h>                      // for sprintf, nullptr, printf, etc
 #include <stdlib.h>                     // for calloc, free, exit
 #include <string.h>                     // for strtok, memcpy, strcat, etc
 #include <assert.h>
@@ -73,10 +73,10 @@
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
 #else
-#define TOPTR(x) (x.empty() ? NULL : &x[0])
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
 #endif
 
-mat_t *mat_file=NULL;  /* file for binary .mat input */
+mat_t *mat_file=nullptr;  /* file for binary .mat input */
 
 /**********************************************************************/
 static const char *qainfo[] =
@@ -116,7 +116,7 @@ int main (int argc, char *argv[]) {
 
   /*open input file*/
   mat_file = Mat_Open(argv[1], MAT_ACC_RDONLY);
-  if (mat_file == NULL) {
+  if (mat_file == nullptr) {
     printf("Error opening matlab file %s\n", argv[1]);
     return(1);
   }
@@ -243,7 +243,7 @@ int main (int argc, char *argv[]) {
 
       sprintf(name,"nsnod%02d",i+1);
       matGetInt(name,num_nodeset_nodes[i],1,node_list);
-      ex_put_set(exo_file,EX_NODE_SET,ids[i], TOPTR(node_list),NULL);
+      ex_put_set(exo_file,EX_NODE_SET,ids[i], TOPTR(node_list),nullptr);
 
       sprintf(name,"nsfac%02d",i+1);
       matGetDbl(name,nnsdfac[i],1,dist_fact);
@@ -272,8 +272,8 @@ int main (int argc, char *argv[]) {
 
     ex_put_block(exo_file, EX_ELEM_BLOCK, ids[i], curr,
                  num_elem_in_block[i], num_node_per_elem, 0, 0, 0);
-    ex_put_conn(exo_file,EX_ELEM_BLOCK,ids[i], TOPTR(connect),NULL,NULL);
-    curr = strtok(NULL, "\n");
+    ex_put_conn(exo_file,EX_ELEM_BLOCK,ids[i], TOPTR(connect),nullptr,nullptr);
+    curr = strtok(nullptr, "\n");
   }
   free(blknames);
 
@@ -367,7 +367,7 @@ int main (int argc, char *argv[]) {
 int matGetStr (const char *name,char *data)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == NULL)
+  if (matvar == nullptr)
     return -1;
 
   int strlen = matvar->nbytes;
@@ -385,7 +385,7 @@ int matGetStr (const char *name,char *data)
 int matGetDbl (const char *name,size_t n1,size_t n2, std::vector<double> &data)
 {
     matvar_t *matvar = Mat_VarRead(mat_file, name);
-    if (matvar == NULL)
+    if (matvar == nullptr)
       return -1;
 
     assert(matvar->dims[0] == n1);
@@ -402,7 +402,7 @@ int matGetDbl (const char *name,size_t n1,size_t n2, std::vector<double> &data)
 int matGetInt (const char *name,size_t n1,size_t n2, std::vector<int> &data)
 {
     matvar_t *matvar = Mat_VarRead(mat_file, name);
-    if (matvar == NULL)
+    if (matvar == nullptr)
       return -1;
 
     assert(matvar->dims[0] == n1);
@@ -419,7 +419,7 @@ int matGetInt (const char *name,size_t n1,size_t n2, std::vector<int> &data)
 int matGetInt (const char *name)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == NULL)
+  if (matvar == nullptr)
     return -1;
 
   assert(matvar->dims[0] == 1);
@@ -435,7 +435,7 @@ int matGetInt (const char *name)
 int matArrNRow (const char *name)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == NULL)
+  if (matvar == nullptr)
     return -1;
 
   int nrow = matvar->dims[0];
@@ -447,7 +447,7 @@ int matArrNRow (const char *name)
 int matArrNCol (const char *name)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name);
-  if (matvar == NULL)
+  if (matvar == nullptr)
     return -1;
 
   int ncol = matvar->dims[1];
@@ -464,7 +464,7 @@ void del_arg(int *argc, char* argv[], int j)
     argv[jj-1]=argv[jj];
   }
   (*argc)--;
-  argv[*argc]=0;
+  argv[*argc]=nullptr;
 }
 
 void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std::string &name)
@@ -477,7 +477,7 @@ void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std:
   char *curr = strtok(str,"\n");
   for (int i=0; i<num_vars; i++) {
     str2[i]=curr;
-    curr = strtok(NULL,"\n");
+    curr = strtok(nullptr,"\n");
   }
   ex_put_variable_names(exo_file, entity, num_vars, str2);
   free(str);

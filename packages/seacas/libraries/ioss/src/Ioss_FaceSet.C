@@ -43,7 +43,7 @@
 #include "Ioss_GroupingEntity.h"
 
 Ioss::FaceSet::FaceSet()
-  : Ioss::EntitySet(NULL, "invalid", 0)
+  : Ioss::EntitySet(nullptr, "invalid", 0)
 {}
 
 Ioss::FaceSet::FaceSet(Ioss::DatabaseIO *io_database, const std::string& my_name,

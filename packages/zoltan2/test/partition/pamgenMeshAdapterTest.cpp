@@ -313,11 +313,9 @@ int main(int narg, char *arg[]) {
 
     if (!me) {
       metricObject->printMetrics(cout);
-      //problem.printMetrics(cout);
 
       if (action == "scotch") {
 	graphMetricObject->printGraphMetrics(cout);
-        //problem.printGraphMetrics(cout);
       }
     }
   }

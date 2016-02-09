@@ -82,7 +82,7 @@ namespace {
 
 Ioss::Field::Field() :
   name_(""), rawCount_(0), transCount_(0), size_(0), index_(0),
-  type_(INVALID), role_(INTERNAL), rawStorage_(NULL), transStorage_(NULL)
+  type_(INVALID), role_(INTERNAL), rawStorage_(nullptr), transStorage_(nullptr)
 { rawStorage_ = transStorage_ = Ioss::VariableType::factory("invalid"); }
 
 Ioss::Field::Field(const std::string &name,
@@ -91,7 +91,7 @@ Ioss::Field::Field(const std::string &name,
 		   const Ioss::Field::RoleType role,
 		   size_t value_count, size_t index) :
   name_(name), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
-  type_(type), role_(role), rawStorage_(NULL), transStorage_(NULL)
+  type_(type), role_(role), rawStorage_(nullptr), transStorage_(nullptr)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage);
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
@@ -104,7 +104,7 @@ Ioss::Field::Field(const std::string &name,
 		   const Ioss::Field::RoleType role,
 		   size_t value_count, size_t index) :
   name_(name), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
-  type_(type), role_(role), rawStorage_(NULL), transStorage_(NULL)
+  type_(type), role_(role), rawStorage_(nullptr), transStorage_(nullptr)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage, copies);
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
@@ -206,9 +206,7 @@ size_t Ioss::Field::get_size() const
 
     new_this->transCount_   = rawCount_;
     new_this->transStorage_ = rawStorage_;
-    std::vector<Transform*>::const_iterator I = transforms_.begin();
-    while (I != transforms_.end()) {
-      Transform* my_transform = *I++;
+    for (auto my_transform : transforms_) {
       new_this->transCount_   = my_transform->output_count(transCount_);
       new_this->transStorage_ = my_transform->output_storage(transStorage_);
       size_t size = internal_get_size(type_, transCount_, transStorage_);
@@ -224,7 +222,7 @@ bool Ioss::Field::add_transform(Transform* my_transform)
   const Ioss::VariableType *new_storage = my_transform->output_storage(transStorage_);
   size_t new_count = my_transform->output_count(transCount_);
 
-  if (new_storage != NULL && new_count > 0) {
+  if (new_storage != nullptr && new_count > 0) {
     transStorage_ = new_storage;
     transCount_   = new_count;
   } else {
@@ -244,12 +242,10 @@ bool Ioss::Field::add_transform(Transform* my_transform)
 
 bool Ioss::Field::transform(void *data)
 {
-  std::vector<Transform*>::const_iterator I = transforms_.begin();
   transStorage_ = rawStorage_;
   transCount_   = rawCount_;
 
-  while (I != transforms_.end()) {
-    Transform* my_transform = *I++;
+  for (auto my_transform : transforms_) {
     my_transform->execute(*this, data);
 
     transStorage_ = my_transform->output_storage(transStorage_);

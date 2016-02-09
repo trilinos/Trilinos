@@ -315,15 +315,15 @@ ExodusMesh::ExodusMesh(const ExodusData &exodusData) : mExodusData(exodusData)
     }
 
     mGlobalNumberOfElements = 0;
-    for(size_t i=0; i < mExodusData.globalNumberOfElementsInBlock.size(); i++)
+    for(auto & elem : mExodusData.globalNumberOfElementsInBlock)
     {
-        mGlobalNumberOfElements += mExodusData.globalNumberOfElementsInBlock[i];
+        mGlobalNumberOfElements += elem;
     }
 
     mLocalNumberOfElements = 0;
-    for(size_t i=0; i < mExodusData.localNumberOfElementsInBlock.size(); i++)
+    for(auto & elem : mExodusData.localNumberOfElementsInBlock)
     {
-        mLocalNumberOfElements += mExodusData.localNumberOfElementsInBlock[i];
+        mLocalNumberOfElements += elem;
     }
 }
 

@@ -139,9 +139,9 @@ int main(int argc, char *argv[])
       if(aprepro.ap_options.keep_history)
       {
         std::vector<SEAMS::history_data> hist = aprepro.get_history();
-        for(size_t i = 0; i < hist.size(); i++)
+        for(auto curr_history : hist)
         {
-          SEAMS::history_data curr_history = hist[i];
+          
           std::cout << curr_history.original << " was substituted with " <<
                        curr_history.substitution << " at index " <<
                        curr_history.index << std::endl;

@@ -69,7 +69,7 @@ namespace
     stk::mesh::Part &skinPart = metaData.declare_part("skin", metaData.side_rank());
     stk::io::put_io_part_attribute(skinPart);
 
-    stk::mesh::create_exposed_boundary_sides(bulkData, allEntities, skinPart);
+    stk::mesh::create_exposed_boundary_sides(bulkData, allEntities, {&skinPart});
 
     // ==================================================
     // VERIFICATION

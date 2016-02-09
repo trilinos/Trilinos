@@ -45,6 +45,7 @@ namespace Ioss {
     static void factory();
     ~Pyramid5();
 
+    ElementShape shape() const {return ElementShape::PYRAMID;}
     int spatial_dimension()           const;
     int parametric_dimension()       const;
     bool is_element()                 const {return true;}

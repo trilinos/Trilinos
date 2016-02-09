@@ -44,7 +44,7 @@
 
 /*****************************************************************************/
 Excn::ParallelDisks::ParallelDisks()
-  : disk_names(NULL), number_of_raids(0), raid_offset(0)
+  : disk_names(nullptr), number_of_raids(0), raid_offset(0)
 {}
 
 /*****************************************************************************/

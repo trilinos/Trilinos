@@ -35,7 +35,6 @@
 
 #include <Ioss_Property.h>              // for Property
 #include <stddef.h>                     // for size_t
-#include <functional>                   // for less
 #include <map>                          // for map, map<>::value_compare
 #include <string>                       // for string, operator<
 #include <vector>                       // for vector

@@ -46,22 +46,22 @@ md_getsubopt (char **optionp, const char **tokens, char **valuep)
 
   /* Find end of next token.  */
   endp = strchr (*optionp, ',');
-  if (endp == NULL)
+  if (endp == nullptr)
     endp = strchr (*optionp, '\0');
 
   /* Find start of value.  */
   vstart = (char*)memchr (*optionp, '=', endp - *optionp);
-  if (vstart == NULL)
+  if (vstart == nullptr)
     vstart = endp;
 
   /* Try to match the characters between *OPTIONP and VSTART against
      one of the TOKENS.  */
-  for (cnt = 0; tokens[cnt] != NULL; ++cnt)
+  for (cnt = 0; tokens[cnt] != nullptr; ++cnt)
     if (memcmp (*optionp, tokens[cnt], vstart - *optionp) == 0
 	&& tokens[cnt][vstart - *optionp] == '\0')
       {
 	/* We found the current option in TOKENS.  */
-        *valuep = vstart != endp ? vstart + 1 : NULL;
+        *valuep = vstart != endp ? vstart + 1 : nullptr;
 
 	if (*endp != '\0')
 	  *endp++ = '\0';

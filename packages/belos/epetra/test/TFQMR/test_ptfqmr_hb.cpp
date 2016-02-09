@@ -176,9 +176,11 @@ int main(int argc, char *argv[]) {
     // *****Construct solution std::vector and random right-hand-sides *****
     //
     RCP<Epetra_MultiVector> X = rcp( new Epetra_MultiVector(Map, numrhs) );
-    X->PutScalar( 0.0 );
     RCP<Epetra_MultiVector> B = rcp( new Epetra_MultiVector(Map, numrhs) );
-    B->Random();
+    MVT::MvRandom( *X );
+    OPT::Apply( *A, *X, *B );
+    MVT::MvInit( *X, 0.0 );
+
     Belos::LinearProblem<double,MV,OP> problem( A, X, B );
     if (leftprec)
       problem.setLeftPrec( Prec );

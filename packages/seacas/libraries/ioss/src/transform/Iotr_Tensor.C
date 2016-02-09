@@ -91,7 +91,7 @@ namespace Iotr {
     static const Ioss::VariableType *st33 =
       Ioss::VariableType::factory("sym_tensor_33");
     if (in != st33)
-      return NULL;
+      return nullptr;
 
     switch (type_) {
     case INVARIANT1:
@@ -105,7 +105,7 @@ namespace Iotr {
     case INVARIANTS:
       return Ioss::VariableType::factory("Real[3]");
     default:
-      return NULL;
+      return nullptr;
     }
   }
 

@@ -58,7 +58,7 @@ bool are_lists_epsilon_equal(int cmp_len, const ScalarType vec_listA[][DIM], con
     for (unsigned j = 0; j < DIM; ++j)
     {
       ScalarType diff = vec_listA[i][j] - vec_listB[i][j];
-      if (abs(diff) > cmp_epsilon)
+      if (std::abs(diff) > cmp_epsilon)
         return false;
     }
   }
