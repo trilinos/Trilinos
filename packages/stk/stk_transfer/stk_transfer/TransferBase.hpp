@@ -52,6 +52,22 @@ public :
   virtual void local_search()  = 0;
   virtual void apply()         = 0;
 };
+
+class NewTransferBase {
+public :
+  NewTransferBase(){};
+  virtual ~NewTransferBase(){};
+  void initialize() {
+    coarse_search();
+    communication();
+    local_search();
+  }
+  virtual void coarse_search() = 0;
+  virtual void communication() = 0;
+  virtual void communicate_destination_points() = 0;
+  virtual void local_search()  = 0;
+  virtual void apply()         = 0;
+};
 }
 }
 #endif

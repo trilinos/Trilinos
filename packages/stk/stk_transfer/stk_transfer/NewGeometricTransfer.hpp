@@ -31,8 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef  STK_GEOMETRICTRANSFER_HPP
-#define  STK_GEOMETRICTRANSFER_HPP
+#ifndef  NEW_STK_GEOMETRICTRANSFER_HPP
+#define  NEW_STK_GEOMETRICTRANSFER_HPP
 
 #include <set>
 #include <vector>
@@ -43,14 +43,13 @@
 
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/environment/Env.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_transfer/TransferBase.hpp>
 #include <stk_search/SearchMethod.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#include<impl/Kokkos_Timer.hpp>
 
 
 namespace stk {
@@ -78,7 +77,7 @@ bool local_is_sorted(ForwardIterator first, ForwardIterator last, Compare compar
   return true;
 }
 
-template <class INTERPOLATE> class GeometricTransfer : public TransferBase {
+template <class INTERPOLATE> class NewGeometricTransfer : public NewTransferBase {
 
 public :
 
@@ -103,18 +102,21 @@ public :
 
   enum {Dimension = 3};
 
-  GeometricTransfer(boost::shared_ptr<MeshA> &mesha,
+  NewGeometricTransfer(boost::shared_ptr<MeshA> &mesha,
                     boost::shared_ptr<MeshB> &meshb,
                     const std::string &name,
                     const double expansion_factor = 1.5,
                     const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE);
-  virtual ~GeometricTransfer(){};
+  virtual ~NewGeometricTransfer(){};
   virtual void coarse_search();
   virtual void communication();
+  virtual void communicate_destination_points();
   virtual void local_search();
   virtual void apply();
 
-  void determine_entities_to_copy(typename MeshA::EntityProcVec &entities_to_copy) const;
+  void determine_entities_to_copy(typename MeshB::EntityProcVec   &entities_to_copy_to,
+                                  typename MeshA::EntityProcVec   &entities_to_copy_from ) const;
+
   const boost::shared_ptr<MeshA> mesha() const {return m_mesha;}
   const boost::shared_ptr<MeshB> meshb() const {return m_meshb;}
 
@@ -133,6 +135,7 @@ private :
 
   EntityProcRelationVec m_global_range_to_domain;
   EntityKeyMap          m_local_range_to_domain;
+  InterpolateClass      m_interpolate;
 
   template <bool B, typename T = void> struct Enable_If          { typedef T type; };
   template <        typename T       > struct Enable_If<false, T>{                 };
@@ -223,7 +226,7 @@ private :
 
 
 
-template <class INTERPOLATE> GeometricTransfer<INTERPOLATE>::GeometricTransfer (boost::shared_ptr<MeshA> &mesha,
+template <class INTERPOLATE> NewGeometricTransfer<INTERPOLATE>::NewGeometricTransfer (boost::shared_ptr<MeshA> &mesha,
                                                                                 boost::shared_ptr<MeshB> &meshb,
                                                                                 const std::string        &name,
                                                                                 const double              expansion_factor,
@@ -234,7 +237,7 @@ template <class INTERPOLATE> GeometricTransfer<INTERPOLATE>::GeometricTransfer (
   m_expansion_factor(expansion_factor),
   m_search_method(search_method) {}
 
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::coarse_search() {
+template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::coarse_search() {
 
   m_global_range_to_domain.clear();
   coarse_search(m_global_range_to_domain,
@@ -242,25 +245,40 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::coarse_search(
                 *m_meshb,
                 m_expansion_factor);
 }
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication() {
+template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::communication() {
 
-  ParallelMachine comm = m_mesha->comm();
+  ParallelMachine comm = m_meshb->comm();
   const unsigned p_size = parallel_machine_size(comm);
   if (1 < p_size) {
-    if (optional_functions<MeshA>::copy_entities) copy_domain_to_range_processors();
-    else ThrowRequireMsg (optional_functions<MeshA>::copy_entities,
-             __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities.");
+    if (optional_functions<MeshB>::copy_entities) copy_domain_to_range_processors();
+    else ThrowRequireMsg (optional_functions<MeshB>::copy_entities,
+             __FILE__<<":"<<__LINE__<<" Still working on communication capabilities.");
   }
 }
 
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::local_search() {
+template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::communicate_destination_points() {
+
+  typename MeshB::EntityProcVec to_entity_keys;
+  typename MeshA::EntityProcVec from_entity_keys;
+
+  determine_entities_to_copy(to_entity_keys, from_entity_keys);
+  m_interpolate.communicate_to_points(to_entity_keys, *m_meshb);
+
   localize_entity_key_map();
-  INTERPOLATE::filter_to_nearest(m_local_range_to_domain, *m_mesha, *m_meshb);
+  m_interpolate.INTERPOLATE::buildExchangeLists(to_entity_keys, from_entity_keys);
+  m_interpolate.INTERPOLATE::obtain_parametric_coords(from_entity_keys, *m_mesha);
+  m_interpolate.INTERPOLATE::communicate_distances();
+  m_interpolate.INTERPOLATE::filter_to_nearest(to_entity_keys, from_entity_keys);
+}
+
+template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::local_search() {
+
+//  m_interpolate.INTERPOLATE::filter_to_nearest(m_local_range_to_domain, to_entity_keys, from_entity_keys, *m_mesha, *m_meshb);
+
 }
 
 
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::apply(){
-
+template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::apply(){
   ParallelMachine comm = m_mesha->comm();
   const unsigned my_rank = parallel_machine_rank(comm);
   const unsigned num_procs = parallel_machine_size(comm);
@@ -268,9 +286,9 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::apply(){
   //Execute the transfer
   Kokkos::Impl::Timer timer;
 
-  m_mesha->update_values();
-  INTERPOLATE::apply(*m_meshb, *m_mesha, m_local_range_to_domain);
   m_meshb->update_values();
+  m_interpolate.INTERPOLATE::apply(*m_meshb, *m_mesha);
+  m_mesha->update_values();
 
 
   double find_time = timer.seconds();
@@ -283,36 +301,43 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::apply(){
     std::cout << "Apply Times:" << std::endl << "   Min: " << minTime
         << "   Max: " << maxTime << "   Avg: " << avgTime/num_procs << std::endl;
   }
-
 }
 
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::determine_entities_to_copy(
-                       typename MeshA::EntityProcVec   &entities_to_copy) const {
-  entities_to_copy.clear();
+template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::determine_entities_to_copy(
+                         typename MeshB::EntityProcVec   &entities_to_copy_to,
+                         typename MeshA::EntityProcVec   &entities_to_copy_from ) const {
 
-  ParallelMachine comm = m_mesha->comm();
+  entities_to_copy_to.clear();
+  entities_to_copy_from.clear();
+
+  ParallelMachine comm = m_meshb->comm();
   const unsigned my_rank = parallel_machine_rank(comm);
 
   const typename EntityProcRelationVec::const_iterator end=m_global_range_to_domain.end();
   for (typename EntityProcRelationVec::const_iterator i=m_global_range_to_domain.begin(); i!=end; ++i) {
     const unsigned            domain_owning_rank = i->second.proc();
     const unsigned             range_owning_rank = i->first.proc();
-    if (domain_owning_rank == my_rank && range_owning_rank != my_rank) {
+
+    if (range_owning_rank == my_rank) {
+      const EntityKeyB entity = i->first.id();
+      const typename MeshB::EntityProc ep(entity, domain_owning_rank);
+      entities_to_copy_to.push_back(ep);
+    }
+    if (domain_owning_rank == my_rank) {
       const EntityKeyA entity = i->second.id();
-      const typename MeshA::EntityProc ep(entity, range_owning_rank);
-      entities_to_copy.push_back(ep);
+      const typename MeshA::EntityProc ep (entity, range_owning_rank);
+      entities_to_copy_from.push_back(ep);
     }
   }
-  std::sort(entities_to_copy.begin(), entities_to_copy.end());
-  typename MeshA::EntityProcVec::iterator del = std::unique(entities_to_copy.begin(), entities_to_copy.end());
-  entities_to_copy.resize(std::distance(entities_to_copy.begin(), del));
+  std::sort(entities_to_copy_to.begin(), entities_to_copy_to.end());
+
 }
 
 
 template <class INTERPOLATE> void
-GeometricTransfer<INTERPOLATE>::localize_entity_key_map()  {
+NewGeometricTransfer<INTERPOLATE>::localize_entity_key_map()  {
 
-  ParallelMachine comm = m_mesha->comm();
+  ParallelMachine comm = m_meshb->comm();
   const unsigned my_rank = parallel_machine_rank(comm);
 
   m_local_range_to_domain.clear();
@@ -323,15 +348,16 @@ GeometricTransfer<INTERPOLATE>::localize_entity_key_map()  {
 }
 
 template <class INTERPOLATE> void
-GeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors()  {
+NewGeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors()  {
 
-  typename MeshA::EntityProcVec entities_to_copy ;
+  typename MeshB::EntityProcVec entities_to_copy_to ;
+  typename MeshA::EntityProcVec entities_to_copy_from ;
 
-  determine_entities_to_copy(entities_to_copy);
-  copy_entities(*m_mesha, entities_to_copy, m_name);
+  determine_entities_to_copy(entities_to_copy_to, entities_to_copy_from);
+  copy_entities(*m_meshb, entities_to_copy_to, m_name);
 }
 
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::delete_range_points_found(
+template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::delete_range_points_found(
                                std::vector<BoundingBoxB>            &range_vector,
                                const EntityProcRelationVec          &del) const {
 
@@ -358,7 +384,7 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::delete_range_p
   swap(difference, range_vector);
 }
 
-template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
+template <class INTERPOLATE>  void NewGeometricTransfer<INTERPOLATE>::coarse_search
 (EntityProcRelationVec   &range_to_domain,
  const MeshA             &mesha,
  const MeshB             &meshb,
@@ -370,13 +396,12 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
   mesha.bounding_boxes(domain_vector);
   meshb.bounding_boxes(range_vector);
 
+
   if( !local_is_sorted( domain_vector.begin(), domain_vector.end(), BoundingBoxCompare<BoundingBoxA>() ) )
     std::sort(domain_vector.begin(),domain_vector.end(),BoundingBoxCompare<BoundingBoxA>());
   if( !local_is_sorted( range_vector.begin(), range_vector.end(), BoundingBoxCompare<BoundingBoxB>() ) )
     std::sort(range_vector.begin(),range_vector.end(),BoundingBoxCompare<BoundingBoxB>());
 
-  // check track of how many times the coarse search needs to exercise the expanstion_factor
-  int not_empty_count = 0; 
 
   unsigned range_vector_not_empty = !range_vector.empty();
   stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
@@ -387,9 +412,6 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
     // in coarse_search call, but really, this is what we want.
     EntityProcRelationVec rng_to_dom;
     search::coarse_search(range_vector, domain_vector, m_search_method, mesha.comm(), rng_to_dom);
-
-    // increment how many times we are within the while loop
-    not_empty_count++;
 
     if (optional_functions<InterpolateClass>::post_coarse_search_filter) {
       post_coarse_search_filter<InterpolateClass>(rng_to_dom, mesha, meshb);
@@ -403,25 +425,16 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
       search::scale_by(i->first, expansion_factor);
     }
     if (!range_vector.empty()) {
-      // If points were missed, increase search radius; extract the number of these points and tell the user
+      // If points were missed, increase search radius.
       for (typename std::vector<BoundingBoxA>::iterator i=domain_vector.begin(); i!=domain_vector.end(); ++i) {
         search::scale_by(i->first, expansion_factor);
       }
     }
     range_vector_not_empty = !range_vector.empty();
     stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
-
-    if (range_vector_not_empty) {
-        // sum and provide message to user
-        size_t range_vector_size = range_vector.size();
-        size_t g_range_vector_size = 0;
-        stk::all_reduce_max( mesha.comm(), &range_vector_size, &g_range_vector_size, 1);
-        sierra::Env::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: " << g_range_vector_size
-                                << " after expanding bounding boxes: " << not_empty_count << " time(s)" << std::endl;
-        sierra::Env::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search" << std::endl;
-    }
   }
   sort (range_to_domain.begin(), range_to_domain.end());
+
 }
 
 }
