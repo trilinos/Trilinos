@@ -6,6 +6,7 @@
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct sharing_info; } }
@@ -261,6 +262,15 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
 bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity side);
 
 bool is_local_element(stk::mesh::impl::LocalId elemId);
+
+template <typename T>
+void pack_vector_to_proc(stk::CommSparse& comm, const T& data, int otherProc)
+{
+    comm.send_buffer(otherProc).pack<unsigned>(data.size());
+    for(size_t i=0; i<data.size(); ++i)
+        comm.send_buffer(otherProc).pack<typename T::value_type>(data[i]);
+}
+
 
 }}} // end namespaces stk mesh
 

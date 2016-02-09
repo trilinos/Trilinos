@@ -442,14 +442,6 @@ void ElemElemGraph::write_graph_edge(std::ostringstream& os,
     os << "(" << remoteMarker << elem2EntityId << ", " << graphEdge.side2 << ")[" << elem2ChosenSideId << "] ";
 }
 
-template <typename T>
-void pack_vector_to_proc(stk::CommSparse& comm, const T& data, int otherProc)
-{
-    comm.send_buffer(otherProc).pack<unsigned>(data.size());
-    for(size_t i=0; i<data.size(); ++i)
-        comm.send_buffer(otherProc).pack<typename T::value_type>(data[i]);
-}
-
 size_t ElemElemGraph::pack_shared_side_nodes_of_elements(stk::CommSparse &comm, impl::ElemSideToProcAndFaceId& elements_to_communicate)
 {
     impl::ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
@@ -481,7 +473,7 @@ size_t ElemElemGraph::pack_shared_side_nodes_of_elements(stk::CommSparse &comm, 
         }
 
         std::vector<PartOrdinal> elementBlockPartOrdinals = stk::mesh::impl::get_element_block_part_ordinals(elem, m_bulk_data);
-        pack_vector_to_proc(comm, elementBlockPartOrdinals, sharing_proc);
+        impl::pack_vector_to_proc(comm, elementBlockPartOrdinals, sharing_proc);
 
         unsigned num_nodes_this_side = topology.side_topology(side_index).num_nodes();
         stk::mesh::EntityVector side_nodes(num_nodes_this_side);
@@ -492,7 +484,7 @@ size_t ElemElemGraph::pack_shared_side_nodes_of_elements(stk::CommSparse &comm, 
         {
             side_node_entity_keys[i] = m_bulk_data.entity_key(side_nodes[i]);
         }
-        pack_vector_to_proc(comm, side_node_entity_keys, sharing_proc);
+        impl::pack_vector_to_proc(comm, side_node_entity_keys, sharing_proc);
     }
     return counter;
 }
@@ -524,6 +516,7 @@ void ElemElemGraph::communicate_remote_edges_for_pre_existing_graph_nodes(const 
                 comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(remoteEdgeInfo.m_chosenSideId);
                 comm.recv_buffer(proc_id).unpack<bool>(remoteEdgeInfo.m_isInPart);
                 comm.recv_buffer(proc_id).unpack<bool>(remoteEdgeInfo.m_isInAir);
+                unpack_into_vector_of_data(comm, remoteEdgeInfo.m_partOrdinals, proc_id);
                 comm.recv_buffer(proc_id).unpack<stk::topology>(remoteEdgeInfo.m_remoteElementTopology);
                 unsigned numNodes = 0;
                 comm.recv_buffer(proc_id).unpack<unsigned>(numNodes);

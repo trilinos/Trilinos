@@ -247,11 +247,11 @@ TEST_F(SkinAAWithModification, TestSkinningWithNoMods)
 {
     test_no_mods(AAExterior, AAInterior);
 }
-TEST_F(SkinAAWithModification, DISABLED_TestAddingOneShell)
+TEST_F(SkinAAWithModification, TestAddingOneShell)
 {
     test_adding_one_shell(AeAExterior, AeAInterior);
 }
-TEST_F(SkinAAWithModification, DISABLED_TestAddingTwoShells)
+TEST_F(SkinAAWithModification, TestAddingTwoShells)
 {
     test_adding_two_shell(AefAExterior, AefAInterior);
 }
