@@ -761,7 +761,6 @@ int testFromDataFile(
     }
 
     //params->set("timer_output_stream" , "std::cout");
-    //params->set("compute_metrics", "true");
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
     if (rectilinear)
@@ -896,7 +895,6 @@ int testFromDataFile(
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-      //problem->printMetrics(cout);
         cout << "testFromDataFile is done " << endl;
     }
 
