@@ -734,6 +734,8 @@ struct FillSymmetricCSR{
 
 };
 
+
+
 template <typename in_lno_row_view_t,
           typename in_lno_nnz_view_t,
           typename out_lno_nnz_view_t,
@@ -803,13 +805,16 @@ void symmetrize_and_get_lower_diagonal_edge_list(
       pre_pps_);
   MyExecSpace::fence();
 
-
-  //out_lno_row_view_t d_sym_edge_size = Kokkos::subview(pre_pps_, num_rows_to_symmetrize, num_rows_to_symmetrize );
+  auto d_sym_edge_size = Kokkos::subview(pre_pps_, num_rows_to_symmetrize);
+  auto h_sym_edge_size = Kokkos::create_mirror_view (d_sym_edge_size);
+  Kokkos::deep_copy (h_sym_edge_size, d_sym_edge_size);
+  num_symmetric_edges = h_sym_edge_size();
+  /*
   typename out_lno_nnz_view_t::HostMirror h_sym_edge_size = Kokkos::create_mirror_view (pre_pps_);
 
   Kokkos::deep_copy (h_sym_edge_size , pre_pps_);
   num_symmetric_edges = h_sym_edge_size(h_sym_edge_size.dimension_0() - 1);
-
+  */
 
 
   sym_srcs = out_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_srcs"), num_symmetric_edges);
@@ -1072,6 +1077,25 @@ void copy_vector(
 
 }
 
+
+template<typename view_type>
+struct ReduceSumFunctor{
+
+  view_type view_to_reduce;
+
+  ReduceSumFunctor(
+      view_type view_to_reduce_): view_to_reduce(view_to_reduce_){}
+
+  void operator()(const size_t &i, typename view_type::data_type &sum_reduction) const {
+    sum_reduction += view_to_reduce(i);
+  }
+};
+
+template <typename view_type , typename MyExecSpace>
+void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename view_type::data_type &sum_reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
+}
 }
 }
 }
