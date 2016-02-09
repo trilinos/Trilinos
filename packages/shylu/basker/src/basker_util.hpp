@@ -1887,7 +1887,7 @@ namespace BaskerNS
     AT.nrow  = n_;
     AT.scol  = sm_;
     AT.ncol  = m_;
-    AT.nnz   = nzz_;
+    AT.nnz   = nnz_;
 
     BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol");
     MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
@@ -1899,7 +1899,7 @@ namespace BaskerNS
     init_value(AT.val,     AT.nnz, (Entry)1.0);
     
     //Setup a litte workspace
-    const Int ws_size = M.nrow;
+    const Int ws_size = m_;
     INT_1DARRAY ws;
     BASKER_ASSERT(ws_size > 0, "util trans ws");
     MALLOC_INT_1DARRAY(ws, ws_size);
@@ -1939,7 +1939,7 @@ namespace BaskerNS
 	//total2 = total2 + ws_test[j];
       }
    
-    for(Int j = 1; j < M.nrow; ++j)
+    for(Int j = 1; j < n_; ++j)
       {
 	ws(j)  = ws(j) + ws(j-1);
  
@@ -1947,24 +1947,24 @@ namespace BaskerNS
   
     //copy over to AT
     AT.col_ptr(0) = (Int) 0;
-    for(Int j = 1; j <= M.nrow; ++j)
+    for(Int j = 1; j <= n_; ++j)
       {
 	AT.col_ptr(j) = ws(j-1);
       }
 
     //set ws
-    for(Int j = 0; j < M.nrow; ++j)
+    for(Int j = 0; j < n_; ++j)
       {
 	ws(j) = AT.col_ptr(j);
       }
 
-    for(Int k = 0; k < M.ncol; ++k)
+    for(Int k = 0; k < n_; ++k)
       {
 
         //for(Int j = M.col_ptr(k); 
 	//   j < M.col_ptr(k+1); ++j)
 	for(Int j = col_ptr[k]; 
-	    j < col[k+1]; ++j)
+	    j < col_ptr[k+1]; ++j)
           {
 	    	    
 	    if(ws(row_idx[j]) >= AT.nnz)

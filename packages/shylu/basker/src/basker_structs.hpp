@@ -695,6 +695,9 @@ namespace BaskerNS
       //Nonsymmetric Options
       AtA        = BASKER_FALSE;
       
+      //Transpose Option
+      transpose  = BASKER_FALSE;
+      
       //Ordering Options
       order_on        = BASKER_FALSE; //Default on future
       btf             = BASKER_FALSE;
@@ -722,6 +725,8 @@ namespace BaskerNS
 
     //Memory Options
     BASKER_BOOL  realloc;
+    BASKER_BOOL  transpose;
+    
 
     //Symmetric Options
     BASKER_BOOL  symmetric;
