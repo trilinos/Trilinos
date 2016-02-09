@@ -2094,6 +2094,143 @@ if (refPointsRank==3){
   } // for(iter)
 }
 
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+
+template<class Scalar>
+void CellTools<Scalar>::setModifiedLinePoint(double &ot, 
+                                             const double pt,
+                                             const int ort) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt && pt <= 1.0 ), std::invalid_argument,
+                              ">>> ERROR (Intrepid::CellTools::setModifiedLinePoint): pt is out of range [-1, 1].");  
+#endif
+  
+  switch (ort) {
+  case 0: ot =   pt; break;
+  case 1: ot = - pt; break;
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
+                               ">>> ERROR (Intrepid2::CellTools::setModifiedLinePoint): Invalid orientation number (0--1)." );
+  }
+}
+
+template<class Scalar>
+void CellTools<Scalar>::setModifiedTrianglePoint(double &ot0,     
+                                                 double &ot1, 
+                                                 const double pt0, 
+                                                 const double pt1,
+                                                 const int ort) {
+  const double lambda[3] = { 1.0 - pt0 - pt1, 
+                             pt0,
+                             pt1 };
+  
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[0] && lambda[0] <= 1.0 ), std::invalid_argument,
+                              ">>> ERROR (Intrepid::CellTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[0]) is out of range [0, 1].");  
+  
+  TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[1] && lambda[1] <= 1.0 ), std::invalid_argument,
+                              ">>> ERROR (Intrepid::CellTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[1]) is out of range [0, 1].");  
+  
+  TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[2] && lambda[2] <= 1.0 ), std::invalid_argument,
+                              ">>> ERROR (Intrepid::CellTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[2]) is out of range [0, 1].");  
+#endif
+
+  switch (ort) {
+  case 0: ot0 = lambda[1]; ot1 = lambda[2]; break;
+  case 1: ot0 = lambda[2]; ot1 = lambda[0]; break;
+  case 2: ot0 = lambda[0]; ot1 = lambda[1]; break;
+  case 3: ot0 = lambda[2]; ot1 = lambda[1]; break;
+  case 4: ot0 = lambda[0]; ot1 = lambda[2]; break;
+  case 5: ot0 = lambda[1]; ot1 = lambda[0]; break;
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
+                              ">>> ERROR (Intrepid2::CellTools::setModifiedTrianglePoint): Invalid orientation number (0--5)." );
+  }
+}
+
+template<class Scalar>
+void CellTools<Scalar>::setModifiedQuadrilateralPoint(double &ot0,     
+                                                      double &ot1, 
+                                                      const double pt0, 
+                                                      const double pt1,
+                                                      const int ort) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt0 && pt0 <= 1.0 ), std::invalid_argument,
+                              ">>> ERROR (Intrepid::CellTools::setModifiedQuadrilateralPoint): pt0 is out of range [-1, 1].");  
+  
+  TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt1 && pt1 <= 1.0 ), std::invalid_argument,
+                              ">>> ERROR (Intrepid::CellTools::setModifiedQuadrilateralPoint): pt1 is out of range [-1, 1].");  
+#endif
+
+  const double lambda[2][2] = { { pt0, -pt0 }, 
+                                { pt1, -pt1 } };
+  
+  switch (ort) {
+  case 0: ot0 = lambda[0][0]; ot1 = lambda[1][0]; break;
+  case 1: ot0 = lambda[1][0]; ot1 = lambda[0][1]; break;
+  case 2: ot0 = lambda[0][1]; ot1 = lambda[0][1]; break;
+  case 3: ot0 = lambda[1][1]; ot1 = lambda[0][0]; break;
+  case 4: ot0 = lambda[1][0]; ot1 = lambda[0][0]; break;
+  case 5: ot0 = lambda[0][0]; ot1 = lambda[1][1]; break;
+  case 6: ot0 = lambda[1][1]; ot1 = lambda[1][1]; break;
+  case 7: ot0 = lambda[0][1]; ot1 = lambda[1][0]; break;
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
+                              ">>> ERROR (Intrepid2::CellTools::setModifiedQuadrilateralPoint): Invalid orientation number (0--7)." );
+  }
+}
+
+template<class Scalar>
+template<class ArrayPoint>
+void CellTools<Scalar>::mapToModifiedReference(ArrayPoint &                  ortPoints,
+                                               const ArrayPoint &            refPoints,
+                                               const shards::CellTopology &  cellTopo,
+                                               const int                     cellOrt){
+#ifdef HAVE_INTREPID_DEBUG
+  {
+    const int cellDim = cellTopo.getDimension();
+    TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument, 
+                                ">>> ERROR (Intrepid::CellTools::mapToModifiedReference): the specified cell topology does not have a reference cell.");
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= cellDim) && (cellDim <= 2 ) ), std::invalid_argument,
+                                ">>> ERROR (Intrepid::CellTools::mapToModifiedReference): method defined only for 1 and 2-dimensional subcells.");  
+
+    TEUCHOS_TEST_FOR_EXCEPTION( !( numPts == refPoints.dimension(0) ), std::invalid_argument, 
+                                ">>> ERROR (Intrepid::CellTools::mapToModifiedReference): size of input and output point arrays does not match each other.");
+  }
+#endif
+    
+  // Apply the parametrization map to every point in parameter domain
+  const size_t numPts  = static_cast<size_t>(ortPoints.dimension(0));
+  const auto key = cellTopo.getBaseCellTopologyData()->key ;
+  switch (key) {
+  case shards::Line<>::key : {
+    for (size_t pt=0;pt<numPts;++pt) 
+      setModifiedLinePoint(ortPoints(pt, 0),
+                           refPoints(pt, 0), 
+                           cellOrt);
+    break;
+  }
+  case shards::Triangle<>::key : {
+    for (size_t pt=0;pt<numPts;++pt) 
+      setModifiedTrianglePoint(ortPoints(pt, 0), ortPoints(pt, 1),
+                               refPoints(pt, 0), refPoints(pt, 1), 
+                               cellOrt);
+    break;
+  }
+  case shards::Quadrilateral<>::key : {
+    for (size_t pt=0;pt<numPts;++pt) 
+      setModifiedQuadrilateralPoint(ortPoints(pt, 0), ortPoints(pt, 1),
+                                    refPoints(pt, 0), refPoints(pt, 1), 
+                                    cellOrt);
+    break;
+  }
+  default: 
+    TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
+                              ">>> ERROR (Intrepid2::CellTools::mapToModifiedReference): Invalid cell topology." );
+  }
+}
+#endif
 
 
 template<class Scalar>
