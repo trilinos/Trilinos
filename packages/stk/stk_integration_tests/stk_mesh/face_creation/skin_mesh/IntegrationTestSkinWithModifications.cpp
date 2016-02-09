@@ -159,12 +159,6 @@ protected:
 
     const stk::mesh::EntityId shellId1 = 13;
     const stk::mesh::EntityId shellId2 = 14;
-    const SideTestUtil::TestCase AAExterior =   {"AA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
-    const SideTestUtil::TestCase AeAExterior =  {"AA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
-    const SideTestUtil::TestCase AefAExterior = {"AA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
-    const SideTestUtil::TestCase AAInterior =   {"AA.e",   2,  0, {}};
-    const SideTestUtil::TestCase AeAInterior =  {"AeA.e",  3,  2, {{1, 5}, {shellId1, 0}, {shellId1, 1}, {2, 4}}};
-    const SideTestUtil::TestCase AefAInterior = {"AefA.e", 3,  2, {{1, 5}, {shellId1, 0}, {shellId1, 1}, {shellId2, 0}, {shellId2, 1}, {2, 4}}};
 
     stk::mesh::Entity shell13;
     stk::mesh::Entity shell14;
@@ -182,58 +176,124 @@ protected:
         SideTestUtil::read_and_decompose_mesh(initialConfiguration, get_bulk());
         setup_for_skinning();
     }
+
+    void test_no_mods(const SideTestUtil::TestCase &exterior, const SideTestUtil::TestCase &interior)
+    {
+        if(stk::parallel_machine_size(get_comm()) <= 2)
+        {
+            setup_mesh_from_initial_configuration (get_filename());
+            test_skinning(exterior, interior);
+        }
+    }
+
+    void test_adding_one_shell(const SideTestUtil::TestCase &exterior, const SideTestUtil::TestCase &interior)
+    {
+        if(stk::parallel_machine_size(get_comm()) <= 2)
+        {
+            setup_mesh_from_initial_configuration(get_filename());
+            create_shell_13();
+            test_skinning(exterior, interior);
+        }
+    }
+
+    void test_adding_two_shell(const SideTestUtil::TestCase &exterior, const SideTestUtil::TestCase &interior)
+    {
+        if(stk::parallel_machine_size(get_comm()) <= 2)
+        {
+            setup_mesh_from_initial_configuration(get_filename());
+            create_shells_13_and_14();
+            test_skinning(exterior, interior);
+        }
+    }
+
+    void test_adding_two_shells_then_delete_one(const SideTestUtil::TestCase &exterior, const SideTestUtil::TestCase &interior)
+    {
+        if(stk::parallel_machine_size(get_comm()) <= 2)
+        {
+            setup_mesh_from_initial_configuration(get_filename());
+            create_shells_13_and_14();
+            destroy_element(shell14);
+            test_skinning(exterior, interior);
+        }
+    }
+
+    void test_adding_two_shells_then_delete_both(const SideTestUtil::TestCase &exterior, const SideTestUtil::TestCase &interior)
+    {
+        if(stk::parallel_machine_size(get_comm()) <= 2)
+        {
+            setup_mesh_from_initial_configuration(get_filename());
+            create_shells_13_and_14();
+            destroy_element(shell14);
+            destroy_element(shell13);
+            test_skinning(exterior, interior);
+        }
+    }
+
+    virtual const std::string get_filename() = 0;
 };
 
-TEST_F(SkinFileWithModification, TestSkinningWithNoMods)
+class SkinAAWithModification : public SkinFileWithModification
 {
-    if(stk::parallel_machine_size(get_comm()) <= 2)
-    {
-        setup_mesh_from_initial_configuration("AA.e");
-        test_skinning(AAExterior, AAInterior);
-    }
+protected:
+    virtual const std::string get_filename() { return "AA.e"; }
+    const SideTestUtil::TestCase AAExterior =   {"AA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
+    const SideTestUtil::TestCase AeAExterior =  {"AeA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
+    const SideTestUtil::TestCase AefAExterior = {"AefA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
+    const SideTestUtil::TestCase AAInterior =   {"AA.e",   2,  0, {}};
+    const SideTestUtil::TestCase AeAInterior =  {"AeA.e",  3,  2, {{1, 5}, {shellId1, 0}, {shellId1, 1}, {2, 4}}};
+    const SideTestUtil::TestCase AefAInterior = {"AefA.e", 3,  2, {{1, 5}, {shellId1, 0}, {shellId1, 1}, {shellId2, 0}, {shellId2, 1}, {2, 4}}};
+};
+TEST_F(SkinAAWithModification, TestSkinningWithNoMods)
+{
+    test_no_mods(AAExterior, AAInterior);
+}
+TEST_F(SkinAAWithModification, DISABLED_TestAddingOneShell)
+{
+    test_adding_one_shell(AeAExterior, AeAInterior);
+}
+TEST_F(SkinAAWithModification, DISABLED_TestAddingTwoShells)
+{
+    test_adding_two_shell(AefAExterior, AefAInterior);
+}
+TEST_F(SkinAAWithModification, DISABLED_TestAddTwoShellThenDeleteOne)
+{
+    test_adding_two_shells_then_delete_one(AeAExterior, AeAInterior);
+}
+TEST_F(SkinAAWithModification, DISABLED_TestAddTwoShellThenDeleteBoth)
+{
+    test_adding_two_shells_then_delete_both(AAExterior, AAInterior);
 }
 
-TEST_F(SkinFileWithModification, DISABLED_TestAddingOneShell)
+class SkinAWithModification : public SkinFileWithModification
 {
-    if(stk::parallel_machine_size(get_comm()) <= 2)
-    {
-        setup_mesh_from_initial_configuration("AA.e");
-        create_shell_13();
-        test_skinning(AeAExterior, AeAInterior);
-    }
+protected:
+    virtual const std::string get_filename() { return "A.e"; }
+    const SideTestUtil::TestCase AExterior =   {"A.e",   1,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}}};
+    const SideTestUtil::TestCase AeExterior =  {"Ae.e",  2,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {shellId1, 0}}};
+    const SideTestUtil::TestCase AefExterior = {"Aef.e", 3,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {shellId1, 0}, {shellId2, 0}}};
+    const SideTestUtil::TestCase AInterior =   {"A.e",   2,  0, {}};
+    const SideTestUtil::TestCase AeInterior =  {"Ae.e",  2,  1, {{1, 5}, {shellId1, 1}}};
+    const SideTestUtil::TestCase AefInterior = {"Aef.e", 3,  1, {{1, 5}, {shellId1, 1}, {shellId2, 1}}};
+};
+TEST_F(SkinAWithModification, TestSkinningWithNoMods)
+{
+    test_no_mods(AExterior, AInterior);
 }
-
-TEST_F(SkinFileWithModification, DISABLED_TestAddingTwoShells)
+TEST_F(SkinAWithModification, TestAddingOneShell)
 {
-    if(stk::parallel_machine_size(get_comm()) <= 2)
-    {
-        setup_mesh_from_initial_configuration("AA.e");
-        create_shells_13_and_14();
-        test_skinning(AefAExterior, AefAInterior);
-    }
+    test_adding_one_shell(AeExterior, AeInterior);
 }
-
-TEST_F(SkinFileWithModification, DISABLED_TestAddTwoShellThenDeleteOne)
+TEST_F(SkinAWithModification, TestAddingTwoShells)
 {
-    if(stk::parallel_machine_size(get_comm()) <= 2)
-    {
-        setup_mesh_from_initial_configuration("AA.e");
-        create_shells_13_and_14();
-        destroy_element(shell14);
-        test_skinning(AeAExterior, AeAInterior);
-    }
+    test_adding_two_shell(AefExterior, AefInterior);
 }
-
-TEST_F(SkinFileWithModification, DISABLED_TestAddTwoShellThenDeleteBoth)
+TEST_F(SkinAWithModification, DISABLED_TestAddTwoShellThenDeleteOne)
 {
-    if(stk::parallel_machine_size(get_comm()) <= 2)
-    {
-        setup_mesh_from_initial_configuration("AA.e");
-        create_shells_13_and_14();
-        destroy_element(shell14);
-        destroy_element(shell13);
-        test_skinning(AAExterior, AAInterior);
-    }
+    test_adding_two_shells_then_delete_one(AeExterior, AeInterior);
+}
+TEST_F(SkinAWithModification, DISABLED_TestAddTwoShellThenDeleteBoth)
+{
+    test_adding_two_shells_then_delete_both(AExterior, AInterior);
 }
 
 }
