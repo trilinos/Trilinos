@@ -286,13 +286,16 @@ namespace BaskerNS
 
 	if(Options.transpose == BASKER_FALSE)
 	  {
+	    printf("=======NO TRANS=====\n");
 	    A.init_matrix("Original Matrix",
 		  nrow, ncol, nnz, col_ptr, row_idx, val);
 	    A.scol = 0;
 	    A.srow = 0;
+	    printMTX("A_LOAD.mtx", A);
 	  }
 	else
 	  {
+	    printf("======TRANS=====\n");
 	    //Will transpose and put in A using little extra
 	    matrix_transpose(0, nrow,
 			     0, ncol,

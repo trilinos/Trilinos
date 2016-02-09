@@ -1972,12 +1972,18 @@ namespace BaskerNS
 		printf("error \n");
 	      }
 	    
-            AT.row_idx(ws(row_idx[j])++) = k; 
+            //AT.row_idx(ws(row_idx[j])++) = k;
+	    AT.row_idx(ws(row_idx[j])) = k;
+	    AT.val(ws(row_idx[j])) = val[j];
+	    ws(row_idx[j])++;
 	    //starting at zero
     
           }
       }
     //printf("updated trans \n");
+
+    sort_matrix(AT);
+    printMTX("A_TRANS.mtx", AT);
 
     FREE_INT_1DARRAY(ws);
   }//end matrix_transpos
@@ -2145,8 +2151,8 @@ namespace BaskerNS
 
 
     //Debug
-    printVec("left_perm.csc", outp_l, gn);
-    printVec("right_perm.csc", outp_r, gn);
+    //printVec("left_perm.csc", outp_l, gn);
+    //printVec("right_perm.csc", outp_r, gn);
 
     FREE_INT_1DARRAY(temp);
 
