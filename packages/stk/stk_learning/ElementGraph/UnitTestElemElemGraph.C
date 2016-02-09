@@ -15,6 +15,7 @@
 #include <stk_mesh/base/Field.hpp>
 
 #include <stk_mesh/base/SkinMesh.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
@@ -63,8 +64,6 @@ int get_side_from_element1_to_element2(const impl::ElementGraph &elem_graph,
                                        const impl::SidesForElementGraph &via_sides,
                                        stk::mesh::impl::LocalId element1_local_id,
                                        stk::mesh::impl::LocalId other_element_id);
-
-void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::Part& part);
 
 ElemElemGraphTester create_base_1x1x4_elem_graph(stk::ParallelMachine &comm, stk::mesh::BulkData &bulk);
 
@@ -845,123 +844,6 @@ void print_graph(const std::string &title, int proc_id, T& elem_graph)
     std::cerr << os.str();
 }
 
-
-void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::Part& part)
-{
-    double wall_time_start = stk::wall_time();
-
-    std::vector<unsigned> counts;
-    stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
-    int numElems = counts[stk::topology::ELEM_RANK];
-
-    stk::mesh::EntityVector local_id_to_element_entity(numElems, Entity());
-    std::vector<stk::topology> element_topologies(numElems);
-    impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
-
-    ElemElemGraphTester elemElemGraph(bulkData);
-
-    stk::mesh::ParallelInfoForGraphEdges & parallel_graph = elemElemGraph.get_parallel_graph();
-
-    double graph_time = stk::wall_time() - wall_time_start;
-    wall_time_start = stk::wall_time();
-
-    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
-    stk::mesh::PartVector parts {&part};
-    //BeginDocExample4
-
-    bulkData.modification_begin();
-
-    std::vector<stk::mesh::sharing_info> shared_modified;
-
-    for(size_t i = 0; i < elemElemGraph.get_graph().get_num_elements_in_graph(); ++i)
-    {
-        stk::mesh::Entity element1 = local_id_to_element_entity[i];
-
-        LocalId this_element = i;
-
-        for(size_t j = 0; j < elemElemGraph.get_graph().get_num_edges_for_element(this_element); ++j)
-        {
-            const stk::mesh::GraphEdge & graphEdge = elemElemGraph.get_graph().get_edge_for_element(this_element, j);
-            if(this_element < graphEdge.elem2 && graphEdge.elem2 >= 0)
-            {
-                stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + graphEdge.side1;
-                if ( impl::is_id_already_in_use_locally(bulkData, side_rank, face_global_id) )
-                {
-
-                }
-                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, graphEdge.side1,
-                        face_global_id, stk::mesh::PartVector(1,&part));
-
-                const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
-                unsigned num_side_nodes = bulkData.num_nodes(face);
-                stk::mesh::EntityVector side_nodes_vec(side_nodes, side_nodes + num_side_nodes);
-
-                stk::mesh::Entity element2 = local_id_to_element_entity[graphEdge.elem2];
-                std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ord_and_perm = stk::mesh::get_ordinal_and_permutation(bulkData, element2, stk::topology::FACE_RANK, side_nodes_vec);
-                bulkData.declare_relation(element2, face, ord_and_perm.first, ord_and_perm.second);
-            }
-            else if(graphEdge.elem2 < 0)
-            {
-                LocalId other_element = -1 * graphEdge.elem2;
-                stk::mesh::impl::ParallelInfo& parallelInfo = parallel_graph.get_parallel_info_for_graph_edge(graphEdge);
-                int other_proc = parallelInfo.get_proc_rank_of_neighbor();
-                int other_side = graphEdge.side2;
-
-                int this_proc = bulkData.parallel_rank();
-                int owning_proc = this_proc < other_proc ? this_proc : other_proc;
-
-                stk::mesh::EntityId face_global_id = 0;
-                stk::mesh::Permutation perm;
-                if(owning_proc == this_proc)
-                {
-                    stk::mesh::EntityId id = bulkData.identifier(element1);
-                    face_global_id = impl::get_element_side_multiplier() * id + graphEdge.side1;
-                    perm = static_cast<stk::mesh::Permutation>(0);
-                }
-                else
-                {
-                    face_global_id = impl::get_element_side_multiplier() * other_element + other_side;
-                    perm = static_cast<stk::mesh::Permutation>(parallelInfo.m_permutation);
-                }
-
-                stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1);
-
-                stk::ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, side_rank, face_global_id));
-                stk::ThrowRequireWithSierraHelpMsg(!impl::does_side_exist_with_different_permutation(bulkData, element1, side_ord, perm));
-                stk::ThrowRequireWithSierraHelpMsg(!impl::does_element_side_exist(bulkData, element1, side_ord));
-
-                stk::mesh::Entity face = impl::connect_side_to_element(bulkData, element1, face_global_id, side_ord, perm, parts);
-
-                shared_modified.push_back(stk::mesh::sharing_info(face, other_proc, owning_proc));
-            }
-        }
-
-        std::vector<int> exposedSides;
-        stk::mesh::impl::add_exposed_sides(i, element_topologies[i].num_sides(), elemElemGraph.get_graph(), exposedSides);
-        for(size_t j = 0; j < exposedSides.size(); j++)
-        {
-            stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + exposedSides[j];
-            stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, exposedSides[j], face_global_id, stk::mesh::PartVector(1,&part));
-        }
-    }
-
-    double start_mod_end = stk::wall_time();
-    bulkData.my_modification_end_for_entity_creation(shared_modified);
-
-    //EndDocExample4
-
-    double mod_end_time = stk::wall_time() - start_mod_end;
-
-    double create_faces_time = stk::wall_time() - wall_time_start;
-
-    if(bulkData.parallel_rank() == 0)
-    {
-        std::cerr << "graph time: " << graph_time << std::endl;
-        std::cerr << "create faces time: " << create_faces_time << std::endl;
-        std::cerr << "mod end time: " << mod_end_time << std::endl;
-    }
-}
-
 //BeginDocExample1
 
 stk::mesh::EntityVector get_killed_elements(stk::mesh::BulkData& bulkData, const int killValue, const stk::mesh::Part& active)
@@ -1347,7 +1229,9 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel)
         msgs.push_back("after mesh-read");
         mem_usage.push_back(stk::get_memory_usage_now());
 
-        create_faces_using_graph(bulkData, new_faces_part);
+        stk::mesh::experimental::create_faces(bulkData);
+        const bool connectFacesToEdges = false;
+        stk::mesh::create_all_sides(bulkData, meta.universal_part(), {&new_faces_part}, connectFacesToEdges);
 
         const stk::mesh::BucketVector& sharedNodeBuckets = bulkData.get_buckets(stk::topology::NODE_RANK, meta.globally_shared_part());
         for(size_t bucket_index=0; bucket_index<sharedNodeBuckets.size(); ++bucket_index)
@@ -1433,7 +1317,8 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel_block_membership)
 
         bulkData.modification_end();
 
-        create_faces_using_graph(bulkData, new_faces_part);
+        const bool connectFacesToEdges = false;
+        stk::mesh::create_all_sides(bulkData, meta.universal_part(), {&new_faces_part}, connectFacesToEdges);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after create-faces");
@@ -1475,7 +1360,7 @@ TEST(ElementGraph, compare_performance_create_faces)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    std::string dimension = unitTestUtils::getOption("--zdim", "none");
+    std::string dimension = unitTestUtils::getOption("--xdim", "none");
 
     int xdim = 3;
     if ( dimension != "none")
@@ -1507,7 +1392,7 @@ TEST(ElementGraph, compare_performance_create_faces)
 
             if (stk::parallel_machine_rank(comm) == 0)
             {
-                std::cerr << "STK time: " << elapsed_time << std::endl;
+                std::cerr << "Create faces without graph time: " << elapsed_time << std::endl;
             }
         }
     }
@@ -1518,6 +1403,7 @@ TEST(ElementGraph, compare_performance_create_faces)
         bool force_no_induce = true;
         stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4, force_no_induce);
         stk::io::put_io_part_attribute(faces_part);
+        const bool connectFacesToEdges = false;
         BulkDataElementGraphTester bulkData(meta, comm);
 
         stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
@@ -1525,18 +1411,18 @@ TEST(ElementGraph, compare_performance_create_faces)
         {
             double wall_time_start = stk::wall_time();
 
-            create_faces_using_graph(bulkData, faces_part);
+            stk::mesh::create_all_sides(bulkData, meta.universal_part(), {&faces_part}, connectFacesToEdges);
 
             double elapsed_time = stk::wall_time() - wall_time_start;
 
-            stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
+ //           stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
 
             std::vector<size_t> counts;
             stk::mesh::comm_mesh_counts(bulkData, counts);
 
             if (stk::parallel_machine_rank(comm) == 0)
             {
-                std::cerr << "Element graph time: " << elapsed_time << std::endl;
+                std::cerr << "Total time for creating graph and faces: " << elapsed_time << std::endl;
                 std::cerr << "Total # of elements: " << counts[stk::topology::ELEM_RANK] << std::endl;
             }
         }

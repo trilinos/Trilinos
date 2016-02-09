@@ -1781,7 +1781,7 @@ stk::mesh::Entity ElemElemGraph::add_side_to_mesh(const stk::mesh::impl::Element
     return side;
 }
 
-stk::mesh::EntityId add_skinned_shared_side_to_element(stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& graphEdge, const impl::ParallelInfo& parallel_edge_info,
+stk::mesh::EntityId add_shared_side_to_element(stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& graphEdge, const impl::ParallelInfo& parallel_edge_info,
         stk::mesh::Entity local_element, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts = nullptr)
 {
@@ -1800,11 +1800,6 @@ stk::mesh::EntityId add_skinned_shared_side_to_element(stk::mesh::BulkData& bulk
     {
         perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
     }
-
-//    if(parallel_edge_info.m_in_body_to_be_skinned)
-//    {
-//        perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-//    }
 
     stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
 
@@ -1868,7 +1863,7 @@ void ElemElemGraph::create_remote_sides(stk::mesh::BulkData& bulk_data, const st
         if(num_connected_elements_this_side == side_counts[side_ordinal])
         {
             skinned_elements.push_back(element);
-            add_skinned_shared_side_to_element(bulk_data, remote_edges[k].m_graphEdge, remote_edges[k].m_parallel_edge_info, element, skin_parts, shared_modified);
+            add_shared_side_to_element(bulk_data, remote_edges[k].m_graphEdge, remote_edges[k].m_parallel_edge_info, element, skin_parts, shared_modified);
         }
     }
 }
@@ -1883,7 +1878,7 @@ void ElemElemGraph::create_remote_sides1(stk::mesh::BulkData& bulk_data, const s
         {
             stk::mesh::Entity element = m_local_id_to_element_entity[remote_edges[k].m_graphEdge.elem1];
             skinned_elements.push_back(element);
-            add_skinned_shared_side_to_element(bulk_data, remote_edges[k].m_graphEdge, remote_edges[k].m_parallel_edge_info, element, skin_parts, shared_modified);
+            add_shared_side_to_element(bulk_data, remote_edges[k].m_graphEdge, remote_edges[k].m_parallel_edge_info, element, skin_parts, shared_modified);
         }
     }
 }
@@ -1938,7 +1933,7 @@ stk::mesh::EntityId ElemElemGraph::add_side_for_remote_edge(const GraphEdge & gr
         if(!impl::is_local_element(graphEdge.elem2))
         {
             impl::ParallelInfo &parallel_edge_info = m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge);
-            newFaceId = add_skinned_shared_side_to_element(m_bulk_data, graphEdge, parallel_edge_info, element, skin_parts, shared_modified);
+            newFaceId = add_shared_side_to_element(m_bulk_data, graphEdge, parallel_edge_info, element, skin_parts, shared_modified);
         }
     }
     return newFaceId;

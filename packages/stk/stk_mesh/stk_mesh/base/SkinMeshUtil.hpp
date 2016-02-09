@@ -23,6 +23,8 @@ public:
 
     std::vector<SideSetEntry> extract_interior_sideset();
 
+    std::vector<SideSetEntry> extract_all_sides_sideset();
+
 private:
     SkinMeshUtil();
 

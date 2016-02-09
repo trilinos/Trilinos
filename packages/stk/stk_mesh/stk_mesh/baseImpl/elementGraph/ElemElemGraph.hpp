@@ -140,6 +140,8 @@ public:
         return m_graph;
     }
 
+    const stk::mesh::ParallelInfoForGraphEdges& get_parallel_graph() const { return m_parallelInfoForGraphEdges; }
+
     void create_side_entities(const std::vector<int> &exposedSides,
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,

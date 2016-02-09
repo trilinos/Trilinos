@@ -49,6 +49,7 @@
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 #include "stk_topology/apply_functor.tcc"  // for topology::apply_functor
@@ -218,6 +219,29 @@ struct create_face_impl
 
 } //namespace
 
+namespace experimental {
+void create_faces( BulkData & mesh )
+{
+    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), false);
+}
+
+void create_faces( BulkData & mesh, const Selector & element_selector)
+{
+    stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), false);
+}
+
+void create_faces( BulkData & mesh, bool connect_faces_to_edges)
+{
+    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), connect_faces_to_edges);
+}
+
+void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges)
+{
+    stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), connect_faces_to_edges);
+}
+}
+
+
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
 
 void create_faces( BulkData & mesh )
@@ -239,6 +263,7 @@ void create_faces( BulkData & mesh, const Selector & element_selector, bool conn
 {
     internal_create_faces(mesh, element_selector, connect_faces_to_edges, FaceCreationBehavior::CREATE_FACES_FACE_CREATION_CLASSIC);
 }
+
 
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior)
 {
