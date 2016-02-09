@@ -261,17 +261,37 @@ int ex_get_var_time( int   exoid,
 
   free(stat_vals);
 
+  /* Check that times are in range */
+  {
+    int num_time_steps = ex_inquire_int (exoid, EX_INQ_TIME);
+    if (beg_time_step <= 0 || beg_time_step > num_time_steps) {
+      sprintf(errmsg,
+              "ERROR: beginning time_step is out-of-range. Value = %d, valid range is 1 to %d in file id %d",
+              beg_time_step, num_time_steps, exoid);
+      ex_err("ex_get_var_time",errmsg,EX_BADPARAM);
+      return (EX_FATAL);
+    }
+
+    if (end_time_step < 0) {
+      /* user is requesting the maximum time step;  we find this out using the
+       * database inquire function to get the number of time steps;  the ending
+       * time step number is 1 less due to 0 based array indexing in C
+       */
+      end_time_step = ex_inquire_int (exoid, EX_INQ_TIME);
+    }
+    else if (end_time_step < beg_time_step || end_time_step > num_time_steps) {
+      sprintf(errmsg,
+              "ERROR: end time_step is out-of-range. Value = %d, valid range is %d to %d in file id %d",
+              beg_time_step, end_time_step, num_time_steps, exoid);
+      ex_err("ex_get_var_time",errmsg,EX_BADPARAM);
+      return (EX_FATAL);
+    }
+  }
+
   /* read values of object variable */
   start[0] = --beg_time_step;
   start[1] = offset;
 
-  if (end_time_step < 0) {
-    /* user is requesting the maximum time step;  we find this out using the
-     * database inquire function to get the number of time steps;  the ending
-     * time step number is 1 less due to 0 based array indexing in C
-     */
-    end_time_step = ex_inquire_int (exoid, EX_INQ_TIME);
-  }
 
   end_time_step--;
 
