@@ -159,6 +159,33 @@ namespace BaskerNS
 	Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
 			     sep_nfactor);
 	Kokkos::fence();
+
+
+	//======Check for error=====
+	while(true)
+	  {
+	    INT_1DARRAY thread_start;
+	    MALLOC_INT_1DARRAY(thread_start, num_threads+1);
+	    init_value(thread_start, num_threads+1,
+		      (Int) BASKER_MAX_IDX);
+	    int nt = nfactor_sep_error(thread_start);
+	    if((nt == BASKER_SUCCESS)||
+	       (nt == BASKER_ERROR) ||
+	       (sep_restart > BASKER_RESTART))
+	      {
+		FREE_INT_1DARRAY(thread_start);
+		break;
+	      }
+	    else
+	      {
+		sep_restart++;
+		printf("restart \n");
+		Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
+		Kokkos::fence();
+
+	      }
+	  }//end while-true
+
 	
 	#ifdef BASKER_TIME
 	printf("Time INNERSEP: %d %f \n", 

@@ -209,6 +209,10 @@ int main(int argc, char* argv[])
   mybasker.SolveTest();
   //mybasker.Solve(y,x);
   cout << "--------------Done Solve----------------------"<<endl;
+
+    Int *lperm;
+  Int *rperm;
+  mybasker.GetPerm(&lperm, &rperm);
   mybasker.Finalize();
   cout << "--------------Called Finalize-----------------"<<endl;
  
