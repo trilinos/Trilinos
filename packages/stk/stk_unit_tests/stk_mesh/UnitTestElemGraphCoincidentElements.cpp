@@ -522,14 +522,14 @@ public:
     const stk::mesh::impl::SparseGraph& my_get_coincident_graph() {return m_coincidentGraph; }
 };
 
-class ShellShellMeshModification : public stk::unit_test_util::MeshFixture
+class ShellMeshModification : public stk::unit_test_util::MeshFixture
 {
 protected:
-    ShellShellMeshModification()
+    ShellMeshModification()
     {
     }
 
-    ~ShellShellMeshModification()
+    ~ShellMeshModification()
     {
         delete elemElemGraph;
         delete updater;
@@ -641,6 +641,20 @@ protected:
         verify_graph_for_stacked_shells();
     }
 
+    void create_and_delete_shell_in_same_mod_cycle()
+    {
+        get_bulk().modification_begin();
+        declare_shell2_on_lowest_rank_proc();
+        destroy_shell2();
+        get_bulk().modification_end();
+    }
+
+    void verify_empty_graph()
+    {
+        verify_graph_has_num_elements_and_num_edges(0u,0u);
+        verify_num_elements_and_num_edges_in_coincident_graph(0u,0u);
+    }
+
 private:
     void verify_local_and_parallel_edges_from_entity_to_remote_entity(stk::mesh::Entity entity, stk::mesh::EntityId remoteEntityId, size_t numParallelEdges)
     {
@@ -721,7 +735,7 @@ private:
 } // namespace
 
 
-TEST_F(ShellShellMeshModification, DISABLED_CreateStackedShellsThenTestDeleteOneAutoAura)
+TEST_F(ShellMeshModification, DISABLED_CreateStackedShellsThenTestDeleteOneAutoAura)
 {
     if (stk::parallel_machine_size(get_comm()) <= 2)
     {
@@ -729,7 +743,7 @@ TEST_F(ShellShellMeshModification, DISABLED_CreateStackedShellsThenTestDeleteOne
     }
 }
 
-TEST_F(ShellShellMeshModification, DISABLED_CreateStackedShellsThenTestDeleteOneNoAura)
+TEST_F(ShellMeshModification, DISABLED_CreateStackedShellsThenTestDeleteOneNoAura)
 {
     if (stk::parallel_machine_size(get_comm()) == 2)
     {
@@ -738,7 +752,7 @@ TEST_F(ShellShellMeshModification, DISABLED_CreateStackedShellsThenTestDeleteOne
 }
 
 
-TEST_F( ShellShellMeshModification, CreateShellThenTestCreateAnotherShellAutoAura)
+TEST_F( ShellMeshModification, CreateShellThenTestCreateAnotherShellAutoAura)
 {
     if (stk::parallel_machine_size(get_comm()) <= 2)
     {
@@ -746,11 +760,22 @@ TEST_F( ShellShellMeshModification, CreateShellThenTestCreateAnotherShellAutoAur
     }
 }
 
-TEST_F( ShellShellMeshModification, CreateShellThenTestCreateAnotherShellNoAura)
+TEST_F( ShellMeshModification, CreateShellThenTestCreateAnotherShellNoAura)
 {
     if (stk::parallel_machine_size(get_comm()) == 2)
     {
         test_create_shell_then_create_another_one(stk::mesh::BulkData::NO_AUTO_AURA);
+    }
+}
+
+TEST_F( ShellMeshModification, CreateAndDeleteShellInSameModCycle)
+{
+    if (stk::parallel_machine_size(get_comm()) == 1)
+    {
+        initialize(stk::mesh::BulkData::NO_AUTO_AURA);
+        create_elem_elem_graph();
+        EXPECT_NO_THROW(create_and_delete_shell_in_same_mod_cycle());
+        verify_empty_graph();
     }
 }
 
