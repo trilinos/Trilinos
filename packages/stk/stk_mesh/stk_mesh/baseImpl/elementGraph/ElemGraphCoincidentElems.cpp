@@ -26,31 +26,51 @@ namespace mesh
 namespace impl
 {
 
+int count_shared_sides(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
+{
+    int numSharedSides = 0;
+    for(size_t i=0; i < graph.get_num_edges_for_element(graphEdge.elem1); i++)
+    {
+        const stk::mesh::GraphEdge &elem1GraphEdge = graph.get_edge_for_element(graphEdge.elem1, i);
+        if(elem1GraphEdge.elem2 == graphEdge.elem2)
+            numSharedSides++;
+    }
+    return numSharedSides;
+}
+
+bool are_graph_edge_elements_fully_coincident(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
+{
+    int numSides = topologies[graphEdge.elem1].num_sides();
+    int numSharedSides = count_shared_sides(graph, topologies, graphEdge);
+    return (numSharedSides == numSides);
+}
+
+
 void CoincidentSideExtractor::delete_edges(const GraphEdgeVector& edgesToDelete)
 {
-    for(const stk::mesh::GraphEdge& edgeToDelete : edgesToDelete)
+    for(const GraphEdge& edgeToDelete : edgesToDelete)
         m_graph.delete_edge(edgeToDelete);
 }
 
 void CoincidentSideExtractor::add_edges(const GraphEdgeVector& edgesToDelete, SparseGraph& extractedCoincidentSides)
 {
-    for(const stk::mesh::GraphEdge& edgeToDelete : edgesToDelete)
+    for(const GraphEdge& edgeToDelete : edgesToDelete)
         extractedCoincidentSides[edgeToDelete.elem1].push_back(edgeToDelete);
 }
 
-void CoincidentSideExtractor::extract_coincident_sides_for_element(stk::mesh::impl::LocalId elemId,
+void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemId,
                                                                    GraphEdgeVector &coincidentSides,
                                                                    const CoincidenceDetector &detector)
 {
     for(size_t edgeIndex = 0; edgeIndex < m_graph.get_num_edges_for_element(elemId); edgeIndex++)
     {
-        const stk::mesh::GraphEdge &graphEdge = m_graph.get_edge_for_element(elemId, edgeIndex);
+        const GraphEdge &graphEdge = m_graph.get_edge_for_element(elemId, edgeIndex);
         if(detector.are_graph_edge_elements_coincident(graphEdge))
             coincidentSides.push_back(graphEdge);
     }
 }
 
-void CoincidentSideExtractor::extract_coincident_sides_for_element(stk::mesh::impl::LocalId elemId,
+void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemId,
                                                                    SparseGraph& extractedCoincidentSides,
                                                                    const CoincidenceDetector &detector)
 {
@@ -58,7 +78,7 @@ void CoincidentSideExtractor::extract_coincident_sides_for_element(stk::mesh::im
     extract_coincident_sides_for_element(elemId, coincidentSides, detector);
     add_edges(coincidentSides, extractedCoincidentSides);
     delete_edges(coincidentSides);
-    detector.report_coincident_sides(std::cerr, coincidentSides);
+    //detector.report_coincident_sides(std::cerr, coincidentSides);
 }
 
 void CoincidentSideExtractor::extract_coincident_sides(SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector)
@@ -70,11 +90,7 @@ void CoincidentSideExtractor::extract_coincident_sides(SparseGraph& extractedCoi
 SparseGraph CoincidentSideExtractor::extract_coincident_sides()
 {
     SparseGraph extractedCoincidentSides;
-    FullyCoincidentElementDetector fullyCoincidentDetector(m_graph, m_topologies);
-
-    extract_coincident_sides(extractedCoincidentSides, fullyCoincidentDetector);
     extract_coincident_sides(extractedCoincidentSides, m_detector);
-
     return extractedCoincidentSides;
 }
 

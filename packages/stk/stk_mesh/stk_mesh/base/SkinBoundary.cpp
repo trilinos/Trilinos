@@ -114,7 +114,7 @@ bool is_sideset_equivalent_to_skin(BulkData &bulkData, stk::mesh::EntityVector &
 void add_locally_owned_side_from_element_side_pair(BulkData &bulkData, const SideSetEntry &facet, stk::mesh::EntityVector &sidesetSides)
 {
     Entity side = get_side_entity_for_element_side_pair(bulkData, facet);
-    if(bulkData.bucket(side).owned())
+    if(bulkData.is_valid(side) && bulkData.bucket(side).owned())
         sidesetSides.push_back(side);
 }
 

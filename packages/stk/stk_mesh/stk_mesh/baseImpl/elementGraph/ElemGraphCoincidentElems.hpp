@@ -38,9 +38,11 @@ class CoincidenceDetector
 {
 public:
     virtual ~CoincidenceDetector() {}
+
     virtual bool are_graph_edge_elements_coincident(const stk::mesh::GraphEdge &graphEdge) const = 0;
+
     virtual void report_coincident_sides(std::ostream &stream,
-                                         const GraphEdgeVector& partiallyCoincidentSides) const {}
+                                         const GraphEdgeVector& coincidentSides) const {};
 };
 
 class CoincidentSideExtractor
@@ -55,13 +57,13 @@ public:
 
     SparseGraph extract_coincident_sides();
     void append_extracted_coincident_sides(const std::vector<impl::LocalId> &elemIds,
-                                           stk::mesh::impl::SparseGraph &coincidentEdges);
+                                           SparseGraph &coincidentEdges);
 private:
     CoincidentSideExtractor();
 
     void extract_coincident_sides(SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector);
-    void extract_coincident_sides_for_element(stk::mesh::impl::LocalId elemId, GraphEdgeVector &partiallyCoincidentSides, const CoincidenceDetector &detector);
-    void extract_coincident_sides_for_element(stk::mesh::impl::LocalId elemId, SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector);
+    void extract_coincident_sides_for_element(LocalId elemId, GraphEdgeVector &coincidentSides, const CoincidenceDetector &detector);
+    void extract_coincident_sides_for_element(LocalId elemId, SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector);
     void delete_edges(const GraphEdgeVector& edgesToDelete);
     void add_edges(const GraphEdgeVector& edgesToDelete, SparseGraph& extractedCoincidentSides);
 
@@ -69,6 +71,8 @@ private:
     const std::vector<stk::topology> &m_topologies;
     const CoincidenceDetector &m_detector;
 };
+
+bool are_graph_edge_elements_fully_coincident(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge);
 
 void make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(const stk::mesh::Graph &graph,
                                             stk::mesh::ParallelInfoForGraphEdges &parallelInfoForGraphEdges,

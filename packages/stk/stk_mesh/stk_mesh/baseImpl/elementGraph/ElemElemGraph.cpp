@@ -4,6 +4,7 @@
 #include "ElemGraphShellConnections.hpp"
 #include "BulkDataIdMapper.hpp"
 #include "BulkDataCoincidenceDetector.hpp"
+#include "FullyCoincidentElementDetector.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -95,7 +96,7 @@ void ElemElemGraph::fill_from_mesh()
 
 void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids()
 {
-    impl::BulkDataCoincidenceDetector detector(m_bulk_data, m_element_topologies, m_local_id_to_element_entity, m_parallelInfoForGraphEdges);
+    impl::BulkDataCoincidenceDetector detector(m_bulk_data, m_graph, m_element_topologies, m_local_id_to_element_entity, m_parallelInfoForGraphEdges);
     impl::CoincidentSideExtractor extractor(m_graph, m_element_topologies, detector);
     m_coincidentGraph = extractor.extract_coincident_sides();
     impl::BulkDataIdMapper idMapper(m_bulk_data, m_local_id_to_element_entity, m_entity_to_local_id);
@@ -2045,25 +2046,50 @@ void ElemElemGraph::add_exposed_sides_due_to_air_selector(impl::LocalId local_id
             exposedSides.push_back(exposedSide);
 }
 
+void ElemElemGraph::mark_local_connections(const stk::mesh::GraphEdge &graphEdge,
+                                           std::vector<bool> &isOnlyConnectedRemotely)
+{
+    if(impl::is_local_element(graphEdge.elem2))
+    {
+        stk::mesh::Entity other_element = m_local_id_to_element_entity[graphEdge.elem2];
+        if(is_element_selected_and_can_have_side(m_bulk_data, m_skinned_selector, other_element))
+            isOnlyConnectedRemotely[graphEdge.side1] = false;
+    }
+}
+
+void ElemElemGraph::mark_remote_connections(const stk::mesh::GraphEdge &graphEdge,
+                                            std::vector<bool> &isConnectedToRemoteElementInBodyToSkin)
+{
+    if(!impl::is_local_element(graphEdge.elem2))
+    {
+        impl::parallel_info &parallel_edge_info = m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge);
+        bool is_other_element_selected = parallel_edge_info.m_in_body_to_be_skinned;
+        if(is_other_element_selected)
+            isConnectedToRemoteElementInBodyToSkin[graphEdge.side1] = true;
+    }
+}
+
+void ElemElemGraph::mark_sides_exposed_on_other_procs(const stk::mesh::GraphEdge &graphEdge,
+                                                      std::vector<bool> &isConnectedToRemoteElementInBodyToSkin,
+                                                      std::vector<bool> &isOnlyConnectedRemotely)
+{
+    mark_local_connections(graphEdge, isOnlyConnectedRemotely);
+    mark_remote_connections(graphEdge, isConnectedToRemoteElementInBodyToSkin);
+}
+
 std::vector<int> ElemElemGraph::get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId, int numElemSides)
 {
     std::vector<bool> isConnectedToRemoteElementInBodyToSkin(numElemSides, false);
     std::vector<bool> isOnlyConnectedRemotely(numElemSides, true);
+
     for(const stk::mesh::GraphEdge &graphEdge : m_graph.get_edges_for_element(localId))
+        mark_sides_exposed_on_other_procs(graphEdge, isConnectedToRemoteElementInBodyToSkin, isOnlyConnectedRemotely);
+
+    auto iter = m_coincidentGraph.find(localId);
+    if(iter != m_coincidentGraph.end())
     {
-        if(impl::is_local_element(graphEdge.elem2))
-        {
-            stk::mesh::Entity other_element = m_local_id_to_element_entity[graphEdge.elem2];
-            if(is_element_selected_and_can_have_side(m_bulk_data, m_skinned_selector, other_element))
-                isOnlyConnectedRemotely[graphEdge.side1] = false;
-        }
-        else
-        {
-            impl::parallel_info &parallel_edge_info = m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge);
-            bool is_other_element_selected = parallel_edge_info.m_in_body_to_be_skinned;
-            if(is_other_element_selected)
-                isConnectedToRemoteElementInBodyToSkin[graphEdge.side1] = true;
-        }
+        for(const GraphEdge & graphEdge : iter->second)
+            mark_local_connections(graphEdge, isOnlyConnectedRemotely);
     }
 
     std::vector<int> exposedSides;

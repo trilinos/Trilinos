@@ -231,10 +231,18 @@ private:
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts);
 
-    void create_remote_sides(stk::mesh::BulkData& bulk_data, const std::vector<RemoteEdge>& remote_edges, stk::mesh::EntityVector& skinned_elements, const stk::mesh::PartVector& skin_parts,
-            const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
-    void create_remote_sides1(stk::mesh::BulkData& bulk_data, const std::vector<RemoteEdge>& remote_edges, stk::mesh::EntityVector& skinned_elements, const stk::mesh::PartVector& skin_parts,
-            const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
+    void create_remote_sides(stk::mesh::BulkData& bulk_data,
+                             const std::vector<RemoteEdge>& remote_edges,
+                             stk::mesh::EntityVector& skinned_elements,
+                             const stk::mesh::PartVector& skin_parts,
+                             const std::vector<unsigned>& side_counts,
+                             std::vector<stk::mesh::sharing_info>& shared_modified);
+    void create_remote_sides1(stk::mesh::BulkData& bulk_data,
+                              const std::vector<RemoteEdge>& remote_edges,
+                              stk::mesh::EntityVector& skinned_elements,
+                              const stk::mesh::PartVector& skin_parts,
+                              const std::vector<unsigned>& side_counts,
+                              std::vector<stk::mesh::sharing_info>& shared_modified);
     bool is_connected_element_air(const stk::mesh::GraphEdge &graphEdge);
     bool is_connected_element_in_body_to_be_skinned(const stk::mesh::GraphEdge &graphEdge);
     bool is_element_selected_and_can_have_side(const stk::mesh::BulkData &bulkData, const stk::mesh::Selector &selector, stk::mesh::Entity otherElement);
@@ -245,6 +253,12 @@ private:
                                                  std::vector<stk::mesh::sharing_info> &shared_modified);
     void add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides);
     std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId, int numElemSides);
+    void mark_sides_exposed_on_other_procs(const stk::mesh::GraphEdge &graphEdge,
+                                           std::vector<bool> &isConnectedToRemoteElementInBodyToSkin,
+                                           std::vector<bool> &isOnlyConnectedRemotely);
+    void mark_remote_connections(const stk::mesh::GraphEdge &graphEdge,
+                                 std::vector<bool> &isConnectedToRemoteElementInBodyToSkin);
+    void mark_local_connections(const stk::mesh::GraphEdge &graphEdge, std::vector<bool> &isOnlyConnectedRemotely);
 
 private:
     void update_all_local_neighbors(const stk::mesh::Entity elemToSend,

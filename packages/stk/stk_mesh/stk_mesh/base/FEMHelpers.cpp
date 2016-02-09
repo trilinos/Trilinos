@@ -309,11 +309,16 @@ Entity declare_element_edge(
     return edge;
 }
 
+
 OrdinalAndPermutation
-get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, const stk::mesh::EntityVector &nodes_of_sub_rank)
+get_ordinal_and_permutation_with_filter(const stk::mesh::BulkData& mesh,
+                                        stk::mesh::Entity parent_entity,
+                                        stk::mesh::EntityRank to_rank,
+                                        const stk::mesh::EntityVector &nodes_of_sub_rank,
+                                        bool filter_negative_permutations)
 {
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = std::make_pair(stk::mesh::INVALID_CONNECTIVITY_ORDINAL,
-            stk::mesh::INVALID_PERMUTATION);
+                                                                                                             stk::mesh::INVALID_PERMUTATION);
 
     unsigned nodes_of_sub_rank_size = nodes_of_sub_rank.size();
 
@@ -337,16 +342,15 @@ get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity p
         ThrowRequireMsg(num_nodes == nodes_of_sub_rank.size(), "AHA! num_nodes != nodes_of_sub_rank.size()");
         ThrowRequireMsg(num_nodes<=max_nodes_possible, "Program error. Exceeded expected array dimensions. Contact sierra-help for support.");
         elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology);
-        if (!elemTopology.is_shell() || (to_rank == stk::topology::EDGE_RANK))
-        {
-           result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
-        }
-        else
+
+        result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
+
+        if ((elemTopology.is_shell() && (to_rank != stk::topology::EDGE_RANK)) || filter_negative_permutations)
         {
            result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
            if (result.first && result.second >= sub_topology.num_positive_permutations())
            {
-        	   result.first = false;
+               result.first = false;
            }
         }
 
@@ -359,6 +363,22 @@ get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity p
 
     return ordinalAndPermutation;
 }
+
+OrdinalAndPermutation
+get_ordinal_and_permutation(const stk::mesh::BulkData& mesh,
+                            stk::mesh::Entity parent_entity,
+                            stk::mesh::EntityRank to_rank,
+                            const stk::mesh::EntityVector &nodes_of_sub_rank)
+{
+    return get_ordinal_and_permutation_with_filter(mesh, parent_entity, to_rank, nodes_of_sub_rank, false);
+}
+
+OrdinalAndPermutation
+get_ordinal_and_positive_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, const stk::mesh::EntityVector &nodes_of_sub_rank)
+{
+    return get_ordinal_and_permutation_with_filter(mesh, parent_entity, to_rank, nodes_of_sub_rank, true);
+}
+
 
 stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
         stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part)

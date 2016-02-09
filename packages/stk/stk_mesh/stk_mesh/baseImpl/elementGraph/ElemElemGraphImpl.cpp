@@ -23,7 +23,9 @@ namespace stk { namespace mesh {
 namespace impl
 {
 
-void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies)
+void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData,
+                                                            stk::mesh::EntityVector& local_id_to_element_entity,
+                                                            std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector& elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     size_t local_id = 0;
@@ -40,8 +42,10 @@ void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData&
     }
 }
 
-void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity,
-                                                             std::vector<impl::LocalId>& entity_to_local_id, std::vector<stk::topology>& element_topologies)
+void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData,
+                                                             stk::mesh::EntityVector& local_id_to_element_entity,
+                                                             std::vector<impl::LocalId>& entity_to_local_id,
+                                                             std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     size_t local_id = 0;
@@ -476,7 +480,11 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     return side;
 }
 
-void add_shell_element_if_coincident(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
+void add_shell_element_if_coincident(const stk::mesh::BulkData& mesh,
+                                     const unsigned sideOrdinal,
+                                     const stk::mesh::Entity localElement,
+                                     const ConnectedElementData& connectedElem,
+                                     ConnectedElementDataVector& filteredConnectedElements)
 {
     const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
     stk::mesh::OrdinalAndPermutation localElemOrdAndPerm =
@@ -491,11 +499,15 @@ void add_shell_element_if_coincident(const stk::mesh::BulkData& mesh, const unsi
     }
 }
 
-void add_solid_element_if_normals_oppose_to_shell(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
+void add_solid_element_if_normals_oppose_to_shell(const stk::mesh::BulkData& mesh,
+                                                  const unsigned sideOrdinal,
+                                                  const stk::mesh::Entity localElement,
+                                                  const ConnectedElementData& connectedElem,
+                                                  ConnectedElementDataVector& filteredConnectedElements)
 {
     const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
     stk::mesh::OrdinalAndPermutation localElemOrdAndPerm =
-            stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), sideNodesOfReceivedElement);
+            stk::mesh::get_ordinal_and_positive_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), sideNodesOfReceivedElement);
     // for shell element, want the nodes of the solid to be in opposite order. So getting non-matching side ordinals
     // means the normals oppose
     bool does_local_shell_side_normal_oppose_other_element_side_normal = (localElemOrdAndPerm.first != sideOrdinal);
@@ -506,7 +518,10 @@ void add_solid_element_if_normals_oppose_to_shell(const stk::mesh::BulkData& mes
     }
 }
 
-void add_shell_connections_to_this_solid_if_normals_oppose(const stk::mesh::BulkData& mesh, const stk::mesh::Entity localElement, const unsigned sideOrdinal, ConnectedElementDataVector& connectedElementData)
+void add_shell_connections_to_this_solid_if_normals_oppose(const stk::mesh::BulkData& mesh,
+                                                           const stk::mesh::Entity localElement,
+                                                           const unsigned sideOrdinal,
+                                                           ConnectedElementDataVector& connectedElementData)
 {
     ConnectedElementDataVector filteredConnectedElements;
 
@@ -526,7 +541,10 @@ void add_shell_connections_to_this_solid_if_normals_oppose(const stk::mesh::Bulk
     
         if (connectedElem.m_elementTopology.is_shell() && isEquivalentNodes)
         {
-            stk::mesh::OrdinalAndPermutation localElemOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), connectedElem.m_sideNodes);
+            stk::mesh::OrdinalAndPermutation localElemOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh,
+                                                                                                          localElement,
+                                                                                                          mesh.mesh_meta_data().side_rank(),
+                                                                                                          connectedElem.m_sideNodes);
             bool localNegativeRelativeFacePolarity = !localSideTopology.is_positive_polarity(localElemOrdAndPerm.second);
     
             if (localNegativeRelativeFacePolarity)

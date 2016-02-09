@@ -246,10 +246,6 @@ void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh
                                           const unsigned sideOrdinal,
                                           ConnectedElementDataVector & connectedElementData);
 
-void break_volume_element_connections_across_shells(const std::set<EntityId> & localElementsConnectedToRemoteShell,
-                                       ElementGraph & elem_graph,
-                                       SidesForElementGraph & via_sides);
-
 void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges);
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
