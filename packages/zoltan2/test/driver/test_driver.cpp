@@ -54,6 +54,7 @@
 #include <Zoltan2_Typedefs.hpp>
 #include <AdapterForTests.hpp>
 #include <Zoltan2_ComparisonHelper.hpp>
+#include <Zoltan2_MetricAnalyzer.hpp>
 
 #include <Zoltan2_ProblemFactory.hpp>
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
@@ -97,7 +98,7 @@ using std::queue;
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
 // temporary methods for debugging and leanring
-typedef Zoltan2::MetricValues<zscalar_t> metric_t; // typedef metric_type
+//typedef Zoltan2::MetricValues<zscalar_t> metric_t; // typedef metric_type
 
 void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & plist)
 {
@@ -123,7 +124,6 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
   zoltan2Parameters.set("compute_metrics", "true");
 
 }
-
 
 void getParameterLists(const string &inputFileName,
                        queue<ParameterList> &problems,
@@ -154,58 +154,6 @@ void getParameterLists(const string &inputFileName,
     if(plist.name() == "Comparison") comparisons.emplace(plist);
     else problems.emplace(plist);
   }
-  
-}
-
-bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
-                      const metric_t & metric,
-                      const Teuchos::ParameterList & metricPlist,
-                      ostringstream &msg)
-{
-  // run a comparison of min and max agains a given metric
-  // return an error message on failure
-  bool pass = true;
-  string test_name = metric.getName() + " test";
-  double local_value = metric.getMaxImbalance()/metric.getMinImbalance();
-  
-  
-  // reduce problem metric to processor 0
-  double value;
-  Teuchos::Ptr<double> global(&value);
-  comm->barrier();
-  reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,local_value,global);
-  
-  // Perfom tests
-  if (metricPlist.isParameter("lower"))
-  {
-    double min = metricPlist.get<double>("lower");
-    
-    if(value < min)
-    {
-      msg << test_name << " FAILED: Minimum imbalance per part, "
-      << value << ", less than specified allowable minimum, " << min << ".\n";
-      pass = false;
-    }else{
-      msg << test_name << " PASSED: Minimum imbalance per part, "
-      << value << ", greater than specified allowable minimum, " << min << ".\n";
-    }
-  }
-  
-  if(metricPlist.isParameter("upper" ) && pass != false) {
-    double max = metricPlist.get<double>("upper");
-    if (value > max)
-    {
-      msg << test_name << " FAILED: Maximum imbalance per part, "
-      << value << ", greater than specified allowable maximum, " << max << ".\n";
-      pass = false;
-    }else{
-      msg << test_name << " PASSED: Maximum imbalance per part, "
-      << value << ", less than specified allowable maximum, " << max << ".\n";
-    }
-    
-  }
-  
-  return pass;
 }
 
 void run(const UserInputForTests &uinput,
@@ -327,64 +275,50 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////
-  
-  // calculate pass fail based on imbalance
-  if(rank == 0) cout << "Comparing metrics..." << endl;
-
   // An environment.  This is usually created by the problem.
   // BDD unused, only applicable to partitioning problems
   // RCP<const Zoltan2::Environment> env =
   //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
 
-  if( problem_kind == "partitioning" &&
-      problem_parameters.isParameter("Metrics"))
-  {
-    if(rank == 0) {
+  if( problem_parameters.isParameter("Metrics")) {
+    // calculate pass fail based on imbalance
+    if(rank == 0) cout << "Analyzing metrics..." << endl;
+    if(rank == 0 && problem_kind == "partitioning") {
       std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
       reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
     }
 
-    ArrayRCP<const metric_t> metrics
-    = reinterpret_cast<partitioning_problem_t *>(problem)->getMetrics();
+    std::ostringstream msg;
+    auto metricsPlist = problem_parameters.sublist("Metrics");
+    bool all_tests_pass = false;
     
-    // get metric plist
-    const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
+    if (problem_kind == "partitioning") {
+      all_tests_pass
+      = MetricAnalyzer<partitioning_problem_t>::analyzeMetrics( metricsPlist,
+                                                                reinterpret_cast<const partitioning_problem_t *>(const_cast<base_problem_t *>(problem)),
+                                                                comm,
+                                                                msg); 
+    } else if (problem_kind == "ordering") {
+      all_tests_pass
+      = MetricAnalyzer<ordering_problem_t>::analyzeMetrics( metricsPlist,
+                                                            reinterpret_cast<const ordering_problem_t *>(const_cast<base_problem_t *>(problem)),
+                                                            comm,
+                                                            msg); 
+    } else if (problem_kind == "coloring") {
+      all_tests_pass
+      = MetricAnalyzer<coloring_problem_t>::analyzeMetrics( metricsPlist,
+                                                            reinterpret_cast<const coloring_problem_t *>(const_cast<base_problem_t *>(problem)),
+                                                            comm,
+                                                            msg); 
+    }
+    std::cout << msg.str() << std::endl;
+    if(rank == 0 && all_tests_pass) cout << "All tests PASSED." << endl;
+    else if(rank == 0) cout << "Testing FAILED." << endl;
     
-    string test_name;
-    bool all_tests_pass = true;
-    for(int i = 0; i < metrics.size(); i++)
-    {
-      // print their names...
-      ostringstream msg;
-      test_name = metrics[i].getName();
-      if(metricsPlist.isSublist(test_name))
-      {
-        if(!MetricBoundsTest(comm, metrics[i], metricsPlist.sublist(test_name), msg))
-          all_tests_pass = false;
-        
-        if(rank == 0) cout << msg.str() << endl;
-      }
-    }
-    
-    if(all_tests_pass)
-    {
-      if(rank == 0) cout << "All tests PASSED." << endl;
-    }
-    else
-    {
-      if(rank == 0) cout << "Testing FAILED." << endl;
-    }
-    
-  }else{
-    if(rank == 0)
-    {
-      if (problem_kind == "partitioning") {
-      cout << "No test metrics provided." << endl;
-      reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
-      } else {
-        cout << "Metrics unavailable for " + problem_kind + " problems" << std::endl;
-      }
-    }
+  }else if(rank == 0 && problem_kind == "partitioning") {
+    // BDD for debugging
+    cout << "No test metrics provided. Problem Metrics are: " << endl;
+    reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
   }
   
   // 4b. timers
