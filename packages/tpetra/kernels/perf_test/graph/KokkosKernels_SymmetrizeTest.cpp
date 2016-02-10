@@ -4,8 +4,8 @@
 
 #include "KokkosKernels_GraphHelpers.hpp"
 
-#define CUDACONFIG
-//#define OPENMP
+//#define CUDACONFIG
+#define OPENMP
 
 #ifdef CUDACONFIG
 #define REPEAT 5

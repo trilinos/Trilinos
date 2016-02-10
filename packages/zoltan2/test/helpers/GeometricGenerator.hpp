@@ -669,7 +669,7 @@ public:
 
   virtual CoordinatePoint<T> getPoint(gno_t pindex, unsigned int &state){
 
-    pindex = 0; // not used in normal distribution.
+    //pindex = 0; // not used in normal distribution.
     CoordinatePoint <T> p;
 
     for(int i = 0; i < this->dimension; ++i){
@@ -744,7 +744,7 @@ public:
   virtual CoordinatePoint<T> getPoint(gno_t pindex, unsigned int &state){
 
 
-    pindex = 0; //not used in uniform dist.
+    //pindex = 0; //not used in uniform dist.
     CoordinatePoint <T> p;
     for(int i = 0; i < this->dimension; ++i){
       switch(i){

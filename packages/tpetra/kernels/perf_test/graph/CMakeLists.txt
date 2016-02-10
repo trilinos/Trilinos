@@ -6,7 +6,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  gs_test
+  PCG_TEST
   SOURCES KokkosKernels_PCG_GS_TEST.cpp KokkosKernels_PCG.hpp KokkosKernels_GraphHelpers.hpp
   )
 
@@ -25,10 +25,10 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES KokkosKernels_SymmetrizeTest.cpp KokkosKernels_GraphHelpers.hpp experiment_space.hpp
   )  
   
-#TRIBITS_ADD_EXECUTABLE(
-#  mytest
-#  SOURCES mytest.cpp KokkosKernels_GraphHelpers.hpp experiment_space.hpp
-#)  
+TRIBITS_ADD_EXECUTABLE(
+  view_test
+  SOURCES view_test.cpp
+)  
   
 #
 # Make a trivial change here if you add a file either to this

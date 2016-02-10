@@ -47,6 +47,7 @@
 #ifdef KOKKOS_HAVE_CXX11
 #include <type_traits>
 #include <Kokkos_Sparse_impl_spmv.hpp>
+//#include <Kokkos_Sparse.hpp>
 #endif // KOKKOS_HAVE_CXX11
 
 namespace KokkosSparse {
