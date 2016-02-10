@@ -48,6 +48,10 @@
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
 */
 
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+#include "Intrepid2_OrientationTools.hpp"
+#endif
+
 namespace Intrepid2 {
 
   template<class Scalar, class ArrayScalar>
@@ -69,14 +73,26 @@ namespace Intrepid2 {
 
     // construct lattice
 
-    shards::CellTopology myTri_3( shards::getCellTopologyData< shards::Triangle<3> >() );  
-
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+    {
+      ArrayScalar tempPts(N, 2);
+      PointTools::getLattice<Scalar,ArrayScalar >( tempPts ,
+                                                   this->basisCellTopology_,
+                                                   n ,
+                                                   0 ,
+                                                   pointType );
+    
+      OrientationTools<Scalar>::getLatticePointsByTopology( latticePts,
+                                                            tempPts,
+                                                            *this );
+    }
+#else
     PointTools::getLattice<Scalar,ArrayScalar >( latticePts ,
-                                                            myTri_3 ,
-                                                            n ,
-                                                            0 ,
-                                                            pointType );
-
+                                                 this->basisCellTopology_,
+                                                 n ,
+                                                 0 ,
+                                                 pointType );
+#endif
     
     // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
     // so we transpose on copy below.
@@ -289,6 +305,28 @@ namespace Intrepid2 {
     TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                         ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): FEM Basis calling an FVD member function");
   }
+
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+  // This should be part of basis tag and filled by derived classes instead of hardwired like this
+  template<class Scalar, class ArrayScalar>
+  int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumVertexDofs() const {
+    return 1;
+  }
+  template<class Scalar, class ArrayScalar>
+  int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumEdgeDofs() const {
+    const int order = this->basisDegree_;
+    return (order - 1);
+  }
+  template<class Scalar, class ArrayScalar>
+  int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumFaceDofs() const {
+    return 0;
+  }
+  template<class Scalar, class ArrayScalar>
+  int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumInteriorDofs() const {
+    const int order = this->basisDegree_;
+    return (order - 2)*(order - 1)/2;
+  }
+#endif  
 
 
 }// namespace Intrepid2

@@ -57,14 +57,57 @@
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
 
 namespace Intrepid2 {
+
+  template<class Scalar>
+  template<class ArrayPoint>
+  void OrientationTools<Scalar>::getTriangleLatticePointsByTopology(ArrayPoint &                     outPts,
+                                                                    const ArrayPoint &               refPts,
+                                                                    const Basis<Scalar,ArrayPoint> & basis) {
+    const int nv = basis.getNumVertexDofs();
+    const int ne = basis.getNumEdgeDofs();
+    const int ni = basis.getNumInteriorDofs();
+    const int nn = 3*nv + ne*3 + ni;
+
+    // group (vertex, edges, interior)
+    int eoff0 = 3*nv, eoff1 = eoff0+ne, eoff2 = eoff1+ne, ioff = eoff2+ne;
+
+    // group dofs with bicentric coordiantes
+    const double eps = INTREPID2_EPSILON;
+
+    for (int k=0;k<nn;++k) {
+      const Scalar pt[] = { refPts(k, 0),
+                            refPts(k, 1) };
+
+      const Scalar lambda[] = { (1.0 - pt[0] - pt[1])*(1.0 - pt[0] - pt[1]),
+                                pt[0]*pt[0],
+                                pt[1]*pt[1] };
+
+      const bool vflag[] = { (lambda[0] - 1.0 < eps),
+                             (lambda[1] - 1.0 < eps),
+                             (lambda[2] - 1.0 < eps) };
+
+      const bool eflag[] = { (lambda[2] < eps),
+                             (lambda[0] < eps),
+                             (lambda[1] < eps) };
+
+      if      ( vflag[0] &&  eflag[1] &&  eflag[2]) { outPts(0,0) = refPts(k,0); outPts(0,1) = refPts(k,1); } //vert0
+      else if ( eflag[0] &&  vflag[1] &&  eflag[2]) { outPts(1,0) = refPts(k,0); outPts(1,1) = refPts(k,1); } //vert1
+      else if ( eflag[0] &&  eflag[1] &&  vflag[2]) { outPts(2,0) = refPts(k,0); outPts(2,1) = refPts(k,1); } //vert2
+      else if ( eflag[0] && !eflag[1] && !eflag[2]) { outPts(eoff0, 0) = refPts(k,0); outPts(eoff0++, 1) = refPts(k,1); } //edge0 
+      else if (!eflag[0] &&  eflag[1] && !eflag[2]) { outPts(eoff1, 0) = refPts(k,0); outPts(eoff1++, 1) = refPts(k,1); } //edge1 
+      else if (!eflag[0] && !eflag[1] &&  eflag[2]) { outPts(eoff2, 0) = refPts(k,0); outPts(eoff2++, 1) = refPts(k,1); } //edge2
+      else                                          { outPts(ioff,  0) = refPts(k,0); outPts(ioff++,  1) = refPts(k,1); } //interior
+    }
+  }
+
   
   template<class Scalar>
-  void OrientationTools<Scalar>::setModifiedLinePoint(double &ot, 
-                                               const double pt,
-                                               const int ort) {
+  void OrientationTools<Scalar>::getModifiedLinePoint(double &ot, 
+                                                      const double pt,
+                                                      const int ort) {
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt && pt <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::setModifiedLinePoint): pt is out of range [-1, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedLinePoint): pt is out of range [-1, 1].");  
 #endif
   
     switch (ort) {
@@ -72,29 +115,29 @@ namespace Intrepid2 {
     case 1: ot = - pt; break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
-                                 ">>> ERROR (Intrepid2::OrientationTools::setModifiedLinePoint): Invalid orientation number (0--1)." );
+                                 ">>> ERROR (Intrepid2::OrientationTools::getModifiedLinePoint): Invalid orientation number (0--1)." );
     }
   }
 
   template<class Scalar>
-  void OrientationTools<Scalar>::setModifiedTrianglePoint(double &ot0,     
-                                                   double &ot1, 
-                                                   const double pt0, 
-                                                   const double pt1,
-                                                   const int ort) {
+  void OrientationTools<Scalar>::getModifiedTrianglePoint(double &ot0,     
+                                                          double &ot1, 
+                                                          const double pt0, 
+                                                          const double pt1,
+                                                          const int ort) {
     const double lambda[3] = { 1.0 - pt0 - pt1, 
                                pt0,
                                pt1 };
   
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[0] && lambda[0] <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[0]) is out of range [0, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[0]) is out of range [0, 1].");  
   
     TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[1] && lambda[1] <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[1]) is out of range [0, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[1]) is out of range [0, 1].");  
   
     TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[2] && lambda[2] <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[2]) is out of range [0, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[2]) is out of range [0, 1].");  
 #endif
 
     switch (ort) {
@@ -106,22 +149,22 @@ namespace Intrepid2 {
     case 5: ot0 = lambda[1]; ot1 = lambda[0]; break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
-                                 ">>> ERROR (Intrepid2::OrientationTools::setModifiedTrianglePoint): Invalid orientation number (0--5)." );
+                                 ">>> ERROR (Intrepid2::OrientationTools::getModifiedTrianglePoint): Invalid orientation number (0--5)." );
     }
   }
 
   template<class Scalar>
-  void OrientationTools<Scalar>::setModifiedQuadrilateralPoint(double &ot0,     
-                                                        double &ot1, 
-                                                        const double pt0, 
-                                                        const double pt1,
-                                                        const int ort) {
+  void OrientationTools<Scalar>::getModifiedQuadrilateralPoint(double &ot0,     
+                                                               double &ot1, 
+                                                               const double pt0, 
+                                                               const double pt1,
+                                                               const int ort) {
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt0 && pt0 <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::setModifiedQuadrilateralPoint): pt0 is out of range [-1, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedQuadrilateralPoint): pt0 is out of range [-1, 1].");  
   
     TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt1 && pt1 <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::setModifiedQuadrilateralPoint): pt1 is out of range [-1, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedQuadrilateralPoint): pt1 is out of range [-1, 1].");  
 #endif
 
     const double lambda[2][2] = { { pt0, -pt0 }, 
@@ -138,16 +181,51 @@ namespace Intrepid2 {
     case 7: ot0 = lambda[0][1]; ot1 = lambda[1][0]; break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
-                                 ">>> ERROR (Intrepid2::OrientationTools::setModifiedQuadrilateralPoint): Invalid orientation number (0--7)." );
+                                 ">>> ERROR (Intrepid2::OrientationTools::getModifiedQuadrilateralPoint): Invalid orientation number (0--7)." );
+    }
+  }
+
+  // -- Public interface
+
+  template<class Scalar>
+  template<class ArrayPoint>
+  void OrientationTools<Scalar>::getLatticePointsByTopology(ArrayPoint &                     outPoints,
+                                                            const ArrayPoint &               refPoints,
+                                                            const Basis<Scalar,ArrayPoint> & basis) {
+#ifdef HAVE_INTREPID_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument, 
+                                ">>> ERROR (Intrepid::OrientationTools::getLatticePointsByTopology): populate point array by a topological order.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION( !( outPoints.dimension(0) == refPoints.dimension(0) ), std::invalid_argument,
+                                ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): size of input and output point arrays does not match each other.");
+#endif
+    
+    const auto key = basis.getBaseCellTopology().getBaseCellTopologyData()->key;
+    switch (key) {
+    case shards::Line<>::key : {
+      break;
+    }
+    case shards::Triangle<>::key : {
+      getTriangleLatticePointsByTopology(outPoints, 
+                                         refPoints,
+                                         basis);
+      break;
+    }
+    case shards::Quadrilateral<>::key : {
+      break;
+    }
+    default: 
+      TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
+                                 ">>> ERROR (Intrepid2::OrientationTools::getLatticePointsByTopology): Invalid cell topology." );
     }
   }
 
   template<class Scalar>
   template<class ArrayPoint>
   void OrientationTools<Scalar>::mapToModifiedReference(ArrayPoint &                  ortPoints,
-                                                 const ArrayPoint &            refPoints,
-                                                 const shards::CellTopology &  cellTopo,
-                                                 const int                     cellOrt){
+                                                        const ArrayPoint &            refPoints,
+                                                        const shards::CellTopology &  cellTopo,
+                                                        const int                     cellOrt) {
 #ifdef HAVE_INTREPID_DEBUG
     {
       const int cellDim = cellTopo.getDimension();
@@ -157,7 +235,7 @@ namespace Intrepid2 {
       TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= cellDim) && (cellDim <= 2 ) ), std::invalid_argument,
                                   ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): method defined only for 1 and 2-dimensional subcells.");  
 
-      TEUCHOS_TEST_FOR_EXCEPTION( !( numPts == refPoints.dimension(0) ), std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( !( ortPoints.dimension(0) == refPoints.dimension(0) ), std::invalid_argument,
                                   ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): size of input and output point arrays does not match each other.");
     }
 #endif
@@ -168,21 +246,21 @@ namespace Intrepid2 {
     switch (key) {
     case shards::Line<>::key : {
       for (size_t pt=0;pt<numPts;++pt) 
-        setModifiedLinePoint(ortPoints(pt, 0),
+        getModifiedLinePoint(ortPoints(pt, 0),
                              refPoints(pt, 0), 
                              cellOrt);
       break;
     }
     case shards::Triangle<>::key : {
       for (size_t pt=0;pt<numPts;++pt) 
-        setModifiedTrianglePoint(ortPoints(pt, 0), ortPoints(pt, 1),
+        getModifiedTrianglePoint(ortPoints(pt, 0), ortPoints(pt, 1),
                                  refPoints(pt, 0), refPoints(pt, 1), 
                                  cellOrt);
       break;
     }
     case shards::Quadrilateral<>::key : {
       for (size_t pt=0;pt<numPts;++pt) 
-        setModifiedQuadrilateralPoint(ortPoints(pt, 0), ortPoints(pt, 1),
+        getModifiedQuadrilateralPoint(ortPoints(pt, 0), ortPoints(pt, 1),
                                       refPoints(pt, 0), refPoints(pt, 1), 
                                       cellOrt);
       break;

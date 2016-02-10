@@ -73,7 +73,6 @@ namespace Intrepid2 {
   
   template<class Scalar>
   class OrientationTools {
-  private:
   public:
   
     /** \brief  Default constructor.
@@ -83,14 +82,20 @@ namespace Intrepid2 {
     /** \brief  Destructor
      */
     ~OrientationTools(){ };
-  
+
+  private:
+    template<class ArrayPoint>
+    static void getTriangleLatticePointsByTopology(ArrayPoint &                     outPts,
+                                                   const ArrayPoint &               refPts,
+                                                   const Basis<Scalar,ArrayPoint> & basis);
+
     /** \brief  Computes modified point for line segment.
       
         \param  ot       [out] - modified point value
         \param  pt       [in]  - input point in [-1.0 , 1.0]
         \param  ort      [in]  - orientation number between 0 and 1
     */
-    static void setModifiedLinePoint(double &ot,
+    static void getModifiedLinePoint(double &ot,
                                      const double pt,
                                      const int ort);
 
@@ -102,7 +107,7 @@ namespace Intrepid2 {
         \param  pt1      [out] - input coordinate 1
         \param  ort      [in]  - orientation number between 0 and 5
     */
-    static void setModifiedTrianglePoint(double &ot0,
+    static void getModifiedTrianglePoint(double &ot0,
                                          double &ot1,
                                          const double pt0,
                                          const double pt1,
@@ -116,11 +121,18 @@ namespace Intrepid2 {
         \param  pt1      [out] - input coordinate 1
         \param  ort      [in]  - orientation number between 0 and 7
     */
-    static void setModifiedQuadrilateralPoint(double &ot0,
+    static void getModifiedQuadrilateralPoint(double &ot0,
                                               double &ot1,
                                               const double pt0,
                                               const double pt1,
                                               const int ort);
+
+  public:
+    template<class ArrayPoint>
+    static void getLatticePointsByTopology(ArrayPoint &                     outPoints,
+                                           const ArrayPoint &               refPoints,
+                                           const Basis<Scalar,ArrayPoint> & basis);
+    
 
     /** \brief  Computes modified parameterization maps of 1- and 2-subcells with orientation.
 

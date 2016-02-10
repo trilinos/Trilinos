@@ -275,7 +275,16 @@ public:
    */
   virtual const std::vector<std::vector<int> >& getAllDofTags();
   
-  
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+  // This should be pure virtual but right now return -1 from the base
+  // 1D - vertex, interior
+  // 2D - vertex, edge, interior
+  // 3D - vertex, edge, face, interior
+  virtual int getNumVertexDofs() const;
+  virtual int getNumEdgeDofs() const;
+  virtual int getNumFaceDofs() const;
+  virtual int getNumInteriorDofs() const;
+#endif  
 
 
 }; // class Basis
