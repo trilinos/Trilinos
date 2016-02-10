@@ -208,10 +208,9 @@ bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
   return pass;
 }
 
-template<typename ProblemType, typename AdapterType>
 void run(const UserInputForTests &uinput,
          const ParameterList &problem_parameters,
-         RCP<ComparisonHelper<ProblemType, AdapterType>> & comparison_helper,
+         RCP<ComparisonHelper> & comparison_helper,
          const RCP<const Teuchos::Comm<int> > & comm)
 {
   // Major steps in running a problem in zoltan 2
@@ -244,7 +243,7 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 0. add comparison source
   ////////////////////////////////////////////////////////////
-  ComparisonSource<ProblemType, AdapterType> * comparison_source = new ComparisonSource<ProblemType, AdapterType>;
+  ComparisonSource * comparison_source = new ComparisonSource;
   comparison_helper->AddSource(problem_parameters.name(), comparison_source);
   comparison_source->addTimer("adapter construction time");
   comparison_source->addTimer("problem construction time");
@@ -300,11 +299,11 @@ void run(const UserInputForTests &uinput,
   
   comparison_source->timers["solve time"]->start();
   if (problem_kind == "partitioning") {
-    reinterpret_cast<ProblemType *>(problem)->solve();
+    reinterpret_cast<partitioning_problem_t *>(problem)->solve();
   } else if (problem_kind == "ordering") {
-    reinterpret_cast<ProblemType *>(problem)->solve();
+    reinterpret_cast<ordering_problem_t *>(problem)->solve();
   } else if (problem_kind == "coloring") {
-    reinterpret_cast<ProblemType *>(problem)->solve();
+    reinterpret_cast<coloring_problem_t *>(problem)->solve();
   }
   comparison_source->timers["solve time"]->stop();
   if (rank == 0)
@@ -319,7 +318,7 @@ void run(const UserInputForTests &uinput,
       std::cout << rank << " LID " << i
                 << " GID " << kddIDs[i]
                 << " PART " 
-                << reinterpret_cast<ProblemType *>(problem)->getSolution().getPartListView()[i]
+                << reinterpret_cast<partitioning_problem_t *>(problem)->getSolution().getPartListView()[i]
                 << std::endl;
     }
   }
@@ -335,18 +334,18 @@ void run(const UserInputForTests &uinput,
   // An environment.  This is usually created by the problem.
   // BDD unused, only applicable to partitioning problems
   // RCP<const Zoltan2::Environment> env =
-  //   reinterpret_cast<ProblemType *>(problem)->getEnvironment();
+  //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
 
   if( problem_kind == "partitioning" &&
       problem_parameters.isParameter("Metrics"))
   {
     if(rank == 0) {
       std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
-      reinterpret_cast<ProblemType *>(problem)->printMetrics(cout);
+      reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
     }
 
     ArrayRCP<const metric_t> metrics
-    = reinterpret_cast<ProblemType *>(problem)->getMetrics();
+    = reinterpret_cast<partitioning_problem_t *>(problem)->getMetrics();
     
     // get metric plist
     const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
@@ -381,7 +380,7 @@ void run(const UserInputForTests &uinput,
     {
       if (problem_kind == "partitioning") {
       cout << "No test metrics provided." << endl;
-      reinterpret_cast<ProblemType *>(problem)->printMetrics(cout);
+      reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
       } else {
         cout << "Metrics unavailable for " + problem_kind + " problems" << std::endl;
       }
@@ -390,18 +389,18 @@ void run(const UserInputForTests &uinput,
   
   // 4b. timers
 //  if(zoltan2_parameters.isParameter("timer_output_stream"))
-//    reinterpret_cast<ProblemType *>(problem)->printTimers();
+//    reinterpret_cast<partitioning_problem_t *>(problem)->printTimers();
   
   ////////////////////////////////////////////////////////////
   // 5. Add solution to map for possible comparison testing
   ////////////////////////////////////////////////////////////
-  comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<AdapterType *>(ia));
-  comparison_source->problem = RCP<ProblemType>(reinterpret_cast<ProblemType *>(problem));
+  comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
+  comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
   
   // write mesh solution
-//  auto sol = reinterpret_cast<ProblemType *>(problem)->getSolution();
+//  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
 //  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
 
   ////////////////////////////////////////////////////////////
@@ -473,8 +472,8 @@ int main(int argc, char *argv[])
 //    MyUtils::writeMesh(uinput,comm);
 //    MyUtils::getConnectivityGraph(uinput, comm);
         
-    RCP<ComparisonHelper<partitioning_problem_t, basic_id_t>> comparison_manager
-      = rcp(new ComparisonHelper<partitioning_problem_t, basic_id_t>);
+    RCP<ComparisonHelper> comparison_manager
+      = rcp(new ComparisonHelper);
     while (!problems.empty()) {
       run(uinput, problems.front(), comparison_manager, comm);
       problems.pop();
