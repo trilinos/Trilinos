@@ -377,6 +377,20 @@ public:
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
     { return unsigned(r) < unsigned(Rank) ? m_offset.m_dim.extent(r) : 1 ; }
 
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename Traits::array_layout layout() const
+    { return typename Traits::array_layout(
+        0 < unsigned(Rank) ? m_offset.dimension_0() : 0,
+        1 < unsigned(Rank) ? m_offset.dimension_1() : 0,
+        2 < unsigned(Rank) ? m_offset.dimension_2() : 0,
+        3 < unsigned(Rank) ? m_offset.dimension_3() : 0,
+        4 < unsigned(Rank) ? m_offset.dimension_4() : 0,
+        5 < unsigned(Rank) ? m_offset.dimension_5() : 0,
+        6 < unsigned(Rank) ? m_offset.dimension_6() : 0,
+        7 < unsigned(Rank) ? m_offset.dimension_7() : 0
+        );
+    }
+
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
     { return 0 < unsigned(Rank) ? m_offset.dimension_0() : 1 ; }
 
@@ -528,12 +542,13 @@ public:
   KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
+  template< class ... P >
   KOKKOS_INLINE_FUNCTION
   ViewMapping
-    ( pointer_type ptr
+    ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & layout
     )
-    : m_handle( reinterpret_cast< handle_type >( ptr ) )
+    : m_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
     , m_offset( std::integral_constant< unsigned , 0 >()
               , layout )
     // Query m_offset, not input, in case of static dimension
@@ -555,12 +570,12 @@ public:
    */
   template< class ... P >
   SharedAllocationRecord<> *
-  allocate_shared( ViewAllocProp< P... > const & prop
+  allocate_shared( ViewCtorProp< P... > const & prop
                  , typename Traits::array_layout const & layout )
   {
-    typedef ViewAllocProp< P... > alloc_prop ;
+    typedef ViewCtorProp< P... > ctor_prop ;
 
-    typedef typename alloc_prop::execution_space  execution_space ;
+    typedef typename ctor_prop::execution_space  execution_space ;
     typedef typename Traits::memory_space         memory_space ;
     typedef ViewValueFunctor< execution_space , fad_value_type > functor_type ;
     typedef SharedAllocationRecord< memory_space , functor_type > record_type ;
@@ -582,8 +597,8 @@ public:
 
     // Create shared memory tracking record with allocate memory from the memory space
     record_type * const record =
-      record_type::allocate( ( (ViewAllocProp<void,memory_space> const &) prop ).value
-                           , ( (ViewAllocProp<void,std::string>  const &) prop ).value
+      record_type::allocate( ( (ViewCtorProp<void,memory_space> const &) prop ).value
+                           , ( (ViewCtorProp<void,std::string>  const &) prop ).value
                            , alloc_size );
 
     //  Only set the the pointer and initialize if the allocation is non-zero.
@@ -592,10 +607,10 @@ public:
 
       m_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
 
-      if ( alloc_prop::initialize ) {
+      if ( ctor_prop::initialize ) {
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
-        record->m_destroy = functor_type( ( (ViewAllocProp<void,execution_space> const &) prop).value
+        record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
                                         , (fad_value_type *) m_handle
                                         , m_offset.span()
                                         );
@@ -607,27 +622,6 @@ public:
 
     return record ;
   }
-
-  //----------------------------------------
-  // If the View is to construct or destroy the elements.
-
-  /*
-  template< class ExecSpace >
-  void construct( const ExecSpace & space ) const
-    {
-      typedef ViewValueFunctor< fad_value_type , ExecSpace > FunctorType ;
-
-      (void) FunctorType( space , m_handle , m_offset.span() , FunctorType::CONSTRUCT );
-    }
-
-  template< class ExecSpace >
-  void destroy( const ExecSpace & space ) const
-    {
-      typedef ViewValueFunctor< fad_value_type , ExecSpace > FunctorType ;
-
-      (void) FunctorType( space , m_handle , m_offset.span() , FunctorType::DESTROY );
-    }
-  */
 
 };
 

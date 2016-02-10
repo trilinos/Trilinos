@@ -115,7 +115,9 @@ public:
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
+  typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t ;
 
+  typedef typename team_policy_t::member_type team_member_t ;
 private:
   //Parameters
   ColoringAlgorithm coloring_type; //VB, VBBIT or EB.
@@ -282,20 +284,106 @@ private:
     }
   };
 
-  template <typename view_type>
-  struct PPS{
-    view_type lower_xadj_counts;
-    PPS(view_type lower_xadj_counts_):
-        lower_xadj_counts(lower_xadj_counts_){}
+  template<typename v1, typename v2, typename v3>
+  struct CountLowerTriangleTeam{
+
+    row_lno_t nv;
+    v1 xadj;
+    v2 adj;
+    v3 lower_xadj_counts;
+
+    CountLowerTriangleTeam(
+        row_lno_t nv_,
+        v1 xadj_,
+        v2 adj_,
+        v3 lower_xadj_counts_
+        ): nv(nv_),
+            xadj(xadj_), adj(adj_),
+            lower_xadj_counts(lower_xadj_counts_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_lno_t &ii, size_t& update, const bool final) const{
-      update += lower_xadj_counts(ii);
-      if (final) {
-        lower_xadj_counts(ii)  = update;
+    void operator()(const team_member_t & teamMember/*, row_lno_t &new_num_edge*/) const {
+
+
+      row_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+      if (ii >= nv) {
+        return;
       }
+
+      row_lno_t xadj_begin = xadj(ii);
+      row_lno_t xadj_end = xadj(ii + 1);
+
+      row_lno_t new_edge_count = 0;
+
+
+      Kokkos::parallel_reduce(
+          Kokkos::ThreadVectorRange(teamMember, xadj_end - xadj_begin),
+          [&] (row_lno_t i, row_lno_t &numEdges) {
+
+        row_lno_t adjind = i + xadj_begin;
+        row_lno_t n = adj[adjind];
+        if (ii < n && n < nv){
+          numEdges += 1;
+        }
+      }, new_edge_count);
+
+      Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+        lower_xadj_counts(ii + 1) = new_edge_count;
+      });
+    }
+
+  };
+
+  template<typename v1, typename v2, typename v3, typename v4>
+  struct FillLowerTriangleTeam{
+    row_lno_t nv;
+    v1 xadj;
+    v2 adj;
+    v3 lower_xadj_counts;
+    v4 lower_srcs;
+    v4 lower_dsts;
+
+    FillLowerTriangleTeam(
+        row_lno_t nv_,
+        v1 xadj_,
+        v2 adj_,
+        v3 lower_xadj_counts_,
+        v4 lower_srcs_,
+        v4 lower_dsts_
+        ):  nv(nv_),
+            xadj(xadj_), adj(adj_),
+            lower_xadj_counts(lower_xadj_counts_),
+            lower_srcs(lower_srcs_), lower_dsts(lower_dsts_) {}
+
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const team_member_t & teamMember) const {
+
+
+      row_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+      if (ii >= nv) {
+        return;
+      }
+
+      row_lno_t xadj_begin = xadj(ii);
+      row_lno_t xadj_end = xadj(ii + 1);
+
+      Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, xadj_end - xadj_begin),
+          [&] (row_lno_t i) {
+
+        row_lno_t adjind = i + xadj_begin;
+        row_lno_t n = adj[adjind];
+        if (ii < n && n < nv){
+          row_lno_t position =
+              Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), 1);
+          lower_srcs(position) = i;
+          lower_dsts(position) = n;
+        }
+      });
     }
   };
+
 
   template<typename v1, typename v2, typename v3, typename v4>
   struct FillLowerTriangle{
@@ -334,7 +422,6 @@ private:
       }
     }
   };
-
   template <typename row_index_view_type, typename nonzero_view_type>
   void symmetrize_and_calculate_lower_diagonal_edge_list(
       row_lno_t nv,
@@ -352,7 +439,6 @@ private:
     size_of_edge_list = lower_triangle_src.dimension_0();
 
   }
-
 
   template <typename row_index_view_type, typename nonzero_view_type>
   void get_lower_diagonal_edge_list(
@@ -374,22 +460,79 @@ private:
       row_lno_temp_work_view_t lower_count("LowerXADJ", nv + 1);
       row_lno_t new_num_edge = 0;
       typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
-      if (nv > 0) {
-        Kokkos::parallel_reduce(my_exec_space(0,nv),
-            CountLowerTriangle<row_index_view_type, nonzero_view_type, row_lno_temp_work_view_t> (nv, xadj, adj, lower_count), new_num_edge);
+
+
+      if (
+#if defined( KOKKOS_HAVE_CUDA )
+          Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value ||
+#endif
+          0){
+
+
+        int teamSizeMax = 0;
+        int vector_size = 0;
+
+        CountLowerTriangleTeam<row_index_view_type, nonzero_view_type, row_lno_temp_work_view_t> clt (nv, xadj, adj, lower_count);
+        int max_allowed_team_size = team_policy_t::team_size_max(clt);
+        KokkosKernels::Experimental::Util::get_suggested_vector_team_size<row_lno_t, HandleExecSpace>(
+            max_allowed_team_size,
+            vector_size,
+            teamSizeMax,
+            nv, ne);
+
+        //std::cout << "teamSizeMax:" << teamSizeMax << " vector_size:" << vector_size << std::endl;
+        //Kokkos::parallel_reduce(
+
+
+
+        Kokkos::parallel_for(
+            team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
+            clt//, new_num_edge
+        );
+
+        KokkosKernels::Experimental::Util::inclusive_parallel_prefix_sum<row_lno_temp_work_view_t, HandleExecSpace>
+        (nv+1, lower_count);
+        //Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
+        HandleExecSpace::fence();
+        auto lower_total_count = Kokkos::subview(lower_count, nv);
+        auto hlower = Kokkos::create_mirror_view (lower_total_count);
+        Kokkos::deep_copy (hlower, lower_total_count);
+
+        new_num_edge = hlower();
+        row_lno_persistent_work_view_t half_src = row_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
+        row_lno_persistent_work_view_t half_dst = row_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
+        Kokkos::parallel_for(
+            team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
+            FillLowerTriangleTeam
+            <row_index_view_type, nonzero_view_type,
+           row_lno_temp_work_view_t,row_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
+
+        src = lower_triangle_src = half_src;
+        dst = lower_triangle_dst = half_dst;
+        num_out_edges = size_of_edge_list = new_num_edge;
+      }
+      else {
+        if (nv > 0) {
+          Kokkos::parallel_reduce(my_exec_space(0,nv),
+              CountLowerTriangle<row_index_view_type, nonzero_view_type, row_lno_temp_work_view_t> (nv, xadj, adj, lower_count), new_num_edge);
+        }
+
+        //Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
+
+        KokkosKernels::Experimental::Util::inclusive_parallel_prefix_sum<row_lno_temp_work_view_t, HandleExecSpace>
+        (nv+1, lower_count);
+        row_lno_persistent_work_view_t half_src = row_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
+        row_lno_persistent_work_view_t half_dst = row_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
+
+        Kokkos::parallel_for(my_exec_space(0,nv), FillLowerTriangle
+            <row_index_view_type, nonzero_view_type,
+            row_lno_temp_work_view_t,row_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
+
+        src = lower_triangle_src = half_src;
+        dst = lower_triangle_dst = half_dst;
+        num_out_edges = size_of_edge_list = new_num_edge;
       }
 
-      //std::cout << "nv:" << nv << " ne:" << ne << " new_num_edge:" << new_num_edge << std::endl;
-
-      row_lno_persistent_work_view_t half_src = row_lno_persistent_work_view_t("HALF SRC",new_num_edge);
-      row_lno_persistent_work_view_t half_dst = row_lno_persistent_work_view_t("HALF DST",new_num_edge);
-      Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
-      Kokkos::parallel_for(my_exec_space(0,nv), FillLowerTriangle
-          <row_index_view_type, nonzero_view_type,
-          row_lno_temp_work_view_t,row_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
-      src = lower_triangle_src = half_src;
-      dst = lower_triangle_dst = half_dst;
-      num_out_edges = size_of_edge_list = new_num_edge;
     }
   }
 

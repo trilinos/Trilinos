@@ -543,18 +543,56 @@ void RILUK<MatrixType>::initialize ()
       }
     else
       {
+
+	/*
+	std::cout << "node_type:  " << typeid(node_type).name()
+		  << std:: endl;
+	std::cout << "compare type" << typeid(Kokkos::OpenMP).name() << std::endl;
+
+	
+	static_assert( std::is_same< node_type, 
+		       Kokkos::OpenMP>::value, 
+		       "Not supported");
+	*/
+
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
 	myBasker = rcp( new BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP>);
 	myBasker->Options.no_pivot   = true;
+	myBasker->Options.transpose  = true; //CRS not CCS
 	myBasker->Options.symmetric  = false;
 	myBasker->Options.realloc    = true;
 	myBasker->Options.btf        = false;
 	myBasker->Options.incomplete = true;
 	myBasker->Options.inc_lvl    = LevelOfFill_;
 	myBasker->SetThreads(basker_threads);
+	
+	Teuchos::ArrayRCP<const size_t> r_ptr;
+	Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
+	Teuchos::ArrayRCP<const scalar_type>         val;
+	A_local_crs_->getAllValues(r_ptr, c_idx, val);
+	Teuchos::ArrayRCP<local_ordinal_type> rl_ptr(r_ptr.size()+1);
+        
+	for(int btemp = 0; btemp < r_ptr.size(); btemp++)
+	  rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
+
+	int basker_error = 
+	myBasker->Symbolic(
+	 ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
+	 ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
+	 ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
+	  (rl_ptr.getRawPtr()),
+	  (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
+	  (const_cast<scalar_type *>(val.getRawPtr()))
+			   );
+
+	TEUCHOS_TEST_FOR_EXCEPTION(
+        basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
+	 "Error in basker Symbolic");
+
+
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(
-      0==1, std::logic_error, "Ifpack2::RILUK::initialize: "
+      0==0, std::logic_error, "Ifpack2::RILUK::initialize: "
       "Using experimental ILUK without compiling experimental "
       "Try again with -DIFPACK2_ILUK_EXPERIMENAL.");
 #endif
@@ -894,24 +932,7 @@ void RILUK<MatrixType>::compute ()
   } 
   else{
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
-    //We might want to set early so use less memory
-    Teuchos::ArrayRCP<const size_t> r_ptr;
-    Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
-    Teuchos::ArrayRCP<const scalar_type>         val;
-    A_local_crs_->getAllValues(r_ptr, c_idx, val);
-    Teuchos::ArrayRCP<local_ordinal_type> rl_ptr(r_ptr.size()+1);
-    
-    for(int btemp = 0; btemp < r_ptr.size(); btemp++)
-      rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
-   
-    myBasker->Symbolic(
-		       ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
-		       ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
-		       ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
-		       (rl_ptr.getRawPtr()),
-		       (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
-		       (const_cast<scalar_type *>(val.getRawPtr()))
-		       );
+ 
      myBasker->Factor_Inc(0);
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(

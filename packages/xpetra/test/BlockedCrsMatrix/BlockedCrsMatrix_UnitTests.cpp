@@ -157,17 +157,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, SplitMatrix, M, MA, Scalar,
      if (MyGlobalElements[i] == 0) {
        A->insertGlobalValues(MyGlobalElements[i],
                              Teuchos::tuple<GO>(MyGlobalElements[i], MyGlobalElements[i] +1),
-                             Teuchos::tuple<Scalar> (i*STS::one(), -1.0));
+                             Teuchos::tuple<Scalar> (Teuchos::as<Scalar>(i)*STS::one(), -1.0));
      }
      else if (MyGlobalElements[i] == NumGlobalElements - 1) {
        A->insertGlobalValues(MyGlobalElements[i],
                              Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i]),
-                             Teuchos::tuple<Scalar> (-1.0, i*STS::one()));
+                             Teuchos::tuple<Scalar> (-1.0, Teuchos::as<Scalar>(i)*STS::one()));
      }
      else {
        A->insertGlobalValues(MyGlobalElements[i],
                              Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i], MyGlobalElements[i] +1),
-                             Teuchos::tuple<Scalar> (-1.0, i*STS::one(), -1.0));
+                             Teuchos::tuple<Scalar> (-1.0, Teuchos::as<Scalar>(i)*STS::one(), -1.0));
      }
   }
 
@@ -223,7 +223,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, SplitMatrix, M, MA, Scalar,
   A->apply(*rnd, *exp);
   bOp->apply(*rnd, *res);
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-13, out, success);
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
   TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-14, out, success);
 }
 
@@ -624,12 +624,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, M, 
 
 #endif
 
+
+#define XP_MATRIX_INSTANT(S,LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, SplitMatrix, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+
+
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N)
 
 // List of tests which run only with Epetra
 #define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, SplitMatrix, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, EpetraApply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
@@ -637,8 +641,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, M, 
 //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node )
 //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
 
-// above tests only work with Epetra
-/*
 #if defined(HAVE_XPETRA_TPETRA)
 
 #include <TpetraCore_config.h>
@@ -647,10 +649,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, M, 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
 
 #endif
-*/
-
 
 #if defined(HAVE_XPETRA_EPETRA)
 
@@ -659,6 +660,7 @@ typedef Xpetra::EpetraNode EpetraNode;
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
 XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
+XP_MATRIX_INSTANT(double,int,int,EpetraNode)
 #endif
 // EpetraExt routines are not working with 64 bit
 /*#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES

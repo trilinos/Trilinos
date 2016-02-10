@@ -304,7 +304,7 @@ namespace BaskerNS
 	//MALLOC_INT_1DARRAY(csymamd_perm, BTF_A.ncol+1);
 	init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
 	//init_value(csymamd_perm, BTF_A.ncol+1,(Int) 0);
-	
+	printf("============CALLING CSYMAMD============\n");
 	csymamd_order(BTF_A, order_csym_array, cmember);
 	//csymamd_order(BTF_A, csymamd_perm, cmember);
 	
@@ -431,11 +431,24 @@ namespace BaskerNS
 
     */
       
+    //You would think a match order would help!
+    //It does not!
+
     Int job = 2; //5 is the default for SuperLU_DIST
     //INT_1DARRAY mperm = order_match_array;
     MALLOC_INT_1DARRAY(order_match_array, A.nrow);
     //MALLOC_INT_1DARRAY(mperm, A.nrow);
-    mwm(A,order_match_array);
+    if(Options.incomplete == BASKER_FALSE)
+      {
+	mwm(A,order_match_array);
+      }
+    else
+      {
+	for(Int i = 0; i < A.nrow; i++)
+	  {
+	    order_match_array(i) = i;
+	  }
+      }
     //mc64(job,order_match_array);
     //mc64(job,mperm);
 
