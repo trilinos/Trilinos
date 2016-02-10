@@ -127,13 +127,17 @@ static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
                         ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
                         int *parts, int *ierr)
 {
+  typedef typename Adapter::lno_t lno_t;
   const Adapter *adp = static_cast<Adapter *>(data);
   *ierr = ZOLTAN_OK;
   const typename Adapter::part_t *myparts;
   adp->getPartsView(myparts);
   // User parts from input adapter
-  for (int i = 0; i < nObj; i++)
-    parts[i] = int(myparts[lids[i]]);
+  for (int i = 0; i < nObj; i++) {
+    lno_t lidx;
+    TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(lidx, &(lids[i*nLidEnt]));
+    parts[i] = int(myparts[lidx]);
+  }
 }
 
 /////////////////////
@@ -153,6 +157,7 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
                        ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
                        int nDim, double *coords, int *ierr)
 {
+  typedef typename Adapter::lno_t lno_t;
   const Adapter *adp = static_cast<Adapter *>(data);
   *ierr = ZOLTAN_OK;
 
@@ -160,8 +165,11 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
     const typename Adapter::scalar_t *mycoords;
     int mystride;
     adp->getCoordinatesView(mycoords, mystride, d);
-    for (int i = 0; i < nObj; i++)
-      coords[i*nDim+d] = double(mycoords[lids[i]*mystride]);
+    for (int i = 0; i < nObj; i++) {
+      lno_t lidx;
+      TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(lidx, &(lids[i*nLidEnt]));
+      coords[i*nDim+d] = double(mycoords[lidx*mystride]);
+    }
   }
 }
 
@@ -417,8 +425,10 @@ static void zoltanHGObjList_withModel(void *data, int nGidEnt, int nLidEnt,
   int j=0;
   for (size_t i=0;i<num_verts;i++) {
     if (isOwner[i]) {
-      lids[j] = i;
-      gids[j] = Ids[i];
+      ZOLTAN_ID_PTR idPtr = &(gids[j*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, Ids[i]);
+      idPtr = &(lids[j*nLidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,lno_t>::ASSIGN_TPL_T(idPtr, lno_t(i));
       j++;
     }
   }
@@ -489,12 +499,15 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
   ArrayView<input_t> pin_wgts;
   mdl->getPinList(pinIds_,offsets,pin_wgts);
   for (int i=0;i<nEdges;i++) {
-    edgeIds[i]=Ids[i];
-    edgeIdx[i]=offsets[i];
+    ZOLTAN_ID_PTR idPtr = &(edgeIds[i*nGidEnt]);
+    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, Ids[i]);
+    edgeIdx[i] = Teuchos::as<int>(offsets[i]);
   }
   
-  for (int i=0;i<nPins;i++)
-    pinIds[i] = pinIds_[i];
+  for (int i=0;i<nPins;i++) {
+    ZOLTAN_ID_PTR idPtr = &(pinIds[i*nGidEnt]);
+    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, pinIds_[i]);
+  }
 }
 
 }
