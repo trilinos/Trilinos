@@ -52,6 +52,7 @@
 
 #include "Zoltan2_TestHelpers.hpp"
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_Typedefs.hpp>
 
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -89,6 +90,7 @@ using Teuchos::arcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using namespace std;
+using namespace Zoltan2_typedefs;
 
 /*! \brief A class that generates typical user input for testing.
  *
@@ -125,23 +127,25 @@ typedef enum USERINPUT_FILE_FORMATS{MATRIX_MARKET, CHACO, GEOMGEN, PAMGEN} USERI
 class UserInputForTests
 {
 public:
-  
-  typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
-  typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
-  typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tVector_t;
-  typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
-  
-  typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xcrsMatrix_t;
-  typedef Xpetra::CrsGraph<zlno_t, zgno_t, znode_t> xcrsGraph_t;
-  typedef Xpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> xVector_t;
-  typedef Xpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> xMVector_t;
+
+ // BDD MOVED TO Zoltan2_Typedefs.h  
+ // typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
+ // typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
+ // typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tVector_t;
+ // typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
+ // 
+ // typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xcrsMatrix_t;
+ // typedef Xpetra::CrsGraph<zlno_t, zgno_t, znode_t> xcrsGraph_t;
+ // typedef Xpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> xVector_t;
+ // typedef Xpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> xMVector_t;
+ // 
+ // typedef GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>
+ // geometricgen_t;
   
   typedef Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
   typedef Tpetra::Export<zlno_t, zgno_t, znode_t> export_t;
   typedef Tpetra::Import<zlno_t, zgno_t, znode_t> import_t;
   typedef map_t::node_type default_znode_t;
-  typedef GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>
-  geometricgen_t;
   
 
   /*! \brief Constructor that reads in a matrix/graph from disk.
@@ -548,38 +552,38 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 }
 
 
-RCP<UserInputForTests::tMVector_t> UserInputForTests::getUICoordinates()
+RCP<Zoltan2_typedefs::tMVector_t> UserInputForTests::getUICoordinates()
 {
   if (xyz_.is_null())
     throw std::runtime_error("could not read coord file");
   return xyz_;
 }
 
-RCP<UserInputForTests::tMVector_t> UserInputForTests::getUIWeights()
+RCP<Zoltan2_typedefs::tMVector_t> UserInputForTests::getUIWeights()
 {
   return vtxWeights_;
 }
 
-RCP<UserInputForTests::tMVector_t> UserInputForTests::getUIEdgeWeights()
+RCP<Zoltan2_typedefs::tMVector_t> UserInputForTests::getUIEdgeWeights()
 {
   return edgWeights_;
 }
 
-RCP<UserInputForTests::tcrsMatrix_t> UserInputForTests::getUITpetraCrsMatrix()
+RCP<Zoltan2_typedefs::tcrsMatrix_t> UserInputForTests::getUITpetraCrsMatrix()
 {
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   return M_;
 }
 
-RCP<UserInputForTests::tcrsGraph_t> UserInputForTests::getUITpetraCrsGraph()
+RCP<Zoltan2_typedefs::tcrsGraph_t> UserInputForTests::getUITpetraCrsGraph()
 {
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   return rcp_const_cast<tcrsGraph_t>(M_->getCrsGraph());
 }
 
-RCP<UserInputForTests::tVector_t> UserInputForTests::getUITpetraVector()
+RCP<Zoltan2_typedefs::tVector_t> UserInputForTests::getUITpetraVector()
 {
   RCP<tVector_t> V = rcp(new tVector_t(M_->getRowMap(),  1));
   V->randomize();
@@ -587,7 +591,7 @@ RCP<UserInputForTests::tVector_t> UserInputForTests::getUITpetraVector()
   return V;
 }
 
-RCP<UserInputForTests::tMVector_t> UserInputForTests::getUITpetraMultiVector(int nvec)
+RCP<Zoltan2_typedefs::tMVector_t> UserInputForTests::getUITpetraMultiVector(int nvec)
 {
   RCP<tMVector_t> mV = rcp(new tMVector_t(M_->getRowMap(), nvec));
   mV->randomize();
@@ -595,26 +599,26 @@ RCP<UserInputForTests::tMVector_t> UserInputForTests::getUITpetraMultiVector(int
   return mV;
 }
 
-RCP<UserInputForTests::xcrsMatrix_t> UserInputForTests::getUIXpetraCrsMatrix()
+RCP<Zoltan2_typedefs::xcrsMatrix_t> UserInputForTests::getUIXpetraCrsMatrix()
 {
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   return xM_;
 }
 
-RCP<UserInputForTests::xcrsGraph_t> UserInputForTests::getUIXpetraCrsGraph()
+RCP<Zoltan2_typedefs::xcrsGraph_t> UserInputForTests::getUIXpetraCrsGraph()
 {
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   return rcp_const_cast<xcrsGraph_t>(xM_->getCrsGraph());
 }
 
-RCP<UserInputForTests::xVector_t> UserInputForTests::getUIXpetraVector()
+RCP<Zoltan2_typedefs::xVector_t> UserInputForTests::getUIXpetraVector()
 {
   return Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(getUITpetraVector());
 }
 
-RCP<UserInputForTests::xMVector_t> UserInputForTests::getUIXpetraMultiVector(int nvec)
+RCP<Zoltan2_typedefs::xMVector_t> UserInputForTests::getUIXpetraMultiVector(int nvec)
 {
   RCP<tMVector_t> tMV = getUITpetraMultiVector(nvec);
   return Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
