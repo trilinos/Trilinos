@@ -55,7 +55,7 @@
 #endif
 
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-
+#include "Teuchos_LAPACK.hpp"
 namespace Intrepid2 {
 
   template<class Scalar>
