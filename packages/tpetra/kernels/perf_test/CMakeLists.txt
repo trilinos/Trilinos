@@ -9,9 +9,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # MPI process.
 
 #to bind the kernels graph subpackage test, uncomment below
-#ADD_SUBDIRECTORIES(
-#	graph
-#)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+ADD_SUBDIRECTORIES(
+	graph
+)
+ENDIF()
+
 
 TRIBITS_ADD_EXECUTABLE(
   blas1

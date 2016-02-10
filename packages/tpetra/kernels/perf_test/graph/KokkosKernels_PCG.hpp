@@ -52,184 +52,13 @@
 #include <Kokkos_Atomic.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 
-//#include <WrapMPI.hpp>
-
 #include <iostream>
 #include "KokkosKernels_GaussSeidel.hpp"
 #include "KokkosKernels_Handle.hpp"
-//#include "Kokkos_Sparse_MV.hpp"
-#include "Kokkos_Sparse_CrsMatrix.hpp"
+#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <Kokkos_Sparse.hpp>
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-
-//#define PRINTRES
-namespace KokkosKernels {
-
-namespace Experimental{
-
-namespace Example {
-
-template< typename ValueType ,typename Idx_Type, class Space >
-struct CrsMatrix {
-  struct StaticCrsGraphType{
-    Idx_Type nv, ne;
-    const typename Kokkos::View<Idx_Type *, Space > row_map;
-    const typename Kokkos::View<Idx_Type *, Space > entries;
-    StaticCrsGraphType():row_map(), entries(){}
-    StaticCrsGraphType(
-        Idx_Type nv_, Idx_Type ne_,
-        const Kokkos::View<Idx_Type *, Space > row_map_,
-        const Kokkos::View<Idx_Type *, Space > entries_):
-          nv(nv_), ne(ne_),
-          row_map(row_map_), entries(entries_){}
-  } graph;
-
-  typedef typename Kokkos::View< ValueType * , Space > coeff_type ;
-
-  coeff_type coeff ;
-
-  CrsMatrix() : graph(), coeff() {}
-
-  CrsMatrix(
-            Idx_Type nv_, Idx_Type ne_,
-            const Kokkos::View<Idx_Type *, Space > row_map,
-            const Kokkos::View<Idx_Type *, Space > entries,
-            coeff_type coeff_)
-    : graph( nv_,ne_, row_map,  entries)
-    , coeff(coeff_)
-    {}
-};
-
-
-template< typename view_y, typename crsMat_t
-        , typename view_x>
-struct Multiply {
-
-  typedef typename crsMat_t::ordinal_type Idx_Type;
-  const crsMat_t    m_A ;
-  const view_x m_x ;
-  const view_y m_y ;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const int iRow ) const
-    {
-      const Idx_Type iEntryBegin = m_A.graph.row_map[iRow];
-      const Idx_Type iEntryEnd   = m_A.graph.row_map[iRow+1];
-
-      double sum = 0 ;
-
-      for ( Idx_Type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
-        sum += m_A.values(iEntry) * m_x( m_A.graph.entries(iEntry) );
-      }
-
-      m_y(iRow) = sum ;
-    }
-
-  Multiply( const view_y & y
-          , const crsMat_t    & A
-          , const view_x & x
-          )
-  : m_A( A ), m_x( x ), m_y( y )
-  {}
-};
-
-template< typename view_y, typename crsMat_t
-        , typename view_x
-        , class Space >
-inline
-void multiply( const int nrow
-             , const view_y    & y
-             , const crsMat_t & A
-             , const view_x    & x
-             )
-{
-  Kokkos::parallel_for( Kokkos::RangePolicy<Space>(0,nrow), Multiply<view_y,crsMat_t, view_x>( y , A , x ) );
-}
-
-template< typename view_w, typename view_x,typename view_y >
-struct WAXPBY {
-  const view_w  m_x ;
-  const view_x  m_y ;
-  const view_y  m_w ;
-  const double m_alpha ;
-  const double m_beta ;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const int i ) const
-    { m_w(i) = m_alpha * m_x(i) + m_beta * m_y(i); }
-
-  WAXPBY( const view_w  & arg_w
-        , const double arg_alpha
-        , const view_x  & arg_x
-        , const double arg_beta
-        , const view_y  & arg_y
-        )
-    : m_x( arg_x )
-    , m_y( arg_y )
-    , m_w( arg_w )
-    , m_alpha( arg_alpha )
-    , m_beta( arg_beta )
-    {}
-};
-
-template< typename view_w, typename view_x, typename view_y , typename Space >
-void waxpby( const int n
-           , const view_w & arg_w
-           , const double arg_alpha
-           , const view_x & arg_x
-           , const double arg_beta
-           , const view_y & arg_y
-           )
-{
-  Kokkos::parallel_for( Kokkos::RangePolicy<Space>(0,n), WAXPBY<view_w,view_x, view_y>(arg_w,arg_alpha,arg_x,arg_beta,arg_y) );
-}
-
-
-template< typename view_x , typename view_y>
-struct Dot {
-  typedef double value_type ;
-
-  const view_x  m_x ;
-  const view_y  m_y ;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const int i , value_type & update ) const
-    { update += m_x(i) * m_y(i); }
-
-  Dot( const view_x  & arg_x
-     , const view_y & arg_y
-     )
-    : m_x(arg_x), m_y(arg_y) {}
-};
-
-template< typename view_x , typename view_y, typename Space >
-double dot( const int n
-          , const view_x & arg_x
-          , const view_y & arg_y
-          )
-{
-  double result = 0 ;
-  Kokkos::parallel_reduce( Kokkos::RangePolicy<Space>(0,n) , Dot<view_x,view_y>( arg_x , arg_y ) , result );
-  return result ;
-}
-
-
-template <typename view_type>
-struct InitZeroView{
-  view_type myview;
-  InitZeroView(view_type myview_): myview(myview_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const int i ) const {
-    myview(i) = 0;
-  }
-};
-
-} // namespace Example
-} // namespace Kokkos
-}
+#include <Kokkos_Blas1_MV.hpp>
+#include <Kokkos_Blas1.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -247,8 +76,7 @@ struct CGSolveResult {
   double precond_init_time;
 };
 
-//#define PRECOND_NORM
-//#define PRE
+
 template< typename KernelHandle_t,
           typename crsMatrix_t,
           typename y_vector_t,
@@ -265,7 +93,7 @@ void pcgsolve(
             ,  bool use_sgs = true) {
 
   typedef typename KernelHandle_t::HandleExecSpace Space;
-  typedef y_vector_t  VectorType ;
+
 
   const size_t count_total = crsMat.numRows();
 
@@ -280,56 +108,48 @@ void pcgsolve(
   Kokkos::Impl::Timer timer;
 
   // Need input vector to matvec to be owned + received
-  VectorType pAll ( "cg::p" , count_total );
+  y_vector_t pAll ( "cg::p" , count_total );
 
-  VectorType p = Kokkos::subview( pAll , std::pair<size_t,size_t>(0,count_total) );
-  VectorType r ( "cg::r" , count_total );
-  VectorType Ap( "cg::Ap", count_total );
+  y_vector_t p = Kokkos::subview( pAll , std::pair<size_t,size_t>(0,count_total) );
+  y_vector_t r ( "cg::r" , count_total );
+  y_vector_t Ap( "cg::Ap", count_total );
 
   /* r = b - A * x ; */
-
   /* p  = x       */  Kokkos::deep_copy( p , x_vector );
 
-  ///* Ap = A * p   */  multiply<VectorType,crsMatrix_t,VectorType, Space>  ( count_total , Ap , crsMat , pAll );
-  KokkosSparse::spmv("N", 1, crsMat, pAll, 0, Ap);
+  /* Ap = A * p   */  KokkosSparse::spmv("N", 1, crsMat, pAll, 0, Ap);
 
-  /* r = b - Ap   */  waxpby<VectorType, y_vector_t, VectorType, Space>( count_total , r , 1.0 , y_vector , -1.0 , Ap );
+  /* r  = Ap       */  Kokkos::deep_copy( r , Ap );
+
+  /* r = b - r   */  KokkosBlas::axpby(1.0, y_vector, -1.0, r);
+
   /* p  = r       */  Kokkos::deep_copy( p , r );
 
-  //double old_rdot = Kokkos::Example::all_reduce( dot( count_owned , r , r ) , import.comm );
-  double old_rdot = dot<VectorType,VectorType, Space>( count_total , r , r );
-
+  double old_rdot = KokkosBlas::dot( r , r );
   norm_res  = sqrt( old_rdot );
 
-
-
   int apply_count = 1;
-  VectorType z;
-  //double precond_old_rdot = Kokkos::Example::all_reduce( dot( count_owned , r , z ) , import.comm );
-  double precond_old_rdot = 1;
-#ifdef PRECOND_NORM
-  double precond_norm_res  = 1;
-#endif
-  Kokkos::deep_copy( p , z );
+  y_vector_t z;
 
-  //typename KernelHandle::GaussSeidelHandleType *gsHandler;
+  double precond_old_rdot = 1;
+  //Kokkos::deep_copy( p , z );
+
   bool owner_handle = false;
   if (use_sgs){
     if (kh.get_gs_handle() == NULL){
-
       owner_handle = true;
       kh.create_gs_handle();
     }
-    //gsHandler = kh.get_gs_handle();
+
     timer.reset();
 
     KokkosKernels::Experimental::Graph::gauss_seidel_numeric
       (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values);
 
     Space::fence();
-    precond_init_time += timer.seconds();
 
-    z = VectorType( "pcg::z" , count_total );
+    precond_init_time += timer.seconds();
+    z = y_vector_t( "pcg::z" , count_total );
     Space::fence();
     timer.reset();
 
@@ -338,41 +158,32 @@ void pcgsolve(
 
     Space::fence();
     precond_time += timer.seconds();
-    //double precond_old_rdot = Kokkos::Example::all_reduce( dot( count_owned , r , z ) , import.comm );
-    precond_old_rdot = dot<VectorType,VectorType, Space>( count_total , r , z );
-#ifdef PRECOND_NORM
-    precond_norm_res  = sqrt( precond_old_rdot );
-#endif
-
+    precond_old_rdot = KokkosBlas::dot( r , z );
     Kokkos::deep_copy( p , z );
   }
 
   iteration = 0 ;
 
-#ifdef PRINTRES
+#ifdef KK_TICTOCPRINT
 
   std::cout << "norm_res:" << norm_res << " old_rdot:" << old_rdot<<  std::endl;
-#ifdef PRECOND_NORM
-  if (use_sgs)
-  std::cout << "precond_norm_res:" << precond_norm_res << " precond_old_rdot:" << precond_old_rdot<<  std::endl;
-#endif
 
 #endif
   while ( tolerance < norm_res && iteration < maximum_iteration ) {
 
-    /* pAp_dot = dot( p , Ap = A * p ) */
 
     timer.reset();
-    ///* import p    */  import( pAll );
-    ///* Ap = A * p   */  multiply<VectorType,crsMatrix_t,VectorType, Space>( count_total , Ap , crsMat , pAll );
-    KokkosSparse::spmv("N", 1, crsMat, pAll, 0, Ap);
+    /* Ap = A * p   */  KokkosSparse::spmv("N", 1, crsMat, pAll, 0, Ap);
 
 
     Space::fence();
     matvec_time += timer.seconds();
 
     //const double pAp_dot = Kokkos::Example::all_reduce( dot( count_owned , p , Ap ) , import.comm );
-    const double pAp_dot = dot<VectorType,VectorType, Space>( count_total , p , Ap ) ;
+    //const double pAp_dot = dot<y_vector_t,y_vector_t, Space>( count_total , p , Ap ) ;
+
+    /* pAp_dot = dot(Ap , p ) */ const double pAp_dot = KokkosBlas::dot( p , Ap ) ;
+
 
     double alpha  = 0;
     if (use_sgs){
@@ -382,13 +193,13 @@ void pcgsolve(
       alpha = old_rdot / pAp_dot ;
     }
 
-    /* x +=  alpha * p ;  */ waxpby<VectorType, y_vector_t, VectorType, Space>( count_total , x_vector ,  alpha, p  , 1.0 , x_vector );
-    /* r += -alpha * Ap ; */ waxpby<VectorType, y_vector_t, VectorType, Space>( count_total , r , -alpha, Ap , 1.0 , r );
+    /* x +=  alpha * p ;  */  KokkosBlas::axpby(alpha, p, 1.0, x_vector);
 
-    //const double r_dot = Kokkos::Example::all_reduce( dot( count_owned , r , r ) , import.comm );
-    const double r_dot = dot<VectorType,VectorType, Space>( count_total , r , r );
+    /* r += -alpha * Ap ; */  KokkosBlas::axpby(-alpha, Ap, 1.0, r);
+
+    const double r_dot = KokkosBlas::dot( r , r );
+
     const double beta_original  = r_dot / old_rdot ;
-
     double precond_r_dot = 1;
     double precond_beta = 1;
     if (use_sgs){
@@ -404,24 +215,22 @@ void pcgsolve(
 
       Space::fence();
       precond_time += timer.seconds();
-      //const double precond_r_dot = Kokkos::Example::all_reduce( dot( count_owned , r , z ) , import.comm );
-      precond_r_dot = dot<VectorType,VectorType, Space>( count_total , r , z );
+      precond_r_dot = KokkosBlas::dot(r , z );
       precond_beta  = precond_r_dot / precond_old_rdot ;
     }
 
     double beta  = 1;
     if (!use_sgs){
       beta = beta_original;
-      /* p = r + beta * p ; */ waxpby<VectorType, y_vector_t, VectorType, Space>( count_total , p , 1.0 , r , beta , p );
+      /* p = r + beta * p ; */  KokkosBlas::axpby(1.0, r, beta, p);
     }
     else {
       beta = precond_beta;
-      waxpby<VectorType, y_vector_t, VectorType, Space>( count_total , p , 1.0 , z , beta , p );
+      KokkosBlas::axpby(1.0, z, beta, p);
     }
 
-#ifdef PRINTRES
+#ifdef KK_TICTOCPRINT
     std::cout << "\tbeta_original:" << beta_original <<  std::endl;
-
     if (use_sgs)
     std::cout << "\tprecond_beta:" << precond_beta <<  std::endl;
 
@@ -429,21 +238,10 @@ void pcgsolve(
 
 
     norm_res = sqrt( old_rdot = r_dot );
-#ifdef PRECOND_NORM
-    if (use_sgs){
-      precond_norm_res = sqrt( precond_old_rdot = precond_r_dot );
-    }
-#else
     precond_old_rdot = precond_r_dot;
-#endif
 
-#ifdef PRINTRES
+#ifdef KK_TICTOCPRINT
     std::cout << "\tnorm_res:" << norm_res << " old_rdot:" << old_rdot<<  std::endl;
-#ifdef PRECOND_NORM
-
-    if (use_sgs)
-    std::cout << "\tprecond_norm_res:" << precond_norm_res << " precond_old_rdot:" << precond_old_rdot<<  std::endl;
-#endif
 #endif
     ++iteration ;
   }
