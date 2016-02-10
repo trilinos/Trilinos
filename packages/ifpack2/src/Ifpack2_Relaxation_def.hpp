@@ -51,8 +51,7 @@
 #include <Ifpack2_Utilities.hpp>
 #include <Ifpack2_Relaxation_decl.hpp>
 
-//#define IFPACK2_MD_EXPERIMENTAL
-#ifdef IFPACK2_MD_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
 #include <KokkosKernels_GaussSeidel.hpp>
 #endif
 
@@ -580,7 +579,7 @@ void Relaxation<MatrixType>::initialize ()
       hasBlockCrsMatrix_ = true;
     }
   }
-#ifdef IFPACK2_MD_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
     //KokkosKernels GaussSiedel Initialization.
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
       const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
@@ -1110,7 +1109,7 @@ void Relaxation<MatrixType>::compute ()
       Importer_ = A_->getGraph ()->getImporter ();
       Diagonal_->template sync<device_type> ();
     }
-#ifdef IFPACK2_MD_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
     //KokkosKernels GaussSiedel Initialization.
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
       const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
@@ -1624,7 +1623,7 @@ void Relaxation<MatrixType>::MTGaussSeidel (
     const int numSweeps,
     const bool zeroInitialGuess) const
 {
-#ifdef IFPACK2_MD_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
   using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::rcp;
