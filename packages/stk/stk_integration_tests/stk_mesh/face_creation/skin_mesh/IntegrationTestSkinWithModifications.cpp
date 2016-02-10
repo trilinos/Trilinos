@@ -37,7 +37,7 @@ namespace
 class SkinWithModification : public stk::unit_test_util::MeshFixture
 {
 protected:
-    SkinWithModification() : elemGraph(nullptr), elemGraphUpdater(nullptr)
+    SkinWithModification() : elemGraph(nullptr), elemGraphUpdater(nullptr), boundaryPart(nullptr)
     {
     }
     void setup_for_skinning()
@@ -103,7 +103,7 @@ private:
     }
     void make_exterior_sides()
     {
-        stk::mesh::SkinMeshUtil skinMesh(get_bulk(), *elemGraph, {boundaryPart}, get_things_to_skin());
+        stk::mesh::SkinMeshUtil skinMesh(*elemGraph, {boundaryPart}, get_things_to_skin());
         std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
         stk::mesh::FaceCreator(get_bulk(), *elemGraph).create_side_entities_given_sideset(skinnedSideSet, {boundaryPart});
     }
@@ -136,7 +136,7 @@ private:
     }
     void make_interior_block_boundary_sides()
     {
-        stk::mesh::SkinMeshUtil skinMesh(get_bulk(), *elemGraph, {boundaryPart}, get_things_to_skin());
+        stk::mesh::SkinMeshUtil skinMesh(*elemGraph, {boundaryPart}, get_things_to_skin());
         std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_interior_sideset();
         stk::mesh::FaceCreator(get_bulk(), *elemGraph).create_side_entities_given_sideset(skinnedSideSet, {boundaryPart});
     }

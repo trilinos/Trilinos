@@ -154,7 +154,9 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
         elements_to_add.push_back(elem4);
     }
 
+    elem_graph.write_graph();
     elem_graph.add_elements(elements_to_add);
+    elem_graph.write_graph();
 
     if (0 == p_rank)
     {
