@@ -51,6 +51,7 @@
 // taking headers from existing driver template
 // will keep or remove as needed
 #include <UserInputForTests.hpp>
+#include <Zoltan2_Typedefs.hpp>
 #include <AdapterForTests.hpp>
 #include <Zoltan2_ComparisonHelper.hpp>
 
@@ -79,6 +80,7 @@ using Teuchos::Comm;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::XMLObject;
+using namespace Zoltan2_typedefs;
 
 using std::cout;
 using std::cerr;
@@ -206,9 +208,10 @@ bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
   return pass;
 }
 
+template<typename ProblemType, typename AdapterType>
 void run(const UserInputForTests &uinput,
          const ParameterList &problem_parameters,
-         RCP<ComparisonHelper> & comparison_helper,
+         RCP<ComparisonHelper<ProblemType, AdapterType>> & comparison_helper,
          const RCP<const Teuchos::Comm<int> > & comm)
 {
   // Major steps in running a problem in zoltan 2
@@ -217,24 +220,6 @@ void run(const UserInputForTests &uinput,
   // 3. solve the problem
   // 4. analyze metrics
   // 5. clean up
-  
-  typedef AdapterForTests::base_adapter_t base_t;
-  typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
-  typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
-  typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
-  typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
-  typedef AdapterForTests::basic_vector_adapter basic_vector_t;
-  typedef AdapterForTests::pamgen_adapter_t pamgen_t;
-
-  typedef Zoltan2::Problem<base_t> problem_t;
-  typedef Zoltan2::PartitioningProblem<basic_id_t> basic_partitioning_t; // basic id problem type
-  typedef Zoltan2::OrderingProblem<basic_id_t> basic_ordering_t; // basic id problem type
-  typedef Zoltan2::ColoringProblem<basic_id_t> basic_coloring_t; // basic id problem type
-  // typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mv problem type
-  // typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_graph problem type
-  // typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_matrix problem type
-  // typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // vector problem type
-  // typedef Zoltan2::PartitioningProblem<pamgen_t> pamgen_problem_t; // pamgen mesh problem type
 
   int rank = comm->getRank();
   
@@ -259,7 +244,7 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 0. add comparison source
   ////////////////////////////////////////////////////////////
-  ComparisonSource * comparison_source = new ComparisonSource;
+  ComparisonSource<ProblemType, AdapterType> * comparison_source = new ComparisonSource<ProblemType, AdapterType>;
   comparison_helper->AddSource(problem_parameters.name(), comparison_source);
   comparison_source->addTimer("adapter construction time");
   comparison_source->addTimer("problem construction time");
@@ -270,7 +255,7 @@ void run(const UserInputForTests &uinput,
   
   const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
   comparison_source->timers["adapter construction time"]->start();
-  base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
+  base_adapter_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
   comparison_source->timers["adapter construction time"]->stop();
   
 //  if(rank == 0) cout << "Got input adapter... " << endl;
@@ -288,42 +273,21 @@ void run(const UserInputForTests &uinput,
   // get Zoltan2 partion parameters
   ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
   
-//  if(rank == 0){
-//    cout << "\nZoltan 2 parameters:" << endl;
-//    zoltan2_parameters.print(std::cout);
-//    cout << endl;
-//  }
-  problem_t * problem = nullptr;
+  //if(rank == 0){
+  //  cout << "\nZoltan 2 parameters:" << endl;
+  //  zoltan2_parameters.print(std::cout);
+  //  cout << endl;
+  //}
+
   comparison_source->timers["problem construction time"]->start();
   std::string problem_kind = problem_parameters.get<std::string>("kind"); 
   if (rank == 0) std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
 #ifdef HAVE_ZOLTAN2_MPI
-  if (adapter_name == "BasicIdentifier")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, basic_vector_t>(problem_kind, ia, &zoltan2_parameters, MPI_COMM_WORLD);
-  else if (adapter_name == "XpetraMultiVector")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, xpetra_mv_t>(problem_kind, ia, &zoltan2_parameters, MPI_COMM_WORLD);
-  else if (adapter_name == "XpetraCrsGraph")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, xcrsGraph_t>(problem_kind, ia, &zoltan2_parameters, MPI_COMM_WORLD);
-  else if (adapter_name == "XpetraCrsMatrix")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, xcrsMatrix_t>(problem_kind, ia, &zoltan2_parameters, MPI_COMM_WORLD);
-  else if (adapter_name == "BasicVector")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, basic_vector_t>(problem_kind, ia, &zoltan2_parameters, MPI_COMM_WORLD);
-  else if (adapter_name == "PamgenMesh")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, pamgen_t>(problem_kind, ia, &zoltan2_parameters, MPI_COMM_WORLD);
+  base_problem_t * problem = Zoltan2::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters, MPI_COMM_WORLD);
 #else
-  if (adapter_name == "BasicIdentifier")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, basic_vector_t>(problem_kind, ia, &zoltan2_parameters);
-  else if (adapter_name == "XpetraMultiVector")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, xpetra_mv_t>(problem_kind, ia, &zoltan2_parameters);
-  else if (adapter_name == "XpetraCrsGraph")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, xcrsGraph_t>(problem_kind, ia, &zoltan2_parameters);
-  else if (adapter_name == "XpetraCrsMatrix")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, xcrsMatrix_t>(problem_kind, ia, &zoltan2_parameters);
-  else if (adapter_name == "BasicVector")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, basic_vector_t>(problem_kind, ia, &zoltan2_parameters);
-  else if (adapter_name == "PamgenMesh")
-    problem = Zoltan2::ProblemFactory::newProblem<base_t, pamgen_t>(problem_kind, ia, &zoltan2_parameters);
+  base_problem_t * problem = Zoltan2::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters);
 #endif
+
   if (problem == nullptr) {
     if (rank == 0)
       std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
@@ -335,28 +299,27 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   
   comparison_source->timers["solve time"]->start();
-  if (problem_kind == "partitioning")
-    reinterpret_cast<basic_partitioning_t *>(problem)->solve();
-  else if (problem_kind == "ordering")
-    reinterpret_cast<basic_ordering_t *>(problem)->solve();
-  else if (problem_kind == "coloring")
-    reinterpret_cast<basic_coloring_t *>(problem)->solve();
-
+  if (problem_kind == "partitioning") {
+    reinterpret_cast<ProblemType *>(problem)->solve();
+  } else if (problem_kind == "ordering") {
+    reinterpret_cast<ProblemType *>(problem)->solve();
+  } else if (problem_kind == "coloring") {
+    reinterpret_cast<ProblemType *>(problem)->solve();
+  }
   comparison_source->timers["solve time"]->stop();
-  
   if (rank == 0)
     cout << problem_kind + "Problem solved." << endl;
   
-#define KDDKDD
+//#define KDDKDD
 #ifdef KDDKDD
   {
-  const base_t::gno_t *kddIDs = NULL;
+  const base_adapter_t::gno_t *kddIDs = NULL;
   ia->getIDsView(kddIDs);
     for (size_t i = 0; i < ia->getLocalNumIDs(); i++) {
       std::cout << rank << " LID " << i
                 << " GID " << kddIDs[i]
                 << " PART " 
-                << reinterpret_cast<basic_partitioning_t *>(problem)->getSolution().getPartListView()[i]
+                << reinterpret_cast<ProblemType *>(problem)->getSolution().getPartListView()[i]
                 << std::endl;
     }
   }
@@ -367,20 +330,23 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   
   // calculate pass fail based on imbalance
-  if(rank == 0) cout << "Comparing metrics...\n" << endl;
+  if(rank == 0) cout << "Comparing metrics..." << endl;
 
   // An environment.  This is usually created by the problem.
+  // BDD unused, only applicable to partitioning problems
+  // RCP<const Zoltan2::Environment> env =
+  //   reinterpret_cast<ProblemType *>(problem)->getEnvironment();
 
-  RCP<const Zoltan2::Environment> env =
-    reinterpret_cast<basic_partitioning_t *>(problem)->getEnvironment();
-
-  if(problem_parameters.isParameter("Metrics"))
+  if( problem_kind == "partitioning" &&
+      problem_parameters.isParameter("Metrics"))
   {
-    if(rank == 0)
-      reinterpret_cast<basic_partitioning_t *>(problem)->printMetrics(cout);
-    
+    if(rank == 0) {
+      std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
+      reinterpret_cast<ProblemType *>(problem)->printMetrics(cout);
+    }
+
     ArrayRCP<const metric_t> metrics
-    = reinterpret_cast<basic_partitioning_t *>(problem)->getMetrics();
+    = reinterpret_cast<ProblemType *>(problem)->getMetrics();
     
     // get metric plist
     const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
@@ -413,25 +379,29 @@ void run(const UserInputForTests &uinput,
   }else{
     if(rank == 0)
     {
+      if (problem_kind == "partitioning") {
       cout << "No test metrics provided." << endl;
-      reinterpret_cast<basic_partitioning_t *>(problem)->printMetrics(cout);
+      reinterpret_cast<ProblemType *>(problem)->printMetrics(cout);
+      } else {
+        cout << "Metrics unavailable for " + problem_kind + " problems" << std::endl;
+      }
     }
   }
   
   // 4b. timers
 //  if(zoltan2_parameters.isParameter("timer_output_stream"))
-//    reinterpret_cast<basic_partitioning_t *>(problem)->printTimers();
+//    reinterpret_cast<ProblemType *>(problem)->printTimers();
   
   ////////////////////////////////////////////////////////////
   // 5. Add solution to map for possible comparison testing
   ////////////////////////////////////////////////////////////
-  comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
-  comparison_source->problem = RCP<basic_partitioning_t>(reinterpret_cast<basic_partitioning_t *>(problem));
+  comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<AdapterType *>(ia));
+  comparison_source->problem = RCP<ProblemType>(reinterpret_cast<ProblemType *>(problem));
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
   
   // write mesh solution
-//  auto sol = reinterpret_cast<basic_partitioning_t *>(problem)->getSolution();
+//  auto sol = reinterpret_cast<ProblemType *>(problem)->getSolution();
 //  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
 
   ////////////////////////////////////////////////////////////
@@ -502,8 +472,9 @@ int main(int argc, char *argv[])
 //     pamgen debugging
 //    MyUtils::writeMesh(uinput,comm);
 //    MyUtils::getConnectivityGraph(uinput, comm);
-    
-    RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
+        
+    RCP<ComparisonHelper<partitioning_problem_t, basic_id_t>> comparison_manager
+      = rcp(new ComparisonHelper<partitioning_problem_t, basic_id_t>);
     while (!problems.empty()) {
       run(uinput, problems.front(), comparison_manager, comm);
       problems.pop();
