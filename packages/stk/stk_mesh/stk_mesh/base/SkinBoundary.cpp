@@ -96,14 +96,6 @@ Entity get_side_entity_for_element_side_pair(BulkData &bulkData, const SideSetEn
     return get_side_entity_from_ordinal(sideVector, ordinals, facet.side);
 }
 
-bool check_global_truth_value(bool truthValue, MPI_Comm communicator)
-{
-    unsigned localResult = truthValue;
-    unsigned globalResult = 0;
-    stk::all_reduce_min<unsigned>( communicator, &localResult, &globalResult , 1 );
-    return (0 != globalResult);
-}
-
 stk::mesh::EntityVector get_locally_owned_skinned_sides(BulkData &bulkData, const Part& skinnedPart)
 {
     stk::mesh::EntityVector skinnedSides;
@@ -116,7 +108,7 @@ bool is_sideset_equivalent_to_skin(BulkData &bulkData, stk::mesh::EntityVector &
     stk::mesh::EntityVector skinnedSides = get_locally_owned_skinned_sides(bulkData, skinnedPart);
     stk::util::sort_and_unique(sidesetSides);
     stk::util::sort_and_unique(skinnedSides);
-    return check_global_truth_value(sidesetSides == skinnedSides, bulkData.parallel());
+    return stk::is_true_on_all_procs(bulkData.parallel(), sidesetSides == skinnedSides);
 }
 
 void add_locally_owned_side_from_element_side_pair(BulkData &bulkData, const SideSetEntry &facet, stk::mesh::EntityVector &sidesetSides)
