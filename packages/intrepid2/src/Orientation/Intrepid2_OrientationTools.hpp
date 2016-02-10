@@ -70,9 +70,67 @@
 #include "Kokkos_Core.hpp"
 
 namespace Intrepid2 {
-  
+
   template<class Scalar>
   class OrientationTools {
+  public:
+
+    class DenseMatrix {
+    private:
+      int _offm, _offn, _m, _n, _cs, _rs;
+      Kokkos::View<Scalar*> _ax;
+
+    public:
+      DenseMatrix() = default;
+      DenseMatrix(const DenseMatrix &b) = default;
+
+      DenseMatrix(const int m, const int n);
+      void setView(const DenseMatrix &b,
+                   const int offm, const int m,
+                   const int offn, const int n);
+
+      int NumRows() const;
+      int NumCols() const;
+      int RowStride() const;
+      int ColStride() const;
+      Scalar* ValuePtr() const;
+
+      Scalar& Value(const int i,
+                    const int j);
+
+      size_t countNumNonZeros(const Scalar epsilon) const;
+    };
+
+    class CoeffMatrix {
+    private:
+      std::string _label;
+      
+      int _m, _n;
+
+      Kokkos::View<size_t*>  _ap;      //!< pointers to column index and values
+      Kokkos::View<int*>     _aj;      //!< column index compressed format
+      Kokkos::View<Scalar*>  _ax;      //!< values
+
+      void createInternalArrays(const int m, 
+                                const int n, 
+                                const size_t nnz);
+
+    public:
+      CoeffMatrix();
+      CoeffMatrix(const CoeffMatrix &b) = default;
+
+      void import(const DenseMatrix &b,
+                  const bool transpose);
+      
+      int NumRows() const;
+      int NumCols() const;
+
+      size_t RowPtr(const int i) const;
+      int* ColsInRow(const int i) const;
+      Scalar* ValuesInRow(const int i) const;
+      int NumNonZerosInRow(const int i) const;
+    };
+    
   public:
   
     /** \brief  Default constructor.
@@ -128,6 +186,17 @@ namespace Intrepid2 {
                                               const int ort);
 
   public:
+    template<class ArrayPoint>
+    static void getEdgeCoeffMatrix(CoeffMatrix &                    C,
+                                   const Basis<Scalar,ArrayPoint> & basis,
+                                   const int                        edgeId,
+                                   const int                        edgeOrt);
+
+    // template<class ArrayPoint>
+    // static void getFaceCoeffMatrix(CoeffMatrix &                    C,
+    //                                const Basis<Scalar,ArrayPoint> & basis,
+    //                                const int                        faceId);
+
     template<class ArrayPoint>
     static void getLatticePointsByTopology(ArrayPoint &                     outPoints,
                                            const ArrayPoint &               refPoints,

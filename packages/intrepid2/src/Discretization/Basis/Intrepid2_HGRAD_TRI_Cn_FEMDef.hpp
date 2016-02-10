@@ -223,8 +223,8 @@ namespace Intrepid2 {
         {
           ArrayScalar phisCur( numBf , numPts );
           Phis.getValues( phisCur , inputPoints , operatorType );
-          for (int i=0;i<outputValues.dimension(0);i++) {
-            for (int j=0;j<outputValues.dimension(1);j++) {
+          for (int i=0;i<outputValues.dimension(0);i++) {    // # of points
+            for (int j=0;j<outputValues.dimension(1);j++) {  
               outputValues(i,j) = 0.0;
               for (int k=0;k<this->getCardinality();k++) {
                 outputValues(i,j) += this->Vinv(k,i) * phisCur(k,j);
@@ -307,22 +307,73 @@ namespace Intrepid2 {
   }
 
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+  template<class Scalar, class ArrayScalar> 
+  void Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
+                                                              const ArrayScalar &  inputPoints,
+                                                              const Orientation    ort,
+                                                              const EOperator      operatorType) const {
+    // the basis functions are already topologically reordered 
+    // and store the values in tempValues
+    const int numPts = inputPoints.dimension(0);
+    const int dimPts = inputPoints.dimension(1);
+
+    ArrayScalar tempValues(numPts, dimPts);
+    getValues(tempValues, inputPoints, operatorType);
+    
+    // retrive information compute offsets of output values
+    const shards::CellTopology cellTopo = this->getBaseCellTopology();
+    const unsigned int numVertex = cellTopo.getVertexCount();
+    const unsigned int numEdge   = cellTopo.getEdgeCount();
+    const unsigned int numEdgeDofs = getNumEdgeDofs();
+
+    // decode orientation for edges
+    int edgeOrt[3] = {};
+    ort.getEdgeOrientation(edgeOrt, 3);
+
+    // compute (or retrive) coefficient matrix and apply to output values
+    for (int edgeId=0,offset=numVertex;edgeId<numEdge;++edgeId,offset+=numEdgeDofs) {
+      typename OrientationTools<Scalar>::CoeffMatrix C;
+      OrientationTools<Scalar>::getEdgeCoeffMatrix(C, 
+                                           *this, 
+                                           edgeId,
+                                           edgeOrt);
+      
+      // apply the coefficient matrix: 
+      // for now, assume that the output value container is row-oriented
+      // do we have any means to identify how to exchange loop based on the storage layout ??
+      for (int i=0;i<numEdgeDofs;++i) {
+        auto nnz     = C.NumNonZerosInRow(i);
+        auto colsPtr = C.ColsInRow(i);
+        auto valsPtr = C.ValuesInRow(i);
+        
+        // sparse mat-vec
+        for (int j=0;j<dimPts;++j) {
+          Scalar temp = 0.0;
+          for (int k=0;k<nnz;++k)
+            temp += valsPtr[k]*tempValues(colsPtr[k] + offset, j);
+          
+          outputValues(i + offset, j) = temp;
+        }
+      }
+    }
+  }
+
   // This should be part of basis tag and filled by derived classes instead of hardwired like this
   template<class Scalar, class ArrayScalar>
-  int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumVertexDofs() const {
+  unsigned int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumVertexDofs() const {
     return 1;
   }
   template<class Scalar, class ArrayScalar>
-  int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumEdgeDofs() const {
+  unsigned int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumEdgeDofs() const {
     const int order = this->basisDegree_;
     return (order - 1);
   }
   template<class Scalar, class ArrayScalar>
-  int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumFaceDofs() const {
+  unsigned int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumFaceDofs() const {
     return 0;
   }
   template<class Scalar, class ArrayScalar>
-  int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumInteriorDofs() const {
+  unsigned int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumInteriorDofs() const {
     const int order = this->basisDegree_;
     return (order - 2)*(order - 1)/2;
   }
