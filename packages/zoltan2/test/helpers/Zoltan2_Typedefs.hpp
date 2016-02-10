@@ -184,7 +184,7 @@ namespace Zoltan2_typedefs {
 #endif
 
   // Problem types
-  typedef Zoltan2::Problem<base_adapter_t>                          base_problem_t; 
+  typedef Zoltan2::Problem<basic_id_t>                          base_problem_t; 
   typedef Zoltan2::PartitioningProblem<basic_id_t>                  partitioning_problem_t; 
   typedef Zoltan2::OrderingProblem<basic_id_t>                      ordering_problem_t; 
   typedef Zoltan2::ColoringProblem<basic_id_t>                      coloring_problem_t; 
