@@ -623,8 +623,15 @@ namespace MueLu {
         }
         if (emptySolve == true) {
           GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
-          // Coarse operator is identity
-          X.update(one, B, zero);
+          // There are two cases to handle here.
+          // 1) Single level AMG, no smoother.  Return B, which is most likely
+          //    the residual from a Krylov method.
+          // 2) Multilevel AMG, no coarse grid solve.  Return zero vector, as
+          //    the coarse grid correction should have no effect.  X was already
+          //    initialized to zero on the previous level, so there's no need to
+          //    do it here.
+          if (GetNumLevels() == 1)
+            X.update(one, B, zero);
         }
 
       } else {

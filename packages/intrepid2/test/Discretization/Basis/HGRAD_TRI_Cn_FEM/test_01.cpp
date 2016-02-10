@@ -68,10 +68,10 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  
+
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  
+
   if (iprint > 0)
     outStream = Teuchos::rcp(&std::cout, false);
   else
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
     << "|                                                                             |\n" \
     << "===============================================================================\n";
-  
+
   int errorFlag  = 0;
 
   // Let's instantiate a basis
@@ -112,11 +112,27 @@ int main(int argc, char *argv[]) {
 
     FieldContainer<double> lattice( np_lattice , 2 );
 
-    PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-                                                            myBasis.getBaseCellTopology() , 
-                                                            deg , 
-                                                            0 , 
-                                                            POINTTYPE_WARPBLEND );         
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+    {
+      FieldContainer<double> temp( np_lattice , 2 );
+      PointTools::getLattice<double,FieldContainer<double> >( temp,
+                                                              myBasis.getBaseCellTopology() ,
+                                                              deg ,
+                                                              0 ,
+                                                              POINTTYPE_WARPBLEND );
+      
+      OrientationTools<double>::getLatticePointsByTopology( lattice,
+                                                            temp,
+                                                            myBasis );
+    }
+#else
+    PointTools::getLattice<double,FieldContainer<double> >( lattice ,
+                                                            myBasis.getBaseCellTopology() ,
+                                                            deg ,
+                                                            0 ,
+                                                            POINTTYPE_WARPBLEND );
+#endif
+
     FieldContainer<double> vals( nbf , np_lattice );
 
     myBasis.getValues( vals , lattice , OPERATOR_VALUE );
@@ -175,12 +191,27 @@ int main(int argc, char *argv[]) {
 
     FieldContainer<double> lattice( np_lattice , 2 );
 
-    PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-                                                            myBasis.getBaseCellTopology() , 
-                                                            deg , 
-                                                            0 , 
-                                                            POINTTYPE_WARPBLEND );     
-                                                            
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+    {
+      FieldContainer<double> temp( np_lattice , 2 );
+      PointTools::getLattice<double,FieldContainer<double> >( temp ,
+                                                              myBasis.getBaseCellTopology() ,
+                                                              deg ,
+                                                              0 ,
+                                                              POINTTYPE_WARPBLEND );
+      
+      OrientationTools<double>::getLatticePointsByTopology( lattice,
+                                                            temp,
+                                                            myBasis );
+    }
+#else
+    PointTools::getLattice<double,FieldContainer<double> >( lattice ,
+                                                            myBasis.getBaseCellTopology() ,
+                                                            deg ,
+                                                            0 ,
+                                                            POINTTYPE_WARPBLEND );
+#endif
+
     FieldContainer<double> vals( nbf , np_lattice , 2 );
 
     myBasis.getValues( vals , lattice , OPERATOR_CURL );
@@ -191,13 +222,13 @@ int main(int argc, char *argv[]) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
-  
+
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
-  
+
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
   Kokkos::finalize();

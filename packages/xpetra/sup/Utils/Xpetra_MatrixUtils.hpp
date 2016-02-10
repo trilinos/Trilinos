@@ -81,6 +81,104 @@ class MatrixUtils {
 
 public:
 
+  static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > concatenateMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps) {
+
+    // merge submaps to global map
+    std::vector<GlobalOrdinal> gids;
+    for(size_t tt = 0; tt<subMaps.size(); ++tt) {
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > subMap = subMaps[tt];
+      for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(subMap->getNodeNumElements()); ++l) {
+        GlobalOrdinal gid = subMap->getGlobalElement(l);
+        gids.push_back(gid);
+      }
+    }
+
+    const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+    //std::sort(gids.begin(), gids.end());
+    //gids.erase(std::unique(gids.begin(), gids.end()), gids.end());
+    Teuchos::ArrayView<GO> gidsView(&gids[0], gids.size());
+    Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullMap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(subMaps[0]->lib(), INVALID, gidsView, subMaps[0]->getIndexBase(), subMaps[0]->getComm());
+    return fullMap;
+  }
+
+  static Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > findColumnSubMap(
+      const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& input,
+      const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& domainMap ) {
+
+    RCP< const Teuchos::Comm<int> > comm = input.getRowMap()->getComm();
+
+    // build an overlapping version of mySpecialMap
+    Teuchos::Array<GlobalOrdinal> ovlUnknownStatusGids;
+    Teuchos::Array<GlobalOrdinal> ovlFoundStatusGids;
+
+    // loop over global column map of A and find all GIDs where it is not sure, whether they are special or not
+    for(size_t i = 0; i<input.getColMap()->getNodeNumElements(); i++) {
+      GlobalOrdinal gcid = input.getColMap()->getGlobalElement(i);
+      if(domainMap.isNodeGlobalElement(gcid) == false) {
+        ovlUnknownStatusGids.push_back(gcid);
+      }
+    }
+
+    // We need a locally replicated list of all DOF gids of the (non-overlapping) range map of A10
+    // Communicate the number of DOFs on each processor
+    std::vector<int> myUnknownDofGIDs(comm->getSize(),0);
+    std::vector<int> numUnknownDofGIDs(comm->getSize(),0);
+    myUnknownDofGIDs[comm->getRank()] = ovlUnknownStatusGids.size();
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,comm->getSize(),&myUnknownDofGIDs[0],&numUnknownDofGIDs[0]);
+
+    // create array containing all DOF GIDs
+    size_t cntUnknownDofGIDs = 0;
+    for(int p = 0; p < comm->getSize(); p++) cntUnknownDofGIDs += numUnknownDofGIDs[p];
+    std::vector<GlobalOrdinal> lUnknownDofGIDs(cntUnknownDofGIDs,-1); // local version to be filled
+    std::vector<GlobalOrdinal> gUnknownDofGIDs(cntUnknownDofGIDs,-1); // global version after communication
+    // calculate the offset and fill chunk of memory with local data on each processor
+    size_t cntUnknownOffset = 0;
+    for(int p = 0; p < comm->getRank(); p++) cntUnknownOffset += numUnknownDofGIDs[p];
+    for(size_t k=0; k < Teuchos::as<size_t>(ovlUnknownStatusGids.size()); k++) {
+      lUnknownDofGIDs[k+cntUnknownOffset] = ovlUnknownStatusGids[k];
+    }
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lUnknownDofGIDs[0],&gUnknownDofGIDs[0]);
+    std::sort(gUnknownDofGIDs.begin(), gUnknownDofGIDs.end());
+    gUnknownDofGIDs.erase(std::unique(gUnknownDofGIDs.begin(), gUnknownDofGIDs.end()), gUnknownDofGIDs.end());
+
+    // loop through all GIDs with unknown status
+    for(size_t k=0; k < gUnknownDofGIDs.size(); k++) {
+      GlobalOrdinal curgid = gUnknownDofGIDs[k];
+      if(domainMap.isNodeGlobalElement(curgid)) {
+        ovlFoundStatusGids.push_back(curgid); // curgid is in special map (on this processor)
+      }
+    }
+
+    std::vector<int> myFoundDofGIDs(comm->getSize(),0);
+    std::vector<int> numFoundDofGIDs(comm->getSize(),0);
+    myFoundDofGIDs[comm->getRank()] = ovlFoundStatusGids.size();
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,comm->getSize(),&myFoundDofGIDs[0],&numFoundDofGIDs[0]);
+
+    // create array containing all DOF GIDs
+    size_t cntFoundDofGIDs = 0;
+    for(int p = 0; p < comm->getSize(); p++) cntFoundDofGIDs += numFoundDofGIDs[p];
+    std::vector<GlobalOrdinal> lFoundDofGIDs(cntFoundDofGIDs,-1); // local version to be filled
+    std::vector<GlobalOrdinal> gFoundDofGIDs(cntFoundDofGIDs,-1); // global version after communication
+    // calculate the offset and fill chunk of memory with local data on each processor
+    size_t cntFoundOffset = 0;
+    for(int p = 0; p < comm->getRank(); p++) cntFoundOffset += numFoundDofGIDs[p];
+    for(size_t k=0; k < Teuchos::as<size_t>(ovlFoundStatusGids.size()); k++) {
+      lFoundDofGIDs[k+cntFoundOffset] = ovlFoundStatusGids[k];
+    }
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntFoundDofGIDs),&lFoundDofGIDs[0],&gFoundDofGIDs[0]);
+
+    Teuchos::Array<GlobalOrdinal> ovlDomainMapArray;
+    for(size_t i = 0; i<input.getColMap()->getNodeNumElements(); i++) {
+      GlobalOrdinal gcid = input.getColMap()->getGlobalElement(i);
+      if(domainMap.isNodeGlobalElement(gcid) == true ||
+         std::find(gFoundDofGIDs.begin(), gFoundDofGIDs.end(), gcid) != gFoundDofGIDs.end()) {
+        ovlDomainMapArray.push_back(gcid);
+      }
+    }
+    RCP<Map> ovlDomainMap = MapFactory::Build (domainMap.lib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),ovlDomainMapArray(),0,comm);
+    return ovlDomainMap;
+  }
+
   /** Given a matrix A split it into a nxm blocked matrix using the map extractors.
 
     @param input Input matrix, must already have had 'FillComplete()' called.
@@ -90,7 +188,8 @@ public:
   static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > SplitMatrix(
                        const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& input,
                        Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rangeMapExtractor,
-                       Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domainMapExtractor) {
+                       Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domainMapExtractor,
+                       Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > columnMapExtractor = Teuchos::null) {
     size_t numRows  = rangeMapExtractor->NumMaps();
     size_t numCols  = domainMapExtractor->NumMaps();
 
@@ -109,6 +208,25 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getGlobalNumElements() != input.getDomainMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
     TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getNodeNumElements()   != input.getDomainMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
 
+    // check column map extractor
+    Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > myColumnMapExtractor = Teuchos::null;
+    if(columnMapExtractor == Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->getThyraMode() == true, Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Auto generation of column map extractor not supported for Thyra style numbering.");
+      std::vector<Teuchos::RCP<const Map> > ovlxmaps(numCols, Teuchos::null);
+      for(size_t c = 0; c < numCols; c++) {
+        Teuchos::RCP<const Map> colMap =
+          Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::findColumnSubMap(input, *(domainMapExtractor->getMap(c))); // TODO what about Thyra style numbering? Probably no changes necessary as we obtain a pseudo map with unique GIDs.
+        ovlxmaps[c] = colMap;
+      }
+
+      Teuchos::RCP<const Map> fullColMap =
+          Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::concatenateMaps(ovlxmaps);
+
+      myColumnMapExtractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(fullColMap,ovlxmaps);
+    } else
+      myColumnMapExtractor = columnMapExtractor; // use user-provided column map extractor.
+
+    // create submatrices
     std::vector<Teuchos::RCP<CrsMatrix> > subMatrices(numRows*numCols, Teuchos::null);
 
     for (size_t r = 0; r < numRows; r++) {
@@ -144,7 +262,7 @@ public:
 
       for(size_t i=0; i<(size_t)indices.size(); i++) {
         GlobalOrdinal gcolid = input.getColMap()->getGlobalElement(indices[i]);
-        size_t colBlockId = domainMapExtractor->getMapIndexForGID(gcolid);
+        size_t colBlockId = myColumnMapExtractor->getMapIndexForGID(gcolid);
         blockColIdx [colBlockId].push_back(gcolid);
         blockColVals[colBlockId].push_back( vals[i]);
       }

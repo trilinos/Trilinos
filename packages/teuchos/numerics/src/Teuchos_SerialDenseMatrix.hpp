@@ -400,14 +400,14 @@ protected:
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix()
-  : CompObject(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(false), values_(0)
+  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(false), values_(0)
 {}
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   OrdinalType numRows_in, OrdinalType numCols_in, bool zeroOut
   )
-  : CompObject(), numRows_(numRows_in), numCols_(numCols_in), stride_(numRows_in)
+  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), numRows_(numRows_in), numCols_(numCols_in), stride_(numRows_in)
 {
   values_ = new ScalarType[stride_*numCols_];
   valuesCopied_ = true;
@@ -420,7 +420,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   DataAccess CV, ScalarType* values_in, OrdinalType stride_in, OrdinalType numRows_in,
   OrdinalType numCols_in
   )
-  : CompObject(), numRows_(numRows_in), numCols_(numCols_in), stride_(stride_in),
+  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), numRows_(numRows_in), numCols_(numCols_in), stride_(stride_in),
     valuesCopied_(false), values_(values_in)
 {
   if(CV == Copy)
@@ -433,7 +433,8 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans) : CompObject(), BLAS<OrdinalType,ScalarType>(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(true), values_(0)
+SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans) 
+  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), numRows_(0), numCols_(0), stride_(0), valuesCopied_(true), values_(0)
 {
   if ( trans == Teuchos::NO_TRANS )
   {

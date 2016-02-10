@@ -1493,6 +1493,9 @@ namespace BaskerNS
     //test
     //printMTX("A_BTF.mtx", BTF_A);
 
+    //test 
+    // printMTX("extra_C.mtx", BTF_C);
+
     return 0;
   }//sfactor_copy2()
 

@@ -598,7 +598,11 @@ public:
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
     { return m_offset.m_dim.extent(r); }
 
-   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename Traits::array_layout layout() const
+    { return m_offset.layout(); }
+
+  KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
     { return m_offset.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const
     { return m_offset.dimension_1(); }
@@ -772,9 +776,10 @@ public:
   KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
+  template< class ... P >
   KOKKOS_INLINE_FUNCTION
   ViewMapping
-    ( pointer_type ptr
+    ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & layout
     )
     : m_handle()
@@ -783,7 +788,8 @@ public:
     , m_stride( 1 )
     , m_sacado_size( Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout) )
     {
-      m_handle.set( ptr, m_offset.span(), m_sacado_size.value );
+      m_handle.set( ( (ViewCtorProp<void,pointer_type> const &) prop ).value,
+                    m_offset.span(), m_sacado_size.value );
     }
 
   //----------------------------------------
@@ -793,12 +799,12 @@ public:
    */
   template< class ... P >
   SharedAllocationRecord<> *
-  allocate_shared( ViewAllocProp< P... > const & prop
+  allocate_shared( ViewCtorProp< P... > const & prop
                  , typename Traits::array_layout const & layout )
   {
-    typedef ViewAllocProp< P... > alloc_prop ;
+    typedef ViewCtorProp< P... > ctor_prop ;
 
-    typedef typename alloc_prop::execution_space  execution_space ;
+    typedef typename ctor_prop::execution_space  execution_space ;
     typedef typename Traits::memory_space         memory_space ;
     typedef typename handle_type::template ConstructDestructFunctor<execution_space> functor_type ;
     typedef SharedAllocationRecord< memory_space , functor_type > record_type ;
@@ -815,8 +821,8 @@ public:
 
     // Create shared memory tracking record with allocate memory from the memory space
     record_type * const record =
-      record_type::allocate( ( (ViewAllocProp<void,memory_space> const &) prop ).value
-                           , ( (ViewAllocProp<void,std::string>  const &) prop ).value
+      record_type::allocate( ( (ViewCtorProp<void,memory_space> const &) prop ).value
+                           , ( (ViewCtorProp<void,std::string>  const &) prop ).value
                            , alloc_size );
 
     //  Only set the the pointer and initialize if the allocation is non-zero.
@@ -829,8 +835,8 @@ public:
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
       record->m_destroy = m_handle.create_functor(
-        ( (ViewAllocProp<void,execution_space> const &) prop).value
-        , alloc_prop::initialize
+        ( (ViewCtorProp<void,execution_space> const &) prop).value
+        , ctor_prop::initialize
         , m_offset.span()
         , m_sacado_size.value );
 

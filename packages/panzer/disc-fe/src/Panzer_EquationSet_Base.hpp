@@ -155,6 +155,9 @@ namespace panzer {
 
     ///@}
 
+    //! Set the list of tangent parameter names
+    virtual void setTangentParamNames(const std::vector<std::string>& tangent_param_names) = 0;
+
   };
   
 }

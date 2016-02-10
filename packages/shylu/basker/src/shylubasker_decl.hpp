@@ -500,6 +500,8 @@ namespace BaskerNS
     BASKER_INLINE
     int nfactor_domain_error(INT_1DARRAY);
     BASKER_INLINE
+    int nfactor_sep_error(INT_1DARRAY);
+    BASKER_INLINE
     int nfactor_diag_error(INT_1DARRAY );
     
    
@@ -965,6 +967,8 @@ namespace BaskerNS
     int printL();
     int printL2D();
     int printU();
+    int printLMTX();
+    int printUMTX();
     void printMTX(std::string fname,
 		  BASKER_MATRIX &M);
     void printMTX(std::string fname,

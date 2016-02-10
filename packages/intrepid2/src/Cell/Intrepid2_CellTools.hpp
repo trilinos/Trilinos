@@ -699,8 +699,6 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
 					     const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
                                              const int &                   whichCell = -1);
     
-
-    
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
       
                 Applies \f$\hat{\Phi}_i\f$, the parametrization map of a subcell \f$\hat{\mathcal{S}}_i\f$ 
