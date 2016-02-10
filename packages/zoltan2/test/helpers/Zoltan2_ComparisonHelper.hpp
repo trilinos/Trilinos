@@ -84,22 +84,6 @@ class ComparisonSource
   
 public:
   
- // typedef AdapterForTests::base_adapter_t base_t;
- // typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
- // typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
- // typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
- // typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
- // typedef AdapterForTests::basic_vector_adapter basic_vector_t;
- // 
- // typedef Zoltan2::Problem<base_t> problem_t;
- // typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
- // typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
- // typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
- // typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mb problem type
- // typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mb problem type
- // typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mb problem type
-  
-  
   /*! \brief Destructor.
    */
   ~ComparisonSource()
@@ -131,23 +115,6 @@ class ComparisonHelper
 {
   
 public:
-  
- // typedef AdapterForTests::base_adapter_t base_t;
- // typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
- // typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
- // typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
- // typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
- // typedef AdapterForTests::basic_vector_adapter basic_vector_t;
- // 
- // typedef Zoltan2::Problem<base_t> problem_t;
- // typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
- // typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
- // typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mv problem type
- // typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mv problem type
- // typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mv problem type
- // typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mv problem type
-  
- // typedef const Zoltan2::MetricValues<zscalar_t> metric_t;
   
   /* \brief Compare the solutions, metrics or timers of two Zoltan2 solutions.
    * \param pList is a parameter list defining the comparison
