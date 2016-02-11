@@ -224,7 +224,7 @@ namespace MueLu {
       if (factoryName == "TogglePFactory")                  return BuildTogglePFactory<TogglePFactory>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TransPFactory")                   return Build2<TransPFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                 (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "UncoupledAggregationFactory")     return Build2<UncoupledAggregationFactory>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserPFactory")                    return Build2<UserPFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SemiCoarsenPFactory")             return Build2<SemiCoarsenPFactory>           (paramList, factoryMapIn, factoryManagersIn);
@@ -541,43 +541,6 @@ namespace MueLu {
 
       if(paramList.isParameter("aggregation: min agg size"))
         factory->SetMinNodesPerAggregate(paramList.get<int>("aggregation: min agg size"));
-
-      return factory;
-    }
-
-    //! UncoupledAggregationFactory
-    RCP<FactoryBase> BuildUncoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
-      RCP<UncoupledAggregationFactory> factory = Build<UncoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
-
-      ParameterList paramListWithFactories(paramList); // copy  (*might* also avoid indicating that parameter entry is used)
-      paramListWithFactories.remove("factory", false);
-
-      // Read the RCP<Factory> parameters of the class T
-      RCP<const ParameterList> validParamList = factory->GetValidParameterList();
-      for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
-        const std::string & pName = validParamList->name(param);
-
-        if (validParamList->isType< RCP<const FactoryBase> >(pName) && paramList.isParameter(pName)) {
-          // Generate or get factory described by param
-          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
-
-          // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
-          paramListWithFactories.remove(pName);
-          paramListWithFactories.set(pName, generatingFact);
-        }
-
-        if (pName == "ParameterList" && validParamList->isType<RCP<const ParameterList> >(pName) && paramList.isParameter(pName)) {
-          // NOTE: we cannot use
-          //     subList = sublist(rcpFromRef(paramList), pName)
-          // here as that would result in sublist also being a reference to a temporary object.
-          // The resulting dereferencing in the corresponding factory would then segfault
-          RCP<const ParameterList> subList = Teuchos::sublist(rcp(new ParameterList(paramList)), pName);
-          paramListWithFactories.set(pName, subList);
-        }
-      }
-
-      // Configure the factory
-      factory->SetParameterList(paramListWithFactories);
 
       return factory;
     }
