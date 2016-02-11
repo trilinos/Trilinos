@@ -334,6 +334,14 @@ void AlgZoltan<Adapter>::partition(
       zz->Set_Param("LB_APPROACH", "REPARTITION");
   }
 
+  pe = pl.getEntryPtr("rectilinear");
+  if (pe) {
+    int val;
+    val = pe->getValue<int>(&val);
+    if (val != 0)
+      zz->Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
+  }
+
   // Look for zoltan_parameters sublist; pass all zoltan parameters to Zoltan
   try {
     const Teuchos::ParameterList &zpl = pl.sublist("zoltan_parameters");
