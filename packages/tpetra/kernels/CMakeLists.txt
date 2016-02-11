@@ -33,6 +33,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
   "1"
   )
 
+# Enable experimental features of Tpetrakernels if set at configure
+# time. Default is no.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_TPETRAKERNELS_EXPERIMENTAL
+  "Enable building and installation of experimental TpetraKernels features."
+  NO )
+
 # ==================================================================
 # Explicit template instantiation (ETI) and test instantiation logic
 # ==================================================================

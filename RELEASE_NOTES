@@ -1,5 +1,171 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 12.6 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.6 general release contains 58 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL, RTOp, Rythmos, Sacado,
+SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos,
+ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra,
+Zoltan, Zoltan2.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+Ifpack2
+
+  - Fixed Ifpack2's part of Bug 6358
+
+    Ifpack2, as well as its tests and examples, no longer require
+    GlobalOrdinal = int to be enabled in Tpetra.
+
+  - Fixed Bug 6443
+
+    One unit test for RILUK had an excessively tight tolerance for Scalar
+    = float.  This commit relaxes the tolerance in a principled way.  As a
+    result, the test now passes.
+
+
+ROL
+
+  - Enhancements:
+
+    -  Default template parameters for ROL::TpetraMultiVector.
+    -  StdVector, TpetraMultiVector, and PartitionedVector now do
+       dimensional compatibility checks.
+    -  More unary and binary elementwise functions added.
+
+
+  - New Features:
+
+    - Methods:
+      -  InteriorPointStep class, and classes it uses (e.g. PenalizedObjective,
+         InequalityConstraint, and CompositeConstraint) to solve Interior Point
+         problems with the CompositeStep SQP solver with successive penalty
+         reduction.
+      -  Standalone GMRES solver in the Krylov directory.
+      -  Mixed quantile risk measure.
+      -  New risk measure corresponding to Kullback-Liebler based
+         distributionally robust optimization.
+      -  SROM SampleGenerator:  The associated samples are determined
+         by solving an optimization problem.  Current objective functions
+         correspond to moment matching and the squared L2 error between
+         distribution functions.
+      -  The PDE-OPT Application Development Kit (ADK) enables the rapid
+         prototyping of large-scale risk-averse optimization problems with
+         PDE constraints. The PDE-OPT ADK comprises three key modules:
+           -- degree-of-freedom manager, which enables the use of an arbitrary
+              number of simulation, control, and design fields based on finite
+              element discretizations, on 1D, 2D and 3D meshes;
+           -- finite element assembly loops and data structures that enable the
+              development of a variety of multiphysics components, built on
+              Intrepid for local finite element computations and Tpetra for
+              parallel linear algebra data structures;
+           -- interface between the physics module and the SimOpt programming
+              interface.
+
+    - Infrastructure:
+      -  OptimizationProblem class unifies Algorithm::run interface.
+      -  StochasticProblem allows for the construction of a general
+         stochastic objective function based on input parameters.
+      -  Generalized CVaRVector to RiskVector.  This allows for a very general
+         treatment of risk-averse optimization problems.
+      -  Risk measure factory.
+      -  Default solve implementation for EqualityConstraint_SimOpt.
+      -  BoundConstraint capability for Interior Point problems with and
+         without Equality Constraints.
+
+Tpetra
+
+  - Better CUDA testing
+
+    We added more nightly test builds with CUDA enabled (for running on
+    NVIDIA GPUs).  The builds test various combinations of CUDA with
+    different compiler versions and host thread parallelism options
+    (OpenMP, Pthreads, serial).  CUDA + GCC 4.7.2 is currently the
+    best-tested option, but we're using these tests to improve support for
+    other options.
+
+  - CrsMatrix, MultiVector, Vector: Added 'atomic' option to sumInto
+
+    The sumIntoLocalValues method in Tpetra::CrsMatrix, and the
+    sumIntoLocalValue and sumIntoGlobalValue methods in
+    Tpetra::MultiVector and Tpetra::Vector, now take an optional bool
+    'atomic' argument.  If true, the methods use Kokkos::atomic_add
+    (atomic +=); if false, they use (non-atomic) += as before.
+
+    This lets different threads call the methods concurrently on the same
+    entry/ies of the matrix, multivector, or vector.  To support this, I
+    also modified CrsMatrix::sumIntoGlobalValues so that it does not
+    change Teuchos::RCP reference counts, thus making it thread safe.
+
+    The default value of 'atomic' depends on the class' execution space.
+    If the execution space is Kokkos::Serial (no threads), atomic is false
+    by default; else, it is true by default.  This ensures that existing
+    MPI-only codes do not need to pay the (small integer factor) overhead
+    of atomic updates, while making sumInto always correct by default when
+    using thread parallelism.
+
+    If you know that different threads will never access the same entries
+    concurrently, you should set atomic=false for best performance.
+
+  - Block(Multi)Vector: Add "offset view" constructors (Bug 6450)
+
+    Tpetra::Experimental::{BlockMultiVector, BlockVector} now have two
+    "offset view" constructors.  They behave analogously to the offsetView
+    and offsetViewNonConst methods of Tpetra::MultiVector.
+
+    The constructors view an existing BlockMultiVector with a different
+    mesh Map, and an optional local row offset from which to start the
+    view on each process.  The offset is a mesh offset (it gets multiplied
+    by the block size internally in order to find the point offset).  The
+    two constructors differ only in that one lets you supply the new point
+    Map, while the other computes it for you.
+
+    This fixes Bug 6450 (which was a feature request).
+
+Zoltan
+
+  - Minor code cleanup and bug fixes.
+
+  - New Zoltan_Get_Fn interface returning pointers to callback functions.
+    See zoltan/src/include/zoltan.h for details.
+
+  - Closest stand-alone Zoltan release is v3.83.  
+    http://www.cs.sandia.gov/Zoltan
+
+Zoltan2
+
+  -  New interface to graph partitioning third-party library PuLP (Partitioning
+     using Label Propagation).  PuLP is currently single-node, multi-threaded
+     with OpenMP.  Work for the next release will include extension to 
+     MPI+OpenMP.
+
+  -  Improved handling of TPL data types, especially in the Zoltan interface.
+
+  -  Interface from MatrixAdapter to Zoltan hypergraph algorithms implemented.
+
+  -  Consistent handling of Tpetra explicitly instantiated types; in particular,
+     enabled builds without GlobalOrdinal=int and without Epetra.
+
+  -  PartitioningSolutionQuality class is being refactored and renamed 
+     EvaluatePartition; work will continue to next release.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 12.4 Release Notes                                         #
 #                                                                             #
 ###############################################################################
@@ -16,7 +182,7 @@ The Trilinos 12.4 general release contains 58 packages: Amesos, Amesos2,
 Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
 ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
 Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
-Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL*, RTOp, Rythmos, Sacado,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL, RTOp, Rythmos, Sacado,
 SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos,
 ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra,
 Zoltan, Zoltan2.

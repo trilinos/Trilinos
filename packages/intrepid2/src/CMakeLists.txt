@@ -281,6 +281,16 @@ APPEND_SET(HEADERS
   )
 
 #
+# Orientation headers
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Orientation)
+APPEND_SET(HEADERS
+  Orientation/Intrepid2_OrientationTools.hpp
+  Orientation/Intrepid2_OrientationToolsDef.hpp
+  )
+
+#
 # All sources
 #
 

@@ -401,3 +401,19 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
 // is included in the definition file.
 template<class ArrayScalar>
 DofCoordsInterface<ArrayScalar>::~DofCoordsInterface() {}
+
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+
+template<class Scalar, class ArrayScalar>
+int Basis<Scalar, ArrayScalar>::getNumVertexDofs() const {  return -1; }
+
+template<class Scalar, class ArrayScalar>
+int Basis<Scalar, ArrayScalar>::getNumEdgeDofs() const {  return -1; }
+
+template<class Scalar, class ArrayScalar>
+int Basis<Scalar, ArrayScalar>::getNumFaceDofs() const {  return -1; }
+
+template<class Scalar, class ArrayScalar>
+int Basis<Scalar, ArrayScalar>::getNumInteriorDofs() const {  return -1; }
+
+#endif

@@ -1,5 +1,5 @@
-#define CUDACONFIG
-//#define OPENMP
+//#define CUDACONFIG
+#define OPENMP
 
 
 #ifdef CUDACONFIG
