@@ -8,6 +8,9 @@
 #include "ElemElemGraph.hpp"
 #include "MeshDiagnosticObserver.hpp"
 #include "../EquivalentEntityBlocks.hpp"
+#include "../../../../stk_util/stk_util/parallel/DistributedIndex.hpp"
+#include "../../base/GetEntities.hpp"
+#include "../MeshImplUtils.hpp"
 
 namespace stk { namespace mesh {
 
@@ -32,7 +35,6 @@ std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_co
 
     for(const stk::mesh::impl::SparseGraph::value_type& extractedEdgesForElem : coingraph)
     {
-        //const stk::mesh::impl::LocalId possibleMCE = extractedEdgesForElem.first;
         const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem = extractedEdgesForElem.second;
         for(const stk::mesh::GraphEdge& edge : coincidentEdgesForElem)
         {
@@ -50,10 +52,9 @@ std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_co
     return badElements;
 }
 
-void write_mesh_diagnostics(const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > & splitCoincidentElements)
+std::string get_message_for_split_coincident_elements(const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > & splitCoincidentElements)
 {
-    int my_proc_id = bulkData.parallel_rank();
-    std::ofstream out("mesh_diagnostics_failures_" + std::to_string(my_proc_id) + ".txt");
+    std::ostringstream out;
     for(const auto& item : splitCoincidentElements) {
         stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK,item.first);
         const stk::mesh::PartVector& elementParts = bulkData.bucket(element).supersets();
@@ -65,18 +66,107 @@ void write_mesh_diagnostics(const stk::mesh::BulkData& bulkData, const std::map<
             }
         }
         blockNames += " }";
-        out << "[" << my_proc_id << "] Element " << item.first << " (" << bulkData.bucket(element).topology() << ") in blocks " << blockNames << " is coincident with element " << item.second.first << " on processor " << item.second.second << std::endl;
+        out << "[" << bulkData.parallel_rank() << "] Element " << item.first << " (" << bulkData.bucket(element).topology() << ") in blocks " << blockNames << " is coincident with element " << item.second.first << " on processor " << item.second.second << std::endl;
     }
-    out.close();
+    return out.str();
 }
 
-void print_and_throw_if_elements_are_split(const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > &splitCoincidentElements)
+void print_and_throw_if_elements_are_split(std::ostream& out, const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > &splitCoincidentElements)
 {
     bool is_all_ok_locally = splitCoincidentElements.empty();
     bool is_all_ok_globally = stk::is_true_on_all_procs(bulkData.parallel(), is_all_ok_locally);
     if(!is_all_ok_locally)
-        write_mesh_diagnostics(bulkData, splitCoincidentElements);
+    {
+        out << get_message_for_split_coincident_elements(bulkData, splitCoincidentElements);
+        out.flush();
+    }
     ThrowRequireMsg(is_all_ok_globally, "Mesh diagnostics failed.");
+}
+
+stk::mesh::Selector get_owned_or_shared_selector(const stk::mesh::BulkData & bulkData)
+{
+    return bulkData.mesh_meta_data().locally_owned_part() | bulkData.mesh_meta_data().globally_shared_part();
+}
+
+stk::parallel::DistributedIndex::KeyTypeVector get_all_local_keys(const stk::mesh::BulkData & bulkData)
+{
+    stk::parallel::DistributedIndex::KeyTypeVector localKeys;
+    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK;rank < bulkData.mesh_meta_data().entity_rank_count();++rank)
+    {
+        stk::mesh::EntityVector entities;
+        stk::mesh::get_selected_entities(get_owned_or_shared_selector(bulkData), bulkData.buckets(rank), entities);
+        for(stk::mesh::Entity entity: entities)
+            localKeys.push_back(bulkData.entity_key(entity));
+    }
+    return localKeys;
+}
+
+void add_keys_to_distributed_index(const stk::mesh::BulkData & bulkData, stk::parallel::DistributedIndex & distributedIndex)
+{
+    stk::parallel::DistributedIndex::KeyTypeVector localKeys = get_all_local_keys(bulkData);
+
+    stk::parallel::DistributedIndex::KeyTypeVector::const_iterator begin = localKeys.begin();
+    stk::parallel::DistributedIndex::KeyTypeVector::const_iterator end = localKeys.end();
+    distributedIndex.update_keys( begin, end );
+}
+
+std::vector<stk::mesh::EntityKeyProc> get_non_unique_keys(const stk::mesh::BulkData& bulkData, const stk::parallel::DistributedIndex& distributedIndex,
+        const stk::parallel::DistributedIndex::KeyTypeVector& localKeys)
+{
+    stk::parallel::DistributedIndex::KeyProcVector sharedKeyProcs;
+    distributedIndex.query_to_usage(localKeys, sharedKeyProcs);
+
+    std::vector<stk::mesh::EntityKeyProc> badKeys;
+    for (const stk::parallel::DistributedIndex::KeyProc& sharedKeyProc : sharedKeyProcs)
+    {
+        stk::mesh::EntityKey key( static_cast<stk::mesh::EntityKey::entity_key_t>(sharedKeyProc.first) );
+        if ( bulkData.parallel_rank() != sharedKeyProc.second )
+        {
+            if(!bulkData.in_shared(key, sharedKeyProc.second))
+                badKeys.push_back({key, sharedKeyProc.second});
+        }
+    }
+    return badKeys;
+}
+
+std::string get_topology(stk::topology topology)
+{
+    if(topology==stk::topology::INVALID_TOPOLOGY)
+        return " ";
+    return " (" + topology.name() + ") ";
+}
+
+std::vector<stk::mesh::EntityKeyProc> get_non_unique_key_procs(const stk::mesh::BulkData& bulkData)
+{
+    stk::parallel::DistributedIndex distributedIndex( bulkData.parallel(), stk::mesh::impl::convert_entity_keys_to_spans(bulkData.mesh_meta_data()));
+    add_keys_to_distributed_index(bulkData, distributedIndex);
+    stk::parallel::DistributedIndex::KeyTypeVector localKeys = get_all_local_keys(bulkData);
+    return get_non_unique_keys(bulkData, distributedIndex, localKeys);
+}
+
+std::string get_non_unique_key_messages(const stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKeyProc> &badKeyProcs)
+{
+    std::ostringstream os;
+    for(const stk::mesh::EntityKeyProc& keyProc : badKeyProcs)
+    {
+        stk::mesh::Entity entity = bulkData.get_entity(keyProc.first);
+        os << "[" << bulkData.parallel_rank() << "] Key " << keyProc.first <<
+                get_topology(bulkData.bucket(entity).topology()) << "is also present (inappropriately) on processor " <<
+                keyProc.second << "." << std::endl;
+    }
+    return os.str();
+}
+
+void print_and_throw_if_entities_are_not_unique(std::ostream& out, const stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKeyProc> &badKeyProcs)
+{
+    bool allOk = badKeyProcs.empty();
+    if(!allOk)
+    {
+        out << get_non_unique_key_messages(bulkData, badKeyProcs);
+        out.flush();
+    }
+    bool globally_ok = stk::is_true_on_all_procs(bulkData.parallel(), allOk);
+    ThrowRequireMsg(globally_ok, "Program error. Please contact sierra-help@sandia.gov for support.");
 }
 
 } }

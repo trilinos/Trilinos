@@ -82,7 +82,7 @@ public:
             EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].neighboringProc, neighboringProc);
         }
 
-        stk::mesh::print_and_throw_if_elements_are_split(bulkData, splitCoincidentElements);
+        stk::mesh::print_and_throw_if_elements_are_split(std::cerr, bulkData, splitCoincidentElements);
     }
 
     MPI_Comm get_comm() const
