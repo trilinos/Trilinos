@@ -51,14 +51,13 @@
 #define ZOLTAN2_TYPEDEFS
 
 #include "Zoltan2_TestHelpers.hpp"
-//#include <Zoltan2_XpetraTraits.hpp>
-//
-//#include <Tpetra_MultiVector.hpp>
-//#include <Tpetra_CrsMatrix.hpp>
-////#include <Tpetra_Map.hpp>
-//#include <Xpetra_Vector.hpp>
-//#include <Xpetra_CrsMatrix.hpp>
-//#include <Xpetra_CrsGraph.hpp>
+#include <Tpetra_MultiVector_decl.hpp>
+#include <Tpetra_Vector_decl.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
+//#include <Tpetra_Map.hpp>
+//#include <Xpetra_Vector_decl.hpp>
+//#include <Xpetra_CrsMatrix_decl.hpp>
+//#include <Xpetra_CrsGraph_decl.hpp>
 //
 ////#ifdef HAVE_ZOLTAN2_GALERI
 ////#include <Galeri_XpetraProblemFactory.hpp>
@@ -69,86 +68,86 @@
 //#include "GeometricGenerator.hpp"
 
 // Forward declaration for classes in the Tpetra namespace
-namespace Tpetra {
-
-  template<typename T1, typename T2, typename T3, typename T4, const bool T5>
-  class CrsMatrix;  
-
-  template<typename T1, typename T2, typename T3, const bool T4>
-  class CrsGraph;  
-
-  template<typename T1, typename T2, typename T3, typename T4, const bool T5>
-  class Vector; 
-
-  template<typename T1, typename T2, typename T3, typename T4, const bool T5>
-  class MultiVector;
-}
-
-// Forward declaration for classes in the Xpetra namespace
-namespace Xpetra {
-
-  template<typename T1, typename T2, typename T3, typename T4>
-  class CrsMatrix;  
-
-  template<typename T1, typename T2, typename T3>
-  class CrsGraph;  
-
-  template<typename T1, typename T2, typename T3, typename T4>
-  class Vector; 
-
-  template<typename T1, typename T2, typename T3, typename T4>
-  class MultiVector;
-}
-
-// Forward declaration for classes in the GeometricGen namespace
-namespace GeometricGen {
-  template<typename T1, typename T2, typename T3, typename T4>
-  class GeometricGenerator;
-}
-
+// namespace Tpetra {
+// 
+//   template<typename T1, typename T2, typename T3, typename T4, const bool T5>
+//   class CrsMatrix;  
+// 
+//   template<typename T1, typename T2, typename T3, const bool T4>
+//   class CrsGraph;  
+// 
+//   template<typename T1, typename T2, typename T3, typename T4, const bool T5>
+//   class Vector; 
+// 
+//   template<typename T1, typename T2, typename T3, typename T4, const bool T5>
+//   class MultiVector;
+// }
+// 
+// // Forward declaration for classes in the Xpetra namespace
+// namespace Xpetra {
+// 
+//   template<typename T1, typename T2, typename T3, typename T4>
+//   class CrsMatrix;  
+// 
+//   template<typename T1, typename T2, typename T3>
+//   class CrsGraph;  
+// 
+//   template<typename T1, typename T2, typename T3, typename T4>
+//   class Vector; 
+// 
+//   template<typename T1, typename T2, typename T3, typename T4>
+//   class MultiVector;
+// }
+ 
+ // Forward declaration for classes in the GeometricGen namespace
+ namespace GeometricGen {
+   template<typename T1, typename T2, typename T3, typename T4>
+   class GeometricGenerator;
+ }
+ 
 // Forward declaration of classes in the Zoltan2 namespace
-namespace Zoltan2 {
-  template<typename T1, typename T2, typename T3>
-  class BasicUserTypes;
-
-  template<typename T1>
-  class BaseAdapter;
-
-  template<typename T1>
-  class BasicIdentifierAdapter;
-
-  template<typename T1>
-  class XpetraMultiVectorAdapter;
-
-  template<typename T1, typename T2>
-  class XpetraCrsGraphAdapter;
-
-  template<typename T1, typename T2>
-  class XpetraCrsMatrixAdapter;
-
-  template<typename T1>
-  class BasicVectorAdapter; 
-
-#ifdef HAVE_ZOLTAN2_PAMGEN
-  template<typename T1>
-  class PamgenMeshAdapter;
-#endif
-
-  template<typename T1>
-  class Problem;
-  
-  template<typename T1>
-  class PartitioningProblem;
-  
-  template<typename T1>
-  class OrderingProblem;
-  
-  template<typename T1>
-  class ColoringProblem;
-
-  template<typename T1>
-  class MetricValues;
-}
+ namespace Zoltan2 {
+   template<typename T1, typename T2, typename T3>
+   class BasicUserTypes;
+ 
+   template<typename T1>
+   class BaseAdapter;
+ 
+   template<typename T1>
+   class BasicIdentifierAdapter;
+ 
+   template<typename T1>
+   class XpetraMultiVectorAdapter;
+ 
+   template<typename T1, typename T2>
+   class XpetraCrsGraphAdapter;
+ 
+   template<typename T1, typename T2>
+   class XpetraCrsMatrixAdapter;
+ 
+   template<typename T1>
+   class BasicVectorAdapter; 
+ 
+ #ifdef HAVE_ZOLTAN2_PAMGEN
+   template<typename T1>
+   class PamgenMeshAdapter;
+ #endif
+ 
+   template<typename T1>
+   class Problem;
+   
+   template<typename T1>
+   class PartitioningProblem;
+   
+   template<typename T1>
+   class OrderingProblem;
+   
+   template<typename T1>
+   class ColoringProblem;
+ 
+   template<typename T1>
+   class MetricValues;
+ }
 
 namespace Zoltan2_TestingFramework {
 
