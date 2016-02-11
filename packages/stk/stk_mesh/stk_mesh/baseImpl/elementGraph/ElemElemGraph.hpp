@@ -145,7 +145,6 @@ public:
     void write_graph(std::ostream& out) const;
 
 protected:
-    void write_graph() const;
     void fill_graph();
     void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);

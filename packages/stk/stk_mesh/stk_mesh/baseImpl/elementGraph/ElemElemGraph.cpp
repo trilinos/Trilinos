@@ -563,9 +563,12 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
         localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.begin());
 
         std::pair<bool,unsigned> result = localElemTopology.side_topology(side_index).equivalent(localElemSideNodes, sideNodes);
-        bool same_type_of_element = localElemTopology == receivedSharedEdge.m_remoteElementTopology;
-        bool negative_permutation = result.second < localElemTopology.side_topology(side_index).num_positive_permutations();
-        if ((result.first) && (same_type_of_element == negative_permutation))
+        bool is_positive_permutation = result.second < localElemTopology.side_topology(side_index).num_positive_permutations();
+        bool are_both_shells = localElemTopology.is_shell() && receivedSharedEdge.m_remoteElementTopology.is_shell();
+        bool is_positive_permutation_and_both_shells     =  is_positive_permutation &&  are_both_shells;
+        bool is_negative_permutation_and_not_both_shells = !is_positive_permutation && !are_both_shells;
+
+        if (result.first && (is_positive_permutation_and_both_shells || is_negative_permutation_and_not_both_shells))
         {
             impl::LocalId local_elem_id = get_local_element_id(localElem);
             impl::LocalId negSgnRemoteElemId = -1*receivedSharedEdge.m_remoteElementId;

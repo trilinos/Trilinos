@@ -114,8 +114,8 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
 
     const std::vector<size_t> numHex{1,1};
     stk::mesh::EntityIdVector hexNodeIDs[] {
-        { 8, 7, 16, 15, 12, 11, 18, 17 },
-        { 4, 3, 14, 13,  8,  7, 16, 15 }
+        { 12, 11, 18, 17, 8, 7, 16, 15 },
+        {  8,  7, 16, 15, 4, 3, 14, 13 }
     };
     stk::mesh::EntityIdVector hexElemIDs {3, 4};
 
@@ -154,23 +154,21 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
         elements_to_add.push_back(elem4);
     }
 
-    elem_graph.write_graph();
     elem_graph.add_elements(elements_to_add);
-    elem_graph.write_graph();
 
     if (0 == p_rank)
     {
         EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(1, 2));
         EXPECT_EQ(2, elem_graph.get_side_from_element1_to_element2(1, 4));
         EXPECT_EQ(0, elem_graph.get_side_from_element1_to_element2(3, 2));
-        EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(3, 4));
+        EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(3, 4));
     }
     else
     {
         EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(2, 1));
         EXPECT_EQ(2, elem_graph.get_side_from_element1_to_element2(2, 3));
         EXPECT_EQ(0, elem_graph.get_side_from_element1_to_element2(4, 1));
-        EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(4, 3));
+        EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(4, 3));
     }
     EXPECT_EQ(2u, elem_graph.size());
     EXPECT_EQ(4u, elem_graph.num_edges());
@@ -3115,6 +3113,7 @@ TEST( ElementGraph, Hex0AddShell0Hex1Parallel )
     if (0 == p_rank) {
         addVector.push_back(shell3);
     }
+
     elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
