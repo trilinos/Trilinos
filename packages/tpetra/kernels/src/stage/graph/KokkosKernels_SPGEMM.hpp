@@ -5,6 +5,7 @@
 #include "KokkosKernels_SPGEMM_cuSPARSE_impl.hpp"
 #include "KokkosKernels_SPGEMM_CUSP_impl.hpp"
 #include "KokkosKernels_SPGEMM_mkl_impl.hpp"
+#include "KokkosKernels_SPGEMM_impl.hpp"
 
 namespace KokkosKernels{
 
@@ -34,17 +35,34 @@ namespace Graph{
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
     switch (sh->get_algorithm_type()){
+
     case SPGEMM_CUSPARSE:
       Impl::cuSPARSE_symbolic
-        <spgemmHandleType,
-          lno_row_view_t_,
-          lno_nnz_view_t_>(sh, m,n,k,
+      <spgemmHandleType,
+      lno_row_view_t_,
+      lno_nnz_view_t_>(sh, m,n,k,
           row_mapA, entriesA, transposeA,
           row_mapB, entriesB, transposeB,
           row_mapC, entriesC);
       break;
+
     case SPGEMM_CUSP:
       break;
+
+    case SPGEMM_KK1:
+    {
+      KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
+      <KernelHandle,
+      lno_row_view_t_, lno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
+      lno_row_view_t_, lno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
+      kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
+      kspgemm.KokkosSPGEMM_symbolic(row_mapC, entriesC);
+    }
+      break;
+
+    case SPGEMM_DEFAULT:
+    case SPGEMM_SERIAL:
+    case SPGEMM_MKL:
     default:
       break;
     }
@@ -97,6 +115,11 @@ namespace Graph{
     case SPGEMM_CUSP:
         //no op.
           break;
+
+    case SPGEMM_KK1:
+    case SPGEMM_DEFAULT:
+    case SPGEMM_SERIAL:
+    case SPGEMM_MKL:
     default:
       break;
     }
@@ -174,6 +197,10 @@ namespace Graph{
                 row_mapB, entriesB, valuesB, transposeB,
                 row_mapC, entriesC, valuesC);
       break;
+
+    case SPGEMM_KK1:
+    case SPGEMM_DEFAULT:
+    case SPGEMM_SERIAL:
     default:
       break;
     }

@@ -18,7 +18,7 @@ namespace Experimental{
 
 namespace Graph{
 
-enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL};
+enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_KK1};
 
 template <class lno_row_view_t_,
           class lno_nnz_view_t_,
