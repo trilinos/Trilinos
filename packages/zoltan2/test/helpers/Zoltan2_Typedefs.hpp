@@ -150,7 +150,7 @@ namespace Zoltan2 {
   class MetricValues;
 }
 
-namespace Zoltan2_typedefs {
+namespace Zoltan2_TestingFramework {
 
   // Data types
   typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>     tcrsMatrix_t;
@@ -184,12 +184,12 @@ namespace Zoltan2_typedefs {
 #endif
 
   // Problem types
-  typedef Zoltan2::Problem<basic_id_t>                          base_problem_t; 
+  typedef Zoltan2::Problem<basic_id_t>                              base_problem_t;
   typedef Zoltan2::PartitioningProblem<basic_id_t>                  partitioning_problem_t; 
   typedef Zoltan2::OrderingProblem<basic_id_t>                      ordering_problem_t; 
   typedef Zoltan2::ColoringProblem<basic_id_t>                      coloring_problem_t; 
   
-  typedef Zoltan2::MetricValues<zscalar_t> metric_t;
+  typedef Zoltan2::MetricValues<zscalar_t>                          metric_t;
 }
 
 #endif

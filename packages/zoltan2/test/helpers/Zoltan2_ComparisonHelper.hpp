@@ -75,7 +75,7 @@ using std::map;
 using std::pair;
 using std::ostringstream;
 using Teuchos::reduceAll;
-using namespace Zoltan2_typedefs;
+using namespace Zoltan2_TestingFramework;
 
 /*! \brief A class used to save problem solutions and timers.
  */

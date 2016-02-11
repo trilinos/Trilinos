@@ -81,7 +81,7 @@ using Teuchos::Comm;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::XMLObject;
-using namespace Zoltan2_typedefs;
+using namespace Zoltan2_TestingFramework;
 
 using std::cout;
 using std::cerr;
@@ -230,9 +230,11 @@ void run(const UserInputForTests &uinput,
   std::string problem_kind = problem_parameters.get<std::string>("kind"); 
   if (rank == 0) std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
 #ifdef HAVE_ZOLTAN2_MPI
-  base_problem_t * problem = Zoltan2::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters, MPI_COMM_WORLD);
+  base_problem_t * problem = 
+    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters, MPI_COMM_WORLD);
 #else
-  base_problem_t * problem = Zoltan2::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters);
+  base_problem_t * problem = 
+    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters);
 #endif
 
   if (problem == nullptr) {

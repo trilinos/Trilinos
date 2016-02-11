@@ -89,7 +89,7 @@ using Teuchos::arcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using std::string;
-using namespace Zoltan2_typedefs;
+using namespace Zoltan2_TestingFramework;
 
 /* \brief A class for constructing Zoltan2 input adapters */
 class AdapterForTests{
@@ -233,11 +233,11 @@ private:
 };
 
 
-Zoltan2_typedefs::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputForTests *uinput,
+Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputForTests *uinput,
                                                                       const ParameterList &pList,
                                                                       const RCP<const Comm<int> > &comm)
 {
-  Zoltan2_typedefs::base_adapter_t * ia = nullptr; // input adapter
+  Zoltan2_TestingFramework::base_adapter_t * ia = nullptr; // input adapter
   
   if(!pList.isParameter("input adapter"))
   {
@@ -266,7 +266,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getAdapterForInput(UserInput
 }
 
 
-Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForInput(UserInputForTests *uinput,
+Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForInput(UserInputForTests *uinput,
     const ParameterList &pList,
     const RCP<const Comm<int> > &comm)
 {
@@ -389,16 +389,16 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForI
 #endif
   
   if(localCount == 0) return nullptr;
-  return reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>( new Zoltan2_typedefs::basic_id_t(zlno_t(localCount),globalIds,weights,weightStrides));
+  return reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>( new Zoltan2_TestingFramework::basic_id_t(zlno_t(localCount),globalIds,weights,weightStrides));
 }
 
 
-Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(
+Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(
   UserInputForTests *uinput,
   const ParameterList &pList,
   const RCP<const Comm<int> > &comm)
 {
-  Zoltan2_typedefs::base_adapter_t * adapter = nullptr;
+  Zoltan2_TestingFramework::base_adapter_t * adapter = nullptr;
 
   if(!pList.isParameter("data type"))
   {
@@ -435,9 +435,9 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(
     RCP<tMVector_t> data = uinput->getUICoordinates();
     RCP<const tMVector_t> const_data = rcp_const_cast<const tMVector_t>(data);
     if(weights.empty())
-      adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_data));
+      adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_data));
     else
-      adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_data,weights,weightStrides));
+      adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_data,weights,weightStrides));
   }
   else if(input_type == "tpetra_multivector")
   {
@@ -445,9 +445,9 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
     RCP<const tMVector_t> const_data = rcp_const_cast<const tMVector_t>(data);
     if(weights.empty())
-      adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_data));
+      adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_data));
     else
-      adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_data,weights,weightStrides));
+      adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_data,weights,weightStrides));
   }
   else if(input_type == "xpetra_multivector")
   {
@@ -455,9 +455,9 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
     RCP<const xMVector_t> const_data = rcp_const_cast<const xMVector_t>(data);
     if(weights.empty())
-      adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<xMVector_t>(const_data));
+      adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<xMVector_t>(const_data));
     else{
-      adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<xMVector_t>(const_data,weights,weightStrides));
+      adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(new Zoltan2::XpetraMultiVectorAdapter<xMVector_t>(const_data,weights,weightStrides));
     }
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -469,10 +469,10 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(
     RCP<const Epetra_MultiVector> const_data = rcp_const_cast<const Epetra_MultiVector>(data);
     
     if(weights.empty())
-      adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(
+      adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(
                                                                     new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data));
     else
-      adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(
+      adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(
                                                                     new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data,weights,weightStrides));
   }
 #endif
@@ -484,13 +484,13 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(
 }
 
 
-Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForInput(
+Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForInput(
   UserInputForTests *uinput,
   const ParameterList &pList,
   const RCP<const Comm<int> > &comm)
 {
   
-  Zoltan2_typedefs::base_adapter_t * adapter = nullptr;
+  Zoltan2_TestingFramework::base_adapter_t * adapter = nullptr;
 
   if(!pList.isParameter("data type"))
   {
@@ -557,7 +557,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForI
         ia->setEdgeWeights(edge_weights[i],edge_weightStride[i],i);
     }
     
-    adapter =  reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(ia);
+    adapter =  reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
   }
   else if(input_type == "xpetra_crs_graph")
   {
@@ -579,7 +579,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForI
         ia->setEdgeWeights(edge_weights[i],edge_weightStride[i],i);
     }
     
-    adapter =  reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(ia);
+    adapter =  reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
   
@@ -603,7 +603,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForI
         ia->setEdgeWeights(edge_weights[i],edge_weightStride[i],i);
     }
     
-    adapter =  reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(ia);
+    adapter =  reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
     
   }
 #endif
@@ -621,7 +621,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForI
     Teuchos::ParameterList pCopy(pList);
     pCopy = pCopy.set<std::string>("data type","coordinates");
     
-    Zoltan2_typedefs::base_adapter_t * ca = nullptr;
+    Zoltan2_TestingFramework::base_adapter_t * ca = nullptr;
     ca = getXpetraMVAdapterForInput(uinput,pCopy, comm);
     
     if(ca == nullptr)
@@ -632,18 +632,18 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForI
     }
     
     // set the coordinate adapter
-    reinterpret_cast<Zoltan2_typedefs::xcrsGraph_adapter *>(adapter)->setCoordinateInput(reinterpret_cast<Zoltan2_typedefs::xpetra_mv_adapter *>(ca));
+    reinterpret_cast<Zoltan2_TestingFramework::xcrsGraph_adapter *>(adapter)->setCoordinateInput(reinterpret_cast<Zoltan2_TestingFramework::xpetra_mv_adapter *>(ca));
   }
   return adapter;
 }
 
 
-Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForInput(
+Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForInput(
   UserInputForTests *uinput,
   const ParameterList &pList,
   const RCP<const Comm<int> > &comm)
 {
-  Zoltan2_typedefs::base_adapter_t * adapter = nullptr;
+  Zoltan2_TestingFramework::base_adapter_t * adapter = nullptr;
 
   if(!pList.isParameter("data type"))
   {
@@ -698,7 +698,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterFor
     }
     
     // cast to base type
-    adapter = reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(ia);
+    adapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
     
   }
   else if(input_type == "xpetra_crs_matrix")
@@ -719,7 +719,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterFor
          ia->setWeights(weights[i],strides[i],i);
     }
     
-    adapter =  reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(ia);
+    adapter =  reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
     
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -741,7 +741,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterFor
          ia->setWeights(weights[i],strides[i],i);
     }
     
-    adapter =  reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(ia);
+    adapter =  reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
   }
 #endif
   
@@ -758,7 +758,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterFor
     Teuchos::ParameterList pCopy(pList);
     pCopy = pCopy.set<std::string>("data type","coordinates");
     
-    Zoltan2_typedefs::base_adapter_t * ca = nullptr;
+    Zoltan2_TestingFramework::base_adapter_t * ca = nullptr;
     ca = getXpetraMVAdapterForInput(uinput,pCopy,comm);
     
     if(ca == nullptr){
@@ -768,19 +768,19 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterFor
     }
     
     // set the coordinate adapter
-    reinterpret_cast<Zoltan2_typedefs::xcrsMatrix_adapter *>(adapter)->setCoordinateInput(reinterpret_cast<Zoltan2_typedefs::xpetra_mv_adapter *>(ca));
+    reinterpret_cast<Zoltan2_TestingFramework::xcrsMatrix_adapter *>(adapter)->setCoordinateInput(reinterpret_cast<Zoltan2_TestingFramework::xpetra_mv_adapter *>(ca));
   }
   return adapter;
 }
 
 
-Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput(
+Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput(
   UserInputForTests *uinput,
   const ParameterList &pList,
   const RCP<const Comm<int> > &comm)
 {
   
-  Zoltan2_typedefs::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
+  Zoltan2_TestingFramework::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
 
   if(!pList.isParameter("data type"))
   {
@@ -837,12 +837,12 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInpu
     
     if(weights.empty())
     {
-      ia = new Zoltan2_typedefs::basic_vector_adapter(zlno_t(localCount),
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(zlno_t(localCount),
                                                      globalIds,
                                                      coords[0],coords[1],coords[2],
                                                      stride, stride, stride);
     }else{
-      ia = new Zoltan2_typedefs::basic_vector_adapter(zlno_t(localCount),
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(zlno_t(localCount),
                                                      globalIds,
                                                      coords[0],coords[1],coords[2],
                                                      stride, stride, stride,
@@ -865,10 +865,10 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInpu
     
     if(weights.empty())
     {
-      ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                      coords[0], entry_strides[0]);
     }else{
-      ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                      coords[0], entry_strides[0],
                                                      true,
                                                      weights[0],
@@ -890,7 +890,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInpu
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     
-    ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+    ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                    coords, entry_strides,
                                                    weights,weightStrides);
     
@@ -908,10 +908,10 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInpu
     
     if(weights.empty())
     {
-      ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                      coords[0], entry_strides[0]);
     }else{
-      ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                      coords[0], entry_strides[0],
                                                      true,
                                                      weights[0],
@@ -934,7 +934,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInpu
     if(comm->getRank() == 0) cout << "size of coords: " << coords.size() << endl;
     
     // make vector!
-    ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+    ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                    coords, entry_strides,
                                                    weights,weightStrides);
   }
@@ -953,10 +953,10 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInpu
     
     if(weights.empty())
     {
-      ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                      coords[0], entry_strides[0]);
     }else{
-      ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                      coords[0], entry_strides[0],
                                                      true,
                                                      weights[0],
@@ -978,7 +978,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInpu
     AdapterForTests::InitializeEpetraVectorData(data,coords,entry_strides,stride);
     
     // make vector!
-    ia = new Zoltan2_typedefs::basic_vector_adapter(localCount, globalIds,
+    ia = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
                                                    coords, entry_strides,
                                                    weights,weightStrides);
     
@@ -990,7 +990,7 @@ Zoltan2_typedefs::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInpu
     if(ia != nullptr) delete ia;
     return nullptr;
   }
-  return reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(ia);
+  return reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
   
 }
 
@@ -1158,7 +1158,7 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
 
 
 // pamgen adapter
-Zoltan2_typedefs::base_adapter_t*
+Zoltan2_TestingFramework::base_adapter_t*
 AdapterForTests::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
                                               const ParameterList &pList,
                                               const RCP<const Comm<int> > &comm)
@@ -1180,7 +1180,7 @@ AdapterForTests::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
               << std::endl;
   }
   
-  return  reinterpret_cast<Zoltan2_typedefs::base_adapter_t *>(ia);
+  return  reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
 #else
   throw std::runtime_error("Pamgen input requested but Trilinos is not "
                            "built with Pamgen");

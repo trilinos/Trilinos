@@ -64,7 +64,7 @@ using Teuchos::ParameterList;
 using Teuchos::Comm;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
-using namespace Zoltan2_typedefs;
+using namespace Zoltan2_TestingFramework;
 
 template <class Problem>
 class MetricAnalyzer {

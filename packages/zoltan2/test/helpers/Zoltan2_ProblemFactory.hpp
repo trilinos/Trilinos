@@ -56,7 +56,10 @@
 #include <Zoltan2_OrderingProblem.hpp>
 #include <Zoltan2_Typedefs.hpp>
 
-namespace Zoltan2 {
+using namespace Zoltan2_TestingFramework;
+using namespace Zoltan2;
+
+namespace Zoltan2_TestingFramework {
 /// \brief ProblemFactory class contains 1 static factory method
   class ProblemFactory {
   public:
