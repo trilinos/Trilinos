@@ -17,20 +17,11 @@
 #include <mpi.h>
 #include <map>
 #include <string>
+#include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
+#include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
 
 namespace
 {
-
-class ElemElemGraphTester : public stk::mesh::ElemElemGraph
-{
-public:
-    ElemElemGraphTester(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr) :
-        stk::mesh::ElemElemGraph(bulkData, selector, air) { }
-
-    stk::mesh::impl::ParallelGraphInfo& get_parallel_info() { return m_parallelInfoForGraphEdges.get_parallel_graph_info(); }
-    stk::mesh::Entity get_entity(stk::mesh::impl::LocalId local_id) const { return m_local_id_to_element_entity[local_id]; }
-    const stk::mesh::impl::SparseGraph& get_coincident_graph() const { return m_coincidentGraph; }
-};
 
 struct split_element_info
 {
@@ -38,43 +29,6 @@ struct split_element_info
     stk::mesh::EntityId remoteElementId;
     int neighboringProc;
 };
-
-std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_coincident_elements(stk::mesh::BulkData& bulkData)
-{
-    stk::mesh::Selector sel = bulkData.mesh_meta_data().locally_owned_part();
-    ElemElemGraphTester graph(bulkData, sel);
-    const stk::mesh::impl::SparseGraph& coingraph = graph.get_coincident_graph();
-
-    std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > badElements;
-
-    for(const stk::mesh::impl::SparseGraph::value_type& extractedEdgesForElem : coingraph)
-    {
-        //const stk::mesh::impl::LocalId possibleMCE = extractedEdgesForElem.first;
-        const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem = extractedEdgesForElem.second;
-        for(const stk::mesh::GraphEdge& edge : coincidentEdgesForElem)
-        {
-            if(edge.elem2 < 0)
-            {
-                stk::mesh::Entity entity = graph.get_entity(edge.elem1);
-                stk::mesh::EntityId id = bulkData.identifier(entity);
-                stk::mesh::impl::ParallelGraphInfo& par_info = graph.get_parallel_info();
-                stk::mesh::impl::ParallelGraphInfo::iterator iter = par_info.find(edge);
-                ThrowRequireMsg(iter!=par_info.end(), "Program error. Contact sierra-help@sandia.gov for support.");
-                badElements[id] = std::make_pair(-edge.elem2, iter->second.m_other_proc);
-            }
-        }
-    }
-    return badElements;
-}
-
-void write_mesh_diagnostics(const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > & splitCoincidentElements, stk::ParallelMachine comm)
-{
-    int my_proc_id = stk::parallel_machine_rank(comm);
-    std::ofstream out("mesh_diagnostics_failures_" + std::to_string(my_proc_id) + ".txt");
-    for(const auto& item : splitCoincidentElements)
-        out << "[" << my_proc_id << "] Element " << item.first << " is coincident with element " << item.second.first << " on processor " << item.second.second << std::endl;
-    out.close();
-}
 
 struct TestCase
 {
@@ -115,7 +69,7 @@ public:
         stk::mesh::BulkData bulkData(metaData, get_comm(), auraOption);
         SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
 
-        std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitCoincidentElements = get_split_coincident_elements(bulkData);
+        std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
 
         for(const auto& item : splitCoincidentElements)
         {
@@ -128,11 +82,7 @@ public:
             EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].neighboringProc, neighboringProc);
         }
 
-        bool is_all_ok_locally = splitCoincidentElements.empty();
-        bool is_all_ok_globally = stk::is_true_on_all_procs(bulkData.parallel(), is_all_ok_locally);
-        if(!is_all_ok_locally)
-            write_mesh_diagnostics(splitCoincidentElements, bulkData.parallel());
-        ThrowRequireMsg(is_all_ok_globally, "Mesh diagnostics failed.");
+        stk::mesh::print_and_throw_if_elements_are_split(bulkData, splitCoincidentElements);
     }
 
     MPI_Comm get_comm() const
