@@ -271,16 +271,16 @@ namespace Intrepid2 {
   {
     const int np = z.dimension(0);
     const int card = outputValues.dimension(0);
-    FieldContainer<Sacado::Fad::DFad<Scalar> > dZ( z.dimension(0) , z.dimension(1) );
+    FieldContainer<Sacado::Fad::SFad<Scalar,3> > dZ( z.dimension(0) , z.dimension(1) );
     for (int i=0;i<np;i++) {
       for (int j=0;j<3;j++) {
-        dZ(i,j) = Sacado::Fad::DFad<Scalar>( z(i,j) );
+        dZ(i,j) = Sacado::Fad::SFad<Scalar,3>( z(i,j) );
         dZ(i,j).diff(j,3);
       }
     }
-    FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np);
+    FieldContainer<Sacado::Fad::SFad<Scalar,3> > dResult(card,np);
 
-    TabulatorTet<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> >,0>::tabulate( dResult ,
+    TabulatorTet<Sacado::Fad::SFad<Scalar,3>,FieldContainer<Sacado::Fad::SFad<Scalar,3> >,0>::tabulate( dResult ,
                                                                                                     deg ,
                                                                                                     dZ );
 
