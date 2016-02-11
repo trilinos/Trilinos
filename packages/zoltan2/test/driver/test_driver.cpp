@@ -214,7 +214,7 @@ void run(const UserInputForTests &uinput,
   }
   
   ////////////////////////////////////////////////////////////
-  // 2. construct partitioning problem
+  // 2. construct a Zoltan2 problem
   ////////////////////////////////////////////////////////////
   string adapter_name = adapterPlist.get<string>("input adapter"); // If we are here we have an input adapter, no need to check for one.
   // get Zoltan2 partion parameters
