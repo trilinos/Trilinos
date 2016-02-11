@@ -314,30 +314,43 @@ namespace Intrepid2 {
                                                               const EOperator      operatorType) const {
     // the basis functions are already topologically reordered 
     // and store the values in tempValues
-    const int numPts = inputPoints.dimension(0);
-    const int dimPts = inputPoints.dimension(1);
 
-    ArrayScalar tempValues(numPts, dimPts);
-    getValues(tempValues, inputPoints, operatorType);
-    
+    ArrayScalar tempValues(outputValues.dimension(0), 
+                           outputValues.dimension(1));
+    this->getValues(tempValues, inputPoints, operatorType);
+
     // retrive information compute offsets of output values
     const shards::CellTopology cellTopo = this->getBaseCellTopology();
-    const unsigned int numVertex = cellTopo.getVertexCount();
-    const unsigned int numEdge   = cellTopo.getEdgeCount();
-    const unsigned int numEdgeDofs = getNumEdgeDofs();
+
+    const unsigned int numVertex       = cellTopo.getVertexCount();
+    const unsigned int numVertexDofs   = getNumVertexDofs();
+    const unsigned int numEdge         = cellTopo.getEdgeCount();
+    const unsigned int numEdgeDofs     = getNumEdgeDofs();
+    const unsigned int numInterior     = 1;
+    const unsigned int numInteriorDofs = getNumInteriorDofs();
+    const unsigned int numPts          = inputPoints.dimension(0);
 
     // decode orientation for edges
-    int edgeOrt[3] = {};
-    ort.getEdgeOrientation(edgeOrt, 3);
+    int orts[3] = {};
+    ort.getEdgeOrientation(orts, 3);
 
     // compute (or retrive) coefficient matrix and apply to output values
-    for (int edgeId=0,offset=numVertex;edgeId<numEdge;++edgeId,offset+=numEdgeDofs) {
+    size_t offset = 0;
+    for (int vertId=0;vertId<numVertex;++vertId,offset+=numVertexDofs) 
+      for (int i=0;i<numVertexDofs;++i) 
+        for (int j=0;j<numPts;++j) 
+          outputValues(i + offset, j) = tempValues(i + offset, j);
+
+    for (int edgeId=0;edgeId<numEdge;++edgeId,offset+=numEdgeDofs) {
       typename OrientationTools<Scalar>::CoeffMatrix C;
       OrientationTools<Scalar>::getEdgeCoeffMatrix(C, 
-                                           *this, 
-                                           edgeId,
-                                           edgeOrt);
-      
+                                                   *this, 
+                                                   edgeId,
+                                                   orts[edgeId]);
+
+      // for communication with Eric and Mauro, let this show
+      C.showMe(std::cout);
+
       // apply the coefficient matrix: 
       // for now, assume that the output value container is row-oriented
       // do we have any means to identify how to exchange loop based on the storage layout ??
@@ -345,17 +358,20 @@ namespace Intrepid2 {
         auto nnz     = C.NumNonZerosInRow(i);
         auto colsPtr = C.ColsInRow(i);
         auto valsPtr = C.ValuesInRow(i);
-        
+
         // sparse mat-vec
-        for (int j=0;j<dimPts;++j) {
+        for (int j=0;j<numPts;++j) {
           Scalar temp = 0.0;
-          for (int k=0;k<nnz;++k)
-            temp += valsPtr[k]*tempValues(colsPtr[k] + offset, j);
-          
+          for (int k=0;k<nnz;++k) 
+            temp = valsPtr[k]*tempValues(colsPtr[k] + offset, j);
           outputValues(i + offset, j) = temp;
         }
       }
     }
+    for (int intrId=0;intrId<numInterior;++intrId,offset+=numInteriorDofs) 
+      for (int i=0;i<numInteriorDofs;++i) 
+        for (int j=0;j<numPts;++j) 
+          outputValues(i + offset, j) = tempValues(i + offset, j);
   }
 
   // This should be part of basis tag and filled by derived classes instead of hardwired like this

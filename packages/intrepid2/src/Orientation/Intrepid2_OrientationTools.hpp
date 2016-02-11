@@ -78,7 +78,7 @@ namespace Intrepid2 {
     class DenseMatrix {
     private:
       int _offm, _offn, _m, _n, _cs, _rs;
-      Kokkos::View<Scalar*> _ax;
+      Kokkos::View<Scalar*> _a;
 
     public:
       DenseMatrix() = default;
@@ -98,21 +98,26 @@ namespace Intrepid2 {
       Scalar& Value(const int i,
                     const int j);
 
+      Scalar Value(const int i,
+                   const int j) const;
+
       size_t countNumNonZeros(const Scalar epsilon) const;
+
+      std::ostream& showMe(std::ostream &os) const;
     };
 
     class CoeffMatrix {
     private:
       std::string _label;
-      
+
       int _m, _n;
 
       Kokkos::View<size_t*>  _ap;      //!< pointers to column index and values
       Kokkos::View<int*>     _aj;      //!< column index compressed format
       Kokkos::View<Scalar*>  _ax;      //!< values
 
-      void createInternalArrays(const int m, 
-                                const int n, 
+      void createInternalArrays(const int m,
+                                const int n,
                                 const size_t nnz);
 
     public:
@@ -121,7 +126,7 @@ namespace Intrepid2 {
 
       void import(const DenseMatrix &b,
                   const bool transpose);
-      
+
       int NumRows() const;
       int NumCols() const;
 
@@ -129,14 +134,16 @@ namespace Intrepid2 {
       int* ColsInRow(const int i) const;
       Scalar* ValuesInRow(const int i) const;
       int NumNonZerosInRow(const int i) const;
+
+      std::ostream& showMe(std::ostream &os) const;
     };
-    
+
   public:
-  
+
     /** \brief  Default constructor.
      */
     OrientationTools(){ };
-  
+
     /** \brief  Destructor
      */
     ~OrientationTools(){ };
@@ -148,7 +155,7 @@ namespace Intrepid2 {
                                                    const Basis<Scalar,ArrayPoint> & basis);
 
     /** \brief  Computes modified point for line segment.
-      
+
         \param  ot       [out] - modified point value
         \param  pt       [in]  - input point in [-1.0 , 1.0]
         \param  ort      [in]  - orientation number between 0 and 1
@@ -201,7 +208,7 @@ namespace Intrepid2 {
     static void getLatticePointsByTopology(ArrayPoint &                     outPoints,
                                            const ArrayPoint &               refPoints,
                                            const Basis<Scalar,ArrayPoint> & basis);
-    
+
 
     /** \brief  Computes modified parameterization maps of 1- and 2-subcells with orientation.
 
@@ -215,9 +222,9 @@ namespace Intrepid2 {
                                        const ArrayPoint &            refPoints,
                                        const shards::CellTopology &  cellTopo,
                                        const int                     cellOrt = 0);
-  }; 
+  };
 
-} 
+}
 
 // include templated function definitions
 #include "Intrepid2_OrientationToolsDef.hpp"

@@ -589,8 +589,8 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): numEdge is out of range (3--12)");
 #endif
       _edgeOrt = 0;
-      for (int i=0;i<numEdge;++i, _edgeOrt <<= 1)
-        _edgeOrt |= (edgeOrt[i] & 1);
+      for (int i=0;i<numEdge;++i) 
+        _edgeOrt |= (edgeOrt[i] & 1) << i;
     }
     
     inline void getEdgeOrientation(int *edgeOrt, const int numEdge) const {
@@ -598,9 +598,8 @@ namespace Intrepid2 {
       TEUCHOS_TEST_FOR_EXCEPTION( !( 3 <= numEdge && numEdge <= 12 ), std::invalid_argument,
                                   ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): numEdge is out of range (3--12)");
 #endif
-      unsigned int tmp = _edgeOrt;
-      for (int i=0;i<numEdge;++i, tmp >>= 1)
-        edgeOrt[i] = (1 & tmp);
+      for (int i=0;i<numEdge;++i) 
+        edgeOrt[i] = (_edgeOrt & (1 << i)) >> i;
     }
     
     inline void setFaceOrientation(const int numFace, const int faceOrt[]) {

@@ -59,9 +59,12 @@
 namespace Intrepid2 {
 
   template<class Scalar>
-  OrientationTools<Scalar>::DenseMatrix::DenseMatrix(const int m, 
+  OrientationTools<Scalar>::DenseMatrix::DenseMatrix(const int m,
                                                      const int n)
-    : _m(m), _n(n), _cs(m), _rs(1), _ax("OrientationTools::DenseMatrix::ax", m*n) { }
+    :  _offm(0), _offn(0),
+       _m(m), _n(n),
+       _cs(m), _rs(1),
+       _a("OrientationTools::DenseMatrix::a", m*n) { }
 
   template<class Scalar>
   void
@@ -75,39 +78,46 @@ namespace Intrepid2 {
 
   template<class Scalar>
   int
-  OrientationTools<Scalar>::DenseMatrix::NumRows() const { 
+  OrientationTools<Scalar>::DenseMatrix::NumRows() const {
     return _m;
   }
-  
+
   template<class Scalar>
-  int 
-  OrientationTools<Scalar>::DenseMatrix::NumCols() const { 
+  int
+  OrientationTools<Scalar>::DenseMatrix::NumCols() const {
     return _n;
   }
 
   template<class Scalar>
-  int 
-  OrientationTools<Scalar>::DenseMatrix::RowStride() const { 
+  int
+  OrientationTools<Scalar>::DenseMatrix::RowStride() const {
     return _rs;
   }
 
   template<class Scalar>
   int
-  OrientationTools<Scalar>::DenseMatrix::ColStride() const { 
+  OrientationTools<Scalar>::DenseMatrix::ColStride() const {
     return _cs;
   }
 
   template<class Scalar>
   Scalar*
   OrientationTools<Scalar>::DenseMatrix::ValuePtr() const {
-    return &_ax[_offm*_rs + _offn*_cs]; 
+    return &_a[_offm*_rs + _offn*_cs];
   }
-  
+
   template<class Scalar>
   Scalar&
   OrientationTools<Scalar>::DenseMatrix::Value(const int i,
-                                               const int j) { 
-    return _ax[(i+_offm)*_rs + (j+_offn)*_cs]; 
+                                               const int j) {
+    return _a[(i+_offm)*_rs + (j+_offn)*_cs];
+  }
+
+  template<class Scalar>
+  Scalar
+  OrientationTools<Scalar>::DenseMatrix::Value(const int i,
+                                               const int j) const {
+    return _a[(i+_offm)*_rs + (j+_offn)*_cs];
   }
 
   template<class Scalar>
@@ -117,17 +127,46 @@ namespace Intrepid2 {
     for (int j=0;j<NumCols();++j) {
       for (int i=0;i<NumRows();++i) {
         const Scalar val = Value(i,j);
-        if ((val*val) > epsilon)
-          ++nnz;
+        nnz += ((val*val) > epsilon);
       }
     }
     return nnz;
   }
 
   template<class Scalar>
-  void 
-  OrientationTools<Scalar>::CoeffMatrix::createInternalArrays(const int m, 
-                                                              const int n, 
+  std::ostream&
+  OrientationTools<Scalar>::DenseMatrix::showMe(std::ostream &os) const {
+    std::streamsize prec = os.precision();
+    os.precision(3);
+
+    os << " -- OrientationTools::DenseMatrix -- " << std::endl
+       << "    # of Rows              = " << _m << std::endl
+       << "    # of Cols              = " << _n << std::endl
+       << "    Col Stride             = " << _cs << std::endl
+       << "    Row Stride             = " << _rs << std::endl
+       << std::endl
+       << "    ValueArray dimensions  = " << _a.dimension_0() << std::endl
+       << std::endl;
+
+    const int w = 10;
+    if (_a.size()) {
+      for (int i=0;i<_m;++i) {
+        for (int j=0;j<_n;++j) {
+          const Scalar val = this->Value(i,j);
+          os << std::setw(w) << val << "  ";
+        }
+        os << std::endl;
+      }
+    }
+    os.precision(prec);
+
+    return os;
+  }
+
+  template<class Scalar>
+  void
+  OrientationTools<Scalar>::CoeffMatrix::createInternalArrays(const int m,
+                                                              const int n,
                                                               const size_t nnz) {
     _m = m;
     _n = n;
@@ -140,7 +179,7 @@ namespace Intrepid2 {
 
     if (static_cast<size_t>(_ax.dimension_0()) < nnz)
       _ax = Kokkos::View<Scalar*>(_label+"::ValuesArray", nnz);
-  } 
+  }
 
   template<class Scalar>
   OrientationTools<Scalar>::CoeffMatrix
@@ -149,7 +188,7 @@ namespace Intrepid2 {
       _m(0), _n(0), _ap(), _aj(), _ax() { }
 
   template<class Scalar>
-  void 
+  void
   OrientationTools<Scalar>::CoeffMatrix::import(const OrientationTools<Scalar>::DenseMatrix &b,
                                                 const bool transpose) {
 #ifdef HAVE_INTREPID_DEBUG
@@ -170,7 +209,7 @@ namespace Intrepid2 {
       for (int j=0;j<ncols;++j) {
         const Scalar val  = (transpose ? b.Value(j,i) : b.Value(i,j));
         const Scalar val2 = val*val;
-        
+
         // consider it as a nonzero entry
         if (val2 > eps) {
           _aj(nnz) = j;
@@ -184,26 +223,26 @@ namespace Intrepid2 {
 
   template<class Scalar>
   int
-  OrientationTools<Scalar>::CoeffMatrix::NumRows() const { 
+  OrientationTools<Scalar>::CoeffMatrix::NumRows() const {
     return _m;
   }
-  
+
   template<class Scalar>
-  int 
-  OrientationTools<Scalar>::CoeffMatrix::NumCols() const { 
+  int
+  OrientationTools<Scalar>::CoeffMatrix::NumCols() const {
     return _n;
   }
-  
+
   template<class Scalar>
-  size_t 
-  OrientationTools<Scalar>::CoeffMatrix::RowPtr(const int i) const { 
+  size_t
+  OrientationTools<Scalar>::CoeffMatrix::RowPtr(const int i) const {
     return _ap[i];
   }
-  
+
   template<class Scalar>
   int*
   OrientationTools<Scalar>::CoeffMatrix::ColsInRow(const int i) const {
-    return &_aj[_ap[i]]; 
+    return &_aj[_ap[i]];
   }
 
   template<class Scalar>
@@ -213,9 +252,44 @@ namespace Intrepid2 {
   }
 
   template<class Scalar>
-  int 
+  int
   OrientationTools<Scalar>::CoeffMatrix::NumNonZerosInRow(const int i) const {
     return (_ap[i+1] - _ap[i]);
+  }
+
+  template<class Scalar>
+  std::ostream&
+  OrientationTools<Scalar>::CoeffMatrix::showMe(std::ostream &os) const {
+    std::streamsize prec = os.precision();
+    os.precision(3);
+
+    os << " -- OrientationTools::CoeffMatrix -- " << std::endl
+       << "    # of Rows          = " << _m << std::endl
+       << "    # of Cols          = " << _n << std::endl
+       << std::endl
+       << "    RowPtrArray length = " << _ap.dimension_0() << std::endl
+       << "    ColArray    length = " << _aj.dimension_0() << std::endl
+       << "    ValueArray  length = " << _ax.dimension_0() << std::endl
+       << std::endl;
+
+    const int w = 10;
+    if (_ap.size() && _aj.size() && _ax.size()) {
+      os << std::setw(w) <<  "Row" << "  "
+         << std::setw(w) <<  "Col" << "  "
+         << std::setw(w) <<  "Val" << std::endl;
+      for (int i=0;i<_m;++i) {
+        size_t jbegin = _ap[i], jend = _ap[i+1];
+        for (size_t j=jbegin;j<jend;++j) {
+          Scalar val = _ax[j];
+          os << std::setw(w) <<      i << "  "
+             << std::setw(w) << _aj[j] << "  "
+             << std::setw(w) <<    val << std::endl;
+        }
+      }
+    }
+    os.precision(prec);
+
+    return os;
   }
 
   template<class Scalar>
@@ -253,23 +327,23 @@ namespace Intrepid2 {
       if      ( vflag[0] &&  eflag[1] &&  eflag[2]) { outPts(0,0) = refPts(k,0); outPts(0,1) = refPts(k,1); } //vert0
       else if ( eflag[0] &&  vflag[1] &&  eflag[2]) { outPts(1,0) = refPts(k,0); outPts(1,1) = refPts(k,1); } //vert1
       else if ( eflag[0] &&  eflag[1] &&  vflag[2]) { outPts(2,0) = refPts(k,0); outPts(2,1) = refPts(k,1); } //vert2
-      else if ( eflag[0] && !eflag[1] && !eflag[2]) { outPts(eoff0, 0) = refPts(k,0); outPts(eoff0++, 1) = refPts(k,1); } //edge0 
-      else if (!eflag[0] &&  eflag[1] && !eflag[2]) { outPts(eoff1, 0) = refPts(k,0); outPts(eoff1++, 1) = refPts(k,1); } //edge1 
+      else if ( eflag[0] && !eflag[1] && !eflag[2]) { outPts(eoff0, 0) = refPts(k,0); outPts(eoff0++, 1) = refPts(k,1); } //edge0
+      else if (!eflag[0] &&  eflag[1] && !eflag[2]) { outPts(eoff1, 0) = refPts(k,0); outPts(eoff1++, 1) = refPts(k,1); } //edge1
       else if (!eflag[0] && !eflag[1] &&  eflag[2]) { outPts(eoff2, 0) = refPts(k,0); outPts(eoff2++, 1) = refPts(k,1); } //edge2
       else                                          { outPts(ioff,  0) = refPts(k,0); outPts(ioff++,  1) = refPts(k,1); } //interior
     }
   }
 
-  
+
   template<class Scalar>
-  void OrientationTools<Scalar>::getModifiedLinePoint(double &ot, 
+  void OrientationTools<Scalar>::getModifiedLinePoint(double &ot,
                                                       const double pt,
                                                       const int ort) {
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt && pt <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::getModifiedLinePoint): pt is out of range [-1, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedLinePoint): pt is out of range [-1, 1].");
 #endif
-  
+
     switch (ort) {
     case 0: ot =   pt; break;
     case 1: ot = - pt; break;
@@ -280,24 +354,24 @@ namespace Intrepid2 {
   }
 
   template<class Scalar>
-  void OrientationTools<Scalar>::getModifiedTrianglePoint(double &ot0,     
-                                                          double &ot1, 
-                                                          const double pt0, 
+  void OrientationTools<Scalar>::getModifiedTrianglePoint(double &ot0,
+                                                          double &ot1,
+                                                          const double pt0,
                                                           const double pt1,
                                                           const int ort) {
-    const double lambda[3] = { 1.0 - pt0 - pt1, 
+    const double lambda[3] = { 1.0 - pt0 - pt1,
                                pt0,
                                pt1 };
-  
+
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[0] && lambda[0] <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[0]) is out of range [0, 1].");  
-  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[0]) is out of range [0, 1].");
+
     TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[1] && lambda[1] <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[1]) is out of range [0, 1].");  
-  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[1]) is out of range [0, 1].");
+
     TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[2] && lambda[2] <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[2]) is out of range [0, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): Bicentric coordinate (lamba[2]) is out of range [0, 1].");
 #endif
 
     switch (ort) {
@@ -314,22 +388,22 @@ namespace Intrepid2 {
   }
 
   template<class Scalar>
-  void OrientationTools<Scalar>::getModifiedQuadrilateralPoint(double &ot0,     
-                                                               double &ot1, 
-                                                               const double pt0, 
+  void OrientationTools<Scalar>::getModifiedQuadrilateralPoint(double &ot0,
+                                                               double &ot1,
+                                                               const double pt0,
                                                                const double pt1,
                                                                const int ort) {
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt0 && pt0 <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::getModifiedQuadrilateralPoint): pt0 is out of range [-1, 1].");  
-  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedQuadrilateralPoint): pt0 is out of range [-1, 1].");
+
     TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt1 && pt1 <= 1.0 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::OrientationTools::getModifiedQuadrilateralPoint): pt1 is out of range [-1, 1].");  
+                                ">>> ERROR (Intrepid::OrientationTools::getModifiedQuadrilateralPoint): pt1 is out of range [-1, 1].");
 #endif
 
-    const double lambda[2][2] = { { pt0, -pt0 }, 
+    const double lambda[2][2] = { { pt0, -pt0 },
                                   { pt1, -pt1 } };
-  
+
     switch (ort) {
     case 0: ot0 = lambda[0][0]; ot1 = lambda[1][0]; break;
     case 1: ot0 = lambda[1][0]; ot1 = lambda[0][1]; break;
@@ -360,40 +434,58 @@ namespace Intrepid2 {
     if (found) {
       // C = foundCoeffMatrix'
     } else {
+
       // populate points on an edge
       // this should be retrieved from subcell information; let's make it quick for now
+      shards::CellTopology cellTopo = basis.getBaseCellTopology();
       shards::CellTopology edgeTopo(shards::getCellTopologyData<shards::Line<2> >() );
-      
+      //cellTopo.getBaseCellTopologyData(1, edgeId);
+
       const int m = basis.getCardinality();
       const int ndofEdge = basis.getNumEdgeDofs();
       const Scalar delta = 2.0/(ndofEdge+1);
-      
+
       // reference points
-      ArrayPoint refPts(ndofEdge, 1);
+      ArrayPoint refPtsEdge(ndofEdge, 1);
       Scalar pt=(-1.0 + delta);
-      for (int i=0;i<ndofEdge;++i,pt+=delta) 
-        refPts(i, 0) = pt;
-      
+      for (int i=0;i<ndofEdge;++i,pt+=delta)
+        refPtsEdge(i, 0) = pt;
+
       // modified points with orientation
-      ArrayPoint ortPts(ndofEdge, 1);
-      mapToModifiedReference(ortPts,
-                             refPts,
+      ArrayPoint ortPtsEdge(ndofEdge, 1);
+      mapToModifiedReference(ortPtsEdge,
+                             refPtsEdge,
                              edgeTopo,
                              edgeOrt);
-      
-      // evaluate basis for reference points; 
+
+      // map to reference coordinates
+      ArrayPoint refPtsCell(ndofEdge, cellTopo.getDimension());
+      CellTools<Scalar>::mapToReferenceSubcell(refPtsCell,
+                                               refPtsEdge,
+                                               1,
+                                               edgeId,
+                                               cellTopo);
+
+      ArrayPoint ortPtsCell(ndofEdge, cellTopo.getDimension());
+      CellTools<Scalar>::mapToReferenceSubcell(ortPtsCell,
+                                               ortPtsEdge,
+                                               1,
+                                               edgeId,
+                                               cellTopo);
+
+      // evaluate basis for reference points;
       // if vector-valued, this array dimension should be changed.
       // where can I get such information ? for now hgrad only
       ArrayPoint refValues(m, ndofEdge);
-      basis.getValues(refValues, refPts);
+      basis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
 
       ArrayPoint ortValues(m, ndofEdge);
-      basis.getValues(ortValues, ortPts);
+      basis.getValues(ortValues, ortPtsCell, OPERATOR_VALUE);
 
       // locate edge dofs
-      const int numVertex = basis.getBaseCellTopology().getVertexCount();
-      const int ndofVertex = basis.getVertexDofs();
-      const int offset = numVertex*ndofVertex * edgeId*ndofEdge;
+      const int numVertex = cellTopo.getVertexCount();
+      const int ndofVertex = basis.getNumVertexDofs();
+      const int offset = numVertex*ndofVertex + edgeId*ndofEdge;
 
       // construct collocation matrix (cannot crop the arraypoint view....  repack)
       // this will be compilcated for hcurl and hdiv
@@ -411,23 +503,23 @@ namespace Intrepid2 {
       // solve the system
       Teuchos::LAPACK<int,Scalar> lapack;
       int info = 0;
-      lapack.GESV(ndofEdge, ndofEdge, 
-                  refMat.ValuePtr(), 
+      lapack.GESV(ndofEdge, ndofEdge,
+                  refMat.ValuePtr(),
                   refMat.ColStride(),
-                  pivVec.ValuePtr(),
-                  ortMat.ValuePtr(), 
-                  ortMat.ColStride(), 
+                  (int*)pivVec.ValuePtr(),
+                  ortMat.ValuePtr(),
+                  ortMat.ColStride(),
                   &info);
 
       TEUCHOS_TEST_FOR_EXCEPTION( info != 0, std::runtime_error,
                                   ">>> ERROR (Intrepid::OrientationTools::getEdgeCoeffMatrix): LAPACK fails.");
-      
+
       const bool transpose = true;
       CoeffMatrixType R;
 
       // sparcify
       R.import(ortMat, transpose);
-      
+
       // done!!
       C = R;
     }
@@ -439,20 +531,20 @@ namespace Intrepid2 {
                                                             const ArrayPoint &               refPoints,
                                                             const Basis<Scalar,ArrayPoint> & basis) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::OrientationTools::getLatticePointsByTopology): populate point array by a topological order.");
 
     TEUCHOS_TEST_FOR_EXCEPTION( !( outPoints.dimension(0) == refPoints.dimension(0) ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): size of input and output point arrays does not match each other.");
 #endif
-    
+
     const auto key = basis.getBaseCellTopology().getBaseCellTopologyData()->key;
     switch (key) {
     case shards::Line<>::key : {
       break;
     }
     case shards::Triangle<>::key : {
-      getTriangleLatticePointsByTopology(outPoints, 
+      getTriangleLatticePointsByTopology(outPoints,
                                          refPoints,
                                          basis);
       break;
@@ -460,7 +552,7 @@ namespace Intrepid2 {
     case shards::Quadrilateral<>::key : {
       break;
     }
-    default: 
+    default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
                                  ">>> ERROR (Intrepid2::OrientationTools::getLatticePointsByTopology): Invalid cell topology." );
     }
@@ -475,48 +567,48 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID_DEBUG
     {
       const int cellDim = cellTopo.getDimension();
-      TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument,
                                   ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): the specified cell topology does not have a reference cell.");
-    
+
       TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= cellDim) && (cellDim <= 2 ) ), std::invalid_argument,
-                                  ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): method defined only for 1 and 2-dimensional subcells.");  
+                                  ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): method defined only for 1 and 2-dimensional subcells.");
 
       TEUCHOS_TEST_FOR_EXCEPTION( !( ortPoints.dimension(0) == refPoints.dimension(0) ), std::invalid_argument,
                                   ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): size of input and output point arrays does not match each other.");
     }
 #endif
-    
+
     // Apply the parametrization map to every point in parameter domain
     const size_t numPts  = static_cast<size_t>(ortPoints.dimension(0));
     const auto key = cellTopo.getBaseCellTopologyData()->key ;
     switch (key) {
     case shards::Line<>::key : {
-      for (size_t pt=0;pt<numPts;++pt) 
+      for (size_t pt=0;pt<numPts;++pt)
         getModifiedLinePoint(ortPoints(pt, 0),
-                             refPoints(pt, 0), 
+                             refPoints(pt, 0),
                              cellOrt);
       break;
     }
     case shards::Triangle<>::key : {
-      for (size_t pt=0;pt<numPts;++pt) 
+      for (size_t pt=0;pt<numPts;++pt)
         getModifiedTrianglePoint(ortPoints(pt, 0), ortPoints(pt, 1),
-                                 refPoints(pt, 0), refPoints(pt, 1), 
+                                 refPoints(pt, 0), refPoints(pt, 1),
                                  cellOrt);
       break;
     }
     case shards::Quadrilateral<>::key : {
-      for (size_t pt=0;pt<numPts;++pt) 
+      for (size_t pt=0;pt<numPts;++pt)
         getModifiedQuadrilateralPoint(ortPoints(pt, 0), ortPoints(pt, 1),
-                                      refPoints(pt, 0), refPoints(pt, 1), 
+                                      refPoints(pt, 0), refPoints(pt, 1),
                                       cellOrt);
       break;
     }
-    default: 
+    default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
                                  ">>> ERROR (Intrepid2::OrientationTools::mapToModifiedReference): Invalid cell topology." );
     }
   }
 }
 #endif
-  
+
 #endif
