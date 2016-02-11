@@ -253,9 +253,9 @@ namespace BaskerNS
      if(((sg.cblk) != pow(2.0,((double)num_levels+1))-1) ||
 	(num_trees != 1))
       {
-	printf("\n\n\n");
-	printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
-	printf("\n\n\n");
+	//printf("\n\n\n");
+	//printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
+	//printf("\n\n\n");
 	
 	Int iblks = pow(2, num_levels+1)-1;
 	
@@ -276,13 +276,13 @@ namespace BaskerNS
 	for(Int i = 0; i < sg.cblk; i++)
 	  {
 	    ttree(i) = sg.treetab[i];
-	    printf("tcopy: %d \n", ttree(i));
+	    //printf("tcopy: %d \n", ttree(i));
 	  }
 	
 	for(Int i = 0; i < sg.cblk+1; i++)
 	  {
 	    ttabs(i) = sg.rangtab[i];
-	    printf("rcopy: %d \n", ttabs(i));
+	    //printf("rcopy: %d \n", ttabs(i));
 	  }
 
 	#ifdef BASKER_DEBUG_ORDER_SCOTCH

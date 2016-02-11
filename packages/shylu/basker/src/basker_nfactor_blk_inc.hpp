@@ -2350,7 +2350,7 @@ namespace BaskerNS
       }
     #endif
 
-
+    return 0;
   }//end t_lower_col_diag_find_fill()
 
  

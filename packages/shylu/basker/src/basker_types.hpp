@@ -93,7 +93,7 @@ enum BASKER_INCOMPLETE_CODE
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
-      {printf("\n\n%s\n\n", s);}  \				 
+      {printf("\n\n%s\n\n", s);} \
     ASSERT(a);                   \
   }
 
