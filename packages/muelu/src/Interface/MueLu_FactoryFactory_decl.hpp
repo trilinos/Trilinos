@@ -206,6 +206,7 @@ namespace MueLu {
       if (factoryName == "MatrixAnalysisFactory")           return Build2<MatrixAnalysisFactory>         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MultiVectorTransferFactory")      return Build2<MultiVectorTransferFactory>    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NoFactory")                       return Teuchos::null;
+      if (factoryName == "NoSmoother")                      return rcp(new SmootherFactory(Teuchos::null));
       if (factoryName == "NullspaceFactory")                return Build2<NullspaceFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspacePresmoothFactory")       return Build2<NullspacePresmoothFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "PatternFactory")                  return Build2<PatternFactory>                (paramList, factoryMapIn, factoryManagersIn);
@@ -605,6 +606,9 @@ namespace MueLu {
       // std::string verbose;         if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
+      // parameters from SmootherFactory
+      bool bKeepSmootherData = false; if(paramList.isParameter("keep smoother data")) bKeepSmootherData = paramList.get<bool>("keep smoother data");
+
       // Read in factory information for smoothers (if available...)
       // NOTE: only a selected number of factories can be used with the Trilinos smoother
       //       smoothers usually work with the global data available (which is A and the transfers P and R)
@@ -624,7 +628,12 @@ namespace MueLu {
         trilSmoo->SetFactory("CoarseNumZLayers", generatingFact);
       }
 
-      return rcp(new SmootherFactory(trilSmoo));
+      RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(Teuchos::null));
+      Teuchos::ParameterList smooFactParams;
+      smooFactParams.set<bool>("keep smoother data",bKeepSmootherData);
+      smooFact->SetParameterList(smooFactParams);
+      smooFact->SetSmootherPrototypes(trilSmoo);
+      return smooFact;
     }
 
 #ifdef HAVE_MUELU_MATLAB
