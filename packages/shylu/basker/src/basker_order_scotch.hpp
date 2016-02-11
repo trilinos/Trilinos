@@ -4,7 +4,7 @@
 #include "basker_types.hpp"
 #include "scotch.h"
 
-#define BASKER_DEBUG_ORDER_SCOTCH
+//#define BASKER_DEBUG_ORDER_SCOTCH
 
 //NOTE need to change all the max_idx here still
 

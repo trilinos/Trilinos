@@ -82,11 +82,13 @@ namespace BaskerNS
 	basker->btf_schedule(kid);
       
 
-      printf("Chunk start: %d size: %d \n", 
-	     chunk_start, chunk_size);
+      //printf("Chunk start: %d size: %d \n", 
+      //     chunk_start, chunk_size);
+      if(chunk_size > 0)
+	{
       basker->t_nfactor_diag(kid, chunk_start,
 			     chunk_size);
-
+	}
 
 
 

@@ -543,19 +543,14 @@ void RILUK<MatrixType>::initialize ()
       }
     else
       {
-
-	/*
-	std::cout << "node_type:  " << typeid(node_type).name()
-		  << std:: endl;
-	std::cout << "compare type" << typeid(Kokkos::OpenMP).name() << std::endl;
-
-	
-	static_assert( std::is_same< node_type, 
-		       Kokkos::OpenMP>::value, 
-		       "Not supported");
-	*/
-
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
+	typedef typename node_type::device_type    kokkos_device;
+	typedef typename kokkos_device::execution_space kokkos_exe;
+	static_assert( std::is_same< kokkos_exe, 
+		       Kokkos::OpenMP>::value, 
+		       "Kokkos node type not supported by experimental thread basker RILUK");
+
+
 	myBasker = rcp( new BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP>);
 	myBasker->Options.no_pivot   = true;
 	myBasker->Options.transpose  = true; //CRS not CCS
@@ -934,6 +929,7 @@ void RILUK<MatrixType>::compute ()
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
  
      myBasker->Factor_Inc(0);
+     myBasker->DEBUG_PRINT();
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
        0==1, std::runtime_error,

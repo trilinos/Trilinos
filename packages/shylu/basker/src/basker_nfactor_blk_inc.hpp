@@ -59,6 +59,7 @@ namespace BaskerNS
       //printf("after workspace init\n");
       
       //if(kid == 2 || kid == 3)
+      //if(kid==0)
       {
       basker->t_nfactor_blk_inc_lvl(kid);
 	}
@@ -138,8 +139,7 @@ namespace BaskerNS
     BASKER_MATRIX &L   = LL(b)(0);
     BASKER_MATRIX &U   = LU(b)(LU_size(b)-1);
     BASKER_MATRIX &M   = ALM(b)(0); //A->blk
- 
-    //printf("Accessing blk: %d kid: %d  \n", b, kid);
+
     INT_1DARRAY   ws   = LL(b)(0).iws;
     ENTRY_1DARRAY X    = LL(b)(0).ews;
     Int        ws_size = LL(b)(0).iws_size;
@@ -241,8 +241,10 @@ namespace BaskerNS
           printf("xnnz: %d ws_size: %d top: %d \n", 
                  xnnz, ws_size, top);
           #endif
+	 
              
 	  t_back_solve_inc_lvl(kid,0,0,k,top,xnnz);
+	  
 
           maxv = 0.0;
           for(i = top; i < ws_size; i++)
@@ -268,6 +270,7 @@ namespace BaskerNS
             }//for (i = top; i < ws_size)
           //printf("b: %d lcnt: %d after \n", b, lcnt);
 
+	  
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
 	      maxindex = k;
@@ -345,6 +348,8 @@ namespace BaskerNS
 		}
 
             }
+	  
+	 
 
           L.row_idx(lnnz) = maxindex;
           L.val(lnnz)     = (Entry) 1.0;
@@ -403,9 +408,9 @@ namespace BaskerNS
                     }
                 }//end if() not 0
 
-              #ifdef BASKER_DEBUG_NFACTOR_BLK
-              printf("Zeroing element: %d \n", j);
-              #endif
+		#ifdef BASKER_DEBUG_NFACTOR_BLK
+		printf("Zeroing element: %d \n", j);
+               #endif
 
 	      X(j) = 0;	  
             }//end if(x[i] != 0)
@@ -426,13 +431,14 @@ namespace BaskerNS
 	  U.col_ptr(k+1) = unnz;
           cu_utop        = unnz;
 
-
+	  
 	  #ifdef BASKER_2DL
 	  //-----------------------Update offdiag-------------//
 	  for(Int blk_row = 1; blk_row < LL_size(b); ++blk_row)
 	    {
 	      //Do back solve of off-diag blocks
-	      //printf("before offdiag \n");
+	      // printf("before offdiag blk_row: %d kid: %d \n", 
+	      //     blk_row, kid);
               
               
               t_dom_lower_col_offdiag_find_fill(kid, L.srow,
@@ -440,11 +446,13 @@ namespace BaskerNS
                                                 b, blk_row,
                                                 k,
                                                 U.row_idx,
-                                                U.col_ptr(k+1)-U.col_ptr(k),
+                                  U.col_ptr(k+1)-U.col_ptr(k),
                                                 U.col_ptr(k),
-                                                      BASKER_TRUE);
+                                                BASKER_TRUE);
               
-
+	      
+	     
+	      
 	      t_back_solve_offdiag_inc_lvl(kid, L.srow,
 				   b, blk_row,
 				   b, blk_row,
@@ -453,16 +461,15 @@ namespace BaskerNS
 		       U.col_ptr(k+1)-U.col_ptr(k),
 				  U.col_ptr(k),
 				   BASKER_TRUE);
-	    
+	      
 	      //Move these factors into Local Ls
-	      //printf("before t_move_L\n");
 	      t_move_offdiag_L_inc_lvl(kid,
 			       b, blk_row,
 			       b, blk_row,
 			       k, pivot);
-	         
+	      
 	    }//end over all diag
-
+	  
 	  for(Int i = 0; i < M.nrow; i++)
 	    {
 	      INC_LVL_TEMP(i+brow) = BASKER_MAX_IDX;
@@ -470,9 +477,6 @@ namespace BaskerNS
 
 	  #endif
 
-	  
-	  //NOT PRUNE
-	  //t_prune(kid,0,0,k,maxindex);
 
 	}//end for() over all columns
 
@@ -2161,6 +2165,7 @@ namespace BaskerNS
     Int          brow    = L.srow;
     Int          bcol    = L.scol;
   
+    
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("t_back_solve_diag, kid: %d blkcol: %d blkrow: %d \n",
 	   kid, blkcol, blkrow);
@@ -2174,11 +2179,14 @@ namespace BaskerNS
     Int *pattern = &(color[ws_size]);
     Int *stack   = &(pattern[ws_size]);
    
+    
     //need to make this so not every column 
-    for(Int i = 0 ; i < L.ncol; i++)
+    for(Int i = 0 ; i < ws_size; i++)
       {
 	stack[i] = BASKER_MAX_IDX;
       }
+    
+  
     //Preload with A
     if(A_option == BASKER_TRUE)
       {
@@ -2214,7 +2222,7 @@ namespace BaskerNS
 	printf("LVL_TEMP[%d] = %d, %d kid: %d continue? \n", 
 	       k+pbrow, INC_LVL_TEMP(k+pbrow), Options.inc_lvl, kid); 
 	#endif
-
+	
 	for(Int j = L.col_ptr(k);
 	    j < L.col_ptr(k+1); j++)
 	  {

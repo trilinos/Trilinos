@@ -34,7 +34,7 @@ namespace BaskerNS
   int Basker<Int, Entry, Exe_Space>::factor_inc_lvl(Int option)
   {
 
-    printf("Factor Inc Level Called \n");
+    //printf("Factor Inc Level Called \n");
 
     gn = A.ncol;
     gm = A.nrow;
@@ -127,7 +127,7 @@ namespace BaskerNS
     //---------------------------Sep--------------------------//
 
     
-    
+    //if(false)
     if(btf_tabs_offset != 0)
       {
         //for(Int l=1; l<=1; l++)
