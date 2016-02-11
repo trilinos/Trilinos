@@ -2,10 +2,10 @@
        non-rectilinear blocks were returned with this test problem.
        Feature:  many elements with zero weights; rectilinear blocks -->
 
-<ParameterList name="RectilinearRCBTest">
+<ParameterList name="RectilinearRCB_left">
   
   <ParameterList name="InputParameters">
-    <Parameter name="input file" type="string" value="rectilinearRCB"/>
+    <Parameter name="input file" type="string" value="rectilinearRCB_left"/>
     <Parameter name="file type" type="string" value="Chaco"/>
   </ParameterList>
   
@@ -21,7 +21,20 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="rcb"/>
       <Parameter name="rectilinear" type="string" value="1"/>
+      <Parameter name="compute_metrics" type="string" value="1"/>
     </ParameterList>
+
+    <ParameterList name="Metrics">
+      <ParameterList name="object count">
+        <Parameter name="lower" type="double" value="1.49"/>
+        <Parameter name="upper" type="double" value="1.51"/>
+      </ParameterList>
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.01"/>
+      </ParameterList>
+    </ParameterList>
+
     
   </ParameterList>
   
