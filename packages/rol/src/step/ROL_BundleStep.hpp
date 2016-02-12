@@ -110,6 +110,10 @@ private:
 
 public:
 
+  using Step<Real>::initialize;
+  using Step<Real>::compute;
+  using Step<Real>::update;
+
   BundleStep(Teuchos::ParameterList &parlist)
     : bundle_(Teuchos::null), lineSearch_(Teuchos::null),
       QPiter_(0), QPmaxit_(0), QPtol_(0.), step_flag_(0),
