@@ -1,4 +1,4 @@
-ADD_SUBDIRECTORY(glaze)
+#ADD_SUBDIRECTORY(glaze)
 ADD_SUBDIRECTORY(rectilinearRCB)
 
 # command that copies files during build
