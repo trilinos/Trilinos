@@ -246,7 +246,7 @@ namespace BaskerNS
 
     //TEst 
     sort_matrix(BTF_A);
-    printMTX("A_TEST.mtx", BTF_A);
+    //printMTX("A_TEST.mtx", BTF_A);
     
     sort_matrix(BTF_C);
 
@@ -349,7 +349,7 @@ namespace BaskerNS
 	//Comeback
         #endif
 
-	printMTX("BTF_A.mtx", BTF_A); 
+	//printMTX("BTF_A.mtx", BTF_A); 
 	
       }//if btf_tab_offset == 0
 
@@ -357,7 +357,7 @@ namespace BaskerNS
     if(btf_nblks > 1)
       {
 	sort_matrix(BTF_C);
-	printMTX("C_TEST.mtx", BTF_C);
+	//printMTX("C_TEST.mtx", BTF_C);
 	//Permute C
 
 
