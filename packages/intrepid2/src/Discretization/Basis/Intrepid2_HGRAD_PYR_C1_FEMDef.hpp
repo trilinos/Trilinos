@@ -62,6 +62,9 @@ namespace Intrepid2 {
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
   
   

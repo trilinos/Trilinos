@@ -112,26 +112,11 @@ int main(int argc, char *argv[]) {
 
     FieldContainer<double> lattice( np_lattice , 2 );
 
-#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-    {
-      FieldContainer<double> temp( np_lattice , 2 );
-      PointTools::getLattice<double,FieldContainer<double> >( temp,
-                                                              myBasis.getBaseCellTopology() ,
-                                                              deg ,
-                                                              0 ,
-                                                              POINTTYPE_WARPBLEND );
-      
-      OrientationTools<double>::getLatticePointsByTopology( lattice,
-                                                            temp,
-                                                            myBasis );
-    }
-#else
     PointTools::getLattice<double,FieldContainer<double> >( lattice ,
                                                             myBasis.getBaseCellTopology() ,
                                                             deg ,
                                                             0 ,
                                                             POINTTYPE_WARPBLEND );
-#endif
 
     FieldContainer<double> vals( nbf , np_lattice );
 
@@ -191,26 +176,11 @@ int main(int argc, char *argv[]) {
 
     FieldContainer<double> lattice( np_lattice , 2 );
 
-#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-    {
-      FieldContainer<double> temp( np_lattice , 2 );
-      PointTools::getLattice<double,FieldContainer<double> >( temp ,
-                                                              myBasis.getBaseCellTopology() ,
-                                                              deg ,
-                                                              0 ,
-                                                              POINTTYPE_WARPBLEND );
-      
-      OrientationTools<double>::getLatticePointsByTopology( lattice,
-                                                            temp,
-                                                            myBasis );
-    }
-#else
     PointTools::getLattice<double,FieldContainer<double> >( lattice ,
                                                             myBasis.getBaseCellTopology() ,
                                                             deg ,
                                                             0 ,
                                                             POINTTYPE_WARPBLEND );
-#endif
 
     FieldContainer<double> vals( nbf , np_lattice , 2 );
 

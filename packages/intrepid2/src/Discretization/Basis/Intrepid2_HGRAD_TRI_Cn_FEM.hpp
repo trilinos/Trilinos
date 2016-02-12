@@ -130,18 +130,6 @@ public:
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
 
-#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const Orientation      ort,
-                 const EOperator        operatorType) const;
-
-  unsigned int getNumVertexDofs() const;
-  unsigned int getNumEdgeDofs() const;
-  unsigned int getNumFaceDofs() const;
-  unsigned int getNumInteriorDofs() const;
-#endif  
-
 };
 
 }// namespace Intrepid2

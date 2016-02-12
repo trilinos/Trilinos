@@ -71,9 +71,26 @@
 
 namespace Intrepid2 {
 
+  // Orientation encoding and decoding
+  class Orientation {
+  private:
+    unsigned int _edgeOrt, _faceOrt;
+    
+  public:
+    Orientation() = default;
+    Orientation(const Orientation &b) = default;
+    
+    bool isAlignedToReference() const;
+
+    void setEdgeOrientation(const int numEdge, const int edgeOrt[]);
+    void getEdgeOrientation(int *edgeOrt, const int numEdge) const;
+    void setFaceOrientation(const int numFace, const int faceOrt[]);
+    void getFaceOrientation(int *faceOrt, const int numFace) const;
+  };
+
   template<class Scalar>
   class OrientationTools {
-  public:
+  private:
 
     class DenseMatrix {
     private:
@@ -108,8 +125,6 @@ namespace Intrepid2 {
 
     class CoeffMatrix {
     private:
-      std::string _label;
-
       int _m, _n;
 
       Kokkos::View<size_t*>  _ap;      //!< pointers to column index and values
@@ -121,7 +136,7 @@ namespace Intrepid2 {
                                 const size_t nnz);
 
     public:
-      CoeffMatrix();
+      CoeffMatrix() = default;
       CoeffMatrix(const CoeffMatrix &b) = default;
 
       void import(const DenseMatrix &b,
@@ -137,22 +152,6 @@ namespace Intrepid2 {
 
       std::ostream& showMe(std::ostream &os) const;
     };
-
-  public:
-
-    /** \brief  Default constructor.
-     */
-    OrientationTools(){ };
-
-    /** \brief  Destructor
-     */
-    ~OrientationTools(){ };
-
-  private:
-    template<class ArrayPoint>
-    static void getTriangleLatticePointsByTopology(ArrayPoint &                     outPts,
-                                                   const ArrayPoint &               refPts,
-                                                   const Basis<Scalar,ArrayPoint> & basis);
 
     /** \brief  Computes modified point for line segment.
 
@@ -192,36 +191,96 @@ namespace Intrepid2 {
                                               const double pt1,
                                               const int ort);
 
+    template<class ArrayType>
+    static void getEdgeCoeffMatrix_HGRAD(CoeffMatrix &                   C,
+                                         const Basis<Scalar,ArrayType> & basis,
+                                         const int                       edgeId,
+                                         const int                       edgeOrt);
+
+    template<class ArrayType>
+    static void getEdgeCoeffMatrix_HCURL(CoeffMatrix &                   C,
+                                         const Basis<Scalar,ArrayType> & basis,
+                                         const int                       edgeId,
+                                         const int                       edgeOrt) {}
+
+    template<class ArrayType>
+    static void getEdgeCoeffMatrix_HDIV(CoeffMatrix &                   C,
+                                        const Basis<Scalar,ArrayType> & basis,
+                                        const int                       edgeId,
+                                        const int                       edgeOrt) {}
+    
+    template<class ArrayType>
+    static void getTriangleCoeffMatrix_HGRAD(CoeffMatrix &                   C,
+                                             const Basis<Scalar,ArrayType> & basis,
+                                             const int                       faceId,
+                                             const int                       faceOrt) {}
+    
+    template<class ArrayType>
+    static void getTriangleCoeffMatrix_HCURL(CoeffMatrix &                   C,
+                                             const Basis<Scalar,ArrayType> & basis,
+                                             const int                       faceId,
+                                             const int                       faceOrt) {}
+    
+    template<class ArrayType>
+    static void getTriangleCoeffMatrix_HDIV(CoeffMatrix &                   C,
+                                            const Basis<Scalar,ArrayType> & basis,
+                                            const int                       faceId,
+                                            const int                       faceOrt) {}
+    
+    template<class ArrayType>
+    static void getQuadrilateralCoeffMatrix_HGRAD(CoeffMatrix &                   C,
+                                                  const Basis<Scalar,ArrayType> & basis,
+                                                  const int                       faceId,
+                                                  const int                       faceOrt) {}
+    
+    template<class ArrayType>
+    static void getQuadrilateralCoeffMatrix_HCURL(CoeffMatrix &                   C,
+                                                  const Basis<Scalar,ArrayType> & basis,
+                                                  const int                       faceId,
+                                                  const int                       faceOrt) {}
+    
+    template<class ArrayType>
+    static void getQuadrilateralCoeffMatrix_HDIV(CoeffMatrix &                   C,
+                                                 const Basis<Scalar,ArrayType> & basis,
+                                                 const int                       faceId,
+                                                 const int                       faceOrt) {}
+    
+    template<class ArrayType>
+    static void applyCoeffMatrix(ArrayType &         outValues,
+                                 const ArrayType &   refValues,
+                                 const CoeffMatrix & C,
+                                 const unsigned int  offset,
+                                 const unsigned int  numDofs);
+
   public:
-    template<class ArrayPoint>
-    static void getEdgeCoeffMatrix(CoeffMatrix &                    C,
-                                   const Basis<Scalar,ArrayPoint> & basis,
-                                   const int                        edgeId,
-                                   const int                        edgeOrt);
-
-    // template<class ArrayPoint>
-    // static void getFaceCoeffMatrix(CoeffMatrix &                    C,
-    //                                const Basis<Scalar,ArrayPoint> & basis,
-    //                                const int                        faceId);
-
-    template<class ArrayPoint>
-    static void getLatticePointsByTopology(ArrayPoint &                     outPoints,
-                                           const ArrayPoint &               refPoints,
-                                           const Basis<Scalar,ArrayPoint> & basis);
-
-
     /** \brief  Computes modified parameterization maps of 1- and 2-subcells with orientation.
 
-        \param  ortPoints       [out] - rank-2 (P,D2) array with points in 1D or 2D modified domain with orientation
+        \param  outPoints       [out] - rank-2 (P,D2) array with points in 1D or 2D modified domain with orientation
         \param  refPoints       [in]  - rank-2 (P,D2) array with points in 1D or 2D parameter domain
         \param  cellTopo        [in]  - cell topology of the parameterized domain (1- and 2-subcells)
         \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
     */
-    template<class ArrayPoint>
-    static void mapToModifiedReference(ArrayPoint &                  ortPoints,
-                                       const ArrayPoint &            refPoints,
-                                       const shards::CellTopology &  cellTopo,
-                                       const int                     cellOrt = 0);
+    template<class ArrayType>
+    static void mapToModifiedReference(ArrayType &                  outPoints,
+                                       const ArrayType &            refPoints,
+                                       const shards::CellTopology & cellTopo,
+                                       const int                    cellOrt = 0);
+
+
+    // basis object indlues std::vector which needs copied by reerence.
+    // this should be removed.
+    template<class ArrayType>
+    static void getBasisFunctionsByTopology(ArrayType &                     outValues,
+                                            const ArrayType &               refValues,
+                                            const Basis<Scalar,ArrayType> & basis);
+
+
+    template<class ArrayType>
+    static void getModifiedBasisFunctions(ArrayType &                     outValues,
+                                          const ArrayType &               refValues,
+                                          const Basis<Scalar,ArrayType> & basis,
+                                          const Orientation               ort);
+    
   };
 
 }

@@ -52,6 +52,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Intrepid2_PointTools.hpp"
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+#include "Intrepid2_OrientationTools.hpp"
+#endif
 #include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
 #include "Shards_CellTopology.hpp"
 
@@ -140,13 +143,13 @@ int main(int argc, char *argv[]) {
     ort.setEdgeOrientation(nedge, orts);
 
     // map line points and modified points to reference coordinates
-    FieldContainer<value_type> temp_cell_pts(npts_edge, ndim);
+    FieldContainer<value_type> tmp_cell_pts(npts_edge, ndim);
 
     const int npts_cell = npts_edge*nedge;
     FieldContainer<value_type> ref_cell_pts(npts_cell, ndim), ort_cell_pts(npts_cell, ndim);
 
     for (int edge_id=0,offset=0;edge_id<nedge;++edge_id,offset+=npts_edge) {
-      CellTools<value_type>::mapToReferenceSubcell(temp_cell_pts,
+      CellTools<value_type>::mapToReferenceSubcell(tmp_cell_pts,
                                                    ref_line_pts,
                                                    1,
                                                    edge_id,
@@ -154,9 +157,9 @@ int main(int argc, char *argv[]) {
 
       for (int i=0;i<npts_edge;++i)
         for (int j=0;j<ndim;++j)
-          ref_cell_pts(i + offset, j) = temp_cell_pts(i, j);
+          ref_cell_pts(i + offset, j) = tmp_cell_pts(i, j);
 
-      CellTools<value_type>::mapToReferenceSubcell(temp_cell_pts,
+      CellTools<value_type>::mapToReferenceSubcell(tmp_cell_pts,
                                                    (orts[edge_id] ? ort_line_pts : ref_line_pts),
                                                    1,
                                                    edge_id,
@@ -164,35 +167,56 @@ int main(int argc, char *argv[]) {
 
       for (int i=0;i<npts_edge;++i)
         for (int j=0;j<ndim;++j)
-          ort_cell_pts(i + offset, j) = temp_cell_pts(i, j);
+          ort_cell_pts(i + offset, j) = tmp_cell_pts(i, j);
     }
-
-    // basis values wrt modified coordinates
-    FieldContainer<double> ref_cell_vals( nbf, npts_cell);
-    basis.getValues(ref_cell_vals, ort_cell_pts, OPERATOR_VALUE);
+    
+    // temporary cell workspace
+    FieldContainer<double> tmp_cell_vals(nbf, npts_cell);
 
     // modified basis values wrt reference coordinates
-    FieldContainer<double> ort_cell_vals( nbf, npts_cell);
-    basis.getValues(ort_cell_vals , ref_cell_pts, ort, OPERATOR_VALUE );
+    FieldContainer<double> ref_cell_vals(nbf, npts_cell);
+    basis.getValues(tmp_cell_vals , ref_cell_pts, OPERATOR_VALUE );
+    OrientationTools<value_type>::getBasisFunctionsByTopology(ref_cell_vals,
+                                                              tmp_cell_vals,
+                                                              basis);
 
+    // basis values wrt modified coordinates
+    FieldContainer<double> ort_cell_vals(nbf, npts_cell);
+    basis.getValues(tmp_cell_vals, ort_cell_pts, OPERATOR_VALUE);
+    OrientationTools<value_type>::getBasisFunctionsByTopology(ort_cell_vals,
+                                                              tmp_cell_vals,
+                                                              basis);
+    
+    for (int i=0;i<nbf;++i)
+      for (int j=0;j<npts_cell;++j)
+        tmp_cell_vals(i, j) = ort_cell_vals(i, j);
+
+    OrientationTools<value_type>::getModifiedBasisFunctions(ort_cell_vals,
+                                                            tmp_cell_vals,
+                                                            basis,
+                                                            ort);
+    
     // check the basis should be same for edge DOFs
     {
-      const unsigned int nvert     = cell_topo.getVertexCount();
-      const unsigned int nvert_dof = basis.getNumVertexDofs();
-      const unsigned int nedge     = cell_topo.getEdgeCount();
-      const unsigned int nedge_dof = basis.getNumEdgeDofs();
-
-      const int ibegin = nvert*nvert_dof;
-      const int iend   = ibegin + nedge*nedge_dof;
-
+      int ibegin = 0; 
+      const int nvert = cell_topo.getVertexCount();
+      for (int i=0;i<nvert;++i) {
+        const int ord_vert = basis.getDofOrdinal(0, i, 0);
+        ibegin += basis.getDofTag(ord_vert)[3];
+      }
+      int iend = ibegin; 
+      const int nedge = cell_topo.getEdgeCount();
+      for (int i=0;i<nedge;++i) {
+        const int ord_edge = basis.getDofOrdinal(1, i, 0);
+        iend += basis.getDofTag(ord_edge)[3];
+      }
       for (int i=ibegin;i<iend;++i) {
         for (int j=0;j<npts_cell;++j) {
-          const value_type diff = (ref_cell_vals(i,j) - ort_cell_vals(i,j));
-          const value_type diff2 = diff*diff;
-          if (diff2 > INTREPID_TOL) {
+          const value_type diff = std::abs(ref_cell_vals(i,j) - ort_cell_vals(i,j));
+          if (diff > INTREPID_TOL) {
             ++r_val;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            *outStream << " Basis function " << i << " does not match each other\n";
+            *outStream << " Basis function " << i << " at point " << j << " does not match each other\n";
           }
         }
       }
