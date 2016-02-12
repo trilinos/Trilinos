@@ -82,7 +82,8 @@ public:
             EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].neighboringProc, neighboringProc);
         }
 
-        stk::mesh::throw_if_coincident_elements_are_split(bulkData, splitCoincidentElements.empty());
+        //KHP: Commenting out to fix build until this function can be added to the repository.
+        //stk::mesh::throw_if_coincident_elements_are_split(bulkData, splitCoincidentElements.empty());
     }
 
     MPI_Comm get_comm() const
