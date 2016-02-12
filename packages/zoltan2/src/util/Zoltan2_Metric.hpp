@@ -282,13 +282,14 @@ template <typename scalar_t>
   }
 
   os << std::setw(20) << label;
-  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalMin];
-  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalMax];
-  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalAvg];
+  os << std::setw(11) << std::setprecision(4) << values_[evalGlobalMin];
+  os << std::setw(11) << std::setprecision(4) << values_[evalGlobalMax];
+  os << std::setw(11) << std::setprecision(4) << values_[evalGlobalAvg];
   os << std::setw(2) << " ";
-  os << std::setw(6) << std::setprecision(4) << values_[evalMinImbalance];
-  os << std::setw(6) << std::setprecision(4) << values_[evalMaxImbalance];
-  os << std::setw(6) << std::setprecision(4) << values_[evalAvgImbalance];
+  os << std::setw(10) << std::setprecision(4) << values_[evalMinImbalance];
+  os << std::setw(10) << std::setprecision(4) << values_[evalMaxImbalance];
+  os << std::setw(2) << char(177);
+  os << std::setprecision(3) << values_[evalAvgImbalance];
   os << std::endl;
 }
 
@@ -298,13 +299,13 @@ template <typename scalar_t>
   os << std::setw(20) << " ";
   os << std::setw(36) << "------------SUM PER PART-----------";
   os << std::setw(2) << " ";
-  os << std::setw(18) << "IMBALANCE PER PART";
+  os << std::setw(24) << "---IMBALANCE PER PART---";
   os << std::endl;
 
   os << std::setw(20) << " ";
-  os << std::setw(12) << "min" << std::setw(12) << "max" << std::setw(12) << "avg";
+  os << std::setw(11) << "min" << std::setw(11) << "max" << std::setw(11) << "avg";
   os << std::setw(2) << " ";
-  os << std::setw(6) << "min" << std::setw(6) << "max" << std::setw(6) << "avg";
+  os << std::setw(10) << "lightest" << std::setw(10) << "heaviest" << std::setw(6) << "avg";
   os << std::endl;
 }
 
@@ -1021,8 +1022,9 @@ template <typename scalar_t, typename part_t>
     for (part_t p=0; p < numParts; p++){
       scalar_t diff = vals[p] - target;
       scalar_t adiff = (diff >= 0 ? diff : -diff);
-      scalar_t tmp = adiff / target;
-      avg += tmp;
+      scalar_t tmp = diff / target;
+      scalar_t atmp = adiff / target;
+      avg += atmp;
       if (tmp > max) max = tmp;
       if (tmp < min) min = tmp;
     }
@@ -1040,8 +1042,9 @@ template <typename scalar_t, typename part_t>
           scalar_t target = sumVals * psizes[p];
           scalar_t diff = vals[p] - target;
           scalar_t adiff = (diff >= 0 ? diff : -diff);
-          scalar_t tmp = adiff / target;
-          avg += tmp;
+          scalar_t tmp = diff / target;
+          scalar_t atmp = adiff / target;
+          avg += atmp;
           if (tmp > max) max = tmp;
           if (tmp < min) min = tmp;
         }
@@ -1366,7 +1369,7 @@ template <typename Adapter>
 
   metrics[0].setMinImbalance(1.0 + min);
   metrics[0].setMaxImbalance(1.0 + max);
-  metrics[0].setAvgImbalance(1.0 + avg);
+  metrics[0].setAvgImbalance(avg);
 
   ///////////////////////////////////////////////////////////////////////////
   // Compute imbalances for the normed weight sum.
@@ -1382,7 +1385,7 @@ template <typename Adapter>
 
     metrics[1].setMinImbalance(1.0 + min);
     metrics[1].setMaxImbalance(1.0 + max);
-    metrics[1].setAvgImbalance(1.0 + avg);
+    metrics[1].setAvgImbalance(avg);
 
     if (metrics.size() > 2){
 
@@ -1403,7 +1406,7 @@ template <typename Adapter>
   
         metrics[next].setMinImbalance(1.0 + min);
         metrics[next].setMaxImbalance(1.0 + max);
-        metrics[next].setAvgImbalance(1.0 + avg);
+        metrics[next].setAvgImbalance(avg);
         next++;
       }
     }

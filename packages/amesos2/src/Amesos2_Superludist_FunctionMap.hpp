@@ -68,7 +68,7 @@
 
 #define AMESOS2_SLUD_GET_DIAG_SCALE(eq) (((eq)=='N') ? SLUD::NOEQUIL : ((eq)=='R') ? SLUD::ROW : ((eq)=='C') ? SLUD::COL : SLUD::BOTH)
 
-#define AMESOS2_SLUD_GET_EQUED(ds) (((ds)==SLUD::NOEQUIL) ? 'N' : ((ds)==SLUD::ROW) ? 'R' : ((ds)=='C') ? SLUD::COL : SLUD::BOTH)
+#define AMESOS2_SLUD_GET_EQUED(ds) (((ds)==SLUD::NOEQUIL) ? 'N' : ((ds)==SLUD::ROW) ? 'R' : ((ds)==SLUD::COL) ? 'C' : 'B')
 
 namespace Amesos2 {
 

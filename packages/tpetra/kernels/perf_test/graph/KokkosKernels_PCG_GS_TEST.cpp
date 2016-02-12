@@ -197,11 +197,6 @@ enum { CMD_USE_THREADS = 0
      , CMD_COUNT };
 
 int main (int argc, char ** argv){
-  if (argc < 2){
-    std::cerr << "Usage:" << argv[0] << " input_bin_file" << std::endl;
-    exit(1);
-  }
-
 
   int cmdline[ CMD_COUNT ] ;
   char *mtx_bin_file = NULL;

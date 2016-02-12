@@ -1086,13 +1086,13 @@ struct ReduceSumFunctor{
   ReduceSumFunctor(
       view_type view_to_reduce_): view_to_reduce(view_to_reduce_){}
 
-  void operator()(const size_t &i, typename view_type::data_type &sum_reduction) const {
+  void operator()(const size_t &i, typename view_type::non_const_value_type &sum_reduction) const {
     sum_reduction += view_to_reduce(i);
   }
 };
 
 template <typename view_type , typename MyExecSpace>
-void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename view_type::data_type &sum_reduction){
+void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename view_type::non_const_value_type &sum_reduction){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
 }
