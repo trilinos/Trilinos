@@ -43,7 +43,7 @@
 #include "Ioss_GroupingEntity.h"
 
 Ioss::EdgeSet::EdgeSet()
-  : Ioss::EntitySet(NULL, "invalid", 0)
+  : Ioss::EntitySet(nullptr, "invalid", 0)
 {}
 
 Ioss::EdgeSet::EdgeSet(Ioss::DatabaseIO *io_database, const std::string& my_name,

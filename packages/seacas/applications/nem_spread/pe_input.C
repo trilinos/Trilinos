@@ -37,7 +37,7 @@
 /*          ExodusII command file.                                          */
 /*--------------------------------------------------------------------------*/
 
-#include <stdio.h>                      // for fprintf, NULL, stderr, etc
+#include <stdio.h>                      // for fprintf, nullptr, stderr, etc
 #include <stdlib.h>                     // for exit, realloc
 #include <string.h>                     // for strtok, strchr, strstr, etc
 #include "pe_str_util_const.h"          // for strip_string, token_compare, etc
@@ -53,12 +53,12 @@
 int read_mesh_file_name(const char *filename)
 {
 /* local declarations */
-  FILE *file_cmd = NULL;
+  FILE *file_cmd = nullptr;
   char  inp_line[MAX_INPUT_STR_LN + 1];
   char  inp_copy[MAX_INPUT_STR_LN + 1];
 
   /* Open the file */
-  if((file_cmd=fopen(filename, "r")) == NULL)
+  if((file_cmd=fopen(filename, "r")) == nullptr)
     return -1;
   ON_BLOCK_EXIT(fclose, file_cmd);
   
@@ -74,7 +74,7 @@ int read_mesh_file_name(const char *filename)
       if (token_compare(cptr, "input fem file")) {
         if(strlen(ExoFile) == 0)
         {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           strncpy(ExoFile, cptr, MAX_FNL);
           ExoFile[MAX_FNL-1] = '\0';
@@ -102,7 +102,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
 /* local declarations */
   static const char *yo = "read_pexoII_info";
 
-  FILE *file_cmd = NULL;
+  FILE *file_cmd = nullptr;
   char  inp_line[MAX_INPUT_STR_LN + 1];
   char  inp_copy[MAX_INPUT_STR_LN + 1];
   char *cptr, *cptr2, *cptr3;
@@ -111,7 +111,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
 /***************************** BEGIN EXECUTION ******************************/
 
   /* Open the file */
-  if((file_cmd=fopen(filename, "r")) == NULL)
+  if((file_cmd=fopen(filename, "r")) == nullptr)
     return -1;
   ON_BLOCK_EXIT(fclose, file_cmd);
 
@@ -127,7 +127,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       if (token_compare(cptr, "input fem file")) {
         if(strlen(ExoFile) == 0)
         {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           strncpy(ExoFile, cptr, MAX_FNL);
           ExoFile[MAX_FNL-1] = '\0';
@@ -137,7 +137,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       else if (token_compare(cptr, "lb file")) {
         if(strlen(Exo_LB_File) == 0)
         {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           strncpy(Exo_LB_File, cptr, MAX_FNL);
           Exo_LB_File[MAX_FNL-1] = '\0';
@@ -147,7 +147,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       else if (token_compare(cptr, "scalar results fem file")) {
         if(strlen(Exo_Res_File) == 0)
         {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           strncpy(Exo_Res_File, cptr, MAX_FNL);
           Exo_Res_File[MAX_FNL-1] = '\0';
@@ -156,7 +156,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       /****** The parallel results ExodusII file name ******/
       else if (token_compare(cptr, "parallel results file base name")) {
         if (strlen(Output_File_Base_Name) == 0) {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           strncpy(Output_File_Base_Name, cptr, MAX_FNL);
           Output_File_Base_Name[MAX_FNL-1] = '\0';
@@ -165,7 +165,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       /****** The Number of Processors ******/
       else if (token_compare(cptr, "number of processors")) {
         if (spreader.Proc_Info[0] < 0) {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           if(sscanf(cptr, "%d", &(spreader.Proc_Info[0])) != 1) {
             fprintf(stderr, "%s: ERROR, can\'t interpret int for number of"
@@ -176,7 +176,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       }
       /****** The File extension to use for spread files ******/
       else if (token_compare(cptr, "file extension for spread files")) {
-        cptr = strtok(NULL, "\t=");
+        cptr = strtok(nullptr, "\t=");
         strip_string(cptr, " \t\n");
         strncpy(PIO_Info.Exo_Extension, cptr, MAX_FNL);
 	PIO_Info.Exo_Extension[MAX_FNL-1] = '\0';
@@ -185,7 +185,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       /****** Is There a Scalar Mesh File to Use ******/
       else if (token_compare(cptr, "use scalar mesh file")) {
         if (Gen_Flag < 0) {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           if (Gen_Flag < 0) {
             if (token_compare(cptr, "yes"))
@@ -198,7 +198,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       /****** The Debug reporting level ******/
       else if (token_compare(cptr, "debug")) {
         if (Debug_Flag < 0) {
-          cptr = strtok(NULL, "\t=");
+          cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           if(sscanf(cptr, "%d", &Debug_Flag) != 1) {
             fprintf(stderr, "%s: ERROR, can\'t interpret int for Debug_Flag\n",
@@ -221,7 +221,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
          * them to blank spaces.
          */
         cptr2 = strchr(cptr, '{');
-        if (cptr2 != NULL) {
+        if (cptr2 != nullptr) {
           icnt = strlen(cptr2);
           for (i = 0; i < icnt; i++) {
             if (*cptr2 == '}') break;
@@ -234,7 +234,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
         cptr = strtok(cptr, ",");
 
         /* Loop until all the suboptions have been specified */
-        while(cptr != NULL)
+        while(cptr != nullptr)
         {
           strip_string(cptr, " \t\n");
           string_to_lower(cptr, '\0');
@@ -256,7 +256,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
           /* IGNORED check if the user wants move variable in blocks IGNORED */
           else if (strstr(cptr, "block")) {
             cptr2 = strchr(cptr, '=');
-            if(cptr2 == NULL)
+            if(cptr2 == nullptr)
             {
               fprintf(stderr, "fatal: must specify a value with \"block\"");
               exit(1);
@@ -267,13 +267,13 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
           else if (strstr(cptr, "list")) {
             /* "{" defines the beginning of the group designator */
             cptr2 = strchr(cptr, '{');
-            if (cptr2== NULL) {
+            if (cptr2== nullptr) {
               fprintf(stderr, "fatal: list start designator \"{\" not found");
               exit(1);
             }
             cptr2++;
             cptr3 = strchr(cptr, '}');
-            if (cptr3== NULL) {
+            if (cptr3== nullptr) {
               fprintf(stderr, "fatal: list end designator \"}\" not found");
               exit(1);
             }
@@ -317,7 +317,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
                     cptr);
             exit(1);
           }
-          cptr = strtok(NULL, ",");
+          cptr = strtok(nullptr, ",");
         }
       } /* End "if (token_compare(cptr, "restart time list"))" */
       /****** Reserved Space for Variables ******/
@@ -328,12 +328,12 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
         strip_string(cptr," \t\n=");
         cptr = strtok(cptr, ",");
 
-        while (cptr != NULL) {
+        while (cptr != nullptr) {
           strip_string(cptr, " \t\n");
           string_to_lower(cptr, '=');
           if (strstr(cptr, "nodal")) {
             cptr2 = strchr(cptr, '=');
-            if (cptr2 == NULL) {
+            if (cptr2 == nullptr) {
               fprintf(stderr, "Error: integer value must be specified for"
                               " reserve space.\n");
               return 0;
@@ -347,7 +347,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
           }
           else if (strstr(cptr, "elemental")) {
             cptr2 = strchr(cptr, '=');
-            if (cptr2 == NULL) {
+            if (cptr2 == nullptr) {
               fprintf(stderr, "Error: integer value must be specified for"
                               " reserve space.\n");
               return 0;
@@ -361,7 +361,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
           }
           else if (strstr(cptr, "global")) {
             cptr2 = strchr(cptr, '=');
-            if (cptr2 == NULL) {
+            if (cptr2 == nullptr) {
               fprintf(stderr, "Error: integer value must be specified for"
                               " reserve space.\n");
               return 0;
@@ -375,7 +375,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
           }
           else if (strstr(cptr, "nodeset")) {
             cptr2 = strchr(cptr, '=');
-            if (cptr2 == NULL) {
+            if (cptr2 == nullptr) {
               fprintf(stderr, "Error: integer value must be specified for"
                               " reserve space.\n");
               return 0;
@@ -389,7 +389,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
           }
           else if (strstr(cptr, "sideset")) {
             cptr2 = strchr(cptr, '=');
-            if (cptr2 == NULL) {
+            if (cptr2 == nullptr) {
               fprintf(stderr, "Error: integer value must be specified for"
                               " reserve space.\n");
               return 0;
@@ -402,9 +402,9 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
             }
           }
 
-          cptr = strtok(NULL, ",");
+          cptr = strtok(nullptr, ",");
 
-        } /* End "while (cptr != NULL)" */
+        } /* End "while (cptr != nullptr)" */
       } /* End "else if (token_compare(cptr, "reserve space"))" */
       /****** Parallel Disk Information ******/
       else if (token_compare(cptr, "parallel disk info")) {
@@ -424,7 +424,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
         }
         else {
           cptr2 = strchr(cptr, '=');
-          if (cptr2 == NULL) {
+          if (cptr2 == nullptr) {
             fprintf(stderr, "Error: integer value must be specified for"
                             " reserve space.\n");
             return 0;
@@ -437,8 +437,8 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
           }
         }
 
-        cptr = strtok(NULL, ",");
-        while (cptr != NULL) {
+        cptr = strtok(nullptr, ",");
+        while (cptr != nullptr) {
           strip_string(cptr, " \t\n");
           string_to_lower(cptr, '=');
           if (strstr(cptr, "list")) {
@@ -452,7 +452,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
 
             /* "{" defines the beginning of the list */
             cptr = strchr(cptr, '{');
-            if (cptr == NULL) {
+            if (cptr == nullptr) {
               fprintf(stderr, "Error: disk list must be specified\n");
               return 0;
             }
@@ -464,14 +464,14 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
                                                     sizeof(int));
             for (i = 0; i < (PIO_Info.Dsk_List_Cnt - 1); i++) {
               sscanf(cptr, "%d", &(PIO_Info.Dsk_List[i]));
-              cptr = strtok(NULL, ", \t;");
+              cptr = strtok(nullptr, ", \t;");
             }
             /* last one is a special case */
             sscanf(cptr, "%d}", &(PIO_Info.Dsk_List[i]));
           }
           else if (strstr(cptr, "offset")) {
             cptr2 = strchr(cptr, '=');
-            if (cptr2 == NULL) {
+            if (cptr2 == nullptr) {
               fprintf(stderr, "Error: value must be specified with the "
                               "\"offset\" option.\n");
               return 0;
@@ -496,7 +496,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
             strcpy(PIO_Info.Staged_Writes, "yes");
           }
 
-          cptr = strtok(NULL, ",");
+          cptr = strtok(nullptr, ",");
         }
       } /* End "else if (token_compare(cptr, "parallel disk info"))" */
       else if (token_compare(cptr, "parallel file location")) {
@@ -505,12 +505,12 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
         strip_string(cptr," \t\n=");
         cptr = strtok(cptr, ",");
 
-        while (cptr != NULL) {
+        while (cptr != nullptr) {
           strip_string(cptr, " \t\n");
           string_to_lower(cptr, '=');
           if (strstr(cptr, "root")) {
             cptr2 = strchr(cptr, '=');
-            if(cptr2 == NULL)
+            if(cptr2 == nullptr)
             {
               fprintf(stderr, "fatal: must specify a path with \"root\"");
               return 0;
@@ -527,7 +527,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
           }
           if (strstr(cptr, "subdir")) {
             cptr2 = strchr(cptr, '=');
-            if(cptr2 == NULL)
+            if(cptr2 == nullptr)
             {
               fprintf(stderr, "fatal: must specify a path with \"subdir\"");
               return 0;
@@ -546,7 +546,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
               strcat(PIO_Info.Par_Dsk_SubDirec, "/");
           }
 
-          cptr = strtok(NULL, ",");
+          cptr = strtok(nullptr, ",");
         }
       }
 
@@ -562,7 +562,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
 
     // If there is an extension, strip it off...
     char *cPtr = strrchr(Output_File_Base_Name, '.');
-    if (cPtr != NULL) {
+    if (cPtr != nullptr) {
       *cPtr = '\0';
     }
   }

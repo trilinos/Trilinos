@@ -175,20 +175,17 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
   // DOFs (unknowns)
   // ********************
 
-  // Whether this is the tangent evaluation type
-  //const bool is_tangent = Sacado::mpl::is_same<EvalT, panzer::Traits::Tangent>::value;
-
   // Gather, includes construction of orientation gathers
   for (BasisIterator basis_it = m_basis_to_dofs.begin(); basis_it != m_basis_to_dofs.end(); ++basis_it) {
 
     // Set tangent field names (first dimension is DOF, second is parameter)
     Teuchos::RCP< std::vector< std::vector<std::string> > > tangent_field_names;
-    if (tangentParamNames.size() > 0) {
+    if (m_tangent_param_names.size() > 0) {
       tangent_field_names = rcp(new std::vector< std::vector<std::string> >(basis_it->second.second->size()));
       for (std::size_t i=0; i<basis_it->second.second->size(); ++i) {
-        for (std::size_t j=0; j<tangentParamNames.size(); ++j) {
+        for (std::size_t j=0; j<m_tangent_param_names.size(); ++j) {
           const std::string tname =
-            (*(basis_it->second.second))[i] + " SENSITIVITY " + tangentParamNames[j];
+            (*(basis_it->second.second))[i] + " SENSITIVITY " + m_tangent_param_names[j];
           (*tangent_field_names)[i].push_back(tname);
         }
       }
@@ -211,26 +208,22 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       this->template registerEvaluator<EvalT>(fm, op);
     }
 
-    // Create a second gather evaluator for each tangent field, only for tangent evaluation type
+    // Create a second gather evaluator for each tangent field,
     // we never compute derivatives with respect to this field
     if (tangent_field_names != Teuchos::null) {
-      for (std::size_t i=0; i<tangentParamNames.size(); ++i) {
+      for (std::size_t i=0; i<m_tangent_param_names.size(); ++i) {
 
         Teuchos::RCP< std::vector<std::string> > names = rcp(new std::vector<std::string>);
         for (std::size_t j=0; j<basis_it->second.second->size(); ++j)
           names->push_back((*tangent_field_names)[j][i]);
 
-        std::string firstDOFName = "<none>";
-        if(basis_it->second.second->size()>0)
-          firstDOFName = (*(basis_it->second.second))[0];
-
-        ParameterList p(std::string("Gather Tangent ") + this->tangentParamNames[i]);
+        ParameterList p(std::string("Gather Tangent ") + this->m_tangent_param_names[i]);
         p.set("Basis", basis_it->second.first);
         p.set("DOF Names", names);
         p.set("Indexer Names", basis_it->second.second);
         p.set("Sensitivities Name", "");
         p.set("Disable Sensitivities", true);
-        p.set("Global Data Key", firstDOFName + "_TANGENT: " + this->tangentParamNames[i]);
+        p.set("Global Data Key", "X TANGENT GATHER CONTAINER: " + this->m_tangent_param_names[i]);
 
         RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherTangent<EvalT>(p);
 
@@ -273,31 +266,72 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 
     RCP< std::vector<std::string> > t_dof_names = rcp(new std::vector<std::string>);   // time derivative indexer names
     RCP< std::vector<std::string> > t_field_names = rcp(new std::vector<std::string>); // time derivative field names
+    RCP< std::vector< std::vector<std::string> > > tangent_field_names = rcp(new std::vector< std::vector<std::string> >); // tangent field names
 
     // determine which fields associated with this basis need time derivatives
     for (typename std::vector<std::string>::const_iterator dof_name = basis_it->second.second->begin();
          dof_name != basis_it->second.second->end(); ++dof_name) {
-      
+
       DescriptorIterator desc = m_provided_dofs_desc.find(*dof_name);
       TEUCHOS_ASSERT(desc != m_provided_dofs_desc.end());
-      
+
       // does this field need a time derivative?
       if(desc->second.timeDerivative.first) {
         // time derivative needed
         t_dof_names->push_back(*dof_name);
         t_field_names->push_back(desc->second.timeDerivative.second);
+
+        // Set tangent field names (first dimension is DOF, second is parameter)
+        if (m_tangent_param_names.size() > 0) {
+          std::vector<std::string> tfn;
+          for (std::size_t j=0; j<m_tangent_param_names.size(); ++j) {
+            const std::string tname =
+              desc->second.timeDerivative.second + " SENSITIVITY " + m_tangent_param_names[j];
+            tfn.push_back(tname);
+          }
+          tangent_field_names->push_back(tfn);
+        }
       }
     }
 
-    ParameterList p("Gather");
-    p.set("Basis", basis_it->second.first);
-    p.set("DOF Names", t_field_names);
-    p.set("Indexer Names", t_dof_names);
-    p.set("Use Time Derivative Solution Vector", true);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-    
-    this->template registerEvaluator<EvalT>(fm, op);
+    {
+      ParameterList p("Gather");
+      p.set("Basis", basis_it->second.first);
+      p.set("DOF Names", t_field_names);
+      p.set("Indexer Names", t_dof_names);
+      p.set("Use Time Derivative Solution Vector", true);
+
+      // Set tangent field names
+      if (m_tangent_param_names.size() > 0)
+        p.set("Tangent Names", tangent_field_names);
+
+      RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
+
+      this->template registerEvaluator<EvalT>(fm, op);
+    }
+
+    // Create a second gather evaluator for each tangent field,
+    // we never compute derivatives with respect to this field
+    if (m_tangent_param_names.size() > 0) {
+      for (std::size_t i=0; i<m_tangent_param_names.size(); ++i) {
+
+        Teuchos::RCP< std::vector<std::string> > names =
+          rcp(new std::vector<std::string>);
+        for (std::size_t j=0; j<tangent_field_names->size(); ++j)
+          names->push_back((*tangent_field_names)[j][i]);
+
+        ParameterList p(std::string("Gather Tangent ") + this->m_tangent_param_names[i]);
+        p.set("Basis", basis_it->second.first);
+        p.set("DOF Names", names);
+        p.set("Indexer Names", t_dof_names);
+        p.set("Use Time Derivative Solution Vector", true);
+        p.set("Global Data Key", "DXDT TANGENT GATHER CONTAINER: " + this->m_tangent_param_names[i]);
+
+        RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherTangent<EvalT>(p);
+
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+    }
   }
 
   // **************************
@@ -310,9 +344,9 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       p.set("Basis", basis_it->second.first);
       p.set("DOF Names", basis_it->second.second);
       p.set("Indexer Names", basis_it->second.second);
-     
+
       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
-      
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
   }
@@ -745,6 +779,13 @@ template <typename EvalT>
 std::string panzer::EquationSet_DefaultImpl<EvalT>::getType() const
 {
   return m_type;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::setTangentParamNames(const std::vector<std::string>& tangent_param_names)
+{
+  m_tangent_param_names = tangent_param_names;
 }
 
 // ***********************************************************************

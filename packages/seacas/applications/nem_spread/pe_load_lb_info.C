@@ -184,7 +184,7 @@ void NemSpread<T,INT>::load_lb_info(void)
       globals.N_Comm_Map[iproc] = (NODE_COMM_MAP<INT> *)malloc(PEX_MAX(1,
 								  globals.Num_N_Comm_Maps[iproc]) *
 							  sizeof(NODE_COMM_MAP<INT>));
-      if(globals.N_Comm_Map[iproc] == NULL && globals.Num_N_Comm_Maps[iproc] > 0) {
+      if(globals.N_Comm_Map[iproc] == nullptr && globals.Num_N_Comm_Maps[iproc] > 0) {
         fprintf(stderr,
                 "%s: ERROR. Insufficient memory for nodal comm. map!\n",
                 yo);
@@ -197,7 +197,7 @@ void NemSpread<T,INT>::load_lb_info(void)
       globals.E_Comm_Map[iproc] = (ELEM_COMM_MAP<INT> *)malloc(PEX_MAX(1,
 								  globals.Num_E_Comm_Maps[iproc]) *
 							  sizeof(ELEM_COMM_MAP<INT>));
-      if(globals.E_Comm_Map[iproc] == NULL && globals.Num_E_Comm_Maps[iproc] > 0) {
+      if(globals.E_Comm_Map[iproc] == nullptr && globals.Num_E_Comm_Maps[iproc] > 0) {
         fprintf(stderr,
                 "%s: ERROR. Insufficient memory for elemental comm. map!\n",
                 yo);
@@ -794,7 +794,7 @@ void NemSpread<T,INT>::read_cmap_params(int lb_exoid,
     *comm_vec = (INT *)array_alloc(__FILE__, __LINE__, 1, read_len,
 				   sizeof(INT));
   else
-    *comm_vec = NULL;
+    *comm_vec = nullptr;
 
   size_t vec_start = 0;
   for (int iproc=0; iproc <Proc_Info[0]; iproc++) {

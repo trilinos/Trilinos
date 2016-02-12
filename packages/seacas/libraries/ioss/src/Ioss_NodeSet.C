@@ -44,7 +44,7 @@ class Field;
 }  // namespace Ioss
 
 Ioss::NodeSet::NodeSet()
-  : Ioss::EntitySet(NULL, "invalid", 0)
+  : Ioss::EntitySet(nullptr, "invalid", 0)
 {}
 
 Ioss::NodeSet::NodeSet(Ioss::DatabaseIO *io_database, const std::string& my_name,

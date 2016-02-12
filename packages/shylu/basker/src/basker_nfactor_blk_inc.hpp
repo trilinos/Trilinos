@@ -59,6 +59,7 @@ namespace BaskerNS
       //printf("after workspace init\n");
       
       //if(kid == 2 || kid == 3)
+      //if(kid==0)
       {
       basker->t_nfactor_blk_inc_lvl(kid);
 	}
@@ -120,7 +121,7 @@ namespace BaskerNS
       
       //if(kid == 8)
 	{
-      basker->t_nfactor_blk(kid);
+      basker->t_nfactor_blk_inc_lvl(kid);
 	}
 
 
@@ -138,8 +139,7 @@ namespace BaskerNS
     BASKER_MATRIX &L   = LL(b)(0);
     BASKER_MATRIX &U   = LU(b)(LU_size(b)-1);
     BASKER_MATRIX &M   = ALM(b)(0); //A->blk
- 
-    //printf("Accessing blk: %d kid: %d  \n", b, kid);
+
     INT_1DARRAY   ws   = LL(b)(0).iws;
     ENTRY_1DARRAY X    = LL(b)(0).ews;
     Int        ws_size = LL(b)(0).iws_size;
@@ -168,7 +168,7 @@ namespace BaskerNS
     Int col_idx_offset = M.nnz;
 
     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
-    printf("=======NFACTOR BLK INC LVL========\n");
+    printf("=======NFACTOR BLK INC LVL %d========\n", kid);
     #endif
     //printf("test one ws_size: %d \n", ws_size);
     
@@ -204,13 +204,13 @@ namespace BaskerNS
 	  lcnt = 0;
 	  ucnt = 0;
 
-          #ifdef BASKER_DEBUG_NFACTOR_BLK
+          //#ifdef BASKER_DEBUG_NFACTOR_BLK
           ASSERT(top == ws_size);
           //ASSERT entry workspace is clean
           for(i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
           //ASSERT int workspace is clean
 	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
-          #endif
+          //#endif
 
           //for each nnz in column
 	  //Wnat to change this to local blk anyway
@@ -241,8 +241,10 @@ namespace BaskerNS
           printf("xnnz: %d ws_size: %d top: %d \n", 
                  xnnz, ws_size, top);
           #endif
+	 
              
 	  t_back_solve_inc_lvl(kid,0,0,k,top,xnnz);
+	  
 
           maxv = 0.0;
           for(i = top; i < ws_size; i++)
@@ -268,6 +270,7 @@ namespace BaskerNS
             }//for (i = top; i < ws_size)
           //printf("b: %d lcnt: %d after \n", b, lcnt);
 
+	  
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
 	      maxindex = k;
@@ -315,8 +318,10 @@ namespace BaskerNS
 		{
 		  thread_array(kid).error_type =
 		    BASKER_ERROR_REMALLOC;
-		  thread_array(kid).error_blk = b;
-		  thread_array(kid).error_info = newsize;
+		  thread_array(kid).error_blk    = b;
+		  thread_array(kid).error_subblk = 0;
+		  thread_array(kid).error_info   = newsize;
+		  return BASKER_ERROR;
 		}
 
             }
@@ -340,11 +345,15 @@ namespace BaskerNS
 		{
 		  thread_array(kid).error_type =
 		    BASKER_ERROR_REMALLOC;
-		  thread_array(kid).error_blk = b;
-		  thread_array(kid).error_info = newsize;
+		  thread_array(kid).error_blk    = b;
+		  thread_array(kid).error_subblk = -1;
+		  thread_array(kid).error_info  = newsize;
+		  return BASKER_ERROR;
 		}
 
             }
+	  
+	 
 
           L.row_idx(lnnz) = maxindex;
           L.val(lnnz)     = (Entry) 1.0;
@@ -403,9 +412,9 @@ namespace BaskerNS
                     }
                 }//end if() not 0
 
-              #ifdef BASKER_DEBUG_NFACTOR_BLK
-              printf("Zeroing element: %d \n", j);
-              #endif
+		#ifdef BASKER_DEBUG_NFACTOR_BLK
+		printf("Zeroing element: %d \n", j);
+               #endif
 
 	      X(j) = 0;	  
             }//end if(x[i] != 0)
@@ -426,13 +435,14 @@ namespace BaskerNS
 	  U.col_ptr(k+1) = unnz;
           cu_utop        = unnz;
 
-
+	  
 	  #ifdef BASKER_2DL
 	  //-----------------------Update offdiag-------------//
 	  for(Int blk_row = 1; blk_row < LL_size(b); ++blk_row)
 	    {
 	      //Do back solve of off-diag blocks
-	      //printf("before offdiag \n");
+	      // printf("before offdiag blk_row: %d kid: %d \n", 
+	      //     blk_row, kid);
               
               
               t_dom_lower_col_offdiag_find_fill(kid, L.srow,
@@ -440,11 +450,13 @@ namespace BaskerNS
                                                 b, blk_row,
                                                 k,
                                                 U.row_idx,
-                                                U.col_ptr(k+1)-U.col_ptr(k),
+                                  U.col_ptr(k+1)-U.col_ptr(k),
                                                 U.col_ptr(k),
-                                                      BASKER_TRUE);
+                                                BASKER_TRUE);
               
-
+	      
+	     
+	      
 	      t_back_solve_offdiag_inc_lvl(kid, L.srow,
 				   b, blk_row,
 				   b, blk_row,
@@ -453,16 +465,21 @@ namespace BaskerNS
 		       U.col_ptr(k+1)-U.col_ptr(k),
 				  U.col_ptr(k),
 				   BASKER_TRUE);
-	    
+	      
 	      //Move these factors into Local Ls
-	      //printf("before t_move_L\n");
+	      Int move_error = 
 	      t_move_offdiag_L_inc_lvl(kid,
 			       b, blk_row,
 			       b, blk_row,
 			       k, pivot);
-	         
+	      
+	      if(move_error == BASKER_ERROR)
+		{
+		  return BASKER_ERROR;
+		}
+		  
 	    }//end over all diag
-
+	  
 	  for(Int i = 0; i < M.nrow; i++)
 	    {
 	      INC_LVL_TEMP(i+brow) = BASKER_MAX_IDX;
@@ -470,9 +487,6 @@ namespace BaskerNS
 
 	  #endif
 
-	  
-	  //NOT PRUNE
-	  //t_prune(kid,0,0,k,maxindex);
 
 	}//end for() over all columns
 
@@ -549,10 +563,12 @@ namespace BaskerNS
 	   pop_top, pattern[pop_top], pattern[pop_top+1]);
     #endif
 
+    //printf("short test: %d %d kid: %d \n",
+    //	   j+brow, gperm(j+brow), kid);
     //Short circuit
     if(gperm(j+brow) == BASKER_MAX_IDX)
       {
-	#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+        #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	printf("==DFS Short circuit: %d %d== \n",
 	       j, gperm(j+brow));
 	#endif
@@ -1306,10 +1322,31 @@ namespace BaskerNS
 
     if((p_size) > (llnnz-lnnz))
       {
-	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d \n",
-	       blkcol, blkrow, kid, llnnz,lnnz,p_size  );
+	Int newsize = llnnz*1.2 + L.ncol;
+
+	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d newsize: %d  \n",
+	       blkcol, blkrow, kid, llnnz,lnnz,p_size, newsize  );
 	BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
-	
+
+	if(Options.realloc == BASKER_FALSE)
+	  {
+	    thread_array(kid).error_type =
+	      BASKER_ERROR_NOMALLOC;
+	    return BASKER_ERROR;
+
+	  }
+	else
+	  {
+	    thread_array(kid).error_type =
+	      BASKER_ERROR_REMALLOC;
+	    thread_array(kid).error_blk    = blkcol;
+	    thread_array(kid).error_subblk = blkrow;
+	    thread_array(kid).error_info   = newsize;
+	    return BASKER_ERROR;
+	  }
+
+
+       
       }
 
     for(Int i = 0; i < p_size; i++)
@@ -1327,6 +1364,7 @@ namespace BaskerNS
 	L.row_idx(lnnz) = j;
 	L.inc_lvl(lnnz) = stack[j];
 	stack[j] = BASKER_MAX_IDX;
+
 	L.val(lnnz) = EntryOP::divide(X(j),pivot);
 	X(j) = 0;
 
@@ -2103,6 +2141,16 @@ namespace BaskerNS
     const Int    llnnz = L.nnz;
     Int    lnnz  = L.col_ptr(k);
    
+    if(L.nrow > (llnnz - lnnz))
+      {
+	printf("no enough memory in dense \n");
+	printf("kid: %d llnnz: %d lnnz: %d \n",
+	       kid, lnnz, lnnz);
+	
+
+      }
+    
+
     for(Int j = 0; j < L.nrow; ++j)
       {
 	if(X(j)!=0)
@@ -2116,7 +2164,9 @@ namespace BaskerNS
 	#endif
 
 	color[j] = 0;
-	
+
+	//printf("lnnz: %d %d kid: %d \n",
+	//     lnnz, j, kid); 
 	L.row_idx(lnnz) = j;
 
 	L.val(lnnz) = EntryOP::divide(X(j),pivot);
@@ -2161,6 +2211,7 @@ namespace BaskerNS
     Int          brow    = L.srow;
     Int          bcol    = L.scol;
   
+    
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("t_back_solve_diag, kid: %d blkcol: %d blkrow: %d \n",
 	   kid, blkcol, blkrow);
@@ -2174,11 +2225,14 @@ namespace BaskerNS
     Int *pattern = &(color[ws_size]);
     Int *stack   = &(pattern[ws_size]);
    
+    
     //need to make this so not every column 
-    for(Int i = 0 ; i < L.ncol; i++)
+    for(Int i = 0 ; i < ws_size; i++)
       {
 	stack[i] = BASKER_MAX_IDX;
       }
+    
+  
     //Preload with A
     if(A_option == BASKER_TRUE)
       {
@@ -2214,7 +2268,7 @@ namespace BaskerNS
 	printf("LVL_TEMP[%d] = %d, %d kid: %d continue? \n", 
 	       k+pbrow, INC_LVL_TEMP(k+pbrow), Options.inc_lvl, kid); 
 	#endif
-
+	
 	for(Int j = L.col_ptr(k);
 	    j < L.col_ptr(k+1); j++)
 	  {
@@ -2342,7 +2396,7 @@ namespace BaskerNS
       }
     #endif
 
-
+    return 0;
   }//end t_lower_col_diag_find_fill()
 
  

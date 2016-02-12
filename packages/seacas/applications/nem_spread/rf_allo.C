@@ -34,7 +34,7 @@
  */
 #include <stdarg.h>                     // for va_arg, va_end, va_list, etc
 #include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for fprintf, NULL, stderr
+#include <stdio.h>                      // for fprintf, nullptr, stderr
 #include <stdlib.h>                     // for exit, free, malloc
 #include "rf_format.h"
 
@@ -152,11 +152,11 @@ double *array_alloc (const char *file, int lineno, int numdim, ...)
    if (dim[0].index == 0) {
 #ifdef DEBUG
      fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-	     "dimension == 0; will return NULL\n",
+	     "dimension == 0; will return nullptr\n",
 	     yo, file, lineno);
 #endif
      va_end(va);
-     return((double *) NULL);
+     return((double *) nullptr);
    }
 
    dim[0].total = dim[0].index;
@@ -166,10 +166,10 @@ double *array_alloc (const char *file, int lineno, int numdim, ...)
       dim[i].index = va_arg(va, size_t);
       if (dim[i].index <= 0) {
          fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d == 0, "
-                 " will return NULL\n",
+                 " will return nullptr\n",
                  yo, file, lineno, i+1);
 	 va_end(va);
-	 return((double *) NULL);
+	 return((double *) nullptr);
       }
       dim[i].total = dim[i-1].total * dim[i].index;
       dim[i].size = sizeof(void *);
@@ -213,11 +213,11 @@ static double *smalloc (size_t n, char *filename, int lineno)
   double *pntr;           /* return value */
 
   if (n == 0)
-    pntr = NULL;
+    pntr = nullptr;
   else
     pntr = (double *) malloc(n);
 
-  if (pntr == NULL && n != 0) {
+  if (pntr == nullptr && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
             "requested = " ST_ZU "\n", yo, filename, lineno, (unsigned long)n);
     exit(0);
@@ -236,19 +236,19 @@ void safe_free (void **ptr)
 /*
  *  This version of free calls the system's free function
  *  with maximum error checking. It also doesn't call free if ptr is
- *  the NULL pointer.
+ *  the nullptr pointer.
  */
 
-  if (*ptr != NULL) {
+  if (*ptr != nullptr) {
 
     free(*ptr);
 
     /*
-     *  Set the value of ptr to NULL, so that further references
+     *  Set the value of ptr to nullptr, so that further references
      *  to it will be flagged.
      */
 
-    *ptr = NULL;
+    *ptr = nullptr;
   }
 }  /* safe_free */
 

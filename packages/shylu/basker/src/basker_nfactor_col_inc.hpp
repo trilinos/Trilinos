@@ -79,6 +79,7 @@ namespace BaskerNS
     const Int scol = LU(U_col)(U_row).scol;
     const Int ecol = LU(U_col)(U_row).ecol;
 
+    int upper_error = BASKER_MAX_IDX;
     
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     printf("\n\n  LVL=%d  ----- kid: %d --\n\n",
@@ -97,29 +98,48 @@ namespace BaskerNS
 	printf("UPPER, kid: %d k: %d \n",
 	       kid, k);
 	#endif
-	
+
+
+	upper_error =
 	t_upper_col_factor_inc_lvl(kid, team_leader, 
 				   lvl, 0, 
 				   k,
 				   BASKER_FALSE);
 
-
+	if(upper_error == BASKER_ERROR)
+	  {
+	    //Need a way to say all should stop!
+	    //How to do that nice, maybe an atomic
+	    //Cannot return because the communication will hang
+	    break;
+	  }
+	
       }//over all columns / domains / old sublevel 0
 
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     printf("\n\n\n done with UPPER, kid: %d \n\n\n", kid);
     #endif
 
-   
-  
     //------Need because extend does not 
     //-------------Barrier--Between Domains-------------
+    Int error_leader = find_leader(kid, lvl);
+    //printf("kid: %d eleader: %d \n", 
+    //	   kid, error_leader);
+    if(upper_error == BASKER_ERROR)
+      {
+	basker_barrier.ExitSet(error_leader, BASKER_TRUE);
+      }
     Int my_leader = find_leader(kid, 0);
     Int b_size    = pow(2,1);
     //barrier k = 0 usedl1
     t_basker_barrier_inc_lvl(thread,kid,my_leader,
 		     b_size, 0, LU(U_col)(U_row).scol, 0);
-   
+    BASKER_BOOL error_flag = BASKER_FALSE;
+    basker_barrier.ExitGet(error_leader, error_flag);
+    if(error_flag == BASKER_TRUE)
+      {
+	return;
+      }
     
     
     //----------------Sep level upper tri-------------
@@ -150,19 +170,23 @@ namespace BaskerNS
 		       kid);
 		#endif
 		
+		Int upper_error =
 		t_upper_col_factor_inc_lvl(kid, team_leader, 
 				   lvl, l, 
 				   k,
 				   BASKER_FALSE);
 		
-
+		if(upper_error == BASKER_ERROR)
+		  {
+		    //Again need a nice way to exit here
+		    break;
+		  }
 	      }//if correct kid to do this sublevels upperfactor
 	    
 	  }//over all columns
       }//for - over all sublevel 1...lvl-2
 
 
-    
    
     //---------Lower Factor (old sublevel lvl-1)-------
     
@@ -390,6 +414,8 @@ namespace BaskerNS
 
   }//end t_add_add_inc_lvl
 
+ 
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -533,7 +559,6 @@ namespace BaskerNS
     
     Int j, t, xnnz;
     Int top = ws_size;
-
     Int unnz = 0 ; 
 
     if(k!=0)
@@ -632,10 +657,29 @@ namespace BaskerNS
 
      if(unnz+ucnt-1 > uunnz)
        {
-
+	 /*
 	 printf("kid: %d col: %d need to realloc, unnz: %d ucnt: %d uunnz: %d U_col: %d U_row: %d \n", kid, k, unnz, ucnt, uunnz, U_col, U_row);
 	 BASKER_ASSERT(0==1, "USIZE\n");
-       }
+	 */
+
+	 Int newsize = (unnz+U.nrow) * 1.2  ;
+	 
+	 if(Options.realloc == BASKER_FALSE)
+	   {
+	     thread_array(kid).error_type =
+	       BASKER_ERROR_NOMALLOC;
+	     return BASKER_ERROR;
+	   }
+	 else
+	   {
+	     thread_array(kid).error_type =
+	       BASKER_ERROR_REMALLOC;
+	     thread_array(kid).error_blk    = U_col;
+	     thread_array(kid).error_subblk = U_row;
+	     thread_array(kid).error_info   = newsize;
+	     return BASKER_ERROR;
+	   }//if/else realloc
+       }//if need to realloc
 
      t_back_solve_inc_lvl(kid, l,l, k, top, xnnz);
      
@@ -1394,16 +1438,46 @@ namespace BaskerNS
    if(lnnz + lcnt > llnnz)
      {
        //Note: comeback
-       newsize = lnnz * 1.1 + 2 *A.nrow + 1;
+       newsize = lnnz * 1.1 + 2 *L.nrow + 1;
        cout << "Lower Col Reallocing L oldsize: " << llnnz 
 	    << " newsize: " << newsize << endl;
+      
+       if(Options.realloc == BASKER_FALSE)
+	 {
+	   thread_array(kid).error_type = 
+	     BASKER_ERROR_NOMALLOC;
+	   return BASKER_ERROR;
+	 }
+       else
+	 {
+	   thread_array(kid).error_type = 
+	     BASKER_ERROR_REMALLOC;
+	   thread_array(kid).error_blk    = L_col;
+	   thread_array(kid).error_subblk = -1;
+	   thread_array(kid).error_info   = newsize;
+	   return BASKER_ERROR;
+	 }
      }
    if(unnz+ucnt > uunnz)
      {
        //Note: comeback
-       newsize = uunnz*1.1 + 2*A.nrow+1;
+       newsize = uunnz*1.1 + 2*U.nrow+1;
        cout << "Lower Col Reallocing U oldsize: " << uunnz 
 	    << " newsize " << newsize << endl;
+       if(Options.realloc == BASKER_FALSE)
+	 {
+	   thread_array(kid).error_type = 
+	     BASKER_ERROR_NOMALLOC;
+	 }
+       else
+	 {
+	   thread_array(kid).error_type = 
+	     BASKER_ERROR_REMALLOC;
+	   thread_array(kid).error_blk    = U_col;
+	   thread_array(kid).error_subblk = U_row;
+	   thread_array(kid).error_info   = newsize;
+	   return BASKER_ERROR;
+	 }
      }
   
    L.row_idx(lnnz) = maxindex;

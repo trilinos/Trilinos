@@ -145,7 +145,7 @@ public:
   // TODO:  KDDKDD (requiring more storage or a directory) or only for the 
   // TODO:  KDDKDD local process.
   // TODO:  KDDKDD Could require O(nprocs) storage
-  virtual void getPartsForProc(int procId, part_t &numParts, part_t *parts)
+  virtual void getPartsForProc(int procId, part_t &numParts, part_t *&parts)
     const = 0;
 
   /*! \brief Get the processes containing a part.
@@ -156,7 +156,7 @@ public:
    */
   // TODO:  KDDKDD Arguments should be count and array, not min and max.
   // TODO:  KDDKDD Could require O(nGlobalParts) storage
-  virtual void getProcsForPart(part_t partId, part_t &numProcs, part_t *procs) const = 0;
+  virtual void getProcsForPart(part_t partId, part_t &numProcs, part_t *&procs) const = 0;
 
 private:
 };

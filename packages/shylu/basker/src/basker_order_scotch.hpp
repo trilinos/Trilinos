@@ -4,7 +4,7 @@
 #include "basker_types.hpp"
 #include "scotch.h"
 
-#define BASKER_DEBUG_ORDER_SCOTCH
+//#define BASKER_DEBUG_ORDER_SCOTCH
 
 //NOTE need to change all the max_idx here still
 
@@ -150,24 +150,40 @@ namespace BaskerNS
     sg.Ap[0] = 0;
     Int sj;
     Int sptr = 0;
+    Int self_edge = 0; //If we do not have them, the matrix order will be bad
     for(Int i = 0; i < sg.m; i++)
       {
         sj=0;
 	//printf("scol: %d ecol: %d \n", M.col_ptr[i], M.col_ptr[i+1]);
 	//break;
-        for(Int k = M.col_ptr[i]; k <M.col_ptr[i+1]; k++)
+        for(Int k = M.col_ptr(i); k <M.col_ptr(i+1); k++)
           {
 	    //printf("col: %d k: %d \n", i, k);
-            if(M.row_idx[k] != i)
+            if(M.row_idx(k) != i)
               {
                 ASSERT(sptr < M.nnz);
-                sg.Ai[sptr++] = M.row_idx[k];
+                sg.Ai[sptr++] = M.row_idx(k);
                 sj++;
               }
+	    else
+	      {
+		self_edge++;
+	      }
           }
         sg.Ap[i+1] = sg.Ap[i]+sj;
       }
     sg.nz = sg.Ap[sg.m];
+
+    //printf("num self_edge: %d sg.m: %d \n",
+    //	   self_edge, sg.m);
+    if(self_edge != (sg.m))
+      {
+        BASKER_ASSERT(self_edge == (sg.m-1), 
+		      "ZERO ON DIAGONAL, SCOTCH FAIL\n");
+	exit(0);
+	//Need to clean up this 
+      }
+
 
     for(Int i =0; i < sg.m; i++)
       {
@@ -253,9 +269,9 @@ namespace BaskerNS
      if(((sg.cblk) != pow(2.0,((double)num_levels+1))-1) ||
 	(num_trees != 1))
       {
-	printf("\n\n\n");
-	printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
-	printf("\n\n\n");
+	//printf("\n\n\n");
+	//printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
+	//printf("\n\n\n");
 	
 	Int iblks = pow(2, num_levels+1)-1;
 	
@@ -276,13 +292,13 @@ namespace BaskerNS
 	for(Int i = 0; i < sg.cblk; i++)
 	  {
 	    ttree(i) = sg.treetab[i];
-	    printf("tcopy: %d \n", ttree(i));
+	    //printf("tcopy: %d \n", ttree(i));
 	  }
 	
 	for(Int i = 0; i < sg.cblk+1; i++)
 	  {
 	    ttabs(i) = sg.rangtab[i];
-	    printf("rcopy: %d \n", ttabs(i));
+	    //printf("rcopy: %d \n", ttabs(i));
 	  }
 
 	#ifdef BASKER_DEBUG_ORDER_SCOTCH

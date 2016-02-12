@@ -130,7 +130,8 @@ namespace panzer {
   };
 
   void buildAssemblyPieces(bool parameter_on,bool distr_parameter_on,
-                           AssemblyPieces & ap);
+                           AssemblyPieces & ap,
+                           const std::vector<std::string>& tangentParamNames = std::vector<std::string>());
 
   bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
                                   const Thyra::VectorBase<double> & b, 
@@ -316,7 +317,8 @@ namespace panzer {
 
       InArgs inArgs = me->createInArgs();
 
-      TEST_EQUALITY(inArgs.Np(),3);
+      // 3 model parameters + 3 tangent vectors
+      TEST_EQUALITY(inArgs.Np(),6);
 
       RCP<const Teuchos::Array<std::string> > names_0 = me->get_p_names(0); 
       RCP<const Teuchos::Array<std::string> > names_1 = me->get_p_names(index_dummy); 
@@ -340,10 +342,10 @@ namespace panzer {
       RCP<const Thyra::VectorSpaceBase<double> > vs_2 = me->get_p_space(index_dummy_pair);
 
       TEST_THROW(me->get_p_space(-1),std::runtime_error);
-      TEST_THROW(me->get_p_space(3),std::runtime_error);
+      TEST_THROW(me->get_p_space(7),std::runtime_error);
 
       TEST_THROW(me->get_p_names(-1),std::runtime_error);
-      TEST_THROW(me->get_p_names(3),std::runtime_error);
+      TEST_THROW(me->get_p_names(7),std::runtime_error);
 
       TEST_ASSERT(vs_0!=Teuchos::null);
       TEST_ASSERT(vs_1!=Teuchos::null);
@@ -513,6 +515,103 @@ namespace panzer {
     }
   }
 
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(thyra_model_evaluator, scalar_parameters_dfdp_tangent)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    PHX::KokkosDeviceSession session;
+
+    bool parameter_on = true;
+    AssemblyPieces ap;
+    std::vector<std::string> tangentParamNames(1);
+    tangentParamNames[0] = "SOURCE_TEMPERATURE";
+  
+    buildAssemblyPieces(parameter_on,false,ap,tangentParamNames);
+
+    {
+      typedef Thyra::ModelEvaluatorBase MEB;
+      typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+      typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+      typedef Thyra::VectorBase<double> VectorType;
+      typedef Thyra::LinearOpBase<double> OperatorType;
+      typedef panzer::ModelEvaluator<double> PME;
+
+      bool build_transient_support = false;
+      RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
+      me->addParameter("SOURCE_TEMPERATURE",1.0);
+      me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                     *ap.eqset_factory,
+                     *ap.bc_factory,
+                     ap.cm_factory,
+                     ap.cm_factory,
+                      ap.closure_models,
+                      ap.user_data,true,"dfdp_tangent");
+
+      InArgs inArgs = me->createInArgs();
+
+      // 1 model parameter + 1 tangent vector
+      TEST_ASSERT(inArgs.Np() == 2);
+
+      RCP<Thyra::VectorBase<double> > x = Thyra::createMember(me->get_x_space());
+      RCP<Thyra::VectorBase<double> > p = Thyra::createMember(me->get_p_space(0));
+      RCP<Thyra::VectorBase<double> > v = Thyra::createMember(me->get_p_space(1));
+      RCP<Thyra::VectorBase<double> > f = Thyra::createMember(me->get_f_space());
+      RCP<Thyra::VectorBase<double> > fd = Thyra::createMember(me->get_f_space());
+      RCP<Thyra::VectorBase<double> > dfdp = Thyra::createMember(me->get_f_space());
+
+      double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
+
+      // TEST DfDp
+      /////////////////////////////////////////////////////
+
+      Thyra::seed_randomize<double>(123456u);
+      Thyra::randomize(0.0,1.0,x.ptr());
+      Thyra::randomize(0.0,1.0,v.ptr());
+      Thyra::put_scalar(5.0,p.ptr());
+      Thyra::put_scalar(0.0,f.ptr());
+      Thyra::put_scalar(0.0,fd.ptr());
+      Thyra::put_scalar(0.0,dfdp.ptr());
+
+      inArgs.set_x(x);
+      inArgs.set_p(0,p);
+      inArgs.set_p(1,v);
+
+      out << "evalModel(dfdp)" << std::endl;
+      OutArgs outArgs = me->createOutArgs();
+      outArgs.set_DfDp(0,MEB::Derivative<double>(dfdp,MEB::DERIV_MV_BY_COL));
+      me->evalModel(inArgs,outArgs);
+      TEST_ASSERT(Thyra::norm_2(*dfdp)>0);
+
+      out << "evalModel(f)" << std::endl;
+      OutArgs outArgs_base = me->createOutArgs();
+      outArgs_base.set_f(f);
+      me->evalModel(inArgs,outArgs_base);
+
+      out << "evalModel(fd)" << std::endl;
+      OutArgs outArgs_delta = me->createOutArgs();
+      Thyra::Vp_StV(x.ptr(),1.0,*v); // x = x + 1 * v
+      Thyra::put_scalar(6.0,p.ptr());// p = p + 1
+      outArgs_delta.set_f(fd);
+      me->evalModel(inArgs,outArgs_delta);
+
+      // (df/dx)*v + df/dp = f(x + 1 * v, p + 1) - f(x,p)
+      // since the problem is linear
+      Teuchos::ArrayRCP<const double> dfdp_data;
+      Teuchos::ArrayRCP<const double> f_data;
+      Teuchos::ArrayRCP<const double> fd_data;
+      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*dfdp).getLocalData(Teuchos::ptrFromRef(dfdp_data));
+      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*f).getLocalData(Teuchos::ptrFromRef(f_data));
+      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*fd).getLocalData(Teuchos::ptrFromRef(fd_data));
+      for(int i=0;i<dfdp_data.size();i++) {
+        if(std::abs(dfdp_data[i]) > 1e-13)
+        { TEST_FLOATING_EQUALITY(fd_data[i]-f_data[i],dfdp_data[i],1e-10); }
+        out << fd_data[i]-f_data[i] << "    " << dfdp_data[i] << std::endl;
+      }
+    }
+  }
+
   // Testing Ditributed Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
   {
@@ -592,8 +691,9 @@ namespace panzer {
 
       InArgs in_args = me->createInArgs();
       OutArgs out_args = me->createOutArgs();
-      
-      TEST_ASSERT(in_args.Np() == 2);
+
+      // 1 scalar parameter + 1 tangent + 1 distributed parameter
+      TEST_ASSERT(in_args.Np() == 3);
 
       in_args.set_x(x);
       in_args.set_p(0,p);
@@ -625,8 +725,9 @@ namespace panzer {
 
       InArgs in_args = me->createInArgs();
       OutArgs out_args = me->createOutArgs();
-      
-      TEST_ASSERT(in_args.Np() == 2);
+
+      // 1 scalar parameter + 1 tangent + 1 distributed parameter
+      TEST_ASSERT(in_args.Np() == 3);
 
       in_args.set_x(x);
       in_args.set_p(0,p);
@@ -1048,7 +1149,8 @@ namespace panzer {
   }
   
   void buildAssemblyPieces(bool parameter_on,bool distr_parameter_on,
-                           AssemblyPieces & ap)
+                           AssemblyPieces & ap,
+                           const std::vector<std::string>& tangentParamNames)
   {
     using Teuchos::RCP;
   
@@ -1097,7 +1199,8 @@ namespace panzer {
                                  ap.eqset_factory,
 				 ap.gd,
 			         build_transient_support,
-                                 ap.physicsBlocks);
+                                 ap.physicsBlocks,
+                                 tangentParamNames);
     }
 
     // build worksets

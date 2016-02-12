@@ -15,10 +15,14 @@ namespace BaskerNS
   int Basker<Int, Entry, Exe_Space>::sfactor_inc()
   {
 
+    //printf("-======= TEST CALL Sfactor_inc====== \n");
+
     if(btf_tabs_offset!=0)
       {
 	sfactor_nd_estimate();
       }
+
+    //printf("done with nd estimate\n");
 
     if(Options.btf == BASKER_TRUE)
       {
@@ -31,11 +35,11 @@ namespace BaskerNS
 
 
 
-    printf("Global nnz: %d \n", global_nnz);
+    //printf("Global nnz: %d \n", global_nnz);
 
     //Add init stuff
     
-     if(btf_tabs_offset != 0)
+    //if(btf_tabs_offset != 0)
        {
      #ifdef BASKER_KOKKOS
      kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
@@ -48,6 +52,7 @@ namespace BaskerNS
 
      //if(btf_tabs_offset != 0)
        {
+	 //printf("before allow workspace\n");
      //Allocate workspace
      #ifdef BASKER_KOKKOS
      typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
@@ -84,9 +89,14 @@ namespace BaskerNS
      //init_value(INC_LVL_TEMP, A.nrow, A.max_idx);
      init_value(INC_LVL_TEMP, A.nrow, BASKER_MAX_IDX);
      //#endif
-     printf("MALLOC TEMP SIZE: %d \n", A.nrow);
+     //printf("MALLOC TEMP SIZE: %d \n", A.nrow);
 
        }
+
+
+     //printf("num_threads: %d \n", num_threads);
+     //BASKER_ASSERT(num_threads > 0, "thread_array");
+     //MALLOC_THREAD_1DARRAY(thread_array, num_threads);
 
      return 0;
 
@@ -97,6 +107,8 @@ namespace BaskerNS
   void Basker<Int,Entry,Exe_Space>::sfactor_nd_estimate()
   {
     //We estmate only by using a fraction of the number of nnz
+    //printf("start sfactor nd estimate \n");
+    //printf("num_threads: %d \n", num_threads);
     
     for(Int p=0; p < num_threads; ++p)
       {
@@ -105,10 +117,12 @@ namespace BaskerNS
 				LL(blk)(0), 
 				LU(blk)(LU_size(blk)-1));
 	
+	//printf("did domain: %d %d nlvls: %d \n", 
+	//     blk, 0, tree.nlvls);
 	for(Int l=0; l < tree.nlvls; l++)
 	  {
 	    Int U_col = S(l+1)(p);
-	    Int U_row = (l=0)?(p%2):S(0)(p)%LU_size(U_col);
+	    Int U_row = (l==0)?(p%2):S(0)(p)%LU_size(U_col);
 	    
 	    if((blk > 14) &&
 	       (blk > LU_size(U_col)) &&
@@ -118,15 +132,17 @@ namespace BaskerNS
 		U_row = ((blk+1) -tm*16)%LU_size(U_col);
 	      }
 	    
+	    //printf("lvl: %d ublk: %d %d \n",
+	    //	   l, U_col, U_row);
 	    sfactor_nd_upper_estimate(AVM(U_col)(U_row),
 				      LU(U_col)(U_row));
 
 	    sfactor_nd_lower_estimate(ALM(blk)(l+1),
 				      LL(blk)(l+1));
 	    
-	   }
+	  }//for - l
 
-	printf("============SFACTOR INC SEP=======\n");
+	//printf("============SFACTOR INC SEP=======\n");
 	for(Int lvl = 0; lvl < tree.nlvls; lvl++)
 	  {
 	    Int p = pow(tree.nparts, tree.nlvls-lvl-1);
@@ -159,10 +175,10 @@ namespace BaskerNS
 		      }
 
 		    
-		    sfactor_nd_upper_estimate(AVM(U_col)(U_row),
+		    sfactor_nd_sep_upper_estimate(AVM(U_col)(U_row),
 					      LU(U_col)(U_row));
 		    
-		    sfactor_nd_lower_estimate(
+		    sfactor_nd_sep_lower_estimate(
 					ALM(innerblk)(l-lvl),
 					LL(innerblk)(l-lvl));
 
@@ -222,9 +238,13 @@ namespace BaskerNS
    BASKER_MATRIX &LM
    )
   {
+    //LM.nnz = 0;
+    
     LM.nnz = M.nnz *
-      ((BASKER_FILL_LLOWERESTIMATE+Options.user_fill)*
+    ((BASKER_FILL_LLOWERESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
+    
+    //printf("lower size: %d %d \n", M.nnz, LM.nnz);
     global_nnz += LM.nnz;
   }//end sfactor_nd_lower_estimate()
 
@@ -236,11 +256,38 @@ namespace BaskerNS
    BASKER_MATRIX &UM
    )
   {
+    //UM.nnz = 0;
+    
     UM.nnz = M.nnz * 
       ((BASKER_FILL_UUPPERESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
+    
     global_nnz += UM.nnz;
   }//end sfactor_nd_upper_estimate()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::sfactor_nd_sep_upper_estimate
+  (
+   BASKER_MATRIX &M,
+   BASKER_MATRIX &UM
+   )
+  {
+    UM.nnz = M.ncol*M.nrow;
+    global_nnz += UM.nnz;
+  }//end sfactor_nd_sep_upper_estimate
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::sfactor_nd_sep_lower_estimate
+  (
+   BASKER_MATRIX &M,
+   BASKER_MATRIX &LM
+   )
+  {
+    LM.nnz = M.ncol*M.nrow;
+    global_nnz += LM.nnz;
+  }//end sfactor_nd_sep_lower_estimate
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -278,6 +325,9 @@ namespace BaskerNS
     UM.nnz = nnz_low * 
       ((BASKER_FILL_USEPESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
+
+    LM.nnz = M.nrow*M.nrow;
+    UM.nnz = M.nrow*M.nrow;
     global_nnz += UM.nnz;
   }//end sfactor_nd_sep_estimate
 

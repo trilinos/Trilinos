@@ -49,8 +49,8 @@ namespace {
 FileInfo::FileInfo()
   : filename_(""), exists_(false), readable_(false) {}
   
-FileInfo::FileInfo(const std::string &my_filename)
-  : filename_(my_filename), exists_(false), readable_(false)
+FileInfo::FileInfo(std::string my_filename)
+  : filename_(std::move(my_filename)), exists_(false), readable_(false)
 {
   readable_ = internal_access(filename_, R_OK);
   exists_   = readable_ || internal_access(filename_, F_OK);
@@ -249,7 +249,7 @@ const std::string FileInfo::basename() const
 
 const std::string FileInfo::realpath() const
 {
-  char *path = ::realpath(filename_.c_str(), NULL);
+  char *path = ::realpath(filename_.c_str(), nullptr);
   if (path) {
     std::string temp(path);
     free(path);

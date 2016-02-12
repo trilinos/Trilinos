@@ -47,7 +47,7 @@ namespace SEAMS {
   void load_conversion(struct var_init *base, struct svar_init *label);
 
 #define DEFINE_VAR(name, val, label) do {	\
-    if ((ptr = aprepro->getsym((name))) == NULL) \
+    if ((ptr = aprepro->getsym((name))) == nullptr) \
       ptr = aprepro->putsym((name), SEAMS::Aprepro::VARIABLE, 1);	\
     ptr->value.var = (val);		\
     if (echo) { \
@@ -76,7 +76,7 @@ struct svar_init si_label[] =
     {"pout", "Pa"},
     {"Tout", "degK"},
     {"Aout", "radian"},
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, nullptr}				/* Last line must be 0, 0 */
   };
 
 struct var_init si[] =
@@ -86,7 +86,7 @@ struct var_init si[] =
     {"kg"   , 1.}, 
     {"degK" , 1.},
     {"rad"  , 1.}, 
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, 0}				/* Last line must be 0, 0 */
   };
 
 /*-------------------------------------------------------------------------------------*/
@@ -106,7 +106,7 @@ struct svar_init cgs_label[] =
     {"pout", "dyne/cm^2"},
     {"Tout", "degK"},
     {"Aout", "radian"},
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, nullptr}				/* Last line must be 0, 0 */
   };
 
 struct var_init cgs[] =
@@ -116,7 +116,7 @@ struct var_init cgs[] =
     {"kg"   , 1000.}, 
     {"degK" ,    1.},
     {"rad"  ,    1.}, 
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, 0}				/* Last line must be 0, 0 */
   };
 
 /*-------------------------------------------------------------------------------------*/
@@ -136,7 +136,7 @@ struct svar_init cgs_ev_label[] =
     {"pout", "dyne/cm^2"},
     {"Tout", "eV"},
     {"Aout", "radian"},
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, nullptr}				/* Last line must be 0, 0 */
   };
 
 struct var_init cgs_ev[] =
@@ -146,7 +146,7 @@ struct var_init cgs_ev[] =
     {"kg"   , 1000.}, 
     {"degK" ,    1./ 11605.},
     {"rad"  ,    1.}, 
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, 0}				/* Last line must be 0, 0 */
   };
 
 /*-------------------------------------------------------------------------------------*/
@@ -166,7 +166,7 @@ struct svar_init shock_label[] =
     {"pout", "Mbar"},
     {"Tout", "degK"},
     {"Aout", "radian"},
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, nullptr}				/* Last line must be 0, 0 */
   };
 
 struct var_init shock[] =
@@ -176,7 +176,7 @@ struct var_init shock[] =
     {"kg"   , 1000.}, 
     {"degK" ,    1.},
     {"rad"  ,    1.}, 
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, 0}				/* Last line must be 0, 0 */
   };
 
 /*-------------------------------------------------------------------------------------*/
@@ -196,7 +196,7 @@ struct svar_init swap_label[] =
     {"pout", "kbar"},
     {"Tout", "degK"},
     {"Aout", "radian"},
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, nullptr}				/* Last line must be 0, 0 */
   };
 
 struct var_init swap[] =
@@ -206,7 +206,7 @@ struct var_init swap[] =
     {"kg"   , 10000000.}, 
     {"degK" ,        1.},
     {"rad"  ,        1.}, 
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, 0}				/* Last line must be 0, 0 */
   };
 
 /*-------------------------------------------------------------------------------------*/
@@ -226,7 +226,7 @@ struct svar_init ft_lbf_s_label[] =
     {"pout", "lbf/ft^2"},
     {"Tout", "degR"},
     {"Aout", "radian"},
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, nullptr}				/* Last line must be 0, 0 */
   };
 
 struct var_init ft_lbf_s[] =
@@ -236,7 +236,7 @@ struct var_init ft_lbf_s[] =
     {"kg"   , 1/4.5359237e-1/(9.806650/.3048)}, 
     {"degK" , 1.8},
     {"rad"  , 1.}, 
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, 0}				/* Last line must be 0, 0 */
   };
 
 
@@ -257,7 +257,7 @@ struct svar_init ft_lbm_s_label[] =
     {"pout", "poundal/ft^2"},
     {"Tout", "degR"},
     {"Aout", "radian"},
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, nullptr}				/* Last line must be 0, 0 */
   };
 
 struct var_init ft_lbm_s[] =
@@ -267,7 +267,7 @@ struct var_init ft_lbm_s[] =
     {"kg"   , 1/.45359237}, 
     {"degK" , 1.8},
     {"rad"  , 1.}, 
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, 0}				/* Last line must be 0, 0 */
   };
 
 /*-------------------------------------------------------------------------------------*/
@@ -287,7 +287,7 @@ struct svar_init in_lbf_s_label[] =
     {"pout", "psi"},
     {"Tout", "degR"},
     {"Aout", "radian"},
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, nullptr}				/* Last line must be 0, 0 */
   };
 
 struct var_init in_lbf_s[] =
@@ -297,7 +297,7 @@ struct var_init in_lbf_s[] =
     {"kg"   , 1/4.5359237e-1/(9.806650/2.54e-2)}, 
     {"degK" , 1.8},
     {"rad"  , 1.}, 
-    {0, 0}				/* Last line must be 0, 0 */
+    {nullptr, 0}				/* Last line must be 0, 0 */
   };
 
 struct unit_systems
@@ -317,7 +317,7 @@ struct unit_systems systems[] =
     {"ft-lbf-s", ft_lbf_s, ft_lbf_s_label},
     {"ft-lbm-s", ft_lbm_s, ft_lbm_s_label},
     {"in-lbf-s", in_lbf_s, in_lbf_s_label},
-    {0, 0, 0}
+    {nullptr, nullptr, nullptr}
   };
 }
 
@@ -327,22 +327,22 @@ const char *do_Units(char *type)
   SEAMS::symrec *ptr;
   SEAMS::conv_string(type);
   
-  for (i = 0; systems[i].name != 0; i++) {
+  for (i = 0; systems[i].name != nullptr; i++) {
     if (std::strcmp(type, systems[i].name) == 0) {
       break;
     }
   }
-  if (systems[i].name != 0) {
+  if (systems[i].name != nullptr) {
     /* Found a match */
-    for (j = 0; systems[i].label[j].vname != 0; j++) {
-      if ((ptr = aprepro->getsym(systems[i].label[j].vname)) == NULL) {
+    for (j = 0; systems[i].label[j].vname != nullptr; j++) {
+      if ((ptr = aprepro->getsym(systems[i].label[j].vname)) == nullptr) {
 	ptr = aprepro->putsym(systems[i].label[j].vname, SEAMS::Aprepro::STRING_VARIABLE, 1);
       }
       ptr->value.svar = systems[i].label[j].value;
     }
 
-    for (j = 0; systems[i].base[j].vname != 0; j++) {
-      if ((ptr = aprepro->getsym(systems[i].base[j].vname)) == NULL) {
+    for (j = 0; systems[i].base[j].vname != nullptr; j++) {
+      if ((ptr = aprepro->getsym(systems[i].base[j].vname)) == nullptr) {
 	ptr = aprepro->putsym(systems[i].base[j].vname, SEAMS::Aprepro::VARIABLE, 1);
       }
       ptr->value.var = systems[i].base[j].value;

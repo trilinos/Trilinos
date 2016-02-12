@@ -195,20 +195,20 @@ private:
 
 
     /*Handle for Basker object*/
+ 
 #ifdef SHYLUBASKER
-
 #ifdef HAVE_AMESOS2_KOKKOS
-  //#pragma message("HAVE SHYLUBASKER AND KOKKOS")
+  //Note, that we need to get to the tpetra node_type!!!!
+  //We currently do not have a method for this, but need to add
+  #pragma message("HAVE SHYLUBASKER AND KOKKOS")
   typedef Kokkos::OpenMP Exe_Space;
    ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space>  *basker;
 #else
-     #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
+  #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
 #endif
-
 #else
-  mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
-#endif
-
+   mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
+ #endif
 
 
 };                              // End class Basker

@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <visualization/Iovs_IOFactory.h>
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for nullptr
 #include <visualization/Iovs_DatabaseIO.h>  // for DatabaseIO
 #include <string>                       // for string
 #include "Ioss_DBUsage.h"               // for DatabaseUsage
@@ -36,7 +36,7 @@ namespace Iovs {
 				       MPI_Comm communicator,
 				       const Ioss::PropertyManager &properties) const
   {
-    return new DatabaseIO(NULL, filename, db_usage, communicator, properties);
+    return new DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 
   /**

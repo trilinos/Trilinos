@@ -135,6 +135,14 @@ C ... 'TRI' can be triangle or trishell
                side(i) = 4 - side(i)
             end do
          end if
+      else if (type(:5) .eq. 'WEDGE') then
+        do i = 1, numsid
+          if (side(i) .eq. 3) then
+            side(i) = 1
+          else if (side(i) .eq. 1) then
+            side(i) = 3
+          end if
+        end do
       end if
       return
       end
@@ -193,9 +201,15 @@ C ... 'TRI' can be triangle or trishell
             end if
          else if (blktyp(iblk)(:3) .eq. 'TRI') then
 C ... 'TRI' can be triangle or trishell
-            if (ndim .eq. 2) then
-               side(i) = 4 - side(i)
-            end if
+           if (ndim .eq. 2) then
+             side(i) = 4 - side(i)
+           end if
+         else if (blktyp(iblk)(:5) .eq. 'WEDGE') then
+           if (side(i) .eq. 3) then
+             side(i) = 1
+           else if (side(i) .eq. 1) then
+             side(i) = 3
+           end if
          end if
 C ... If not in list above, assume that they need no adjustment.            
       end do

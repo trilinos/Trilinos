@@ -38,7 +38,7 @@
 #endif
 #include <tokenize.h>
 
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for nullptr
 #include <string>                       // for string
 
 #include "Ioss_CodeTypes.h"             // for MPI_Comm
@@ -111,10 +111,10 @@ namespace Ioex {
     // Could call Iopx::DatabaseIO constructor directly, but that leads to some circular
     // dependencies and other yuks.
     if (decompose)
-      return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+      return new Iopx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
     else
 #endif
-      return new Iofx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+      return new Iofx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 }
 
@@ -149,12 +149,10 @@ namespace {
     if (util.get_environment("IOSS_PROPERTIES", env_props, true)) {
       // env_props string should be of the form
       // "PROP1=VALUE1:PROP2=VALUE2:..."
-      std::vector<std::string> prop_val;
-      Ioss::tokenize(env_props, ":", prop_val);
+      std::vector<std::string> prop_val = Ioss::tokenize(env_props, ":");
 
       for (size_t i=0; i < prop_val.size(); i++) {
-        std::vector<std::string> property;
-        Ioss::tokenize(prop_val[i], "=", property);
+        std::vector<std::string> property = Ioss::tokenize(prop_val[i], "=");
         if (property.size() != 2) {
           std::ostringstream errmsg;
           errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
@@ -217,12 +215,10 @@ namespace {
     if (util.get_environment("IOSS_PROPERTIES", env_props, true)) {
       // env_props string should be of the form
       // "PROP1=VALUE1:PROP2=VALUE2:..."
-      std::vector<std::string> prop_val;
-      Ioss::tokenize(env_props, ":", prop_val);
+      std::vector<std::string> prop_val = Ioss::tokenize(env_props, ":");
 
       for (size_t i=0; i < prop_val.size(); i++) {
-        std::vector<std::string> property;
-        Ioss::tokenize(prop_val[i], "=", property);
+        std::vector<std::string> property = Ioss::tokenize(prop_val[i], "=");
         std::string prop = Ioss::Utils::uppercase(property[0]);
         if (prop == compose_property) {
 	  if (property.size() != 2) {

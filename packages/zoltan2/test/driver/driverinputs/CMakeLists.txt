@@ -1,3 +1,6 @@
+#ADD_SUBDIRECTORY(glaze)
+#ADD_SUBDIRECTORY(rectilinearRCB)
+
 # command that copies files during build
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
     SOURCE_FILES

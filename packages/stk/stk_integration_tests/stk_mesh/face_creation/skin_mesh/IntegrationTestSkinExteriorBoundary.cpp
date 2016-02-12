@@ -160,16 +160,7 @@ protected:
                                     const SideTestUtil::TestCase& testCase)
     {
         stk::mesh::Part& skinnedPart = SideTestUtil::run_skin_mesh(bulkData, get_things_to_skin(bulkData));
-        expect_exposed_sides_connected_as_specified_in_test_case(bulkData, testCase, skinnedPart);
-    }
-
-    void expect_exposed_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
-                                                                  const SideTestUtil::TestCase& testCase,
-                                                                  stk::mesh::Part &skinnedPart)
-    {
-        SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase, skinnedPart);
-        SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
-        EXPECT_TRUE(stk::mesh::check_exposed_boundary_sides(bulkData, get_things_to_skin(bulkData), skinnedPart));
+        expect_exposed_sides_connected_as_specified_in_test_case(bulkData, testCase, get_things_to_skin(bulkData), skinnedPart);
     }
 
     virtual stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)

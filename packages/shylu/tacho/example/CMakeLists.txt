@@ -8,6 +8,12 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluchol)
 
+# Do not compile if Scotch is not enalbed
+IF(TPL_ENABLE_Scotch)
+
+# symbolic factorization is guarded with Cholmod
+IF(TPL_ENABLE_Cholmod)
+
 # Symbolic Factorization
 # ======================
 
@@ -27,6 +33,8 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES example_symbolic_factor_pthread.cpp
     COMM serial mpi
   )
+ENDIF()
+
 ENDIF()
 
 # Sparse Chol
@@ -309,7 +317,7 @@ ENDIF()
 #  COMM serial mpi
 #  )
 
-
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
         SOURCE_FILES test.mtx

@@ -75,6 +75,7 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
+namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
@@ -113,6 +114,17 @@ struct sharing_info
     int m_owner;
     sharing_info(stk::mesh::Entity entity, int sharing_proc, int owner) :
         m_entity(entity), m_sharing_proc(sharing_proc), m_owner(owner) {}
+};
+
+struct SharingInfoLess
+{
+    bool operator()(const stk::mesh::sharing_info &a, const stk::mesh::sharing_info &b)
+    {
+        if(a.m_entity == b.m_entity)
+            return a.m_owner < b.m_owner;
+        else
+            return a.m_entity < b.m_entity;
+    }
 };
 
 
@@ -937,11 +949,6 @@ protected: //functions
   void require_ok_to_modify() const ; // Mod Mark
   void internal_update_fast_comm_maps();
 
-  void internal_create_new_owner_map(const std::vector<EntityProc> & local_change,
-                                     const std::vector<EntityProc> & shared_change,
-                                     const std::vector<EntityProc> & ghosted_change,
-                                     NewOwnerMap & new_owner_map);
-
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
 
   bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
@@ -1240,6 +1247,7 @@ private:
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
   friend class ::stk::mesh::ElemElemGraph;
+  friend class ::stk::mesh::FaceCreator;
   friend class ::stk::mesh::EntityLess;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData

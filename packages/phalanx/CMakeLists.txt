@@ -115,6 +115,10 @@ ELSE()
   MESSAGE(STATUS "Build MDField support for Intrepid: OFF")
 ENDIF()
 
+# For use by Phalanx and Panzer unit tests
+GLOBAL_SET(PHALANX_UNIT_TEST_MAIN
+  "${PACKAGE_SOURCE_DIR}/test/Utilities/Phalanx_UnitTestMain.cpp")
+
 #
 # C) Add the libraries, tests, and examples
 #

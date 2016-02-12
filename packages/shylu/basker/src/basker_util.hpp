@@ -258,8 +258,10 @@ namespace BaskerNS
 	    for(Int row = 0; row < LL_size(b); row++)
 	      {
 		
+                #ifdef BASKER_DEBUG_INIT
 		printf("L Factor Init: %d %d , kid: %d, nnz: %ld \n",
 		       b, row, kid, LL[b][row].nnz);
+		#endif
 		
 		LL(b)(row).init_matrix("Loffdig",
 				       LL(b)(row).srow,
@@ -290,9 +292,11 @@ namespace BaskerNS
 	  {
 	    Int b = S(lvl)(kid);
 	    
+	    #ifdef BASKER_DEBUG_INIT
 	    printf("U Factor init: %d %d, nnz: %ld \n",
 		   b, LU_size[b]-1, 
 		   LU[b][LU_size[b]-1].nnz);
+	    #endif
 	    
 
 	    LU(b)(LU_size(b)-1).init_matrix("Udiag",
@@ -326,10 +330,12 @@ namespace BaskerNS
 
 		  }
 
-
+		
+		#ifdef BASKER_DEBUG_INIT
 		printf("Init U: %d %d lvl: %d l: %d kid: %d nnz: %ld \n",
 		       U_col, U_row, lvl, l, kid, 
 		       LU[U_col][U_row].nnz);
+		#endif
 		
 
 		LU(U_col)(U_row).init_matrix("Uoffdiag",
@@ -372,10 +378,12 @@ namespace BaskerNS
 	    for(Int row = 0; row < LL_size(b); row++)
 	      {
 		
+		#ifdef BASKER_DEBUG_INIT
 		printf("ALM Factor Init: %d %d , kid: %d, nnz: %d nrow: %d ncol: %d\n",
 		     b, row, kid, ALM(b)(row).nnz, 
 		     ALM(b)(row).nrow, 
 		     ALM(b)(row).ncol);
+		#endif
 
 		if(Options.btf == BASKER_FALSE)
 		  {
@@ -384,8 +392,10 @@ namespace BaskerNS
 		else
 		  {
 		    //printf("Using BTF AL \n");
+		    #ifdef BASKER_DEBUG_INIT
 		    printf("ALM alloc: %d %d \n",
 			   b, row);
+		    #endif
 		    ALM(b)(row).convert2D(BTF_A, alloc);
 		  }
 
@@ -401,11 +411,13 @@ namespace BaskerNS
 	  {
 	    Int b = S(lvl)(kid);
 	    
+	    #ifdef BASKER_DEBUG_INTI
 	    printf("AUM Factor init: %d %d, kid: %d nnz: %d nrow: %d ncol: %d \n",
-	    	   b, LU_size[b]-1, kid, 
-	    	   AVM[b][LU_size[b]-1].nnz, 
-	    	   AVM[b][LU_size[b]-1].nrow,
-	    	   AVM[b][LU_size[b]-1].ncol);
+	    	   b, LU_size(b)-1, kid, 
+	    	   AVM(b)(LU_size(b)-1).nnz, 
+	    	   AVM(b)(LU_size(b)-1).nrow,
+	    	   AVM(b)(LU_size(b)-1).ncol);
+	    #endif
 
 	    if(Options.btf == BASKER_FALSE)
 	      {
@@ -442,12 +454,13 @@ namespace BaskerNS
 
 		  }
 
-
+                #ifdef BASKER_DEBUG_INIT
 		printf("Init AUM: %d %d lvl: %d l: %d kid: %d nnz: %d nrow: %d ncol: %d \n",
 		     U_col, U_row, lvl, l, kid, 
-		     AVM[U_col][U_row].nnz, 
-		     AVM[U_col][U_row].nrow,
-		     AVM[U_col][U_row].ncol);
+		       AVM(U_col)(U_row).nnz, 
+		       AVM(U_col)(U_row).nrow,
+		       AVM(U_col)(U_row).ncol);
+		#endif
 
 		if(Options.btf == BASKER_FALSE)
 		  {
@@ -473,16 +486,14 @@ namespace BaskerNS
   {
 
     //printf("t_init_workspace called \n");
-
-
-     Int max_sep_size = 0;
+    Int max_sep_size = 0;
 
     if(btf_tabs_offset != 0)
       {
 
        
     #ifdef BASKER_2DL
-        Int            b  = S[0][kid];
+        Int            b  = S(0)(kid);
         //INT_1DARRAY    ws = LL[b][0].iws;
         //ENTRY_1DARRAY  X  = LL[b][0].ews;
         //Int      iws_size = LL[b][0].iws_size;
@@ -490,30 +501,30 @@ namespace BaskerNS
         //Int      iws_mult = LL[b][0].iws_mult;
         //Int      ews_mult = LL[b][0].ews_mult;
     #else
-        INT_1DARRAY  &ws = thread_array[kid].iws;
-        ENTRY_1DARRAY &X = thread_array[kid].ews;
-        Int iws_size     = thread_array[kid].iws_size;
-        Int iws_mult     = thread_array[kid].iws_mult;
-        Int ews_size     = thread_array[kid].ews_size;
-        Int ews_mult     = thread_array[kid].ews_mult;
+        INT_1DARRAY  &ws = thread_array(kid).iws;
+        ENTRY_1DARRAY &X = thread_array(kid).ews;
+        Int iws_size     = thread_array(kid).iws_size;
+        Int iws_mult     = thread_array(kid).iws_mult;
+        Int ews_size     = thread_array(kid).ews_size;
+        Int ews_mult     = thread_array(kid).ews_mult;
     #endif
     //Note: need to add a size array for all these
 
     #ifdef BASKER_2DL
-        for(Int l = 0; l < LL_size[b]; l++)
+        for(Int l = 0; l < LL_size(b); l++)
           {
             //defining here
-            LL[b][l].iws_size = LL[b][l].nrow;
+            LL(b)(l).iws_size = LL(b)(l).nrow;
             //This can be made smaller, see notes in Sfactor_old
-            LL[b][l].iws_mult = 5;
-            LL[b][l].ews_size = LL[b][l].nrow;
+            LL(b)(l).iws_mult = 5;
+            LL(b)(l).ews_size = LL(b)(l).nrow;
             //This can be made smaller, see notes in sfactor_old
-            LL[b][l].ews_mult = 2;
+            LL(b)(l).ews_mult = 2;
 
-            Int iws_size = LL[b][l].iws_size;
-            Int iws_mult = LL[b][l].iws_mult;
-            Int ews_size = LL[b][l].ews_size;
-            Int ews_mult = LL[b][l].ews_mult;
+            Int iws_size = LL(b)(l).iws_size;
+            Int iws_mult = LL(b)(l).iws_mult;
+            Int ews_size = LL(b)(l).ews_size;
+            Int ews_mult = LL(b)(l).ews_mult;
 
 
             
@@ -523,30 +534,32 @@ namespace BaskerNS
               }
 
             //printf("init_workspace 2d, kid: %d blk: %d %d size: %d %d %d %d \n",
-	//     kid, b, l, iws_mult, iws_size, ews_mult, ews_size);
+	    //kid, b, l, iws_mult, iws_size, ews_mult, ews_size);
 
             if(iws_size == 0)
               {
                 iws_size  = 1;
               }
             BASKER_ASSERT((iws_size*iws_mult)>0, "util iws");
-            MALLOC_INT_1DARRAY(LL[b][l].iws, iws_size*iws_mult);
+            MALLOC_INT_1DARRAY(LL(b)(l).iws, iws_size*iws_mult);
+	    //TEST
+	    INT_1DARRAY att = LL(b)(l).iws; 
             if(ews_size == 0)
               {
                 ews_size = 1;
               }
             BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
-            MALLOC_ENTRY_1DARRAY(LL[b][l].ews, ews_size*ews_mult);
+            MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
             
             for(Int i=0; i<iws_mult*iws_size; i++)
               {
-                LL[b][l].iws[i] = 0;
+                LL(b)(l).iws(i) = 0;
               }
             for(Int i=0; i<ews_mult*ews_size; i++)
               {
-                LL[b][l].ews[i] = 0;
+                LL(b)(l).ews(i) = 0;
               }
-            LL[b][l].fill();
+            LL(b)(l).fill();
 
             
             if(l==0)
@@ -564,10 +577,10 @@ namespace BaskerNS
           }
           //Also workspace matrix 
     //This could be made smaller
-    printf("C: size: %d kid: %d \n",
-    	   max_sep_size, kid);
+    //printf("C: size: %d kid: %d \n",
+    //	   max_sep_size, kid);
 
-    thread_array[kid].C.init_matrix("cwork", 
+    thread_array(kid).C.init_matrix("cwork", 
 				    0, max_sep_size,
 				    0, 2, 
 				    max_sep_size*2);
@@ -822,6 +835,211 @@ namespace BaskerNS
     return 0;
   }//print L2d()
 
+  template <class Int, class Entry, class Exe_Space>
+  int Basker<Int, Entry, Exe_Space>::printLMTX()
+  {
+    Int nnz = get_Lnnz();
+    FILE *fp;
+    fp = fopen("L.mtx", "w");
+
+    fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+    fprintf(fp, "%%Generated by **Basker** \n");
+    fprintf(fp, "%d %d %d \n", gn, gn, nnz);
+
+    //over each blk
+    //for(Int l = 0; l < tree.nblks; l++)
+    for(Int l = 0; l < tree.nblks; l++)
+      {
+	//over each column
+	for(Int k=0; k < LL[l][0].ncol; k++)
+	  {
+	    //fprintf(fp, "k=%d \n", k+LL[l][0].scol);
+	    for(Int r = 0; r < LL_size[l]; r++)
+            {
+	      //printf("L - col: %d blk: %d %d \n",
+	      //     k+LL[l][0].scol, l, r);
+              BASKER_MATRIX &myL = LL[l][r];
+	      Int brow = myL.srow;
+	      Int bcol = myL.scol;
+	      //printf("L - Col: %d %d blk: %d %d \n",
+	      //     k, bcol, l, r);
+              for(Int j = myL.col_ptr[k]; 
+		  j < myL.col_ptr[k+1]; j++)
+                {
+		  
+		  fprintf(fp, "%d %d %g \n",
+			  gperm(myL.row_idx(j)+myL.srow)+1,
+			  k+myL.scol+1,
+			  myL.val(j));
+
+                  //fprintf(fp, "(%d , %d , %d, %d, %d) %g , ",
+		  ///      k+myL.scol, myL.row_idx[j], 
+		  ///	  myL.row_idx[j]+myL.srow,
+		  ///	  myL.srow,
+		  ///	  gperm(myL.row_idx[j]+myL.srow),
+		  //     myL.val[j]);
+		  //total_Lnnz++;
+                }//end over each nnz in column (k) of local U              
+            }//end over each matrix row
+            //fprintf(fp, " \n \n ");
+	  }//end over each column
+      }//end over all nblks
+    if(Options.btf == BASKER_TRUE)
+      {
+	Int nblks = btf_nblks-btf_tabs_offset;
+	for(Int i =0; i < nblks; i++)
+	  {
+
+	    
+	    BASKER_MATRIX &myL = LBTF(i);
+	    Int brow = myL.srow;
+	    Int bcol = myL.scol;
+	    
+	   
+	    //printf("L(%d) %d %d %d %d \n",
+	    //	   i, 
+	    ///	   myL.srow, myL.nrow,
+	    //	   myL.scol, myL.ncol);
+	    
+	    
+	    for(Int k = 0; k < myL.ncol; k++)
+	      {
+
+		//	printf("k=%d \n", myL.scol+k);
+		//fprintf(fp, "k=%d \n", myL.scol+k);
+		
+		/*
+		printf("col_ptr: %d %d \n",
+		       myL.col_ptr(k),
+		       myL.col_ptr(k+1));
+		*/
+		for(Int j = myL.col_ptr(k);
+		    j< myL.col_ptr(k+1); j++)
+		  {
+		    /*
+		       printf( "(%d , %d , %d) %f , ", 
+		    	    k+myL.scol, myL.row_idx[j], 
+		    	    myL.row_idx[j], 
+		    	    myL.val[j]);
+		    */
+		    
+		  
+		    fprintf(fp, "%d %d %g \n",
+			    gperm(myL.row_idx(j)+myL.srow)+1,
+			    k+myL.scol+1,
+			    myL.val(j));
+		    /*
+		    fprintf(fp, "(%d , %d , %d, %d) %g , ", 
+			    k+myL.scol, myL.row_idx[j], 
+			    myL.row_idx[j]+myL.srow,
+			    gperm(myL.row_idx[j]+myL.srow),
+			    myL.val[j]);
+		    total_Lnnz++;
+		    */
+		  }//over all nnz
+		//printf( "\n \n");
+		//fprintf(fp, " \n \n ");
+	      }//over all columns
+	  }//over all blks
+      }//end option btf
+
+    fclose(fp);
+    
+    return 0;
+
+
+  }//end printLMTX
+  
+  template <class Int, class Entry, class Exe_Space>
+  int Basker<Int,Entry, Exe_Space>::printUMTX()
+  {
+    
+    Int nnz_u = get_Unnz();
+
+    FILE *fp;
+    fp = fopen("U.mtx", "w");
+    fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+    fprintf(fp, "%%Generated by **Basker** \n");
+    fprintf(fp, "%d %d %d \n", gn, gn, nnz_u);
+
+    //over each blks
+    for(Int l = 0; l < tree.nblks; l++)
+      {
+        //over each column
+        for(Int k = 0; k < LU[l][0].ncol; k++)
+          {
+            //fprintf(fp, "k=%d \n", k+LU[l][0].scol);
+	    
+            //over each row of U
+            //printf("column: %d U.size %d \n", k+LU[l][0].scol, LU[l].size());
+            //for(Int r = 0; r < LU[l].size(); r++)
+	    for(Int r = 0; r < LU_size[l]; r++)
+            {
+              BASKER_MATRIX &myU = LU[l][r];
+              //printf("nnz: %d %d  in k: %d r: %d \n",
+              //     myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
+              //over each nnz in column (k) of local U
+              for(Int j = myU.col_ptr[k]; j < myU.col_ptr[k+1]; j++)
+                {
+
+		  BASKER_ASSERT((myU.row_idx(j)+myU.srow+1)>0, "location 1-1");
+		  BASKER_ASSERT((k+myU.scol+1)>0, "location 1-2");
+		  
+		  fprintf(fp, "%d %d %g \n", 
+			  myU.row_idx(j)+myU.srow+1,
+			  k+myU.scol+1,
+			  myU.val(j));
+		  
+                }//end over each nnz in column (k) of local U              
+            }//end over each matrix row
+          }//end over each column
+      }//end over nblks
+
+    if(Options.btf == BASKER_TRUE)
+      {
+	Int nblks = btf_nblks-btf_tabs_offset;
+	for(Int i =0; i < nblks; i++)
+	  {
+	    BASKER_MATRIX &myU = UBTF[i];
+	    Int brow = myU.srow;
+	    Int bcol = myU.scol;
+	    for(Int k = 0; k < myU.ncol; k++)
+	      {
+
+		//fprintf(fp, "k=%d \n", k+myU.scol);
+		//printf("k=%d \n", k+myU.scol);
+
+		for(Int j = myU.col_ptr[k];
+		    j< myU.col_ptr[k+1]; j++)
+		  {
+		    
+		    BASKER_ASSERT((myU.row_idx(j)+myU.srow+1)>0, "location 2-1");
+		    BASKER_ASSERT((k+myU.scol+1)>0, "location 2-2");
+		    fprintf(fp, "%d %d %g \n",
+			    myU.row_idx(j)+myU.srow+1,
+			    k+myU.scol+1,
+			    myU.val(j));
+
+		    
+		    //fprintf(fp, "(%d , %d , %d) %f , ", 
+		    //	    k+myU.scol, myU.row_idx[j], 
+		    //	    myU.row_idx[j]+myU.srow, 
+		    //	    myU.val[j]);
+		    //total_Lnnz++;
+		  }//over all nnz
+		//printf("\n \n");
+		//fprintf(fp, " \n \n ");
+	      }//over all columns
+	  }//over all blks
+      }//end option btf
+
+    fclose(fp);
+    printf("---------Done Print U ------\n");
+    return 0;
+
+  }//end printUMTX
+
+
   //Print U out to file U.txt
   template <class Int, class Entry, class Exe_Space>
   int Basker<Int, Entry, Exe_Space>::printU()
@@ -935,7 +1153,7 @@ namespace BaskerNS
       }//over each column
 
     fclose(fp);
-    printf("Done Writing Matrix \n");
+    //printf("Done Writing Matrix \n");
   }//end printMTX() 
 
    //Print MTX
@@ -1501,7 +1719,7 @@ namespace BaskerNS
     INT_1DARRAY ws;
     BASKER_ASSERT(ws_size > 0, "util trans ws");
     MALLOC_INT_1DARRAY(ws, ws_size);
-    printf("ws_size: %d \n", ws_size);
+    //printf("ws_size: %d \n", ws_size);
     //init_value(ws, ws_size, (Int)0);
     for(Int j = 0; j < ws_size; ++j)
       {
@@ -1682,7 +1900,7 @@ namespace BaskerNS
     AT.nrow  = n_;
     AT.scol  = sm_;
     AT.ncol  = m_;
-    AT.nnz   = nzz_;
+    AT.nnz   = nnz_;
 
     BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol");
     MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
@@ -1694,11 +1912,11 @@ namespace BaskerNS
     init_value(AT.val,     AT.nnz, (Entry)1.0);
     
     //Setup a litte workspace
-    const Int ws_size = M.nrow;
+    const Int ws_size = m_;
     INT_1DARRAY ws;
     BASKER_ASSERT(ws_size > 0, "util trans ws");
     MALLOC_INT_1DARRAY(ws, ws_size);
-    printf("ws_size: %d \n", ws_size);
+    //printf("ws_size: %d \n", ws_size);
     
     for(Int j = 0; j < ws_size; ++j)
       {
@@ -1734,7 +1952,7 @@ namespace BaskerNS
 	//total2 = total2 + ws_test[j];
       }
    
-    for(Int j = 1; j < M.nrow; ++j)
+    for(Int j = 1; j < n_; ++j)
       {
 	ws(j)  = ws(j) + ws(j-1);
  
@@ -1742,24 +1960,24 @@ namespace BaskerNS
   
     //copy over to AT
     AT.col_ptr(0) = (Int) 0;
-    for(Int j = 1; j <= M.nrow; ++j)
+    for(Int j = 1; j <= n_; ++j)
       {
 	AT.col_ptr(j) = ws(j-1);
       }
 
     //set ws
-    for(Int j = 0; j < M.nrow; ++j)
+    for(Int j = 0; j < n_; ++j)
       {
 	ws(j) = AT.col_ptr(j);
       }
 
-    for(Int k = 0; k < M.ncol; ++k)
+    for(Int k = 0; k < n_; ++k)
       {
 
         //for(Int j = M.col_ptr(k); 
 	//   j < M.col_ptr(k+1); ++j)
 	for(Int j = col_ptr[k]; 
-	    j < col[k+1]; ++j)
+	    j < col_ptr[k+1]; ++j)
           {
 	    	    
 	    if(ws(row_idx[j]) >= AT.nnz)
@@ -1767,12 +1985,18 @@ namespace BaskerNS
 		printf("error \n");
 	      }
 	    
-            AT.row_idx(ws(row_idx[j])++) = k; 
+            //AT.row_idx(ws(row_idx[j])++) = k;
+	    AT.row_idx(ws(row_idx[j])) = k;
+	    AT.val(ws(row_idx[j])) = val[j];
+	    ws(row_idx[j])++;
 	    //starting at zero
     
           }
       }
     //printf("updated trans \n");
+
+    sort_matrix(AT);
+    //printMTX("A_TRANS.mtx", AT);
 
     FREE_INT_1DARRAY(ws);
   }//end matrix_transpos

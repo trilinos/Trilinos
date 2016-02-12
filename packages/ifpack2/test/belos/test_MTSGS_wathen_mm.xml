@@ -1,0 +1,15 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="/home/srajama/matrices/wathen_30_30.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <ParameterList name="Belos">
+    <Parameter name="Verbosity" type="int" value="2"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="RELAXATION"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="relaxation: type" type="string" value="MT Symmetric Gauss-Seidel"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="31"/>
+</ParameterList>

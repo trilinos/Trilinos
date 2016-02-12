@@ -60,9 +60,9 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Basker_decl.hpp"
 
-#ifdef SHYLUBASKER
-#include "Kokkos_Core.hpp"
-#endif
+//#ifdef SHYLUBASKER
+//#include "Kokkos_Core.hpp"
+//#endif
 
 namespace Amesos2 {
 
@@ -84,41 +84,35 @@ Basker<Matrix,Vector>::Basker(
   // TODO: use data_ here to init
 
    
-
+  
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
-  
+  //We need to get to the tpetra node type to do a static_assert
   typedef Kokkos::OpenMP Exe_Space;
-  
-  basker = new ::BaskerNS::Basker<local_ordinal_type, slu_type, Exe_Space>();
-
-  printf("Constructor Called \n");
-  
+  basker = new ::BaskerNS::Basker<local_ordinal_type, slu_type, Exe_Space>(); 
   basker->Options.no_pivot  = true;
   basker->Options.symmetric = false;
   basker->Options.realloc   = false;
   basker->Options.verbose   = false;
   basker->Options.btf       = true;
-  
   num_threads = Kokkos::OpenMP::max_hardware_threads();
-
-
 #endif  
 #endif
-
+  
 }
 
 
 template <class Matrix, class Vector>
 Basker<Matrix,Vector>::~Basker( )
 {
-  printf("Destructor Call \n");
+  
+  
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
-
   delete basker;
 #endif
 #endif
+ 
   /* Basker will cleanup its own internal memory*/
 }
 
@@ -140,26 +134,20 @@ template <class Matrix, class Vector>
 int
 Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
-
+  
 #ifdef SHYLUBASKER
+ 
   //std::cout << "shylubasker sfactor" << std::endl;
   if(this->root_)
-    {
-
-      
-      basker->SetThreads(num_threads);
-
-      
+    {     
+      basker->SetThreads(num_threads); 
       //std::cout << "Set Threads Done" << std::endl;
-
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "Basker:: Before symbolic factorization" << std::endl;
       std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
-
-      
       int info;
       info =basker->Symbolic(this->globalNumRows_, 
                             this->globalNumCols_, 
@@ -167,13 +155,11 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
                             colptr_.getRawPtr(), 
                             rowind_.getRawPtr(), 
                             nzvals_.getRawPtr());
-   
-      
       //std::cout << "Symbolic Factorization Done" << std::endl; 
       
     }
-
 #endif
+ 
   /*No symbolic factoriztion*/
   return(0);
 }
@@ -199,21 +185,19 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
 
+     
 #ifdef SHYLUBASKER
-      std::cout << "SHYLUBASKER FACTOR " << std::endl;
-      
-      
+      //std::cout << "SHYLUBASKER FACTOR " << std::endl;
       info = basker->Factor(this->globalNumRows_,
                            this->globalNumCols_, 
                            this->globalNumNonZeros_, 
                            colptr_.getRawPtr(), 
                            rowind_.getRawPtr(), 
                            nzvals_.getRawPtr());
-      
-      
 #else
+     
       info =basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
-#endif
+     #endif
 
     }
 
@@ -276,10 +260,7 @@ Basker<Matrix,Vector>::solve_impl(
 #endif
 
 #ifdef SHYLUBASKER
-      
-      std::cout << "SHYLUBASKER Only handles 1 solve right now" << std::endl;
       ierr = basker->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
-      
 #else
     ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
 #endif

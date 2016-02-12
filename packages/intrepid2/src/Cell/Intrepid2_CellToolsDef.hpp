@@ -2094,8 +2094,6 @@ if (refPointsRank==3){
   } // for(iter)
 }
 
-
-
 template<class Scalar>
 template<class ArraySubcellPoint, class ArrayParamPoint>
 void CellTools<Scalar>::mapToReferenceSubcell(ArraySubcellPoint     &       refSubcellPoints,

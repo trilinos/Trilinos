@@ -1,7 +1,7 @@
 #ifndef BASKER_NFACTOR_INC_HPP
 #define BASKER_NFACTOR_INC_HPP
 
-#define BASKER_TIME
+//#define BASKER_TIME
 
 /*Basker Includes*/
 #include "basker_types.hpp"
@@ -34,7 +34,7 @@ namespace BaskerNS
   int Basker<Int, Entry, Exe_Space>::factor_inc_lvl(Int option)
   {
 
-    printf("Factor Inc Level Called \n");
+    //printf("Factor Inc Level Called \n");
 
     gn = A.ncol;
     gm = A.nrow;
@@ -60,7 +60,7 @@ namespace BaskerNS
 
     //====TIMER==
     #ifdef BASKER_TIME
-    Kokkos::Impl::Timer       timer;
+    //Kokkos::Impl::Timer       timer;
     #endif
     //===TIMER===
 
@@ -68,7 +68,7 @@ namespace BaskerNS
 
     if(btf_tabs_offset != 0)
       {
-
+	printf("domain\n");
 	Int domain_restart = 0;
 	kokkos_nfactor_domain_inc_lvl <Int,Entry,Exe_Space>
 	  domain_nfactor(this);
@@ -95,7 +95,7 @@ namespace BaskerNS
 	  {
 	    domain_restart++;
 	    printf("restart \n");
-	    kokkos_nfactor_domain_remalloc <Int, Entry, Exe_Space>
+	    kokkos_nfactor_domain_remalloc_inc_lvl <Int, Entry, Exe_Space>
 	      diag_nfactor_remalloc(this, thread_start);
 	    Kokkos::parallel_for(TeamPolicy(num_threads,1),
 				 diag_nfactor_remalloc);
@@ -106,8 +106,8 @@ namespace BaskerNS
 
     //====TIMER===
     #ifdef BASKER_TIME
-    printf("Time DOMAIN: %f \n", timer.seconds());
-    timer.reset();
+	//printf("Time DOMAIN: %f \n", timer.seconds());
+	//timer.reset();
     #endif
     //====TIMER====
     
@@ -127,7 +127,7 @@ namespace BaskerNS
     //---------------------------Sep--------------------------//
 
     
-    
+    //if(false)
     if(btf_tabs_offset != 0)
       {
         //for(Int l=1; l<=1; l++)
@@ -150,7 +150,7 @@ namespace BaskerNS
 
 	
 	#ifdef BASKER_KOKKOS
-	Kokkos::Impl::Timer  timer_inner_sep;
+	//Kokkos::Impl::Timer  timer_inner_sep;
 	#ifdef BASKER_NO_LAMBDA
 	
 	kokkos_nfactor_sep2_inc_lvl <Int, Entry, Exe_Space>
@@ -159,10 +159,38 @@ namespace BaskerNS
 	Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
 			     sep_nfactor);
 	Kokkos::fence();
+
+	//printf("AFTER SEP \n");
+       
+	//======Check for error=====
+	while(true)
+	  {
+	    INT_1DARRAY thread_start;
+	    MALLOC_INT_1DARRAY(thread_start, num_threads+1);
+	    init_value(thread_start, num_threads+1,
+		      (Int) BASKER_MAX_IDX);
+	    int nt = nfactor_sep_error(thread_start);
+	    if((nt == BASKER_SUCCESS)||
+	       (nt == BASKER_ERROR) ||
+	       (sep_restart > BASKER_RESTART))
+	      {
+		FREE_INT_1DARRAY(thread_start);
+		break;
+	      }
+	    else
+	      {
+		sep_restart++;
+		printf("restart \n");
+		Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
+		Kokkos::fence();
+
+	      }
+	  }//end while-true
+
 	
 	#ifdef BASKER_TIME
-	printf("Time INNERSEP: %d %f \n", 
-	       l, timer_inner_sep.seconds());
+	//printf("Time INNERSEP: %d %f \n", 
+	//     l, timer_inner_sep.seconds());
 	#endif
         #else //ELSE BASKER_NO_LAMBDA
 	//Note: to be added
@@ -176,7 +204,7 @@ namespace BaskerNS
       }//end over each level
 
     #ifdef BASKER_TIME
-    printf("Time SEP: %f \n", timer.seconds());
+       //printf("Time SEP: %f \n", timer.seconds());
     #endif
       }
 
@@ -185,11 +213,12 @@ namespace BaskerNS
 
 
     //-------------------IF BTF-----------------------//
-    if(Options.btf == BASKER_TRUE)
+    if(false)
+    //if(Options.btf == BASKER_TRUE)
       {
 	//=====Timer
 	#ifdef BASKER_TIME
-	Kokkos::Impl::Timer  timer_btf;
+	//Kokkos::Impl::Timer  timer_btf;
 	#endif
 	//====Timer
 	
@@ -229,8 +258,8 @@ namespace BaskerNS
 
 	//====TIMER
 	#ifdef BASKER_TIME
-	printf("Time BTF: %f \n", 
-	       timer_btf.seconds());
+	//printf("Time BTF: %f \n", 
+	//     timer_btf.seconds());
 	#endif
 	//===TIMER
 

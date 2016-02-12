@@ -68,7 +68,7 @@ namespace {
 
 Ioss::Property::Property() :
   name_(""), type_(INVALID), storage_(UNKNOWN_VAR_TYPE), isImplicit_(false)
-{ data_.pval = NULL; }
+{ data_.pval = nullptr; }
 
 Ioss::Property::Property(const std::string &name,
 			 const BasicType type,
@@ -156,7 +156,7 @@ double   Ioss::Property::get_real()    const
 
 void*  Ioss::Property::get_pointer() const
 {
-  void* value = NULL;
+  void* value = nullptr;
   bool valid = get_value(value);
   if (!valid) {
     error_message(*this, "pointer");

@@ -4,10 +4,10 @@
 #include "KokkosKernels_SPGEMM.hpp"
 
 
-#define CUDACONFIG
-//#define OPENMP
+//#define CUDACONFIG
+#define OPENMP
 
-#define RUNCUSP
+//#define RUNCUSP
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
 

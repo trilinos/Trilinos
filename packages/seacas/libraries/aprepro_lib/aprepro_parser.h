@@ -233,7 +233,7 @@ namespace SEAMS {
 
       /// Constructor for symbols with semantic value.
       basic_symbol (typename Base::kind_type t,
-                    const semantic_type& v);
+                    semantic_type  v);
 
       /// Destroy the symbol.
       ~basic_symbol ();

@@ -106,9 +106,9 @@ Excn::ExodusFile::~ExodusFile()
 
 void Excn::ExodusFile::close_all()
 {
-  for(size_t p = 0; p < fileids_.size(); p++) {
-    ex_close(fileids_[p]);
-    fileids_[p] = -1;
+  for(auto & elem : fileids_) {
+    ex_close(elem);
+    elem = -1;
   }
   ex_close(outputId_);
   outputId_ = -1;

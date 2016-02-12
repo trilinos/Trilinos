@@ -110,8 +110,8 @@ namespace {
 			 double &xmax, double &ymax, double &zmax)
   {
     std::vector<int> elem_block_nodes(node_count);
-    for (size_t i=0; i < connectivity.size(); i++) {
-      elem_block_nodes[connectivity[i]-1] = 1;
+    for (auto &node : connectivity) {
+      elem_block_nodes[node-1] = 1;
     }
 
     xmin = DBL_MAX;
@@ -152,7 +152,7 @@ namespace Ioss {
 			 DatabaseUsage db_usage,
 			 MPI_Comm communicator,
 			 const PropertyManager &props)
-    : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
+    : properties(props), commonSideTopology(nullptr), DBFilename(filename), dbState(STATE_INVALID),
       isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
       timeScaleFactor(1.0), splitType(SPLIT_BY_TOPOLOGIES),
       dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
@@ -171,16 +171,14 @@ namespace Ioss {
     if (util_.get_environment("IOSS_PROPERTIES", env_props, isParallel)) {
       // env_props string should be of the form
       // "PROP1=VALUE1:PROP2=VALUE2:..."
-      std::vector<std::string> prop_val;
-      tokenize(env_props, ":", prop_val);
+      std::vector<std::string> prop_val = tokenize(env_props, ":");
 
-      for (size_t i=0; i < prop_val.size(); i++) {
-        std::vector<std::string> property;
-        tokenize(prop_val[i], "=", property);
+      for (auto & elem : prop_val) {
+        std::vector<std::string> property = tokenize(elem, "=");
         if (property.size() != 2) {
           std::ostringstream errmsg;
           errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
-              << "       Found '" << prop_val[i] << "' which is not of the correct PROPERTY=VALUE form";
+              << "       Found '" << elem << "' which is not of the correct PROPERTY=VALUE form";
           IOSS_ERROR(errmsg);
         }
         std::string prop = Utils::uppercase(property[0]);
@@ -192,7 +190,7 @@ namespace Ioss {
           std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
 
         if (all_digit) {
-          int int_value = std::strtol(value.c_str(), NULL, 10);
+          int int_value = std::strtol(value.c_str(), nullptr, 10);
           properties.add(Property(prop, int_value));
         }
         else if (up_value == "TRUE" || up_value == "YES") {
@@ -310,11 +308,11 @@ namespace Ioss {
     //
     // Currently does not check for duplicate entity membership in a set -- union with duplicates
     //
-    create_groups("GROUP_SIDESET", SIDESET, "side", (SideSet*)NULL);
-    create_groups("GROUP_NODESET", NODESET, "node", (NodeSet*)NULL);
-    create_groups("GROUP_EDGESET", EDGESET, "edge", (EdgeSet*)NULL);
-    create_groups("GROUP_FACESET", FACESET, "face", (FaceSet*)NULL);
-    create_groups("GROUP_ELEMSET", ELEMENTSET, "elem", (ElementSet*)NULL);
+    create_groups("GROUP_SIDESET", SIDESET, "side", (SideSet*)nullptr);
+    create_groups("GROUP_NODESET", NODESET, "node", (NodeSet*)nullptr);
+    create_groups("GROUP_EDGESET", EDGESET, "edge", (EdgeSet*)nullptr);
+    create_groups("GROUP_FACESET", FACESET, "face", (FaceSet*)nullptr);
+    create_groups("GROUP_ELEMSET", ELEMENTSET, "elem", (ElementSet*)nullptr);
   }
 
   template <typename T>
@@ -325,18 +323,16 @@ namespace Ioss {
       return;
 
     std::string prop = properties.get(property_name).get_string();
-    std::vector<std::string> groups;
-    tokenize(prop, ":", groups);
-    for (size_t i=0; i < groups.size(); i++) {
-      std::vector<std::string> group_spec;
-      tokenize(groups[i], ",", group_spec);
+    std::vector<std::string> groups = tokenize(prop, ":");
+    for (auto &group : groups) {
+      std::vector<std::string> group_spec = tokenize(group, ",");
 
       // group_spec should contain the name of the new group as
       // the first location and the members of the group as subsequent
       // locations.  OK to have a single member
       if (group_spec.size() < 2) {
 	std::ostringstream errmsg;
-	errmsg << "ERROR: Invalid " << type_name << " group specification '" << groups[i] << "'\n"
+	errmsg << "ERROR: Invalid " << type_name << " group specification '" << group << "'\n"
 	       << "       Correct syntax is 'new_group,member1,...,memberN' and their must "
 	       << "       be at least 1 member of the group";
 	IOSS_ERROR(errmsg);
@@ -373,12 +369,9 @@ namespace Ioss {
     // Find the member SideSets...
     for (size_t i=1; i < group_spec.size(); i++) {
       SideSet* set = get_region()->get_sideset(group_spec[i]);
-      if (set != NULL) {
+      if (set != nullptr) {
 	SideBlockContainer side_blocks = set->get_side_blocks();
-	SideBlockContainer::const_iterator J;
-
-	for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
-	  SideBlock *sbold = *J;
+	for (auto &sbold : side_blocks) {
 	  size_t side_count = sbold->get_property("entity_count").get_int();
 	  SideBlock *sbnew = new SideBlock(this, sbold->name(),
 					   sbold->topology()->name(),
@@ -430,12 +423,12 @@ namespace Ioss {
 
       // Check face types.
       if (element_count > 0) {
-	if (commonSideTopology != NULL || I == element_blocks.begin()) {
+	if (commonSideTopology != nullptr || I == element_blocks.begin()) {
 	  ElementTopology* side_type = (*I)->topology()->boundary_type();
-	  if (commonSideTopology == NULL) // First block
+	  if (commonSideTopology == nullptr) // First block
 	    new_this->commonSideTopology = side_type;
 	  if (commonSideTopology != side_type) { // Face topologies differ in mesh
-	    new_this->commonSideTopology = NULL;
+	    new_this->commonSideTopology = nullptr;
 	    return;
 	  }
 	}
@@ -493,13 +486,11 @@ namespace Ioss {
 
       ElementBlockContainer element_blocks =
 	get_region()->get_element_blocks();
-      ElementBlockContainer::const_iterator I;
 
-      for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-	const ElementBlock *block = *I;
+      for (auto &block : element_blocks) {
 	const ElementTopology *elem_type = block->topology();
 	const ElementTopology *side_type = elem_type->boundary_type();
-	if (side_type == NULL) {
+	if (side_type == nullptr) {
 	  // heterogeneous sides.  Iterate through...
 	  int size = elem_type->number_boundaries();
 	  for (int i=1; i <= size; i++) {
@@ -549,9 +540,8 @@ namespace Ioss {
       std::vector<double> minmax;
       minmax.reserve(6*nblock);
       
-      for (size_t i=0; i < element_blocks.size(); i++) {
+      for (auto &block : element_blocks) {
 	double xmin, ymin, zmin, xmax, ymax, zmax;
-	Ioss::ElementBlock *block = element_blocks[i];
 	ssize_t nelem = block->get_property("entity_count").get_int();
 	if (block->get_database()->int_byte_size_api() == 8) {
 	  std::vector<int64_t> connectivity;
@@ -598,7 +588,7 @@ namespace {
 		 const Ioss::ParallelUtils &util)
   {
     if (initial_time < 0.0) {
-      gettimeofday(&tp, NULL);
+      gettimeofday(&tp, nullptr);
       initial_time = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
     }
 
@@ -612,17 +602,16 @@ namespace {
     if (util.parallel_rank() == 0 || single_proc_only) {
       std::string name = entity->name();
       std::ostringstream strm;
-      gettimeofday(&tp, NULL);
+      gettimeofday(&tp, nullptr);
       double time_now = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
       strm << symbol << " [" << std::fixed << std::setprecision(3)
 	   << time_now-initial_time << "]\t";
 
       int64_t total = 0;
       // Now append each processors size onto the stream...
-      std::vector<int64_t>::const_iterator pos = all_sizes.begin();
-      for (; pos != all_sizes.end(); ++pos) {
-	strm << std::setw(8) << *pos << ":";
-	total += *pos;
+      for (auto &p_size : all_sizes) {
+	strm << std::setw(8) << p_size << ":";
+	total += p_size;
       }
       if (util.parallel_size() > 1)
 	strm << std::setw(8) << total;

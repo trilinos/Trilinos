@@ -647,7 +647,6 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     params->set("timer_output_stream" , "std::cout");
 
     params->set("algorithm", "multijagged");
-    params->set("compute_metrics", "true");
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
     if (rectilinear)
@@ -695,7 +694,6 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-        problem->printMetrics(cout);
     }
     problem->printTimers();
 
@@ -761,7 +759,6 @@ int testFromDataFile(
     }
 
     //params->set("timer_output_stream" , "std::cout");
-    params->set("compute_metrics", "true");
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
     if (rectilinear)
@@ -896,7 +893,6 @@ int testFromDataFile(
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-      //problem->printMetrics(cout);
         cout << "testFromDataFile is done " << endl;
     }
 
@@ -1013,7 +1009,7 @@ int testFromSeparateDataFiles(
     }
 
     //params->set("timer_output_stream" , "std::cout");
-    params->set("compute_metrics", "true");
+    //params->set("compute_metrics", "true");
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
@@ -1087,7 +1083,7 @@ int testFromSeparateDataFiles(
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-        problem->printMetrics(cout);
+      //problem->printMetrics(cout);
         cout << "testFromDataFile is done " << endl;
     }
 

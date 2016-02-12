@@ -33,7 +33,7 @@
 #include <Ioss_Wedge18.h>
 #include <Ioss_ElementVariableType.h>   // for ElementVariableType
 #include <assert.h>                     // for assert
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for nullptr
 #include "Ioss_CodeTypes.h"             // for IntVector
 #include "Ioss_ElementTopology.h"       // for ElementTopology
 
@@ -169,7 +169,7 @@ Ioss::ElementTopology* Ioss::Wedge18::face_type(int face_number) const
 {
   assert(face_number >= 0 && face_number <= number_faces());
   if (face_number == 0)
-    return (Ioss::ElementTopology*)NULL;
+    return (Ioss::ElementTopology*)nullptr;
   else if (face_number <= 3)
 //    return Ioss::ElementTopology::factory("quadface9");
     return Ioss::ElementTopology::factory("quad9");

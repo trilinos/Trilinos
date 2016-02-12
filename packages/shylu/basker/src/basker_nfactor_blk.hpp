@@ -398,9 +398,7 @@ namespace BaskerNS
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
 	      cout << endl << endl;
-
 	      cout << "---------------------------"<<endl;
-	     
               cout << "Error: Matrix is singular, blk" << endl;
               cout << "k: " << k << " MaxIndex: " << maxindex 
 		   << " pivot " 
@@ -408,8 +406,9 @@ namespace BaskerNS
               cout << "lcnt: " << lcnt << endl;
 	      thread_array(kid).error_type =
 		BASKER_ERROR_SINGULAR;
-	      thread_array(kid).error_blk  = b;
-	      thread_array(kid).error_info = k;
+	      thread_array(kid).error_blk   = b;
+	      thread_array(kid).error_subblk = 0; 
+	      thread_array(kid).error_info  = k;
 	      return BASKER_ERROR;
             }          
 
@@ -444,8 +443,10 @@ namespace BaskerNS
 		{
 		  thread_array(kid).error_type =
 		    BASKER_ERROR_REMALLOC;
-		  thread_array(kid).error_blk = b;
-		  thread_array(kid).error_info = newsize;
+		  thread_array(kid).error_blk    = b;
+		  thread_array(kid).error_subblk = 0;
+		  thread_array(kid).error_info   = newsize;
+		  return BASKER_ERROR;
 		}
 
             }
@@ -469,8 +470,10 @@ namespace BaskerNS
 		{
 		  thread_array(kid).error_type =
 		    BASKER_ERROR_REMALLOC;
-		  thread_array(kid).error_blk = b;
-		  thread_array(kid).error_info = newsize;
+		  thread_array(kid).error_blk    = b;
+		  thread_array(kid).error_subblk = -1;
+		  thread_array(kid).error_info   = newsize;
+		  return BASKER_ERROR;
 		}
 
             }
@@ -648,10 +651,16 @@ namespace BaskerNS
 
 	      #endif
 	      //Move these factors into Local Ls
+	      Int move_error = 
 	      t_move_offdiag_L(kid,
 			       b, blk_row,
 			       b, blk_row,
 			       k, pivot);
+
+	      if(move_error == BASKER_ERROR)
+		{
+		  return BASKER_ERROR;
+		}
 	    }//end over all diag
 	  #endif
 
@@ -1358,9 +1367,28 @@ namespace BaskerNS
 
     if((p_size) > (llnnz-lnnz))
       {
+
+	Int newsize = llnnz*1.2 + L.ncol;
+
+	 if(Options.realloc == BASKER_FALSE)
+	   {
+	     thread_array(kid).error_type =
+	       BASKER_ERROR_NOMALLOC;
+	     return BASKER_ERROR;
+	   }
+	 else
+	   {
+	     thread_array(kid).error_type =
+	       BASKER_ERROR_REMALLOC;
+	     thread_array(kid).error_blk    = blkcol;
+	     thread_array(kid).error_subblk = blkrow;
+	     thread_array(kid).error_info   = newsize;
+	     return BASKER_ERROR;
+	   }
+
 	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d \n",
 	       blkcol, blkrow, kid, llnnz,lnnz,p_size  );
-	BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
+	//BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
 	
       }
 

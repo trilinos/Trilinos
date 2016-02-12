@@ -167,7 +167,6 @@ void box_global_bounds(
   const RangeBoundingBox  * const arg_range_boxes ,
   float        * const arg_global_box )
 {
-  typedef typename DomainBoundingBox::first_type box_type;
   enum { Dim = 3};
 
 #if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 1210)
@@ -859,7 +858,6 @@ void createSearchTree(
 {
   typedef std::pair<DomainBox,DomainIdent> DomainBoundingBox;
   typedef std::pair<RangeBox,RangeIdent> RangeBoundingBox;
-  typedef std::map<stk::OctTreeKey, std::pair<std::list<DomainBoundingBox>, std::list<RangeBoundingBox> > > SearchTree;
 
   stk::OctTreeKey covering[8];
   unsigned number = 0u;

@@ -401,3 +401,29 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
 // is included in the definition file.
 template<class ArrayScalar>
 DofCoordsInterface<ArrayScalar>::~DofCoordsInterface() {}
+
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+
+template<class Scalar, class ArrayScalar>
+void Basis<Scalar, ArrayScalar>::getValues(ArrayScalar &          outputValues,
+                                           const ArrayScalar &    inputPoints,
+                                           const ArrayScalar &    cellVertices,
+                                           const Orientation      ort,
+                                           const EOperator        operatorType) const {
+  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
+                              ">>> ERROR (Basis): FEM Basis calling an high order member function with orientation");
+}
+
+template<class Scalar, class ArrayScalar>
+unsigned int Basis<Scalar, ArrayScalar>::getNumVertexDofs() const {  return 0; }
+
+template<class Scalar, class ArrayScalar>
+unsigned int Basis<Scalar, ArrayScalar>::getNumEdgeDofs() const {  return 0; }
+
+template<class Scalar, class ArrayScalar>
+unsigned int Basis<Scalar, ArrayScalar>::getNumFaceDofs() const {  return 0; }
+
+template<class Scalar, class ArrayScalar>
+unsigned int Basis<Scalar, ArrayScalar>::getNumInteriorDofs() const {  return 0; }
+
+#endif

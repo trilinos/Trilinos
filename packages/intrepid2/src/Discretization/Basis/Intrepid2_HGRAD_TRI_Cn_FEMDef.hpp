@@ -48,6 +48,10 @@
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
 */
 
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+#include "Intrepid2_OrientationTools.hpp"
+#endif
+
 namespace Intrepid2 {
 
   template<class Scalar, class ArrayScalar>
@@ -69,14 +73,26 @@ namespace Intrepid2 {
 
     // construct lattice
 
-    shards::CellTopology myTri_3( shards::getCellTopologyData< shards::Triangle<3> >() );  
-
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+    {
+      ArrayScalar tempPts(N, 2);
+      PointTools::getLattice<Scalar,ArrayScalar >( tempPts ,
+                                                   this->basisCellTopology_,
+                                                   n ,
+                                                   0 ,
+                                                   pointType );
+    
+      OrientationTools<Scalar>::getLatticePointsByTopology( latticePts,
+                                                            tempPts,
+                                                            *this );
+    }
+#else
     PointTools::getLattice<Scalar,ArrayScalar >( latticePts ,
-                                                            myTri_3 ,
-                                                            n ,
-                                                            0 ,
-                                                            pointType );
-
+                                                 this->basisCellTopology_,
+                                                 n ,
+                                                 0 ,
+                                                 pointType );
+#endif
     
     // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
     // so we transpose on copy below.
@@ -207,8 +223,8 @@ namespace Intrepid2 {
         {
           ArrayScalar phisCur( numBf , numPts );
           Phis.getValues( phisCur , inputPoints , operatorType );
-          for (int i=0;i<outputValues.dimension(0);i++) {
-            for (int j=0;j<outputValues.dimension(1);j++) {
+          for (int i=0;i<outputValues.dimension(0);i++) {    // # of points
+            for (int j=0;j<outputValues.dimension(1);j++) {  
               outputValues(i,j) = 0.0;
               for (int k=0;k<this->getCardinality();k++) {
                 outputValues(i,j) += this->Vinv(k,i) * phisCur(k,j);
@@ -289,6 +305,95 @@ namespace Intrepid2 {
     TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                         ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): FEM Basis calling an FVD member function");
   }
+
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+  template<class Scalar, class ArrayScalar> 
+  void Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
+                                                              const ArrayScalar &  inputPoints,
+                                                              const Orientation    ort,
+                                                              const EOperator      operatorType) const {
+    // the basis functions are already topologically reordered 
+    // and store the values in tempValues
+
+    ArrayScalar tempValues(outputValues.dimension(0), 
+                           outputValues.dimension(1));
+    this->getValues(tempValues, inputPoints, operatorType);
+
+    // retrive information compute offsets of output values
+    const shards::CellTopology cellTopo = this->getBaseCellTopology();
+
+    const unsigned int numVertex       = cellTopo.getVertexCount();
+    const unsigned int numVertexDofs   = getNumVertexDofs();
+    const unsigned int numEdge         = cellTopo.getEdgeCount();
+    const unsigned int numEdgeDofs     = getNumEdgeDofs();
+    const unsigned int numInterior     = 1;
+    const unsigned int numInteriorDofs = getNumInteriorDofs();
+    const unsigned int numPts          = inputPoints.dimension(0);
+
+    // decode orientation for edges
+    int orts[3] = {};
+    ort.getEdgeOrientation(orts, 3);
+
+    // compute (or retrive) coefficient matrix and apply to output values
+    size_t offset = 0;
+    for (int vertId=0;vertId<numVertex;++vertId,offset+=numVertexDofs) 
+      for (int i=0;i<numVertexDofs;++i) 
+        for (int j=0;j<numPts;++j) 
+          outputValues(i + offset, j) = tempValues(i + offset, j);
+
+    for (int edgeId=0;edgeId<numEdge;++edgeId,offset+=numEdgeDofs) {
+      typename OrientationTools<Scalar>::CoeffMatrix C;
+      OrientationTools<Scalar>::getEdgeCoeffMatrix(C, 
+                                                   *this, 
+                                                   edgeId,
+                                                   orts[edgeId]);
+
+      // for communication with Eric and Mauro, let this show
+      C.showMe(std::cout);
+
+      // apply the coefficient matrix: 
+      // for now, assume that the output value container is row-oriented
+      // do we have any means to identify how to exchange loop based on the storage layout ??
+      for (int i=0;i<numEdgeDofs;++i) {
+        auto nnz     = C.NumNonZerosInRow(i);
+        auto colsPtr = C.ColsInRow(i);
+        auto valsPtr = C.ValuesInRow(i);
+
+        // sparse mat-vec
+        for (int j=0;j<numPts;++j) {
+          Scalar temp = 0.0;
+          for (int k=0;k<nnz;++k) 
+            temp = valsPtr[k]*tempValues(colsPtr[k] + offset, j);
+          outputValues(i + offset, j) = temp;
+        }
+      }
+    }
+    for (int intrId=0;intrId<numInterior;++intrId,offset+=numInteriorDofs) 
+      for (int i=0;i<numInteriorDofs;++i) 
+        for (int j=0;j<numPts;++j) 
+          outputValues(i + offset, j) = tempValues(i + offset, j);
+  }
+
+  // This should be part of basis tag and filled by derived classes instead of hardwired like this
+  template<class Scalar, class ArrayScalar>
+  unsigned int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumVertexDofs() const {
+    return 1;
+  }
+  template<class Scalar, class ArrayScalar>
+  unsigned int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumEdgeDofs() const {
+    const int order = this->basisDegree_;
+    return (order - 1);
+  }
+  template<class Scalar, class ArrayScalar>
+  unsigned int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumFaceDofs() const {
+    return 0;
+  }
+  template<class Scalar, class ArrayScalar>
+  unsigned int Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::getNumInteriorDofs() const {
+    const int order = this->basisDegree_;
+    return (order - 2)*(order - 1)/2;
+  }
+#endif  
 
 
 }// namespace Intrepid2

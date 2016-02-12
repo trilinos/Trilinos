@@ -26,6 +26,9 @@
 /* Define if experimental Ifpack2 code is enabled. */
 #cmakedefine HAVE_IFPACK2_EXPERIMENTAL
 
+/* Define if experimental Ifpack2 code that uses TpetraKernels is enabled. */
+#cmakedefine HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
+
 /* Define if Ifpack2::SupportGraph is enabled. */
 #cmakedefine HAVE_IFPACK2_SUPPORTGRAPH
 

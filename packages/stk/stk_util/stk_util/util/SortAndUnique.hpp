@@ -14,6 +14,14 @@ void sort_and_unique(VECTOR &vector, COMPARE compare )
     vector.resize(endIter - vector.begin());
 }
 
+template<typename VECTOR, typename COMPARE_LESS, typename COMPARE_EQUALS>
+void sort_and_unique(VECTOR &vector, COMPARE_LESS compare_less, COMPARE_EQUALS compare_equals  )
+{
+    std::sort(vector.begin(), vector.end(), compare_less);
+    auto endIter = std::unique(vector.begin(), vector.end(), compare_equals);
+    vector.resize(endIter - vector.begin());
+}
+
 template<typename VECTOR>
 void sort_and_unique(VECTOR &vec)
 {

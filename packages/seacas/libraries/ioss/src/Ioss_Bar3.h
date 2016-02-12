@@ -45,6 +45,7 @@ namespace Ioss {
     static void factory();
     ~Bar3();
 
+    ElementShape shape() const {return ElementShape::LINE;}
     int spatial_dimension()           const;
     int parametric_dimension()       const;
     bool is_element()                 const {return true;}

@@ -33,7 +33,7 @@
  * 
  */
 #include "shell_interface.h"
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for nullptr
 #include <cstdlib>                      // for exit, strtod, EXIT_SUCCESS, etc
 #include <cstring>                      // for strcmp
 #include <iostream>                     // for operator<<, basic_ostream, etc
@@ -61,10 +61,10 @@ void IOShell::Interface::enroll_options()
   options_.usage("[options] input_file[s] output_file");
 
   options_.enroll("help", Ioss::GetLongOption::NoValue,
-		  "Print this summary and exit", 0);
+		  "Print this summary and exit", nullptr);
 
   options_.enroll("version", Ioss::GetLongOption::NoValue,
-		  "Print version and exit", NULL);
+		  "Print version and exit", nullptr);
 
   options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue,
 		  "Database type for input file: pamgen|generated|exodus. exodus is the default.",
@@ -76,90 +76,90 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("extract_group", Ioss::GetLongOption::MandatoryValue,
 		  "Write the data from the specified group to the output file.\n",
-		  NULL);
+		  nullptr);
 
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue,
 		  "Use 64-bit integers on output database",
-		  NULL);
+		  nullptr);
 
   options_.enroll("float", Ioss::GetLongOption::NoValue,
 		  "Use 32-bit floating point values on output database; default is 64-bits",
-		  NULL);
+		  nullptr);
 
   options_.enroll("netcdf4", Ioss::GetLongOption::NoValue,
 		  "Output database will be a netcdf4 hdf5-based file instead of the classical netcdf file format",
-		  NULL);
+		  nullptr);
   
   options_.enroll("shuffle", Ioss::GetLongOption::NoValue,
 		  "Use a netcdf4 hdf5-based file and use hdf5s shuffle mode with compression.",
-		  NULL);
+		  nullptr);
   
   options_.enroll("compress", Ioss::GetLongOption::MandatoryValue,
 		  "Specify the hdf5 compression level [0..9] to be used on the output file.",
-		  NULL);
+		  nullptr);
   
   options_.enroll("compose", Ioss::GetLongOption::MandatoryValue,
 		  "Specify the parallel-io method to be used to output a single file in a parallel run. "
 		  "Options are default, mpiio, mpiposix, pnetcdf",
-		  NULL);
+		  nullptr);
 
   options_.enroll("rcb", Ioss::GetLongOption::NoValue,
 		  "Use recursive coordinate bisection method to decompose the input mesh in a parallel run.",
-		  NULL);
+		  nullptr);
   options_.enroll("rib", Ioss::GetLongOption::NoValue,
 		  "Use recursive inertial bisection method to decompose the input mesh in a parallel run.",
-		  NULL);
+		  nullptr);
 
   options_.enroll("hsfc", Ioss::GetLongOption::NoValue,
 		  "Use hilbert space-filling curve method to decompose the input mesh in a parallel run.",
-		  NULL);
+		  nullptr);
 
   options_.enroll("metis_sfc", Ioss::GetLongOption::NoValue,
 		  "Use the metis space-filling-curve method to decompose the input mesh in a parallel run.",
-		  NULL);
+		  nullptr);
   
   options_.enroll("kway", Ioss::GetLongOption::NoValue,
 		  "Use the metis kway graph-based method to decompose the input mesh in a parallel run.",
-		  NULL);
+		  nullptr);
 
   options_.enroll("kway_geom", Ioss::GetLongOption::NoValue,
 		  "Use the metis kway graph-based method with geometry speedup to decompose the input mesh in a parallel run.",
-		  NULL);
+		  nullptr);
 
   options_.enroll("linear", Ioss::GetLongOption::NoValue,
 		  "Use the linear method to decompose the input mesh in a parallel run. "
 		  "elements in order first n/p to proc 0, next to proc 1.",
-		  NULL);
+		  nullptr);
 
   options_.enroll("cyclic", Ioss::GetLongOption::NoValue,
 		  "Use the cyclic method to decompose the input mesh in a parallel run. "
 		  "elements handed out to id % proc_count",
-		  NULL);
+		  nullptr);
 
   options_.enroll("random", Ioss::GetLongOption::NoValue,
 		  "Use the random method to decompose the input mesh in a parallel run."
 		  "elements assigned randomly to processors in a way that preserves balance (do not use for a real run)",
-		  NULL);
+		  nullptr);
 
   options_.enroll("external", Ioss::GetLongOption::NoValue,
 		  "Files are decomposed externally into a file-per-processor in a parallel run.",
-		  NULL);
+		  nullptr);
 
   options_.enroll("debug" , Ioss::GetLongOption::NoValue,
 		  "turn on debugging output",
-		  NULL);
+		  nullptr);
 
   options_.enroll("statistics" , Ioss::GetLongOption::NoValue,
 		  "output parallel io timing statistics",
-		  NULL);
+		  nullptr);
 
   options_.enroll("Maximum_Time", Ioss::GetLongOption::MandatoryValue,
 		  "Maximum time on input database to transfer to output database",
-		  NULL);
+		  nullptr);
 
   options_.enroll("Minimum_Time", Ioss::GetLongOption::MandatoryValue,
 		  "Minimum time on input database to transfer to output database",
-		  NULL);
+		  nullptr);
 
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
 		  "Character used to separate a field suffix from the field basename\n"
@@ -172,7 +172,7 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("copyright", Ioss::GetLongOption::NoValue,
 		  "Show copyright and license data.",
-		  NULL);
+		  nullptr);
 }
 
 bool IOShell::Interface::parse_options(int argc, char **argv)
@@ -183,7 +183,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   // Get options from environment variable also...
   char *options = getenv("IO_SHELL_OPTIONS");
-  if (options != NULL) {
+  if (options != nullptr) {
     std::cerr << "\nThe following options were specified via the IO_SHELL_OPTIONS environment variable:\n"
 	      << "\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
@@ -223,8 +223,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("compress");
-    if (temp != NULL) {
-      compression_level = std::strtol(temp, NULL, 10);
+    if (temp != nullptr) {
+      compression_level = std::strtol(temp, nullptr, 10);
     }
   }
 
@@ -278,42 +278,42 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("in_type");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       inFiletype = temp;
     }
   }
 
   {
     const char *temp = options_.retrieve("out_type");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       outFiletype = temp;
     }
   }
 
   {
     const char *temp = options_.retrieve("compose");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       compose_output = Ioss::Utils::lowercase(temp);
     }
   }
 
   {
     const char *temp = options_.retrieve("extract_group");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       groupName = temp;
     }
   }
 
   {
     const char *temp = options_.retrieve("field_suffix_separator");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       fieldSuffixSeparator = temp[0];
     }
   }
 
   {
     const char *temp = options_.retrieve("surface_split_scheme");
-    if (temp != NULL) {
+    if (temp != nullptr) {
       if (std::strcmp(temp, "TOPOLOGY") == 0)
         surface_split_type = 1;
       else if (std::strcmp(temp, "ELEMENT_BLOCK") == 0)
@@ -325,15 +325,15 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("Maximum_Time");
-    if (temp != NULL) {
-      maximum_time = std::strtod(temp, NULL);
+    if (temp != nullptr) {
+      maximum_time = std::strtod(temp, nullptr);
     }
   }
 
   {
     const char *temp = options_.retrieve("Minimum_Time");
-    if (temp != NULL) {
-      minimum_time = std::strtod(temp, NULL);
+    if (temp != nullptr) {
+      minimum_time = std::strtod(temp, nullptr);
     }
   }
 

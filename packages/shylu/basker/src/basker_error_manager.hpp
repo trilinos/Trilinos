@@ -66,54 +66,134 @@ namespace BaskerNS
 	if(thread_array(ti).error_type ==
 	   BASKER_ERROR_REMALLOC)
 	  {
-
-	    BASKER_ASSERT(thread_array(ti).error_blk > 0,
+	    
+	    BASKER_ASSERT(thread_array(ti).error_blk >= 0,
 			  "nfactor_dom_error error_blk");
 
-	    printf("ERROR THREADS: %d DOMBLK MALLOC: %d \n",
+	    printf("ERROR THREADS: %d DOMBLK MALLOC: %d %d \n",
 		   ti,
-		   thread_array(ti).error_blk);
+		   thread_array(ti).error_blk, 
+		   thread_array(ti).error_subblk);
 	    
 
+	    //If on diagonal, want to compare L and U
+	    Int resize_L = BASKER_MAX_IDX;   
+	    Int resize_U = BASKER_MAX_IDX;
+	    if(thread_array(ti).error_subblk != BASKER_MAX_IDX)
+	      {
+		
+		BASKER_ASSERT(thread_array(ti).error_info >0,
+			      "L) newsize not big enough");
+		resize_L = thread_array(ti).error_info;
+		printf("L(%d)  resize: %d \n", ti,  resize_L);
+
+
+		//if L is already bigger and U, 
+		//We will want re size U as, well
+		if(thread_array(ti).error_subblk == 0)
+		  {
+		    Int blkcol = thread_array(ti).error_blk;
+		    Int blkUrow = LU_size(blkcol)-1;
+		    if(LL(blkcol)(0).nnz >=
+		       LU(blkcol)(blkUrow).nnz)
+		      {
+			printf("resize U too \n");
+			resize_U = thread_array(ti).error_info;
+		      }
+		  }//if - a domain
+	      }
+	    //We don't care about the other way since,
+	    //L is already checked before U.
+	    printf("now to check U\n");
+	    if(thread_array(ti).error_subblk == -1)
+	      {  
+		resize_U = thread_array(ti).error_info;
+		printf("resize U: %d \n", resize_U);
+	      }
+
+	    printf("before resize \n");
 	    //Resize L
-	    BASKER_MATRIX &L = LL(thread_array(ti).error_blk)(0);
-	    REALLOC_INT_1DARRAY(L.row_idx,
-			       L.nnz,
-			       thread_array(ti).error_info);
-	    REALLOC_ENTRY_1DARRAY(L.val,
-				 L.nnz,
-				 thread_array(ti).error_info);
-	    L.nnz = thread_array(ti).error_info;
+	    if(resize_L > BASKER_MAX_IDX)
+	      {
+		BASKER_MATRIX &L =
+   LL(thread_array(ti).error_blk)(thread_array(ti).error_subblk);
+		REALLOC_INT_1DARRAY(L.row_idx,
+				    L.nnz,
+				    resize_L);
+		REALLOC_ENTRY_1DARRAY(L.val,
+				      L.nnz,
+				      resize_L);
+		if(Options.incomplete == BASKER_TRUE)
+		  {
+		    REALLOC_INT_1DARRAY(L.inc_lvl,
+					L.nnz,
+					resize_L);
+
+		  }
+		L.nnz = resize_L;
+	      }
+
+	    //Resize U
+	    if(resize_U > BASKER_MAX_IDX)
+	      {
+		BASKER_MATRIX &U = 
+		  LU(thread_array(ti).error_blk)(0);
+		REALLOC_INT_1DARRAY(U.row_idx,
+			       U.nnz,
+			       resize_U);
+		REALLOC_ENTRY_1DARRAY(U.val,
+				      U.nnz,
+				      resize_U);
+		U.nnz = resize_U;
+  
+	      }
 
 	    //clean up workspace
-	    if(L.w_fill == BASKER_TRUE)
+	    //if(LL(thread_array(ti).error_blk)(0).w_fill == 
+	    //  BASKER_TRUE)
 	      {
-		//Clear workspace
-		for(Int i = 0; i < L.iws_size*L.iws_mult; ++i)
+		//Clear workspace, whole column
+		for(Int sb = 0; 
+		    sb < LL_size(thread_array(ti).error_blk);
+		    sb++)
 		  {
-		    L.iws(i) = (Int) 0;
-		  }
-		for(Int i = 0; i < L.ews_size*L.ews_mult; ++i)
-		  {
-		    L.ews(i) = (Entry) 0;
-		  }
-		//Clear perm
-		for(Int i = L.srow; i < L.srow+L.nrow; ++i)
-		  {
-		    gperm(i) = BASKER_MAX_IDX;
-		  }
-	      }
-	    
-	    //Resize U
-	    BASKER_MATRIX &U = LU(thread_array(ti).error_blk)(0);
-	    REALLOC_INT_1DARRAY(U.row_idx,
-			       U.nnz,
-			       thread_array(ti).error_info);
-	    REALLOC_ENTRY_1DARRAY(U.val,
-				 U.nnz,
-				 thread_array(ti).error_info);
-	    U.nnz = thread_array(ti).error_info;
-	    
+		    BASKER_MATRIX &SL = 
+		      LL(thread_array(ti).error_blk)(sb);
+		    for(Int i = 0; 
+			i < SL.iws_size*SL.iws_mult; 
+			++i)
+		      {
+			SL.iws(i) = (Int) 0;
+		      }
+		    for(Int i = 0;
+			i < SL.ews_size*SL.ews_mult; 
+			++i)
+		      {
+			SL.ews(i) = (Entry) 0;
+		      }
+		    if(sb == 0)
+		      {
+			printf("CLEARING PERM\n");
+			//Clear perm
+			for(Int i = SL.srow; 
+			    i < SL.srow+SL.nrow; ++i)
+			  {
+			    gperm(i) = BASKER_MAX_IDX;
+			  }
+
+			//Clear incomplete ws
+			if(Options.incomplete == BASKER_TRUE)
+			  {
+			    for(Int i = SL.srow;
+				i < SL.srow+SL.nrow; ++i)
+			      {
+				INC_LVL_TEMP(i) = BASKER_MAX_IDX;
+			      }
+			  }
+		      }
+		  }//for - sb (subblks)
+	      }//if ws is filled
+	     
 	    threads_start(ti) = thread_array(ti).error_blk;
 	
 
@@ -143,6 +223,181 @@ namespace BaskerNS
   }//end nfactor_domain_error
 
  
+
+  //========SEP ERROR HANDLE===========//
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::nfactor_sep_error
+  (
+   INT_1DARRAY thread_start
+   )
+  {
+    Int nthread_remalloc = 0;
+    for(Int ti = 0; ti < num_threads; ti++)
+      {
+
+	//Note: jdb we can make this into a switch
+	if(thread_array(ti).error_type ==
+	   BASKER_ERROR_NOERROR)
+	  {
+	    thread_start(ti) = BASKER_MAX_IDX;
+	    continue;
+	  }//end if NOERROR
+
+	if(thread_array(ti).error_type ==
+	   BASKER_ERROR_SINGULAR)
+	  {
+	    printf("ERROR THREAD: %d DOMBLK SINGULAR: %d\n",
+		   ti,
+		   thread_array(ti).error_blk);
+	    return BASKER_ERROR;
+	  }//end if SINGULAR
+	
+	if(thread_array(ti).error_type ==
+	   BASKER_ERROR_NOMALLOC)
+	  {
+	    printf("ERROR THREADS: %d DOMBLK NOMALLOC: %d\n",
+		   ti,
+		   thread_array(ti).error_blk);
+	    return BASKER_ERROR;
+	  }//end if NOMALLOC
+	
+	if(thread_array(ti).error_type ==
+	   BASKER_ERROR_REMALLOC)
+	  {
+
+	    BASKER_ASSERT(thread_array(ti).error_blk > 0,
+			  "nfactor_SEP_error error_blk");
+
+	    printf("ERROR THREADS: %d SEPBLK MALLOC: %d %d \n",
+		   ti,
+		   thread_array(ti).error_blk, 
+		   thread_array(ti).error_subblk);
+	    
+
+	    //If on diagonal, want to compare L and U
+	    Int resize_L = BASKER_MAX_IDX;   
+	    Int resize_U = BASKER_MAX_IDX;
+	    if(thread_array(ti).error_subblk <= -1)
+	      {
+		resize_L == thread_array(ti).error_info;       
+	      }
+	    //We don't care about the other way since,
+	    //L is already checked before U.
+	    if(thread_array(ti).error_subblk > -1)
+	      {
+		resize_U = thread_array(ti).error_info;
+	      }
+
+	    //Resize L
+	    if(resize_L > BASKER_MAX_IDX)
+	      {
+		const Int tsb = (-1*thread_array(ti).error_subblk)-1;
+		BASKER_MATRIX &L =
+   LL(thread_array(ti).error_blk)(tsb);
+		REALLOC_INT_1DARRAY(L.row_idx,
+				    L.nnz,
+				    thread_array(ti).error_info);
+		REALLOC_ENTRY_1DARRAY(L.val,
+				      L.nnz,
+				  thread_array(ti).error_info);
+		L.nnz = thread_array(ti).error_info;
+	      }
+
+	    //Resize U
+	    if(resize_U > BASKER_MAX_IDX)
+	      {
+		const Int tsb = thread_array(ti).error_subblk;
+		BASKER_MATRIX &U = 
+		  LU(thread_array(ti).error_blk)(tsb);
+		REALLOC_INT_1DARRAY(U.row_idx,
+			       U.nnz,
+			       resize_U);
+		REALLOC_ENTRY_1DARRAY(U.val,
+				      U.nnz,
+				      resize_U);
+		if(Options.incomplete == BASKER_TRUE)
+		  {
+		    REALLOC_INT_1DARRAY(U.inc_lvl,
+					U.nnz,
+					resize_U);
+		  }
+		U.nnz = thread_array(ti).error_info;
+	      }
+	    
+	    //clean up workspace
+	    //No nice way to do this since multiple threads
+	    //Though this could be done in parallel in the future
+	    for(Int p = 0; p < num_threads; p++)
+	      {
+		Int blk = S(p)(0);
+		if(LL(blk)(0).w_fill == BASKER_TRUE)
+		  {
+		    //Clear workspace, whole column
+		    for(Int sb = 0; 
+			sb < LL_size(blk);
+			sb++)
+		      {
+			BASKER_MATRIX &SL =  LL(blk)(sb);
+			for(Int i = 0; 
+			    i < SL.iws_size*SL.iws_mult; 
+			    ++i)
+			  {
+			    SL.iws(i) = (Int) 0;
+			  }
+			for(Int i = 0;
+			    i < SL.ews_size*SL.ews_mult; 
+			    ++i)
+			  {
+			    SL.ews(i) = (Entry) 0;
+			  }
+		      }//for - sb (subblks)
+		  }//if ws is filled
+	      }//for-other all threads
+	     
+	    //Clear permuation
+	    BASKER_MATRIX &SL = 
+	      LL(thread_array(ti).error_blk)(0);
+	    
+	    for(Int i = SL.srow; i < (SL.srow+SL.nrow);
+		i++)
+	      {
+		gperm(i) = BASKER_MAX_IDX;
+	      }//for--to clear perm
+	
+	
+	    thread_start(ti) = thread_array(ti).error_blk;
+	
+	    //Reset 
+	    thread_array(ti).error_type = BASKER_ERROR_NOERROR;
+	    thread_array(ti).error_blk  = BASKER_MAX_IDX;
+	    thread_array(ti).error_info = BASKER_MAX_IDX;
+	    
+	    for(Int i = 0; i < num_threads; i++)
+	      {
+		basker_barrier.ExitSet(i,BASKER_FALSE);
+	      }
+	    
+	    nthread_remalloc++;
+    
+	  }//if REMALLOC
+
+      }//for all threads
+    
+    if(nthread_remalloc == 0)
+      {
+	return BASKER_SUCCESS;
+      }
+    else
+      {
+	return nthread_remalloc;
+      }
+
+    //Should never be here
+    BASKER_ASSERT(0==1, "nfactor_diag_error, should never");
+    return BASKER_SUCCESS;
+
+  }//end nfactor_sep_error
 
 
   //========BTF ERROR HANDLE==============//
@@ -278,6 +533,9 @@ namespace BaskerNS
     BASKER_ASSERT(0==1, "nfactor_diag_error, should never");
     return BASKER_SUCCESS;
   }//end nfactor_diag_error
+
+
+
 
 }//end namespace BaskerNS
 

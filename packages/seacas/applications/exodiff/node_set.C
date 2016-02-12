@@ -32,7 +32,7 @@
 // 
 
 #include "node_set.h"
-#include <cstdlib>                      // for NULL, exit
+#include <cstdlib>                      // for nullptr, exit
 #include <iostream>                     // for operator<<, endl, ostream, etc
 #include <vector>                       // for vector
 #include "ED_SystemInterface.h"         // for SystemInterface, interface
@@ -48,27 +48,27 @@ template <typename INT>
 Node_Set<INT>::Node_Set()
   : Exo_Entity(),
     num_dist_factors(0),
-    nodes(NULL),
-    nodeIndex(NULL),
-    dist_factors(NULL)
+    nodes(nullptr),
+    nodeIndex(nullptr),
+    dist_factors(nullptr)
 { }
 
 template <typename INT>
 Node_Set<INT>::Node_Set(int file_id, size_t id)
   : Exo_Entity(file_id, id),
     num_dist_factors(0),
-    nodes(NULL),
-    nodeIndex(NULL),
-    dist_factors(NULL)
+    nodes(nullptr),
+    nodeIndex(nullptr),
+    dist_factors(nullptr)
 { }
 
 template <typename INT>
 Node_Set<INT>::Node_Set(int file_id, size_t id, size_t nnodes, size_t ndfs)
   : Exo_Entity(file_id, id, nnodes),
     num_dist_factors(ndfs),
-    nodes(NULL),
-    nodeIndex(NULL),
-    dist_factors(NULL)
+    nodes(nullptr),
+    nodeIndex(nullptr),
+    dist_factors(nullptr)
 {}
 
 template <typename INT>
@@ -118,7 +118,7 @@ size_t Node_Set<INT>::Node_Index(size_t position) const
       load_nodes();
     }
     SMART_ASSERT(position < numEntity);
-    SMART_ASSERT(nodeIndex != NULL);
+    SMART_ASSERT(nodeIndex != nullptr);
     return nodeIndex[position];
   }
 }
@@ -126,10 +126,10 @@ size_t Node_Set<INT>::Node_Index(size_t position) const
 template <typename INT>
 void Node_Set<INT>::apply_map(const INT *node_map)
 {
-  SMART_ASSERT(node_map != NULL);
-  if (nodes != NULL) {
-    delete [] nodes;     nodes = NULL;
-    delete [] nodeIndex; nodeIndex = NULL;
+  SMART_ASSERT(node_map != nullptr);
+  if (nodes != nullptr) {
+    delete [] nodes;     nodes = nullptr;
+    delete [] nodeIndex; nodeIndex = nullptr;
   }
   load_nodes(node_map);
 }
@@ -140,9 +140,9 @@ void Node_Set<INT>::load_nodes(const INT *node_map) const
   if (numEntity > 0) {
     nodes = new INT[numEntity];  SMART_ASSERT(nodes != 0);
     nodeIndex = new INT[numEntity];  SMART_ASSERT(nodeIndex != 0);
-    ex_get_set(fileId, EX_NODE_SET, id_, nodes, 0);
+    ex_get_set(fileId, EX_NODE_SET, id_, nodes, nullptr);
     
-    if (node_map != NULL) {
+    if (node_map != nullptr) {
       for (size_t i=0; i < numEntity; i++) {
 	nodes[i] = 1+node_map[nodes[i]-1];
       }
@@ -194,9 +194,9 @@ void Node_Set<INT>::entity_load_params()
   std::vector<ex_set> sets(1);
   sets[0].id = id_;
   sets[0].type = EX_NODE_SET;
-  sets[0].entry_list = NULL;
-  sets[0].extra_list = NULL;
-  sets[0].distribution_factor_list = NULL;
+  sets[0].entry_list = nullptr;
+  sets[0].extra_list = nullptr;
+  sets[0].distribution_factor_list = nullptr;
 
   int err = ex_get_sets(fileId, 1, &sets[0]);
   
