@@ -71,15 +71,9 @@ std::string get_message_for_split_coincident_elements(const stk::mesh::BulkData&
     return out.str();
 }
 
-void print_and_throw_if_elements_are_split(std::ostream& out, const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > &splitCoincidentElements)
+void throw_if_any_proc_has_false(MPI_Comm comm, bool is_all_ok_locally)
 {
-    bool is_all_ok_locally = splitCoincidentElements.empty();
-    bool is_all_ok_globally = stk::is_true_on_all_procs(bulkData.parallel(), is_all_ok_locally);
-    if(!is_all_ok_locally)
-    {
-        out << get_message_for_split_coincident_elements(bulkData, splitCoincidentElements);
-        out.flush();
-    }
+    bool is_all_ok_globally = stk::is_true_on_all_procs(comm, is_all_ok_locally);
     ThrowRequireMsg(is_all_ok_globally, "Mesh diagnostics failed.");
 }
 
@@ -157,16 +151,5 @@ std::string get_non_unique_key_messages(const stk::mesh::BulkData& bulkData, con
     return os.str();
 }
 
-void print_and_throw_if_entities_are_not_unique(std::ostream& out, const stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKeyProc> &badKeyProcs)
-{
-    bool allOk = badKeyProcs.empty();
-    if(!allOk)
-    {
-        out << get_non_unique_key_messages(bulkData, badKeyProcs);
-        out.flush();
-    }
-    bool globally_ok = stk::is_true_on_all_procs(bulkData.parallel(), allOk);
-    ThrowRequireMsg(globally_ok, "Program error. Please contact sierra-help@sandia.gov for support.");
-}
 
 } }

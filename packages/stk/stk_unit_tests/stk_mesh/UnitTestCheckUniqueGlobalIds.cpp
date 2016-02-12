@@ -7,6 +7,9 @@
 #include "../../stk_mesh/stk_mesh/base/FEMHelpers.hpp"
 #include "../../stk_mesh/stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp"
 
+namespace
+{
+
 class MeshChecker : public stk::unit_test_util::MeshFixture
 {
 public:
@@ -17,14 +20,14 @@ void test_non_unique_key_results(const stk::mesh::BulkData& bulkData, const std:
     std::vector<stk::mesh::EntityKeyProc> badKeyProcs = stk::mesh::get_non_unique_key_procs(bulkData);
     EXPECT_EQ(gold_values[bulkData.parallel_rank()].size(), badKeyProcs.size());
     EXPECT_EQ(gold_values[bulkData.parallel_rank()], badKeyProcs);
-    EXPECT_THROW(stk::mesh::print_and_throw_if_entities_are_not_unique(std::cerr, bulkData, badKeyProcs), std::logic_error);
+    EXPECT_THROW(stk::mesh::throw_if_any_proc_has_false(bulkData.parallel(), badKeyProcs.empty()), std::logic_error);
 }
 
 void test_keys_are_unique(const stk::mesh::BulkData& bulkData)
 {
     std::vector<stk::mesh::EntityKeyProc> badKeyProcs = stk::mesh::get_non_unique_key_procs(bulkData);
     EXPECT_TRUE(badKeyProcs.empty());
-    EXPECT_NO_THROW(stk::mesh::print_and_throw_if_entities_are_not_unique(std::cerr, bulkData, badKeyProcs));
+    EXPECT_NO_THROW(stk::mesh::throw_if_any_proc_has_false(bulkData.parallel(), badKeyProcs.empty()));
 }
 
 TEST_F(MeshChecker, check_throw_on_non_unique_ids)
@@ -134,4 +137,7 @@ TEST_F(MeshChecker, check_throw_on_non_unique_ids_for_elements)
         test_non_unique_key_results(get_bulk(), gold_values);
     }
 }
+
+}
+
 
