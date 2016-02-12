@@ -206,6 +206,7 @@ namespace MueLu {
       if (factoryName == "MatrixAnalysisFactory")           return Build2<MatrixAnalysisFactory>         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MultiVectorTransferFactory")      return Build2<MultiVectorTransferFactory>    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NoFactory")                       return Teuchos::null;
+      if (factoryName == "NoSmoother")                      return rcp(new SmootherFactory(Teuchos::null));
       if (factoryName == "NullspaceFactory")                return Build2<NullspaceFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspacePresmoothFactory")       return Build2<NullspacePresmoothFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "PatternFactory")                  return Build2<PatternFactory>                (paramList, factoryMapIn, factoryManagersIn);
@@ -223,7 +224,7 @@ namespace MueLu {
       if (factoryName == "TogglePFactory")                  return BuildTogglePFactory<TogglePFactory>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TransPFactory")                   return Build2<TransPFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                 (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "UncoupledAggregationFactory")     return Build2<UncoupledAggregationFactory>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserPFactory")                    return Build2<UserPFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SemiCoarsenPFactory")             return Build2<SemiCoarsenPFactory>           (paramList, factoryMapIn, factoryManagersIn);
@@ -544,43 +545,6 @@ namespace MueLu {
       return factory;
     }
 
-    //! UncoupledAggregationFactory
-    RCP<FactoryBase> BuildUncoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
-      RCP<UncoupledAggregationFactory> factory = Build<UncoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
-
-      ParameterList paramListWithFactories(paramList); // copy  (*might* also avoid indicating that parameter entry is used)
-      paramListWithFactories.remove("factory", false);
-
-      // Read the RCP<Factory> parameters of the class T
-      RCP<const ParameterList> validParamList = factory->GetValidParameterList();
-      for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
-        const std::string & pName = validParamList->name(param);
-
-        if (validParamList->isType< RCP<const FactoryBase> >(pName) && paramList.isParameter(pName)) {
-          // Generate or get factory described by param
-          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
-
-          // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
-          paramListWithFactories.remove(pName);
-          paramListWithFactories.set(pName, generatingFact);
-        }
-
-        if (pName == "ParameterList" && validParamList->isType<RCP<const ParameterList> >(pName) && paramList.isParameter(pName)) {
-          // NOTE: we cannot use
-          //     subList = sublist(rcpFromRef(paramList), pName)
-          // here as that would result in sublist also being a reference to a temporary object.
-          // The resulting dereferencing in the corresponding factory would then segfault
-          RCP<const ParameterList> subList = Teuchos::sublist(rcp(new ParameterList(paramList)), pName);
-          paramListWithFactories.set(pName, subList);
-        }
-      }
-
-      // Configure the factory
-      factory->SetParameterList(paramListWithFactories);
-
-      return factory;
-    }
-
     //! TrilinosSmoother
     // Parameter List Parsing:
     //     <ParameterList name="smootherFact1">
@@ -605,6 +569,9 @@ namespace MueLu {
       // std::string verbose;         if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
+      // parameters from SmootherFactory
+      bool bKeepSmootherData = false; if(paramList.isParameter("keep smoother data")) bKeepSmootherData = paramList.get<bool>("keep smoother data");
+
       // Read in factory information for smoothers (if available...)
       // NOTE: only a selected number of factories can be used with the Trilinos smoother
       //       smoothers usually work with the global data available (which is A and the transfers P and R)
@@ -624,7 +591,12 @@ namespace MueLu {
         trilSmoo->SetFactory("CoarseNumZLayers", generatingFact);
       }
 
-      return rcp(new SmootherFactory(trilSmoo));
+      RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(Teuchos::null));
+      Teuchos::ParameterList smooFactParams;
+      smooFactParams.set<bool>("keep smoother data",bKeepSmootherData);
+      smooFact->SetParameterList(smooFactParams);
+      smooFact->SetSmootherPrototypes(trilSmoo);
+      return smooFact;
     }
 
 #ifdef HAVE_MUELU_MATLAB
