@@ -121,7 +121,7 @@ namespace BaskerNS
       
       //if(kid == 8)
 	{
-      basker->t_nfactor_blk(kid);
+      basker->t_nfactor_blk_inc_lvl(kid);
 	}
 
 
@@ -168,7 +168,7 @@ namespace BaskerNS
     Int col_idx_offset = M.nnz;
 
     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
-    printf("=======NFACTOR BLK INC LVL========\n");
+    printf("=======NFACTOR BLK INC LVL %d========\n", kid);
     #endif
     //printf("test one ws_size: %d \n", ws_size);
     
@@ -204,13 +204,13 @@ namespace BaskerNS
 	  lcnt = 0;
 	  ucnt = 0;
 
-          #ifdef BASKER_DEBUG_NFACTOR_BLK
+          //#ifdef BASKER_DEBUG_NFACTOR_BLK
           ASSERT(top == ws_size);
           //ASSERT entry workspace is clean
           for(i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
           //ASSERT int workspace is clean
 	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
-          #endif
+          //#endif
 
           //for each nnz in column
 	  //Wnat to change this to local blk anyway
@@ -318,8 +318,10 @@ namespace BaskerNS
 		{
 		  thread_array(kid).error_type =
 		    BASKER_ERROR_REMALLOC;
-		  thread_array(kid).error_blk = b;
-		  thread_array(kid).error_info = newsize;
+		  thread_array(kid).error_blk    = b;
+		  thread_array(kid).error_subblk = 0;
+		  thread_array(kid).error_info   = newsize;
+		  return BASKER_ERROR;
 		}
 
             }
@@ -343,8 +345,10 @@ namespace BaskerNS
 		{
 		  thread_array(kid).error_type =
 		    BASKER_ERROR_REMALLOC;
-		  thread_array(kid).error_blk = b;
-		  thread_array(kid).error_info = newsize;
+		  thread_array(kid).error_blk    = b;
+		  thread_array(kid).error_subblk = -1;
+		  thread_array(kid).error_info  = newsize;
+		  return BASKER_ERROR;
 		}
 
             }
@@ -463,11 +467,17 @@ namespace BaskerNS
 				   BASKER_TRUE);
 	      
 	      //Move these factors into Local Ls
+	      Int move_error = 
 	      t_move_offdiag_L_inc_lvl(kid,
 			       b, blk_row,
 			       b, blk_row,
 			       k, pivot);
 	      
+	      if(move_error == BASKER_ERROR)
+		{
+		  return BASKER_ERROR;
+		}
+		  
 	    }//end over all diag
 	  
 	  for(Int i = 0; i < M.nrow; i++)
@@ -553,10 +563,12 @@ namespace BaskerNS
 	   pop_top, pattern[pop_top], pattern[pop_top+1]);
     #endif
 
+    //printf("short test: %d %d kid: %d \n",
+    //	   j+brow, gperm(j+brow), kid);
     //Short circuit
     if(gperm(j+brow) == BASKER_MAX_IDX)
       {
-	#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+        #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	printf("==DFS Short circuit: %d %d== \n",
 	       j, gperm(j+brow));
 	#endif
@@ -1310,10 +1322,31 @@ namespace BaskerNS
 
     if((p_size) > (llnnz-lnnz))
       {
-	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d \n",
-	       blkcol, blkrow, kid, llnnz,lnnz,p_size  );
+	Int newsize = llnnz*1.2 + L.ncol;
+
+	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d newsize: %d  \n",
+	       blkcol, blkrow, kid, llnnz,lnnz,p_size, newsize  );
 	BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
-	
+
+	if(Options.realloc == BASKER_FALSE)
+	  {
+	    thread_array(kid).error_type =
+	      BASKER_ERROR_NOMALLOC;
+	    return BASKER_ERROR;
+
+	  }
+	else
+	  {
+	    thread_array(kid).error_type =
+	      BASKER_ERROR_REMALLOC;
+	    thread_array(kid).error_blk    = blkcol;
+	    thread_array(kid).error_subblk = blkrow;
+	    thread_array(kid).error_info   = newsize;
+	    return BASKER_ERROR;
+	  }
+
+
+       
       }
 
     for(Int i = 0; i < p_size; i++)
@@ -1331,6 +1364,7 @@ namespace BaskerNS
 	L.row_idx(lnnz) = j;
 	L.inc_lvl(lnnz) = stack[j];
 	stack[j] = BASKER_MAX_IDX;
+
 	L.val(lnnz) = EntryOP::divide(X(j),pivot);
 	X(j) = 0;
 
@@ -2107,6 +2141,16 @@ namespace BaskerNS
     const Int    llnnz = L.nnz;
     Int    lnnz  = L.col_ptr(k);
    
+    if(L.nrow > (llnnz - lnnz))
+      {
+	printf("no enough memory in dense \n");
+	printf("kid: %d llnnz: %d lnnz: %d \n",
+	       kid, lnnz, lnnz);
+	
+
+      }
+    
+
     for(Int j = 0; j < L.nrow; ++j)
       {
 	if(X(j)!=0)
@@ -2120,7 +2164,9 @@ namespace BaskerNS
 	#endif
 
 	color[j] = 0;
-	
+
+	//printf("lnnz: %d %d kid: %d \n",
+	//     lnnz, j, kid); 
 	L.row_idx(lnnz) = j;
 
 	L.val(lnnz) = EntryOP::divide(X(j),pivot);

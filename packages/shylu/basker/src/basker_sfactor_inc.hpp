@@ -175,10 +175,10 @@ namespace BaskerNS
 		      }
 
 		    
-		    sfactor_nd_upper_estimate(AVM(U_col)(U_row),
+		    sfactor_nd_sep_upper_estimate(AVM(U_col)(U_row),
 					      LU(U_col)(U_row));
 		    
-		    sfactor_nd_lower_estimate(
+		    sfactor_nd_sep_lower_estimate(
 					ALM(innerblk)(l-lvl),
 					LL(innerblk)(l-lvl));
 
@@ -238,9 +238,13 @@ namespace BaskerNS
    BASKER_MATRIX &LM
    )
   {
+    //LM.nnz = 0;
+    
     LM.nnz = M.nnz *
-      ((BASKER_FILL_LLOWERESTIMATE+Options.user_fill)*
+    ((BASKER_FILL_LLOWERESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
+    
+    //printf("lower size: %d %d \n", M.nnz, LM.nnz);
     global_nnz += LM.nnz;
   }//end sfactor_nd_lower_estimate()
 
@@ -252,11 +256,38 @@ namespace BaskerNS
    BASKER_MATRIX &UM
    )
   {
+    //UM.nnz = 0;
+    
     UM.nnz = M.nnz * 
       ((BASKER_FILL_UUPPERESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
+    
     global_nnz += UM.nnz;
   }//end sfactor_nd_upper_estimate()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::sfactor_nd_sep_upper_estimate
+  (
+   BASKER_MATRIX &M,
+   BASKER_MATRIX &UM
+   )
+  {
+    UM.nnz = M.ncol*M.nrow;
+    global_nnz += UM.nnz;
+  }//end sfactor_nd_sep_upper_estimate
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::sfactor_nd_sep_lower_estimate
+  (
+   BASKER_MATRIX &M,
+   BASKER_MATRIX &LM
+   )
+  {
+    LM.nnz = M.ncol*M.nrow;
+    global_nnz += LM.nnz;
+  }//end sfactor_nd_sep_lower_estimate
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -294,6 +325,9 @@ namespace BaskerNS
     UM.nnz = nnz_low * 
       ((BASKER_FILL_USEPESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
+
+    LM.nnz = M.nrow*M.nrow;
+    UM.nnz = M.nrow*M.nrow;
     global_nnz += UM.nnz;
   }//end sfactor_nd_sep_estimate
 

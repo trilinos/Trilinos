@@ -927,9 +927,7 @@ void RILUK<MatrixType>::compute ()
   } 
   else{
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
- 
      myBasker->Factor_Inc(0);
-     myBasker->DEBUG_PRINT();
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
        0==1, std::runtime_error,

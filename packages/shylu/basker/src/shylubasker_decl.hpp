@@ -481,6 +481,14 @@ namespace BaskerNS
     void sfactor_nd_upper_estimate(BASKER_MATRIX &M,
 				   BASKER_MATRIX &UM);
     BASKER_INLINE
+    void sfactor_nd_sep_upper_estimate(BASKER_MATRIX &M,
+				       BASKER_MATRIX &UM);
+
+    BASKER_INLINE
+    void sfactor_nd_sep_lower_estimate(BASKER_MATRIX &M,
+				       BASKER_MATRIX &LM);
+
+    BASKER_INLINE
     void sfactor_nd_sep_estimate(BASKER_MATRIX &M,
 				 BASKER_MATRIX &ML,
 				 BASKER_MATRIX &MU);

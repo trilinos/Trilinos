@@ -275,6 +275,7 @@ namespace BaskerNS
 	         Int nnz, Int *col_ptr, Int *row_idx, Entry *val)
   {
 
+    // printf("befor symbolic\n");
     //Init Matrix A.
     if(matrix_flag == BASKER_TRUE)
       {
@@ -291,7 +292,7 @@ namespace BaskerNS
 		  nrow, ncol, nnz, col_ptr, row_idx, val);
 	    A.scol = 0;
 	    A.srow = 0;
-	    printMTX("A_LOAD.mtx", A);
+	    //printMTX("A_LOAD.mtx", A);
 	  }
 	else
 	  {

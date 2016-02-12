@@ -1916,7 +1916,7 @@ namespace BaskerNS
     INT_1DARRAY ws;
     BASKER_ASSERT(ws_size > 0, "util trans ws");
     MALLOC_INT_1DARRAY(ws, ws_size);
-    printf("ws_size: %d \n", ws_size);
+    //printf("ws_size: %d \n", ws_size);
     
     for(Int j = 0; j < ws_size; ++j)
       {
@@ -1996,7 +1996,7 @@ namespace BaskerNS
     //printf("updated trans \n");
 
     sort_matrix(AT);
-    printMTX("A_TRANS.mtx", AT);
+    //printMTX("A_TRANS.mtx", AT);
 
     FREE_INT_1DARRAY(ws);
   }//end matrix_transpos

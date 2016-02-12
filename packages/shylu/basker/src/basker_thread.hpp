@@ -22,12 +22,16 @@ namespace BaskerNS
     Int ntasks;
     Int nlvls;
 
+    //An Exit
+    BASKER_BOOL * volatile exit_token;
+
+
     BASKER_BOOL init_flg;
     
     inline
     BaskerPointBarrier()
     {
-      init_flg = BASKER_FALSE;
+      init_flg    = BASKER_FALSE;
     }
 
     inline
@@ -53,6 +57,14 @@ namespace BaskerNS
 	      token[i][j] = BASKER_MAX_IDX;
 	    }
 	}
+
+      //init exit
+      exit_token = new BASKER_BOOL[_nthreads];
+      for(Int i = 0; i < _nthreads; i++)
+	{
+	  exit_token[i] = BASKER_FALSE;
+	}
+
     }//end BaskerPointBarrier
 
     ~BaskerPointBarrier()
@@ -75,7 +87,7 @@ namespace BaskerNS
 	    }
 
 	  delete [] token;
-  
+	  delete [] exit_token;
 	}
       init_flg == BASKER_FALSE;
     }//end Finalize()
@@ -132,7 +144,17 @@ namespace BaskerNS
 
     }//end Barrier_Domain
 
+    inline
+    void ExitSet(Int my_leader, BASKER_BOOL flg)
+    {
+      exit_token[my_leader] = flg;
+    }
     
+    inline
+    void ExitGet(Int my_leader, BASKER_BOOL &flg)
+    {
+      flg = exit_token[my_leader];
+    }
    
   };//end BaskerPointBarrier
 
