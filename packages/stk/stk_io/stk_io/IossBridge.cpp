@@ -1329,9 +1329,7 @@ namespace stk {
         //it from the coordinate-field's restriction onto the universal part.
         //This is because some codes (sierra framework) don't put the coordinate
         //field on the universal part. (framework puts it on active and inactive parts)
-
         const int spatial_dim = meta.spatial_dimension();
-        io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
 
         //--------------------------------
         // Create the special universal node block:

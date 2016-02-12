@@ -377,11 +377,10 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
 
   // Transfer some common data...
   output_region.property_add(part_mesh[0]->get_property("title"));
-  output_region.property_add(part_mesh[0]->get_property("spatial_dimension"));
-  int spatial_dimension = part_mesh[0]->get_property("spatial_dimension").get_int();
 
   // Define a node block...  
   std::string block_name = "nodeblock_1";
+  int spatial_dimension = part_mesh[0]->get_property("spatial_dimension").get_int();
   Ioss::NodeBlock *block = new Ioss::NodeBlock(output_region.get_database(), block_name,
 					       node_count, spatial_dimension);
   block->property_add(Ioss::Property("id", 1));

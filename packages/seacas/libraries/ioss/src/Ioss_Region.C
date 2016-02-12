@@ -138,6 +138,8 @@ namespace Ioss {
     }
 
     properties.add(Property(this,
+			    "spatial_dimension",   Property::INTEGER));
+    properties.add(Property(this,
 			    "node_block_count",    Property::INTEGER));
     properties.add(Property(this,
 			    "edge_block_count",    Property::INTEGER));
@@ -154,7 +156,7 @@ namespace Ioss {
     properties.add(Property(this,
 			    "face_set_count",      Property::INTEGER));
     properties.add(Property(this,
-			    "element_set_count",      Property::INTEGER));
+			    "element_set_count",   Property::INTEGER));
     properties.add(Property(this,
 			    "comm_set_count",      Property::INTEGER));
     properties.add(Property(this,
@@ -1284,6 +1286,14 @@ namespace Ioss {
 
   Property Region::get_implicit_property(const std::string& my_name) const
   {
+     if (my_name == "spatial_dimension") {
+       if (!nodeBlocks.empty()) {
+ 	return nodeBlocks[0]->get_property("component_degree");
+       }
+       else {
+ 	return Property(my_name, 0);
+       }
+     }
     if (my_name == "node_block_count")
       return Property(my_name, (int)nodeBlocks.size());
 

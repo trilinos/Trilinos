@@ -537,8 +537,6 @@ namespace Iopx {
     this_region->property_add(Ioss::Property("global_element_count", (int64_t)decomp->globalElementCount));
 
     this_region->property_add(Ioss::Property(std::string("title"), info.title));
-    this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
-                                             spatialDimension));
 
     // Get information records from database and add to informationRecords...
     int num_info = ex_inquire_int(get_file_pointer(), EX_INQ_INFO);    
