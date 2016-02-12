@@ -52,7 +52,13 @@ namespace BaskerNS
       #endif
 
       //if(kid==12 || kid==13 || kid==14 || kid==15)
-      //if(kid == 2 || kid ==3 )
+      //if(kid == 24 || kid ==25 )
+      //if(kid ==0 || kid==1)
+      //if((kid > 15) && (kid < 20))
+      //if((kid > 19) && (kid < 24))
+      //if((kid > 23) && (kid < 28))
+      //if((kid > -1) && (kid < 4))
+
 	{
       #ifdef BASKER_KOKKOS
        basker->t_nfactor_sep2_inc_lvl(kid, lvl, team_leader, thread);
@@ -409,7 +415,13 @@ namespace BaskerNS
 	
       }//over all sublevels
 
+    //printf("TEST--LEADER me: %d leader: %d \n", 
+    //	   kid, my_leader);
+    //JDB TESTED
+    if(kid == my_leader)
+      {
     t_dense_copy_update_matrix2_inc_lvl(kid, my_leader, lvl, l, k);
+      }
 
 
   }//end t_add_add_inc_lvl
@@ -464,12 +476,12 @@ namespace BaskerNS
    )
   {
     l = l+1;
-    Int my_token = S[l][kid];
+    Int my_token = S(l)(kid);
     Int my_loc = kid;
     while((my_loc > 0))
       {
 	my_loc--;
-	if(S[l][my_loc] != my_token)
+	if(S(l)(my_loc) != my_token)
 	  {
 	    my_loc++;
 	    break;
@@ -486,7 +498,6 @@ namespace BaskerNS
 
   //local idx for local blks
   template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::t_upper_col_factor_inc_lvl
   (
    Int kid,
@@ -497,23 +508,34 @@ namespace BaskerNS
    BASKER_BOOL sep_flg
    )
   {
+
+
     //Get needed variables
     const Int L_col = S(l)(kid);
     const Int L_row = 0;
     const Int U_col = S(lvl)(kid);
-    Int U_row = (lvl==1)?(kid%2):S(l)(kid)%LU_size(U_col);
+    
+    Int my_row_leader = find_leader(kid,lvl-1);
+    Int my_new_row = 
+      L_col - S(0)(my_row_leader);
+    
   
+ 
+    Int U_row = (lvl==1)?(kid%2):S(l)(kid)%LU_size(U_col);  
     if((L_col > 14) &&
        (L_col > LU_size(U_col)) &&
        (lvl != 1))
       {
-	//printf("modify urow, %d %d \n",
-	//     L_col, LU_size(U_col));
-	
 	Int tm = (L_col+1)/16;
 	U_row = ((L_col+1)-(tm*16))%LU_size(U_col);
-
       }
+    
+    //printf("U-upper.  kid: %d U: %d %d  leader: %d %d new: %d lvl: %d l %d \n",
+    //	   kid, U_col, U_row, my_row_leader, L_col,my_new_row, lvl, l);
+    
+    //JDB TEST
+    //PASS TEST
+    U_row = my_new_row;
 
 
     const Int X_col = S(0)(kid);
@@ -786,13 +808,24 @@ namespace BaskerNS
 	return;
       }
     
+    //if(kid==24)
+      {
+	// printf("ffactor kid: %d lvl: %d sl: %d l: %d \n",
+	// kid, lvl, sl, l);
+      }
+
     const Int L_col     = S(sl)(my_leader);
     Int L_row           = l-sl+1; //Might have to think about th
     const Int U_col     = S(lvl)(kid);
+    
+    Int my_row_leader = find_leader(kid,lvl-1);
+    Int my_new_row = 
+      L_col - S(0)(my_row_leader);
+    // Int U_row = my_new_row;
+    
+  
     Int U_row     =
       (lvl==1)?(kid%2):S(sl)(kid)%LU_size(U_col);
-
-    //printf("test \n");
     if((S(sl)(kid) > 14) &&
        (S(sl)(kid) > LU_size(U_col)) &&
        (lvl != 1))
@@ -802,6 +835,14 @@ namespace BaskerNS
 	Int tm = (S(sl)(kid)+1)/16;
 	U_row = ((S(sl)(kid)+1) - (tm*16))%LU_size(U_col);
       }
+  
+    //printf("UFF kid:%d U: %d %d new: %d leader: %d %d lvl: %d l: %d sl: %d \n",
+    //	   kid, U_col, U_row, my_new_row,
+    //	   my_row_leader, L_col, 
+    //	   lvl, l, sl);
+    
+    //JDB PASS TEST
+    U_row = my_new_row;
 
     const Int X_col     = S(0)(my_leader);
     Int X_row     = l+1; //this will change for us 
@@ -839,7 +880,15 @@ namespace BaskerNS
      #endif
 
     const BASKER_BOOL A_option = BASKER_FALSE;
-	    
+
+
+    //U.info();
+    //JDB TEST
+    //printf("kid: %d k: %d \n",
+    //	   kid, k);
+    //printf("kid: %d k: %d testpoint: %d %d \n",
+    //	   kid, k, U.col_ptr(k+1), U.col_ptr(k));
+
 
     t_lower_col_offdiag_find_fill(kid,
 				  L_col, L_row,
@@ -911,20 +960,37 @@ namespace BaskerNS
     const Int L_col     = S(sl)(my_leader);
     Int L_row           = l-sl+1; //Might have to think about th
     const Int U_col     = S(lvl)(kid);
+
+
+
+    Int my_row_leader = find_leader(kid,lvl-1);
+    Int my_new_row = 
+      L_col - S(0)(my_row_leader);
+    // Int U_row = my_new_row;
+   
+
     Int U_row     =
       (lvl==1)?(kid%2):S(sl)(kid)%LU_size(U_col);
-
-
     //printf("test \n");
     if((S(sl)(kid) > 14) &&
        (S(sl)(kid) > LU_size(U_col)) &&
        (lvl != 1))
       {
+
+	///printf("TM HERE 1\n");
 	//printf("lower offdiag new num, %d %d \n",
 	//     S(sl)(kid), LU_size(U_col));
 	Int tm = (S(sl)(kid)+1)/16;
 	U_row = ((S(sl)(kid)+1) - (tm*16))%LU_size(U_col);
       }
+
+    // printf("lowerspmv kid: %d U: %d %d new %d leader: %d %d lvl: %d %d %d \n",
+    //	   kid, U_col, U_row, my_new_row, my_row_leader, 
+    //	   lvl, l, sl);
+
+    //JDB PASSED TEST
+    U_row = my_new_row;
+
 
     const Int X_col     = S(0)(my_leader);
     Int X_row     = l+1; //this will change for us 
@@ -1037,8 +1103,14 @@ namespace BaskerNS
     //Copy B -> C
     Int bl = l+1;
     Int A_col = S(lvl)(kid);
-    Int A_row = (lvl==1)?(2):S(bl)(kid)%(LU_size(A_col));
 
+    Int my_row_leader = find_leader(kid,lvl-1);
+    Int my_new_row = 
+      S(bl)(kid) - S(0)(my_row_leader);
+    //Int A_row = my_new_row;
+    
+
+    Int A_row = (lvl==1)?(2):S(bl)(kid)%(LU_size(A_col));
     if((S(bl)(kid) > 14) &&
        (S(bl)(kid) > LU_size(A_col)) &&
        (lvl != 1))
@@ -1049,6 +1121,14 @@ namespace BaskerNS
 	Int tm = (S(bl)(kid)+1)/16;
 	A_row  = ((S(bl)(kid)+1) - (tm*16))%LU_size(A_col);
       } 
+     
+
+  
+    //printf("Dense TEST kid: %d A: %d %d new: %d leader: %d %d lvl: %d %d \n", 
+    //	   kid, A_col, A_row, my_new_row, my_row_leader, S(bl)(kid), lvl, bl);
+
+    //JDB PASS
+    A_row = my_new_row;
 
     Int CM_idx = kid;
     
@@ -1071,6 +1151,7 @@ namespace BaskerNS
     //B.print();
     gbrow = B.srow;
 
+    //return;
 
     Int team_leader   = find_leader(kid, l);
     ENTRY_1DARRAY   X = LL(leader_idx)(bl).ews;
@@ -1117,9 +1198,9 @@ namespace BaskerNS
       {
 	Int bl = l+1;
 	Int A_col = S(lvl)(kid);
+	
+	/* CAN REMOVE
 	Int A_row = (lvl==1)?(2):S(bl)(kid)%(LU_size(A_col));
-
-
 	//maybe no???
 	if((S(bl)(kid) > 14) &&
 	   (S(bl)(kid) > LU_size(A_col)) &&
@@ -1131,7 +1212,8 @@ namespace BaskerNS
 	Int tm = (S(bl)(kid)+1)/16;
 	A_row  = ((S(bl)(kid)+1) - (tm*16))%LU_size(A_col);
       } 
-
+	*/
+	
      // printf("kid: %d leader_idx: %d bl: %d \n",
      //	    kid, leader_idx, bl);
 
@@ -1142,7 +1224,7 @@ namespace BaskerNS
     const Int   ws_size = LL(leader_idx)(bl).ews_size;
     const Int      brow = LL(leader_idx)(bl).srow;
     const Int      nrow = LL(leader_idx)(bl).nrow;
-    Int p_size          = LL[leader_idx][bl].p_size;
+    Int p_size          = LL(leader_idx)(bl).p_size;
 
     //For recounting patterns in dense blk
     //Need better sparse update
@@ -1153,8 +1235,8 @@ namespace BaskerNS
     Int *stack   = &(pattern[ws_size]);
     
     #ifdef BASKER_DEBUG_NFACTOR_COL2
-    printf("moving, kid: %d  A: %d %d %d %d p_size: %d \n", 
-	   kid, A_col, A_row, team_leader, bl,p_size);
+    //printf("moving, kid: %d  A: %d %d %d %d p_size: %d \n", 
+    //	   kid, A_col, A_row, team_leader, bl,p_size);
     #endif
       
     //over all dim(S)

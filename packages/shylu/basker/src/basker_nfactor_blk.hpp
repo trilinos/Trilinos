@@ -1837,32 +1837,7 @@ namespace BaskerNS
 
 
 
-  //We need an easier and faster way to do this.  
-  //Could get very big
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  Int Basker<Int,Entry,Exe_Space>::find_leader(Int kid, Int l)
-  {
-    l = l+1;
-    Int my_token = S[l][kid];
-    Int my_loc = kid;
-    while((my_loc > 0))
-      {
-	my_loc--;
-	if(S[l][my_loc] != my_token)
-	  {
-	    my_loc++;
-	    break;
-	  }
-      }
-
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
-    printf("find_leader, kid: %d l: %d leader: %d \n",
-	   kid, l, my_loc);
-    #endif
-    return my_loc;
-
-  }//end find_leader()
+ 
 
 }//end namespace baskerNS -- contains functions
 

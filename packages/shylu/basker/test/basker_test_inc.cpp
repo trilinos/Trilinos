@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
 
  // mybasker.Factor(m,n,nnz,col_ptr,row_idx,vals);
   //cout << "--------------Done NFactor-----------------" << endl;
-  mybasker.DEBUG_PRINT();
+   mybasker.DEBUG_PRINT();
   cout << "--------------Done Print----------------------"<<endl;
   // mybasker.SolveTest();
   //mybasker.Solve(y,x);

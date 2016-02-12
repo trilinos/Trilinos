@@ -1009,7 +1009,7 @@ namespace BaskerNS
 
     //printf("\n\n\n----------------------------");
     //printf("CALLED FIND 2D CONVERT");
-    //printf("-----------------------------\n\n\n");
+    // printf("-----------------------------\n\n\n");
 
     //This will scan the whle matrix and find the nnz and cuts
     //In parallel the values will be copied over
@@ -1074,7 +1074,7 @@ namespace BaskerNS
 		  
 
 		    if((L_row+1 < LL_size(L_col)) &&
-		       (tree.row_tabs[r_idx+1] == ALM[L_col][L_row+1].srow))
+		       (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
 		      {
 			L_row++;
 			if(k==118800)
@@ -1082,7 +1082,7 @@ namespace BaskerNS
 			    //printf("k: %d j: %d L: %d %d s: %d \n", 
 			    //k, j, L_col, L_row, LL_size[L_col]);
 			  }
-			BASKER_ASSERT(L_row < LL_size[L_col], " Wrong L in A to 2d");
+			BASKER_ASSERT(L_row < LL_size(L_col), " Wrong L in A to 2d");
 			//printf("new start_col\n");
 			start_col = BASKER_TRUE;
 		      }
@@ -1090,8 +1090,8 @@ namespace BaskerNS
 		  }
 		else if(j <= k)
 		  {
-		    if((U_row+1 < LU_size[U_col]) &&
-		       (tree.row_tabs[r_idx+1] == AVM[U_col][U_row+1].srow))
+		    if((U_row+1 < LU_size(U_col)) &&
+		       (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
 		      {
 			U_row++;
 			//if(k==118800)
@@ -1099,7 +1099,7 @@ namespace BaskerNS
 			    //printf("k: %d j: %d U: %d %d \n",
 			    //		     k, j , U_col, U_row);
 			  }
-			BASKER_ASSERT(U_row < LU_size[U_col], " Wrong U in A to 2d");
+			  BASKER_ASSERT(U_row < LU_size(U_col), " Wrong U in A to 2d");
 			start_col = BASKER_TRUE;
 		      }
 		  }
@@ -1107,12 +1107,12 @@ namespace BaskerNS
 	      }
 
 	    //Get Matrix Ref
-	    BASKER_MATRIX &Ltemp = ALM[L_col][L_row];
-	    BASKER_MATRIX &Utemp = AVM[U_col][U_row];
+	    BASKER_MATRIX &Ltemp = ALM(L_col)(L_row);
+	    BASKER_MATRIX &Utemp = AVM(U_col)(U_row);
 	    Int bcol  = Ltemp.scol;
 	    
 	    //Debug
-	    //if(k==118800)
+	    //if(U_col>61)
 	      {
 		//printf("A2D.  L: %d %d U %d %d \n", 
 		// L_col, L_row, 
@@ -1120,13 +1120,16 @@ namespace BaskerNS
 	      }
 
 	    //diag blk
-	    if((L_row==0)&&(U_row==LU_size[U_col]-1))
+	      if((L_row==0)&&(U_row==LU_size(U_col)-1))
 	      {
 		if(start_col == BASKER_TRUE)
 		  {
-		    //printf("setting diag blk start: %d %d \n",
-		    //	   k-bcol, i);
-		    Ltemp.col_ptr[k-bcol] = i;
+		    //if(U_col>61)
+		      {
+			//printf("setting diag blk start: %d %d \n",
+			// k, i);
+		      }
+		    Ltemp.col_ptr(k-bcol) = i;
 		  }
 		Ltemp.nnz = Ltemp.nnz+1;
 	      }
@@ -1138,9 +1141,12 @@ namespace BaskerNS
 		  {
 		    if(start_col == BASKER_TRUE)
 		      {
-			//printf("setting L : %d %d \n",
-			//     k-bcol, i);
-			Ltemp.col_ptr[k-bcol] = i;
+			//if(U_col>61)
+			  {
+			    //	printf("setting L : %d %d \n",
+			    // k, i);
+			  }
+			Ltemp.col_ptr(k-bcol) = i;
 		      }
 		    Ltemp.nnz = Ltemp.nnz+1;
 		  }
@@ -1149,9 +1155,12 @@ namespace BaskerNS
 		  {
 		    if(start_col == BASKER_TRUE)
 		      {
-			//printf("setting U: %d %d \n",
-			//     k-bcol, i);
-			Utemp.col_ptr[k-bcol] = i;
+			//if(U_col>61)
+			  {
+			    //printf("setting U: %d %d \n",
+			    // k, i);
+			  }
+			Utemp.col_ptr(k-bcol) = i;
 		      }
 		    Utemp.nnz = Utemp.nnz+1;
 		  }

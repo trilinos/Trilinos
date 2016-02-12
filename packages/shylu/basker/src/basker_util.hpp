@@ -73,7 +73,7 @@ namespace BaskerNS
       //	<< "alloc:" << alloc
       //	<< std::endl;
 
-      //if((kid  >= 8))
+      //if((kid  == 24))
 	{
 	  basker->t_init_2DA(kid, alloc);
 	}
@@ -311,6 +311,12 @@ namespace BaskerNS
 	    for(Int l = lvl+1; l < tree.nlvls+1; l++)
 	      {
 		Int U_col = S(l)(kid);
+
+
+		Int my_row_leader = find_leader(kid, l-1);
+		Int my_new_row = 
+		  b - S(0)(my_row_leader);
+
 		Int U_row = (l==1)?(kid%2):S(lvl)(kid)%LU_size(U_col);
 
 		if((b > 14) &&
@@ -326,9 +332,18 @@ namespace BaskerNS
 
 		    Int tm = (b+1)/16;
 		    U_row = ((b+1)-(tm*16))%LU_size(U_col);
-
-
 		  }
+
+		
+		//printf("Init U kid: %d U: %d %d new: %d leader: %d %d \n",
+
+		//kid, U_col, U_row, my_new_row, 
+		//S(0)(my_row_leader), b);
+		
+		//JDB TEST PASS
+		U_row = my_new_row;
+
+
 
 		
 		#ifdef BASKER_DEBUG_INIT
@@ -379,7 +394,7 @@ namespace BaskerNS
 	      {
 		
 		#ifdef BASKER_DEBUG_INIT
-		printf("ALM Factor Init: %d %d , kid: %d, nnz: %d nrow: %d ncol: %d\n",
+		printf("ALM Factor Init: %d %d , kid: %d, nnz: %d nrow: %d ncol: %d \n",
 		     b, row, kid, ALM(b)(row).nnz, 
 		     ALM(b)(row).nrow, 
 		     ALM(b)(row).ncol);
@@ -387,16 +402,16 @@ namespace BaskerNS
 
 		if(Options.btf == BASKER_FALSE)
 		  {
-		    ALM(b)(row).convert2D(A, alloc);
+		    ALM(b)(row).convert2D(A, alloc, kid);
 		  }
 		else
 		  {
 		    //printf("Using BTF AL \n");
 		    #ifdef BASKER_DEBUG_INIT
-		    printf("ALM alloc: %d %d \n",
-			   b, row);
+		    printf("ALM alloc: %d %d kid: %d \n",
+			   b, row, kid);
 		    #endif
-		    ALM(b)(row).convert2D(BTF_A, alloc);
+		    ALM(b)(row).convert2D(BTF_A, alloc, kid);
 		  }
 
 	      }//end over all row
@@ -421,38 +436,62 @@ namespace BaskerNS
 
 	    if(Options.btf == BASKER_FALSE)
 	      {
-		AVM(b)(LU_size(b)-1).convert2D(A, alloc);
+		AVM(b)(LU_size(b)-1).convert2D(A, alloc, kid);
 	      }
 	    else
 	      {
 		//printf("Using BTF AU\n");
-		AVM(b)(LU_size(b)-1).convert2D(BTF_A, alloc);
+		//printf("convert AVM: %d %d kid: %d  \n", 
+		//     b, LU_size(b)-1, kid);
+		AVM(b)(LU_size(b)-1).convert2D(BTF_A, alloc, kid);
 	      }
 
 	    for(Int l = lvl+1; l < tree.nlvls+1; l++)
 	      {
+		//MOVE LEFT TO RIGHT, FIX G-ROW
+
+		//TEST
+		Int my_leader = find_leader(kid,l-1);
+		Int my_leader_row = S(0)(my_leader);
+		Int my_col_size  = pow(2,l);
+		Int my_new_row  = 
+		  (S(lvl)(kid) - my_leader_row);
+		//my_new_row = my_new_row%my_col_size;
+
+		/*
+		printf("TEST lvl: %d l: %d leader: %d leader_r: %d my: %d col_size: %d new_row: %d \n",
+		       lvl, l,
+		       my_leader, my_leader_row, 
+		       S(lvl)(kid),
+		       my_col_size, my_new_row);
+		*/
+		
+
+
 		Int U_col = S(l)(kid);
-		Int U_row = (l==1)?(kid%2):S[lvl][kid]%LU_size[U_col];
-
+		Int U_row = my_new_row;
+		//Int U_row = (l==1)?(kid%2):S(lvl)(kid)%LU_size(U_col);
 		//printf("U_col: %d U_row: %d lvl: %d l: %d \n",
-		//     U_col, U_row, lvl, l);
-
-
+		//   U_col, U_row, lvl, l);
 		//if((S(lvl)(kid) > LU_size(U_col)) &&
+		/*
 		if((S(lvl)(kid) > 14)&&
 		   (S(lvl)(kid) > LU_size(U_col)) &&
 		   (l!=1))
 		  {
 
-		    //printf("test point: %d %d %d  \n",
-		    //S(lvl)(kid), LU_size(U_col),
-		    //S(lvl)(kid)/LU_size(U_col));
-		    //	   S(lvl)(kid)/16);
+		    
+		    printf("test point: %d %d %d  \n",
+		    S(lvl)(kid), LU_size(U_col),
+		
+		    	   S(lvl)(kid)/16);
+		    
 
 		    Int tm = (S(lvl)(kid)+1)/16;
 		    U_row = ((S(lvl)(kid)+1)-(tm*16))%LU_size(U_col);
 
 		  }
+		*/
 
                 #ifdef BASKER_DEBUG_INIT
 		printf("Init AUM: %d %d lvl: %d l: %d kid: %d nnz: %d nrow: %d ncol: %d \n",
@@ -464,12 +503,18 @@ namespace BaskerNS
 
 		if(Options.btf == BASKER_FALSE)
 		  {
-		    AVM(U_col)(U_row).convert2D(A);
+		    BASKER_ASSERT(0==1, "SHOULD NOTH BE CALL\n");
+		    //AVM(U_col)(U_row).convert2D(A);
 		  }
 		else
 		  {
 		    //printf("Using BTF AU\n");
-		    AVM(U_col)(U_row).convert2D(BTF_A, alloc);
+		    //printf("2nd convert AVM: %d %d size:%d kid: %d\n",
+		    //	   U_col, U_row, AVM(U_col)(U_row).nnz, 
+		    //	   kid);
+;
+		  
+ AVM(U_col)(U_row).convert2D(BTF_A, alloc, kid);
 		  }
 			
 	      }//over inner lvls
@@ -2170,6 +2215,37 @@ namespace BaskerNS
     FREE_INT_1DARRAY(temp);
 
   }//end get_total_perm
+
+
+
+ //We need an easier and faster way to do this.  
+  //Could get very big
+  //We should use a dynamic build up
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  Int Basker<Int,Entry,Exe_Space>::find_leader(Int kid, Int l)
+  {
+    l = l+1;
+    Int my_token = S(l)(kid);
+    Int my_loc = kid;
+    while((my_loc > 0))
+      {
+	my_loc--;
+	if(S(l)(my_loc) != my_token)
+	  {
+	    my_loc++;
+	    break;
+	  }
+      }
+
+    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    printf("find_leader, kid: %d l: %d leader: %d \n",
+	   kid, l, my_loc);
+    #endif
+    return my_loc;
+
+  }//end find_leader()
+
 
  
 }//end namespace basker

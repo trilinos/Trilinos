@@ -741,7 +741,12 @@ namespace BaskerNS
 	    if((color[j] == 0)||(color[j] == 1))
 	      {
 	    
-		BASKER_ASSERT((*top-1) > 0, "Top pass pattern\n");
+		BASKER_ASSERT((*top-1) >= 0, "Top pass pattern\n");
+		if((*top-1)<0)
+		  {
+		printf("blk: %d kid: %d \n", b, kid);
+		  }
+
 		color[j] = 2;
 	       		 
 	     //loop forward
@@ -2627,23 +2632,28 @@ namespace BaskerNS
 	//printf("===========T ADD ORIG FILL CALLED\n");
 	const Int leader_id  = find_leader(kid, l);
 	const Int lteam_size = pow(2,l+1);
-	const Int L_col      = S(lvl)(leader_id);
-	Int L_row      = 0;
+	const Int L_col      = S(lvl-1)(leader_id);
+	Int L_row             = 0;
 	const Int U_col      = S(lvl)(leader_id); 
 	Int U_row            = LU_size(U_col)-1;
 	Int X_col            = S(0)(leader_id);
 	Int X_row            = l+1;
     
-        //	printf("=***== fill MY ID: %d LEADER ID: %d ===** \n",
-        //   kid, leader_id);
+       	//printf("=***== fill MY ID: %d LEADER ID: %d ===** \n",
+	// kid, leader_id);
 
 	if(kid == leader_id)
 	  {
 	    
 	    Int bl = l+1;
 	    Int A_col = S(lvl)(kid);
+
+	    Int my_row_leader = find_leader(kid, lvl-1);
+	    Int my_new_row = 
+	      L_col - S(0)(my_row_leader);
+
+
 	    Int A_row = (lvl==l)?(2):S(bl)(kid)%(LU_size(A_col));
-	    
 	    if((S(bl)(kid)>14) &&
 	       (S(bl)(kid)>LU_size(A_col)) &&
 	       (lvl != 1))
@@ -2652,6 +2662,13 @@ namespace BaskerNS
 		A_row = ((S(bl)(kid)+1)-(tm*16))%LU_size(A_col);
 	      }
 	   
+
+	    //printf("TEST---ADD kid: %d A: %d %d new: %d leader: %d %d lvl: %d %d\n",
+	    //	   kid, A_col, A_row, my_new_row, my_row_leader, L_col,lvl, bl);
+
+	    A_row = my_new_row;
+
+
 	    BASKER_ASSERT((A_row!=(LU_size(A_col)-1)),
 			  "ERROR: Selected Lower");
 	   

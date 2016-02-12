@@ -246,7 +246,7 @@ namespace BaskerNS
 
     //TEst 
     sort_matrix(BTF_A);
-    //printMTX("A_TEST.mtx", BTF_A);
+    printMTX("A_TEST.mtx", BTF_A);
     
     sort_matrix(BTF_C);
 
@@ -332,6 +332,8 @@ namespace BaskerNS
 	    //printMTX("C_BTF_AMD.mtx", BTF_C);
 	  }
     
+
+	//printMTX("BTF_A.mtx", BTF_A);
     
 	//6. Move to 2D Structure
 	//finds the shapes for both view and submatrices,
@@ -349,7 +351,7 @@ namespace BaskerNS
 	//Comeback
         #endif
 
-	//printMTX("BTF_A.mtx", BTF_A); 
+	printMTX("BTF_A.mtx", BTF_A); 
 	
       }//if btf_tab_offset == 0
 

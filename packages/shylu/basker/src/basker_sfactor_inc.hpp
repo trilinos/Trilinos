@@ -122,8 +122,13 @@ namespace BaskerNS
 	for(Int l=0; l < tree.nlvls; l++)
 	  {
 	    Int U_col = S(l+1)(p);
+
+	    Int my_row_leader = find_leader(p,l);
+	    Int my_new_row   = 
+	      blk - S(0)(my_row_leader);
+
+
 	    Int U_row = (l==0)?(p%2):S(0)(p)%LU_size(U_col);
-	    
 	    if((blk > 14) &&
 	       (blk > LU_size(U_col)) &&
 	       (l!=0))
@@ -131,6 +136,12 @@ namespace BaskerNS
 		Int tm = (blk+1)/16;
 		U_row = ((blk+1) -tm*16)%LU_size(U_col);
 	      }
+
+	    //printf("sfactor kid: %d u: %d %d new: %d leader: %d %d \n",
+	    //p, U_col, U_row, my_new_row, S(0)(my_row_leader), blk);
+
+	    //JDB TEST PASSED
+	    U_row = my_new_row;
 	    
 	    //printf("lvl: %d ublk: %d %d \n",
 	    //	   l, U_col, U_row);
@@ -163,8 +174,13 @@ namespace BaskerNS
 		for(Int l = lvl+1; l < tree.nlvls; l++)
 		  {
 		    U_col = S(l+1)(ppp);
-		    U_row = S(lvl+1)(ppp)%LU_size(U_col);
-		    
+
+		    Int my_row_leader = find_leader(ppp,l);
+		    Int my_new_row = 
+		      S(lvl+1)(ppp) - S(0)(my_row_leader);
+
+
+		    U_row = S(lvl+1)(ppp)%LU_size(U_col);	 
 		    if((S(lvl+1)(ppp) > 14) &&
 		       (S(lvl+1)(ppp) > LU_size(U_col)) 
 		       )
@@ -173,6 +189,14 @@ namespace BaskerNS
 			U_row = ((S(lvl+1)(ppp)+1) - 
 				 (tm*16))%LU_size(U_col);
 		      }
+
+		    
+		    //printf("sfact 2. kid: %d U:%d %d new: %d leader: %d %d \n",
+		    //ppp, U_col, U_row, my_new_row, 
+		    //S(0)(my_row_leader), S(lvl+1)(ppp));
+			   
+		    //JDB TEST PASS
+		    U_row = my_new_row;
 
 		    
 		    sfactor_nd_sep_upper_estimate(AVM(U_col)(U_row),
