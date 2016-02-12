@@ -146,7 +146,7 @@ namespace BaskerNS
 	  {
 	    p(i) = i;
 	  }
-	printf("Short csym \n");
+	//printf("Short csym \n");
 	return;
       }
 
@@ -351,7 +351,7 @@ namespace BaskerNS
   {
    
 
-     printf("=============BTF_BLK_AMD_CALLED========\n");
+    // printf("=============BTF_BLK_AMD_CALLED========\n");
     if(Options.incomplete == BASKER_TRUE)
       {
 	//We note that AMD on incomplete ILUK
@@ -369,7 +369,7 @@ namespace BaskerNS
 	    btf_work(b) =1;
 	  }
        
-	printf("Short amd blk\n");
+	//printf("Short amd blk\n");
 
 	return;
       }

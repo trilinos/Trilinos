@@ -1765,7 +1765,7 @@ public:
    *  \param numProcs (output), the number of processor the part is assigned to.
    *  \param procs (output), the list of processors assigned to given part..
    */
-  virtual void getProcsForPart(part_t taskId, part_t &numProcs, part_t *procs) const{
+  virtual void getProcsForPart(part_t taskId, part_t &numProcs, part_t *&procs) const{
     numProcs = 1;
     procs = this->task_to_proc.getRawPtr() + taskId;
   }
@@ -1781,7 +1781,7 @@ public:
    *  \param numParts (output), the number of parts the processor is assigned to.
    *  \param parts (output), the list of parts assigned to given processor..
    */
-  virtual void getPartsForProc(int procId, part_t &numParts, part_t *parts) const{
+  virtual void getPartsForProc(int procId, part_t &numParts, part_t *&parts) const{
 
     part_t task_begin = this->proc_to_task_xadj[procId];
     part_t taskend = this->proc_to_task_xadj[procId+1];

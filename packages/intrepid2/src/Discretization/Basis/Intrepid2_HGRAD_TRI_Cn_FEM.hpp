@@ -131,10 +131,15 @@ public:
                  const EOperator        operatorType = OPERATOR_VALUE) const;
 
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-  int getNumVertexDofs() const;
-  int getNumEdgeDofs() const;
-  int getNumFaceDofs() const;
-  int getNumInteriorDofs() const;
+  void getValues(ArrayScalar &          outputValues,
+                 const ArrayScalar &    inputPoints,
+                 const Orientation      ort,
+                 const EOperator        operatorType) const;
+
+  unsigned int getNumVertexDofs() const;
+  unsigned int getNumEdgeDofs() const;
+  unsigned int getNumFaceDofs() const;
+  unsigned int getNumInteriorDofs() const;
 #endif  
 
 };

@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define BASKER_DEBUG_TREE 
+//#define BASKER_DEBUG_TREE 
 
 namespace BaskerNS
 {
@@ -781,8 +781,10 @@ namespace BaskerNS
 
     //Should also do LL and LU while it
 
+    #ifdef BASKER_DEBUG_TREE
     flat.info();
     printf("nblks: %d \n", nblks);
+    #endif
 
     for(Int i=0; i < nblks; i++)
       {
@@ -795,9 +797,9 @@ namespace BaskerNS
           }
       }
    
-    //#ifdef BASKER_DEBUG_TREE
+    #ifdef BASKER_DEBUG_TREE
     printf("Make Hier View of size: %d %d \n", nblks, nnzblks);
-    //#endif    
+    #endif    
 
     //Malloc  AU and AL views, and needed space
     BASKER_ASSERT(nblks > 0, "tree nblks 99");
@@ -1345,9 +1347,8 @@ namespace BaskerNS
   {
     
 
-
-
-    printf("\n====== sfactor_copy2=======\n");
+    //This is the good one
+    //printf("\n====== sfactor_copy2=======\n");
     //ALM(0)(0).info();
 
     //A.print();

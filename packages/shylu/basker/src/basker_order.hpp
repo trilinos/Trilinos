@@ -243,6 +243,11 @@ namespace BaskerNS
   
 
     find_btf2(A); 
+
+    //TEst 
+    sort_matrix(BTF_A);
+    printMTX("A_TEST.mtx", BTF_A);
+    
     sort_matrix(BTF_C);
 
     //btf_tabs_offset = 0;
@@ -251,7 +256,7 @@ namespace BaskerNS
    
     if((btf_tabs_offset != 0) )
       {
-	printf("BTF_OFFSET CALLED\n");
+	//printf("BTF_OFFSET CALLED\n");
 
         //  printf("A/B block stuff called\n");
 	//3. ND on BTF_A
@@ -304,7 +309,7 @@ namespace BaskerNS
 	//MALLOC_INT_1DARRAY(csymamd_perm, BTF_A.ncol+1);
 	init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
 	//init_value(csymamd_perm, BTF_A.ncol+1,(Int) 0);
-	printf("============CALLING CSYMAMD============\n");
+	//printf("============CALLING CSYMAMD============\n");
 	csymamd_order(BTF_A, order_csym_array, cmember);
 	//csymamd_order(BTF_A, csymamd_perm, cmember);
 	
@@ -335,6 +340,7 @@ namespace BaskerNS
 	//finds the starting point of A for submatrices
 	find_2D_convert(BTF_A);
 	//now we can fill submatrices
+	//printf("AFTER CONVERT\n");
         #ifdef BASKER_KOKKOS
 	kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
 	Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);

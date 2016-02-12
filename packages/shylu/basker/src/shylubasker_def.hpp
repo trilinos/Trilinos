@@ -286,7 +286,7 @@ namespace BaskerNS
 
 	if(Options.transpose == BASKER_FALSE)
 	  {
-	    printf("=======NO TRANS=====\n");
+	    //printf("=======NO TRANS=====\n");
 	    A.init_matrix("Original Matrix",
 		  nrow, ncol, nnz, col_ptr, row_idx, val);
 	    A.scol = 0;
@@ -295,7 +295,7 @@ namespace BaskerNS
 	  }
 	else
 	  {
-	    printf("======TRANS=====\n");
+	    //printf("======TRANS=====\n");
 	    //Will transpose and put in A using little extra
 	    matrix_transpose(0, nrow,
 			     0, ncol,
@@ -319,7 +319,7 @@ namespace BaskerNS
       }
     else
       {
-	printf("btf_order called \n");
+	//printf("btf_order called \n");
 	//btf_order();
 	btf_order2();
 	if(btf_tabs_offset != 0)
@@ -343,6 +343,8 @@ namespace BaskerNS
       }
     else
       {
+	
+       
 	if(Options.incomplete == BASKER_FALSE)
 	  {
 	    sfactor();
@@ -351,6 +353,7 @@ namespace BaskerNS
 	  {
 	    sfactor_inc();
 	  }
+	
 	symb_flag = BASKER_TRUE;
       }
 

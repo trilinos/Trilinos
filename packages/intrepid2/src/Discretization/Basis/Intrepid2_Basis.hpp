@@ -276,14 +276,20 @@ public:
   virtual const std::vector<std::vector<int> >& getAllDofTags();
   
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+  virtual void getValues(ArrayScalar &          outputValues,
+                         const ArrayScalar &    inputPoints,
+                         const ArrayScalar &    cellVertices,
+                         const Orientation      ort,
+                         const EOperator        operatorType = OPERATOR_VALUE) const;
+
   // This should be pure virtual but right now return -1 from the base
   // 1D - vertex, interior
   // 2D - vertex, edge, interior
   // 3D - vertex, edge, face, interior
-  virtual int getNumVertexDofs() const;
-  virtual int getNumEdgeDofs() const;
-  virtual int getNumFaceDofs() const;
-  virtual int getNumInteriorDofs() const;
+  virtual unsigned int getNumVertexDofs() const;
+  virtual unsigned int getNumEdgeDofs() const;
+  virtual unsigned int getNumFaceDofs() const;
+  virtual unsigned int getNumInteriorDofs() const;
 #endif  
 
 

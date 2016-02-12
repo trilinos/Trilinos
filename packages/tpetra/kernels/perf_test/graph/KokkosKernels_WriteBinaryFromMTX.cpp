@@ -2,7 +2,9 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "experiment_space.hpp"
+
+typedef int idx;
+typedef double wt;
 
 int main (int argc, char ** argv){
   if (argc != 3){
