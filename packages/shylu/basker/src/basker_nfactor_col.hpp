@@ -687,7 +687,7 @@ namespace BaskerNS
 	#endif
 	  {
 	    #ifdef BASKER_INC_LVL
-	    t_local_reach_selective(kid, l, l, j, &top);
+	    //t_local_reach_selective(kid, l, l, j, &top);
 	    #else
 	    //t_local_reach(kid, l, l, j, &top); //Note: comeback
 	    t_local_reach(kid,l,l,j,top);

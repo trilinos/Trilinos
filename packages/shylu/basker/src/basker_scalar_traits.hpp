@@ -1,4 +1,3 @@
-
 #ifndef BASKER_SCALAR_TRAITS_HPP
 #define BASKER_SCALAR_TRAITS_HPP
 
@@ -59,7 +58,7 @@ namespace BaskerNS
   struct Basker_ScalarTraits< std::complex<T> >
   {
     typedef std::complex<T> ComplexT ;
-    typedef typename BASKER_ScalarTraits<T>::magnitudeType magnitudeType ;
+    typedef typename Basker_ScalarTraits<T>::magnitudeType magnitudeType ;
     
     static inline ComplexT reciprocal (ComplexT c)
     {
@@ -253,8 +252,9 @@ namespace BaskerNS
     
   };
   
-}//end BaskerNS
+
 
 #endif // HAVE _TEUCHOS_COMPLEX
 
+}//end BaskerNS
 #endif // BASKER_SCALAR_TRAIT_HPP
