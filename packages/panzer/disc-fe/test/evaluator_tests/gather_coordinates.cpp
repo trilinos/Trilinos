@@ -55,7 +55,6 @@ using Teuchos::rcp;
 
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_IntegrationValues.hpp"
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_BasisValues2.hpp"
 #include "Panzer_CellData.hpp"
