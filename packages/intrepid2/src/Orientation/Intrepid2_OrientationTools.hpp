@@ -75,11 +75,11 @@ namespace Intrepid2 {
   class Orientation {
   private:
     unsigned int _edgeOrt, _faceOrt;
-    
+
   public:
-    Orientation() = default;
+    Orientation();
     Orientation(const Orientation &b) = default;
-    
+
     bool isAlignedToReference() const;
 
     void setEdgeOrientation(const int numEdge, const int edgeOrt[]);
@@ -98,7 +98,7 @@ namespace Intrepid2 {
       Kokkos::View<Scalar*> _a;
 
     public:
-      DenseMatrix() = default;
+      DenseMatrix();
       DenseMatrix(const DenseMatrix &b) = default;
 
       DenseMatrix(const int m, const int n);
@@ -136,7 +136,7 @@ namespace Intrepid2 {
                                 const size_t nnz);
 
     public:
-      CoeffMatrix() = default;
+      CoeffMatrix();
       CoeffMatrix(const CoeffMatrix &b) = default;
 
       void import(const DenseMatrix &b,
@@ -208,49 +208,55 @@ namespace Intrepid2 {
                                         const Basis<Scalar,ArrayType> & basis,
                                         const int                       edgeId,
                                         const int                       edgeOrt) {}
-    
+
     template<class ArrayType>
     static void getTriangleCoeffMatrix_HGRAD(CoeffMatrix &                   C,
                                              const Basis<Scalar,ArrayType> & basis,
                                              const int                       faceId,
-                                             const int                       faceOrt) {}
-    
+                                             const int                       faceOrt);
+
     template<class ArrayType>
     static void getTriangleCoeffMatrix_HCURL(CoeffMatrix &                   C,
                                              const Basis<Scalar,ArrayType> & basis,
                                              const int                       faceId,
                                              const int                       faceOrt) {}
-    
+
     template<class ArrayType>
     static void getTriangleCoeffMatrix_HDIV(CoeffMatrix &                   C,
                                             const Basis<Scalar,ArrayType> & basis,
                                             const int                       faceId,
                                             const int                       faceOrt) {}
-    
+
     template<class ArrayType>
     static void getQuadrilateralCoeffMatrix_HGRAD(CoeffMatrix &                   C,
                                                   const Basis<Scalar,ArrayType> & basis,
                                                   const int                       faceId,
                                                   const int                       faceOrt) {}
-    
+
     template<class ArrayType>
     static void getQuadrilateralCoeffMatrix_HCURL(CoeffMatrix &                   C,
                                                   const Basis<Scalar,ArrayType> & basis,
                                                   const int                       faceId,
                                                   const int                       faceOrt) {}
-    
+
     template<class ArrayType>
     static void getQuadrilateralCoeffMatrix_HDIV(CoeffMatrix &                   C,
                                                  const Basis<Scalar,ArrayType> & basis,
                                                  const int                       faceId,
                                                  const int                       faceOrt) {}
-    
+
     template<class ArrayType>
     static void applyCoeffMatrix(ArrayType &         outValues,
                                  const ArrayType &   refValues,
                                  const CoeffMatrix & C,
                                  const unsigned int  offset,
                                  const unsigned int  numDofs);
+
+    template<class ArrayType>
+    static void copyBasisValues(ArrayType &         outValues,
+                                const ArrayType &   refValues,
+                                const unsigned int  offRows, const unsigned int  numRows,
+                                const unsigned int  offCols, const unsigned int  numCols);
 
   public:
     /** \brief  Computes modified parameterization maps of 1- and 2-subcells with orientation.
@@ -280,7 +286,10 @@ namespace Intrepid2 {
                                           const ArrayType &               refValues,
                                           const Basis<Scalar,ArrayType> & basis,
                                           const Orientation               ort);
-    
+
+
+    static bool verbose;
+    static std::ostream* verboseStreamPtr;
   };
 
 }
