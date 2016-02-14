@@ -60,6 +60,9 @@ Basis_HGRAD_HEX_I2_FEM<Scalar,ArrayScalar>::Basis_HGRAD_HEX_I2_FEM()
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
   
   

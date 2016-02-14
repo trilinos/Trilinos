@@ -72,6 +72,8 @@ namespace Intrepid2 {
     bases[1][1] = rcp( &closedBasis_ , false );
     this->setBases( bases );
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
 
   template<class Scalar, class ArrayScalar>
@@ -117,6 +119,8 @@ namespace Intrepid2 {
     bases[1][1] = rcp( &closedBasis_ , false );
     this->setBases( bases );
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
   
   template<class Scalar, class ArrayScalar>
