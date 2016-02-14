@@ -283,7 +283,8 @@ namespace panzer {
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    // Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    auto userArray = int_values.cub_points;
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_q1,*point_rule));
 
@@ -295,7 +296,7 @@ namespace panzer {
     Teuchos::RCP<const std::vector<Teuchos::RCP<PHX::FieldTag > > > evalJacFields;
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
     {
@@ -379,7 +380,8 @@ namespace panzer {
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    // Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    auto userArray = int_values.cub_points;
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_edge,*point_rule));
 
@@ -400,7 +402,7 @@ namespace panzer {
     }
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
     {
@@ -507,7 +509,8 @@ namespace panzer {
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    // Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    auto userArray = int_values.cub_points;
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_q1,*point_rule));
 
@@ -522,7 +525,7 @@ namespace panzer {
     }
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
     {
