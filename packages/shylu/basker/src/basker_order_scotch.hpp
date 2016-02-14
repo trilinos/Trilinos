@@ -255,7 +255,7 @@ namespace BaskerNS
 	  }
       }
     
-    //#ifdef BASKER_DEBUG_ORDER_SCOTCH
+    #ifdef BASKER_DEBUG_ORDER_SCOTCH
     printf("FIX SCOTCH PRINT OUT\n");
      printf("SCOTCH: ASKED: %d  GOT : %d TREES: %d \n",
 	    num_levels, sg.cblk, num_trees);
@@ -264,13 +264,13 @@ namespace BaskerNS
 	    2,
 	    ((Int)num_levels+1),
 	    pow(2.0,((double)num_levels+1))-1);
-     //#endif
+     #endif
      
      if(((sg.cblk) != pow(2.0,((double)num_levels+1))-1) ||
 	(num_trees != 1))
       {
 	//printf("\n\n\n");
-	printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
+	//printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
 	//printf("\n\n\n");
 	
 	Int iblks = pow(2, num_levels+1)-1;

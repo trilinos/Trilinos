@@ -392,7 +392,8 @@ namespace BaskerNS
 	        Int nnz, Int *col_ptr, Int *row_idx, Entry *val) 
   {
     
-    int err = A.copy_values(nrow, ncol, nnz, col_ptr, row_idx, val);
+    int err = A.copy_values(nrow, ncol, nnz, col_ptr, 
+			    row_idx, val);
 
     if(err == BASKER_ERROR)
       {
@@ -500,8 +501,18 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::SetThreads(Int nthreads)
   {
+    //Need to test if power of 2.
+    if((nthreads != 1) && 
+       (nthreads%2 != 0))
+      {
+	BASKER_ASSERT(0==1, 
+		      "Number of thread error");
+	//Set default 1
+	num_threads = 1;
+	return BASKER_ERROR;
+      }
     num_threads = nthreads;
-    return 0;
+    return BASKER_SUCCESS;
   }//end SetThreads()
 
   //Return nnz of L
