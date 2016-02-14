@@ -318,39 +318,18 @@ namespace BaskerNS
 	    //Note: Need to think more about this flow
 	    //Should be subtracted by how many times in the 
 	    //future
-	    Int U_row = (l==0)?(p%2):S(0)(p)%LU_size(U_col);
-	   
 
-
-	    if((blk > 14) &&
-	       (blk > LU_size(U_col)) && 
-	       (l!=0)) 
-	    {
-	      
-	      #ifdef BASKER_DEBUG_SFACTOR
-	      printf("Sblk: %d size: %d \n",
-		     blk, LU_size(U_col));
-	      #endif
-	      
-	      Int tm = (blk+1)/16;
-	      U_row = ((blk+1) - tm*16)%LU_size(U_col); 
-	      
-	      //U_row = (p - (LU_size(U_col)+1))%LU_size(U_col);
-
-	      }
-
-
-
+	    Int my_row_leader = S(0)(find_leader(p,l));
+	    //Int my_new_row = 
+	    // blk - my_row_leader;
+	    Int U_row = blk-my_row_leader;
+	    
 	    #ifdef BASKER_DEBUG_SFACTOR
 	    printf("Proc off-diag block: %d p: %d loc: %d %d \n", 
 	    	   l, p, U_col, U_row);
 	    #endif
-	    //Determine upper blk nnz
-	    //-----OLD
-	    //U_blk_sfactor(AV[U_col][U_row], stree, 
-		//	  gScol, gSrow,0);
-	   
-
+	  
+	  
 	    Int glvl = p/2;
 
 	    #ifdef BASKER_DEBUG_SFACTOR
@@ -447,16 +426,11 @@ namespace BaskerNS
 		U_col = S(l+1)(ppp);
 		U_row = S(lvl+1)(ppp)%LU_size(U_col);
 		
-
-		if((S(lvl+1)(ppp) > 14) &&
-		   (S(lvl+1)(ppp) > LU_size(U_col)) 
-		   )
-		  {
-		    Int tm = (S(lvl+1)(ppp)+1)/16;
-		    U_row = ((S(lvl+1)(ppp)+1) - (tm*16))%LU_size(U_col);
-
-		  }
-
+		
+		Int my_row_leader = S(0)(find_leader(ppp,l));
+		//Int my_new_row = 
+		// S(lvl+1)(ppp) - my_row_leader;
+		U_row =  S(lvl+1)(ppp) - my_row_leader;
 
 		#ifdef BASKER_DEBUG_SFACTOR
 		printf("offida sep, lvl: %d l: %d U_col: %d U_row: %d \n", lvl, l, U_col, U_row);

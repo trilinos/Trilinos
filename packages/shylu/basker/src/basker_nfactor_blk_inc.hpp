@@ -1,8 +1,6 @@
 #ifndef BASKER_NFACTOR_BLK_INC_HPP
 #define BASKER_NFACTOR_BLK_INC_HPP
 
-
-//#include "basker_decl.hpp"
 #include "basker_matrix_decl.hpp"
 #include "basker_matrix_view_decl.hpp"
 #include "basker_matrix_view_def.hpp"
@@ -53,16 +51,9 @@ namespace BaskerNS
 	     kid);
       #endif
 
-      //No longer needed, added in sfactor
-      //printf("before workspace init\n");
-      //basker->t_init_workspace(kid);
-      //printf("after workspace init\n");
-      
-      //if(kid == 2 || kid == 3)
-      //if(kid==0)
       {
-      basker->t_nfactor_blk_inc_lvl(kid);
-	}
+	basker->t_nfactor_blk_inc_lvl(kid);
+      }
     }//end operator
   };//end kokkos_nfactor_domain struct
 
@@ -118,15 +109,13 @@ namespace BaskerNS
       //printf("before workspace init\n");
       //basker->t_init_workspace(kid);
       //printf("after workspace init\n");
+            
+      {
+	basker->t_nfactor_blk_inc_lvl(kid);
+      }
+
+	}//if-thread !BASKER_MAX_IDX
       
-      //if(kid == 8)
-	{
-      basker->t_nfactor_blk_inc_lvl(kid);
-	}
-
-
-	}
-
     }//end operator
   };//end kokkos_nfactor_domain_remalloc_inc_lvl struct
  

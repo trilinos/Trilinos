@@ -530,20 +530,11 @@ namespace BaskerNS
     const Int L_col = S(l)(kid);
     const Int L_row = 0;
     const Int U_col = S(lvl)(kid);
-    Int U_row = (lvl==1)?(kid%2):S(l)(kid)%LU_size(U_col);
-  
-    if((L_col > 14) &&
-       (L_col > LU_size(U_col)) &&
-       (lvl != 1))
-      {
-	//printf("modify urow, %d %d \n",
-	//     L_col, LU_size(U_col));
-	
-	Int tm = (L_col+1)/16;
-	U_row = ((L_col+1)-(tm*16))%LU_size(U_col);
 
-      }
-
+    Int my_row_leader = S(0)(find_leader(kid,lvl-1));
+    Int my_new_row = 
+      L_col - my_row_leader;
+    Int U_row = L_col - my_row_leader;
 
     const Int X_col = S(0)(kid);
     const Int X_row = l; //X_row = lower(L)

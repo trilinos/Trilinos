@@ -971,15 +971,10 @@ namespace BaskerNS
 
     Int U_row     =
       (lvl==1)?(kid%2):S(sl)(kid)%LU_size(U_col);
-    //printf("test \n");
     if((S(sl)(kid) > 14) &&
        (S(sl)(kid) > LU_size(U_col)) &&
        (lvl != 1))
       {
-
-	///printf("TM HERE 1\n");
-	//printf("lower offdiag new num, %d %d \n",
-	//     S(sl)(kid), LU_size(U_col));
 	Int tm = (S(sl)(kid)+1)/16;
 	U_row = ((S(sl)(kid)+1) - (tm*16))%LU_size(U_col);
       }

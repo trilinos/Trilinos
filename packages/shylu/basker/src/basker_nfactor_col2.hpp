@@ -390,20 +390,12 @@ namespace BaskerNS
     const Int L_col     = S(sl)(my_leader);
     Int L_row           = l-sl+1; //Might have to think about th
     const Int U_col     = S(lvl)(kid);
-    Int U_row     =
-      (lvl==1)?(kid%2):S(sl)(kid)%LU_size(U_col);
 
-
-    //printf("test \n");
-    if((S(sl)(kid) > 14) &&
-       (S(sl)(kid) > LU_size(U_col)) &&
-       (lvl != 1))
-      {
-	//printf("lower offdiag new num, %d %d \n",
-	//     S(sl)(kid), LU_size(U_col));
-	Int tm = (S(sl)(kid)+1)/16;
-	U_row = ((S(sl)(kid)+1) - (tm*16))%LU_size(U_col);
-      }
+    Int my_row_leader  = S(0)(find_leader(kid,lvl-1));
+    //Int my_new_row = 
+    // L_col - my_row_leader;
+    Int U_row     = L_col-my_row_leader;
+   
 
     const Int X_col     = S(0)(my_leader);
     Int X_row     = l+1; //this will change for us 
@@ -683,19 +675,12 @@ namespace BaskerNS
     //Copy B -> C
     Int bl = l+1;
     Int A_col = S(lvl)(kid);
-    Int A_row = (lvl==1)?(2):S(bl)(kid)%(LU_size(A_col));
 
-    if((S(bl)(kid) > 14) &&
-       (S(bl)(kid) > LU_size(A_col)) &&
-       (lvl != 1))
-      {
-	//printf("test cm %d %d %d \n",
-	//     kid, S(bl)(kid), LU_size(A_col));
-
-	Int tm = (S(bl)(kid)+1)/16;
-	A_row  = ((S(bl)(kid)+1) - (tm*16))%LU_size(A_col);
-      } 
-
+    Int my_row_leader = S(0)(find_leader(kid,lvl-1));
+    //Int my_new_row = 
+    // S(bl)(kid) - my_row_leader;
+    Int A_row = S(bl)(kid) - my_row_leader;
+    
 
 
     Int CM_idx = kid;
@@ -768,9 +753,9 @@ namespace BaskerNS
 
 	Int bl = l+1;
     Int A_col = S(lvl)(kid);
+  
+    /*
     Int A_row = (lvl==1)?(2):S(bl)(kid)%(LU_size(A_col));
-
-
     //maybe no???
      if((S(bl)(kid) > 14) &&
        (S(bl)(kid) > LU_size(A_col)) &&
@@ -785,7 +770,7 @@ namespace BaskerNS
 
      // printf("kid: %d leader_idx: %d bl: %d \n",
      //	    kid, leader_idx, bl);
-
+     */
 
     Int CM_idx = kid;
     ENTRY_1DARRAY   X   = LL(leader_idx)(bl).ews;
