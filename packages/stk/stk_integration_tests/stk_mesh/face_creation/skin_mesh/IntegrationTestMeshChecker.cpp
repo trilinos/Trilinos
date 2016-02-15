@@ -98,7 +98,7 @@ private:
 
 TEST_F(MeshChecker, diagnose_bad_meshes)
 {
-    run_all_test_cases(badDecomps, stk::mesh::BulkData::NO_AUTO_AURA);
+    // run_all_test_cases(badDecomps, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 
