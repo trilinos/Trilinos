@@ -40,6 +40,7 @@ namespace
 // Z = degenerate hex in block Z
 // Y = degenerate hex in block Y
 // T = tet in block T
+// P = hex that is partially coincident with block A on a face
 // g = degenerate shell (usually attached to face of tet T)
 // .e = the language of our Patron Saint Exodus
 //
@@ -116,7 +117,7 @@ const SideTestUtil::TestCaseData exposedBoundaryTestCases =
     {"ef.e",        2,      2,      {{1, 0}, {1, 1}, {2, 0}, {2, 1}}},
     {"ALJ.e",       3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}, {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 5}}},
 
-    {"AP.e",        2,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}}},
+    {"AP.e",        2,      11,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}}},
 
     {"AB_doubleKissing.e",  2,  8,  {{1, 0}, {1, 3}, {1, 4}, {1, 5}, {2, 1}, {2, 2}, {2, 4}, {2, 5}}},
     {"Tg.e",        2,      6,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}}},

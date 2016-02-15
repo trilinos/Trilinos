@@ -155,7 +155,7 @@ void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToS
     ElemElemGraph elemElemGraph(bulkData, blocksToSkin, air);
     SkinMeshUtil skinMesh(elemElemGraph, partToPutSidesInto, blocksToSkin, air);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
-    elemElemGraph.write_graph(std::cerr);
+
     FaceCreator(bulkData, elemElemGraph).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
 }
 
