@@ -22,6 +22,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
    NUM_MPI_PROCS 2
    )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+   initial_condition_control
+   SOURCES initial_condition_control.cpp user_app_STKClosureModel_Factory.hpp user_app_STKClosureModel_Factory_impl.hpp user_app_STKClosureModel_Factory_TemplateBuilder.hpp ${UNIT_TEST_DRIVER}
+   COMM serial mpi
+   NUM_MPI_PROCS 2
+   )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ic_builder2_files
   SOURCE_FILES block-decomp.exo block-decomp.exo.2.0 block-decomp.exo.2.1
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/"
