@@ -206,7 +206,7 @@ install install-user-include2
 
 explicit install-user-include2b ;
 install install-user-include2b
-  : $(seacas-root)/libraries/exodus/cbind/sierra/exodus_meta.h
+  : $(seacas-root)/libraries/exodus/cbind/sierra/exodusII_meta.h
   : <location>$(install-root)/seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus/cbind/sierra
   ;
