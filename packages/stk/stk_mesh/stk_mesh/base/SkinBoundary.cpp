@@ -60,9 +60,7 @@ public:
         FaceToSideSetMap::iterator iter = m_faceToSideSetMap.find(face);
         if(iter == m_faceToSideSetMap.end())
         {
-            std::set<SideSetEntry, SideSetEntryLess> setEntry(m_cmp);
-            setEntry.insert(sideSetEntry);
-            m_faceToSideSetMap.insert( std::pair< stk::mesh::Entity, std::set<SideSetEntry, SideSetEntryLess> > (face, setEntry));
+            add_new_entry(face, sideSetEntry);
         }
         else
         {
@@ -73,9 +71,6 @@ public:
     void report(const stk::mesh::EntityVector & skinnedSides, const stk::mesh::EntityVector &sidesetSides, const Part& skinnedPart)
     {
         std::ostringstream os;
-        size_t max_size = skinnedSides.size() + sidesetSides.size();
-        std::vector<stk::mesh::Entity> diffFromPartToSideSet(max_size), diffFromSideSetToPart(max_size);
-        std::vector<stk::mesh::Entity>::iterator it;
 
         os << "" << std::endl;
         os << "Skin report for skinned part named: " << skinnedPart.name() << " on processor " << m_bulkData.parallel_rank() << std::endl;
@@ -90,14 +85,28 @@ public:
 private:
     SkinnedBoundaryErrorReporter();
 
+    void add_new_entry(stk::mesh::Entity face, const SideSetEntry &sideSetEntry)
+    {
+        std::set<SideSetEntry, SideSetEntryLess> setEntry(m_cmp);
+        setEntry.insert(sideSetEntry);
+        m_faceToSideSetMap.insert( std::pair< stk::mesh::Entity, std::set<SideSetEntry, SideSetEntryLess> > (face, setEntry));
+    }
+
+    stk::mesh::EntityVector get_entity_vector_difference(const stk::mesh::EntityVector & A, const stk::mesh::EntityVector &B)
+    {
+        stk::mesh::EntityVector difference(A.size() + B.size());
+        stk::mesh::EntityVector::iterator it;
+
+        it = std::set_difference(A.begin(), A.end(), B.begin(), B.end(), difference.begin());
+        difference.resize(it - difference.begin());
+
+        return difference;
+    }
+
     void report_difference_from_skinned_part_to_sideset(const stk::mesh::EntityVector & skinnedSides, const stk::mesh::EntityVector &sidesetSides, std::ostringstream &os)
     {
-        size_t max_size = skinnedSides.size() + sidesetSides.size();
-        std::vector<stk::mesh::Entity> diffFromPartToSideSet(max_size);
-        std::vector<stk::mesh::Entity>::iterator it;
+        stk::mesh::EntityVector diffFromPartToSideSet = get_entity_vector_difference(skinnedSides, sidesetSides);
 
-        it = std::set_difference(skinnedSides.begin(), skinnedSides.end(), sidesetSides.begin(), sidesetSides.end(), diffFromPartToSideSet.begin());
-        diffFromPartToSideSet.resize(it - diffFromPartToSideSet.begin());
         os << "    List of sides in skinned part but not in skinned sideset" << std::endl;
         for(size_t i = 0; i < diffFromPartToSideSet.size(); ++i)
         {
@@ -108,12 +117,8 @@ private:
 
     void report_difference_from_sideset_to_skinned_part(const stk::mesh::EntityVector & skinnedSides, const stk::mesh::EntityVector &sidesetSides, std::ostringstream &os)
     {
-        size_t max_size = skinnedSides.size() + sidesetSides.size();
-        std::vector<stk::mesh::Entity> diffFromSideSetToPart(max_size);
-        std::vector<stk::mesh::Entity>::iterator it;
+        stk::mesh::EntityVector diffFromSideSetToPart = get_entity_vector_difference(sidesetSides, skinnedSides);
 
-        it = std::set_difference(sidesetSides.begin(), sidesetSides.end(), skinnedSides.begin(), skinnedSides.end(), diffFromSideSetToPart.begin());
-        diffFromSideSetToPart.resize(it - diffFromSideSetToPart.begin());
         os << "    List of sides in skinned sideset but not in skinned part" << std::endl;
         for(size_t i = 0; i < diffFromSideSetToPart.size(); ++i)
         {
@@ -123,20 +128,21 @@ private:
         os << "    -----------------------------------" << std::endl;
     }
 
+    void report_sideset_entry_info(const std::set<SideSetEntry, SideSetEntryLess> &setList, std::ostringstream &os)
+    {
+        int count = 0;
+        for(const SideSetEntry & entry : setList)
+        {
+            os << "            Sideset Info[" << count << "] = (" << m_bulkData.identifier(entry.element) << "," << entry.side << ")"<< std::endl;
+            count++;
+        }
+    }
+
     void report_sideset_info(stk::mesh::Entity face, std::ostringstream &os)
     {
         FaceToSideSetMap::iterator iter = m_faceToSideSetMap.find(face);
         if(iter != m_faceToSideSetMap.end())
-        {
-            const std::set<SideSetEntry, SideSetEntryLess> &setList = iter->second;
-
-            int count = 0;
-            for(const SideSetEntry & entry : setList)
-            {
-                os << "            Sideset Info[" << count << "] = (" << m_bulkData.identifier(entry.element) << "," << entry.side << ")"<< std::endl;
-                count++;
-            }
-        }
+            report_sideset_entry_info(iter->second, os);
     }
 
     typedef std::map< stk::mesh::Entity, std::set<SideSetEntry, SideSetEntryLess> > FaceToSideSetMap;
