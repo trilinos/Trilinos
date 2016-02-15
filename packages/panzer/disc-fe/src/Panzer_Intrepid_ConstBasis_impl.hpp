@@ -13,6 +13,9 @@ Basis_Constant<Scalar,ArrayScalar>::Basis_Constant(const shards::CellTopology & 
     this -> basisType_         = Intrepid2::BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = Intrepid2::COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
   
   
