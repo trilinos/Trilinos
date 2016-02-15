@@ -41,10 +41,11 @@ typedef std::vector<TestCase> TestCaseData;
 
 const TestCaseData badDecomps =
 {
-  /* filename, max#procs, #side,  sideset */
+  /* filename, #procs,      {local element id, remoted element id, remote proc} */
     {"Aef.e",     2,        { {3u, 2u, 1}, {2u, 3u, 0} }},
     {"ef.e",      2,        { {1u, 2u, 1}, {2u, 1u, 0} }},
     {"AefB.e",    3,        { {}, {2u, 3u, 2}, {3u, 2u, 1} }},
+    {"AP.e",      2,        { {1u, 2u, 1}, {2u, 1u, 0}} }
 };
 
 class MeshChecker : public ::testing::Test
@@ -82,8 +83,7 @@ public:
             EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].neighboringProc, neighboringProc);
         }
 
-        //KHP: Commenting out to fix build until this function can be added to the repository.
-        //stk::mesh::throw_if_coincident_elements_are_split(bulkData, splitCoincidentElements.empty());
+        stk::mesh::throw_if_any_proc_has_false(bulkData.parallel(), splitCoincidentElements.empty());
     }
 
     MPI_Comm get_comm() const
@@ -98,7 +98,7 @@ private:
 
 TEST_F(MeshChecker, diagnose_bad_meshes)
 {
-    // run_all_test_cases(badDecomps, stk::mesh::BulkData::NO_AUTO_AURA);
+    run_all_test_cases(badDecomps, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 
