@@ -93,6 +93,10 @@ buildAndRegisterEvaluators(const std::string & responseName,
   else if(addSolutionFields_)
     allFields.insert(allFields.end(),physicsBlock.getProvidedDOFs().begin(),physicsBlock.getProvidedDOFs().end());
 
+  // Add in tangent fields
+  if(addSolutionFields_)
+    allFields.insert(allFields.end(),physicsBlock.getTangentFields().begin(),physicsBlock.getTangentFields().end());
+
   // add in bases for any addtional fields
   for(std::size_t i=0;i<additionalFields_.size();i++)
     bases[additionalFields_[i].second->name()] = additionalFields_[i].second;

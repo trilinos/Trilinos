@@ -348,6 +348,11 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
       // Generate unique list of bases
       m_bases[sbNames[j].second->name()] = sbNames[j].second;
 
+      // Generate tangent field names
+      for (std::size_t k=0; k<tangent_param_names.size(); ++k)
+        m_tangent_fields.push_back( StrPureBasisPair( sbNames[j].first + " SENSITIVITY " + tangent_param_names[k],
+                                                      sbNames[j].second ) );
+
     }
 
     // add coordinate dofs to physics block
@@ -645,6 +650,12 @@ const std::vector<panzer::StrPureBasisPair>& panzer::PhysicsBlock::getProvidedDO
 const std::vector<std::vector<std::string> >& panzer::PhysicsBlock::getCoordinateDOFs() const
 {
   return m_coordinate_dofs;
+}
+
+// *******************************************************************
+const std::vector<panzer::StrPureBasisPair>& panzer::PhysicsBlock::getTangentFields() const
+{
+  return m_tangent_fields;
 }
 
 // *******************************************************************
