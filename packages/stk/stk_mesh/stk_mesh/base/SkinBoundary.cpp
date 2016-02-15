@@ -36,6 +36,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/SkinBoundaryErrorReporter.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
@@ -48,110 +49,6 @@ namespace stk
 {
 namespace mesh
 {
-
-class SkinnedBoundaryErrorReporter
-{
-public:
-    SkinnedBoundaryErrorReporter(std::ostream &stream, const stk::mesh::BulkData &bulkData)
-    : m_stream(stream), m_bulkData(bulkData), m_cmp(bulkData) {}
-
-    void add_entry(stk::mesh::Entity face, const SideSetEntry &sideSetEntry)
-    {
-        FaceToSideSetMap::iterator iter = m_faceToSideSetMap.find(face);
-        if(iter == m_faceToSideSetMap.end())
-        {
-            add_new_entry(face, sideSetEntry);
-        }
-        else
-        {
-            iter->second.insert(sideSetEntry);
-        }
-    }
-
-    void report(const stk::mesh::EntityVector & skinnedSides, const stk::mesh::EntityVector &sidesetSides, const Part& skinnedPart)
-    {
-        std::ostringstream os;
-
-        os << "" << std::endl;
-        os << "Skin report for skinned part named: " << skinnedPart.name() << " on processor " << m_bulkData.parallel_rank() << std::endl;
-        os << "-----------------------------------" << std::endl;
-
-        report_difference_from_skinned_part_to_sideset(skinnedSides, sidesetSides, os);
-        report_difference_from_sideset_to_skinned_part(skinnedSides, sidesetSides, os);
-
-        m_stream << os.str();
-    }
-
-private:
-    SkinnedBoundaryErrorReporter();
-
-    void add_new_entry(stk::mesh::Entity face, const SideSetEntry &sideSetEntry)
-    {
-        std::set<SideSetEntry, SideSetEntryLess> setEntry(m_cmp);
-        setEntry.insert(sideSetEntry);
-        m_faceToSideSetMap.insert( std::pair< stk::mesh::Entity, std::set<SideSetEntry, SideSetEntryLess> > (face, setEntry));
-    }
-
-    stk::mesh::EntityVector get_entity_vector_difference(const stk::mesh::EntityVector & A, const stk::mesh::EntityVector &B)
-    {
-        stk::mesh::EntityVector difference(A.size() + B.size());
-        stk::mesh::EntityVector::iterator it;
-
-        it = std::set_difference(A.begin(), A.end(), B.begin(), B.end(), difference.begin());
-        difference.resize(it - difference.begin());
-
-        return difference;
-    }
-
-    void report_difference_from_skinned_part_to_sideset(const stk::mesh::EntityVector & skinnedSides, const stk::mesh::EntityVector &sidesetSides, std::ostringstream &os)
-    {
-        stk::mesh::EntityVector diffFromPartToSideSet = get_entity_vector_difference(skinnedSides, sidesetSides);
-
-        os << "    List of sides in skinned part but not in skinned sideset" << std::endl;
-        for(size_t i = 0; i < diffFromPartToSideSet.size(); ++i)
-        {
-            os << "        (" << i << ") " << m_bulkData.identifier(diffFromPartToSideSet[i]) << std::endl;
-        }
-        os << "    -----------------------------------" << std::endl;
-    }
-
-    void report_difference_from_sideset_to_skinned_part(const stk::mesh::EntityVector & skinnedSides, const stk::mesh::EntityVector &sidesetSides, std::ostringstream &os)
-    {
-        stk::mesh::EntityVector diffFromSideSetToPart = get_entity_vector_difference(sidesetSides, skinnedSides);
-
-        os << "    List of sides in skinned sideset but not in skinned part" << std::endl;
-        for(size_t i = 0; i < diffFromSideSetToPart.size(); ++i)
-        {
-            os << "        (" << i << ") " << m_bulkData.identifier(diffFromSideSetToPart[i]) << std::endl;
-            report_sideset_info(diffFromSideSetToPart[i], os);
-        }
-        os << "    -----------------------------------" << std::endl;
-    }
-
-    void report_sideset_entry_info(const std::set<SideSetEntry, SideSetEntryLess> &setList, std::ostringstream &os)
-    {
-        int count = 0;
-        for(const SideSetEntry & entry : setList)
-        {
-            os << "            Sideset Info[" << count << "] = (" << m_bulkData.identifier(entry.element) << "," << entry.side << ")"<< std::endl;
-            count++;
-        }
-    }
-
-    void report_sideset_info(stk::mesh::Entity face, std::ostringstream &os)
-    {
-        FaceToSideSetMap::iterator iter = m_faceToSideSetMap.find(face);
-        if(iter != m_faceToSideSetMap.end())
-            report_sideset_entry_info(iter->second, os);
-    }
-
-    typedef std::map< stk::mesh::Entity, std::set<SideSetEntry, SideSetEntryLess> > FaceToSideSetMap;
-
-    std::ostream &m_stream;
-    const stk::mesh::BulkData &m_bulkData;
-    FaceToSideSetMap m_faceToSideSetMap;
-    SideSetEntryLess m_cmp;
-};
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -208,7 +105,7 @@ stk::mesh::EntityVector get_locally_owned_skinned_sides(BulkData &bulkData, cons
     return skinnedSides;
 }
 
-bool is_sideset_equivalent_to_skin(BulkData &bulkData, stk::mesh::EntityVector &sidesetSides, const Part& skinnedPart, SkinnedBoundaryErrorReporter &reporter)
+bool is_sideset_equivalent_to_skin(BulkData &bulkData, stk::mesh::EntityVector &sidesetSides, const Part& skinnedPart, impl::SkinBoundaryErrorReporter &reporter)
 {
     stk::mesh::EntityVector skinnedSides = get_locally_owned_skinned_sides(bulkData, skinnedPart);
     stk::util::sort_and_unique(sidesetSides);
@@ -221,7 +118,7 @@ bool is_sideset_equivalent_to_skin(BulkData &bulkData, stk::mesh::EntityVector &
     return result;
 }
 
-void add_locally_owned_side_from_element_side_pair(BulkData &bulkData, const SideSetEntry &facet, stk::mesh::EntityVector &sidesetSides, SkinnedBoundaryErrorReporter &reporter)
+void add_locally_owned_side_from_element_side_pair(BulkData &bulkData, const SideSetEntry &facet, stk::mesh::EntityVector &sidesetSides, impl::SkinBoundaryErrorReporter &reporter)
 {
     Entity side = get_side_entity_for_element_side_pair(bulkData, facet);
     if(bulkData.is_valid(side) && bulkData.bucket(side).owned())
@@ -231,7 +128,7 @@ void add_locally_owned_side_from_element_side_pair(BulkData &bulkData, const Sid
     }
 }
 
-stk::mesh::EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet, SkinnedBoundaryErrorReporter &reporter)
+stk::mesh::EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet, impl::SkinBoundaryErrorReporter &reporter)
 {
     stk::mesh::EntityVector sidesetSides;
 
@@ -247,7 +144,7 @@ bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlo
     ElemElemGraph elemElemGraph(bulkData, skinnedBlock);
     SkinMeshUtil skinMesh(elemElemGraph, {&skinnedPart}, skinnedBlock);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
-    SkinnedBoundaryErrorReporter reporter(stream, bulkData);
+    impl::SkinBoundaryErrorReporter reporter(stream, bulkData);
 
     stk::mesh::EntityVector sidesetSides = get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet, reporter);
     return is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart, reporter);
@@ -263,7 +160,7 @@ bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const st
     stk::mesh::ElemElemGraph graph(bulkData, skinnedBlock);
     SkinMeshUtil skinMesh(graph, {&skinnedPart}, skinnedBlock);
     std::vector<SideSetEntry> skinnedSideSet = skinMesh.extract_interior_sideset();
-    SkinnedBoundaryErrorReporter reporter(stream, bulkData);
+    impl::SkinBoundaryErrorReporter reporter(stream, bulkData);
 
     stk::mesh::EntityVector sidesetSides = stk::mesh::get_locally_owned_sides_from_sideset(bulkData, skinnedSideSet, reporter);
     return stk::mesh::is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart, reporter);
