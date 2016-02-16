@@ -360,7 +360,7 @@ public:
         TEUCHOS_TEST_FOR_EXCEPTION(thyRgMapExtractorMaps[r]->getNodeNumElements()  != rMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style range map extractor contains faulty data.")
       }
       RCP<const Map> fullThyRangeMap = MatrixUtils::concatenateMaps(thyRgMapExtractorMaps);
-      thyRangeMapExtractor = MapExtractorFactory::Build(fullThyRangeMap,thyRgMapExtractorMaps);
+      thyRangeMapExtractor = MapExtractorFactory::Build(fullThyRangeMap,thyRgMapExtractorMaps,true);
 
       std::vector<Teuchos::RCP<const Map> > thyDoMapExtractorMaps (numCols, Teuchos::null);
       std::vector<Teuchos::RCP<const Map> > thyColMapExtractorMaps(numCols, Teuchos::null);
@@ -374,8 +374,8 @@ public:
       }
       RCP<const Map> fullThyDomainMap = MatrixUtils::concatenateMaps(thyDoMapExtractorMaps);
       RCP<const Map> fullThyColumnMap = MatrixUtils::concatenateMaps(thyColMapExtractorMaps);
-      thyDomainMapExtractor = MapExtractorFactory::Build(fullThyDomainMap,thyDoMapExtractorMaps);
-      thyColMapExtractor    = MapExtractorFactory::Build(fullThyColumnMap,thyColMapExtractorMaps);
+      thyDomainMapExtractor = MapExtractorFactory::Build(fullThyDomainMap,thyDoMapExtractorMaps,true);
+      thyColMapExtractor    = MapExtractorFactory::Build(fullThyColumnMap,thyColMapExtractorMaps,true);
     }
 
     // create submatrices
