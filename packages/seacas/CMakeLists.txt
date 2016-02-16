@@ -13,6 +13,11 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 #
 # B) Set up package-specific options
 #
+ if (DEFINED TPL_Netcdf_PARALLEL)
+ else()
+   ASSERT_DEFINED(SEACASExodus_ENABLE_MPI)
+   SET(TPL_Netcdf_PARALLEL ${SEACASExodus_ENABLE_MPI})
+ endif()
 
 #
 # C) Add the libraries, tests, and examples

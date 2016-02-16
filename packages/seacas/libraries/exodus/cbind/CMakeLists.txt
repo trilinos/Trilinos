@@ -42,13 +42,13 @@ ENDFUNCTION()
 
 is_enabled(TPL_Netcdf_Enables_Netcdf4 HAS_NETCDF4)
 is_enabled(TPL_Netcdf_Enables_PNetcdf HAS_PNETCDF)
-is_enabled(SEACASExodus_ENABLE_MPI HAS_PARALLEL)
+is_enabled(TPL_Netcdf_PARALLEL HAS_PARALLEL)
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/exodusII_meta.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/exodusII_meta.h @ONLY)
 
-IF (NOT SEACASExodus_ENABLE_MPI)
+IF (NOT TPL_Netcdf_PARALLEL)
   LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/ex_create_par.c")
   LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/ex_open_par.c")
   LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/exodusII_par.h")
