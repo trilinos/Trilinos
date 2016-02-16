@@ -43,8 +43,8 @@ namespace BaskerNS
       Int kid = (Int)(thread.league_rank()*
 		      thread.team_size()+
 		      thread.team_rank());
-      Int total_threads = thread.league_size()*
-	thread.team_size();
+      //Int total_threads = thread.league_size()*
+      //	thread.team_size(); //Not used
 
 
       //================OLD EQ BLK=================//
@@ -130,8 +130,8 @@ namespace BaskerNS
       Int kid = (Int)(thread.league_rank()*
 		      thread.team_size()+
 		      thread.team_rank());
-      Int total_threads = thread.league_size()*
-	thread.team_size();
+      //Int total_threads = thread.league_size()*
+      //thread.team_size(); //Not used
 
 
       Int chunk_start = thread_start(kid);
@@ -202,7 +202,7 @@ namespace BaskerNS
    )
   {  
     Int bcol = BTF_C.scol;
-    Int brow = BTF_C.srow;
+    //Int brow = BTF_C.srow;
     Int btab = btf_tabs_offset;
     
     BASKER_MATRIX  &M = BTF_C;
@@ -250,7 +250,7 @@ namespace BaskerNS
    )
   {
     Int bcol = BTF_C.scol;
-    Int brow = BTF_C.srow;
+    //Int brow = BTF_C.srow;
     Int btab = btf_tabs_offset;
     
     BASKER_MATRIX  &M = BTF_C;
@@ -288,9 +288,9 @@ namespace BaskerNS
 
     Int llnnz  = L.nnz;
     Int uunnz  = U.nnz;
-    Entry maxv;
+    Entry maxv = (Entry) 0;
 
-    Int maxindex;
+    Int maxindex = 0;
 
     Int i,j, t;
     Int cu_ltop = 0;
@@ -720,7 +720,7 @@ namespace BaskerNS
  
     Int brow        = L.srow;
     
-    Int *color       = &(ws(0));
+    //Int *color       = &(ws(0));
     Int *pattern     = &(ws(ws_size));
     Int *stack       = &(pattern[ws_size]);
     Int *store       = &(stack[ws_size]);

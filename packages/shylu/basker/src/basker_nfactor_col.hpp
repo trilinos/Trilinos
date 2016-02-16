@@ -532,13 +532,13 @@ namespace BaskerNS
     const Int U_col = S(lvl)(kid);
 
     Int my_row_leader = S(0)(find_leader(kid,lvl-1));
-    Int my_new_row = 
-      L_col - my_row_leader;
+    //Int my_new_row = 
+    // L_col - my_row_leader;
     Int U_row = L_col - my_row_leader;
 
     const Int X_col = S(0)(kid);
     const Int X_row = l; //X_row = lower(L)
-    const Int col_idx_offset = 0; //we might be able to remove
+    //const Int col_idx_offset = 0; //we might be able to remove
   
     #ifdef BASKER_DEBUG_NFACTOR_COL
     if(kid >= 0)
@@ -588,7 +588,7 @@ namespace BaskerNS
 
 
     const Int brow = U.srow;
-    const Int bcol = U.scol;
+    //const Int bcol = U.scol;
 
     Int *color     = &(ws(0));
     Int *pattern   = &(color[ws_size]);
@@ -1147,7 +1147,7 @@ namespace BaskerNS
     const Int U_row = LU_size(U_col)-1;
     
     const Int X_col = S(0)(kid);
-    Int col_idx_offset = 0; //can we get rid of now?
+    //Int col_idx_offset = 0; //can we get rid of now?
     
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
@@ -1182,7 +1182,7 @@ namespace BaskerNS
     ENTRY_1DARRAY X       = LL(X_col)(l+1).ews;
 
     const Int brow     = U.srow;
-    const Int bcol     = U.scol;
+    //const Int bcol     = U.scol;
 
     //Int lval       = L.col_ptr[k-bcol];
     const Int lval  = L.col_ptr(k);

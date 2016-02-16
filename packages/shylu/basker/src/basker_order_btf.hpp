@@ -47,7 +47,7 @@ namespace BaskerNS
     Int t_size            = 0;
     Int t_loc             = 0;
     btf_schedule(0) = btf_tabs_offset;
-    BASKER_BOOL  move_fwd = BASKER_TRUE;
+    //BASKER_BOOL  move_fwd = BASKER_TRUE; //NU
 
     for(Int b = btf_tabs_offset; b < btf_nblks;
 	b++)

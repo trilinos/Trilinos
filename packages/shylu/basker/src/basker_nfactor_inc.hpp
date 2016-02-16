@@ -68,13 +68,14 @@ namespace BaskerNS
 
     if(btf_tabs_offset != 0)
       {
-	printf("domain\n");
+	//printf("domain\n");
 	Int domain_restart = 0;
 	kokkos_nfactor_domain_inc_lvl <Int,Entry,Exe_Space>
 	  domain_nfactor(this);
 	Kokkos::parallel_for(TeamPolicy(num_threads,1), 
 			     domain_nfactor);
 	Kokkos::fence();
+        //printf("done domain\n");
     
 
 	//=====Check for error======
@@ -94,7 +95,7 @@ namespace BaskerNS
 	else
 	  {
 	    domain_restart++;
-	    printf("restart \n");
+	    //printf("restart \n");
 	    kokkos_nfactor_domain_remalloc_inc_lvl <Int, Entry, Exe_Space>
 	      diag_nfactor_remalloc(this, thread_start);
 	    Kokkos::parallel_for(TeamPolicy(num_threads,1),
@@ -180,7 +181,7 @@ namespace BaskerNS
 	    else
 	      {
 		sep_restart++;
-		printf("restart \n");
+		//printf("restart \n");
 		Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
 		Kokkos::fence();
 

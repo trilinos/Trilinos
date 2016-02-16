@@ -357,7 +357,8 @@ namespace BaskerNS
 
 
     //Find the leaf nad non-leaf nodes
-    Int is_nonleaf[sg.cblk];
+    //Int is_nonleaf[sg.cblk];
+    Int *is_nonleaf = new Int[sg.cblk];
     
     for(Int i = 0; i < sg.cblk; i++)
       is_nonleaf[i] = 0;
@@ -463,6 +464,7 @@ namespace BaskerNS
     free(sg.peritab);
     free(sg.rangtab);
     free(sg.treetab);
+    free(is_nonleaf);
 
     SCOTCH_stratExit(&strdat);
     SCOTCH_graphFree(&cgrafptr);

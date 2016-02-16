@@ -442,7 +442,7 @@ namespace BaskerNS
     //You would think a match order would help!
     //It does not!
 
-    Int job = 2; //5 is the default for SuperLU_DIST
+    //Int job = 2; //5 is the default for SuperLU_DIST
     //INT_1DARRAY mperm = order_match_array;
     MALLOC_INT_1DARRAY(order_match_array, A.nrow);
     //MALLOC_INT_1DARRAY(mperm, A.nrow);
@@ -514,7 +514,7 @@ namespace BaskerNS
 	FREE(MMT);
       }
     
-    nd_flag == BASKER_TRUE;
+    nd_flag = BASKER_TRUE;
     //permute
     //permute_col(M, part_tree.permtab);
     ///permute_row(M, part_tree.permtab);

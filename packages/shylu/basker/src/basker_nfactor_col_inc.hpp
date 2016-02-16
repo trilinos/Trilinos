@@ -82,8 +82,8 @@ namespace BaskerNS
     const Int U_col =  S(lvl)(kid);
     Int U_row       =  0;
 	  
-    const Int scol = LU(U_col)(U_row).scol;
-    const Int ecol = LU(U_col)(U_row).ecol;
+    //const Int scol = LU(U_col)(U_row).scol;
+    //const Int ecol = LU(U_col)(U_row).ecol;
 
     int upper_error = BASKER_MAX_IDX;
     
@@ -540,7 +540,7 @@ namespace BaskerNS
 
     const Int X_col = S(0)(kid);
     const Int X_row = l; //X_row = lower(L)
-    const Int col_idx_offset = 0; //we might be able to remove
+    //const Int col_idx_offset = 0; //we might be able to remove
   
     #ifdef BASKER_DEBUG_NFACTOR_COL
     if(kid >= 0)
@@ -574,7 +574,7 @@ namespace BaskerNS
     ENTRY_1DARRAY X    = LL(X_col)(X_row).ews;
   
     const Int brow = U.srow;
-    const Int bcol = U.scol;
+    //const Int bcol = U.scol;
 
     Int *color     = &(ws(0));
     Int *pattern   = &(color[ws_size]);
@@ -847,10 +847,10 @@ namespace BaskerNS
     const Int X_col     = S(0)(my_leader);
     Int X_row     = l+1; //this will change for us 
   
-    Int col_idx_offset  = 0;
+    //Int col_idx_offset  = 0;
     
     BASKER_MATRIX     &U   = LU(U_col)(U_row);
-    const Int         bcol = U.scol;
+    //const Int         bcol = U.scol;
          
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     if(L_row >= LL_size(L_col))
@@ -879,7 +879,7 @@ namespace BaskerNS
       }
      #endif
 
-    const BASKER_BOOL A_option = BASKER_FALSE;
+      //const BASKER_BOOL A_option = BASKER_FALSE;
 
 
     //U.info();
@@ -993,7 +993,7 @@ namespace BaskerNS
     Int col_idx_offset  = 0;
     
     BASKER_MATRIX     &U   = LU(U_col)(U_row);
-    const Int         bcol = U.scol;
+    //const Int         bcol = U.scol;
          
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     if(L_row >= LL_size(L_col))
@@ -1022,7 +1022,7 @@ namespace BaskerNS
       }
      #endif
 
-    const BASKER_BOOL A_option = BASKER_FALSE;
+      //const BASKER_BOOL A_option = BASKER_FALSE;
 	    
     t_dense_back_solve_offdiag_inc_lvl(kid,
 			       L_col, L_row,
@@ -1125,7 +1125,7 @@ namespace BaskerNS
     //JDB PASS
     A_row = my_new_row;
 
-    Int CM_idx = kid;
+    //Int CM_idx = kid; //Not used
     
     BASKER_MATRIX  *Bp;
     if(A_row != (LU_size(A_col)-1))
@@ -1148,29 +1148,29 @@ namespace BaskerNS
 
     //return;
 
-    Int team_leader   = find_leader(kid, l);
+    //Int team_leader   = find_leader(kid, l);  //Not used
     ENTRY_1DARRAY   X = LL(leader_idx)(bl).ews;
     INT_1DARRAY    ws = LL(leader_idx)(bl).iws;
-    const Int brow    = LL(leader_idx)(bl).srow;
-    const Int nrow    = LL(leader_idx)(bl).nrow;
-    Int p_size        = LL(leader_idx)(bl).p_size;
-    const Int ws_size = LL(leader_idx)(bl).iws_size;
-    Int *color        = &(ws(0));
-    Int *pattern      = &(color[ws_size]);
-    Int *stack        = &(pattern[ws_size]); //used for fill
+    //const Int brow    = LL(leader_idx)(bl).srow;
+    //const Int nrow    = LL(leader_idx)(bl).nrow;
+    //Int p_size        = LL(leader_idx)(bl).p_size;
+    //const Int ws_size = LL(leader_idx)(bl).iws_size;
+    //Int *color        = &(ws(0));
+    //Int *pattern      = &(color[ws_size]);
+    //Int *stack        = &(pattern[ws_size]); //used for fill
 
     #ifdef BASKER_DEBUG_NFACTOR_COL2    
     printf("copy, kid: %d bl: %d  A: %d %d \n", 
 	   kid, bl, A_col, A_row);
     #endif
 
-    const Int bbcol = B.scol;
+    //const Int bbcol = B.scol;
    
     for(Int i = B.col_ptr(k);
 	i < B.col_ptr(k+1); ++i)
       {
 	Int B_row = B.row_idx(i);	
-	Int j = gperm(B_row+B.srow);
+	//Int j = gperm(B_row+B.srow); //Not used
 
      	X(B_row) += B.val(i);
 
@@ -1192,7 +1192,7 @@ namespace BaskerNS
     for(Int TEMP = 0; TEMP < 1; ++TEMP)
       {
 	Int bl = l+1;
-	Int A_col = S(lvl)(kid);
+	//Int A_col = S(lvl)(kid);
 	
 	/* CAN REMOVE
 	Int A_row = (lvl==1)?(2):S(bl)(kid)%(LU_size(A_col));
@@ -1213,17 +1213,17 @@ namespace BaskerNS
      //	    kid, leader_idx, bl);
 
 
-    Int CM_idx = kid;
+        //Int CM_idx = kid;
     ENTRY_1DARRAY   X   = LL(leader_idx)(bl).ews;
     INT_1DARRAY    ws   = LL(leader_idx)(bl).iws;
     const Int   ws_size = LL(leader_idx)(bl).ews_size;
-    const Int      brow = LL(leader_idx)(bl).srow;
+    //const Int      brow = LL(leader_idx)(bl).srow; //NU
     const Int      nrow = LL(leader_idx)(bl).nrow;
-    Int p_size          = LL(leader_idx)(bl).p_size;
+    //Int p_size          = LL(leader_idx)(bl).p_size;
 
     //For recounting patterns in dense blk
     //Need better sparse update
-    Int p_count  =0 ; 
+    //Int p_count  =0 ; 
     
     Int *color   = &(ws(0));
     Int *pattern = &(color[ws_size]);
@@ -1307,7 +1307,7 @@ namespace BaskerNS
     const Int U_row = LU_size(U_col)-1;
     
     const Int X_col = S(0)(kid);
-    Int col_idx_offset = 0; //can we get rid of now?
+    //Int col_idx_offset = 0; //can we get rid of now?
     
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
@@ -1342,7 +1342,7 @@ namespace BaskerNS
     ENTRY_1DARRAY X       = LL(X_col)(l+1).ews;
 
     const Int brow     = U.srow;
-    const Int bcol     = U.scol;
+    //const Int bcol     = U.scol;
 
     const Int lval  = L.col_ptr(k);
     const Int uval  = U.col_ptr(k);
@@ -1759,11 +1759,11 @@ namespace BaskerNS
     BASKER_MATRIX        &U = LU(U_col)(U_row); 
     
     INT_1DARRAY     ws = LL(X_col)(X_row).iws;
-    const Int  ws_size = LL(X_col)(X_row).iws_size;
+    //const Int  ws_size = LL(X_col)(X_row).iws_size;
     ENTRY_1DARRAY    X = LL(X_col)(X_row).ews;
 
-    const Int brow     = U.srow;
-    const Int bcol     = U.scol;
+    //const Int brow     = U.srow;
+    //const Int bcol     = U.scol;
 
     pivot = U.tpivot;
         
@@ -1828,7 +1828,7 @@ namespace BaskerNS
     //should remove either as a paramter or here
     Int team_leader      = find_leader(kid, sl);
     const Int leader_idx = S(0)(team_leader);
-    Int loop_col_idx     = S(l)(kid);
+    //Int loop_col_idx     = S(l)(kid); NU
 
     //#ifdef BASKER_DEBUG_NFACTOR_COL2
     if(lower == BASKER_TRUE)
@@ -1868,12 +1868,12 @@ namespace BaskerNS
 	ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews;
 	INT_1DARRAY   &ws = LL(my_idx)(blk).iws;
 	const Int ws_size = LL(my_idx)(blk).iws_size;
-	Int       p_size  = LL(my_idx)(blk).p_size;
+	//Int       p_size  = LL(my_idx)(blk).p_size; 
 	Int       *color  = &(ws[0]);
 	Int     *pattern  = &(color[ws_size]); 
 	Int     *stack    = &(pattern[ws_size]); //used for fill
-	Int      brow     = LL(my_idx)(blk).srow;
-	Int      browL    = LL(leader_idx)(blk).srow;
+	//Int      brow     = LL(my_idx)(blk).srow; //NU
+	//Int      browL    = LL(leader_idx)(blk).srow; //NU
 
 	#ifdef BASKER_DEBUG_NFACTOR_COL2
 	if(lower == BASKER_TRUE)
@@ -1966,7 +1966,7 @@ namespace BaskerNS
 		   p_sizeL, leader_idx, blk, kid);
 	    #endif
 	    LL(leader_idx)(blk).p_size = p_sizeL;
-	    p_size = 0;
+	    //p_size = 0; NOT USED
 	  }//over all blks
 	  }
       }//if not team_leader

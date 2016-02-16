@@ -90,12 +90,19 @@ enum BASKER_INCOMPLETE_CODE
 #define ASSERT(a)           assert(a)
 #endif
 
+#ifdef BASKER_DEBUG
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
       {printf("\n\n%s\n\n", s);} \
     ASSERT(a);                   \
   }
+#else
+#define BASKER_ASSERT(a,s)      \
+  {                             \
+    BASKER_NO_OP;               \
+  }
+#endif
 
 
 //Note:  Should see if Kokkos has a fast memory cpy in place of for-loop

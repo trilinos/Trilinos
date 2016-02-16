@@ -280,7 +280,7 @@ namespace BaskerNS
 	    Int resize_U = BASKER_MAX_IDX;
 	    if(thread_array(ti).error_subblk <= -1)
 	      {
-		resize_L == thread_array(ti).error_info;       
+		resize_L = thread_array(ti).error_info;       
 	      }
 	    //We don't care about the other way since,
 	    //L is already checked before U.

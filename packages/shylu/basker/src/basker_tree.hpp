@@ -275,8 +275,8 @@ namespace BaskerNS
         Int nparents = pow(tree.nparts, l-1);
         Int pp = new_pos;
         //ttemp = lvl_task[l];
-	Int task_pos = 0;
-	Int task_offset = pow(tree.nparts, tree.nlvls-l);
+	//Int task_pos = 0; //Not used
+	//Int task_offset = pow(tree.nparts, tree.nlvls-l); //NU
         for(Int p = 0 ; p < nparents; p++)
           {
             Int parentptr = pp+nparents-p;

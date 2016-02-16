@@ -453,7 +453,7 @@ namespace BaskerNS
 		//TEST
 		Int my_leader = find_leader(kid,l-1);
 		Int my_leader_row = S(0)(my_leader);
-		Int my_col_size  = pow(2,l);
+		//Int my_col_size  = pow(2,l); Not used
 		Int my_new_row  = 
 		  (S(lvl)(kid) - my_leader_row);
 		//my_new_row = my_new_row%my_col_size;
@@ -1741,7 +1741,7 @@ namespace BaskerNS
    )
   {
         
-    const Int brow = M.srow;
+    //const Int brow = M.srow; Not used
     //Setup what we do know
     AT.srow = M.srow;
     AT.nrow = M.ncol;
@@ -1806,7 +1806,7 @@ namespace BaskerNS
     //write stupid code!
     //add them all up
     total = 0;
-    Int total2 = 0;
+    //Int total2 = 0; //Not used
     for(Int j = 0; j < ws_size; ++j)
       {
 	total = total + ws(j);
@@ -1990,7 +1990,7 @@ namespace BaskerNS
     //write stupid code!
     //add them all up
     total = 0;
-    Int total2 = 0;
+    //Int total2 = 0; //Not used
     for(Int j = 0; j < ws_size; ++j)
       {
 	total = total + ws(j);

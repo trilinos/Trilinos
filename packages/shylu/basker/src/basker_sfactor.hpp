@@ -541,8 +541,8 @@ namespace BaskerNS
     //printf("**init parent: %d \n", MV->ncol);
     ST.init_parent(MV->ncol+1);
     //printf("after \n");
-    Int brow = MV->srow;
-    Int bcol = MV->scol;
+    //Int brow = MV->srow; //Not used
+    //Int bcol = MV->scol; //Not used
     INT_1DARRAY ws;
     Int ws_size = 2*MV->nrow;
 
@@ -1540,7 +1540,7 @@ namespace BaskerNS
 
     //???Fix??
     // MV.init_offset(MV.scol,0);
-    Int brow = MV.srow;
+    //Int brow = MV.srow; //Not used
     Int bcol = MV.scol;
  
     #ifdef BASKER_DEBUG_SFACTOR
@@ -2239,8 +2239,8 @@ namespace BaskerNS
     //If a*b == (size-size)^2 .... adjust padding
 
 
-    Int brow = MV.srow;
-    Int bcol = MV.scol;
+    //Int brow = MV.srow; //Not used
+    //Int bcol = MV.scol; //Not used
     
     //Find nnz L(:,1)
     Int nnz_c = 0;
@@ -2257,7 +2257,7 @@ namespace BaskerNS
     #endif
 
 
-    Int nnz_r = nnz_c;
+    //Int nnz_r = nnz_c; //Not used
 
     /*
       //Come back to, we know in symtric case samce

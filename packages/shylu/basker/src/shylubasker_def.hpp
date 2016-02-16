@@ -511,6 +511,22 @@ namespace BaskerNS
 	num_threads = 1;
 	return BASKER_ERROR;
       }
+
+    //Next test if Kokkos has that many threads!
+    //This is a common mistake in mpi-based apps
+    #ifdef KOKKOS_HAVE_OPENMP
+    int check_value = Kokkos::OpenMP::max_hardware_threads();
+    if(nthreads > check_value)
+      {
+        BASKER_ASSERT(0==1,
+                      "Number of thread not aval in Kokkos");
+        num_threads =  1;
+        return BASKER_ERROR;
+      }
+    #else
+    nthreads = 1;
+    #endif
+
     num_threads = nthreads;
     return BASKER_SUCCESS;
   }//end SetThreads()
