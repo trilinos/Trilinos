@@ -176,7 +176,8 @@ int ex_put_loadbal_param_cc(int   exoid,
   }
 
   /* Output the file version */
-  if ((status=ex_put_nemesis_version(exoid)) < 0) return (status);
+  if ((status=ex_put_nemesis_version(exoid)) < 0) { return (status);
+}
 
   /* Output the file type */
   if (nc_inq_varid(exoid, VAR_FILE_TYPE, &varid) != NC_NOERR) {
@@ -679,8 +680,9 @@ int ex_put_loadbal_param_cc(int   exoid,
   } /* End "if (num_e_cmaps > 0)" */
 
   /* Leave define mode */
-  if (ex_leavedef(exoid, func_name) != EX_NOERR)
+  if (ex_leavedef(exoid, func_name) != EX_NOERR) {
     return (EX_FATAL);
+}
 
   /* need to reset these counters */
   num_int_elem = 0;
@@ -720,10 +722,11 @@ int ex_put_loadbal_param_cc(int   exoid,
 
     start[0] = iproc;
 
-    if (nin > 0)
+    if (nin > 0) {
       nmstat = 1;
-    else
+    } else {
       nmstat = 0;
+}
 
     if ((status = nc_put_var1_int(exoid, varid_nm[0], start, &nmstat)) != NC_NOERR) {
       exerrval = status;
@@ -734,10 +737,11 @@ int ex_put_loadbal_param_cc(int   exoid,
       return (EX_FATAL);
     }
 
-    if (nbn > 0)
+    if (nbn > 0) {
       nmstat = 1;
-    else
+    } else {
       nmstat = 0;
+}
 
     if ((status = nc_put_var1_int(exoid, varid_nm[1], start, &nmstat)) != NC_NOERR) {
       exerrval = status;
@@ -748,10 +752,11 @@ int ex_put_loadbal_param_cc(int   exoid,
       return (EX_FATAL);
     }
 
-    if (nen > 0)
+    if (nen > 0) {
       nmstat = 1;
-    else
+    } else {
       nmstat = 0;
+}
 
     if ((status = nc_put_var1_int(exoid, varid_nm[2], start, &nmstat)) != NC_NOERR) {
       exerrval = status;
@@ -762,10 +767,11 @@ int ex_put_loadbal_param_cc(int   exoid,
       return (EX_FATAL);
     }
 
-    if (nie > 0)
+    if (nie > 0) {
       nmstat = 1;
-    else
+    } else {
       nmstat = 0;
+}
 
     if ((status = nc_put_var1_int(exoid, varid_em[0], start, &nmstat)) != NC_NOERR) {
       exerrval = status;
@@ -776,10 +782,11 @@ int ex_put_loadbal_param_cc(int   exoid,
       return (EX_FATAL);
     }
 
-    if (nbe > 0)
+    if (nbe > 0) {
       nmstat = 1;
-    else
+    } else {
       nmstat = 0;
+}
 
     if ((status = nc_put_var1_int(exoid, varid_em[1], start, &nmstat)) != NC_NOERR) {
       exerrval = status;

@@ -44,7 +44,7 @@ template void NemSpread<double,int64_t>::create_elem_types(void);
 template void NemSpread<float,int64_t>::create_elem_types(void);
 
 template <typename T, typename INT>
-void NemSpread<T,INT>::create_elem_types(void)
+void NemSpread<T,INT>::create_elem_types()
 /*
  *      Function which creates a vector of element types for each element.
  */

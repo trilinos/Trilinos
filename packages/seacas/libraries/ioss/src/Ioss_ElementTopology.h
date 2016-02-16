@@ -67,7 +67,7 @@ namespace Ioss {
   public:
     
     void alias(const std::string& base, const std::string& syn);
-    bool is_alias(const std::string &alias) const;
+    bool is_alias(const std::string &my_alias) const;
 
     virtual ~ElementTopology();
 
@@ -131,7 +131,7 @@ namespace Ioss {
     static int describe(NameList *names);
 
   protected:
-    ElementTopology(const std::string& type, const std::string& master_elem_name,
+    ElementTopology(std::string  type, std::string  master_elem_name,
 		    bool delete_me=false);
 
   private:

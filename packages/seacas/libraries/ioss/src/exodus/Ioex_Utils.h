@@ -70,8 +70,11 @@ namespace Ioex {
     int64_t eb_offset = -1;
     for (I=blocks.begin(); I != blocks.end(); ++I) {
       int64_t this_off = (*I)->get_offset();
-      if (this_off < eb_offset)
+      if (this_off < eb_offset) { { {
 	return false;
+}
+}
+}
       eb_offset = this_off;
     }
 #endif

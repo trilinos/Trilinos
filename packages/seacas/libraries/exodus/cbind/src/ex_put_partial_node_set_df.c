@@ -99,13 +99,13 @@ int ex_put_partial_node_set_df (int   exoid,
               node_set_id, exoid);
       ex_err("ex_put_partial_node_set_df",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
      "Error: failed to locate node set id %"PRId64" in VAR_NS_IDS array in file id %d",
               node_set_id, exoid);
       ex_err("ex_put_partial_node_set_df",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire id's of previously defined dimensions  */
@@ -160,22 +160,23 @@ int ex_put_partial_node_set_df (int   exoid,
       ex_err("ex_put_partial_node_set_df",errmsg,exerrval);
       return (EX_WARN);
 
-    } else {
+    } 
       exerrval = status;
       sprintf(errmsg,
               "Error: failed to locate node set %"PRId64" dist factors in file id %d",
               node_set_id, exoid);
       ex_err("ex_put_partial_node_set_df",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
 
   /* write out the distribution factors array */
   start[0] = --start_num;
   count[0] = num_df_to_get;
-  if (count[0] == 0)
+  if (count[0] == 0) {
     start[0] = 0;
+}
 
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, dist_id, start, count, node_set_dist_fact);

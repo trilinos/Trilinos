@@ -91,7 +91,7 @@ Ioss::Bar2::Bar2()
 }
 
 
-Ioss::Bar2::~Bar2() {}
+Ioss::Bar2::~Bar2() = default;
 
 int Ioss::Bar2::parametric_dimension() const {return  1;}
 int Ioss::Bar2::spatial_dimension()    const {return  3;}
@@ -135,8 +135,9 @@ Ioss::IntVector Ioss::Bar2::face_connectivity(int /* face_number */) const
 Ioss::IntVector Ioss::Bar2::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 

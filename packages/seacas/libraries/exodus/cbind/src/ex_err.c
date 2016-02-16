@@ -98,27 +98,27 @@ void ex_err(const char *module_name,
             const char *message, 
             int err_num)            
 {
-  if (err_num == 0)             /* zero is no error, ignore and return */
+  if (err_num == 0) {             /* zero is no error, ignore and return */
     return;
+  }
 
-  else if (err_num ==  EX_PRTLASTMSG)
-  {
+  else if (err_num ==  EX_PRTLASTMSG) {
     fprintf(stderr, "[%s] %s\n",last_pname,last_errmsg);
     fprintf(stderr, "    exerrval = %d\n",last_err_num);
     return;
   }
 
-  else if (err_num == EX_NULLENTITY)
-  {
+  else if (err_num == EX_NULLENTITY) {
     if (exoptval & EX_NULLVERBOSE) {
       fprintf(stderr, "Exodus Library Warning: [%s]\n\t%s\n",module_name,message);
     }
   }
-  else if (exoptval & EX_VERBOSE) /* check see if we really want to hear this */
-  {
+
+  else if (exoptval & EX_VERBOSE) { /* check see if we really want to hear this */
     fprintf(stderr, "Exodus Library Warning/Error: [%s]\n\t%s\n",module_name,message);
-    if (err_num < 0)
+    if (err_num < 0) {
       fprintf(stderr, "\t%s\n", nc_strerror(err_num));
+    }
   } 
   /* save the error message for replays */
   strcpy(last_errmsg, message);
@@ -129,8 +129,9 @@ void ex_err(const char *module_name,
 
   /* with netCDF 3.4, (fatal) system error codes are > 0; 
      so all EXODUS fatal error codes are > 0    */
-  if ((err_num > 0) && (exoptval & EX_ABORT))
+  if ((err_num > 0) && (exoptval & EX_ABORT)) {
     exit (err_num);
+  }
 }
 
 void ex_get_err( const char** msg, const char** func, int* err_num )

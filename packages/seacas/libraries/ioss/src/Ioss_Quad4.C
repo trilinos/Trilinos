@@ -84,7 +84,7 @@ Ioss::Quad4::Quad4()
   Ioss::ElementTopology::alias("quad4", "quadface4");
 }
 
-Ioss::Quad4::~Quad4() {}
+Ioss::Quad4::~Quad4() = default;
 
 int Ioss::Quad4::parametric_dimension()           const {return  2;}
 int Ioss::Quad4::spatial_dimension()           const {return  2;}
@@ -111,8 +111,9 @@ Ioss::IntVector Ioss::Quad4::edge_connectivity(int edge_number) const
   assert(edge_number > 0 && edge_number <= number_edges());
   Ioss::IntVector connectivity(Constants::nedgenode);
 
-  for (int i=0; i < Constants::nedgenode; i++)
+  for (int i=0; i < Constants::nedgenode; i++) {
     connectivity[i] = Constants::edge_node_order[edge_number-1][i];
+}
 
   return connectivity;
 }
@@ -126,8 +127,9 @@ Ioss::IntVector Ioss::Quad4::face_connectivity(int /* face_number */) const
 Ioss::IntVector Ioss::Quad4::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 

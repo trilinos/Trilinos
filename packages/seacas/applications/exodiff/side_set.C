@@ -135,9 +135,9 @@ void Side_Set<INT>::load_sides(const INT *elmt_map) const
   int err = 0;
   if ((elmts == nullptr || sides == nullptr) && numEntity > 0)
     {
-      elmts = new INT[numEntity];  SMART_ASSERT(elmts != 0);
-      sides = new INT[numEntity];  SMART_ASSERT(sides != 0);
-      sideIndex = new INT[numEntity]; SMART_ASSERT(sideIndex != 0);
+      elmts = new INT[numEntity];  SMART_ASSERT(elmts != nullptr);
+      sides = new INT[numEntity];  SMART_ASSERT(sides != nullptr);
+      sideIndex = new INT[numEntity]; SMART_ASSERT(sideIndex != nullptr);
 
       err = ex_get_set(fileId, EX_SIDE_SET, id_, elmts, sides);
     
@@ -183,7 +183,7 @@ void Side_Set<INT>::load_df() const
   if (dist_factors != nullptr)
     return;  // Already loaded.
   
-  dfIndex = new INT[numEntity+1]; SMART_ASSERT(dfIndex != 0);
+  dfIndex = new INT[numEntity+1]; SMART_ASSERT(dfIndex != nullptr);
   std::vector<int> count(numEntity);
 
   // Handle the sierra "universal side set" which only has a single df per face...

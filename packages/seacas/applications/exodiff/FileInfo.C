@@ -64,8 +64,7 @@ FileInfo::FileInfo(const char   *my_filename)
 }
 
 FileInfo::FileInfo(const FileInfo& copy_from)
-  : filename_(copy_from.filename_), exists_(copy_from.exists_),
-    readable_(copy_from.readable_) {}
+  = default;
 
 FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename)
   : filename_("")
@@ -82,7 +81,7 @@ FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename)
   exists_   = readable_ || internal_access(filename_, F_OK);
 }
 
-FileInfo::~FileInfo() {}
+FileInfo::~FileInfo() = default;
 
 //: Returns TRUE if the file exists (is readable)
 bool FileInfo::exists()      const

@@ -4,7 +4,7 @@
 // * Single element block per zone.
 // * Serial for now.
 // * Single Base.
-
+// * ZoneGridConnectivity is 1to1 with point lists
 
 // Copyright(C) 2015
 // Sandia Corporation. Under the terms of Contract
@@ -83,8 +83,9 @@ namespace {
     errmsg << "CGNS error '" << cg_get_error() << "' at line " << lineno
 	   << " in file '" << Version()
 	   << "' Please report to gdsjaar@sandia.gov if you need help.";
-    if (cgnsid > 0)
+    if (cgnsid > 0) {
       cg_close(cgnsid);
+}
     IOSS_ERROR(errmsg);
   }
 
@@ -197,44 +198,39 @@ namespace Iocgns {
 
     if (!is_input()) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: CGNS Currently only supports reading, not writing.\n";
+      errmsg << "ERROR: IOSS CGNS Currently only supports reading, not writing.\n";
       IOSS_ERROR(errmsg);
     }
 
+    std::cout << "CGNS DatabaseIO using " << CG_SIZEOF_SIZE << "-bit integers.\n";
     if (CG_SIZEOF_SIZE == 64) {
-      std::cout << "CGNS DatabaseIO using 64-bit integers.\n";
       set_int_byte_size_api(Ioss::USE_INT64_API);
     }
 
     openDatabase();
   }
 
-  DatabaseIO::~DatabaseIO()
-  { }
-
   void DatabaseIO::openDatabase() const
   {
     if (cgnsFilePtr < 0) {
       if (is_input()) {
-	std::string decoded_filename = util().decode_filename(get_filename(),
-							      isParallel);
-        int ierr = cg_open(decoded_filename.c_str(), CG_MODE_READ, &cgnsFilePtr);
+        int ierr = cg_open(get_filename().c_str(), CG_MODE_READ, &cgnsFilePtr);
 	if (ierr != CG_OK) {
 	  // NOTE: Code will not continue past this call...
 	  std::ostringstream errmsg;
-	  errmsg << "ERROR: Problem opening file '" << decoded_filename << "' for read access.";
+	  errmsg << "ERROR: Problem opening file '" << get_filename() << "' for read access.";
 	  IOSS_ERROR(errmsg);
 	}
       }
     }
-
     assert(cgnsFilePtr >= 0);
   }
 
   void DatabaseIO::closeDatabase() const
   {
-    if (cgnsFilePtr != -1)
+    if (cgnsFilePtr != -1) {
       cg_close(cgnsFilePtr);
+    }
     cgnsFilePtr = -1;
   }
 
@@ -255,25 +251,17 @@ namespace Iocgns {
     // Determine the number of bases in the grid.
     // Currently only handle 1.
     cgsize_t n_bases = 0;
-    if (cg_nbases(cgnsFilePtr, &n_bases) != CG_OK) {
-    }
+    cg_nbases(cgnsFilePtr, &n_bases);
     if (n_bases != 1) {
       std::ostringstream errmsg;
       errmsg << "CGNS: Too many bases; only support files with a single bases at this time";
       IOSS_ERROR(errmsg);
     }
 
-    // Get the cell/element and physical dimension...
-    cgsize_t base = 1;
-    char basename[33];
-    cgsize_t cell_dimension = 0;
-    cgsize_t phys_dimension = 0;
-    cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension);
-    
-    
     // ========================================================================
     // Get the number of families in the mesh...
     // Will treat these as sidesets if they are of the type "FamilyBC_t"
+    cgsize_t base = 1;
     cgsize_t num_families = 0;
     cg_nfamilies(cgnsFilePtr, base, &num_families);
     for (cgsize_t family=1; family <= num_families; family++) {
@@ -540,8 +528,9 @@ namespace Iocgns {
 	  std::vector<double> coord(num_coord);
 	  int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble,
 				   &first, &num_coord, TOPTR(coord));
-	  if (ierr < 0)
+	  if (ierr < 0) {
 	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 
 	  // Map to global coordinate position...
 	  for (cgsize_t i=0; i < num_coord; i++) {
@@ -559,8 +548,9 @@ namespace Iocgns {
 	  std::vector<double> coord(num_coord);
 	  int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble,
 				   &first, &num_coord, TOPTR(coord));
-	  if (ierr < 0)
+	  if (ierr < 0) {
 	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 
 	  // Map to global coordinate position...
 	  for (cgsize_t i=0; i < num_coord; i++) {
@@ -578,8 +568,9 @@ namespace Iocgns {
 	  std::vector<double> coord(num_coord);
 	  int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble,
 				   &first, &num_coord, TOPTR(coord));
-	  if (ierr < 0)
+	  if (ierr < 0) {
 	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 
 	  // Map to global coordinate position...
 	  for (cgsize_t i=0; i < num_coord; i++) {
@@ -607,8 +598,9 @@ namespace Iocgns {
 
 	  int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble,
 				   &first, &num_coord, TOPTR(coord));
-	  if (ierr < 0)
+	  if (ierr < 0) {
 	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 
 	  // Map to global coordinate position...
 	  for (cgsize_t i=0; i < num_coord; i++) {
@@ -617,8 +609,9 @@ namespace Iocgns {
 
 	  ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble,
 			       &first, &num_coord, TOPTR(coord));
-	  if (ierr < 0)
+	  if (ierr < 0) {
 	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 
 	  // Map to global coordinate position...
 	  for (cgsize_t i=0; i < num_coord; i++) {
@@ -627,8 +620,9 @@ namespace Iocgns {
 
 	  ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble,
 			       &first, &num_coord, TOPTR(coord));
-	  if (ierr < 0)
+	  if (ierr < 0) {
 	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 
 	  // Map to global coordinate position...
 	  for (cgsize_t i=0; i < num_coord; i++) {
@@ -654,6 +648,7 @@ namespace Iocgns {
       }
       return num_to_get;
     }
+    return -1;
   }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
@@ -693,8 +688,9 @@ namespace Iocgns {
 	  if (my_element_count > 0) {
 	    int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect,
 					idata, nullptr);
-	    if (ierr < 0)
+	    if (ierr < 0) {
 	      cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 	  }
 
 	  // Now need to map block-local node connectivity to global nodes...
@@ -710,8 +706,9 @@ namespace Iocgns {
 	  if (my_element_count > 0) {
 	    int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect,
 					(cgsize_t*)data, nullptr);
-	    if (ierr < 0)
+	    if (ierr < 0) {
 	      cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 	  }
 	}
 	else if (field.get_name() == "ids") {
@@ -807,8 +804,9 @@ namespace Iocgns {
 
 	int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect,
 				    TOPTR(elements), TOPTR(parent));
-	if (ierr < 0)
+	if (ierr < 0) {
 	  cgns_error(cgnsFilePtr, __LINE__, myProcessor);
+}
 
 	size_t offset = m_zoneOffset[zone];
 	if (field.get_type() == Ioss::Field::INT32) {

@@ -79,7 +79,7 @@ namespace Ioss {
     static int describe(NameList *names);
     static bool create_named_suffix_field_type(const std::string &type_name, std::vector<std::string> &suffices);
     static bool get_field_type_mapping(const std::string &field, std::string *type);
-    static bool add_field_type_mapping(const std::string &field, const std::string &type);
+    static bool add_field_type_mapping(const std::string &raw_field, const std::string &raw_type);
 
     virtual ~VariableType();
     int component_count() const;
@@ -97,7 +97,7 @@ namespace Ioss {
 				      const char suffix_sep='_') const;
     virtual bool match(const std::vector<Suffix> &suffices) const;
 
-    static const VariableType* factory(const std::string& name, int copies = 1);
+    static const VariableType* factory(const std::string& raw_name, int copies = 1);
     static const VariableType* factory(const std::vector<Suffix> &suffices);
 
   protected:
@@ -112,7 +112,7 @@ namespace Ioss {
     VariableType(const VariableType&); // Do not implement...
     VariableType& operator=(const VariableType&); // Do not implement...
 
-    static bool build_variable_type(const std::string& type);
+    static bool build_variable_type(const std::string& raw_type);
   };
 }
 inline std::string Ioss::VariableType::name() const

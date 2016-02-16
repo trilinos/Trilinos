@@ -31,9 +31,7 @@ class ScopeGuardImplBase
 {
   ScopeGuardImplBase& operator =(const ScopeGuardImplBase&);
  protected:
-  ~ScopeGuardImplBase()
-    {
-    }
+  ~ScopeGuardImplBase() = default;
   ScopeGuardImplBase(const ScopeGuardImplBase& other) throw() 
     : dismissed_(other.dismissed_)
     {

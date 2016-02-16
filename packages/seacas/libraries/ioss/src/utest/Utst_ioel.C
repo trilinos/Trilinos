@@ -73,10 +73,10 @@ int main(int argc, char *argv[])
   if (err_count == 0) {
     OUTPUT << "\nSIERRA execution successful." << std::endl;
     return EXIT_SUCCESS;
-  } else {
+  } 
     OUTPUT << "\nSIERRA execution failed." << std::endl;
     return EXIT_FAILURE;
-  }
+  
 }
 
 int test_all_elements()
@@ -90,9 +90,9 @@ int test_all_elements()
   for (int i=0; i < element_count; i++) {
     OUTPUT << "Testing element: " << std::setw(20) << elements[i];
     bool result = test_element(elements[i]);
-    if (result == true || elements[i] == "unknown" || elements[i] == "invalid_topology")
+    if (result || elements[i] == "unknown" || elements[i] == "invalid_topology") {
       OUTPUT << "OK" << '\n';
-    else {
+    } else {
       OUTPUT << "\n        element: " << std::setw(20) << elements[i]
 	   << "FAIL" << '\n';
       err_count++;
@@ -194,7 +194,7 @@ bool test_element(const std::string& type)
 
   int nne = element->number_nodes_edge(0);
   if (nne == -1) {
-    if (homo_edges != false) {
+    if (homo_edges) {
       OUTPUT << "\n\tInconsistent edge homogeneity...\n";
       result = false;
     } else {
@@ -226,7 +226,7 @@ bool test_element(const std::string& type)
       if (face == nullptr && i > 0) {
 	OUTPUT << "\n\tBad face type for face " << i;
 	result = false;
-      } else if (face == nullptr && i == 0 && homo_faces == true) {
+      } else if (face == nullptr && i == 0 && homo_faces) {
 	OUTPUT << "\n\tHomogenous faces, but null face_type";
 	result = false;
       }	else if (face != nullptr) {
@@ -253,7 +253,7 @@ bool test_element(const std::string& type)
       if (edge == nullptr && i > 0) {
 	OUTPUT << "\n\tBad edge type for edge " << i;
 	result = false;
-      } else if (edge == nullptr && i == 0 && homo_edges == true) {
+      } else if (edge == nullptr && i == 0 && homo_edges) {
 	OUTPUT << "\n\tHomogenous edges, but null edge_type";
 	result = false;
       }	else if (edge != nullptr) {

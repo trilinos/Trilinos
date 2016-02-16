@@ -50,8 +50,11 @@ namespace Ioss {
   public:
     Map() : entityType("unknown"), defined(false)
       {} 
-    Map(const std::string &entity_type) : entityType(entity_type), defined(false)
+    Map(std::string entity_type) : entityType(std::move(entity_type)), defined(false)
       {}
+    Map(const Map& from) =delete;
+    Map& operator=(const Map& from) =delete;
+    ~Map() =default;
     
     int64_t global_to_local(int64_t global, bool must_exist = true) const;
 
@@ -80,10 +83,6 @@ namespace Ioss {
     ReverseMapContainer reverse;
     std::string         entityType; // node, element, edge, face
     bool defined; // For use by some clients; not all, so don't read too much into value...
-    
-  private:
-    Map(const Map& from); // do not implement
-    Map& operator=(const Map& from); // do not implement
   };
 }
 

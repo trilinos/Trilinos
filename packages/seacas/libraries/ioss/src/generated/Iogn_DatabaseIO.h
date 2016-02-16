@@ -77,7 +77,7 @@ namespace Iogn {
     Ioss::DatabaseIO* make_IO(const std::string& filename,
 			      Ioss::DatabaseUsage db_usage,
 			      MPI_Comm communicator,
-			      const Ioss::PropertyManager &properties) const;
+			      const Ioss::PropertyManager &props) const;
   };
 
   class DatabaseIO : public Ioss::DatabaseIO
@@ -85,7 +85,10 @@ namespace Iogn {
   public:
     DatabaseIO(Ioss::Region *region, const std::string& filename,
 	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-	       const Ioss::PropertyManager &properties);
+	       const Ioss::PropertyManager &props);
+    DatabaseIO(const DatabaseIO& from) =delete;
+    DatabaseIO& operator=(const DatabaseIO& from) =delete;
+
     ~DatabaseIO();
 
     int64_t node_global_to_local(int64_t global, bool must_exist) const
@@ -142,7 +145,7 @@ namespace Iogn {
 			   void *data, size_t data_size) const;
     int64_t get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
+    int64_t get_field_internal(const Ioss::SideBlock* ef_blk, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
     int64_t get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
@@ -183,10 +186,6 @@ namespace Iogn {
 			   void *data, size_t data_size) const;
 
     void add_transient_fields(Ioss::GroupingEntity *entity);
-
-    // Private member functions
-    DatabaseIO(const DatabaseIO& from); // do not implement
-    DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
     GeneratedMesh *m_generatedMesh;
     std::vector<std::string> m_sideset_names;

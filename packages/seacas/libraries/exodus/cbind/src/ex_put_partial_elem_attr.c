@@ -87,13 +87,13 @@ int ex_put_partial_elem_attr (int   exoid,
               elem_blk_id, exoid);
       ex_err("ex_put_partial_elem_attr",errmsg,EX_NULLENTITY);
       return (EX_WARN);              /* no attributes for this element block */
-    } else {
+    } 
       sprintf(errmsg,
              "Error: no element block id %"PRId64" in %s array in file id %d",
               elem_blk_id, VAR_ID_EL_BLK, exoid);
       ex_err("ex_put_partial_elem_attr",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire id's of previously defined dimensions  */
@@ -105,14 +105,14 @@ int ex_put_partial_elem_attr (int   exoid,
              elem_blk_id, exoid);
       ex_err("ex_put_partial_elem_attr",errmsg,exerrval);
       return (EX_FATAL);
-    } else {
+    } 
       exerrval = status;
       sprintf(errmsg,
         "Error: failed to locate number of elements for block %"PRId64" in file id %d",
              elem_blk_id, exoid);
       ex_err("ex_put_partial_elem_attr",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
 
@@ -169,8 +169,9 @@ int ex_put_partial_elem_attr (int   exoid,
   count[0] = num_elems;
   count[1] = num_attr;
 
-  if (count[0] == 0)
+  if (count[0] == 0) {
     start[0] = 0;
+}
   
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, attrid, start, count, attrib);

@@ -191,10 +191,11 @@ int ex_put_block_params( int         exoid,
 
     blocks_to_define[i] = start[0]+1; /* element id index into vblkids array*/
 
-    if (blocks[i].num_entry == 0) /* Is this a NULL element block? */
+    if (blocks[i].num_entry == 0) { /* Is this a NULL element block? */
       blk_stat = 0; /* change element block status to NULL */
-    else
+    } else {
       blk_stat = 1; /* change element block status to EX_EX_TRUE */
+}
 
     if ((status = nc_inq_varid (exoid, vblksta, &varid)) != NC_NOERR) {
       exerrval = status;
@@ -386,13 +387,14 @@ int ex_put_block_params( int         exoid,
     if (strlen(blocks[i].topology) >= 3) {
       if ((blocks[i].topology[0] == 'n' || blocks[i].topology[0] == 'N') &&
 	  (blocks[i].topology[1] == 's' || blocks[i].topology[1] == 'S') &&
-	  (blocks[i].topology[2] == 'i' || blocks[i].topology[2] == 'I'))
+	  (blocks[i].topology[2] == 'i' || blocks[i].topology[2] == 'I')) {
 	arbitrary_polyhedra = 1;
-      else if ((blocks[i].topology[0] == 'n' || blocks[i].topology[0] == 'N') &&
+      } else if ((blocks[i].topology[0] == 'n' || blocks[i].topology[0] == 'N') &&
 	       (blocks[i].topology[1] == 'f' || blocks[i].topology[1] == 'F') &&
-	       (blocks[i].topology[2] == 'a' || blocks[i].topology[2] == 'A'))
+	       (blocks[i].topology[2] == 'a' || blocks[i].topology[2] == 'A')) {
 	/* If a FACE_BLOCK, then we are dealing with the faces of the nfaced blocks[i]. */
 	arbitrary_polyhedra = blocks[i].type == EX_FACE_BLOCK ? 1 : 2;
+}
     }
 
     /* element connectivity array */
@@ -411,10 +413,11 @@ int ex_put_block_params( int         exoid,
 
 	/* store entity types as attribute of npeid variable -- node/elem, node/face, face/elem*/
 	strcpy(entity_type1, "NODE");
-	if (blocks[i].type == EX_ELEM_BLOCK)
+	if (blocks[i].type == EX_ELEM_BLOCK) {
 	  strcpy(entity_type2, "ELEM");
-	else
+	} else {
 	  strcpy(entity_type2, "FACE");
+}
       } else if (arbitrary_polyhedra == 2) {
 	dims[0] = nfacperentdim;
 	vconn = vfaccon;

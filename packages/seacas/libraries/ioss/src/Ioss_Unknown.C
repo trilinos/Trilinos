@@ -75,7 +75,7 @@ Ioss::Unknown::Unknown()
   Ioss::ElementTopology::alias("unknown", "invalid_topology");
 }
 
-Ioss::Unknown::~Unknown() {}
+Ioss::Unknown::~Unknown() = default;
 
 int Ioss::Unknown::parametric_dimension()           const {return  0;}
 int Ioss::Unknown::spatial_dimension()           const {return  0;}

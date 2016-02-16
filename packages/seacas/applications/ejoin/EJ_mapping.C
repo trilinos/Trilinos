@@ -163,7 +163,7 @@ template void eliminate_omitted_nodes(RegionVector &part_mesh,
     // If any omitted nodes, remove them from the global_node_map.
     // The id will be 0
     if (any_omitted_nodes) {
-      typename std::vector<INT>::iterator pos = std::remove(global_node_map.begin(),
+      auto pos = std::remove(global_node_map.begin(),
 						   global_node_map.end(), 0);
       global_node_map.erase(pos, global_node_map.end());
     }
@@ -184,8 +184,7 @@ template void eliminate_omitted_nodes(RegionVector &part_mesh,
     // 'global id' and then 'global id' to global position. The
     // mapping is now a direct lookup instead of a lookup followed by
     // a reverse map.
-    typedef typename std::vector<INT>::iterator V_INT_iterator;
-    V_INT_iterator cur_pos = global_node_map.begin();
+    auto cur_pos = global_node_map.begin();
     for (size_t p = 0; p < part_count; p++) {
       size_t noffset = part_mesh[p]->get_property("node_offset").get_int();
       size_t node_count = global_nodes[p].size();
@@ -194,7 +193,7 @@ template void eliminate_omitted_nodes(RegionVector &part_mesh,
 
 	if (global_node > 0) {
 	if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
-	  V_INT_iterator iter = std::lower_bound(global_node_map.begin(),
+	  auto iter = std::lower_bound(global_node_map.begin(),
 						 global_node_map.end(),
 						 global_node);
 	  if (iter == global_node_map.end()) {
@@ -248,9 +247,9 @@ void build_local_element_map(RegionVector &part_mesh,
 {
   size_t global = 0;
   size_t offset = 0;
-  for (size_t p = 0; p < part_mesh.size(); p++) {
+  for (auto & p : part_mesh) {
 
-    Ioss::ElementBlockContainer ebs = part_mesh[p]->get_element_blocks();
+    Ioss::ElementBlockContainer ebs = p->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i = ebs.begin();
 
     while (i != ebs.end()) {
@@ -292,8 +291,8 @@ void generate_element_ids(RegionVector &part_mesh,
   // have a non-1..numel map...
   bool has_map = false;
   size_t offset = 0;
-  for (size_t p = 0; p < part_mesh.size(); p++) {
-    Ioss::ElementBlockContainer ebs = part_mesh[p]->get_element_blocks();
+  for (auto & p : part_mesh) {
+    Ioss::ElementBlockContainer ebs = p->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i = ebs.begin();
 
     while (i != ebs.end()) {

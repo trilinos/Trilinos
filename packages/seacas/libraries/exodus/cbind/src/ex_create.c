@@ -223,14 +223,15 @@ int ex_create_int (const char *path,
 	    path, (int)my_mode);
     ex_err("ex_create",errmsg,exerrval);
   }
-  if (my_mode & EX_NORMAL_MODEL)
+  if (my_mode & EX_NORMAL_MODEL) {
     filesiz = 0;
 #if defined(ENABLE_NETCDF4)
-  else if (mode & NC_NETCDF4)
+  } else if (mode & NC_NETCDF4) {
     filesiz = 1;
 #endif
-  else 
+  } else { 
     filesiz = (int)((my_mode & EX_LARGE_MODEL) || (ex_large_model(-1) == 1));
+}
 
   if (
 #if defined(ENABLE_NETCDF4)

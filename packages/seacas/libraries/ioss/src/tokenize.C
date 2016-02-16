@@ -46,8 +46,9 @@ Ioss::tokenize(const std::string& str, const std::string& separators)
     if (first != second) {
       tokens.emplace_back(first, second);
     }
-    if (second == std::end(str))
+    if (second == std::end(str)) {
       break;
+}
     first = std::next(second);
   }
   return tokens;

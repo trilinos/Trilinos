@@ -128,8 +128,9 @@ int ex_get_concat_side_set_node_count(int exoid,
   }
 
   int_size = sizeof(int);
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     int_size = sizeof(int64_t);
+}
   
   /* Allocate space for the element block ids */
   ids_size = sizeof(int);
@@ -231,8 +232,9 @@ int ex_get_concat_side_set_node_count(int exoid,
       goto error_ret;
     }
     
-    if (tot_num_ss_elem == 0)
+    if (tot_num_ss_elem == 0) {
       continue;
+}
    
     /* Allocate space for the side set element list */
     if (!(side_set_elem_list=malloc(tot_num_ss_elem*int_size))) {

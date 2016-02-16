@@ -98,13 +98,13 @@ int ex_put_partial_one_attr( int   exoid,
 		ex_name_of_object(obj_type),obj_id,exoid);
 	ex_err("ex_put_partial_one_attr",errmsg,EX_NULLENTITY);
 	return (EX_WARN);              /* no attributes for this element block */
-      } else {
+      } 
 	sprintf(errmsg,
 		"Error: no %s id %"PRId64" in id array in file id %d",
 		ex_name_of_object(obj_type), obj_id, exoid);
 	ex_err("ex_put_partial_one_attr",errmsg,exerrval);
 	return (EX_FATAL);
-      }
+      
     }
   }
   
@@ -164,8 +164,9 @@ int ex_put_partial_one_attr( int   exoid,
   }
 
   /* inquire id's of previously defined dimensions  */
-  if (ex_get_dimension(exoid, dnumobjent,"entries", &num_entries_this_obj, &temp, "ex_put_partial_one_attr") != NC_NOERR)
+  if (ex_get_dimension(exoid, dnumobjent,"entries", &num_entries_this_obj, &temp, "ex_put_partial_one_attr") != NC_NOERR) {
     return EX_FATAL;
+}
 
   if (start_num + num_ent -1 > num_entries_this_obj) {
     exerrval = EX_BADPARAM;
@@ -176,8 +177,9 @@ int ex_put_partial_one_attr( int   exoid,
     return (EX_FATAL);
   }
   
-  if (ex_get_dimension(exoid, dnumobjatt,"attributes", &num_attr, &temp, "ex_put_partial_one_attr") != NC_NOERR)
+  if (ex_get_dimension(exoid, dnumobjatt,"attributes", &num_attr, &temp, "ex_put_partial_one_attr") != NC_NOERR) {
     return EX_FATAL;
+}
 
   if (attrib_index < 1 || attrib_index > (int)num_attr) {
     exerrval = EX_FATAL;
@@ -208,8 +210,9 @@ int ex_put_partial_one_attr( int   exoid,
   stride[0] = 1;
   stride[1] = num_attr;
   
-  if (count[0] == 0)
+  if (count[0] == 0) {
     start[0] = 0;
+}
   
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vars_float(exoid, attrid, start, count, stride, attrib);

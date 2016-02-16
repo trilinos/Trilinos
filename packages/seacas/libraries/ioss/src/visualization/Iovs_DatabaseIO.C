@@ -170,7 +170,7 @@ namespace Iovs {
     this->debugLevel = 0;
     if(props.exists("CATALYST_DEBUG_LEVEL"))
       {
-      this->debugLevel = props.get("CATALYST_DEBUG_LEVEL").get_int();
+      this->enableLogging = props.get("CATALYST_DEBUG_LEVEL").get_int();
       }
 
     this->catalyst_output_directory = "";

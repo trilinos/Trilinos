@@ -58,7 +58,7 @@ Ioss::EdgeBlock::EdgeBlock(Ioss::DatabaseIO *io_database,
 
 }
 
-Ioss::EdgeBlock::~EdgeBlock() {}
+Ioss::EdgeBlock::~EdgeBlock() = default;
 
 Ioss::Property Ioss::EdgeBlock::get_implicit_property(const std::string& my_name) const
 {

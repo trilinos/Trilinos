@@ -95,9 +95,9 @@ namespace Iotr {
     static const Ioss::VariableType *sca = Ioss::VariableType::factory("scalar");
     if (in == sca) {
       return sca;
-    } else {
+    } 
       return nullptr;
-    }
+    
   }
 
   int MinMax::output_count(int /* in */) const

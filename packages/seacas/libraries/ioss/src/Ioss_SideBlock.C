@@ -96,14 +96,15 @@ Ioss::SideBlock::get_implicit_property(const std::string& my_name) const
       int64_t nnodes = topology()->number_nodes();
       int64_t nside  = get_property("entity_count").get_int();
       return Ioss::Property(my_name, nnodes*nside);
-    } else {
+    } 
       return Ioss::Property(my_name, 0);
-    }
+    
   }
-  else if (my_name == "parent_topology_type")
+  else if (my_name == "parent_topology_type") {
     return Ioss::Property(my_name, parent_element_topology()->name());
-  else
+  } else {
     return Ioss::EntityBlock::get_implicit_property(my_name);
+}
 }
 
 void Ioss::SideBlock::block_membership(std::vector<std::string> &block_members)
@@ -157,10 +158,11 @@ int  Ioss::SideBlock::get_consistent_side_number() const
       }
 
       int side_max = get_database()->util().global_minmax(side, Ioss::ParallelUtils::DO_MAX);
-      if (side_max != 999)
+      if (side_max != 999) {
 	consistentSideNumber = side_max;
-      else
+      } else {
 	consistentSideNumber = 0;
+}
     } else {
       consistentSideNumber = 0;
     }

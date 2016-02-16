@@ -95,13 +95,13 @@ int ex_put_elem_var_slab (int   exoid,
 	      elem_blk_id, exoid);
       ex_err("ex_put_elem_var_slab", errmsg, EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to locate element block id %"PRId64" in %s array in file id %d",
 	      elem_blk_id, VAR_ID_EL_BLK, exoid);
       ex_err("ex_put_elem_var_slab", errmsg, exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   if ((status = nc_inq_varid (exoid,

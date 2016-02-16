@@ -37,7 +37,7 @@
 #include <Ioss_Field.h>                 // for Field, etc
 #include <Ioss_Map.h>                   // for Map, MapContainer
 #include <Ioss_ParallelUtils.h>         // for ParallelUtils, etc
-#include <Ioss_Utils.h>                 // for TOPTR, Utils, ct_assert
+#include <Ioss_Utils.h>                 // for TOPTR, Utils
 #include <Ioss_PropertyManager.h>       // for PropertyManager
 
 #include <assert.h>                     // for assert
@@ -699,7 +699,8 @@ namespace Iopx {
         exit(EXIT_FAILURE);
       }
 
-      ct_assert(sizeof(double) == sizeof(real_t)); // centroids_ is double, make sure it matches real_t
+      static_assert(sizeof(double) == sizeof(real_t),
+		    "Parmetis real_t size must match double size");
 
       rc = ParMETIS_V3_PartGeomKway(element_dist, dual_xadj, dual_adjacency,
                                     elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
@@ -719,7 +720,9 @@ namespace Iopx {
       }
     }
     else if (method == "METIS_SFC") {
-      ct_assert(sizeof(double) == sizeof(real_t)); // centroids_ is double, make sure it matches real_t
+      static_assert(sizeof(double) == sizeof(real_t),
+		    "Parmetis real_t size must match double size");
+
       int rc = ParMETIS_V3_PartGeom(element_dist, &ndims, (real_t*)TOPTR(centroids_), elem_partition, &comm_);
 
       if (rc != METIS_OK) {

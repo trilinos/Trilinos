@@ -135,8 +135,9 @@ namespace Ioex {
     m_groupCount[EX_NODE_BLOCK] = 1; // To make some common code work more cleanly.
 
     // A history file is only written on processor 0...
-    if (db_usage == Ioss::WRITE_HISTORY)
+    if (db_usage == Ioss::WRITE_HISTORY) {
       isParallel = false;
+}
 
     dbState = Ioss::STATE_UNKNOWN;
 
@@ -250,8 +251,9 @@ namespace Ioex {
   // common
   int DatabaseIO::free_file_pointer() const
   {
-    if (exodusFilePtr != -1)
+    if (exodusFilePtr != -1) {
       ex_close(exodusFilePtr);
+}
     exodusFilePtr = -1;
 
     return exodusFilePtr;
@@ -360,8 +362,9 @@ namespace Ioex {
     
     int ierr = ex_put_qa(get_file_pointer(), num_qa_records+1,
 			 myProcessor == 0 ? qa[0].qa_record : nullptr);
-    if (ierr < 0)
+    if (ierr < 0) {
       Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
 
     for (size_t i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
@@ -412,8 +415,9 @@ namespace Ioex {
     }
 
     int ierr = ex_put_info(get_file_pointer(), total_lines, myProcessor == 0 ? info : nullptr);
-    if (ierr < 0)
+    if (ierr < 0) {
       Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
 
     delete_exodus_names(info, total_lines);
   }
@@ -450,8 +454,9 @@ namespace Ioex {
     {
       Ioss::SerializeIO serializeIO__(this);
       int ierr = ex_get_attr_param(get_file_pointer(), EX_NODE_BLOCK, 1, &num_attr);
-      if (ierr < 0)
+      if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
     }
 
     add_attribute_fields(EX_NODE_BLOCK, block, num_attr, "");
@@ -482,7 +487,7 @@ namespace Ioex {
       int lblk_position  = leb->get_property("original_block_order").get_int();
 
       if (blk_position != lblk_position &&
-          blockAdjacency[blk_position][lblk_position] == 1) {
+          static_cast<int>(blockAdjacency[blk_position][lblk_position]) == 1) {
         block_adjacency.push_back(leb->name());
       }
     }
@@ -611,8 +616,9 @@ namespace Ioex {
       size_t block_count = blocks.size();
       size_t var_count = variables.size();
 
-      if (var_count == 0 || block_count == 0)
+      if (var_count == 0 || block_count == 0) {
 	return;
+}
 
       truth_table.resize(block_count*var_count);
 
@@ -633,8 +639,9 @@ namespace Ioex {
 	  Ioss::Field::BasicType ioss_type = field.get_type();
 
 	  int re_im = 1;
-	  if (ioss_type == Ioss::Field::COMPLEX)
+	  if (ioss_type == Ioss::Field::COMPLEX) {
 	    re_im = 2;
+}
 	  for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
 	    field_name = field.get_name();
 	    if (re_im == 2) {
@@ -689,8 +696,9 @@ namespace Ioex {
     int var_index=0;
 
     int re_im = 1;
-    if (field.get_type() == Ioss::Field::COMPLEX)
+    if (field.get_type() == Ioss::Field::COMPLEX) {
       re_im = 2;
+}
     for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
       std::string field_name = field.get_name();
       if (re_im == 2) {
@@ -712,18 +720,19 @@ namespace Ioex {
 	assert(static_cast<int>(globalValues.size()) >= var_index);
 
 	// Transfer from 'variables' array.
-	if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+	if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
 	  globalValues[var_index-1] = rvar[i];
-	else if (ioss_type == Ioss::Field::INTEGER)
+	} else if (ioss_type == Ioss::Field::INTEGER) {
 	  globalValues[var_index-1] = ivar[i];
-	else if (ioss_type == Ioss::Field::INT64)
+	} else if (ioss_type == Ioss::Field::INT64) {
 	  globalValues[var_index-1] = ivar64[i]; // FIX 64 UNSAFE
+}
       }
     }
   }
 
   // common
-  void DatabaseIO::get_reduction_field(ex_entity_type,
+  void DatabaseIO::get_reduction_field(ex_entity_type /*unused*/,
 				       const Ioss::Field& field,
 				       const Ioss::GroupingEntity */* ge */,
 				       void *variables) const
@@ -752,12 +761,13 @@ namespace Ioex {
       assert(static_cast<int>(globalValues.size()) >= var_index);
 
       // Transfer to 'variables' array.
-      if (ioss_type == Ioss::Field::REAL)
+      if (ioss_type == Ioss::Field::REAL) {
 	rvar[i] = globalValues[var_index-1];
-      else if (ioss_type == Ioss::Field::INT64)
+      } else if (ioss_type == Ioss::Field::INT64) {
 	i64var[i] = static_cast<int64_t>(globalValues[var_index-1]);
-      else if (ioss_type == Ioss::Field::INTEGER)
+      } else if (ioss_type == Ioss::Field::INTEGER) {
 	ivar[i] = static_cast<int>(globalValues[var_index-1]);
+}
     }
   }
 
@@ -770,8 +780,9 @@ namespace Ioex {
     if (count > 0) {
       int ierr = ex_put_var(get_file_pointer(), step, EX_GLOBAL, 1, 0,
 			    count, (double*)TOPTR(globalValues));
-      if (ierr < 0)
+      if (ierr < 0) {
 	Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
     }
   }
 
@@ -783,8 +794,9 @@ namespace Ioex {
     if (count > 0) {
       int ierr = ex_get_var(get_file_pointer(), step, EX_GLOBAL, 1, 0,
 			    count, TOPTR(globalValues));
-      if (ierr < 0)
+      if (ierr < 0) {
 	Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
     }
   }
 
@@ -820,8 +832,9 @@ namespace Ioex {
 
       if (!is_input()) {
 	ex_update(get_file_pointer());
-	if (minimizeOpenFiles)
+	if (minimizeOpenFiles) {
 	  free_file_pointer();
+}
       }
       dbState = Ioss::STATE_UNKNOWN;
     }
@@ -841,8 +854,9 @@ namespace Ioex {
     state = get_database_step(state);
     if (!is_input()) {
       int ierr = ex_put_time(get_file_pointer(), state, &time);
-      if (ierr < 0)
+      if (ierr < 0) {
 	Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
 
       // Zero global variable array...
       std::fill(globalValues.begin(), globalValues.end(), 0.0);
@@ -855,7 +869,7 @@ namespace Ioex {
   }
       
   // common
-  bool DatabaseIO::end_state(Ioss::Region*, int, double time)
+  bool DatabaseIO::end_state(Ioss::Region* /*region*/, int /*state*/, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -863,8 +877,9 @@ namespace Ioex {
       write_reduction_fields();
       time /= timeScaleFactor;
       finalize_write(time);
-      if (minimizeOpenFiles)
+      if (minimizeOpenFiles) {
 	free_file_pointer();
+}
     }
     return true;
   }
@@ -891,8 +906,9 @@ namespace Ioex {
       Ioss::SerializeIO       serializeIO__(this);
 
       int ierr = ex_get_variable_param(get_file_pointer(), type, &nvar);
-      if (ierr < 0)
+      if (ierr < 0) {
 	Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
     }
 
     if (nvar > 0) {
@@ -913,8 +929,9 @@ namespace Ioex {
 	  }
 	  else {
 	    int ierr = ex_get_truth_table(get_file_pointer(), type, block_count, nvar, &truth_table[0]);
-	    if (ierr < 0)
+	    if (ierr < 0) {
 	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
 	  }
 	}
 
@@ -940,21 +957,24 @@ namespace Ioex {
 	Ioss::SerializeIO     serializeIO__(this);
 
 	int ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
-	if (ierr < 0)
+	if (ierr < 0) {
 	  Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
 
 	// Add to VariableNameMap so can determine exodusII index given a
 	// Sierra field name.  exodusII index is just 'i+1'
 	for (int i=0; i < nvar; i++) {
-	  if (lowerCaseVariableNames)
+	  if (lowerCaseVariableNames) {
 	    Ioss::Utils::fixup_name(names[i]);
+}
 	  variables.insert(VNMValuePair(std::string(names[i]),   i+1));
 	}
 
 	int offset = position*nvar;
 	int *local_truth = nullptr;
-	if (!truth_table.empty())
+	if (!truth_table.empty()) {
 	  local_truth = &truth_table[offset];
+}
 
 	std::vector<Ioss::Field> fields;
 	int64_t count = entity->get_property("entity_count").get_int();
@@ -1055,8 +1075,9 @@ namespace Ioex {
       Ioss::SerializeIO       serializeIO__(this);
 
       int ierr = ex_put_all_var_param_ext(get_file_pointer(), &exo_params);
-      if (ierr < 0)
+      if (ierr < 0) {
 	Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
 
       globalValues.resize(m_variables[EX_GLOBAL].size());
       output_results_names(EX_GLOBAL, m_variables[EX_GLOBAL]);
@@ -1100,11 +1121,13 @@ namespace Ioex {
 
     // Get names of all transient and reduction fields...
     Ioss::NameList results_fields;
-    if (reduction)
+    if (reduction) {
       ge->field_describe(Ioss::Field::REDUCTION, &results_fields);
+}
 
-    if (!reduction || type == EX_GLOBAL)
+    if (!reduction || type == EX_GLOBAL) {
       ge->field_describe(Ioss::Field::TRANSIENT, &results_fields);
+}
 
     // NOTE: For exodusII, the convention is that the displacement
     //       fields are the first 'ndim' fields in the file.
@@ -1113,8 +1136,9 @@ namespace Ioex {
     bool has_disp = false;
     if (!reduction && nblock && new_index == 0) {
       has_disp = find_displacement_field(results_fields, ge, spatialDimension, &disp_name);
-      if (has_disp)
+      if (has_disp) {
 	new_index += spatialDimension;
+}
     }
 
     int save_index = 0;
@@ -1129,8 +1153,9 @@ namespace Ioex {
       const Ioss::VariableType *var_type = field.transformed_storage();
 
       int re_im = 1;
-      if (field.get_type() == Ioss::Field::COMPLEX)
+      if (field.get_type() == Ioss::Field::COMPLEX) {
 	re_im = 2;
+}
       for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
 	std::string field_name = field.get_name();
 	if (re_im == 2) {
@@ -1169,8 +1194,9 @@ namespace Ioex {
   {
     size_t var_count = m_variables[EX_SIDE_SET].size();
 
-    if (var_count == 0 || m_groupCount[EX_SIDE_SET] == 0)
+    if (var_count == 0 || m_groupCount[EX_SIDE_SET] == 0) {
       return;
+}
 
     // Member variable.  Will be deleted in destructor...
     m_truthTable[EX_SIDE_SET].resize(m_groupCount[EX_SIDE_SET]*var_count);
@@ -1181,32 +1207,32 @@ namespace Ioex {
     // next block, ...
     size_t offset = 0;
 
-    Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
-    Ioss::SideSetContainer::const_iterator I;
-
     char field_suffix_separator = get_field_separator();
-    for (auto &sideset : sidesets) {
-      Ioss::SideBlockContainer side_blocks = sideset->get_side_blocks();
 
+    Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
+    for (auto &sideset : sidesets) {
+
+      Ioss::SideBlockContainer side_blocks = sideset->get_side_blocks();
       for (auto &block : side_blocks) {
 	// See if this sideblock has a corresponding entry in the sideset list.
-	if (block->property_exists("invalid"))
+	if (block->property_exists("invalid")) {
 	  continue;
+	}
 
 	// Get names of all transient and reduction fields...
 	Ioss::NameList results_fields;
 	block->field_describe(Ioss::Field::TRANSIENT, &results_fields);
 	block->field_describe(Ioss::Field::REDUCTION, &results_fields);
 
-	Ioss::NameList::const_iterator IF;
 	for (auto &field_name : results_fields) {
 	  Ioss::Field field = block->get_field(field_name);
 	  const Ioss::VariableType *var_type = field.transformed_storage();
 	  Ioss::Field::BasicType ioss_type = field.get_type();
 
 	  int re_im = 1;
-	  if (ioss_type == Ioss::Field::COMPLEX)
+	  if (ioss_type == Ioss::Field::COMPLEX) {
 	    re_im = 2;
+}
 	  for (int complex_comp = 0; complex_comp < re_im; complex_comp++) {
 	    field_name = field.get_name();
 	    if (re_im == 2) {
@@ -1249,16 +1275,18 @@ namespace Ioex {
 	size_t index = variable.second;
 	assert(index > 0 && index <= var_count);
 	variable_names[index-1] = variable.first;
-	if (uppercase_names)
+	if (uppercase_names) {
 	  variable_names[index-1] = Ioss::Utils::uppercase(variable_names[index-1]);
-	else if (lowercase_names)
+	} else if (lowercase_names) {
 	  variable_names[index-1] = Ioss::Utils::lowercase(variable_names[index-1]);
+}
 	var_names[index-1] = (char*)variable_names[index-1].c_str();
       }
 
       int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
-      if (ierr < 0)
+      if (ierr < 0) {
 	Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
     }
   }
 
@@ -1268,13 +1296,15 @@ namespace Ioex {
   int DatabaseIO::get_database_step(int global_step) const
   {
     assert(overlayCount >= 0 && cycleCount >= 0);
-    if (overlayCount == 0 && cycleCount == 0)
+    if (overlayCount == 0 && cycleCount == 0) {
       return global_step;
+}
 
     int local_step = global_step - 1;
     local_step /= (overlayCount + 1);
-    if (cycleCount > 0)
+    if (cycleCount > 0) {
       local_step %= cycleCount;
+}
     return local_step + 1;
   }
 
@@ -1322,8 +1352,9 @@ namespace Ioex {
 	do_flush = false;
       }
     }
-    if (do_flush)
+    if (do_flush) {
       ex_update(get_file_pointer());
+}
   }
 
   // common
@@ -1381,9 +1412,10 @@ namespace Ioex {
           
 	for (int i=0; i < attribute_count; i++) {
 	  int writ = ::snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
-	  if (writ > maximumNameLength)
+	  if (writ > maximumNameLength) {
 	    names[i][maximumNameLength] = '\0';
-	}
+	
+}}
       }
       else {
 	// Use attribute names if they exist.
@@ -1391,8 +1423,9 @@ namespace Ioex {
 	  Ioss::SerializeIO   serializeIO__(this);
 	  if (block->get_property("entity_count").get_int() != 0) {
 	    int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
-	    if (ierr < 0)
+	    if (ierr < 0) {
 	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
 	  }
 	}
 
@@ -1415,7 +1448,7 @@ namespace Ioex {
 	for (int i=0; i < attribute_count; i++) {
 	  fix_bad_name(names[i]);
 	  Ioss::Utils::fixup_name(names[i]);
-	  if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
+	  if (names[i][0] == '\0' || names[i][0] == ' ' || (std::isalnum(names[i][0]) == 0)) {
 	    attributes_named = false;
 	  }
 	}
@@ -1601,8 +1634,9 @@ namespace Ioex {
     labels[1] = "y";
     labels[2] = "z";
     int ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
-    if (ierr < 0)
+    if (ierr < 0) {
       Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+}
     
     // Write coordinate frame data...
     write_coordinate_frames(get_file_pointer(), get_region()->get_coordinate_frames());
@@ -1652,8 +1686,9 @@ namespace {
 	}
 	size_t ge_id = ge->get_property("id").get_int();
 	int ierr = ex_put_attr_names(exoid, type, ge_id, TOPTR(names));
-	if (ierr < 0)
+	if (ierr < 0) {
 	  Ioex::exodus_error(exoid, __LINE__, -1);
+}
       }
     }
   }
@@ -1662,8 +1697,9 @@ namespace {
   void check_attribute_index_order(Ioss::GroupingEntity *block)
   {
     int attribute_count = block->get_property("attribute_count").get_int();
-    if (attribute_count == 0)
+    if (attribute_count == 0) {
       return;
+}
     int component_sum = 0;
 
     std::vector<int> attributes(attribute_count+1);
@@ -1697,8 +1733,9 @@ namespace {
       int comp_count = type->component_count();
       component_sum += comp_count;
 
-      if (field_offset == 0)
+      if (field_offset == 0) {
 	continue;
+}
 
       if (field_offset + comp_count - 1 > attribute_count) {
 	std::ostringstream errmsg;
@@ -1771,13 +1808,15 @@ namespace {
     assert(!all_attributes_indexed && some_attributes_indexed);
     int last_defined = 0;
     for (int i=1; i < attribute_count+1; i++) {
-      if (attributes[i] != 0)
+      if (attributes[i] != 0) {
 	last_defined = i;
+}
     }
     int first_undefined = attribute_count;
     for (int i=attribute_count; i > 0; i--) {
-      if (attributes[i] == 0)
+      if (attributes[i] == 0) {
 	first_undefined = i;
+}
     }
     if (last_defined < first_undefined) {
       for (auto &field_name : results_fields) {

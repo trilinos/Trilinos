@@ -102,13 +102,13 @@ struct ExodusData {
                const std::vector<int> globalNumOfElemsInBlock, const std::vector<int> localNumOfElemsInBlock,
                const std::vector<Topology> blockTopoData, int globalNumNodes, const std::vector<int> globalIdsOfLocalElems,
                const std::vector<int> globalIdsLocalNodes,
-               const std::vector< std::vector<int> > & sidesetConn = std::vector< std::vector<int> >(),
-               const std::vector< std::vector<std::string> > & sidesetBlocks = std::vector< std::vector<std::string> >())
+               std::vector< std::vector<int> >  sidesetConn = std::vector< std::vector<int> >(),
+               std::vector< std::vector<std::string> >  sidesetBlocks = std::vector< std::vector<std::string> >())
     : coordinates(coords), elementBlockConnectivity(elemBlockConnectivity),
       globalNumberOfElementsInBlock(globalNumOfElemsInBlock), localNumberOfElementsInBlock(localNumOfElemsInBlock),
       blockTopologicalData(blockTopoData), globalNumberOfNodes(globalNumNodes), globalIdsOfLocalElements(globalIdsOfLocalElems),
-      globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(0), sidesetConnectivity(sidesetConn),
-      sidesetTouchingBlocks(sidesetBlocks)
+      globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(0), sidesetConnectivity(std::move(sidesetConn)),
+      sidesetTouchingBlocks(std::move(sidesetBlocks))
     {
 
     }
@@ -175,7 +175,7 @@ public:
     virtual int64_t node_count_proc() const;
 
     virtual int64_t element_count() const;
-    virtual int64_t element_count(int64_t block_number) const;
+    virtual int64_t element_count(int64_t surfaceNumber) const;
     virtual int64_t element_count_proc() const;
     virtual int64_t element_count_proc(int64_t block_number) const;
 
@@ -228,9 +228,9 @@ public:
     virtual int64_t node_count_proc() const;
 
     virtual int64_t element_count() const;
-    virtual int64_t element_count(int64_t block_number) const;
+    virtual int64_t element_count(int64_t blockNumber) const;
     virtual int64_t element_count_proc() const;
-    virtual int64_t element_count_proc(int64_t block_number) const;
+    virtual int64_t element_count_proc(int64_t blockNumber) const;
 
     virtual int64_t block_count() const;
 
@@ -247,13 +247,13 @@ public:
     virtual void coordinates(int component, std::vector<double> &xyz) const;
     virtual void coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const;
 
-    virtual void connectivity(int64_t block_number, int* connect) const;
+    virtual void connectivity(int64_t blockNumber, int* connectivityForBlock) const;
 
-    virtual std::pair<std::string, int> topology_type(int64_t block_number) const;
+    virtual std::pair<std::string, int> topology_type(int64_t blockNumber) const;
 
     virtual void sideset_elem_sides(int64_t setId, std::vector<int64_t> &elem_sides) const;
 
-    virtual std::vector<std::string> sideset_touching_blocks(int64_t set_id) const;
+    virtual std::vector<std::string> sideset_touching_blocks(int64_t setId) const;
 
     virtual void nodeset_nodes(int64_t nset_id, std::vector<int64_t> &nodes) const;
 
@@ -262,8 +262,8 @@ public:
     virtual void node_map(std::vector<int> &map) const;
     virtual void node_map(std::vector<int64_t> &map) const;
 
-    virtual void element_map(int64_t block_number, std::vector<int> &map) const;
-    virtual void element_map(int64_t block_number, std::vector<int64_t> &map) const;
+    virtual void element_map(int64_t blockNumber, std::vector<int> &map) const;
+    virtual void element_map(int64_t blockNumber, std::vector<int64_t> &map) const;
     virtual void element_map(std::vector<int64_t> &map) const;
     virtual void element_map(std::vector<int> &map) const;
 

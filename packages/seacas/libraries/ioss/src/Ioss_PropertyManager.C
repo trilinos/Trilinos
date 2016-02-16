@@ -51,7 +51,7 @@ Ioss::PropertyManager::~PropertyManager()
 
 void Ioss::PropertyManager::add(const Ioss::Property& new_prop)
 {
-  PropMapType::iterator iter = properties.find(new_prop.get_name());
+  auto iter = properties.find(new_prop.get_name());
   if (iter != properties.end()) {
     properties.erase(iter);
   }
@@ -66,7 +66,7 @@ bool Ioss::PropertyManager::exists(const std::string& property_name) const
 
 Ioss::Property Ioss::PropertyManager::get(const std::string& property_name) const
 {
-  PropMapType::const_iterator iter = properties.find(property_name);
+  auto iter = properties.find(property_name);
   if (iter == properties.end()) {
     std::ostringstream errmsg;
     errmsg << "ERROR: Could not find property '" << property_name << "'\n";
@@ -77,7 +77,7 @@ Ioss::Property Ioss::PropertyManager::get(const std::string& property_name) cons
 
 void Ioss::PropertyManager::erase(const std::string& property_name)
 {
-  PropMapType::iterator iter = properties.find(property_name);
+  auto iter = properties.find(property_name);
   if (iter != properties.end()) {
     properties.erase(iter);
   }

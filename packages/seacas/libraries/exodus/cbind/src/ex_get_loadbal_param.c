@@ -106,7 +106,8 @@ int ex_get_loadbal_param(int   exoid,
   exerrval = 0; /* clear error code */
 
   /* Check the file version information */
-  if ((dimid=ne_check_file_version(exoid)) != EX_NOERR) return (dimid);
+  if ((dimid=ne_check_file_version(exoid)) != EX_NOERR) { return (dimid);
+}
 
   /* Get the file type */
   if (ex_get_file_type(exoid, ftype) != EX_NOERR) {
@@ -130,10 +131,11 @@ int ex_get_loadbal_param(int   exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 's')
+  if (ftype[0] == 's') {
     start[0] = processor;
-  else
+  } else {
     start[0] = 0;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
@@ -205,10 +207,11 @@ int ex_get_loadbal_param(int   exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 's')
+  if (ftype[0] == 's') {
     start[0] = processor;
-  else
+  } else {
     start[0] = 0;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
@@ -280,10 +283,11 @@ int ex_get_loadbal_param(int   exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 's')
+  if (ftype[0] == 's') {
     start[0] = processor;
-  else
+  } else {
     start[0] = 0;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
@@ -353,10 +357,11 @@ int ex_get_loadbal_param(int   exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 's')
+  if (ftype[0] == 's') {
     start[0] = processor;
-  else
+  } else {
     start[0] = 0;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
@@ -426,10 +431,11 @@ int ex_get_loadbal_param(int   exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 's')
+  if (ftype[0] == 's') {
     start[0] = processor;
-  else
+  } else {
     start[0] = 0;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
@@ -502,9 +508,9 @@ int ex_get_loadbal_param(int   exoid,
   /* check if I need to get the dimension of the nodal comm map */
   if (varidx[1] == -1) {
     /* Get the nodal comm map information */
-    if ((status = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS, &dimid)) != NC_NOERR)
+    if ((status = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS, &dimid)) != NC_NOERR) {
       varidx[1] = 0;
-    else {
+    } else {
       if ((status = nc_inq_dimlen(exoid, dimid, &nncm)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
@@ -537,9 +543,9 @@ int ex_get_loadbal_param(int   exoid,
   /* check if I need to get the dimension of the elemental comm map */
   if (varidx[1] == -1) {
     /* Get the elemental comm map information */
-    if ((status = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid)) != NC_NOERR)
+    if ((status = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid)) != NC_NOERR) {
       varidx[1] = 0;
-    else {
+    } else {
       if ((status = nc_inq_dimlen(exoid, dimid, &necm)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,

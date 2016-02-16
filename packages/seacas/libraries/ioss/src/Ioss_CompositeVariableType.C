@@ -57,7 +57,7 @@ CompositeVariableType::composite_variable_type(const VariableType *inst, int cop
   // See if we already constructed this composite type...
   std::string composite_type = CompositeVariableType::composite_name(inst->name(),copies);
 
-  VariableTypeMap::iterator iter = registry().find(composite_type);
+  auto iter = registry().find(composite_type);
   if (iter == registry().end()) {
     // Not found, construct new type...
     comp_inst = new CompositeVariableType(inst, copies, true);

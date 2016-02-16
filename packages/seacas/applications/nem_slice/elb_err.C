@@ -65,7 +65,7 @@ void error_add(int level, const std::string &message, const std::string &filenam
 /*****************************************************************************/
 /* This function outputs the accumulated error messages to stderr
  *****************************************************************************/
-void error_report(void)
+void error_report()
 {
   int iflag=0;
 

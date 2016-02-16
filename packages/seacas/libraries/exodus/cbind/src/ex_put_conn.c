@@ -87,13 +87,13 @@ int ex_put_conn (int   exoid,
        ex_err("ex_put_conn",errmsg,EX_NULLENTITY);
        return (EX_WARN);
        }
-     else {
+     
        sprintf(errmsg,
          "Error: failed to locate %s id %"PRId64" in id array in file id %d",
          ex_name_of_object(blk_type),blk_id, exoid);
        ex_err("ex_put_conn",errmsg,exerrval);
        return (EX_FATAL);
-       }
+       
      }
 
 /* inquire id's of previously defined dimensions  */

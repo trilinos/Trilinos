@@ -41,9 +41,9 @@ namespace Ioss {
 
   class CoordinateFrame {
   public:
-    CoordinateFrame(int64_t id,
-		    char tag,
-		    const double *coordinates);
+    CoordinateFrame(int64_t my_id,
+		    char my_tag,
+		    const double *point_list);
 
     int64_t id() const;
     char tag() const;

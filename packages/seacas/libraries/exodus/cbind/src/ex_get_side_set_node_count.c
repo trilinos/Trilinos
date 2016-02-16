@@ -109,15 +109,15 @@ int ex_get_side_set_node_count(int exoid,
 	  ex_err("ex_get_side_set_node_count",errmsg,EX_NULLENTITY);
 	  return (EX_WARN);
 	}
-      else
-	{
+      
+	
 
 	  sprintf(errmsg,
 		  "Error: failed to locate side set %"PRId64" in VAR_SS_IDS array in file id %d",
 		  side_set_id,exoid);
 	  ex_err("ex_get_side_set_node_count",errmsg,exerrval);
 	  return (EX_FATAL);
-	}
+	
     }
 
   num_elem_blks = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
@@ -139,8 +139,9 @@ int ex_get_side_set_node_count(int exoid,
   }
 
   int int_size = sizeof(int);
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     int_size = sizeof(int64_t);
+}
 
   /* First determine the  # of elements in the side set*/
   int err;

@@ -96,6 +96,9 @@ namespace Ioxf {
 	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 	       const Ioss::PropertyManager &properties_x);
     ~DatabaseIO();
+    DatabaseIO(const DatabaseIO& from) =delete;
+    DatabaseIO& operator=(const DatabaseIO& from) =delete;
+
     static void finalize();
 
     // Eliminate as much memory as possible, but still retain meta data information
@@ -197,10 +200,6 @@ namespace Ioxf {
 			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-
-    // Private member functions
-    DatabaseIO(const DatabaseIO& from); // do not implement
-    DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
     virtual void openDatabase() const {}
 

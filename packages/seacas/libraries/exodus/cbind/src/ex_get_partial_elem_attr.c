@@ -87,13 +87,13 @@ int ex_get_partial_elem_attr (int   exoid,
               elem_blk_id,exoid);
       ex_err("ex_get_partial_elem_attr",errmsg,EX_NULLENTITY);
       return (EX_WARN);              /* no attributes for this element block */
-    } else {
+    } 
       sprintf(errmsg,
       "Warning: failed to locate element block %"PRId64" in %s array in file id %d",
               elem_blk_id,VAR_ID_EL_BLK, exoid);
       ex_err("ex_get_partial_elem_attr",errmsg,exerrval);
       return (EX_WARN);
-    }
+    
   }
 
 

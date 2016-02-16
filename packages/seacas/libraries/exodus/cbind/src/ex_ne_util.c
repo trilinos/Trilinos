@@ -244,8 +244,9 @@ int ex_get_file_type(int exoid,
   }
 
   /* Set the appropriate character */
-  if (lftype == 0)       strcpy(ftype, "p");
-  else if (lftype == 1)  strcpy(ftype, "s");
+  if (lftype == 0) {       strcpy(ftype, "p");
+  } else if (lftype == 1) {  strcpy(ftype, "s");
+}
 
   return (EX_NOERR);
 }

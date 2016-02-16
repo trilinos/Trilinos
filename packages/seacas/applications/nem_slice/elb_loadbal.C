@@ -237,8 +237,16 @@ int generate_loadbal(Machine_Description* machine,
       graph->adj[cnt]++;
   }
 
-  if(problem->read_coords == ELB_TRUE)
+  if ((problem->type == ELEMENTAL) && 
+      (lb->type == INERTIAL || lb->type == ZPINCH || lb->type == BRICK ||
+       lb->type == ZOLTAN_RCB || lb->type == ZOLTAN_RIB || 
+       lb->type == ZOLTAN_HSFC))
     {
+      if (problem->read_coords != ELB_TRUE) {
+	Gen_Error(0, "FATAL: internal logic error. Reading coordinates, but read_coords not set");
+	return 0;
+      }
+
       switch(mesh->num_dims) {
       case 3:
 	x_node_ptr = (mesh->coords);
@@ -277,6 +285,10 @@ int generate_loadbal(Machine_Description* machine,
        lb->type == ZOLTAN_RCB || lb->type == ZOLTAN_RIB || 
        lb->type == ZOLTAN_HSFC))
     {
+      if (problem->read_coords != ELB_TRUE) {
+	Gen_Error(0, "FATAL: internal logic error. Reading coordinates, but read_coords not set");
+	return 0;
+      }
       /* just check to make sure that there are vertices to get coords for */
       if (problem->num_vertices > 0) {
 	/* allocate memory for element coordinates */

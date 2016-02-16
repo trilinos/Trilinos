@@ -132,7 +132,7 @@ void usage()
    line feeds, we put it as ints, and use 'char()' to convert it */
 void mPutStr (const char *name, const char *str)
 {
-  assert(m_file!=0);
+  assert(m_file!=nullptr);
   if (strchr(str,'\n')==nullptr)
     fprintf(m_file,"%s='%s';\n",name,str);
   else {

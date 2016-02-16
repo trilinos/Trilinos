@@ -92,13 +92,13 @@ int ex_get_set_dist_fact (int   exoid,
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set_dist_fact",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to locate %s set %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* setup more pointers based on set_type */
@@ -130,13 +130,13 @@ int ex_get_set_dist_fact (int   exoid,
       return (EX_WARN);         /* complain - but not too loud */
     }
     /* is an error for other sets */
-    else  {
+     
       sprintf(errmsg,
 	      "Error: failed to locate dist factors list for %s set %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* read in the distribution factors array */

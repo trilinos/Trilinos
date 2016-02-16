@@ -48,6 +48,7 @@ namespace Ioss {
   class PropertyManager {
   public:
     PropertyManager();
+    PropertyManager& operator=(const PropertyManager& from) =delete;
     ~PropertyManager();
 
     // Add the specified property to the list.
@@ -67,8 +68,6 @@ namespace Ioss {
     size_t count() const;
 
   private:
-    PropertyManager& operator=(const PropertyManager& from); // do not implement
-
     PropMapType properties;
   };
 }

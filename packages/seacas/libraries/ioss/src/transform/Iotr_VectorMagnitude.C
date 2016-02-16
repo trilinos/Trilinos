@@ -53,7 +53,7 @@ namespace Iotr {
     Factory::alias("vector magnitude", "length");
   }
 
-  Ioss::Transform* VM_Factory::make(const std::string&) const
+  Ioss::Transform* VM_Factory::make(const std::string& /*unused*/) const
   { return new VectorMagnitude(); }
 
   VectorMagnitude::VectorMagnitude() {}
@@ -66,9 +66,9 @@ namespace Iotr {
     static const Ioss::VariableType *sca = Ioss::VariableType::factory("scalar");
     if (in == v2d || in == v3d) {
       return sca;
-    } else {
+    } 
       return nullptr;
-    }
+    
   }
 
   int VectorMagnitude::output_count(int in) const

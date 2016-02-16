@@ -79,9 +79,12 @@ namespace Ioss {
     // If 'error_message' non-null, then put the warning message into the string and return it.
     // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
       //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    virtual bool ok(bool write_message = false, std::string *error_message=nullptr, int *bad_count=nullptr) const
+    virtual bool ok(bool write_message = false, std::string *error_message=nullptr,
+		    int *bad_count=nullptr) const
     {
-      if (bad_count) *bad_count = 0;
+      if (bad_count != nullptr){
+	*bad_count = 0;
+      }
       return dbState != Ioss::STATE_INVALID;
     }
 
@@ -154,7 +157,7 @@ namespace Ioss {
     // QA Records:
     const std::vector<std::string> &get_qa_records() const { return qaRecords;}
     void add_qa_record(const std::string &code, const std::string &code_qa,
-		       const std::string &data, const std::string &time);
+		       const std::string &date, const std::string &time);
 
     // The get_field and put_field functions are just a wrapper around the
     // pure virtual get_field_internal and put_field_internal functions,
@@ -263,7 +266,7 @@ namespace Ioss {
 
     protected:
 
-    DatabaseIO(Region *region, const std::string& filename,
+    DatabaseIO(Region *region, std::string  filename,
                Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                const Ioss::PropertyManager &props);
 
@@ -374,7 +377,7 @@ namespace Ioss {
     std::vector<std::string> qaRecords;
 
     private:
-    void verify_and_log(const GroupingEntity *reg, const Field& field, int in_out) const;
+    void verify_and_log(const GroupingEntity *ge, const Field& field, int in_out) const;
 
     virtual int64_t get_field_internal(const Region* reg, const Field& field,
                                        void *data, size_t data_size) const = 0;

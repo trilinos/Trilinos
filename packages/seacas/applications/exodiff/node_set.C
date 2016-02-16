@@ -138,8 +138,8 @@ template <typename INT>
 void Node_Set<INT>::load_nodes(const INT *node_map) const
 {
   if (numEntity > 0) {
-    nodes = new INT[numEntity];  SMART_ASSERT(nodes != 0);
-    nodeIndex = new INT[numEntity];  SMART_ASSERT(nodeIndex != 0);
+    nodes = new INT[numEntity];  SMART_ASSERT(nodes != nullptr);
+    nodeIndex = new INT[numEntity];  SMART_ASSERT(nodeIndex != nullptr);
     ex_get_set(fileId, EX_NODE_SET, id_, nodes, nullptr);
     
     if (node_map != nullptr) {
@@ -160,7 +160,7 @@ template <typename INT>
 const double* Node_Set<INT>::Distribution_Factors() const
 {
   if (!dist_factors && num_dist_factors > 0) {
-    dist_factors = new double[num_dist_factors];  SMART_ASSERT(dist_factors != 0);
+    dist_factors = new double[num_dist_factors];  SMART_ASSERT(dist_factors != nullptr);
     ex_get_set_dist_fact(fileId, EX_NODE_SET, id_, dist_factors);
   }
   return dist_factors;

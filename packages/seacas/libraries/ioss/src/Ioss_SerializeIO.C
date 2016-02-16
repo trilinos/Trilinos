@@ -69,7 +69,7 @@ SerializeIO::SerializeIO(
   if (s_rank == -1) {
     s_rank = util.parallel_rank();
     s_size = util.parallel_size();
-    if (s_groupFactor) {
+    if (s_groupFactor != 0) {
       s_groupRank = s_rank/s_groupFactor;
       s_groupSize = (s_size - 1)/s_groupFactor + 1;
     }
@@ -103,17 +103,18 @@ SerializeIO::SerializeIO(
       s_owner = m_manualOwner;
     }
   }
-  else
+  else {
     s_owner = s_groupRank;
+}
 }
 
 
 SerializeIO::~SerializeIO()
 {
   try {
-  if (m_activeFallThru)
+  if (m_activeFallThru) {
     ;
-  else if (s_groupFactor > 0) {
+  } else if (s_groupFactor > 0) {
     if (m_manualOwner == -1) {
       m_databaseIO->closeDatabase();
 #ifdef HAVE_MPI
@@ -133,8 +134,9 @@ SerializeIO::~SerializeIO()
     }
   }
 
-  else
+  else {
     s_owner = -1;
+}
   } catch (...) {
   }
 }
@@ -144,10 +146,11 @@ void
 SerializeIO::setGroupFactor(
   int			factor)
 {
-  if (s_rank != -1)
+  if (s_rank != -1) {
     IOSS_WARNING << "Mesh I/O serialization group factor cannot be changed once serialized I/O has begun";
-  else
+  } else {
     s_groupFactor = factor;
+}
 }
 
 } // namespace Ioss

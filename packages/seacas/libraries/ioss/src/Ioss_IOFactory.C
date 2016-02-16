@@ -54,7 +54,7 @@ Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
 					  const Ioss::PropertyManager &properties)
 {
   Ioss::DatabaseIO *db = nullptr;
-  Ioss::IOFactoryMap::iterator iter = registry()->find(type);
+  auto iter = registry()->find(type);
   if (iter == registry()->end()) {
     if (registry()->empty()) {
       std::ostringstream errmsg;

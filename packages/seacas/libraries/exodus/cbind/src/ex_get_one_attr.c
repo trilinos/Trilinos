@@ -90,13 +90,13 @@ int ex_get_one_attr( int   exoid,
 		ex_name_of_object(obj_type),obj_id,exoid);
 	ex_err("ex_get_one_attr",errmsg,EX_NULLENTITY);
 	return (EX_WARN);              /* no attributes for this object */
-      } else {
+      } 
 	sprintf(errmsg,
 		"Warning: failed to locate %s id %"PRId64" in id array in file id %d",
 		ex_name_of_object(obj_type),obj_id, exoid);
 	ex_err("ex_get_one_attr",errmsg,exerrval);
 	return (EX_WARN);
-      }
+      
     }
   }
 
@@ -156,11 +156,13 @@ int ex_get_one_attr( int   exoid,
   }
 
   /* inquire id's of previously defined dimensions  */
-  if (ex_get_dimension(exoid, dnumobjent,"entries", &num_entries_this_obj, &temp, "ex_get_one_attr") != NC_NOERR)
+  if (ex_get_dimension(exoid, dnumobjent,"entries", &num_entries_this_obj, &temp, "ex_get_one_attr") != NC_NOERR) {
     return EX_FATAL;
+}
   
-  if (ex_get_dimension(exoid, dnumobjatt,"attributes", &num_attr, &temp, "ex_get_one_attr") != NC_NOERR)
+  if (ex_get_dimension(exoid, dnumobjatt,"attributes", &num_attr, &temp, "ex_get_one_attr") != NC_NOERR) {
     return EX_FATAL;
+}
 
   if (attrib_index < 1 || attrib_index > (int)num_attr) {
     exerrval = EX_FATAL;

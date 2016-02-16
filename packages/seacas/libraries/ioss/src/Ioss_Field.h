@@ -54,21 +54,21 @@ namespace Ioss {
     // Create a field named 'name' that contains values of type 'type'
     // in a storage format of type 'storage'.  There are 'value_count'
     // items in the field.
-    Field(const std::string &name, const BasicType type,
+    Field(std::string name, const BasicType type,
 	  const std::string &storage,
 	  const RoleType role, size_t value_count, size_t index=0);
     
-    Field(const std::string &name, const BasicType type,
+    Field(std::string name, const BasicType type,
 	  const std::string &storage, int copies,
 	  const RoleType role, size_t value_count, size_t index=0);
 
-    Field(const std::string &name, const BasicType type,
+    Field(std::string name, const BasicType type,
 	  const VariableType *storage,
 	  const RoleType role, size_t value_count, size_t index=0);
     
     // Create a field from another field.
-    Field(const Field&);
-    Field& operator=(const Field&);
+    Field(const Field& /*from*/);
+    Field& operator=(const Field& /*from*/);
 
     // Compare two fields (used for STL container)
     bool operator<(const Field& other) const;
@@ -109,7 +109,7 @@ namespace Ioss {
     bool is_type(BasicType the_type) const
     {return the_type == type_;}
     
-    bool add_transform(Transform* transform);
+    bool add_transform(Transform* my_transform);
     bool transform(void *data);
 
   private:

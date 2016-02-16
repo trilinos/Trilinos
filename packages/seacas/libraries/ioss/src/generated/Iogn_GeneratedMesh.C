@@ -120,12 +120,14 @@ namespace Iogn {
 
     if (processorCount > 1) {
       myNumZ = numZ / processorCount;
-      if (myProcessor < (numZ % processorCount)) myNumZ++;
+      if (myProcessor < (numZ % processorCount)) { myNumZ++;
+}
 
       // Determine myStartZ for this processor...
       size_t extra = numZ % processorCount;
-      if (extra > myProcessor)
+      if (extra > myProcessor) {
         extra = myProcessor;
+}
       size_t per_proc  = numZ / processorCount;
       myStartZ = myProcessor * per_proc + extra;
     } else {
@@ -398,8 +400,9 @@ namespace Iogn {
           int count = std::strtol(tokens[ir++].c_str(), nullptr, 10);
           set_variable_count(type, count);
         }
-        if (timestepCount == 0)
+        if (timestepCount == 0) {
           timestepCount = 1;
+}
       }
 
       else if (option[0] == "help") {
@@ -451,8 +454,8 @@ namespace Iogn {
       if (doRotation) {
         std::cerr << "\tRotation Matrix: \n\t" << std::scientific ;
         for (auto & elem : rotmat) {
-          for (int jj=0; jj < 3; jj++) {
-            std::cerr << std::setw(14) << elem[jj] << "\t";
+          for (double jj : elem) {
+            std::cerr << std::setw(14) << jj << "\t";
           }
           std::cerr << "\n\t";
         }
@@ -511,10 +514,10 @@ namespace Iogn {
     if (block_number == 1) {
       int64_t mult = createTets ? 6 : 1;
       return mult * numX * numY * numZ;
-    } else {
+    } 
       ShellLocation loc = shellBlocks[block_number-2];
       return shell_element_count(loc);
-    }
+    
   }
 
   int64_t GeneratedMesh::shell_element_count(ShellLocation loc) const
@@ -541,10 +544,10 @@ namespace Iogn {
     if (block_number == 1) {
       int64_t mult = createTets ? 6 : 1;
       return mult * numX * numY * myNumZ;
-    } else {
+    } 
       ShellLocation loc = shellBlocks[block_number-2];
       return shell_element_count_proc(loc);
-    }
+    
   }
 
   int64_t GeneratedMesh::shell_element_count_proc(ShellLocation loc) const
@@ -558,15 +561,17 @@ namespace Iogn {
     case PY:
       return mult * numX * myNumZ;
     case MZ:
-      if (myProcessor == 0)
+      if (myProcessor == 0) {
         return mult * numX * numY;
-      else
+      } else {
         return 0;
+}
     case PZ:
-      if (myProcessor == processorCount -1)
+      if (myProcessor == processorCount -1) {
         return mult * numX * numY;
-      else
+      } else {
         return 0;
+}
     }
     return 0;
   }
@@ -603,15 +608,17 @@ namespace Iogn {
     case PY:
       return (numX+1) * (myNumZ+1);
     case MZ:
-      if (myProcessor == 0)
+      if (myProcessor == 0) {
         return (numX+1) * (numY+1);
-      else
+      } else {
         return 0;
+}
     case PZ:
-      if (myProcessor == processorCount -1)
+      if (myProcessor == processorCount -1) {
         return (numX+1) * (numY+1);
-      else
+      } else {
         return 0;
+}
     }
     return 0;
   }
@@ -650,15 +657,17 @@ namespace Iogn {
     case PY:
       return mult * numX * myNumZ;
     case MZ:
-      if (myProcessor == 0)
+      if (myProcessor == 0) {
         return mult * numX * numY;
-      else
+      } else {
         return 0;
+}
     case PZ:
-      if (myProcessor == processorCount -1)
+      if (myProcessor == processorCount -1) {
         return mult * numX * numY;
-      else
+      } else {
         return 0;
+}
     }
     return 0;
   }
@@ -670,16 +679,16 @@ namespace Iogn {
     if (createTets) {
       if (block_number == 1) {
         return std::make_pair(std::string("tet4"), 4);
-      } else {
+      } 
         return std::make_pair(std::string("tri3"), 3);
-      }
+      
     }
     else {
       if (block_number == 1) {
         return std::make_pair(std::string("hex8"), 8);
-      } else {
+      } 
         return std::make_pair(std::string("shell4"), 4);
-      }
+      
     }
   }
 
@@ -700,8 +709,9 @@ namespace Iogn {
   int64_t GeneratedMesh::communication_node_count_proc() const
   {
     int64_t count = (numX+1) * (numY+1);
-    if (myProcessor != 0 && myProcessor != processorCount-1)
+    if (myProcessor != 0 && myProcessor != processorCount-1) {
       count *= 2;
+    }
 
     return count;
   }
@@ -724,8 +734,9 @@ namespace Iogn {
   {
     int64_t count = (numX+1) * (numY+1);
     int64_t slab = count;
-    if (myProcessor != 0 && myProcessor != processorCount-1)
+    if (myProcessor != 0 && myProcessor != processorCount-1) {
       count *= 2;
+    }
 
     map.resize(count);
     proc.resize(count);

@@ -57,7 +57,7 @@ Ioss::FaceBlock::FaceBlock(Ioss::DatabaseIO *io_database,
   }
 }
 
-Ioss::FaceBlock::~FaceBlock() {}
+Ioss::FaceBlock::~FaceBlock() = default;
 
 Ioss::Property Ioss::FaceBlock::get_implicit_property(const std::string& my_name) const
 {

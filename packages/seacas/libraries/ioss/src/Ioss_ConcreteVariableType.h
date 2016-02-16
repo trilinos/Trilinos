@@ -59,10 +59,10 @@ class X : public VariableType {\
 
   class Invalid_Storage : public VariableType {
   public:
-    std::string label(int which, const char suffix_sep='_') const;
-    std::string label_name(const std::string& base, int,
-			      const char suffix_sep) const;
-    int suffix_count() const {return 0;}
+    std::string label(int which, const char suffix_sep='_') const override;
+    std::string label_name(const std::string& base, int /*which*/,
+			      const char suffix_sep) const override;
+    int suffix_count() const override {return 0;}
     static void factory();
 
   protected:
@@ -74,10 +74,10 @@ class X : public VariableType {\
 
   class Scalar : public VariableType {
   public:
-    std::string label(int which, const char suffix_sep='_') const;
-    std::string label_name(const std::string& base, int,
-			      const char suffix_sep) const;
-    int suffix_count() const {return 0;}
+    std::string label(int which, const char suffix_sep='_') const override;
+    std::string label_name(const std::string& base, int /*which*/,
+			      const char suffix_sep) const override;
+    int suffix_count() const override {return 0;}
     static void factory();
 
   protected:
