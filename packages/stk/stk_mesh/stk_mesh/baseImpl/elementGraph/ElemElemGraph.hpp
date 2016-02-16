@@ -152,14 +152,14 @@ protected:
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
-                                                                    stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector,
+                                                                    stk::mesh::impl::ParallelElementDataVector & communicatedElementDataVector,
                                                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
-    stk::mesh::EntityId pick_id_for_side_if_created(const impl::ConnectedElementData & elemDataFromOtherProc,
+    stk::mesh::EntityId pick_id_for_side_if_created(const impl::ParallelElementData & elemDataFromOtherProc,
             const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideDataSent, stk::mesh::Entity localElem, unsigned side_index);
 
     void add_parallel_edge_and_info(const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideDataSent,
-            const impl::ConnectedElementDataVector &filteredCommunicatedElementData, const impl::ConnectedElementData &elementData,
+            const impl::ParallelElementDataVector &filteredCommunicatedElementData, const impl::ParallelElementData &elementData,
             std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
@@ -168,7 +168,7 @@ protected:
 
     void add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges) const;
 
-    impl::NotSureVector get_only_valid_element_connections(stk::mesh::Entity element, unsigned side_index, const stk::mesh::EntityVector& side_nodes) const;
+    impl::SerialElementDataVector get_only_valid_element_connections(stk::mesh::Entity element, unsigned side_index, const stk::mesh::EntityVector& side_nodes) const;
 
     stk::mesh::ConnectivityOrdinal get_neighboring_side_ordinal(const stk::mesh::BulkData &mesh, stk::mesh::Entity currentElem,
                                                                 stk::mesh::ConnectivityOrdinal currentOrdinal, stk::mesh::Entity neighborElem);

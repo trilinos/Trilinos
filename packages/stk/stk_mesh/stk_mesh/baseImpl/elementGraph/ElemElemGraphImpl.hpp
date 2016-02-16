@@ -63,17 +63,17 @@ std::ostream& operator<<(std::ostream& out, const parallel_info& info)
     return out;
 }
 
-struct NotSure
+struct SerialElementData
 {
     LocalId m_elementLocalId;
     stk::mesh::EntityId m_elementIdentifier;
     stk::topology m_elementTopology;
     unsigned m_sideIndex;
     stk::mesh::EntityVector m_sideNodes;
-    NotSure(LocalId elementLocalId, stk::mesh::EntityId elementId, stk::topology elementToplogy, unsigned sideIndex, const stk::mesh::EntityVector& sideNodes) :
+    SerialElementData(LocalId elementLocalId, stk::mesh::EntityId elementId, stk::topology elementToplogy, unsigned sideIndex, const stk::mesh::EntityVector& sideNodes) :
         m_elementLocalId(elementLocalId), m_elementIdentifier(elementId), m_elementTopology(elementToplogy), m_sideIndex(sideIndex), m_sideNodes(sideNodes) {}
 
-    NotSure()
+    SerialElementData()
     : m_elementLocalId(std::numeric_limits<impl::LocalId>::max()),
       m_elementIdentifier(stk::mesh::InvalidEntityId),
       m_elementTopology(stk::topology::INVALID_TOPOLOGY),
@@ -98,17 +98,17 @@ struct NotSure
 
 };
 
-struct ConnectedElementData
+struct ParallelElementData
 {
-    NotSure notSure;
+    SerialElementData serialElementData;
     int m_procId;
     stk::mesh::EntityId m_suggestedFaceId;
     bool m_isInPart;
     bool m_isAir;
     std::vector<PartOrdinal> m_part_ordinals;
 
-    ConnectedElementData()
-    : notSure(),
+    ParallelElementData()
+    : serialElementData(),
       m_procId(-1),
       m_suggestedFaceId(stk::mesh::InvalidEntityId),
       m_isInPart(true),
@@ -118,20 +118,20 @@ struct ConnectedElementData
 
     bool is_parallel_edge() const { return m_procId != -1; }
 
-    stk::mesh::EntityId get_element_identifier() const { return notSure.get_element_identifier(); }
-    stk::topology get_element_topology() const { return notSure.get_element_topology(); }
-    const stk::mesh::EntityVector& get_side_nodes() const { return notSure.get_side_nodes(); }
-    LocalId get_element_local_id() const { return notSure.get_element_local_id(); }
-    unsigned get_element_side_index() const { return notSure.get_element_side_index(); }
+    stk::mesh::EntityId get_element_identifier() const { return serialElementData.get_element_identifier(); }
+    stk::topology get_element_topology() const { return serialElementData.get_element_topology(); }
+    const stk::mesh::EntityVector& get_side_nodes() const { return serialElementData.get_side_nodes(); }
+    LocalId get_element_local_id() const { return serialElementData.get_element_local_id(); }
+    unsigned get_element_side_index() const { return serialElementData.get_element_side_index(); }
 
-    void clear_side_nodes() { notSure.clear_side_nodes(); }
-    void resize_side_nodes(size_t n) { notSure.resize_side_nodes(n); }
-    void set_element_local_id(LocalId id) { notSure.set_element_local_id(id); }
-    void set_element_identifier(stk::mesh::EntityId id) { notSure.set_element_identifier(id); }
-    void set_element_topology(stk::topology topo) { notSure.set_element_topology(topo); }
-    void set_element_side_index(unsigned index) { notSure.set_element_side_index(index); }
+    void clear_side_nodes() { serialElementData.clear_side_nodes(); }
+    void resize_side_nodes(size_t n) { serialElementData.resize_side_nodes(n); }
+    void set_element_local_id(LocalId id) { serialElementData.set_element_local_id(id); }
+    void set_element_identifier(stk::mesh::EntityId id) { serialElementData.set_element_identifier(id); }
+    void set_element_topology(stk::topology topo) { serialElementData.set_element_topology(topo); }
+    void set_element_side_index(unsigned index) { serialElementData.set_element_side_index(index); }
 
-    stk::mesh::EntityVector::iterator side_nodes_begin() { return notSure.side_nodes_begin(); }
+    stk::mesh::EntityVector::iterator side_nodes_begin() { return serialElementData.side_nodes_begin(); }
 };
 
 struct SharedEdgeInfo
@@ -241,8 +241,8 @@ typedef std::pair<LocalId,int> ElementSidePair;
 typedef std::map<GraphEdge, parallel_info, GraphEdgeLessByElem2> ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
-typedef std::vector<ConnectedElementData> ConnectedElementDataVector;
-typedef std::vector<NotSure> NotSureVector;
+typedef std::vector<ParallelElementData> ParallelElementDataVector;
+typedef std::vector<SerialElementData> SerialElementDataVector;
 
 typedef std::vector<GraphEdge> GraphEdgeVector;
 
