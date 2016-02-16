@@ -60,6 +60,9 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar,ArrayScalar>::Basis_HGRAD_TRI_Cn_FEM_ORTH( in
     this -> basisType_         = BASIS_FEM_HIERARCHICAL;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
 }
   
   

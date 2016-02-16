@@ -201,7 +201,6 @@ namespace Iogn {
     get_commsets();
 
     this_region->property_add(Ioss::Property(std::string("title"), std::string("GeneratedMesh: ") += get_filename()));
-    this_region->property_add(Ioss::Property(std::string("spatial_dimension"), 3));
   }
 
   bool DatabaseIO::begin(Ioss::State /* state */)

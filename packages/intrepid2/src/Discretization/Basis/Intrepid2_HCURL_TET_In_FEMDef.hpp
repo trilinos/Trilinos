@@ -361,6 +361,8 @@ namespace Intrepid2 {
 
     //std::cout << coeffs_ << std::endl;
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
     
   template<class Scalar, class ArrayScalar>

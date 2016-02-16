@@ -75,8 +75,8 @@ namespace MueLuTests {
       belosList.set("Maximum Iterations",    10);   // Maximum number of iterations allowed
       belosList.set("Convergence Tolerance", 1e-7); // Relative convergence tolerance requested
 
-      // Create an iterative solver manager.
-      RCP<Belos::SolverManager<Scalar, MV, OP> > belosSolver = rcp(new Belos::BlockCGSolMgr<double,MV,OP>(belosProblem, rcp(&belosList,false)));
+      // Create an iterative solver manager. (was double before...)
+      RCP<Belos::SolverManager<Scalar, MV, OP> > belosSolver = rcp(new Belos::BlockCGSolMgr<Scalar,MV,OP>(belosProblem, rcp(&belosList,false)));
 
       // Perform solve
       Belos::ReturnType ret = belosSolver->solve();
@@ -124,7 +124,7 @@ namespace MueLuTests {
 
       // Compute norm of X (using MV traits)
       typedef Belos::MultiVecTraits<Scalar, MV> MVT;
-      std::vector<Scalar> norms(1);
+      std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
       MVT::MvNorm(*X, norms);
 
       // Test norm equality across the unit tests
@@ -258,7 +258,7 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     RCP<TestProblem<SC,LO,GO,NO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO>(lib);
 
-    typedef Tpetra::MultiVector<SC> MV;
+    typedef Tpetra::MultiVector<SC,LO,GO,NO> MV;
     typedef Belos::OperatorT<MV>    OP;
 
     // Construct a Belos LinearProblem object
@@ -277,12 +277,28 @@ namespace MueLuTests {
 #endif
   }
 
+// Instantiate the Tpetra and Xpetra based tests
+#if defined(HAVE_MUELU_TPETRA)
 # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_XpetraMV, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_TpetraMV, Scalar, LO, GO, Node) \
 
 # include <MueLu_ETI_4arg.hpp>
+#endif
+
+
+#if defined(HAVE_MUELU_EPETRA)
+#include "Epetra_config.h"
+#include "Xpetra_Map.hpp" // defines EpetraNode
+typedef Xpetra::EpetraNode EpetraNode;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, double, int, int, EpetraNode)
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long int LongLong;
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_EpetraMV, double, int, LongLong, EpetraNode)
+#endif
+#endif
 
 } // namespace MueLuTests
 

@@ -120,6 +120,17 @@ packages/muelu/doc/UsersGuide/mueluguide.pdf
 rsync.*
 .project
 
+# Ignore files that get created by checkin-test.py to allow checkin-test.py to
+# be run in source dir.
+/TrilinosPackageDependencies.generate.out
+/TrilinosPackageDependencies.xml
+/checkin-test.out
+/commitStatusEmailBody.out
+/modifiedFiles*out
+/pullInitial*out
+/pullInitial*success
+
+
 # Repostiory list file for egdist
 .egdist
 

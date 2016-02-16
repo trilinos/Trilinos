@@ -72,7 +72,8 @@ namespace BaskerNS
     void clean_col();
     BASKER_INLINE
     void convert2D(BASKER_MATRIX &M, 
-		   BASKER_BOOL alloc = BASKER_TRUE);
+		   BASKER_BOOL alloc, 
+		   Int kid);
 
     
     //just set shape, do not init

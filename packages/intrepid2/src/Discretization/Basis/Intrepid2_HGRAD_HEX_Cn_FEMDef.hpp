@@ -96,6 +96,9 @@ namespace Intrepid2 {
     this -> basisType_         = BASIS_FEM_FIAT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
 
   template<class Scalar, class ArrayScalar>
@@ -135,6 +138,8 @@ namespace Intrepid2 {
 	ptsz_(i,0) = ptsx_(i,0);
       }
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
 
   template<class Scalar, class ArrayScalar>

@@ -574,56 +574,6 @@ namespace Intrepid2 {
              (compEngType == COMP_BLAS) );
   }
 
-#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-  class Orientation {
-  private:
-    unsigned int _edgeOrt, _faceOrt;
-    
-  public:
-    Orientation() = default;
-    Orientation(const Orientation &b) = default;
-    
-    inline void setEdgeOrientation(const int numEdge, const int edgeOrt[]) {
-#ifdef HAVE_INTREPID_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION( !( 3 <= numEdge && numEdge <= 12 ), std::invalid_argument,
-                                  ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): numEdge is out of range (3--12)");
-#endif
-      _edgeOrt = 0;
-      for (int i=0;i<numEdge;++i) 
-        _edgeOrt |= (edgeOrt[i] & 1) << i;
-    }
-    
-    inline void getEdgeOrientation(int *edgeOrt, const int numEdge) const {
-#ifdef HAVE_INTREPID_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION( !( 3 <= numEdge && numEdge <= 12 ), std::invalid_argument,
-                                  ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): numEdge is out of range (3--12)");
-#endif
-      for (int i=0;i<numEdge;++i) 
-        edgeOrt[i] = (_edgeOrt & (1 << i)) >> i;
-    }
-    
-    inline void setFaceOrientation(const int numFace, const int faceOrt[]) {
-#ifdef HAVE_INTREPID_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION( !( 4 <= numFace && numFace <= 6 ), std::invalid_argument,
-                                  ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): numEdge is out of range (3--12)");
-#endif
-      _faceOrt = 0;
-      for (int i=0;i<numFace;++i, _faceOrt <<= 3)
-        _faceOrt |= (faceOrt[i] & 7);
-    }
-    
-    inline void getFaceOrientation(int *faceOrt, const int numFace) const {
-#ifdef HAVE_INTREPID_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION( !( 4 <= numFace && numFace <= 6 ), std::invalid_argument,
-                                  ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): numEdge is out of range (3--12)");
-#endif
-      unsigned int tmp = _faceOrt;
-      for (int i=0;i<numFace;++i, tmp >>= 3)
-        faceOrt[i] = (7 & tmp);
-    }
-  };  
-#endif
-
 } //namespace Intrepid2
 
 /*! \mainpage INTREPID Documentation (Development Version)

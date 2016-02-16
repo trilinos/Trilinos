@@ -907,13 +907,12 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   evalModelImpl_basic(inArgs,outArgs);
 
   // evaluate responses...uses the stored assembly arguments and containers
-  if(required_basic_g(outArgs)) {
+  if(required_basic_g(outArgs))
     evalModelImpl_basic_g(inArgs,outArgs);
 
-    // evaluate response derivatives
-    if(required_basic_dgdx(outArgs))
-      evalModelImpl_basic_dgdx(inArgs,outArgs);
-  }
+  // evaluate response derivatives
+  if(required_basic_dgdx(outArgs))
+    evalModelImpl_basic_dgdx(inArgs,outArgs);
 
   // evaluate response derivatives to distributed parameters
   if(required_basic_dgdp_distro(outArgs))
@@ -1328,18 +1327,26 @@ evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scala
      outArgs_base.set_f(outArgs.get_f());
    outArgs_base.set_W_op(outArgs.get_W_op());
    this->evalModel(inArgs, outArgs_base);
-   RCP<const Thyra::VectorBase<Scalar> > f    = outArgs_base.get_f();
-   RCP<const Thyra::VectorBase<Scalar> > x    = inArgs.get_x();
+   RCP<const Thyra::VectorBase<Scalar> > f = outArgs_base.get_f();
+   RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
+   RCP<const Thyra::VectorBase<Scalar> > x_dot;
+   if (inArgs.supports(MEB::IN_ARG_x_dot))
+     x_dot = inArgs.get_x_dot();
 
    // Create in/out args for FD calculation
    RCP<Thyra::VectorBase<Scalar> > fd = Thyra::createMember(this->get_f_space());
    MEB::OutArgs<Scalar> outArgs_fd = this->createOutArgs();
    outArgs_fd.set_f(fd);
 
-   RCP<Thyra::VectorBase<Scalar> > xd    = Thyra::createMember(this->get_x_space());
+   RCP<Thyra::VectorBase<Scalar> > xd = Thyra::createMember(this->get_x_space());
+   RCP<Thyra::VectorBase<Scalar> > xd_dot;
+   if (x_dot != Teuchos::null)
+     xd_dot = Thyra::createMember(this->get_x_space());
    MEB::InArgs<Scalar> inArgs_fd = this->createInArgs();
    inArgs_fd.setArgs(inArgs);  // This sets all inArgs that we don't override below
    inArgs_fd.set_x(xd);
+   if (x_dot != Teuchos::null)
+     inArgs_fd.set_x_dot(xd_dot);
 
    const double h = fd_perturb_size_;
    for(std::size_t i=0; i < parameters_.size(); i++) {
@@ -1362,6 +1369,13 @@ evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scala
      RCP<const Thyra::VectorBase<Scalar> > dx_v    = inArgs.get_p(i+parameters_.size());
      RCP<const Thyra::MultiVectorBase<Scalar> > dx =
        rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(dx_v,true)->getMultiVector();
+     RCP<const Thyra::VectorBase<Scalar> > dx_dot_v;
+     RCP<const Thyra::MultiVectorBase<Scalar> > dx_dot;
+     if (x_dot != Teuchos::null) {
+       dx_dot_v =inArgs.get_p(i+parameters_.size()+tangent_space_.size());
+       dx_dot =
+         rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(dx_dot_v,true)->getMultiVector();
+     }
 
      // Create perturbed parameter vector
      RCP<Thyra::VectorBase<Scalar> > pd = Thyra::createMember(this->get_p_space(i));
@@ -1374,7 +1388,9 @@ evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scala
        Thyra::set_ele(j, Thyra::get_ele(*p,j)+h, pd.ptr());
 
        // Perturb state vectors using tangents
-       Thyra::V_VpStV(xd.ptr(),    *x,    h, *(dx)->col(j));
+       Thyra::V_VpStV(xd.ptr(), *x, h, *(dx)->col(j));
+       if (x_dot != Teuchos::null)
+         Thyra::V_VpStV(xd_dot.ptr(), *x_dot, h, *(dx_dot)->col(j));
 
        // Evaluate perturbed residual
        Thyra::assign(fd.ptr(), 0.0);

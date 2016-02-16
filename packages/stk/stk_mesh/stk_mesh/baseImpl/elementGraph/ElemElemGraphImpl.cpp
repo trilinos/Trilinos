@@ -11,6 +11,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -22,7 +23,9 @@ namespace stk { namespace mesh {
 namespace impl
 {
 
-void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies)
+void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData,
+                                                            stk::mesh::EntityVector& local_id_to_element_entity,
+                                                            std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector& elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     size_t local_id = 0;
@@ -39,8 +42,10 @@ void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData&
     }
 }
 
-void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity,
-                                                             std::vector<impl::LocalId>& entity_to_local_id, std::vector<stk::topology>& element_topologies)
+void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData,
+                                                             stk::mesh::EntityVector& local_id_to_element_entity,
+                                                             std::vector<impl::LocalId>& entity_to_local_id,
+                                                             std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     size_t local_id = 0;
@@ -475,105 +480,6 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     return side;
 }
 
-void add_shell_element_if_coincident(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
-{
-    const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
-    stk::mesh::OrdinalAndPermutation localElemOrdAndPerm =
-            stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), sideNodesOfReceivedElement);
-    // for shell element, want the nodes of the solid to be in opposite order. So getting non-matching side ordinals
-    // means the normals oppose
-    bool does_local_shell_side_normal_oppose_other_element_side_normal = (localElemOrdAndPerm.first == sideOrdinal);
-
-    if (does_local_shell_side_normal_oppose_other_element_side_normal)
-    {
-        filteredConnectedElements.push_back(connectedElem);
-    }
-}
-
-void add_solid_element_if_normals_oppose_to_shell(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
-{
-    const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
-    stk::mesh::OrdinalAndPermutation localElemOrdAndPerm =
-            stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), sideNodesOfReceivedElement);
-    // for shell element, want the nodes of the solid to be in opposite order. So getting non-matching side ordinals
-    // means the normals oppose
-    bool does_local_shell_side_normal_oppose_other_element_side_normal = (localElemOrdAndPerm.first != sideOrdinal);
-
-    if (does_local_shell_side_normal_oppose_other_element_side_normal)
-    {
-        filteredConnectedElements.push_back(connectedElem);
-    }
-}
-
-void add_shell_connections_to_this_solid_if_normals_oppose(const stk::mesh::BulkData& mesh, const stk::mesh::Entity localElement, const unsigned sideOrdinal, ConnectedElementDataVector& connectedElementData)
-{
-    ConnectedElementDataVector filteredConnectedElements;
-
-    stk::topology localElemTopology = mesh.bucket(localElement).topology();
-    stk::topology localSideTopology = localElemTopology.side_topology(sideOrdinal);
-    bool foundAnySingleElementThatIsEquivalentToLocalElement = false;
-    const stk::mesh::Entity* localElemNodes = mesh.begin_nodes(localElement);
-    stk::mesh::EntityVector localElemSideNodes;
-    localElemSideNodes.resize(localSideTopology.num_nodes());
-    localElemTopology.side_nodes(localElemNodes, sideOrdinal, localElemSideNodes.begin());
-    
-    for (const ConnectedElementData & connectedElem: connectedElementData)
-    {
-        std::pair<bool,unsigned> result = localSideTopology.equivalent(localElemSideNodes, connectedElem.m_sideNodes);
-        const bool isEquivalentNodes = result.first;
-        foundAnySingleElementThatIsEquivalentToLocalElement = foundAnySingleElementThatIsEquivalentToLocalElement || isEquivalentNodes;
-    
-        if (connectedElem.m_elementTopology.is_shell() && isEquivalentNodes)
-        {
-            stk::mesh::OrdinalAndPermutation localElemOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), connectedElem.m_sideNodes);
-            bool localNegativeRelativeFacePolarity = !localSideTopology.is_positive_polarity(localElemOrdAndPerm.second);
-    
-            if (localNegativeRelativeFacePolarity)
-            {
-                filteredConnectedElements.push_back(connectedElem);
-            }
-        }
-    }
-    
-    if (!filteredConnectedElements.empty()) 
-    {
-        connectedElementData.swap(filteredConnectedElements);
-    }
-
-    if (!foundAnySingleElementThatIsEquivalentToLocalElement)
-    {
-        connectedElementData.clear();
-    }
-}
-
-void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh,
-                                              const stk::mesh::Entity localElement,
-                                              const unsigned sideOrdinal,
-                                              ConnectedElementDataVector & connectedElementData)
-{
-    stk::topology localElemTopology = mesh.bucket(localElement).topology();
-
-    if (localElemTopology.is_shell())
-    {
-        ConnectedElementDataVector filteredConnectedElements;
-        for (const ConnectedElementData & connectedElem: connectedElementData)
-        {
-            if(mesh.identifier(localElement) != connectedElem.m_elementIdentifier)
-            {
-                if(connectedElem.m_elementTopology.is_shell())
-                    add_shell_element_if_coincident(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
-                else
-                    add_solid_element_if_normals_oppose_to_shell(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
-            }
-        }
-        connectedElementData.swap(filteredConnectedElements);
-    }
-    else
-    {
-        add_shell_connections_to_this_solid_if_normals_oppose(mesh, localElement, sideOrdinal, connectedElementData);
-    }
-}
-
 void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &bulkData, const std::vector<SharedEdgeInfo> &newlySharedEdges)
 {
     std::vector<SharedEdgeInfo>::const_iterator iter = newlySharedEdges.begin();
@@ -603,6 +509,8 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
         comm.send_buffer(sharing_proc).pack<bool>(isInPart);
         comm.send_buffer(sharing_proc).pack<bool>(isAir);
+        std::vector<PartOrdinal> elementBlockPartOrdinals = stk::mesh::impl::get_element_block_part_ordinals(localEntity, bulkData);
+        impl::pack_vector_to_proc(comm, elementBlockPartOrdinals, sharing_proc);
         comm.send_buffer(sharing_proc).pack<stk::topology>(bulkData.bucket(localEntity).topology());
         comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
         for(size_t i=0; i<numNodes; ++i)
@@ -620,21 +528,17 @@ bool is_local_element(stk::mesh::impl::LocalId elemId)
 void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
                       const stk::mesh::Graph &graph, std::vector<int> &element_side_pairs)
 {
-    bool does_element_have_exposed_sides = ( graph.get_num_edges_for_element(elementId) < maxSidesThisElement );
-    if (does_element_have_exposed_sides)
+    std::vector<int> elemSides(maxSidesThisElement, -1);
+    for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
     {
-        std::vector<int> elemSides(maxSidesThisElement, -1);
-        for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
-        {
-            const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
-            int sideId = graphEdge.side1;
-            elemSides[sideId] = sideId;
-        }
-
-        for(size_t sideId = 0; sideId < maxSidesThisElement; ++sideId)
-            if (elemSides[sideId] == -1)
-                element_side_pairs.push_back(sideId);
+        const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
+        int sideId = graphEdge.side1;
+        elemSides[sideId] = sideId;
     }
+
+    for(size_t sideId = 0; sideId < maxSidesThisElement; ++sideId)
+        if (elemSides[sideId] == -1)
+            element_side_pairs.push_back(sideId);
 }
 
 

@@ -114,6 +114,20 @@ Part * PartRepository::universal_part() const
   return m_universal_part;
 }
 
+Part * PartRepository::get_part_by_name(const std::string &name) const
+{
+    auto iter = m_name_to_parts_map.find(name);
+    if(iter != m_name_to_parts_map.end())
+        return iter->second;
+    return nullptr;
+}
+
+void PartRepository::add_part(Part* part)
+{
+    m_all_parts.push_back(part);
+    m_name_to_parts_map[part->name()] = part;
+}
+
 const PartVector & PartRepository::get_all_parts() const
 {
   return m_all_parts;
@@ -132,8 +146,7 @@ const PartVector PartRepository::get_mesh_parts() const
 
 Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank, bool force_no_induce )
 {
-  const PartVector & all_parts = get_all_parts();
-  Part * p = find( all_parts, arg_name );
+  Part * p = get_part_by_name( arg_name );
 
   if ( p == NULL ) {
     p = declare_part_impl( arg_name, arg_rank, force_no_induce );
@@ -151,7 +164,7 @@ Part * PartRepository::declare_part_impl( const std::string & name, EntityRank r
   size_t ordinal = get_all_parts().size();
   Part * part = new Part(m_meta_data, name, rank, ordinal, force_no_induce);
   declare_subset_impl(*m_universal_part, *part);
-  m_all_parts.push_back(part);
+  add_part(part);
   return part;
 }
 
@@ -197,10 +210,11 @@ void PartRepository::declare_subset( Part & superset, Part & subset )
 PartRepository::PartRepository(MetaData * meta)
   : m_meta_data(meta),
     m_universal_part(NULL),
-    m_all_parts()
+    m_all_parts(),
+    m_name_to_parts_map()
 {
   m_universal_part = new Part( m_meta_data, universal_part_name(), stk::topology::INVALID_RANK, 0 /*ordinal*/);
-  m_all_parts.push_back(m_universal_part);
+  add_part(m_universal_part);
 }
 
 PartRepository::~PartRepository()

@@ -95,6 +95,10 @@ private:
 
 public:
  
+  using Step<Real>::initialize;
+  using Step<Real>::compute;
+  using Step<Real>::update;
+
   ~InteriorPointStep() {}
 
   InteriorPointStep(Teuchos::ParameterList &parlist) :

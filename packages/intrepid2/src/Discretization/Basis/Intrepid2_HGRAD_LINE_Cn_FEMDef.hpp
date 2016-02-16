@@ -116,6 +116,8 @@ namespace Intrepid2 {
       }
     }
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
 
   template<class Scalar, class ArrayScalar>
@@ -173,6 +175,9 @@ namespace Intrepid2 {
         Vinv_(i,j) = Vsdm(j,i);
       }
     }
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
   
   

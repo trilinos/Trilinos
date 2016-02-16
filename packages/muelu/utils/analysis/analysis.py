@@ -184,8 +184,8 @@ def nonlinear_history_solve(yaml_data, mode, ax = None):
     """Show solve time per nonlinear step across the whole simulation (setup time is ignored)"""
     ticks = []
 
-    if yaml_data['scheme'] != 'albany':
-      raise RuntimeError('This mode is for Albany only!')
+    if yaml_data['scheme'] != 'albany' and yaml_data['scheme'] != 'drekar':
+      raise RuntimeError('This mode is for Albany/Drekar only!')
 
     colors = tableau20()
 

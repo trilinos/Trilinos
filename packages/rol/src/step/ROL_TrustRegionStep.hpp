@@ -231,6 +231,10 @@ private:
 
 public:
 
+  using Step<Real>::initialize;
+  using Step<Real>::compute;
+  using Step<Real>::update;
+
   virtual ~TrustRegionStep() {}
 
   /** \brief Constructor.

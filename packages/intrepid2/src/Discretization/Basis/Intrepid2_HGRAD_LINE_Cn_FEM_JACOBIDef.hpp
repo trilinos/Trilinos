@@ -61,6 +61,9 @@ Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar,ArrayScalar>::Basis_HGRAD_LINE_Cn_FEM_JACO
     this -> basisType_         = BASIS_FEM_HIERARCHICAL;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
 }
 
 

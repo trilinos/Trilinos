@@ -33,6 +33,8 @@ public:
                                       stk::mesh::Entity elemEntity,
                                       int elemSide);
 private:
+    SideConnector();
+
     stk::mesh::Entity get_entity_for_local_id(stk::mesh::impl::LocalId localId) const;
 
     void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,

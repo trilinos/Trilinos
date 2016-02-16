@@ -199,22 +199,18 @@ namespace Iohb {
 
       bool append = open_create_behavior() == Ioss::DB_APPEND;
 
+      // Try to open file...
+      new_this->logStream = nullptr;
       if (util().parallel_rank() == 0) {
-
         new_this->logStream = open_stream(get_filename(),
             &(new_this->streamNeedsDelete),
             append);
-
-        if (new_this->logStream == nullptr) {
-	  Ioss::FileInfo path = Ioss::FileInfo(get_filename());
-	  Ioss::Utils::create_path(path.pathname());
-	  new_this->logStream = open_stream(get_filename(),
-              &(new_this->streamNeedsDelete),
-              append);
-        }
-      } else {
-	// All processors except processor 0
-	new_this->logStream = nullptr;
+	
+	if (new_this->logStream == nullptr) {
+	  std::ostringstream errmsg;
+	  errmsg << "ERROR: Could not create heartbeat file '" << get_filename() << "'\n";
+	  IOSS_ERROR(errmsg);
+	}
       }
 
       // Pull variables from the regions property data...

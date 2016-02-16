@@ -304,7 +304,7 @@ namespace BaskerNS
 	#ifdef BASKER_DEBUG_ORDER_SCOTCH
 	printf("\n\n Starting DEBUG COMPLETE OUT \n\n");
 	printf("Tree: ");
-	for(Int i = 0; i < iblks+1; i++)
+`	for(Int i = 0; i < iblks+1; i++)
 	  {
 	    printf("%d, ", ttree(i));
 	  }
@@ -323,7 +323,7 @@ namespace BaskerNS
 			 );
 
 	
-	#ifdef BASKER_DEBUG_ORDER_SCOTCH
+	//#ifdef BASKER_DEBUG_ORDER_SCOTCH
 	printf("\n\n DEBUG COMPLETE OUT \n\n");
 	printf("Tree: ");
 	for(Int i = 0; i < iblks+1; i++)
@@ -337,7 +337,7 @@ namespace BaskerNS
 	    printf("%d, ", ttabs(i));
 	  }
 	printf("\n");
-	#endif
+	///#endif
 
 	//copy back into scotch
 	sg.cblk = iblks;
@@ -357,7 +357,8 @@ namespace BaskerNS
 
 
     //Find the leaf nad non-leaf nodes
-    Int is_nonleaf[sg.cblk];
+    //Int is_nonleaf[sg.cblk];
+    Int *is_nonleaf = new Int[sg.cblk];
     
     for(Int i = 0; i < sg.cblk; i++)
       is_nonleaf[i] = 0;
@@ -463,6 +464,7 @@ namespace BaskerNS
     free(sg.peritab);
     free(sg.rangtab);
     free(sg.treetab);
+    free(is_nonleaf);
 
     SCOTCH_stratExit(&strdat);
     SCOTCH_graphFree(&cgrafptr);
@@ -516,6 +518,28 @@ namespace BaskerNS
     BASKER_ASSERT((iblks+1)>0, "scotch iblks 2");
     MALLOC_INT_1DARRAY(ws, iblks+1);
     init_value(ws, iblks+1, (Int) 0);
+
+
+    //DEBUG
+    printf("test - otree\n");
+    for(Int t_blk = 1; t_blk < iblks+1; t_blk++)
+      {
+
+	printf("%d,", otree(t_blk));
+	/*
+	if(otree(t_blk) == -1)
+	  {
+	    break;
+	  }
+	if(otree(t_blk-1) == otree(t_blk))
+	  {
+	    indomains++;
+	  }
+	 */
+      }
+    printf("\n");
+
+
 
 
     //test if enough domain
@@ -795,13 +819,13 @@ namespace BaskerNS
 	#endif
 
 
+	tree(leftc)  = mynum;
+	tree(rightc) = mynum;
+
 	#ifdef BASKER_DEBUG_ORDER_SCOTCH
 	printf("assign: %d %d \n", leftc, mynum);
-	tree(leftc)  = mynum;
 	printf("assign: %d %d \n", rightc,mynum);
-	tree(rightc) = mynum;
 	#endif
-
 
 	mynum = rightc;
 	rec_build_tree(lvl-1, 

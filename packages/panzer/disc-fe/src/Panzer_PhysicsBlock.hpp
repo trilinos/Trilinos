@@ -236,6 +236,9 @@ namespace panzer {
 
     const std::vector<std::vector<std::string> > & getCoordinateDOFs() const;
 
+    //! Returns list of tangent fields from DOFs and tangent param names
+    const std::vector<StrPureBasisPair>& getTangentFields() const;
+
     //! Returns the unique set of bases, key is the unique panzer::PureBasis::name() of the basis
     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& getBases() const;
 
@@ -286,6 +289,7 @@ namespace panzer {
 
     std::vector<std::string> m_dof_names;
     std::vector<StrPureBasisPair> m_provided_dofs;
+    std::vector<StrPureBasisPair> m_tangent_fields;
     std::vector<std::vector<std::string> > m_coordinate_dofs; // coordinate DOFs (defines them)
 
     //! map of unique bases, key is the panzer::PureBasis::name() corresponding to its value

@@ -280,33 +280,37 @@ namespace BaskerNS
 	    Int resize_U = BASKER_MAX_IDX;
 	    if(thread_array(ti).error_subblk <= -1)
 	      {
-		resize_L == thread_array(ti).error_info;       
+		resize_L = thread_array(ti).error_info;    
+		printf("L size: %d \n", resize_L);
 	      }
 	    //We don't care about the other way since,
 	    //L is already checked before U.
 	    if(thread_array(ti).error_subblk > -1)
 	      {
 		resize_U = thread_array(ti).error_info;
+		//printf("U size: %d \n", resize_U);
 	      }
 
 	    //Resize L
 	    if(resize_L > BASKER_MAX_IDX)
 	      {
+		//printf("Resizing L\n");
 		const Int tsb = (-1*thread_array(ti).error_subblk)-1;
 		BASKER_MATRIX &L =
    LL(thread_array(ti).error_blk)(tsb);
 		REALLOC_INT_1DARRAY(L.row_idx,
 				    L.nnz,
-				    thread_array(ti).error_info);
+				    resize_L);
 		REALLOC_ENTRY_1DARRAY(L.val,
 				      L.nnz,
-				  thread_array(ti).error_info);
-		L.nnz = thread_array(ti).error_info;
+				  resize_L);
+		L.nnz = resize_L;
 	      }
 
 	    //Resize U
 	    if(resize_U > BASKER_MAX_IDX)
 	      {
+		//printf("Resizing U\n");
 		const Int tsb = thread_array(ti).error_subblk;
 		BASKER_MATRIX &U = 
 		  LU(thread_array(ti).error_blk)(tsb);
@@ -316,22 +320,26 @@ namespace BaskerNS
 		REALLOC_ENTRY_1DARRAY(U.val,
 				      U.nnz,
 				      resize_U);
+		//printf("done resizing normal\n");
 		if(Options.incomplete == BASKER_TRUE)
 		  {
 		    REALLOC_INT_1DARRAY(U.inc_lvl,
 					U.nnz,
 					resize_U);
 		  }
-		U.nnz = thread_array(ti).error_info;
+		//printf("done resizing incomplete");
+		U.nnz = resize_U;
 	      }
 	    
+	    //printf("done resize matrix\n");
 	    //clean up workspace
 	    //No nice way to do this since multiple threads
 	    //Though this could be done in parallel in the future
 	    for(Int p = 0; p < num_threads; p++)
 	      {
-		Int blk = S(p)(0);
-		if(LL(blk)(0).w_fill == BASKER_TRUE)
+		Int blk = S(0)(p);
+		//printf("clear blk: %d \n", blk);
+		//if(LL(blk)(0).w_fill == BASKER_TRUE)
 		  {
 		    //Clear workspace, whole column
 		    for(Int sb = 0; 
@@ -355,6 +363,7 @@ namespace BaskerNS
 		  }//if ws is filled
 	      }//for-other all threads
 	     
+	    //printf("done resize workspace\n");
 	    //Clear permuation
 	    BASKER_MATRIX &SL = 
 	      LL(thread_array(ti).error_blk)(0);

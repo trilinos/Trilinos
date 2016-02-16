@@ -38,6 +38,7 @@
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_Region.h>
 #include <Ioss_Utils.h>
+#include <Ioss_FileInfo.h>
 #include <assert.h>
 #include <stddef.h>
 #include <float.h>
@@ -50,6 +51,8 @@
 #include <utility>
 #include <vector>
 #include <tokenize.h>
+#include <sys/stat.h>
+#include <cstring>
 
 #include "Ioss_DBUsage.h"
 #include "Ioss_Field.h"
@@ -226,6 +229,11 @@ namespace Ioss {
       int consistent = properties.get("PARALLEL_CONSISTENCY").get_int();
       set_parallel_consistency(consistent == 1);
     }
+
+    if (!is_input()) {
+      // Create full path to the output file at this point if it doesn't exist...
+      create_path(DBFilename);
+    }
   }
 
   DatabaseIO::~DatabaseIO()
@@ -274,6 +282,60 @@ namespace Ioss {
       exists = (IfDatabaseExistsBehavior)properties.get("APPEND_OUTPUT").get_int();
     }
     return exists;
+  }
+
+  void DatabaseIO::create_path(const std::string& filename) const
+  {
+    bool error_found = false;
+    std::ostringstream errmsg;
+
+    if (myProcessor == 0) {
+      Ioss::FileInfo file = Ioss::FileInfo(filename);
+      std::string path = file.pathname();
+
+      const int mode = 0777;  // Users umask will be applied to this.
+
+      auto iter = path.begin();
+      while (iter != path.end() && !error_found) {
+	iter = std::find(iter, path.end(), '/');
+	std::string path_root = std::string(path.begin(), iter);
+
+	if (iter != path.end()) {
+	  ++iter; // Skip past the '/'
+	}
+
+	if (path_root.empty()) { // Path started with '/'
+	  continue;
+	}
+
+	struct stat st;
+	if (stat(path_root.c_str(), &st) != 0) {
+	  if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
+	    errmsg << "ERROR: Cannot create directory '" << path_root
+		   << "' : " << std::strerror(errno) << "\n";
+	    error_found = true;
+	  }
+	}
+	else if (!S_ISDIR(st.st_mode)) {
+	  errno = ENOTDIR;
+	  errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
+	  error_found = true;
+	}
+      }
+    } else {
+      // Give the other processors something to say in case there is an error.
+      errmsg << "ERROR: Could not create path. See processor 0 output for more details.\n";
+    }
+
+    // Sync all processors with error status...
+    // All processors but 0 will have error_found=false
+    // Processor 0 will have error_found = true or false depending on path result.
+    int is_error = error_found ? 1 : 0; 
+    error_found = (util().global_minmax(is_error, Ioss::ParallelUtils::DO_MAX) == 1);
+
+    if (error_found) {
+      IOSS_ERROR(errmsg);
+    }
   }
 
   void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field, int in_out) const

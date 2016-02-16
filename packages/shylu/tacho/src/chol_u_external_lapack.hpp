@@ -5,7 +5,7 @@
 /// \file chol_u_external_lapack.hpp
 /// \brief BLAS Chloesky factorization.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
-
+#ifdef HAVE_SHYLUTACHO_TEUCHOS
 #include "Teuchos_LAPACK.hpp"
 
 namespace Tacho {
@@ -37,4 +37,5 @@ namespace Tacho {
 
 }
 
+#endif
 #endif

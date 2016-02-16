@@ -100,6 +100,8 @@ namespace Intrepid2 {
       }
     }
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
   
   

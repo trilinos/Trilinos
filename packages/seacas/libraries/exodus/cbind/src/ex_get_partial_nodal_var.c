@@ -81,7 +81,17 @@ int ex_get_partial_nodal_var (int   exoid,
 
   exerrval = 0; /* clear error code */
 
-  /* inquire previously defined variable */
+  /* Verify that time_step is within bounds */
+  {
+    int num_time_steps = ex_inquire_int (exoid, EX_INQ_TIME);
+    if (time_step <= 0 || time_step > num_time_steps) {
+      sprintf(errmsg,
+	      "ERROR: time_step is out-of-range. Value = %d, valid range is 1 to %d in file id %d",
+	      time_step, num_time_steps, exoid);
+      ex_err("ex_get_partial_nodal_var",errmsg,EX_BADPARAM);
+      return (EX_FATAL);
+    }
+  }
 
   if (ex_large_model(exoid) == 0) {
     /* read values of the nodal variable */
