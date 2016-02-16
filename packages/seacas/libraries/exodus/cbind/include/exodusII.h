@@ -73,7 +73,7 @@
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
 #define NEMESIS_FILE_VERSION		2.6 
-
+#define EX_HAS_META_H
 /*
  * need following extern if this include file is used in a C++
  * program, to keep the C++ compiler from mangling the function names.
