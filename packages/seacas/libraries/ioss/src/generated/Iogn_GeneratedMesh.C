@@ -773,13 +773,16 @@ namespace Iogn {
     assert(block_number <= block_count() && block_number > 0);
 
     INT count = element_count_proc(block_number);
-    map.resize(count);
+    map.reserve(count);
 
     if (block_number == 1) {
       // Hex/Tet block...
       INT mult = createTets ? 6 : 1;
+      count = element_count_proc(1);
       INT offset = mult * myStartZ * numX * numY;
-      std::iota(map.begin(), map.end(), offset+1);
+      for (INT i=0; i < count; i++) {
+        map.push_back(offset + i + 1);
+      }
     } else {
       INT start = element_count(1);
 
@@ -807,7 +810,9 @@ namespace Iogn {
             offset = 0;
             break;
           }
-	  std::iota(map.begin(), map.end(), start+offset+1);
+          for (INT i=0; i < count; i++) {
+            map.push_back(start + offset + i + 1);
+          }
         } else {
           start += element_count(ib+2);
         }
@@ -830,12 +835,14 @@ namespace Iogn {
   {
     INT mult = createTets ? 6 : 1;
     INT count = element_count_proc();
-    map.resize(count);
+    map.reserve(count);
 
     // Hex block...
     count = element_count_proc(1);
     INT offset = mult * myStartZ * numX * numY;
-    std::iota(map.begin(), map.end(), offset+1);
+    for (INT i=0; i < count; i++) {
+      map.push_back(offset + i + 1);
+    }
 
     INT start = element_count(1);
 
@@ -862,7 +869,9 @@ namespace Iogn {
         offset = 0;
         break;
       }
-      std::iota(map.begin(), map.end(), start+offset+1);
+      for (INT i=0; i < count; i++) {
+        map.push_back(start + offset + i + 1);
+      }
       start += element_count(ib+2);
     }
   }
