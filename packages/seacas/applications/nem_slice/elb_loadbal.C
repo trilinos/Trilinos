@@ -42,13 +42,13 @@
  *	elemental_dist()
  *	ilog2i()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-#include <assert.h>                     // for assert
-#include <float.h>                      // for FLT_MAX
-#include <limits.h>                     // for INT_MAX
-#include <math.h>           /* Needed for ZPINCH_assign */
-#include <stdio.h>                      // for printf, nullptr, fprintf, etc
-#include <stdlib.h>                     // for malloc, free, realloc, exit, etc
-#include <string.h>                     // for strcat, strcpy
+#include <cassert>                     // for assert
+#include <cfloat>                      // for FLT_MAX
+#include <climits>                     // for INT_MAX
+#include <cmath>           /* Needed for ZPINCH_assign */
+#include <cstdio>                      // for printf, nullptr, fprintf, etc
+#include <cstdlib>                     // for malloc, free, realloc, exit, etc
+#include <cstring>                     // for strcat, strcpy
 
 #include "chaco.h"                      // for input_assign, interface
 #include "elb.h"                  // for LB_Description<INT>, etc
@@ -2349,7 +2349,7 @@ namespace {
 	else            theta = 3. * M_PI_2;
       }
       else {
-	theta = atan(y[i] / x[i]);   /* In range -M_PI_2 to M_PI_2 */
+	theta = std::atan2(y[i], x[i]);   /* In range -M_PI_2 to M_PI_2 */
 
 	/* Convert to range 0 to 2*M_PI */
 	if (x[i] < 0.)       theta += M_PI;

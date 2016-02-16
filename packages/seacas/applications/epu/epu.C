@@ -45,16 +45,15 @@
 #include <stdexcept>
 #include <utility>
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <float.h>
-#include <math.h>
-#include <limits.h>
+#include <cstdint>
+#include <cstddef>
+#include <cstdlib>
+#include <cfloat>
+#include <climits>
 
-#include <string.h>
-#include <time.h>
-#include <ctype.h>
+#include <cstring>
+#include <ctime>
+#include <cctype>
 #include "smart_assert.h"
 #include "to_string.h"
 

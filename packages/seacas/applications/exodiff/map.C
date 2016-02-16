@@ -33,8 +33,7 @@
 
 #include <cstdlib>
 #include <iomanip>
-#include <math.h>
-#include <float.h>
+#include <cfloat>
 
 #include "Tolerance.h"
 #include "smart_assert.h"

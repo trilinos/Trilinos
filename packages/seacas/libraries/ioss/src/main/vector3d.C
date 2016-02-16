@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <math.h>
+#include <cmath>
 
 #include "vector3d.h"
 
@@ -154,7 +154,7 @@ vector3d& vector3d::operator/= (double scalar)
 
 double vector3d::length () const
 {
-  return sqrt(x*x + y*y + z*z);
+  return std::sqrt(x*x + y*y + z*z);
 }
 
 double vector3d::normalize (double tolerance)

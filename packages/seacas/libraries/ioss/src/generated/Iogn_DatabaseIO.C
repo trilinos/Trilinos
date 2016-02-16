@@ -36,7 +36,7 @@
 #include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR
 #include <assert.h>                     // for assert
 #include <generated/Iogn_GeneratedMesh.h>  // for GeneratedMesh
-#include <math.h>                       // for sqrt
+#include <cmath>                        // for sqrt
 #include <algorithm>                    // for copy
 #include <iostream>                     // for ostringstream, operator<<, etc
 #include <string>                       // for string, operator==, etc
@@ -83,12 +83,12 @@ namespace {
     double *rdata = static_cast<double*>(data);
     if (component_count == 1) {
       for (size_t i=0; i < ids.size(); i++) {
-        rdata[i] = sqrt((double)ids[i]);
+        rdata[i] = std::sqrt((double)ids[i]);
       }
     } else {
       for (size_t i=0; i < ids.size(); i++) {
         for (size_t j=0; j < component_count; j++) {
-          rdata[i*component_count + j] = j+sqrt((double)ids[i]);
+          rdata[i*component_count + j] = j+std::sqrt((double)ids[i]);
         }
       }
     }

@@ -32,8 +32,8 @@
 
 #include <Ioss_Field.h>
 #include <Ioss_VariableType.h>
-#include <math.h>
-#include <stddef.h>
+#include <cmath>
+#include <cstddef>
 #include <transform/Iotr_VectorMagnitude.h>
 #include <string>
 
@@ -86,14 +86,14 @@ namespace Iotr {
     if (field.transformed_storage()->component_count() == 3) {
       int j = 0;
       for (size_t i = 0; i < count; i++) {
-	rdata[i] = sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1] +
-			rdata[j+2]*rdata[j+2]);
+	rdata[i] = std::sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1] +
+			     rdata[j+2]*rdata[j+2]);
 	j+=3;
       }
     } else {
       int j = 0;
       for (size_t i = 0; i < count; i++) {
-	rdata[i] = sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1]);
+	rdata[i] = std::sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1]);
 	j+=2;
       }
     }
