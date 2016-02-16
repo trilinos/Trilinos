@@ -142,11 +142,8 @@ int Zoltan_RB_find_median(
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank=0;                    /* rank in partition (Tflops_Special) */
   int     loopCount=0;
-#define KDD_MOVE_SOME
-#ifdef KDD_MOVE_SOME
   int     moveSome = 0;              /* Flag indicating whether to move at least
                                         some dots that are along the cut */
-#endif
 
   /* MPI data types and user functions */
 
@@ -261,11 +258,19 @@ int Zoltan_RB_find_median(
         if (tmp_half < valuemin || tmp_half > valuemax)
           tmp_half = 0.5 * (valuemin + valuemax);
       }
-#define KDD_WEIGHT_TMPHALF
+#define KDD_WEIGHT_TMPHALF  
 #ifdef KDD_WEIGHT_TMPHALF
-      else if (weight)
+      else if (weight) {
+        /* Some problems with many zero-weighted dots do not behave well
+         * with this computation of tmp_half.  Moreover, since zoltan 
+         * provides artificial weights of 1 for non-weighted problems,
+         * this version was always used.  
+         * Removing it, however, changes many Zoltan answer files.  
+         * I will keep it for now, and perhaps remove it later.  KDD 2/16/16
+         */
         tmp_half = valuemin + (targetlo - weightlo) /
                     (weight - weightlo - weighthi) * (valuemax - valuemin);
+     }
 #endif
       else
         tmp_half = 0.5 * (valuemin + valuemax);
@@ -336,7 +341,7 @@ int Zoltan_RB_find_median(
          MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
       }
 
-#define KDD_NOISY
+#undef KDD_NOISY
 #ifdef KDD_NOISY
 if (proc==0) printf("%d tmp_half %.20f weightlo/hi %.0f %.0f valuemin/max %.20f %.20f wtlo/hi %.0f %.0f\n", loopCount, tmp_half, weightlo, weighthi, valuemin, valuemax, med.wtlo, med.wthi);
 #endif
@@ -365,21 +370,15 @@ if (proc==0) printf("%d tmp_half %.20f weightlo/hi %.0f %.0f valuemin/max %.20f 
         else {                                   /* multiple dots to move */
           breakflag = 0;
           wtok = 0.0;
-#ifdef KDD_MOVE_SOME
           moveSome = 0;
-#endif
           if (medme.valuehi == med.valuehi) {
             wtok = medme.wthi;   
-#ifdef KDD_MOVE_SOME
             moveSome = 1;
-#endif
           }
           if (weightlo + med.wthi >= targetlo) {                /* all done */
             if (rectilinear_blocks) {
               if (weightlo + med.wthi - targetlo > targetlo - weightlo) {
-#ifdef KDD_MOVE_SOME
                 moveSome = 0;
-#endif
                 wtok = 0.0;                      /* don't move if moving group
                                                     of dots has worse balance*/
               }
@@ -394,26 +393,17 @@ if (proc==0) printf("%d tmp_half %.20f weightlo/hi %.0f %.0f valuemin/max %.20f 
             }
             breakflag = 1;
           }                                      /* wtok = most I can move */
-#ifdef KDD_MOVE_SOME
           wtsum = 0.0;
           if (moveSome) 
           for (j = 0; j < numlist;  j++)
-#else
-          for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++)
-#endif
           {
             i = dotlist[j];
             if (dots[i] == med.valuehi) { /* only move if better */
               tmp_wgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
-#ifdef KDD_MOVE_SOME
               if (rectilinear_blocks || /* move all when rectilinear_blocks */
                  ((tmp_wgt == 0.) || (wtsum + tmp_wgt - wtok < wtok - wtsum)))
                  /* weight is either zero or small enough to not exceed wtok */
-#else
-              if (wtsum + tmp_wgt - wtok < wtok - wtsum)
-#endif
               {
-if (rectilinear_blocks) printf("KDDHOWDY ONE\n");
                 dotmark[i] = 0;
                 wtsum += tmp_wgt;  /* KDD Moved sum inside if test 1/2002 */
               }
@@ -427,7 +417,6 @@ if (rectilinear_blocks) printf("KDDHOWDY ONE\n");
             }
             else
               MPI_Allreduce(&wtsum, &wtok, 1, MPI_DOUBLE, MPI_SUM, local_comm);
-printf("%d (%d of %d) WTSUM FINAL %f %f\n", proc, rank, num_procs, wtsum, wtok);
             weightlo += wtok;
             weighthi = weight - weightlo;
             break;
@@ -465,21 +454,15 @@ printf("%d (%d of %d) WTSUM FINAL %f %f\n", proc, rank, num_procs, wtsum, wtok);
         else {                                   /* multiple dots to move */
           breakflag = 0;
           wtok = 0.0;
-#ifdef KDD_MOVE_SOME
           moveSome = 0;
-#endif
           if (medme.valuelo == med.valuelo) {
             wtok = medme.wtlo;   
-#ifdef KDD_MOVE_SOME
             moveSome = 1;
-#endif
           }
           if (weighthi + med.wtlo >= targethi) {                /* all done */
             if (rectilinear_blocks) {
               if (weighthi + med.wtlo - targethi > targethi - weighthi) {
-#ifdef KDD_MOVE_SOME
                 moveSome = 0;
-#endif
                 wtok = 0.0;                      /* don't move if moving group
                                                     of dots has worse balance*/
               }
@@ -494,26 +477,17 @@ printf("%d (%d of %d) WTSUM FINAL %f %f\n", proc, rank, num_procs, wtsum, wtok);
             }
             breakflag = 1;
           }                                      /* wtok = most I can move */
-#ifdef KDD_MOVE_SOME
           wtsum = 0.0;
           if (moveSome) 
           for (j = 0; j < numlist;  j++)
-#else
-          for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++)
-#endif
           {
             i = dotlist[j];
             if (dots[i] == med.valuelo) { /* only move if better */
               tmp_wgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
-#ifdef KDD_MOVE_SOME
               if (rectilinear_blocks || /* move all when rectilinear_blocks */
                  ((tmp_wgt == 0.) || (wtsum + tmp_wgt - wtok < wtok - wtsum)))
                  /* weight is either zero or small enough to not exceed wtok */
-#else
-              if (wtsum + tmp_wgt - wtok < wtok - wtsum)
-#endif
               {
-if (rectilinear_blocks) printf("KDDHOWDY TWO\n");
                 dotmark[i] = 1;
                 wtsum += tmp_wgt; /* KDD Moved sum inside if test 1/2002 */
               }
@@ -565,7 +539,6 @@ if (rectilinear_blocks) printf("KDDHOWDY TWO\n");
     weighthi = 0.;
     tmp_half = valuemax;
   }
-#define KDD_NOISY
 #ifdef KDD_NOISY
 if (proc==0) printf("FINAL tmp_half %.20f weightlo/hi %.0f %.0f valuemin/max %.20f %.20f \n", tmp_half, weightlo, weighthi, valuemin, valuemax);
 #endif
