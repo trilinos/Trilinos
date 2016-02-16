@@ -1820,16 +1820,12 @@ namespace Iopx {
           size_t offset = decomp->nodeOffset;
           size_t count = decomp->nodeCount;
           if (int_byte_size_api() == 4) {
-            std::vector<int> file_ids; file_ids.reserve(count);
-            for (size_t i=0; i<count; i++) {
-              file_ids.push_back(offset+i+1);
-            }
+            std::vector<int> file_ids(count);
+	    std::iota(file_ids.begin(), file_ids.end(), offset+1);
             decomp->communicate_node_data(TOPTR(file_ids), (int*)data, 1);
           } else {
-            std::vector<int64_t> file_ids; file_ids.reserve(count);
-            for (size_t i=0; i<count; i++) {
-              file_ids.push_back(offset+i+1);
-            }
+            std::vector<int64_t> file_ids(count);
+	    std::iota(file_ids.begin(), file_ids.end(), offset+1);
             decomp->communicate_node_data(TOPTR(file_ids), (int64_t*)data, 1);
           }
         }

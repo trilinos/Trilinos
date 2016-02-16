@@ -188,14 +188,10 @@ namespace {
     }
 
     if (ngid_ent == 1) {
-      for (size_t i = 0; i < element_count; i++) {
-        gids[i] = element_offset + i;
-      }
+	std::iota(gids, gids+element_count, element_offset);
     } else if (ngid_ent == 2){
       int64_t* global_ids = (int64_t*)gids;
-      for (size_t i = 0; i < element_count; i++) {
-        global_ids[i] = element_offset + i;
-      }
+      std::iota(global_ids, global_ids+element_count, element_offset);
     } else {
       *ierr = ZOLTAN_FATAL;
     }
@@ -496,10 +492,8 @@ namespace Iopx {
 
       size_t local = element_dist[myProcessor+1] - element_dist[myProcessor];
       assert(local == elementCount);
-      localElementMap.reserve(local);
-      for (size_t i=0; i < local; i++) {
-        localElementMap.push_back(i);
-      }
+      localElementMap.resize(local);
+      std::iota(localElementMap.begin(), localElementMap.end(), 0);
 
       // All values are 0
       exportElementCount.resize(processorCount+1);
@@ -530,12 +524,10 @@ namespace Iopx {
       size_t local = node_dist[myProcessor+1] - node_dist[myProcessor];
       assert(local == nodeCount);
       
-      localNodeMap.reserve(local);
-      nodeGTL.reserve(local);
-      for (size_t i=0; i < local; i++) {
-        localNodeMap.push_back(i+nodeOffset);
-	nodeGTL.push_back(i+nodeOffset+1);
-      }
+      localNodeMap.resize(local);
+      nodeGTL.resize(local);
+      std::iota(localNodeMap.begin(), localNodeMap.end(), nodeOffset);
+      std::iota(nodeGTL.begin(), nodeGTL.end(), nodeOffset+1);
 
       // All values are 0
       exportNodeCount.resize(processorCount+1);
