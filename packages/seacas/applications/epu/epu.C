@@ -572,11 +572,11 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	part.resize(global_node_map.size());
       }
 
-      for (int p = 0; p < part_count; p++) {
-	size_t node_count = local_mesh[p].nodeCount;
+      for (int pc = 0; pc < part_count; pc++) {
+	size_t node_count = local_mesh[pc].nodeCount;
 	for (size_t i = 0; i < node_count; i++) {
-	  INT gloc = local_node_to_global[p][i];
-	  shared[p][gloc] = i+1;
+	  INT gloc = local_node_to_global[pc][i];
+	  shared[pc][gloc] = i+1;
 	  num_shared[gloc]++;
 	}
       }
@@ -585,9 +585,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       for (size_t i=0; i < global_node_map.size(); i++) {
 	if (num_shared[i] > 1) {
 	  std::cout << "Global Node " << i+1 << ": ";
-	  for (int p=0; p < part_count; p++) {
-	    if (shared[p][i] >= 1) {
-	      std::cout << "\t" << p << ":" << shared[p][i];
+	  for (int pc=0; pc < part_count; pc++) {
+	    if (shared[pc][i] >= 1) {
+	      std::cout << "\t" << pc << ":" << shared[pc][i];
 	    }
 	  }
 	  std::cout << "\n";

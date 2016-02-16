@@ -1772,7 +1772,6 @@ namespace Iopx {
     std::vector<double> coord_send;
     coord_send.reserve(node_comm_send.size() * spatialDimension);
     std::vector<double> coord_recv(node_comm_recv.size() * spatialDimension);
-    size_t j = 0;
     for (size_t i=0; i < node_comm_send.size(); i++) {
       size_t node = node_comm_send[i] - nodeOffset;
       coord_send.push_back(x[node]);

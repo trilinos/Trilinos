@@ -2068,15 +2068,17 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
 	
     size_t ecount = sset1->Size();
 
-    std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(ecount-1);
-    if (Invalid_Values(vals1, range1.second)) {
-      std::cout << "\tERROR: NaN found for distribution factors in sideset "
-		<< sset1->Id() << ", file 1\n";
-      diff_flag = true;
+    {
+      std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(ecount-1);
+      if (Invalid_Values(vals1, range1.second)) {
+	std::cout << "\tERROR: NaN found for distribution factors in sideset "
+		  << sset1->Id() << ", file 1\n";
+	diff_flag = true;
+      }
+      
+      // See if all df are the same value:
+      same1 = Equal_Values(vals1, range1.second, &value1);
     }
-
-    // See if all df are the same value:
-    same1 = Equal_Values(vals1, range1.second, &value1);
 
     double* vals2 = (double*)sset2->Distribution_Factors();
 
@@ -2088,15 +2090,17 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
       continue;
     }
 
-    std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(sset2->Size()-1);
-    if (Invalid_Values(vals2, range2.second)) {
-      std::cout << "\tERROR: NaN found for distribution factors in sideset "
-		<< sset2->Id() << ", file 2\n";
-      diff_flag = true;
-    }
+    {
+      std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(sset2->Size()-1);
+      if (Invalid_Values(vals2, range2.second)) {
+	std::cout << "\tERROR: NaN found for distribution factors in sideset "
+		  << sset2->Id() << ", file 2\n";
+	diff_flag = true;
+      }
 	
-    // See if all df are the same value:
-    same2 = Equal_Values(vals2, range2.second, &value2);
+      // See if all df are the same value:
+      same2 = Equal_Values(vals2, range2.second, &value2);
+    }
         
     if (same1 && same2 && (value1 == value2)) {
       continue;
