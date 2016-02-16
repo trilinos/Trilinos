@@ -1,13 +1,9 @@
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
-  relaxation: type = symmetric Gauss-Seidel   [unused]
-  relaxation: sweeps = 1   [unused]
-  relaxation: damping factor = 1   [unused]
- 
+ relaxation: type = symmetric Gauss-Seidel   [unused]
+ relaxation: sweeps = 1   [unused]
+ relaxation: damping factor = 1   [unused]
+
 Level 1
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
@@ -15,14 +11,11 @@ Level 1
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::AmesosSmoother{type = Klu})
- keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- presmoother -> 
+ presmoother ->
   [empty list]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

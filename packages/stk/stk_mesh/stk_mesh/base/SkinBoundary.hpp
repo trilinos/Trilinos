@@ -34,6 +34,8 @@
 #ifndef stk_mesh_SkinBoundary_hpp
 #define stk_mesh_SkinBoundary_hpp
 
+#include <ostream>
+
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { class Part; } }
@@ -50,7 +52,8 @@ void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToS
 void create_interior_block_boundary_sides(BulkData&, const Selector& blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto);
 
 bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, stk::mesh::Part& skinnedPart);
+bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, stk::mesh::Part& skinnedPart, std::ostream &stream);
 bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part &skinnedPart);
-
+bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part &skinnedPart, std::ostream &stream);
 }} // namespace stk::mesh
 #endif

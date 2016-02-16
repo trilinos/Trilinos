@@ -137,8 +137,8 @@ protected:
         const int rank = get_bulk().parallel_rank();
         stk::mesh::EntityIdVector hexNodeIds[]
         {
-            { 8, 7, 16, 15, 12, 11, 18, 17 },
-            { 4, 3, 14, 13,  8,  7, 16, 15 }
+            {  12, 11, 18, 17, 8, 7, 16, 15 },
+            {   8,  7, 16, 15, 4, 3, 14, 13 }
         };
         stk::mesh::declare_element(get_bulk(), *hexPart, hexElemIdsByProc[rank], hexNodeIds[rank]);
     }
@@ -219,8 +219,8 @@ protected:
     stk::mesh::EntityIdVector hexElemIdsByProc = {3, 4};
     std::vector<GraphEdges> goldElement1ToElement2SideOrdinalsPerOwningProc =
     {
-        {{1, 2, 5}, {1, 4, 2}, {3, 2, 0}, {3, 4, 4}},
-        {{2, 1, 4}, {2, 3, 2}, {4, 1, 0}, {4, 3, 5}},
+        {{1, 2, 5}, {1, 4, 2}, {3, 2, 0}, {3, 4, 5}},
+        {{2, 1, 4}, {2, 3, 2}, {4, 1, 0}, {4, 3, 4}},
     };
 };
 TEST_F(ElemGraphAddElementsToExistingGraphTester, aura_on)

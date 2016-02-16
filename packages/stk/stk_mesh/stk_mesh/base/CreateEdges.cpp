@@ -204,14 +204,17 @@ struct create_edge_impl
   template <typename Topology>
   void operator()(Topology t)
   {
-    typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
-
     stk::topology elem_topo = m_bucket.topology();
-    EdgeTopology edge_topo;
+
+    if (elem_topo.edge_topology() == stk::topology::INVALID_TOPOLOGY) {
+        return;  // No edges defined for this topology
+    }
 
     BulkData & mesh = m_bucket.mesh();
-    PartVector add_parts;
+    typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+    EdgeTopology edge_topo;
 
+    PartVector add_parts;
     add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( EdgeTopology::value )));
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);

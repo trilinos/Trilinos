@@ -37,6 +37,8 @@ const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
     {"AefB.e",    4,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 4}}},
     {"ef.e",      2,        0,    {}},
 
+    {"AP.e",      2,        0,    {}},
+
     {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
     {"Tg.e",      2,        0,    {}},
