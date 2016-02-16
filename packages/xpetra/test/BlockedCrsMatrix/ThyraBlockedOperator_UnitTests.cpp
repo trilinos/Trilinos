@@ -243,7 +243,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraOperator2XpetraCrs
 
   // generate the matrix
   LO nEle = 63;
-  const Teuchos::RCP<const M> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+  const Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > matrix =
                Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
@@ -524,6 +524,108 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
 #endif // end HAVE_XPETRA_THYRA
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> MapClass;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+  typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractorClass;
+  typedef Xpetra::MapExtractorFactory<Scalar,LO,GO,Node> MapExtractorFactoryClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  M testMap(1,0,comm);
+  Xpetra::UnderlyingLib lib = testMap.lib();
+
+  // generate problem
+  GO nEle = 63;
+  const Teuchos::RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+  LO NumMyElements = map->getNodeNumElements();
+  GO NumGlobalElements = map->getGlobalNumElements();
+  Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+  TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
+
+  for (LO i = 0; i < NumMyElements; i++) {
+     if (MyGlobalElements[i] == 0) {
+       A->insertGlobalValues(MyGlobalElements[i],
+                             Teuchos::tuple<GO>(MyGlobalElements[i], MyGlobalElements[i] +1),
+                             Teuchos::tuple<Scalar> (Teuchos::as<Scalar>(i)*STS::one(), -1.0));
+     }
+     else if (MyGlobalElements[i] == NumGlobalElements - 1) {
+       A->insertGlobalValues(MyGlobalElements[i],
+                             Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i]),
+                             Teuchos::tuple<Scalar> (-1.0, Teuchos::as<Scalar>(i)*STS::one()));
+     }
+     else {
+       A->insertGlobalValues(MyGlobalElements[i],
+                             Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i], MyGlobalElements[i] +1),
+                             Teuchos::tuple<Scalar> (-1.0, Teuchos::as<Scalar>(i)*STS::one(), -1.0));
+     }
+  }
+
+  A->fillComplete();
+  TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == false || A->isFillActive() == true, std::runtime_error, "");
+
+  Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node> > mat =
+      Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node>(A));
+
+  Teuchos::Array<GO> gids1;
+  Teuchos::Array<GO> gids2;
+  for(LO i=0; i<NumMyElements; i++) {
+    if(i % 3 < 2)
+      gids1.push_back(map->getGlobalElement(i));
+    else
+      gids2.push_back(map->getGlobalElement(i));
+  }
+
+  const Teuchos::RCP<const MapClass> map1 = MapFactoryClass::Build (lib,
+      Teuchos::OrdinalTraits<GO>::invalid(),
+      gids1.view(0,gids1.size()),
+      0,
+      comm);
+  const Teuchos::RCP<const MapClass> map2 = MapFactoryClass::Build (lib,
+      Teuchos::OrdinalTraits<GO>::invalid(),
+      gids2.view(0,gids2.size()),
+      0,
+      comm);
+
+  std::vector<Teuchos::RCP<const MapClass> > xmaps;
+  xmaps.push_back(map1);
+  xmaps.push_back(map2);
+
+  Teuchos::RCP<const MapExtractorClass> map_extractor = MapExtractorFactoryClass::Build(map,xmaps);
+
+  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp =
+      Xpetra::MatrixUtils<Scalar, LO, GO, Node>::SplitMatrix(*mat,map_extractor,map_extractor,Teuchos::null,true);
+
+  // build gloabl vector with one entries
+  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(map, true);
+  Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(map, true);
+  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(map, true);
+  Teuchos::RCP<VectorClass> rnd  = VectorFactoryClass::Build(map, true);
+  ones->putScalar(STS::one());
+  rnd->randomize();
+
+  A->apply(*ones, *exp);
+  bOp->apply(*ones, *res);
+  res->update(-STS::one(),*exp,STS::one());
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
+
+  A->apply(*rnd, *exp);
+  bOp->apply(*rnd, *res);
+  res->update(-STS::one(),*exp,STS::one());
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+}
+
 //
 // INSTANTIATIONS
 //
@@ -543,15 +645,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
 
 #endif
 
-// List of tests which run only with Tpetra
+// List of tests which run both with Epetra and Tpetra
 #define XP_MATRIX_INSTANT(S,LO,GO,N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraOperator2XpetraCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
-
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraOperator2XpetraCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraShrinkMaps,            M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+    //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, SplitMatrixForThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraVectorSpace2XpetraMap_Tpetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraShrinkMaps,            M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraVectorSpace2XpetraMap_Tpetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Epetra
 #define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \
@@ -566,6 +668,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
 
 #endif
@@ -577,6 +680,7 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
 typedef Xpetra::EpetraNode EpetraNode;
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
+XP_MATRIX_INSTANT(double,int,int,EpetraNode)
 XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
 #endif
 // EpetraExt routines are not working with 64 bit
