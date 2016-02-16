@@ -606,24 +606,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M,
       Xpetra::MatrixUtils<Scalar, LO, GO, Node>::SplitMatrix(*mat,map_extractor,map_extractor,Teuchos::null,true);
 
   // build gloabl vector with one entries
-  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(map, true);
+  Teuchos::RCP<VectorClass> ones_A   = VectorFactoryClass::Build(map, true);
   Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(map, true);
-  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(map, true);
-  Teuchos::RCP<VectorClass> rnd  = VectorFactoryClass::Build(map, true);
-  ones->putScalar(STS::one());
-  rnd->randomize();
+  Teuchos::RCP<VectorClass> ones_bOp = VectorFactoryClass::Build(bOp->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(bOp->getRangeMap(), true);
+  ones_A->putScalar(STS::one());
+  ones_bOp->putScalar(STS::one());
 
-  A->apply(*ones, *exp);
-  bOp->apply(*ones, *res);
-  res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
+  A->apply(*ones_A, *exp);
+  bOp->apply(*ones_bOp, *res);
 
-  A->apply(*rnd, *exp);
-  bOp->apply(*rnd, *res);
-  res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+  TEST_EQUALITY(res->norm2(),exp->norm2());
+  TEST_EQUALITY(res->normInf(),exp->normInf());
+  TEST_EQUALITY(bOp->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(bOp->getDomainMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(bOp->getRangeMap(0)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(bOp->getRangeMap(1)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(bOp->getDomainMap(0)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(bOp->getDomainMap(1)->getMinAllGlobalIndex(), 0);
 }
 
 //
@@ -648,8 +648,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M,
 // List of tests which run both with Epetra and Tpetra
 #define XP_MATRIX_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraOperator2XpetraCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraShrinkMaps,            M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
-    //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, SplitMatrixForThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraShrinkMaps,            M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, SplitMatrixForThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
