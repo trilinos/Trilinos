@@ -1701,6 +1701,12 @@ namespace Iopx {
       }
     }
 
+    int64_t DatabaseIO::get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+					   void *data, size_t data_size) const
+    {
+      return Ioex::DatabaseIO::get_field_internal(reg, field, data, data_size);
+    }
+
     int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
                                            const Ioss::Field& field,
                                            void *data, size_t data_size) const
@@ -3041,6 +3047,12 @@ namespace Iopx {
       // better error message.
       assert(idb == number_distribution_factors);
       return 0;
+    }
+
+    int64_t DatabaseIO::put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+			       void *data, size_t data_size) const
+    {
+      return Ioex::DatabaseIO::put_field_internal(reg, field, data, data_size);
     }
 
     int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock* nb,

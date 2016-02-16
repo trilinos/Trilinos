@@ -151,8 +151,8 @@ namespace Ioex {
                                     std::vector<std::string> &block_membership) const;
 
   protected:
-      int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-				 void *data, size_t data_size) const;
+      virtual int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+					 void *data, size_t data_size) const = 0;
       virtual int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 					 void *data, size_t data_size) const = 0;
       virtual int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
@@ -176,8 +176,8 @@ namespace Ioex {
       virtual int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 					 void *data, size_t data_size) const = 0;
 
-      int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-                                 void *data, size_t data_size) const;
+      virtual int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+					 void *data, size_t data_size) const = 0;
       virtual int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 					 void *data, size_t data_size) const = 0;
       virtual int64_t put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
