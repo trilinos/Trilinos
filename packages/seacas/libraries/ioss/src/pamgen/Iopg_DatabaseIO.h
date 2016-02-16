@@ -123,7 +123,6 @@ namespace Iopg {
     void get_block_adjacencies(const Ioss::ElementBlock *eb,
 			       std::vector<std::string> &block_adjacency) const;
 
-    void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const;
     void compute_block_membership(Ioss::SideBlock *efblock,
 				  std::vector<std::string> &block_membership) const;
 

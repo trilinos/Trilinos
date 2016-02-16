@@ -92,8 +92,6 @@ namespace Iofx {
 
       void get_step_times();
 
-      void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const;
-
     private:
       int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;

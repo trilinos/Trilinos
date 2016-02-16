@@ -147,13 +147,12 @@ namespace Ioex {
       void get_block_adjacencies(const Ioss::ElementBlock *eb,
                                  std::vector<std::string> &block_adjacency) const;
 
-      virtual void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const = 0;
       void compute_block_membership(Ioss::SideBlock *efblock,
                                     std::vector<std::string> &block_membership) const;
 
   protected:
       int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-                                 void *data, size_t data_size) const;
+				 void *data, size_t data_size) const;
       virtual int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 					 void *data, size_t data_size) const = 0;
       virtual int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
