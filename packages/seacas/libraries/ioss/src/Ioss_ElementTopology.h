@@ -44,7 +44,6 @@ namespace Ioss { class ElementTopology; }
 namespace Ioss {
   enum class ElementShape {UNKNOWN, POINT, LINE, TRI, QUAD, TET, PYRAMID, WEDGE, HEX};
 
-  typedef std::vector<std::string> NameList;
   typedef std::map<std::string, ElementTopology*,
     std::less<std::string> > ElementTopologyMap;
   typedef ElementTopologyMap::value_type ETM_VP;

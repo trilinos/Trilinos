@@ -314,11 +314,11 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
 
   INT node_offset = 0;
   INT element_offset = 0;
-  for (size_t p = 0; p < part_count; p++) {
-    part_mesh[p]->property_add(Ioss::Property("node_offset", node_offset));
-    part_mesh[p]->property_add(Ioss::Property("element_offset", element_offset));
-    INT local_node_count = part_mesh[p]->get_property("node_count").get_int();
-    INT local_elem_count = part_mesh[p]->get_property("element_count").get_int();
+  for (auto &pm : part_mesh) {
+    pm->property_add(Ioss::Property("node_offset", node_offset));
+    pm->property_add(Ioss::Property("element_offset", element_offset));
+    INT local_node_count = pm->get_property("node_count").get_int();
+    INT local_elem_count = pm->get_property("element_count").get_int();
     node_offset += local_node_count;
     element_offset += local_elem_count;
   }
@@ -405,8 +405,8 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
     const std::vector<int> &info_parts = interface.information_record_parts();
     if (info_parts[0] == 0) {
       // Transfer info records from all parts...
-      for (size_t p = 0; p < part_count; p++) {
-	const std::vector<std::string> &info = part_mesh[p]->get_information_records();
+      for (auto &pm : part_mesh) {
+	const std::vector<std::string> &info = pm->get_information_records();
 	output_region.add_information_records(info);
       }
     } else {

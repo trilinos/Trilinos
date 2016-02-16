@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-#include "Ioss_CodeTypes.h"
+#include <Ioss_CodeTypes.h>
 
 namespace {
   size_t internal_get_size(Ioss::Field::BasicType type, size_t count,

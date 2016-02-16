@@ -38,13 +38,12 @@
 #include <map>                          // for map, map<>::value_compare
 #include <string>                       // for string, operator<
 #include <vector>                       // for vector
+#include <Ioss_CodeTypes.h>
+
 namespace Ioss { class VariableType; }
 
 
 namespace Ioss {
-  typedef std::vector<std::string> NameList;
-
-  
   typedef std::map<std::string, VariableType*, std::less<std::string> > VariableTypeMap;
   typedef VariableTypeMap::value_type VTM_ValuePair;
 

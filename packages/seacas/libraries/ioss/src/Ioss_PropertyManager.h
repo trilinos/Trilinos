@@ -34,6 +34,7 @@
 #define IOSS_Ioss_PropertyManager_h
 
 #include <Ioss_Property.h>              // for Property
+#include <Ioss_CodeTypes.h> 
 #include <stddef.h>                     // for size_t
 #include <map>                          // for map, map<>::value_compare
 #include <string>                       // for string, operator<
@@ -41,7 +42,6 @@
 
 
 namespace Ioss {
-  typedef std::vector<std::string> NameList;
   typedef std::map<std::string, Property, std::less<std::string> > PropMapType;
   typedef PropMapType::value_type ValuePair;
 

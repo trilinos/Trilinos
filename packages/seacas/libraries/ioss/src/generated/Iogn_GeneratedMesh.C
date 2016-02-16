@@ -343,7 +343,7 @@ namespace Iogn {
         // be the sum of the intervals specified in this command.
         std::vector<std::string> tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == processorCount);
-        Int64Vector Zs;
+        Ioss::Int64Vector Zs;
         numZ = 0;
         for (size_t j = 0; j < processorCount; j++) {
           Zs.push_back(std::strtol(tokens[j].c_str(), nullptr, 10));
@@ -683,14 +683,14 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_map(Int64Vector &map) const
+  void GeneratedMesh::node_map(Ioss::Int64Vector &map) const
   {
     map.resize(node_count_proc());
     int64_t offset = myStartZ * (numX+1) * (numY+1);
     std::iota(map.begin(), map.end(), offset+1);
   }
 
-  void GeneratedMesh::node_map(IntVector &map) const
+  void GeneratedMesh::node_map(Ioss::IntVector &map) const
   {
     map.resize(node_count_proc());
     int offset = myStartZ * (numX+1) * (numY+1);
@@ -720,7 +720,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_communication_map(Int64Vector &map, std::vector<int> &proc)
+  void GeneratedMesh::node_communication_map(Ioss::Int64Vector &map, std::vector<int> &proc)
   {
     int64_t count = (numX+1) * (numY+1);
     int64_t slab = count;
@@ -746,12 +746,12 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::element_map(int64_t block_number, Int64Vector &map) const
+  void GeneratedMesh::element_map(int64_t block_number, Ioss::Int64Vector &map) const
   {
     raw_element_map(block_number, map);
   }
 
-  void GeneratedMesh::element_map(int64_t block_number, IntVector &map) const
+  void GeneratedMesh::element_map(int64_t block_number, Ioss::IntVector &map) const
   {
     raw_element_map(block_number, map);
   }
@@ -804,12 +804,12 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::element_map(Int64Vector &map) const
+  void GeneratedMesh::element_map(Ioss::Int64Vector &map) const
   {
     raw_element_map(map);
   }
 
-  void GeneratedMesh::element_map(IntVector &map) const
+  void GeneratedMesh::element_map(Ioss::IntVector &map) const
   {
     raw_element_map(map);
   }
@@ -856,7 +856,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::element_surface_map(ShellLocation loc, Int64Vector &map) const
+  void GeneratedMesh::element_surface_map(ShellLocation loc, Ioss::Int64Vector &map) const
   {
     int64_t count = shell_element_count_proc(loc);
     map.resize(2*count);
@@ -1126,7 +1126,7 @@ namespace Iogn {
     }    
   }
 
-  void GeneratedMesh::connectivity(int64_t block_number, Int64Vector &connect) const
+  void GeneratedMesh::connectivity(int64_t block_number, Ioss::Int64Vector &connect) const
   {
     if (block_number == 1) {  // HEX Element Block
       int64_t npe = createTets ? 4 : 8;
@@ -1138,7 +1138,7 @@ namespace Iogn {
     raw_connectivity(block_number, &connect[0]);
   }
 
-  void GeneratedMesh::connectivity(int64_t block_number, IntVector &connect) const
+  void GeneratedMesh::connectivity(int64_t block_number, Ioss::IntVector &connect) const
   {
     if (block_number == 1) {  // HEX Element Block
       int64_t npe = createTets ? 4 : 8;
@@ -1435,7 +1435,7 @@ namespace Iogn {
     return;
   }
 
-  void GeneratedMesh::nodeset_nodes(int64_t id, Int64Vector &nodes) const
+  void GeneratedMesh::nodeset_nodes(int64_t id, Ioss::Int64Vector &nodes) const
   {
     // id is position in nodeset list + 1
     assert(id > 0 && (size_t)id <= nodesets.size());
@@ -1496,7 +1496,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::sideset_elem_sides(int64_t id, Int64Vector &elem_sides) const
+  void GeneratedMesh::sideset_elem_sides(int64_t id, Ioss::Int64Vector &elem_sides) const
   {
     // id is position in sideset list + 1
     assert(id > 0 && (size_t)id <= sidesets.size());

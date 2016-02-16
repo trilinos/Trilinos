@@ -78,12 +78,6 @@
 #include "xdmf/Ioxf_Internals.h"        // for SideSet, NodeSet, Block, etc
 namespace Ioss { class PropertyManager; }
 
-
-
-
-
-// The following eliminates the use of the "__ FILE __" variable which
-// was causing code bloat on janus.
 static const char *Version = "2009/08/18";
 
 // ========================================================================
@@ -126,15 +120,6 @@ namespace {
 }
 
 namespace Ioxf {
-  // ========================================================================
-  // Internal typedefs/structs/classes used in some algorithms.
-  // ========================================================================
-  typedef std::map<std::pair<const Ioss::ElementTopology*,
-			     const Ioss::ElementTopology*>, int,
-		   std::less<std::pair<const Ioss::ElementTopology*,
-				       const Ioss::ElementTopology*> > > TopologyMap;
-  typedef TopologyMap::value_type TopoMapPair;
-
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
 			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,

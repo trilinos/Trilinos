@@ -65,24 +65,23 @@ namespace Ioss {
 
   class CoordinateFrame;
 
-  typedef std::vector<NodeBlock*>    NodeBlockContainer;
-  typedef std::vector<EdgeBlock*>    EdgeBlockContainer;
-  typedef std::vector<FaceBlock*>    FaceBlockContainer;
-  typedef std::vector<ElementBlock*> ElementBlockContainer;
+  using NodeBlockContainer = std::vector<NodeBlock*>;
+  using EdgeBlockContainer = std::vector<EdgeBlock*>;
+  using FaceBlockContainer = std::vector<FaceBlock*>;
+  using ElementBlockContainer = std::vector<ElementBlock*>;
 
-  typedef std::vector<NodeSet*>      NodeSetContainer;
-  typedef std::vector<EdgeSet*>      EdgeSetContainer;
-  typedef std::vector<FaceSet*>      FaceSetContainer;
-  typedef std::vector<ElementSet*>   ElementSetContainer;
+  using NodeSetContainer =    std::vector<NodeSet*>;
+  using EdgeSetContainer =    std::vector<EdgeSet*>;
+  using FaceSetContainer =    std::vector<FaceSet*>;
+  using ElementSetContainer = std::vector<ElementSet*>;
 
-  typedef std::vector<SideSet*>      SideSetContainer;
-  typedef std::vector<CommSet*>      CommSetContainer;
-  typedef std::vector<double>        StateTimeContainer;
+  using SideSetContainer   = std::vector<SideSet*>;
+  using CommSetContainer   = std::vector<CommSet*>;
+  using StateTimeContainer = std::vector<double>;
 
-  typedef std::vector<CoordinateFrame> CoordinateFrameContainer;
+  using CoordinateFrameContainer = std::vector<CoordinateFrame>;
   
-  typedef std::map<std::string, std::string, std::less<std::string> > AliasMap;
-  typedef AliasMap::value_type IOAliasValuePair;
+  using AliasMap = std::map<std::string, std::string, std::less<std::string>>;
 
   class Region : public GroupingEntity {
   public:

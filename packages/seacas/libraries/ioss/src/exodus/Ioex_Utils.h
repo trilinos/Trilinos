@@ -18,12 +18,10 @@ namespace Ioss {
   typedef std::vector<CoordinateFrame> CoordinateFrameContainer;
 }
 
-typedef std::vector<std::string> NameList;
-
 namespace Ioex {
-  typedef std::set<std::pair<int64_t, int64_t> > EntityIdSet;
-  typedef std::set<std::string> SideSetSet;
-  typedef std::map<std::string, const std::string, std::less<const std::string> > SideSetMap;
+  using EntityIdSet = std::set<std::pair<int64_t, int64_t>>;
+  using SideSetSet =  std::set<std::string>;
+  using SideSetMap =  std::map<std::string, const std::string, std::less<const std::string>>;
 
   struct TopologyMapCompare {
       bool operator() (const std::pair<std::string, const Ioss::ElementTopology*> &lhs,
@@ -35,8 +33,7 @@ namespace Ioex {
       }
   };
 
-  typedef std::map<std::pair<std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare > TopologyMap;
-  typedef TopologyMap::value_type TopoMapPair;
+  using TopologyMap = std::map<std::pair<std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare >;
 
   const char *Version();
   bool check_processor_info(int exodusFilePtr, int processor_count, int processor_id);

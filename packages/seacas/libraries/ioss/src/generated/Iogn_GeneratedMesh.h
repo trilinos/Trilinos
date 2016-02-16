@@ -34,6 +34,7 @@
 #define IOSS_Iogn_GeneratedMesh_h
 
 #include <Ioss_EntityType.h>            // for EntityType
+#include <Ioss_CodeTypes.h>
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for int64_t
 #include <map>                          // for map, etc
@@ -43,8 +44,6 @@
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;
-  typedef std::vector<int64_t> Int64Vector;
-  typedef std::vector<int>     IntVector;
 
   class GeneratedMesh
   {
@@ -375,7 +374,7 @@ namespace Iogn {
      * processor.
      */
     virtual void node_map(MapVector &map) const;
-    virtual void node_map(IntVector &map) const;
+    virtual void node_map(Ioss::IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
@@ -383,7 +382,7 @@ namespace Iogn {
      * processor in block "block_number".
      */
     virtual void element_map(int64_t block_number, MapVector &map) const;
-    virtual void element_map(int64_t block_number, IntVector &map) const;
+    virtual void element_map(int64_t block_number, Ioss::IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
@@ -391,7 +390,7 @@ namespace Iogn {
      * processor 
      */
     virtual void element_map(MapVector &map) const;
-    virtual void element_map(IntVector &map) const;
+    virtual void element_map(Ioss::IntVector &map) const;
     
     /** 
      * Fill the passed in 'map' argument with the element map pair
@@ -412,8 +411,8 @@ namespace Iogn {
      * size required to contain the nodal connectivity for the
      * specified block; all information in 'connect' will be overwritten.
      */
-    void connectivity(int64_t block_number, Int64Vector &connect) const;
-    void connectivity(int64_t block_number, IntVector &connect) const;
+    void connectivity(int64_t block_number, Ioss::Int64Vector &connect) const;
+    void connectivity(int64_t block_number, Ioss::IntVector &connect) const;
     void connectivity(int64_t block_number, int64_t* connect) const;
     virtual void connectivity(int64_t block_number, int* connect) const;
 

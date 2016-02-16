@@ -43,8 +43,6 @@
 
 
 namespace Ioss {
-  typedef std::vector<std::string> NameList;
-
   // This performs a case-insensitive string comparison which will make
   // the FieldMapType do case-insensitive comparisons between field names.
   class StringCmp : public std::binary_function<std::string,std::string,bool>

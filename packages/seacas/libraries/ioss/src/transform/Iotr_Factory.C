@@ -63,7 +63,7 @@ Ioss::Transform* Factory::create(const std::string& type)
   return transform;
 }
 
-int Factory::describe(NameList *names)
+int Factory::describe(Ioss::NameList *names)
 {
   int count = 0;
   FactoryMap::const_iterator I;

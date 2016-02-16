@@ -70,7 +70,6 @@ namespace Iopg {
   };
 
   typedef std::map<std::pair<std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare > TopologyMap;
-  typedef TopologyMap::value_type TopoMapPair;
 }
 
 namespace {
