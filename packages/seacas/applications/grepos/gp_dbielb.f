@@ -33,7 +33,8 @@ C
 
 C=======================================================================
       SUBROUTINE DBIELB (NDB, OPTION, NELBS, NELBE, IDELB, NUMELB,
-     &           NUMLNK, NUMATR, A, IA, KLINK, KATRIB, BLKTYP, *)
+     &           NUMLNK, NUMATR, A, IA, KLINK, KATRIB, BLKTYP,
+     *           NTOTATR, *)
 C=======================================================================
 C   --*** DBIELB *** (EXOLIB) Read database element blocks
 C   --
@@ -62,6 +63,7 @@ C   --   IA     - I/O - the dynamic memory base array for INTEGERS
 C   --   KLINK  - OUT - pointer to the connectivity for each block 
 C   --   KATRIB - OUT - pointer to the attributes for each block 
 C   --   BLKTYP - OUT - the type of element in each block
+C   --   NTOTATR- OUT - the total number of attributes over all blocks (sum numatr)
 C   --   *      - OUT - return statement if end of file or read error
 
       include 'exodusII.inc'
@@ -114,6 +116,8 @@ C ... Get element block ids
       IEATR = IASAV 
       ISATR = 0
       ISLNK = 0
+      NTOTATR = 0
+
       DO 100 NELB = NELBS, NELBE
          IELB = NELB-NELBS+1
          call exgelb(ndb, idelb(ielb), blktyp(ielb), nel, nlnk,
@@ -125,6 +129,7 @@ C ... Get element block ids
             NUMELB(IELB) = NEL
             NUMLNK(IELB) = NLNK
             NUMATR(IELB) = NATR
+            NTOTATR = NTOTATR + NATR
          END IF
 
          IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'C') .GT. 0)) THEN
