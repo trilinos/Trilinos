@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
-   dofManager.setUseDOFManagerFEI(truee);
+   dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
