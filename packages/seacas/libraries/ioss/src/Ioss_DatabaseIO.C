@@ -495,7 +495,6 @@ namespace Ioss {
 	  }
 	}
       }
-      ++I;
     }
   }
 

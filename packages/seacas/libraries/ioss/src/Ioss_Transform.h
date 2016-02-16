@@ -70,8 +70,7 @@ namespace Ioss {
 }
 
 namespace Iotr {
-  typedef std::map<std::string, Factory*, std::less<std::string> > FactoryMap;
-  typedef FactoryMap::value_type FactoryValuePair;
+  using FactoryMap = std::map<std::string, Factory*, std::less<std::string>>;
 
   class Factory {
   public:

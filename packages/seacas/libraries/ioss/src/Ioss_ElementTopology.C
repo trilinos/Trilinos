@@ -33,24 +33,16 @@
 #include <Ioss_ElementTopology.h>
 #include <Ioss_Super.h>                 // for Super
 #include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR, etc
+#include <Ioss_CodeTypes.h>             // for IntVector
+
 #include <assert.h>                     // for assert
 #include <stddef.h>                     // for size_t
-#include <algorithm>                    // for for_each
-#include <cstring>                      // for nullptr
-#include <map>                          // for _Rb_tree_iterator, etc
+
 #include <ostream>                      // for operator<<, basic_ostream, etc
 #include <string>                       // for string, char_traits, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#include "Ioss_CodeTypes.h"             // for IntVector
 
-
-namespace {
-  class Deleter {
-  public:
-    void operator()(Ioss::ElementTopology* t) {delete t;}
-  };
-}
 
 void Ioss::ETRegistry::insert(const Ioss::ETM_VP &value, bool delete_me)
 {
@@ -177,9 +169,8 @@ unsigned int Ioss::ElementTopology::get_unique_id(const std::string& type)
 int Ioss::ElementTopology::describe(NameList *names)
 {
   int count = 0;
-  Ioss::ElementTopologyMap::const_iterator I;
-  for (I = registry().begin(); I != registry().end(); ++I) {
-    names->push_back((*I).first);
+  for (auto &entry : registry()) {
+    names->push_back(entry.first);
     count++;
   }
   return count;

@@ -39,12 +39,12 @@
 #include <Ioss_Field.h>                 // for Field, Field::RoleType, etc
 #include <Ioss_FieldManager.h>          // for FieldManager, NameList
 #include <Ioss_PropertyManager.h>       // for PropertyManager
+#include <Ioss_Property.h>              // for Property
 #include <Ioss_State.h>                 // for State
 #include <stddef.h>                     // for size_t, nullptr
 #include <stdint.h>                     // for int64_t
 #include <string>                       // for string
 #include <vector>                       // for vector
-#include "Ioss_Property.h"              // for Property
 
 namespace Ioss {
 
