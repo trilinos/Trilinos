@@ -206,8 +206,8 @@ namespace {
                         size_t offset=0, size_t stride=1)
   {
     // Pull out the locally owned nodeset data 
-    for (size_t i=0; i < owned_nodes.size(); i++) {
-      file_data.push_back(data[stride*owned_nodes[i]+offset]);
+    for (auto owned_node : owned_nodes) {
+      file_data.push_back(data[stride*owned_node+offset]);
     }
   }
 
@@ -218,10 +218,9 @@ namespace {
   void map_data(const Ioss::IntVector &owning_processor, int this_processor, 
                 const T *data, std::vector<U> &file_data, size_t offset=0, size_t stride=1)
   {
-    size_t count = owning_processor.size();
     size_t index = offset;
-    for (size_t i=0; i < count; i++) {
-      if (owning_processor[i] == this_processor) {
+    for (auto op : owning_processor) {
+      if (op == this_processor) {
         file_data.push_back(data[index]);
       }
       index += stride;
@@ -323,8 +322,8 @@ namespace Iopx {
         }
       }
       if (bad_count != nullptr) {
-        for (int i=0; i < util().parallel_size(); i++) {
-          if (status[i] < 0) {
+        for (auto stat : status) {
+          if (stat < 0) {
             (*bad_count)++;
           }
         }
@@ -935,37 +934,34 @@ namespace Iopx {
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     assert(Ioex::check_block_order(element_blocks));
 
-    {
-      for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
-        Ioss::ElementBlock *eb = element_blocks[iblk];
-        int blk_position =  eb->get_property("original_block_order").get_int();
-        int64_t id =        eb->get_property("id").get_int();
-        int element_nodes = eb->get_property("topology_node_count").get_int();
-        int64_t my_element_count = eb->get_property("entity_count").get_int();
-        int order = eb->get_property("original_block_order").get_int();
-        if (my_element_count > 0) {
-          if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-            std::vector<int64_t> conn(my_element_count * element_nodes);
-            decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+    for (Ioss::ElementBlock *eb : element_blocks) {
+      int blk_position =  eb->get_property("original_block_order").get_int();
+      int64_t id =        eb->get_property("id").get_int();
+      int element_nodes = eb->get_property("topology_node_count").get_int();
+      int64_t my_element_count = eb->get_property("entity_count").get_int();
+      int order = eb->get_property("original_block_order").get_int();
+      if (my_element_count > 0) {
+	if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+	  std::vector<int64_t> conn(my_element_count * element_nodes);
+	  decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 
-            for (int64_t i=0; i < my_element_count * element_nodes; i++) {
-              node_used[conn[i]-1] = blk_position+1;
-            }
-          } else {
-            std::vector<int> conn(my_element_count * element_nodes);
-            decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+	  for (auto node : conn) {
+	    node_used[node-1] = blk_position+1;
+	  }
+	} else {
+	  std::vector<int> conn(my_element_count * element_nodes);
+	  decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 
-            for (int64_t i=0; i < my_element_count * element_nodes; i++) {
-              node_used[conn[i]-1] = blk_position+1;
-            }
-          }
+	  for (auto node : conn) {
+	    node_used[node-1] = blk_position+1;
+	  }
+	}
 
-          for (int64_t i=0; i < nodeCount; i++) {
-            if (node_used[i] == blk_position+1) {
-              inv_con[i].push_back(blk_position);
-            }
-          }
-        }
+	for (int64_t i=0; i < nodeCount; i++) {
+	  if (node_used[i] == blk_position+1) {
+	    inv_con[i].push_back(blk_position);
+	  }
+	}
       }
     }
 
@@ -1114,8 +1110,8 @@ namespace Iopx {
 
     // Convert from inv_con arrays to block adjacency...
     blockAdjacency.resize(m_groupCount[EX_ELEM_BLOCK]);
-    for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
-      blockAdjacency[iblk].resize(m_groupCount[EX_ELEM_BLOCK]);
+    for (auto &block : blockAdjacency) {
+      block.resize(m_groupCount[EX_ELEM_BLOCK]);
     }
 
     for (int64_t i = 0; i < nodeCount; i++) {
@@ -1193,8 +1189,7 @@ namespace Iopx {
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     assert(Ioex::check_block_order(element_blocks));
 
-    for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
-      Ioss::ElementBlock *block = element_blocks[i];
+    for (Ioss::ElementBlock *block : element_blocks) {
       unsigned char status = 2;
       if (Ioss::Utils::block_is_omitted(block)) {
         status = 1;
@@ -1208,14 +1203,14 @@ namespace Iopx {
         if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
           std::vector<int64_t> conn(my_element_count * element_nodes);
           decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
-          for (int64_t j=0; j < my_element_count * element_nodes; j++) {
-            nodeConnectivityStatus[conn[j]-1] |= status;
+          for (auto node : conn) {
+            nodeConnectivityStatus[node-1] |= status;
           }
         } else {
           std::vector<int> conn(my_element_count * element_nodes);
           decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
-          for (int64_t j=0; j < my_element_count * element_nodes; j++) {
-            nodeConnectivityStatus[conn[j]-1] |= status;
+          for (auto node : conn) {
+            nodeConnectivityStatus[node-1] |= status;
           }
         }
       }
@@ -1254,8 +1249,8 @@ namespace Iopx {
       {
         int error;
 
-        for (int i = 0; i < m_groupCount[EX_SIDE_SET]; i++) {
-          int64_t id = decomp->side_sets[i].id();
+        for (auto ss : decomp->side_sets) {
+          int64_t id = ss.id();
           std::vector<char> ss_name(maximumNameLength+1);
           error = ex_get_name(get_file_pointer(), EX_SIDE_SET, id, TOPTR(ss_name));
           if (error < 0) {
@@ -1407,9 +1402,9 @@ namespace Iopx {
             // topology and the side number, determine the side
             // type.
 
-            for (Ioss::TopoContainer::size_type i=0; i < sideTopology.size(); i++) {
-              topo_map[std::make_pair(sideTopology[i].first->name(), sideTopology[i].second)] = 0;
-              side_map[std::make_pair(sideTopology[i].first->name(), sideTopology[i].second)] = 0;
+            for (auto side_topo : sideTopology) {
+              topo_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
+              side_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
             }
 
             Ioex::separate_surface_element_sides(element, sides, get_region(), topo_map, side_map, split_type);
@@ -1426,8 +1421,7 @@ namespace Iopx {
             Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
             assert(Ioex::check_block_order(element_blocks));
 
-            for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
-              Ioss::ElementBlock *block = element_blocks[i];
+            for (Ioss::ElementBlock *block : element_blocks) {
               if (!Ioss::Utils::block_is_omitted(block)) {
                 std::string name = block->name();
                 const Ioss::ElementTopology *common_ftopo = block->topology()->boundary_type(0);
@@ -1642,8 +1636,7 @@ namespace Iopx {
             decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
 
             Ioss::ElementBlock *block = nullptr;
-            for (int64_t iel = 0; iel < number_sides; iel++) {
-              int64_t elem_id = element[iel];
+            for (auto elem_id : element) {
               if (block == nullptr || !block->contains(elem_id)) {
                 block = get_region()->get_element_block(elem_id);
                 assert(block != nullptr);
@@ -1660,8 +1653,7 @@ namespace Iopx {
             decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
 
             Ioss::ElementBlock *block = nullptr;
-            for (int64_t iel = 0; iel < number_sides; iel++) {
-              int64_t elem_id = element[iel];
+            for (auto elem_id : element) {
               if (block == nullptr || !block->contains(elem_id)) {
                 block = get_region()->get_element_block(elem_id);
                 assert(block != nullptr);
@@ -3012,8 +3004,8 @@ namespace Iopx {
       {
         double value = number_distribution_factors > 0 ? dist[0] : 0.0;
         bool constant = true;
-        for (int64_t i=1; i < number_distribution_factors; i++) {
-          if (dist[i] != value) {
+        for (auto df : dist) {
+          if (df != value) {
             constant = false;
             break;
           }

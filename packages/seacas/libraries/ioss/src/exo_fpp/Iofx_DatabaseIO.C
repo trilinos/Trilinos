@@ -1186,8 +1186,7 @@ namespace Iofx {
 
     {
       Ioss::SerializeIO serializeIO__(this);
-      for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
-        Ioss::ElementBlock *eb = element_blocks[iblk];
+      for (Ioss::ElementBlock *eb : element_blocks) {
         int blk_position =  eb->get_property("original_block_order").get_int();
         int64_t id =        eb->get_property("id").get_int();
         int element_nodes = eb->get_property("topology_node_count").get_int();
@@ -1248,9 +1247,9 @@ namespace Iofx {
 
       std::vector<int> procs(util().parallel_size());
       size_t offset = 0;
-      for (size_t i=0; i < proc_node.size(); i++) {
-        int64_t glob_id = proc_node[i].second;
-        int proc    = proc_node[i].first;
+      for (auto pn : proc_node) {
+        int64_t glob_id = pn.second;
+        int proc    = pn.first;
         procs[proc]++;
         send[offset++] = glob_id;
         int64_t loc_id = nodeMap.global_to_local(glob_id, true) -1;
@@ -1446,8 +1445,7 @@ namespace Iofx {
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     assert(Ioex::check_block_order(element_blocks));
 
-    for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
-      Ioss::ElementBlock *block = element_blocks[i];
+    for (Ioss::ElementBlock *block : element_blocks) {
       unsigned char status = 2;
       if (Ioss::Utils::block_is_omitted(block)) {
         status = 1;
@@ -1518,10 +1516,9 @@ namespace Iofx {
           Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
         }
 
-        for (int i = 0; i < m_groupCount[EX_SIDE_SET]; i++) {
+        for (auto id : side_set_ids) {
           std::vector<char> ss_name(maximumNameLength+1);
-          error = ex_get_name(get_file_pointer(), EX_SIDE_SET, side_set_ids[i],
-                              TOPTR(ss_name));
+          error = ex_get_name(get_file_pointer(), EX_SIDE_SET, id, TOPTR(ss_name));
           if (error < 0) {
             Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
           }
@@ -1698,8 +1695,7 @@ namespace Iofx {
             Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
             assert(Ioex::check_block_order(element_blocks));
 
-            for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
-              Ioss::ElementBlock *block = element_blocks[i];
+            for (Ioss::ElementBlock *block : element_blocks) {
               if (!Ioss::Utils::block_is_omitted(block)) {
                 std::string name = block->name();
                 const Ioss::ElementTopology *common_ftopo = block->topology()->boundary_type(0);
@@ -1918,8 +1914,7 @@ namespace Iofx {
                 Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
               Ioss::ElementBlock *block = nullptr;
-              for (int64_t iel = 0; iel < number_sides; iel++) {
-                int64_t elem_id = element[iel];
+              for (auto elem_id : element) {
                 if (block == nullptr || !block->contains(elem_id)) {
                   block = get_region()->get_element_block(elem_id);
                   assert(block != nullptr);
@@ -1938,8 +1933,7 @@ namespace Iofx {
                 Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
               Ioss::ElementBlock *block = nullptr;
-              for (int64_t iel = 0; iel < number_sides; iel++) {
-                int64_t elem_id = element[iel];
+              for (auto elem_id : element) {
                 if (block == nullptr || !block->contains(elem_id)) {
                   block = get_region()->get_element_block(elem_id);
                   assert(block != nullptr);
@@ -2126,9 +2120,9 @@ namespace Iofx {
         Ioss::SerializeIO       serializeIO__(this);
         // This is a parallel run. There should be communications data
         // Get nemesis commset metadata
-        int64_t my_node_count = 0;
-        int64_t elem_count = 0;
-
+	int64_t my_node_count = 0;
+	int64_t elem_count = 0;
+	
         // NOTE: It is possible for a parallel run to have no
         // communications maps if the decomposition occurs along contact
         // surfaces.  In this case, we create empty node and element
@@ -2168,13 +2162,11 @@ namespace Iofx {
             Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
           // Count nodes, elements, and convert counts to offsets.
-          //
-          for (int64_t ics = 0; ics < commsetNodeCount; ics++) {
-            my_node_count += nodeCmapNodeCnts[ics];
-          }
-          for (int64_t ecs = 0; ecs < commsetElemCount; ecs++) {
-            elem_count += elemCmapElemCnts[ecs];
-          }
+	  my_node_count += std::accumulate(nodeCmapNodeCnts.begin(),
+					   nodeCmapNodeCnts.end(), 0);
+	
+	  elem_count += std::accumulate(elemCmapElemCnts.begin(),
+					elemCmapElemCnts.end(), 0);
         }
         // Create a single node commset and a single element commset
         Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node",
@@ -5083,7 +5075,6 @@ namespace Iofx {
       {
         Ioss::EdgeBlockContainer edge_blocks = region->get_edge_blocks();
         assert(Ioex::check_block_order(edge_blocks));
-        Ioss::EdgeBlockContainer::const_iterator I;
         // Set ids of all entities that have "id" property...
 	for (auto &edge_block : edge_blocks) {
           Ioex::set_id(edge_block, EX_EDGE_BLOCK, &ids_);

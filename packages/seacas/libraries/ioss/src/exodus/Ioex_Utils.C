@@ -420,23 +420,19 @@ namespace Ioex {
 
     static char displace[] = "displacement";
 
-    Ioss::NameList::const_iterator IF;
-    Ioss::NameList::const_iterator IFend = fields.end();
     size_t max_span = 0;
-
-    for (IF = fields.begin(); IF != IFend; ++IF) {
-      const char *name = (*IF).c_str();
+    for (const auto &name : fields) {
       std::string lc_name(name);
 
       Ioss::Utils::fixup_name(lc_name);
       size_t span = match(lc_name.c_str(), displace);
       if (span > max_span) {
 	const Ioss::VariableType *var_type =
-	  block->get_field((*IF)).transformed_storage();
+	  block->get_field(name).transformed_storage();
 	int comp_count = var_type->component_count();
 	if (comp_count == ndim) {
 	  max_span  = span;
-	  *disp_name = *IF;
+	  *disp_name = name;
 	}
       }
     }

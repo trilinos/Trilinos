@@ -42,7 +42,7 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <string>                       // for string, operator==, etc
 #include <vector>                       // for vector
-
+#include <algorithm>
 
 
 namespace Iogn {
@@ -223,17 +223,16 @@ namespace Iogn {
 
   void GeneratedMesh::parse_options(const std::vector<std::string> &groups)
   {
-    for (size_t i=1; i < groups.size(); i++) {
-      std::vector<std::string> option = Ioss::tokenize(groups[i], ":");
+    for (auto group : groups) {
+      std::vector<std::string> option = Ioss::tokenize(group, ":");
       // option[0] is the type of the option and option[1] is the argument to the option.
 
       if (option[0] == "shell") {
         // Option of the form  "shell:xXyYzZ"
         // The argument specifies whether there is a shell block
         // at the location. 'x' is minX, 'X' is maxX, etc.
-        size_t length = option[1].size();
-        for (size_t j=0; j < length; j++) {
-          switch (option[1][j]) {
+	for (auto opt : option[1]) {
+          switch (opt) {
           case 'x':
             add_shell_block(MX);
             break;
@@ -254,8 +253,7 @@ namespace Iogn {
             break;
           default:
             std::cerr << "ERROR: Unrecognized shell location option '"
-            << option[1][j]
-                         << "'.";
+            << opt << "'.";
           }
         }
       }
@@ -263,9 +261,8 @@ namespace Iogn {
         // Option of the form  "nodeset:xXyYzZ"
         // The argument specifies whether there is a nodeset
         // at the location. 'x' is minX, 'X' is maxX, etc.
-        size_t length = option[1].size();
-        for (size_t j=0; j < length; j++) {
-          switch (option[1][j]) {
+	for (auto opt : option[1]) {
+          switch (opt) {
           case 'x':
             add_nodeset(MX);
             break;
@@ -286,8 +283,7 @@ namespace Iogn {
             break;
           default:
             std::cerr << "ERROR: Unrecognized nodeset location option '"
-            << option[1][j]
-                         << "'.";
+            << opt << "'.";
           }
         }
       }
@@ -295,9 +291,8 @@ namespace Iogn {
         // Option of the form  "sideset:xXyYzZ"
         // The argument specifies whether there is a sideset
         // at the location. 'x' is minX, 'X' is maxX, etc.
-        size_t length = option[1].size();
-        for (size_t j=0; j < length; j++) {
-          switch (option[1][j]) {
+	for (auto opt : option[1]) {
+          switch (opt) {
           case 'x':
             add_sideset(MX);
             break;
@@ -318,8 +313,7 @@ namespace Iogn {
             break;
           default:
             std::cerr << "ERROR: Unrecognized sideset location option '"
-            << option[1][j]
-                         << "'.";
+            << opt << "'.";
           }
         }
       }
@@ -691,22 +685,16 @@ namespace Iogn {
 
   void GeneratedMesh::node_map(Int64Vector &map) const
   {
-    int64_t count = node_count_proc();
-    map.reserve(count);
+    map.resize(node_count_proc());
     int64_t offset = myStartZ * (numX+1) * (numY+1);
-    for (int64_t i=0; i < count; i++) {
-      map.push_back(offset + i + 1);
-    }
+    std::iota(map.begin(), map.end(), offset+1);
   }
 
   void GeneratedMesh::node_map(IntVector &map) const
   {
-    int count = node_count_proc();
-    map.resize(count);
+    map.resize(node_count_proc());
     int offset = myStartZ * (numX+1) * (numY+1);
-    for (int i=0; i < count; i++) {
-      map[i] = offset + i + 1;
-    }
+    std::iota(map.begin(), map.end(), offset+1);
   }
 
   int64_t GeneratedMesh::communication_node_count_proc() const
@@ -774,16 +762,13 @@ namespace Iogn {
     assert(block_number <= block_count() && block_number > 0);
 
     INT count = element_count_proc(block_number);
-    map.reserve(count);
+    map.resize(count);
 
     if (block_number == 1) {
       // Hex/Tet block...
       INT mult = createTets ? 6 : 1;
-      count = element_count_proc(1);
       INT offset = mult * myStartZ * numX * numY;
-      for (INT i=0; i < count; i++) {
-        map.push_back(offset + i + 1);
-      }
+      std::iota(map.begin(), map.end(), offset+1);
     } else {
       INT start = element_count(1);
 
@@ -811,9 +796,7 @@ namespace Iogn {
             offset = 0;
             break;
           }
-          for (INT i=0; i < count; i++) {
-            map.push_back(start + offset + i + 1);
-          }
+	  std::iota(map.begin(), map.end(), start+offset+1);
         } else {
           start += element_count(ib+2);
         }
@@ -836,14 +819,12 @@ namespace Iogn {
   {
     INT mult = createTets ? 6 : 1;
     INT count = element_count_proc();
-    map.reserve(count);
+    map.resize(count);
 
     // Hex block...
     count = element_count_proc(1);
     INT offset = mult * myStartZ * numX * numY;
-    for (INT i=0; i < count; i++) {
-      map.push_back(offset + i + 1);
-    }
+    std::iota(map.begin(), map.end(), offset+1);
 
     INT start = element_count(1);
 
@@ -870,9 +851,7 @@ namespace Iogn {
         offset = 0;
         break;
       }
-      for (INT i=0; i < count; i++) {
-        map.push_back(start + offset + i + 1);
-      }
+      std::iota(map.begin(), map.end(), start+offset+1);
       start += element_count(ib+2);
     }
   }
