@@ -2225,6 +2225,8 @@ namespace BaskerNS
   BASKER_INLINE
   Int Basker<Int,Entry,Exe_Space>::find_leader(Int kid, Int l)
   {
+    //printf("find leader called. kid: %d l: %d \n",
+    //	   kid, l);
     l = l+1;
     Int my_token = S(l)(kid);
     Int my_loc = kid;

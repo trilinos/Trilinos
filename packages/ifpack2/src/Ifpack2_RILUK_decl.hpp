@@ -594,6 +594,7 @@ protected:
   Teuchos::RCP< BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP> >
   myBasker;
   local_ordinal_type basker_threads;
+  scalar_type        basker_user_fill;
 #endif
 
 

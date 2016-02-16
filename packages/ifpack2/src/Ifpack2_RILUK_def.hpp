@@ -364,7 +364,7 @@ setParameters (const Teuchos::ParameterList& params)
   //Do not think catch is the method for this. JDB
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
   try {
-    isExperimental_ = params.get<bool> ("fact: iluk experimental");
+    isExperimental_ = params.get<bool> ("fact: iluk experimental basker");
   }
   catch (InvalidParameterType&) {
     //Use default
@@ -374,7 +374,7 @@ setParameters (const Teuchos::ParameterList& params)
   }
  
   try {
-    basker_threads = params.get<int> ("fact: iluk experimental threads");
+    basker_threads = params.get<int> ("fact: iluk experimental basker threads");
   }
   catch (InvalidParameterType&) {
     basker_threads = 1;
@@ -382,6 +382,17 @@ setParameters (const Teuchos::ParameterList& params)
   catch (InvalidParameterName&) {
     basker_threads = 1;
   }
+
+  try {
+    basker_user_fill = (scalar_type) params.get<double>("fact: iluk experimental basker user_fill");
+  }
+  catch (InvalidParameterType&) {
+    basker_user_fill = (scalar_type) 0;
+  }
+  catch (InvalidParameterName&) {
+    basker_user_fill = (scalar_type) 0;
+  }
+
 
 #endif 
   
@@ -559,6 +570,7 @@ void RILUK<MatrixType>::initialize ()
 	myBasker->Options.btf        = false;
 	myBasker->Options.incomplete = true;
 	myBasker->Options.inc_lvl    = LevelOfFill_;
+	myBasker->Options.user_fill  = basker_user_fill;
 	myBasker->SetThreads(basker_threads);
 	
 	Teuchos::ArrayRCP<const size_t> r_ptr;

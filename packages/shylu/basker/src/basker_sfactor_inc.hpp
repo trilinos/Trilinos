@@ -244,13 +244,14 @@ namespace BaskerNS
       }//for - k...ncol
  
     LM.nnz = nnz_low *
-      ((BASKER_FILL_LESTIMATE+Options.user_fill)*
+      (((Entry)BASKER_FILL_LESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
     global_nnz += LM.nnz;
     UM.nnz = nnz_top *
-      ((BASKER_FILL_UESTIMATE+Options.user_fill)*
+      (((Entry)BASKER_FILL_UESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
     global_nnz += UM.nnz;
+    //printf("DOM ESTIMATE: %d %d %d \n", M.nnz, LM.nnz, UM.nnz);
     
   }//end sfactor_nd_dom_estimate
 
@@ -265,7 +266,7 @@ namespace BaskerNS
     //LM.nnz = 0;
     
     LM.nnz = M.nnz *
-    ((BASKER_FILL_LLOWERESTIMATE+Options.user_fill)*
+      (((Entry)BASKER_FILL_LLOWERESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
     
     //printf("lower size: %d %d \n", M.nnz, LM.nnz);
@@ -283,7 +284,7 @@ namespace BaskerNS
     //UM.nnz = 0;
     
     UM.nnz = M.nnz * 
-      ((BASKER_FILL_UUPPERESTIMATE+Options.user_fill)*
+      (((Entry)BASKER_FILL_UUPPERESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
     
     global_nnz += UM.nnz;
@@ -343,11 +344,11 @@ namespace BaskerNS
       }//for - k...ncol
 
     LM.nnz = nnz_top * 
-      ((BASKER_FILL_LSEPESTIMATE+Options.user_fill)*
+      (((Entry)BASKER_FILL_LSEPESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
     global_nnz += LM.nnz;
     UM.nnz = nnz_low * 
-      ((BASKER_FILL_USEPESTIMATE+Options.user_fill)*
+      (((Entry)BASKER_FILL_USEPESTIMATE+Options.user_fill)*
        (Options.inc_lvl+1));
 
     LM.nnz = M.nrow*M.nrow;

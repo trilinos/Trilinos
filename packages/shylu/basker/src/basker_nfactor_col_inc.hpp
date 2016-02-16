@@ -4,6 +4,7 @@
 #include "basker_types.hpp"
 #include "basker_stats.hpp"
 #include "basker_thread.hpp"
+#include "basker_util.hpp"
 
 #include "basker_nfactor_blk_inc.hpp"
 
@@ -117,6 +118,7 @@ namespace BaskerNS
 	    //Need a way to say all should stop!
 	    //How to do that nice, maybe an atomic
 	    //Cannot return because the communication will hang
+	    //printf("kid: %d break error \n", kid);
 	    break;
 	  }
 	
@@ -128,11 +130,13 @@ namespace BaskerNS
 
     //------Need because extend does not 
     //-------------Barrier--Between Domains-------------
-    Int error_leader = find_leader(kid, lvl);
-    //printf("kid: %d eleader: %d \n", 
-    //	   kid, error_leader);
+    Int error_leader = find_leader(kid, lvl-1);
+    //printf("kid: %d eleader: %d test: %d \n", 
+    //	   kid, error_leader, find_leader(kid,lvl-1));
     if(upper_error == BASKER_ERROR)
       {
+	//printf("kid: %d set error leader: %d  \n", 
+	//     kid, error_leader);
 	basker_barrier.ExitSet(error_leader, BASKER_TRUE);
       }
     Int my_leader = find_leader(kid, 0);
@@ -140,12 +144,14 @@ namespace BaskerNS
     //barrier k = 0 usedl1
     t_basker_barrier_inc_lvl(thread,kid,my_leader,
 		     b_size, 0, LU(U_col)(U_row).scol, 0);
+    //printf("1 kid: %d  error_leader: %d lvl: %d  \n", kid, error_leader, lvl);
     BASKER_BOOL error_flag = BASKER_FALSE;
     basker_barrier.ExitGet(error_leader, error_flag);
     if(error_flag == BASKER_TRUE)
       {
 	return;
       }
+    //printf("2 kid: %d \n", kid);
     
     
     //----------------Sep level upper tri-------------
@@ -679,10 +685,10 @@ namespace BaskerNS
 
      if(unnz+ucnt-1 > uunnz)
        {
-	 /*
+	 
 	 printf("kid: %d col: %d need to realloc, unnz: %d ucnt: %d uunnz: %d U_col: %d U_row: %d \n", kid, k, unnz, ucnt, uunnz, U_col, U_row);
 	 BASKER_ASSERT(0==1, "USIZE\n");
-	 */
+	 
 
 	 Int newsize = (unnz+U.nrow) * 1.2  ;
 	 
