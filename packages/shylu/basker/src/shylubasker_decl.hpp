@@ -549,6 +549,8 @@ namespace BaskerNS
     int t_back_solve_old(Int,Int,Int,Int,Int,Int);
     BASKER_INLINE
     int t_back_solve_inc_lvl(Int,Int,Int,Int,Int,Int);
+    BASKER_INLINE
+    int t_back_solve_inc_rlvl(Int,Int,Int,Int,Int,Int,Entry&);
     
 
     BASKER_INLINE

@@ -770,7 +770,6 @@ namespace BaskerNS
     BASKER_INT   btf_prune_size;
   
     //Incomplete Factorization Options
-    //BASKER_INT   incomplete;
     BASKER_BOOL  incomplete;
     BASKER_INT   incomplete_type;
     BASKER_INT   inc_lvl;
