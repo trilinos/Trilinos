@@ -421,6 +421,8 @@ void ElemElemGraph::write_graph(std::ostream& out) const
         if(iter != m_coincidentGraph.end())
             for(const stk::mesh::GraphEdge &graphEdge : iter->second)
                 write_graph_edge(os, graphEdge);
+        else
+            os << "none";
         os << std::endl;
     }
     os << "Parallel Info for Graph Edges:  " << std::endl;

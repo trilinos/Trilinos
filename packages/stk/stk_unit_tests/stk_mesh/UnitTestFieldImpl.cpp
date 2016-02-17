@@ -114,7 +114,7 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   std::vector< std::string > dummy_names(4, "dummy");
 
-  MetaData meta_data(0 /*dim*/,dummy_names);
+  MetaData meta_data(3 /*dim*/,dummy_names);
 
   const FieldVector  & allocated_fields = meta_data.get_fields();
 

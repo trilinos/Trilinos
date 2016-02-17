@@ -2,7 +2,7 @@
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <unit_tests/BulkDataTester.hpp>
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "FaceCreatorFixture.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
@@ -14,7 +14,7 @@ class FaceCreatorElemGraphUsingBDElemGraphFaceSharingTester : public FaceCreator
 protected:
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        set_bulk(new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), auraOption));
+        set_bulk(new stk::unit_test_util::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), auraOption));
     }
 };
 

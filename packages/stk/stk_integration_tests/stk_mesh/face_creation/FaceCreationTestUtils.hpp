@@ -141,7 +141,7 @@ public:
                 test_one_case(testCase, auraOption);
     }
 protected:
-    void test_one_case(const SideTestUtil::TestCase &testCase,
+    virtual void test_one_case(const SideTestUtil::TestCase &testCase,
                        stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         stk::mesh::MetaData metaData;
@@ -152,7 +152,7 @@ protected:
 
     virtual void test_side_creation(stk::mesh::BulkData& bulkData,
                                     const SideTestUtil::TestCase& testCase) = 0;
-private:
+
     MPI_Comm communicator;
 };
 

@@ -65,7 +65,7 @@
 #include "stk_mesh/base/CreateEdges.hpp"
 #include "stk_mesh/base/SkinMesh.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "BulkDataTester.hpp"
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "UnitTestModificationEnd.hpp"
 
 #include <stdio.h> // getline
@@ -84,7 +84,7 @@ TEST(BulkDataModificationEnd, test_IR_ghosted_modify_delete_with_element_being_m
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
         std::string exodusFileName = getOption("-i", "generated:1x1x4");
         populateBulkDataWithFile(exodusFileName, communicator, stkMeshBulkData);
@@ -181,7 +181,7 @@ TEST(BulkDataModificationEnd, test_element_deletion_with_IR_ghosted_modifiy_dele
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
         // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
         // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
@@ -252,7 +252,7 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_pieces_of_internal_modific
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
         // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
         // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
@@ -459,7 +459,7 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
         // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
         // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
@@ -594,7 +594,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_and_test_internal_modificati
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
         // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
         // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
@@ -697,7 +697,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_using_only_needed_pieces)
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
         // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
         // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
@@ -771,7 +771,7 @@ TEST(BulkDataModificationEnd, create_edges)
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
         std::string exodusFileName = getOption("-i", "generated:1x1x4");
         populateBulkDataWithFile(exodusFileName, communicator, stkMeshBulkData);
@@ -800,7 +800,7 @@ TEST(BulkDataModificationEnd, test_invalid_add_node_sharing)
         stk::mesh::MetaData meta_data(spatial_dim);
         stk::mesh::Part &node_part = meta_data.get_topology_root_part(stk::topology::NODE);
         meta_data.commit();
-        stk::mesh::unit_test::BulkDataTester mesh(meta_data, MPI_COMM_WORLD);
+        stk::unit_test_util::BulkDataTester mesh(meta_data, MPI_COMM_WORLD);
         mesh.modification_begin();
 
         stk::mesh::Entity node1 = mesh.declare_entity(stk::topology::NODE_RANK, 1, node_part);
@@ -839,7 +839,7 @@ TEST(BulkDataModificationEnd, DISABLED_create_edges_with_min_map)
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator, stk::mesh::ConnectivityMap::minimal_upward_connectivity_map());
+        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator, stk::mesh::ConnectivityMap::minimal_upward_connectivity_map());
 
         // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
         // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12

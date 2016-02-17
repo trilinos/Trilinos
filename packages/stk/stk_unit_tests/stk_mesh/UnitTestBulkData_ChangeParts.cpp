@@ -45,7 +45,7 @@
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 namespace stk { namespace mesh { class Selector; } }
 
 using stk::mesh::Part;

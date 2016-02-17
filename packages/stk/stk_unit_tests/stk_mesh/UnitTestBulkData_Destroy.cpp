@@ -50,7 +50,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 
 
 
@@ -239,7 +239,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
   if ( 1 < p_size ) { // With ghosting
     RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
-    stk::mesh::unit_test::BulkDataTester& bulk = mesh.m_bulk_data;
+    stk::unit_test_util::BulkDataTester& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );
@@ -300,7 +300,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
   if ( 1 < p_size ) { // With ghosting
     RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
-    stk::mesh::unit_test::BulkDataTester& bulk = mesh.m_bulk_data;
+    stk::unit_test_util::BulkDataTester& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );

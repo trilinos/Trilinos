@@ -11,7 +11,6 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_topology/topology.hpp>    // for topology, operator++, etc
 #include <vector>                       // for vector
 #include "ioUtils.hpp"                  // for fill_mesh_using_stk_io, etc

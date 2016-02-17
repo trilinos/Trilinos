@@ -471,10 +471,22 @@ stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData
     	return invalid;
     }
 
-    stk::mesh::Entity side = mesh.declare_entity(to_rank, global_sub_topology_id, part);
-    for (unsigned i=0;i<sub_topology_nodes.size();++i)
+    stk::mesh::Entity side = mesh.get_entity(to_rank, global_sub_topology_id);
+    if (!mesh.is_valid(side))
     {
-        mesh.declare_relation(side, sub_topology_nodes[i], i);
+        side = mesh.declare_entity(to_rank, global_sub_topology_id, part);
+        for (unsigned i=0;i<sub_topology_nodes.size();++i)
+        {
+            mesh.declare_relation(side, sub_topology_nodes[i], i);
+        }
+    }
+    else {
+        const stk::mesh::Entity* sideNodes = mesh.begin_nodes(side);
+        unsigned numNodes = mesh.num_nodes(side);
+        ThrowRequireMsg(sub_topology_nodes.size() == numNodes, "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different number of nodes");
+        for(unsigned i=0; i<numNodes; ++i) {
+            ThrowRequireMsg(sub_topology_nodes[i] == sideNodes[i], "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different node connectivity");
+        }
     }
 
     mesh.declare_relation(elem, side, ordinalAndPermutation.first, ordinalAndPermutation.second);

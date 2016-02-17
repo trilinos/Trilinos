@@ -55,7 +55,7 @@
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBroadcast, etc
 #include "stk_util/util/SortAndUnique.hpp"
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 
 
 

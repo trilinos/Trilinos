@@ -37,7 +37,7 @@
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <string>                       // for string
-#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
 #include "UnitTestCEOCommonUtils.hpp"
@@ -98,7 +98,7 @@ TEST(CEO, change_entity_owner_2Elem2ProcMove)
 
     const int spatial_dimension = 2;
     stk::mesh::MetaData meta(spatial_dimension);
-    stk::mesh::unit_test::BulkDataTester bulk(meta, pm);
+    stk::unit_test_util::BulkDataTester bulk(meta, pm);
 
     stk::mesh::EntityVector elems;
     CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);

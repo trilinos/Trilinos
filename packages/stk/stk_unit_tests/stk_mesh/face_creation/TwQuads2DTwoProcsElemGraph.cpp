@@ -4,7 +4,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 #include <stk_io/IossBridge.hpp>
-#include <unit_tests/BulkDataTester.hpp>
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "FaceCreatorFixture.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
@@ -72,7 +72,7 @@ protected:
 
     void setup_2x1_2d_mesh(stk::mesh::BulkData::AutomaticAuraOption aura_option)
     {
-        set_bulk(new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), aura_option));
+        set_bulk(new stk::unit_test_util::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), aura_option));
         unsigned numX = 2, numY = 1;
         convert_quad_fixture_to_my_bulk_data_flavor(numX, numY, get_bulk());
     }

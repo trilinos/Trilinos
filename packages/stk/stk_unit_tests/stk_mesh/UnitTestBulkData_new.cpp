@@ -61,7 +61,7 @@
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommAll, CommBuffer
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -344,7 +344,7 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 {
   TestBoxFixture fixture;
-  stk::mesh::unit_test::BulkDataTester &bulk = fixture.bulk_data ();
+  stk::unit_test_util::BulkDataTester &bulk = fixture.bulk_data ();
   PartVector            add_part;
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };

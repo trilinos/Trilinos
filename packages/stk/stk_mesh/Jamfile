@@ -118,6 +118,7 @@ exe stk_mesh_utest
     [ glob $(stk_mesh-root)/unit_tests/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/*.cpp 
            $(stk_mesh-root)/unit_tests/change_parts/*.cpp 
+           $(stk_mesh-root)/unit_tests/face_creation/user_created/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/skin_mesh/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/integration/*.cpp 
            $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp 
@@ -195,6 +196,7 @@ lib stk_mesh_fixtures
         [ glob $(stk_mesh-root)/stk_mesh/fixtures/*.cpp ]
     ]
     stk_mesh_base
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util
