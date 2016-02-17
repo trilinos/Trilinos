@@ -83,7 +83,7 @@
 #endif
 
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 
 using Teuchos::RCP;
 using Teuchos::rcp;
