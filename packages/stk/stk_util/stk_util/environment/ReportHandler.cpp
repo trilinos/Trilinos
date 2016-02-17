@@ -89,6 +89,11 @@ void default_handler_exc(const char* expr,
 
 }
 
+void ThrowRequireWithSierraHelpMsg(bool condition)
+{
+    ThrowRequireMsg(condition, "Program error. Contact sierra-help@sandia.gov for support.");
+}
+
 void clean_error_handler(const char* expr,
                          const std::string& location,
                          std::ostringstream& message)

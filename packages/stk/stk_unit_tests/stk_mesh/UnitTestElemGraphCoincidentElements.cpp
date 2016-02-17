@@ -229,16 +229,16 @@ TEST_F(HexShellShell, Hex0Shell1Shell2Parallel_testChosenIds )
         if(stk::parallel_machine_rank(get_comm()) == 0)
         {
             const stk::mesh::Entity hex1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
-            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(hex1, 5, 2, 1);
-            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(hex1, 5, 3, 1);
+            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(hex1, 5, 2, 1);
+            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(hex1, 5, 3, 1);
             EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
             chosen_id = info1.m_chosen_side_id;
         }
         else if(stk::parallel_machine_rank(get_comm()) == 1)
         {
             const stk::mesh::Entity shell2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
-            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(shell2, 1, 1, 5);
-            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(shell2, 1, 3, 1);
+            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(shell2, 1, 1, 5);
+            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(shell2, 1, 3, 1);
             //stk::mesh::impl::parallel_info& info3   = elemElemGraph.get_parallel_edge_info(shell2, 0, 3, 0);
             EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
             chosen_id = info1.m_chosen_side_id;
@@ -246,8 +246,8 @@ TEST_F(HexShellShell, Hex0Shell1Shell2Parallel_testChosenIds )
         else
         {
             const stk::mesh::Entity shell3 = get_bulk().get_entity(stk::topology::ELEM_RANK, 3);
-            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(shell3, 1, 1, 5);
-            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(shell3, 1, 2, 1);
+            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(shell3, 1, 1, 5);
+            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(shell3, 1, 2, 1);
             //stk::mesh::impl::parallel_info& info3   = elemElemGraph.get_parallel_edge_info(shell3, 0, 2, 0);
             EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
             chosen_id = info1.m_chosen_side_id;
@@ -1306,8 +1306,8 @@ TEST( ElementGraph, Hex0Shell0Shell1Hex1Parallel )
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
 
-        stk::mesh::impl::parallel_info& p_info_shell4_shell3 = elemElemGraph.get_parallel_edge_info(shell4, 1, 3, 1);
-        stk::mesh::impl::parallel_info& p_info_shell4_hex2   = elemElemGraph.get_parallel_edge_info(shell4, 1, 1, 5);
+        stk::mesh::impl::ParallelInfo& p_info_shell4_shell3 = elemElemGraph.get_parallel_edge_info(shell4, 1, 3, 1);
+        stk::mesh::impl::ParallelInfo& p_info_shell4_hex2   = elemElemGraph.get_parallel_edge_info(shell4, 1, 1, 5);
         EXPECT_EQ(p_info_shell4_shell3.m_chosen_side_id, p_info_shell4_hex2.m_chosen_side_id);
 
     }

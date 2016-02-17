@@ -23,41 +23,86 @@ namespace impl
 typedef int64_t LocalId;
 static const LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
 
-struct graphEdgeProc
+struct RemoteElementData
 {
+public:
+    RemoteElementData() : m_other_proc(-1), m_in_body_to_be_skinned(false), m_is_air(false), m_part_ordinals() {}
+
+    RemoteElementData(int proc, bool in_body, bool is_air, const std::vector<PartOrdinal> & ords) :
+        m_other_proc(proc), m_in_body_to_be_skinned(in_body), m_is_air(is_air), m_part_ordinals(ords) {}
+
+    bool is_in_body_to_be_skinned() const { return m_in_body_to_be_skinned; }
+    bool is_considered_air() const { return m_is_air; }
+    int get_proc_rank_of_neighbor() const { return m_other_proc; }
+    const std::vector<PartOrdinal>& get_part_ordinals() const { return m_part_ordinals; }
+
+    void set_body_to_be_skinned(bool val) { m_in_body_to_be_skinned = val; }
+    void set_is_in_air(bool val) { m_is_air = val; }
+    void set_part_ordinals(const std::vector<PartOrdinal>& ords) { m_part_ordinals = ords; }
+    void set_proc_rank(int proc) { m_other_proc = proc; }
+
+private:
+    int m_other_proc;
+    bool m_in_body_to_be_skinned;
+    bool m_is_air;
+    std::vector<PartOrdinal> m_part_ordinals;
+};
+
+struct GraphEdgeProc
+{
+    GraphEdgeProc(const stk::mesh::EntityId& localElementId, int localSide, const stk::mesh::EntityId &remoteElementId, int remoteSide, int proc_id) :
+        m_localElementId(localElementId), m_remoteElementId(remoteElementId), m_localSide(localSide), m_remoteSide(remoteSide), m_proc_id(proc_id) {}
+    GraphEdgeProc() : m_localElementId(stk::mesh::InvalidEntityId), m_remoteElementId(stk::mesh::InvalidEntityId), m_localSide(-1),
+            m_remoteSide(-1), m_proc_id(-1) {}
+
+    stk::mesh::EntityId get_local_element_global_id() const { return m_localElementId; }
+    stk::mesh::EntityId get_remote_element_global_id() const { return m_remoteElementId; }
+    int get_local_element_side_index() const { return m_localSide; }
+    int get_remote_element_side_index() const { return m_remoteSide; }
+    int get_remote_processor_rank() const { return m_proc_id; }
+
+    void set_remote_processor_rank(int proc) { m_proc_id = proc; }
+
+private:
     stk::mesh::EntityId m_localElementId;
     stk::mesh::EntityId m_remoteElementId;
     int m_localSide;
     int m_remoteSide;
     int m_proc_id;
-    graphEdgeProc(const stk::mesh::EntityId& localElementId, int localSide, const stk::mesh::EntityId &remoteElementId, int remoteSide, int proc_id) :
-        m_localElementId(localElementId), m_remoteElementId(remoteElementId), m_localSide(localSide), m_remoteSide(remoteSide), m_proc_id(proc_id) {}
 };
 
-struct parallel_info
+struct ParallelInfo
 {
-    int m_other_proc;
+public:
+    ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false, const std::vector<stk::mesh::PartOrdinal>& part_ords = std::vector<stk::mesh::PartOrdinal>()) :
+        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_chosen_side_id(chosen_face_id), remoteElementData(proc, inPart, isInAir, part_ords) {}
+
+    bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
+    bool is_considered_air() const { return remoteElementData.is_considered_air(); }
+    int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
+    const std::vector<PartOrdinal>& get_part_ordinals() const { return remoteElementData.get_part_ordinals(); }
+
+    void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
+    void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
+    void set_part_ordinals(const std::vector<PartOrdinal>& ords) { remoteElementData.set_part_ordinals(ords); }
+    void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
+
     int m_permutation;
     stk::topology m_remote_element_toplogy;
-    bool m_in_body_to_be_skinned;
-    bool m_is_air;
-
     stk::mesh::EntityId m_chosen_side_id;
-    std::vector<PartOrdinal> m_part_ordinals;
 
-    parallel_info(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false, const std::vector<stk::mesh::PartOrdinal>& part_ords = std::vector<stk::mesh::PartOrdinal>()) :
-        m_other_proc(proc), m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_in_body_to_be_skinned(inPart), m_is_air(isInAir),
-        m_chosen_side_id(chosen_face_id), m_part_ordinals(part_ords){}
+private:
+    RemoteElementData remoteElementData;
 };
 
 inline
-std::ostream& operator<<(std::ostream& out, const parallel_info& info)
+std::ostream& operator<<(std::ostream& out, const ParallelInfo& info)
 {
-    out << "(other_proc=" << info.m_other_proc
+    out << "(other_proc=" << info.get_proc_rank_of_neighbor()
             << ", perm=" << info.m_permutation
             << ", remote_top=" << info.m_remote_element_toplogy
-            << ", in_body=" << (info.m_in_body_to_be_skinned?"true":"false")
-            << ", is_air=" << (info.m_is_air?"true":"false")
+            << ", in_body=" << (info.is_in_body_to_be_skinned() ?"true":"false")
+            << ", is_air=" << (info.is_considered_air()?"true":"false")
             << ", chosen_side_id=" << info.m_chosen_side_id
             << ")";
     return out;
@@ -65,11 +110,7 @@ std::ostream& operator<<(std::ostream& out, const parallel_info& info)
 
 struct SerialElementData
 {
-    LocalId m_elementLocalId;
-    stk::mesh::EntityId m_elementIdentifier;
-    stk::topology m_elementTopology;
-    unsigned m_sideIndex;
-    stk::mesh::EntityVector m_sideNodes;
+public:
     SerialElementData(LocalId elementLocalId, stk::mesh::EntityId elementId, stk::topology elementToplogy, unsigned sideIndex, const stk::mesh::EntityVector& sideNodes) :
         m_elementLocalId(elementLocalId), m_elementIdentifier(elementId), m_elementTopology(elementToplogy), m_sideIndex(sideIndex), m_sideNodes(sideNodes) {}
 
@@ -93,30 +134,27 @@ struct SerialElementData
     void set_element_identifier(stk::mesh::EntityId id) { m_elementIdentifier = id; }
     void set_element_topology(stk::topology topo) { m_elementTopology = topo; }
     void set_element_side_index(unsigned index) { m_sideIndex = index; }
+    void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { m_sideNodes = nodes; }
 
     stk::mesh::EntityVector::iterator side_nodes_begin() { return m_sideNodes.begin(); }
 
+private:
+    LocalId m_elementLocalId;
+    stk::mesh::EntityId m_elementIdentifier;
+    stk::topology m_elementTopology;
+    unsigned m_sideIndex;
+    stk::mesh::EntityVector m_sideNodes;
 };
 
 struct ParallelElementData
 {
-    SerialElementData serialElementData;
-    int m_procId;
-    stk::mesh::EntityId m_suggestedFaceId;
-    bool m_isInPart;
-    bool m_isAir;
-    std::vector<PartOrdinal> m_part_ordinals;
-
     ParallelElementData()
-    : serialElementData(),
-      m_procId(-1),
-      m_suggestedFaceId(stk::mesh::InvalidEntityId),
-      m_isInPart(true),
-      m_isAir(false),
-      m_part_ordinals()
+    : m_suggestedFaceId(stk::mesh::InvalidEntityId),
+      remoteElementData(),
+      serialElementData()
     {}
 
-    bool is_parallel_edge() const { return m_procId != -1; }
+    bool is_parallel_edge() const { return get_proc_rank_of_neighbor() != -1; }
 
     stk::mesh::EntityId get_element_identifier() const { return serialElementData.get_element_identifier(); }
     stk::topology get_element_topology() const { return serialElementData.get_element_topology(); }
@@ -130,22 +168,60 @@ struct ParallelElementData
     void set_element_identifier(stk::mesh::EntityId id) { serialElementData.set_element_identifier(id); }
     void set_element_topology(stk::topology topo) { serialElementData.set_element_topology(topo); }
     void set_element_side_index(unsigned index) { serialElementData.set_element_side_index(index); }
+    void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { serialElementData.set_element_side_nodes(nodes); }
 
     stk::mesh::EntityVector::iterator side_nodes_begin() { return serialElementData.side_nodes_begin(); }
+
+    bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
+    bool is_considered_air() const { return remoteElementData.is_considered_air(); }
+    int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
+    const std::vector<PartOrdinal>& get_part_ordinals() const { return remoteElementData.get_part_ordinals(); }
+
+    void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
+    void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
+    void set_part_ordinals(const std::vector<PartOrdinal>& ords) { remoteElementData.set_part_ordinals(ords); }
+    void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
+
+    stk::mesh::EntityId m_suggestedFaceId;
+
+private:
+    RemoteElementData remoteElementData;
+    SerialElementData serialElementData;
 };
 
 struct SharedEdgeInfo
 {
-    stk::mesh::EntityId m_locaElementlId;
-    stk::mesh::EntityId m_remoteElementId;
-    int m_procId;
-    unsigned m_sideIndex;
+public:
+    SharedEdgeInfo()
+    : m_chosenSideId(stk::mesh::InvalidEntityId), m_sharedNodes(),
+      m_remoteElementTopology(stk::topology::INVALID_TOPOLOGY),
+      remoteElementData(), graphEdgeProc() {}
+
+    stk::mesh::EntityId get_local_element_global_id() const { return graphEdgeProc.get_local_element_global_id(); }
+    stk::mesh::EntityId get_remote_element_global_id() const { return graphEdgeProc.get_remote_element_global_id(); }
+    int get_local_element_side_index() const { return graphEdgeProc.get_local_element_side_index(); }
+    int get_remote_element_side_index() const { return graphEdgeProc.get_remote_element_side_index(); }
+    int get_remote_processor_rank() const { return graphEdgeProc.get_remote_processor_rank(); }
+
+    void set_graph_edge_proc(GraphEdgeProc& graph_edge_proc) { graphEdgeProc = graph_edge_proc; }
+
+    bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
+    bool is_considered_air() const { return remoteElementData.is_considered_air(); }
+    int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
+    const std::vector<PartOrdinal>& get_part_ordinals() const { return remoteElementData.get_part_ordinals(); }
+
+    void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
+    void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
+    void set_part_ordinals(const std::vector<PartOrdinal>& ords) { remoteElementData.set_part_ordinals(ords); }
+    void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
+
     stk::mesh::EntityId m_chosenSideId;
     stk::mesh::EntityVector m_sharedNodes;
-    bool m_isInPart;
-    bool m_isInAir;
     stk::topology m_remoteElementTopology;
-    std::vector<stk::mesh::PartOrdinal> m_partOrdinals;
+
+private:
+    RemoteElementData remoteElementData;
+    GraphEdgeProc graphEdgeProc;
 };
 
 struct ShellConnectivityData
@@ -238,7 +314,7 @@ std::ostream& operator<<(std::ostream& out, const GraphEdge& graphEdge)
 namespace impl {
 
 typedef std::pair<LocalId,int> ElementSidePair;
-typedef std::map<GraphEdge, parallel_info, GraphEdgeLessByElem2> ParallelGraphInfo;
+typedef std::map<GraphEdge, ParallelInfo, GraphEdgeLessByElem2> ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
 typedef std::vector<ParallelElementData> ParallelElementDataVector;
@@ -260,14 +336,14 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
-std::vector<graphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
+std::vector<GraphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
 
-std::vector<graphEdgeProc> communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<graphEdgeProc>& elements_to_comm);
+std::vector<GraphEdgeProc> communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<GraphEdgeProc>& elements_to_comm);
 
-void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgeProc>& elements_to_comm);
+void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<GraphEdgeProc>& elements_to_comm);
 
-void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info,
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
         stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
 
@@ -304,6 +380,7 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
 bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity side);
 
 bool is_local_element(stk::mesh::impl::LocalId elemId);
+stk::mesh::EntityVector get_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index);
 
 template <typename T>
 void pack_vector_to_proc(stk::CommSparse& comm, const T& data, int otherProc)

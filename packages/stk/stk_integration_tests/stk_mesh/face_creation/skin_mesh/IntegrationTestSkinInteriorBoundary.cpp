@@ -29,13 +29,14 @@ namespace
 
 const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
 {
-  /* filename, max#procs, #side,  sideset */
+  /* filename, max#procs, #side,  sideset */ // AefA fails
     {"AB.e",      2,        1,    {{1, 5}, {2, 4}}},
     {"Ae.e",      2,        1,    {{1, 5}, {2, 1}}},
     {"Aef.e",     3,        1,    {{1, 5}, {2, 1}, {3, 1}}},
     {"AeB.e",     3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
     {"AefB.e",    4,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 4}}},
     {"ef.e",      2,        0,    {}},
+    {"eff.e",     3,        0,    {}},
 
     {"AP.e",      2,        0,    {}},
 
@@ -54,6 +55,7 @@ const SideTestUtil::TestCaseData createInteriorBoundaryForOneBlockTestCases =
     {"AeB.e",     3,        1,    {{1, 5}}},
     {"AefB.e",    4,        1,    {{1, 5}}},
     {"ef.e",      2,        0,    {}},
+    {"eff.e",     3,        0,    {}},
 
     {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}}},
 

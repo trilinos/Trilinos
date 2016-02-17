@@ -66,6 +66,13 @@ public:
   void set_min_corner(point_type const& x_min_corner) { m_min_corner = x_min_corner; }
   void set_max_corner(point_type const& x_max_corner) { m_max_corner = x_max_corner; }
 
+  void set_box(const value_type x1, const value_type y1, const value_type z1,
+               const value_type x2, const value_type y2, const value_type z2)
+  {
+    set_min_corner(point_type(x1, y1, z1));
+    set_max_corner(point_type(x2, y2, z2));
+  }
+
   bool operator==(Box<value_type> const& b) const
   { return m_min_corner == b.m_min_corner && m_max_corner == b.m_max_corner; }
 

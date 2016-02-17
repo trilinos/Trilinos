@@ -25,7 +25,7 @@ void pack_data_for_air(stk::CommSparse &comm, ElemElemGraphTester& graph, const 
     for(const auto& item : parallel_info)
     {
         const stk::mesh::GraphEdge &edge = item.first;
-        const stk::mesh::impl::parallel_info &pinfo = item.second;
+        const stk::mesh::impl::ParallelInfo &pinfo = item.second;
         stk::mesh::Entity local_element = graph.get_entity(edge.elem1);
 
         bool didPartChangesOccur = true;
@@ -34,9 +34,9 @@ void pack_data_for_air(stk::CommSparse &comm, ElemElemGraphTester& graph, const 
         {
             int64_t id = bulkData.identifier(local_element);
             if(sel(bulkData.bucket(local_element)))
-                comm.send_buffer(pinfo.m_other_proc).pack<int64_t>(id);
+                comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<int64_t>(id);
             else
-                comm.send_buffer(pinfo.m_other_proc).pack<int64_t>(-id);
+                comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<int64_t>(-id);
         }
     }
 }
@@ -65,14 +65,14 @@ void unpack_and_update_air(stk::CommSparse &comm, const stk::mesh::BulkData& bul
     for(auto& item : parallel_info)
     {
         const stk::mesh::GraphEdge &edge = item.first;
-        stk::mesh::impl::parallel_info &pinfo = item.second;
+        stk::mesh::impl::ParallelInfo &pinfo = item.second;
         int64_t id = -edge.elem2;
         if(std::binary_search(idsTrue.begin(), idsTrue.end(), id))
         {
-            pinfo.m_is_air = true;
+            pinfo.set_is_in_air(true);
         }
         else if(std::binary_search(idsFalse.begin(), idsFalse.end(), id))
-            pinfo.m_is_air = false;
+            pinfo.set_is_in_air(false);
     }
 }
 
@@ -104,7 +104,7 @@ void pack_data_for_part_ordinals(stk::CommSparse &comm, ElemElemGraphTester& gra
     for(const auto& item : parallel_info)
     {
         const stk::mesh::GraphEdge &edge = item.first;
-        const stk::mesh::impl::parallel_info &pinfo = item.second;
+        const stk::mesh::impl::ParallelInfo &pinfo = item.second;
         stk::mesh::Entity local_element = graph.get_entity(edge.elem1);
         std::vector<stk::mesh::PartOrdinal> partOrdinals = stk::mesh::impl::get_element_block_part_ordinals(local_element, bulkData);
 
@@ -112,11 +112,11 @@ void pack_data_for_part_ordinals(stk::CommSparse &comm, ElemElemGraphTester& gra
 
         if(didPartChangesOccur)
         {
-            pack_edge(comm, graph, bulkData, edge, pinfo.m_other_proc);
+            pack_edge(comm, graph, bulkData, edge, pinfo.get_proc_rank_of_neighbor());
 
-            comm.send_buffer(pinfo.m_other_proc).pack<size_t>(partOrdinals.size());
+            comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<size_t>(partOrdinals.size());
             for(stk::mesh::PartOrdinal partOrdinal : partOrdinals)
-                comm.send_buffer(pinfo.m_other_proc).pack<stk::mesh::PartOrdinal>(partOrdinal);
+                comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<stk::mesh::PartOrdinal>(partOrdinal);
         }
     }
 }
@@ -131,7 +131,7 @@ stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkDat
     comm.recv_buffer(proc_id).unpack<unsigned>(side2);
 
     stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, id2);
-    ThrowRequireMsg(bulkData.is_valid(element), "Program error. Contact sierra-help@sandia.gov for support.");
+    stk::ThrowRequireWithSierraHelpMsg(bulkData.is_valid(element));
 
     stk::mesh::impl::LocalId localId2 = graph.get_local_element_id(element);
     stk::mesh::GraphEdge edge(localId2, side2, -id1, side1);
@@ -154,8 +154,8 @@ void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::Bul
 
             stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_info();
             auto iter = parallel_info.find(edge);
-            ThrowRequireMsg(iter!=parallel_info.end(), "Program error. Contact sierra-help@sandia.gov for support.");
-            iter->second.m_part_ordinals = partOrdinals;
+            stk::ThrowRequireWithSierraHelpMsg(iter!=parallel_info.end());
+            iter->second.set_part_ordinals(partOrdinals);
         }
     }
 }
@@ -225,8 +225,8 @@ public:
     {
         for(const auto& item : parallel_info)
         {
-            const stk::mesh::impl::parallel_info &pinfo = item.second;
-            EXPECT_TRUE(pinfo.m_is_air == false);
+            const stk::mesh::impl::ParallelInfo &pinfo = item.second;
+            EXPECT_TRUE(pinfo.is_considered_air() == false);
         }
     }
 
@@ -234,8 +234,8 @@ public:
     {
         for(const auto& item : parallel_info)
         {
-            const stk::mesh::impl::parallel_info &pinfo = item.second;
-            EXPECT_TRUE(!std::binary_search(pinfo.m_part_ordinals.begin(), pinfo.m_part_ordinals.end(), part->mesh_meta_data_ordinal()));
+            const stk::mesh::impl::ParallelInfo &pinfo = item.second;
+            EXPECT_TRUE(!std::binary_search(pinfo.get_part_ordinals().begin(), pinfo.get_part_ordinals().end(), part->mesh_meta_data_ordinal()));
         }
     }
 
@@ -244,11 +244,11 @@ public:
         for(const auto& item : parallel_info)
         {
             const stk::mesh::GraphEdge &edge = item.first;
-            const stk::mesh::impl::parallel_info& pinfo = item.second;
+            const stk::mesh::impl::ParallelInfo& pinfo = item.second;
             if(edge.elem2 %2 == 0)
-                EXPECT_TRUE(pinfo.m_is_air == true) << " for element " << -edge.elem2;
+                EXPECT_TRUE(pinfo.is_considered_air() == true) << " for element " << -edge.elem2;
             else
-                EXPECT_TRUE(pinfo.m_is_air == false) << " for element " << -edge.elem2;
+                EXPECT_TRUE(pinfo.is_considered_air() == false) << " for element " << -edge.elem2;
         }
     }
 
@@ -257,11 +257,11 @@ public:
         for(const auto& item : parallel_info)
         {
             const stk::mesh::GraphEdge &edge = item.first;
-            const stk::mesh::impl::parallel_info &pinfo = item.second;
+            const stk::mesh::impl::ParallelInfo &pinfo = item.second;
             if(edge.elem2%2 == 0)
-                EXPECT_TRUE(std::binary_search(pinfo.m_part_ordinals.begin(), pinfo.m_part_ordinals.end(), part->mesh_meta_data_ordinal()));
+                EXPECT_TRUE(std::binary_search(pinfo.get_part_ordinals().begin(), pinfo.get_part_ordinals().end(), part->mesh_meta_data_ordinal()));
             else
-                EXPECT_TRUE(!std::binary_search(pinfo.m_part_ordinals.begin(), pinfo.m_part_ordinals.end(), part->mesh_meta_data_ordinal()));
+                EXPECT_TRUE(!std::binary_search(pinfo.get_part_ordinals().begin(), pinfo.get_part_ordinals().end(), part->mesh_meta_data_ordinal()));
         }
     }
 

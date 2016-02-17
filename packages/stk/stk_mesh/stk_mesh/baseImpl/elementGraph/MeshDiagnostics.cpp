@@ -44,8 +44,8 @@ std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_co
                 stk::mesh::EntityId id = bulkData.identifier(entity);
                 stk::mesh::impl::ParallelGraphInfo& par_info = graph.get_parallel_info();
                 stk::mesh::impl::ParallelGraphInfo::iterator iter = par_info.find(edge);
-                ThrowRequireMsg(iter!=par_info.end(), "Program error. Contact sierra-help@sandia.gov for support.");
-                badElements[id] = std::make_pair(-edge.elem2, iter->second.m_other_proc);
+                ThrowRequireWithSierraHelpMsg(iter!=par_info.end());
+                badElements[id] = std::make_pair(-edge.elem2, iter->second.get_proc_rank_of_neighbor());
             }
         }
     }

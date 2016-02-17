@@ -66,16 +66,16 @@ private:
         {
             stk::mesh::impl::IdViaSidePair sidePair = egraph.get_connected_remote_id_and_via_side(element, element_index);
             int remoteSideOrdinal = egraph.get_connected_elements_side(element, element_index);
-            const stk::mesh::impl::parallel_info &p_info = egraph.get_const_parallel_edge_info(element, sidePair.side, sidePair.id, remoteSideOrdinal);
+            const stk::mesh::impl::ParallelInfo &p_info = egraph.get_const_parallel_edge_info(element, sidePair.side, sidePair.id, remoteSideOrdinal);
             test_parallel_info_for_side(p_info, element, side, sidePair.side);
         }
     }
 
-    void test_parallel_info_for_side(const stk::mesh::impl::parallel_info &p_info, stk::mesh::Entity element, stk::mesh::Entity side, int side_ordinal)
+    void test_parallel_info_for_side(const stk::mesh::impl::ParallelInfo &p_info, stk::mesh::Entity element, stk::mesh::Entity side, int side_ordinal)
     {
         test_parallel_info(p_info);
         stk::mesh::EntityVector side_nodes(get_bulk().begin_nodes(side),get_bulk().end_nodes(side));
-        stk::mesh::EntityVector permuted_element_side_nodes = get_permuted_element_side_nodes(element, side_ordinal, p_info.m_other_proc, p_info.m_permutation);
+        stk::mesh::EntityVector permuted_element_side_nodes = get_permuted_element_side_nodes(element, side_ordinal, p_info.get_proc_rank_of_neighbor(), p_info.m_permutation);
         EXPECT_TRUE(side_nodes == permuted_element_side_nodes);
     }
 
@@ -109,9 +109,9 @@ private:
         return permuted_element_side_nodes;
     }
 
-    void test_parallel_info(const stk::mesh::impl::parallel_info &p_info)
+    void test_parallel_info(const stk::mesh::impl::ParallelInfo &p_info)
     {
-        EXPECT_EQ(1-get_bulk().parallel_rank(), p_info.m_other_proc);
+        EXPECT_EQ(1-get_bulk().parallel_rank(), p_info.get_proc_rank_of_neighbor());
         EXPECT_EQ(4, p_info.m_permutation);
         EXPECT_EQ(stk::topology::HEXAHEDRON_8, p_info.m_remote_element_toplogy);
         EXPECT_EQ(2u, p_info.m_chosen_side_id);

@@ -100,4 +100,69 @@ TEST_F(MeshCheckerOwnedOrphans, check_mesh_with_orphaned_owned_sides)
     }
 }
 
+class MeshCheckerWithElements : public stk::unit_test_util::MeshFixture
+{
+protected:
+    void delete_element5_on_proc0()
+    {
+        get_bulk().modification_begin();
+        if(get_bulk().parallel_rank()==0)
+        {
+            stk::mesh::EntityId elementId = 5;
+            stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elementId);
+            get_bulk().destroy_entity(element);
+        }
+        get_bulk().modification_end();
+    }
+
+    void make_an_orphaned_face_on_proc0()
+    {
+        get_bulk().modification_begin();
+        if(get_bulk().parallel_rank()==0)
+        {
+            stk::mesh::EntityIdVector ids{18, 19, 22, 23};
+            stk::mesh::Entity face = get_bulk().declare_entity(stk::topology::FACE_RANK, 1, get_bulk().mesh_meta_data().get_topology_root_part(stk::topology::QUADRILATERAL_4));
+            for(size_t i=0;i<ids.size();++i)
+            {
+                stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, ids[i]);
+                get_bulk().declare_relation(face, node, i);
+            }
+        }
+        get_bulk().modification_end();
+    }
+
+    void test_if_orphaned_faces_are_found()
+    {
+        std::vector<std::vector<stk::mesh::EntityKey> > badSidesPerProc = {
+                {stk::mesh::EntityKey(stk::topology::FACE_RANK, 1)},
+                {},
+        };
+
+        std::vector<stk::mesh::EntityKey> orphanedOwnedSides = get_orphaned_owned_sides(get_bulk());
+        EXPECT_EQ(badSidesPerProc[get_bulk().parallel_rank()], orphanedOwnedSides);
+    }
+};
+
+TEST_F(MeshCheckerWithElements, withoutAura)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        setup_mesh("generated:3x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
+        delete_element5_on_proc0();
+        make_an_orphaned_face_on_proc0();
+        test_if_orphaned_faces_are_found();
+    }
+}
+
+TEST_F(MeshCheckerWithElements, withAura)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        setup_mesh("generated:3x1x4", stk::mesh::BulkData::AUTO_AURA);
+        delete_element5_on_proc0();
+        make_an_orphaned_face_on_proc0();
+        test_if_orphaned_faces_are_found();
+    }
+}
+
 }

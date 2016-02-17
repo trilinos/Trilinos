@@ -194,7 +194,7 @@ void BulkDataFaceSharingTester::change_connectivity_for_edge_or_face(stk::mesh::
             bucket_edge.my_change_exisiting_connectivity(this->bucket_ordinal(side), &nodes[0]);
 
             stk::mesh::Permutation new_permutation = get_permutation(elements[i], nodes);
-            ThrowRequireMsg(new_permutation!=stk::mesh::INVALID_PERMUTATION, "Program error. Please contact sierra-help@sandia.gov for support.");
+            ThrowRequireWithSierraHelpMsg(new_permutation!=stk::mesh::INVALID_PERMUTATION);
 
 
             unsigned edges_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
@@ -261,7 +261,7 @@ stk::mesh::Entity create_side_and_add_to_shared_entity_list(stk::mesh::Entity el
         stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id, stk::mesh::Part& root_topo_part)
 {
     stk::mesh::Entity side = stk::mesh::declare_element_to_sub_topology_with_nodes(bulkData, element, nodes, shared_entity_other_proc.global_key.id(), side_rank, root_topo_part);
-    ThrowRequireMsg(bulkData.is_valid(side), "Program error. Contact sierra-help@sandia.gov for support.");
+    ThrowRequireWithSierraHelpMsg(bulkData.is_valid(side));
     add_side_to_shared_entities(side, shared_entities_this_proc, shared_entity_other_proc, other_proc_id);
     return side;
 }
@@ -306,7 +306,7 @@ stk::mesh::EntityVector BulkDataElemGraphFaceSharingTester::get_local_sides() co
 
 stk::mesh::EntityVector get_nodes_of_entity(const BulkDataElemGraphFaceSharingTester& bulkData, stk::mesh::Entity entity)
 {
-    ThrowRequireMsg(bulkData.num_nodes(entity)>0, "Program error. Contact sierra-help@sandia.gov for support.");
+    ThrowRequireWithSierraHelpMsg(bulkData.num_nodes(entity)>0);
     stk::mesh::EntityVector nodes(bulkData.begin_nodes(entity), bulkData.end_nodes(entity));
     return nodes;
 }

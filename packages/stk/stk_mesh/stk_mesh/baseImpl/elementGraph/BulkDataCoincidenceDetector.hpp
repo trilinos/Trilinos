@@ -91,7 +91,7 @@ private:
 
     bool are_parallel_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge) const
     {
-        const impl::parallel_info& pInfo = m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge);
+        const impl::ParallelInfo& pInfo = m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge);
         stk::topology remoteSideTopology = pInfo.m_remote_element_toplogy.side_topology(graphEdge.side2);
         bool same_polarity = static_cast<unsigned>(pInfo.m_permutation) < remoteSideTopology.num_positive_permutations();
         return same_polarity;

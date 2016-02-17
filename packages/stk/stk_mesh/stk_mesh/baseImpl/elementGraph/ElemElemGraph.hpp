@@ -80,8 +80,8 @@ public:
 
     bool is_connected_to_other_element_via_side_ordinal(stk::mesh::Entity element, int sideOrdinal) const;
 
-    impl::parallel_info& get_parallel_edge_info(stk::mesh::Entity element, int side1, stk::mesh::EntityId remote_id, int side2);
-    const impl::parallel_info& get_const_parallel_edge_info(stk::mesh::Entity element, int side1, stk::mesh::EntityId remote_id, int side2) const;
+    impl::ParallelInfo& get_parallel_edge_info(stk::mesh::Entity element, int side1, stk::mesh::EntityId remote_id, int side2);
+    const impl::ParallelInfo& get_const_parallel_edge_info(stk::mesh::Entity element, int side1, stk::mesh::EntityId remote_id, int side2) const;
 
     size_t num_edges() const;
 
@@ -125,7 +125,7 @@ public:
         return m_local_id_to_element_entity[elem];
     }
 
-    const impl::parallel_info&get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
+    const impl::ParallelInfo&get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
     {
         return m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(edge);
     }
@@ -169,9 +169,6 @@ protected:
     void add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges) const;
 
     impl::SerialElementDataVector get_only_valid_element_connections(stk::mesh::Entity element, unsigned side_index, const stk::mesh::EntityVector& side_nodes) const;
-
-    stk::mesh::ConnectivityOrdinal get_neighboring_side_ordinal(const stk::mesh::BulkData &mesh, stk::mesh::Entity currentElem,
-                                                                stk::mesh::ConnectivityOrdinal currentOrdinal, stk::mesh::Entity neighborElem);
 
     impl::LocalId create_new_local_id(stk::mesh::Entity new_elem);
 
@@ -271,7 +268,7 @@ private:
                                     const int destination_proc,
                                     impl::ParallelGraphInfo &newParallelGraphEntries);
 
-    impl::parallel_info create_parallel_info(stk::mesh::Entity connected_element,
+    impl::ParallelInfo create_parallel_info(stk::mesh::Entity connected_element,
                                                             const stk::mesh::Entity elemToSend,
                                                             int side_id,
                                                             const int destination_proc);

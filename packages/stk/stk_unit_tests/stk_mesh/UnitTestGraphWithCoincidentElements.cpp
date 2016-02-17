@@ -116,7 +116,7 @@ void add_remote_edge_to_graph(stk::mesh::Graph &graph,
                               stk::mesh::EntityId chosenFaceId)
 {
     graph.add_edge(graphEdge);
-    stk::mesh::impl::parallel_info parInfo(otherProc, 0, chosenFaceId, stk::topology::HEX_8, true);
+    stk::mesh::impl::ParallelInfo parInfo(otherProc, 0, chosenFaceId, stk::topology::HEX_8, true);
     parallelInfoForGraphEdges.insert_parallel_info_for_graph_edge(graphEdge, parInfo);
 }
 
@@ -171,7 +171,7 @@ void expect_chosen_side_id_for_graph_edge(const stk::mesh::ParallelInfoForGraphE
                                           const stk::mesh::GraphEdge &graphEdge,
                                           stk::mesh::EntityId expectedChosenSideId)
 {
-    const stk::mesh::impl::parallel_info &parInfo =
+    const stk::mesh::impl::ParallelInfo &parInfo =
             parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge);
     EXPECT_EQ(expectedChosenSideId, parInfo.m_chosen_side_id);
 }

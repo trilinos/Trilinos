@@ -817,9 +817,9 @@ void test_parallel_graph_info(const stk::mesh::Graph& graph, const ParallelInfoF
             const stk::mesh::GraphEdge& graphEdge = graph.get_edge_for_element(i, j);
             if(graphEdge.elem2==-1*other_element && static_cast<LocalId>(i) == this_element)
             {
-                const stk::mesh::impl::parallel_info& parallelInfo= parallel_graph.get_parallel_info_for_graph_edge(graphEdge);
+                const stk::mesh::impl::ParallelInfo& parallelInfo= parallel_graph.get_parallel_info_for_graph_edge(graphEdge);
                 did_find = true;
-                EXPECT_EQ(other_proc, parallelInfo.m_other_proc);
+                EXPECT_EQ(other_proc, parallelInfo.get_proc_rank_of_neighbor());
                 EXPECT_EQ(permutation, parallelInfo.m_permutation);
             }
         }
@@ -903,8 +903,8 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
             else if(graphEdge.elem2 < 0)
             {
                 LocalId other_element = -1 * graphEdge.elem2;
-                stk::mesh::impl::parallel_info& parallelInfo = parallel_graph.get_parallel_info_for_graph_edge(graphEdge);
-                int other_proc = parallelInfo.m_other_proc;
+                stk::mesh::impl::ParallelInfo& parallelInfo = parallel_graph.get_parallel_info_for_graph_edge(graphEdge);
+                int other_proc = parallelInfo.get_proc_rank_of_neighbor();
                 int other_side = graphEdge.side2;
 
                 int this_proc = bulkData.parallel_rank();
@@ -926,11 +926,9 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
                 stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1);
 
-                std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";
-
-                ThrowRequireMsg(!impl::is_id_already_in_use_locally(bulkData, side_rank, face_global_id), msg);
-                ThrowRequireMsg(!impl::does_side_exist_with_different_permutation(bulkData, element1, side_ord, perm), msg);
-                ThrowRequireMsg(!impl::does_element_side_exist(bulkData, element1, side_ord), msg);
+                stk::ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, side_rank, face_global_id));
+                stk::ThrowRequireWithSierraHelpMsg(!impl::does_side_exist_with_different_permutation(bulkData, element1, side_ord, perm));
+                stk::ThrowRequireWithSierraHelpMsg(!impl::does_element_side_exist(bulkData, element1, side_ord));
 
                 stk::mesh::Entity face = impl::connect_side_to_element(bulkData, element1, face_global_id, side_ord, perm, parts);
 
@@ -1262,7 +1260,7 @@ TEST(ElementGraph, test_parallel_graph_info_data_structure)
         stk::mesh::EntityId chosen_face_id = 1;
 
         const bool inActivePart = true;
-        parallel_graph.insert_parallel_info_for_graph_edge(graphEdge, stk::mesh::impl::parallel_info(other_proc, permutation,
+        parallel_graph.insert_parallel_info_for_graph_edge(graphEdge, stk::mesh::impl::ParallelInfo(other_proc, permutation,
                 chosen_face_id, stk::topology::INVALID_TOPOLOGY, inActivePart));
 
         size_t num_elems_this_proc = graph.get_num_elements_in_graph();
@@ -5115,9 +5113,9 @@ TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
             EXPECT_TRUE(!graph.is_connected_elem_locally_owned(elem2, 1));
             stk::mesh::EntityId remoteElemId = 3;
             EXPECT_EQ(remoteElemId, graph.get_connected_remote_id_and_via_side(elem2, 1).id);
-            stk::mesh::impl::parallel_info &parallelInfo = graph.get_parallel_edge_info(elem2, 5, remoteElemId, 4);
-            EXPECT_EQ(1, parallelInfo.m_other_proc);
-            EXPECT_TRUE(parallelInfo.m_in_body_to_be_skinned);
+            stk::mesh::impl::ParallelInfo &parallelInfo = graph.get_parallel_edge_info(elem2, 5, remoteElemId, 4);
+            EXPECT_EQ(1, parallelInfo.get_proc_rank_of_neighbor());
+            EXPECT_TRUE(parallelInfo.is_in_body_to_be_skinned());
         }
         else if (bulkData.parallel_rank() == 1) {
             stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK,3);
@@ -5132,9 +5130,9 @@ TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
             EXPECT_TRUE(!graph.is_connected_elem_locally_owned(elem3, 1));
             stk::mesh::EntityId remoteElemId = 2;
             EXPECT_EQ(remoteElemId, graph.get_connected_remote_id_and_via_side(elem3, 1).id);
-            stk::mesh::impl::parallel_info &parallelInfo = graph.get_parallel_edge_info(elem3, 4, remoteElemId, 5);
-            EXPECT_EQ(0, parallelInfo.m_other_proc);
-            EXPECT_TRUE(!parallelInfo.m_in_body_to_be_skinned);
+            stk::mesh::impl::ParallelInfo &parallelInfo = graph.get_parallel_edge_info(elem3, 4, remoteElemId, 5);
+            EXPECT_EQ(0, parallelInfo.get_proc_rank_of_neighbor());
+            EXPECT_TRUE(!parallelInfo.is_in_body_to_be_skinned());
 
 
             ASSERT_EQ(1u, graph.get_num_connected_elems(elem4));
