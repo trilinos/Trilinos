@@ -254,7 +254,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, Apply, M, MA, Scalar, LO, G
   Teuchos::Array<GO> velgidvec; // global strided maps
   Teuchos::Array<GO> pregidvec;
   Teuchos::Array<GO> fullgidvec; // full global map
-  for (LO i=0; i<pointmap->getNodeNumElements(); i++)
+  for (LO i=0; i<Teuchos::as<LO>(pointmap->getNodeNumElements()); i++)
   {
     // loop over all local ids in pointmap
 
@@ -359,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMult, M, MA, Sc
   Teuchos::Array<GO> velgidvec; // global strided maps
   Teuchos::Array<GO> pregidvec;
   Teuchos::Array<GO> fullgidvec; // full global map
-  for (LO i=0; i<pointmap->getNodeNumElements(); i++)
+  for (LO i=0; i<Teuchos::as<LO>(pointmap->getNodeNumElements()); i++)
   {
     // loop over all local ids in pointmap
 
