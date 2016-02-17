@@ -105,10 +105,6 @@ namespace BaskerNS
 	     kid);
       #endif
 
-      //No longer needed, added in sfactor
-      //printf("before workspace init\n");
-      //basker->t_init_workspace(kid);
-      //printf("after workspace init\n");
             
       {
 	basker->t_nfactor_blk_inc_lvl(kid);
@@ -193,13 +189,13 @@ namespace BaskerNS
 	  lcnt = 0;
 	  ucnt = 0;
 
-          //#ifdef BASKER_DEBUG_NFACTOR_BLK
+          #ifdef BASKER_DEBUG_NFACTOR_BLK
           ASSERT(top == ws_size);
           //ASSERT entry workspace is clean
           for(i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
           //ASSERT int workspace is clean
 	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
-          //#endif
+          #endif
 
           //for each nnz in column
 	  //Wnat to change this to local blk anyway
@@ -221,8 +217,23 @@ namespace BaskerNS
 	      //Note we need to check all 
 	      //LVL = min max{}+1
 	      //Need to search all "posible" paths
+	      if(Options.incomplete_type ==
+		 BASKER_INCOMPLETE_LVL)
+		{
 	      t_local_reach_inc_lvl(kid,0,0,j,&top);
-	      
+		}
+	      else
+		{
+		  if(gperm(j+brow) != BASKER_MAX_IDX)
+		    {
+		      t_local_reach_inc_rlvl(kid,0,0,j,top);
+		    }
+		  else
+		    {
+		      t_local_reach_short_inc_rlvl(kid,0,0,j,top);
+		    }
+		}
+
           }//end for() each nnz in column
 	  xnnz = ws_size - top;
 
@@ -485,7 +496,233 @@ namespace BaskerNS
     return 0;
   }//end t_nfactor_blk_inc_lvl()
 
-   //Note: need to fix indexing for color
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void
+  Basker<Int,Entry,Exe_Space>::t_local_reach_inc_rlvl
+   (
+   const Int kid, 
+   const Int lvl,
+   const Int l,
+   Int j, 
+   Int &top
+   )
+  {
+    
+    //Setup variables
+    const Int      b   = S(lvl)(kid);
+    const Int     wsb  = S(0)(kid);
+    BASKER_MATRIX  &L  = LL(b)(0);
+    const Int     brow = L.srow;
+
+    INT_1DARRAY    ws  = LL(wsb)(l).iws;
+    const Int  ws_size = LL(wsb)(l).iws_size;
+   
+    //Int *color       = &(ws[0]);
+    Int *pattern     = &(ws(ws_size));
+    Int *stack       = &(pattern[ws_size]);
+    Int *store       = &(stack[ws_size]);
+    
+
+    Int i, t, head, i1;
+    Int start, end, done;
+
+    Int inc_lvl = 0;
+
+    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    printf("local_reach, L: %d %d  X: %d %d j: %d, kid: %d \n",
+	   b, 0, wsb, l, j, kid);
+    #endif
+
+    start    = -1;
+    head     = 0;
+    stack[0] = j;
+
+    while(head != BASKER_MAX_IDX)
+      { 
+        #ifdef BASKER_DEBUG_LOCAL_REACH
+        printf("stack_offset: %d head: %d \n", 
+	       stack_offset , head);
+        BASKER_ASSERT(head > -1, " ");
+        #endif
+
+	j = stack[head];
+	t = gperm(j+brow);
+        
+        #ifdef BASKER_DEBUG_LOCAL_REACH
+	printf("--------DFS: %d %d %d -------------\n",
+	       j, j+brow, t);
+        #endif
+
+	if(ws(j) == 0)
+	  {	    
+
+	    ws(j) = 1;
+  
+	    if(t!=BASKER_MAX_IDX)
+	      {
+                #ifdef BASKER_DEBUG_LOCAL_REACH
+                printf("reach.... j: %d t:%d L.scol %d \n",
+		       j, t, L.scol);
+		printf("colend: %d pend(%d): %d %d \n",
+		       L.col_ptr(t+1-L.scol),
+		       t-L.scol,
+		       L.pend(j),
+		       L.pend(t-L.scol));
+                #endif
+		//start = L.col_ptr(t+1-L.scol);
+		//start = 
+		  //(L.pend(t-L.scol)==BASKER_MAX_IDX)?L.col_ptr(t+1-L.scol):L.pend(t-L.scol); 
+		start = L.col_ptr(t+1-L.scol);
+	      }//if not permuted
+	  }
+	else
+	  {
+	    start = store[j];
+	    inc_lvl = inc_lvl - L.inc_lvl(start-1)-1;
+	    
+	    BASKER_ASSERT(inc_lvl >= 0, 
+			  "inc_lvl too small 2");
+	  }
+	done = 1;
+	
+
+	end = L.col_ptr(t-L.scol);
+	for(i1 = --start; i1 >= end; --i1)
+	  {
+	    i = L.row_idx(i1);
+	   
+	    //printf("Search i1: %d  i: %d %d %d \n",
+	    //	   i1, i, i+L.scol, gperm(i+L.scol));
+
+	    if((ws(i) != 0))
+	      {
+		//printf("continue called\n");
+		if(L.inc_lvl(i1)+inc_lvl < Options.inc_lvl)
+		  {
+		    if(gperm(i+brow) != BASKER_MAX_IDX)
+		      {
+			store[j] = i1;
+			stack[++head] = i;
+			inc_lvl = inc_lvl + L.inc_lvl(i1)+1;
+			break;
+		      }
+		  }
+		else
+		  {
+		    continue;
+		  }
+	      }
+	    else
+	    //if(ws(i) == 0)
+	      {
+		//if(not explored)
+		if(gperm(i+brow) >= 0)
+		  {
+		    //store[j] = i1+1;
+		    store[j] = i1;
+		    stack[++head] = i;
+		    inc_lvl = inc_lvl + L.inc_lvl(i1) + 1;
+		    break;
+		  }
+		else
+		  {
+		    //color[i] = 2;
+		    ws(i) = 2;
+		    pattern[--top] = i;
+
+		    if(INC_LVL_TEMP(i+brow) == BASKER_MAX_IDX)
+		      {
+			INC_LVL_TEMP(i+brow) = inc_lvl;
+		      }
+		    else
+		      {
+			INC_LVL_TEMP(i+brow) =
+			  min(inc_lvl, INC_LVL_TEMP(i+brow));
+		      }
+
+		    //printf("Adding idx: %d %d  to pattern at location: %d \n",i, i+L.scol, top);
+
+		  }
+	      }
+	   
+
+
+	  }
+	
+	//if we have used up the whole column
+	if(i1 < end)
+	  {
+	    
+	    head--;
+	    if(ws(j) != 2)
+	      {
+		//color[j] = 2;
+		ws(j) = 2;
+		pattern[--top] = j;
+	      }
+	    if(INC_LVL_TEMP(j+brow) == BASKER_MAX_IDX)
+	      {
+		INC_LVL_TEMP(j+brow) = inc_lvl;
+	      }
+	    else
+	      {
+		INC_LVL_TEMP(j+brow) =
+		  min(inc_lvl, INC_LVL_TEMP(j+brow));
+	      }
+	    
+    
+	  }
+	//printf("head: %d \n", head);
+	/*
+	if(head == 0)
+	  {head = BASKER_MAX_IDX;}
+	else
+	  {--head;}
+	*/
+	//printf("Adding idx: %d to pattern at location: %d \n",j, *top);
+      	//printf("head2: %d \n", head);
+      }//end while 
+
+  }//end t_local_reach_inc_rlvl
+
+  template <class Int, class Entry, class Exe_Space>
+  inline
+  void 
+  Basker<Int,Entry,Exe_Space>::t_local_reach_short_inc_rlvl
+  (
+   const Int kid, 
+   const Int lvl,
+   const Int l,
+   const Int j,
+   Int &top
+   )
+  {
+    //Setup variables
+    const Int b      = S(lvl)(kid);
+    const Int wsb    = S(0)(kid);
+    BASKER_MATRIX &L = LL(b)(0);
+
+    INT_1DARRAY  ws   = LL(wsb)(l).iws;
+    const Int ws_size = LL(wsb)(l).iws_size;
+
+    Int *color       = &(ws(0));
+    Int *pattern     = &(ws(ws_size));
+
+    color[j]       = 2;
+    pattern[--top] = j;
+    
+    if(Options.incomplete == BASKER_TRUE)
+      {
+	if(INC_LVL_TEMP(j+L.srow) == BASKER_MAX_IDX)
+	  {
+	    INC_LVL_TEMP(j+L.srow) = 0;
+	  }//if incomplete lvl not set
+      }//end--if incomplete
+    return;
+  }//end t_local_reach short_inc_rlvl()
+  
+  //Note: need to fix indexing for color
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int 
