@@ -525,6 +525,16 @@ namespace BaskerNS
     inline
     void t_local_reach(const Int, const Int, const Int,
 		       Int, Int &);
+    
+    inline 
+    void t_local_reach_short_inc_rlvl
+    (const Int,const Int, const Int,
+			     const Int, Int&);
+    inline
+    void t_local_reach_inc_rlvl
+    (const Int, const Int, const Int,
+		       Int, Int &);
+
     inline
     int t_local_reach_old(Int,Int,Int,Int,Int*);
     BASKER_INLINE
@@ -539,6 +549,8 @@ namespace BaskerNS
     int t_back_solve_old(Int,Int,Int,Int,Int,Int);
     BASKER_INLINE
     int t_back_solve_inc_lvl(Int,Int,Int,Int,Int,Int);
+    BASKER_INLINE
+    int t_back_solve_inc_rlvl(Int,Int,Int,Int,Int,Int,Entry&);
     
 
     BASKER_INLINE

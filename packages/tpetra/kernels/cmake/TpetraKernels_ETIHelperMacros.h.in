@@ -1,7 +1,7 @@
 #ifndef TPETRAKERNELS_ETIHELPERMACROS_H
 #define TPETRAKERNELS_ETIHELPERMACROS_H
 
-#include "TpetraCore_config.h"
+#include "TpetraKernels_config.h"
 
 @TPETRAKERNELS_INSTANTIATE_SLD@
 

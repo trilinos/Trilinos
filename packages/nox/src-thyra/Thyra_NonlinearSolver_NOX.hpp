@@ -118,6 +118,20 @@ public:
   /** \brief . */
   RCP< const LinearOpWithSolveBase<double> > get_W() const;
 
+  /** \brief . */
+  RCP< const LinearOpBase<double> >
+  get_W_op() const;
+  /** \brief . */
+  RCP< LinearOpBase<double> >
+  get_nonconst_W_op(const bool forceUpToDate);
+
+  /** \brief . */
+  RCP< const PreconditionerBase<double> >
+  get_prec_op() const;
+  /** \brief . */
+  RCP< PreconditionerBase<double> >
+  get_nonconst_prec_op();
+
   //@}
 
   /** \brief . */

@@ -316,6 +316,22 @@ NOX::Thyra::Group::getJacobian() const
 }
 
 
+Teuchos::RCP< ::Thyra::PreconditionerBase<double> >
+NOX::Thyra::Group::getNonconstPreconditioner()
+{
+  NOX_ASSERT(nonnull(prec_));
+  return prec_;
+}
+
+
+Teuchos::RCP<const ::Thyra::PreconditionerBase<double> >
+NOX::Thyra::Group::getPreconditioner() const
+{
+  NOX_ASSERT(nonnull(prec_));
+  return prec_;
+}
+
+
 void NOX::Thyra::Group::setX(const NOX::Abstract::Vector& y)
 {
   setX(dynamic_cast<const NOX::Thyra::Vector&> (y));
