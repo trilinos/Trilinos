@@ -66,6 +66,20 @@
 
 
 namespace EpetraExt {
+
+//=========================================================================
+// ETI
+template<int> int import_only(const Epetra_CrsMatrix& M,
+					 const Epetra_Map& targetMap,
+					 CrsMatrixStruct& Mview,
+					 const Epetra_Import * prototypeImporter);
+
+template<long long> int import_only(const Epetra_CrsMatrix& M,
+					 const Epetra_Map& targetMap,
+					 CrsMatrixStruct& Mview,
+					 const Epetra_Import * prototypeImporter);
+
+
 //=========================================================================
 //
 //Method for internal use... sparsedot forms a dot-product between two
@@ -884,123 +898,6 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 }
 
 
-
-
-// ==============================================================
-template<typename int_type>
-int import_only(const Epetra_CrsMatrix& M,
-                const Epetra_Map& targetMap,
-                CrsMatrixStruct& Mview,
-                const Epetra_Import * prototypeImporter=0)
-{
-  // The goal of this method to populare the Mview object with ONLY the rows of M
-  // that correspond to elements in 'targetMap.'  There will be no population of the
-  // numEntriesPerRow, indices, values, remote or numRemote arrays.
-
-
-  // The prototype importer, if used, has to know who owns all of the PIDs in M's rowmap.
-  // The typical use of this is to provide A's column map when I&XV is called for B, for
-  // a C = A * B multiply.
-
-#ifdef ENABLE_MMM_TIMINGS
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Setup")));
-#endif
-
-  Mview.deleteContents();
-
-  Mview.origMatrix          = &M;
-  const Epetra_Map& Mrowmap = M.RowMap();
-  int numProcs              = Mrowmap.Comm().NumProc();
-  Mview.numRows             = targetMap.NumMyElements();
-
-  Mview.origRowMap   = &(M.RowMap());
-  Mview.rowMap       = &targetMap;
-  Mview.colMap       = &(M.ColMap());
-  Mview.domainMap    = &(M.DomainMap());
-  Mview.importColMap = NULL;
-
-  int i;
-  int numRemote =0;
-  int N = Mview.rowMap->NumMyElements();
-
-  if(Mrowmap.SameAs(targetMap)) {
-    numRemote = 0;
-    Mview.targetMapToOrigRow.resize(N);
-    for(i=0;i<N; i++) Mview.targetMapToOrigRow[i]=i;
-    return 0;
-  }
-  else if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)){
-    numRemote = prototypeImporter->NumRemoteIDs();
-
-    Mview.targetMapToOrigRow.resize(N);    Mview.targetMapToOrigRow.assign(N,-1);
-    Mview.targetMapToImportRow.resize(N);  Mview.targetMapToImportRow.assign(N,-1);
-
-    const int * PermuteToLIDs   = prototypeImporter->PermuteToLIDs();
-    const int * PermuteFromLIDs = prototypeImporter->PermuteFromLIDs();
-    const int * RemoteLIDs      = prototypeImporter->RemoteLIDs();
-
-    for(i=0; i<prototypeImporter->NumSameIDs();i++)
-      Mview.targetMapToOrigRow[i] = i;
-
-    // NOTE: These are reversed on purpose since we're doing a revere map.
-    for(i=0; i<prototypeImporter->NumPermuteIDs();i++)
-      Mview.targetMapToOrigRow[PermuteToLIDs[i]] = PermuteFromLIDs[i];
-
-    for(i=0; i<prototypeImporter->NumRemoteIDs();i++)
-      Mview.targetMapToImportRow[RemoteLIDs[i]] = i;
-
-  }
-  else
-    throw std::runtime_error("import_only: This routine only works if you either have the right map or no prototypeImporter");
-
-  if (numProcs < 2) {
-    if (Mview.numRemote > 0) {
-      std::cerr << "EpetraExt::MatrixMatrix::Multiply ERROR, numProcs < 2 but "
-           << "attempting to import remote matrix rows."<<std::endl;
-      return(-1);
-    }
-
-    //If only one processor we don't need to import any remote rows, so return.
-    return(0);
-  }
-
-#ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-1")));
-#endif
-  const int * RemoteLIDs = prototypeImporter->RemoteLIDs();
-
-    //Create a map that describes the remote rows of M that we need.
-  int_type* MremoteRows = numRemote>0 ? new int_type[prototypeImporter->NumRemoteIDs()] : 0;
-  for(i=0; i<prototypeImporter->NumRemoteIDs(); i++)
-    MremoteRows[i] = (int_type) targetMap.GID64(RemoteLIDs[i]);
-
-  LightweightMap MremoteRowMap((int_type) -1, numRemote, MremoteRows, (int_type)Mrowmap.IndexBase64());
-
-#ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-2")));
-#endif
-  //Create an importer with target-map MremoteRowMap and
-  //source-map Mrowmap.
-  RemoteOnlyImport * Rimporter=0;
-  Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
-
-#ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-3")));
-#endif
-
-  Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
-
-#ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-4")));
-#endif
-
-  // Cleanup
-  delete Rimporter;
-  delete [] MremoteRows;
-
-  return(0);
-}
 
 
 
