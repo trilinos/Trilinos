@@ -35,6 +35,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     SOURCE_FILES scaling.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
    )
 
+ TRIBITS_ADD_EXECUTABLE(
+   ImportPerformance
+   SOURCES ImportPerformance
+   COMM mpi
+   )
+ 
+
   IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
 
     TRIBITS_ADD_EXECUTABLE(
