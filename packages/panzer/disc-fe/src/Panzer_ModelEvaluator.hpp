@@ -415,6 +415,14 @@ private:
   void evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
+  /** handles evaluation of responses dgdp (scalar) defined as dg/dx * dx/dp + dg/dp
+    *
+    * \note This method should (basically) be a no-op if <code>required_basic_dgdp_scalar(outArgs)==false</code>.
+    *       However, for efficiency this is not checked.
+    */
+  void evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
   /** handles evaluation of responses dgdp (distributed)
     *
     * \note This method should (basically) be a no-op if <code>required_basic_dgdx_distro(outArgs)==false</code>.
@@ -423,7 +431,7 @@ private:
   void evalModelImpl_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
-  /** handles evaluation of dfdp
+  /** handles evaluation of dfdp (tangent) defined as df/dx * dx/dp + df/dp
     *
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
@@ -431,7 +439,7 @@ private:
   void evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
-   /** handles evaluation of dfdp using finite-differences
+   /** handles evaluation of dfdp (tangent) defined as df/dx * dx/dp + df/dp using finite-differences
     *
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
@@ -452,6 +460,9 @@ private:
 
   //! Are their required responses in the out args? DgDx
   bool required_basic_dgdx(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  //! Are their required responses in the out args? DgDp
+  bool required_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Are their required responses in the out args? DgDp
   bool required_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
