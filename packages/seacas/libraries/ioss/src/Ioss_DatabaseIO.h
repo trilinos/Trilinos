@@ -159,6 +159,9 @@ namespace Ioss {
     void add_qa_record(const std::string &code, const std::string &code_qa,
 		       const std::string &date, const std::string &time);
 
+    bool get_logging() const {return doLogging && !singleProcOnly;}
+    void set_logging(bool on_off) {doLogging = on_off;}
+
     // The get_field and put_field functions are just a wrapper around the
     // pure virtual get_field_internal and put_field_internal functions,
     // but this lets me add some debug/checking/common code to the
@@ -169,18 +172,19 @@ namespace Ioss {
     int64_t get_field(const T* reg,      const Field& field, void *data, size_t data_size) const
     {
       verify_and_log(reg, field, 1);
-      return get_field_internal(reg, field, data, data_size);
+      int64_t retval = get_field_internal(reg, field, data, data_size);
+      verify_and_log(nullptr, field, 1);
+      return retval;
     }
 
     template <typename T>
     int64_t put_field(const T* reg,      const Field& field, void *data, size_t data_size) const
     {
       verify_and_log(reg, field, 0);
-      return put_field_internal(reg, field, data, data_size);
+      int64_t retval = put_field_internal(reg, field, data, data_size);
+      verify_and_log(nullptr, field, 0);
+      return retval;
     }
-
-    bool get_logging() const {return doLogging && !singleProcOnly;}
-    void set_logging(bool on_off) {doLogging = on_off;}
 
     bool is_parallel_consistent() const {return isParallelConsistent;}
     void set_parallel_consistency(bool on_off) {isParallelConsistent = on_off;}
