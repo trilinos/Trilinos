@@ -64,7 +64,7 @@
         <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
       
-      <ParameterList name="weight 1">
+      <ParameterList name="weight 0">
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>

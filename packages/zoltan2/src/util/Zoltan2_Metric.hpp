@@ -481,12 +481,12 @@ template <typename scalar_t, typename lno_t, typename part_t>
  *   \param metrics on return points to a list of named MetricValues objects 
  *     that each contains the global min, max and avg over parts of 
  *     the item being measured. The list may contain "object count",
- *     "normed weight", "weight 1", "weight 2" and so on in that order.
+ *     "normed weight", "weight 0", "weight 1" and so on in that order.
  *     If uniform weights were given, then only "object count" appears.
  *     If one set of non-uniform weights were given, then
- *     "object count" and "weight 1" appear.  Finally, if multiple
+ *     "object count" and "weight 0" appear.  Finally, if multiple
  *     weights were given, we have "object count", then "normed weight",
- *     then the individual weights "weight 1", "weight 2", and so on.
+ *     then the individual weights "weight 0", "weight 1", and so on.
  *   \param globalSums If weights are uniform, the globalSums is the
  *      \c numParts totals of global number of objects in each part.
  *     Suppose the number of weights is \c W.  If
@@ -526,7 +526,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
   numParts = numNonemptyParts = 0;
 
   int numMetrics = 1;                       // "object count"
-  if (vwgtDim) numMetrics++;                // "normed weight" or "weight 1"
+  if (vwgtDim) numMetrics++;                // "normed weight" or "weight 0"
   if (vwgtDim > 1) numMetrics += vwgtDim;   // "weight n"
 
   typedef MetricValues<scalar_t> mv_t;
@@ -579,7 +579,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
 
   if (numMetrics > 1){
 
-    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 1
+    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 0
     try{
       normedPartWeights<scalar_t, lno_t, part_t>(env, nparts, 
         part, vwgts, mcNorm, wgt);
@@ -607,7 +607,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
   next++;
 
   if (numMetrics > 1){
-    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 1
+    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 0
     scalar_t total = 0.0;
   
     for (int p=0; p < nparts; p++){
@@ -615,7 +615,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
     }
 
     if (vwgtDim == 1)
-      metrics[next].setName("weight 1");
+      metrics[next].setName("weight 0");
     else
       metrics[next].setName("normed weight");
 
@@ -631,7 +631,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
         }
 
         std::ostringstream oss;
-        oss << "weight " << vdim+1;
+        oss << "weight " << vdim;
 
         metrics[next].setName(oss.str());
         metrics[next].setLocalSum(total);
@@ -668,7 +668,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
   next++;
 
   if (numMetrics > 1){
-    scalar_t *wgt = sumBuf + nparts;        // single normed weight or weight 1
+    scalar_t *wgt = sumBuf + nparts;        // single normed weight or weight 0
   
     ArrayView<scalar_t> normedWVec(wgt, nparts);
     getStridedStats<scalar_t>(normedWVec, 1, 0, min, max, sum);
@@ -726,12 +726,12 @@ template <typename scalar_t, typename lno_t, typename part_t>
  *   \param metrics on return points to a list of named GraphMetricValues cuts 
  *     that each contains the global max and sum over parts of 
  *     the item being measured. The list may contain "cut count", or
- *     "weight 1", "weight 2" and so on in that order.
+ *     "weight 0", "weight 1" and so on in that order.
  *     If uniform weights were given, then only "cut count" appears.
  *     If one set of non-uniform weights were given, then
- *     "weight 1" appear.  Finally, if multiple
+ *     "weight 0" appear.  Finally, if multiple
  *     weights were given, we have
- *     the individual weights "weight 1", "weight 2", and so on.
+ *     the individual weights "weight 0", "weight 1", and so on.
  *   \param globalSums If weights are uniform, the globalSums is the
  *      \c numParts totals of global number of cuts in each part.
  *     Suppose the number of weights is \c W.  If
@@ -763,7 +763,7 @@ template <typename Adapter>
 
   int ewgtDim = graph->getNumWeightsPerEdge();
 
-  int numMetrics = 1;                       // "cut count" or "weight 1"
+  int numMetrics = 1;                       // "cut count" or "weight 0"
   if (ewgtDim > 1) numMetrics = ewgtDim;   // "weight n"
 
   typedef typename Adapter::scalar_t scalar_t;
@@ -906,7 +906,7 @@ template <typename Adapter>
   // This code assumes the solution has the part ordered the
   // same way as the user input.  (Bug 5891 is resolved.)
   } else {
-    scalar_t *wgt = localBuf; // weight 1
+    scalar_t *wgt = localBuf; // weight 0
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++) {
 	const gno_t globalRow = Ids[i];
@@ -949,14 +949,14 @@ template <typename Adapter>
   metrics[next].setGlobalSum(sum);
 
   if (ewgtDim){
-    scalar_t *wgt = sumBuf;        // weight 1
+    scalar_t *wgt = sumBuf;        // weight 0
   
     for (int edim=0; edim < ewgtDim; edim++){
       ArrayView<scalar_t> fromVec(wgt, nparts);
       getStridedStats<scalar_t>(fromVec, 1, 0, max, sum);
 
       std::ostringstream oss;
-      oss << "weight " << edim+1;
+      oss << "weight " << edim;
 
       metrics[next].setName(oss.str());
       metrics[next].setGlobalMax(max);
@@ -1222,12 +1222,12 @@ template <typename scalar_t, typename part_t>
  *     that each contains the global min, max and avg over parts and
  *     also imbalance measures of 
  *     the item being measured. The list may contain "object count",
- *     "normed weight", "weight 1", "weight 2" and so on in that order.
+ *     "normed weight", "weight 0", "weight 1" and so on in that order.
  *     If uniform weights were given, then only "object count" appears.
  *     If one set of non-uniform weights were given, then
- *     "object count" and "weight 1" appear.  Finally, if multiple
+ *     "object count" and "weight 0" appear.  Finally, if multiple
  *     weights were given, we have "object count", then "normed weight",
- *     then the individual weights "weight 1", "weight 2", and so on.
+ *     then the individual weights "weight 0", "weight 1", and so on.
  *
  *  objectMetrics() must be called by all processes in \c comm.  
  *  See the metricOffset enumerator in the MetricValues class for the 

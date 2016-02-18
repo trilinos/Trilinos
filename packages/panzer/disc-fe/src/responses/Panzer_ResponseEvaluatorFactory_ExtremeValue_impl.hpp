@@ -79,7 +79,8 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_ExtremeValue<EvalT,LO,GO>::
 typeSupported() const
 {
-  if(   PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Residual>() 
+  if(   PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Residual>()  ||
+        PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Tangent>()
     )
     return true;
 

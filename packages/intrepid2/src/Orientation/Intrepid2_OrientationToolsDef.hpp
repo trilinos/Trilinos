@@ -65,13 +65,13 @@ namespace Intrepid2 {
   Orientation::Orientation()
     : _edgeOrt(0), _faceOrt(0) {}
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   bool
   Orientation::isAlignedToReference() const {
     return (_edgeOrt == 0 && _faceOrt == 0);
   }
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   void
   Orientation::setEdgeOrientation(const int numEdge, const int edgeOrt[]) {
 #ifdef HAVE_INTREPID_DEBUG
@@ -84,7 +84,7 @@ namespace Intrepid2 {
       _edgeOrt |= (edgeOrt[i] & 1) << i;
   }
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   void
   Orientation::getEdgeOrientation(int *edgeOrt, const int numEdge) const {
 #ifdef HAVE_INTREPID_DEBUG
@@ -96,7 +96,7 @@ namespace Intrepid2 {
       edgeOrt[i] = (_edgeOrt & (1 << i)) >> i;
   }
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   void
   Orientation::setFaceOrientation(const int numFace, const int faceOrt[]) {
 #ifdef HAVE_INTREPID_DEBUG
@@ -111,7 +111,7 @@ namespace Intrepid2 {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   void
   Orientation::getFaceOrientation(int *faceOrt, const int numFace) const {
 #ifdef HAVE_INTREPID_DEBUG
@@ -478,7 +478,8 @@ namespace Intrepid2 {
   template<class ArrayType>
   void
   OrientationTools<Scalar>::getEdgeCoeffMatrix_HGRAD(OrientationTools<Scalar>::CoeffMatrix & C,
-                                                     const Basis<Scalar,ArrayType> &         basis,
+                                                     const Basis<Scalar,ArrayType> &         lineBasis,
+                                                     const Basis<Scalar,ArrayType> &         cellBasis,
                                                      const int                               edgeId,
                                                      const int                               edgeOrt) {
     typedef typename OrientationTools<Scalar>::DenseMatrix DenseMatrixType;
@@ -491,21 +492,22 @@ namespace Intrepid2 {
     } else {
 
       // populate points on a line and map to subcell
-      shards::CellTopology cellTopo = basis.getBaseCellTopology();
-      shards::CellTopology lineTopo( shards::getCellTopologyData<shards::Line<2> >() );
-
+      shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
+      shards::CellTopology lineTopo = lineBasis.getBaseCellTopology();
+      
       const unsigned int cellDim  = cellTopo.getDimension();
       const unsigned int lineDim  = lineTopo.getDimension();
+      const unsigned int degree = cellBasis.getDegree();
 
-      const unsigned int numBasis = basis.getCardinality();
-      const unsigned int degBasis = basis.getDegree();
-
-      const int ordEdge = basis.getDofOrdinal(lineDim, edgeId, 0);
-      const unsigned int ndofEdge = basis.getDofTag(ordEdge)[3];
+      const unsigned int numCellBasis = cellBasis.getCardinality();
+      const unsigned int numLineBasis = lineBasis.getCardinality();
+      
+      const int ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
+      const unsigned int ndofEdge = cellBasis.getDofTag(ordEdge)[3];
 
       // reference points between (-1 , 1)
 #ifdef HAVE_INTREPID_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION( !(ndofEdge == PointTools::getLatticeSize<Scalar>(lineTopo, degBasis, 1)),
+      TEUCHOS_TEST_FOR_EXCEPTION( !(ndofEdge == PointTools::getLatticeSize<Scalar>(lineTopo, degree, 1)),
                                   std::logic_error,
                                   ">>> ERROR (Intrepid::OrientationTools::getEdgeCoeffMatrix_HGRAD): " \
                                   "The number of DOFs does not match to the number of collocation points.");
@@ -513,7 +515,7 @@ namespace Intrepid2 {
       ArrayType refPtsLine(ndofEdge, lineDim);
       PointTools::getLattice<Scalar>(refPtsLine,
                                      lineTopo,
-                                     degBasis,
+                                     degree,
                                      1,
                                      POINTTYPE_EQUISPACED);
 
@@ -527,13 +529,6 @@ namespace Intrepid2 {
       // map to reference coordinates
       ArrayType refPtsCell(ndofEdge, cellDim);
       CellTools<Scalar>::mapToReferenceSubcell(refPtsCell,
-                                               refPtsLine,
-                                               lineDim,
-                                               edgeId,
-                                               cellTopo);
-
-      ArrayType ortPtsCell(ndofEdge, cellDim);
-      CellTools<Scalar>::mapToReferenceSubcell(ortPtsCell,
                                                ortPtsLine,
                                                lineDim,
                                                edgeId,
@@ -541,32 +536,34 @@ namespace Intrepid2 {
 
       // temporary storage to evaluate vanila basis on reference points
       // basis is not reordered yet
-      ArrayType tmpValues(numBasis, ndofEdge);
+      ArrayType tmpValues(numCellBasis, ndofEdge);
 
       // reorder values by topology
-      ArrayType refValues(numBasis, ndofEdge);
-      basis.getValues(tmpValues, refPtsCell, OPERATOR_VALUE);
+      ArrayType refValues(numCellBasis, ndofEdge);
+      cellBasis.getValues(tmpValues, refPtsCell, OPERATOR_VALUE);
       getBasisFunctionsByTopology(refValues,
                                   tmpValues,
-                                  basis);
+                                  cellBasis);
 
       // reorder values by topology
-      ArrayType outValues(numBasis, ndofEdge);
-      basis.getValues(tmpValues, ortPtsCell, OPERATOR_VALUE);
+      ArrayType outValues(numLineBasis, ndofEdge);
+      lineBasis.getValues(tmpValues, refPtsLine, OPERATOR_VALUE);
       getBasisFunctionsByTopology(outValues,
                                   tmpValues,
-                                  basis);
+                                  lineBasis);
 
       // compute offset
-      unsigned int offset = 0;
-      const unsigned int numVert = cellTopo.getVertexCount();
-      for (int i=0;i<numVert;++i) {
-        const unsigned int ord = basis.getDofOrdinal(0, i, 0);
-        offset += basis.getDofTag(ord)[3]; // ndof of this vertex
-      }
-      for (int i=0;i<edgeId;++i) {
-        const unsigned int ord = basis.getDofOrdinal(1, i, 0);
-        offset += basis.getDofTag(ord)[3]; // ndof of this edge
+      unsigned int offCell = 0, offLine = 2;
+      {
+        const unsigned int numVert = cellTopo.getVertexCount();
+        for (int i=0;i<numVert;++i) {
+          const unsigned int ord = cellBasis.getDofOrdinal(0, i, 0);
+          offCell += cellBasis.getDofTag(ord)[3]; // ndof of this vertex
+        }
+        for (int i=0;i<edgeId;++i) {
+          const unsigned int ord = cellBasis.getDofOrdinal(1, i, 0);
+          offCell += cellBasis.getDofTag(ord)[3]; // ndof of this edge
+        }
       }
 
       // construct collocation matrix
@@ -578,8 +575,8 @@ namespace Intrepid2 {
       // transpose the matrix
       for (int i=0;i<ndofEdge;++i) {
         for (int j=0;j<ndofEdge;++j) {
-          refMat.Value(j,i) = refValues(i+offset, j);
-          ortMat.Value(j,i) = outValues(i+offset, j);
+          refMat.Value(j,i) = refValues(i+offCell, j);
+          ortMat.Value(j,i) = outValues(i+offLine, j);
         }
       }
 
@@ -617,9 +614,11 @@ namespace Intrepid2 {
   template<class ArrayType>
   void
   OrientationTools<Scalar>::getTriangleCoeffMatrix_HGRAD(OrientationTools<Scalar>::CoeffMatrix & C,
-                                                         const Basis<Scalar,ArrayType> &         basis,
+                                                         const Basis<Scalar,ArrayType> &         faceBasis,
+                                                         const Basis<Scalar,ArrayType> &         cellBasis,
                                                          const int                               faceId,
-                                                         const int                               faceOrt) {
+                                                         const int                               faceOrt,
+                                                         const bool                              leftHanded) {
     typedef typename OrientationTools<Scalar>::DenseMatrix DenseMatrixType;
     typedef typename OrientationTools<Scalar>::CoeffMatrix CoeffMatrixType;
 
@@ -628,23 +627,27 @@ namespace Intrepid2 {
     if (found) {
       // C = foundCoeffMatrix'
     } else {
+      // if the face is left-handed system, the orientation should be re-enumerated 
+      const int leftOrt[] = { 0, 2, 1, 3, 5, 4};
+      const int ort = (leftHanded ? leftOrt[faceOrt] : faceOrt);
 
       // populate points on a line and map to subcell
-      shards::CellTopology cellTopo = basis.getBaseCellTopology();
-      shards::CellTopology faceTopo( shards::getCellTopologyData<shards::Triangle<3> >() );
+      shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
+      shards::CellTopology faceTopo = faceBasis.getBaseCellTopology();
 
       const unsigned int cellDim  = cellTopo.getDimension();
       const unsigned int faceDim  = faceTopo.getDimension();
+      const unsigned int degree = cellBasis.getDegree();
 
-      const unsigned int numBasis = basis.getCardinality();
-      const unsigned int degBasis = basis.getDegree();
+      const unsigned int numCellBasis = cellBasis.getCardinality();
+      const unsigned int numFaceBasis = faceBasis.getCardinality();
 
-      const int ordFace = basis.getDofOrdinal(faceDim, faceId, 0);
-      const unsigned int ndofFace = basis.getDofTag(ordFace)[3];
+      const int ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
+      const unsigned int ndofFace = cellBasis.getDofTag(ordFace)[3];
 
       // reference points in triangle
 #ifdef HAVE_INTREPID_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION( !(ndofFace == PointTools::getLatticeSize<Scalar>(faceTopo, degBasis, 1)),
+      TEUCHOS_TEST_FOR_EXCEPTION( !(ndofFace == PointTools::getLatticeSize<Scalar>(faceTopo, degree, 1)),
                                   std::logic_error,
                                   ">>> ERROR (Intrepid::OrientationTools::getTriangleCoeffMatrix_HGRAD): " \
                                   "The number of DOFs does not match to the number of collocation points.");
@@ -652,7 +655,7 @@ namespace Intrepid2 {
       ArrayType refPtsFace(ndofFace, faceDim);
       PointTools::getLattice<Scalar>(refPtsFace,
                                      faceTopo,
-                                     degBasis,
+                                     degree,
                                      1,
                                      POINTTYPE_EQUISPACED);
 
@@ -661,18 +664,11 @@ namespace Intrepid2 {
       mapToModifiedReference(ortPtsFace,
                              refPtsFace,
                              faceTopo,
-                             faceOrt);
+                             ort);
 
       // map to reference coordinates
       ArrayType refPtsCell(ndofFace, cellDim);
       CellTools<Scalar>::mapToReferenceSubcell(refPtsCell,
-                                               refPtsFace,
-                                               faceDim,
-                                               faceId,
-                                               cellTopo);
-
-      ArrayType ortPtsCell(ndofFace, cellDim);
-      CellTools<Scalar>::mapToReferenceSubcell(ortPtsCell,
                                                ortPtsFace,
                                                faceDim,
                                                faceId,
@@ -680,37 +676,52 @@ namespace Intrepid2 {
 
       // temporary storage to evaluate vanila basis on reference points
       // basis is not reordered yet
-      ArrayType tmpValues(numBasis, ndofFace);
-
+      ArrayType tmpValues(numCellBasis, ndofFace);
+      
       // reorder values by topology
-      ArrayType refValues(numBasis, ndofFace);
-      basis.getValues(tmpValues, refPtsCell, OPERATOR_VALUE);
+      ArrayType refValues(numCellBasis, ndofFace);
+      cellBasis.getValues(tmpValues, refPtsCell, OPERATOR_VALUE);
       getBasisFunctionsByTopology(refValues,
                                   tmpValues,
-                                  basis);
+                                  cellBasis);
 
       // reorder values by topology
-      ArrayType outValues(numBasis, ndofFace);
-      basis.getValues(tmpValues, ortPtsCell, OPERATOR_VALUE);
+      ArrayType outValues(numFaceBasis, ndofFace);
+      faceBasis.getValues(tmpValues, refPtsFace, OPERATOR_VALUE);
       getBasisFunctionsByTopology(outValues,
                                   tmpValues,
-                                  basis);
+                                  faceBasis);
 
       // compute offset
-      unsigned int offset = 0;
-      const unsigned int numVert = cellTopo.getVertexCount();
-      for (int i=0;i<numVert;++i) {
-        const unsigned int ord = basis.getDofOrdinal(0, i, 0);
-        offset += basis.getDofTag(ord)[3]; // ndof of this vertex
+      unsigned int offCell = 0;
+      {
+        const unsigned int numVert = cellTopo.getVertexCount();
+        for (int i=0;i<numVert;++i) {
+          const unsigned int ord = cellBasis.getDofOrdinal(0, i, 0);
+          offCell += cellBasis.getDofTag(ord)[3]; // ndof of this vertex
+        }
+        const unsigned int numEdge = cellTopo.getEdgeCount();
+        for (int i=0;i<numEdge;++i) {
+          const unsigned int ord = cellBasis.getDofOrdinal(1, i, 0);
+          offCell += cellBasis.getDofTag(ord)[3]; // ndof of this edge
+        }
+        for (int i=0;i<faceId;++i) {
+          const unsigned int ord = cellBasis.getDofOrdinal(2, i, 0);
+          offCell += cellBasis.getDofTag(ord)[3]; // ndof of this face
+        }
       }
-      const unsigned int numEdge = cellTopo.getEdgeCount();
-      for (int i=0;i<numEdge;++i) {
-        const unsigned int ord = basis.getDofOrdinal(1, i, 0);
-        offset += basis.getDofTag(ord)[3]; // ndof of this edge
-      }
-      for (int i=0;i<faceId;++i) {
-        const unsigned int ord = basis.getDofOrdinal(2, i, 0);
-        offset += basis.getDofTag(ord)[3]; // ndof of this face
+      unsigned int offFace = 0;
+      {
+        const unsigned int numVert = faceTopo.getVertexCount();
+        for (int i=0;i<numVert;++i) {
+          const unsigned int ord = faceBasis.getDofOrdinal(0, i, 0);
+          offFace += faceBasis.getDofTag(ord)[3]; // ndof of this vertex
+        }
+        const unsigned int numEdge = faceTopo.getEdgeCount();
+        for (int i=0;i<numEdge;++i) {
+          const unsigned int ord = faceBasis.getDofOrdinal(1, i, 0);
+          offFace += faceBasis.getDofTag(ord)[3]; // ndof of this edge
+        }
       }
 
       // construct collocation matrix
@@ -722,8 +733,8 @@ namespace Intrepid2 {
       // transpose the matrix
       for (int i=0;i<ndofFace;++i) {
         for (int j=0;j<ndofFace;++j) {
-          refMat.Value(j,i) = refValues(i+offset, j);
-          ortMat.Value(j,i) = outValues(i+offset, j);
+          refMat.Value(j,i) = refValues(i+offCell, j);
+          ortMat.Value(j,i) = outValues(i+offFace, j);
         }
       }
 
@@ -954,12 +965,16 @@ namespace Intrepid2 {
 
   template<class Scalar>
   template<class ArrayType>
-  void OrientationTools<Scalar>::getModifiedBasisFunctions(ArrayType &                     outValues,
-                                                           const ArrayType &               refValues,
-                                                           const Basis<Scalar,ArrayType> & basis,
-                                                           const Orientation               ort) {
-    const int numBasis = basis.getCardinality();
+  void OrientationTools<Scalar>::getModifiedBasisFunctions(ArrayType &                        outValues,
+                                                           const ArrayType &                  refValues,
+                                                           const BasisSet<Scalar,ArrayType> & basisSet,
+                                                           const Orientation                  ort) {
+    const Basis<Scalar,ArrayType>& cellBasis = basisSet.getCellBasis();
+    const EFunctionSpace space = basisSet.getFunctionSpace();
+
+    const int numBasis = cellBasis.getCardinality();
     const int numPts = refValues.dimension(1);
+
 
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( numBasis <= outValues.dimension(0) ), std::invalid_argument,
@@ -978,20 +993,14 @@ namespace Intrepid2 {
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedBasisFunctions): " \
                                 "Dimension(1) in refValues is greater than the number of points on outValues.");
 #endif
-
-    shards::CellTopology cellTopo = basis.getBaseCellTopology();
-
-    // for now, this is only thing; TODO:: add space tag in the basis
-    EFunctionSpace space = FUNCTION_SPACE_HGRAD;
+    shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
 
     // early return after simply copied
     const auto key = cellTopo.getBaseCellTopologyData()->key;
     if (key   == shards::Line<>::key ||
-        space == FUNCTION_SPACE_HVOL ||
-        ort.isAlignedToReference()) {
+        space == FUNCTION_SPACE_HVOL) {
       const unsigned int numRows = refValues.dimension(0);
       const unsigned int numCols = refValues.dimension(1);
-
       copyBasisValues(outValues,
                       refValues,
                       0, numRows,
@@ -1011,12 +1020,13 @@ namespace Intrepid2 {
     unsigned int offset = 0;
     if (offset < numBasis) {
       for (int i=0;i<numVert;++i) {
-        const int ord = basis.getDofOrdinal(0, i, 0);
-        const unsigned int ndof= basis.getDofTag(ord)[3];
-        copyBasisValues(outValues,
-                        refValues,
-                        offset, ndof,
-                        0,      numPts);
+        const int ord = cellBasis.getDofOrdinal(0, i, 0);
+        const unsigned int ndof= cellBasis.getDofTag(ord)[3];
+        if (ndof) 
+          copyBasisValues(outValues,
+                          refValues,
+                          offset, ndof,
+                          0,      numPts);
         offset += ndof;
       }
     }
@@ -1027,14 +1037,16 @@ namespace Intrepid2 {
 
     if (offset < numBasis) {
       for (int i=0;i<numEdge;++i) {
-        const int ord = basis.getDofOrdinal(1, i, 0);
-        const unsigned int ndof = basis.getDofTag(ord)[3];
-        if (ortEdge[i] && ndof) {
+        const int ord = cellBasis.getDofOrdinal(1, i, 0);
+        const unsigned int ndof = cellBasis.getDofTag(ord)[3];
+        const Basis<Scalar,ArrayType>& lineBasis = basisSet.getLineBasis();
+        if (ndof) {
           typename OrientationTools<Scalar>::CoeffMatrix C;
           switch (space) {
           case FUNCTION_SPACE_HGRAD:
             OrientationTools<Scalar>::getEdgeCoeffMatrix_HGRAD(C,
-                                                               basis,
+                                                               lineBasis,
+                                                               cellBasis,
                                                                i,
                                                                ortEdge[i]);
             break;
@@ -1056,11 +1068,6 @@ namespace Intrepid2 {
                            refValues,
                            C, offset, ndof);
 
-        } else {
-          copyBasisValues(outValues,
-                          refValues,
-                          offset, ndof,
-                          0,      numPts);
         }
         offset += ndof;
       }
@@ -1072,24 +1079,31 @@ namespace Intrepid2 {
 
     if (offset < numBasis) {
       for (int i=0;i<numFace;++i) {
-        const int ord = basis.getDofOrdinal(2, i, 0);
-        const unsigned int ndof = basis.getDofTag(ord)[3];
-        if (ortFace[i] && ndof) {
+        const bool lefthanded = basisSet.isLeftHandedFace(i);
+        const int ord = cellBasis.getDofOrdinal(2, i, 0);
+        const unsigned int ndof = cellBasis.getDofTag(ord)[3];
+        if (ndof) {
           typename OrientationTools<Scalar>::CoeffMatrix C;
           switch (space) {
           case FUNCTION_SPACE_HGRAD: {
             shards::CellTopology faceTopo(cellTopo.getCellTopologyData(2, i));
-            const auto key = faceTopo.getBaseCellTopologyData()->key;
+            const unsigned int key = faceTopo.getBaseCellTopologyData()->key;
             if        (key == shards::Triangle<>::key) {
+              const Basis<Scalar,ArrayType>& trigBasis = basisSet.getTriangleBasis();
               OrientationTools<Scalar>::getTriangleCoeffMatrix_HGRAD(C,
-                                                                     basis,
+                                                                     trigBasis,
+                                                                     cellBasis,
                                                                      i,
-                                                                     ortFace[i]);
+                                                                     ortFace[i],
+                                                                     lefthanded);
             } else if (key == shards::Quadrilateral<>::key) {
+              const Basis<Scalar,ArrayType>& quadBasis = basisSet.getQuadrilateralBasis();
               OrientationTools<Scalar>::getQuadrilateralCoeffMatrix_HGRAD(C,
-                                                                          basis,
+                                                                          quadBasis,
+                                                                          cellBasis,
                                                                           i,
-                                                                          ortFace[i]);
+                                                                          ortFace[i],
+                                                                          lefthanded);
             } else {
               TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getModifiedBasisFunctions): " \
@@ -1113,12 +1127,7 @@ namespace Intrepid2 {
           applyCoeffMatrix(outValues,
                            refValues,
                            C, offset, ndof);
-        } else {
-          copyBasisValues(outValues,
-                          refValues,
-                          offset, ndof,
-                          0,      numPts);
-        }
+        } 
         offset += ndof;
       }
     }
@@ -1126,16 +1135,18 @@ namespace Intrepid2 {
     // interior copy
     if (offset < numBasis) {
       for (int intrId=0;intrId<numIntr;++intrId) {
-        const int ord = basis.getDofOrdinal(cellDim, intrId, 0);
-        const unsigned int ndof = basis.getDofTag(ord)[3];
-        copyBasisValues(outValues,
-                        refValues,
-                        offset, ndof,
-                        0,      numPts);
+        const int ord = cellBasis.getDofOrdinal(cellDim, intrId, 0);
+        const unsigned int ndof = cellBasis.getDofTag(ord)[3];
+        if (ndof)
+          copyBasisValues(outValues,
+                          refValues,
+                          offset, ndof,
+                          0,      numPts);
         offset += ndof;
       }
     }
   }
+
   template<class Scalar>
   bool OrientationTools<Scalar>::verbose = false;
 

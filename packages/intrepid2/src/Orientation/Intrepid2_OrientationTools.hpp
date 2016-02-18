@@ -51,6 +51,12 @@
 
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
 
+#include "Shards_CellTopology.hpp"
+#include "Shards_BasicTopologies.hpp"
+
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_RCP.hpp"
+
 #include "Intrepid2_FieldContainer.hpp"
 #include "Intrepid2_FieldContainer_Kokkos.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
@@ -58,13 +64,9 @@
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
+
 #include "Intrepid2_Basis.hpp"
-
-#include "Shards_CellTopology.hpp"
-#include "Shards_BasicTopologies.hpp"
-
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_RCP.hpp"
+#include "Intrepid2_BasisSet.hpp"
 
 #include <Intrepid2_KokkosRank.hpp>
 #include "Kokkos_Core.hpp"
@@ -193,58 +195,70 @@ namespace Intrepid2 {
 
     template<class ArrayType>
     static void getEdgeCoeffMatrix_HGRAD(CoeffMatrix &                   C,
-                                         const Basis<Scalar,ArrayType> & basis,
+                                         const Basis<Scalar,ArrayType> & lineBasis,
+                                         const Basis<Scalar,ArrayType> & cellBasis,
                                          const int                       edgeId,
                                          const int                       edgeOrt);
-
+    
     template<class ArrayType>
     static void getEdgeCoeffMatrix_HCURL(CoeffMatrix &                   C,
-                                         const Basis<Scalar,ArrayType> & basis,
+                                         const Basis<Scalar,ArrayType> & cellBasis,
+                                         const Basis<Scalar,ArrayType> & lineBasis,
                                          const int                       edgeId,
                                          const int                       edgeOrt) {}
 
     template<class ArrayType>
     static void getEdgeCoeffMatrix_HDIV(CoeffMatrix &                   C,
-                                        const Basis<Scalar,ArrayType> & basis,
+                                        const Basis<Scalar,ArrayType> & lineBasis,
+                                        const Basis<Scalar,ArrayType> & cellBasis,
                                         const int                       edgeId,
                                         const int                       edgeOrt) {}
 
     template<class ArrayType>
     static void getTriangleCoeffMatrix_HGRAD(CoeffMatrix &                   C,
-                                             const Basis<Scalar,ArrayType> & basis,
+                                             const Basis<Scalar,ArrayType> & faceBasis,
+                                             const Basis<Scalar,ArrayType> & cellBasis,
                                              const int                       faceId,
-                                             const int                       faceOrt);
+                                             const int                       faceOrt,
+                                             const bool                      leftHanded);
 
     template<class ArrayType>
     static void getTriangleCoeffMatrix_HCURL(CoeffMatrix &                   C,
-                                             const Basis<Scalar,ArrayType> & basis,
+                                             const Basis<Scalar,ArrayType> & faceBasis,
+                                             const Basis<Scalar,ArrayType> & cellBasis,
                                              const int                       faceId,
                                              const int                       faceOrt) {}
 
     template<class ArrayType>
     static void getTriangleCoeffMatrix_HDIV(CoeffMatrix &                   C,
-                                            const Basis<Scalar,ArrayType> & basis,
+                                            const Basis<Scalar,ArrayType> & faceBasis,
+                                            const Basis<Scalar,ArrayType> & cellBasis,
                                             const int                       faceId,
                                             const int                       faceOrt) {}
 
     template<class ArrayType>
     static void getQuadrilateralCoeffMatrix_HGRAD(CoeffMatrix &                   C,
-                                                  const Basis<Scalar,ArrayType> & basis,
+                                                  const Basis<Scalar,ArrayType> & faceBasis,
+                                                  const Basis<Scalar,ArrayType> & cellBasis,
                                                   const int                       faceId,
-                                                  const int                       faceOrt) {}
+                                                  const int                       faceOrt,
+                                                  const bool                      leftHanded) {}
 
     template<class ArrayType>
     static void getQuadrilateralCoeffMatrix_HCURL(CoeffMatrix &                   C,
-                                                  const Basis<Scalar,ArrayType> & basis,
+                                                  const Basis<Scalar,ArrayType> & faceBasis,
+                                                  const Basis<Scalar,ArrayType> & cellBasis,
                                                   const int                       faceId,
                                                   const int                       faceOrt) {}
 
     template<class ArrayType>
     static void getQuadrilateralCoeffMatrix_HDIV(CoeffMatrix &                   C,
-                                                 const Basis<Scalar,ArrayType> & basis,
+                                                 const Basis<Scalar,ArrayType> & faceBasis,
+                                                 const Basis<Scalar,ArrayType> & cellBasis,
                                                  const int                       faceId,
                                                  const int                       faceOrt) {}
 
+    // all edges and faces should apply this coeff matrix
     template<class ArrayType>
     static void applyCoeffMatrix(ArrayType &         outValues,
                                  const ArrayType &   refValues,
@@ -252,6 +266,7 @@ namespace Intrepid2 {
                                  const unsigned int  offset,
                                  const unsigned int  numDofs);
 
+    // vertex and interior DOFs only
     template<class ArrayType>
     static void copyBasisValues(ArrayType &         outValues,
                                 const ArrayType &   refValues,
@@ -282,10 +297,10 @@ namespace Intrepid2 {
 
 
     template<class ArrayType>
-    static void getModifiedBasisFunctions(ArrayType &                     outValues,
-                                          const ArrayType &               refValues,
-                                          const Basis<Scalar,ArrayType> & basis,
-                                          const Orientation               ort);
+    static void getModifiedBasisFunctions(ArrayType &                        outValues,
+                                          const ArrayType &                  refValues,
+                                          const BasisSet<Scalar,ArrayType> & basis,
+                                          const Orientation                  ort);
 
 
     static bool verbose;

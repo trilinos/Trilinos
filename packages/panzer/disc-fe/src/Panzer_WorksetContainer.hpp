@@ -194,6 +194,11 @@ public:
      */
    void setGlobalIndexer(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
 
+   /** Add a basis to the worksets (if required). If reuqired this will clear
+     * the workset reconstructing all the arrays. Add to all element blocks.
+     */
+   void addBasis(const std::string & type,int order,const std::string & rep_field);
+
 private:
    /** Set the orientations. Can only be called once, this also sets the internally stored
      * global indexer. If an exception is raised, saying it wasn't null then this method
