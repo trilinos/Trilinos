@@ -115,7 +115,7 @@ public:
     return fullMap;
   }
 
-  /*! @brief Helper function to shrink the GIDs and generate a standard map
+  /*! @brief Helper function to shrink the GIDs and generate a standard map whith GIDs starting at 0
    *
     @param  input       Input map (may be overlapping) containing all GIDs. Think of it as a column map.
     @param  nonOvlInput Non-overlapping version of "input" map. Think of it is the corresponding domain map associated with the column map "input"
@@ -123,9 +123,9 @@ public:
 
     This helper routine may be useful for the transformation of MapExtractors in Xpetra-style GID ordering to the Thyra-style ordering.
 
-    Example: input = { 0, 15, 26, 37, 48 }; on proc 0
+    Example: input = { 10, 15, 26, 37, 48 }; on proc 0
              input = { 37, 48, 59, 60, 70 }; on proc 1
-             nonOvlInput = { 0, 15, 26, 37 }; on proc 0
+             nonOvlInput = { 10, 15, 26, 37 }; on proc 0
              nonOvlInput = { 48, 59, 60, 70 }: on proc 1
              result = { 0, 1, 2, 3, 4 }; on proc 0
              result = { 3, 4, 5, 6, 7 }; on proc 1
@@ -356,7 +356,17 @@ public:
       std::vector<Teuchos::RCP<const Map> > thyRgMapExtractorMaps(numRows, Teuchos::null);
       for (size_t r = 0; r < numRows; r++) {
         RCP<const Map> rMap = rangeMapExtractor->getMap(r);
-        thyRgMapExtractorMaps[r] = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::shrinkMapGIDs(*rMap,*rMap);
+        RCP<const Map> shrinkedMap = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::shrinkMapGIDs(*rMap,*rMap);
+        RCP<const StridedMap> strRangeMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rMap);
+        if(strRangeMap != Teuchos::null) {
+          std::vector<size_t> strInfo = strRangeMap->getStridingData();
+          GlobalOrdinal offset = strRangeMap->getOffset();
+          LocalOrdinal stridedBlockId = strRangeMap->getStridedBlockId();
+          RCP<const StridedMap> strShrinkedMap = Teuchos::rcp(new StridedMap(shrinkedMap, strInfo, shrinkedMap->getIndexBase(), stridedBlockId, offset));
+          thyRgMapExtractorMaps[r] = strShrinkedMap;
+        } else {
+          thyRgMapExtractorMaps[r] = shrinkedMap;
+        }
         TEUCHOS_TEST_FOR_EXCEPTION(thyRgMapExtractorMaps[r]->getNodeNumElements()  != rMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style range map extractor contains faulty data.")
       }
       RCP<const Map> fullThyRangeMap = MatrixUtils::concatenateMaps(thyRgMapExtractorMaps);
@@ -366,9 +376,32 @@ public:
       std::vector<Teuchos::RCP<const Map> > thyColMapExtractorMaps(numCols, Teuchos::null);
       for (size_t c = 0; c < numCols; c++) {
         RCP<const Map> cMap   = domainMapExtractor->getMap(c);
+
+        RCP<const Map> shrinkedDomainMap = MatrixUtils::shrinkMapGIDs(*cMap,*cMap);
+        RCP<const StridedMap> strDomainMap = Teuchos::rcp_dynamic_cast<const StridedMap>(cMap);
+        if(strDomainMap != Teuchos::null) {
+          std::vector<size_t> strInfo = strDomainMap->getStridingData();
+          GlobalOrdinal offset = strDomainMap->getOffset();
+          LocalOrdinal stridedBlockId = strDomainMap->getStridedBlockId();
+          RCP<const StridedMap> strShrinkedDomainMap = Teuchos::rcp(new StridedMap(shrinkedDomainMap, strInfo, shrinkedDomainMap->getIndexBase(), stridedBlockId, offset));
+          thyDoMapExtractorMaps[c]  = strShrinkedDomainMap;
+        } else {
+          thyDoMapExtractorMaps[c]  = shrinkedDomainMap;
+        }
+
         RCP<const Map> colMap = myColumnMapExtractor->getMap(c);
-        thyDoMapExtractorMaps[c]  = MatrixUtils::shrinkMapGIDs(*cMap,*cMap);
-        thyColMapExtractorMaps[c] = MatrixUtils::shrinkMapGIDs(*colMap,*cMap);
+        RCP<const Map> shrinkedColMap = MatrixUtils::shrinkMapGIDs(*colMap,*cMap);
+        RCP<const StridedMap> strColMap = Teuchos::rcp_dynamic_cast<const StridedMap>(colMap);
+        if(strColMap != Teuchos::null) {
+          std::vector<size_t> strInfo = strColMap->getStridingData();
+          GlobalOrdinal offset = strColMap->getOffset();
+          LocalOrdinal stridedBlockId = strColMap->getStridedBlockId();
+          RCP<const StridedMap> strShrinkedColMap = Teuchos::rcp(new StridedMap(shrinkedColMap, strInfo, shrinkedColMap->getIndexBase(), stridedBlockId, offset));
+          thyColMapExtractorMaps[c]  = strShrinkedColMap;
+        } else {
+          thyColMapExtractorMaps[c]  = shrinkedColMap;
+        }
+
         TEUCHOS_TEST_FOR_EXCEPTION(thyColMapExtractorMaps[c]->getNodeNumElements() != colMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style column map extractor contains faulty data.")
         TEUCHOS_TEST_FOR_EXCEPTION(thyDoMapExtractorMaps[c]->getNodeNumElements()  != cMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style domain map extractor contains faulty data.")
       }
@@ -387,7 +420,7 @@ public:
         // make sure that the submatrices are defined using the right row maps (either Thyra or xpetra style)
         // Note: we're reserving a little bit too much memory for the submatrices, but should be still reasonable
         if(bThyraMode == true)
-          subMatrices[r*numCols+c] = CrsMatrixFactory::Build (thyRangeMapExtractor->getMap(r),input.getNodeMaxNumRowEntries());
+          subMatrices[r*numCols+c] = CrsMatrixFactory::Build (thyRangeMapExtractor->getMap(r,true),input.getNodeMaxNumRowEntries());
         else
           subMatrices[r*numCols+c] = CrsMatrixFactory::Build (rangeMapExtractor->getMap(r),input.getNodeMaxNumRowEntries());
       }
@@ -414,7 +447,7 @@ public:
         // find local row id associated with growid in the corresponding subblock
         LocalOrdinal lrowid = rangeMapExtractor->getMap(rowBlockId)->getLocalElement(growid);
         // translate back local row id to global row id for the subblock
-        subblock_growid = thyRangeMapExtractor->getMap(rowBlockId)->getGlobalElement(lrowid);
+        subblock_growid = thyRangeMapExtractor->getMap(rowBlockId,true)->getGlobalElement(lrowid);
       }
 
       // extract matrix entries from input matrix
@@ -437,7 +470,7 @@ public:
           // find local col id associated with gcolid in the corresponding subblock
           LocalOrdinal lcolid = myColumnMapExtractor->getMap(colBlockId)->getLocalElement(gcolid);
           // translate back local col id to global col id for the subblock
-          subblock_gcolid = thyColMapExtractor->getMap(colBlockId)->getGlobalElement(lcolid);
+          subblock_gcolid = thyColMapExtractor->getMap(colBlockId,true)->getGlobalElement(lcolid);
         }
         blockColIdx [colBlockId].push_back(subblock_gcolid);
         blockColVals[colBlockId].push_back(vals[i]);
@@ -454,7 +487,7 @@ public:
     if(bThyraMode == true) {
       for (size_t r = 0; r < numRows; r++) {
         for (size_t c = 0; c < numCols; c++) {
-          subMatrices[r*numCols+c]->fillComplete(thyDomainMapExtractor->getMap(c), thyRangeMapExtractor->getMap(r));
+          subMatrices[r*numCols+c]->fillComplete(thyDomainMapExtractor->getMap(c,true), thyRangeMapExtractor->getMap(r,true));
         }
       }
       bA = Teuchos::rcp(new BlockedCrsMatrix(thyRangeMapExtractor, thyDomainMapExtractor, 10 /*input.getRowMap()->getNodeMaxNumRowEntries()*/));
