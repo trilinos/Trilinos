@@ -639,9 +639,12 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
           outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
 
 
-          for(std::size_t p=0;p<parameters_.size();p++)
+          for(std::size_t p=0;p<parameters_.size();p++) {
             if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
               outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+            if(!parameters_[p]->is_distributed)
+              outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+          }
         }
       }
     }
@@ -914,6 +917,10 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if(required_basic_dgdx(outArgs))
     evalModelImpl_basic_dgdx(inArgs,outArgs);
 
+  // evaluate response derivatives to scalar parameters
+  if(required_basic_dgdp_scalar(outArgs))
+    evalModelImpl_basic_dgdp_scalar(inArgs,outArgs);
+
   // evaluate response derivatives to distributed parameters
   if(required_basic_dgdp_distro(outArgs))
     evalModelImpl_basic_dgdp_distro(inArgs,outArgs);
@@ -1128,6 +1135,91 @@ evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs
 
   // reset parameters back to nominal values
   resetParameters();
+}
+
+template <typename Scalar>
+void
+panzer::ModelEvaluator<Scalar>::
+evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // optional sanity check
+  TEUCHOS_ASSERT(required_basic_dgdp_scalar(outArgs));
+
+  // First find all of the active parameters for all responses
+  std::vector<std::string> activeParameterNames;
+  std::vector<int> activeParameters;
+  int totalParameterCount = 0;
+  for(std::size_t j=0; j<parameters_.size(); j++) {
+
+    // skip non-scalar parameters
+    if(parameters_[j]->is_distributed)
+      continue;
+
+    bool is_active = false;
+    for(std::size_t i=0;i<responses_.size(); i++) {
+
+      MEB::Derivative<Scalar> deriv = outArgs.get_DgDp(i,j);
+      if(deriv.isEmpty())
+        continue;
+
+      Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > vec = deriv.getMultiVector();
+      if(vec!=Teuchos::null) {
+        // get the response and tell it to fill the derivative vector
+        std::string responseName = responses_[i]->name;
+        RCP<panzer::ResponseMESupportBase<panzer::Traits::Tangent> > resp =
+          rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Tangent> >(
+            responseLibrary_->getResponse<panzer::Traits::Tangent>(responseName));
+        resp->setVector(vec);
+        is_active = true;
+      }
+    }
+
+    if (is_active) {
+      for (std::size_t k=0; k<parameters_[j]->scalar_value.size(); k++) {
+        std::string name = "PARAMETER_SENSITIVIES: "+(*parameters_[j]->names)[k];
+        activeParameterNames.push_back(name);
+        totalParameterCount++;
+      }
+      activeParameters.push_back(j);
+    }
+  }
+
+  // setup all the assembly in arguments
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+
+  // add active parameter names to assembly in-args
+  RCP<panzer::GlobalEvaluationData> ged_activeParameters =
+    rcp(new panzer::ParameterList_GlobalEvaluationData(activeParameterNames));
+  ae_inargs.addGlobalEvaluationData("PARAMETER_NAMES",ged_activeParameters);
+
+  // Initialize Fad components of all active parameters
+  int paramIndex = 0;
+  for (std::size_t ap=0; ap<activeParameters.size(); ++ap) {
+    const int j = activeParameters[ap];
+    for (unsigned int k=0; k < parameters_[j]->scalar_value.size(); k++) {
+      panzer::Traits::FadType p(totalParameterCount, parameters_[j]->scalar_value[k].baseValue);
+      p.fastAccessDx(paramIndex) = 1.0;
+      parameters_[j]->scalar_value[k].family->template setValue<panzer::Traits::Tangent>(p);
+      paramIndex++;
+    }
+  }
+
+  // make sure that the total parameter count and the total parameter index match up
+  TEUCHOS_ASSERT(paramIndex==totalParameterCount);
+
+  // evaluate response tangent
+  if(totalParameterCount>0) {
+    responseLibrary_->addResponsesToInArgs<Traits::Tangent>(ae_inargs);
+    responseLibrary_->evaluate<Traits::Tangent>(ae_inargs);
+  }
 }
 
 template <typename Scalar>
@@ -1489,6 +1581,32 @@ required_basic_dgdx(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) c
 
      // this is basically a redundant computation
      activeGArgs |= (!outArgs.get_DgDx(i).isEmpty());
+   }
+
+   return activeGArgs;
+}
+
+template <typename Scalar>
+bool panzer::ModelEvaluator<Scalar>::
+required_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+   typedef Thyra::ModelEvaluatorBase MEB;
+
+   // determine if any of the outArgs are not null!
+   bool activeGArgs = false;
+   for(int i=0;i<outArgs.Ng();i++) {
+     for(int p=0;p<Teuchos::as<int>(parameters_.size());p++) {
+
+       // only look at scalar parameters
+       if(parameters_[p]->is_distributed)
+         continue;
+
+       // no derivatives are supported
+       if(outArgs.supports(MEB::OUT_ARG_DgDp,i,p).none())
+         continue;
+
+       activeGArgs |= (!outArgs.get_DgDp(i,p).isEmpty());
+     }
    }
 
    return activeGArgs;

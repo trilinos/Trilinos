@@ -128,6 +128,9 @@ struct FunctionalResponse_Builder : public ResponseMESupportBuilderBase {
 
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildDerivativeFactory() const
   { return build<panzer::Traits::Jacobian>(); }
+
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildTangentFactory() const
+  { return build<panzer::Traits::Tangent>(); }
   
 private:
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
