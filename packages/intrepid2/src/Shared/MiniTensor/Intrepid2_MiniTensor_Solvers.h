@@ -408,9 +408,6 @@ struct LineSearchRegularizedStep final : public StepBase<FN, T, N>
 
   T
   hessian_cond_tol{1.0e+08};
-
-  T
-  hessian_singular_tol{1.0e-12};
 };
 
 } // namespace Intrepid2
