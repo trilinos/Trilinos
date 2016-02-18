@@ -75,14 +75,15 @@ Belos_Translate_from_Aztec_Params(const int * aztec_options,
   case AZ_cg_condnum:
     tpl.set("Solver Name","Pseudoblock CG");
     break; 
-  case AZ_lu:
-    tpl.set("Solver Name","Klu2");
-    break;
   case AZ_bicgstab:
     tpl.set("Solver Name","BICGSTAB");
     break;
   case AZ_tfqmr:
     tpl.set("Solver Name","TFQMR");
+    break;
+  case AZ_lu:
+    error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_lu "<<std::endl;
+    econd |= WARN;;
     break;
   case AZ_cgs:
     error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_cgs"<<std::endl;
