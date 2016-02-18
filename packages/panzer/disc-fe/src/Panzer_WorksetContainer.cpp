@@ -261,6 +261,25 @@ setGlobalIndexer(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi
 }
 
 void WorksetContainer::
+addBasis(const std::string & type,int order,const std::string & rep_field)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  for(auto itr=ebToNeeds_.begin();itr!=ebToNeeds_.end();++itr) {
+    WorksetNeeds & needs = itr->second;
+    RCP<PureBasis> basis = rcp(new PureBasis(type,order,needs.cellData));
+
+    // add in the new basis
+    needs.bases.push_back(basis); 
+    needs.rep_field_name.push_back(rep_field); 
+  }
+
+  // clear all arrays, lazy evaluation means it will be rebuilt
+  clear();
+}
+
+void WorksetContainer::
 applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi)
 {
   // this gurantees orientations won't accidently be applied twice.

@@ -201,7 +201,7 @@ continueSolve() const
 {
   // Regardless of other criteria, if the residual is zero stop solving.
   bool const
-  zero_resi = (abs_error > 0.0 == false);
+  zero_resi = ((abs_error > 0.0) == false);
 
   if (zero_resi == true) return false;
 

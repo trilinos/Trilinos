@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
 
   const Teuchos::RCP<const MapClass> thMap = MatrixUtilsClass::shrinkMapGIDs(*map,*map);
 
-  TEST_EQUALITY(thMap->getGlobalNumElements() , Teuchos::as<GO>(comm->getSize() * 10));
+  TEST_EQUALITY(thMap->getGlobalNumElements() , Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 10));
   TEST_EQUALITY(thMap->getNodeNumElements() , 10);
   TEST_EQUALITY(thMap->getMinLocalIndex(), 0);
   TEST_EQUALITY(thMap->getMaxLocalIndex(), 9);
@@ -228,7 +228,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
   TEST_EQUALITY(thMap2->getNodeNumElements() , (comm->getRank() > 0) ? 13 : 10 );
   TEST_EQUALITY(thMap2->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(thMap2->getMaxAllGlobalIndex(), comm->getSize() * 10 - 1);
-  TEST_EQUALITY(thMap2->getGlobalNumElements() , Teuchos::as<GO>(comm->getSize() * 13 - 3));
+  TEST_EQUALITY(thMap2->getGlobalNumElements() , Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 13 - 3));
 #endif
 }
 

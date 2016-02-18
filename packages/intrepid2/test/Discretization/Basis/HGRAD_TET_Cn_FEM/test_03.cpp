@@ -52,11 +52,12 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Intrepid2_PointTools.hpp"
+#include "Shards_CellTopology.hpp"
+
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+#include "Intrepid2_BasisSet.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #endif
-#include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
-#include "Shards_CellTopology.hpp"
 
 #include <iostream>
 using namespace Intrepid2;
@@ -118,124 +119,140 @@ int main(int argc, char *argv[]) {
                      << "===============================================================================\n" \
                      << "  Order = " << test_order << " , Face = " << test_face << " , Orientation = " << test_ort << "\n" \
                      << "===============================================================================\n";
-          
-          // populate points on a triangle
-          shards::CellTopology face_topo(shards::getCellTopologyData<shards::Triangle<3> >() );
-          
-          const int order = test_order, offset = 1;
-          const int npts_face = PointTools::getLatticeSize(face_topo, order, offset);
+
+          // Step 0 : construct basis function set
+          const int order = test_order;
+
+          BasisSet_HGRAD_TET_Cn_FEM<double,FieldContainer<double> > basis_set(order , POINTTYPE_EQUISPACED);
+          const auto& cell_basis = basis_set.getCellBasis();
+          const auto& face_basis = basis_set.getTriangleBasis();
+
+          const shards::CellTopology cell_topo = cell_basis.getBaseCellTopology();
+          const shards::CellTopology face_topo = face_basis.getBaseCellTopology();
+
+          const int nbf_cell = cell_basis.getCardinality();
+          const int nbf_face = face_basis.getCardinality();
+
+          const int ndim_cell  = cell_topo.getDimension();
+          const int ndim_face  = face_topo.getDimension();
+
+          const int npts = PointTools::getLatticeSize(face_topo, order, 1);
+
+          // Step 1 : create reference and modified triangle points
 
           // reference triangle points
-          FieldContainer<value_type> ref_face_pts(npts_face, 2);
+          FieldContainer<value_type> ref_face_pts(npts, ndim_face);
           PointTools::getLattice<value_type>(ref_face_pts,
                                              face_topo,
-                                             order, offset);
-          
+                                             order, 1);
+
           // modified triangle points
-          FieldContainer<value_type> ort_face_pts(npts_face, 2);
+          FieldContainer<value_type> ort_face_pts(npts, ndim_face);
           OrientationTools<value_type>::mapToModifiedReference(ort_face_pts,
                                                                ref_face_pts,
                                                                face_topo,
                                                                test_ort);
 
-          // create a basis object
-          Basis_HGRAD_TET_Cn_FEM<double,FieldContainer<double> >  basis(order , POINTTYPE_WARPBLEND);
-          const int nbf = basis.getCardinality();
-          
-          const shards::CellTopology cell_topo = basis.getBaseCellTopology();
-          const int ndim  = cell_topo.getDimension();
+
+          // Step 2 : map face points to cell points appropriately
           const int nface = cell_topo.getFaceCount();
-          
+
           // create orientation object
           int orts[4] = {};
           orts[test_face] = test_ort;
-          
+
           Orientation ort;
           ort.setFaceOrientation(nface, orts);
 
           // map triangle points and modified points to reference coordinates
-          FieldContainer<value_type> tmp_cell_pts(npts_face, ndim);
-          
-          const int npts_cell = npts_face*nface;
-          FieldContainer<value_type> ref_cell_pts(npts_cell, ndim), ort_cell_pts(npts_cell, ndim);
+          FieldContainer<value_type> ref_cell_pts(npts, ndim_cell);
+          CellTools<value_type>::mapToReferenceSubcell(ref_cell_pts,
+                                                       ref_face_pts,
+                                                       ndim_face,
+                                                       test_face,
+                                                       cell_topo);
 
-          for (int face_id=0,offset=0;face_id<nface;++face_id,offset+=npts_face) {
-            CellTools<value_type>::mapToReferenceSubcell(tmp_cell_pts,
-                                                         ref_face_pts,
-                                                         2,
-                                                         face_id,
-                                                         cell_topo);
-
-            for (int i=0;i<npts_face;++i)
-              for (int j=0;j<ndim;++j)
-                ref_cell_pts(i + offset, j) = tmp_cell_pts(i, j);
-            
-            CellTools<value_type>::mapToReferenceSubcell(tmp_cell_pts,
-                                                         (orts[face_id] ? ort_face_pts : ref_face_pts),
-                                                         2,
-                                                         face_id,
-                                                         cell_topo);
-            
-            for (int i=0;i<npts_face;++i)
-              for (int j=0;j<ndim;++j)
-                ort_cell_pts(i + offset, j) = tmp_cell_pts(i, j);
-          }
-          
-          // temporary cell workspace
-          FieldContainer<double> tmp_cell_vals(nbf, npts_cell);
-          
-          // modified basis values wrt reference coordinates
-          FieldContainer<double> ref_cell_vals(nbf, npts_cell);
-          basis.getValues(tmp_cell_vals , ref_cell_pts, OPERATOR_VALUE );
-          OrientationTools<value_type>::getBasisFunctionsByTopology(ref_cell_vals,
-                                                                    tmp_cell_vals,
-                                                                    basis);
-
-          // basis values wrt modified coordinates
-          FieldContainer<double> ort_cell_vals(nbf, npts_cell);
-          basis.getValues(tmp_cell_vals, ort_cell_pts, OPERATOR_VALUE);
-          OrientationTools<value_type>::getBasisFunctionsByTopology(ort_cell_vals,
-                                                                    tmp_cell_vals,
-                                                                    basis);
-          
-          for (int i=0;i<nbf;++i)
-            for (int j=0;j<npts_cell;++j)
-              tmp_cell_vals(i, j) = ort_cell_vals(i, j);
-          
-          // modify the basis wrt orientations
-          OrientationTools<value_type>::verbose = true;  
-          OrientationTools<value_type>::getModifiedBasisFunctions(ort_cell_vals,
-                                                                 tmp_cell_vals,
-                                                                 basis,
-                                                                 ort);
-          OrientationTools<value_type>::verbose = false; 
-
-          // check the basis should be same for edge DOFs
+          // Step 3 : evaluate modified basis functions with orientation for reference cell points
+          FieldContainer<double> ort_cell_vals(nbf_cell, npts);
           {
-            int ibegin = 0; 
-            const int nvert = cell_topo.getVertexCount();
-            for (int i=0;i<nvert;++i) {
-              const int ord_vert = basis.getDofOrdinal(0, i, 0);
-              ibegin += basis.getDofTag(ord_vert)[3];
-            }
-            if (ibegin < nbf) {
-              const int nedge = cell_topo.getEdgeCount();
-              for (int i=0;i<nedge;++i) {
-                const int ord_edge = basis.getDofOrdinal(1, i, 0);
-                ibegin += basis.getDofTag(ord_edge)[3];
+            // temporary cell workspace
+            FieldContainer<double> tmp_cell_vals(nbf_cell, npts);
+
+            cell_basis.getValues(tmp_cell_vals, ref_cell_pts, OPERATOR_VALUE);
+            OrientationTools<value_type>::getBasisFunctionsByTopology(ort_cell_vals,
+                                                                      tmp_cell_vals,
+                                                                      cell_basis);
+
+            for (int i=0;i<nbf_cell;++i)
+              for (int j=0;j<npts;++j)
+                tmp_cell_vals(i, j) = ort_cell_vals(i, j);
+
+            OrientationTools<value_type>::verbose = true;
+            OrientationTools<value_type>::getModifiedBasisFunctions(ort_cell_vals,
+                                                                    tmp_cell_vals,
+                                                                    basis_set,
+                                                                    ort);
+            OrientationTools<value_type>::verbose = false;
+          }
+
+          // Step 4 : evaluate reference face basis functions for modified face points
+          FieldContainer<double> ref_face_vals(nbf_face, npts);
+          {
+            // temporary face workspace
+            FieldContainer<double> tmp_face_vals(nbf_face, npts);
+
+            face_basis.getValues(tmp_face_vals, ort_face_pts, OPERATOR_VALUE);
+            OrientationTools<value_type>::getBasisFunctionsByTopology(ref_face_vals,
+                                                                      tmp_face_vals,
+                                                                      face_basis);
+          }
+
+          // Step 5 : compare the basis functions to line functions
+          {
+            // strip the range of cell DOFs
+            int off_cell = 0;
+            {
+              const int nvert = cell_topo.getVertexCount();
+              for (int i=0;i<nvert;++i) {
+                const int ord_vert = cell_basis.getDofOrdinal(0, i, 0);
+                off_cell += cell_basis.getDofTag(ord_vert)[3];
+              }
+              if (off_cell < nbf_cell) {
+                const int nedge = cell_topo.getEdgeCount();
+                for (int i=0;i<nedge;++i) {
+                  const int ord_edge = cell_basis.getDofOrdinal(1, i, 0);
+                  off_cell += cell_basis.getDofTag(ord_edge)[3];
+                }
+              }
+              if (off_cell < nbf_cell) {
+                for (int i=0;i<test_face;++i) {
+                  const int ord_face = cell_basis.getDofOrdinal(2, i, 0);
+                  off_cell += cell_basis.getDofTag(ord_face)[3];
+                }
               }
             }
-            int iend = ibegin; 
-            if (iend < nbf) {
-              const int nface = cell_topo.getFaceCount();
-              for (int i=0;i<nface;++i) {
-                const int ord_face = basis.getDofOrdinal(2, i, 0);
-                iend += basis.getDofTag(ord_face)[3];
+
+            // strip the range of face DOFs
+            int off_face = 0;
+            {
+              const int nvert = face_topo.getVertexCount();
+              for (int i=0;i<nvert;++i) {
+                const int ord_vert = face_basis.getDofOrdinal(0, i, 0);
+                off_face += face_basis.getDofTag(ord_vert)[3];
+              }
+              if (off_face < nbf_face) {
+                const int nedge = face_topo.getEdgeCount();
+                for (int i=0;i<nedge;++i) {
+                  const int ord_edge = face_basis.getDofOrdinal(1, i, 0);
+                  off_face += face_basis.getDofTag(ord_edge)[3];
+                }
               }
             }
-            for (int i=ibegin;i<iend;++i) {
-              for (int j=0;j<npts_cell;++j) {
-                const value_type diff = std::abs(ref_cell_vals(i,j) - ort_cell_vals(i,j));
+
+            const int ndof = nbf_face - off_face;
+            for (int i=0;i<ndof;++i) {
+              for (int j=0;j<npts;++j) {
+                const value_type diff = std::abs(ort_cell_vals(i+off_cell,j) - ref_face_vals(i+off_face,j));
                 if (diff > INTREPID_TOL) {
                   ++r_val;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

@@ -197,6 +197,8 @@ int main(int argc, char* argv[])
   mybasker.Options.realloc    = true;
   mybasker.Options.btf        = true;
   mybasker.Options.incomplete = true;
+  mybasker.Options.incomplete_type = 
+    BASKER_INCOMPLETE_RLVL_LIMITED;
   mybasker.Options.inc_lvl    = 0;
   mybasker.Options.user_fill  = 0;
 

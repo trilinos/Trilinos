@@ -141,6 +141,7 @@ namespace Intrepid2 {
       PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_EQUISPACED );
       break;
     case POINTTYPE_SPECTRAL: 
+    case POINTTYPE_WARPBLEND:
       PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_WARPBLEND );
       break;
     case POINTTYPE_SPECTRAL_OPEN: 

@@ -1116,11 +1116,12 @@ namespace BaskerNS
 			  k+myU.scol, myU.row_idx[j], 
 			  myU.row_idx[j], myU.val[j]);
 		  */
-
 		  
                   fprintf(fp, "(%d , %d , %d) %f , ",
-                          k+myU.scol, myU.row_idx[j], myU.row_idx[j]+myU.srow,
+                          k+myU.scol, myU.row_idx[j], 
+			  myU.row_idx[j]+myU.srow,
                           myU.val[j]);
+		  
 		  
                 }//end over each nnz in column (k) of local U              
             }//end over each matrix row
