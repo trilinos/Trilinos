@@ -219,40 +219,6 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 
     ACME::BoxA_BoxB_Par_Search(domainBoxes, rangeBoxes, comm, interaction_list, first_interaction, last_interaction);
 
-    /*
-    std::vector<int> ghost_indices;
-    std::vector<int> ghost_procs;
-    ACME::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
-
-    int num_procs = stk::parallel_machine_size(comm);
-    std::vector< std::vector<GtkBox> > send_list(num_procs);
-    std::vector< std::vector<GtkBox> > recv_list(num_procs);
-
-    for (size_t i=0;i<ghost_indices.size();i++)
-    {
-        send_list[ghost_procs[i]].push_back(rangeBoxes[ghost_indices[i]]);
-    }
-
-    ACME::Parallel_Data_Exchange(send_list, recv_list, comm);
-
-    ASSERT_EQ(static_cast<size_t>(num_procs), recv_list.size());
-    for (size_t i=0;i<recv_list.size();i++)
-    {
-        for (size_t j=0;j<recv_list[i].size();j++)
-        {
-            rangeBoxes.push_back(recv_list[i][j]);
-            procThatOwnsBox.push_back(i);
-        }
-    }
-    std::vector<int> interaction_list;
-    std::vector<int> first_interaction;
-    std::vector<int> last_interaction;
-
-    gtk::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
-    */
-
-
-
     double elapsedTime = stk::wall_time() - startTime;
 
 
