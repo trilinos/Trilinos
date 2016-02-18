@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
 
   const Teuchos::RCP<const MapClass> thMap = MatrixUtilsClass::shrinkMapGIDs(*map,*map);
 
-  TEST_EQUALITY(thMap->getGlobalNumElements() , comm->getSize() * 10);
+  TEST_EQUALITY(thMap->getGlobalNumElements() , Teuchos::as<GO>(comm->getSize() * 10));
   TEST_EQUALITY(thMap->getNodeNumElements() , 10);
   TEST_EQUALITY(thMap->getMinLocalIndex(), 0);
   TEST_EQUALITY(thMap->getMaxLocalIndex(), 9);
@@ -228,7 +228,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
   TEST_EQUALITY(thMap2->getNodeNumElements() , (comm->getRank() > 0) ? 13 : 10 );
   TEST_EQUALITY(thMap2->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(thMap2->getMaxAllGlobalIndex(), comm->getSize() * 10 - 1);
-  TEST_EQUALITY(thMap2->getGlobalNumElements() , comm->getSize() * 13 - 3);
+  TEST_EQUALITY(thMap2->getGlobalNumElements() , Teuchos::as<GO>(comm->getSize() * 13 - 3));
 #endif
 }
 
@@ -302,7 +302,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraBlockedOperator2Xp
   Teuchos::Array<GO> velgidvec; // global strided maps
   Teuchos::Array<GO> pregidvec;
   Teuchos::Array<GO> fullgidvec; // full global map
-  for (LO i=0; i<pointmap->getNodeNumElements(); i++)
+  for (LO i=0; i<Teuchos::as<LO>(pointmap->getNodeNumElements()); i++)
   {
     // loop over all local ids in pointmap
 
@@ -410,7 +410,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
   Teuchos::Array<GO> velgidvec; // global strided maps
   Teuchos::Array<GO> pregidvec;
   Teuchos::Array<GO> fullgidvec; // full global map
-  for (LO i=0; i<pointmap->getNodeNumElements(); i++)
+  for (LO i=0; i<Teuchos::as<LO>(pointmap->getNodeNumElements()); i++)
   {
     // loop over all local ids in pointmap
 

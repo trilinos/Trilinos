@@ -260,6 +260,40 @@ Thyra::NOXNonlinearSolver::get_W() const
 
 // ****************************************************************
 // ****************************************************************
+Teuchos::RCP< Thyra::LinearOpBase<double> >
+Thyra::NOXNonlinearSolver::get_nonconst_W_op(const bool forceUpToDate)
+{
+  if (forceUpToDate && !nox_group_->isJacobian())
+    nox_group_->computeJacobian();
+  return nox_group_->getNonconstJacobianOperator();
+}
+
+// ****************************************************************
+// ****************************************************************
+Teuchos::RCP< const Thyra::LinearOpBase<double> >
+Thyra::NOXNonlinearSolver::get_W_op() const
+{
+  return nox_group_->getJacobianOperator();
+}
+
+// ****************************************************************
+// ****************************************************************
+Teuchos::RCP<const Thyra::PreconditionerBase<double> >
+Thyra::NOXNonlinearSolver::get_prec_op() const
+{
+  return nox_group_->getPreconditioner();
+}
+
+// ****************************************************************
+// ****************************************************************
+Teuchos::RCP< Thyra::PreconditionerBase<double> >
+Thyra::NOXNonlinearSolver::get_nonconst_prec_op()
+{
+  return nox_group_->getNonconstPreconditioner();
+}
+
+// ****************************************************************
+// ****************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> Thyra::NOXNonlinearSolver::
 buildStatusTests(Teuchos::ParameterList& p)
 {
