@@ -1009,7 +1009,6 @@ int testFromSeparateDataFiles(
     }
 
     //params->set("timer_output_stream" , "std::cout");
-    //params->set("compute_metrics", "true");
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
@@ -1083,7 +1082,6 @@ int testFromSeparateDataFiles(
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-      //problem->printMetrics(cout);
         cout << "testFromDataFile is done " << endl;
     }
 
