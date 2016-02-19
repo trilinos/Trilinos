@@ -79,6 +79,19 @@ namespace Intrepid2 {
     unsigned int _edgeOrt, _faceOrt;
 
   public:
+    template<typename NodeType>
+    static void getElementNodeMap(NodeType *subCellVerts,
+                                  int & numVertex,
+                                  const shards::CellTopology & cellTopo,
+                                  const NodeType *elemNodes,
+                                  const int subCellDim,
+                                  const int subCellOrd);
+    
+    // orientation is always computed on the right-handed coordinates
+    template<typename NodeType>
+    static int getOrientation(const NodeType *subCellVerts,
+                              const int numVertex);
+    
     Orientation();
     Orientation(const Orientation &b) = default;
 
@@ -219,8 +232,7 @@ namespace Intrepid2 {
                                              const Basis<Scalar,ArrayType> & faceBasis,
                                              const Basis<Scalar,ArrayType> & cellBasis,
                                              const int                       faceId,
-                                             const int                       faceOrt,
-                                             const bool                      leftHanded);
+                                             const int                       faceOrt);
 
     template<class ArrayType>
     static void getTriangleCoeffMatrix_HCURL(CoeffMatrix &                   C,
@@ -241,8 +253,7 @@ namespace Intrepid2 {
                                                   const Basis<Scalar,ArrayType> & faceBasis,
                                                   const Basis<Scalar,ArrayType> & cellBasis,
                                                   const int                       faceId,
-                                                  const int                       faceOrt,
-                                                  const bool                      leftHanded) {}
+                                                  const int                       faceOrt) {}
 
     template<class ArrayType>
     static void getQuadrilateralCoeffMatrix_HCURL(CoeffMatrix &                   C,
@@ -274,6 +285,10 @@ namespace Intrepid2 {
                                 const unsigned int  offCols, const unsigned int  numCols);
 
   public:
+    
+    template<class ArrayType>
+    static bool isLeftHandedCell(const ArrayType & pts);
+    
     /** \brief  Computes modified parameterization maps of 1- and 2-subcells with orientation.
 
         \param  outPoints       [out] - rank-2 (P,D2) array with points in 1D or 2D modified domain with orientation
