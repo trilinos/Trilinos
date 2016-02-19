@@ -334,6 +334,17 @@ void AlgZoltan<Adapter>::partition(
       zz->Set_Param("LB_APPROACH", "REPARTITION");
   }
 
+  pe = pl.getEntryPtr("partitioning_objective");
+  if (pe){
+    std::string strChoice = pe->getValue<std::string>(&strChoice);
+    if (strChoice == std::string("multicriteria_minimize_total_weight"))
+      zz->Set_Param("RCB_MULTICRITERIA_NORM", "1");
+    else if (strChoice == std::string("multicriteria_balance_total_maximum"))
+      zz->Set_Param("RCB_MULTICRITERIA_NORM", "2");
+    else if (strChoice == std::string("multicriteria_minimize_maximum_weight"))
+      zz->Set_Param("RCB_MULTICRITERIA_NORM", "3");
+  }
+
   pe = pl.getEntryPtr("rectilinear");
   if (pe) {
     int val;
