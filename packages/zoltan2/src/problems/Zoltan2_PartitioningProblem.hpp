@@ -120,7 +120,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(),
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_(), graphMetrics_()
+      metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -136,7 +136,7 @@ public:
       numberOfWeights_(),
       partIds_(), partSizes_(), numberOfCriteria_(),
       levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_(), graphMetrics_()
+      metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -152,7 +152,7 @@ public:
       numberOfWeights_(),
       partIds_(), partSizes_(), numberOfCriteria_(),
       levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_(), graphMetrics_()
+      metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -223,12 +223,12 @@ public:
    *   graph metrics with a parameter.
    */
   ArrayRCP<const GraphMetricValues<scalar_t> > getGraphMetrics() const {
-   if (graphMetrics_.is_null()){
+    if (metrics_.is_null()){
       ArrayRCP<const GraphMetricValues<scalar_t> > emptyMetrics;
       return emptyMetrics;
     }
     else
-      return graphMetrics_->getGraphMetrics();
+      return metrics_->getGraphMetrics();
   }
 
   /*! \brief Print the array of metrics
@@ -249,10 +249,10 @@ public:
    *   metrics with a parameter.
    */
   void printGraphMetrics(std::ostream &os) const {
-    if (graphMetrics_.is_null())
+    if (metrics_.is_null())
       os << "No metrics available." << std::endl;
     else
-      graphMetrics_->printGraphMetrics(os);
+      metrics_->printGraphMetrics(os);
   };
 
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
@@ -400,7 +400,6 @@ private:
 
   bool metricsRequested_;
   RCP<const EvaluatePartition<Adapter> > metrics_;
-  RCP<const EvaluatePartition<Adapter> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -640,34 +639,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     psq_t *quality = NULL;
 
-    if (inputType_ == GraphAdapterType ||
-        inputType_ == MatrixAdapterType ||
-        inputType_ == MeshAdapterType){
-
-      try{
-        quality=new psq_t(this->envConst_, problemCommConst_,
-			  this->baseInputAdapter_,&this->getSolution(),false);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      psq_t *graphQuality = NULL;
-
-      try{
-        graphQuality = new psq_t(this->envConst_, problemCommConst_,
-                                 this->baseInputAdapter_, &this->getSolution(),
-                                 this->graphModel_);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      graphMetrics_ = rcp(graphQuality);
-    } else {
-
-      try{
-        quality=new psq_t(this->envConst_, problemCommConst_,
-			  this->baseInputAdapter_,&this->getSolution(),false);
-      }
-      Z2_FORWARD_EXCEPTIONS
+    try{
+      quality=new psq_t(this->envConst_, problemCommConst_,
+			this->baseInputAdapter_,&this->getSolution(),false);
     }
+    Z2_FORWARD_EXCEPTIONS
 
     metrics_ = rcp(quality);
   }
