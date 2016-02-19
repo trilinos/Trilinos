@@ -67,6 +67,7 @@ template <typename Adapter>
 
 private:
 
+  typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
@@ -100,7 +101,7 @@ public:
     const RCP<const Comm<int> > &problemComm,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
     const PartitioningSolution<Adapter> *soln,
-    bool useDegreeAsWeight,
+    bool useDegreeAsWeight = false,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
 
@@ -113,13 +114,13 @@ public:
 
       The constructor does global communication to compute the graph metrics.
       The rest of the  methods are local.
-   */
+   *
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
-		    Teuchos::null);
+    Teuchos::null);*/
 
   /*! \brief Return the metric values.
    *  \param values on return is the array of values.
@@ -214,7 +215,7 @@ template <typename Adapter>
   bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
-    metrics_(),  metricsConst_()
+    metrics_(),  metricsConst_(), graphMetrics_(), graphMetricsConst_()
 {
 
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
@@ -250,7 +251,7 @@ template <typename Adapter>
     targetGlobalParts_ = problemComm->getSize();
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
-  env->debug(DETAILED_STATUS, std::string("Exiting EvaluatePartition"));
+  /*env->debug(DETAILED_STATUS, std::string("Exiting EvaluatePartition"));
 }
 
 template <typename Adapter>
@@ -265,14 +266,15 @@ template <typename Adapter>
 {
 
   env->debug(DETAILED_STATUS,
-	     std::string("Entering EvaluatePartition"));
+  std::string("Entering EvaluatePartition"));*/
+  BaseAdapterType inputType = ia->adapterType();
+  if (inputType == GraphAdapterType ||
+      inputType == MatrixAdapterType ||
+      inputType == MeshAdapterType){
   env->timerStart(MACRO_TIMERS, "Computing graph metrics");
   // When we add parameters for which weights to use, we
   // should check those here.  For now we compute graph metrics
   // using all weights.
-
-  typedef typename Adapter::part_t part_t;
-  typedef typename Adapter::base_adapter_t base_adapter_t;
 
   std::bitset<NUM_MODEL_FLAGS> modelFlags;
 
@@ -320,11 +322,12 @@ template <typename Adapter>
     Z2_FORWARD_EXCEPTIONS;
   }
 
-  if (soln)
+  /*if (soln)
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
-  else targetGlobalParts_ = problemComm->getSize();
+  else targetGlobalParts_ = problemComm->getSize();*/
 
   env->timerStop(MACRO_TIMERS, "Computing graph metrics");
+  }
   env->debug(DETAILED_STATUS,
 	     std::string("Exiting EvaluatePartition"));
 }

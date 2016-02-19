@@ -304,18 +304,18 @@ int main(int narg, char *arg[]) {
     RCP<quality_t> metricObject = 
       rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
 
-    RCP<quality_t> graphMetricObject;
+    /*RCP<quality_t> graphMetricObject;
 
     if (action == "scotch") {
       graphMetricObject = rcp(new quality_t(env, CommT, bia,
 					    &problem.getSolution()));
-    }
+					    }*/
 
     if (!me) {
       metricObject->printMetrics(cout);
 
       if (action == "scotch") {
-	graphMetricObject->printGraphMetrics(cout);
+	/*graphM*/metricObject->printGraphMetrics(cout);
       }
     }
   }
