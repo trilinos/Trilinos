@@ -342,7 +342,7 @@ public:
       /********************************************************************/
       itol_ = std::sqrt(ROL_EPSILON);
       if ( useSecantHessVec_ && secant_ != Teuchos::null ) {        // IHAs = H*As
-        secant_->applyB(*gtmp_,*As_,x);
+        secant_->applyB(*gtmp_,*As_);
       }
       else {
         obj.hessVec(*gtmp_,*As_,x,itol_);
@@ -372,7 +372,7 @@ public:
       // UPDATE MULTIPLIER 
       /********************************************************************/
       if ( useSecantHessVec_ && secant_ != Teuchos::null ) {
-        secant_->applyB(*rtmp_,s,x);
+        secant_->applyB(*rtmp_,s);
       }
       else {
         obj.hessVec(*rtmp_,s,x,itol_);
@@ -449,7 +449,7 @@ public:
     algo_state.ngrad++;
 
     if ( secant_ != Teuchos::null ) {
-      secant_->update(*(step_state->gradientVec),*gtmp_,s,algo_state.snorm,algo_state.iter+1);
+      secant_->updateStorage(x,*(step_state->gradientVec),*gtmp_,s,algo_state.snorm,algo_state.iter+1);
     }
     (algo_state.iterateVec)->set(x);
   }

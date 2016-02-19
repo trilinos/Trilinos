@@ -175,7 +175,7 @@ public:
       Z.push_back(x.clone());
 
       // Apply right preconditioner
-      M.apply(*(Z[iter]),*(V[iter]),itol);
+      M.applyInverse(*(Z[iter]),*(V[iter]),itol);
 
       // Apply operator
       A.apply(*w_,*(Z[iter]),itol);

@@ -88,6 +88,9 @@ public:
     useSecant_ = useSecant;
   }
 
+  void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    Hv.set(v.dual());
+  }
   /** \brief Apply preconditioner.
 
       This function applies the preconditioner to a vector.
@@ -95,11 +98,11 @@ public:
       @param[in]          v   is the input vector.
       @param[in]          tol is a tolerance for inexact Hessian application.
   */
-  void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+  void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     v_->set(v);
     con_->pruneActive(*v_,*xlam_,eps_);
     if ( useSecant_ && secant_ != Teuchos::null ) {
-      secant_->applyH(Hv,*v_,*x_);
+      secant_->applyH(Hv,*v_);
     }
     else {
       obj_->precond(Hv,*v_,*x_,tol);

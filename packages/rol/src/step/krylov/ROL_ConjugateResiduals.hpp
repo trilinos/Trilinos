@@ -89,7 +89,7 @@ public:
     x.zero(); 
 
     // Apply preconditioner to residual
-    M.apply(*r_,b,itol);
+    M.applyInverse(*r_,b,itol);
 
     // Initialize direction p
     p_->set(*r_); 
@@ -117,7 +117,7 @@ public:
 
     for (iter = 0; iter < (int)Krylov<Real>::getMaximumIteration(); iter++) {
       itol = std::sqrt(ROL_EPSILON);
-      M.apply(*MAp_, *Ap_, itol);
+      M.applyInverse(*MAp_, *Ap_, itol);
       kappa = MAp_->dot(Ap_->dual());
       //if ( gHg <= 0.0 || kappa <= 0.0 ) { 
         //flag = 2;

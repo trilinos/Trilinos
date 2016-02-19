@@ -543,6 +543,7 @@ namespace ROL {
     NONLINEARCG_DAI_YUAN,
     NONLINEARCG_HAGER_ZHANG,
     NONLINEARCG_OREN_LUENBERGER,
+    NONLINEARCG_USERDEFINED,
     NONLINEARCG_LAST
   };
 
@@ -558,6 +559,7 @@ namespace ROL {
       case NONLINEARCG_DAI_YUAN:              retString = "Dai-Yuan";                    break;
       case NONLINEARCG_HAGER_ZHANG:           retString = "Hager-Zhang";                 break;
       case NONLINEARCG_OREN_LUENBERGER:       retString = "Oren-Luenberger";             break;
+      case NONLINEARCG_USERDEFINED:           retString = "User Defined";                break;
       case NONLINEARCG_LAST:                  retString = "Last Type (Dummy)";           break;
       default:                                retString = "INVALID ENonlinearCG";
     }
@@ -578,7 +580,8 @@ namespace ROL {
             (s == NONLINEARCG_LIU_STOREY)        ||
             (s == NONLINEARCG_DAI_YUAN)          ||
             (s == NONLINEARCG_HAGER_ZHANG)       ||
-            (s == NONLINEARCG_OREN_LUENBERGER)      
+            (s == NONLINEARCG_OREN_LUENBERGER)   ||
+            (s == NONLINEARCG_USERDEFINED)
           );
   }
 
@@ -643,7 +646,7 @@ namespace ROL {
       case LINESEARCH_BISECTION:            retString = "Bisection";               break;
       case LINESEARCH_GOLDENSECTION:        retString = "Golden Section";          break;
       case LINESEARCH_CUBICINTERP:          retString = "Cubic Interpolation";     break;
-      case LINESEARCH_BRENTS:               retString = "Brents";                  break;
+      case LINESEARCH_BRENTS:               retString = "Brent's";                 break;
       case LINESEARCH_USERDEFINED:          retString = "User Defined";            break;
       case LINESEARCH_LAST:                 retString = "Last Type (Dummy)";       break;
       default:                              retString = "INVALID ELineSearch";
