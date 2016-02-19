@@ -3431,9 +3431,14 @@ namespace BaskerNS
 	    Int bl = l+1;
 	    Int A_col = S(lvl)(kid);
 
+	    /*
+	    printf("leader_id: %d kid: %d lvl: %d l: %d blk: %d %d \n",
+		   leader_id, kid, lvl, l,
+		   S(bl)(kid), find_leader(kid,lvl-1));
+	    */
 	    Int my_row_leader = find_leader(kid, lvl-1);
 	    Int my_new_row = 
-	      L_col - S(0)(my_row_leader);
+	      S(bl)(kid) - S(0)(my_row_leader);
 
 
 	    Int A_row = (lvl==l)?(2):S(bl)(kid)%(LU_size(A_col));
@@ -3445,12 +3450,12 @@ namespace BaskerNS
 		A_row = ((S(bl)(kid)+1)-(tm*16))%LU_size(A_col);
 	      }
 	   
-	    
-	    //printf("TEST---ADD kid: %d A: %d %d new: %d leader: %d %d lvl: %d %d\n",
-	    //kid, A_col, A_row, my_new_row, my_row_leader, L_col,lvl, bl);
-	   
+	    /*
+	    printf("TEST---ADD kid: %d A: %d %d new: %d leader: %d %d lvl: %d %d\n",
+	    kid, A_col, A_row, my_new_row, my_row_leader, L_col,lvl, bl);
+	    */
 
-	    //A_row = my_new_row;
+	    A_row = my_new_row;
 
 
 	    BASKER_ASSERT((A_row!=(LU_size(A_col)-1)),
