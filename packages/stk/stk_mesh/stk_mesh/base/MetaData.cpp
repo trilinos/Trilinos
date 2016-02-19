@@ -328,15 +328,11 @@ FieldBase const* MetaData::coordinate_field() const
 Part * MetaData::get_part( const std::string & p_name ,
                            const char * required_by ) const
 {
-  const PartVector & all_parts = m_part_repo.get_all_parts();
-
-  Part * const p = find( all_parts , p_name );
-
-  ThrowErrorMsgIf( required_by && NULL == p,
+  Part *part = m_part_repo.get_part_by_name(p_name);
+  ThrowErrorMsgIf( required_by && NULL == part,
                    "Failed to find part with name " << p_name <<
                    " for method " << required_by );
-
-  return p ;
+  return part;
 }
 
 void MetaData::add_new_part_in_part_fields()

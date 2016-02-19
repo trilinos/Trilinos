@@ -794,7 +794,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     return nullptr;
   }
   
-  vector<const zscalar_t *> weights;
+  std::vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
   const zgno_t * globalIds;
   zlno_t localCount = 0;
@@ -824,22 +824,25 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
-    vector<const zscalar_t *> coords;
-    vector<int> entry_strides;
+    std::vector<const zscalar_t *> coords;
+    std::vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     
-    size_t dim = coords.size(); //BDD may need to add NULL for constructor call
-    size_t push_null = 3-dim;
-    for (size_t i = 0; i < push_null; i ++)
-      coords.push_back(NULL);
     
     if(weights.empty())
     {
+      size_t dim = coords.size(); //BDD add NULL for constructor call
+      size_t push_null = 3-dim;
+      for (size_t i = 0; i < push_null; i ++) coords.push_back(NULL);
       ia = new AdapterForTests::basic_vector_adapter(zlno_t(localCount),
                                                      globalIds,
                                                      coords[0],coords[1],coords[2],
                                                      stride, stride, stride);
-    }else{
+    }
+    else if (weights.size() == 1) {
+      size_t dim = coords.size(); //BDD add NULL for constructor call
+      size_t push_null = 3-dim;
+      for (size_t i = 0; i < push_null; i ++) coords.push_back(NULL);
       ia = new AdapterForTests::basic_vector_adapter(zlno_t(localCount),
                                                      globalIds,
                                                      coords[0],coords[1],coords[2],
@@ -848,7 +851,12 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
                                                      weights[0],
                                                      weightStrides[0]);
     }
-    
+    else { // More than one weight per ID
+      ia = new AdapterForTests::basic_vector_adapter(zlno_t(localCount),
+                                                     globalIds,
+                                                     coords, entry_strides,
+                                                     weights, weightStrides);
+    }
   }
   else if(input_type == "tpetra_vector")
   {

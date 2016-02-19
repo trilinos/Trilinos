@@ -52,7 +52,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_PointRule.hpp"
-#include "Panzer_PointValues.hpp"
+#include "Panzer_PointValues2.hpp"
 
 #include "Intrepid2_FieldContainer.hpp"
 
@@ -67,9 +67,9 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(DirichletResidual_FaceBasis)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<ScalarT,Cell,Point,Dim> dof;
-  PHX::MDField<ScalarT,Cell,Point,Dim> value;
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation; // will scale residual
+  PHX::MDField<const ScalarT,Cell,Point,Dim> dof;
+  PHX::MDField<const ScalarT,Cell,Point,Dim> value;
+  PHX::MDField<const ScalarT,Cell,BASIS> dof_orientation; // will scale residual
                                                     // by orientation to ensure
                                                     // parallel consistency
 
@@ -78,7 +78,7 @@ PANZER_EVALUATOR_CLASS(DirichletResidual_FaceBasis)
   Intrepid2::FieldContainer<ScalarT> faceNormal; // face normals
   Intrepid2::FieldContainer<ScalarT> refFaceNormal; // reference face normals
 
-  PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
+  PointValues2<ScalarT,PHX::MDField> pointValues;
 
 PANZER_EVALUATOR_CLASS_END
 

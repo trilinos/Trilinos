@@ -243,6 +243,10 @@ namespace BaskerNS
   
 
     find_btf2(A); 
+
+    //TEst 
+    sort_matrix(BTF_A);
+    //printMTX("A_TEST.mtx", BTF_A);
     sort_matrix(BTF_C);
 
     //btf_tabs_offset = 0;
@@ -251,7 +255,7 @@ namespace BaskerNS
    
     if((btf_tabs_offset != 0) )
       {
-	printf("BTF_OFFSET CALLED\n");
+	//printf("BTF_OFFSET CALLED\n");
 
         //  printf("A/B block stuff called\n");
 	//3. ND on BTF_A
@@ -304,7 +308,7 @@ namespace BaskerNS
 	//MALLOC_INT_1DARRAY(csymamd_perm, BTF_A.ncol+1);
 	init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
 	//init_value(csymamd_perm, BTF_A.ncol+1,(Int) 0);
-	
+	//printf("============CALLING CSYMAMD============\n");
 	csymamd_order(BTF_A, order_csym_array, cmember);
 	//csymamd_order(BTF_A, csymamd_perm, cmember);
 	
@@ -327,6 +331,8 @@ namespace BaskerNS
 	    //printMTX("C_BTF_AMD.mtx", BTF_C);
 	  }
     
+
+	printMTX("BTF_A.mtx", BTF_A);
     
 	//6. Move to 2D Structure
 	//finds the shapes for both view and submatrices,
@@ -335,6 +341,7 @@ namespace BaskerNS
 	//finds the starting point of A for submatrices
 	find_2D_convert(BTF_A);
 	//now we can fill submatrices
+	//printf("AFTER CONVERT\n");
         #ifdef BASKER_KOKKOS
 	kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
 	Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
@@ -343,7 +350,7 @@ namespace BaskerNS
 	//Comeback
         #endif
 
-	printMTX("BTF_A.mtx", BTF_A); 
+	//printMTX("BTF_A.mtx", BTF_A); 
 	
       }//if btf_tab_offset == 0
 
@@ -351,7 +358,7 @@ namespace BaskerNS
     if(btf_nblks > 1)
       {
 	sort_matrix(BTF_C);
-	printMTX("C_TEST.mtx", BTF_C);
+	//printMTX("C_TEST.mtx", BTF_C);
 	//Permute C
 
 
@@ -431,11 +438,24 @@ namespace BaskerNS
 
     */
       
-    Int job = 2; //5 is the default for SuperLU_DIST
+    //You would think a match order would help!
+    //It does not!
+
+    //Int job = 2; //5 is the default for SuperLU_DIST
     //INT_1DARRAY mperm = order_match_array;
     MALLOC_INT_1DARRAY(order_match_array, A.nrow);
     //MALLOC_INT_1DARRAY(mperm, A.nrow);
-    mwm(A,order_match_array);
+    if(Options.incomplete == BASKER_FALSE)
+      {
+	mwm(A,order_match_array);
+      }
+    else
+      {
+	for(Int i = 0; i < A.nrow; i++)
+	  {
+	    order_match_array(i) = i;
+	  }
+      }
     //mc64(job,order_match_array);
     //mc64(job,mperm);
 
@@ -493,7 +513,7 @@ namespace BaskerNS
 	FREE(MMT);
       }
     
-    nd_flag == BASKER_TRUE;
+    nd_flag = BASKER_TRUE;
     //permute
     //permute_col(M, part_tree.permtab);
     ///permute_row(M, part_tree.permtab);

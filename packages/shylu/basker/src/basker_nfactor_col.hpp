@@ -530,24 +530,15 @@ namespace BaskerNS
     const Int L_col = S(l)(kid);
     const Int L_row = 0;
     const Int U_col = S(lvl)(kid);
-    Int U_row = (lvl==1)?(kid%2):S(l)(kid)%LU_size(U_col);
-  
-    if((L_col > 14) &&
-       (L_col > LU_size(U_col)) &&
-       (lvl != 1))
-      {
-	//printf("modify urow, %d %d \n",
-	//     L_col, LU_size(U_col));
-	
-	Int tm = (L_col+1)/16;
-	U_row = ((L_col+1)-(tm*16))%LU_size(U_col);
 
-      }
-
+    Int my_row_leader = S(0)(find_leader(kid,lvl-1));
+    //Int my_new_row = 
+    // L_col - my_row_leader;
+    Int U_row = L_col - my_row_leader;
 
     const Int X_col = S(0)(kid);
     const Int X_row = l; //X_row = lower(L)
-    const Int col_idx_offset = 0; //we might be able to remove
+    //const Int col_idx_offset = 0; //we might be able to remove
   
     #ifdef BASKER_DEBUG_NFACTOR_COL
     if(kid >= 0)
@@ -597,7 +588,7 @@ namespace BaskerNS
 
 
     const Int brow = U.srow;
-    const Int bcol = U.scol;
+    //const Int bcol = U.scol;
 
     Int *color     = &(ws(0));
     Int *pattern   = &(color[ws_size]);
@@ -687,7 +678,7 @@ namespace BaskerNS
 	#endif
 	  {
 	    #ifdef BASKER_INC_LVL
-	    t_local_reach_selective(kid, l, l, j, &top);
+	    //t_local_reach_selective(kid, l, l, j, &top);
 	    #else
 	    //t_local_reach(kid, l, l, j, &top); //Note: comeback
 	    t_local_reach(kid,l,l,j,top);
@@ -1156,7 +1147,7 @@ namespace BaskerNS
     const Int U_row = LU_size(U_col)-1;
     
     const Int X_col = S(0)(kid);
-    Int col_idx_offset = 0; //can we get rid of now?
+    //Int col_idx_offset = 0; //can we get rid of now?
     
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
@@ -1191,7 +1182,7 @@ namespace BaskerNS
     ENTRY_1DARRAY X       = LL(X_col)(l+1).ews;
 
     const Int brow     = U.srow;
-    const Int bcol     = U.scol;
+    //const Int bcol     = U.scol;
 
     //Int lval       = L.col_ptr[k-bcol];
     const Int lval  = L.col_ptr(k);

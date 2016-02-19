@@ -55,7 +55,6 @@ using Teuchos::rcp;
 
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_IntegrationValues.hpp"
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_Workset.hpp"
@@ -218,11 +217,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
     coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
     coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
     coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
-
-    Teuchos::RCP<panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > > quadValues1 
-        = Teuchos::rcp(new panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> >);
-    quadValues1->setupArrays(quadRule);
-    quadValues1->evaluateValues(coords);
   }
 
   // construct workset

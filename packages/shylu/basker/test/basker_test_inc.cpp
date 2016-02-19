@@ -197,8 +197,10 @@ int main(int argc, char* argv[])
   mybasker.Options.realloc    = true;
   mybasker.Options.btf        = true;
   mybasker.Options.incomplete = true;
-  mybasker.Options.inc_lvl    = 0;
-  mybasker.Options.user_fill  = 0;
+  mybasker.Options.incomplete_type = 
+    BASKER_INCOMPLETE_RLVL_LIMITED;
+  mybasker.Options.inc_lvl    = 3;
+  mybasker.Options.user_fill  = 1.0;
 
   mybasker.SetThreads(numthreads);
   cout << "--------------Done Setting Threads----------" << endl;
@@ -208,7 +210,7 @@ int main(int argc, char* argv[])
 
  // mybasker.Factor(m,n,nnz,col_ptr,row_idx,vals);
   //cout << "--------------Done NFactor-----------------" << endl;
-  mybasker.DEBUG_PRINT();
+   mybasker.DEBUG_PRINT();
   cout << "--------------Done Print----------------------"<<endl;
   // mybasker.SolveTest();
   //mybasker.Solve(y,x);

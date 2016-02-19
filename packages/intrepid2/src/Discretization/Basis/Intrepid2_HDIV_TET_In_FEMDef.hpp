@@ -225,6 +225,9 @@ namespace Intrepid2 {
         coeffs_(i,j) = Csdm(i,j);
       }
     }
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
     
   template<class Scalar, class ArrayScalar>

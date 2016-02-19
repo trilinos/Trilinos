@@ -116,6 +116,8 @@ namespace Intrepid2 {
       }
     }
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
 
   template<class Scalar, class ArrayScalar>
@@ -139,6 +141,7 @@ namespace Intrepid2 {
       PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_EQUISPACED );
       break;
     case POINTTYPE_SPECTRAL: 
+    case POINTTYPE_WARPBLEND:
       PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_WARPBLEND );
       break;
     case POINTTYPE_SPECTRAL_OPEN: 
@@ -173,6 +176,9 @@ namespace Intrepid2 {
         Vinv_(i,j) = Vsdm(j,i);
       }
     }
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
   
   

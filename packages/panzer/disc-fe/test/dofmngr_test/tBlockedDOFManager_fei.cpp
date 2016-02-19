@@ -75,6 +75,8 @@ using Teuchos::rcpFromRef;
 
 typedef Intrepid2::FieldContainer<double> FieldContainer;
 
+#ifdef PANZER_HAVE_FEI
+
 namespace panzer {
 
 template <typename Intrepid2Type>
@@ -107,6 +109,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
+   dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManager,MPI_COMM_WORLD);
 
    TEST_ASSERT(dofManager.getComm()!=Teuchos::null);
@@ -137,7 +140,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    TEST_ASSERT(dofManager.getElementBlock("block_2")==connManager->getElementBlock("block_2"));
 }
 
-#ifdef PANZER_HAVE_FEI
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 {
    PHX::KokkosDeviceSession session;
@@ -158,6 +160,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
+   dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -266,7 +269,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    TEST_EQUALITY(blk2fn[0],4);
    TEST_EQUALITY(blk2fn[1],5);
 }
-#endif
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
@@ -290,6 +292,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
+   dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -404,6 +407,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 
    RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
+   dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -563,6 +567,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
    PHX::KokkosDeviceSession session;
 
    BlockedDOFManager<int,int> dofManager; 
+   dofManager.setUseDOFManagerFEI(true);
 
    std::set<std::string> validFields;
    validFields.insert("horse");
@@ -653,3 +658,4 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 }
 
 }
+#endif

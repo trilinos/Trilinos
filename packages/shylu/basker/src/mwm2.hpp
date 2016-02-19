@@ -519,15 +519,18 @@ namespace mwm_order
    Int &num, Entry &bv
    )
   {
-    Int i,ii,i0,j,jj, k, k1, k2;
+    //Int i,ii,i0,j,jj, k, k1, k2;
+    Int i,ii,i0,j,jj, k;
     Int kk, kk1, kk2;
-    Entry a0, ai, av;
+    //Entry a0, ai, av;
+    Entry a0, ai;
     //bn value, b0 = min(maxr,maxc)
     //bv  = (Entry) 0;
     bv = (Entry) INF;
     //printf("bv: %f \n", bv);
 
     //Init used values
+    i0 = -1;
     num = 0;
     for(k = 0; k < n; k++)
       {
@@ -732,16 +735,20 @@ namespace mwm_order
    )
   {
 
-    Int i, ii, i0, i1;
-    Int j, jj, j0, j1;
-    Int k, kk, k0, k1;
+    //Int i, ii, i0, i1;
+    Int i, i0;
+    //Int j, jj, j0, j1;
+    Int j, jj;
+    //Int k, kk, k0, k1
+    Int k, kk;;
     
     Int jord, jdum, idum;
 
     Int qlen, low, up;
 
     Int q0;
-    Entry qi, dq0;
+    //Entry qi, dq0;
+    Entry dq0;
 
     Entry dnew, di;
     Entry csp;
@@ -773,7 +780,8 @@ namespace mwm_order
     printf("\n");
     #endif
     
- 
+    jsp = -1;
+    isp = -1;
     //prep
     for(i = 0; i < n; i++)
       {

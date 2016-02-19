@@ -100,6 +100,11 @@ int main(int argc, char *argv[])
       if (argv[1][0]=='-' && argv[1][1]=='v')
     verbose = true;
 
+    // Seed the random number generator in Teuchos.  We create random
+    // bordering matrices and it is possible different processors might generate
+    // different matrices.  By setting the seed, this shouldn't happen.
+    Teuchos::ScalarTraits<double>::seedrandom(12345);
+
     // Create and initialize the parameter vector
     LOCA::ParameterVector pVector;
     pVector.addParameter("Param 1",  1.69);

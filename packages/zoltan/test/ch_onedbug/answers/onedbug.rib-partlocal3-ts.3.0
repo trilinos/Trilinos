@@ -13,4 +13,3 @@ test local partitions	= 3
 Test Drops		= 1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-60	0	-1	-1

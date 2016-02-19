@@ -129,6 +129,7 @@ public:
                  const ArrayScalar &    inputPoints,
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
+
 };
 
 }// namespace Intrepid2

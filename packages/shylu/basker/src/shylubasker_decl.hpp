@@ -481,6 +481,14 @@ namespace BaskerNS
     void sfactor_nd_upper_estimate(BASKER_MATRIX &M,
 				   BASKER_MATRIX &UM);
     BASKER_INLINE
+    void sfactor_nd_sep_upper_estimate(BASKER_MATRIX &M,
+				       BASKER_MATRIX &UM);
+
+    BASKER_INLINE
+    void sfactor_nd_sep_lower_estimate(BASKER_MATRIX &M,
+				       BASKER_MATRIX &LM);
+
+    BASKER_INLINE
     void sfactor_nd_sep_estimate(BASKER_MATRIX &M,
 				 BASKER_MATRIX &ML,
 				 BASKER_MATRIX &MU);
@@ -517,6 +525,16 @@ namespace BaskerNS
     inline
     void t_local_reach(const Int, const Int, const Int,
 		       Int, Int &);
+    
+    inline 
+    void t_local_reach_short_inc_rlvl
+    (const Int,const Int, const Int,
+			     const Int, Int&);
+    inline
+    void t_local_reach_inc_rlvl
+    (const Int, const Int, const Int,
+		       Int, Int &);
+
     inline
     int t_local_reach_old(Int,Int,Int,Int,Int*);
     BASKER_INLINE
@@ -531,6 +549,8 @@ namespace BaskerNS
     int t_back_solve_old(Int,Int,Int,Int,Int,Int);
     BASKER_INLINE
     int t_back_solve_inc_lvl(Int,Int,Int,Int,Int,Int);
+    BASKER_INLINE
+    int t_back_solve_inc_rlvl(Int,Int,Int,Int,Int,Int,Entry&);
     
 
     BASKER_INLINE
@@ -695,6 +715,17 @@ namespace BaskerNS
 
     BASKER_INLINE
     int t_lower_col_offdiag_find_fill(Int kid,
+				      Int blkcol, Int blkrow,
+				      Int X_col, Int X_row,
+				      Int k,
+				      ENTRY_1DARRAY x,
+				      INT_1DARRAY x_idx,
+				      INT_1DARRAY x_fill,
+				      Int x_size, Int x_offset);
+
+    
+    BASKER_INLINE
+    int t_lower_col_offdiag_find_fill_rlvl(Int kid,
 				      Int blkcol, Int blkrow,
 				      Int X_col, Int X_row,
 				      Int k,

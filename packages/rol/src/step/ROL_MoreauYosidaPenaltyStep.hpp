@@ -167,6 +167,11 @@ private:
   }
 
 public:
+
+  using Step<Real>::initialize;
+  using Step<Real>::compute;
+  using Step<Real>::update;
+
   ~MoreauYosidaPenaltyStep() {}
 
   MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)

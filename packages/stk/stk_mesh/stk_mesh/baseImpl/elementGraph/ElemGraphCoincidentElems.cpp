@@ -1,6 +1,7 @@
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "ElemElemGraph.hpp"
+#include "FullyCoincidentElementDetector.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -25,80 +26,73 @@ namespace mesh
 namespace impl
 {
 
-int count_shared_sides(const stk::mesh::Graph &graph, stk::mesh::impl::LocalId elem1, stk::mesh::impl::LocalId elem2)
+int count_shared_sides(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
 {
     int numSharedSides = 0;
-    for(size_t i=0; i < graph.get_num_edges_for_element(elem1); i++)
+    for(size_t i=0; i < graph.get_num_edges_for_element(graphEdge.elem1); i++)
     {
-        const stk::mesh::GraphEdge &graphEdge = graph.get_edge_for_element(elem1, i);
-        if(graphEdge.elem2 == elem2)
+        const stk::mesh::GraphEdge &elem1GraphEdge = graph.get_edge_for_element(graphEdge.elem1, i);
+        if(elem1GraphEdge.elem2 == graphEdge.elem2)
             numSharedSides++;
     }
     return numSharedSides;
 }
 
-bool are_elements_coincident(const stk::mesh::Graph &graph,
-                             const CoincidentElementDescription &elemDesc)
+bool are_graph_edge_elements_fully_coincident(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
 {
-    int numSharedSides = count_shared_sides(graph, elemDesc.elem1, elemDesc.elem2);
-    return (numSharedSides == elemDesc.numSides);
+    int numSides = topologies[graphEdge.elem1].num_sides();
+    int numSharedSides = count_shared_sides(graph, topologies, graphEdge);
+    return (numSharedSides == numSides);
 }
 
-void fill_coincident_edges(stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, size_t elemId, std::vector<stk::mesh::GraphEdge> &edgesToDelete)
+
+void CoincidentSideExtractor::delete_edges(const GraphEdgeVector& edgesToDelete)
 {
-    for(size_t edgeIndex = 0; edgeIndex < graph.get_num_edges_for_element(elemId); edgeIndex++)
-    {
-        const stk::mesh::GraphEdge &graphEdge = graph.get_edge_for_element(elemId, edgeIndex);
-        if(stk::mesh::impl::are_elements_coincident(graph, {static_cast<int>(topologies[elemId].num_sides()), graphEdge.elem1, graphEdge.elem2}))
-            edgesToDelete.push_back(graphEdge);
-    }
+    for(const GraphEdge& edgeToDelete : edgesToDelete)
+        m_graph.delete_edge(edgeToDelete);
 }
 
-void delete_edges(stk::mesh::Graph& graph, const std::vector<stk::mesh::GraphEdge>& edgesToDelete)
+void CoincidentSideExtractor::add_edges(const GraphEdgeVector& edgesToDelete, SparseGraph& extractedCoincidentSides)
 {
-    for(const stk::mesh::GraphEdge& edgeToDelete : edgesToDelete)
-        graph.delete_edge(edgeToDelete);
-}
-
-void add_edges(const std::vector<stk::mesh::GraphEdge>& edgesToDelete, SparseGraph& extractedCoincidentSides)
-{
-    for(const stk::mesh::GraphEdge& edgeToDelete : edgesToDelete)
+    for(const GraphEdge& edgeToDelete : edgesToDelete)
         extractedCoincidentSides[edgeToDelete.elem1].push_back(edgeToDelete);
 }
 
-void extract_coincident_sides_for_element(stk::mesh::Graph& graph,
-                                          const std::vector<stk::topology>& topologies,
-                                          size_t elemId,
-                                          SparseGraph& extractedCoincidentSides)
+void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemId,
+                                                                   GraphEdgeVector &coincidentSides,
+                                                                   const CoincidenceDetector &detector)
 {
-    std::vector<stk::mesh::GraphEdge> coincidentEdges;
-    fill_coincident_edges(graph, topologies, elemId, coincidentEdges);
-    add_edges(coincidentEdges, extractedCoincidentSides);
-    delete_edges(graph, coincidentEdges);
+    for(size_t edgeIndex = 0; edgeIndex < m_graph.get_num_edges_for_element(elemId); edgeIndex++)
+    {
+        const GraphEdge &graphEdge = m_graph.get_edge_for_element(elemId, edgeIndex);
+        if(detector.are_graph_edge_elements_coincident(graphEdge))
+            coincidentSides.push_back(graphEdge);
+    }
 }
 
-SparseGraph extract_coincident_sides(stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies)
+void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemId,
+                                                                   SparseGraph& extractedCoincidentSides,
+                                                                   const CoincidenceDetector &detector)
+{
+    GraphEdgeVector coincidentSides;
+    extract_coincident_sides_for_element(elemId, coincidentSides, detector);
+    add_edges(coincidentSides, extractedCoincidentSides);
+    delete_edges(coincidentSides);
+    //detector.report_coincident_sides(std::cerr, coincidentSides);
+}
+
+void CoincidentSideExtractor::extract_coincident_sides(SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector)
+{
+    for(size_t elemId = 0; elemId < m_graph.get_num_elements_in_graph(); elemId++)
+        extract_coincident_sides_for_element(elemId, extractedCoincidentSides, detector);
+}
+
+SparseGraph CoincidentSideExtractor::extract_coincident_sides()
 {
     SparseGraph extractedCoincidentSides;
-    for(size_t elemId = 0; elemId < graph.get_num_elements_in_graph(); elemId++)
-        extract_coincident_sides_for_element(graph, topologies, elemId, extractedCoincidentSides);
+    extract_coincident_sides(extractedCoincidentSides, m_detector);
     return extractedCoincidentSides;
 }
-
-void append_extracted_coincident_sides(stk::mesh::Graph &graph,
-                                       const std::vector<stk::topology> &topologies,
-                                       const std::vector<impl::LocalId> &elemIds,
-                                       stk::mesh::impl::SparseGraph &coincidentEdges)
-{
-    for(impl::LocalId elemId : elemIds)
-        extract_coincident_sides_for_element(graph, topologies, elemId, coincidentEdges);
-}
-
-
-
-
-
-
 
 typedef std::map<stk::mesh::impl::ElementSidePair, std::vector<stk::mesh::GraphEdge>> ElemSideAndEdges;
 

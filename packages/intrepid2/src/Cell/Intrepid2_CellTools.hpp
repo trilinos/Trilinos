@@ -699,60 +699,6 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
 					     const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
                                              const int &                   whichCell = -1);
     
-#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-  /** \brief  Computes modified point for line segment.
-
-      \param  ot       [out] - modified point value
-      \param  pt       [in]  - input point in [-1.0 , 1.0]
-      \param  ort      [in]  - orientation number between 0 and 1
-  */
-  static void setModifiedLinePoint(double &ot,
-                                   const double pt,
-                                   const int ort);
-
-  /** \brief  Computes modified point for triangle.
-
-      \param  ot0      [out] - modified coordinate 0
-      \param  ot1      [out] - modified coordinate 1
-      \param  pt0      [out] - input coordinate 0
-      \param  pt1      [out] - input coordinate 1
-      \param  ort      [in]  - orientation number between 0 and 5
-  */
-  static void setModifiedTrianglePoint(double &ot0,
-                                       double &ot1,
-                                       const double pt0,
-                                       const double pt1,
-                                       const int ort);
-
-  /** \brief  Computes modified point for quadrilateral.
-
-      \param  ot0      [out] - modified coordinate 0
-      \param  ot1      [out] - modified coordinate 1
-      \param  pt0      [out] - input coordinate 0
-      \param  pt1      [out] - input coordinate 1
-      \param  ort      [in]  - orientation number between 0 and 7
-  */
-  static void setModifiedQuadrilateralPoint(double &ot0,
-                                            double &ot1,
-                                            const double pt0,
-                                            const double pt1,
-                                            const int ort);
-
-  /** \brief  Computes modified parameterization maps of 1- and 2-subcells with orientation.
-
-      \param  ortPoints       [out] - rank-2 (P,D2) array with points in 1D or 2D modified domain with orientation
-      \param  refPoints       [in]  - rank-2 (P,D2) array with points in 1D or 2D parameter domain
-      \param  cellTopo        [in]  - cell topology of the parameterized domain (1- and 2-subcells)
-      \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
-  */
-  template<class ArrayPoint>
-  static void mapToModifiedReference(ArrayPoint &                  ortPoints,
-                                     const ArrayPoint &            refPoints,
-                                     const shards::CellTopology &  cellTopo,
-                                     const int                     cellOrt = 0);
-#endif
-
-    
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
       
                 Applies \f$\hat{\Phi}_i\f$, the parametrization map of a subcell \f$\hat{\mathcal{S}}_i\f$ 

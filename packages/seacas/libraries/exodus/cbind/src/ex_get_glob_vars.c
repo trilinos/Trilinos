@@ -123,6 +123,18 @@ int ex_get_glob_vars (int   exoid,
      return (EX_WARN);
    }
 
+   /* Verify that time_step is within bounds */
+   {
+    int num_time_steps = ex_inquire_int (exoid, EX_INQ_TIME);
+    if (time_step <= 0 || time_step > num_time_steps) {
+      sprintf(errmsg,
+              "ERROR: time_step is out-of-range. Value = %d, valid range is 1 to %d in file id %d",
+              time_step, num_time_steps, exoid);
+      ex_err("ex_get_nodal_var",errmsg,EX_BADPARAM);
+      return (EX_FATAL);
+    }
+  }
+
    /* read values of global variables */
    start[0] = --time_step;
    start[1] = 0;

@@ -26,6 +26,27 @@
 namespace
 {
 
+//The Magical Alphabet of Hexes, Shells & Sidesets
+//
+// A = hex in block A
+// B = hex in block B
+// e = shell in block E
+// f = shell in block F
+// L = sideset associated with the side on the left
+// R = "        "           "   "  "     "   " right
+// D = sideset containing 2 sides, one associated to left and one to right
+// X = sideset associated with all sides on this surface
+// J = two hexes in block A connected to the same 8 nodes
+// Z = degenerate hex in block Z
+// Y = degenerate hex in block Y
+// T = tet in block T
+// P = hex that is partially coincident with block A on a face
+// g = degenerate shell (usually attached to face of tet T)
+// .e = the language of our Patron Saint Exodus
+//
+// RR = pronounced like a pirate
+// RRR = roll the R
+
 const SideTestUtil::TestCaseData exposedBoundaryTestCases =
 {
   /* filename, max#procs, #side,  sideset */
@@ -95,6 +116,8 @@ const SideTestUtil::TestCaseData exposedBoundaryTestCases =
 
     {"ef.e",        2,      2,      {{1, 0}, {1, 1}, {2, 0}, {2, 1}}},
     {"ALJ.e",       3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}, {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 5}}},
+
+    {"AP.e",        2,      11,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}}},
 
     {"AB_doubleKissing.e",  2,  8,  {{1, 0}, {1, 3}, {1, 4}, {1, 5}, {2, 1}, {2, 2}, {2, 4}, {2, 5}}},
     {"Tg.e",        2,      6,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}}},

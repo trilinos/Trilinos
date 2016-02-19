@@ -68,15 +68,11 @@ namespace Intrepid2 {
     this -> basisTagsAreSet_   = false;
 
     // construct lattice
-
-    shards::CellTopology myTri_3( shards::getCellTopologyData< shards::Triangle<3> >() );  
-
     PointTools::getLattice<Scalar,ArrayScalar >( latticePts ,
-                                                            myTri_3 ,
-                                                            n ,
-                                                            0 ,
-                                                            pointType );
-
+                                                 this->basisCellTopology_,
+                                                 n ,
+                                                 0 ,
+                                                 pointType );
     
     // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
     // so we transpose on copy below.
@@ -103,12 +99,12 @@ namespace Intrepid2 {
       }
     }
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
-  
-  
+
   template<class Scalar, class ArrayScalar>
   void Basis_HGRAD_TRI_Cn_FEM<Scalar, ArrayScalar>::initializeTags() {
-  
     // Basis-dependent initializations
     int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
     int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
@@ -207,8 +203,8 @@ namespace Intrepid2 {
         {
           ArrayScalar phisCur( numBf , numPts );
           Phis.getValues( phisCur , inputPoints , operatorType );
-          for (int i=0;i<outputValues.dimension(0);i++) {
-            for (int j=0;j<outputValues.dimension(1);j++) {
+          for (int i=0;i<outputValues.dimension(0);i++) {    // # of points
+            for (int j=0;j<outputValues.dimension(1);j++) {  
               outputValues(i,j) = 0.0;
               for (int k=0;k<this->getCardinality();k++) {
                 outputValues(i,j) += this->Vinv(k,i) * phisCur(k,j);
@@ -289,7 +285,6 @@ namespace Intrepid2 {
     TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                         ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): FEM Basis calling an FVD member function");
   }
-
 
 }// namespace Intrepid2
 #endif

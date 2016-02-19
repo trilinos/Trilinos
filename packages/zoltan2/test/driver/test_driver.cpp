@@ -164,14 +164,7 @@ bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
   // return an error message on failure
   bool pass = true;
   string test_name = metric.getName() + " test";
-  double local_value = metric.getMaxImbalance()/metric.getMinImbalance();
-  
-  
-  // reduce problem metric to processor 0
-  double value;
-  Teuchos::Ptr<double> global(&value);
-  comm->barrier();
-  reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,local_value,global);
+  double value = metric.getMaxImbalance();
   
   // Perfom tests
   if (metricPlist.isParameter("lower"))
@@ -180,11 +173,11 @@ bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
     
     if(value < min)
     {
-      msg << test_name << " FAILED: Minimum imbalance per part, "
+      msg << test_name << " FAILED: imbalance per part, "
       << value << ", less than specified allowable minimum, " << min << ".\n";
       pass = false;
     }else{
-      msg << test_name << " PASSED: Minimum imbalance per part, "
+      msg << test_name << " PASSED: imbalance per part, "
       << value << ", greater than specified allowable minimum, " << min << ".\n";
     }
   }
@@ -193,11 +186,11 @@ bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
     double max = metricPlist.get<double>("upper");
     if (value > max)
     {
-      msg << test_name << " FAILED: Maximum imbalance per part, "
+      msg << test_name << " FAILED: imbalance per part, "
       << value << ", greater than specified allowable maximum, " << max << ".\n";
       pass = false;
     }else{
-      msg << test_name << " PASSED: Maximum imbalance per part, "
+      msg << test_name << " PASSED: imbalance per part, "
       << value << ", less than specified allowable maximum, " << max << ".\n";
     }
     
@@ -372,7 +365,7 @@ void run(const UserInputForTests &uinput,
   if (rank == 0)
     cout << "Problem solved." << endl;
   
-#define KDDKDD
+#undef KDDKDD
 #ifdef KDDKDD
   {
   const base_t::gno_t *kddIDs = NULL;
@@ -438,7 +431,7 @@ void run(const UserInputForTests &uinput,
   }else{
     if(rank == 0)
     {
-      cout << "No test metrics provided." << endl;
+      cout << "PASS:  No test metrics provided." << endl;
       reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
     }
   }

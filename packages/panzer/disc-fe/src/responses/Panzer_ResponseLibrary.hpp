@@ -304,6 +304,11 @@ protected:
      */
    void addResidualResponsesToInArgs(Overloader<typename TraitsT::Jacobian>,panzer::AssemblyEngineInArgs & input_args) const;
 
+  /** Add in the residual responses to the input arguments. Note only residual and Jacobian
+     * calls currently work!
+     */
+   void addResidualResponsesToInArgs(Overloader<typename TraitsT::Tangent>,panzer::AssemblyEngineInArgs & input_args) const;
+
    /** Add in a response (for internal use only) using a template manager.
      */
    void addResponse(const std::string & responseName,

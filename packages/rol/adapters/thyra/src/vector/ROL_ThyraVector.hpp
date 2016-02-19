@@ -151,12 +151,33 @@ public:
     ::Thyra::copy( *ex.getVector(), thyra_vec_.ptr() );
   }
 
-  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+  void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     for(::Thyra::Ordinal i=0;i<thyra_vec_->space()->dim();i++) {
       Real val = ::Thyra::get_ele(*thyra_vec_,i);
       ::Thyra::set_ele(i,f.apply(val),thyra_vec_.ptr());
     }
   }
+
+  void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
+    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    Teuchos::RCP< const Thyra::VectorBase<Real> > xp = ex.getVector();
+
+    for(::Thyra::Ordinal i=0;i<thyra_vec_->space()->dim();i++) {
+      Real val  = ::Thyra::get_ele(*thyra_vec_,i);
+      Real xval = ::Thyra::get_ele(*xp,i);
+
+      ::Thyra::set_ele(i,f.apply(val,xval),thyra_vec_.ptr());
+    }
+  }
+
+  Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
+    Real result = r.initialValue();
+    
+    for(::Thyra::Ordinal i=0;i<thyra_vec_->space()->dim();i++) {
+      r.reduce(::Thyra::get_ele(*thyra_vec_,i),result);  
+    }
+    return result;
+  } 
 
 }; // class ThyraVector
 

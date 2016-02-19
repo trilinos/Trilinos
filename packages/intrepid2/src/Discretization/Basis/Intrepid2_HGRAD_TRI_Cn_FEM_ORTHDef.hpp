@@ -60,6 +60,9 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar,ArrayScalar>::Basis_HGRAD_TRI_Cn_FEM_ORTH( in
     this -> basisType_         = BASIS_FEM_HIERARCHICAL;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
 }
   
   
@@ -251,16 +254,16 @@ void TabulatorTri<Scalar,ArrayScalar,1>::tabulate(ArrayScalar &outputValues ,
 {
   const int np = z.dimension(0);
   const int card = outputValues.dimension(0);
-  FieldContainer<Sacado::Fad::DFad<Scalar> > dZ( z.dimension(0) , z.dimension(1) );
+  FieldContainer<Sacado::Fad::SFad<Scalar,2> > dZ( z.dimension(0) , z.dimension(1) );
   for (int i=0;i<np;i++) {
     for (int j=0;j<2;j++) {
-      dZ(i,j) = Sacado::Fad::DFad<Scalar>( z(i,j) );
+      dZ(i,j) = Sacado::Fad::SFad<Scalar,2>( z(i,j) );
       dZ(i,j).diff(j,2);
     }
   }
-  FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np);
+  FieldContainer<Sacado::Fad::SFad<Scalar,2> > dResult(card,np);
 
-  TabulatorTri<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> >,0>::tabulate( dResult ,
+  TabulatorTri<Sacado::Fad::SFad<Scalar,2>,FieldContainer<Sacado::Fad::SFad<Scalar,2> >,0>::tabulate( dResult ,
                                                                                                   deg ,
                                                                                                   dZ );
 
@@ -285,16 +288,16 @@ void TabulatorTri<Scalar,ArrayScalar,derivOrder>::tabulate( ArrayScalar &outputV
 {
   const int np = z.dimension(0);
   const int card = outputValues.dimension(0);
-  FieldContainer<Sacado::Fad::DFad<Scalar> > dZ( z.dimension(0) , z.dimension(1) );
+  FieldContainer<Sacado::Fad::SFad<Scalar,2> > dZ( z.dimension(0) , z.dimension(1) );
   for (int i=0;i<np;i++) {
     for (int j=0;j<2;j++) {
-      dZ(i,j) = Sacado::Fad::DFad<Scalar>( z(i,j) );
+      dZ(i,j) = Sacado::Fad::SFad<Scalar,2>( z(i,j) );
       dZ(i,j).diff(j,2);
     }
   }
-  FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np,derivOrder+1);
+  FieldContainer<Sacado::Fad::SFad<Scalar,2> > dResult(card,np,derivOrder+1);
 
-  TabulatorTri<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> >,derivOrder-1>::tabulate(dResult ,
+  TabulatorTri<Sacado::Fad::SFad<Scalar,2>,FieldContainer<Sacado::Fad::SFad<Scalar,2> >,derivOrder-1>::tabulate(dResult ,
                                                                                                             deg ,
                                                                                                             dZ );
 

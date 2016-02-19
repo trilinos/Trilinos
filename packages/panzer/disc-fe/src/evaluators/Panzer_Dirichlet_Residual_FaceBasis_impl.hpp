@@ -79,16 +79,13 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
   TEUCHOS_ASSERT(vector_layout_vector->dimension(2)==vector_layout_dof->dimension(2));
 
   residual = PHX::MDField<ScalarT,Cell,BASIS>(residual_name, basis_layout);
-  dof      = PHX::MDField<ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
-  value    = PHX::MDField<ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
+  dof      = PHX::MDField<const ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
+  value    = PHX::MDField<const ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
 
   // setup the orientation field
-  std::string orientationFieldName = basis->name() + " Orientation";
-  // std::string orientationFieldName = field_name+" Orientation";
-  // if(p.isType<std::string>("Orientation Field Name"))
-  //   orientationFieldName = p.get<std::string>("Orientation Field Name");
-  dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
-	                                                basis_layout);
+  // std::string orientationFieldName = basis->name() + " Orientation";
+  // dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
+  //                                                    basis_layout);
 
   // setup all basis fields that are required
   panzer::MDFieldArrayFactory af_pv(pointRule->getName()+"_");
@@ -102,9 +99,8 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
-  this->addDependentField(dof_orientation);
+  // this->addDependentField(dof_orientation);
   this->addDependentField(value);
-  this->addDependentField(pointValues.jac);
  
   std::string n = "Dirichlet Residual Face Basis Evaluator";
   this->setName(n);
@@ -115,7 +111,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis,worksets,fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(dof_orientation,fm);
+  // this->utils.setFieldData(dof_orientation,fm);
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 

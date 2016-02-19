@@ -180,7 +180,7 @@ int main(int argc,char * argv[]) {
     //
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
-    Stratimikos::enableMueLu(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+    Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
     linearSolverBuilder.setParameterList(paramList);              // Setup solver parameters using a Stratimikos parameter list.
 
     // Build a new "solver factory" according to the previously specified parameter list.

@@ -226,10 +226,9 @@ template <typename Adapter>
   // using all weights.
 
   const Teuchos::ParameterList &pl = env->getParameters();
+
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
-
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
-
   if (pe){
     std::string strChoice = pe->getValue<std::string>(&strChoice);
     if (strChoice == std::string("multicriteria_minimize_total_weight"))

@@ -807,7 +807,7 @@ namespace BaskerNS
     #endif
 
     const Int bcol = M.scol;
-    const Int brow = M.srow;
+    //const Int brow = M.srow;
     //for(Int k=M.scol; k < (M.scol+M.ncol); k++)
     for(Int k=0; k < M.ncol; ++k)
       {
@@ -843,7 +843,7 @@ namespace BaskerNS
     #endif
 
     const Int bcol = M.scol;
-    const Int brow = M.srow;
+    //const Int brow = M.srow; //Not used
     //for(Int k=M.scol; k < (M.scol+M.ncol); k++)
     for(Int k=0; k < M.ncol; ++k)
       {

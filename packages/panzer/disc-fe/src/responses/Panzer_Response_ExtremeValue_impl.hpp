@@ -13,7 +13,7 @@ namespace panzer {
 
 template <typename EvalT>
 void Response_ExtremeValue<EvalT>::
-scatterResponse() 
+scatterResponse()
 {
   double locValue = Sacado::ScalarValue<ScalarT>::eval(value);
   double glbValue = 0.0;
@@ -28,7 +28,7 @@ scatterResponse()
 
   // built data in vectors
   if(this->useEpetra()) {
-    // use epetra 
+    // use epetra
     this->getEpetraVector()[0] = glbValue;
   }
   else {
@@ -41,7 +41,7 @@ scatterResponse()
 
 template < >
 void Response_ExtremeValue<panzer::Traits::Jacobian>::
-scatterResponse() 
+scatterResponse()
 {
   using Teuchos::rcp_dynamic_cast;
 
@@ -55,16 +55,59 @@ scatterResponse()
   uniqueContainer_ = Teuchos::null;
 }
 
+template < >
+void Response_ExtremeValue<panzer::Traits::Tangent>::
+scatterResponse()
+{
+  const int n = value.size();
+  const int num_deriv = this->numDeriv();
+  TEUCHOS_ASSERT(n == 0 || n == num_deriv);
+  ScalarT glbValue = ScalarT(num_deriv, 0.0);
+
+  // do global min/max on value
+  if(useMax_)
+    Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_MAX, Thyra::Ordinal(1), &value.val(), &glbValue.val());
+  else
+    Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_MIN, Thyra::Ordinal(1), &value.val(), &glbValue.val());
+
+  // find the minimum processor who's local value == the global min/max value
+  if (num_deriv > 0) {
+    int locProc = value.val() == glbValue.val() ? this->getComm()->getRank() : this->getComm()->getSize();
+    int glbProc = 0;
+    Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_MIN, Thyra::Ordinal(1), &locProc, &glbProc);
+
+    // now broadcast the derivatives from proc glbProc
+    Teuchos::broadcast(*this->getComm(), glbProc, Thyra::Ordinal(n), &glbValue.fastAccessDx(0));
+  }
+
+  value = glbValue;
+
+  // copy data in vectors
+  if(this->useEpetra()) {
+    // use epetra
+    Epetra_MultiVector& deriv = this->getEpetraMultiVector();
+    for (int i=0; i<num_deriv; ++i)
+      deriv[i][0] = glbValue.dx(i);
+  }
+  else {
+    // use thyra
+    TEUCHOS_ASSERT(this->useThyra());
+    Thyra::ArrayRCP< Thyra::ArrayRCP<double> > deriv = this->getThyraMultiVector();
+    for (int i=0; i<num_deriv; ++i)
+      deriv[i][0] = glbValue.dx(i);
+  }
+}
+
 // Do nothing unless derivatives are actually required
 template <typename EvalT>
 void Response_ExtremeValue<EvalT>::
 setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs) { }
 
-// derivatives are required for 
+// derivatives are required for
 template < >
 void Response_ExtremeValue<panzer::Traits::Jacobian>::
-setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs) 
-{ 
+setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs)
+{
   setDerivativeVectorSpace(soln_vs);
 }
 
@@ -76,8 +119,8 @@ adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const Glob
 // Do nothing unless derivatives are required
 template < >
 void Response_ExtremeValue<panzer::Traits::Jacobian>::
-adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows) 
-{ 
+adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows)
+{
   linObjFactory_->adjustForDirichletConditions(Teuchos::dyn_cast<const LinearObjContainer>(localBCRows),
                                                Teuchos::dyn_cast<const LinearObjContainer>(globalBCRows),
                                                *ghostedContainer_,true,true);

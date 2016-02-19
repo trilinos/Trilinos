@@ -87,6 +87,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable building and installation of experimental Ifpack2 features."
   NO )
 
+IF(TpetraKernels_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Experimental)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
+  "Enable building and installation of experimental Ifpack2 and TpetraKernels features."
+  NO )
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_IFPACK2_TIMER_BARRIER
   HAVE_IFPACK2_TIMER_BARRIER

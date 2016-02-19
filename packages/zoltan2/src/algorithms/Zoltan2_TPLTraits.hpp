@@ -147,15 +147,16 @@ struct TPL_Traits<tpl_t, tpl_t> {
 
 ////////////////////////////////////////////////////////////
 // Special case:  Zoltan ZOLTAN_ID_PTR 
-// Copy the data bitwise into the array of ZOLTAN_ID_TYPE   
-// We assume that any memory pointed to by ZOLTAN_ID_PTR is
-// big enough to hold the bits of zno_t -- that is, that  
-// the ZOLTAN_ID_PTR's memory correctly accomodates Zoltan's
-// num_gid_entries or num_lid_entries                     
 ////////////////////////////////////////////////////////////
 
 template <typename zno_t>
 struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
+
+  // Copy the data bitwise INTO the array of ZOLTAN_ID_TYPE   
+  // We assume that any memory pointed to by ZOLTAN_ID_PTR is
+  // big enough to hold the bits of zno_t -- that is, that  
+  // the ZOLTAN_ID_PTR's memory correctly accomodates Zoltan's
+  // num_gid_entries or num_lid_entries                     
 
   static const int NUM_ID = ((sizeof(zno_t) / sizeof(ZOLTAN_ID_TYPE) > 0)
                            ? (sizeof(zno_t) / sizeof(ZOLTAN_ID_TYPE))
@@ -214,6 +215,36 @@ struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
       delete [] *a;
   }
 };
+
+template <typename zno_t>
+struct TPL_Traits<zno_t, ZOLTAN_ID_PTR> {
+
+  // Copy the data bitwise FROM the array of ZOLTAN_ID_TYPE   
+
+  static const int NUM_ID = TPL_Traits<ZOLTAN_ID_PTR, zno_t>::NUM_ID;
+
+  static inline bool OK_TO_CAST_TPL_T()
+  {
+    // There may be cases where if it OK to cast a pointer to a
+    // ZOLTAN_ID_PTR to a zno_t, but the semantics of this
+    // function ask whether a pointer to a ZOLTAN_ID_PTR can be cast
+    // to a pointer to a zno_t.  Thus, the answer is "no."
+    return false;
+  }
+
+  static inline void ASSIGN_TPL_T(zno_t &a, ZOLTAN_ID_PTR b)
+  {
+    switch (NUM_ID) {
+    case 1:
+      a = static_cast<zno_t>(b[0]);
+      break;
+    default:
+      zno_t *tmp = (zno_t *) b;
+      a = *tmp;
+    }
+  }
+};
+
 } // namespace Zoltan2
 
 #endif

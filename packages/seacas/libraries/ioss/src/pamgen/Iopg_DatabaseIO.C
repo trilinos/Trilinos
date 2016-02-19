@@ -343,8 +343,6 @@ namespace Iopg {
 
     Ioss::Region *this_region = get_region();
     this_region->property_add(Ioss::Property(std::string("title"), dbtitle));
-    this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
-					     spatialDimension));
   }
 
   void DatabaseIO::read_communication_metadata()

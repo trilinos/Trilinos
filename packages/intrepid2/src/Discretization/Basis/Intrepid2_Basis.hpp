@@ -147,7 +147,7 @@ protected:
   std::vector<std::vector<std::vector<int> > > tagToOrdinal_;  
   
 public:
-    
+
   /** \brief  Destructor
    */
   virtual ~Basis() {}
@@ -246,10 +246,10 @@ public:
    */
   virtual int getDofOrdinal(const int subcDim,
                             const int subcOrd,
-                            const int subcDofOrd);  
+                            const int subcDofOrd) const;  
 
   /** \brief DoF tag to ordinal data structure */
-  virtual const std::vector<std::vector<std::vector<int> > > &getDofOrdinalData( );
+  virtual const std::vector<std::vector<std::vector<int> > > &getDofOrdinalData( ) const;
 
   
   /** \brief  DoF ordinal to DoF tag lookup.
@@ -262,7 +262,7 @@ public:
       \li     element [2] = tag field 2  ->  ordinal of the specified DoF relative to the subcell
       \li     element [3] = tag field 3  ->  total number of DoFs associated with the subcell
    */
-  virtual const std::vector<int>&  getDofTag(const int dofOrd);
+  virtual const std::vector<int>&  getDofTag(const int dofOrd) const;
   
   
   /** \brief  Retrieves all DoF tags. 
@@ -273,10 +273,7 @@ public:
       \li     element [DofOrd][2] = tag field 2 for the DoF with the specified ordinal
       \li     element [DofOrd][3] = tag field 3 for the DoF with the specified ordinal
    */
-  virtual const std::vector<std::vector<int> >& getAllDofTags();
-  
-  
-
+  virtual const std::vector<std::vector<int> >& getAllDofTags() const;
 
 }; // class Basis
 

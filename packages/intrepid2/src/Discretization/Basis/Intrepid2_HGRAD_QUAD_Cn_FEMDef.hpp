@@ -87,6 +87,8 @@ namespace Intrepid2 {
 	ptsy_(i,0) = pts_y(i,0);
       }
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
 
   template<class Scalar, class ArrayScalar>
@@ -120,6 +122,9 @@ namespace Intrepid2 {
       {
 	ptsy_(i,0) = ptsx_(i,0);
       }
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
 
   template<class Scalar, class ArrayScalar>

@@ -1,8 +1,6 @@
 #ifndef BASKER_NFACTOR_BLK_INC_HPP
 #define BASKER_NFACTOR_BLK_INC_HPP
 
-
-//#include "basker_decl.hpp"
 #include "basker_matrix_decl.hpp"
 #include "basker_matrix_view_decl.hpp"
 #include "basker_matrix_view_def.hpp"
@@ -52,16 +50,11 @@ namespace BaskerNS
       printf("\n-----------BLK---Kid: %d -------------\n",
 	     kid);
       #endif
-
-      //No longer needed, added in sfactor
-      //printf("before workspace init\n");
-      //basker->t_init_workspace(kid);
-      //printf("after workspace init\n");
       
-      //if(kid == 2 || kid == 3)
+      //if(kid ==0)
       {
-      basker->t_nfactor_blk_inc_lvl(kid);
-	}
+	basker->t_nfactor_blk_inc_lvl(kid);
+      }
     }//end operator
   };//end kokkos_nfactor_domain struct
 
@@ -113,19 +106,13 @@ namespace BaskerNS
 	     kid);
       #endif
 
-      //No longer needed, added in sfactor
-      //printf("before workspace init\n");
-      //basker->t_init_workspace(kid);
-      //printf("after workspace init\n");
+            
+      {
+	basker->t_nfactor_blk_inc_lvl(kid);
+      }
+
+	}//if-thread !BASKER_MAX_IDX
       
-      //if(kid == 8)
-	{
-      basker->t_nfactor_blk(kid);
-	}
-
-
-	}
-
     }//end operator
   };//end kokkos_nfactor_domain_remalloc_inc_lvl struct
  
@@ -138,14 +125,13 @@ namespace BaskerNS
     BASKER_MATRIX &L   = LL(b)(0);
     BASKER_MATRIX &U   = LU(b)(LU_size(b)-1);
     BASKER_MATRIX &M   = ALM(b)(0); //A->blk
- 
-    //printf("Accessing blk: %d kid: %d  \n", b, kid);
+
     INT_1DARRAY   ws   = LL(b)(0).iws;
     ENTRY_1DARRAY X    = LL(b)(0).ews;
     Int        ws_size = LL(b)(0).iws_size;
  
    
-    Int          bcol  = L.scol;  //begining col
+    //Int          bcol  = L.scol;  //begining col
     Int          brow  = L.srow;  //begining row 
     Int          lval  = 0;
     Int          uval  = 0;
@@ -161,14 +147,14 @@ namespace BaskerNS
 
     Int llnnz = L.nnz;
     Int uunnz = U.nnz;
-    Int scol  = L.scol; //Note: this seems like over kill --clean up variables
-    Int ecol  = L.ecol;
+    // Int scol  = L.scol; //Note: this seems like over kill --clean up variables
+    //Int ecol  = L.ecol;
     
     //Why did we need this?
     Int col_idx_offset = M.nnz;
 
     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
-    printf("=======NFACTOR BLK INC LVL========\n");
+    printf("=======NFACTOR BLK INC LVL %d========\n", kid);
     #endif
     //printf("test one ws_size: %d \n", ws_size);
     
@@ -192,7 +178,7 @@ namespace BaskerNS
     
     //for each column    
     for(k = 0; k < M.ncol; ++k)
-    //for(k = 0; k < 36; ++k)
+    //for(k = 0; k < 5; ++k)
         {
           #ifdef BASKER_DEBUG_NFACTOR_BLK
           printf("\n----------------K=%d %d--------------\n", k+M.scol, kid);
@@ -212,6 +198,7 @@ namespace BaskerNS
 	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
           #endif
 
+	 
           //for each nnz in column
 	  //Wnat to change this to local blk anyway
 	  //Backwards is a little faster because less flips
@@ -229,11 +216,28 @@ namespace BaskerNS
                      color[j] );
               #endif
 
+	      //INC_LVL_TEMP(j+brow) = 0;
+
 	      //Note we need to check all 
 	      //LVL = min max{}+1
 	      //Need to search all "posible" paths
+	      if(Options.incomplete_type ==
+		 BASKER_INCOMPLETE_LVL)
+		{
 	      t_local_reach_inc_lvl(kid,0,0,j,&top);
-	      
+		}
+	      else
+		{
+		  if(gperm(j+brow) != BASKER_MAX_IDX)
+		    {
+		      t_local_reach_inc_rlvl(kid,0,0,j,top);
+		    }
+		  else
+		    {
+		      t_local_reach_short_inc_rlvl(kid,0,0,j,top);
+		    }
+		}
+
           }//end for() each nnz in column
 	  xnnz = ws_size - top;
 
@@ -241,41 +245,69 @@ namespace BaskerNS
           printf("xnnz: %d ws_size: %d top: %d \n", 
                  xnnz, ws_size, top);
           #endif
-             
-	  t_back_solve_inc_lvl(kid,0,0,k,top,xnnz);
+	 
+          
+	  Entry relax_value = 0;
+	  if(Options.incomplete_type == 
+	     BASKER_INCOMPLETE_LVL)
+	    {
+	      t_back_solve_inc_lvl(kid,0,0,k,top,xnnz);
+	    }
+	  else
+	    {
+	      t_back_solve_inc_rlvl(kid,0,0,k,top,xnnz,
+				    relax_value);
+	    }
 
+
+	  //Select Pivot 
+	  //Get upper and lower count
+	  //Note: upper and lower count should be moved to
+	  //back_solve to speed this up when not pivoting!!!
+	  //Most, likely case first, 
+	  //Which is no_pivot in incomplete factorization
           maxv = 0.0;
-          for(i = top; i < ws_size; i++)
-            {
+	  ucnt = 0;
+	  for(i = top; i < ws_size; i++)
+	    {
 	      j = pattern[i];
 	      t = gperm(j+brow);
-	   
-	      value = X(j);
-	   
-	      absv = EntryOP::approxABS(value);
-    
-	      if(t == BASKER_MAX_IDX)
-                {
-                  lcnt++;
-                  //if(absv > maxv)
-		  if(EntryOP::gt(absv,maxv))
-                    {
-                      maxv     = absv;
-                      pivot    = value;
-                      maxindex = j;                
-                    }
-                }
-            }//for (i = top; i < ws_size)
-          //printf("b: %d lcnt: %d after \n", b, lcnt);
+
+	      //printf("Consider: %d %d inc: %d \n",
+	      //     j, t, INC_LVL_TEMP(j+brow));
+
+	      //Only consider those that can be included
+	      if(INC_LVL_TEMP(j+brow) <= Options.inc_lvl)
+		{
+		  
+		  value = X(j);
+		  absv = EntryOP::approxABS(value);
+		  if(t == BASKER_MAX_IDX)
+		    {
+		      lcnt++;
+		      //We can short circuit the gt 
+		      //so it is not used all the time
+		      if((Options.no_pivot != BASKER_TRUE) &&
+			 EntryOP::gt(absv,maxv))
+			{
+			  maxv     = absv;
+			  pivot    = value;
+			  maxindex = j;                
+			}
+		    }//if lower-half of column
+		  else
+		    {
+		      ucnt++;
+		    }
+		}//if lvl < option
+	    }//for over all elements
 
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
 	      maxindex = k;
 	      pivot    = X(k);
-	      //printf("sym pivot: %f \n", pivot);
 	    }
-      
-          ucnt = ws_size - top - lcnt +1;
+          //ucnt = ws_size - top - lcnt +1;
     
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
@@ -315,8 +347,10 @@ namespace BaskerNS
 		{
 		  thread_array(kid).error_type =
 		    BASKER_ERROR_REMALLOC;
-		  thread_array(kid).error_blk = b;
-		  thread_array(kid).error_info = newsize;
+		  thread_array(kid).error_blk    = b;
+		  thread_array(kid).error_subblk = 0;
+		  thread_array(kid).error_info   = newsize;
+		  return BASKER_ERROR;
 		}
 
             }
@@ -340,12 +374,15 @@ namespace BaskerNS
 		{
 		  thread_array(kid).error_type =
 		    BASKER_ERROR_REMALLOC;
-		  thread_array(kid).error_blk = b;
-		  thread_array(kid).error_info = newsize;
+		  thread_array(kid).error_blk    = b;
+		  thread_array(kid).error_subblk = -1;
+		  thread_array(kid).error_info  = newsize;
+		  return BASKER_ERROR;
 		}
 
             }
-
+	  
+	
           L.row_idx(lnnz) = maxindex;
           L.val(lnnz)     = (Entry) 1.0;
 	  L.inc_lvl(lnnz) = INC_LVL_TEMP(maxindex+brow);
@@ -365,27 +402,44 @@ namespace BaskerNS
 	      t = gperm(j+brow);
             
               #ifdef BASKER_DEBUG_NFACTOR_BLK
-              printf("j: %d t: %d \n", j, t);
-              #endif            
-
+              printf("j: %d t: %d lvl: %d\n", 
+		     j, t, INC_LVL_TEMP(j+brow));
+              #endif         
 	      
-	      //For very ill problems, will need to clear
-	      //if(X(j) != 0)
-                {
-		  if(t != BASKER_MAX_IDX)
-                    {
-                      if(t < (k+brow))
-                        {
-			  
-			  U.row_idx(unnz) = t-brow;
-			  U.val(unnz) = X(j);
-			  unnz++;
-                        }
-                      else
-                        {
-			  lastU = X(j);
-                        }
-                    }
+	      if(INC_LVL_TEMP(j+brow) <= Options.inc_lvl)
+	      {
+		if(t != BASKER_MAX_IDX)
+		  {
+		    if(t < (k+brow))
+		      {
+			
+			U.row_idx(unnz) = t-brow;
+			U.val(unnz) = X(j);
+			unnz++;
+	
+
+		
+			#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+			printf("add U(%d): %g lvl: %d \n",
+			       U.row_idx(unnz-1),
+			       U.val(unnz-1), 
+			       INC_LVL_TEMP(j+brow));
+			#endif
+			/*
+			if(num_threads == 1)
+			  {
+			    INC_LVL_TEMP(j+brow) = 
+			      BASKER_MAX_IDX;
+			  }
+			*/
+
+			
+		      }
+		    else
+		      {
+			lastU = X(j);
+		      }
+		  }
 		  else if (t == BASKER_MAX_IDX)
                     {
 		      L.row_idx(lnnz) = j;
@@ -401,10 +455,15 @@ namespace BaskerNS
 		      INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
                       lnnz++;
                     }
-                }//end if() not 0
+                }//end if() lvl <
+	      else
+		{
+		  INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
+		  //Add relaxation here!
+		}
 
               #ifdef BASKER_DEBUG_NFACTOR_BLK
-              printf("Zeroing element: %d \n", j);
+	      printf("Zeroing element: %d \n", j);
               #endif
 
 	      X(j) = 0;	  
@@ -414,6 +473,9 @@ namespace BaskerNS
 	  U.row_idx(unnz) = k;
 	  U.val(unnz)     = lastU;
           unnz++;
+
+	  //printf("Add U(%d) %g \n",
+	  //	 k, U.val(unnz-1));
 
           xnnz = 0;
           top = ws_size;
@@ -426,13 +488,14 @@ namespace BaskerNS
 	  U.col_ptr(k+1) = unnz;
           cu_utop        = unnz;
 
-
+	  
 	  #ifdef BASKER_2DL
 	  //-----------------------Update offdiag-------------//
 	  for(Int blk_row = 1; blk_row < LL_size(b); ++blk_row)
 	    {
 	      //Do back solve of off-diag blocks
-	      //printf("before offdiag \n");
+	      // printf("before offdiag blk_row: %d kid: %d \n", 
+	      //     blk_row, kid);
               
               
               t_dom_lower_col_offdiag_find_fill(kid, L.srow,
@@ -440,11 +503,13 @@ namespace BaskerNS
                                                 b, blk_row,
                                                 k,
                                                 U.row_idx,
-                                                U.col_ptr(k+1)-U.col_ptr(k),
+                                  U.col_ptr(k+1)-U.col_ptr(k),
                                                 U.col_ptr(k),
-                                                      BASKER_TRUE);
+                                                BASKER_TRUE);
               
-
+	      
+	     
+	      
 	      t_back_solve_offdiag_inc_lvl(kid, L.srow,
 				   b, blk_row,
 				   b, blk_row,
@@ -453,26 +518,34 @@ namespace BaskerNS
 		       U.col_ptr(k+1)-U.col_ptr(k),
 				  U.col_ptr(k),
 				   BASKER_TRUE);
-	    
+	      
 	      //Move these factors into Local Ls
-	      //printf("before t_move_L\n");
+	      Int move_error = 
 	      t_move_offdiag_L_inc_lvl(kid,
 			       b, blk_row,
 			       b, blk_row,
 			       k, pivot);
-	         
+	      
+	      if(move_error == BASKER_ERROR)
+		{
+		  return BASKER_ERROR;
+		}
+		  
 	    }//end over all diag
-
-	  for(Int i = 0; i < M.nrow; i++)
+	 
+	  //This can be made faster by only looping over used
+	  //Note that this will need to be changed with pivoting
+	 
+	  for(Int i = U.col_ptr(k); i < U.col_ptr(k+1); i++)
 	    {
-	      INC_LVL_TEMP(i+brow) = BASKER_MAX_IDX;
+	      const Int j = U.row_idx(i);
+	      INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
 	    }
+	    
+	  
 
 	  #endif
 
-	  
-	  //NOT PRUNE
-	  //t_prune(kid,0,0,k,maxindex);
 
 	}//end for() over all columns
 
@@ -482,7 +555,315 @@ namespace BaskerNS
     return 0;
   }//end t_nfactor_blk_inc_lvl()
 
-   //Note: need to fix indexing for color
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void
+  Basker<Int,Entry,Exe_Space>::t_local_reach_inc_rlvl
+   (
+   const Int kid, 
+   const Int lvl,
+   const Int l,
+   Int j, 
+   Int &top
+   )
+  {
+    
+    //Setup variables
+    const Int      b   = S(lvl)(kid);
+    const Int     wsb  = S(0)(kid);
+    BASKER_MATRIX  &L  = LL(b)(0);
+    const Int     brow = L.srow;
+
+    INT_1DARRAY    ws  = LL(wsb)(l).iws;
+    const Int  ws_size = LL(wsb)(l).iws_size;
+   
+    //Int *color       = &(ws[0]);
+    Int *pattern     = &(ws(ws_size));
+    Int *stack       = &(pattern[ws_size]);
+    Int *store       = &(stack[ws_size]);
+    
+
+    Int i, t, head, i1;
+    Int start, end, done;
+
+
+    Int inc_lvl = 0;
+    
+    //printf("reach blks: %d %d kid: %d  lvl: %d %d  \n",
+    //	   b,0, kid, lvl, l);
+
+    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    printf("local_reach, L: %d %d  X: %d %d j: %d %d, kid: %d \n",
+	   b, 0, wsb, l, j+brow, brow, kid);
+    #endif
+
+    start    = -1;
+    head     = 0;
+    stack[0] = j;
+
+    if(lvl!=0)
+      {
+	//printf("kid: %d j: %d  using inc: %d %d\n",
+	//		   kid , j+brow, INC_LVL_TEMP(j+brow),
+	//		   INC_LVL_TEMP(j+brow)+inc_lvl);
+	inc_lvl =  INC_LVL_TEMP(j+brow);
+      }
+   
+
+
+    while(head != BASKER_MAX_IDX)
+      { 
+        #ifdef BASKER_DEBUG_LOCAL_REACH
+        printf("stack_offset: %d head: %d \n", 
+	       stack_offset , head);
+        BASKER_ASSERT(head > -1, " ");
+        #endif
+
+	j = stack[head];
+	t = gperm(j+brow);
+        
+        #ifdef BASKER_DEBUG_LOCAL_REACH
+	printf("--------DFS: %d %d %d kid: %d -------------\n",
+	       j, j+brow, t, kid);
+        #endif
+
+	if((ws(j) == 0) || (ws(j) == 2))
+	  {	    
+
+	    if(ws(j) == 0)
+	      {
+		ws(j) = 1;
+	      }
+	    else
+	      {
+		ws(j) = 3;
+	      }
+  
+	    if(t!=BASKER_MAX_IDX)
+	      {
+		start = L.col_ptr(t+1-L.scol);
+	      }//if not permuted
+	    //printf("kid: %d j: %d start: %d inc_lvl: %d\n",
+	    //	   kid, j+brow, start, inc_lvl);
+	  }
+	else
+	  {
+	    start = store[j];
+	    inc_lvl = inc_lvl - L.inc_lvl(start) -1;
+
+	    //printf("kid: %d j: %d start2: %d inc_lvl: %d \n",
+	    //	   kid, j+brow, start, inc_lvl);
+
+	    BASKER_ASSERT(inc_lvl >= 0, 
+			  "inc_lvl too small 2");
+	  }
+	done = 1;
+	
+
+	end = L.col_ptr(t-L.scol);
+	//printf("end: %d \n", end);
+	for(i1 = --start; i1 >= end; --i1)
+	  {
+	    i = L.row_idx(i1);
+	   
+	    ///printf("Search i1: %d  i: %d %d %d lvl: %d color: %d\n",
+	    //	   i1, i, i+L.scol, gperm(i+L.scol), 
+	    //	   INC_LVL_TEMP(i+brow),ws(i));
+	    
+	    //if explored
+	    if((ws(i) != 0))
+	      {
+
+		//if ws(i) ==1 || 3, we already seen it
+		// and the path must be less
+		
+
+		//if ws(i) ==2, we might have not
+		//printf("continue called\n");
+		if(ws(i) == 2)
+		  {
+		if(L.inc_lvl(i1)+inc_lvl < Options.inc_lvl)
+		  {
+		    if(gperm(i+brow) != BASKER_MAX_IDX)
+		      {
+			store[j] = i1;
+			stack[++head] = i;
+			inc_lvl = inc_lvl + L.inc_lvl(i1)+1;
+			//printf("kid: %d j: %d seen but exploring inc: %d\n",
+			//     kid, i+brow, inc_lvl);
+			break;
+		      }
+		    else
+		      {
+		
+			INC_LVL_TEMP(i+brow) =
+			  min(inc_lvl+L.inc_lvl(i1)+1,
+			      INC_LVL_TEMP(i+brow));
+		
+		      
+
+
+		      }
+		  }
+		else
+		  {
+		    continue;
+		  }
+		  }
+	      }
+	    else
+	    //if(ws(i) == 0)
+	      {
+		//if(not explored)
+		if(gperm(i+brow) >= 0)
+		  {
+		    //store[j] = i1+1;
+		    store[j] = i1;
+		    stack[++head] = i;
+		    inc_lvl = inc_lvl + L.inc_lvl(i1) + 1;
+		    //printf("kid: %d j: %d  break inc: %d \n",
+		    //	   kid, j, inc_lvl);
+		    break;
+		  }
+		else
+		  {
+		    //color[i] = 2;
+		    ws(i) = 2;
+		    pattern[--top] = i;
+
+		    if(i == 4)
+		      {
+			//printf("\n\n\n Add 4 leaf \n \n");
+		      }
+
+
+		    if(INC_LVL_TEMP(i+brow) == BASKER_MAX_IDX)
+		      {
+			INC_LVL_TEMP(i+brow) = 
+			  inc_lvl + L.inc_lvl(i1)+1;
+			//printf("kid: %d setone: %d \n",
+			//   kid, INC_LVL_TEMP(i+brow));
+		      }
+		    else
+		      {
+			INC_LVL_TEMP(i+brow) =
+			  min(inc_lvl+L.inc_lvl(i1)+1,
+			      INC_LVL_TEMP(i+brow));
+			//printf("kid: %d settwo: %d \n",
+			       //kid, INC_LVL_TEMP(i+brow));
+		      }
+
+		    //printf("Adding idx: %d %d  to pattern at location: %d inc_lvl: %d  \n",i, i+L.scol, top, INC_LVL_TEMP(i+brow));
+
+		  }
+	      }
+	   
+
+
+	  }
+	
+	//if we have used up the whole column
+	if(i1 < end)
+	  {
+	    
+	       if(INC_LVL_TEMP(j+brow) == BASKER_MAX_IDX)
+	      {
+		INC_LVL_TEMP(j+brow) = inc_lvl;
+		//printf("kid: %d j: %d set three: %d \n",
+		//   kid, j+brow, inc_lvl);
+	      }
+	    else
+	      {
+		INC_LVL_TEMP(j+brow) =
+		  min(inc_lvl, INC_LVL_TEMP(j+brow));
+		//printf("kid: %d j: %d set four: %d \n",
+		//   kid, j+brow, INC_LVL_TEMP(j+brow));
+	      }
+
+	       //printf("consider adding: %d color %d lvl: %d \n",
+	       //  j+brow, ws(j), INC_LVL_TEMP(j+brow));
+
+	    head--;
+	    if((ws(j) != 2) &&
+	       (ws(j) != 3))
+	      {
+		//color[j] = 2;
+		ws(j) = 2;
+		pattern[--top] = j;
+		//printf("add: %d \n",
+		//j+brow);
+
+		//if(j == 4)
+		// {
+		    // printf("\n\n\n ADD 4 root \n\n");
+		//}
+
+
+	      }
+	    if(ws(j) == 3)
+	      {
+		ws(j) = 2;
+	      }
+	       
+	  }
+	//printf("head: %d \n", head);
+	/*
+	if(head == 0)
+	  {head = BASKER_MAX_IDX;}
+	else
+	  {--head;}
+	*/
+	//printf("Adding idx: %d to pattern at location: %d \n",j, *top);
+      	//printf("head2: %d \n", head);
+      }//end while 
+
+  }//end t_local_reach_inc_rlvl
+
+  template <class Int, class Entry, class Exe_Space>
+  inline
+  void 
+  Basker<Int,Entry,Exe_Space>::t_local_reach_short_inc_rlvl
+  (
+   const Int kid, 
+   const Int lvl,
+   const Int l,
+   const Int j,
+   Int &top
+   )
+  {
+    //Setup variables
+    const Int b      = S(lvl)(kid);
+    const Int wsb    = S(0)(kid);
+    BASKER_MATRIX &L = LL(b)(0);
+
+    INT_1DARRAY  ws   = LL(wsb)(l).iws;
+    const Int ws_size = LL(wsb)(l).iws_size;
+
+    Int *color       = &(ws(0));
+    Int *pattern     = &(ws(ws_size));
+
+
+    if(color[j] != 2)
+      {
+    color[j]       = 2;
+    pattern[--top] = j;
+      }
+    if(Options.incomplete == BASKER_TRUE)
+      {
+	//printf("short reach: j: %d inc: %d \n",
+	//     j+L.srow, INC_LVL_TEMP(j+L.srow));
+	if(INC_LVL_TEMP(j+L.srow) == BASKER_MAX_IDX)
+	  {
+	    INC_LVL_TEMP(j+L.srow) = 0;
+	  }//if incomplete lvl not set
+      }//end--if incomplete
+
+    //printf("kid: %d short_reach: %d \n",
+    //	   kid, j);
+    return;
+  }//end t_local_reach short_inc_rlvl()
+  
+  //Note: need to fix indexing for color
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int 
@@ -549,10 +930,12 @@ namespace BaskerNS
 	   pop_top, pattern[pop_top], pattern[pop_top+1]);
     #endif
 
+    //printf("short test: %d %d kid: %d \n",
+    //	   j+brow, gperm(j+brow), kid);
     //Short circuit
     if(gperm(j+brow) == BASKER_MAX_IDX)
       {
-	#ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+        #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	printf("==DFS Short circuit: %d %d== \n",
 	       j, gperm(j+brow));
 	#endif
@@ -725,7 +1108,12 @@ namespace BaskerNS
 	    if((color[j] == 0)||(color[j] == 1))
 	      {
 	    
-		BASKER_ASSERT((*top-1) > 0, "Top pass pattern\n");
+		BASKER_ASSERT((*top-1) >= 0, "Top pass pattern\n");
+		if((*top-1)<0)
+		  {
+		printf("blk: %d kid: %d \n", b, kid);
+		  }
+
 		color[j] = 2;
 	       		 
 	     //loop forward
@@ -915,6 +1303,114 @@ namespace BaskerNS
   }//end t_back_solve_inc_lvl()
 
 
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int 
+  Basker<Int, Entry,Exe_Space>::t_back_solve_inc_rlvl
+  (Int kid, 
+   Int lvl,
+   Int l,
+   Int k, Int top,
+   Int xnnz,
+   Entry &relax_value
+   )
+  {
+
+    //We note that this can be fixed to be faster
+    const Int       b = S(lvl)(kid);
+    const Int     wsb = S(0)(kid);
+    BASKER_MATRIX  &L = LL(b)(0);
+    INT_1DARRAY    ws = LL(wsb)(l).iws;
+    ENTRY_1DARRAY   X = LL(wsb)(l).ews;
+    const Int ws_size = LL(wsb)(l).iws_size;
+
+    Int brow     = L.srow;
+    Int *color   = &(ws(0));
+    Int *pattern = &(color[ws_size]);
+ 
+    Int top1 = top;
+    Int j,t,pp, p, p2;
+    Entry xj = 0;
+    for(pp = 0; pp < xnnz; pp++)
+      {
+	j = pattern[top1];
+	t = gperm(j+brow);
+
+	//printf("kid: %d backsolve %d %d \n",
+	//   kid, j, t);
+
+	if(Options.incomplete_type ==
+	   BASKER_INCOMPLETE_RLVL_LIMITED)
+	  {
+	    //Going to short circuit
+	    //If not the right level
+	    //printf("kid: %d limite, j: %d inc_lvl: %d \n",
+	    //	   kid, j+brow, INC_LVL_TEMP(j+brow));
+	    if(INC_LVL_TEMP(j+brow) > Options.inc_lvl)
+	      {
+		
+		//printf("limited continue j: %d kid: %d \n", 
+		//     j, kid);
+		top1++;
+		continue;
+	      }
+	  }//end if- rlvl limited
+
+	if(t!= BASKER_MAX_IDX)
+          {
+	    xj = X(j);
+	    //Get rid of these temp variables
+            Int local_offset = L.scol;
+            p2 = L.col_ptr(t+1-local_offset);
+            p = L.col_ptr(t-local_offset)+1;
+            
+            for( ; p < p2; p++)
+              {
+		if(color[L.row_idx(p)] == 0)
+		  {
+		    //printf("Color continue \n");
+		    top1++;
+		    continue;
+		  }
+		
+		/*
+		if((L.row_idx(p) + L.srow) == 40)
+		  {
+		    
+		printf("j: %d X(%d): %f Lval: %f xj: %f end: %f \n",
+		       t,
+		       L.row_idx(p),
+		       X(L.row_idx(p)),
+		       L.val(p),
+		       xj, 
+		       X(L.row_idx(p))-L.val(p)*xj);
+		  }
+		*/
+		
+
+                X(L.row_idx(p)) -= L.val(p) *xj;
+
+              }//end for() over each nnz in the column
+          }//end if() not permuted
+	top1++;
+      }//end for() over all nnz in LHS
+
+    //Now we can clear the colors
+    //We find this to be slightly faster than 
+    //clearing the color in the compute loop for some reason
+    top1 = top;
+    for(pp = 0; pp < xnnz; pp++)
+      {
+	j = pattern[top1];
+	color[j] = 0;
+	//printf("CLEARING COLOR: %d \n", 
+	//     j);
+	top1++;
+	
+      }//end for over all nnz_pattern
+
+    return 0;
+  }//end t_back_solve_inc_rlvl()
 
   
   template <class Int, class Entry, class Exe_Space>
@@ -939,8 +1435,8 @@ namespace BaskerNS
     Int         ws_size  = LL(X_col)(X_row).iws_size;
     
     Int          nnz     = LL(X_col)(X_row).p_size;
-    Int          brow    = L.srow;
-    Int          bcol    = L.scol;
+    //Int          brow    = L.srow;
+    //Int          bcol    = L.scol;
   
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("t_back_solve_diag, kid: %d blkcol: %d blkrow: %d \n",
@@ -1040,8 +1536,9 @@ namespace BaskerNS
 	    #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	    printf("jj: %d j: %d \n",
 		   jj, j);
-	    printf("VALUE: before: %f %f %f AFTER: %f\n",
-		   X(jj), L.val(j), xj, X(jj)-L.val(j)*xj );
+	    printf("VALUE: before: %f %f %f AFTER: %f kid: %d jj: %d\n",
+		   X(jj), L.val(j), xj, X(jj)-L.val(j)*xj, 
+		   kid, jj+L.srow);
 	    #endif
 
 	    X(jj) -= L.val(j)*xj;
@@ -1299,23 +1796,44 @@ namespace BaskerNS
     Int *pattern = &(color[ws_size]);
     Int *stack   = &(pattern[ws_size]);
 
-    const Int    brow  = L.srow;
-    const Int    bcol  = L.scol;
+    //const Int    brow  = L.srow;
+    //const Int    bcol  = L.scol;
     const Int    llnnz = L.nnz;
           Int    lnnz  = L.col_ptr(k);
 
     if((p_size) > (llnnz-lnnz))
       {
-	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d \n",
-	       blkcol, blkrow, kid, llnnz,lnnz,p_size  );
+	Int newsize = llnnz*1.2 + L.ncol;
+
+	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d newsize: %d  \n",
+	       blkcol, blkrow, kid, llnnz,lnnz,p_size, newsize  );
 	BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
-	
+
+	if(Options.realloc == BASKER_FALSE)
+	  {
+	    thread_array(kid).error_type =
+	      BASKER_ERROR_NOMALLOC;
+	    return BASKER_ERROR;
+
+	  }
+	else
+	  {
+	    thread_array(kid).error_type =
+	      BASKER_ERROR_REMALLOC;
+	    thread_array(kid).error_blk    = blkcol;
+	    thread_array(kid).error_subblk = blkrow;
+	    thread_array(kid).error_info   = newsize;
+	    return BASKER_ERROR;
+	  }
+
+
+       
       }
 
     for(Int i = 0; i < p_size; i++)
       {
 	Int j = pattern[i];
-	Int t = gperm(j+brow);
+	//Int t = gperm(j+brow);
 	
 	#ifdef BASKER_DEBUG_NFACTOR_BLK
 	printf("L-Moving, kid: %d j: %d val: %f lnnz: %d inc: %d \n",
@@ -1327,6 +1845,10 @@ namespace BaskerNS
 	L.row_idx(lnnz) = j;
 	L.inc_lvl(lnnz) = stack[j];
 	stack[j] = BASKER_MAX_IDX;
+	
+	//printf("clearing stack %d \n",
+	//     j+L.srow);
+
 	L.val(lnnz) = EntryOP::divide(X(j),pivot);
 	X(j) = 0;
 
@@ -1335,6 +1857,12 @@ namespace BaskerNS
     //printf("L-Moving, kid: %d col_ptr(%d): %d \n",
     //	   kid, k-bcol+1, lnnz);
     
+    //Fix later 
+    for(Int i = 0; i < LL(X_col)(X_row).nrow; i++)
+      {
+	stack[i] = BASKER_MAX_IDX;
+      }
+
     L.col_ptr(k+1) = lnnz;
     LL(X_col)(X_row).p_size = 0;
 
@@ -1902,8 +2430,8 @@ namespace BaskerNS
     Int         ws_size         = LL(X_col)(X_row).iws_size;
     
     Int    nnz            = LL(X_col)(X_row).p_size;
-    const Int    brow           = L.srow;
-    const Int    bcol           = L.scol;
+    //const Int    brow           = L.srow;
+    //const Int    bcol           = L.scol;
   
 
     //printf("=============RIGHT ONE CALLED ============\n");
@@ -2004,10 +2532,10 @@ namespace BaskerNS
 	    #endif 
 	     
 	    #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
-	    if((kid == 2)||(kid==3))
+	    //if((kid == 2)||(kid==3))
 	     printf("L.inc_lvl[%d %d]: %d %d kid: %d \n",
 		    jj+L.srow, j, L.inc_lvl(j), stack[jj], kid);
-	     #endif
+	    #endif
 
 	     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	    if((kid == 2)||(kid==3))
@@ -2015,6 +2543,56 @@ namespace BaskerNS
 		    jj, stack[jj]);
 	     #endif
 
+
+
+
+
+	    //TEST--- CAN BE REMOVED LATER
+	    if(A_option == BASKER_TRUE)
+	      {
+		/*
+	    if(INC_LVL_TEMP(k+LL(blkcol)(0).srow) == BASKER_MAX_IDX)
+	      {
+		printf("ERROR INC_TEMP RESET LOWER BACKSOLVE\n");
+
+	      }
+		*/
+
+	    Int temp = INC_LVL_TEMP(k+LL(blkcol)(0).srow)+ L.inc_lvl(j) + 1;
+	    /*
+	    printf("lower row: %d kid: %d inc: %d %d %d j: %d \n",
+		   jj+L.srow,
+		   kid, stack[jj],
+		   INC_LVL_TEMP(k+LL(blkcol)(0).srow),
+		   temp,
+		   k+LL(blkcol)(0).srow);
+		   
+	    */
+				
+
+
+	    //stack[jj] = min(stack[jj], 
+	    //		    INC_LVL_TEMP(k+LL(blkcol)(0).srow)+ L.inc_lvl(j) + 1);
+	       
+	    if(stack[jj] != BASKER_MAX_IDX)
+	      {
+	    stack[jj] = min(stack[jj], temp);
+	      }
+	    else
+	      {
+		stack[jj] = temp;
+	      }
+
+	    //   printf("lower update  row: %d kid: %d inc: %d \n", 
+	    //	   jj+L.srow,
+	    //	   kid, 
+	    //	   stack[jj]);
+
+	      }
+
+	    if(Options.incomplete_type == 
+	       BASKER_INCOMPLETE_LVL)
+	      {
 	     
 	     if((stack[jj] == BASKER_MAX_IDX) ||
 		(stack[jj] > Options.inc_lvl))
@@ -2023,19 +2601,25 @@ namespace BaskerNS
 
 		 continue;
 	       }
+	      }
+	   
+	    
 
 	  
-	     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
-	     if((kid == 2)||(kid==3))
+	    #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+	      //if((kid == 2)||(kid==3))
 	       {
-	     printf("VALUE: before %f %f %f AFTER: %f\n",
-		    X(jj), L.val(j), xj, X(jj)-L.val(j)*xj);
+	     printf("VALUE: before %f %f %f AFTER: %f kid: %d jj: %d\n",
+		    X(jj), L.val(j), xj, X(jj)-L.val(j)*xj, 
+		    kid, jj+L.srow);
 	       }
-	     #endif
+	       #endif
 	     
 	     X(jj) -= L.val(j)*xj;
 
 	  }//over all nnz in column
+	//REset moved from lower to here
+	INC_LVL_TEMP(k+LL(blkcol)(0).srow) = BASKER_MAX_IDX;
       }//over all nonzero in left
 
     #ifdef BASKER_2DL
@@ -2087,7 +2671,9 @@ namespace BaskerNS
     INT_1DARRAY   ws    = LL(X_col)(X_row).iws;
     ENTRY_1DARRAY X     = LL(X_col)(X_row).ews;
     const Int   ws_size = LL(X_col)(X_row).iws_size;
-    const Int   p_size  = LL(X_col)(X_row).p_size;
+    //const Int   p_size  = LL(X_col)(X_row).p_size;
+
+
    
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("t_move_offdiag_L, kid: %d L %d % X %d %d p_size: %d \n",
@@ -2098,36 +2684,56 @@ namespace BaskerNS
     Int *pattern = &(color[ws_size]);
     Int *stack   = &(pattern[ws_size]);
 
-    const Int    brow  = L.srow;
-    const Int    bcol  = L.scol;
+    //const Int    brow  = L.srow;
+    //const Int    bcol  = L.scol;
     const Int    llnnz = L.nnz;
     Int    lnnz  = L.col_ptr(k);
    
+    if(L.nrow > (llnnz - lnnz))
+      {
+	printf("no enough memory in dense \n");
+	printf("kid: %d llnnz: %d lnnz: %d \n",
+	       kid, lnnz, lnnz);
+	
+
+      }
+    
+
     for(Int j = 0; j < L.nrow; ++j)
       {
-	if(X(j)!=0)
+
+	//printf("Consider L-move (%d %d) %f kid: %d inc: %d \n",
+	//     k+L.scol, j+L.srow, X(j), kid, stack[j]);
+
+	if((X(j)!=0))
 	  {
 
-	Int t = gperm(j+brow);
-	
-	#ifdef BASKER_DEBUG_NFACTOR_BLK
-	printf("L-Moving, kid: %d j: %d val: %f lnnz: %d \n",
-	     kid, j, X[j]/pivot, lnnz);
-	#endif
+	    if((stack[j] != BASKER_MAX_IDX)&&
+	       stack[j] <= Options.inc_lvl)
+	      {
+	    
+	 #ifdef BASKER_DEBUG_NFACTOR_BLK
+	printf("L-Moving, [%d %d] kid: %d j: %d val: %f lnnz: %d inc: %d\n",
+	       k+L.scol, j+L.srow,
+	       kid, j, X[j]/pivot, lnnz, stack[j]);
+	#endif	
 
-	color[j] = 0;
-	
+	//printf("lnnz: %d %d kid: %d \n",
+	//     lnnz, j, kid); 
 	L.row_idx(lnnz) = j;
-
 	L.val(lnnz) = EntryOP::divide(X(j),pivot);
-
-	X(j) = 0;
-
         L.inc_lvl(lnnz) = stack[j];
-        
-
 	lnnz++;
-	  }
+	      }
+	
+	    //X(j) = 0;
+	    //color[j] = 0;
+	
+	//Clear stack too ?
+	  }//if not zero
+	color[j] = 0;
+	X(j)  = 0;
+	stack[j] = BASKER_MAX_IDX;
       }
 
     L.col_ptr(k+1) = lnnz;
@@ -2157,10 +2763,11 @@ namespace BaskerNS
     ENTRY_1DARRAY X      = LL(X_col)(X_row).ews;
     Int         ws_size  = LL(X_col)(X_row).iws_size;
     
-    Int          nnz     = LL(X_col)(X_row).p_size;
-    Int          brow    = L.srow;
-    Int          bcol    = L.scol;
+    //Int          nnz     = LL(X_col)(X_row).p_size;
+    //Int          brow    = L.srow;
+    //Int          bcol    = L.scol;
   
+    
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("t_back_solve_diag, kid: %d blkcol: %d blkrow: %d \n",
 	   kid, blkcol, blkrow);
@@ -2174,11 +2781,16 @@ namespace BaskerNS
     Int *pattern = &(color[ws_size]);
     Int *stack   = &(pattern[ws_size]);
    
+    
     //need to make this so not every column 
-    for(Int i = 0 ; i < L.ncol; i++)
+    for(Int i = 0 ; i < ws_size; i++)
       {
 	stack[i] = BASKER_MAX_IDX;
+	//printf("clearing stack: %d \n",
+	//     i+LL(X_col)(X_row).srow);
       }
+    
+  
     //Preload with A
     if(A_option == BASKER_TRUE)
       {
@@ -2214,7 +2826,7 @@ namespace BaskerNS
 	printf("LVL_TEMP[%d] = %d, %d kid: %d continue? \n", 
 	       k+pbrow, INC_LVL_TEMP(k+pbrow), Options.inc_lvl, kid); 
 	#endif
-
+	
 	for(Int j = L.col_ptr(k);
 	    j < L.col_ptr(k+1); j++)
 	  {
@@ -2247,6 +2859,7 @@ namespace BaskerNS
 	    #endif
 	    
           }//over the column
+	//can not clear here
 	//INC_LVL_TEMP(k+pbrow) = BASKER_MAX_IDX;
       }//over all nonzero in left
 
@@ -2273,22 +2886,24 @@ namespace BaskerNS
     ENTRY_1DARRAY X      = LL(X_col)(X_row).ews;
     Int        ws_size   = LL(X_col)(X_row).iws_size;
 
-    Int nnz              = LL(X_col)(X_row).p_size;
-    const Int brow       = L.srow;
-    const Int bcol       = L.scol;
+    //Int nnz              = LL(X_col)(X_row).p_size;
+    //const Int brow       = L.srow; //Not used
+    //const Int bcol       = L.scol; //Not used
 
     
     Int *color   = &(ws(0));
     Int *pattern = &(color[ws_size]);
     Int *stack   = &(pattern[ws_size]);
 
-    //printf("find fill kid: %d L: %d %d X: %d %d \n",
-    //     kid, blkcol, blkrow, X_col, X_row);
+    // printf("find fill kid: %d L: %d %d X: %d %d xsize: %d \n",
+    //	   kid, blkcol, blkrow, X_col, X_row, x_size);
 
     //Need to find away not to prefill everytime
     for(Int i = 0; i < L.nrow; i++)
       {
 	stack[i] = BASKER_MAX_IDX;
+	//printf("clearing stack2: %d \n",
+	//     i+LL(X_col)(X_row).srow);
       }
 
     //Simulate SPMV to get fill-in pattern
@@ -2296,10 +2911,17 @@ namespace BaskerNS
       {
 	const Int k     = x_idx(i+x_offset);
 	const Int flvl  = x_fill(i+x_offset);
+
+	if(kid == 1)
+	  {
+	    printf("consider U_fill: %d %d \n",
+		   k+L.scol, flvl);
+	  }
+
 	
 	if(flvl+1 > Options.inc_lvl)
 	  {
-	    //printf("Continued skip because too large\n");
+	    printf("Continued skip because too large\n");
 	    continue;
 	  }
 	
@@ -2309,10 +2931,43 @@ namespace BaskerNS
 	    const Int jj    = L.row_idx(j);
 	    const Int nflvl = L.inc_lvl(j) + flvl + 1;
 	    
+
+	    /*
+	    if((jj+L.srow) == 40)
+	      {
+		
+		printf("fill-32.  kid: %d col: %d xj-lvl: %d col-lvl: %d %d\n",
+		       kid, k+L.scol, 
+		       flvl,
+		       L.inc_lvl(j),
+		       nflvl);
+		       
+	      }
+	    */
+	    
+	    
+	    /*
+	     if((jj+L.srow) == 20)
+	       {
+			
+		printf("fill-20.  kid: %d col: %d xj-lvl: %d col-lvl: %d %d \n",
+		       kid, k+L.scol, 
+		       flvl,
+		       L.inc_lvl(j),
+		       nflvl);
+		       
+	      }
+	    */
+
+
+
+
             // if((kid==2)||(kid==3))
 	    //  {
-	    //printf("%d -- flvl: %d nflvl: %d kid: %d \n",
-	    //	   jj+L.srow, stack[jj], nflvl, kid);
+	    //printf("%d -- flvl: %d nflvl: %d %d %d kid: %d \n",
+	    //	   jj+L.srow, stack[jj], 
+	    //	   nflvl, L.inc_lvl(j), flvl,
+	    //	   kid);
             // }
 	    if(stack[jj] == BASKER_MAX_IDX)
 	      {
@@ -2323,10 +2978,10 @@ namespace BaskerNS
 		stack[jj] = min(nflvl, stack[jj]);
 	      }
 
-            // if((kid==2)||(kid==3))
+            //if((kid==2)||(kid==3))
 	    //  {
             //printf("Assigned inc_lvl(%d) = %d, kid: %d \n",
-            // 	   jj+L.srow, stack[jj], kid);
+	    //	   jj+L.srow, stack[jj], kid);
             // }
 
 	  }//end for-all nnz in L
@@ -2342,8 +2997,168 @@ namespace BaskerNS
       }
     #endif
 
-
+    return 0;
   }//end t_lower_col_diag_find_fill()
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::t_lower_col_offdiag_find_fill_rlvl
+  (
+   Int kid,
+   Int blkcol, Int blkrow,
+   Int X_col, Int X_row,
+   Int k,
+   ENTRY_1DARRAY x,
+   INT_1DARRAY x_idx,
+   INT_1DARRAY x_fill,
+   Int x_size, Int x_offset
+   )
+  {
+    BASKER_MATRIX &L     = LL(blkcol)(blkrow);
+    
+    INT_1DARRAY   ws     = LL(X_col)(X_row).iws;
+    ENTRY_1DARRAY X      = LL(X_col)(X_row).ews;
+    Int        ws_size   = LL(X_col)(X_row).iws_size;
+
+    //Int nnz              = LL(X_col)(X_row).p_size;
+    //const Int brow       = L.srow; //Not used
+    //const Int bcol       = L.scol; //Not used
+
+    
+    Int *color   = &(ws(0));
+    Int *pattern = &(color[ws_size]);
+    Int *stack   = &(pattern[ws_size]);
+
+    //printf("find fill kid: %d L: %d %d X: %d %d xsize: %d \n",
+    //	   kid, blkcol, blkrow, X_col, X_row, x_size);
+
+    //Need to find away not to prefill everytime
+    /*
+    for(Int i = 0; i < L.nrow; i++)
+      {
+	//This will over write, need to fix
+	//stack[i] = BASKER_MAX_IDX;
+	//printf("clearing stack2: %d \n",
+	//     i+LL(X_col)(X_row).srow);
+	
+
+	//Check if z
+	
+	if(stack[i] != BASKER_MAX_IDX)
+	  {
+	    printf("EERRO kid: %d stack not cleared: %d \n",
+		   kid, i+L.srow);
+	  }
+	
+      }
+    */
+
+    //Simulate SPMV to get fill-in pattern
+    for(Int i = 0; i < x_size; i++)
+      {
+	const Int k     = x_idx(i+x_offset);
+	const Int flvl  = x_fill(i+x_offset);
+
+	if(kid == 1)
+	  {
+	    // printf("consider U_fill: %d %d \n",
+	    //	   k+L.scol, flvl);
+	  }
+
+	//In RLVL we can not skip out
+		
+	for(Int j = L.col_ptr(k);
+	    j < L.col_ptr(k+1); j++)
+	  {
+	    const Int jj    = L.row_idx(j);
+	    const Int nflvl = L.inc_lvl(j) + flvl + 1;
+	    
+	    /*
+	    if((jj+L.srow) == 90)
+	      {
+
+		printf("fill-90.  kid: %d col: %d xj-lvl: %d col-lvl: %d %d\n",
+		       kid, k+L.scol, 
+		       flvl,
+		       L.inc_lvl(j),
+		       nflvl);
+		       
+	      }
+	    */
+	    
+	    
+	    /*
+	     if((jj+L.srow) == 20)
+	       {
+			
+		printf("fill-20.  kid: %d col: %d xj-lvl: %d col-lvl: %d %d \n",
+		       kid, k+L.scol, 
+		       flvl,
+		       L.inc_lvl(j),
+		       nflvl);
+		       
+	      }
+	    */
+
+
+
+
+            // if((kid==2)||(kid==3))
+	    //  {
+	    //printf("%d -- flvl: %d nflvl: %d %d %d kid: %d \n",
+	    //	   jj+L.srow, stack[jj], 
+	    //	   nflvl, L.inc_lvl(j), flvl,
+	    //	   kid);
+            // }
+	    if(stack[jj] == BASKER_MAX_IDX)
+	      {
+		stack[jj] = nflvl;
+	      }
+	    else
+	      {
+		stack[jj] = min(nflvl, stack[jj]);
+	      }
+	    
+	    /*
+	    if((jj+L.srow) == 35)
+	      {
+
+		printf("fill-35.  kid: %d col: %d set: %d\n",
+		       kid, k+L.scol, 
+		       stack[jj]);
+	   
+		       
+	      }
+	    */
+
+
+
+            //if((kid==2)||(kid==3))
+	    //  {
+            //printf("Assigned inc_lvl(%d) = %d, kid: %d \n",
+	    //	   jj+L.srow, stack[jj], kid);
+            // }
+
+	  }//end for-all nnz in L
+      }//over all nnz
+
+    //printf("TEST 30 kid: %d stack: %d \n",
+    //	   kid, stack[0]);
+
+    #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+    printf("Fill-in after test kid: %d blk:  %d %d \n",
+           kid, blkcol, blkrow);
+    for(Int i = 0; i < L.nrow; i++)
+      {
+        printf("kid: %d fi: %d %d \n",
+               kid, i+L.srow, stack[i]);
+      }
+    #endif
+
+    return 0;
+  }//end t_lower_col_diag_find_fill_rlvl()
+
 
  
   //Notes on t_popluate_col_fill
@@ -2363,10 +3178,10 @@ namespace BaskerNS
     //if((kid == 2) || (kid == 3))
       {
     printf("============t_pop_col_fill called kid: %d============\n", kid);
-    printf("populating B: %d %d X: %d %d kid: %d \n",
-	   blkcol,blkrow,X_col,X_row, kid);
+    printf("populating k: %d B: %d %d X: %d %d kid: %d \n",
+	   k, blkcol,blkrow,X_col,X_row, kid);
       }
-    #endif
+     #endif
     //Note X_col is always the leader
     BASKER_MATRIX *B;
     if(lower == BASKER_TRUE)
@@ -2387,6 +3202,14 @@ namespace BaskerNS
     Int *stack    = &(pattern[ws_size]);
 
 
+    //printf("Crazy test: %d %d \n", 
+    //	   X_col, X_row);
+    // for(Int i = 0; i < M.nrow; i++)
+    // {
+    //	printf("scrazy: %d %d \n",
+    //	       i+M.srow, stack[i]);
+    // }
+
     //printf("\n");
     //Scan the column to see for nnz
     for(Int jj = M.col_ptr(k); jj < M.col_ptr(k+1); jj++)
@@ -2406,7 +3229,12 @@ namespace BaskerNS
 	//#endif
 
 	stack[j] = 0;
+
 	
+	//printf("Populating original: k: %d j: %d %f \n",
+	//   k+LU(blkcol)(blkrow).scol, 
+	//   j+LU(blkcol)(blkrow).srow, M.val(jj));
+       
     
       }//end-for over all nnz in column
 
@@ -2422,7 +3250,7 @@ namespace BaskerNS
       }
     printf("\n");
       }
-    #endif
+      #endif
 
 
 
@@ -2440,14 +3268,16 @@ namespace BaskerNS
    )
   {
 
-    //if((kid==2)||(kid==3))
-    //printf("Reduce col fill called, kid: %d \n",
-    //	   kid);
+  
 
     const Int my_idx      = S(0)(kid);
     const Int team_leader = find_leader(kid,sl);
     const Int leader_idx  = S(0)(team_leader);
-    Int loop_col_idx      = S(l)(kid);
+    //Int loop_col_idx      = S(l)(kid);
+
+    //printf("Reduce col fill called, kid: %d leader: %d \n",
+    //	   kid, team_leader);
+
 
     //If I am not the leader, then get sparsity pattern of B
     if(kid != team_leader)
@@ -2458,17 +3288,17 @@ namespace BaskerNS
 	  {
 	    ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews;
 	    INT_1DARRAY  &wsL = LL(leader_idx)(blk).iws;
-	    Int      p_sizeL  = LL(leader_idx)(blk).p_size;
+	    //Int      p_sizeL  = LL(leader_idx)(blk).p_size;
 	    Int      ws_sizeL = LL(leader_idx)(blk).iws_size;
 	    ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews;
 	    INT_1DARRAY   &ws = LL(my_idx)(blk).iws;
 	    const Int ws_size = LL(my_idx)(blk).iws_size;
-	    Int       p_size  = LL(my_idx)(blk).p_size;
+	    //Int       p_size  = LL(my_idx)(blk).p_size;
 	    Int       *color  = &(ws[0]);
 	    Int     *pattern  = &(color[ws_size]); 
 	    Int     *stack    = &(pattern[ws_size]); //used for fill
-	    Int      brow     = LL(my_idx)(blk).srow;
-	    Int      browL    = LL(leader_idx)(blk).srow;
+	    //Int      brow     = LL(my_idx)(blk).srow;
+	    //Int      browL    = LL(leader_idx)(blk).srow;
 	    
 	    Int *colorL   = &(wsL(0));
 	    Int *patternL = &(colorL[ws_sizeL]);
@@ -2479,15 +3309,15 @@ namespace BaskerNS
 	      {
 		//if(kid==3)
                 // {
-                //  printf("checking: %d %d %dkid: %d \n",
-		//	   jj, stack[jj], stackL[jj], kid);
+		//printf("checking: %d %d %d kid: %d \n",
+		//	 jj+LL(my_idx)(blk).srow, stack[jj], stackL[jj], kid);
                 // }
 		if((stack[jj] != BASKER_MAX_IDX)&&
 		   (stackL[jj] != BASKER_MAX_IDX))
 		  {
 		    //if((kid==2)||(kid==3))
                     // {
-                        //  printf("Copy fillto leader: %d %d kid: %d\n",
+		    //   printf("Copy fillto leader: %d %d kid: %d\n",
                     //	   stack[jj], stackL[jj], kid);
 		    
                     // }
@@ -2543,8 +3373,8 @@ namespace BaskerNS
 	const Int lteam_size = pow(2,l+1);
 	const Int L_col      = S(lvl)(leader_id);
 	Int L_row      = 0;
-	const Int U_col      = S(lvl)(leader_id); 
-	Int U_row            = LU_size(U_col)-1;
+	//const Int U_col      = S(lvl)(leader_id); 
+	//Int U_row            = LU_size(U_col)-1;
 	//Int X_col            = S(0)(leader_id);
         Int X_col            = S(0)(kid);
 	Int X_row            = l+1;
@@ -2572,24 +3402,29 @@ namespace BaskerNS
       {
 	//printf("===========T ADD ORIG FILL CALLED\n");
 	const Int leader_id  = find_leader(kid, l);
-	const Int lteam_size = pow(2,l+1);
-	const Int L_col      = S(lvl)(leader_id);
-	Int L_row      = 0;
-	const Int U_col      = S(lvl)(leader_id); 
-	Int U_row            = LU_size(U_col)-1;
+	//const Int lteam_size = pow(2,l+1);
+	const Int L_col      = S(lvl-1)(leader_id);
+	//Int L_row             = 0;
+	//const Int U_col      = S(lvl)(leader_id); 
+	//Int U_row            = LU_size(U_col)-1;
 	Int X_col            = S(0)(leader_id);
 	Int X_row            = l+1;
     
-        //	printf("=***== fill MY ID: %d LEADER ID: %d ===** \n",
-        //   kid, leader_id);
+       	//printf("=***== fill MY ID: %d LEADER ID: %d ===** \n",
+	// kid, leader_id);
 
 	if(kid == leader_id)
 	  {
 	    
 	    Int bl = l+1;
 	    Int A_col = S(lvl)(kid);
+
+	    Int my_row_leader = find_leader(kid, lvl-1);
+	    Int my_new_row = 
+	      L_col - S(0)(my_row_leader);
+
+
 	    Int A_row = (lvl==l)?(2):S(bl)(kid)%(LU_size(A_col));
-	    
 	    if((S(bl)(kid)>14) &&
 	       (S(bl)(kid)>LU_size(A_col)) &&
 	       (lvl != 1))
@@ -2598,6 +3433,14 @@ namespace BaskerNS
 		A_row = ((S(bl)(kid)+1)-(tm*16))%LU_size(A_col);
 	      }
 	   
+	    
+	    //printf("TEST---ADD kid: %d A: %d %d new: %d leader: %d %d lvl: %d %d\n",
+	    //kid, A_col, A_row, my_new_row, my_row_leader, L_col,lvl, bl);
+	   
+
+	    //A_row = my_new_row;
+
+
 	    BASKER_ASSERT((A_row!=(LU_size(A_col)-1)),
 			  "ERROR: Selected Lower");
 	   

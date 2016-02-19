@@ -56,6 +56,8 @@
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+
 #ifdef HAVE_ZOLTAN2_SCOTCH
 // stdint.h for int64_t in scotch header
 #include <stdint.h>
@@ -402,7 +404,7 @@ int main(int argc, char *argv[])
 #endif
 
   ///////////////////////////////////////////////////////////
-  // Test conversions into ZOLTAN_ID_PTR
+  // Test conversions into and from ZOLTAN_ID_PTR
 
   ZOLTAN_ID_PTR zoltanGID = new ZOLTAN_ID_TYPE[4];
 
@@ -411,10 +413,23 @@ int main(int argc, char *argv[])
     test_t zgno = 'a';
     zoltanGID[0] = 0; zoltanGID[1] = 0; zoltanGID[2] = 0; zoltanGID[3] = 0;
 
+    int num_gid = MAX(1, sizeof(test_t) / sizeof(ZOLTAN_ID_TYPE));
+    if (Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::NUM_ID != num_gid) {
+      PRINTMSG("FAIL: NUM_ID wrong for char");
+      ierr++;
+    }
+
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN_TPL_T(zoltanGID, zgno);
     if (zoltanGID[0] != ZOLTAN_ID_TYPE(zgno) || zoltanGID[1] != 0 || 
         zoltanGID[2] != 0 || zoltanGID[3] != 0) {
-      PRINTMSG("FAIL: int to ZOLTAN_ID_PTR");
+      PRINTMSG("FAIL: char to ZOLTAN_ID_PTR");
+      ierr++;
+    }
+
+    test_t back;
+    Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(back, zoltanGID);
+    if (back != zgno) {
+      PRINTMSG("FAIL: ZOLTAN_ID_PTR to char");
       ierr++;
     }
   }
@@ -424,10 +439,23 @@ int main(int argc, char *argv[])
     test_t zgno = 63;
     zoltanGID[0] = 0; zoltanGID[1] = 0; zoltanGID[2] = 0; zoltanGID[3] = 0;
 
+    int num_gid = MAX(1, sizeof(test_t) / sizeof(ZOLTAN_ID_TYPE));
+    if (Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::NUM_ID != num_gid) {
+      PRINTMSG("FAIL: NUM_ID wrong for short");
+      ierr++;
+    }
+
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN_TPL_T(zoltanGID, zgno);
     if (zoltanGID[0] != ZOLTAN_ID_TYPE(zgno) || zoltanGID[1] != 0 || 
         zoltanGID[2] != 0 || zoltanGID[3] != 0) {
-      PRINTMSG("FAIL: int to ZOLTAN_ID_PTR");
+      PRINTMSG("FAIL: short to ZOLTAN_ID_PTR");
+      ierr++;
+    }
+
+    test_t back;
+    Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(back, zoltanGID);
+    if (back != zgno) {
+      PRINTMSG("FAIL: ZOLTAN_ID_PTR to short");
       ierr++;
     }
   }
@@ -437,10 +465,23 @@ int main(int argc, char *argv[])
     test_t zgno = 123;
     zoltanGID[0] = 0; zoltanGID[1] = 0; zoltanGID[2] = 0; zoltanGID[3] = 0;
 
+    int num_gid = MAX(1, sizeof(test_t) / sizeof(ZOLTAN_ID_TYPE));
+    if (Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::NUM_ID != num_gid) {
+      PRINTMSG("FAIL: NUM_ID wrong for int");
+      ierr++;
+    }
+
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN_TPL_T(zoltanGID, zgno);
     if (zoltanGID[0] != ZOLTAN_ID_TYPE(zgno) || zoltanGID[1] != 0 || 
         zoltanGID[2] != 0 || zoltanGID[3] != 0) {
       PRINTMSG("FAIL: int to ZOLTAN_ID_PTR");
+      ierr++;
+    }
+
+    test_t back;
+    Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(back, zoltanGID);
+    if (back != zgno) {
+      PRINTMSG("FAIL: ZOLTAN_ID_PTR to int");
       ierr++;
     }
   }
@@ -450,10 +491,23 @@ int main(int argc, char *argv[])
     test_t zgno = 456;
     zoltanGID[0] = 0; zoltanGID[1] = 0; zoltanGID[2] = 0; zoltanGID[3] = 0;
 
+    int num_gid = MAX(1, sizeof(test_t) / sizeof(ZOLTAN_ID_TYPE));
+    if (Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::NUM_ID != num_gid) {
+      PRINTMSG("FAIL: NUM_ID wrong for unsigned int");
+      ierr++;
+    }
+
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN_TPL_T(zoltanGID, zgno);
     if (zoltanGID[0] != zgno || zoltanGID[1] != 0 || 
         zoltanGID[2] != 0 || zoltanGID[3] != 0) {
       PRINTMSG("FAIL: unsigned int to ZOLTAN_ID_PTR");
+      ierr++;
+    }
+
+    test_t back;
+    Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(back, zoltanGID);
+    if (back != zgno) {
+      PRINTMSG("FAIL: ZOLTAN_ID_PTR to unsigned int");
       ierr++;
     }
   }
@@ -463,10 +517,24 @@ int main(int argc, char *argv[])
     test_t zgno = ((test_t)1 << 34) + (test_t)17;
     zoltanGID[0] = 0; zoltanGID[1] = 0; zoltanGID[2] = 0; zoltanGID[3] = 0;
 
+    int num_gid = MAX(1, sizeof(test_t) / sizeof(ZOLTAN_ID_TYPE));
+    if (Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::NUM_ID != num_gid) {
+      PRINTMSG("FAIL: NUM_ID wrong for long long");
+      ierr++;
+    }
+
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN_TPL_T(zoltanGID, zgno);
     if (zoltanGID[0] != 17 || zoltanGID[1] != 4 || 
         zoltanGID[2] != 0 || zoltanGID[3] != 0) {
       PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+      ierr++;
+    }
+
+    test_t back;
+    Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(back, zoltanGID);
+    if (back != zgno) {
+      std::cout << "back " << back << " != zgno " << zgno << std::endl;
+      PRINTMSG("FAIL: ZOLTAN_ID_PTR to long long");
       ierr++;
     }
   }
@@ -476,10 +544,24 @@ int main(int argc, char *argv[])
     test_t zgno = ((test_t)1 << 36) + (test_t)25;
     zoltanGID[0] = 0; zoltanGID[1] = 0; zoltanGID[2] = 0; zoltanGID[3] = 0;
 
+    int num_gid = MAX(1, sizeof(test_t) / sizeof(ZOLTAN_ID_TYPE));
+    if (Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::NUM_ID != num_gid) {
+      PRINTMSG("FAIL: NUM_ID wrong for unsigned long long");
+      ierr++;
+    }
+
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN_TPL_T(zoltanGID, zgno);
     if (zoltanGID[0] != 25 || zoltanGID[1] != 16 || 
         zoltanGID[2] != 0 || zoltanGID[3] != 0) {
       PRINTMSG("FAIL: unsigned long long to ZOLTAN_ID_PTR");
+      ierr++;
+    }
+
+    test_t back;
+    Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(back, zoltanGID);
+    if (back != zgno) {
+      std::cout << "back " << back << " != zgno " << zgno << std::endl;
+      PRINTMSG("FAIL: ZOLTAN_ID_PTR to unsigned long long");
       ierr++;
     }
   }
@@ -490,8 +572,13 @@ int main(int argc, char *argv[])
     for (size_t i = 0; i < 8*sizeof(test_t); i++) zgno += (test_t)1<<i;
     zoltanGID[0] = 0; zoltanGID[1] = 0; zoltanGID[2] = 0; zoltanGID[3] = 0;
 
+    int num_gid = MAX(1, sizeof(test_t) / sizeof(ZOLTAN_ID_TYPE));
+    if (Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::NUM_ID != num_gid) {
+      PRINTMSG("FAIL: NUM_ID wrong for size_t");
+      ierr++;
+    }
+
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN_TPL_T(zoltanGID, zgno);
-    int num_gid = sizeof(test_t) / sizeof(ZOLTAN_ID_TYPE);
     for (int i = 0; i < num_gid; i++)
       if (zoltanGID[i] != std::numeric_limits<ZOLTAN_ID_TYPE>::max()) {
         PRINTMSG("FAIL: size_t to ZOLTAN_ID_PTR");
@@ -502,6 +589,14 @@ int main(int argc, char *argv[])
         PRINTMSG("FAIL: size_t to ZOLTAN_ID_PTR");
         ierr++;
       }
+
+    test_t back;
+    Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(back, zoltanGID);
+    if (back != zgno) {
+      std::cout << "back " << back << " != zgno " << zgno << std::endl;
+      PRINTMSG("FAIL: ZOLTAN_ID_PTR to size_t");
+      ierr++;
+    }
   }
   delete [] zoltanGID;
 

@@ -700,7 +700,10 @@ public:
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const { return m_bucket_repository.total_field_data_footprint(f, rank); }
   size_t total_field_data_footprint(EntityRank rank) const;
 
-  // Print all mesh info
+  // Print all mesh info, consider using:
+  // std::ostringstream oss;
+  // oss << "output." << parallel_rank();
+  // std::ofstream out(oss.str(), std::ios_base::app);
   void dump_all_mesh_info(std::ostream& out) const;
 
   // memoized version

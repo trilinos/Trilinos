@@ -47,9 +47,10 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_Workset_Builder.hpp"
-#include "Panzer_IntegrationValues.hpp"
+#include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_CellData.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -70,7 +71,13 @@ namespace panzer_stk_classic {
 				 std::ostream* out,
 				 std::ostream* pout)
   {    
+    using panzer::Cell;
+    using panzer::NODE;
+    using panzer::Dim;
+
     using Teuchos::RCP;
+
+    panzer::MDFieldArrayFactory af("",true);
     
     RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh->getMetaData();
     RCP<stk_classic::mesh::BulkData> bulkData = mesh->getBulkData();
@@ -116,13 +123,15 @@ namespace panzer_stk_classic {
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
     
       std::vector<stk_classic::mesh::Entity*> elementEntities;
-      elementEntities.push_back(*parentElement);
-      Intrepid2::FieldContainer<double> vertices;
-      mesh->getElementVertices(elementEntities,elementBlockName,vertices);
+      elementEntities.push_back(*parentElement); // notice this is size 1!
+      PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> vertices 
+          = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getVertexCount(), mesh->getDimension());
+      mesh->getElementVerticesNoResize(elementEntities,elementBlockName,vertices);
       
-      panzer::CellData sideCellData(1,*sideID,parentTopology);
+      panzer::CellData sideCellData(1,*sideID,parentTopology); // this is size 1 because elementEntties is size 1!
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));
-      panzer::IntegrationValues<double, Intrepid2::FieldContainer<double> > iv;
+
+      panzer::IntegrationValues2<double> iv("",true);
       iv.setupArrays(ir);
       iv.evaluateValues(vertices);
       

@@ -8,6 +8,23 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluchol)
 
+# Do not compile if Scotch is not enabled
+IF(TPL_ENABLE_Scotch)
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    chol_performance_device_cuda
+    NOEXEPREFIX
+    SOURCES example_chol_performance_device_cuda.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+IF(Trilinos_ENABLE_Teuchos)
+
+# symbolic factorization is guarded with Cholmod
+IF(TPL_ENABLE_Cholmod)
+
 # Symbolic Factorization
 # ======================
 
@@ -27,6 +44,8 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES example_symbolic_factor_pthread.cpp
     COMM serial mpi
   )
+ENDIF()
+
 ENDIF()
 
 # Sparse Chol
@@ -296,8 +315,10 @@ IF(TPL_ENABLE_MKL)
     COMM serial mpi
   )
 ENDIF()
-ENDIF()
 
+ENDIF()  # Teuchos
+
+ENDIF()  # Scotch
 
 # Temporary
 # =========
@@ -309,7 +330,7 @@ ENDIF()
 #  COMM serial mpi
 #  )
 
-
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
         SOURCE_FILES test.mtx

@@ -28,6 +28,9 @@
 
 #define BASKER_EPSILON       1e-6
 
+#define BASKER_PIVOT_TOL     .0001
+#define BASKER_PIVOT_BIAS    1.001
+
 //Error Codes
 enum BASKER_ERROR_CODE 
 {
@@ -38,6 +41,16 @@ enum BASKER_ERROR_CODE
   BASKER_ERROR_OTHER
 };
 
+//Matching Types
+enum BASKER_MATCHING_CODE
+{
+  BASKER_MATCHING_COMMON,
+  BASKER_MATCHING_BN,
+  BASKER_MATCHING_SUM,
+  BASKER_MATCHING_PRODUCT,
+  BASKER_MATCHING_EXP
+};
+
 //MACRO BTF METHOD
 #define BASKER_BTF_MAX_PERCENT  1.00
 #define BASKER_BTF_LARGE        500  //Made smaller for unit test
@@ -46,12 +59,26 @@ enum BASKER_ERROR_CODE
 #define BASKER_BTF_NNZ_OVER      1.20
 #define BASKER_BTF_PRUNE_SIZE    100
 
+enum BASKER_INCOMPLETE_CODE
+{
+  BASKER_INCOMPLETE_LVL,           //ilu(k) 
+  BASKER_INCOMPLETE_RLVL,          //milu(k)
+  BASKER_INCOMPLETE_RLVL_LIMITED,  //milu(k) -- no float on offd
+  BASKER_INCOMPLETE_TOL,
+  BASKER_INCOMPLETE_LVL_TOL,
+  BASKER_INCOMPLETE_EXP
+};
+
+//MACRO DEFAULT INC SETTINGS
+#define BASKER_INC_LVL_VALUE        0
+#define BASKER_INC_TOL_VALUE      0.0001
 
 //MACRO INC FILL (this will become dynamic in the future)
-#define BASKER_FILL_LESTIMATE      1.20
-#define BASKER_FILL_UESTIMATE      1.20
-#define BASKER_FILL_LLOWERESTIMATE 1.30
-#define BASKER_FILL_UUPPERESTIMATE 1.30
+#define BASKER_FILL_USER           1.00
+#define BASKER_FILL_LESTIMATE      1.50
+#define BASKER_FILL_UESTIMATE      1.50
+#define BASKER_FILL_LLOWERESTIMATE 2.00
+#define BASKER_FILL_UUPPERESTIMATE 2.00
 #define BASKER_FILL_LSEPESTIMATE   2.00
 #define BASKER_FILL_USEPESTIMATE   2.00
 
@@ -65,12 +92,19 @@ enum BASKER_ERROR_CODE
 #define ASSERT(a)           assert(a)
 #endif
 
+#ifdef BASKER_DEBUG
 #define BASKER_ASSERT(a,s)       \
   {                              \
     if(!(a))                     \
-      {printf("\n\n%s\n\n", s);}  \				 
+      {printf("\n\n%s\n\n", s);} \
     ASSERT(a);                   \
   }
+#else
+#define BASKER_ASSERT(a,s)      \
+  {                             \
+    BASKER_NO_OP;               \
+  }
+#endif
 
 
 //Note:  Should see if Kokkos has a fast memory cpy in place of for-loop
