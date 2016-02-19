@@ -263,7 +263,7 @@ namespace ROL {
 
     void hessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       if ( useSecantHessVec_ ) {
-        secant_->applyB( Hv, v, x );
+        secant_->applyB( Hv, v );
       }
       else {
         obj_->hessVec( Hv, v, x, tol );
@@ -272,7 +272,7 @@ namespace ROL {
 
     void invHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       if ( useSecantHessVec_ ) {
-        secant_->applyH(Hv,v,x);
+        secant_->applyH(Hv,v);
       }
       else {
         obj_->invHessVec(Hv,v,x,tol);
@@ -281,7 +281,7 @@ namespace ROL {
 
     void precond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       if ( useSecantPrecond_ ) {
-        secant_->applyH( Mv, v, x );
+        secant_->applyH( Mv, v );
       }
       else {
         obj_->precond( Mv, v, x, tol );

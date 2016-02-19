@@ -41,29 +41,17 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_01.cpp
-    \brief Shows how to use Belos in for a Krylov-Newton method    
-    \author Created by G. von Winckel
+/*! \file  test_01.cpp
+    \brief Test scalar minimization algorithms on test 01.
 */
 
-
-#include "ROL_Zakharov.hpp"
-#include "ROL_BelosKrylov.hpp"
-#include "ROL_Algorithm.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_StatusTest.hpp"
-
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-
-#include <cstdlib>
+#include "ROL_ScalarMinimizationTest01.hpp"
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -74,70 +62,41 @@ int main(int argc, char *argv[]) {
   else
     outStream = Teuchos::rcp(&bhs, false);
 
+  // Save the format state of the original std::cout.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(std::cout);
+
   int errorFlag  = 0;
 
-  // *** Example body.
+  // *** Test body.
 
   try {
-    
-      int dim = 10;
 
-      Teuchos::RCP<ROL::Step<RealT> > step;
- 
+    Teuchos::ParameterList parlist;
+    parlist.sublist("Scalar Minimization").set("Type","Brent's");
+    parlist.sublist("Scalar Minimization").sublist("Brent's").set("Tolerance",1.e-10);
+    parlist.sublist("Scalar Minimization").sublist("Brent's").set("Iteration Limit",1000);
+    Teuchos::RCP<ROL::ScalarMinimizationTest<RealT> > smt
+      = Teuchos::rcp(new ROL::ScalarMinimizationTest01<RealT>(parlist));
+    *outStream << "\nBrent's Method\n";
+    bool flag = smt->test(*outStream);
+    errorFlag += (flag ? 0 : 1);
 
-      Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
-      std::string paramfile = "parameters.xml";
-      Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+    parlist.sublist("Scalar Minimization").set("Type","Bisection");
+    parlist.sublist("Scalar Minimization").sublist("Bisection").set("Tolerance",1.e-10);
+    parlist.sublist("Scalar Minimization").sublist("Bisection").set("Iteration Limit",1000);
+    smt = Teuchos::rcp(new ROL::ScalarMinimizationTest01<RealT>(parlist));
+    *outStream << "\nBisection Method\n";
+    flag = smt->test(*outStream);
+    errorFlag += (flag ? 0 : 1);
 
-      // Iteration Vector 
-      Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-
-      // Vector of natural numbers
-      Teuchos::RCP<std::vector<RealT> > k_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-
-      for (int i=0; i<dim; i++) {
-          (*x_rcp)[i]   = 4;
-          (*k_rcp)[i]   = i+1.0;
-       }
-
-       Teuchos::RCP<ROL::Vector<RealT> > k = Teuchos::rcp(new ROL::StdVector<RealT> (k_rcp) );
-       ROL::StdVector<RealT> x(x_rcp);
-
-       ROL::ZOO::Objective_Zakharov<RealT> obj(k);
-
-      // Make a Belos-Krylov solver if specified
-      if(parlist->get("Use Belos",false)) { 
-          Teuchos::RCP<ROL::Krylov<RealT> > krylov = Teuchos::rcp(new ROL::BelosKrylov<RealT>(*parlist));   
-          step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist,krylov));  
-      }
-      else { // Otherwise use ROL's default
-          step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
-      }
-
-      // Define Status Test
-      RealT gtol  = 1e-12;  // norm of gradient tolerance
-      RealT stol  = 1e-14;  // norm of step tolerance
-      int   maxit = 100;    // maximum number of iterations
-      Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol, stol, maxit));    
-
-      // Define Algorithm
-      ROL::Algorithm<RealT> algo(step,status,false);
-
-      // Run Algorithm
-      algo.run(x, obj, true, *outStream);
-
-      // Get True Solution
-      Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-      ROL::StdVector<RealT> xtrue(xtrue_rcp);
-        
-      // Compute Error
-      x.axpy(-1.0, xtrue);
-      RealT abserr = x.norm();
-      *outStream << std::scientific << "\n   Absolute Error: " << abserr << std::endl;
-      if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
-          errorFlag += 1;
-      }
-
+    parlist.sublist("Scalar Minimization").set("Type","Golden Section");
+    parlist.sublist("Scalar Minimization").sublist("Golden Section").set("Tolerance",1.e-10);
+    parlist.sublist("Scalar Minimization").sublist("Golden Section").set("Iteration Limit",1000);
+    smt = Teuchos::rcp(new ROL::ScalarMinimizationTest01<RealT>(parlist));
+    *outStream << "\nGolden Section Method\n";
+    flag = smt->test(*outStream);
+    errorFlag += (flag ? 0 : 1);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
@@ -148,6 +107,9 @@ int main(int argc, char *argv[]) {
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
+
+  // reset format state of std::cout
+  std::cout.copyfmt(oldFormatState);
 
   return 0;
 

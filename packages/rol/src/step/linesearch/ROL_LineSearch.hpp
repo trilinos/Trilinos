@@ -54,6 +54,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
+#include "ROL_ScalarFunction.hpp"
 
 namespace ROL { 
 
@@ -79,7 +80,8 @@ private:
   Teuchos::RCP<Vector<Real> > xtst_; 
   Teuchos::RCP<Vector<Real> > d_;
   Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<const Vector<Real> > grad_;
+  Teuchos::RCP<Vector<Real> > grad_;
+//  Teuchos::RCP<const Vector<Real> > grad_;
 
 public:
 
@@ -119,16 +121,39 @@ public:
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
                            Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    grad_ = Teuchos::rcp(&g, false);
+    grad_ = g.clone(); //Teuchos::rcp(&g, false);
     xtst_ = x.clone();
     d_    = s.clone();
     g_    = g.clone();
   }
 
-  void setData(Real &eps) {
+  virtual void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
+                    const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+                    Objective<Real> &obj, BoundConstraint<Real> &con ) = 0;
+
+  // Set epsilon for epsilon active sets
+  void setData(Real &eps, const Vector<Real> &g) {
     eps_ = eps;
+    grad_->set(g);
   }
 
+  // use this function to modify alpha and fval if the maximum number of iterations
+  // are reached
+  void setMaxitUpdate(Real &alpha, Real &fnew, const Real &fold) {
+    // Use local minimizer
+    if( itcond_ && acceptMin_ ) {
+      alpha = alphaMin_;
+      fnew = fmin_;
+    }
+    // Take no step
+    else if(itcond_ && !acceptMin_) {
+      alpha = 0;
+      fnew = fold;
+    }
+  }
+ 
+
+protected:
   virtual bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
                        const Real fold, const Real sgold, const Real fnew, 
                        const Vector<Real> &x, const Vector<Real> &s, 
@@ -232,10 +257,6 @@ public:
     }
   }
 
-  virtual void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-                    const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-                    Objective<Real> &obj, BoundConstraint<Real> &con ) = 0;
-
   virtual Real getInitialAlpha(int &ls_neval, int &ls_ngrad, const Real fval, const Real gs, 
                                const Vector<Real> &x, const Vector<Real> &s, 
                                Objective<Real> &obj, BoundConstraint<Real> &con) {
@@ -284,23 +305,6 @@ public:
   bool takeNoStep() {
     return itcond_ && !acceptMin_;
   }
-
-  // use this function to modify alpha and fval if the maximum number of iterations
-  // are reached
-  void setMaxitUpdate(Real &alpha, Real &fnew, const Real &fold) {
-    // Use local minimizer
-    if( itcond_ && acceptMin_ ) {
-      alpha = alphaMin_;
-      fnew = fmin_;
-    }
-    // Take no step
-    else if(itcond_ && !acceptMin_) {
-      alpha = 0;
-      fnew = fold;
-    }
-  }
- 
-
 };
 
 }

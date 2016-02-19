@@ -60,6 +60,8 @@ namespace BaskerNS
       //if((kid > 23) && (kid < 28))
       //if((kid > -1) && (kid < 4))
       //if(kid ==0)
+      //if(kid < 4)
+      //if(kid == 2 || kid == 3)
 	{
       #ifdef BASKER_KOKKOS
        basker->t_nfactor_sep2_inc_lvl(kid, lvl, team_leader, thread);
@@ -267,6 +269,11 @@ namespace BaskerNS
 	//     my_leader, b_size, lvl);
 	t_basker_barrier_inc_lvl(thread, kid, my_leader,
 		     b_size, 9, k, lvl-1);
+
+
+	//Need to clean INC_LVL_HERE
+	t_lower_col_factor_offdiag2_cleanup_inc_lvl(kid, lvl, lvl-1, k);
+
       }
       }
     
@@ -1942,8 +1949,8 @@ namespace BaskerNS
 
     pivot = U.tpivot;
         
-    //printf("OFF_DIAG_LOWER, kid: %d leaderid: %d t_size: %d \n",
-    //	   kid, leader_id, lteam_size);
+    //printf("OFF_DIAG_LOWER, kid: %d leaderid: %d t_size: %d \n"
+    //   kid, leader_id, lteam_size);
     
     L_row += (kid-leader_id)+1;
     X_row += (kid-leader_id)+1;
@@ -1953,7 +1960,7 @@ namespace BaskerNS
     
      { 
 
-
+       //Using leader_id is a bad hack!!!!
        t_dense_back_solve_offdiag_inc_lvl(leader_id,
 				  L_col, L_row,
 				  X_col, X_row,
@@ -1971,8 +1978,64 @@ namespace BaskerNS
 			      k, pivot);
        
      }//end for over all offdiag blks
+    
+    //Now we can clear the inc-array
+    //Race here
+    /*
+    for(Int i = 0 ; i < U.nrow; i++)
+      {
+	INC_LVL_TEMP(i+U.srow) = BASKER_MAX_IDX;
+      }
+    */
 
   }//end t_lower_col_factor_offdiag2_inc_lvl()
+
+
+   template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void 
+  Basker<Int,Entry,Exe_Space>::t_lower_col_factor_offdiag2_cleanup_inc_lvl
+  (
+   const Int kid,
+   const Int lvl,
+   const Int l,
+   const Int k
+   )
+  {
+  
+    #ifndef BASKER_MULTIPLE_LOWER
+    BASKER_ASSERT(0==1,"BASKER_MULTIPLE_LOWER ERROR");
+    return 0;
+    #endif
+
+
+    const Int leader_id   = find_leader(kid, l);
+    const Int lteam_size  = pow(2,l+1);
+    const Int L_col       = S(lvl)(leader_id);
+    Int L_row             = 0;
+    const Int U_col       = S(lvl)(leader_id);
+    Int U_row             = LU_size(U_col)-1;
+    Int X_col             = S(0)(leader_id);
+    Int X_row             = l+1;
+    Int col_idx_offset    = 0;  //can get rid of?
+   
+    BASKER_MATRIX        &L = LL(L_col)(L_row);
+    BASKER_MATRIX        &U = LU(U_col)(U_row); 
+    
+    INT_1DARRAY     ws = LL(X_col)(X_row).iws;
+    //const Int  ws_size = LL(X_col)(X_row).iws_size;
+    ENTRY_1DARRAY    X = LL(X_col)(X_row).ews;
+
+    if(kid == leader_id)
+      {
+    for(Int i = 0 ; i < U.nrow; i++)
+      {
+	INC_LVL_TEMP(i+U.srow) = BASKER_MAX_IDX;
+      }
+      }
+  
+
+  }//end t_lower_col_factor_offdiag2_cleanup_inc_lvl()
 
 
 
@@ -2047,7 +2110,7 @@ namespace BaskerNS
 	Int       *color  = &(ws[0]);
 	Int     *pattern  = &(color[ws_size]); 
 	Int     *stack    = &(pattern[ws_size]); //used for fill
-	//Int      brow     = LL(my_idx)(blk).srow; //NU
+	Int      brow     = LL(my_idx)(blk).srow; //NU
 	//Int      browL    = LL(leader_idx)(blk).srow; //NU
 
 	#ifdef BASKER_DEBUG_NFACTOR_COL2

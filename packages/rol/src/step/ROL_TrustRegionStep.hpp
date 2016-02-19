@@ -390,7 +390,7 @@ public:
     if ( step_state->searchSize <= 0.0 ) {
       Teuchos::RCP<Vector<Real> > Bg = g.clone();
       if ( useSecantHessVec_ ) {
-        secant_->applyB(*Bg,(step_state->gradientVec)->dual(),x);
+        secant_->applyB(*Bg,(step_state->gradientVec)->dual());
       }
       else {
         obj.hessVec(*Bg,(step_state->gradientVec)->dual(),x,htol);
@@ -571,10 +571,10 @@ public:
         if ( con.isActivated() ) { // Compute new constrained step
           xnew_->set(x);
           xnew_->axpy(-1.0,*xold_);
-          secant_->update(*(state->gradientVec),*gp_,*xnew_,algo_state.snorm,algo_state.iter+1);
+          secant_->updateStorage(x,*(state->gradientVec),*gp_,*xnew_,algo_state.snorm,algo_state.iter+1);
         }
         else {
-          secant_->update(*(state->gradientVec),*gp_,s,algo_state.snorm,algo_state.iter+1);
+          secant_->updateStorage(x,*(state->gradientVec),*gp_,s,algo_state.snorm,algo_state.iter+1);
         }
       }
 

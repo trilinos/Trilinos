@@ -49,7 +49,6 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 
-
 namespace ROL {
 
 template <class Real>

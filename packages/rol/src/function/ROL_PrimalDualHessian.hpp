@@ -99,7 +99,7 @@ public:
     v_->set(v);
     con_->pruneActive(*v_,*xlam_,eps_);
     if ( useSecant_ && secant_ != Teuchos::null ) {
-      secant_->applyB(Hv,*v_,*x_);
+      secant_->applyB(Hv,*v_);
     }
     else {
       obj_->hessVec(Hv,*v_,*x_,tol);
