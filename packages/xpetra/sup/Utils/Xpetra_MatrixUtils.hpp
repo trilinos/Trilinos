@@ -115,6 +115,24 @@ public:
     return fullMap;
   }
 
+  static Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpetraGidNumbering2ThyraGidNumbering(
+      const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& input) {
+    RCP<const Map> map = shrinkMapGIDs(*(input.getMap()),*(input.getMap()));
+    RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ret =
+        Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map,
+            input.getNumVectors(),
+            true);
+
+    for (size_t c = 0; c < input.getNumVectors(); c++) {
+      Teuchos::ArrayRCP< const Scalar > data = input.getData(c);
+      for (size_t r = 0; r < input.getLocalLength(); r++) {
+        ret->replaceLocalValue(Teuchos::as<LocalOrdinal>(r), c, data[r]);
+      }
+    }
+
+    return ret;
+  }
+
   /*! @brief Helper function to shrink the GIDs and generate a standard map whith GIDs starting at 0
    *
     @param  input       Input map (may be overlapping) containing all GIDs. Think of it as a column map.
