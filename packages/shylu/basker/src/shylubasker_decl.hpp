@@ -897,6 +897,12 @@ namespace BaskerNS
 				     const Int l,
 				     const Int k,
 				     Entry pivot);
+    void t_lower_col_factor_offdiag2_cleanup_inc_lvl(const Int kid,
+				     const Int lvl,
+				     const Int l,
+				     const Int k);
+    
+
     
     void t_add_orig_fill(const Int kid, const Int lvl,
 			 const Int l, const Int k, 
