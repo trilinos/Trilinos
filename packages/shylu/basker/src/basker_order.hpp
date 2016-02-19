@@ -332,7 +332,7 @@ namespace BaskerNS
 	  }
     
 
-	//printMTX("BTF_A.mtx", BTF_A);
+	printMTX("BTF_A.mtx", BTF_A);
     
 	//6. Move to 2D Structure
 	//finds the shapes for both view and submatrices,

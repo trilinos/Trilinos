@@ -723,6 +723,17 @@ namespace BaskerNS
 				      INT_1DARRAY x_fill,
 				      Int x_size, Int x_offset);
 
+    
+    BASKER_INLINE
+    int t_lower_col_offdiag_find_fill_rlvl(Int kid,
+				      Int blkcol, Int blkrow,
+				      Int X_col, Int X_row,
+				      Int k,
+				      ENTRY_1DARRAY x,
+				      INT_1DARRAY x_idx,
+				      INT_1DARRAY x_fill,
+				      Int x_size, Int x_offset);
+
 
     BASKER_INLINE
     void t_populate_col_fill(const Int kid,
