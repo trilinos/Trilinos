@@ -349,6 +349,7 @@ public:
     if ( useSecantPrecond_ ) {
       gp_->set(*(step_state->gradientVec));
     }
+    obj.update(x,true,algo_state.iter);
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

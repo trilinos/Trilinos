@@ -129,6 +129,7 @@ public:
     algo_state.snorm = s.norm();
 
     // Compute new gradient
+    obj.update(x,true,algo_state.iter);
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 
