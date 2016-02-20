@@ -140,6 +140,7 @@ public:
     // Compute new gradient
     gp_->set(*(step_state->gradientVec));
     obj.update(x,true,algo_state.iter);
+    algo_state.value = obj.value(x,tol);
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

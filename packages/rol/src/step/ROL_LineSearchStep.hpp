@@ -461,7 +461,7 @@ public:
     std::string desc = desc_->print(algo_state,false);
     desc.erase(std::remove(desc.end()-3,desc.end(),'\n'), desc.end());
     std::string name = desc_->printName();
-    int pos = desc.find(name);
+    size_t pos = desc.find(name);
     if ( pos != std::string::npos ) {
       desc.erase(pos, name.length());
     }
