@@ -834,7 +834,7 @@ namespace Iovs {
     }
       }
 
-    nodeMap.build_reverse_map(myProcessor);
+    nodeMap.build_reverse_map();
 
     // Only a single nodeblock and all set
     if (num_to_get == nodeCount) {
@@ -922,7 +922,7 @@ namespace Iovs {
 
     // Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
     if (db_state == Ioss::STATE_MODEL) {
-      entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
+      entity_map.build_reverse_map(num_to_get, eb_offset);
         }
 
     // Build the reorderEntityMap which does a direct mapping from

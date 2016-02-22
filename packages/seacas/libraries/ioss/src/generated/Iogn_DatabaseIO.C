@@ -140,7 +140,8 @@ namespace Iogn {
         m_generatedMesh(nullptr),  spatialDimension(3), nodeCount(0),
         elementCount(0), nodeBlockCount(0),
         elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-        nodeMap("node"), elemMap("elem"), m_useVariableDf(true)
+        nodeMap("node", "generated", myProcessor), elemMap("elem", "generated", myProcessor),
+	m_useVariableDf(true)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
@@ -589,7 +590,7 @@ namespace Iogn {
 	  break;
 	}
       }
-      nodeMap.build_reverse_map(myProcessor);
+      nodeMap.build_reverse_map();
     }
     return nodeMap;
   }
@@ -618,7 +619,7 @@ namespace Iogn {
       }
 
       if (elemMap.map[0] == 1) {
-	elemMap.build_reverse_map(myProcessor);
+	elemMap.build_reverse_map();
       }
     }
     return elemMap;

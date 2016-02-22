@@ -5,7 +5,7 @@
 //    strange cases
 //
 //
-// Copyright(C) 2012
+// Copyright(C) 2012, 2013, 2014, 2015, 2016
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -282,7 +282,8 @@ namespace Iopx {
                                       &cpu_word_size, &io_word_size, &version, util().communicator(), info);
 
     if (!is_input() && exodus_file_ptr < 0) {
-      // File didn't exist above, but this OK if is an output file. See if we can create it...
+      // File didn't exist above, but this OK if is an output
+      // file. See if we can create it...
       int mode = 0;
       if (int_byte_size_api() == 8)
         mode |= EX_ALL_INT64_DB;
@@ -378,12 +379,12 @@ namespace Iopx {
           exodusFilePtr = ex_create_par(get_filename().c_str(), mode|par_mode,
                                         &cpu_word_size, &dbRealWordSize, util().communicator(), info);
           if (exodusFilePtr < 0) {
-	    dbState = Ioss::STATE_INVALID;
-	    // NOTE: Code will not continue past this call...
-	    std::ostringstream errmsg;
-	    errmsg << "ERROR: Cannot create specified file '" << get_filename() << "'";
-	    IOSS_ERROR(errmsg);
-	  }
+            dbState = Ioss::STATE_INVALID;
+            // NOTE: Code will not continue past this call...
+            std::ostringstream errmsg;
+            errmsg << "ERROR: Cannot create specified file '" << get_filename() << "'";
+            IOSS_ERROR(errmsg);
+          }
         }
         ex_set_max_name_length(exodusFilePtr, maximumNameLength);
       }
@@ -409,16 +410,16 @@ namespace Iopx {
       // Check properties handled post-create/open...
       // NOTE: Compression is not supported in parallel output at this time...
       if (!is_input()) {
-	if (properties.exists("COMPRESSION_LEVEL")) {
-	  if (myProcessor == 0) {
-	    IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
-	  }
-	}
-	if (properties.exists("COMPRESSION_SHUFFLE")) {
-	  if (myProcessor == 0) {
-	    IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
-	  }
-	}
+        if (properties.exists("COMPRESSION_LEVEL")) {
+          if (myProcessor == 0) {
+            IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
+          }
+        }
+        if (properties.exists("COMPRESSION_SHUFFLE")) {
+          if (myProcessor == 0) {
+            IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
+          }
+        }
       }
     }
     assert(exodusFilePtr >= 0);
@@ -716,7 +717,7 @@ namespace Iopx {
           }
         }
 
-        entity_map.build_reverse_map(myProcessor);
+        entity_map.build_reverse_map();
 
       } else {
         // Output database; entity_map.map not set yet... Build a default map.
@@ -941,27 +942,27 @@ namespace Iopx {
       int64_t my_element_count = eb->get_property("entity_count").get_int();
       int order = eb->get_property("original_block_order").get_int();
       if (my_element_count > 0) {
-	if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-	  std::vector<int64_t> conn(my_element_count * element_nodes);
-	  decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+        if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+          std::vector<int64_t> conn(my_element_count * element_nodes);
+          decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 
-	  for (auto node : conn) {
-	    node_used[node-1] = blk_position+1;
-	  }
-	} else {
-	  std::vector<int> conn(my_element_count * element_nodes);
-	  decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+          for (auto node : conn) {
+            node_used[node-1] = blk_position+1;
+          }
+        } else {
+          std::vector<int> conn(my_element_count * element_nodes);
+          decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 
-	  for (auto node : conn) {
-	    node_used[node-1] = blk_position+1;
-	  }
-	}
+          for (auto node : conn) {
+            node_used[node-1] = blk_position+1;
+          }
+        }
 
-	for (int64_t i=0; i < nodeCount; i++) {
-	  if (node_used[i] == blk_position+1) {
-	    inv_con[i].push_back(blk_position);
-	  }
-	}
+        for (int64_t i=0; i < nodeCount; i++) {
+          if (node_used[i] == blk_position+1) {
+            inv_con[i].push_back(blk_position);
+          }
+        }
       }
     }
 
@@ -1267,7 +1268,7 @@ namespace Iopx {
       // sidesets which were probably written by a previous run of the
       // IO system and are already split into homogenous pieces...
       {
-	for (auto &fs_name : fs_set) {
+        for (auto &fs_name : fs_set) {
           Ioss::SideSet *side_set = new Ioss::SideSet(this, fs_name);
           get_region()->add(side_set);
           int64_t id = Ioex::extract_id(fs_name);
@@ -1454,9 +1455,9 @@ namespace Iopx {
         Ioss::Int64Vector global_side_counts(topo_map.size());
         {
           int64_t i = 0;
-	  for (auto &topo : topo_map) {
-	    global_side_counts[i++] = topo.second;
-	  }
+          for (auto &topo : topo_map) {
+            global_side_counts[i++] = topo.second;
+          }
 
           // If splitting by element block, also sync the side_map
           // information which specifies whether the sideset has
@@ -1466,9 +1467,9 @@ namespace Iopx {
           if (side_map.size() == topo_map.size()) {
             global_side_counts.resize(topo_map.size() + side_map.size());
 
-	    for (auto &side : side_map) {
-	      global_side_counts[i++] = side.second;
-	    }
+            for (auto &side : side_map) {
+              global_side_counts[i++] = side.second;
+            }
           }
 
           // See if any processor has non-zero count for the topo_map counts
@@ -1702,7 +1703,7 @@ namespace Iopx {
     }
 
     int64_t DatabaseIO::get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-					   void *data, size_t data_size) const
+                                           void *data, size_t data_size) const
     {
       return Ioex::DatabaseIO::get_field_internal(reg, field, data, data_size);
     }
@@ -1742,11 +1743,11 @@ namespace Iopx {
           size_t count = decomp->nodeCount;
           if (int_byte_size_api() == 4) {
             std::vector<int> file_ids(count);
-	    std::iota(file_ids.begin(), file_ids.end(), offset+1);
+            std::iota(file_ids.begin(), file_ids.end(), offset+1);
             decomp->communicate_node_data(TOPTR(file_ids), (int*)data, 1);
           } else {
             std::vector<int64_t> file_ids(count);
-	    std::iota(file_ids.begin(), file_ids.end(), offset+1);
+            std::iota(file_ids.begin(), file_ids.end(), offset+1);
             decomp->communicate_node_data(TOPTR(file_ids), (int64_t*)data, 1);
           }
         }
@@ -2273,20 +2274,20 @@ namespace Iopx {
             Ioss::Field df_field("distribution_factor", Ioss::Field::REAL, "scalar", Ioss::Field::MESH, num_to_get);
             decomp->get_set_mesh_double(get_file_pointer(), EX_SIDE_SET, id, df_field, TOPTR(real_ids));
 
-	    if (field.get_type() == Ioss::Field::INTEGER) {
-	      // Need to convert 'double' to 'int' for Sierra use...
-	      int* ids = static_cast<int*>(data);
-	      for (ssize_t i = 0; i < num_to_get; i++) {
-		ids[i] = static_cast<int>(real_ids[i]);
-	      }
-	    }
-	    else {
-	      // Need to convert 'double' to 'int' for Sierra use...
-	      int64_t* ids = static_cast<int64_t*>(data);
-	      for (ssize_t i = 0; i < num_to_get; i++) {
-		ids[i] = static_cast<int64_t>(real_ids[i]);
-	      }
-	    }
+            if (field.get_type() == Ioss::Field::INTEGER) {
+              // Need to convert 'double' to 'int' for Sierra use...
+              int* ids = static_cast<int*>(data);
+              for (ssize_t i = 0; i < num_to_get; i++) {
+                ids[i] = static_cast<int>(real_ids[i]);
+              }
+            }
+            else {
+              // Need to convert 'double' to 'int' for Sierra use...
+              int64_t* ids = static_cast<int64_t*>(data);
+              for (ssize_t i = 0; i < num_to_get; i++) {
+                ids[i] = static_cast<int64_t>(real_ids[i]);
+              }
+            }
           }
         }
 
@@ -2319,13 +2320,13 @@ namespace Iopx {
               for (ssize_t iel = 0; iel < 2*entity_count; iel+=2) {
                 int64_t new_id = (int64_t)10*els[iel] + els[iel+1];
                 if (new_id > int_max) {
-		  std::ostringstream errmsg;
-		  errmsg << "ERROR: accessing the sideset field 'ids'\n"
-			 << "\t\thas exceeded the integer bounds for entity " << els[iel]
-			 << ", local side id " << els[iel+1] << ".\n\t\tTry using 64-bit mode to read the file '"
-			 << get_filename() << "'.\n";
-		  IOSS_ERROR(errmsg);
-		}
+                  std::ostringstream errmsg;
+                  errmsg << "ERROR: accessing the sideset field 'ids'\n"
+                         << "\t\thas exceeded the integer bounds for entity " << els[iel]
+                         << ", local side id " << els[iel+1] << ".\n\t\tTry using 64-bit mode to read the file '"
+                         << get_filename() << "'.\n";
+                  IOSS_ERROR(errmsg);
+                }
                 
                 ids[idx++] = (int)new_id;
               }
@@ -3049,7 +3050,7 @@ namespace Iopx {
     }
 
     int64_t DatabaseIO::put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			       void *data, size_t data_size) const
+                               void *data, size_t data_size) const
     {
       return Ioex::DatabaseIO::put_field_internal(reg, field, data, data_size);
     }
@@ -3510,7 +3511,7 @@ namespace Iopx {
             }
           }
 
-          nodeMap.build_reverse_map(myProcessor);
+          nodeMap.build_reverse_map();
           nodeMap.build_reorder_map(0, num_to_get);
 
           // Only a single nodeblock and all set
@@ -3598,7 +3599,7 @@ namespace Iopx {
 
         // Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
         if (db_state == Ioss::STATE_MODEL) {
-          entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
+          entity_map.build_reverse_map(num_to_get, eb_offset);
 
           // Output this portion of the entity number map
           int ierr = ex_put_partial_id_map(file_pointer, map_type, offset+1, count, ids);
@@ -4040,27 +4041,27 @@ namespace Iopx {
           // Need to convert 'ints' to 'double' for storage on mesh...
           // FIX 64
           if (field.get_type() == Ioss::Field::INTEGER) {
-	    int* ids = static_cast<int*>(data);
-	    std::vector<double> real_ids(num_to_get);
-	    for (size_t i = 0; i < num_to_get; i++) {
-	      real_ids[i] = static_cast<double>(ids[i]);
-	    }
-	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
-						  offset+1, entity_count, TOPTR(real_ids));
-	    if (ierr < 0)
-	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
-	  else {
-	    int64_t* ids = static_cast<int64_t*>(data);
-	    std::vector<double> real_ids(num_to_get);
-	    for (size_t i = 0; i < num_to_get; i++) {
-	      real_ids[i] = static_cast<double>(ids[i]);
-	    }
-	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
-						  offset+1, entity_count, TOPTR(real_ids));
-	    if (ierr < 0)
-	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
+            int* ids = static_cast<int*>(data);
+            std::vector<double> real_ids(num_to_get);
+            for (size_t i = 0; i < num_to_get; i++) {
+              real_ids[i] = static_cast<double>(ids[i]);
+            }
+            int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+                                                  offset+1, entity_count, TOPTR(real_ids));
+            if (ierr < 0)
+              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+          }
+          else {
+            int64_t* ids = static_cast<int64_t*>(data);
+            std::vector<double> real_ids(num_to_get);
+            for (size_t i = 0; i < num_to_get; i++) {
+              real_ids[i] = static_cast<double>(ids[i]);
+            }
+            int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+                                                  offset+1, entity_count, TOPTR(real_ids));
+            if (ierr < 0)
+              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+          }
         }
 
         else if (field.get_name() == "side_ids") {
@@ -4239,12 +4240,12 @@ namespace Iopx {
       {
         Ioss::EdgeBlockContainer edge_blocks = region->get_edge_blocks();
         assert(Ioex::check_block_order(edge_blocks));
-	for (auto &edge_block : edge_blocks) {
+        for (auto &edge_block : edge_blocks) {
           Ioex::set_id(edge_block, EX_EDGE_BLOCK, &ids_);
         }
 
         edgeCount = 0;
-	for (auto &edge_block : edge_blocks) {
+        for (auto &edge_block : edge_blocks) {
           edgeCount += edge_block->get_property("entity_count").get_int();
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(edge_block, EX_EDGE_BLOCK, &ids_);
@@ -4384,7 +4385,7 @@ namespace Iopx {
           int64_t df_count = 0;
 
           Ioss::SideBlockContainer side_blocks = set->get_side_blocks();
-	  for (auto &block : side_blocks) {
+          for (auto &block : side_blocks) {
             // Add  "*_offset" properties to specify at what offset
             // the data for this block appears in the containing set.
             Ioss::SideBlock *new_block = const_cast<Ioss::SideBlock*>(block);

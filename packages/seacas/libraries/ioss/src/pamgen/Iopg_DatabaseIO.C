@@ -137,7 +137,7 @@ namespace Iopg {
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
     commsetNodeCount(0), commsetElemCount(0),
-    nodeMap("node"), elemMap("elem"),
+    nodeMap("node", filename, myProcessor), elemMap("elem", filename, myProcessor),
     blockAdjacenciesCalculated(false)
   {
     if (is_input()) {
@@ -1494,7 +1494,7 @@ namespace Iopg {
 	  }
 	}
 
-	nodeMap.build_reverse_map(myProcessor);
+	nodeMap.build_reverse_map();
 
       } else {
 	unsupported("output nodal id map");
@@ -1530,7 +1530,7 @@ namespace Iopg {
 	  }
 	}
 
-	elemMap.build_reverse_map(myProcessor);
+	elemMap.build_reverse_map();
 
       } else {
 	unsupported("output element map");

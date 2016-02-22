@@ -116,26 +116,6 @@ namespace {
 
   typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
 
-  void verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map, int processor, const std::string &type)
-  {
-    // Check for duplicate ids...
-    auto dup = std::adjacent_find(reverse_map.begin(),
-							   reverse_map.end(),
-							   IdPairEqual());
-
-    if (dup != reverse_map.end()) {
-      auto other = dup+1;
-      std::ostringstream errmsg;
-      errmsg << "\nERROR: Duplicate " << type << " global id detected on processor "
-	     << processor << ".\n"
-	     << "       Global id " << (*dup).first
-	     << " assigned to local " << type << "s "
-	     << (*dup).second << " and "
-	     << (*other).second << ".\n";
-      IOSS_ERROR(errmsg);
-    }
-  }
-
   template <typename INT>
   void map_implicit_data_internal(INT *ids, size_t count, const Ioss::MapContainer &map, size_t offset)
   {
@@ -160,14 +140,14 @@ void Ioss::Map::release_memory()
   ReverseMapContainer().swap(reverse);
 }
 
-void Ioss::Map::build_reverse_map(int processor)
+void Ioss::Map::build_reverse_map()
 {
   if (map[0] == 1) {
-    build_reverse_map(map.size()-1, 0, processor);
+    build_reverse_map(map.size()-1, 0);
   }
 }
 
-void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset, int processor)
+void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset)
 {
   // Stored as a sorted vector of <global_id, local_id> pairs...
   // To build incrementally:
@@ -187,7 +167,8 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset, int proces
     if (map[local_id] <= 0) {
       std::ostringstream errmsg;
       errmsg << "\nERROR: " << entityType << " map detected non-positive global id " << map[local_id]
-	     << " for " << entityType << " with local id " << local_id << " on processor " << processor << ".\n";
+	     << " for " << entityType << " with local id " << local_id
+	     << " on processor " << myProcessor << ".\n";
       IOSS_ERROR(errmsg);
     }
   }
@@ -213,7 +194,27 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset, int proces
     
   }
   // Check for duplicate ids...
-  verify_no_duplicate_ids(reverse, processor, entityType);
+  verify_no_duplicate_ids(reverse);
+}
+
+void Ioss::Map::verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map)
+{
+  // Check for duplicate ids...
+  auto dup = std::adjacent_find(reverse_map.begin(),
+				reverse_map.end(),
+				IdPairEqual());
+
+  if (dup != reverse_map.end()) {
+    auto other = dup+1;
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Duplicate " << entityType << " global id detected on processor "
+	   << myProcessor << ", filename '" << filename << "'.\n"
+	   << "       Global id " << (*dup).first
+	   << " assigned to local " << entityType << "s "
+	   << (*dup).second << " and "
+	   << (*other).second << ".\n";
+    IOSS_ERROR(errmsg);
+  }
 }
 
 template void Ioss::Map::set_map(int *ids, size_t count, size_t offset);
@@ -230,8 +231,10 @@ void Ioss::Map::set_map(INT *ids, size_t count, size_t offset)
     }
     if (ids[i] <= 0) {
       std::ostringstream errmsg;
-      errmsg << "\nERROR: " << entityType << " mapping routines detected non-positive global id " << ids[i]
-	     << " for local id " << local_id << ".\n";
+      errmsg << "\nERROR: " << entityType
+	     << " mapping routines detected non-positive global id " << ids[i]
+	     << " for local id " << local_id 
+	     << " on processor " << myProcessor << ", filename '" << filename << "'.\n";
       IOSS_ERROR(errmsg);
     }
   }
@@ -401,9 +404,11 @@ int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
   }
   if (local > (int64_t)map.size()-1 || (local <= 0  && must_exist)) {
     std::ostringstream errmsg;
-    errmsg << "ERROR: Ioss Mapping routines detected " << entityType << " with global id equal to " << global
-	   << " returns a local id of " << local
-	   << " which is invalid. This should not happen, please report.\n";
+    errmsg << "ERROR: Ioss Mapping routines detected " << entityType
+	   << " with global id equal to " << global
+	   << " returns a local id of " << local << " which is invalid\n"
+	   << "on processor " << myProcessor << ", filename '" << filename << "'.\n"
+	   << "This should not happen, please report.\n";
     IOSS_ERROR(errmsg);
   }
   return local;

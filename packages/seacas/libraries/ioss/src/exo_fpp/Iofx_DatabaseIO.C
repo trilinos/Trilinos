@@ -387,7 +387,8 @@ namespace Iofx {
     {
       Ioss::SerializeIO serializeIO__(this);
 
-      Ioex::check_processor_info(get_file_pointer(), util().parallel_size(), myProcessor);
+      Ioex::check_processor_info(get_file_pointer(), util().parallel_size(),
+				 myProcessor);
 
       read_region();
       read_communication_metadata();
@@ -899,7 +900,7 @@ namespace Iofx {
           }
         }
 
-        entity_map.build_reverse_map(myProcessor);
+        entity_map.build_reverse_map();
 
       } else {
         // Output database; entity_map.map not set yet... Build a default map.
@@ -1953,26 +1954,26 @@ namespace Iofx {
               Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
             }
 
-          for (int ins = 0; ins < count; ins++) {
-            int64_t id = set_params[ins].id;
-            int num_attr = 0;
-            int ierr = ex_get_attr_param(get_file_pointer(), type, id, &num_attr);
-            if (ierr < 0) {
-              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	    }
-            attributes[ins] = num_attr;
+	    for (int ins = 0; ins < count; ins++) {
+	      int64_t id = set_params[ins].id;
+	      int num_attr = 0;
+	      int ierr = ex_get_attr_param(get_file_pointer(), type, id, &num_attr);
+	      if (ierr < 0) {
+		Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	      }
+	      attributes[ins] = num_attr;
 
-            bool db_has_name = false;
-            std::string Xset_name = Ioex::get_entity_name(get_file_pointer(), type, id, base+"list",
-							  maximumNameLength, db_has_name);
+	      bool db_has_name = false;
+	      std::string Xset_name = Ioex::get_entity_name(get_file_pointer(), type, id, base+"list",
+							    maximumNameLength, db_has_name);
 
-            std::string alias = Ioss::Utils::encode_entity_name(base+"list", id);
+	      std::string alias = Ioss::Utils::encode_entity_name(base+"list", id);
 
-            if (get_use_generic_canonical_name()) {
-              std::string temp = Xset_name;
-              Xset_name = alias;
-              alias = temp;
-            }
+	      if (get_use_generic_canonical_name()) {
+		std::string temp = Xset_name;
+		Xset_name = alias;
+		alias = temp;
+	      }
 
               bool filtered = false;
               int64_t original_set_size = set_params[ins].num_entry;
@@ -2128,7 +2129,7 @@ namespace Iofx {
     }
 
     int64_t DatabaseIO::get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-					   void *data, size_t data_size) const
+                                           void *data, size_t data_size) const
     {
       return Ioex::DatabaseIO::get_field_internal(reg, field, data, data_size);
     }
@@ -3857,7 +3858,7 @@ namespace Iofx {
     }
 
     int64_t DatabaseIO::put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			       void *data, size_t data_size) const
+					   void *data, size_t data_size) const
     {
       return Ioex::DatabaseIO::put_field_internal(reg, field, data, data_size);
     }
@@ -4309,7 +4310,7 @@ namespace Iofx {
           }
         }
 
-        nodeMap.build_reverse_map(myProcessor);
+        nodeMap.build_reverse_map();
 
         // Only a single nodeblock and all set
         if (num_to_get == nodeCount) {
@@ -4403,7 +4404,7 @@ namespace Iofx {
 
         // Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
         if (db_state == Ioss::STATE_MODEL) {
-          entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
+          entity_map.build_reverse_map(num_to_get, eb_offset);
 
           // Output this portion of the entity number map
           int ierr = ex_put_partial_id_map(file_pointer, map_type, eb_offset+1, num_to_get, ids);
