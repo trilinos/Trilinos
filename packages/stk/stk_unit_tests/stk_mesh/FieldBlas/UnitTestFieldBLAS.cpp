@@ -1841,56 +1841,58 @@ struct BLASFixture3d {
     unsigned int numEntitiesUniversal;
     unsigned int numEntitiesGlobal;
 
-    BLASFixture3d(A* init1_input, A* init2_input, A* init3_input, const int MeshSize = 4);
+    BLASFixture3d(A* init1_input, A* init2_input, A* init3_input);
     ~BLASFixture3d();
 };
 
 template<class A>
-BLASFixture3d<A>::BLASFixture3d(A* init1_input,A* init2_input,A* init3_input,const int MeshSize)
+BLASFixture3d<A>::BLASFixture3d(A* init1_input, A* init2_input, A* init3_input)
 {
     init1=init1_input;
     init2=init2_input;
     init3=init3_input;
 
+    const unsigned int meshSizeX = 1;
+    const unsigned int meshSizeY = 1;
+    const unsigned int meshSizeZ = 4;
+
     MPI_Comm my_comm = MPI_COMM_WORLD;
     stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
     stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
     std::ostringstream osstr;
-    osstr<<"generated:"<<MeshSize<<"x"<<MeshSize<<"x"<<MeshSize;
+    osstr<<"generated:"<<meshSizeX<<"x"<<meshSizeY<<"x"<<meshSizeZ;
     io.add_mesh_database(osstr.str(), stk::io::READ_MESH);
     io.create_input_mesh();
     stk::mesh::MetaData &meta_data = io.meta_data();
 
     field1 = &meta_data.declare_field<stk::mesh::Field<A,stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "field1");
     stk::mesh::put_field(*field1,field1->mesh_meta_data().universal_part(),init1);
-    fieldBase1 = dynamic_cast<stk::mesh::FieldBase*>(field1);
+    fieldBase1 = field1;
 
     field2 = &meta_data.declare_field<stk::mesh::Field<A,stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "field2");
     stk::mesh::put_field(*field2,field2->mesh_meta_data().universal_part(),init2);
-    fieldBase2 = dynamic_cast<stk::mesh::FieldBase*>(field2);
+    fieldBase2 = field2;
 
     field3 = &meta_data.declare_field<stk::mesh::Field<A,stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "field3");
     stk::mesh::put_field(*field3,field3->mesh_meta_data().universal_part(),init3);
-    fieldBase3 = dynamic_cast<stk::mesh::FieldBase*>(field3);
+    fieldBase3 = field3;
 
     io.populate_bulk_data(); // THIS IS THE SLOW LINE
     stkMeshBulkData = &io.bulk_data();
 
-    numEntitiesOwned    =0;
-    numEntitiesUniversal=0;
-
-    const stk::mesh::Selector end_all_selector = meta_data.universal_part() & stk::mesh::selectField(*field1);
-    const stk::mesh::BucketVector & buckets = stkMeshBulkData->get_buckets(field1->entity_rank(),end_all_selector);
-    for (unsigned int i=0; i<buckets.size();i++) {
-        numEntitiesUniversal+=buckets[i]->size();
-        if (buckets[i]->owned()) {
-            numEntitiesOwned+=buckets[i]->size();
-        }
+    numEntitiesOwned     = 0;
+    numEntitiesUniversal = 0;
+    const stk::mesh::BucketVector & buckets = stkMeshBulkData->get_buckets(stk::topology::NODE_RANK, meta_data.universal_part());
+    for(const stk::mesh::Bucket *bucket : buckets)
+    {
+        numEntitiesUniversal += bucket->size();
+        if (bucket->owned())
+            numEntitiesOwned += bucket->size();
     }
 
-    numEntitiesGlobal = numEntitiesOwned;
+    numEntitiesGlobal = 0;
     stk::all_reduce_sum(stkMeshBulkData->parallel(),&numEntitiesOwned,&numEntitiesGlobal,1u);
-    EXPECT_EQ(numEntitiesGlobal,(unsigned int)pow(MeshSize+1,3));
+    EXPECT_EQ(numEntitiesGlobal, (meshSizeX+1) * (meshSizeY+1) * (meshSizeZ+1));
 }
 
 template<class A>
