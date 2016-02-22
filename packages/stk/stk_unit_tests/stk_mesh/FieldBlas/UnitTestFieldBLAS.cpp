@@ -80,13 +80,13 @@ struct BLASFixture {
     unsigned int numPartAEntitiesGlobal;
     unsigned int numPartBEntitiesGlobal;
 
-    BLASFixture(const A init1, const A init2 = A(), const A init3 = A(), const int MeshSize_x = 0);
+    BLASFixture(const A init1, const A init2 = A(), const A init3 = A());
     ~BLASFixture();
 
 };
 
 template<class A>
-BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3, const int MeshSize_x)
+BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
 {
     initial_value1 = init1;
     initial_value2 = init2;
@@ -94,145 +94,101 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3, const i
 
     MPI_Comm my_comm = MPI_COMM_WORLD;
 
-    const double scaleFactor = 0.0625;
-    const double bucket_fraction_to_no_part = 1.2 * scaleFactor;
-    const double bucket_fraction_to_part_A  = 1.1 * scaleFactor;
-    const double bucket_fraction_to_part_B  = 0.2 * scaleFactor;
+    const double fractionToPartA = 0.3;
+    const double fractionToPartB = 0.3;
 
-    int MeshSize = MeshSize_x;
-    if (MeshSize==0) {
-        int MPI_size = 1;
-#ifdef STK_HAS_MPI
-        if ( MPI_SUCCESS != MPI_Comm_size( my_comm , &MPI_size ) ) {
-            MPI_size = 1 ;
-        }
-#endif
-        double num_buckets_needed = bucket_fraction_to_no_part +
-                bucket_fraction_to_part_A +
-                bucket_fraction_to_part_B;
-        MeshSize = int(pow(double(num_buckets_needed*512*MPI_size),1.0/3.0));
-    }
+    const unsigned int meshSizeX = 1;
+    const unsigned int meshSizeY = 4;
+    const unsigned int meshSizeZ = 4;
 
     stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
     stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
     std::ostringstream osstr;
-    osstr<<"generated:"<<MeshSize<<"x"<<MeshSize<<"x"<<MeshSize;
+    osstr << "generated:" << meshSizeX << "x" << meshSizeY << "x" << meshSizeZ;
     io.add_mesh_database(osstr.str(), stk::io::READ_MESH);
     io.create_input_mesh();
     stk::mesh::MetaData &meta_data = io.meta_data();
 
     field1 = &meta_data.declare_field<stk::mesh::Field<A> >(stk::topology::NODE_RANK, "field1");
     stk::mesh::put_field(*field1,field1->mesh_meta_data().universal_part(),&initial_value1);
-    fieldBase1 = dynamic_cast<stk::mesh::FieldBase*>(field1);
+    fieldBase1 = field1;
 
     field2 = &meta_data.declare_field<stk::mesh::Field<A> >(stk::topology::NODE_RANK, "field2");
     stk::mesh::put_field(*field2,field2->mesh_meta_data().universal_part(),&initial_value2);
-    fieldBase2 = dynamic_cast<stk::mesh::FieldBase*>(field2);
+    fieldBase2 = field2;
 
     field3 = &meta_data.declare_field<stk::mesh::Field<A> >(stk::topology::NODE_RANK, "field3");
     stk::mesh::put_field(*field3,field3->mesh_meta_data().universal_part(),&initial_value3);
-    fieldBase3 = dynamic_cast<stk::mesh::FieldBase*>(field3);
+    fieldBase3 = field3;
 
     io.populate_bulk_data();
     stkMeshBulkData = &io.bulk_data();
 
-    const stk::mesh::Selector begin_all_selector = meta_data.universal_part() & stk::mesh::selectField(*field1);
-    const stk::mesh::BucketVector & begin_buckets = stkMeshBulkData->get_buckets(field1->entity_rank(),begin_all_selector);
+    pPartA = &meta_data.declare_part( "PartA" , stk::topology::NODE_RANK );
+    pPartB = &meta_data.declare_part( "PartB" , stk::topology::NODE_RANK );
+
+    std::vector<stk::mesh::Entity> entities;
+    stk::mesh::get_selected_entities(meta_data.locally_owned_part(), stkMeshBulkData->buckets(stk::topology::NODE_RANK), entities);
+
+    stkMeshBulkData->modification_begin();
+    size_t numToPartA = entities.size() * fractionToPartA;
+    for (unsigned int i=0; i<numToPartA; i++)
+        stkMeshBulkData->change_entity_parts(entities[i],{pPartA});
+    size_t numToPartB = entities.size() * fractionToPartB;
+    for (unsigned int i=numToPartA; i<numToPartA+numToPartB; i++)
+        stkMeshBulkData->change_entity_parts(entities[i],{pPartB});
+    stkMeshBulkData->modification_end();
+
 
     numEntitiesUniversal=0;
-    for (unsigned int i=0;i<begin_buckets.size();i++)
-    {
-        numEntitiesUniversal+=begin_buckets[i]->size();
-    }
-
-    stk::mesh::Part & PartA = meta_data.declare_part( "PartA" , stk::topology::NODE_RANK );
-    pPartA = &PartA;
-    stk::mesh::PartVector PV_A;
-    PV_A.push_back(&PartA);
-
-    stk::mesh::Part & PartB = meta_data.declare_part( "PartB" , stk::topology::NODE_RANK );
-    pPartB = &PartB;
-    stk::mesh::PartVector PV_B;
-    PV_B.push_back(&PartB);
-
-    unsigned int bucketCapacity = begin_buckets[0]->capacity(); // 512
-    std::vector<stk::mesh::Entity> entities;
-    stk::mesh::get_selected_entities(field1->mesh_meta_data().locally_owned_part() & (PartA|PartB).complement(),
-                                     stkMeshBulkData->buckets(field1->entity_rank()), entities);
-    unsigned int num_entities_to_part_A = bucket_fraction_to_part_A*bucketCapacity;
-    EXPECT_GT(entities.size(),num_entities_to_part_A);
-
-    stkMeshBulkData->modification_begin();
-    for (unsigned int i=0; i<(unsigned int)(bucket_fraction_to_part_A*bucketCapacity); i++)
-    {
-        stkMeshBulkData->change_entity_parts(entities[i],PV_A);
-    }
-    stkMeshBulkData->modification_end();
-
-    stk::mesh::get_selected_entities(field1->mesh_meta_data().locally_owned_part() & (PartA|PartB).complement(),
-                                     stkMeshBulkData->buckets(field1->entity_rank()), entities);
-    unsigned int num_entities_to_part_B = bucket_fraction_to_part_B*bucketCapacity;
-    EXPECT_GT(entities.size(),num_entities_to_part_B);
-
-    stkMeshBulkData->modification_begin();
-    for (unsigned int i=0; i<(unsigned int)(bucket_fraction_to_part_B*bucketCapacity); i++)
-    {
-        stkMeshBulkData->change_entity_parts(entities[i],PV_B);
-    }
-    stkMeshBulkData->modification_end();
-
-    const stk::mesh::Selector end_all_selector = meta_data.universal_part() & stk::mesh::selectField(*field1);
-    const stk::mesh::BucketVector & end_buckets = stkMeshBulkData->get_buckets(field1->entity_rank(),end_all_selector);
-
     unsigned int numPartAEntitiesUniversal = 0;
     numPartAEntitiesOwned = 0;
     unsigned int numPartBEntitiesUniversal = 0;
     numPartBEntitiesOwned = 0;
 
     unsigned int numPartABEntities = 0;
-    unsigned int numPartABcEntities = 0;
-    unsigned int numEntitiesUniversal_end = 0;
+    unsigned int numPartlessEntities = 0;
     numEntitiesOwned = 0;
-    unsigned int numBucketsOwned = 0;
 
-    for (unsigned int i=0; i<end_buckets.size();i++)
+    const stk::mesh::BucketVector & nodeBuckets = stkMeshBulkData->get_buckets(stk::topology::NODE_RANK, meta_data.universal_part());
+    for(const stk::mesh::Bucket *bucket : nodeBuckets)
     {
-        numEntitiesUniversal_end += end_buckets[i]->size();
-        if ((*end_buckets[i]).member(PartA)) {
-            numPartAEntitiesUniversal += end_buckets[i]->size();
-            if ((*end_buckets[i]).owned()) {
-                numPartAEntitiesOwned += end_buckets[i]->size();
+        const unsigned bucketSize = bucket->size();
+        numEntitiesUniversal += bucketSize;
+
+        if (bucket->owned()) {
+            numEntitiesOwned += bucketSize;
+            if (bucket->member(*pPartA)) {
+                numPartAEntitiesOwned += bucketSize;
+            }
+            if (bucket->member(*pPartB)) {
+                numPartBEntitiesOwned += bucketSize;
             }
         }
-        if ((*end_buckets[i]).member(PartB)) {
-            numPartBEntitiesUniversal += end_buckets[i]->size();
-            if ((*end_buckets[i]).owned()) {
-                numPartBEntitiesOwned += end_buckets[i]->size();
-            }
+
+        if (bucket->member(*pPartA)) {
+            numPartAEntitiesUniversal += bucketSize;
         }
-        if ((*end_buckets[i]).member(PartA) & (*end_buckets[i]).member(PartB)) {
-            numPartABEntities += end_buckets[i]->size();
+        if (bucket->member(*pPartB)) {
+            numPartBEntitiesUniversal += bucketSize;
         }
-        if (!((*end_buckets[i]).member(PartA) | (*end_buckets[i]).member(PartB))) {
-            numPartABcEntities += end_buckets[i]->size();
+        if (bucket->member(*pPartA) && bucket->member(*pPartB)) {
+            numPartABEntities += bucketSize;
         }
-        if (end_buckets[i]->owned()) {
-            numBucketsOwned += 1u;
-            numEntitiesOwned += end_buckets[i]->size();
+        if (!bucket->member(*pPartA) && !bucket->member(*pPartB)) {
+            numPartlessEntities += bucketSize;
         }
     }
-    EXPECT_EQ(numEntitiesUniversal,numEntitiesUniversal_end);
-    EXPECT_EQ(numPartABEntities,0u);
-    EXPECT_EQ(numPartAEntitiesUniversal+numPartBEntitiesUniversal+numPartABcEntities,numEntitiesUniversal);
+    EXPECT_EQ(0u, numPartABEntities);
+    EXPECT_EQ(numEntitiesUniversal, numPartAEntitiesUniversal+numPartBEntitiesUniversal+numPartlessEntities);
 
-    numEntitiesGlobal = numEntitiesOwned;
-    numPartAEntitiesGlobal = numPartAEntitiesOwned;
-    numPartBEntitiesGlobal = numPartBEntitiesOwned;
+    numEntitiesGlobal = 0;
+    numPartAEntitiesGlobal = 0;
+    numPartBEntitiesGlobal = 0;
     stk::all_reduce_sum(stkMeshBulkData->parallel(),&numEntitiesOwned     ,&numEntitiesGlobal     ,1u);
     stk::all_reduce_sum(stkMeshBulkData->parallel(),&numPartAEntitiesOwned,&numPartAEntitiesGlobal,1u);
     stk::all_reduce_sum(stkMeshBulkData->parallel(),&numPartBEntitiesOwned,&numPartBEntitiesGlobal,1u);
-    EXPECT_EQ(numEntitiesGlobal,(unsigned int)pow(MeshSize+1,3));
-//    EXPECT_GT(numEntitiesGlobal,bucketCapacity);
+    EXPECT_EQ(numEntitiesGlobal, (meshSizeX+1) * (meshSizeY+1) * (meshSizeZ+1));
 }
 
 template<class A>
@@ -1885,7 +1841,7 @@ struct BLASFixture3d {
     unsigned int numEntitiesUniversal;
     unsigned int numEntitiesGlobal;
 
-    BLASFixture3d(A* init1_input, A* init2_input, A* init3_input, const int MeshSize = 11);
+    BLASFixture3d(A* init1_input, A* init2_input, A* init3_input, const int MeshSize = 4);
     ~BLASFixture3d();
 };
 
