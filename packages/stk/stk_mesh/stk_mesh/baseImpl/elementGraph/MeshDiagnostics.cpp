@@ -152,4 +152,48 @@ std::string get_non_unique_key_messages(const stk::mesh::BulkData& bulkData, con
 }
 
 
+std::vector<stk::mesh::EntityKey> get_orphaned_owned_sides(const stk::mesh::BulkData& bulkData)
+{
+    stk::mesh::EntityVector sides;
+    stk::mesh::get_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(bulkData.mesh_meta_data().side_rank()), sides);
+    std::vector<stk::mesh::EntityKey> badSides;
+    for(stk::mesh::Entity side : sides)
+    {
+        unsigned num_elements = bulkData.num_elements(side);
+        const stk::mesh::Entity* elements = bulkData.begin_elements(side);
+        size_t num_owned_elements = 0;
+        for(unsigned i=0;i<num_elements;++i)
+        {
+            if(bulkData.bucket(elements[i]).owned())
+                num_owned_elements++;
+        }
+        if(num_owned_elements == 0)
+            badSides.push_back(bulkData.entity_key(side));
+    }
+    return badSides;
+}
+
+
+
+std::string get_messages_for_orphaned_owned_nodes(const stk::mesh::BulkData& bulkData, std::vector<stk::mesh::EntityKey>& keys)
+{
+    std::ostringstream os;
+    for(const stk::mesh::EntityKey& key : keys)
+    {
+        stk::mesh::Entity entity = bulkData.get_entity(key);
+        os << "[" << bulkData.parallel_rank() << "] Side " << key << " (" << bulkData.bucket(entity).topology()
+                << ") does not have upwards relations to a locally owned element. Nodes of side are {";
+        unsigned num_nodes = bulkData.num_nodes(entity);
+        const stk::mesh::Entity* nodes = bulkData.begin_nodes(entity);
+        for(unsigned i=0;i<num_nodes;i++)
+        {
+            os << bulkData.entity_key(nodes[i]);
+            if(i != num_nodes-1)
+                os << ", ";
+        }
+        os << "}.\n";
+    }
+    return os.str();
+}
+
 } }
