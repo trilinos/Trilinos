@@ -835,7 +835,7 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicVectorAdapte
       size_t dim = coords.size(); //BDD add NULL for constructor call
       size_t push_null = 3-dim;
       for (size_t i = 0; i < push_null; i ++) coords.push_back(NULL);
-      ia = new AdapterForTests::basic_vector_adapter(zlno_t(localCount),
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(zlno_t(localCount),
                                                      globalIds,
                                                      coords[0],coords[1],coords[2],
                                                      stride, stride, stride);
@@ -843,7 +843,7 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicVectorAdapte
       size_t dim = coords.size(); //BDD add NULL for constructor call
       size_t push_null = 3-dim;
       for (size_t i = 0; i < push_null; i ++) coords.push_back(NULL);
-      ia = new AdapterForTests::basic_vector_adapter(zlno_t(localCount),
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(zlno_t(localCount),
                                                      globalIds,
                                                      coords[0],coords[1],coords[2],
                                                      stride, stride, stride,
@@ -851,7 +851,7 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicVectorAdapte
                                                      weights[0],
                                                      weightStrides[0]);
     } else { // More than one weight per ID
-      ia = new AdapterForTests::basic_vector_adapter(zlno_t(localCount),
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(zlno_t(localCount),
                                                      globalIds,
                                                      coords, entry_strides,
                                                      weights, weightStrides);
