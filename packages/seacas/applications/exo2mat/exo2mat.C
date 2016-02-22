@@ -66,6 +66,9 @@
 #include "add_to_log.h"                 // for add_to_log
 #include "exodusII.h"                   // for ex_get_variable_param, etc
 #include "matio.h"                      // for Mat_VarCreate, Mat_VarFree, etc
+#if MATIO_VERSION < 151
+#error "MatIO Version 1.5.1 or greater is required"
+#endif
 
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()

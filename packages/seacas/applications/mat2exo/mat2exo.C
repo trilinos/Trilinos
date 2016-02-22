@@ -68,6 +68,9 @@
 #include <assert.h>
 #include "add_to_log.h"                 // for add_to_log
 #include "matio.h"                      // for matvar_t, Mat_VarFree, etc
+#if MATIO_VERSION < 151
+#error "MatIO Version 1.5.1 or greater is required"
+#endif
 
 /**********************************************************************/
 #if __cplusplus > 199711L
