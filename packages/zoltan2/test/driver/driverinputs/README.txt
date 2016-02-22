@@ -13,7 +13,7 @@ Every Zoltan2 test driver input file must contain 2 required sections sections a
 	2. Test/Problem parameters and components definitions
 	3. Comparison definitions (optional)
 
-Each section is detailed below.  Please note that the sections described must be continued within a “Main” xml block whose name is arbitrary (ex. 0). Please not that the general use of the word “block” in the following refers to an xml parameter list block unless otherwise stated.
+Each section is detailed below.  Please note that the sections described must be contained within a “Main” xml block whose name is arbitrary (ex. 0). Please not that the general use of the word “block” in the following refers to an xml parameter list block unless otherwise stated.
 
 
 ==========================================================================
@@ -64,7 +64,7 @@ InputAdapterParameters:  This block defines the type of input adapter to be pass
 		- XpetraCrsGraph
 		- PamgenMesh
 
-Please note that if you choose to use a multi-vector data type with an adapter then you must additionally define an integer typed “vector_dimension” parameter specifying the dimension of the (x,t, e)petra multi-vector data type.
+Please note that if you choose to use a multi-vector data type with an adapter then you must additionally define an integer typed “vector_dimension” parameter specifying the dimension of the (x,t,e)petra multi-vector data type.
 
 Zoltan2Parameters:  This block defines all of the parameters applicable to a given problem.  It supports all Zoltan2 parameters as well as those defined by supported TPLs.  Please consult the Zoltan2 documentation for a complete list of parameters.
 
