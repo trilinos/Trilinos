@@ -660,7 +660,14 @@ namespace BaskerNS
 	done = 1;
 	
 
-	end = L.col_ptr(t-L.scol);
+	if(inc_lvl <= Options.inc_lvl)
+	  {
+	    end = L.col_ptr(t-L.scol);
+	  }
+	else
+	  {
+	    end = start;
+	  }
 	//printf("end: %d \n", end);
 	for(i1 = --start; i1 >= end; --i1)
 	  {
