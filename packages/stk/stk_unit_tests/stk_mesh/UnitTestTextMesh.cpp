@@ -380,7 +380,7 @@ TEST(TextMesh, twoHexesParallel)
     }
 }
 
-TEST(TextMesh, twoQuadOneShellParallel)
+TEST(TextMesh, DISABLED_twoQuadOneShellParallel)
 {
     std::string meshDesc =
 "0,1,QUAD_4_2D,1,2,3,4\n\
