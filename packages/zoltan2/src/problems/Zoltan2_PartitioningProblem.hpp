@@ -548,12 +548,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                            this->baseInputAdapter_));
     }
     else if (algName_ == std::string("scotch")) {
-      // BDD: constructor refactored to use base input adapter 
-      // instead of graphModel_, graph models will be constructed
-      // on an as needed basis within AlgPTScotch
-      //this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
-      //                                      problemComm_,
-      //                                      this->graphModel_));
       this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
                                             problemComm_,
                                             this->baseInputAdapter_));
