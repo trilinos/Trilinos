@@ -261,6 +261,21 @@ namespace Iopx {
     }
   }
 
+  void DatabaseIO::release_memory()
+  {
+    nodeMap.release_memory();
+    edgeMap.release_memory();
+    faceMap.release_memory();
+    elemMap.release_memory();
+    try {
+      delete decomp;
+      decomp=nullptr;
+      decomp32=nullptr;
+      decomp64=nullptr;
+    } catch (...) {
+    }
+  }
+
   bool DatabaseIO::ok(bool write_message, std::string *error_msg, int *bad_count) const
   {
     if (fileExists) {

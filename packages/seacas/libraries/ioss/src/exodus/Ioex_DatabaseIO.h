@@ -110,7 +110,7 @@ namespace Ioex {
 
       // Eliminate as much memory as possible, but still retain meta data information
       // Typically, eliminate the maps...
-      void release_memory();
+      virtual void release_memory();
 
       // Check capabilities of input/output database...  Returns an
       // unsigned int with the supported Ioss::EntityTypes or'ed

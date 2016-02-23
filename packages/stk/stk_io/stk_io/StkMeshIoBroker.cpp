@@ -1479,10 +1479,6 @@ namespace stk {
         if (i_started_modification_cycle) {
           bulk_data().modification_end();
         }
-
-        if (region->get_property("state_count").get_int() == 0) {
-          region->get_database()->release_memory();
-        }
       }
 
       void StkMeshIoBroker::populate_field_data()
@@ -1511,6 +1507,10 @@ namespace stk {
           process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
           process_nodesets_df(*region,      bulk_data(), zero);
           process_sidesets_df(*region,      bulk_data());
+        }
+
+        if (region->get_property("state_count").get_int() == 0) {
+          region->get_database()->release_memory();
         }
       }
 

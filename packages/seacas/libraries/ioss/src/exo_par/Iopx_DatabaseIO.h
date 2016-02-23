@@ -84,6 +84,7 @@ namespace Iopx {
     DatabaseIO& operator=(const DatabaseIO& from) =delete;
     ~DatabaseIO();
 
+    void release_memory() override;
     bool needs_shared_node_information() const {return true;}
     void compute_node_status() const;
     
