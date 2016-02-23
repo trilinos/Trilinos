@@ -319,8 +319,9 @@ void run(const UserInputForTests &uinput,
     
   }else if(rank == 0 && problem_kind == "partitioning") {
     // BDD for debugging
-    cout << "No test metrics provided. Problem Metrics are: " << endl;
+    cout << "No test metrics requested. Problem Metrics are: " << endl;
     reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
+    cout << "PASSED." << endl;
   }
   
   // 4b. timers
