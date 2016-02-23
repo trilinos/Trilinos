@@ -361,6 +361,7 @@
         <String value=\"natural\"/> \
         <String value=\"random\"/> \
         <String value=\"sorted_degree\"/> \
+        <String value=\"scotch\"/> \
         <String value=\"nd\"/> \
       </Validator> \
       <Validator defaultParameterName=\"compute_metrics\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"15\"> \
