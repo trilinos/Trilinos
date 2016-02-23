@@ -139,3 +139,9 @@ IF(Sacado_ENABLE_Teuchos)
     NUM_MPI_PROCS 1
     )
 ENDIF()
+
+TRIBITS_ADD_EXECUTABLE(
+  view_factory_example
+  SOURCES view_factory_example.cpp
+  COMM serial mpi
+  )
