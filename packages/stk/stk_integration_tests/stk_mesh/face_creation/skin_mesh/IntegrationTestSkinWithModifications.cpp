@@ -10,7 +10,6 @@
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include <stddef.h>                     // for size_t, nullptr
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
-
 #include <stk_mesh/base/FaceCreator.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
@@ -23,10 +22,10 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
-
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 #include "../FaceCreationTestUtils.hpp"
@@ -241,7 +240,7 @@ protected:
 
     stk::mesh::EntityId create_partial_coincident_hexes(stk::mesh::EntityId elemId)
     {
-        stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+        stk::mesh::Part& block2 = create_part_with_id(get_meta(), 2, stk::topology::HEX_8);
         setup_mesh_from_initial_configuration (get_filename());
         add_partially_coincident_hex(elemId, block2);
         return elemId;
@@ -262,6 +261,42 @@ protected:
                                                                      {elemId, 0}, {elemId, 1}, {elemId, 2}, {elemId, 3}, {elemId, 4}}};
         const SideTestUtil::TestCase interiorCase = {"AA.e", 2, 1, {{1, 5}, {elemId, 5}, {2, 4}}};
         test_skinning(exteriorCase, interiorCase);
+    }
+
+
+    void create_2_quads_mesh(stk::mesh::Part& block1, stk::mesh::Part& block2)
+    {
+        std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4\n\
+                                1,2,QUAD_4_2D,4,3,5,6";
+        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+
+        get_bulk().modification_begin();
+        put_entity_into_part(get_bulk(), 1, block1);
+        put_entity_into_part(get_bulk(), 2, block2);
+        get_bulk().modification_end();
+    }
+
+    void add_partial_coincident_quad(stk::mesh::Part& block1)
+    {
+        stk::unit_test_util::fill_mesh_using_text_mesh("0,3,QUAD_4_2D,21,22,3,4", get_bulk());
+        get_bulk().modification_begin();
+        put_entity_into_part(get_bulk(), 3, block1);
+        get_bulk().modification_end();
+    }
+
+    void put_entity_into_part(stk::mesh::BulkData &bulkData, stk::mesh::EntityId id, stk::mesh::Part& part)
+    {
+        stk::mesh::Entity entity = bulkData.get_entity(stk::topology::ELEM_RANK, id);
+        if(bulkData.is_valid(entity) && bulkData.bucket(entity).owned())
+        {
+            bulkData.change_entity_parts(entity, stk::mesh::PartVector{&part});
+        }
+    }
+    stk::mesh::Part& create_part_with_id(stk::mesh::MetaData &metaData, int id, stk::topology topology)
+    {
+        stk::mesh::Part& part = metaData.declare_part_with_topology("block_"+std::to_string(id), topology);
+        metaData.set_part_id(part, id);
+        return part;
     }
 
     virtual const std::string get_filename() = 0;
@@ -302,18 +337,29 @@ TEST_F(SkinAAWithModification, TestPartialCoincident)
 {
     test_adding_partial_coincident_hex();
 }
-//TEST_F(SkinAAWithModification, TestPartialCoincident2d)
-//{
-//    stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::HEX_8);
-//    stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
-//    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
-//
-//    std::string meshDesc =
-//        "0,1,QUAD_4_2D,1,2,3,4\n
-//         1,2,QUAD_4_2D,3,4,5,6";
-//    TextMesh textMesh(meshDesc, stk::mesh::BulkData::NO_AUTO_AURA);
-//
-//}
+TEST_F(SkinAAWithModification, TestPartialCoincident2d)
+{
+    if(stk::parallel_machine_size(get_comm()) <= 2)
+    {
+        initialize_mesh();
+        allocate_meta(2);
+        stk::mesh::Part& block1 = create_part_with_id(get_meta(), 1, stk::topology::QUAD_4_2D);
+        stk::mesh::Part& block2 = create_part_with_id(get_meta(), 2, stk::topology::QUAD_4_2D);
+        setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+
+        create_2_quads_mesh(block1, block2);
+
+        setup_for_skinning();
+
+        add_partial_coincident_quad(block1);
+
+        const SideTestUtil::TestCase exteriorCase = {"AA.e", 2, 9, {{1, 0}, {1, 1}, {1, 3},
+                                                                     {2, 1}, {2, 2}, {2, 3},
+                                                                     {3, 0}, {3, 1}, {3, 3}}};
+        const SideTestUtil::TestCase interiorCase = {"AA.e", 2, 1, {{1, 2}, {3, 2}, {2, 0}}};
+        test_skinning(exteriorCase, interiorCase);
+    }
+}
 
 class SkinAWithModification : public SkinFileWithModification
 {

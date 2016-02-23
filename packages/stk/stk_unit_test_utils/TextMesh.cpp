@@ -173,7 +173,7 @@ void setup_mesh(const MeshData& meshData, stk::mesh::BulkData &bulkData)
     bulkData.modification_begin();
     for(const ElementData& elementData : meshData.elementDataVec)
     {
-        if(bulkData.parallel_rank() == elementData.proc)
+        if(bulkData.parallel_rank() == elementData.proc || bulkData.parallel_size() == 1)
         {
             stk::mesh::PartVector topologyParts = {&bulkData.mesh_meta_data().get_topology_root_part(elementData.topology)};
             stk::mesh::declare_element(bulkData,
