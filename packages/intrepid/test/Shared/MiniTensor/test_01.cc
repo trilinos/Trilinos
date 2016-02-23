@@ -52,9 +52,12 @@ main(int ac, char* av[])
 
   ::testing::InitGoogleTest(&ac, av);
 
-  return RUN_ALL_TESTS();
+  auto const
+  retval = RUN_ALL_TESTS();
 
   Kokkos::finalize();
+
+  return retval;
 }
 
 namespace Intrepid {
