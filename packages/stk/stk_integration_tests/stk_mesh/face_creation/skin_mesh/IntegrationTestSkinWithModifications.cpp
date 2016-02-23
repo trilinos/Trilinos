@@ -229,6 +229,41 @@ protected:
         }
     }
 
+    void test_adding_partial_coincident_hex()
+    {
+        if(stk::parallel_machine_size(get_comm()) <= 2)
+        {
+            stk::mesh::EntityId elemId = 30;
+            create_partial_coincident_hexes(elemId);
+            test_skinning_partial_coincident(elemId);
+        }
+    }
+
+    stk::mesh::EntityId create_partial_coincident_hexes(stk::mesh::EntityId elemId)
+    {
+        stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+        setup_mesh_from_initial_configuration (get_filename());
+        add_partially_coincident_hex(elemId, block2);
+        return elemId;
+    }
+
+    void add_partially_coincident_hex(stk::mesh::EntityId elemId, stk::mesh::Part& block2)
+    {
+        get_bulk().modification_begin();
+        if(get_bulk().parallel_rank() == 0)
+            stk::mesh::declare_element(get_bulk(), block2, elemId, stk::mesh::EntityIdVector {31, 32, 33, 34, 5, 6, 7, 8});
+        get_bulk().modification_end();
+    }
+
+    void test_skinning_partial_coincident(stk::mesh::EntityId elemId)
+    {
+        const SideTestUtil::TestCase exteriorCase = {"AA.e", 2, 15, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4},
+                                                                     {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5},
+                                                                     {elemId, 0}, {elemId, 1}, {elemId, 2}, {elemId, 3}, {elemId, 4}}};
+        const SideTestUtil::TestCase interiorCase = {"AA.e", 2, 1, {{1, 5}, {elemId, 5}, {2, 4}}};
+        test_skinning(exteriorCase, interiorCase);
+    }
+
     virtual const std::string get_filename() = 0;
 };
 
@@ -265,24 +300,20 @@ TEST_F(SkinAAWithModification, DISABLED_TestAddTwoShellThenDeleteBoth)
 }
 TEST_F(SkinAAWithModification, TestPartialCoincident)
 {
-    if(stk::parallel_machine_size(get_comm()) <= 2)
-    {
-        stk::mesh::Part &block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
-        setup_mesh_from_initial_configuration(get_filename());
-
-        stk::mesh::EntityId elemId = 30;
-        get_bulk().modification_begin();
-        if(get_bulk().parallel_rank() == 0)
-            stk::mesh::declare_element(get_bulk(), block2, elemId, stk::mesh::EntityIdVector{31, 32, 33, 34, 5, 6, 7, 8});
-        get_bulk().modification_end();
-
-        const SideTestUtil::TestCase exteriorCase = {"AA.e", 2, 15, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4},
-                                                                     {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5},
-                                                                     {elemId, 0}, {elemId, 1}, {elemId, 2}, {elemId, 3}, {elemId, 4}}};
-        const SideTestUtil::TestCase interiorCase = {"AA.e", 2,  1, {{1, 5}, {elemId, 5}, {2, 4}}};
-        test_skinning(exteriorCase, interiorCase);
-    }
+    test_adding_partial_coincident_hex();
 }
+//TEST_F(SkinAAWithModification, TestPartialCoincident2d)
+//{
+//    stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::HEX_8);
+//    stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+//    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+//
+//    std::string meshDesc =
+//        "0,1,QUAD_4_2D,1,2,3,4\n
+//         1,2,QUAD_4_2D,3,4,5,6";
+//    TextMesh textMesh(meshDesc, stk::mesh::BulkData::NO_AUTO_AURA);
+//
+//}
 
 class SkinAWithModification : public SkinFileWithModification
 {
