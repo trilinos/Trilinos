@@ -160,6 +160,26 @@ std::vector<int> SkinMeshUtil::get_sides_for_skinning(const stk::mesh::Selector&
     return exposedSides;
 }
 
+void SkinMeshUtil::extract_skinned_sideset_for_element(stk::mesh::Entity element, const stk::mesh::Bucket &bucket, std::vector<SideSetEntry> &skinnedSideSet)
+{
+    stk::mesh::impl::LocalId localId = eeGraph.get_local_element_id(element);
+    std::vector<int> exposedSides = get_sides_for_skinning(skinSelector, bucket, element, localId, airSelector);
+
+    for(size_t k=0; k<exposedSides.size(); ++k)
+    {
+        skinnedSideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
+    }
+}
+
+void SkinMeshUtil::extract_skinned_sideset_for_bucket(const stk::mesh::Bucket &bucket, std::vector<SideSetEntry> &skinnedSideSet)
+{
+    for(size_t j=0; j<bucket.size(); ++j)
+    {
+        stk::mesh::Entity element = bucket[j];
+        extract_skinned_sideset_for_element(element, bucket, skinnedSideSet);
+    }
+}
+
 std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
 {
     std::vector<SideSetEntry> skinnedSideSet;
@@ -170,23 +190,73 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
     for(size_t i=0;i<buckets.size();++i)
     {
         const stk::mesh::Bucket &bucket = *buckets[i];
-        for(size_t j=0;j<bucket.size();++j)
-        {
-            stk::mesh::Entity element = bucket[j];
-
-            stk::mesh::impl::LocalId localId = eeGraph.get_local_element_id(element);
-            std::vector<int> exposedSides = get_sides_for_skinning(skinSelector, bucket, element, localId, airSelector);
-
-            for(size_t k=0; k<exposedSides.size(); ++k)
-            {
-                skinnedSideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
-            }
-        }
+        extract_skinned_sideset_for_bucket(bucket, skinnedSideSet);
     }
 
     stk::util::sort_and_unique(skinnedSideSet, SideSetEntryLess(bulkData), SideSetEntryEquals(bulkData));
 
     return skinnedSideSet;
+}
+
+bool SkinMeshUtil::is_parallel_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::GraphEdge & graphEdge, bool &isElement1InSelector)
+{
+    const impl::ParallelInfo &parallel_edge_info = eeGraph.get_parallel_info_for_graph_edge(graphEdge);
+    bool isElement2InSelector = parallel_edge_info.is_in_body_to_be_skinned();
+    if(!isElement1InSelector && !isElement2InSelector) return false;
+    return !stk::mesh::impl::are_entity_element_blocks_equivalent(eeGraph.get_mesh(), element, parallel_edge_info.get_part_ordinals());
+}
+
+bool SkinMeshUtil::is_local_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::GraphEdge & graphEdge, bool &isElement1InSelector)
+{
+    const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
+    stk::mesh::Entity otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2);
+    bool isElement2InSelector = skinSelector(bulkData.bucket(otherElement));
+
+    if(!isElement1InSelector && !isElement2InSelector) return false;
+
+    if(bulkData.identifier(element) < bulkData.identifier(otherElement))
+        return !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElement);
+
+    return false;
+}
+
+bool SkinMeshUtil::is_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::Bucket &bucket, const stk::mesh::GraphEdge & graphEdge)
+{
+    bool isElement1InSelector = skinSelector(bucket);
+
+    if(!stk::mesh::impl::is_local_element(graphEdge.elem2))
+        return is_parallel_graph_edge_candidate_for_interior_sideset(element, graphEdge, isElement1InSelector);
+
+    return is_local_graph_edge_candidate_for_interior_sideset(element, graphEdge, isElement1InSelector);
+}
+
+void SkinMeshUtil::extract_interior_sideset_for_element(stk::mesh::Entity element, const stk::mesh::Bucket &bucket, std::vector<SideSetEntry> &sideSet)
+{
+    impl::LocalId elementId = eeGraph.get_local_element_id(element);
+
+    for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elementId))
+    {
+        bool should_add_side = is_graph_edge_candidate_for_interior_sideset(element, bucket, graphEdge);
+
+        if(should_add_side)
+        {
+            sideSet.push_back(SideSetEntry(element, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1)));
+            if(stk::mesh::impl::is_local_element(graphEdge.elem2))
+            {
+                stk::mesh::Entity otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2);
+                sideSet.push_back(SideSetEntry(otherElement, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side2)));
+            }
+        }
+    }
+}
+
+void SkinMeshUtil::extract_interior_sideset_for_bucket(const stk::mesh::Bucket &bucket, std::vector<SideSetEntry> &sideSet)
+{
+    for(size_t i=0;i<bucket.size();++i)
+    {
+        stk::mesh::Entity element = bucket[i];
+        extract_interior_sideset_for_element(element, bucket, sideSet);
+    }
 }
 
 std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
@@ -197,50 +267,10 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
 
     for(const stk::mesh::Bucket* bucket : buckets)
     {
-        for(size_t i=0;i<bucket->size();++i)
-        {
-            stk::mesh::Entity element = (*bucket)[i];
-            impl::LocalId elementId = eeGraph.get_local_element_id(element);
-
-            for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elementId))
-            {
-                stk::mesh::EntityId otherEntityId = 0;
-                stk::mesh::Entity otherElement;
-                bool isElement1InSelector = skinSelector(bucket);
-                bool isElement2InSelector = false;
-
-                bool isParallelEdge = graphEdge.elem2<0;
-                bool should_add_side = false;
-
-                if(isParallelEdge)
-                {
-                    const impl::ParallelInfo &parallel_edge_info = eeGraph.get_parallel_info_for_graph_edge(graphEdge);
-                    isElement2InSelector = parallel_edge_info.is_in_body_to_be_skinned();
-                    if(!isElement1InSelector && !isElement2InSelector) continue;
-                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallel_edge_info.get_part_ordinals());
-                }
-                else
-                {
-                    otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2);
-                    otherEntityId = bulkData.identifier(otherElement);
-                    isElement2InSelector = skinSelector(bulkData.bucket(otherElement));
-                    if(!isElement1InSelector && !isElement2InSelector) continue;
-                    if(!isParallelEdge && bulkData.identifier(element) < otherEntityId)
-                        should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElement);
-                }
-
-                if(should_add_side)
-                {
-                    skinnedSideSet.push_back(SideSetEntry(element, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1)));
-                    if(!isParallelEdge)
-                        skinnedSideSet.push_back(SideSetEntry(otherElement, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side2)));
-                }
-            }
-        }
+        extract_interior_sideset_for_bucket(*bucket, skinnedSideSet);
     }
 
     stk::util::sort_and_unique(skinnedSideSet, SideSetEntryLess(bulkData), SideSetEntryEquals(bulkData));
-
     return skinnedSideSet;
 }
 
@@ -257,52 +287,12 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
     for (const stk::mesh::Bucket* bucketPtr : buckets) {
         const stk::mesh::Bucket & bucket = *bucketPtr;
         for (size_t i=0; i<bucket.size(); ++i) {
-            stk::mesh::Entity element = bucket[i];
-            impl::LocalId elementId = eeGraph.get_local_element_id(element);
-
-            std::vector<int> exposedSides = get_sides_for_skinning(skinSelector, bucket, element, elementId);
-
-            for (size_t k=0; k<exposedSides.size(); ++k) {
-                sideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
-            }
-
-            for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elementId)) {
-                stk::mesh::EntityId otherEntityId = 0;
-                stk::mesh::Entity otherElement;
-                bool isElement1InSelector = skinSelector(bucket);
-                bool isElement2InSelector = false;
-
-                bool isParallelEdge = graphEdge.elem2<0;
-                bool should_add_side = false;
-
-                if (isParallelEdge) {
-                    const impl::ParallelInfo &parallel_edge_info = eeGraph.get_parallel_info_for_graph_edge(graphEdge);
-                    isElement2InSelector = parallel_edge_info.is_in_body_to_be_skinned();
-                    if (!isElement1InSelector && !isElement2InSelector) continue;
-                    should_add_side = true;
-                }
-                else {
-                    otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2);
-                    otherEntityId = bulkData.identifier(otherElement);
-                    isElement2InSelector = skinSelector(bulkData.bucket(otherElement));
-                    if (!isElement1InSelector && !isElement2InSelector) continue;
-                    if (bulkData.identifier(element) < otherEntityId) {
-                        should_add_side = true;
-                    }
-                }
-
-                if (should_add_side) {
-                    sideSet.push_back(SideSetEntry(element, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1)));
-                    if (!isParallelEdge) {
-                        sideSet.push_back(SideSetEntry(otherElement, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side2)));
-                    }
-                }
-            }
+            extract_skinned_sideset_for_bucket(bucket, sideSet);
+            extract_interior_sideset_for_bucket(bucket, sideSet);
         }
     }
 
     stk::util::sort_and_unique(sideSet, SideSetEntryLess(bulkData), SideSetEntryEquals(bulkData));
-
     return sideSet;
 }
 
