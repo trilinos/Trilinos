@@ -101,6 +101,7 @@ namespace Zoltan2_TestingFramework {
         else if (adapter_name == "PamgenMesh")
           return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<pamgen_adapter_t>(reinterpret_cast<pamgen_adapter_t*>(input), params, comm));
 #else
+        if (adapter_name == "BasicIdentifier")
           return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<basic_vector_adapter>(reinterpret_cast<basic_vector_adapter *>(input), params));
         else if (adapter_name == "XpetraMultiVector")
           return reinterpret_cast< Problem<basic_id_t> *>( new Zoltan2::PartitioningProblem<xpetra_mv_adapter>(reinterpret_cast<xpetra_mv_adapter *>(input), params));
