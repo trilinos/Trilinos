@@ -67,9 +67,14 @@ template <typename Adapter>
 class AlgPTScotch : public Algorithm<Adapter>
 {
 public:
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+  //AlgPTScotch(const RCP<const Environment> &env,
+  //            const RCP<const Comm<int> > &problemComm,
+  //            const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+  //) BDD: old inteface for reference
   AlgPTScotch(const RCP<const Environment> &env,
               const RCP<const Comm<int> > &problemComm,
-              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+              const RCP<const base_adapter_t> &adapter
   )
   {
     throw std::runtime_error(
@@ -124,31 +129,139 @@ class AlgPTScotch : public Algorithm<Adapter>
 {
 public:
 
+  typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+
+//  /*! Scotch constructor
+//   *  \param env  parameters for the problem and library configuration
+//   *  \param problemComm  the communicator for the problem
+//   *  \param model a graph
+//   *
+//   *  Preconditions: The parameters in the environment have been processed.
+//   *  TODO:  THIS IS A MINIMAL CONSTRUCTOR FOR NOW.
+//   *  TODO:  WHEN ADD SCOTCH ORDERING OR MAPPING, MOVE SCOTCH GRAPH CONSTRUCTION
+//   *  TODO:  TO THE CONSTRUCTOR SO THAT CODE MAY BE SHARED.
+//   */
+//  AlgPTScotch(const RCP<const Environment> &env__,
+//              const RCP<const Comm<int> > &problemComm__,
+//              const RCP<graphModel_t> &model__) :
+//    env(env__), problemComm(problemComm__), 
+//#ifdef HAVE_ZOLTAN2_MPI
+//    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+//#endif
+//    model(model__) BDD: olde interface for reference
 
   /*! Scotch constructor
-   *  \param env  parameters for the problem and library configuration
+   *  \param env          parameters for the problem and library configuration
    *  \param problemComm  the communicator for the problem
-   *  \param model a graph
+   *  \param adapter      the user's input adapter
    *
-   *  Preconditions: The parameters in the environment have been processed.
-   *  TODO:  THIS IS A MINIMAL CONSTRUCTOR FOR NOW.
-   *  TODO:  WHEN ADD SCOTCH ORDERING OR MAPPING, MOVE SCOTCH GRAPH CONSTRUCTION
-   *  TODO:  TO THE CONSTRUCTOR SO THAT CODE MAY BE SHARED.
+   *  We're building a graph model, so throw an error if we can't  
+   *    build the model from the input adapter passed to constructor
+   *  For matrix and mesh adapters, additionally determine which 
+   *    objects we wish to partition
    */
   AlgPTScotch(const RCP<const Environment> &env__,
               const RCP<const Comm<int> > &problemComm__,
-              const RCP<graphModel_t> &model__) :
+              const RCP<const IdentifierAdapter<user_t> > &adapter__) :
     env(env__), problemComm(problemComm__), 
 #ifdef HAVE_ZOLTAN2_MPI
     mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
 #endif
-    model(model__)
-  { }
+    adapter(adapter__)
+  {
+    std::string errStr = "cannot build GraphModel from IdentifierAdapter, ";
+    errStr            += "Scotch requires Graph, Matrix, or Mesh Adapter";
+    throw std::runtime_error(errStr);
+  }
+  
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<const VectorAdapter<user_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+#endif
+    adapter(adapter__)
+  {
+    std::string errStr = "cannot build GraphModel from IdentifierAdapter, ";
+    errStr            += "Scotch requires Graph, Matrix, or Mesh Adapter";
+    throw std::runtime_error(errStr);
+  }
+  
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<const GraphAdapter<user_t, userCoord_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+#endif
+    adapter(adapter__), model_flags()
+  {
+    this->model_flags.reset();
+  }
+  
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<const MatrixAdapter<user_t, userCoord_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+#endif
+    adapter(adapter__), model_flags()
+  {
+    this->model_flags.reset();
+    
+    const ParameterList &pl = env->getParameters();
+    const Teuchos::ParameterEntry *pe;
+
+    std::string defString("default");
+    std::string objectOfInterest(defString);
+    pe = pl.getEntryPtr("objects_to_partition");
+    if (pe)
+      objectOfInterest = pe->getValue<std::string>(&objectOfInterest);
+
+    if (objectOfInterest == defString ||
+        objectOfInterest == std::string("matrix_rows") )
+      this->model_flags.set(VERTICES_ARE_MATRIX_ROWS);
+    else if (objectOfInterest == std::string("matrix_columns"))
+      this->model_flags.set(VERTICES_ARE_MATRIX_COLUMNS);
+    else if (objectOfInterest == std::string("matrix_nonzeros"))
+      this->model_flags.set(VERTICES_ARE_MATRIX_NONZEROS);
+  }
+  
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<const MeshAdapter<user_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
+#endif
+    adapter(adapter__), model_flags()
+  {
+    this->model_flags.reset();
+    
+    const ParameterList &pl = env->getParameters();
+    const Teuchos::ParameterEntry *pe;
+
+    std::string defString("default");
+    std::string objectOfInterest(defString);
+    pe = pl.getEntryPtr("objects_to_partition");
+    if (pe)
+      objectOfInterest = pe->getValue<std::string>(&objectOfInterest);
+
+    if (objectOfInterest == defString ||
+        objectOfInterest == std::string("mesh_nodes") )
+      this->model_flags.set(VERTICES_ARE_MESH_NODES);
+    else if (objectOfInterest == std::string("mesh_elements"))
+      this->model_flags.set(VERTICES_ARE_MESH_ELEMENTS);
+  }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   
@@ -166,20 +279,61 @@ private:
 #ifdef HAVE_ZOLTAN2_MPI
   const MPI_Comm mpicomm;
 #endif
-  const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
+  const RCP<const base_adapter_t> adapter;
+  modelFlag_t model_flags;
+  RCP<graphModel_t > model; // BDD:to be constructed
 
+  void buildModel(bool isLocal);
   void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts,
                      SCOTCH_Num *iwgts);
 };
 
-
 /////////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
+void AlgPTScotch<Adapter>::buildModel(bool isLocal) {
+  HELLO;  
+  const ParameterList &pl = env->getParameters();
+  const Teuchos::ParameterEntry *pe;
+
+  std::string defString("default");
+  std::string symParameter(defString);
+  pe = pl.getEntryPtr("symmetrize_graph");
+  if (pe){
+    symParameter = pe->getValue<std::string>(&symParameter);
+    if (symParameter == std::string("transpose"))
+      this->model_flags.set(SYMMETRIZE_INPUT_TRANSPOSE);
+    else if (symParameter == std::string("bipartite"))
+      this->model_flags.set(SYMMETRIZE_INPUT_BIPARTITE);  } 
+
+  int sgParameter = 0;
+  pe = pl.getEntryPtr("subset_graph");
+  if (pe)
+    sgParameter = pe->getValue<int>(&sgParameter);
+  if (sgParameter == 1)
+      this->model_flags.set(BUILD_SUBSET_GRAPH);
+
+  this->model_flags.set(REMOVE_SELF_EDGES);
+  this->model_flags.set(GENERATE_CONSECUTIVE_IDS);
+  if (isLocal) {
+    HELLO; // only for ordering!
+    this->model_flags.set(BUILD_LOCAL_GRAPH);
+  }
+
+  this->env->debug(DETAILED_STATUS, "    building graph model");
+  this->model = rcp(new graphModel_t(this->adapter, 
+        this->env, 
+        this->problemComm, 
+        this->model_flags));
+  this->env->debug(DETAILED_STATUS, "    graph model built");
+}
+
 template <typename Adapter>
 void AlgPTScotch<Adapter>::partition(
   const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
   HELLO;
+  this->buildModel(false);
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
@@ -444,11 +598,17 @@ void AlgPTScotch<Adapter>::scale_weights(
 template <typename Adapter>
 int AlgPTScotch<Adapter>::order(
     const RCP<OrderingSolution<lno_t, gno_t> > &solution) {
+  // TODO: translate teuchos sublist parameters to scotch strategy string
+  // TODO: construct local graph model
+  // TODO: solve with scotch
+  // TODO: set solution feilds
 
   HELLO; // say hi so that we know we have called this method
   if (problemComm->getRank() == 0) {
     std::cout << "Hi, this is just the Host checking in." << std::endl;
+    std::cout << "It would appear that we need to do some work now." << std::endl;
   }
+  this->buildModel(true);
 
   return 0;
 }
