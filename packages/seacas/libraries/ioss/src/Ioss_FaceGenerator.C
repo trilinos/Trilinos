@@ -30,6 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Ioss_CodeTypes.h>
 #include <Ioss_FaceGenerator.h>
 #include "Ioss_CommSet.h"
 #include "Ioss_DBUsage.h"
@@ -351,7 +352,7 @@ namespace Ioss {
     auto diffp = endp - endf;
 
     std::cout << "Node ID hash time:   \t" << std::chrono::duration<double, std::milli> (diffh).count() << " ms\t"
-              << std::chrono::duration<double, std::micro> (diffh).count()/hash_ids.size() << " us/node\n";
+              << hash_ids.size()/std::chrono::duration<double> (diffh).count() << " nodes/second\n";
     std::cout << "Face generation time:\t" << std::chrono::duration<double, std::milli> (difff).count() << " ms\t"
               << faces_.size()/std::chrono::duration<double> (difff).count() << " faces/second.\n";
     std::cout << "Parallel time:       \t" << std::chrono::duration<double, std::milli> (diffp).count() << " ms\t"

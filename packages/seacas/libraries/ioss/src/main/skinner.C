@@ -196,8 +196,8 @@ namespace {
              << "\tBoundary = " << boundary
              << "\tShared   = " << pboundary
              << "\tError = " << error << "\n";
-      OUTPUT << "Buckets = " << faces.bucket_count() << "\n";
-      OUTPUT << "Load = " << faces.load_factor() << "\n";
+      OUTPUT << "Hash Statistics: Bucket Count = " << faces.bucket_count()
+	     << "\tLoad Factor = " << faces.load_factor() << "\n";
       size_t numel = region.get_property("element_count").get_int();
       OUTPUT << "Faces/Element ratio = " << (double)faces.size() / numel << "\n";
     }
@@ -236,7 +236,6 @@ namespace {
     }
 
     size_t ref_count = std::accumulate(ref_nodes.begin(), ref_nodes.end(), 0);
-    std::cout << "Unique nodes in boundary = " << ref_count << "\n";
 
     // Map ids from total mesh down to skin mesh...
     // Also get coordinates...

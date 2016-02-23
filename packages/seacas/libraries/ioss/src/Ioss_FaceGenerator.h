@@ -60,8 +60,8 @@ namespace Ioss {
     
     size_t id_;
     mutable size_t element[2];
-    mutable int elementCount_:2; // Should be max of 2 solid elements...
-    mutable int sharedWithProc_:30;
+    mutable int elementCount_; // Should be max of 2 solid elements...
+    mutable int sharedWithProc_;
     std::array<size_t,4> connectivity_;
   };
 
