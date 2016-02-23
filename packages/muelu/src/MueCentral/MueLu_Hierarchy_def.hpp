@@ -791,7 +791,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const LO& start, const LO& end) {
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const LO& start, const LO& end, const std::string &suffix) {
     LO startLevel = (start != -1 ? start : 0);
     LO   endLevel = (end   != -1 ? end   : Levels_.size()-1);
 
@@ -809,9 +809,9 @@ namespace MueLu {
           R = rcp_dynamic_cast<Matrix>(Levels_[i]-> template Get< RCP< Operator> >("R"));
       }
 
-      if (!A.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A_" + toString(i) + ".m", *A);
-      if (!P.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + ".m", *P);
-      if (!R.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + ".m", *R);
+      if (!A.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A_" + toString(i) + suffix + ".m", *A);
+      if (!P.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + suffix + ".m", *P);
+      if (!R.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + suffix + ".m", *R);
     }
   }
 

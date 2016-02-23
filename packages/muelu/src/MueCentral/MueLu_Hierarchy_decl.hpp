@@ -264,7 +264,7 @@ namespace MueLu {
       Default behavior is to print system and transfer matrices from the entire hierarchy.
       Files are named "A_0.m", "P_1.m", "R_1.m", etc, and are in matrix market coordinate format.
     */
-    void Write(const LO &start=-1, const LO &end=-1);
+    void Write(const LO &start=-1, const LO &end=-1, const std::string &suffix="");
 
     //@}
 

@@ -180,6 +180,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     template/Sacado_TemplateManager.hpp
     template/Sacado_TemplateManagerImp.hpp
     template/Sacado_TemplateIterator.hpp
+    template/Sacado_TemplateContainer.hpp
     )
 
   IF (${PACKAGE_NAME}_ENABLE_PARAMLIB)
