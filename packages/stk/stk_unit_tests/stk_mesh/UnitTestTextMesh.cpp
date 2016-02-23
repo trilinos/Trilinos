@@ -36,16 +36,16 @@ void verify_single_element(const stk::mesh::BulkData& bulk, stk::mesh::EntityId 
     verify_nodes(bulk, element, nodeIds);
 }
 
-class TextMeshFixture : public stk::unit_test_util::MeshFixture
+class TestTextMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
-    TextMeshFixture()
+    TestTextMesh()
     {
         setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     }
 };
 
-TEST_F(TextMeshFixture, singlHex)
+TEST_F(TestTextMesh, singlHex)
 {
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
     if (get_bulk().parallel_size() == 1)
@@ -55,17 +55,7 @@ TEST_F(TextMeshFixture, singlHex)
     }
 }
 
-TEST_F(TextMeshFixture, singleQuad)
-{
-    std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4";
-    if (get_bulk().parallel_size() == 1)
-    {
-        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
-        verify_single_element(get_bulk(), 1u, stk::topology::QUAD_4_2D, stk::mesh::EntityIdVector{1,2,3,4});
-    }
-}
-
-TEST_F(TextMeshFixture, mixedSpatialDim)
+TEST_F(TestTextMesh, mixedSpatialDim)
 {
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
@@ -73,7 +63,7 @@ TEST_F(TextMeshFixture, mixedSpatialDim)
     EXPECT_THROW(stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk()), std::logic_error);
 }
 
-TEST_F(TextMeshFixture, singlHexWithSpaces)
+TEST_F(TestTextMesh, singlHexWithSpaces)
 {
     std::string meshDesc = "0, 1, HEX_8, 1, 2, 3, 4, 5, 6, 7, 8";
     if (get_bulk().parallel_size() == 1)
@@ -83,7 +73,7 @@ TEST_F(TextMeshFixture, singlHexWithSpaces)
     }
 }
 
-TEST_F(TextMeshFixture, singlHexWithLowerCase)
+TEST_F(TestTextMesh, singlHexWithLowerCase)
 {
     std::string meshDesc = "0,1,Hex_8,1,2,3,4,5,6,7,8";
     if (get_bulk().parallel_size() == 1)
@@ -93,32 +83,32 @@ TEST_F(TextMeshFixture, singlHexWithLowerCase)
     }
 }
 
-TEST_F(TextMeshFixture, tooFewNodes)
+TEST_F(TestTextMesh, tooFewNodes)
 {
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7";
     EXPECT_THROW(stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk()), std::logic_error);
 }
 
-TEST_F(TextMeshFixture, tooManyNodes)
+TEST_F(TestTextMesh, tooManyNodes)
 {
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,9";
     EXPECT_THROW(stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk()), std::logic_error);
 }
 
-TEST_F(TextMeshFixture, tooLittleData)
+TEST_F(TestTextMesh, tooLittleData)
 {
     std::string meshDesc = "0,1,";
     EXPECT_THROW(stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk()), std::logic_error);
 }
 
-TEST_F(TextMeshFixture, invalidTopology)
+TEST_F(TestTextMesh, invalidTopology)
 {
     std::string meshDesc = "0,1,invalid,1";
     EXPECT_THROW(stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk()), std::logic_error);
 }
 
 
-TEST_F(TextMeshFixture, twoHexesSerial)
+TEST_F(TestTextMesh, twoHexesSerial)
 {
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
@@ -132,7 +122,7 @@ TEST_F(TextMeshFixture, twoHexesSerial)
     }
 }
 
-TEST_F(TextMeshFixture, twoHexesParallel)
+TEST_F(TestTextMesh, twoHexesParallel)
 {
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
@@ -154,7 +144,26 @@ TEST_F(TextMeshFixture, twoHexesParallel)
     }
 }
 
-TEST_F(TextMeshFixture, DISABLED_twoQuadOneShellParallel)
+class TestTextMesh2d : public stk::unit_test_util::MeshFixture
+{
+protected:
+    TestTextMesh2d() : stk::unit_test_util::MeshFixture(2)
+    {
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    }
+};
+
+TEST_F(TestTextMesh2d, singleQuad)
+{
+    std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4";
+    if (get_bulk().parallel_size() == 1)
+    {
+        stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+        verify_single_element(get_bulk(), 1u, stk::topology::QUAD_4_2D, stk::mesh::EntityIdVector{1,2,3,4});
+    }
+}
+
+TEST_F(TestTextMesh2d, DISABLED_twoQuadOneShellParallel)
 {
     std::string meshDesc =
         "0,1,QUAD_4_2D,1,2,3,4\n\
