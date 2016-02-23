@@ -548,9 +548,15 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                            this->baseInputAdapter_));
     }
     else if (algName_ == std::string("scotch")) {
+      // BDD: constructor refactored to use base input adapter 
+      // instead of graphModel_, graph models will be constructed
+      // on an as needed basis within AlgPTScotch
+      //this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
+      //                                      problemComm_,
+      //                                      this->graphModel_));
       this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
                                             problemComm_,
-                                            this->graphModel_));
+                                            this->baseInputAdapter_));
     }
     else if (algName_ == std::string("parmetis")) {
       this->algorithm_ = rcp(new AlgParMETIS<Adapter>(this->envConst_,
@@ -784,17 +790,19 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
     }
     else if (algorithm == std::string("metis") ||
-             algorithm == std::string("parmetis") ||
-             algorithm == std::string("scotch") ||
-             algorithm == std::string("ptscotch"))
+             algorithm == std::string("parmetis"))
     {
 
       //modelType_ = GraphModelType;
       modelAvail_[GraphModelType]=true;
-
       algName_ = algorithm;
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
+    }
+    else if (algorithm == std::string("scotch") ||
+             algorithm == std::string("ptscotch")) // BDD: Don't construct graph for scotch here
+    {
+      algName_ = algorithm;
     }
     else if (algorithm == std::string("pulp"))
     {
@@ -846,12 +854,11 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[GraphModelType]=true;
 
 #ifdef HAVE_ZOLTAN2_SCOTCH
+      modelAvail_[GraphModelType]=false; // graph constructed by AlgPTScotch
       if (problemComm_->getSize() > 1)
         algName_ = std::string("ptscotch");
       else
         algName_ = std::string("scotch");
-      removeSelfEdges = true;
-      needConsecutiveGlobalIds = true;
 #else
 #ifdef HAVE_ZOLTAN2_PARMETIS
       if (problemComm_->getSize() > 1)
@@ -1082,8 +1089,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
             this->graphModel_);
-    }
-
+    } 
     if(modelAvail_[HypergraphModelType]==true)
     {
       std::cout << "Hypergraph model not implemented yet..." << std::endl;

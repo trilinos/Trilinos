@@ -235,7 +235,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   {
     AlgPTScotch<Adapter> alg(this->envConst_,
                                     problemComm_,
-                                    this->graphModel_);
+                                    this->baseInputAdapter_);
     alg.order(this->solution_);
   }
 
