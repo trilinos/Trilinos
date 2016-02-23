@@ -48,6 +48,7 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_OrderingSolution.hpp> // BDD: needed by ordering method
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 
@@ -150,6 +151,13 @@ public:
   { }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
+  
+  /* BDD: Beginning work on ordering method.
+          Will use scotch for ordering, and then set fields in ording
+          solution. Ordering Solution is also being extended to
+          include fields needed by Basker for seperator information.
+  */
+  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution);
 
 private:
 
@@ -433,11 +441,22 @@ void AlgPTScotch<Adapter>::scale_weights(
 
 }
 
+template <typename Adapter>
+int AlgPTScotch<Adapter>::order(
+    const RCP<OrderingSolution<lno_t, gno_t> > &solution) {
+
+  HELLO; // say hi so that we know we have called this method
+  if (problemComm->getRank() == 0) {
+    std::cout << "Hi, this is just the Host checking in." << std::endl;
+  }
+
+  return 0;
+}
+
 } // namespace Zoltan2
 
 #endif // HAVE_ZOLTAN2_SCOTCH
 
 ////////////////////////////////////////////////////////////////////////
-
 
 #endif
