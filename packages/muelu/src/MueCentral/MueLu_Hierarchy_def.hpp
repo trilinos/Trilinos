@@ -622,7 +622,7 @@ namespace MueLu {
           emptySolve = false;
         }
         if (emptySolve == true) {
-          GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
+          GetOStream(Warnings1) << "No coarse grid solver" << std::endl;
           // Coarse operator is identity
           X.update(one, B, zero);
         }
