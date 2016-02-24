@@ -661,7 +661,6 @@ int AlgPTScotch<Adapter>::order(
   // TODO: solve with scotch
   // TODO: set solution fields
 
-#define BDD  
   HELLO; // say hi so that we know we have called this method
   int me = problemComm->getRank();
   const ParameterList &pl = env->getParameters();
