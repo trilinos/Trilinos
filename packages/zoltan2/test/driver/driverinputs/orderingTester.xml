@@ -61,7 +61,9 @@
       <Parameter name="order_method" type="string" value="scotch"/>
       <Parameter name="compute_metrics" type="string" value="true"/>
       <Parameter name="scotch_verbose" type="string" value="true"/>
-      <Parameter name="scotch_level" type="int" value="10"/>
+      <Parameter name="scotch_ordering_default" type="string" value="false"/>
+      <Parameter name="scotch_ordering_strategy" type="string" value=""/>
+      <Parameter name="scotch_level" type="int" value="2"/>
       <Parameter name="scotch_imbalance_ratio" type="double" value="0.25"/>
     </ParameterList> 
     
