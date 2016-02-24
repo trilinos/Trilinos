@@ -47,12 +47,14 @@
     \author Created by Kyungjoo Kim
 */
 
-#include "Intrepid2_FieldContainer.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Intrepid2_PointTools.hpp"
+
 #include "Shards_CellTopology.hpp"
+
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_PointTools.hpp"
 
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
 #include "Intrepid2_BasisSet.hpp"
