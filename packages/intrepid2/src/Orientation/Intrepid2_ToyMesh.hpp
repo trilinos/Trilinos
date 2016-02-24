@@ -57,7 +57,7 @@ namespace Intrepid2 {
   namespace Example {
 
     constexpr int TOYMESH_MAX_NUM_NODES = 100;
-    constexpr int TOYMESH_NODE_STRIDE = 4;
+    constexpr int TOYMESH_NODE_STRIDE = 8;
 
     class ToyMesh {
     private:
@@ -149,6 +149,7 @@ namespace Intrepid2 {
         const int local = 0, global = 1;
         const int nbf = basis.getCardinality();
         const shards::CellTopology cell = basis.getBaseCellTopology();
+        const int dim = cell.getDimension();
 
         int cnt = 0, off_element = 0;
         int subcell_verts[4], nids;
@@ -168,7 +169,7 @@ namespace Intrepid2 {
             addNode(subcell_verts, nids, off_global);
             local2global[cnt][global] = off_global;
             off_global += dof_vert;
-          } 
+          }
           ++cnt;
         }
         const int nedge = cell.getEdgeCount();
@@ -189,6 +190,24 @@ namespace Intrepid2 {
           }
           ++cnt;
         }
+        const int nface = cell.getFaceCount();
+        for (int i=0;i<nface;++i) {
+          const int ord_face = (off_element < nbf ? basis.getDofOrdinal(2, i, 0) : 0);
+          const int dof_face = (off_element < nbf ? basis.getDofTag(ord_face)[3] : 0);
+      
+          local2global[cnt][local] = off_element;
+          off_element += dof_face;
+          Orientation::getElementNodeMap(subcell_verts, nids,
+                                         cell, element,
+                                         2, i);
+      
+          if (!findNode(local2global[cnt][global], subcell_verts, nids, true)) {
+            addNode(subcell_verts, nids, off_global);
+            local2global[cnt][global] = off_global;
+            off_global += dof_face;
+          }
+          ++cnt;
+        }
         {
           const int i = 0;
           const int ord_intr = (off_element < nbf ? basis.getDofOrdinal(2, i, 0) : 0);
@@ -198,7 +217,7 @@ namespace Intrepid2 {
           off_element += dof_intr;
           Orientation::getElementNodeMap(subcell_verts, nids,
                                          cell, element,
-                                         2, i);
+                                         dim, i);
       
           if (!findNode(local2global[cnt][global], subcell_verts, nids, true)) {
             addNode(subcell_verts, nids, off_global);

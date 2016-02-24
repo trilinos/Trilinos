@@ -69,11 +69,21 @@ using namespace Intrepid2;
 typedef double value_type;
 typedef double magnitude_type;
 
+// ----------------------------------------------------------------------
+// Command line input variable
+//
+//
 static int  maxp = 8; // INTREPID2_MAX_ORDER;
 static int  nelement = 2;
 static bool verbose = false;
 static bool apply_orientation = true;
 
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
+
+// ----------------------------------------------------------------------
+// Function declaration
+//
+//
 #undef MatVal
 #define MatVal(Mat, row, col) Mat[(row) + (col)*(Mat.dimension(1))]
 
@@ -95,13 +105,19 @@ void eval_neumann(FieldContainer<value_type>       & neumann,
                   const int                          nx,
                   const int                          ny);
 
+void fill_cell_nodes(FieldContainer<value_type> & cell_nodes,
+                     const FieldContainer<value_type> & nodes,
+                     const int *element, 
+                     const int nvert, 
+                     const int ndim);
+
 void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                   FieldContainer<value_type> & b,
                                   DefaultCubatureFactory<value_type> & cubature_factory,
                                   const BasisSet_HGRAD_TRI_Cn_FEM<value_type,FieldContainer<value_type> > &basis_set,
                                   const int *element,
                                   const int *boundary,
-                                  const FieldContainer<value_type> & nodes,
+                                  const FieldContainer<value_type> & cell_nodes,
                                   const Orientation ort,
                                   const int nx,
                                   const int ny);
@@ -121,12 +137,26 @@ void retrieve_element_solution(FieldContainer<value_type> &sol,
 void compute_element_error(magnitude_type & interpolation_error,
                            magnitude_type & solution_norm,
                            const int *element,
-                           const FieldContainer<value_type> & nodes,
+                           const FieldContainer<value_type> & cell_nodes,
                            const BasisSet_HGRAD_TRI_Cn_FEM<value_type,FieldContainer<value_type> > &basis_set,
                            const FieldContainer<value_type> &sol,
                            const Orientation ort,
                            const int nx,
                            const int ny);
+
+// ----------------------------------------------------------------------
+// Function implementation
+//
+//
+void fill_cell_nodes(FieldContainer<value_type> & cell_nodes,
+                     const FieldContainer<value_type> & nodes,
+                     const int *element, 
+                     const int nvert, 
+                     const int ndim) {
+  for (int i=0;i<nvert;++i)
+    for (int j=0;j<ndim;++j)
+      cell_nodes(0, i, j) = nodes(0, element[i], j);
+}
 
 void eval_exact(FieldContainer<value_type> &       val,
                 const FieldContainer<value_type> & points,
@@ -232,7 +262,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                   const BasisSet_HGRAD_TRI_Cn_FEM<value_type,FieldContainer<value_type> > &basis_set,
                                   const int *element,
                                   const int *boundary,
-                                  const FieldContainer<value_type> & nodes,
+                                  const FieldContainer<value_type> & cell_nodes,
                                   const Orientation ort,
                                   const int nx,
                                   const int ny) {
@@ -309,13 +339,6 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
 
   // get cubature points and weights
   cell_cub->getCubature(cub_points_cell, cub_weights_cell);
-
-  // compute geometric cell information
-  const int nvert = cell_topo.getVertexCount();
-  FieldContainer<value_type> cell_nodes(1, nvert, ndim_cell);
-  for (int i=0;i<nvert;++i)
-    for (int j=0;j<ndim_cell;++j)
-      cell_nodes(0, i, j) = nodes(0, element[i], j);
 
   CellTools<value_type>::setJacobian   (jacobian_cell, cub_points_cell, cell_nodes, cell_topo);
   CellTools<value_type>::setJacobianInv(jacobian_inv_cell, jacobian_cell);
@@ -510,7 +533,7 @@ void retrieve_element_solution(FieldContainer<value_type> &b,
 void compute_element_error(magnitude_type & interpolation_error,
                            magnitude_type & solution_norm,
                            const int *element,
-                           const FieldContainer<value_type> & nodes,
+                           const FieldContainer<value_type> & cell_nodes,
                            const BasisSet_HGRAD_TRI_Cn_FEM<value_type,FieldContainer<value_type> > &basis_set,
                            const FieldContainer<value_type> &sol,
                            const Orientation ort,
@@ -526,13 +549,6 @@ void compute_element_error(magnitude_type & interpolation_error,
 
   const int nbf_cell = cell_basis.getCardinality();
   const int ndim_cell = cell_topo.getDimension();
-
-  // compute geometric cell information
-  const int nvert = cell_topo.getVertexCount();
-  FieldContainer<value_type> cell_nodes(1, nvert, ndim_cell);
-  for (int i=0;i<nvert;++i)
-    for (int j=0;j<ndim_cell;++j)
-      cell_nodes(0, i, j) = nodes(0, element[i], j);
 
   // create points to evaluate in the reference cell
   const int order = 10;
@@ -595,6 +611,8 @@ void compute_element_error(magnitude_type & interpolation_error,
   // Step 2: compute H1 error
   // skip for now, not meaningful for this unit test
 }
+
+#endif
 
 // ----------------------------------------------------------------------
 // Main
@@ -707,11 +725,15 @@ int main(int argc, char *argv[]) {
 
             const int nbf = basis.getCardinality();
 
-            // ***** Test for different orientations *****
+            const int nvert = cell.getVertexCount();
+            const int nedge = cell.getEdgeCount();
+
+            FieldContainer<value_type> cell_nodes(1, nvert, ndim);
 
             // ignore the subdimension; the matrix is always considered as 1D array
             FieldContainer<value_type> A(1, nbf, nbf), b(1, nbf);
 
+            // ***** Test for different orientations *****
             for (int conf=0;conf<3;++conf) {
               const int *element[2] = { elt_0, elt_1[conf] };
               *outStream << "\n"                                        \
@@ -776,12 +798,19 @@ int main(int argc, char *argv[]) {
               for (int iel=0;iel<nelement;++iel) {
                 // Step 1.1: create element matrices
                 Orientation ort = Orientation::getOrientation(cell, element[iel]);
+
+                // set element nodal coordinates
+                fill_cell_nodes(cell_nodes, 
+                                nodes, 
+                                element[iel], 
+                                nvert, ndim);
+
                 build_element_matrix_and_rhs(A, b,
                                              cubature_factory,
                                              basis_set,
                                              element[iel],
                                              boundary[iel],
-                                             nodes,
+                                             cell_nodes,
                                              ort,
                                              nx, ny);
                 // if p is bigger than 4, not worth to look at the matrix
@@ -846,10 +875,16 @@ int main(int argc, char *argv[]) {
 
                 Orientation ort = Orientation::getOrientation(cell, element[iel]);
 
+                // set element nodal coordinates
+                fill_cell_nodes(cell_nodes, 
+                                nodes, 
+                                element[iel], 
+                                nvert, ndim);
+
                 compute_element_error(element_interpolation_error,
                                       element_solution_norm,
                                       element[iel],
-                                      nodes,
+                                      cell_nodes,
                                       basis_set,
                                       b,
                                       ort,
@@ -859,7 +894,6 @@ int main(int argc, char *argv[]) {
                 solution_norm       += element_solution_norm;
 
                 {
-                  const int nedge = 3;
                   int edge_orts[3];
                   ort.getEdgeOrientation(edge_orts, nedge);
                   *outStream << "   iel = " << std::setw(4) << iel
