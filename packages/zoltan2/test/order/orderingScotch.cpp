@@ -277,9 +277,12 @@ int main(int narg, char** arg)
   // getRangTab: RangTab from Scotch_graphOrder
   // getTreeTab: TreeTab from Scotch_graphOrder
   if (soln->haveSeparators()){ // NYI
-    z2TestLO NumBlocks = soln->getCBlkPtr(); // NYI
-    z2TestLO * RangTab = soln->getRangTab(); // NYI
-    z2TestLO * TreeTab = soln->getTreeTab(); // NYI
+    //z2TestLO NumBlocks = soln->getCBlkPtr(); // NYI
+    //z2TestLO * RangTab = soln->getRangTab(); // NYI
+    //z2TestLO * TreeTab = soln->getTreeTab(); // NYI
+    z2TestLO NumBlocks = soln->getSepColBlockCount(); // BDD
+    z2TestLO * RangTab = soln->getSepRange(); // BDD
+    z2TestLO * TreeTab = soln->getSepTree(); // BDD
     // TODO Use accessor names that make more sense to users
     // getNumSeparatorBlocks()
     // getVertexSeparator(NumBlocks, RangeTab, TreeTab)

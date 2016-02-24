@@ -47,20 +47,21 @@
     \author Created by Kyungjoo Kim
 */
 
-#include "Intrepid2_FieldContainer.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Shards_CellTopology.hpp"
+
+#include "Intrepid2_FieldContainer.hpp"
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
-#include "Shards_CellTopology.hpp"
 
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
 #include "Intrepid2_BasisSet.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #endif
 
-#include <iostream>
 using namespace Intrepid2;
 
 /** \brief Tests for experimental assembly procedure matching basis values.
@@ -74,6 +75,13 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
+
+  bool verbose = false;
+  int  maxp = INTREPID2_MAX_ORDER;
+  for (int i=0;i<argc;++i) {
+    if ((strcmp(argv[i],"--verbose")           == 0)) { verbose  = atoi(argv[++i]); continue;}
+    if ((strcmp(argv[i],"--maxp")              == 0)) { maxp     = atoi(argv[++i]); continue;}
+  }
 
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -112,7 +120,7 @@ int main(int argc, char *argv[]) {
   // Let's instantiate a basis
   try {
     OrientationTools<value_type>::verboseStreamPtr = outStream.get();
-    for (int test_order=1;test_order<=INTREPID2_MAX_ORDER;++test_order) {
+    for (int test_order=1;test_order<=maxp;++test_order) {
       for (int test_edge=0;test_edge<3;++test_edge) {
         for (int test_ort=0;test_ort<2;++test_ort) {
           *outStream << "\n"                                              \
@@ -186,7 +194,7 @@ int main(int argc, char *argv[]) {
               for (int j=0;j<npts;++j)
                 tmp_cell_vals(i, j) = ort_cell_vals(i, j);
 
-            OrientationTools<value_type>::verbose = true;
+            OrientationTools<value_type>::verbose = verbose;
             OrientationTools<value_type>::getModifiedBasisFunctions(ort_cell_vals,
                                                                     tmp_cell_vals,
                                                                     basis_set,
@@ -246,9 +254,9 @@ int main(int argc, char *argv[]) {
               }
             }
           }
-        }
-      }
-    }
+        } // test ort
+      } // test edge
+    } // test order
   }
   catch (std::exception err) {
     std::cout << " Exeption\n";

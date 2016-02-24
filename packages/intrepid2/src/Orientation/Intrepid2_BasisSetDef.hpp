@@ -120,12 +120,6 @@ namespace Intrepid2 {
   }
 
   template<class Scalar, class ArrayType>
-  bool
-  BasisSet<Scalar,ArrayType>::isLeftHandedFace(const int faceId) const {
-    return false;
-  }
-
-  template<class Scalar, class ArrayType>
   BasisSet_HGRAD_TRI_Cn_FEM<Scalar,ArrayType>::BasisSet_HGRAD_TRI_Cn_FEM(const int n,
                                                                          const EPointType pointType)
     : BasisSet<Scalar,ArrayType>(FUNCTION_SPACE_HGRAD),
@@ -168,12 +162,6 @@ namespace Intrepid2 {
   const Basis<Scalar,ArrayType>&
   BasisSet_HGRAD_TET_Cn_FEM<Scalar,ArrayType>::getLineBasis() const {
     return _lineBasis;
-  }
-
-  template<class Scalar, class ArrayType>
-  bool
-  BasisSet_HGRAD_TET_Cn_FEM<Scalar,ArrayType>::isLeftHandedFace(const int faceId) const {
-    return LEFT_HANDED_FACES_TET & (1 << faceId);
   }
 
 }

@@ -62,6 +62,127 @@ namespace Intrepid2 {
   // Orientation
   //
   //
+  template<typename NodeType>
+  inline
+  void
+  Orientation::getElementNodeMap(NodeType *subCellVerts,
+                                 int & numVertex,
+                                 const shards::CellTopology & cellTopo,
+                                 const NodeType *elemNodes,
+                                 const int subCellDim,
+                                 const int subCellOrd) {
+    switch (subCellDim) {
+    case 0: {
+      numVertex = 1;
+      subCellVerts[0] = elemNodes[subCellOrd];
+      break;}
+    default: {
+      numVertex = cellTopo.getVertexCount(subCellDim, subCellOrd);
+      for (int i=0;i<numVertex;++i)
+        subCellVerts[i] = elemNodes[cellTopo.getNodeMap(subCellDim, subCellOrd, i)];
+    }
+    }
+  }
+
+  template<typename NodeType>
+  inline
+  int
+  Orientation::getOrientation(const NodeType *subCellVerts,
+                              const int numVertex) {
+    int ort = 0;
+    switch (numVertex) {
+    case 2: {// edge
+#ifdef HAVE_INTREPID_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION( ( subCellVerts[0] == subCellVerts[1] ), std::invalid_argument,
+                                  ">>> ERROR (Intrepid::Orientation::getOrientation): " \
+                                  "Invalid subCellVerts, same vertex ids are repeated");
+#endif
+      ort = (subCellVerts[0] > subCellVerts[1]);
+      break;
+    }
+    case 3: {
+#ifdef HAVE_INTREPID_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION( ( subCellVerts[0] == subCellVerts[1] ||
+                                    subCellVerts[0] == subCellVerts[2] ||
+                                    subCellVerts[1] == subCellVerts[2] ), std::invalid_argument,
+                                  ">>> ERROR (Intrepid::Orientation::getOrientation): " \
+                                  "Invalid subCellVerts, same vertex ids are repeated");
+#endif
+      int rotation = 0; // find smallest vertex id
+      for (int i=1;i<3;++i)
+        rotation = ( subCellVerts[i] < subCellVerts[rotation] ? i : rotation );
+
+      const int axes[][2] = { {1,2}, {2,0}, {0,1} };
+      const int flip = (subCellVerts[axes[rotation][0]] > subCellVerts[axes[rotation][1]]);
+
+      ort = flip*3 + rotation;
+      break;
+    }
+    case 4: {
+#ifdef HAVE_INTREPID_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION( ( subCellVerts[0] == subCellVerts[1] ||
+                                    subCellVerts[0] == subCellVerts[2] ||
+                                    subCellVerts[0] == subCellVerts[3] ||
+                                    subCellVerts[1] == subCellVerts[2] ||
+                                    subCellVerts[1] == subCellVerts[3] ||
+                                    subCellVerts[2] == subCellVerts[3] ), std::invalid_argument,
+                                  ">>> ERROR (Intrepid::Orientation::getGlobalVertexNodes): " \
+                                  "Invalid subCellVerts, same vertex ids are repeated");
+#endif
+      int rotation = 0; // find smallest vertex id
+      for (int i=1;i<4;++i)
+        rotation = ( subCellVerts[i] < subCellVerts[rotation] ? i : rotation );
+
+      const int axes[][2] = { {1,3}, {2,0}, {3,1}, {0,2} };
+      const int flip = (subCellVerts[axes[rotation][0]] > subCellVerts[axes[rotation][1]]);
+
+      ort = flip*4 + rotation;
+      break;
+    }
+    default: {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                  ">>> ERROR (Intrepid::Orientation::getOrientation): " \
+                                  "Invalid numVertex (2 (edge),3 (triangle) and 4 (quadrilateral) are allowed)");
+    }
+    }
+    return ort;
+  }
+
+  template<typename NodeType>
+  inline
+  Orientation
+  Orientation::getOrientation(const shards::CellTopology & cellTopo,
+                              const NodeType *elemNodes) {
+    Orientation ort;
+    const int nedge = cellTopo.getEdgeCount();
+    if (nedge > 0) {
+      int orts[12], vertsSubCell[2], nvertSubCell;
+      for (int i=0;i<nedge;++i) {
+        Orientation::getElementNodeMap(vertsSubCell,
+                                       nvertSubCell,
+                                       cellTopo,
+                                       elemNodes,
+                                       1, i);
+        orts[i] = Orientation::getOrientation(vertsSubCell, nvertSubCell);
+      }
+      ort.setEdgeOrientation(nedge, orts);
+    }
+    const int nface = cellTopo.getFaceCount();
+    if (nface > 0) {
+      int orts[6], vertsSubCell[4], nvertSubCell;
+      for (int i=0;i<nface;++i) {
+        Orientation::getElementNodeMap(vertsSubCell,
+                                       nvertSubCell,
+                                       cellTopo,
+                                       elemNodes,
+                                       2, i);
+        orts[i] = Orientation::getOrientation(vertsSubCell, nvertSubCell);
+      }
+      ort.setFaceOrientation(nface, orts);
+    }
+    return ort;
+  }
+
   Orientation::Orientation()
     : _edgeOrt(0), _faceOrt(0) {}
 
@@ -494,14 +615,14 @@ namespace Intrepid2 {
       // populate points on a line and map to subcell
       shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
       shards::CellTopology lineTopo = lineBasis.getBaseCellTopology();
-      
+
       const unsigned int cellDim  = cellTopo.getDimension();
       const unsigned int lineDim  = lineTopo.getDimension();
       const unsigned int degree = cellBasis.getDegree();
 
       const unsigned int numCellBasis = cellBasis.getCardinality();
       const unsigned int numLineBasis = lineBasis.getCardinality();
-      
+
       const int ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
       const unsigned int ndofEdge = cellBasis.getDofTag(ordEdge)[3];
 
@@ -617,8 +738,7 @@ namespace Intrepid2 {
                                                          const Basis<Scalar,ArrayType> &         faceBasis,
                                                          const Basis<Scalar,ArrayType> &         cellBasis,
                                                          const int                               faceId,
-                                                         const int                               faceOrt,
-                                                         const bool                              leftHanded) {
+                                                         const int                               faceOrt) {
     typedef typename OrientationTools<Scalar>::DenseMatrix DenseMatrixType;
     typedef typename OrientationTools<Scalar>::CoeffMatrix CoeffMatrixType;
 
@@ -627,13 +747,14 @@ namespace Intrepid2 {
     if (found) {
       // C = foundCoeffMatrix'
     } else {
-      // if the face is left-handed system, the orientation should be re-enumerated 
-      const int leftOrt[] = { 0, 2, 1, 3, 5, 4};
-      const int ort = (leftHanded ? leftOrt[faceOrt] : faceOrt);
-
       // populate points on a line and map to subcell
       shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
       shards::CellTopology faceTopo = faceBasis.getBaseCellTopology();
+
+      // if the face is left-handed system, the orientation should be re-enumerated
+      const int leftHanded = cellTopo.getNodeMap(2, faceId, 1) > cellTopo.getNodeMap(2, faceId, 2);
+      const int leftOrt[] = { 0, 2, 1, 3, 5, 4};
+      const int ort = (leftHanded ? leftOrt[faceOrt] : faceOrt);
 
       const unsigned int cellDim  = cellTopo.getDimension();
       const unsigned int faceDim  = faceTopo.getDimension();
@@ -677,7 +798,7 @@ namespace Intrepid2 {
       // temporary storage to evaluate vanila basis on reference points
       // basis is not reordered yet
       ArrayType tmpValues(numCellBasis, ndofFace);
-      
+
       // reorder values by topology
       ArrayType refValues(numCellBasis, ndofFace);
       cellBasis.getValues(tmpValues, refPtsCell, OPERATOR_VALUE);
@@ -777,18 +898,49 @@ namespace Intrepid2 {
                                                   const unsigned int                            numDofs) {
     const unsigned int numPts = refValues.dimension(1);
     if (C.NumRows() && C.NumCols()) {
-      for (auto i=0;i<numDofs;++i) {
-        auto nnz     = C.NumNonZerosInRow(i);
-        auto colsPtr = C.ColsInRow(i);
-        auto valsPtr = C.ValuesInRow(i);
+      const int rank = refValues.rank();
+      switch (rank) {
+      case 2: {
+        for (auto i=0;i<numDofs;++i) {
+          const auto nnz      = C.NumNonZerosInRow(i);
+          const auto colsPtr  = C.ColsInRow(i);
+          const auto valsPtr  = C.ValuesInRow(i);
+          const auto ii = i + offset;
 
-        // sparse mat-vec
-        for (auto j=0;j<numPts;++j) {
-          Scalar temp = 0.0;
-          for (int k=0;k<nnz;++k)
-            temp += valsPtr[k]*refValues(colsPtr[k] + offset, j);
-          outValues(i + offset, j) = temp;
+          // sparse mat-vec
+          for (auto j=0;j<numPts;++j) {
+            Scalar temp = 0.0;
+            for (int p=0;p<nnz;++p)
+              temp += valsPtr[p]*refValues(colsPtr[p] + offset, j);
+            outValues(ii, j) = temp;
+          }
         }
+        break;
+      }
+      case 3: {
+        const auto dimVal = refValues.dimension(2);
+        for (auto i=0;i<numDofs;++i) {
+          const auto nnz     = C.NumNonZerosInRow(i);
+          const auto colsPtr = C.ColsInRow(i);
+          const auto valsPtr = C.ValuesInRow(i);
+          const auto ii = i + offset;
+
+          // sparse mat-vec
+          for (auto j=0;j<numPts;++j)
+            for (auto k=0;k<dimVal;++k) {
+              Scalar temp = 0.0;
+              for (int p=0;p<nnz;++p)
+                temp += valsPtr[p]*refValues(colsPtr[p] + offset, j, k);
+              outValues(ii, j, k) = temp;
+            }
+        }
+        break;
+      }
+      default: {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>> ERROR (Intrepid::OrientationTools::applyCoeffMatrix): " \
+                                    "The rank of refValues is not 2 or 3.");
+      }
       }
     } else {
       copyBasisValues(outValues,
@@ -804,16 +956,83 @@ namespace Intrepid2 {
                                                  const ArrayType &  refValues,
                                                  const unsigned int offRows, const unsigned int numRows,
                                                  const unsigned int offCols, const unsigned int numCols) {
-    if (numRows && numCols)
-      for (auto i=0;i<numRows;++i)
-        for (auto j=0;j<numCols;++j)
-          outValues(i + offRows, j + offCols) = refValues(i + offRows, j + offCols);
+    if (numRows && numCols) {
+      const int rank = refValues.rank();
+      switch (rank) {
+      case 2: {
+        for (auto i=0;i<numRows;++i)
+          for (auto j=0;j<numCols;++j)
+            outValues(i + offRows, j + offCols) = refValues(i + offRows, j + offCols);
+        break;
+      }
+      case 3: {
+        const int dimVal = refValues.dimension(2);
+        for (auto i=0;i<numRows;++i)
+          for (auto j=0;j<numCols;++j) {
+            const auto ii = i + offRows, jj = j + offCols;
+            for (auto k=0;k<dimVal;++k)
+              outValues(ii, jj, k) = refValues(ii, jj, k);
+          }
+        break;
+      }
+      default: {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>> ERROR (Intrepid::OrientationTools::copyBasis): " \
+                                    "The rank of refValues is not 2 or 3.");
+      }
+      }
+    }
   }
+
 
   // ------------------------------------------------------------------------------------
   // Public interface
   //
   //
+  template<class Scalar>
+  template<class ArrayType>
+  bool OrientationTools<Scalar>::isLeftHandedCell(const ArrayType & pts) {
+    // From all the tests, nodes seems to be fed as 1 dimensional array
+    // with 1 x npts x ndim
+#ifdef HAVE_INTREPID_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION( pts.dimension(0) != 1, std::invalid_argument,
+                                ">>> ERROR (Intrepid::OrientationTools::isLeftHandedCell): " \
+                                "Node point array is supposed to have 1 dimensional array.");
+#endif
+    const int dim = pts.dimension(2);
+    Scalar det = 0.0;
+    switch (dim) {
+    case 2: {
+      // need 3 points (origin, x end point, y end point)
+      const double v[2][2] = { { pts(1,0) - pts(0,0), pts(1,1) - pts(0,1) },
+                               { pts(2,0) - pts(0,0), pts(2,1) - pts(0,1) } };
+
+      det = (v[0][0]*v[1][1] - v[1][0]*v[0][1]);
+      break;
+    }
+    case 3: {
+      // need 4 points (origin, x end point, y end point, z end point)
+      const double v[3][3] = { { pts(1,0) - pts(0,0), pts(1,1) - pts(0,1), pts(1,2) - pts(0,2) },
+                               { pts(2,0) - pts(0,0), pts(2,1) - pts(0,1), pts(2,2) - pts(0,2) },
+                               { pts(3,0) - pts(0,0), pts(3,1) - pts(0,1), pts(3,2) - pts(0,2) } };
+
+      det = (v[0][0] * v[1][1] * v[2][2] +
+             v[0][1] * v[1][2] * v[2][0] +
+             v[0][2] * v[1][0] * v[2][1] -
+             v[0][2] * v[1][1] * v[2][0] -
+             v[0][0] * v[1][2] * v[2][1] -
+             v[0][1] * v[1][0] * v[2][2]);
+      break;
+    }
+    default:{
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                  ">>> ERROR (Intrepid::Orientation::setLeftHandedFlag): " \
+                                  "Dimension of points must be 2 or 3");
+    }
+    }
+    return (det < 0.0);
+  }
+
   template<class Scalar>
   template<class ArrayType>
   void OrientationTools<Scalar>::mapToModifiedReference(ArrayType &                   outPoints,
@@ -958,8 +1177,27 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid::OrientationTools::getBasisFunctionsByTopology): " \
                                     "Tag has invalid information.");
       }
-      for (int j=0;j<numPts;++j)
-        outValues(offset + dofSubCell, j) = refValues(i, j);
+
+      const int rank = refValues.rank();
+      switch (rank) {
+      case 2: {
+        for (int j=0;j<numPts;++j)
+          outValues(offset + dofSubCell, j) = refValues(i, j);
+        break;
+      }
+      case 3: {
+        const auto dimVal = refValues.dimension(2);
+        for (int j=0;j<numPts;++j)
+          for (int k=0;k<dimVal;++k)
+            outValues(offset + dofSubCell, j, k) = refValues(i, j, k);
+        break;
+      }
+      default: {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>> ERROR (Intrepid::OrientationTools::getBasisFunctionsByTopology): " \
+                                    "The rank of refValues is not 2 or 3.");
+      }
+      }
     }
   }
 
@@ -1022,7 +1260,7 @@ namespace Intrepid2 {
       for (int i=0;i<numVert;++i) {
         const int ord = cellBasis.getDofOrdinal(0, i, 0);
         const unsigned int ndof= cellBasis.getDofTag(ord)[3];
-        if (ndof) 
+        if (ndof)
           copyBasisValues(outValues,
                           refValues,
                           offset, ndof,
@@ -1079,7 +1317,6 @@ namespace Intrepid2 {
 
     if (offset < numBasis) {
       for (int i=0;i<numFace;++i) {
-        const bool lefthanded = basisSet.isLeftHandedFace(i);
         const int ord = cellBasis.getDofOrdinal(2, i, 0);
         const unsigned int ndof = cellBasis.getDofTag(ord)[3];
         if (ndof) {
@@ -1094,16 +1331,14 @@ namespace Intrepid2 {
                                                                      trigBasis,
                                                                      cellBasis,
                                                                      i,
-                                                                     ortFace[i],
-                                                                     lefthanded);
+                                                                     ortFace[i]);
             } else if (key == shards::Quadrilateral<>::key) {
               const Basis<Scalar,ArrayType>& quadBasis = basisSet.getQuadrilateralBasis();
               OrientationTools<Scalar>::getQuadrilateralCoeffMatrix_HGRAD(C,
                                                                           quadBasis,
                                                                           cellBasis,
                                                                           i,
-                                                                          ortFace[i],
-                                                                          lefthanded);
+                                                                          ortFace[i]);
             } else {
               TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getModifiedBasisFunctions): " \
@@ -1127,7 +1362,7 @@ namespace Intrepid2 {
           applyCoeffMatrix(outValues,
                            refValues,
                            C, offset, ndof);
-        } 
+        }
         offset += ndof;
       }
     }
