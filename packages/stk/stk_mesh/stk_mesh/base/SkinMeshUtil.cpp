@@ -17,6 +17,41 @@ namespace stk
 namespace mesh
 {
 
+struct InteriorSidesetFilter
+{
+    virtual ~InteriorSidesetFilter() {};
+
+    virtual bool operator()(const stk::mesh::BulkData& bulkData,
+                            stk::mesh::Entity element,
+                            const std::vector<stk::mesh::PartOrdinal>& otherElementOrdinals) const
+    {
+        return true;
+    }
+
+    virtual bool operator()(const stk::mesh::BulkData& bulkData,
+                            stk::mesh::Entity element,
+                            stk::mesh::Entity otherElement) const
+    {
+        return true;
+    }
+};
+
+struct InteriorBlockBoundaryFilter : public InteriorSidesetFilter
+{
+    virtual bool operator()(const stk::mesh::BulkData& bulkData,
+                            stk::mesh::Entity element,
+                            const std::vector<stk::mesh::PartOrdinal>& otherElementOrdinals) const
+    {
+        return !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElementOrdinals);
+    }
+
+    virtual bool operator()(const stk::mesh::BulkData& bulkData,
+                            stk::mesh::Entity element,
+                            stk::mesh::Entity otherElement) const
+    {
+        return !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElement);
+    }
+};
 
 SkinMeshUtil::SkinMeshUtil(const ElemElemGraph& elemElemGraph,
                            const stk::mesh::PartVector& skinParts,
@@ -198,15 +233,16 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
     return skinnedSideSet;
 }
 
-bool SkinMeshUtil::is_parallel_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::GraphEdge & graphEdge, bool &isElement1InSelector)
+
+bool SkinMeshUtil::is_parallel_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::GraphEdge & graphEdge, const InteriorSidesetFilter& filter, bool &isElement1InSelector)
 {
     const impl::ParallelInfo &parallel_edge_info = eeGraph.get_parallel_info_for_graph_edge(graphEdge);
     bool isElement2InSelector = parallel_edge_info.is_in_body_to_be_skinned();
     if(!isElement1InSelector && !isElement2InSelector) return false;
-    return !stk::mesh::impl::are_entity_element_blocks_equivalent(eeGraph.get_mesh(), element, parallel_edge_info.get_part_ordinals());
+    return filter(eeGraph.get_mesh(), element, parallel_edge_info.get_part_ordinals());
 }
 
-bool SkinMeshUtil::is_local_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::GraphEdge & graphEdge, bool &isElement1InSelector)
+bool SkinMeshUtil::is_local_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::GraphEdge & graphEdge, const InteriorSidesetFilter& filter, bool &isElement1InSelector)
 {
     const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
     stk::mesh::Entity otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2);
@@ -215,28 +251,28 @@ bool SkinMeshUtil::is_local_graph_edge_candidate_for_interior_sideset(stk::mesh:
     if(!isElement1InSelector && !isElement2InSelector) return false;
 
     if(bulkData.identifier(element) < bulkData.identifier(otherElement))
-        return !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElement);
+        return filter(bulkData, element, otherElement);
 
     return false;
 }
 
-bool SkinMeshUtil::is_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::Bucket &bucket, const stk::mesh::GraphEdge & graphEdge)
+bool SkinMeshUtil::is_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element, const stk::mesh::Bucket &bucket, const InteriorSidesetFilter& filter, const stk::mesh::GraphEdge & graphEdge)
 {
     bool isElement1InSelector = skinSelector(bucket);
 
     if(!stk::mesh::impl::is_local_element(graphEdge.elem2))
-        return is_parallel_graph_edge_candidate_for_interior_sideset(element, graphEdge, isElement1InSelector);
+        return is_parallel_graph_edge_candidate_for_interior_sideset(element, graphEdge, filter, isElement1InSelector);
 
-    return is_local_graph_edge_candidate_for_interior_sideset(element, graphEdge, isElement1InSelector);
+    return is_local_graph_edge_candidate_for_interior_sideset(element, graphEdge, filter, isElement1InSelector);
 }
 
-void SkinMeshUtil::extract_interior_sideset_for_element(stk::mesh::Entity element, const stk::mesh::Bucket &bucket, std::vector<SideSetEntry> &sideSet)
+void SkinMeshUtil::extract_interior_sideset_for_element(stk::mesh::Entity element, const stk::mesh::Bucket &bucket, const InteriorSidesetFilter& filter, std::vector<SideSetEntry> &sideSet)
 {
     impl::LocalId elementId = eeGraph.get_local_element_id(element);
 
     for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elementId))
     {
-        bool should_add_side = is_graph_edge_candidate_for_interior_sideset(element, bucket, graphEdge);
+        bool should_add_side = is_graph_edge_candidate_for_interior_sideset(element, bucket, filter, graphEdge);
 
         if(should_add_side)
         {
@@ -250,12 +286,12 @@ void SkinMeshUtil::extract_interior_sideset_for_element(stk::mesh::Entity elemen
     }
 }
 
-void SkinMeshUtil::extract_interior_sideset_for_bucket(const stk::mesh::Bucket &bucket, std::vector<SideSetEntry> &sideSet)
+void SkinMeshUtil::extract_interior_sideset_for_bucket(const stk::mesh::Bucket &bucket, const InteriorSidesetFilter& filter, std::vector<SideSetEntry> &sideSet)
 {
     for(size_t i=0;i<bucket.size();++i)
     {
         stk::mesh::Entity element = bucket[i];
-        extract_interior_sideset_for_element(element, bucket, sideSet);
+        extract_interior_sideset_for_element(element, bucket, filter, sideSet);
     }
 }
 
@@ -264,10 +300,10 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
     std::vector<SideSetEntry> skinnedSideSet;
     const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+    InteriorBlockBoundaryFilter filter;
 
-    for(const stk::mesh::Bucket* bucket : buckets)
-    {
-        extract_interior_sideset_for_bucket(*bucket, skinnedSideSet);
+    for(const stk::mesh::Bucket* bucket : buckets) {
+        extract_interior_sideset_for_bucket(*bucket, filter, skinnedSideSet);
     }
 
     stk::util::sort_and_unique(skinnedSideSet, SideSetEntryLess(bulkData), SideSetEntryEquals(bulkData));
@@ -283,12 +319,13 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
     sideSet.reserve(maxNumSides);
 
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+    InteriorSidesetFilter filter;
 
     for (const stk::mesh::Bucket* bucketPtr : buckets) {
         const stk::mesh::Bucket & bucket = *bucketPtr;
         for (size_t i=0; i<bucket.size(); ++i) {
             extract_skinned_sideset_for_bucket(bucket, sideSet);
-            extract_interior_sideset_for_bucket(bucket, sideSet);
+            extract_interior_sideset_for_bucket(bucket, filter, sideSet);
         }
     }
 
