@@ -76,15 +76,20 @@ public:
    */
   OrderingSolution(
     size_t perm_size // This should be equal to nlids
-  )
+  ) : sepColBlock_(0)
   {
     HELLO;
-    perm_size_ = perm_size;
-    gids_   = ArrayRCP<gno_t>(perm_size_);
-    perm_  = ArrayRCP<lno_t>(perm_size_);
-    invperm_  = ArrayRCP<lno_t>(perm_size_);
+    perm_size_  = perm_size;
+    gids_       = ArrayRCP<gno_t>(perm_size_);
+    perm_       = ArrayRCP<lno_t>(perm_size_);
+    invperm_    = ArrayRCP<lno_t>(perm_size_);
+    sepRange_   = ArrayRCP<lno_t>(perm_size_+1);
+    sepTree_    = ArrayRCP<lno_t>(perm_size_);
+
     havePerm_ = false;
     haveInverse_ = false;
+    haveSepRange_ = false;
+    haveSepTree_ = false;
   }
 
   /*! \brief Do we have the direct permutation?
@@ -114,6 +119,34 @@ public:
   void setHaveInverse(bool status)
   {
     haveInverse_ = status; 
+  }
+  
+  /*! \brief Do we have the seperator range?
+   */
+  bool haveSepRange()
+  {
+    return haveSepRange_; 
+  }
+
+  /*! \brief Set haveSepRange (intended for ordering algorithms only)
+   */
+  void setHaveSepRange(bool status)
+  {
+    haveSepRange_ = status; 
+  }
+  
+  /*! \brief Do we have the seperator tree?
+   */
+  bool haveSepTree()
+  {
+    return haveSepTree_; 
+  }
+
+  /*! \brief Set haveSepTree (intended for ordering algorithms only)
+   */
+  void setHaveSepTree(bool status)
+  {
+    haveSepTree_ = status; 
   }
 
   /*! \brief Compute direct permutation from inverse.
@@ -157,6 +190,10 @@ public:
   /*! \brief Get (local) size of permutation.
    */
   inline size_t getPermutationSize() {return perm_size_;}
+  
+  /*! \brief Get size of separator column blocks.
+   */
+  inline lno_t getSepColBlockCount() {return sepColBlock_;}
 
   /*! \brief Get (local) permuted GIDs by RCP.
    */
@@ -174,6 +211,21 @@ public:
     else
       return perm_;
   }
+
+  /*! \brief Get (local) seperator range by RCP.
+   */
+  inline ArrayRCP<lno_t> &getSepRangeRCP() 
+  {
+    return sepRange_;
+  }
+  
+  /*! \brief Get (local) seperator tree by RCP.
+   */
+  inline ArrayRCP<lno_t> &getSepTreeRCP() 
+  {
+    return sepTree_;
+  }
+
 
   /*! \brief Get (local) permuted GIDs by const RCP.
    */
@@ -193,6 +245,20 @@ public:
       return const_cast<ArrayRCP<lno_t>& > (invperm_);
     else
       return const_cast<ArrayRCP<lno_t>& > (perm_);
+  }
+  
+  /*! \brief Get (local) seperator range by const RCP.
+   */
+  inline ArrayRCP<lno_t> &getSepRangeRCPConst() 
+  {
+    return const_cast<ArrayRCP<lno_t> & > (sepRange_);
+  }
+  
+  /*! \brief Get (local) seperator tree by const RCP.
+   */
+  inline ArrayRCP<lno_t> &getSepTreeRCPConst() 
+  {
+    return const_cast<ArrayRCP<lno_t> & > (sepTree_);
   }
 
   /*! \brief Get pointer to (local) GIDs.
@@ -214,6 +280,27 @@ public:
     else
       return perm_.getRawPtr();
   }
+  
+  /*! \brief Get pointer to (local) serparator range.
+   */
+  inline lno_t *getSepRange()
+  {
+    return sepRange_.getRawPtr();
+  }
+
+  /*! \brief Get pointer to (local) serparator tree.
+   */
+  inline lno_t *getSepTree()
+  {
+    return sepTree_.getRawPtr();
+  }
+  
+  /*! \brief Get pointer to (local) separator column block.
+   */
+  inline lno_t &getSepColBlock()
+  {
+    return sepColBlock_; 
+  }
 
 protected:
   // Ordering solution consists of permutation vector(s).
@@ -221,10 +308,15 @@ protected:
   size_t perm_size_;
   ArrayRCP<gno_t>  gids_; // TODO: Remove?
   // For now, assume permutations are local. Revisit later (e.g., for Scotch)
-  bool havePerm_;    // has perm_ been computed yet?
-  bool haveInverse_; // has invperm_ been computed yet?
+  bool havePerm_;           // has perm_ been computed yet?
+  bool haveInverse_;        // has invperm_ been computed yet?
+  bool haveSepRange_;          // has sepRange_ been computed yet?
+  bool haveSepTree_;        // has sepTree_ been computed yet?
   ArrayRCP<lno_t> perm_;    // zero-based local permutation
   ArrayRCP<lno_t> invperm_; // inverse of permutation above
+  ArrayRCP<lno_t> sepRange_;   // range iterator for separator tree
+  ArrayRCP<lno_t> sepTree_; // separator tree
+  lno_t sepColBlock_;        // number of column blocks in separator
 };
 
 }

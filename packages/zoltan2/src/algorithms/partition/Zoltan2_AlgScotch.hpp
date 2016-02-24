@@ -686,8 +686,7 @@ int AlgPTScotch<Adapter>::order(
   ierr = SCOTCH_graphInit( &c_graph_ptr);
   if ( ierr != 0) {
     throw std::runtime_error("Failed to initialize Scotch graph!");
-  } 
-  if (isVerbose && me == 0) {
+  } else if (isVerbose && me == 0) {
     std::cout << "Initialized Scotch graph." << std::endl;
   }
 
@@ -756,16 +755,14 @@ int AlgPTScotch<Adapter>::order(
                             edgenbr, edgetab, edlotab);
   if (ierr != 0) {
     throw std::runtime_error("Failed to build Scotch graph!");
-  }
-  if (isVerbose && me == 0) {
+  } else if (isVerbose && me == 0) {
     std::cout << "Built Scotch graph." << std::endl;
   }
 
   ierr = SCOTCH_graphCheck(&c_graph_ptr);
   if (ierr != 0) {
     throw std::runtime_error("Graph is inconsistent!");
-  }
-  if (isVerbose && me == 0) {
+  } else if (isVerbose && me == 0) {
     std::cout << "Graph is consistent." << std::endl;
   }
 
@@ -779,48 +776,52 @@ int AlgPTScotch<Adapter>::order(
   }
 
   // Allocate results
-  ArrayRCP<int> permtab(vertnbr,0);
-  ArrayRCP<int> peritab(vertnbr,0);
-  ArrayRCP<int> rangetab(vertnbr+1,0);
-  ArrayRCP<int> treetab(vertnbr,0);
-  SCOTCH_Num cblk = 0;
-  ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr, permtab.get(), peritab.get(), 
-                            &cblk, rangetab.get(), treetab.get());
+  //SCOTCH_Num cblk = 0;
+  //SCOTCH_Num *permtab;  // permutation arry
+  //auto arv_perm = solution->getPermutationRCP(false)(); // array view
+  //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&permtab, arv_perm);
+
+  //auto arv_peri = solution->getPermutationRCP(true)(); // array view
+  //SCOTCH_Num *peritab;  // inverse permutation array
+  //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&peritab, arv_peri);
+  //
+  //SCOTCH_Num *rangetab;  // separator range array
+  //auto arv_range = solution->getSepRangeRCP()(); // array view
+  //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&rangetab, arv_range);
+  //
+  //SCOTCH_Num *treetab;  // separator tree
+  //auto arv_tree = solution->getSepTreeRCP()(); // array view
+  //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&treetab, arv_tree);
+
+  //ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr, permtab, peritab, 
+  //                          &cblk, rangetab, treetab);
+  
+  ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr,
+                            solution->getPermutation(false),
+                            solution->getPermutation(true),
+                            &solution->getSepColBlock(),
+                            solution->getSepRange(),
+                            solution->getSepTree());
 
   if (ierr != 0) {
     throw std::runtime_error("Could not compute ordering!!");
-  }
-#ifdef BDD
-  if (me == 0) {
+  } else if(isVerbose && me == 0) {
     std::cout << "Ordering computed." << std::endl;
-    //printf("permutation: {");
-    //for (auto &p : permtab) {
-    //  printf("%8d", p);
-    //}
-    //printf("}\n");
-  
-    //printf("permutation inverse: {");
-    //for (auto &p : peritab) {
-    //  printf("%8d", p);
-    //}
-    //printf("}\n");
-   
-    //printf("range: {");
-    //for (auto &p : rangetab) {
-    //  printf("%8d", p);
-    //}
-    //printf("}\n");
-    //
-    //printf("tree: {");
-    //for (auto &p : treetab) {
-    //  printf("%8d", p);
-    //}
-    //printf("}\n");
-    printf("number of column blocks: %d\n", cblk);
   }
-#endif
+ 
+  solution->setHavePerm(true); 
+  solution->setHaveInverse(true); 
+  solution->setHaveSepRange(true); 
+  solution->setHaveSepTree(true); 
 
   // reclaim memory
+  // Clean up copies made due to differing data sizes.
+  TPL_Traits<SCOTCH_Num, const lno_t>::DELETE_TPL_T_ARRAY(&verttab);
+  TPL_Traits<SCOTCH_Num, const gno_t>::DELETE_TPL_T_ARRAY(&edgetab);
+
+  if (nVwgts) delete [] velotab;
+  if (nEwgts) delete [] edlotab;
+
   SCOTCH_stratExit(&c_strat_ptr);
   SCOTCH_graphFree(&c_graph_ptr);
 
