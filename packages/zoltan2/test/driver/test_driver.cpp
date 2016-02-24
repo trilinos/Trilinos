@@ -329,36 +329,38 @@ void run(const UserInputForTests &uinput,
   if (problem_kind == "ordering") {
     std:cout << "\nLet's examine the solution..." << std::endl;
     auto solution = reinterpret_cast<ordering_problem_t *>(problem)->getSolution();
-    std::ostringstream sol;
-    sol << "Number of column blocks: " << solution->getSepColBlockCount() << std::endl;
-
-    if (solution->getPermutationSize() < 100) {
-      if (solution->havePerm()) {
-        sol << "permutation: {";
-        for (auto &x : solution->getPermutationRCPConst(false)) sol << " " << x;
-        sol << "}" << std::endl;
-      }
-     
-     if (solution->haveInverse()) { 
-        sol << "inverse permutation: {";
-        for (auto &x : solution->getPermutationRCPConst(true)) sol << " " << x;
-        sol << "}" << std::endl;
-     }
+    if (solution->haveSeparators() ) {
       
-     if (solution->haveSepRange()) {
-        sol << "separator range: {";
-        for (auto &x : solution->getSepRangeRCPConst()) sol << " " << x;
-        sol << "}" << std::endl;
-     }
-     
-      if (solution->haveSepTree()) { 
-        sol << "separator tree: {";
-        for (auto &x : solution->getSepTreeRCPConst()) sol << " " << x;
-        sol << "}" << std::endl;
+      std::ostringstream sol;
+      sol << "Number of column blocks: " << solution->getSepColBlockCount() << std::endl;
+      if (solution->getPermutationSize() < 100) {
+        if (solution->havePerm()) {
+          sol << "permutation: {";
+          for (auto &x : solution->getPermutationRCPConst(false)) sol << " " << x;
+          sol << "}" << std::endl;
+        }
+       
+       if (solution->haveInverse()) { 
+          sol << "inverse permutation: {";
+          for (auto &x : solution->getPermutationRCPConst(true)) sol << " " << x;
+          sol << "}" << std::endl;
+       }
+        
+       if (solution->haveSepRange()) {
+          sol << "separator range: {";
+          for (auto &x : solution->getSepRangeRCPConst()) sol << " " << x;
+          sol << "}" << std::endl;
+       }
+       
+        if (solution->haveSepTree()) { 
+          sol << "separator tree: {";
+          for (auto &x : solution->getSepTreeRCPConst()) sol << " " << x;
+          sol << "}" << std::endl;
+        }
       }
-    }
 
-    std::cout << sol.str() << std::endl;
+      std::cout << sol.str() << std::endl;
+    }
   }
 #endif
   // 4b. timers
