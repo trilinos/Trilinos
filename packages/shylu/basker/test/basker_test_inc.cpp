@@ -195,10 +195,12 @@ int main(int argc, char* argv[])
   mybasker.Options.no_pivot   = true;
   mybasker.Options.symmetric  = true;
   mybasker.Options.realloc    = true;
-  mybasker.Options.btf        = true;
+  mybasker.Options.btf        = false;
+  mybasker.Options.matching   = false;
+  mybasker.Options.amd_domains = false;
   mybasker.Options.incomplete = true;
   mybasker.Options.incomplete_type = 
-    BASKER_INCOMPLETE_RLVL_LIMITED;
+    BASKER_INCOMPLETE_LVL;
   mybasker.Options.inc_lvl    = 3;
   mybasker.Options.user_fill  = 1.0;
 
@@ -207,10 +209,8 @@ int main(int argc, char* argv[])
   mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,vals);
   cout << "--------------Done SFactor------------------" << endl;
   mybasker.Factor_Inc(0);
-
- // mybasker.Factor(m,n,nnz,col_ptr,row_idx,vals);
-  //cout << "--------------Done NFactor-----------------" << endl;
-   mybasker.DEBUG_PRINT();
+  cout << "--------------Done NFactor-----------------" << endl;
+  mybasker.DEBUG_PRINT();
   cout << "--------------Done Print----------------------"<<endl;
   // mybasker.SolveTest();
   //mybasker.Solve(y,x);

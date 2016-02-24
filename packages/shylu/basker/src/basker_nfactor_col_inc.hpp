@@ -61,7 +61,7 @@ namespace BaskerNS
       //if((kid > -1) && (kid < 4))
       //if(kid ==0)
       //if(kid < 4)
-      //if(kid == 2 || kid == 3)
+      //if(kid == 0 || kid == 1)
 	{
       #ifdef BASKER_KOKKOS
        basker->t_nfactor_sep2_inc_lvl(kid, lvl, team_leader, thread);
@@ -130,6 +130,7 @@ namespace BaskerNS
      printf("\n\n\n done with UPPER, kid: %d \n\n\n", kid);
     #endif
 
+     
     //------Need because extend does not 
     //-------------Barrier--Between Domains-------------
     Int error_leader = find_leader(kid, lvl-1);
@@ -144,6 +145,7 @@ namespace BaskerNS
     Int my_leader = find_leader(kid, 0);
     Int b_size    = pow(2,1);
     //barrier k = 0 usedl1
+   
     t_basker_barrier_inc_lvl(thread,kid,my_leader,
 		     b_size, 0, LU(U_col)(U_row).scol, 0);
     //printf("1 kid: %d  error_leader: %d lvl: %d  \n", kid, error_leader, lvl);
@@ -328,9 +330,9 @@ namespace BaskerNS
 
 	//if(sl == l)
 	  {
-	    // printf("========FILL IN KID: %d =======\n", kid);
-	 t_add_orig_fill(kid, lvl, l, k, lower); 
-	 //printf("=======AFFERT FILL_IN KID: %d ====\n", kid);
+	    //printf("========FILL IN KID: %d =======\n", kid);
+	    t_add_orig_fill(kid, lvl, l, k, lower); 
+	    //printf("=======AFFERT FILL_IN KID: %d ====\n", kid);
 	  }
 	 //printf("\n\n");
 	
@@ -659,15 +661,22 @@ namespace BaskerNS
 	#endif
 
 	j = B.row_idx(i);
+	if((l != 0)&&
+	   (INC_LVL_TEMP(j+brow)==BASKER_MAX_IDX))
+	  {
+	    continue;
+	  }
+	
+
 	X(j) = B.val(i);
 
 	//INC_LVL_TEMP(j+brow) = 0;
 
 	#ifdef BASKER_DEBUG_NFACTOR_COL
-	if(kid>=0)
+	if(kid==0)
         printf("kid: %d i: %d  val: %g  top: %d \n", 
 	       kid,i, B.val(i), top);
-	if(kid>=0)
+	if(kid==0)
 	  printf("kid: %d Nx in Ak %d %g color = %d \n",
 	    kid, j, X[j],  ws[j] );
         #endif
@@ -758,8 +767,9 @@ namespace BaskerNS
 
 
      Entry relax_value = 0;
-     if(Options.incomplete_type == 
-        BASKER_INCOMPLETE_LVL)
+     if(false)
+     //if(Options.incomplete_type == 
+     // BASKER_INCOMPLETE_LVL)
        {
 	 t_back_solve_inc_lvl(kid, l,l, k, top, xnnz);
        }
@@ -792,7 +802,7 @@ namespace BaskerNS
 	    if(t != BASKER_MAX_IDX)
               {
                 #ifdef BASKER_DEBUG_NFACTOR_COL
-		//if(kid==2)
+		if(kid==0)
 		{
 		printf("U add kid: %d adding x[%d %d] %g to U inc_lvl: %d\n", kid, k+U.scol, j+U.srow, X(j), INC_LVL_TEMP(j+brow));
 		}
@@ -952,13 +962,13 @@ namespace BaskerNS
       }
      #endif
 
-     #ifdef BASKER_DEBUG_NFACTOR_COL2
+      #ifdef BASKER_DEBUG_NFACTOR_COL2
     //if(lower == BASKER_TRUE)
       {
     printf("OFF-DIAG, kid: %d, l: %d  X: %d %d L: %d %d \n",
 	   kid, l,X_col, X_row, L_col, L_row);
       }
-     #endif
+      #endif
 
       //const BASKER_BOOL A_option = BASKER_FALSE;
 
@@ -970,8 +980,9 @@ namespace BaskerNS
     //printf("kid: %d k: %d testpoint: %d %d \n",
     //	   kid, k, U.col_ptr(k+1), U.col_ptr(k));
 
-      if(Options.incomplete_type == 
-	 BASKER_INCOMPLETE_LVL)
+      //     if(Options.incomplete_type == 
+      // BASKER_INCOMPLETE_LVL)
+      if(false)
 	{
     t_lower_col_offdiag_find_fill(kid,
 				  L_col, L_row,
@@ -1009,8 +1020,9 @@ namespace BaskerNS
 	    #endif
 
 	 
-	    if(Options.incomplete_type ==
-	       BASKER_INCOMPLETE_LVL)
+	    // if(Options.incomplete_type ==
+	    // BASKER_INCOMPLETE_LVL)
+	    if(false)
 	      {
 	    t_lower_col_offdiag_find_fill(kid,
 					  L_col, L_row,
@@ -1287,9 +1299,9 @@ namespace BaskerNS
 	//Int j = gperm(B_row+B.srow); //Not used
 
      	X(B_row) += B.val(i);
-
-	//printf("Added B(%d) %g fill-in: %d \n",
-	//     B_row, X(B_row), stack[B_row]);
+	
+	//printf("Added B(%d) %g %g \n",
+	//     B_row, B.val(i), X(B_row));
 	
 
       }//end for over all nnz
@@ -1537,6 +1549,14 @@ namespace BaskerNS
        printf("j: %d i: %d \n", j, i);
        #endif
 
+              
+       if(INC_LVL_TEMP(j+brow) == BASKER_MAX_IDX)
+	 {
+	   continue;
+	 }
+
+
+
        X(j) = B.val(i);
         
        #ifdef BASKER_DEBUG_NFACTOR_COL
@@ -1551,15 +1571,18 @@ namespace BaskerNS
 	      ws[j ],
 	      INC_LVL_TEMP(j+brow));
        #endif
+       
 
-       //t_local_reach_inc_lvl(kid,lvl,l+1,j,&top);
+
        if(Options.incomplete_type == 
 	  BASKER_INCOMPLETE_LVL)
 	 {
+	   //printf("lower reach 1 called \n");
 	   t_local_reach_inc_lvl(kid,lvl,l+1,j,&top);
 	 }
        else
 	 {
+	   //printf("lower reach 2 called \n");
 	   if(gperm(j+brow) != BASKER_MAX_IDX)
 	     {
 	       t_local_reach_inc_rlvl(kid,lvl,l+1,j,top);
@@ -1576,20 +1599,30 @@ namespace BaskerNS
    #ifdef BASKER_DEBUG_NFACTOR_COL
    if(kid>=0)
      {
+       printf("==DEBUG===\n");
        printf("xnnz: %d ws_size: %d top: %d \n",
 	      xnnz, ws_size, top);
+       for(Int z = top; z < ws_size; z++)
+	 {
+	   printf("pattern[%d]: %d \n",
+		  z, pattern[z]);
+	 }
+	   
      }
    #endif
   
 
    Entry relax_value = 0;
-   if(Options.incomplete_type ==
-      BASKER_INCOMPLETE_LVL)
-     {
+   // if(Options.incomplete_type ==
+   // BASKER_INCOMPLETE_LVL)
+   if(false)
+   {
+     // printf("lower back solve 1 called \n");
        t_back_solve_inc_lvl(kid, lvl,l+1, k, top, xnnz); 
      }
    else
      {
+       // printf("lower back solve 2 called \n");
        t_back_solve_inc_rlvl(kid,lvl,l+1,k,top,xnnz,
 			     relax_value);
      }
@@ -1801,7 +1834,7 @@ namespace BaskerNS
 	       L.row_idx(lnnz) = j;
 	       L.val(lnnz) = EntryOP::divide(X(j), pivot);
 	       
-	       #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+               #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	       printf("add L(%d) [%d %d]: %g lvl %d \n",
 		      j+brow,
 		      k+L.scol, 
@@ -1819,7 +1852,7 @@ namespace BaskerNS
 	     //Add relaxation here !
 	      INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
 	   }
-       //move inside if not zero..... extra set ops not needed
+	 //move inside if not zero..... extra set ops not needed
 	 //INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
 	 X(j) = 0;
        
@@ -2158,7 +2191,7 @@ namespace BaskerNS
 	    if(X(jj) !=0)
 	      {
 		#ifdef BASKER_DEBUG_NFACTOR_COL2
-		if(lower == BASKER_TRUE)
+		//if(lower == BASKER_TRUE)
 		  {
 		printf("Atomic Adding X(%d) %f to XL(%d) %f, kid: %d\n",
 			       jj+brow, X[jj], jj, XL[jj], kid);
@@ -2173,7 +2206,9 @@ namespace BaskerNS
 		       stack[jj], stackL[jj]);
 		#endif
 	
-		stackL[jj] = min(stackL[jj], stack[jj]);
+		//if((stack[j] != BASKER_MAX_IDX)
+	   
+		//stackL[jj] = min(stackL[jj], stack[jj]);
 		//Clear my stack
 		
 		    		    			

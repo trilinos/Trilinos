@@ -724,8 +724,8 @@ namespace BaskerNS
       //Incomplete Factorization Options
       //incomplete = (Int) BASKER_INCOMPLETE_LVL;
       incomplete = BASKER_FALSE;
-      //incomplete_type = BASKER_INCOMPLETE_LVL;
-      incomplete_type = BASKER_INCOMPLETE_RLVL_LIMITED;
+      incomplete_type = BASKER_INCOMPLETE_LVL;
+      //incomplete_type = BASKER_INCOMPLETE_RLVL_LIMITED;
       inc_lvl    = BASKER_INC_LVL_VALUE;
       inc_tol    = BASKER_INC_TOL_VALUE;
       user_fill  = (Entry)BASKER_FILL_USER;

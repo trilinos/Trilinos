@@ -285,6 +285,8 @@ namespace BaskerNS
     else
       {
 
+	//Kokkos::Impl::Timer timer_move;
+
 	if(Options.transpose == BASKER_FALSE)
 	  {
 	    //printf("=======NO TRANS=====\n");
@@ -308,6 +310,9 @@ namespace BaskerNS
 	  }
 	sort_matrix(A);
 	matrix_flag = BASKER_TRUE;
+
+	//std::cout << "Transpose A: " << timer_move.seconds()
+	//	  << std::endl;
       }
 
     //Init Ordering
@@ -322,12 +327,30 @@ namespace BaskerNS
       {
 	//printf("btf_order called \n");
 	//btf_order();
+	
+	Kokkos::Impl::Timer timer_order;
+	/*
+	if(Options.incomplete == BASKER_TRUE)
+	  {
+	    order_incomplete();
+	  }
+	else
+	  {
+	    btf_order2();
+	  }
+	*/
 	btf_order2();
-	if(btf_tabs_offset != 0)
+	//if(btf_tabs_offset != 0)
+	if((Options.btf == BASKER_TRUE) &&
+	   (btf_tabs_offset != 0))
 	  {
 	    basker_barrier.init(num_threads, 16, tree.nlvls );
 	  }
 	order_flag = BASKER_TRUE;
+	//std::cout << "Time Order/Init arrays " 
+	//	  << timer_order.seconds()
+	//	  << std::endl;
+
 	//printf("btf_order done \n");
       }
 

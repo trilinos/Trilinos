@@ -453,7 +453,7 @@ namespace BaskerNS
 	   
 	    serial_solve(y,x);
 	    
-	    printf("After serial solve\n");
+	    //printf("After serial solve\n");
 	    //printf("i: %d x: %f y: %f \n", 0, x(0), y(0));
 	    //printf("i: %d x: %f y: %f \n", 24, x(24), y(24));
    

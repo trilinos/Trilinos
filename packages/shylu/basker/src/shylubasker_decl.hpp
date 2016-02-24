@@ -237,6 +237,8 @@ namespace BaskerNS
     BASKER_INLINE
     int btf_order2();
     BASKER_INLINE
+    void order_incomplete();
+    BASKER_INLINE
     int partition(int option);
     BASKER_INLINE
     int match_ordering(int option);
