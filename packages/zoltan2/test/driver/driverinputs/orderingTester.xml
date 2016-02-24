@@ -60,6 +60,9 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="order_method" type="string" value="scotch"/>
       <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="scotch_verbose" type="string" value="true"/>
+      <Parameter name="scotch_level" type="int" value="10"/>
+      <Parameter name="scotch_imbalance_ratio" type="double" value="0.25"/>
     </ParameterList> 
     
     <ParameterList name="Metrics">
