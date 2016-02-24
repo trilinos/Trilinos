@@ -192,8 +192,6 @@ void OrderingProblem<Adapter>::solve(bool newData)
 
   std::string method = this->params_->template get<std::string>("order_method", "rcm");
   
-  if (problemComm_->getRank() == 0) std::cout << "Method is: " << method << std::endl; //BDD
-
   // TODO: Ignore case
   try
   {
