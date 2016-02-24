@@ -283,6 +283,15 @@ void mult_A_B_newmatrix(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   const std::string & label = std::string());
 
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
+void mult_A_B_reuse(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  const std::string & label = std::string());
 
 template<class Scalar,
          class LocalOrdinal,
