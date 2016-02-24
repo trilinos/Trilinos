@@ -1450,7 +1450,7 @@ namespace stk {
           bulk_data().deactivate_field_updating();
         }
 
-        bool i_started_modification_cycle = bulk_data().modification_begin();
+        bool i_started_modification_cycle = bulk_data().modification_begin("Mesh Read");
 
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
         bool ints64bit = db_api_int_size(region) == 8;
@@ -1553,7 +1553,7 @@ namespace stk {
         bool delay_field_data_allocation = false;
 
         //- This modifcation begin/end should not be needed, but a percept test fails without it...
-        bool i_started = bulk_data().modification_begin();
+        bool i_started = bulk_data().modification_begin("Mesh Read");
         populate_mesh(delay_field_data_allocation);
         populate_field_data();
         if (i_started) {

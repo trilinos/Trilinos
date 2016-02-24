@@ -212,6 +212,7 @@ public:
    */
   bool modification_begin(const std::string description = std::string("UNSPECIFIED"))
   {
+      m_lastModificationDescription = description;
       return m_meshModification.modification_begin(description);
   }
 
@@ -737,6 +738,8 @@ public:
    * If field-data was already allocated and staying in sync, then this call is a no-op.
    */
   void allocate_field_data();
+
+  const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
   void register_observer(stk::mesh::ModificationObserver *observer);
 
@@ -1380,6 +1383,7 @@ private: // data
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
   ModificationNotifier notifier;
+  std::string m_lastModificationDescription;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   //stk::ModificationSummary m_modSummary;

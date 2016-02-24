@@ -55,7 +55,10 @@ TEST_F(MeshCheckerOwnedOrphans, check_mesh_with_orphaned_owned_sides)
         EXPECT_EQ(badSidesPerProc[get_bulk().parallel_rank()].size(), orphanedOwnedSides.size());
         EXPECT_EQ(badSidesPerProc[get_bulk().parallel_rank()], orphanedOwnedSides);
         EXPECT_FALSE(stk::is_true_on_all_procs(get_bulk().parallel(), orphanedOwnedSides.empty()));
-        std::cerr << get_messages_for_orphaned_owned_nodes(get_bulk(), orphanedOwnedSides);
+        const std::vector<std::string> & orphanedOwnedMessages = get_messages_for_orphaned_owned_sides(get_bulk(), orphanedOwnedSides);
+        for (const std::string & errorMessage : orphanedOwnedMessages) {
+            std::cerr << errorMessage;
+        }
     }
 }
 

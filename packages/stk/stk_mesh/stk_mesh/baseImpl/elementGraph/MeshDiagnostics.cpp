@@ -52,10 +52,12 @@ std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_co
     return badElements;
 }
 
-std::string get_message_for_split_coincident_elements(const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > & splitCoincidentElements)
+std::vector<std::string> get_messages_for_split_coincident_elements(const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > & splitCoincidentElements)
 {
+    std::vector<std::string> errorList;
     std::ostringstream out;
     for(const auto& item : splitCoincidentElements) {
+        out.str(std::string());
         stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK,item.first);
         const stk::mesh::PartVector& elementParts = bulkData.bucket(element).supersets();
         std::string blockNames;
@@ -66,9 +68,10 @@ std::string get_message_for_split_coincident_elements(const stk::mesh::BulkData&
             }
         }
         blockNames += " }";
-        out << "[" << bulkData.parallel_rank() << "] Element " << item.first << " (" << bulkData.bucket(element).topology() << ") in blocks " << blockNames << " is coincident with element " << item.second.first << " on processor " << item.second.second << std::endl;
+        out << "ERROR: [" << bulkData.parallel_rank() << "] Element " << item.first << " (" << bulkData.bucket(element).topology() << ") in blocks " << blockNames << " is coincident with element " << item.second.first << " on processor " << item.second.second << std::endl;
+        errorList.push_back(out.str());
     }
-    return out.str();
+    return errorList;
 }
 
 void throw_if_any_proc_has_false(MPI_Comm comm, bool is_all_ok_locally)
@@ -138,17 +141,20 @@ std::vector<stk::mesh::EntityKeyProc> get_non_unique_key_procs(const stk::mesh::
     return get_non_unique_keys(bulkData, distributedIndex, localKeys);
 }
 
-std::string get_non_unique_key_messages(const stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKeyProc> &badKeyProcs)
+std::vector<std::string> get_non_unique_key_messages(const stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKeyProc> &badKeyProcs)
 {
+    std::vector<std::string> errorList;
     std::ostringstream os;
     for(const stk::mesh::EntityKeyProc& keyProc : badKeyProcs)
     {
+        os.str(std::string());
         stk::mesh::Entity entity = bulkData.get_entity(keyProc.first);
-        os << "[" << bulkData.parallel_rank() << "] Key " << keyProc.first <<
+        os << "ERROR: [" << bulkData.parallel_rank() << "] Key " << keyProc.first <<
                 get_topology(bulkData.bucket(entity).topology()) << "is also present (inappropriately) on processor " <<
                 keyProc.second << "." << std::endl;
+        errorList.push_back(os.str());
     }
-    return os.str();
+    return errorList;
 }
 
 
@@ -175,13 +181,15 @@ std::vector<stk::mesh::EntityKey> get_orphaned_owned_sides(const stk::mesh::Bulk
 
 
 
-std::string get_messages_for_orphaned_owned_nodes(const stk::mesh::BulkData& bulkData, std::vector<stk::mesh::EntityKey>& keys)
+std::vector<std::string> get_messages_for_orphaned_owned_sides(const stk::mesh::BulkData& bulkData, std::vector<stk::mesh::EntityKey>& keys)
 {
+    std::vector<std::string> errorList;
     std::ostringstream os;
     for(const stk::mesh::EntityKey& key : keys)
     {
+        os.str(std::string());
         stk::mesh::Entity entity = bulkData.get_entity(key);
-        os << "[" << bulkData.parallel_rank() << "] Side " << key << " (" << bulkData.bucket(entity).topology()
+        os << "ERROR: [" << bulkData.parallel_rank() << "] Side " << key << " (" << bulkData.bucket(entity).topology()
                 << ") does not have upwards relations to a locally owned element. Nodes of side are {";
         unsigned num_nodes = bulkData.num_nodes(entity);
         const stk::mesh::Entity* nodes = bulkData.begin_nodes(entity);
@@ -192,8 +200,9 @@ std::string get_messages_for_orphaned_owned_nodes(const stk::mesh::BulkData& bul
                 os << ", ";
         }
         os << "}.\n";
+        errorList.push_back(os.str());
     }
-    return os.str();
+    return errorList;
 }
 
 } }
