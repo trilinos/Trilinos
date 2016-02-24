@@ -94,6 +94,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   bool runHeavyTests = false;
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
 
+  clp.recogniseAllOptions(true);
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -338,12 +339,12 @@ int main(int argc, char* argv[]) {
   bool verbose = true;
 
   try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
+    const bool throwExceptions = false;
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Teuchos::CommandLineProcessor clp(throwExceptions);
     Xpetra::Parameters xpetraParameters(clp);
 
+    clp.recogniseAllOptions(false);
     switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:

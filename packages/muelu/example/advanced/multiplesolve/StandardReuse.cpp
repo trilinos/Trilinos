@@ -305,8 +305,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   std::string xmlFileName = "";     clp.setOption("xml",                &xmlFileName, "read parameters from a file");
   int         numRebuilds = 0;      clp.setOption("rebuild",            &numRebuilds, "#times to rebuild hierarchy");
-  bool        useFilter   = true;   clp.setOption("filter", "nofilter", &useFilter, "Print out only Setup times");
+  bool        useFilter   = true;   clp.setOption("filter", "nofilter", &useFilter,   "Print out only Setup times");
 
+  clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -461,12 +462,12 @@ int main(int argc, char* argv[]) {
   bool success = false;
 
   try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
+    const bool throwExceptions = false;
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Teuchos::CommandLineProcessor clp(throwExceptions);
     Xpetra::Parameters xpetraParameters(clp);
 
+    clp.recogniseAllOptions(false);
     switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
