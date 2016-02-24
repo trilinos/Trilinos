@@ -91,6 +91,10 @@ namespace Intrepid2 {
     template<typename NodeType>
     static int getOrientation(const NodeType *subCellVerts,
                               const int numVertex);
+
+    template<typename NodeType>
+    static Orientation getOrientation(const shards::CellTopology & cellTopo,
+                                      const NodeType *elemNodes);
     
     Orientation();
     Orientation(const Orientation &b) = default;

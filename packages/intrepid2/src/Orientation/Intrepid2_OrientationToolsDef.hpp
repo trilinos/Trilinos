@@ -148,6 +148,41 @@ namespace Intrepid2 {
     return ort;
   }
 
+  template<typename NodeType>
+  inline
+  Orientation
+  Orientation::getOrientation(const shards::CellTopology & cellTopo,
+                              const NodeType *elemNodes) {
+    Orientation ort;
+    const int nedge = cellTopo.getEdgeCount();
+    if (nedge > 0) {
+      int orts[12], vertsSubCell[2], nvertSubCell;
+      for (int i=0;i<nedge;++i) {
+        Orientation::getElementNodeMap(vertsSubCell,
+                                       nvertSubCell,
+                                       cellTopo,
+                                       elemNodes,
+                                       1, i);
+        orts[i] = Orientation::getOrientation(vertsSubCell, nvertSubCell);
+      }
+      ort.setEdgeOrientation(nedge, orts);
+    }
+    const int nface = cellTopo.getFaceCount();
+    if (nface > 0) {
+      int orts[6], vertsSubCell[4], nvertSubCell;
+      for (int i=0;i<nface;++i) {
+        Orientation::getElementNodeMap(vertsSubCell,
+                                       nvertSubCell,
+                                       cellTopo,
+                                       elemNodes,
+                                       2, i);
+        orts[i] = Orientation::getOrientation(vertsSubCell, nvertSubCell);
+      }
+      ort.setFaceOrientation(nface, orts);
+    }
+    return ort;
+  }
+
   Orientation::Orientation()
     : _edgeOrt(0), _faceOrt(0) {}
 
@@ -957,7 +992,7 @@ namespace Intrepid2 {
   template<class Scalar>
   template<class ArrayType>
   bool OrientationTools<Scalar>::isLeftHandedCell(const ArrayType & pts) {
-    // From all the tests, nodes seems to be fed as 1 dimensional array 
+    // From all the tests, nodes seems to be fed as 1 dimensional array
     // with 1 x npts x ndim
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( pts.dimension(0) != 1, std::invalid_argument,

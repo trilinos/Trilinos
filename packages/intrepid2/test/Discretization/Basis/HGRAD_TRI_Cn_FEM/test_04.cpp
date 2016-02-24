@@ -61,6 +61,7 @@
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
 #include "Intrepid2_BasisSet.hpp"
 #include "Intrepid2_OrientationTools.hpp"
+#include "Intrepid2_ToyMesh.hpp"
 #endif
 
 using namespace Intrepid2;
@@ -68,36 +69,31 @@ using namespace Intrepid2;
 typedef double value_type;
 typedef double magnitude_type;
 
-static int  maxp = INTREPID2_MAX_ORDER;
+static int  maxp = 8; // INTREPID2_MAX_ORDER;
 static int  nelement = 2;
 static bool verbose = false;
 static bool apply_orientation = true;
 
-class ToyMesh;
+#undef MatVal
+#define MatVal(Mat, row, col) Mat[(row) + (col)*(Mat.dimension(1))]
 
-void eval_u_exact(FieldContainer<value_type> &,
-                  //FieldContainer<value_type> &,
-                  const FieldContainer<value_type> &,
-                  const int,
-                  const int);
+void eval_exact(FieldContainer<value_type> &       val,
+                const FieldContainer<value_type> & points,
+                const int                          nx,
+                const int                          ny);
 
-void eval_rhs(FieldContainer<value_type> &,
-              const FieldContainer<value_type> &,
-              const int,
-              const int);
+void eval_rhs(FieldContainer<value_type> &       f,
+              const FieldContainer<value_type> & points,
+              const int                          nx,
+              const int                          ny);
 
-void eval_neumann(FieldContainer<value_type>       & ,
-                  const FieldContainer<value_type> & ,
-                  const FieldContainer<value_type> & ,
-                  const FieldContainer<value_type> & ,
-                  const shards::CellTopology   & ,
-                  const int,
-                  const int,
-                  const int);
-
-void get_orientation(Orientation & ort,
-                     const shards::CellTopology & cell_topo,
-                     const int *element);
+void eval_neumann(FieldContainer<value_type>       & neumann,
+                  const FieldContainer<value_type> & points,
+                  const FieldContainer<value_type> & jacs,
+                  const shards::CellTopology   &     parent_cell,
+                  const int                          side_ordinal,
+                  const int                          nx,
+                  const int                          ny);
 
 void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                   FieldContainer<value_type> & b,
@@ -132,195 +128,10 @@ void compute_element_error(magnitude_type & interpolation_error,
                            const int nx,
                            const int ny);
 
-// ----------------------------------------------------------------------
-// Impl. helper functions
-//
-//
-#define TOYMESH_MAX_NUM_NODES 100
-#define TOYMESH_NODE_STRIDE 4
-class ToyMesh {
-private:
-  int _nodes[TOYMESH_MAX_NUM_NODES][TOYMESH_NODE_STRIDE];
-  int _nids[TOYMESH_MAX_NUM_NODES];
-  int _offset[TOYMESH_MAX_NUM_NODES];
-  int _boundary[TOYMESH_MAX_NUM_NODES];
-  int _i;
-
-  void clear_current_node() {
-    for (int j=0;j<TOYMESH_NODE_STRIDE;++j)
-      _nodes[_i][j] = -1;
-  }
-  void sort_subcell_vert_ids(int *sorted_vert_ids,
-                             const int *subcell_vert_ids,
-                             const int nids) {
-    for (int j=0;j<nids;++j)
-      sorted_vert_ids[j] = subcell_vert_ids[j];
-    std::sort(sorted_vert_ids, sorted_vert_ids+nids);
-  }
-  void add_node(const int *subcell_vert_ids, const int nids,
-                const int offset) {
-    clear_current_node();
-    int sorted_vert_ids[TOYMESH_NODE_STRIDE] = {};
-    sort_subcell_vert_ids(sorted_vert_ids, subcell_vert_ids, nids);
-    for (int j=0;j<nids;++j)
-      _nodes[_i][j] = sorted_vert_ids[j];
-    _offset[_i] = offset;
-    _nids[_i] = nids;
-    ++_boundary[_i]; // 1 - boundary and interior, 2 - interface
-
-    ++_i;
-  }
-  bool find_node(int &offset, 
-                 const int *subcell_vert_ids, 
-                 const int nids, 
-                 const bool increase_boundary_flag) {
-    int sorted_vert_ids[TOYMESH_NODE_STRIDE] = {};
-    sort_subcell_vert_ids(sorted_vert_ids, subcell_vert_ids, nids);
-    for (int i=0;i<_i;++i) {
-      int diff = std::abs(_nids[i] - nids);
-      for (int j=0;j<nids;++j)
-        diff += std::abs(sorted_vert_ids[j] - _nodes[i][j]);
-      if (!diff) {
-        offset = _offset[i];
-        _boundary[i] += increase_boundary_flag;
-        return true;
-      }
-    }
-    return false;
-  }
-  bool find_boundary(int &boundary, const int *subcell_vert_ids, const int nids) {
-    int sorted_vert_ids[TOYMESH_NODE_STRIDE] = {};
-    sort_subcell_vert_ids(sorted_vert_ids, subcell_vert_ids, nids);
-    for (int i=0;i<_i;++i) {
-      int diff = std::abs(_nids[i] - nids);
-      for (int j=0;j<nids;++j)
-        diff += std::abs(sorted_vert_ids[j] - _nodes[i][j]);
-      if (!diff) {
-        // 1 - boundary or interior (visited once) 2 - interface visited more than twice
-        boundary = (_boundary[i] == 1); 
-        return true;
-      }
-    }
-    return false;
-  }
-
-public:
-  int get_current_num_nodes() const {
-    return _i;
-  }
-
-  void reset() {
-    for (int i=0;i<TOYMESH_MAX_NUM_NODES;++i) {
-      _nids[i]     = 0;
-      _offset[i]   = 0;
-      _boundary[i] = 0;
-      for (int j=0;j<TOYMESH_NODE_STRIDE;++j)
-        _nodes[i][j] = -1;
-    }
-    _i = 0;
-  }
-
-  void get_one2one_map(int (*local2global)[2],
-                       int &off_global,
-                       const Basis<value_type,FieldContainer<value_type> > &basis,
-                       const int *element) {
-    const int local = 0, global = 1;
-    const int nbf = basis.getCardinality();
-    const shards::CellTopology cell = basis.getBaseCellTopology();
-
-    int cnt = 0, off_element = 0;
-    int subcell_vert_ids[4], nids;
-
-    const int nvert = cell.getVertexCount();
-    for (int i=0;i<nvert;++i) {
-      const int ord_vert = (off_element < nbf ? basis.getDofOrdinal(0, i, 0) : 0);
-      const int dof_vert = (off_element < nbf ? basis.getDofTag(ord_vert)[3] : 0);
-      
-      local2global[cnt][local] = off_element;
-      off_element += dof_vert;
-      Orientation::getElementNodeMap(subcell_vert_ids, nids,
-                                     cell, element,
-                                     0, i);
-      
-      if (!find_node(local2global[cnt][global], subcell_vert_ids, nids, true)) {
-        add_node(subcell_vert_ids, nids, off_global);
-        local2global[cnt][global] = off_global;
-        off_global += dof_vert;
-      } 
-      ++cnt;
-    }
-    const int nedge = cell.getEdgeCount();
-    for (int i=0;i<nedge;++i) {
-      const int ord_edge = (off_element < nbf ? basis.getDofOrdinal(1, i, 0) : 0);
-      const int dof_edge = (off_element < nbf ? basis.getDofTag(ord_edge)[3] : 0);
-      
-      local2global[cnt][local] = off_element;
-      off_element += dof_edge;
-      Orientation::getElementNodeMap(subcell_vert_ids, nids,
-                                     cell, element,
-                                     1, i);
-      
-      if (!find_node(local2global[cnt][global], subcell_vert_ids, nids, true)) {
-        add_node(subcell_vert_ids, nids, off_global);
-        local2global[cnt][global] = off_global;
-        off_global += dof_edge;
-      }
-      ++cnt;
-    }
-    {
-      const int i = 0;
-      const int ord_intr = (off_element < nbf ? basis.getDofOrdinal(2, i, 0) : 0);
-      const int dof_intr = (off_element < nbf ? basis.getDofTag(ord_intr)[3] : 0);
-      
-      local2global[cnt][local] = off_element;
-      off_element += dof_intr;
-      Orientation::getElementNodeMap(subcell_vert_ids, nids,
-                                     cell, element,
-                                     2, i);
-      
-      if (!find_node(local2global[cnt][global], subcell_vert_ids, nids, true)) {
-        add_node(subcell_vert_ids, nids, off_global);
-        local2global[cnt][global] = off_global;
-        off_global += dof_intr;
-      }
-      ++cnt;
-    }
-    
-    // add the last offset
-    local2global[cnt][local] = off_element;
-    local2global[cnt][global] = -1; // invalid values
-  }
-
-  void get_boundary_flags(int *boundary,
-                          const shards::CellTopology cell,
-                          const int *element) {
-    int subcell_vert_ids[4], nids;
-    const int dim = cell.getDimension();
-    const int nside = cell.getSideCount();
-    for (int i=0;i<nside;++i) {
-      Orientation::getElementNodeMap(subcell_vert_ids, nids,
-                                     cell, element,
-                                     dim-1, i);
-          
-      if (!find_boundary(boundary[i], subcell_vert_ids, nids)) {
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error,
-                                    ">>> ERROR (Intrepid::HGRAD_TRI_Cn::Test 04): " \
-                                    "Side node is not found");
-      }
-    }
-  }
-
-  ToyMesh() {
-    reset();
-  }
-
-};
-
-void eval_u_exact(FieldContainer<value_type> &       val,
-                  //FieldContainer<value_type> &       grad,
-                  const FieldContainer<value_type> & points,
-                  const int                          nx,     // order x
-                  const int                          ny) {   // order y
+void eval_exact(FieldContainer<value_type> &       val,
+                const FieldContainer<value_type> & points,
+                const int                          nx,     // order x
+                const int                          ny) {   // order y
   // sol = x^nx + y^ny
   //
   // result is a multi-vector (nsol x npts)
@@ -330,8 +141,6 @@ void eval_u_exact(FieldContainer<value_type> &       val,
   for (int i=0;i<npts;++i) {
     const value_type x = points(i, 0), y = points(i, 1);
     val(0, i) = std::pow(x, nx)*std::pow(y, ny);
-    //grad(0, i, 0) = std::pow(x, nx)*std::pow(y, ny);
-    //grad(0, i, 1) = std::pow(x, nx)*std::pow(y, ny);
   }
 }
 
@@ -415,38 +224,6 @@ void eval_neumann(FieldContainer<value_type>       & neumann,
   RealSpaceTools<value_type>::vectorNorm(normal_lengths, side_normals, NORM_TWO);
   FunctionSpaceTools::scalarMultiplyDataData<value_type>(side_normals, normal_lengths, side_normals, true);
   FunctionSpaceTools::dotMultiplyDataData<value_type>(neumann, grad_u, side_normals);
-}
-
-#define MatVal(Mat, row, col) Mat[(row) + (col)*(Mat.dimension(1))]
-void get_orientation(Orientation & ort,
-                     const shards::CellTopology & cell_topo,
-                     const int *element) {
-  const int nedge = cell_topo.getEdgeCount();
-  if (nedge > 0) {
-    int orts[12], subcell_verts[2], subcell_nvert;
-    for (int i=0;i<nedge;++i) {
-      Orientation::getElementNodeMap(subcell_verts,
-                                     subcell_nvert,
-                                     cell_topo,
-                                     element,
-                                     1, i);
-      orts[i] = Orientation::getOrientation(subcell_verts, subcell_nvert);
-    }
-    ort.setEdgeOrientation(nedge, orts);
-  }
-  const int nface = cell_topo.getFaceCount();
-  if (nface > 0) {
-    int orts[6], subcell_verts[4], subcell_nvert;
-    for (int i=0;i<nface;++i) {
-      Orientation::getElementNodeMap(subcell_verts,
-                                     subcell_nvert,
-                                     cell_topo,
-                                     element,
-                                     2, i);
-      orts[i] = Orientation::getOrientation(subcell_verts, subcell_nvert);
-    }
-    ort.setFaceOrientation(nface, orts);
-  }
 }
 
 void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
@@ -587,18 +364,18 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                                             grad_of_reordered_basis_at_cub_points_cell,
                                                             basis_set,
                                                             ort);
-  }    
+  }
 
   // transform gradients of basis functions
   FunctionSpaceTools::HGRADtransformGRAD<value_type>(transformed_grad_of_basis_at_cub_points_cell,
                                                      jacobian_inv_cell,
                                                      grad_of_basis_at_cub_points_cell);
-  
+
   // multiply with weighted measure
   FunctionSpaceTools::multiplyMeasure<value_type>(weighted_transformed_grad_of_basis_at_cub_points_cell,
                                                   weighted_measure_cell,
                                                   transformed_grad_of_basis_at_cub_points_cell);
-  
+
   // compute stiffness matrices and sum into fe_matrix
   FunctionSpaceTools::integrate<value_type>(A,
                                             transformed_grad_of_basis_at_cub_points_cell,
@@ -608,12 +385,12 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
 
   // Step 3: compute rhs function
   CellTools<value_type>::mapToPhysicalFrame(cub_points_cell_physical, cub_points_cell, cell_nodes, cell_topo);
-  
+
   // evaluate rhs function
   eval_rhs(rhs_at_cub_points_cell_physical,
            cub_points_cell_physical,
            nx, ny);
-  
+
   // compute rhs
   FunctionSpaceTools::integrate<value_type>(b,
                                             rhs_at_cub_points_cell_physical,
@@ -636,7 +413,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                                          cub_weights_side,
                                                          i,
                                                          cell_topo);
-      
+
       // tabulate values of basis functions at side cubature points, in the reference parent cell domain
       cell_basis.getValues(value_of_basis_at_cub_points_side_refcell, cub_points_side_refcell, OPERATOR_VALUE);
       if (apply_orientation) {
@@ -648,11 +425,11 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                                                 basis_set,
                                                                 ort);
       }
-      
+
       // transform
       FunctionSpaceTools::HGRADtransformVALUE<value_type>(transformed_value_of_basis_at_cub_points_side_refcell,
                                                           value_of_basis_at_cub_points_side_refcell);
-      
+
       // multiply with weighted measure
       FunctionSpaceTools::multiplyMeasure<value_type>(weighted_transformed_value_of_basis_at_cub_points_side_refcell,
                                                       weighted_measure_side_refcell,
@@ -675,7 +452,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                                 neumann_data_at_cub_points_side_physical,
                                                 weighted_transformed_value_of_basis_at_cub_points_side_refcell,
                                                 COMP_BLAS);
-      
+
       // adjust rhs
       RealSpaceTools<value_type>::add(b, neumann_fields_per_side);;
     }
@@ -723,7 +500,7 @@ void retrieve_element_solution(FieldContainer<value_type> &b,
       l_offm = l2g[i][local],
       g_offm = l2g[i][global],
       ndofm  = l2g[i+1][local] - l_offm;
-    
+
     for (int km=0;km<ndofm;++km)
       MatVal(b, l_offm+km, 0) = MatVal(b_asm, g_offm+km, 0);
   }
@@ -756,7 +533,7 @@ void compute_element_error(magnitude_type & interpolation_error,
   for (int i=0;i<nvert;++i)
     for (int j=0;j<ndim_cell;++j)
       cell_nodes(0, i, j) = nodes(0, element[i], j);
-  
+
   // create points to evaluate in the reference cell
   const int order = 10;
   const int npts = PointTools::getLatticeSize(cell_topo, order, 1);
@@ -772,13 +549,12 @@ void compute_element_error(magnitude_type & interpolation_error,
   phy_cell_pts.resize(npts, ndim_cell);
 
   // Step 1: compute L2 error
-  
+
   // evaluate exact solution
   FieldContainer<double> exact_solution_val(1, npts);
-  eval_u_exact(exact_solution_val,
-               //exact_solution_grad,
-               phy_cell_pts,
-               nx, ny);
+  eval_exact(exact_solution_val,
+             phy_cell_pts,
+             nx, ny);
 
   // evaluate basis at interpolation points
   FieldContainer<value_type> value_of_basis_at_ref_cell_pts(nbf_cell, npts);
@@ -794,29 +570,30 @@ void compute_element_error(magnitude_type & interpolation_error,
                                                             basis_set,
                                                             ort);
   }
-  
+
   // transform values of basis functions
   FieldContainer<double> transformed_value_of_basis_at_ref_cell_pts(1, nbf_cell, npts);
   FunctionSpaceTools::HGRADtransformVALUE<value_type>(transformed_value_of_basis_at_ref_cell_pts,
                                                       value_of_basis_at_ref_cell_pts);
 
   FieldContainer<double> interpolant(1, npts);
-  FunctionSpaceTools::evaluate<value_type>(interpolant, 
-                                           sol, 
+  FunctionSpaceTools::evaluate<value_type>(interpolant,
+                                           sol,
                                            transformed_value_of_basis_at_ref_cell_pts);
-  
+
   // compute error and magnitude of solution
   RealSpaceTools<value_type>::subtract(interpolant, exact_solution_val);
 
-  interpolation_error += RealSpaceTools<value_type>::vectorNorm(&interpolant[0], 
-                                                                interpolant.dimension(1), 
+  interpolation_error += RealSpaceTools<value_type>::vectorNorm(&interpolant[0],
+                                                                interpolant.dimension(1),
                                                                 NORM_TWO);
-  
-  solution_norm += RealSpaceTools<value_type>::vectorNorm(&exact_solution_val[0], 
-                                                          exact_solution_val.dimension(1), 
-                                                          NORM_TWO);  
+
+  solution_norm += RealSpaceTools<value_type>::vectorNorm(&exact_solution_val[0],
+                                                          exact_solution_val.dimension(1),
+                                                          NORM_TWO);
 
   // Step 2: compute H1 error
+  // skip for now, not meaningful for this unit test
 }
 
 // ----------------------------------------------------------------------
@@ -832,11 +609,11 @@ int main(int argc, char *argv[]) {
   int iprint = argc - 1;
 
   for (int i=0;i<argc;++i) {
-    if ((strcmp(argv[i],"--nelement")          == 0)) { nelement = atoi(argv[++i]); continue;}             
-    if ((strcmp(argv[i],"--apply-orientation") == 0)) { apply_orientation  = atoi(argv[++i]); continue;}             
-    if ((strcmp(argv[i],"--verbose")           == 0)) { verbose  = atoi(argv[++i]); continue;}             
-    if ((strcmp(argv[i],"--maxp")              == 0)) { maxp     = atoi(argv[++i]); continue;}             
-  }  
+    if ((strcmp(argv[i],"--nelement")          == 0)) { nelement = atoi(argv[++i]); continue;}
+    if ((strcmp(argv[i],"--apply-orientation") == 0)) { apply_orientation  = atoi(argv[++i]); continue;}
+    if ((strcmp(argv[i],"--verbose")           == 0)) { verbose  = atoi(argv[++i]); continue;}
+    if ((strcmp(argv[i],"--maxp")              == 0)) { maxp     = atoi(argv[++i]); continue;}
+  }
 
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -901,11 +678,11 @@ int main(int argc, char *argv[]) {
                               { 2, 1, 3},
                               { 3, 2, 1} };
 
-    // left handed configuration, 
+    // left handed configuration,
     // this type of elements should be fixed in preprocessing of stk level.
-    //{ 1, 2, 3}, 
-    //{ 2, 3, 1}, 
-    //{ 3, 1, 2}, 
+    //{ 1, 2, 3},
+    //{ 2, 3, 1},
+    //{ 3, 1, 2},
 
     DefaultCubatureFactory<value_type> cubature_factory;
 
@@ -938,10 +715,10 @@ int main(int argc, char *argv[]) {
             for (int conf=0;conf<3;++conf) {
               const int *element[2] = { elt_0, elt_1[conf] };
               *outStream << "\n"                                        \
-                         << "  Element 0 is fixed " 
-                         << "(" << element[0][0] << ","<< element[0][1] << "," << element[0][2] << ")" 
-                         << "  Element 1 is configured " << conf << " "  
-                         << "(" << element[1][0] << ","<< element[1][1] << "," << element[1][2] << ")" 
+                         << "  Element 0 is fixed "
+                         << "(" << element[0][0] << ","<< element[0][1] << "," << element[0][2] << ")"
+                         << "  Element 1 is configured " << conf << " "
+                         << "(" << element[1][0] << ","<< element[1][1] << "," << element[1][2] << ")"
                          << "\n";
 
               if (verbose) {
@@ -956,19 +733,19 @@ int main(int argc, char *argv[]) {
               }
 
               // Step 0: count one-to-one mapping between high order nodes and dofs
-              ToyMesh mesh;
+              Example::ToyMesh mesh;
               int local2global[2][8][2], boundary[2][3], off_global = 0;
 
               const int nnodes_per_element
                 = cell.getVertexCount()
-                + cell.getEdgeCount() 
-                + 1; 
+                + cell.getEdgeCount()
+                + 1;
 
               for (int iel=0;iel<nelement;++iel)
-                mesh.get_one2one_map(local2global[iel], off_global, basis, element[iel]);
+                mesh.getLocalToGlobalMap(local2global[iel], off_global, basis, element[iel]);
 
               for (int iel=0;iel<nelement;++iel)
-                mesh.get_boundary_flags(boundary[iel], cell, element[iel]);
+                mesh.getBoundaryFlags(boundary[iel], cell, element[iel]);
 
               if (verbose) {
                 *outStream << " - Element one-to-one local2global map -\n";
@@ -998,20 +775,7 @@ int main(int argc, char *argv[]) {
 
               for (int iel=0;iel<nelement;++iel) {
                 // Step 1.1: create element matrices
-                Orientation ort;
-                get_orientation(ort, cell, element[iel]);
-                if (verbose) {
-                  const int nedge = 3;
-                  int edge_orts[3];
-                  ort.getEdgeOrientation(edge_orts, nedge);
-                  *outStream << " - Orientation, iel = " << iel 
-                             << " :: " 
-                             << edge_orts[0] 
-                             << edge_orts[1] 
-                             << edge_orts[2]
-                             << "\n";
-                }
-
+                Orientation ort = Orientation::getOrientation(cell, element[iel]);
                 build_element_matrix_and_rhs(A, b,
                                              cubature_factory,
                                              basis_set,
@@ -1035,7 +799,7 @@ int main(int argc, char *argv[]) {
                 // Step 1.2: assemble high order elements
                 assemble_element_matrix_and_rhs(A_asm, b_asm,
                                                 A, b,
-                                                local2global[iel], 
+                                                local2global[iel],
                                                 nnodes_per_element);
               }
 
@@ -1066,7 +830,7 @@ int main(int argc, char *argv[]) {
                                           b_asm,
                                           local2global[iel],
                                           nnodes_per_element);
-                
+
                 if (verbose && p < 5) {
                   *outStream << " - Element solution, iel = " << iel << "\n";
                   *outStream << std::showpos;
@@ -1076,12 +840,11 @@ int main(int argc, char *argv[]) {
                   *outStream << std::noshowpos;
                 }
 
-                magnitude_type 
-                  element_interpolation_error = 0, 
+                magnitude_type
+                  element_interpolation_error = 0,
                   element_solution_norm = 0;
 
-                Orientation ort;
-                get_orientation(ort, cell, element[iel]);
+                Orientation ort = Orientation::getOrientation(cell, element[iel]);
 
                 compute_element_error(element_interpolation_error,
                                       element_solution_norm,
@@ -1091,26 +854,36 @@ int main(int argc, char *argv[]) {
                                       b,
                                       ort,
                                       nx, ny);
-                
+
                 interpolation_error += element_interpolation_error;
                 solution_norm       += element_solution_norm;
-                
-                *outStream << "   iel = " << std::setw(4) << iel 
-                           << " , error = " << element_interpolation_error 
-                           << " , solution norm = " << element_solution_norm  
-                           << " , relative error = " << (element_interpolation_error/element_solution_norm)
-                           << "\n";
-              }
-              const magnitude_type relative_error = interpolation_error/solution_norm;
-              const magnitude_type tol = p*p*100*INTREPID_TOL;
-              
-              if (relative_error > tol) {
-                ++r_val;
-                *outStream << "\n\nPatch test failed: \n"
-                           << "    exact polynomial (nx, ny) = " << std::setw(4) << nx << ", " << std::setw(4) << ny << "\n"
-                           << "    basis order               = " << std::setw(4) << p << "\n"
-                           << "    orientation configuration = " << std::setw(4) << conf << "\n"
-                           << "    relative error            = " << std::setw(4) << relative_error << "\n";
+
+                {
+                  const int nedge = 3;
+                  int edge_orts[3];
+                  ort.getEdgeOrientation(edge_orts, nedge);
+                  *outStream << "   iel = " << std::setw(4) << iel
+                             << ", orientation = "
+                             << edge_orts[0]
+                             << edge_orts[1]
+                             << edge_orts[2]
+                             << " , error = " << element_interpolation_error
+                             << " , solution norm = " << element_solution_norm
+                             << " , relative error = " << (element_interpolation_error/element_solution_norm)
+                             << "\n";
+                }
+                const magnitude_type relative_error = interpolation_error/solution_norm;
+                const magnitude_type tol = p*p*100*INTREPID_TOL;
+
+                if (relative_error > tol) {
+                  ++r_val;
+                  *outStream << "\n\nPatch test failed: \n"
+                             << "    exact polynomial (nx, ny) = " << std::setw(4) << nx << ", " << std::setw(4) << ny << "\n"
+                             << "    basis order               = " << std::setw(4) << p << "\n"
+                             << "    orientation configuration = " << std::setw(4) << conf << "\n"
+                             << "    relative error            = " << std::setw(4) << relative_error << "\n"
+                             << "    tolerance                 = " << std::setw(4) << tol << "\n";
+                }
               }
             } // end of conf
           } // end of p
@@ -1128,7 +901,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (r_val != 0)
-    std::cout << "End Result: TEST FAILED\n";
+    std::cout << "End Result: TEST FAILED  :: r_val = " << r_val << "\n";
   else
     std::cout << "End Result: TEST PASSED\n";
 
