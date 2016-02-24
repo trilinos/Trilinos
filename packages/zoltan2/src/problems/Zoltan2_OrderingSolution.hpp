@@ -141,6 +141,13 @@ public:
   {
     return haveSepTree_; 
   }
+  
+  /*! \brief Do we have the seperators?
+   */
+  bool haveSeparators()
+  {
+    return haveSepRange() && haveSepTree(); 
+  }
 
   /*! \brief Set haveSepTree (intended for ordering algorithms only)
    */
