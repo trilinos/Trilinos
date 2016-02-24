@@ -156,12 +156,16 @@ private:
       
       if(value < min)
       {
-        msg << test_name << " FAILED: imbalance per part, "
-        << value << ", less than specified allowable minimum, " << min << ".\n";
+        if (comm->getRank() == 0)
+          msg << test_name << " FAILED: imbalance per part, "
+              << value << ", less than specified allowable minimum, " 
+              << min << ".\n";
         pass = false;
       }else{
-        msg << test_name << " PASSED: imbalance per part, "
-        << value << ", greater than specified allowable minimum, " << min << ".\n";
+        if (comm->getRank() == 0)
+          msg << test_name << " PASSED: imbalance per part, "
+              << value << ", greater than specified allowable minimum, " 
+              << min << ".\n";
       }
     }
     
@@ -169,12 +173,16 @@ private:
       double max = metricPlist.get<double>("upper");
       if (value > max)
       {
-        msg << test_name << " FAILED: imbalance per part, "
-        << value << ", greater than specified allowable maximum, " << max << ".\n";
+        if (comm->getRank() == 0)
+          msg << test_name << " FAILED: imbalance per part, "
+              << value << ", greater than specified allowable maximum, " 
+              << max << ".\n";
         pass = false;
       }else{
-        msg << test_name << " PASSED: imbalance per part, "
-        << value << ", less than specified allowable maximum, " << max << ".\n";
+        if (comm->getRank() == 0)
+          msg << test_name << " PASSED: imbalance per part, "
+              << value << ", less than specified allowable maximum, " 
+              << max << ".\n";
       }
       
     }
