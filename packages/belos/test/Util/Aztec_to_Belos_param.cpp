@@ -56,7 +56,7 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
   
-  //* indicates it is a option that is translated by Belos_Translate_from_Aztec_Params
+  //* indicates it is a option that is translated by Belos_translateFromAztecParams
   //x indicates that this option will produce a warning return type. 
 //AZ_solver              0   *
 //AZ_scaling             1
@@ -125,11 +125,11 @@ int main(int argc, char *argv[]) {
   
   Teuchos::ParameterList tpl;
   const double * az_par_val = (const double * ) &(Vaz_param[0]);
-  xlate_err = Belos::Belos_Translate_from_Aztec_Params(az_opt,az_par_val,tpl);
+  xlate_err = Belos::translateFromAztecParams(tpl,az_opt,az_par_val);
   
-  if(xlate_err.second != Belos::OK || xlate_err.first.size()!=0 ) {
+  if(xlate_err.second != Belos::TRANSLATE_FROM_AZTEC_OK || xlate_err.first.size()!=0 ) {
     // this one should be error and warning free
-    std::cout << " Belos_Translate_from_Aztec_Params::  failure, string is:"<<std::endl;
+    std::cout << " translateFromAztecParams::  failure, string is:"<<std::endl;
     std::cout << xlate_err.first<<std::endl;
     std::cout << " Error num "<< xlate_err.second<<std::endl;
     std::cout << " enum   Opt Param "<<std::endl;
@@ -149,11 +149,11 @@ int main(int argc, char *argv[]) {
   az_opt[AZ_precond] = AZ_ls; // any value other than AZ_none == 0 generates a warning. 
   az_opt[AZ_conv] = AZ_rhs; // should be valid. 
   
-  xlate_err = Belos::Belos_Translate_from_Aztec_Params(az_opt,az_par_val,tpl);
+  xlate_err = Belos::translateFromAztecParams(tpl,az_opt,az_par_val);
   
-  if(xlate_err.second != Belos::WARN) {
+  if(xlate_err.second != Belos::TRANSLATE_FROM_AZTEC_WARN) {
     // this one should be error free but generate a  warning
-    std::cout << " Belos_Translate_from_Aztec_Params::  failure, string is:"<<std::endl;
+    std::cout << " translateFromAztecParams::  failure, string is:"<<std::endl;
     std::cout << xlate_err.first<<std::endl;
     std::cout << " Error num "<< xlate_err.second<<std::endl;
     tpl.print();
@@ -167,11 +167,11 @@ int main(int argc, char *argv[]) {
   az_opt[AZ_subdomain_solve] = AZ_icc;
   az_opt[AZ_conv] = AZ_Anorm;
 
-  xlate_err = Belos::Belos_Translate_from_Aztec_Params(az_opt,az_par_val,tpl);
+  xlate_err = Belos::translateFromAztecParams(tpl,az_opt,az_par_val);
   
-  if(xlate_err.second != Belos::WARN) {
+  if(xlate_err.second != Belos::TRANSLATE_FROM_AZTEC_WARN) {
     // this one should be error free but generate a  warning
-    std::cout << " Belos_Translate_from_Aztec_Params::  failure, string is:"<<std::endl;
+    std::cout << " translateFromAztecParams::  failure, string is:"<<std::endl;
     std::cout << xlate_err.first<<std::endl;
     std::cout << " Error num "<< xlate_err.second<<std::endl;
     tpl.print();
@@ -185,12 +185,12 @@ int main(int argc, char *argv[]) {
   az_opt[AZ_orthog]=AZ_double_classic;
   az_opt[AZ_conv] = AZ_noscaled;
   az_opt[AZ_subdomain_solve] = AZ_lu;
-  xlate_err = Belos::Belos_Translate_from_Aztec_Params(az_opt,az_par_val,tpl);
+  xlate_err = Belos::translateFromAztecParams(tpl,az_opt,az_par_val);
   
-  if(! (xlate_err.second | Belos::ERROR && xlate_err.second|Belos::WARN)) {
+  if(! (xlate_err.second | Belos::TRANSLATE_FROM_AZTEC_ERROR && xlate_err.second|Belos::TRANSLATE_FROM_AZTEC_WARN)) {
     // This should generate an error and a warning. 
     // error from az_double_classic
-    std::cout << " Belos_Translate_from_Aztec_Params::  failure, string is:"<<std::endl;
+    std::cout << " translateFromAztecParams::  failure, string is:"<<std::endl;
     std::cout << xlate_err.first<<std::endl;
     std::cout << " Error num "<< xlate_err.second<<std::endl;
     tpl.print();

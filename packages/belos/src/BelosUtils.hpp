@@ -47,20 +47,20 @@
 #include "az_aztec_defs.h" 
 #include "Teuchos_ParameterList.hpp"
 #include "BelosTypes.hpp"
-using namespace std;
 
 namespace Belos{
- enum XLateStatus {
-    OK    =0x00,
-    WARN  =0x01,
-    ERROR =0x02};
+ enum ETranslateFromAztecStatus {
+    TRANSLATE_FROM_AZTEC_OK    =0x00,
+    TRANSLATE_FROM_AZTEC_WARN  =0x01,
+    TRANSLATE_FROM_AZTEC_ERROR =0x02};
 
 std::pair< std::string, int >  
-Belos_Translate_from_Aztec_Params(const int * aztec_options, 
-				  const double * aztec_params,
-				  Teuchos::ParameterList &tpl ) {
- 
-  int econd = OK;
+translateFromAztecParams( Teuchos::ParameterList &tpl ,
+			  const int * aztec_options, 
+			  const double * aztec_params,
+			  ) {
+  using namespace std;
+  int econd = TRANSLATE_FROM_AZTEC_OK;
   ostringstream error;
   if(aztec_options == NULL || aztec_params == NULL ) {
     return std::pair<std::string,int>(string("Belos_Translate_from_Aztec_Params:: Aztec Options or Parameters were null."),econd);
@@ -81,42 +81,42 @@ Belos_Translate_from_Aztec_Params(const int * aztec_options,
   case AZ_tfqmr:
     tpl.set("Solver Name","TFQMR");
     break;
+  case AZ_fixed_pt:
+    tpl.set("Solver Name","FIXED POINT");
+    break;
   case AZ_lu:
     error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_lu "<<std::endl;
-    econd |= WARN;;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
     break;
   case AZ_cgs:
     error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_cgs"<<std::endl;
-    econd |= ERROR;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
     break;
   case AZ_slu:
     error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_slu"<<std::endl;
-    econd |= ERROR;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
     break;
   case AZ_symmlq:
     error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_symmlq"<<std::endl;
-    econd |= ERROR;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
     break;
   case AZ_GMRESR:
     error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_GMRESR"<<std::endl;
-    econd |= ERROR;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
     break;
-  case AZ_fixed_pt:
-    error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_fixed_pt"<<std::endl;
-    econd |= ERROR;
-    break;
+
   case AZ_analyze:
     error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_analyze "<<std::endl;
-    econd |= ERROR;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
     break;
   case AZ_gmres_condnum:
     error<<" Translate_Params_Aztec_to_Belos:: uncaught solver name  AZ_gmres_condnum."<<std::endl;
-    econd |= ERROR;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
     break;
 
   default:
     error << "Translate_Params_Aztec_to_Belos:: unknown solver enum "<<aztec_options[AZ_solver]<<std::endl;
-    econd |= ERROR;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
   }
   // sierra
   //PRECONDITIONING METHOD=DD-ICC
@@ -133,7 +133,7 @@ Belos_Translate_from_Aztec_Params(const int * aztec_options,
   case AZ_dom_decomp:
   default:
     error<<" Belos does not have built in preconditioners, Az_precond ignored."<<std::endl;
-    econd |= WARN;
+    econd |= TRANSLATE_FROM_AZTEC_WARN;
   };
 
   switch(aztec_options[AZ_subdomain_solve]) {
@@ -147,7 +147,7 @@ Belos_Translate_from_Aztec_Params(const int * aztec_options,
   case AZ_icc:
   default:
       error<<" Belos does not have built in subdomain solvers, Az_subdomain_solve ignored."<<std::endl;
-    econd |= WARN;
+    econd |= TRANSLATE_FROM_AZTEC_WARN;
   }
 
   // All sierra options are here.
@@ -168,7 +168,7 @@ Belos_Translate_from_Aztec_Params(const int * aztec_options,
   case AZ_expected_values:
   default: 
     error << "Belos_Translate_from_Aztec_Params: AZ_conv of AZ_sol or AZ_expected_values are not valid for belos. "<<std::endl;
-    econd |= ERROR;
+    econd |= TRANSLATE_FROM_AZTEC_ERROR;
   }
 
   // Make Belos produce output like AztecOO's.
@@ -225,7 +225,7 @@ Belos_Translate_from_Aztec_Params(const int * aztec_options,
       break;
     default:
       error<<"Option AZ_orthog for GMRES not recognized "<<aztec_options[AZ_orthog]<<endl;
-      econd |= ERROR;
+      econd |= TRANSLATE_FROM_AZTEC_ERROR;
       // no way to set DGKS
     }
   }
@@ -245,7 +245,7 @@ Belos_Translate_from_Aztec_Params(const int * aztec_options,
   for(int i=AZ_drop ; i<= AZ_weights ; ++i) {
     if(aztec_params[i]!=0 ){
       error << " Aztec_Params at "<<i<<" non zero and will be ignored"<<std::endl;
-      econd |= WARN;
+      econd |= TRANSLATE_FROM_AZTEC_WARN;
     }
   }
 
