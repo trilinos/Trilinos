@@ -505,7 +505,9 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
 
   if(use_vertex_coordinates) {
     Teuchos::RCP<Intrepid2::DofCoordsInterface<ArrayDynamic> > coords
-        = Teuchos::rcp_dynamic_cast<Intrepid2::DofCoordsInterface<ArrayDynamic> >(intrepid_basis);
+      = Teuchos::rcp_dynamic_cast<Intrepid2::DofCoordsInterface<ArrayDynamic> >(intrepid_basis);
+    // This will trip if the basis is not inheirited off DofCoordsInterface and doesnt have the right function,getDofCoords 
+    TEUCHOS_ASSERT(elmtspace ==PureBasis::CONST || !Teuchos::is_null(coords)); 
     if (!Teuchos::is_null(coords)) {
       ArrayDynamic dyn_basis_coordinates_ref = af.buildArray<Scalar,BASIS,Dim>("basis_coordinates_ref",basis_coordinates_ref.dimension(0),basis_coordinates_ref.dimension(1));
       coords->getDofCoords(dyn_basis_coordinates_ref);
