@@ -298,6 +298,14 @@
     id=\"58\" name=\"scotch_imbalance_ratio\" type=\"string\" validatorId=\"19\" value=\"0.2\" \
     docString='  scotch ordering - Dissection imbalance ratio  (default 0.2)' \
     /> \
+   <Parameter  \
+    id=\"59\" name=\"scotch_ordering_default\" type=\"string\" validatorId=\"51\" value=\"true\" \
+    docString='  use default scotch ordering strategy (default true)' \
+    /> \
+   <Parameter  \
+    id=\"60\" name=\"scotch_ordering_strategy\" type=\"string\" value=\"\" \
+    docString='  scotch ordering - Dissection imbalance ratio (default  )' \
+    /> \
    <ParameterList  name=\"zoltan_parameters\"> \
    </ParameterList> \
    <ParameterList   name=\"parma_parameters\"> \
