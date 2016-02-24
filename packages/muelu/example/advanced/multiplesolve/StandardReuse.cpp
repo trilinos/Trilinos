@@ -306,6 +306,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   std::string xmlFileName = "";     clp.setOption("xml",                &xmlFileName, "read parameters from a file");
   int         numRebuilds = 0;      clp.setOption("rebuild",            &numRebuilds, "#times to rebuild hierarchy");
   bool        useFilter   = true;   clp.setOption("filter", "nofilter", &useFilter,   "Print out only Setup times");
+  bool        modify      = true;   clp.setOption("modify", "nomodify", &modify,      "Change values of the matrix used for reuse");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -336,9 +337,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   RCP<MultiVector>  coordinates, nullspace;
   ConstructData(matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
 
-  galeriList.set("stretchx", 2.2);
-  galeriList.set("stretchy", 1.2);
-  galeriList.set("stretchz", 0.3);
+  if (modify) {
+    galeriList.set("stretchx", 2.2);
+    galeriList.set("stretchy", 1.2);
+    galeriList.set("stretchz", 0.3);
+  }
   ConstructData(matrixType, galeriList, lib, comm, B, map, coordinates, nullspace);
 
   out << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
