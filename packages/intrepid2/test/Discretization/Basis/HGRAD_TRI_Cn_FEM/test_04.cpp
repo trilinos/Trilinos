@@ -551,7 +551,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
   // Step 1: mass matrix: tabulate values of basis functions at cubature points
   cell_basis.getValues(value_of_basis_at_cub_points_cell, cub_points_cell, OPERATOR_VALUE);
   if (apply_orientation) {
-    OrientationTools<value_type>::verbose = verbose;
+    OrientationTools<value_type>::verbose = false;
     OrientationTools<value_type>::getBasisFunctionsByTopology(value_of_reordered_basis_at_cub_points_cell,
                                                               value_of_basis_at_cub_points_cell,
                                                               cell_basis);
@@ -917,7 +917,7 @@ int main(int argc, char *argv[]) {
 
         // test for all basis above order p
         const EPointType pointtype[] = { POINTTYPE_EQUISPACED, POINTTYPE_WARPBLEND };
-        for (int ptype=0;ptype<1;++ptype) {
+        for (int ptype=0;ptype<2;++ptype) {
           for (int p=minp;p<=maxp;++p) {
             *outStream << "\n"                                              \
                        << "===============================================================================\n" \
@@ -1020,8 +1020,8 @@ int main(int argc, char *argv[]) {
                                              nodes,
                                              ort,
                                              nx, ny);
-
-                if (verbose) {
+                // if p is bigger than 4, not worth to look at the matrix
+                if (verbose && p < 5) {
                   *outStream << " - Element matrix and rhs, iel = " << iel << "\n";
                   *outStream << std::showpos;
                   for (int i=0;i<nbf;++i) {
@@ -1039,7 +1039,7 @@ int main(int argc, char *argv[]) {
                                                 nnodes_per_element);
               }
 
-              if (verbose) {
+              if (verbose && p < 5) {
                 *outStream << " - Assembled element matrix and rhs -\n";
                 *outStream << std::showpos;
                 for (int i=0;i<ndofs;++i) {
@@ -1067,7 +1067,7 @@ int main(int argc, char *argv[]) {
                                           local2global[iel],
                                           nnodes_per_element);
                 
-                if (verbose) {
+                if (verbose && p < 5) {
                   *outStream << " - Element solution, iel = " << iel << "\n";
                   *outStream << std::showpos;
                   for (int i=0;i<nbf;++i) {
@@ -1095,8 +1095,7 @@ int main(int argc, char *argv[]) {
                 interpolation_error += element_interpolation_error;
                 solution_norm       += element_solution_norm;
                 
-                *outStream //<< "   conf = " << std::setw(4) << conf 
-                           << "   iel = " << std::setw(4) << iel 
+                *outStream << "   iel = " << std::setw(4) << iel 
                            << " , error = " << element_interpolation_error 
                            << " , solution norm = " << element_solution_norm  
                            << " , relative error = " << (element_interpolation_error/element_solution_norm)
