@@ -79,7 +79,7 @@ void ElemElemGraph::fill_from_mesh()
     size_t num_side_ids_needed = elem_side_comm.size(); // parallel boundary faces
     num_side_ids_needed += m_graph.get_num_edges(); // locally_owned_faces
 
-    num_side_ids_needed += 6*m_graph.get_num_elements_in_graph(); // skinned faces
+    num_side_ids_needed += get_max_num_sides_per_element() * m_graph.get_num_elements_in_graph(); // skinned faces
 
     m_sideIdPool.generate_initial_ids(num_side_ids_needed);
 
@@ -1459,7 +1459,8 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allUnfilteredEle
 
     const size_t numEdgesBefore = num_edges();
     add_elements_locally(allElementsNotAlreadyInGraph);
-    const size_t numNewSideIdsNeeded = num_edges() - numEdgesBefore;
+    size_t numNewSideIdsNeeded = num_edges() - numEdgesBefore;
+    numNewSideIdsNeeded += get_max_num_sides_per_element() * allUnfilteredElementsNotAlreadyInGraph.size();
 
     impl::ElemSideToProcAndFaceId elem_side_comm = get_element_side_ids_to_communicate();
 
@@ -1937,6 +1938,11 @@ stk::mesh::EntityId ElemElemGraph::add_side_for_remote_edge(const GraphEdge & gr
         }
     }
     return newFaceId;
+}
+
+unsigned ElemElemGraph::get_max_num_sides_per_element() const
+{
+    return 6;
 }
 
 

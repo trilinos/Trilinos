@@ -284,6 +284,7 @@ private:
     std::vector<impl::LocalId> get_local_ids_for_element_entities(const stk::mesh::EntityVector &elems);
 
     void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge) const;
+    unsigned get_max_num_sides_per_element() const;
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
