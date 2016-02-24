@@ -286,6 +286,7 @@ private:
   void buildModel(bool isLocal);
   void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts,
                      SCOTCH_Num *iwgts);
+  static int setStrategy(SCOTCH_Strat * c_strat_ptr, const ParameterList &pList, int procRank);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -596,20 +597,236 @@ void AlgPTScotch<Adapter>::scale_weights(
 }
 
 template <typename Adapter>
+int AlgPTScotch<Adapter>::setStrategy(SCOTCH_Strat * c_strat_ptr, const ParameterList &pList, int procRank) {
+// get ordering parameters from parameter list
+  
+  const Teuchos::ParameterEntry *pe;
+  int isVerbose = 0;
+  pe = pList.getEntryPtr("scotch_verbose");
+  if (pe)
+    isVerbose = pe->getValue<int>(&isVerbose);
+
+  int use_default = 1;
+  std::string strat_string("");
+
+  pe = pList.getEntryPtr("scotch_ordering_default");
+  if (pe)
+    use_default = pe->getValue<int>(&use_default);
+  
+  pe = pList.getEntryPtr("scotch_ordering_strategy");
+  if (pe)
+    strat_string = pe->getValue<std::string>(&strat_string);
+
+  int ierr = 1;
+  if (!use_default && strat_string.size() > 0) {
+
+    if (isVerbose && procRank == 0) {
+      std::cout << "Ordering strategy string: " << strat_string << std::endl;
+    }
+    SCOTCH_stratInit(c_strat_ptr);
+    ierr = SCOTCH_stratGraphOrder( c_strat_ptr, strat_string.c_str());
+
+  } else {
+
+    int levels = 0;
+    double balrat = 0.2;
+
+    pe = pList.getEntryPtr("scotch_level");
+    if (pe)
+      levels = pe->getValue<int>(&levels);
+    
+    pe = pList.getEntryPtr("scotch_imbalance_ratio");
+    if (pe)
+      balrat = pe->getValue<double>(&balrat);
+    
+    if (isVerbose && procRank == 0) {
+      std::cout << "Ordering level: " << levels << std::endl;
+      std::cout << "Ordering dissection imbalance ratio: " << balrat << std::endl;
+    }
+  
+    SCOTCH_stratInit(c_strat_ptr);
+    ierr = SCOTCH_stratGraphOrderBuild( c_strat_ptr,
+        SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
+        levels, balrat); // based on Siva's example
+  }
+  
+  return ierr;
+} 
+
+template <typename Adapter>
 int AlgPTScotch<Adapter>::order(
     const RCP<OrderingSolution<lno_t, gno_t> > &solution) {
   // TODO: translate teuchos sublist parameters to scotch strategy string
   // TODO: construct local graph model
   // TODO: solve with scotch
-  // TODO: set solution feilds
+  // TODO: set solution fields
 
+#define BDD  
   HELLO; // say hi so that we know we have called this method
-  if (problemComm->getRank() == 0) {
-    std::cout << "Hi, this is just the Host checking in." << std::endl;
-    std::cout << "It would appear that we need to do some work now." << std::endl;
-  }
-  this->buildModel(true);
+  int me = problemComm->getRank();
+  const ParameterList &pl = env->getParameters();
+  const Teuchos::ParameterEntry *pe;
 
+  int isVerbose = 0;
+  pe = pl.getEntryPtr("scotch_verbose");
+  if (pe)
+    isVerbose = pe->getValue<int>(&isVerbose);
+  
+  // build a local graph model
+  this->buildModel(true);
+  if (isVerbose && me== 0) {
+    std::cout << "Built local graph model." << std::endl;
+  }
+
+  // based off of Siva's example
+  SCOTCH_Strat c_strat_ptr; // strategy
+  SCOTCH_Graph c_graph_ptr; // pointer to scotch graph
+  int ierr;
+
+  ierr = SCOTCH_graphInit( &c_graph_ptr);
+  if ( ierr != 0) {
+    throw std::runtime_error("Failed to initialize Scotch graph!");
+  } 
+  if (isVerbose && me == 0) {
+    std::cout << "Initialized Scotch graph." << std::endl;
+  }
+
+  // Get vertex info
+  ArrayView<const gno_t> vtxID;
+  ArrayView<StridedData<lno_t, scalar_t> > vwgts;
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
+  SCOTCH_Num vertnbr=0;
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertnbr, nVtx);
+
+  // Get edge info
+  ArrayView<const gno_t> edgeIds;
+  ArrayView<const lno_t> offsets;
+  ArrayView<StridedData<lno_t, scalar_t> > ewgts;
+
+  size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
+  SCOTCH_Num edgenbr=0;
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgenbr, nEdge);
+  
+  SCOTCH_Num *verttab;  // starting adj/vtx
+  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_TPL_T_ARRAY(&verttab, offsets);
+
+  SCOTCH_Num *edgetab;  // adjacencies
+  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_TPL_T_ARRAY(&edgetab, edgeIds);
+  
+  // We don't use these arrays, but we need them as arguments to Scotch.
+  SCOTCH_Num *vendtab = NULL;  // Assume consecutive storage for adj
+  //SCOTCH_Num *vendtab = verttab+1;  // Assume consecutive storage for adj
+  // Get weight info.
+  SCOTCH_Num *velotab = NULL;  // Vertex weights
+  SCOTCH_Num *vlbltab = NULL;  // vertes labels
+  SCOTCH_Num *edlotab = NULL;  // Edge weights
+  
+  int nVwgts = model->getNumWeightsPerVertex();
+  int nEwgts = model->getNumWeightsPerEdge();
+  if (nVwgts > 1 && me == 0) {
+    std::cerr << "Warning:  NumWeightsPerVertex is " << nVwgts 
+              << " but Scotch allows only one weight. "
+              << " Zoltan2 will use only the first weight per vertex."
+              << std::endl;
+  }
+  if (nEwgts > 1 && me == 0) {
+    std::cerr << "Warning:  NumWeightsPerEdge is " << nEwgts 
+              << " but Scotch allows only one weight. "
+              << " Zoltan2 will use only the first weight per edge."
+              << std::endl;
+  }
+  
+  if (nVwgts) {
+    velotab = new SCOTCH_Num[nVtx+1];  // +1 since Scotch wants all procs 
+                                       // to have non-NULL arrays
+    scale_weights(nVtx, vwgts[0], velotab);
+  }
+
+  if (nEwgts) {
+    edlotab = new SCOTCH_Num[nEdge+1];  // +1 since Scotch wants all procs 
+                                         // to have non-NULL arrays
+    scale_weights(nEdge, ewgts[0], edlotab);
+  }
+
+  // build scotch graph
+  int baseval = 0;
+  ierr = 1;
+  ierr = SCOTCH_graphBuild( &c_graph_ptr, baseval,
+                            vertnbr, verttab, vendtab, velotab, vlbltab,
+                            edgenbr, edgetab, edlotab);
+  if (ierr != 0) {
+    throw std::runtime_error("Failed to build Scotch graph!");
+  }
+  if (isVerbose && me == 0) {
+    std::cout << "Built Scotch graph." << std::endl;
+  }
+
+  ierr = SCOTCH_graphCheck(&c_graph_ptr);
+  if (ierr != 0) {
+    throw std::runtime_error("Graph is inconsistent!");
+  }
+  if (isVerbose && me == 0) {
+    std::cout << "Graph is consistent." << std::endl;
+  }
+
+  // set the strategy 
+  ierr = AlgPTScotch<Adapter>::setStrategy(&c_strat_ptr, pl, me); 
+
+  if (ierr != 0) {
+    throw std::runtime_error("Can't build strategy!");
+  }else if (isVerbose && me == 0) {
+    std::cout << "Graphing strategy built.." << std::endl;
+  }
+
+  // Allocate results
+  ArrayRCP<int> permtab(vertnbr,0);
+  ArrayRCP<int> peritab(vertnbr,0);
+  ArrayRCP<int> rangetab(vertnbr+1,0);
+  ArrayRCP<int> treetab(vertnbr,0);
+  SCOTCH_Num cblk = 0;
+  ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr, permtab.get(), peritab.get(), 
+                            &cblk, rangetab.get(), treetab.get());
+
+  if (ierr != 0) {
+    throw std::runtime_error("Could not compute ordering!!");
+  }
+#ifdef BDD
+  if (me == 0) {
+    std::cout << "Ordering computed." << std::endl;
+    //printf("permutation: {");
+    //for (auto &p : permtab) {
+    //  printf("%8d", p);
+    //}
+    //printf("}\n");
+  
+    //printf("permutation inverse: {");
+    //for (auto &p : peritab) {
+    //  printf("%8d", p);
+    //}
+    //printf("}\n");
+   
+    //printf("range: {");
+    //for (auto &p : rangetab) {
+    //  printf("%8d", p);
+    //}
+    //printf("}\n");
+    //
+    //printf("tree: {");
+    //for (auto &p : treetab) {
+    //  printf("%8d", p);
+    //}
+    //printf("}\n");
+    printf("number of column blocks: %d\n", cblk);
+  }
+#endif
+
+  // reclaim memory
+  SCOTCH_stratExit(&c_strat_ptr);
+  SCOTCH_graphFree(&c_graph_ptr);
+
+  if (isVerbose && problemComm->getRank() == 0) {
+    std::cout << "Freed Scotch graph!" << std::endl;
+  }
   return 0;
 }
 
