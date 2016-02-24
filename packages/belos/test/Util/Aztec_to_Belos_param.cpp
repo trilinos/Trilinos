@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
     for(int i=0;i<AZ_FIRST_USER_OPTION;++i) {
       std::cout << i<<" "<<az_opt[i];
       if(i<AZ_FIRST_USER_PARAM) std::cout <<" "<<az_par_val[i];
-      cout<<std::endl;
+      std::cout<<std::endl;
     }
    
     tpl.print();

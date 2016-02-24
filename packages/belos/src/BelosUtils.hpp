@@ -57,7 +57,7 @@ namespace Belos{
 std::pair< std::string, int >  
 translateFromAztecParams( Teuchos::ParameterList &tpl ,
 			  const int * aztec_options, 
-			  const double * aztec_params,
+			  const double * aztec_params
 			  ) {
   using namespace std;
   int econd = TRANSLATE_FROM_AZTEC_OK;
