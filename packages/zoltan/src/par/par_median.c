@@ -258,20 +258,19 @@ int Zoltan_RB_find_median(
         if (tmp_half < valuemin || tmp_half > valuemax)
           tmp_half = 0.5 * (valuemin + valuemax);
       }
-#define KDD_WEIGHT_TMPHALF  
-#ifdef KDD_WEIGHT_TMPHALF
       else if (weight) {
-        /* Some problems with many zero-weighted dots do not behave well
-         * with this computation of tmp_half.  Moreover, since zoltan 
-         * provides artificial weights of 1 for non-weighted problems,
-         * this version was always used.  
-         * Removing it, however, changes many Zoltan answer files.  
-         * I will keep it for now, and perhaps remove it later.  KDD 2/16/16
+        /* Note, since zoltan provides artificial weights of 1 for non-weighted
+         * problems, this computation of tmp_half is always used.  
+         * 
+         * Some problems with many zero-weighted dots do not behave well
+         * with this computation of tmp_half.  
+         * Removing it, however, increases the number of iterations needed for
+         * many Zoltan tests.  
+         * KDD 2/2016
          */
         tmp_half = valuemin + (targetlo - weightlo) /
                     (weight - weightlo - weighthi) * (valuemax - valuemin);
-     }
-#endif
+      }
       else
         tmp_half = 0.5 * (valuemin + valuemax);
 
