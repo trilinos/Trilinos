@@ -73,7 +73,7 @@ typedef double magnitude_type;
 // Command line input variable
 //
 //
-static int  maxp = 6; // INTREPID2_MAX_ORDER;
+static int  maxp = 5; // INTREPID2_MAX_ORDER;
 static int  nelement = 2;
 static bool verbose = false;
 static bool apply_orientation = true;
