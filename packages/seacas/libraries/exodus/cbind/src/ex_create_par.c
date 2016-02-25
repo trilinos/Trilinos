@@ -124,7 +124,6 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 
 */
 #include <stdlib.h>
-#include <assert.h>
 #include <mpi.h>
 
 #include "netcdf_par.h"
@@ -158,7 +157,6 @@ int ex_create_par_int (const char *path,
   int is_pnetcdf = 0;
 
   unsigned int my_mode = cmode;
-  assert(my_mode == cmode);
   exerrval = 0; /* clear error code */
 
 #if !defined(ENABLE_NETCDF4)

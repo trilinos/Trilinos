@@ -152,7 +152,6 @@ int ex_create_int (const char *path,
    
   int int64_status;
   unsigned int my_mode = cmode;
-  assert(my_mode == cmode);
   exerrval = 0; /* clear error code */
 
   if (run_version != EX_API_VERS_NODOT && warning_output == 0) {
