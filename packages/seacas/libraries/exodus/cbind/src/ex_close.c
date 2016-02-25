@@ -86,7 +86,7 @@ int ex_close (int exoid)
     * call ex_rm_file_item and ex_rm_stat_ptr on each group.
     */
 
-#if defined(ENABLE_NETCDF4)
+#if NC_HAS_HDF5
    /* nc_inq_grp_parent() will return NC_ENOGRP error if exoid
     * refers to the root group (which is what we want)
     */

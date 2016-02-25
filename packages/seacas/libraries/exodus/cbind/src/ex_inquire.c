@@ -369,7 +369,7 @@ static int ex_inquire_internal (int      exoid,
 				float   *ret_float,
 				char    *ret_char)
 {
-  int dimid, varid, tmp_num, rootid;
+  int dimid, varid, rootid;
   void_int *ids = NULL;
   size_t i;
   size_t ldum = 0;
@@ -1032,20 +1032,25 @@ static int ex_inquire_internal (int      exoid,
     break;
 
   case EX_INQ_NUM_CHILD_GROUPS:
-    /* return number of groups contained in this (exoid) group */
-#if defined(ENABLE_NETCDF4)
-    nc_inq_grps(exoid, &tmp_num, NULL);
-    *ret_int = tmp_num;
+    {
+      /* return number of groups contained in this (exoid) group */
+#if NC_HAS_HDF5
+      int tmp_num;
+      nc_inq_grps(exoid, &tmp_num, NULL);
+      *ret_int = tmp_num;
 #endif
+    }
     break;
     
   case EX_INQ_GROUP_PARENT:
+    {
     /* return id of parent of this (exoid) group; returns exoid if at root */
-#if defined(ENABLE_NETCDF4)
-    tmp_num = exoid;
-    nc_inq_grp_parent(exoid, &tmp_num);
-    *ret_int = tmp_num;
+#if NC_HAS_HDF5
+      int tmp_num = exoid;
+      nc_inq_grp_parent(exoid, &tmp_num);
+      *ret_int = tmp_num;
 #endif
+    }
     break;
     
   case EX_INQ_GROUP_ROOT:
@@ -1055,7 +1060,7 @@ static int ex_inquire_internal (int      exoid,
     
   case EX_INQ_GROUP_NAME_LEN:
     {
-#if defined(ENABLE_NETCDF4)
+#if NC_HAS_HDF5
       size_t len_name = 0;
       /* return name length of group exoid */
       nc_inq_grpname_len(exoid, &len_name);
@@ -1073,14 +1078,14 @@ static int ex_inquire_internal (int      exoid,
       ex_err("ex_inquire",errmsg,exerrval);
       return (EX_FATAL);
     }
-#if defined(ENABLE_NETCDF4)
+#if NC_HAS_HDF5
     nc_inq_grpname(exoid, ret_char);
 #endif    
     break;
     
   case EX_INQ_FULL_GROUP_NAME_LEN:
     {
-#if defined(ENABLE_NETCDF4)
+#if NC_HAS_HDF5
       size_t len_name = 0;
       /* return length of full group name which is the "/" separated path from root
        * For example "/group1/subgroup1/subsubgroup1"
@@ -1103,7 +1108,7 @@ static int ex_inquire_internal (int      exoid,
       ex_err("ex_inquire",errmsg,exerrval);
       return (EX_FATAL);
     }
-#if defined(ENABLE_NETCDF4)
+#if NC_HAS_HDF5
     nc_inq_grpname_full(exoid, NULL, ret_char);
 #endif    
     break;

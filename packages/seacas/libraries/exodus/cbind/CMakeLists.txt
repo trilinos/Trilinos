@@ -17,10 +17,6 @@ FILE(GLOB SOURCES src/*.c)
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-IF (TPL_Netcdf_Enables_Netcdf4)
-   ADD_DEFINITIONS(-DENABLE_NETCDF4)
-ENDIF()
-
 SET(HEADERS
   include/exodusII.h
   include/exodusII_par.h

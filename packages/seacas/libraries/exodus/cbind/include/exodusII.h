@@ -67,8 +67,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.25f
-#define EX_API_VERS_NODOT 625
+#define EX_API_VERS 6.27f
+#define EX_API_VERS_NODOT 627
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -106,11 +106,16 @@ extern "C" {
 #define EX_NOCLOBBER            0x0004 /**< Don't overwrite existing database, default */
 #define EX_CLOBBER              0x0008 /**< Overwrite existing database if it exists */
 #define EX_NORMAL_MODEL         0x0010 /**< disable mods that permit storage of larger models */
-#define EX_LARGE_MODEL          0x0020 /**< enable mods that permit storage of larger models */
+#define EX_64BIT_OFFSET         0x0020 /**< enable mods that permit storage of larger models */
+#define EX_LARGE_MODEL          EX_64BIT_OFFSET /**< enable mods that permit storage of larger models */
+#define EX_64BIT_DATA           0x400000 /**< CDF-5 format: classic model but 64 bit dimensions and sizes */
 #define EX_NETCDF4              0x0040 /**< use the hdf5-based netcdf4 output */
 #define EX_NOSHARE              0x0080  /**< Do not open netcdf file in "share" mode */
 #define EX_SHARE                0x0100 /**< Do open netcdf file in "share" mode */
 #define EX_NOCLASSIC            0x0200 /**< Do not force netcdf to classic mode in netcdf4 mode */
+
+#define EX_DISKLESS             0x100000 /**< Experimental */
+#define EX_MMAP                 0x200000 /**< Experimental */
 
   /* Need to distinguish between storage on database (DB in name) and
      passed through the API functions (API in name).
