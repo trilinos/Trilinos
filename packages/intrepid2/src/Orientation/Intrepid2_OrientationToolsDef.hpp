@@ -650,7 +650,7 @@ namespace Intrepid2 {
       // map to reference coordinates
       ArrayType refPtsCell(ndofEdge, cellDim);
       CellTools<Scalar>::mapToReferenceSubcell(refPtsCell,
-                                               ortPtsLine,
+                                               refPtsLine,
                                                lineDim,
                                                edgeId,
                                                cellTopo);
@@ -668,7 +668,7 @@ namespace Intrepid2 {
 
       // reorder values by topology
       ArrayType outValues(numLineBasis, ndofEdge);
-      lineBasis.getValues(tmpValues, refPtsLine, OPERATOR_VALUE);
+      lineBasis.getValues(tmpValues, ortPtsLine, OPERATOR_VALUE);
       getBasisFunctionsByTopology(outValues,
                                   tmpValues,
                                   lineBasis);
@@ -721,7 +721,7 @@ namespace Intrepid2 {
       }
 
       CoeffMatrixType R;
-      const bool transpose = false;
+      const bool transpose = reverse;
 
       // sparcify
       R.import(ortMat, transpose);
@@ -753,7 +753,7 @@ namespace Intrepid2 {
 
       // if the face is left-handed system, the orientation should be re-enumerated
       const int leftHanded = cellTopo.getNodeMap(2, faceId, 1) > cellTopo.getNodeMap(2, faceId, 2);
-      const int leftOrt[] = { 0, 2, 1, 3, 5, 4};
+      const int leftOrt[] = { 0, 2, 1, 3, 5, 4 };
       const int ort = (leftHanded ? leftOrt[faceOrt] : faceOrt);
 
       const unsigned int cellDim  = cellTopo.getDimension();
@@ -790,7 +790,7 @@ namespace Intrepid2 {
       // map to reference coordinates
       ArrayType refPtsCell(ndofFace, cellDim);
       CellTools<Scalar>::mapToReferenceSubcell(refPtsCell,
-                                               ortPtsFace,
+                                               refPtsFace,
                                                faceDim,
                                                faceId,
                                                cellTopo);
@@ -808,7 +808,7 @@ namespace Intrepid2 {
 
       // reorder values by topology
       ArrayType outValues(numFaceBasis, ndofFace);
-      faceBasis.getValues(tmpValues, refPtsFace, OPERATOR_VALUE);
+      faceBasis.getValues(tmpValues, ortPtsFace, OPERATOR_VALUE);
       getBasisFunctionsByTopology(outValues,
                                   tmpValues,
                                   faceBasis);
@@ -879,7 +879,7 @@ namespace Intrepid2 {
       }
 
       CoeffMatrixType R;
-      const bool transpose = false;
+      const bool transpose = reverse;
 
       // sparcify
       R.import(ortMat, transpose);
@@ -1004,17 +1004,17 @@ namespace Intrepid2 {
     switch (dim) {
     case 2: {
       // need 3 points (origin, x end point, y end point)
-      const double v[2][2] = { { pts(1,0) - pts(0,0), pts(1,1) - pts(0,1) },
-                               { pts(2,0) - pts(0,0), pts(2,1) - pts(0,1) } };
+      const double v[2][2] = { { pts(0,1,0) - pts(0,0,0), pts(0,1,1) - pts(0,0,1) },
+                               { pts(0,2,0) - pts(0,0,0), pts(0,2,1) - pts(0,0,1) } };
 
       det = (v[0][0]*v[1][1] - v[1][0]*v[0][1]);
       break;
     }
     case 3: {
       // need 4 points (origin, x end point, y end point, z end point)
-      const double v[3][3] = { { pts(1,0) - pts(0,0), pts(1,1) - pts(0,1), pts(1,2) - pts(0,2) },
-                               { pts(2,0) - pts(0,0), pts(2,1) - pts(0,1), pts(2,2) - pts(0,2) },
-                               { pts(3,0) - pts(0,0), pts(3,1) - pts(0,1), pts(3,2) - pts(0,2) } };
+      const double v[3][3] = { { pts(0,1,0) - pts(0,0,0), pts(0,1,1) - pts(0,0,1), pts(0,1,2) - pts(0,0,2) },
+                               { pts(0,2,0) - pts(0,0,0), pts(0,2,1) - pts(0,0,1), pts(0,2,2) - pts(0,0,2) },
+                               { pts(0,3,0) - pts(0,0,0), pts(0,3,1) - pts(0,0,1), pts(0,3,2) - pts(0,0,2) } };
 
       det = (v[0][0] * v[1][1] * v[2][2] +
              v[0][1] * v[1][2] * v[2][0] +
@@ -1384,6 +1384,10 @@ namespace Intrepid2 {
 
   template<class Scalar>
   bool OrientationTools<Scalar>::verbose = false;
+
+  // apply transposed map (reverse mapping for test only)
+  template<class Scalar>
+  bool OrientationTools<Scalar>::reverse = false;
 
   template<class Scalar>
   std::ostream* OrientationTools<Scalar>::verboseStreamPtr = &std::cout;

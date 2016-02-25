@@ -73,7 +73,7 @@ typedef double magnitude_type;
 // Command line input variable
 //
 //
-static int  maxp = 8; // INTREPID2_MAX_ORDER;
+static int  maxp = 6; // INTREPID2_MAX_ORDER;
 static int  nelement = 2;
 static bool verbose = false;
 static bool apply_orientation = true;
@@ -90,12 +90,14 @@ static bool apply_orientation = true;
 void eval_exact(FieldContainer<value_type> &       val,
                 const FieldContainer<value_type> & points,
                 const int                          nx,
-                const int                          ny);
+                const int                          ny,
+                const int                          nz);
 
 void eval_rhs(FieldContainer<value_type> &       f,
               const FieldContainer<value_type> & points,
               const int                          nx,
-              const int                          ny);
+              const int                          ny,
+              const int                          nz);
 
 void eval_neumann(FieldContainer<value_type>       & neumann,
                   const FieldContainer<value_type> & points,
@@ -103,12 +105,13 @@ void eval_neumann(FieldContainer<value_type>       & neumann,
                   const shards::CellTopology   &     parent_cell,
                   const int                          side_ordinal,
                   const int                          nx,
-                  const int                          ny);
+                  const int                          ny,
+                  const int                          nz);
 
 void fill_cell_nodes(FieldContainer<value_type> & cell_nodes,
                      const FieldContainer<value_type> & nodes,
-                     const int *element, 
-                     const int nvert, 
+                     const int *element,
+                     const int nvert,
                      const int ndim);
 
 void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
@@ -120,7 +123,8 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                   const FieldContainer<value_type> & cell_nodes,
                                   const Orientation ort,
                                   const int nx,
-                                  const int ny);
+                                  const int ny,
+                                  const int nz);
 
 void assemble_element_matrix_and_rhs(FieldContainer<value_type> &A_asm,
                                      FieldContainer<value_type> &b_asm,
@@ -142,7 +146,8 @@ void compute_element_error(magnitude_type & interpolation_error,
                            const FieldContainer<value_type> &sol,
                            const Orientation ort,
                            const int nx,
-                           const int ny);
+                           const int ny,
+                           const int nz);
 
 // ----------------------------------------------------------------------
 // Function implementation
@@ -150,8 +155,8 @@ void compute_element_error(magnitude_type & interpolation_error,
 //
 void fill_cell_nodes(FieldContainer<value_type> & cell_nodes,
                      const FieldContainer<value_type> & nodes,
-                     const int *element, 
-                     const int nvert, 
+                     const int *element,
+                     const int nvert,
                      const int ndim) {
   for (int i=0;i<nvert;++i)
     for (int j=0;j<ndim;++j)
@@ -161,23 +166,25 @@ void fill_cell_nodes(FieldContainer<value_type> & cell_nodes,
 void eval_exact(FieldContainer<value_type> &       val,
                 const FieldContainer<value_type> & points,
                 const int                          nx,     // order x
-                const int                          ny) {   // order y
-  // sol = x^nx + y^ny
+                const int                          ny,     // order y
+                const int                          nz) {   // order z
+  // sol = x^nx + y^ny + z^nz
   //
   // result is a multi-vector (nsol x npts)
   // points are stored (npts x dim)
   //
   const int npts = val.dimension(1);
   for (int i=0;i<npts;++i) {
-    const value_type x = points(i, 0), y = points(i, 1);
-    val(0, i) = std::pow(x, nx)*std::pow(y, ny);
+    const value_type x = points(i, 0), y = points(i, 1), z = points(i, 2);
+    val(0, i) = std::pow(x, nx)*std::pow(y, ny)*std::pow(z, nz);
   }
 }
 
 void eval_rhs(FieldContainer<value_type> &       f,
               const FieldContainer<value_type> & points,
               const int                          nx,
-              const int                          ny) {
+              const int                          ny,
+              const int                          nz) {
   // f = - \laplace u + u, where u is from exact solution
   //
   // f is a vector (1 x npts)
@@ -193,63 +200,80 @@ void eval_rhs(FieldContainer<value_type> &       f,
     // second x-derivatives of u
     if (nx > 1) {
       for (int j=0;j<npts;++j) {
-        const value_type x = points(0, j, 0), y = points(0, j, 1);
-        f(0, j) -= nx*(nx-1)*std::pow(x, nx-2) * std::pow(y, ny);
+        const value_type x = points(0, j, 0), y = points(0, j, 1), z = points(0, j, 2);
+        f(0, j) -= nx*(nx-1)*std::pow(x, nx-2) * std::pow(y, ny) * std::pow(z, nz);
       }
     }
 
     // second y-derivatives of u
     if (ny > 1) {
       for (int j=0;j<npts;++j) {
-        const value_type x = points(0, j, 0), y = points(0, j, 1);
-        f(0, j) -=  ny*(ny-1)*std::pow(y, ny-2) * std::pow(x, nx);
+        const value_type x = points(0, j, 0), y = points(0, j, 1), z = points(0, j, 2);
+        f(0, j) -=  ny*(ny-1)*std::pow(y, ny-2) * std::pow(z, nz) * std::pow(x, nx);
+      }
+    }
+
+    // second z-derivatives of u
+    if (nz > 1) {
+      for (int j=0;j<npts;++j) {
+        const value_type x = points(0, j, 0), y = points(0, j, 1), z = points(0, j, 2);
+        f(0, j) -=  nz*(nz-1)*std::pow(z, nz-2) * std::pow(x, nx) * std::pow(y, ny);
       }
     }
   }
 
   // u
   for (int j=0;j<npts;++j) {
-    const value_type x = points(0, j, 0), y = points(0, j, 1);
-    f(0, j) +=  std::pow(x, nx) * std::pow(y, ny);
+    const value_type x = points(0, j, 0), y = points(0, j, 1), z = points(0, j, 2);
+    f(0, j) +=  std::pow(x, nx) * std::pow(y, ny) * std::pow(z, nz);
   }
 }
 
 void eval_neumann(FieldContainer<value_type>       & neumann,
                   const FieldContainer<value_type> & points,
                   const FieldContainer<value_type> & jacs,
-                  const shards::CellTopology   &     parent_cell,
+                  const shards::CellTopology   &     cell,
                   const int                          side_ordinal,
                   const int                          nx,
-                  const int                          ny) {
+                  const int                          ny,
+                  const int                          nz) {
   // neumann = \grad u \dot normal
   const int npts = neumann.dimension(1);
-  const int dim = 2;
+  const int dim = 3;
 
   FieldContainer<value_type> grad_u(1, npts, dim);
   {
     // first x-derivatives of u
     if (nx > 0) {
       for (int j=0;j<npts;++j) {
-        const value_type x = points(0, j, 0), y = points(0, j, 1);
-        grad_u(0, j, 0) = nx*std::pow(x, nx-1) * std::pow(y, ny);
+        const value_type x = points(0, j, 0), y = points(0, j, 1), z = points(0, j, 2);
+        grad_u(0, j, 0) = nx*std::pow(x, nx-1) * std::pow(y, ny) * std::pow(z, nz);
       }
     }
 
     // first y-derivatives of u
     if (ny > 0) {
       for (int j=0;j<npts;++j) {
-        const value_type x = points(0, j, 0), y = points(0, j, 1);
-        grad_u(0, j, 1) = ny*std::pow(y, ny-1) * std::pow(x, nx);
+        const value_type x = points(0, j, 0), y = points(0, j, 1), z = points(0, j, 2);
+        grad_u(0, j, 1) = ny*std::pow(y, ny-1) * std::pow(z, nz) * std::pow(x, nx);
+      }
+    }
+
+    // first z-derivatives of u
+    if (nz > 0) {
+      for (int j=0;j<npts;++j) {
+        const value_type x = points(0, j, 0), y = points(0, j, 1), z = points(0, j, 2);
+        grad_u(0, j, 2) = nz*std::pow(z, nz-1) * std::pow(x, nx) * std::pow(y, ny);
       }
     }
   }
 
   FieldContainer<value_type> side_normals(1, npts, dim);
-  CellTools<value_type>::getPhysicalSideNormals(side_normals, jacs, side_ordinal, parent_cell);
+  CellTools<value_type>::getPhysicalSideNormals(side_normals, jacs, side_ordinal, cell);
 
   // scale normals
   FieldContainer<value_type> normal_lengths(1, npts);
-
+  
   // for minus jacobian set the direction opposite
   RealSpaceTools<value_type>::vectorNorm(normal_lengths, side_normals, NORM_TWO);
   FunctionSpaceTools::scalarMultiplyDataData<value_type>(side_normals, normal_lengths, side_normals, true);
@@ -259,17 +283,18 @@ void eval_neumann(FieldContainer<value_type>       & neumann,
 void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                                   FieldContainer<value_type> & b,
                                   DefaultCubatureFactory<value_type> & cubature_factory,
-                                  const BasisSet_HGRAD_TRI_Cn_FEM<value_type,FieldContainer<value_type> > &basis_set,
+                                  const BasisSet_HGRAD_TET_Cn_FEM<value_type,FieldContainer<value_type> > &basis_set,
                                   const int *element,
                                   const int *boundary,
                                   const FieldContainer<value_type> & cell_nodes,
                                   const Orientation ort,
                                   const int nx,
-                                  const int ny) {
+                                  const int ny,
+                                  const int nz) {
 
   // Step 0: initilization
   const auto &cell_basis = basis_set.getCellBasis();
-  const auto &side_basis = basis_set.getLineBasis();
+  const auto &side_basis = basis_set.getTriangleBasis();
 
   const shards::CellTopology cell_topo = cell_basis.getBaseCellTopology();
   const shards::CellTopology side_topo = side_basis.getBaseCellTopology();
@@ -350,6 +375,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
 
   // Step 1: mass matrix: tabulate values of basis functions at cubature points
   cell_basis.getValues(value_of_basis_at_cub_points_cell, cub_points_cell, OPERATOR_VALUE);
+
   if (apply_orientation) {
     OrientationTools<value_type>::verbose = false;
     OrientationTools<value_type>::getBasisFunctionsByTopology(value_of_reordered_basis_at_cub_points_cell,
@@ -365,6 +391,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
   // transform values of basis functions
   FunctionSpaceTools::HGRADtransformVALUE<value_type>(transformed_value_of_basis_at_cub_points_cell,
                                                       value_of_basis_at_cub_points_cell);
+
 
   // multiply with weighted measure
   FunctionSpaceTools::multiplyMeasure<value_type>(weighted_transformed_value_of_basis_at_cub_points_cell,
@@ -412,7 +439,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
   // evaluate rhs function
   eval_rhs(rhs_at_cub_points_cell_physical,
            cub_points_cell_physical,
-           nx, ny);
+           nx, ny, nz);
 
   // compute rhs
   FunctionSpaceTools::integrate<value_type>(b,
@@ -431,7 +458,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
       CellTools<value_type>::setJacobianDet(jacobian_det_side_refcell, jacobian_side_refcell);
 
       // compute weighted edge measure
-      FunctionSpaceTools::computeEdgeMeasure<value_type>(weighted_measure_side_refcell,
+      FunctionSpaceTools::computeFaceMeasure<value_type>(weighted_measure_side_refcell,
                                                          jacobian_side_refcell,
                                                          cub_weights_side,
                                                          i,
@@ -469,7 +496,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
                    jacobian_side_refcell,
                    cell_topo,
                    i,
-                   nx, ny);
+                   nx, ny, nz);
 
       FunctionSpaceTools::integrate<value_type>(neumann_fields_per_side,
                                                 neumann_data_at_cub_points_side_physical,
@@ -534,11 +561,12 @@ void compute_element_error(magnitude_type & interpolation_error,
                            magnitude_type & solution_norm,
                            const int *element,
                            const FieldContainer<value_type> & cell_nodes,
-                           const BasisSet_HGRAD_TRI_Cn_FEM<value_type,FieldContainer<value_type> > &basis_set,
+                           const BasisSet_HGRAD_TET_Cn_FEM<value_type,FieldContainer<value_type> > &basis_set,
                            const FieldContainer<value_type> &sol,
                            const Orientation ort,
                            const int nx,
-                           const int ny) {
+                           const int ny,
+                           const int nz) {
   // initialize return values
   interpolation_error = 0.0;
   solution_norm = 0.0;
@@ -570,7 +598,7 @@ void compute_element_error(magnitude_type & interpolation_error,
   FieldContainer<double> exact_solution_val(1, npts);
   eval_exact(exact_solution_val,
              phy_cell_pts,
-             nx, ny);
+             nx, ny, nz);
 
   // evaluate basis at interpolation points
   FieldContainer<value_type> value_of_basis_at_ref_cell_pts(nbf_cell, npts);
@@ -628,7 +656,7 @@ int main(int argc, char *argv[]) {
 
   for (int i=0;i<argc;++i) {
     if ((strcmp(argv[i],"--nelement")          == 0)) { nelement = atoi(argv[++i]); continue;}
-    if ((strcmp(argv[i],"--apply-orientation") == 0)) { apply_orientation  = atoi(argv[++i]); continue;}
+    if ((strcmp(argv[i],"--apply-orientation") == 0)) { apply_orientation = atoi(argv[++i]); continue;}
     if ((strcmp(argv[i],"--verbose")           == 0)) { verbose  = atoi(argv[++i]); continue;}
     if ((strcmp(argv[i],"--maxp")              == 0)) { maxp     = atoi(argv[++i]); continue;}
   }
@@ -648,7 +676,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                    Unit Test (Basis_HGRAD_TRI_Cn_FEM)                       |\n" \
+    << "|                    Unit Test (Basis_HGRAD_TET_Cn_FEM)                       |\n" \
     << "|                                                                             |\n" \
     << "|     1) Patch test involving mass and stiffness matrices,                    |\n" \
     << "|        for the Neumann problem on a triangular patch                        |\n" \
@@ -677,275 +705,310 @@ int main(int argc, char *argv[]) {
 
   try {
     // test setup
-    const int ndim = 2;
-    FieldContainer<value_type> base_nodes(1, 4, ndim);
+    const int ndim = 3;
+    FieldContainer<value_type> base_nodes(1, 5, ndim);
     base_nodes(0, 0, 0) = 0.0;
     base_nodes(0, 0, 1) = 0.0;
-
+    base_nodes(0, 0, 2) = 0.0;
+    
     base_nodes(0, 1, 0) = 1.0;
     base_nodes(0, 1, 1) = 0.0;
-
+    base_nodes(0, 1, 2) = 0.0;
+    
     base_nodes(0, 2, 0) = 0.0;
     base_nodes(0, 2, 1) = 1.0;
-
-    base_nodes(0, 3, 0) = 1.0;
-    base_nodes(0, 3, 1) = 1.0;
-
-    // element 0 has globally permuted edge node
-    const int elt_0[2][3] = { { 0, 1, 2 },
-                              { 0, 2, 1 } };
+    base_nodes(0, 2, 2) = 0.0;
     
-    // element 1 is locally permuted
-    int elt_1[3] = { 1, 2, 3 };
+    base_nodes(0, 3, 0) = 0.0;
+    base_nodes(0, 3, 1) = 0.0;
+    base_nodes(0, 3, 2) = 1.0;
+
+    base_nodes(0, 4, 0) = 1.0;
+    base_nodes(0, 4, 1) = 1.0;
+    base_nodes(0, 4, 2) = 1.0;
+
+    // element 0 has globally permuted face node
+    const int elt_0[6][4] = { { 0, 1, 2, 3 },
+                              { 0, 3, 1, 2 }, 
+                              { 0, 2, 3, 1 }, 
+                              { 0, 1, 3, 2 }, 
+                              { 0, 3, 2, 1 },
+                              { 0, 2, 1, 3 } };
+    
+    // element 1 is locally permuted 
+    int elt_1[4] = { 1, 2, 3 ,4 };
 
     DefaultCubatureFactory<value_type> cubature_factory;
 
     // for all test orders
     for (int nx=0;nx<=maxp;++nx) {
       for (int ny=0;ny<=maxp-nx;++ny) {
-        // polynomial order of approximation
-        const int minp = std::max(nx+ny, 1);
+        for (int nz=0;nz<=maxp-nx-ny;++nz) {
+          // polynomial order of approximation
+          const int minp = std::max(nx+ny+nz, 1);
+          
+          // test for all basis above order p
+          const EPointType pointtype[] = { POINTTYPE_EQUISPACED, POINTTYPE_WARPBLEND };
+          for (int ptype=0;ptype<1;++ptype) {
+            for (int p=minp;p<=maxp;++p) {
+              *outStream << "\n"                                        \
+                         << "===============================================================================\n" \
+                         << "  Order (nx,ny,nz,p) = " << nx << ", " << ny << ", " << nz << ", " << p << " , PointType = " << EPointTypeToString(pointtype[ptype]) << "\n" \
+                         << "===============================================================================\n";
+              
+              BasisSet_HGRAD_TET_Cn_FEM<value_type,FieldContainer<value_type> > basis_set(p, pointtype[ptype]);
+              const auto& basis = basis_set.getCellBasis();
+              const shards::CellTopology cell = basis.getBaseCellTopology();
 
-        // test for all basis above order p
-        const EPointType pointtype[] = { POINTTYPE_EQUISPACED, POINTTYPE_WARPBLEND };
-        for (int ptype=0;ptype<2;++ptype) {
-          for (int p=minp;p<=maxp;++p) {
-            *outStream << "\n"                                              \
-                       << "===============================================================================\n" \
-                       << "  Order (nx,ny,p) = " << nx << ", " << ny << ", " << p << " , PointType = " << EPointTypeToString(pointtype[ptype]) << "\n" \
-                       << "===============================================================================\n";
+              const int nbf = basis.getCardinality();
 
-            BasisSet_HGRAD_TRI_Cn_FEM<value_type,FieldContainer<value_type> > basis_set(p, pointtype[ptype]);
-            const auto& basis = basis_set.getCellBasis();
-            const shards::CellTopology cell = basis.getBaseCellTopology();
+              const int nvert = cell.getVertexCount();
+              const int nedge = cell.getEdgeCount();
+              const int nface = cell.getFaceCount();
+              
 
-            const int nbf = basis.getCardinality();
+              FieldContainer<value_type> nodes(1, 5, ndim); 
+              FieldContainer<value_type> cell_nodes(1, nvert, ndim);
 
-            const int nvert = cell.getVertexCount();
-            const int nedge = cell.getEdgeCount();
+              // ignore the subdimension; the matrix is always considered as 1D array
+              FieldContainer<value_type> A(1, nbf, nbf), b(1, nbf);
+              
+              // ***** Test for different orientations *****
+              for (int conf0=3;conf0<6;++conf0) { 
+                for (int ino=0;ino<4;++ino) {                                                                   
+                  nodes(0, elt_0[conf0][ino], 0) = base_nodes(0, ino, 0);                                       
+                  nodes(0, elt_0[conf0][ino], 1) = base_nodes(0, ino, 1);                                       
+                  nodes(0, elt_0[conf0][ino], 2) = base_nodes(0, ino, 2);                                       
+                }                                                                                               
+                nodes(0, 4, 0) = base_nodes(0, 4, 0);                                                           
+                nodes(0, 4, 1) = base_nodes(0, 4, 1);   
+                nodes(0, 4, 2) = base_nodes(0, 4, 2);   
 
-            FieldContainer<value_type> nodes(1, 4, ndim);
-            FieldContainer<value_type> cell_nodes(1, nvert, ndim);
+                elt_1[0] = 1;
+                elt_1[1] = 2;
+                elt_1[2] = 3;
+                elt_1[3] = 4;
 
-            // ignore the subdimension; the matrix is always considered as 1D array
-            FieldContainer<value_type> A(1, nbf, nbf), b(1, nbf);
+                // for all permutations of element 1
+                for (int conf1=0;conf1<24;++conf1) {
+                  // filter out left handed element                                                             
+                  fill_cell_nodes(cell_nodes,                                                                   
+                                  nodes,                                                                        
+                                  elt_1,                                                                        
+                                  nvert, ndim);                                                                 
+                  if (OrientationTools<value_type>::isLeftHandedCell(cell_nodes)) {      
+                    // skip left handed
+                  } else {
+                    const int *element[2] = { elt_0[conf0], elt_1 };
+                    *outStream << "\n"                      \
+                               << "  Element 0 is configured " << conf0 << " "
+                               << "(" << element[0][0] 
+                               << "," << element[0][1] 
+                               << "," << element[0][2] 
+                               << "," << element[0][3] 
+                               << ")"
+                               << "  Element 1 is configured " << conf1 << " "
+                               << "(" << element[1][0] 
+                               << "," << element[1][1] 
+                               << "," << element[1][2] 
+                               << "," << element[1][3] 
+                               << ")"
+                               << "\n";
+              
+                    if (verbose) {
+                      *outStream << " - Element nodal connectivity - \n";
+                      for (int iel=0;iel<nelement;++iel)
+                        *outStream << " iel = " << std::setw(4) << iel
+                                   << ", nodes = "
+                                   << std::setw(4) << element[iel][0]
+                                   << std::setw(4) << element[iel][1]
+                                   << std::setw(4) << element[iel][2]
+                                   << std::setw(4) << element[iel][3]
+                                   << "\n";
+                    }
 
-            // ***** Test for different orientations *****
-            for (int conf0=0;conf0<2;++conf0) {
-              for (int ino=0;ino<3;++ino) {
-                nodes(0, elt_0[conf0][ino], 0) = base_nodes(0, ino, 0);
-                nodes(0, elt_0[conf0][ino], 1) = base_nodes(0, ino, 1);
-              }
-              nodes(0, 3, 0) = base_nodes(0, 3, 0);
-              nodes(0, 3, 1) = base_nodes(0, 3, 1);
+                    // Step 0: count one-to-one mapping between high order nodes and dofs
+                    Example::ToyMesh mesh;
+                    int local2global[2][16][2], boundary[2][4], off_global = 0;
 
-              // reset element connectivity
-              elt_1[0] = 1;
-              elt_1[1] = 2;
-              elt_1[2] = 3;
+                    const int nnodes_per_element
+                      = cell.getVertexCount()
+                      + cell.getEdgeCount()
+                      + cell.getFaceCount()
+                      + 1;
 
-              // for all permuations of element 1
-              for (int conf1=0;conf1<6;++conf1) {
-                // filter out left handed element
-                fill_cell_nodes(cell_nodes, 
-                                nodes, 
-                                elt_1,
-                                nvert, ndim);
-                if (OrientationTools<value_type>::isLeftHandedCell(cell_nodes)) {
-                  // skip left handed
-                } else {
-                  const int *element[2] = { elt_0[conf0], elt_1 };
-                  *outStream << "\n"                                \
-                             << "  Element 0 is configured " << conf0 << " "
-                             << "(" << element[0][0] << ","<< element[0][1] << "," << element[0][2] << ")"
-                             << "  Element 1 is configured " << conf1 << " "
-                             << "(" << element[1][0] << ","<< element[1][1] << "," << element[1][2] << ")"
-                             << "\n";
+                    for (int iel=0;iel<nelement;++iel) 
+                      mesh.getLocalToGlobalMap(local2global[iel], off_global, basis, element[iel]);
 
-                  if (verbose) {
-                    *outStream << " - Element nodal connectivity - \n";
                     for (int iel=0;iel<nelement;++iel)
-                      *outStream << " iel = " << std::setw(4) << iel
-                                 << ", nodes = "
-                                 << std::setw(4) << element[iel][0]
-                                 << std::setw(4) << element[iel][1]
-                                 << std::setw(4) << element[iel][2]
-                                 << "\n";
-                  }
+                      mesh.getBoundaryFlags(boundary[iel], cell, element[iel]);
 
-                  // Step 0: count one-to-one mapping between high order nodes and dofs
-                  Example::ToyMesh mesh;
-                  int local2global[2][8][2], boundary[2][3], off_global = 0;
-
-                  const int nnodes_per_element
-                    = cell.getVertexCount()
-                    + cell.getEdgeCount()
-                    + 1;
-
-                  for (int iel=0;iel<nelement;++iel)
-                    mesh.getLocalToGlobalMap(local2global[iel], off_global, basis, element[iel]);
-
-                  for (int iel=0;iel<nelement;++iel)
-                    mesh.getBoundaryFlags(boundary[iel], cell, element[iel]);
-
-                  if (verbose) {
-                    *outStream << " - Element one-to-one local2global map -\n";
-                    for (int iel=0;iel<nelement;++iel) {
-                      *outStream << " iel = " << std::setw(4) << iel << "\n";
-                      for (int i=0;i<(nnodes_per_element+1);++i) {
-                        *outStream << "   local = " << std::setw(4) << local2global[iel][i][0]
-                                   << "   global = " << std::setw(4) << local2global[iel][i][1]
-                                   << "\n";
+                    if (verbose) {
+                      *outStream << " - Element one-to-one local2global map -\n";
+                      for (int iel=0;iel<nelement;++iel) {
+                        *outStream << " iel = " << std::setw(4) << iel << "\n";
+                        for (int i=0;i<(nnodes_per_element+1);++i) {
+                          *outStream << "   local = " << std::setw(4) << local2global[iel][i][0]
+                                     << "   global = " << std::setw(4) << local2global[iel][i][1]
+                                     << "\n";
+                        }
+                      }
+                      *outStream << " - Element boundary flags -\n";
+                      const int nside = cell.getSideCount();
+                      for (int iel=0;iel<nelement;++iel) {
+                        *outStream << " iel = " << std::setw(4) << iel << "\n";
+                        for (int i=0;i<nside;++i) {
+                          *outStream << "   side = " << std::setw(4) << i
+                                     << "   boundary = " << std::setw(4) << boundary[iel][i]
+                                     << "\n";
+                        }
                       }
                     }
-                    *outStream << " - Element boundary flags -\n";
-                    const int nside = cell.getSideCount();
+
+                    // Step 1: assembly
+                    const int ndofs = off_global;
+                    FieldContainer<value_type> A_asm(1, ndofs, ndofs), b_asm(1, ndofs);
+              
                     for (int iel=0;iel<nelement;++iel) {
-                      *outStream << " iel = " << std::setw(4) << iel << "\n";
-                      for (int i=0;i<nside;++i) {
-                        *outStream << "   side = " << std::setw(4) << i
-                                   << "   boundary = " << std::setw(4) << boundary[iel][i]
-                                   << "\n";
+                      // Step 1.1: create element matrices
+                      Orientation ort = Orientation::getOrientation(cell, element[iel]);
+                      fill_cell_nodes(cell_nodes,
+                                      nodes,
+                                      element[iel],
+                                      nvert,
+                                      ndim);
+
+                      build_element_matrix_and_rhs(A, b,
+                                                   cubature_factory,
+                                                   basis_set,
+                                                   element[iel],
+                                                   boundary[iel],
+                                                   cell_nodes,
+                                                   ort,
+                                                   nx, ny, nz);
+
+                      // if p is bigger than 4, not worth to look at the matrix
+                      if (verbose && p < 5) {
+                        *outStream << " - Element matrix and rhs, iel = " << iel << "\n";
+                        *outStream << std::showpos;
+                        for (int i=0;i<nbf;++i) {
+                          for (int j=0;j<nbf;++j)
+                            *outStream << MatVal(A, i, j) << " ";
+                          *outStream << ":: " << MatVal(b, i, 0) << "\n";
+                        }
+                        *outStream << std::noshowpos;
                       }
+
+                      // Step 1.2: assemble high order elements
+                      assemble_element_matrix_and_rhs(A_asm, b_asm,
+                                                      A, b,
+                                                      local2global[iel],
+                                                      nnodes_per_element);
                     }
-                  }
 
-                  // Step 1: assembly
-                  const int ndofs = off_global;
-                  FieldContainer<value_type> A_asm(1, ndofs, ndofs), b_asm(1, ndofs);
-
-                  for (int iel=0;iel<nelement;++iel) {
-                    // Step 1.1: create element matrices
-                    Orientation ort = Orientation::getOrientation(cell, element[iel]);
-
-                    // set element nodal coordinates
-                    fill_cell_nodes(cell_nodes, 
-                                    nodes, 
-                                    element[iel], 
-                                    nvert, ndim);
-
-                    build_element_matrix_and_rhs(A, b,
-                                                 cubature_factory,
-                                                 basis_set,
-                                                 element[iel],
-                                                 boundary[iel],
-                                                 cell_nodes,
-                                                 ort,
-                                                 nx, ny);
-                    // if p is bigger than 4, not worth to look at the matrix
                     if (verbose && p < 5) {
-                      *outStream << " - Element matrix and rhs, iel = " << iel << "\n";
+                      *outStream << " - Assembled element matrix and rhs -\n";
                       *outStream << std::showpos;
-                      for (int i=0;i<nbf;++i) {
-                        for (int j=0;j<nbf;++j)
-                          *outStream << MatVal(A, i, j) << " ";
-                        *outStream << ":: " << MatVal(b, i, 0) << "\n";
+                      for (int i=0;i<ndofs;++i) {
+                        for (int j=0;j<ndofs;++j)
+                          *outStream << MatVal(A_asm, i, j) << " ";
+                        *outStream << ":: " << MatVal(b_asm, i, 0) << "\n";
                       }
                       *outStream << std::noshowpos;
                     }
 
-                    // Step 1.2: assemble high order elements
-                    assemble_element_matrix_and_rhs(A_asm, b_asm,
-                                                    A, b,
-                                                    local2global[iel],
-                                                    nnodes_per_element);
-                  }
+                    // Step 2: solve the system of equations
+                    int info = 0;
+                    Teuchos::LAPACK<int,value_type> lapack;
+                    FieldContainer<int> ipiv(ndofs);
+                    lapack.GESV(ndofs, 1, &A_asm(0,0,0), ndofs, &ipiv(0,0), &b_asm(0,0), ndofs, &info);
+                    TEUCHOS_TEST_FOR_EXCEPTION( info != 0, std::runtime_error,
+                                                ">>> ERROR (Intrepid::HGRAD_TRI_Cn::Test 04): " \
+                                                "LAPACK solve fails");
 
-                  if (verbose && p < 5) {
-                    *outStream << " - Assembled element matrix and rhs -\n";
-                    *outStream << std::showpos;
-                    for (int i=0;i<ndofs;++i) {
-                      for (int j=0;j<ndofs;++j)
-                        *outStream << MatVal(A_asm, i, j) << " ";
-                      *outStream << ":: " << MatVal(b_asm, i, 0) << "\n";
-                    }
-                    *outStream << std::noshowpos;
-                  }
+                    // Step 3: construct interpolant and check solutions
+                    magnitude_type interpolation_error = 0, solution_norm =0;
+                    for (int iel=0;iel<nelement;++iel) {
+                      retrieve_element_solution(b,
+                                                b_asm,
+                                                local2global[iel],
+                                                nnodes_per_element);
 
-                  // Step 2: solve the system of equations
-                  int info = 0;
-                  Teuchos::LAPACK<int,value_type> lapack;
-                  FieldContainer<int> ipiv(ndofs);
-                  lapack.GESV(ndofs, 1, &A_asm(0,0,0), ndofs, &ipiv(0,0), &b_asm(0,0), ndofs, &info);
-                  TEUCHOS_TEST_FOR_EXCEPTION( info != 0, std::runtime_error,
-                                              ">>> ERROR (Intrepid::HGRAD_TRI_Cn::Test 04): " \
-                                              "LAPACK solve fails");
-
-                  // Step 3: construct interpolant and check solutions
-                  magnitude_type interpolation_error = 0, solution_norm =0;
-                  for (int iel=0;iel<nelement;++iel) {
-                    retrieve_element_solution(b,
-                                              b_asm,
-                                              local2global[iel],
-                                              nnodes_per_element);
-
-                    if (verbose && p < 5) {
-                      *outStream << " - Element solution, iel = " << iel << "\n";
-                      *outStream << std::showpos;
-                      for (int i=0;i<nbf;++i) {
-                        *outStream << MatVal(b, i, 0) << "\n";
+                      if (verbose && p < 5) {
+                        *outStream << " - Element solution, iel = " << iel << "\n";
+                        *outStream << std::showpos;
+                        for (int i=0;i<nbf;++i) {
+                          *outStream << MatVal(b, i, 0) << "\n";
+                        }
+                        *outStream << std::noshowpos;
                       }
-                      *outStream << std::noshowpos;
-                    }
 
-                    magnitude_type
-                      element_interpolation_error = 0,
-                      element_solution_norm = 0;
+                      magnitude_type
+                        element_interpolation_error = 0,
+                        element_solution_norm = 0;
 
-                    Orientation ort = Orientation::getOrientation(cell, element[iel]);
+                      Orientation ort = Orientation::getOrientation(cell, element[iel]);
+                      fill_cell_nodes(cell_nodes,
+                                      nodes,
+                                      element[iel],
+                                      nvert,
+                                      ndim);
 
-                    // set element nodal coordinates
-                    fill_cell_nodes(cell_nodes, 
-                                    nodes, 
-                                    element[iel], 
-                                    nvert, ndim);
+                      compute_element_error(element_interpolation_error,
+                                            element_solution_norm,
+                                            element[iel],
+                                            cell_nodes,
+                                            basis_set,
+                                            b,
+                                            ort,
+                                            nx, ny, nz);
 
-                    compute_element_error(element_interpolation_error,
-                                          element_solution_norm,
-                                          element[iel],
-                                          cell_nodes,
-                                          basis_set,
-                                          b,
-                                          ort,
-                                          nx, ny);
+                      interpolation_error += element_interpolation_error;
+                      solution_norm       += element_solution_norm;
 
-                    interpolation_error += element_interpolation_error;
-                    solution_norm       += element_solution_norm;
-
-                    {
-                      int edge_orts[3];
-                      ort.getEdgeOrientation(edge_orts, nedge);
-                      *outStream << "   iel = " << std::setw(4) << iel
-                                 << ", orientation = "
-                                 << edge_orts[0]
-                                 << edge_orts[1]
-                                 << edge_orts[2]
-                                 << " , error = " << element_interpolation_error
-                                 << " , solution norm = " << element_solution_norm
-                                 << " , relative error = " << (element_interpolation_error/element_solution_norm)
-                                 << "\n";
-                    }
-                    const magnitude_type relative_error = interpolation_error/solution_norm;
-                    const magnitude_type tol = p*p*100*INTREPID_TOL;
-
-                    if (relative_error > tol) {
-                      ++r_val;
-                      *outStream << "\n\nPatch test failed: \n"
-                                 << "    exact polynomial (nx, ny) = " << std::setw(4) << nx << ", " << std::setw(4) << ny << "\n"
-                                 << "    basis order               = " << std::setw(4) << p << "\n"
-                                 << "    orientation configuration = " << std::setw(4) << conf0 << std::setw(4) << conf1 << "\n"
-                                 << "    relative error            = " << std::setw(4) << relative_error << "\n"
-                                 << "    tolerance                 = " << std::setw(4) << tol << "\n";
+                      {
+                        int edge_orts[6], face_orts[4];
+                        ort.getEdgeOrientation(edge_orts, nedge);
+                        ort.getFaceOrientation(face_orts, nface);
+                        *outStream << "   iel = " << std::setw(4) << iel
+                                   << ", edge orientation = "
+                                   << edge_orts[0]
+                                   << edge_orts[1]
+                                   << edge_orts[2]
+                                   << edge_orts[3]
+                                   << edge_orts[4]
+                                   << edge_orts[5]
+                                   << ", face orientation = "
+                                   << face_orts[0]
+                                   << face_orts[1]
+                                   << face_orts[2]
+                                   << face_orts[3]
+                                   << " , error = " << element_interpolation_error
+                                   << " , solution norm = " << element_solution_norm
+                                   << " , relative error = " << (element_interpolation_error/element_solution_norm)
+                                   << "\n";
+                      }
+                      const magnitude_type relative_error = interpolation_error/solution_norm;
+                      const magnitude_type tol = p*p*p*200*INTREPID_TOL;
+                
+                      if (relative_error > tol) {
+                        ++r_val;
+                        *outStream << "\n\nPatch test failed: \n"
+                                   << "    exact polynomial (nx, ny) = " << std::setw(4) << nx << ", " << std::setw(4) << ny << ", " << std::setw(4) << nz << "\n"
+                                   << "    basis order               = " << std::setw(4) << p << "\n"
+                                   << "    orientation configuration = " << std::setw(4) << conf0 << std::setw(4) << conf1 << "\n"
+                                   << "    relative error            = " << std::setw(4) << relative_error << "\n"
+                                   << "    tolerance                 = " << std::setw(4) << tol << "\n";
+                      }
                     }
                   }
-                } 
-
-                // for next iteration
-                std::next_permutation(elt_1, elt_1+3);
-              } // end of conf1
-            } // end of conf0
-          } // end of p
-        } // end of point type
+                  // for next iteration                                                                         
+                  std::next_permutation(elt_1, elt_1+4); 
+                } // end of conf1
+              } // end of conf0
+            } // end of p
+          } // end of point type
+        } // end of nz
       } // end of ny
     } // end of nx
   }
@@ -957,16 +1020,16 @@ int main(int argc, char *argv[]) {
   *outStream << "\t This test is for high order element assembly. \n"
              << "\t Use -D INTREPID_USING_EXPERIMENTAL_HIGH_ORDER in CMAKE_CXX_FLAGS \n";
 #endif
-
+  
   if (r_val != 0)
     std::cout << "End Result: TEST FAILED  :: r_val = " << r_val << "\n";
   else
     std::cout << "End Result: TEST PASSED\n";
-
+  
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
+  
   Kokkos::finalize();
-
+  
   return r_val;
 }

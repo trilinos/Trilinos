@@ -210,8 +210,8 @@ namespace Intrepid2 {
         }
         {
           const int i = 0;
-          const int ord_intr = (off_element < nbf ? basis.getDofOrdinal(2, i, 0) : 0);
-          const int dof_intr = (off_element < nbf ? basis.getDofTag(ord_intr)[3] : 0);
+          const int ord_intr = (off_element < nbf ? basis.getDofOrdinal(dim, i, 0) : 0);
+          const int dof_intr = (off_element < nbf ? basis.getDofTag(ord_intr)[3]   : 0);
       
           local2global[cnt][local] = off_element;
           off_element += dof_intr;

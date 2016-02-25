@@ -323,6 +323,7 @@ namespace Intrepid2 {
 
 
     static bool verbose;
+    static bool reverse;
     static std::ostream* verboseStreamPtr;
   };
 

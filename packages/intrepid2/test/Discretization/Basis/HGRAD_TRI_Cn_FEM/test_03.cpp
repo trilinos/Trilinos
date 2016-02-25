@@ -121,30 +121,30 @@ int main(int argc, char *argv[]) {
   try {
     OrientationTools<value_type>::verboseStreamPtr = outStream.get();
     for (int test_order=1;test_order<=maxp;++test_order) {
+      // Step 0 : construct basis function set
+      const int order = test_order;
+      
+      BasisSet_HGRAD_TRI_Cn_FEM<double,FieldContainer<double> > basis_set(order , POINTTYPE_EQUISPACED);
+      const auto& cell_basis = basis_set.getCellBasis();
+      const auto& line_basis = basis_set.getLineBasis();
+      
+      const shards::CellTopology cell_topo = cell_basis.getBaseCellTopology();
+      const shards::CellTopology line_topo = line_basis.getBaseCellTopology();
+      
+      const int nbf_cell = cell_basis.getCardinality();
+      const int nbf_line = line_basis.getCardinality();
+      
+      const int ndim_cell  = cell_topo.getDimension();
+      const int ndim_line  = line_topo.getDimension();
+      
+      const int npts = PointTools::getLatticeSize(line_topo, order, 1);
+
       for (int test_edge=0;test_edge<3;++test_edge) {
         for (int test_ort=0;test_ort<2;++test_ort) {
           *outStream << "\n"                                              \
                      << "===============================================================================\n" \
                      << "  Order = " << test_order << " , Edge = " << test_edge << " , Orientation = " << test_ort << "\n" \
                      << "===============================================================================\n";
-
-          // Step 0 : construct basis function set
-          const int order = test_order;
-
-          BasisSet_HGRAD_TRI_Cn_FEM<double,FieldContainer<double> > basis_set(order , POINTTYPE_EQUISPACED);
-          const auto& cell_basis = basis_set.getCellBasis();
-          const auto& line_basis = basis_set.getLineBasis();
-
-          const shards::CellTopology cell_topo = cell_basis.getBaseCellTopology();
-          const shards::CellTopology line_topo = line_basis.getBaseCellTopology();
-
-          const int nbf_cell = cell_basis.getCardinality();
-          const int nbf_line = line_basis.getCardinality();
-
-          const int ndim_cell  = cell_topo.getDimension();
-          const int ndim_line  = line_topo.getDimension();
-
-          const int npts = PointTools::getLatticeSize(line_topo, order, 1);
 
           // Step 1 : create reference and modified line points
 
@@ -195,6 +195,7 @@ int main(int argc, char *argv[]) {
                 tmp_cell_vals(i, j) = ort_cell_vals(i, j);
 
             OrientationTools<value_type>::verbose = verbose;
+            OrientationTools<value_type>::reverse = true;
             OrientationTools<value_type>::getModifiedBasisFunctions(ort_cell_vals,
                                                                     tmp_cell_vals,
                                                                     basis_set,
@@ -268,7 +269,7 @@ int main(int argc, char *argv[]) {
              << "\t Use -D INTREPID_USING_EXPERIMENTAL_HIGH_ORDER in CMAKE_CXX_FLAGS \n";
 #endif
   if (r_val != 0)
-    std::cout << "End Result: TEST FAILED\n";
+    std::cout << "End Result: TEST FAILED, r_val = " << r_val << "\n";
   else
     std::cout << "End Result: TEST PASSED\n";
 
