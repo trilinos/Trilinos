@@ -41,7 +41,7 @@
 #include <algorithm>
 #include <functional>
 #include <unordered_set>
-#include <random>
+#include <chrono>
 
 #include "Ioss_CodeTypes.h"
 #include "Ioss_Utils.h"
@@ -155,7 +155,15 @@ namespace {
     Ioss::Region region(dbi, "region_1");
 
     Ioss::FaceGenerator face_generator(region);
+#ifdef HAVE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    auto start = std::chrono::steady_clock::now();
     face_generator.generate_faces((INT)0);
+#ifdef HAVE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    auto duration = std::chrono::steady_clock::now() - start;
 
     Ioss::FaceUnorderedSet &faces = face_generator.faces();
 
@@ -195,7 +203,11 @@ namespace {
              << "\tInterior = " << interior-pboundary/2
              << "\tBoundary = " << boundary
              << "\tShared   = " << pboundary
-             << "\tError = " << error << "\n";
+             << "\tError = " << error << "\n"
+	     << "Total Time = " << std::chrono::duration<double, std::milli>(duration).count() << " ms\t"
+	     << (interior+boundary-pboundary/2)/std::chrono::duration<double>(duration).count()
+	     << " faces/second\n\n";
+
       OUTPUT << "Hash Statistics: Bucket Count = " << faces.bucket_count()
 	     << "\tLoad Factor = " << faces.load_factor() << "\n";
       size_t numel = region.get_property("element_count").get_int();

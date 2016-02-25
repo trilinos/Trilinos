@@ -140,7 +140,7 @@ namespace Iogn {
         m_generatedMesh(nullptr),  spatialDimension(3), nodeCount(0),
         elementCount(0), nodeBlockCount(0),
         elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-        nodeMap("node", "generated", myProcessor), elemMap("elem", "generated", myProcessor),
+        nodeMap("node", filename, myProcessor), elemMap("elem", filename, myProcessor),
 	m_useVariableDf(true)
   {
     if (is_input()) {

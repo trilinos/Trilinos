@@ -850,7 +850,7 @@ int *inlen;
 
    for(i=0; i<=*inlen-1; i++)
     { 
-    if(isascii(in[i]) && isalpha(in[i]) && isupper(in[i])) 
+    if(isupper(in[i])) 
       iout[i] = tolower(in[i]); 
     else
       iout[i] = in[i];
@@ -1174,7 +1174,7 @@ int *inlen;
 
    for(i=0; i<=*inlen; i++)
     { 
-    if(isascii(in[i]) && isalpha(in[i]) && islower(in[i])) 
+    if(islower(in[i]))
       iout[i] = toupper(in[i]); 
     }
 }

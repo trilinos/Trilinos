@@ -85,7 +85,7 @@ namespace {
 	   << "' Please report to gdsjaar@sandia.gov if you need help.";
     if (cgnsid > 0) {
       cg_close(cgnsid);
-}
+    }
     IOSS_ERROR(errmsg);
   }
 
@@ -282,7 +282,7 @@ namespace Iocgns {
 
     // ========================================================================
     // Get the number of zones (element blocks) in the mesh...
-    cgsize_t num_zones = 0;
+    int num_zones = 0;
     cg_nzones(cgnsFilePtr, base, &num_zones);
     m_blockLocalNodeMap.resize(num_zones+1);  // Let's use 1-based zones...
     m_zoneOffset.resize(num_zones+1);  // Let's use 1-based zones...
@@ -530,7 +530,7 @@ namespace Iocgns {
 				   &first, &num_coord, TOPTR(coord));
 	  if (ierr < 0) {
 	    cgns_error(cgnsFilePtr, __LINE__, myProcessor);
-}
+	  }
 
 	  // Map to global coordinate position...
 	  for (cgsize_t i=0; i < num_coord; i++) {
@@ -700,8 +700,7 @@ namespace Iocgns {
 	  }
 	}
 	else if (field.get_name() == "connectivity_raw") {
-	  int element_nodes = eb->topology()->number_nodes();
-	  assert(field.raw_storage()->component_count() == element_nodes);
+	  assert(field.raw_storage()->component_count() == eb->topology()->number_nodes());
 
 	  if (my_element_count > 0) {
 	    int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect,

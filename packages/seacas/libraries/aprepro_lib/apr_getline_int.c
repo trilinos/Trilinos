@@ -109,12 +109,17 @@
 #endif
 
 /********************* C library headers ********************************/
-
 #include <stdio.h>
+#include <strings.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+extern int kill(pid_t pid, int sig);
 
 #define _getline_c_ 1
 #include "apr_getline_int.h"
@@ -2060,7 +2065,7 @@ gl_local_filename_completion_proc(const char *start, int idx)
 							gl_matchlist[0] = cp;
 						}
 					}
-					if ((lstat(cp, &st) == 0) && (S_ISDIR(st.st_mode)))
+					if ((stat(cp, &st) == 0) && (S_ISDIR(st.st_mode)))
 						gl_completion_exact_match_extra_char = LOCAL_PATH_DELIM;
 				}
 				return NULL;

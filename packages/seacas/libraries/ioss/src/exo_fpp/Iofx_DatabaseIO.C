@@ -174,7 +174,7 @@ namespace Iofx {
       return dbState != Ioss::STATE_INVALID;
     }
 
-    int app_opt_val = ex_opts(EX_DEFAULT); 
+    int app_opt_val = ex_opts(EX_VERBOSE); 
 
     // File has not yet been opened, so verify that it is readable or
     // writable.  HOWEVER, *DO NOT* overwrite the file here if it exists
@@ -301,19 +301,37 @@ namespace Iofx {
       }
 
       if (is_input()) {
+#if defined EX_DISKLESS
+        // Experimental -- in memory read by netcdf library
+        if (properties.exists("MEMORY_READ")) {
+          mode |= EX_DISKLESS;
+        }
+#endif
+	int app_opt_val = ex_opts(EX_VERBOSE); 
         exodusFilePtr = ex_open(decoded_filename.c_str(), EX_READ|mode,
                                 &cpu_word_size, &io_word_size, &version);
+	ex_opts(app_opt_val); // Reset back to what it was.
       } else {
+#if defined EX_DISKLESS
+        // Experimental -- in memory write by netcdf library
+        if (properties.exists("MEMORY_WRITE")) {
+          mode |= EX_DISKLESS;
+        }
+#endif
         if (fileExists) {
+	  int app_opt_val = ex_opts(EX_VERBOSE); 
           exodusFilePtr = ex_open(decoded_filename.c_str(), EX_WRITE|mode,
                                   &cpu_word_size, &io_word_size, &version);
+	  ex_opts(app_opt_val); // Reset back to what it was.
         } else {
           // If the first write for this file, create it...
           if (int_byte_size_api() == 8) {
             mode |= EX_ALL_INT64_DB;
           }
+	  int app_opt_val = ex_opts(EX_VERBOSE); 
           exodusFilePtr = ex_create(decoded_filename.c_str(), mode,
                                     &cpu_word_size, &dbRealWordSize);
+	  ex_opts(app_opt_val); // Reset back to what it was.
           if (exodusFilePtr < 0) {
             dbState = Ioss::STATE_INVALID;
             // NOTE: Code will not continue past this call...

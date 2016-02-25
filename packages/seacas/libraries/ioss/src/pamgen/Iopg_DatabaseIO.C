@@ -137,7 +137,7 @@ namespace Iopg {
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
     commsetNodeCount(0), commsetElemCount(0),
-    nodeMap("node", filename, myProcessor), elemMap("elem", filename, myProcessor),
+    nodeMap("node", filename, myProcessor), elemMap("edge", filename, myProcessor),
     blockAdjacenciesCalculated(false)
   {
     if (is_input()) {

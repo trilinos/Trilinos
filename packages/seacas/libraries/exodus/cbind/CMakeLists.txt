@@ -1,10 +1,10 @@
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(InstallSymLink)
 
-CONFIGURE_FILE(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/exodusII_cfg.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/include/exodusII_cfg.h
-  @ONLY IMMEDIATE)
+#CONFIGURE_FILE(
+#  ${CMAKE_CURRENT_SOURCE_DIR}/include/exodusII_cfg.h.in
+#  ${CMAKE_CURRENT_BINARY_DIR}/include/exodusII_cfg.h
+#  @ONLY IMMEDIATE)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/include"

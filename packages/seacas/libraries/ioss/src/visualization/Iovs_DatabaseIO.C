@@ -822,30 +822,30 @@ namespace Iovs {
       if (nodeMap.map.empty()) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap was empty, resizing and tagging serial\n";
         nodeMap.map.resize(nodeCount+1);
-    nodeMap.map[0] = -1;
+	nodeMap.map[0] = -1;
       }
 
       if (nodeMap.map[0] == -1) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing mapping\n";
-    if (int_byte_size_api() == 4) {
-      nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
-    } else {
-      nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
-    }
+	if (int_byte_size_api() == 4) {
+	  nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
+	} else {
+	  nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
+	}
       }
 
-    nodeMap.build_reverse_map();
-
-    // Only a single nodeblock and all set
-    if (num_to_get == nodeCount) {
-      assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
-    }
-    assert(get_region()->get_property("node_block_count").get_int() == 1);
+      nodeMap.build_reverse_map();
+      
+      // Only a single nodeblock and all set
+      if (num_to_get == nodeCount) {
+	assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
       }
-
-      nodeMap.build_reorder_map(0, num_to_get);
-      return num_to_get;
+      assert(get_region()->get_property("node_block_count").get_int() == 1);
     }
+
+    nodeMap.build_reorder_map(0, num_to_get);
+    return num_to_get;
+  }
 
       size_t handle_block_ids(const Ioss::EntityBlock *eb,
                   ex_entity_type map_type,

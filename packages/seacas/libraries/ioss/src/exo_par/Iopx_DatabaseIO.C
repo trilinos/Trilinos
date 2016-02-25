@@ -293,8 +293,11 @@ namespace Iopx {
     int par_mode = get_parallel_io_mode(properties);
 
     MPI_Info info = MPI_INFO_NULL;
+    int app_opt_val = ex_opts(EX_VERBOSE); 
     int exodus_file_ptr = ex_open_par(get_filename().c_str(), EX_READ|par_mode,
-                                      &cpu_word_size, &io_word_size, &version, util().communicator(), info);
+                                      &cpu_word_size, &io_word_size, &version,
+				      util().communicator(), info);
+    ex_opts(app_opt_val); // Reset back to what it was.
 
     if (!is_input() && exodus_file_ptr < 0) {
       // File didn't exist above, but this OK if is an output
@@ -303,8 +306,10 @@ namespace Iopx {
       if (int_byte_size_api() == 8)
         mode |= EX_ALL_INT64_DB;
 
+      app_opt_val = ex_opts(EX_VERBOSE); 
       exodus_file_ptr = ex_create_par(get_filename().c_str(), exodusMode|mode|par_mode,
                                       &cpu_word_size, &dbRealWordSize, util().communicator(), info);
+      ex_opts(app_opt_val); // Reset back to what it was.
     }
 
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
@@ -380,19 +385,29 @@ namespace Iopx {
 
       MPI_Info info = MPI_INFO_NULL;
       if (is_input()) {
+	int app_opt_val = ex_opts(EX_VERBOSE); 
         exodusFilePtr = ex_open_par(get_filename().c_str(), EX_READ|mode|par_mode,
-                                    &cpu_word_size, &io_word_size, &version, util().communicator(), info);
+                                    &cpu_word_size, &io_word_size, &version,
+				    util().communicator(), info);
+	ex_opts(app_opt_val); // Reset back to what it was.
 
       } else {
         if (fileExists) {
+	  int app_opt_val = ex_opts(EX_VERBOSE); 
           exodusFilePtr = ex_open_par(get_filename().c_str(), EX_WRITE|mode|par_mode,
-                                      &cpu_word_size, &io_word_size, &version, util().communicator(), info);
+                                      &cpu_word_size, &io_word_size, &version,
+				      util().communicator(), info);
+	  ex_opts(app_opt_val); // Reset back to what it was.
         } else {
           // If the first write for this file, create it...
           if (int_byte_size_api() == 8)
             mode |= EX_ALL_INT64_DB;
+	  int app_opt_val = ex_opts(EX_VERBOSE); 
           exodusFilePtr = ex_create_par(get_filename().c_str(), mode|par_mode,
-                                        &cpu_word_size, &dbRealWordSize, util().communicator(), info);
+                                        &cpu_word_size, &dbRealWordSize,
+					util().communicator(), info);
+	  ex_opts(app_opt_val); // Reset back to what it was.
+
           if (exodusFilePtr < 0) {
             dbState = Ioss::STATE_INVALID;
             // NOTE: Code will not continue past this call...

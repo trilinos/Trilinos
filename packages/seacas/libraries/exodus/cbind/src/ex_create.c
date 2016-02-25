@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
+ * Copyright (c) 2005-2016 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
@@ -126,7 +126,6 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include <stdlib.h>
-#include <assert.h>
 
 static int warning_output = 0;
 
