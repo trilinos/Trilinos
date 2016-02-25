@@ -1,5 +1,7 @@
 INCLUDE(TribitsLibraryMacros)
+if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
 INCLUDE(InstallSymLink)
+endif()
 
 #CONFIGURE_FILE(
 #  ${CMAKE_CURRENT_SOURCE_DIR}/include/exodusII_cfg.h.in
