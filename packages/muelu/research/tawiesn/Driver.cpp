@@ -69,6 +69,7 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
+#include <MueLu_VisualizationHelpers.hpp>
 
 #include <MueLu_Utilities.hpp>
 
@@ -83,6 +84,78 @@
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class ExportVTK : public MueLu::VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  public:
+    ExportVTK() {};
+
+  public:
+
+    void writeFile(std::ofstream& fout, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& coordinates, Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& sol)
+    {
+      using namespace std;
+      typedef MueLu::VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> VH;
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > nodeMap = coordinates->getMap();
+      std::vector<LocalOrdinal> vertices;
+      std::vector<LocalOrdinal> geomSize;
+      LocalOrdinal numFineNodes = Teuchos::as<LocalOrdinal>(coordinates->getLocalLength());
+
+      vertices.reserve(numFineNodes);
+      geomSize.reserve(numFineNodes);
+      for(LocalOrdinal i = 0; i < numFineNodes; i++)
+      {
+        vertices.push_back(i);
+        geomSize.push_back(1);
+      }
+
+      Teuchos::ArrayRCP<const double> xCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(0));
+      Teuchos::ArrayRCP<const double> yCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(1));
+      Teuchos::ArrayRCP<const double> zCoords = Teuchos::null;
+      if(coordinates->getNumVectors() == 3) {
+        zCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(2));
+      }
+      Teuchos::ArrayRCP<const double> solData = Teuchos::arcp_reinterpret_cast<const double>(sol->getData(0));
+
+      std::vector<int> uniqueFine = this->makeUnique(vertices);
+      this->writeFileVTKOpening(fout, uniqueFine, geomSize);
+      this->writeFileVTKNodes(fout, uniqueFine, nodeMap);
+
+      std::string indent = "      ";
+      fout << "        <DataArray type=\"Int32\" Name=\"Processor\" format=\"ascii\">" << std::endl;
+      fout << indent;
+      int myRank = coordinates->getMap()->getComm()->getRank();
+      for(int i = 0; i < int(uniqueFine.size()); i++)
+      {
+        fout << myRank << " ";
+        if(i % 20 == 19)
+          fout << std::endl << indent;
+      }
+      fout << std::endl;
+      fout << "        </DataArray>" << std::endl;
+      // solution vector
+      fout << "        <DataArray type=\"Float64\" Name=\"Solution\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
+      fout << indent;
+      for(int i = 0; i < int(uniqueFine.size()); i++)
+      {
+        size_t numVec = coordinates->getNumVectors();
+        for(int d=0; d<numVec; d++)
+          fout << solData[i*numVec+d] << " ";
+        if(i % 3 == 0)
+          fout << std::endl << indent;
+      }
+      fout << std::endl;
+      fout << "        </DataArray>" << std::endl;
+      fout << "      </PointData>" << std::endl; // that is annoying
+
+      this->writeFileVTKCoordinates(fout, uniqueFine, xCoords, yCoords, zCoords, coordinates->getNumVectors());
+      this->writeFileVTKCells(fout, uniqueFine, vertices, geomSize);
+      this->writeFileVTKClosing(fout);
+      fout.close();
+
+    };
+
+  };
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -139,7 +212,8 @@ int main(int argc, char *argv[]) {
     std::string spcFileName = "crada1/crada_special.mm"; clp.setOption("specialfile",        &spcFileName,      "matrix market file containing fine level special dofs");
     int nPDE = 3; clp.setOption("numpdes",           &nPDE,   "number of PDE equations");
     int nNspVectors = 3; clp.setOption("numnsp", &nNspVectors, "number of nullspace vectors. Only used if null space is read from file. Must be smaller or equal than the number of null space vectors read in from file.");
-    std::string convType = "r0"; clp.setOption("convtype",                   &convType,     "convergence type (r0 or none)");
+    std::string convType = "r0"; clp.setOption("convtype",       &convType,         "convergence type (r0 or none)");
+    std::string strOutputFilename = ""; clp.setOption("output",  &strOutputFilename,"filename prefix for output file name. If empty, no output is written.");
 
     switch (clp.parse(argc,argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -246,7 +320,7 @@ int main(int argc, char *argv[]) {
 
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
       coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(cooFileName), myCoordMap);
-      fancyout << "Found " << nullspace->getNumVectors() << " null space vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
+      fancyout << "Found " << nullspace->getNumVectors() << " coordinate vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
     }
 
     // shouldn't these be const?
@@ -528,6 +602,26 @@ int main(int argc, char *argv[]) {
         fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 #endif //ifdef HAVE_MUELU_BELOS
     }
+    comm->barrier();
+    tm = Teuchos::null;
+
+    if (strOutputFilename.empty() == false) {
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Export solution in VTK")));
+      if(comm->getSize() > 1) {
+        std::stringstream ss;
+        ss << "-proc" << comm->getRank();
+        strOutputFilename.append(ss.str());
+      }
+      strOutputFilename.append(".vtu");
+
+      std::ofstream fout(strOutputFilename);
+      ExportVTK<Scalar,LocalOrdinal,GlobalOrdinal,Node> expVTK;
+      expVTK.writeFile(fout,coordinates,X);
+      fout.close();
+    }
+
+    // print timings
+
     comm->barrier();
     tm = Teuchos::null;
     globalTimeMonitor = Teuchos::null;
