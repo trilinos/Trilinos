@@ -54,7 +54,7 @@
 
 // Dynamically cast 'obj' to 'type newObj'. newObj is declared inside of the macro.
 // If the dynamic cast failed, throw an exception of type Xpetra::Exception::Bad_Cast (using the message exceptionMsg).
-#define COMMA ,
+#define XPETRA_COMMA ,
 #define XPETRA_DYNAMIC_CAST(type, obj, newObj, exceptionMsg)            \
   type * newObj ## _pt = dynamic_cast<type *>(&obj);                    \
   TEUCHOS_TEST_FOR_EXCEPTION(newObj ## _pt == NULL, Xpetra::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); \
