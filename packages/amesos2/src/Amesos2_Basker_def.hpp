@@ -64,8 +64,6 @@
 //#include "Kokkos_Core.hpp"
 //#endif
 
-#include <typeinfo>
-
 namespace Amesos2 {
 
 

@@ -57,8 +57,6 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Basker_FunctionMap.hpp"
 
-#include <typeinfo>
-
 //Note:  We got an error while being a class variable and mutable.  Need to comeback and fix!!
 
 
