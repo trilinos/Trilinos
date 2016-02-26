@@ -338,7 +338,7 @@ class RemoteOnlyImport {
 // ==============================================================
 class LightweightCrsMatrix {
  public:
-  LightweightCrsMatrix(const Epetra_CrsMatrix & A, RemoteOnlyImport & RowImporter);
+  LightweightCrsMatrix(const Epetra_CrsMatrix & A, RemoteOnlyImport & RowImporter, bool SortGhosts=false);
   LightweightCrsMatrix(const Epetra_CrsMatrix & A, Epetra_Import & RowImporter);
   ~LightweightCrsMatrix();
 
@@ -370,11 +370,11 @@ class LightweightCrsMatrix {
  private: 
 
   template <typename ImportType, typename int_type>
-  void Construct(const Epetra_CrsMatrix & A, ImportType & RowImporter);
+    void Construct(const Epetra_CrsMatrix & A, ImportType & RowImporter,bool SortGhosts=false);
 
   // Templated versions of MakeColMapAndReindex (to prevent code duplication)
   template <class GO>
-  int MakeColMapAndReindex(std::vector<int> owningPIDs,std::vector<GO> Gcolind);
+    int MakeColMapAndReindex(std::vector<int> owningPIDs,std::vector<GO> Gcolind,bool SortGhosts=false);
 
   template<typename int_type>
   std::vector<int_type>& getcolind();
@@ -402,7 +402,7 @@ template<typename int_type>
 int import_only(const Epetra_CrsMatrix& M,
                 const Epetra_Map& targetMap,
                 CrsMatrixStruct& Mview,
-                const Epetra_Import * prototypeImporter=0)
+                const Epetra_Import * prototypeImporter=0,bool SortGhosts=false)
 {
   // The goal of this method to populare the Mview object with ONLY the rows of M
   // that correspond to elements in 'targetMap.'  There will be no population of the
@@ -500,7 +500,7 @@ int import_only(const Epetra_CrsMatrix& M,
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-3")));
 #endif
 
-  Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
+  Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter,SortGhosts);
 
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-4")));

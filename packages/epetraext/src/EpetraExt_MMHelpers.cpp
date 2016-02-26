@@ -858,11 +858,11 @@ RemoteOnlyImport::~RemoteOnlyImport()
 
 template <class GO>
 void MakeColMapAndReindexSort(int& NumRemoteColGIDs, GO*& RemoteColindices,
-    std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs);
+			      std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs,bool SortGhostsAssociatedWithEachProcessor_);
 
 template <>
 void MakeColMapAndReindexSort<int>(int& NumRemoteColGIDs, int*& RemoteColindices,
-    std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs)
+    std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs,bool SortGhostsAssociatedWithEachProcessor_)
 {
   // Sort External column indices so that all columns coming from a given remote processor are contiguous
   int NLists = 2;
@@ -873,8 +873,8 @@ void MakeColMapAndReindexSort<int>(int& NumRemoteColGIDs, int*& RemoteColindices
     Epetra_Util::Sort(true, NumRemoteColGIDs, &RemoteOwningPIDs[0], 0, 0, NLists, SortLists);
   }
 
-
-  bool SortGhostsAssociatedWithEachProcessor_ = false;
+  
+  //bool SortGhostsAssociatedWithEachProcessor_ = false;
   if (SortGhostsAssociatedWithEachProcessor_) {
     // Sort external column indices so that columns from a given remote processor are not only contiguous
     // but also in ascending order. NOTE: I don't know if the number of externals associated
@@ -898,7 +898,7 @@ void MakeColMapAndReindexSort<int>(int& NumRemoteColGIDs, int*& RemoteColindices
 
 template <>
 void MakeColMapAndReindexSort<long long>(int& NumRemoteColGIDs, long long*& RemoteColindices,
-    std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs)
+    std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs,bool SortGhostsAssociatedWithEachProcessor_)
 {
   // Sort External column indices so that all columns coming from a given remote processor are contiguous
   if(NumRemoteColGIDs > 0) {
@@ -907,7 +907,7 @@ void MakeColMapAndReindexSort<long long>(int& NumRemoteColGIDs, long long*& Remo
     Epetra_Util::Sort(true, NumRemoteColGIDs, &RemoteOwningPIDs[0], 0, 0, 1, SortLists_int, 1, SortLists_LL);
   }
 
-  bool SortGhostsAssociatedWithEachProcessor_ = false;
+  //  bool SortGhostsAssociatedWithEachProcessor_ = false;
   if (SortGhostsAssociatedWithEachProcessor_) {
     // Sort external column indices so that columns from a given remote processor are not only contiguous
     // but also in ascending order. NOTE: I don't know if the number of externals associated
@@ -930,7 +930,7 @@ void MakeColMapAndReindexSort<long long>(int& NumRemoteColGIDs, long long*& Remo
 }
 
 template <class GO>
-int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std::vector<GO> Gcolind)
+int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std::vector<GO> Gcolind,bool SortGhosts)
 {
 #ifdef ENABLE_MMM_TIMINGS
   using Teuchos::TimeMonitor;
@@ -1023,7 +1023,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   std::vector<int> RemotePermuteIDs(NumRemoteColGIDs);
   for(int i=0; i<NumRemoteColGIDs; i++) RemotePermuteIDs[i]=i;
 
-  MakeColMapAndReindexSort<GO>(NumRemoteColGIDs, RemoteColindices, RemotePermuteIDs, RemoteOwningPIDs);
+  MakeColMapAndReindexSort<GO>(NumRemoteColGIDs, RemoteColindices, RemotePermuteIDs, RemoteOwningPIDs,SortGhosts);
 
   // Reverse the permutation to get the information we actually care about
   std::vector<int> ReverseRemotePermuteIDs(NumRemoteColGIDs);
@@ -1590,7 +1590,7 @@ int LightweightCrsMatrix::MakeExportLists(const Epetra_CrsMatrix & SourceMatrix,
 
 //=========================================================================
 template<typename ImportType, typename int_type>
-void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter)
+void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter,bool SortGhosts)
 {
   // Do we need to use long long for GCIDs?
 
@@ -1787,7 +1787,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 #endif
 
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
-  MakeColMapAndReindex<int_type>(TargetPids,getcolind<int_type>());
+  MakeColMapAndReindex<int_type>(TargetPids,getcolind<int_type>(),SortGhosts);
 
   /********************************************/
   /**** 4) Make Export Lists for Import    ****/
@@ -1826,7 +1826,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 
 
 //=========================================================================
-LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, RemoteOnlyImport & RowImporter):
+LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, RemoteOnlyImport & RowImporter, bool SortGhosts):
   use_lw(true),
   RowMapLW_(0),
   RowMapEP_(0),
@@ -1841,13 +1841,13 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(SourceMatrix.RowMatrixRowMap().GlobalIndicesInt()) {
-    Construct<RemoteOnlyImport, int>(SourceMatrix,RowImporter);
+    Construct<RemoteOnlyImport, int>(SourceMatrix,RowImporter,SortGhosts);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(SourceMatrix.RowMatrixRowMap().GlobalIndicesLongLong()) {
-    Construct<RemoteOnlyImport, long long>(SourceMatrix,RowImporter);
+    Construct<RemoteOnlyImport, long long>(SourceMatrix,RowImporter,SortGhosts);
   }
   else
 #endif
