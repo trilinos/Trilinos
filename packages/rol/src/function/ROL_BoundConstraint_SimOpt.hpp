@@ -278,14 +278,14 @@ public:
  
   const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) const {
 
-    return rcp( new const Vector_SimOpt<Real>( bnd1_->getLowerVectorRCP(),
-                                               bnd2_->getLowerVectorRCP() ) );
+    return rcp( new Vector_SimOpt<Real>( bnd1_->getLowerVectorRCP(),
+                                         bnd2_->getLowerVectorRCP() ) );
   }
 
   const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) const {
 
-    return rcp( new const Vector_SimOpt<Real>( bnd1_->getUpperVectorRCP(),
-                                               bnd2_->getUpperVectorRCP() ) );
+    return rcp( new Vector_SimOpt<Real>( bnd1_->getUpperVectorRCP(),
+                                         bnd2_->getUpperVectorRCP() ) );
   }
 
 
