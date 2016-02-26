@@ -327,7 +327,7 @@ void run(const UserInputForTests &uinput,
 #define BDD
 #ifdef BDD 
   if (problem_kind == "ordering") {
-    std:cout << "\nLet's examine the solution..." << std::endl;
+    std::cout << "\nLet's examine the solution..." << std::endl;
     auto solution = reinterpret_cast<ordering_problem_t *>(problem)->getSolution();
     if (solution->haveSeparators() ) {
       
