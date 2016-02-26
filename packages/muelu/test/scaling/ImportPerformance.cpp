@@ -83,8 +83,6 @@
 #endif
 
 
-//#define DEBUG_MODE
-
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::TimeMonitor;
@@ -197,19 +195,6 @@ void build_remote_pids(int MyPID,const std::vector<int> &ColMapOwningPIDs,std::v
   RemotePIDs.resize(ColMapOwningPIDs.size() - first_idx);
   for(int i=first_idx; i<N; i++)
     RemotePIDs[i-first_idx] = ColMapOwningPIDs[i]; 
-
-  /*
-  printf("[%d] RemotePIDs(%d) =",MyPID,(int)RemotePIDs.size());
-  for(int i=0;i<(int)RemotePIDs.size(); i++)
-    printf("%d ",RemotePIDs[i]);
-  printf("\n");
-
-  
-  printf("[%d] ColMapOwningPIDs(%d) =",MyPID,(int)ColMapOwningPIDs.size());
-  for(int i=0;i<(int)ColMapOwningPIDs.size(); i++)
-    printf("%d ",ColMapOwningPIDs[i]);
-  printf("\n");
-  */
 }
 
 
@@ -225,11 +210,6 @@ Epetra_Map * convert_lightweightmap_to_map(const EpetraExt::LightweightMap & A, 
       Aout = new Epetra_Map((long long)-1,A.NumMyElements(),A.MyGlobalElements64(),(long long)0,Comm);
 #endif
     }
-
-    /*    printf("[%d] LW->Map GIDs = ",Comm.MyPID());
-    for(int i=0;i<Aout->NumMyElements(); i++)
-      printf("%d|%d ",A.GID(i),Aout->GID(i));
-      printf("\n");*/
 
     return Aout;
 }
@@ -414,7 +394,6 @@ bool epetra_check_importer_correctness(const Epetra_Import & A, const Epetra_Imp
       is_correct=false;
     }
   }
-
 #endif  
 
   return is_correct;
