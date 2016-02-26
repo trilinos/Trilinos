@@ -188,13 +188,27 @@ void build_remote_pids(int MyPID,const std::vector<int> &ColMapOwningPIDs,std::v
   for(first_idx=0;first_idx<N; first_idx++)
     if(ColMapOwningPIDs[first_idx]!=MyPID)
       break;
+
+  /*   printf("[%d] ColMapOwningPIDs(%d) =",MyPID,(int)ColMapOwningPIDs.size());
+   for(int i=0;i<(int)ColMapOwningPIDs.size(); i++)
+     printf("%d ",ColMapOwningPIDs[i]);
+     printf("\n");*/
   
   // Make sure there are some non-local unknowns
-  if(ColMapOwningPIDs[first_idx]>N) return;
+   if(first_idx == N) {
+     printf("[%d] No remotes\n",MyPID);
+     return;
+   }
 
   RemotePIDs.resize(ColMapOwningPIDs.size() - first_idx);
   for(int i=first_idx; i<N; i++)
     RemotePIDs[i-first_idx] = ColMapOwningPIDs[i]; 
+
+  /*   printf("[%d] RemotePIDs(%d) =",MyPID,(int)RemotePIDs.size());
+   for(int i=0;i<(int)RemotePIDs.size(); i++)
+     printf("%d ",RemotePIDs[i]);
+     printf("\n");*/
+
 }
 
 
@@ -228,8 +242,6 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
   Epetra_CrsMatrix *Aout = new Epetra_CrsMatrix(Copy,*RowMap,*ColMap,0);
   int N=RowMap->NumMyElements();
   int nnz = A.colind_.size();
-
-  // The LWCRS matrix isn't aztec ordered. I need to fix gthat.
 
   // Copy pointers over
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("OptimizedTransfer: Convert: Data Copy")));
@@ -456,6 +468,7 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     Au->Comm().Barrier();
 
     // Check importer for correctness
+    fflush(stdout);
     const Epetra_Import * OptImport = Aopt->Importer();
     bool is_correct = epetra_check_importer_correctness(NaiveImport,*OptImport);
     fflush(stdout);
