@@ -57,6 +57,7 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Basker_FunctionMap.hpp"
 
+#include <typeinfo>
 
 //Note:  We got an error while being a class variable and mutable.  Need to comeback and fix!!
 
@@ -93,6 +94,8 @@ public:
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
+  typedef typename super_type::node_type                          node_type;
+
 
   typedef TypeMap<Amesos2::Basker,scalar_type>                    type_map;
 
@@ -200,7 +203,15 @@ private:
 #ifdef HAVE_AMESOS2_KOKKOS
   //Note, that we need to get to the tpetra node_type!!!!
   //We currently do not have a method for this, but need to add
-  #pragma message("HAVE SHYLUBASKER AND KOKKOS")
+  //#pragma message("HAVE SHYLUBASKER AND KOKKOS")
+
+  typedef typename node_type::device_type  kokkos_device;
+  typedef typename kokkos_device::execution_space kokkos_exe;
+
+
+  static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
+  		"Kokkos node type not support by experimental Basker Amesos2");
+
   typedef Kokkos::OpenMP Exe_Space;
    ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space>  *basker;
 #else

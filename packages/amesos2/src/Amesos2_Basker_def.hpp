@@ -64,6 +64,8 @@
 //#include "Kokkos_Core.hpp"
 //#endif
 
+#include <typeinfo>
+
 namespace Amesos2 {
 
 
@@ -87,7 +89,8 @@ Basker<Matrix,Vector>::Basker(
   
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
-  //We need to get to the tpetra node type to do a static_assert
+  static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
+  	"Kokkos node type not supported by experimental Basker Amesos2");
   typedef Kokkos::OpenMP Exe_Space;
   basker = new ::BaskerNS::Basker<local_ordinal_type, slu_type, Exe_Space>(); 
   basker->Options.no_pivot  = true;
@@ -104,9 +107,7 @@ Basker<Matrix,Vector>::Basker(
 
 template <class Matrix, class Vector>
 Basker<Matrix,Vector>::~Basker( )
-{
-  
-  
+{  
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
   delete basker;
