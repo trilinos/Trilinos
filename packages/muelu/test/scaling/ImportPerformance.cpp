@@ -174,7 +174,16 @@ CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> >
 // =========================================================================
 // =========================================================================
 #if defined(HAVE_MUELU_EPETRA)
-void build_remote_pids(int MyPID,std::vector<int> ColMapOwningPIDs,std::vector<int>RemotePIDs) {
+
+extern void MakeColMapAndReindexSort(int& NumRemoteColGIDs, int*& RemoteColindices,
+				std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs);
+  
+extern  void MakeColMapAndReindexSort(int& NumRemoteColGIDs, long long*& RemoteColindices,
+				std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs);
+
+
+
+void build_remote_pids(int MyPID,const std::vector<int> &ColMapOwningPIDs,std::vector<int>&RemotePIDs) {
   // Presume the column map has Aztec ordering
   int N=(int)ColMapOwningPIDs.size();
   int first_idx;
@@ -188,6 +197,19 @@ void build_remote_pids(int MyPID,std::vector<int> ColMapOwningPIDs,std::vector<i
   RemotePIDs.resize(ColMapOwningPIDs.size() - first_idx);
   for(int i=first_idx; i<N; i++)
     RemotePIDs[i-first_idx] = ColMapOwningPIDs[i]; 
+
+  /*
+  printf("[%d] RemotePIDs(%d) =",MyPID,(int)RemotePIDs.size());
+  for(int i=0;i<(int)RemotePIDs.size(); i++)
+    printf("%d ",RemotePIDs[i]);
+  printf("\n");
+
+  
+  printf("[%d] ColMapOwningPIDs(%d) =",MyPID,(int)ColMapOwningPIDs.size());
+  for(int i=0;i<(int)ColMapOwningPIDs.size(); i++)
+    printf("%d ",ColMapOwningPIDs[i]);
+  printf("\n");
+  */
 }
 
 
@@ -203,6 +225,12 @@ Epetra_Map * convert_lightweightmap_to_map(const EpetraExt::LightweightMap & A, 
       Aout = new Epetra_Map((long long)-1,A.NumMyElements(),A.MyGlobalElements64(),(long long)0,Comm);
 #endif
     }
+
+    /*    printf("[%d] LW->Map GIDs = ",Comm.MyPID());
+    for(int i=0;i<Aout->NumMyElements(); i++)
+      printf("%d|%d ",A.GID(i),Aout->GID(i));
+      printf("\n");*/
+
     return Aout;
 }
 
@@ -220,6 +248,8 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
   Epetra_CrsMatrix *Aout = new Epetra_CrsMatrix(Copy,*RowMap,*ColMap,0);
   int N=RowMap->NumMyElements();
   int nnz = A.colind_.size();
+
+  // The LWCRS matrix isn't aztec ordered. I need to fix gthat.
 
   // Copy pointers over
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("OptimizedTransfer: Convert: Data Copy")));
@@ -270,6 +300,129 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
 // =========================================================================
 // =========================================================================
 // =========================================================================
+bool epetra_check_importer_correctness(const Epetra_Import & A, const Epetra_Import & B) {
+  int MyPID = A.SourceMap().Comm().MyPID();
+  bool is_correct=true;
+
+  // Same
+  if(A.NumSameIDs() != B.NumSameIDs())       {printf("[%d] NumSameIDs %d vs. %d\n",MyPID,A.NumSameIDs(),B.NumSameIDs());is_correct=false;}
+  // Permutes
+  if(A.NumPermuteIDs() != B.NumPermuteIDs()) {printf("[%d] NumPermuteIDs %d vs. %d\n",MyPID,A.NumPermuteIDs(),B.NumPermuteIDs());is_correct=false;}
+  else {
+    int N= A.NumPermuteIDs();
+    bool error_detected=false;
+    for(int i=0; !error_detected && i<N; i++) 
+      error_detected = (A.PermuteFromLIDs()[i] != B.PermuteFromLIDs()[i]) || (A.PermuteToLIDs()[i] != B.PermuteToLIDs()[i]);
+
+    if(error_detected) {
+      printf("[%d] A Permutes = ",MyPID);
+      for(int i=0; i<N; i++) 
+	printf("%d->%d ",A.PermuteFromLIDs()[i],A.PermuteToLIDs()[i]);
+      printf("\n[%d] B Permutes = ",MyPID);
+      for(int i=0; i<N; i++) 
+	printf("%d->%d ",B.PermuteFromLIDs()[i],B.PermuteToLIDs()[i]);
+      printf("\n");
+      is_correct=false;
+    }
+  }
+
+  // Remotes
+  if(A.NumRemoteIDs() != B.NumRemoteIDs()) {printf("[%d] NumRemoteIDs %d vs. %d\n",MyPID,A.NumRemoteIDs(),B.NumRemoteIDs());is_correct=false;}
+  else {
+    int N= A.NumRemoteIDs();
+    bool error_detected=false;
+    for(int i=0; !error_detected && i<N; i++) 
+      error_detected = A.RemoteLIDs()[i] != B.RemoteLIDs()[i];
+
+    if(error_detected) {
+      printf("[%d] A RemoteLIDs = ",MyPID);
+      for(int i=0; i<N; i++) 
+	printf("%d ",A.RemoteLIDs()[i]);
+      printf("\n[%d] B RemoteLIDs = ",MyPID);
+      for(int i=0; i<N; i++) 
+	printf("%d ",B.RemoteLIDs()[i]);
+      printf("\n");
+      is_correct=false;
+    }
+  }
+
+  // Exports
+  if(A.NumExportIDs() != B.NumExportIDs()) {printf("[%d] NumExportIDs %d vs. %d\n",MyPID,A.NumExportIDs(),B.NumExportIDs());is_correct=false;}
+  else {
+    int N= A.NumExportIDs();
+    bool error_detected=false;
+    for(int i=0; !error_detected && i<N; i++) 
+      error_detected = (A.ExportLIDs()[i] != B.ExportLIDs()[i]) || (A.ExportPIDs()[i] != B.ExportPIDs()[i]);
+
+    if(error_detected) {
+      printf("[%d] A Exports(%d) = ",MyPID,A.NumExportIDs());
+      for(int i=0; i<N; i++) 
+	printf("%d(%d)->%d ",A.ExportLIDs()[i],A.SourceMap().GID(A.ExportLIDs()[i]),A.ExportPIDs()[i]);
+      printf("\n[%d] B Exports(%d) = ",MyPID,B.NumExportIDs());
+      for(int i=0; i<N; i++) 
+	printf("%d(%d)->%d ",B.ExportLIDs()[i],B.SourceMap().GID(A.ExportLIDs()[i]),B.ExportPIDs()[i]);
+      printf("\n");
+      is_correct=false;
+    }
+  }
+
+  // Message Counts
+  if(A.NumSend() != B.NumSend())       {printf("[%d] NumSend %d vs. %d\n",MyPID,A.NumSend(),B.NumSend());is_correct=false;}
+  if(A.NumRecv() != B.NumRecv())       {printf("[%d] NumRecv %d vs. %d\n",MyPID,A.NumRecv(),B.NumRecv());is_correct=false;}
+
+#ifdef HAVE_MPI
+  const Epetra_MpiDistributor& Ad = *dynamic_cast<Epetra_MpiDistributor*>(&A.Distributor());
+  const Epetra_MpiDistributor& Bd = *dynamic_cast<Epetra_MpiDistributor*>(&B.Distributor());
+
+  if(Ad.MaxSendLength() != Bd.MaxSendLength()) {printf("[%d] Distor.MaxSendLength %d vs. %d\n",MyPID,Ad.MaxSendLength(),Bd.MaxSendLength());is_correct=false;}
+  if(Ad.TotalReceiveLength() != Bd.TotalReceiveLength()) {printf("[%d] Distor.TotalReceiveLength %d vs. %d\n",MyPID,Ad.TotalReceiveLength(),Bd.TotalReceiveLength());is_correct=false;}
+
+  if(Ad.NumSends() != Bd.NumSends()) {printf("[%d] Distor.NumSends %d vs. %d\n",MyPID,Ad.NumSends(),Bd.NumSends());is_correct=false;}
+  else {
+    int N=Ad.NumSends();
+    bool error_detected=false;
+    for(int i=0; !error_detected && i<N; i++) 
+      error_detected = (Ad.ProcsTo()[i] != Bd.ProcsTo()[i]) || (Ad.LengthsTo()[i] != Bd.LengthsTo()[i]);
+
+    if(error_detected) {
+      printf("[%d] Ad Sends = ",MyPID);
+      for(int i=0; i<N; i++) 
+	printf("%d->%d ",Ad.LengthsTo()[i],Ad.ProcsTo()[i]);
+      printf("\n[%d] Bd Sends = ",MyPID);
+      for(int i=0; i<N; i++) 
+	printf("%d->%d ",Bd.LengthsTo()[i],Bd.ProcsTo()[i]);
+      printf("\n");
+      is_correct=false;
+    }
+  }
+
+  if(Ad.NumReceives() != Bd.NumReceives()) {printf("[%d] Distor.NumReceives %d vs. %d\n",MyPID,Ad.NumReceives(),Bd.NumReceives());is_correct=false;}
+  else {
+    int N=Ad.NumReceives();
+    bool error_detected=false;
+    for(int i=0; !error_detected && i<N; i++) 
+      error_detected = (Ad.ProcsFrom()[i] != Bd.ProcsFrom()[i]) || (Ad.LengthsFrom()[i] != Bd.LengthsFrom()[i]);
+
+    if(error_detected) {
+      printf("[%d] Ad Receives = ",MyPID);
+      for(int i=0; i<N; i++) 
+	printf("%d->%d ",Ad.LengthsFrom()[i],Ad.ProcsFrom()[i]);
+      printf("\n[%d] Bd Receives = ",MyPID);
+      for(int i=0; i<N; i++) 
+	printf("%d->%d ",Bd.LengthsFrom()[i],Bd.ProcsFrom()[i]);
+      printf("\n");
+      is_correct=false;
+    }
+  }
+
+#endif  
+
+  return is_correct;
+}
+
+// =========================================================================
+// =========================================================================
+// =========================================================================
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A, Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > P) {
 #include <MueLu_UseShortNames.hpp>
@@ -278,6 +431,7 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
 
   if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA)
+    printf("This test is not yet implemented for Tpetra.");
 #endif
   }
   else if (lib == Xpetra::UseEpetra) {
@@ -292,15 +446,16 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // Build the LightweightCrsMatrix
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("OptimizedTransfer: Import")));
     EpetraExt::CrsMatrixStruct Pview;
-
+    bool SortGhosts=true;
+    
     if(Au->RowMap().GlobalIndicesInt()) {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-      EpetraExt::import_only<int> (*Pu,Au->ColMap(),Pview,Au->Importer());    
+      EpetraExt::import_only<int> (*Pu,Au->ColMap(),Pview,Au->Importer(),SortGhosts);
 #endif
     }
     else if(Au->RowMap().GlobalIndicesInt()) {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-      EpetraExt::import_only<long long>(*Pu,Au->ColMap(),Pview,Au->Importer());    
+      EpetraExt::import_only<long long>(*Pu,Au->ColMap(),Pview,Au->Importer(),SortGhosts);
 #endif
     }
 
@@ -313,9 +468,6 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // ==================
     // Naive Transfer
     // ==================
-
-    // FIXME - Do the import "old school w/o owning PIDs"
-
     // Use the columnmap from Aopt and build an importer ex nihilo
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("NaiveTransfer: BuildImport")));
     const Epetra_Map &NaiveColMap = Aopt->ColMap();
@@ -324,14 +476,17 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     tm=Teuchos::null;
     Au->Comm().Barrier();
 
-#ifdef DEBUG_MODE
-    EpetraExt::RowMatrixToMatlabFile("matrix_opt.dat",*Aopt);
-#endif
+    // Check importer for correctness
+    const Epetra_Import * OptImport = Aopt->Importer();
+    bool is_correct = epetra_check_importer_correctness(NaiveImport,*OptImport);
+    fflush(stdout);
+    int is_OK_local = is_correct, is_OK_global;
+    Au->Comm().MinAll(&is_OK_local,&is_OK_global,1);
+    if(!is_OK_global) throw std::runtime_error("Importer correctness test failed.");
 
+    // Cleanup
     delete Aopt;
-
   }
-
 }
 
 // =========================================================================
@@ -367,7 +522,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   std::string xmlFileName       = "import.xml";     clp.setOption("xml",                   &xmlFileName,       "read parameters from a file");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
   std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
-  int         numImports        = 100;               clp.setOption("reimport",              &numImports,        "#times to test");
+  int         numImports        = 100;               clp.setOption("numImport",              &numImports,        "#times to test");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -573,12 +728,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       // Grab useful pieces
       // =========================================================================
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - Extract Stuff")));
-
       RCP<Matrix> P;
-      H->GetLevel(1)->Get("P",P);
-      
-
-
+      H->GetLevel(1)->Get("P",P);     
       comm->barrier();
       tm= Teuchos::null;
       
@@ -591,13 +742,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 	// Optimized transfer & fill complete loop for P_1
 	// =========================================================================		
 	tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - TransferAndFillComplete")));
-	TestTransfer(A,P);
-	  
+	TestTransfer(A,P);	 
 	comm->barrier();
-	tm= Teuchos::null;
-	
+	tm= Teuchos::null;       
       }
-
 
       //Cleanup
       globalTimeMonitor = Teuchos::null;
