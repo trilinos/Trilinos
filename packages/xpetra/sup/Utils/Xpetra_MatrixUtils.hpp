@@ -168,18 +168,14 @@ public:
     size_t gidOffset = 0;
     for(int p = 0; p < comm->getRank(); p++) gidOffset += numGIDs[p];
 
-
     // we use nonOvlInput to assing the globally unique shrinked GIDs and communicate them to input.
     std::map<const GlobalOrdinal, GlobalOrdinal> origGID2newGID;
-
     for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++) {
       origGID2newGID[nonOvlInput.getGlobalElement(i)] = Teuchos::as<GlobalOrdinal>(i) + Teuchos::as<GlobalOrdinal>(gidOffset);
     }
-
     // build an overlapping version of mySpecialMap
     Teuchos::Array<GlobalOrdinal> ovlUnknownStatusGids;
     Teuchos::Array<GlobalOrdinal> ovlFoundStatusGids;
-
     // loop over global column map of A and find all GIDs where it is not sure, whether they are special or not
     for(size_t i = 0; i<input.getNodeNumElements(); i++) {
       GlobalOrdinal gcid = input.getGlobalElement(i);
@@ -205,11 +201,10 @@ public:
     for(size_t k=0; k < Teuchos::as<size_t>(ovlUnknownStatusGids.size()); k++) {
       lUnknownDofGIDs[k+cntUnknownOffset] = ovlUnknownStatusGids[k];
     }
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lUnknownDofGIDs[0],&gUnknownDofGIDs[0]);
-
+    if(cntUnknownDofGIDs > 0) // only perform communication if there are unknown DOF GIDs
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lUnknownDofGIDs[0],&gUnknownDofGIDs[0]);
     std::vector<GlobalOrdinal> lTranslatedDofGIDs(cntUnknownDofGIDs,0); // local version to be filled
     std::vector<GlobalOrdinal> gTranslatedDofGIDs(cntUnknownDofGIDs,0); // global version after communication
-
     // loop through all GIDs with unknown status
     for(size_t k=0; k < gUnknownDofGIDs.size(); k++) {
       GlobalOrdinal curgid = gUnknownDofGIDs[k];
@@ -217,13 +212,12 @@ public:
         lTranslatedDofGIDs[k] = origGID2newGID[curgid]; // curgid is in special map (on this processor)
       }
     }
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lTranslatedDofGIDs[0],&gTranslatedDofGIDs[0]);
-
+    if(cntUnknownDofGIDs > 0) // only perform communication if there are unknown DOF GIDs
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lTranslatedDofGIDs[0],&gTranslatedDofGIDs[0]);
 
     for(size_t k=0; k < Teuchos::as<size_t>(ovlUnknownStatusGids.size()); k++) {
       origGID2newGID[ovlUnknownStatusGids[k]] = gTranslatedDofGIDs[k+cntUnknownOffset];
     }
-
     Teuchos::Array<GlobalOrdinal> ovlDomainMapArray;
     for(size_t i = 0; i<input.getNodeNumElements(); i++) {
       GlobalOrdinal gcid = input.getGlobalElement(i);
@@ -269,7 +263,8 @@ public:
     for(size_t k=0; k < Teuchos::as<size_t>(ovlUnknownStatusGids.size()); k++) {
       lUnknownDofGIDs[k+cntUnknownOffset] = ovlUnknownStatusGids[k];
     }
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lUnknownDofGIDs[0],&gUnknownDofGIDs[0]);
+    if(cntUnknownDofGIDs > 0)
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lUnknownDofGIDs[0],&gUnknownDofGIDs[0]);
     std::sort(gUnknownDofGIDs.begin(), gUnknownDofGIDs.end());
     gUnknownDofGIDs.erase(std::unique(gUnknownDofGIDs.begin(), gUnknownDofGIDs.end()), gUnknownDofGIDs.end());
 
@@ -297,7 +292,8 @@ public:
     for(size_t k=0; k < Teuchos::as<size_t>(ovlFoundStatusGids.size()); k++) {
       lFoundDofGIDs[k+cntFoundOffset] = ovlFoundStatusGids[k];
     }
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntFoundDofGIDs),&lFoundDofGIDs[0],&gFoundDofGIDs[0]);
+    if(cntFoundDofGIDs > 0)
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntFoundDofGIDs),&lFoundDofGIDs[0],&gFoundDofGIDs[0]);
 
     Teuchos::Array<GlobalOrdinal> ovlDomainMapArray;
     for(size_t i = 0; i<input.getColMap()->getNodeNumElements(); i++) {
@@ -358,9 +354,7 @@ public:
         Teuchos::RCP<const Map> colMap = MatrixUtils::findColumnSubMap(input, *(domainMapExtractor->getMap(c)));
         ovlxmaps[c] = colMap;
       }
-
       RCP<const Map> fullColMap = MatrixUtils::concatenateMaps(ovlxmaps);
-
       myColumnMapExtractor = MapExtractorFactory::Build(fullColMap,ovlxmaps);
     } else
       myColumnMapExtractor = columnMapExtractor; // use user-provided column map extractor.
@@ -368,7 +362,6 @@ public:
     Teuchos::RCP<const MapExtractor> thyRangeMapExtractor  = Teuchos::null;
     Teuchos::RCP<const MapExtractor> thyDomainMapExtractor = Teuchos::null;
     Teuchos::RCP<const MapExtractor> thyColMapExtractor    = Teuchos::null;
-
     if(bThyraMode == true) {
       // build Thyra-style map extractors
       std::vector<Teuchos::RCP<const Map> > thyRgMapExtractorMaps(numRows, Teuchos::null);
@@ -389,7 +382,6 @@ public:
       }
       RCP<const Map> fullThyRangeMap = MatrixUtils::concatenateMaps(thyRgMapExtractorMaps);
       thyRangeMapExtractor = MapExtractorFactory::Build(fullThyRangeMap,thyRgMapExtractorMaps,true);
-
       std::vector<Teuchos::RCP<const Map> > thyDoMapExtractorMaps (numCols, Teuchos::null);
       std::vector<Teuchos::RCP<const Map> > thyColMapExtractorMaps(numCols, Teuchos::null);
       for (size_t c = 0; c < numCols; c++) {
@@ -406,7 +398,6 @@ public:
         } else {
           thyDoMapExtractorMaps[c]  = shrinkedDomainMap;
         }
-
         RCP<const Map> colMap = myColumnMapExtractor->getMap(c);
         RCP<const Map> shrinkedColMap = MatrixUtils::shrinkMapGIDs(*colMap,*cMap);
         RCP<const StridedMap> strColMap = Teuchos::rcp_dynamic_cast<const StridedMap>(colMap);
@@ -428,7 +419,6 @@ public:
       thyDomainMapExtractor = MapExtractorFactory::Build(fullThyDomainMap,thyDoMapExtractorMaps,true);
       thyColMapExtractor    = MapExtractorFactory::Build(fullThyColumnMap,thyColMapExtractorMaps,true);
     }
-
     // create submatrices
     std::vector<Teuchos::RCP<CrsMatrix> > subMatrices(numRows*numCols, Teuchos::null);
 
@@ -443,7 +433,6 @@ public:
           subMatrices[r*numCols+c] = CrsMatrixFactory::Build (rangeMapExtractor->getMap(r),input.getNodeMaxNumRowEntries());
       }
     }
-
     // loop over all rows of input matrix
     for (size_t rr = 0; rr < input.getRowMap()->getNodeNumElements(); rr++) {
 
@@ -523,7 +512,6 @@ public:
         bA->setMatrix(r,c,subMatrices[r*numCols+c]);
       }
     }
-
     return bA;
   }
 
