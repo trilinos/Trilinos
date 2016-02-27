@@ -194,7 +194,8 @@ createTransposeLocal ()
     size_t k=0;
     for (LO i=0; i<origRowPtr.size()-1; ++i) {
       const LO rowIndex = Teuchos::as<LO>(i);
-      for (size_t j=origRowPtr[i]; j<origRowPtr[i+1]; ++j) {
+      size_t rowStart = origRowPtr[i], rowEnd = origRowPtr[i+1];
+      for (size_t j = rowStart; j < rowEnd; ++j) {
         size_t idx = CurrentStart[origColInd[k]];
         TransColind[idx] = rowIndex;
         TransValues[idx] = origValues[k];
