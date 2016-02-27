@@ -266,7 +266,11 @@ namespace Iohb {
 	}
 
 	if (addTimeField) {
-	  new_this->legend_->add_legend("Time");
+          if (fileFormat == SPYHIS) {
+            new_this->legend_->add_legend("TIME");
+          } else {
+            new_this->legend_->add_legend("Time");
+          }
 	}
       }
       new_this->initialized_ = true;
