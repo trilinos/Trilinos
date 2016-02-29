@@ -183,4 +183,8 @@ $ Test variable deletion
 
 0  This should print warning about undefined variable
 
+$ Test extract
+test string is found
+
+
 $End of test file
