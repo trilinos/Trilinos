@@ -403,7 +403,8 @@ template<typename int_type>
 int import_only(const Epetra_CrsMatrix& M,
                 const Epetra_Map& targetMap,
                 CrsMatrixStruct& Mview,
-                const Epetra_Import * prototypeImporter=0,bool SortGhosts=false)
+                const Epetra_Import * prototypeImporter=0,bool SortGhosts=false,
+		const char * label=0)
 {
   // The goal of this method to populare the Mview object with ONLY the rows of M
   // that correspond to elements in 'targetMap.'  There will be no population of the
@@ -415,8 +416,10 @@ int import_only(const Epetra_CrsMatrix& M,
   // a C = A * B multiply.
 
 #ifdef ENABLE_MMM_TIMINGS
+  std::string tpref;
+  if(label) tpref = std::string(label);
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Setup")));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: MMM Ionly Setup"))));
 #endif
 
   Mview.deleteContents();
@@ -478,7 +481,7 @@ int import_only(const Epetra_CrsMatrix& M,
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-1")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: MMM Ionly Import-1"))));
 #endif
   const int * RemoteLIDs = prototypeImporter->RemoteLIDs();
 
@@ -490,7 +493,7 @@ int import_only(const Epetra_CrsMatrix& M,
   LightweightMap MremoteRowMap((int_type) -1, numRemote, MremoteRows, (int_type)Mrowmap.IndexBase64());
 
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-2")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: MMM Ionly Import-2"))));
 #endif
   //Create an importer with target-map MremoteRowMap and
   //source-map Mrowmap.
@@ -498,13 +501,13 @@ int import_only(const Epetra_CrsMatrix& M,
   Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
 
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-3")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: MMM Ionly Import-3"))));
 #endif
 
   Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter,SortGhosts);
 
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Ionly Import-4")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: MMM Ionly Import-4"))));
 #endif
 
   // Cleanup
