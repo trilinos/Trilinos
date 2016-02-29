@@ -504,7 +504,7 @@ int import_only(const Epetra_CrsMatrix& M,
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: MMM Ionly Import-3"))));
 #endif
 
-  Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter,SortGhosts);
+  Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter,SortGhosts,label);
 
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: MMM Ionly Import-4"))));
