@@ -176,7 +176,7 @@ CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> >
 extern void MakeColMapAndReindexSort(int& NumRemoteColGIDs, int*& RemoteColindices,
 				std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs);
   
-extern  void MakeColMapAndReindexSort(int& NumRemoteColGIDs, long long*& RemoteColindices,
+extern void MakeColMapAndReindexSort(int& NumRemoteColGIDs, long long*& RemoteColindices,
 				std::vector<int>& RemotePermuteIDs, std::vector<int>& RemoteOwningPIDs);
 
 
