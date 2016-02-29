@@ -30,10 +30,10 @@
 #ifndef SACADO_TEMPLATE_CONTAINER_HPP
 #define SACADO_TEMPLATE_CONTAINER_HPP
 
+// While this code does not directly use C++11 features, it uses mpl::vector,
+// which does
 #include "Sacado_ConfigDefs.h"
 #ifdef HAVE_SACADO_CXX11
-
-#include <tuple>
 
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
@@ -43,17 +43,28 @@
 #include "Sacado_mpl_end.hpp"
 #include "Sacado_mpl_deref.hpp"
 #include "Sacado_mpl_next.hpp"
+#include "Sacado_mpl_enable_if.hpp"
+#include "Sacado_mpl_is_same.hpp"
 
 namespace Sacado {
 
   namespace Impl {
 
     // Forward declaration
-    template <class Seq,
-              class ObjectT,
-              class Iter1 = typename mpl::begin<Seq>::type,
-              class Iter2 = typename mpl::end<Seq>::type>
-    struct MakeTupleType;
+    template <typename TypeSeq,
+              typename ObjectT,
+              typename Iter1 = typename mpl::begin<TypeSeq>::type,
+              typename Iter2 =typename  mpl::end<TypeSeq>::type>
+    struct TupleSeq;
+
+    // Forward declaration
+    template <typename T,
+              typename TypeSeq,
+              typename ObjectT,
+              typename Iter1 = typename mpl::begin<TypeSeq>::type,
+              typename Iter2 = typename mpl::end<TypeSeq>::type,
+              typename Enabled = void>
+    struct GetTupleSeq;
 
   } // namespace Impl
 
@@ -84,14 +95,19 @@ namespace Sacado {
   template <typename TypeSeq, typename ObjectT>
   class TemplateContainer {
 
-    template <typename TupleT, typename BuilderOpT>
+    //! Our container for storing each object
+    typedef Impl::TupleSeq<TypeSeq, ObjectT> tuple_type;
+
+    //! Helper class for building objects in container
+    template <typename BuilderOpT>
     struct BuildObject {
-      TupleT& objects;
+      tuple_type& objects;
       const BuilderOpT& builder;
-      BuildObject(TupleT& objects_, const BuilderOpT& builder_) :
+      BuildObject(tuple_type& objects_,
+                  const BuilderOpT& builder_) :
         objects(objects_), builder(builder_) {}
       template <typename T> void operator()(T x) const {
-        std::get< mpl::find<TypeSeq,T>::value >(objects) = builder(x);
+        Impl::GetTupleSeq<T,TypeSeq,ObjectT>::apply(objects) = builder(x);
       }
     };
 
@@ -120,25 +136,23 @@ namespace Sacado {
     //! Get object corrensponding ObjectT<T>
     template<typename T>
     typename Sacado::mpl::apply<ObjectT,T>::type& get() {
-      return std::get< Sacado::mpl::find<TypeSeq,T>::value >(objects);
+      return Impl::GetTupleSeq<T,TypeSeq,ObjectT>::apply(objects);
     }
 
     //! Get object corrensponding ObjectT<T>
     template<typename T>
     const typename Sacado::mpl::apply<ObjectT,T>::type& get() const  {
-      return std::get< Sacado::mpl::find<TypeSeq,T>::value >(objects);
+      return Impl::GetTupleSeq<T,TypeSeq,ObjectT>::apply(objects);
     }
 
     //! Build objects for each type T
     template <typename BuilderOpT = DefaultBuilderOp>
     void build(const BuilderOpT& builder) {
-      Sacado::mpl::for_each_no_kokkos<TypeSeq>(BuildObject<tuple_type,BuilderOpT>(objects,builder));
+      Sacado::mpl::for_each_no_kokkos<TypeSeq>(
+        BuildObject<BuilderOpT>(objects,builder));
     }
 
   private:
-
-    //! Our container for storing each object
-    typedef typename Impl::MakeTupleType<TypeSeq, ObjectT>::type tuple_type;
 
     //! Stores type of objects of each type
     tuple_type objects;
@@ -181,51 +195,81 @@ namespace Sacado {
 
   namespace Impl {
 
-    template <class TupleType,
-              class ObjectT,
-              class Iter1,
-              class Iter2>
-    struct MakeTupleTypeImpl{};
-
-    template <class ... TupleArgs,
-              class ObjectT,
-              class Iter1,
-              class Iter2>
-    struct MakeTupleTypeImpl< std::tuple<TupleArgs...>,
-                              ObjectT,
-                              Iter1,
-                              Iter2 >{
-      typedef std::tuple<
-        TupleArgs...,
-        typename mpl::apply<ObjectT, typename mpl::deref<Iter1>::type >::type >
-      tuple_type;
-
-      typedef typename MakeTupleTypeImpl< tuple_type,
-                                          ObjectT,
-                                          typename mpl::next<Iter1>::type,
-                                          Iter2 >::type type;
+    // Container class to store our tuple sequence
+    template <typename TypeSeq,
+              typename ObjectT,
+              typename Iter1,
+              typename Iter2>
+    struct TupleSeq :
+      TupleSeq<TypeSeq, ObjectT, typename mpl::next<Iter1>::type, Iter2>
+    {
+      typedef typename mpl::apply<ObjectT,
+                                  typename mpl::deref<Iter1>::type>::type type;
+      type tail;
     };
 
-    template <class ... TupleArgs,
-              class ObjectT,
-              class Iter1>
-    struct MakeTupleTypeImpl< std::tuple<TupleArgs...>,
-                              ObjectT,
-                              Iter1,
-                              Iter1 >{
-      typedef std::tuple< TupleArgs... > type;
+    template <typename TypeSeq,
+              typename ObjectT,
+              typename Iter1>
+    struct TupleSeq<TypeSeq, ObjectT, Iter1, Iter1> {};
+
+    // Helper class to get a value out of the tuple sequence from a given type
+    template <typename T,
+              typename TypeSeq,
+              typename ObjectT,
+              typename Iter1,
+              typename Iter2,
+              typename Enabled>
+    struct GetTupleSeq {};
+
+    template <typename T,
+              typename TypeSeq,
+              typename ObjectT,
+              typename Iter1,
+              typename Iter2>
+    struct GetTupleSeq< T,
+                        TypeSeq,
+                        ObjectT,
+                        Iter1,
+                        Iter2,
+                        typename mpl::enable_if_c<
+                          mpl::is_same< T, typename mpl::deref<Iter1>::type
+                                        >::value
+                          >::type > {
+      static typename TupleSeq<TypeSeq,ObjectT,Iter1,Iter2>::type&
+      apply(TupleSeq<TypeSeq,ObjectT,Iter1,Iter2>& t) {
+        return t.tail;
+      }
+
+      static const typename TupleSeq<TypeSeq,ObjectT,Iter1,Iter2>::type&
+      apply(const TupleSeq<TypeSeq,ObjectT,Iter1,Iter2>& t) {
+        return t.tail;
+      }
     };
 
-    template <class Seq,
-              class ObjectT,
-              class Iter1,
-              class Iter2>
-    struct MakeTupleType{
-      typedef typename MakeTupleTypeImpl< std::tuple<>,
-                                          ObjectT,
-                                          Iter1,
-                                          Iter2 >::type type;
-    };
+    template <typename T,
+              typename TypeSeq,
+              typename ObjectT,
+              typename Iter1,
+              typename Iter2>
+    struct GetTupleSeq< T,
+                        TypeSeq,
+                        ObjectT,
+                        Iter1,
+                        Iter2,
+                        typename mpl::enable_if_c<
+                          !mpl::is_same< T, typename mpl::deref<Iter1>::type
+                                         >::value
+                          >::type > :
+      GetTupleSeq< T, TypeSeq, ObjectT, typename mpl::next<Iter1>::type, Iter2>
+    {};
+
+    template <typename T,
+              typename TypeSeq,
+              typename ObjectT,
+              typename Iter1>
+    struct GetTupleSeq< T, TypeSeq, ObjectT, Iter1, Iter1, void> {};
+
 
   } // namespace Impl
 
