@@ -96,6 +96,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const double kl_mean = cmd.USE_MEAN;
   const double kl_variance = cmd.USE_VAR;
   const double kl_correlation = cmd.USE_COR;
+  const bool kl_exp = cmd.USE_EXPONENTIAL;
 
   int nelem[3] = { cmd.USE_FIXTURE_X,
                    cmd.USE_FIXTURE_Y,
@@ -119,7 +120,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     //typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
     typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
-    KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
+    KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim, kl_exp );
     typedef typename KL::RandomVariableView RV;
     typedef typename RV::HostMirror HRV;
     RV rv = diffusion_coefficient.getRandomVariables();
@@ -151,9 +152,16 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           cmd.PRINT , cmd.USE_TRIALS ,
           cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
           cmd.USE_MEANBASED ,
-          nelem , diffusion_coefficient , cmd.USE_COEFF_SRC ,
+          nelem , diffusion_coefficient , cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
           cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
           response);
+
+      if (cmd.PRINT_ITS && 0 == comm_rank) {
+        std::cout << qp_begin << " : " << perf.cg_iter_count << " ( ";
+        for (int i=0; i<dim; ++i)
+          std::cout << hrv(i) << " ";
+        std::cout << ")" << std::endl;
+      }
 
       perf.newton_iter_count *= VectorSize;
       perf.cg_iter_count *= VectorSize;
@@ -183,7 +191,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     typedef double Scalar;
     //typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
     typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
-    KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
+    KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim, kl_exp );
     typedef typename KL::RandomVariableView RV;
     typedef typename RV::HostMirror HRV;
     RV rv = diffusion_coefficient.getRandomVariables();
@@ -205,9 +213,16 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           cmd.PRINT , cmd.USE_TRIALS ,
           cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
           cmd.USE_MEANBASED ,
-          nelem , diffusion_coefficient , cmd.USE_COEFF_SRC ,
+          nelem , diffusion_coefficient , cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
           cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
           response);
+
+      if (cmd.PRINT_ITS && 0 == comm_rank) {
+        std::cout << qp << " : " << perf.cg_iter_count << " ( ";
+        for (int i=0; i<dim; ++i)
+          std::cout << hrv(i) << " ";
+        std::cout << ")" << std::endl;
+      }
 
       perf_total.increment(perf, !cmd.USE_BELOS);
 

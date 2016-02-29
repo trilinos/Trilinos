@@ -61,6 +61,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("mean",                     &cmdline.USE_MEAN,  "KL diffusion mean");
   clp.setOption("var",                      &cmdline.USE_VAR,  "KL diffusion variance");
   clp.setOption("cor",                      &cmdline.USE_COR,  "KL diffusion correlation");
+  clp.setOption("exponential", "no-exponential", &cmdline.USE_EXPONENTIAL,  "take exponential of KL diffusion coefficient");
+  clp.setOption("isotropic", "anisotropic", &cmdline.USE_ISOTROPIC,  "use isotropic or anisotropic diffusion coefficient");
   clp.setOption("coeff-src",                &cmdline.USE_COEFF_SRC,  "Coefficient for source term");
   clp.setOption("coeff-adv",                &cmdline.USE_COEFF_ADV,  "Coefficient for advection term");
   clp.setOption("sparse", "tensor",         &cmdline.USE_SPARSE ,  "use sparse or tensor grid");
@@ -69,6 +71,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("vtune", "no-vtune",       &cmdline.VTUNE ,  "connect to vtune");
   clp.setOption("verbose", "no-verbose",   &cmdline.VERBOSE, "print verbose intialization info");
   clp.setOption("print", "no-print",        &cmdline.PRINT,  "print detailed test output");
+  clp.setOption("print-its", "no-print-its",&cmdline.PRINT_ITS,  "print solver iterations after each sample");
   clp.setOption("summarize", "no-summarize",&cmdline.SUMMARIZE,  "summarize Teuchos timers at end of run");
 
   bool doDryRun = false;
@@ -168,13 +171,22 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
     s << " Diffusion Coefficient B(" << cmd.USE_DIFF_COEFF_CONSTANT << ")" ;
   }
   if ( cmd.USE_VAR  ) {
-    s << " KL variance(" << cmd.USE_VAR  << ")" ;
+    s << " KL variance(" << cmd.USE_VAR << ")" ;
   }
   if ( cmd.USE_MEAN  ) {
-    s << " KL mean(" << cmd.USE_MEAN  << ")" ;
+    s << " KL mean(" << cmd.USE_MEAN << ")" ;
   }
   if ( cmd.USE_COR  ) {
-    s << " KL correlation(" << cmd.USE_COR  << ")" << ")" ;
+    s << " KL correlation(" << cmd.USE_COR << ")" ;
+  }
+  if ( cmd.USE_EXPONENTIAL ) {
+    s << " KL exponential(" << cmd.USE_EXPONENTIAL << ")" ;
+  }
+  if ( cmd.USE_ISOTROPIC ) {
+    s << " isotropic" ;
+  }
+  if ( !cmd.USE_ISOTROPIC ) {
+    s << " anisotropic" ;
   }
   if ( cmd.USE_COEFF_SRC  ) {
     s << " Source coefficient(" << cmd.USE_COEFF_SRC  << ")" << ")" ;
@@ -215,6 +227,9 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
   if ( cmd.PRINT  ) {
     s << " PRINT" ;
   }
+  if ( cmd.PRINT_ITS  ) {
+    s << " PRINT_ITS" ;
+  }
   if ( cmd.SUMMARIZE  ) {
     s << " SUMMARIZE" ;
   }
@@ -250,6 +265,10 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
      s << " , DIFFUSION COEFFICIENT( "
        << cmd.USE_DIFF_COEFF_LINEAR << " , "
        << cmd.USE_DIFF_COEFF_CONSTANT << " )" ;
+     if ( cmd.USE_ISOTROPIC )
+       s << " ISOTROPIC" ;
+     else
+       s << " ANISOTROPIC" ;
    }
 
    if ( cmd.USE_ATOMIC ) { s << " , USING ATOMICS" ; }
@@ -260,6 +279,11 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
      s << " , KL MEAN , " << cmd.USE_MEAN ;
      s << " , KL VAR , " << cmd.USE_VAR ;
      s << " , KL COR , " << cmd.USE_COR ;
+     s << " , KL EXP , " << cmd.USE_EXPONENTIAL ;
+     if ( cmd.USE_ISOTROPIC )
+       s << " ISOTROPIC" ;
+     else
+       s << " ANISOTROPIC" ;
      if ( cmd.USE_UQ_FAKE ) {
        s << " , UQ FAKE , " << cmd.USE_UQ_FAKE ;
      }

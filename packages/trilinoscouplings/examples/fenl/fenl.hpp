@@ -373,6 +373,7 @@ public:
   const MeshScalar m_variance;    // Variance of random field
   const MeshScalar m_corr_len;    // Correlation length of random field
   const size_type m_num_rv;       // Number of random variables
+  const bool m_use_exp;           // Take exponential of random field
   RandomVariableView m_rv;        // KL random variables
 
 public:
@@ -381,11 +382,13 @@ public:
     const MeshScalar mean ,
     const MeshScalar variance ,
     const MeshScalar correlation_length ,
-    const size_type num_rv ) :
+    const size_type num_rv,
+    const bool use_exp) :
     m_mean( mean ),
     m_variance( variance ),
     m_corr_len( correlation_length ),
     m_num_rv( num_rv ),
+    m_use_exp( use_exp ),
     m_rv( "KL Random Variables", m_num_rv )
   {
     Teuchos::ParameterList solverParams;
@@ -408,6 +411,7 @@ public:
     m_variance( rhs.m_variance ) ,
     m_corr_len( rhs.m_corr_len ) ,
     m_num_rv( rhs.m_num_rv ) ,
+    m_use_exp( rhs.m_use_exp ) ,
     m_rv( rhs.m_rv ) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -424,6 +428,9 @@ public:
       local_rv_view_traits::create_local_view(m_rv, ensemble_rank);
 
     local_scalar_type val = m_rf.evaluate(point, local_rv);
+
+    if (m_use_exp)
+      val = std::exp(val);
 
     return val;
   }
