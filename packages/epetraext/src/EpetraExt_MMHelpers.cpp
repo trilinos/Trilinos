@@ -930,11 +930,13 @@ void MakeColMapAndReindexSort<long long>(int& NumRemoteColGIDs, long long*& Remo
 }
 
 template <class GO>
-int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std::vector<GO> Gcolind,bool SortGhosts)
+int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std::vector<GO> Gcolind,bool SortGhosts,const char * label)
 {
 #ifdef ENABLE_MMM_TIMINGS
+  std::string tpref;
+  if(label) tpref = std::string(label);
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS-3.1")));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS-3.1"))));
 #endif
 
   // Scan all column indices and sort into two groups:
@@ -1064,7 +1066,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
     ColMapOwningPIDs_[NumLocalColGIDs+i] = RemoteOwningPIDs[i];
 
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS-3.2")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS-3.2"))));
 #endif
 
   // Make Column map with same element sizes as Domain map
@@ -1073,7 +1075,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
 
 
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS-3.3")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS-3.3"))));
 #endif
 
   // Low-cost reindex of the matrix
@@ -1590,13 +1592,15 @@ int LightweightCrsMatrix::MakeExportLists(const Epetra_CrsMatrix & SourceMatrix,
 
 //=========================================================================
 template<typename ImportType, typename int_type>
-void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter,bool SortGhosts)
+void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter,bool SortGhosts,const char * label)
 {
   // Do we need to use long long for GCIDs?
 
 #ifdef ENABLE_MMM_TIMINGS
+  std::string tpref;
+  if(label) tpref = std::string(label);
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-1")));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-1"))));
 #endif
 
   // Fused constructor, import & FillComplete
@@ -1681,12 +1685,21 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
     SourcePids.assign(SourceMatrix.ColMap().NumMyElements(),SourceMatrix.Comm().MyPID());
   }
 
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-1.1 Forward Pack"))));
+#endif
+
   // Pack & Prepare w/ owning PIDs
   rv=Epetra_Import_Util::PackAndPrepareWithOwningPIDs(SourceMatrix,
                                                       NumExportIDs,ExportLIDs,
                                                       LenExports_,Exports_,SizeOfPacket,
                                                       Sizes_,VarSizes,SourcePids);
   if(rv) throw "LightweightCrsMatrix: Fused copy constructor failed in PackAndPrepare()";
+
+
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-1.2 Reverse"))));
+#endif
 
   if (communication_needed) {
 #ifdef HAVE_MPI
@@ -1704,6 +1717,10 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
       if(i>0 &&  ExportPIDs[i] < ExportPIDs[i-1]) throw "ExportPIDs not sorted";
     }
 
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-1.2 Forward Send"))));
+#endif
+
     std::vector<int> RecvSizes(MDistor->NumReceives()+1);
     int msg_tag=MpiComm->GetMpiTag();
     boundary_exchange_varsize<char>(*MpiComm,MPI_CHAR,MDistor->NumSends(),MDistor->ProcsTo(),SendSizes.size() ? &SendSizes[0] : 0,Exports_,
@@ -1714,9 +1731,18 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
       Epetra_Import* SourceImporter=const_cast<Epetra_Import*>(SourceMatrix.Importer());
       const Epetra_MpiDistributor * MyDistor = dynamic_cast<Epetra_MpiDistributor*>(&SourceImporter->Distributor());
 
+
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-1.3 Reverse Pack"))));
+#endif
+
       // Setup the reverse communication
       // Note: Buffer pairs are in (PID,GID) order
       PackAndPrepareReverseComm<ImportType, int_type>(SourceMatrix,RowImporter,ReverseSendSizes,ReverseSendBuffer);
+
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-1.4 Reverse Send"))));
+#endif
 
       // Do the reverse communication
       // NOTE: Make the vector one too large to avoid std::vector errors
@@ -1740,7 +1766,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
   /*********************************************************************/
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-2")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-2"))));
 #endif
 
   // Count nnz
@@ -1783,7 +1809,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
   /**************************************************************/
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-3")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-3"))));
 #endif
 
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
@@ -1801,7 +1827,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /********************************************/
   // NOTE: If we have no entries the &blah[0] will cause the STL to die in debug mode
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-4")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-4"))));
 #endif
   if(N>0) Epetra_Util::SortCrsEntries(N, &rowptr_[0], colind_.size() ? &colind_[0] : 0, vals_.size() ? &vals_[0] : 0);
 
@@ -1809,7 +1835,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   /**** 6) Cleanup                         ****/
   /********************************************/
 #ifdef ENABLE_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-5")));
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-5"))));
 #endif
 
 #ifdef HAVE_MPI
@@ -1826,28 +1852,30 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 
 
 //=========================================================================
-LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, RemoteOnlyImport & RowImporter, bool SortGhosts):
+LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, RemoteOnlyImport & RowImporter, bool SortGhosts,const char * label):
   use_lw(true),
   RowMapLW_(0),
   RowMapEP_(0),
   DomainMap_(SourceMatrix.DomainMap())
 {
 #ifdef ENABLE_MMM_TIMINGS
+  std::string tpref;
+  if(label) tpref = std::string(label);
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS Total")));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS Total"))));
 #endif
 
   RowMapLW_= new LightweightMap(RowImporter.TargetMap());
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(SourceMatrix.RowMatrixRowMap().GlobalIndicesInt()) {
-    Construct<RemoteOnlyImport, int>(SourceMatrix,RowImporter,SortGhosts);
+    Construct<RemoteOnlyImport, int>(SourceMatrix,RowImporter,SortGhosts,label);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(SourceMatrix.RowMatrixRowMap().GlobalIndicesLongLong()) {
-    Construct<RemoteOnlyImport, long long>(SourceMatrix,RowImporter,SortGhosts);
+    Construct<RemoteOnlyImport, long long>(SourceMatrix,RowImporter,SortGhosts,label);
   }
   else
 #endif

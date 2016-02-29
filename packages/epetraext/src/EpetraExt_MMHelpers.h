@@ -339,7 +339,7 @@ class RemoteOnlyImport {
 // ==============================================================
 class LightweightCrsMatrix {
  public:
-  LightweightCrsMatrix(const Epetra_CrsMatrix & A, RemoteOnlyImport & RowImporter, bool SortGhosts=false);
+  LightweightCrsMatrix(const Epetra_CrsMatrix & A, RemoteOnlyImport & RowImporter, bool SortGhosts=false,const char * label=0);
   LightweightCrsMatrix(const Epetra_CrsMatrix & A, Epetra_Import & RowImporter);
   ~LightweightCrsMatrix();
 
@@ -371,11 +371,11 @@ class LightweightCrsMatrix {
  private: 
 
   template <typename ImportType, typename int_type>
-    void Construct(const Epetra_CrsMatrix & A, ImportType & RowImporter,bool SortGhosts=false);
-
+    void Construct(const Epetra_CrsMatrix & A, ImportType & RowImporter,bool SortGhosts=false, const char * label=0);
+ 
   // Templated versions of MakeColMapAndReindex (to prevent code duplication)
   template <class GO>
-    int MakeColMapAndReindex(std::vector<int> owningPIDs,std::vector<GO> Gcolind,bool SortGhosts=false);
+    int MakeColMapAndReindex(std::vector<int> owningPIDs,std::vector<GO> Gcolind,bool SortGhosts=false,	const char * label=0);
 
   template<typename int_type>
   std::vector<int_type>& getcolind();
