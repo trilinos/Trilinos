@@ -12,8 +12,6 @@
 namespace stk {
 namespace mesh {
 
-struct InteriorSidesetFilter;
-
 class SkinMeshUtil {
 public:
     SkinMeshUtil(const ElemElemGraph& elemElemGraph,
@@ -66,27 +64,22 @@ private:
                                              std::vector<SideSetEntry> &skinnedSideSet);
 
     void extract_interior_sideset_for_bucket(const stk::mesh::Bucket &bucket,
-                                             const InteriorSidesetFilter& filter,
                                              std::vector<SideSetEntry> &sideSet);
 
     void extract_interior_sideset_for_element(stk::mesh::Entity element,
                                               const stk::mesh::Bucket &bucket,
-                                              const InteriorSidesetFilter& filter,
                                               std::vector<SideSetEntry> &sideSet);
 
     bool is_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element,
                                                       const stk::mesh::Bucket &bucket,
-                                                      const InteriorSidesetFilter& filter,
                                                       const stk::mesh::GraphEdge & graphEdge);
 
     bool is_local_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element,
                                                             const stk::mesh::GraphEdge & graphEdge,
-                                                            const InteriorSidesetFilter& filter,
                                                             bool &isElement1InSelector);
 
     bool is_parallel_graph_edge_candidate_for_interior_sideset(stk::mesh::Entity element,
                                                                const stk::mesh::GraphEdge & graphEdge,
-                                                               const InteriorSidesetFilter& filter,
                                                                bool &isElement1InSelector);
 
     const stk::mesh::ElemElemGraph& eeGraph;
