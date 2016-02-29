@@ -114,12 +114,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  template_container_example
-  SOURCES template_container_example.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
+IF (Sacado_ENABLE_CXX11)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    template_container_example
+    SOURCES template_container_example.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
 
 IF(Sacado_ENABLE_Teuchos)
 
@@ -140,8 +142,10 @@ IF(Sacado_ENABLE_Teuchos)
     )
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE(
-  view_factory_example
-  SOURCES view_factory_example.cpp
-  COMM serial mpi
-  )
+IF (Sacado_ENABLE_KokkosCore)
+  TRIBITS_ADD_EXECUTABLE(
+    view_factory_example
+    SOURCES view_factory_example.cpp
+    COMM serial mpi
+    )
+ENDIF()
