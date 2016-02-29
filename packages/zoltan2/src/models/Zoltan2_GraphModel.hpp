@@ -529,6 +529,13 @@ GraphModel<Adapter>::GraphModel(
     try {
       get2ndAdjsViewFromAdjs(ia, comm_, primaryEType, secondAdjEType, offsets,
                              nborIds);
+      // Save the pointers from the input adapter; we control the
+      // offsets and nborIds memory
+      nLocalEdges_ = offsets[nLocalVertices_];
+      eGids_ = arcp_const_cast<gno_t>(
+               arcp<const gno_t>(nborIds, 0, nLocalEdges_, true));
+      eOffsets_ = arcp_const_cast<lno_t>(
+                  arcp<const lno_t>(offsets, 0, nLocalVertices_+1, true));
     }
     Z2_FORWARD_EXCEPTIONS;
   }
@@ -536,16 +543,17 @@ GraphModel<Adapter>::GraphModel(
     // Get the edges
     try {
       ia->get2ndAdjsView(primaryEType, secondAdjEType, offsets, nborIds);
+      // Save the pointers from the input adapter; we do not control the
+      // offsets and nborIds memory
+      nLocalEdges_ = offsets[nLocalVertices_];
+      eGids_ = arcp_const_cast<gno_t>(
+               arcp<const gno_t>(nborIds, 0, nLocalEdges_, false));
+      eOffsets_ = arcp_const_cast<lno_t>(
+                  arcp<const lno_t>(offsets, 0, nLocalVertices_+1, false));
     }
     Z2_FORWARD_EXCEPTIONS;
   }
 
-  // Save the pointers from the input adapter
-  nLocalEdges_ = offsets[nLocalVertices_];
-  eGids_ = arcp_const_cast<gno_t>(
-                arcp<const gno_t>(nborIds, 0, nLocalEdges_, false));
-  eOffsets_ = arcp_const_cast<lno_t>(
-                   arcp<const lno_t>(offsets, 0, nLocalVertices_+1, false));
 
   // Edge weights
   // Cannot specify edge weights if Zoltan2 computes the second adjacencies;
