@@ -50,6 +50,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
+#include <Teuchos_TimeMonitor.hpp>
 
 #include <vector>
 #include <set>
