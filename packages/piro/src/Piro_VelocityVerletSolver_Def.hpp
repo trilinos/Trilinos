@@ -56,8 +56,8 @@ VelocityVerletSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
                           const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer_ ) :
   appParams(appParams_),
   model(model_),
-  solMgr(solMgr_),
   observer(observer_),
+  solMgr(solMgr_),
   out(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   using Teuchos::RCP;
