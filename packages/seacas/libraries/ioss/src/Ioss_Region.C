@@ -94,25 +94,32 @@ namespace {
   void check_for_duplicate_names(const Ioss::Region *region, const Ioss::GroupingEntity *entity)
   {
     std::string name = entity->name();
-    const Ioss::GroupingEntity *old_ge = region->get_entity(name);
 
-    if (old_ge != nullptr && !(old_ge->type() == Ioss::SIDEBLOCK || old_ge->type() == Ioss::SIDESET)) {
-      std::string filename = region->get_database()->get_filename();
-      std::ostringstream errmsg;
-      int64_t id1 = 0;
-      int64_t id2 = 0;
-      if (entity->property_exists("id")) {
-	id1 = entity->get_property("id").get_int();
+    // See if any alias with this name...
+    std::string alias = region->get_alias(name);
+
+    if (!alias.empty()) {
+      // There is an entity with this name...
+      const Ioss::GroupingEntity *old_ge = region->get_entity(name);
+
+      if (old_ge != nullptr && !(old_ge->type() == Ioss::SIDEBLOCK || old_ge->type() == Ioss::SIDESET)) {
+	std::string filename = region->get_database()->get_filename();
+	std::ostringstream errmsg;
+	int64_t id1 = 0;
+	int64_t id2 = 0;
+	if (entity->property_exists("id")) {
+	  id1 = entity->get_property("id").get_int();
+	}
+	if (old_ge->property_exists("id")) {
+	  id2 = old_ge->get_property("id").get_int();
+	}
+	errmsg << "ERROR: There are multiple blocks or sets with the same name "
+	       << "defined in the exodus file '" << filename << "'.\n"
+	       << "\tBoth " << entity->type_string() << " " << id1
+	       << " and " << old_ge->type_string() << " " << id2
+	       << " are named '" << name << "'.  All names must be unique.";
+	IOSS_ERROR(errmsg);
       }
-      if (old_ge->property_exists("id")) {
-	id2 = old_ge->get_property("id").get_int();
-      }
-      errmsg << "ERROR: There are multiple blocks or sets with the same name "
-	     << "defined in the exodus file '" << filename << "'.\n"
-	     << "\tBoth " << entity->type_string() << " " << id1
-	     << " and " << old_ge->type_string() << " " << id2
-	     << " are named '" << name << "'.  All names must be unique.";
-      IOSS_ERROR(errmsg);
     }
   }
 }
