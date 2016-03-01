@@ -191,12 +191,13 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 }
 
 template <typename User>
-void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
-			    const RCP<const Comm<int> > comm,
-                            Zoltan2::MeshEntityType sourcetarget,
-                            Zoltan2::MeshEntityType through,
-                            const typename MeshAdapter<User>::lno_t *&offsets,
-                            const typename MeshAdapter<User>::gno_t *&adjacencyIds)
+void get2ndAdjsViewFromAdjs(
+    const Teuchos::RCP<const MeshAdapter<User> > &ia,
+    const RCP<const Comm<int> > comm,
+    Zoltan2::MeshEntityType sourcetarget,
+    Zoltan2::MeshEntityType through,
+    Teuchos::ArrayRCP<typename MeshAdapter<User>::lno_t> &offsets,
+    Teuchos::ArrayRCP<typename MeshAdapter<User>::gno_t> &adjacencyIds)
 {
   typedef typename MeshAdapter<User>::gno_t gno_t;
   typedef typename MeshAdapter<User>::lno_t lno_t;
@@ -247,16 +248,16 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
       adj_[i] = adj[i];
     }
 
-    offsets = start;
-    adjacencyIds = adj_;
+    offsets = arcp<lno_t>(start, 0, LocalNumIDs+1, true);
+    adjacencyIds = arcp<gno_t>(adj_, 0, nadj, true);
   }
   else {
     // No adjacencies could be computed; return no edges and valid offsets array
     for (size_t i = 0; i <= LocalNumIDs; i++)
       start[i] = 0;
 
-    offsets = start;
-    adjacencyIds = NULL;
+    offsets = arcp<lno_t>(start, 0, LocalNumIDs+1, true);
+    adjacencyIds = Teuchos::null;
   }
 
   //return nadj;
