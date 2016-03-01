@@ -194,7 +194,9 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset)
     
   }
   // Check for duplicate ids...
+#ifndef NDEBUG
   verify_no_duplicate_ids(reverse);
+#endif
 }
 
 void Ioss::Map::verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map)
