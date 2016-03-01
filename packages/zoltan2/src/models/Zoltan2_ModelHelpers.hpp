@@ -207,6 +207,10 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
   RCP<sparse_matrix_type> secondAdjs = get2ndAdjsMatFromAdjs(ia,comm,sourcetarget,through);
 
+  /* Allocate memory necessary for the adjacency */
+  size_t LocalNumIDs = ia->getLocalNumOf(sourcetarget);
+  lno_t *start = new lno_t [LocalNumIDs+1];
+
   if (secondAdjs!=RCP<sparse_matrix_type>()) {
     Array<gno_t> Indices;
     Array<nonzero_t> Values;
@@ -216,9 +220,6 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     gno_t const *Ids=NULL;
     ia->getIDsViewOf(sourcetarget, Ids);
 
-    /* Allocate memory necessary for the adjacency */
-    size_t LocalNumIDs = ia->getLocalNumOf(sourcetarget);
-    lno_t *start = new lno_t [LocalNumIDs+1];
     std::vector<gno_t> adj;
 
     for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
@@ -248,6 +249,14 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     offsets = start;
     adjacencyIds = adj_;
+  }
+  else {
+    // No adjacencies could be computed; return no edges and valid offsets array
+    for (size_t i = 0; i <= LocalNumIDs; i++)
+      start[i] = 0;
+
+    offsets = start;
+    adjacencyIds = NULL;
   }
 
   //return nadj;
