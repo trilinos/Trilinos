@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
        */
 
     // Create an Epetra_Matrix
-    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, RowMap, n) );
+    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Epetra_DataAccess::Copy, RowMap, n) );
 
     // Compute coefficients for discrete integral operator
     std::vector<double> Values(n);

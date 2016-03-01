@@ -51,7 +51,7 @@ double CheckingTools::errorOrthogonality(const Epetra_MultiVector *X,
 
   int i, j;
   for (i = 0; i < rc; ++i) {
-    Epetra_Vector MRi(Copy, (*R), i);
+    Epetra_Vector MRi(Epetra_DataAccess::Copy, (*R), i);
     if (M)
       M->Apply(*((*R)(i)), MRi);
     double normMR = 0.0;
@@ -84,7 +84,7 @@ double CheckingTools::errorOrthonormality(const Epetra_MultiVector *X,
 
   int i, j;
   for (i = 0; i < xc; ++i) {
-    Epetra_Vector MXi(Copy, (*X), i);
+    Epetra_Vector MXi(Epetra_DataAccess::Copy, (*X), i);
     if (M)
       M->Apply(*((*X)(i)), MXi);
     double dot = 0.0;
@@ -124,7 +124,7 @@ double CheckingTools::errorEquality(const Epetra_MultiVector *X,
   }
 
   for (i = 0; i < xc; ++i) {
-    Epetra_Vector MtimesXi(Copy, (*X), i);
+    Epetra_Vector MtimesXi(Epetra_DataAccess::Copy, (*X), i);
     if (M)
       M->Apply(*((*X)(i)), MtimesXi);
     MtimesXi.Update(-1.0, *((*MX)(i)), 1.0);
@@ -165,17 +165,17 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
   }
 
   Epetra_LocalMap lMap(qexc, 0, MyComm);
-  Epetra_MultiVector QextMQ(View, lMap, z, qexc, qc);
+  Epetra_MultiVector QextMQ(Epetra_DataAccess::View, lMap, z, qexc, qc);
 
   int j;
   for (j=0; j<qc; ++j) {
-    Epetra_MultiVector Qj(View, Q, j, 1);
-    Epetra_MultiVector MQ(View, Q.Map(), mQ, qr, 1);
+    Epetra_MultiVector Qj(Epetra_DataAccess::View, Q, j, 1);
+    Epetra_MultiVector MQ(Epetra_DataAccess::View, Q.Map(), mQ, qr, 1);
     if (M)
       M->Apply(Qj, MQ);
     else
       memcpy(mQ, Qj.Values(), qr*sizeof(double));
-    Epetra_MultiVector colJ(View, QextMQ, j, 1);
+    Epetra_MultiVector colJ(Epetra_DataAccess::View, QextMQ, j, 1);
     colJ.Multiply('T', 'N', 1.0, Qex, MQ,  0.0);
   }
   delete[] mQ;
@@ -285,9 +285,9 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
     std::cout << "     2-Norm     Scaled 2-Nor.\n";
   }
 
-  Epetra_Vector KQ(View, Q.Map(), work);
-  Epetra_Vector MQ(View, Q.Map(), work + qr);
-  Epetra_Vector Qj(View, Q.Map(), Q.Values());
+  Epetra_Vector KQ(Epetra_DataAccess::View, Q.Map(), work);
+  Epetra_Vector MQ(Epetra_DataAccess::View, Q.Map(), work + qr);
+  Epetra_Vector Qj(Epetra_DataAccess::View, Q.Map(), Q.Values());
 
   double maxUserNorm = 0.0;
   double minUserNorm = 1.0e+100;
@@ -311,7 +311,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
 
     double residualUser = 0.0;
     if (normWeight) {
-      Epetra_Vector vectWeight(View, Q.Map(), normWeight);
+      Epetra_Vector vectWeight(Epetra_DataAccess::View, Q.Map(), normWeight);
       KQ.NormWeighted(vectWeight, &residualUser);
     }
 
@@ -388,9 +388,9 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
     std::cout << "     2-Norm     Scaled 2-Nor.\n";
   }
 
-  Epetra_Vector KQ(View, Q.Map(), work);
-  Epetra_Vector MQ(View, Q.Map(), work + qr);
-  Epetra_Vector Qj(View, Q.Map(), Q.Values());
+  Epetra_Vector KQ(Epetra_DataAccess::View, Q.Map(), work);
+  Epetra_Vector MQ(Epetra_DataAccess::View, Q.Map(), work + qr);
+  Epetra_Vector Qj(Epetra_DataAccess::View, Q.Map(), Q.Values());
 
   double maxMinvNorm = 0.0;
   double minMinvNorm = 1.0e+100;

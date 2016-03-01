@@ -794,8 +794,7 @@ namespace Anasazi {
       // wants a nonconst int array argument.  It doesn't actually
       // change the entries of the array.
       std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
-      return Teuchos::rcp (new Epetra_MultiVector (Copy, mv, &tmpind[0], index.size())); 
-      // return Teuchos::rcp (new Epetra_MultiVector (::Copy, mv, &tmpind[0], index.size())); 
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::Copy, mv, &tmpind[0], index.size())); 
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
@@ -819,7 +818,7 @@ namespace Anasazi {
 			     "number of vectors " << inNumVecs << " in the "
 			     "input multivector.");
 	}
-      return Teuchos::rcp (new Epetra_MultiVector (Copy, mv, index.lbound(), index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::Copy, mv, index.lbound(), index.size()));
     }
 
     /*! \brief Creates a new Epetra_MultiVector that shares the selected contents of \c mv (shallow copy).
@@ -885,7 +884,7 @@ namespace Anasazi {
       // wants a nonconst int array argument.  It doesn't actually
       // change the entries of the array.
       std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
-      return Teuchos::rcp (new Epetra_MultiVector (View, mv, &tmpind[0], index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::View, mv, &tmpind[0], index.size()));
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
@@ -910,7 +909,7 @@ namespace Anasazi {
 			     "number of vectors " << mv.NumVectors() << " in "
 			     "the input multivector.");
 	}
-      return Teuchos::rcp (new Epetra_MultiVector (View, mv, index.lbound(), index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::View, mv, index.lbound(), index.size()));
     }
 
     /*! \brief Creates a new const Epetra_MultiVector that shares the selected contents of \c mv (shallow copy).
@@ -976,7 +975,7 @@ namespace Anasazi {
       // wants a nonconst int array argument.  It doesn't actually
       // change the entries of the array.
       std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
-      return Teuchos::rcp (new Epetra_MultiVector (View, mv, &tmpind[0], index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::View, mv, &tmpind[0], index.size()));
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
@@ -1001,7 +1000,7 @@ namespace Anasazi {
 			     "number of vectors " << mv.NumVectors() << " in "
 			     "the input multivector.");
 	}
-      return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector(Epetra_DataAccess::View, mv, index.lbound(), index.size()));
     }
 
     //@}
@@ -1036,7 +1035,7 @@ namespace Anasazi {
                                  double beta, Epetra_MultiVector& mv )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
-      Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(Epetra_DataAccess::View, LocalMap, B.values(), B.stride(), B.numCols());
 
       TEUCHOS_TEST_FOR_EXCEPTION( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta )!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvTimesMatAddMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
@@ -1108,7 +1107,7 @@ namespace Anasazi {
                         )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
-      Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(Epetra_DataAccess::View, LocalMap, B.values(), B.stride(), B.numCols());
       
       TEUCHOS_TEST_FOR_EXCEPTION( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 )!=0, EpetraMultiVecFailure,
           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvTransMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");

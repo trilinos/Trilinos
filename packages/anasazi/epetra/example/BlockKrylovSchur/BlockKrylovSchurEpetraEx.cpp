@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 
     // Create an Epetra_Matrix
 
-    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
+    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Epetra_DataAccess::Copy, Map, &NumNz[0]) );
 
     // Diffusion coefficient, can be set by user.
     // When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
