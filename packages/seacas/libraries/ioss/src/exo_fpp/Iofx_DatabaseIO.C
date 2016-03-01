@@ -1048,6 +1048,8 @@ namespace Iofx {
     int64_t offset = 0;
     int used_blocks = 0;
 
+    int nvar = std::numeric_limits<int>::max(); // Number of 'block' vars on database. Used to skip querying if none.
+    int nmap = std::numeric_limits<int>::max(); // Number of 'block' vars on database. Used to skip querying if none.
     for ( iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
       int index = 4*iblk;
       int64_t nodes_per_X = counts[index+0];
@@ -1188,12 +1190,16 @@ namespace Iofx {
 
       // Check for additional variables.
       add_attribute_fields(entity_type, block, attributes, type);
-      add_results_fields(entity_type, block, iblk);
+      if (nvar > 0) {
+	nvar = add_results_fields(entity_type, block, iblk);
+      }
 
       if (entity_type == EX_ELEM_BLOCK) {
         Ioss::SerializeIO       serializeIO__(this);
-        Ioex::add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)block,
-                             local_X_count[iblk], maximumNameLength);
+	if (nmap > 0) {
+	  nmap = Ioex::add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)block,
+				      local_X_count[iblk], maximumNameLength);
+	}
       }
     }
     m_groupCount[entity_type] = used_blocks;

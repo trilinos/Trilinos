@@ -916,21 +916,21 @@ namespace Ioex {
     }
   }
 
-  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
+  int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
 		      size_t name_length)
   {
     // Check for optional element maps...
     int map_count = ex_inquire_int(exoid, EX_INQ_ELEM_MAP);
     if (map_count <= 0) {
-      return;
-}
+      return map_count;
+    }
 
     // Get the names of the maps...
     char **names = Ioex::get_exodus_names(map_count, name_length);
     int ierr = ex_get_names(exoid, EX_ELEM_MAP, names);
     if (ierr < 0) {
       Ioex::exodus_error(exoid, __LINE__, -1);
-}
+    }
 
     // Convert to lowercase.
     for (int i=0; i < map_count; i++) {
@@ -946,6 +946,7 @@ namespace Ioex {
 				   Ioss::Field::MESH, my_element_count));
     }
     Ioex::delete_exodus_names(names, map_count);
+    return map_count;
   }
 
   void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames) {

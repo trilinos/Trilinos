@@ -54,8 +54,8 @@ namespace Ioex {
 
   void check_non_null(void *ptr, const char *type, const std::string &name);
 
-  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
-                      size_t name_length);
+  int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
+		     size_t name_length);
 
   void add_coordinate_frames(int exoid, Ioss::Region *region);
   void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);

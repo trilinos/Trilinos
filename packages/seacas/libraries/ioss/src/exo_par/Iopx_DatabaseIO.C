@@ -815,6 +815,8 @@ namespace Iopx {
         Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
 
+      int nvar = std::numeric_limits<int>::max(); // Number of 'block' vars on database. Used to skip querying if none.
+      int nmap = std::numeric_limits<int>::max(); // Number of 'block' maps on database. Used to skip querying if none.
       for (int iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
         int64_t id = decomp->el_blocks[iblk].id();
 
@@ -932,11 +934,15 @@ namespace Iopx {
 
         // Check for additional variables.
         add_attribute_fields(entity_type, io_block, decomp->el_blocks[iblk].attributeCount, type);
-        add_results_fields(entity_type, io_block, iblk);
+	if (nvar > 0) {
+	  nvar = add_results_fields(entity_type, io_block, iblk);
+	}
 
         if (entity_type == EX_ELEM_BLOCK) {
-          Ioex::add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block,
-                               decomp->el_blocks[iblk].ioss_count(), maximumNameLength);
+	  if (nmap > 0) {
+	    nmap = Ioex::add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block,
+					decomp->el_blocks[iblk].ioss_count(), maximumNameLength);
+	  }
         }
       }
     }
