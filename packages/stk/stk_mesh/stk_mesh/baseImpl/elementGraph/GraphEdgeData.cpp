@@ -80,7 +80,7 @@ void Graph::delete_edge(const GraphEdge &graphEdge)
             delete_edge_from_graph(graphEdge.elem1, i);
 }
 
-void Graph::delete_all_connections(impl::LocalId elem)
+void Graph::delete_all_edges(impl::LocalId elem)
 {
     m_numEdges -= m_graphEdges[elem].size();
     m_graphEdges[elem].clear();

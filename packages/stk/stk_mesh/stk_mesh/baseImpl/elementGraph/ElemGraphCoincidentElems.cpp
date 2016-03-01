@@ -55,7 +55,7 @@ void CoincidentSideExtractor::delete_edges(const GraphEdgeVector& edgesToDelete)
 void CoincidentSideExtractor::add_edges(const GraphEdgeVector& edgesToDelete, SparseGraph& extractedCoincidentSides)
 {
     for(const GraphEdge& edgeToDelete : edgesToDelete)
-        extractedCoincidentSides[edgeToDelete.elem1].push_back(edgeToDelete);
+        extractedCoincidentSides.add_edge(edgeToDelete);
 }
 
 void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemId,
@@ -93,6 +93,7 @@ SparseGraph CoincidentSideExtractor::extract_coincident_sides()
     extract_coincident_sides(extractedCoincidentSides, m_detector);
     return extractedCoincidentSides;
 }
+
 
 typedef std::map<stk::mesh::impl::ElementSidePair, std::vector<stk::mesh::GraphEdge>> ElemSideAndEdges;
 

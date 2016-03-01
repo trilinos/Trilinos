@@ -68,6 +68,17 @@ protected:
         get_bulk().modification_end();
     }
 
+    void delete_shells_13_and_14()
+    {
+        get_bulk().modification_begin();
+        if(get_bulk().parallel_rank() == 0)
+        {
+            get_bulk().destroy_entity(shell13);
+            get_bulk().destroy_entity(shell14);
+        }
+        get_bulk().modification_end();
+    }
+
     void create_shells_13_and_14()
     {
         create_shell_13();
@@ -228,6 +239,17 @@ protected:
         }
     }
 
+    void test_adding_two_shells_then_delete_both_in_same_mod_cycle(const SideTestUtil::TestCase &exterior, const SideTestUtil::TestCase &interior)
+    {
+        if(stk::parallel_machine_size(get_comm()) <= 2)
+        {
+            setup_mesh_from_initial_configuration(get_filename());
+            create_shells_13_and_14();
+            delete_shells_13_and_14();
+            test_skinning(exterior, interior);
+        }
+    }
+
     void test_adding_partial_coincident_hex()
     {
         if(stk::parallel_machine_size(get_comm()) <= 2)
@@ -325,13 +347,17 @@ TEST_F(SkinAAWithModification, TestAddingTwoShells)
 {
     test_adding_two_shell(AefAExterior, AefAInterior);
 }
-TEST_F(SkinAAWithModification, DISABLED_TestAddTwoShellThenDeleteOne)
+TEST_F(SkinAAWithModification, TestAddTwoShellThenDeleteOne)
 {
     test_adding_two_shells_then_delete_one(AeAExterior, AeAInterior);
 }
-TEST_F(SkinAAWithModification, DISABLED_TestAddTwoShellThenDeleteBoth)
+TEST_F(SkinAAWithModification, TestAddTwoShellThenDeleteBoth)
 {
     test_adding_two_shells_then_delete_both(AAExterior, AAInterior);
+}
+TEST_F(SkinAAWithModification, TestAddTwoShellThenDeleteBothInSameModCycle)
+{
+    test_adding_two_shells_then_delete_both_in_same_mod_cycle(AAExterior, AAInterior);
 }
 TEST_F(SkinAAWithModification, TestPartialCoincident)
 {

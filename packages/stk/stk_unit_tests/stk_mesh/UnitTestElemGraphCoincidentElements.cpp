@@ -677,8 +677,8 @@ private:
 
     void verify_num_elements_and_num_edges_in_coincident_graph(size_t numCoincidentElements, size_t numEdgesToCoincidentElements)
     {
-        EXPECT_EQ(numCoincidentElements, coincident_graph->size());
-        for(const auto& map_iter : *coincident_graph)
+        EXPECT_EQ(numCoincidentElements, coincident_graph->get_num_elements_in_graph());
+        for(const stk::mesh::impl::SparseGraph::value_type& map_iter : *coincident_graph)
         {
             const std::vector<stk::mesh::GraphEdge>& coincident_edges = map_iter.second;
             EXPECT_EQ(numEdgesToCoincidentElements, coincident_edges.size());
@@ -735,22 +735,13 @@ private:
 } // namespace
 
 
-TEST_F(ShellMeshModification, DISABLED_CreateStackedShellsThenTestDeleteOneAutoAura)
+TEST_F(ShellMeshModification, CreateStackedShellsThenTestDeleteOne)
 {
-    if (stk::parallel_machine_size(get_comm()) <= 2)
+    if (stk::parallel_machine_size(get_comm()) == 1)
     {
         test_create_stacked_shells_then_delete_one(stk::mesh::BulkData::AUTO_AURA);
     }
 }
-
-TEST_F(ShellMeshModification, DISABLED_CreateStackedShellsThenTestDeleteOneNoAura)
-{
-    if (stk::parallel_machine_size(get_comm()) == 2)
-    {
-        test_create_stacked_shells_then_delete_one(stk::mesh::BulkData::NO_AUTO_AURA);
-    }
-}
-
 
 TEST_F( ShellMeshModification, CreateShellThenTestCreateAnotherShellAutoAura)
 {

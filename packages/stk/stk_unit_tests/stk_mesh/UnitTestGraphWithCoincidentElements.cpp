@@ -57,11 +57,11 @@ void expect_num_edges_remaining_per_element(const stk::mesh::Graph &graph, const
 void expect_coincident_elements_edges_were_extracted(stk::mesh::impl::SparseGraph &extractedCoincidentElements,
                                                      const stk::mesh::impl::CoincidentElementDescription &elemDesc)
 {
-    EXPECT_EQ(2u, extractedCoincidentElements.size());
+    EXPECT_EQ(2u, extractedCoincidentElements.get_num_elements_in_graph());
     for(int side = 0; side < elemDesc.numSides; side++)
     {
-        EXPECT_EQ(stk::mesh::GraphEdge(elemDesc.elem1, side, elemDesc.elem2, side), extractedCoincidentElements[elemDesc.elem1][side]);
-        EXPECT_EQ(stk::mesh::GraphEdge(elemDesc.elem2, side, elemDesc.elem1, side), extractedCoincidentElements[elemDesc.elem2][side]);
+        EXPECT_EQ(stk::mesh::GraphEdge(elemDesc.elem1, side, elemDesc.elem2, side), extractedCoincidentElements.get_edges_for_element(elemDesc.elem1)[side]);
+        EXPECT_EQ(stk::mesh::GraphEdge(elemDesc.elem2, side, elemDesc.elem1, side), extractedCoincidentElements.get_edges_for_element(elemDesc.elem2)[side]);
     }
 }
 

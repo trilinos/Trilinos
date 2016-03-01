@@ -109,15 +109,9 @@ public:
         return m_graph.get_edges_for_element(elem);
     }
 
-    const std::vector<GraphEdge> get_coincident_edges_for_element(impl::LocalId elem) const
+    const std::vector<GraphEdge> & get_coincident_edges_for_element(impl::LocalId elem) const
     {
-        std::vector<GraphEdge> emptyVector;
-
-        impl::SparseGraph::const_iterator iter = m_coincidentGraph.find(elem);
-        if(iter != m_coincidentGraph.end())
-            return iter->second;
-
-        return emptyVector;
+        return m_coincidentGraph.get_edges_for_element(elem);
     }
 
     stk::mesh::Entity get_entity_from_local_id(impl::LocalId elem) const
@@ -125,7 +119,7 @@ public:
         return m_local_id_to_element_entity[elem];
     }
 
-    const impl::ParallelInfo&get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
+    const impl::ParallelInfo & get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
     {
         return m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(edge);
     }
@@ -285,6 +279,11 @@ private:
 
     void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge) const;
     unsigned get_max_num_sides_per_element() const;
+    bool did_already_delete_a_shell_between_these_elements(std::vector<impl::ShellConnectivityData>& shellConnectivityList,
+                                                           const impl::ShellConnectivityData& shellConnectivityData);
+    bool are_connectivities_for_same_graph_edge(const impl::ShellConnectivityData& shellConn,
+                                                      const impl::ShellConnectivityData& shellConnectivityData);
+    bool is_connected_to_shell_on_side(stk::mesh::impl::LocalId localElemLocalId, int side);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

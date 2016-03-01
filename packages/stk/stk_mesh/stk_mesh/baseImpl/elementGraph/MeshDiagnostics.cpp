@@ -11,6 +11,8 @@
 #include "../../../../stk_util/stk_util/parallel/DistributedIndex.hpp"
 #include "../../base/GetEntities.hpp"
 #include "../MeshImplUtils.hpp"
+#include "BulkDataIdMapper.hpp"
+#include "ElemGraphCoincidentElems.hpp"
 
 namespace stk { namespace mesh {
 
@@ -18,12 +20,41 @@ class ElemGraphForDiagnostics : public stk::mesh::ElemElemGraph
 {
 public:
     ElemGraphForDiagnostics(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr) :
-        stk::mesh::ElemElemGraph(bulkData, selector, air) { }
+        stk::mesh::ElemElemGraph(bulkData, selector, air), m_idMapper(bulkData, m_local_id_to_element_entity, m_entity_to_local_id) { }
 
     stk::mesh::impl::ParallelGraphInfo& get_parallel_info() { return m_parallelInfoForGraphEdges.get_parallel_graph_info(); }
     stk::mesh::Entity get_entity(stk::mesh::impl::LocalId local_id) const { return m_local_id_to_element_entity[local_id]; }
     const stk::mesh::impl::SparseGraph& get_coincident_graph() const { return m_coincidentGraph; }
+    const impl::IdMapper & get_id_mapper() const { return m_idMapper; }
+
+private:
+    impl::BulkDataIdMapper m_idMapper;
 };
+
+std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_coincident_elements(const stk::mesh::impl::SparseGraph& coingraph,
+                                                                                                  const stk::mesh::impl::IdMapper &idMapper,
+                                                                                                  const stk::mesh::impl::ParallelGraphInfo& parInfo)
+{
+    std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitElements;
+
+    for(const stk::mesh::impl::SparseGraph::value_type& extractedEdgesForElem : coingraph)
+    {
+        const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem = extractedEdgesForElem.second;
+        for(const stk::mesh::GraphEdge& edge : coincidentEdgesForElem)
+        {
+            if(!stk::mesh::impl::is_local_element(edge.elem2))
+            {
+                stk::mesh::EntityId id = idMapper.localToGlobal(edge.elem1);
+                stk::mesh::impl::ParallelGraphInfo::const_iterator iter = parInfo.find(edge);
+                ThrowRequireWithSierraHelpMsg(iter!=parInfo.end());
+                splitElements[id] = std::make_pair(-edge.elem2, iter->second.get_proc_rank_of_neighbor());
+            }
+        }
+    }
+
+    return splitElements;
+}
+
 
 std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_coincident_elements(stk::mesh::BulkData& bulkData)
 {
@@ -31,24 +62,9 @@ std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_co
     ElemGraphForDiagnostics graph(bulkData, sel);
     const stk::mesh::impl::SparseGraph& coingraph = graph.get_coincident_graph();
 
-    std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > badElements;
+    std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > badElements =
+            get_split_coincident_elements(coingraph, graph.get_id_mapper(), graph.get_parallel_info());
 
-    for(const stk::mesh::impl::SparseGraph::value_type& extractedEdgesForElem : coingraph)
-    {
-        const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem = extractedEdgesForElem.second;
-        for(const stk::mesh::GraphEdge& edge : coincidentEdgesForElem)
-        {
-            if(edge.elem2 < 0)
-            {
-                stk::mesh::Entity entity = graph.get_entity(edge.elem1);
-                stk::mesh::EntityId id = bulkData.identifier(entity);
-                stk::mesh::impl::ParallelGraphInfo& par_info = graph.get_parallel_info();
-                stk::mesh::impl::ParallelGraphInfo::iterator iter = par_info.find(edge);
-                ThrowRequireWithSierraHelpMsg(iter!=par_info.end());
-                badElements[id] = std::make_pair(-edge.elem2, iter->second.get_proc_rank_of_neighbor());
-            }
-        }
-    }
     return badElements;
 }
 
