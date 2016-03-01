@@ -182,7 +182,7 @@ namespace Ioss {
       }
     }
 	  
-
+    unsigned int hash() const {return hash_;}
   protected:
     void count_attributes() const;
 
@@ -225,6 +225,7 @@ namespace Ioss {
 
     State entityState;
     mutable int64_t attributeCount;
+    unsigned int hash_;
   };
 }
 inline void

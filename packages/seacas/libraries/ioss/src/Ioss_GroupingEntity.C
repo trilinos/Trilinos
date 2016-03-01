@@ -51,14 +51,14 @@
 
 Ioss::GroupingEntity::GroupingEntity()
   : entityCount(0), entityName("invalid"), database_(nullptr), entityState(STATE_CLOSED),
-    attributeCount(0)
+    attributeCount(0), hash_(0)
 {}
 
 Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
 				     const std::string& my_name,
 				     int64_t entity_count)
   : entityCount(entity_count), entityName(my_name), database_(io_database),
-    entityState(STATE_CLOSED), attributeCount(0)    
+    entityState(STATE_CLOSED), attributeCount(0), hash_(Ioss::Utils::hash(my_name))
 {
   properties.add(Ioss::Property("name", my_name));
 
@@ -71,7 +71,7 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
     Ioss::Field::BasicType int_type = Ioss::Field::INTEGER;
     if (io_database != nullptr) {
       int_type = field_int_type();
-}
+    }
     fields.add(Ioss::Field("ids", int_type, "scalar",
 			   Ioss::Field::MESH, entity_count));
   }
