@@ -264,8 +264,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Copy previous linear system into
-    RCP<Epetra_MultiVector> tmpX = rcp( new Epetra_MultiVector( View, *augX, 0, init_numrhs ) );
-    RCP<Epetra_MultiVector> tmpB = rcp( new Epetra_MultiVector( View, *augB, 0, init_numrhs ) );
+    RCP<Epetra_MultiVector> tmpX = rcp( new Epetra_MultiVector( Epetra_DataAccess::View, *augX, 0, init_numrhs ) );
+    RCP<Epetra_MultiVector> tmpB = rcp( new Epetra_MultiVector( Epetra_DataAccess::View, *augB, 0, init_numrhs ) );
     tmpX->Scale( 1.0, *initX );
     tmpB->Scale( 1.0, *initB );
 

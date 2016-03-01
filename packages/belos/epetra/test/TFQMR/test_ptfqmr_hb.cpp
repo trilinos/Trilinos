@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
   try {
     bool proc_verbose = false;
     bool leftprec = true; // use left preconditioning to solve these linear systems
+    bool explicit_test = true;
     int frequency = -1;  // how often residuals are printed by solver
     int numrhs = 1;
     int maxiters = -1;    // maximum iterations allowed
@@ -86,6 +87,7 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
+    cmdp.setOption("explicit","implicit-only",&explicit_test,"Compute explicit residuals.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
@@ -162,8 +164,7 @@ int main(int argc, char *argv[]) {
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    if (leftprec)
-      belosList.set( "Explicit Residual Test", true );     // Need to check for the explicit residual before returning
+    belosList.set( "Explicit Residual Test", explicit_test );     // Need to check for the explicit residual before returning
     if (verbose) {
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
           Belos::TimingDetails + Belos::StatusTestDetails );
