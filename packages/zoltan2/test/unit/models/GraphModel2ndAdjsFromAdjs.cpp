@@ -192,7 +192,7 @@ int main(int narg, char *arg[]) {
         ssize_t in_list = -1;
 
         for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
-          if (adjacencyIds[k] == adjacencyIds[j]) {
+          if (adjacencyIds[k] == madjacencyIds[j]) {
             in_list = k;
             break;
           }
@@ -251,7 +251,7 @@ int main(int narg, char *arg[]) {
         ssize_t in_list = -1;
 
         for (inputAdapter_t::lno_t k=offsets[tnoct]; k<offsets[tnoct+1]; k++) {
-          if (adjacencyIds[k] == adjacencyIds[j]) {
+          if (adjacencyIds[k] == madjacencyIds[j]) {
             in_list = k;
             break;
           }
