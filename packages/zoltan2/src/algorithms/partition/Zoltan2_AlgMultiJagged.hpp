@@ -1752,6 +1752,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
 
         freeArray<mj_lno_t>(this->part_xadj);
         this->part_xadj = this->new_part_xadj;
+        this->new_part_xadj = NULL;
     }
 
     for(mj_lno_t i = 0; i < num_total_coords; ++i){
@@ -5590,7 +5591,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::free_work_memory(){
 
         freeArray<mj_scalar_t>(this->max_min_coords);
 
-        freeArray<mj_lno_t>(this->new_part_xadj);
+        freeArray<mj_lno_t>(this->part_xadj);
 
         freeArray<mj_lno_t>(this->coordinate_permutations);
 
@@ -5830,7 +5831,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         //skip this dimension. For example, this happens when 1 is given in the input
         //part array is given. P=4,5,1,2
         if(output_part_count_in_dimension == current_num_parts) {
-                //still need to swap the input output arrays.
+            //still need to swap the input output arrays.
             tmpPartVect= future_num_part_in_parts;
             future_num_part_in_parts = next_future_num_parts_in_parts;
             next_future_num_parts_in_parts = tmpPartVect;
@@ -6166,7 +6167,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         }
         freeArray<mj_lno_t>(this->part_xadj);
         this->part_xadj = this->new_part_xadj;
-
+        this->new_part_xadj = NULL;
         this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Problem_Partitioning_" + istring);
     }
 
