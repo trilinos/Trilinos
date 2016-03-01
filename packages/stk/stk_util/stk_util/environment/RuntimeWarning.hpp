@@ -204,6 +204,13 @@ public:
     return *this;
   }
 
+  template <typename T1, typename T2>
+  RuntimeWarningAdHoc &operator<<(const std::pair<T1,T2> &t) {
+    message << "(" << t.first << ", " << t.second << ")";
+    return *this;
+  }
+
+
 public:
   std::ostringstream    message;                ///< Stream to receive message content
 
