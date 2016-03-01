@@ -72,6 +72,8 @@
 #include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_DirectSolver.hpp>
 
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+
 namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -781,6 +783,11 @@ namespace MueLuTests {
     //      to write to a file stream, but this would involve writing new interfaces to Epetra's
     //      file I/O capabilities.
     std::string tname = typeid(Scalar).name();
+    tname = tname + typeid(LocalOrdinal).name();
+    tname = tname + typeid(GlobalOrdinal).name();
+    std::string nn = Kokkos::Compat::KokkosDeviceWrapperNode<typename Node::execution_space>::name();
+    nn.erase(std::remove(nn.begin(), nn.end(), '/'), nn.end());
+    tname = tname + nn;
     tname = "_" + tname;
     LocalOrdinal zero = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
     //Only write out the fine level matrix, since that is the only data file we test against.
