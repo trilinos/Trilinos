@@ -5154,9 +5154,7 @@ namespace Iofx {
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(edge_block, EX_EDGE_BLOCK, &ids_);
           Ioex::EdgeBlock T(*(edge_block));
-          if (std::find(mesh.edgeblocks.begin(), mesh.edgeblocks.end(), T) == mesh.edgeblocks.end()) {
-            mesh.edgeblocks.push_back(T);
-          }
+	  mesh.edgeblocks.push_back(T);
         }
         m_groupCount[EX_EDGE_BLOCK] = mesh.edgeblocks.size();
       }
@@ -5176,9 +5174,7 @@ namespace Iofx {
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(face_block, EX_FACE_BLOCK, &ids_);
           Ioex::FaceBlock T(*(face_block));
-          if (std::find(mesh.faceblocks.begin(), mesh.faceblocks.end(), T) == mesh.faceblocks.end()) {
-            mesh.faceblocks.push_back(T);
-          }
+	  mesh.faceblocks.push_back(T);
         }
         m_groupCount[EX_FACE_BLOCK] = mesh.faceblocks.size();
       }
@@ -5198,9 +5194,7 @@ namespace Iofx {
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(element_block, EX_ELEM_BLOCK, &ids_);
           Ioex::ElemBlock T(*(element_block));
-          if (std::find(mesh.elemblocks.begin(), mesh.elemblocks.end(), T) == mesh.elemblocks.end()) {
-            mesh.elemblocks.push_back(T);
-          }
+	  mesh.elemblocks.push_back(T);
         }
         m_groupCount[EX_ELEM_BLOCK] = mesh.elemblocks.size();
       }
@@ -5215,9 +5209,7 @@ namespace Iofx {
         for (auto &nodeset : nodesets) {
           Ioex::get_id(nodeset, EX_NODE_SET, &ids_);
           const Ioex::NodeSet T(*(nodeset));
-          if (std::find(mesh.nodesets.begin(), mesh.nodesets.end(), T) == mesh.nodesets.end()) {
-            mesh.nodesets.push_back(T);
-          }
+	  mesh.nodesets.push_back(T);
         }
         m_groupCount[EX_NODE_SET] = mesh.nodesets.size();
       }
@@ -5232,9 +5224,7 @@ namespace Iofx {
         for (auto &edgeset : edgesets) {
           Ioex::get_id(edgeset, EX_EDGE_SET, &ids_);
           const Ioex::EdgeSet T(*(edgeset));
-          if (std::find(mesh.edgesets.begin(), mesh.edgesets.end(), T) == mesh.edgesets.end()) {
-            mesh.edgesets.push_back(T);
-          }
+	  mesh.edgesets.push_back(T);
         }
         m_groupCount[EX_EDGE_SET] = mesh.edgesets.size();
       }
@@ -5249,9 +5239,7 @@ namespace Iofx {
         for (auto &faceset : facesets) {
           Ioex::get_id(faceset, EX_FACE_SET, &ids_);
           const Ioex::FaceSet T(*(faceset));
-          if (std::find(mesh.facesets.begin(), mesh.facesets.end(), T) == mesh.facesets.end()) {
-            mesh.facesets.push_back(T);
-          }
+	  mesh.facesets.push_back(T);
         }
         m_groupCount[EX_FACE_SET] = mesh.facesets.size();
       }
@@ -5266,9 +5254,7 @@ namespace Iofx {
         for (auto &elementset : elementsets) {
           Ioex::get_id(elementset, EX_ELEM_SET, &ids_);
           const Ioex::ElemSet T(*(elementset));
-          if (std::find(mesh.elemsets.begin(), mesh.elemsets.end(), T) == mesh.elemsets.end()) {
-            mesh.elemsets.push_back(T);
-          }
+	  mesh.elemsets.push_back(T);
         }
         m_groupCount[EX_ELEM_SET] = mesh.elemsets.size();
       }
@@ -5313,9 +5299,7 @@ namespace Iofx {
       for (auto &sset : ssets) {
         // Add a SideSet corresponding to this SideSet/SideBlock
         Ioex::SideSet T(*(sset));
-        if (std::find(mesh.sidesets.begin(), mesh.sidesets.end(), T) == mesh.sidesets.end()) {
-          mesh.sidesets.push_back(T);
-        }
+	mesh.sidesets.push_back(T);
       }
       m_groupCount[EX_SIDE_SET] = mesh.sidesets.size();
 
