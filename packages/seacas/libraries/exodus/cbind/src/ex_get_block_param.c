@@ -80,6 +80,8 @@ int ex_get_block_param( int exoid,
   const char* ablknam;
   const char* vblkcon;
 
+  struct ex_file_item* file = ex_find_file_item(exoid);
+  
   exerrval = 0;
 
   /* First, locate index of element block id in VAR_ID_EL_BLK array */
@@ -172,7 +174,7 @@ int ex_get_block_param( int exoid,
   }
   block->num_nodes_per_entry = len;
 
-  if ( block->type != EX_ELEM_BLOCK ) {
+  if (!file->has_edges || block->type != EX_ELEM_BLOCK) {
     block->num_edges_per_entry = 0;
   } else {
     if ((status = nc_inq_dimid (exoid, dnumedg, &dimid)) != NC_NOERR) {
@@ -191,7 +193,7 @@ int ex_get_block_param( int exoid,
     block->num_edges_per_entry = len;
   }
 
-  if ( block->type != EX_ELEM_BLOCK ) {
+  if (!file->has_faces || block->type != EX_ELEM_BLOCK ) {
     block->num_faces_per_entry = 0;
   } else {
     if ((status = nc_inq_dimid (exoid, dnumfac, &dimid)) != NC_NOERR) {

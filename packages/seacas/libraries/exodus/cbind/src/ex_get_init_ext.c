@@ -199,5 +199,15 @@ int ex_get_init_ext (int   exoid,
     info->title[0] = '\0';
   }
 
+  /* Update settings in ex_file_item struct */
+  {
+    struct ex_file_item *file = ex_find_file_item(exoid);
+    if (file ) {
+      file->has_nodes = info->num_nodes > 0;
+      file->has_edges = info->num_edge  > 0;
+      file->has_faces = info->num_face  > 0;
+      file->has_elems = info->num_elem  > 0;
+    }
+  }
   return (EX_NOERR);
 }

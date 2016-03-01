@@ -615,6 +615,10 @@ struct ex_file_item {
   unsigned int          is_parallel:1;            /* 1 true, 0 false */
   unsigned int          is_mpiio:1;               /* 1 true, 0 false */
   unsigned int          is_pnetcdf:1;             /* 1 true, 0 false */
+  unsigned int          has_nodes:1;   /* for input only at this time */
+  unsigned int          has_edges:1;   /* for input only at this time */
+  unsigned int          has_faces:1;   /* for input only at this time */
+  unsigned int          has_elems:1;   /* for input only at this time */
   struct ex_file_item*     next;
 };
 

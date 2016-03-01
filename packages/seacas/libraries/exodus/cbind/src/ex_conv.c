@@ -209,6 +209,10 @@ int ex_conv_ini( int  exoid,
   new_file->is_parallel = is_parallel;
   new_file->is_mpiio    = is_mpiio;
   new_file->is_pnetcdf  = is_pnetcdf;
+  new_file->has_nodes = 1; /* default to yes in case not set */
+  new_file->has_edges = 1;
+  new_file->has_faces = 1;
+  new_file->has_elems = 1;
   
   new_file->next = file_list;
   file_list = new_file;
