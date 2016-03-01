@@ -74,6 +74,11 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
 
   ENDIF() # ENABLE_BROKEN_TESTS
 
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp
+    SOURCE_FILES import.xml
+    )
+
 ENDIF()
 
 ENDIF() # Galeri
