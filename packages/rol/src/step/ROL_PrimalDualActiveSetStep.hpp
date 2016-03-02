@@ -135,8 +135,6 @@ template <class Real>
 class PrimalDualActiveSetStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<PrimalDualHessian<Real> > hessian_;
-  Teuchos::RCP<PrimalDualPreconditioner<Real> > precond_;
   Teuchos::RCP<Krylov<Real> > krylov_;
 
   // Krylov Parameters
@@ -202,8 +200,7 @@ public:
                                       a secant approximation of the Hessian
   */
   PrimalDualActiveSetStep( Teuchos::ParameterList &parlist ) 
-    : Step<Real>::Step(),
-      hessian_(Teuchos::null), precond_(Teuchos::null), krylov_(Teuchos::null),
+    : Step<Real>::Step(), krylov_(Teuchos::null),
       iterCR_(0), flagCR_(0), itol_(0.),
       maxit_(0), iter_(0), flag_(0), stol_(0.), gtol_(0.), scale_(0.),
       neps_(-ROL_EPSILON<Real>()), feasible_(false),
@@ -272,14 +269,6 @@ public:
     lambda_->set((step_state->gradientVec)->dual());
     lambda_->scale(-1.0);
     //con.setVectorToLowerBound(*lambda_);
-    // Initialize Hessian and preconditioner
-    Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcp(&obj, false);
-    Teuchos::RCP<BoundConstraint<Real> > con_ptr = Teuchos::rcp(&con, false);
-    hessian_ = Teuchos::rcp( 
-      new PrimalDualHessian<Real>(secant_,obj_ptr,con_ptr,algo_state.iterateVec,xlam_,useSecantHessVec_) );
-    precond_ = Teuchos::rcp( 
-      new PrimalDualPreconditioner<Real>(secant_,obj_ptr,con_ptr,algo_state.iterateVec,xlam_,
-                                         useSecantPrecond_) );
   }
 
   /** \brief Compute step.
@@ -363,8 +352,17 @@ public:
       rtmp_->scale(-1.0);                        // rhs = -Ig - I(H*As)
       s.zero();
       if ( rtmp_->norm() > 0.0 ) {             
+        // Initialize Hessian and preconditioner
+        Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcpFromRef(obj);
+        Teuchos::RCP<BoundConstraint<Real> > con_ptr = Teuchos::rcpFromRef(con);
+        Teuchos::RCP<LinearOperator<Real> > hessian
+          = Teuchos::rcp(new PrimalDualHessian<Real>(secant_,obj_ptr,con_ptr,
+              algo_state.iterateVec,xlam_,useSecantHessVec_));
+        Teuchos::RCP<LinearOperator<Real> > precond
+          = Teuchos::rcp(new PrimalDualPreconditioner<Real>(secant_,obj_ptr,
+              con_ptr,algo_state.iterateVec,xlam_,useSecantPrecond_));
         //solve(s,*rtmp_,*xlam_,x,obj,con);   // Call conjugate residuals
-        krylov_->run(s,*hessian_,*rtmp_,*precond_,iterCR_,flagCR_);
+        krylov_->run(s,*hessian,*rtmp_,*precond,iterCR_,flagCR_);
         con.pruneActive(s,*xlam_,neps_);        // s <- Is
       }
       s.plus(*As_);                             // s = Is + As

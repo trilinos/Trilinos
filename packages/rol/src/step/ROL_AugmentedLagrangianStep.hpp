@@ -193,11 +193,12 @@ public:
     algo_state.nfval += augLag.getNumberFunctionEvaluations();
     algo_state.ngrad += augLag.getNumberGradientEvaluations();
     // Initialize intermediate stopping tolerances
-    minPenaltyReciprocal_ = std::min(1./state->searchSize,minPenaltyLowerBound_);
-    optTolerance_  = std::max(1.e-2*outerOptTolerance_,
+    Real one(1), TOL(1.e-2);
+    minPenaltyReciprocal_ = std::min(one/state->searchSize,minPenaltyLowerBound_);
+    optTolerance_  = std::max(TOL*outerOptTolerance_,
                               optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
-    optTolerance_  = std::min(optTolerance_,1.e-2*algo_state.gnorm);
-    feasTolerance_ = std::max(1.e-2*outerFeasTolerance_,
+    optTolerance_  = std::min(optTolerance_,TOL*algo_state.gnorm);
+    feasTolerance_ = std::max(TOL*outerFeasTolerance_,
                               feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
   }
 

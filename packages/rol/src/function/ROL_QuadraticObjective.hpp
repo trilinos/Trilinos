@@ -70,7 +70,7 @@ template <class Real>
 class QuadraticObjective : public Objective<Real> {
 private:
   const Teuchos::RCP<const LinearOperator<Real> > op_;
-  const Teuchos::RCP<const Vector<Real> > vec__;
+  const Teuchos::RCP<const Vector<Real> > vec_;
   Teuchos::RCP<Vector<Real> > tmp_;
 
 public:
@@ -78,10 +78,6 @@ public:
                   const Teuchos::RCP<const Vector<Real> > &vec)
     : op_(op), vec_(vec) {
     tmp_ = vec_->dual().clone();
-  }
-
-  void update(const Vector<Real> &x, bool flag = true, int iter = -1) {
-    op_->update(x,flag,iter);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {

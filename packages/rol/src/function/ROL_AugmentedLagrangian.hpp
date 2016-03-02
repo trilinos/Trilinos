@@ -106,7 +106,7 @@ public:
                       const Vector<Real> &c,
                       Teuchos::ParameterList &parlist)
     : obj_(obj), con_(con), penaltyParameter_(mu),
-      fval_(0.0), ncval_(0), nfval_(0), ngval_(0),
+      fval_(0), ncval_(0), nfval_(0), ngval_(0),
       isConstraintComputed_(false), isValueComputed_(false), isGradientComputed_(false) {
 
     x_    = x.clone();
@@ -150,12 +150,12 @@ public:
     // Compute penalty term
     Real pval = c_->dot(*c_);
     // Compute Augmented Lagrangian value
-    Real val = 0.0;
+    Real val = 0.0, half = 0.5;
     if (scaleLagrangian_) {
-      val = (fval_ + cval)/penaltyParameter_ + 0.5*pval;
+      val = (fval_ + cval)/penaltyParameter_ + half*pval;
     }
     else {
-      val = fval_ + cval + 0.5*penaltyParameter_*pval;
+      val = fval_ + cval + half*penaltyParameter_*pval;
     }
     return val;
   }
@@ -175,10 +175,11 @@ public:
     }
     g.set(*g_);
     // Compute gradient of Augmented Lagrangian
+    Real one = 1.0;
     dlam_->set(c_->dual());
     if ( scaleLagrangian_ ) {
-      g.scale(1./penaltyParameter_);
-      dlam_->axpy(1./penaltyParameter_,*lam_);
+      g.scale(one/penaltyParameter_);
+      dlam_->axpy(one/penaltyParameter_,*lam_);
     }
     else {
       dlam_->scale(penaltyParameter_);
@@ -189,13 +190,14 @@ public:
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    Real one = 1.0;
     // Apply objective Hessian to a vector
     obj_->hessVec(hv,v,x,tol);
     if (HessianLevel_ < 2) {
       con_->applyJacobian(*dc2_,v,x,tol);
       con_->applyAdjointJacobian(*dc1_,dc2_->dual(),x,tol);
       if (scaleLagrangian_) {
-        hv.scale(1./penaltyParameter_);
+        hv.scale(one/penaltyParameter_);
         hv.plus(*dc1_);
       }
       else {
@@ -212,7 +214,7 @@ public:
         // Apply Augmented Lagrangian Hessian to a vector
         dlam_->set(c_->dual());
         if ( scaleLagrangian_ ) {
-          dlam_->axpy(1./penaltyParameter_,*lam_);
+          dlam_->axpy(one/penaltyParameter_,*lam_);
         }
         else {
           dlam_->scale(penaltyParameter_);
@@ -277,7 +279,7 @@ public:
 
   // Reset with upated penalty parameter
   void reset(const Vector<Real> &l, const Real penaltyParameter) {
-    ncval_ = 0.; nfval_ = 0.; ngval_ = 0.;
+    ncval_ = 0; nfval_ = 0; ngval_ = 0;
     lam_->set(l);
     penaltyParameter_ = penaltyParameter;
   }
