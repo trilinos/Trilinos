@@ -209,7 +209,8 @@ int main(int argc, char *argv[]) {
     // CHECK PENALTY OBJECTIVE DERIVATIVES
     Teuchos::RCP<ROL::Objective<RealT> > obj_ptr = Teuchos::rcpFromRef(obj);
     Teuchos::RCP<ROL::EqualityConstraint<RealT> > con_ptr = Teuchos::rcpFromRef(con);
-    ROL::MoreauYosidaPenalty<RealT> myPen(obj,bnd,x,10.0);
+    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd_ptr = Teuchos::rcpFromRef(bnd);
+    ROL::MoreauYosidaPenalty<RealT> myPen(obj_ptr,bnd_ptr,x,10.0);
     myPen.checkGradient(x, y, true, *outStream);
     myPen.checkHessVec(x, g, y, true, *outStream);
     ROL::AugmentedLagrangian<RealT> myAugLag(obj_ptr,con_ptr,l,1.,x,c,*parlist);
@@ -227,7 +228,7 @@ int main(int argc, char *argv[]) {
     gup->scale(-1.0);
     con.applyInverseAdjointJacobian_1(l,*gup,*up,*zp,zerotol);
     gup->zero(); c.zero();
-    algoMY.run(x, g, l, c, obj, con, bnd, true, *outStream);
+    algoMY.run(x, g, l, c, myPen, con, bnd, true, *outStream);
     Teuchos::RCP<ROL::Vector<RealT> > xMY = x.clone();
     xMY->set(x);
     // SOLVE USING AUGMENTED LAGRANGIAN

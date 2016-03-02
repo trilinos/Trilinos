@@ -114,8 +114,9 @@ public:
       c2_ = 0.9;
     }
     if ( edesc_ == DESCENT_NONLINEARCG ) {
+      Real one(1);
       c2_ = 0.4;
-      c3_ = std::min(1.0-c2_,c3_);
+      c3_ = std::min(one-c2_,c3_);
     }
   }
 
