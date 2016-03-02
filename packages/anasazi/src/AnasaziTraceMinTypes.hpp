@@ -48,7 +48,8 @@ namespace Experimental {
   {
     LARGEST_CONVERGED_SHIFT,
     ADJUSTED_RITZ_SHIFT,
-    RITZ_VALUES_SHIFT
+    RITZ_VALUES_SHIFT,
+    EXPERIMENTAL_SHIFT
   };
 
   enum SaddleSolType
