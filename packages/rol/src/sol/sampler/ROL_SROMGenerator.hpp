@@ -193,7 +193,7 @@ public:
       initialize_optimizer(algo,list,optProb);
       if ( optProb ) {
         std::string type = list.sublist("Step").get("Type","Trust Region");
-        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(&list,false);
+        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcpFromRef(list);
         Teuchos::RCP<OptimizationProblem<Real> > optProblem;
         if (type == "Augmented Lagrangian") {
           Teuchos::RCP<Objective<Real> > augLag

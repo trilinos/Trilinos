@@ -94,7 +94,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(Teuchos::null), gsampler_(Teuchos::null), hsampler_(Teuchos::null),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -106,7 +106,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(sampler), gsampler_(sampler), hsampler_(sampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
@@ -122,7 +122,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(gsampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
@@ -139,7 +139,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
@@ -155,7 +155,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(sampler), gsampler_(sampler), hsampler_(sampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
@@ -172,7 +172,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(gsampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
@@ -190,14 +190,14 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
   }
 
   void setParameterList(Teuchos::ParameterList &parlist) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     if (ORIGINAL_obj_ != Teuchos::null) {
       setObjective(ORIGINAL_obj_);
     }

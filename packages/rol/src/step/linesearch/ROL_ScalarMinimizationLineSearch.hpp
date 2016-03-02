@@ -91,11 +91,11 @@ private:
   public:
     Phi(const Teuchos::RCP<Vector<Real> > &xnew,
         const Teuchos::RCP<Vector<Real> > &g,
-        const Vector<Real> &x, const Vector<Real> &s,
-        Objective<Real> &obj, BoundConstraint<Real> &con)
-     : xnew_(xnew), g_(g),
-       x_(Teuchos::rcp(&x,false)), s_(Teuchos::rcp(&s,false)),
-       obj_(Teuchos::rcp(&obj,false)), con_(Teuchos::rcp(&con,false)),
+        const Teuchos::RCP<const Vector<Real> > &x,
+        const Teuchos::RCP<const Vector<Real> > &s,
+        const Teuchos::RCP<Objective<Real> > &obj,
+        const Teuchos::RCP<BoundConstraint<Real> > &con)
+     : xnew_(xnew), g_(g), x_(x), s_(s), obj_(obj), con_(con),
        ftol_(std::sqrt(ROL_EPSILON<Real>())) {}
     Real value(const Real alpha) {
       updateIterate(alpha);
@@ -235,8 +235,12 @@ public:
     alpha = LineSearch<Real>::getInitialAlpha(ls_neval,ls_ngrad,fval,gs,x,s,obj,con);
 
     // Build ScalarFunction and ScalarMinimizationStatusTest
+    Teuchos::RCP<const Vector<Real> > x_ptr = Teuchos::rcpFromRef(x);
+    Teuchos::RCP<const Vector<Real> > s_ptr = Teuchos::rcpFromRef(s);
+    Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcpFromRef(obj);
+    Teuchos::RCP<BoundConstraint<Real> > bnd_ptr = Teuchos::rcpFromRef(con);
     Teuchos::RCP<ScalarFunction<Real> > phi
-      = Teuchos::rcp(new Phi(xnew_,g_,x,s,obj,con));
+      = Teuchos::rcp(new Phi(xnew_,g_,x_ptr,s_ptr,obj_ptr,bnd_ptr));
     Teuchos::RCP<ScalarMinimizationStatusTest<Real> > test
       = Teuchos::rcp(new LineSearchStatusTest(fval,gs,c1_,c2_,c3_,max_nfval_,econd_,phi));
 

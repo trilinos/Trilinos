@@ -239,8 +239,8 @@ namespace ROL {
                         Real eps = 0.0 )
       : isInitialized_(false), useSecantPrecond_(useSecantPrecond),
         useSecantHessVec_(useSecantHessVec), eps_(eps) {
-      obj_    = Teuchos::rcp(&obj, false);
-      con_    = Teuchos::rcp(&con, false);
+      obj_    = Teuchos::rcpFromRef(obj);
+      con_    = Teuchos::rcpFromRef(con);
       secant_ = secant;
     }
 

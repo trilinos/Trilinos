@@ -122,7 +122,7 @@ public:
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
                            Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    grad_ = g.clone(); //Teuchos::rcp(&g, false);
+    grad_ = g.clone();
     xtst_ = x.clone();
     d_    = s.clone();
     g_    = g.clone();
