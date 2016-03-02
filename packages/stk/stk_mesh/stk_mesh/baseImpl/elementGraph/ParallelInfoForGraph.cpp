@@ -12,13 +12,13 @@ namespace mesh
 {
 namespace impl
 {
-void pack_data_for_part_ordinals(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData);
-void pack_edge(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& edge, int other_proc);
-void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph);
-void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo);
-stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, int proc_id);
+void pack_data_for_part_ordinals(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData);
+void pack_edge(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& edge, int other_proc);
+void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph);
+void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo);
+stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, int proc_id);
 
-void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo)
+void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo)
 {
     parallelPartInfo.clear();
     stk::CommSparse comm(bulkData.parallel());
@@ -29,7 +29,7 @@ void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData
     unpack_and_update_part_ordinals(comm, bulkData, graph, parallelPartInfo);
 }
 
-void pack_data_for_part_ordinals(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData)
+void pack_data_for_part_ordinals(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData)
 {
     const stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_graph().get_parallel_graph_info();
     for(const auto& item : parallel_info)
@@ -52,7 +52,7 @@ void pack_data_for_part_ordinals(stk::CommSparse &comm, ElemElemGraph& graph, co
     }
 }
 
-void pack_edge(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& edge, int other_proc)
+void pack_edge(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& edge, int other_proc)
 {
     stk::mesh::EntityId id1 = bulkData.identifier(graph.get_entity(edge.elem1));
     unsigned side1 = edge.side1;
@@ -64,7 +64,7 @@ void pack_edge(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::Bul
     comm.send_buffer(other_proc).pack<unsigned>(side2);
 }
 
-void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo)
+void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo)
 {
     for(int i=0;i<bulkData.parallel_size();++i)
     {
@@ -83,7 +83,7 @@ void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::Bul
     }
 }
 
-stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, int proc_id)
+stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, int proc_id)
 {
     stk::mesh::EntityId id1 = 0, id2 = 0;
     unsigned side1 = 0, side2 = 0;

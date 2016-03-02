@@ -20,7 +20,7 @@ namespace mesh
 {
 
 
-SkinMeshUtil::SkinMeshUtil(ElemElemGraph& elemElemGraph,
+SkinMeshUtil::SkinMeshUtil(const ElemElemGraph& elemElemGraph,
                            const stk::mesh::PartVector& skinParts,
                            const stk::mesh::Selector& inputSkinSelector,
                            const stk::mesh::Selector* inputAirSelector)

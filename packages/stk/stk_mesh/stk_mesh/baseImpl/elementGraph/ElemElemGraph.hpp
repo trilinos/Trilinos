@@ -134,7 +134,6 @@ public:
         return m_graph;
     }
 
-    stk::mesh::ParallelInfoForGraphEdges& get_parallel_graph() { return m_parallelInfoForGraphEdges; }
     const stk::mesh::ParallelInfoForGraphEdges& get_parallel_graph() const { return m_parallelInfoForGraphEdges; }
 
     void create_side_entities(const std::vector<int> &exposedSides,

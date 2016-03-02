@@ -17,7 +17,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
@@ -374,10 +373,6 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& element_s
                     elementData.set_is_in_air(isAir);
                 }
 
-                std::vector<PartOrdinal> part_ords;
-                unpack_into_vector_of_data(comm, part_ords, proc_id);
-                elementData.set_part_ordinals(part_ords);
-
                 std::vector<stk::mesh::EntityKey> node_keys;
                 unpack_into_vector_of_data(comm, node_keys, proc_id);
                 elementData.set_element_side_nodes(convert_keys_to_entities(m_bulk_data, node_keys));
@@ -490,9 +485,6 @@ size_t ElemElemGraph::pack_shared_side_nodes_of_elements(stk::CommSparse &comm, 
             comm.send_buffer(sharing_proc).pack<bool>(is_in_air);
         }
 
-        std::vector<PartOrdinal> elementBlockPartOrdinals = stk::mesh::impl::get_element_block_part_ordinals(elem, m_bulk_data);
-        impl::pack_vector_to_proc(comm, elementBlockPartOrdinals, sharing_proc);
-
         stk::mesh::EntityVector side_nodes =impl:: get_element_side_nodes_from_topology(m_bulk_data, elem, side_index);
         std::vector<stk::mesh::EntityKey> side_node_entity_keys(side_nodes.size());
         for(size_t i=0; i<side_nodes.size(); ++i)
@@ -538,13 +530,10 @@ void ElemElemGraph::communicate_remote_edges_for_pre_existing_graph_nodes(const 
                 comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(remoteEdgeInfo.m_chosenSideId);
 
                 bool isInPart = false, isInAir = false;
-                std::vector<PartOrdinal> part_ords;
                 comm.recv_buffer(proc_id).unpack<bool>(isInPart);
                 comm.recv_buffer(proc_id).unpack<bool>(isInAir);
-//                unpack_into_vector_of_data(comm, part_ords, proc_id);
                 remoteEdgeInfo.set_body_to_be_skinned(isInPart);
                 remoteEdgeInfo.set_is_in_air(isInAir);
-                remoteEdgeInfo.set_part_ordinals(part_ords);
 
                 comm.recv_buffer(proc_id).unpack<stk::topology>(remoteEdgeInfo.m_remoteElementTopology);
                 unsigned numNodes = 0;
@@ -586,8 +575,7 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
                                 receivedSharedEdge.m_chosenSideId,
                                 receivedSharedEdge.m_remoteElementTopology,
                                 receivedSharedEdge.is_in_body_to_be_skinned(),
-                                receivedSharedEdge.is_considered_air(),
-                                receivedSharedEdge.get_part_ordinals());
+                                receivedSharedEdge.is_considered_air());
 
     m_parallelInfoForGraphEdges.insert_parallel_info_for_graph_edge(graphEdge, parInfo);
 }
@@ -619,7 +607,6 @@ void add_shared_edge(const impl::ParallelElementData& elementDataOtherProc, stk:
     sharedEdgeInfo.set_body_to_be_skinned(elementDataOtherProc.is_in_body_to_be_skinned());
     sharedEdgeInfo.m_remoteElementTopology = elem_topology;
     sharedEdgeInfo.set_is_in_air(elementDataOtherProc.is_considered_air());
-    sharedEdgeInfo.set_part_ordinals(elementDataOtherProc.get_part_ordinals());
     newlySharedEdges.push_back(sharedEdgeInfo);
 }
 
@@ -717,8 +704,7 @@ void ElemElemGraph::add_parallel_edge_and_info(const stk::mesh::impl::ElemSideTo
                                         chosen_side_id,
                                         elemDataFromOtherProc.get_element_topology(),
                                         elemDataFromOtherProc.is_in_body_to_be_skinned(),
-                                        elemDataFromOtherProc.is_considered_air(),
-                                        elemDataFromOtherProc.get_part_ordinals());
+                                        elemDataFromOtherProc.is_considered_air());
 
             m_parallelInfoForGraphEdges.insert_parallel_info_for_graph_edge(graphEdge, parInfo);
         }
@@ -1740,8 +1726,7 @@ impl::ParallelInfo ElemElemGraph::create_parallel_info(stk::mesh::Entity connect
     {
         isAir = (*m_air_selector)(m_bulk_data.bucket(elemToSend));
     }
-    std::vector<stk::mesh::PartOrdinal> partOrdinals = stk::mesh::impl::get_element_block_part_ordinals(elemToSend, m_bulk_data);
-    return impl::ParallelInfo(destination_proc, permutation, faceId, elemTopology, inBodyToBeSkinned, isAir, partOrdinals);
+    return impl::ParallelInfo(destination_proc, permutation, faceId, elemTopology, inBodyToBeSkinned, isAir);
 }
 
 stk::mesh::Permutation ElemElemGraph::get_permutation_given_neighbors_node_ordering(stk::mesh::Entity neighborElem,

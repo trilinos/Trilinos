@@ -18,7 +18,7 @@ namespace impl
 typedef std::vector<stk::mesh::PartOrdinal> PartOrdinals;
 typedef std::map<stk::mesh::GraphEdge, PartOrdinals, GraphEdgeLessByElem2> ParallelPartInfo;
 
-void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo);
+void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo);
 
 }
 }

@@ -16,7 +16,6 @@ public:
         stk::mesh::ElemElemGraph(bulkData, selector, air) { }
 
     stk::mesh::impl::ParallelGraphInfo& get_parallel_info() { return m_parallelInfoForGraphEdges.get_parallel_graph_info(); }
-    stk::mesh::Entity get_entity(stk::mesh::impl::LocalId local_id) const { return m_local_id_to_element_entity[local_id]; }
 };
 
 void pack_data_for_air(stk::CommSparse &comm, ElemElemGraphTester& graph, const stk::mesh::BulkData& bulkData, stk::mesh::Selector sel)

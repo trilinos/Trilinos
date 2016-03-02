@@ -14,7 +14,7 @@ namespace mesh {
 
 class SkinMeshUtil {
 public:
-    SkinMeshUtil(ElemElemGraph& elemElemGraph,
+    SkinMeshUtil(const ElemElemGraph& elemElemGraph,
                  const stk::mesh::PartVector& skinParts,
                  const stk::mesh::Selector& inputSkinSelector,
                  const stk::mesh::Selector* inputAirSelector = nullptr);
@@ -56,7 +56,7 @@ private:
                                            std::vector<bool> &isConnectedToRemoteElementInBodyToSkin,
                                            std::vector<bool> &isOnlyConnectedRemotely);
 
-    stk::mesh::ElemElemGraph& eeGraph;
+    const stk::mesh::ElemElemGraph& eeGraph;
     const stk::mesh::Selector& skinSelector;
     const stk::mesh::Selector* airSelector;
 };

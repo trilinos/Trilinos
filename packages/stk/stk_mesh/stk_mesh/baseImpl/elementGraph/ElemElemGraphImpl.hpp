@@ -26,26 +26,23 @@ static const LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max(
 struct RemoteElementData
 {
 public:
-    RemoteElementData() : m_other_proc(-1), m_in_body_to_be_skinned(false), m_is_air(false), m_part_ordinals() {}
+    RemoteElementData() : m_other_proc(-1), m_in_body_to_be_skinned(false), m_is_air(false) {}
 
-    RemoteElementData(int proc, bool in_body, bool is_air, const std::vector<PartOrdinal> & ords) :
-        m_other_proc(proc), m_in_body_to_be_skinned(in_body), m_is_air(is_air), m_part_ordinals(ords) {}
+    RemoteElementData(int proc, bool in_body, bool is_air) :
+        m_other_proc(proc), m_in_body_to_be_skinned(in_body), m_is_air(is_air) {}
 
     bool is_in_body_to_be_skinned() const { return m_in_body_to_be_skinned; }
     bool is_considered_air() const { return m_is_air; }
     int get_proc_rank_of_neighbor() const { return m_other_proc; }
-    const std::vector<PartOrdinal>& get_part_ordinals() const { return m_part_ordinals; }
 
     void set_body_to_be_skinned(bool val) { m_in_body_to_be_skinned = val; }
     void set_is_in_air(bool val) { m_is_air = val; }
-    void set_part_ordinals(const std::vector<PartOrdinal>& ords) { m_part_ordinals = ords; }
     void set_proc_rank(int proc) { m_other_proc = proc; }
 
 private:
     int m_other_proc;
     bool m_in_body_to_be_skinned;
     bool m_is_air;
-    std::vector<PartOrdinal> m_part_ordinals;
 };
 
 struct GraphEdgeProc
@@ -74,17 +71,15 @@ private:
 struct ParallelInfo
 {
 public:
-    ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false, const std::vector<stk::mesh::PartOrdinal>& part_ords = std::vector<stk::mesh::PartOrdinal>()) :
-        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_chosen_side_id(chosen_face_id), remoteElementData(proc, inPart, isInAir, part_ords) {}
+    ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false) :
+        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_chosen_side_id(chosen_face_id), remoteElementData(proc, inPart, isInAir) {}
 
     bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
     bool is_considered_air() const { return remoteElementData.is_considered_air(); }
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
-    const std::vector<PartOrdinal>& get_part_ordinals() const { return remoteElementData.get_part_ordinals(); }
 
     void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
     void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
-    void set_part_ordinals(const std::vector<PartOrdinal>& ords) { remoteElementData.set_part_ordinals(ords); }
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
     int m_permutation;
@@ -175,11 +170,9 @@ struct ParallelElementData
     bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
     bool is_considered_air() const { return remoteElementData.is_considered_air(); }
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
-    const std::vector<PartOrdinal>& get_part_ordinals() const { return remoteElementData.get_part_ordinals(); }
 
     void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
     void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
-    void set_part_ordinals(const std::vector<PartOrdinal>& ords) { remoteElementData.set_part_ordinals(ords); }
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
     stk::mesh::EntityId m_suggestedFaceId;
@@ -208,11 +201,9 @@ public:
     bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
     bool is_considered_air() const { return remoteElementData.is_considered_air(); }
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
-    const std::vector<PartOrdinal>& get_part_ordinals() const { return remoteElementData.get_part_ordinals(); }
 
     void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
     void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
-    void set_part_ordinals(const std::vector<PartOrdinal>& ords) { remoteElementData.set_part_ordinals(ords); }
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
     stk::mesh::EntityId m_chosenSideId;
