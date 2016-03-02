@@ -410,11 +410,11 @@ TEST_F(SkinAWithModification, TestAddingTwoShells)
 {
     test_adding_two_shell(AefExterior, AefInterior);
 }
-TEST_F(SkinAWithModification, DISABLED_TestAddTwoShellThenDeleteOne)
+TEST_F(SkinAWithModification, TestAddTwoShellThenDeleteOne)
 {
     test_adding_two_shells_then_delete_one(AeExterior, AeInterior);
 }
-TEST_F(SkinAWithModification, DISABLED_TestAddTwoShellThenDeleteBoth)
+TEST_F(SkinAWithModification, TestAddTwoShellThenDeleteBoth)
 {
     test_adding_two_shells_then_delete_both(AExterior, AInterior);
 }
