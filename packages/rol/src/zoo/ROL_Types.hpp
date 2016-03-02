@@ -57,6 +57,7 @@
 
 #include <algorithm>
 #include <string>
+#include <sstream>
 #include <limits>
 #include <Teuchos_getConst.hpp>
 #include <Teuchos_RCP.hpp>
@@ -68,6 +69,9 @@
     \brief  Number of steps for derivative checks.
  */
 #define ROL_NUM_CHECKDERIV_STEPS 13
+
+#define TO_STRING(x) static_cast<std::stringstream &> \
+        ( std::ostringstream() << std::dec << x ).str() 
 
 namespace ROL {
 
