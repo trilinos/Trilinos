@@ -81,7 +81,7 @@ public:
     Real b = B,               fb = f.value(b); nfval++;
     Real u = c*a + (1.0-c)*b, fu = f.value(u); nfval++;
     Real v = (1.0-c)*a + c*b, fv = f.value(v); nfval++;
-    Real gx = ROL_INF;
+    Real gx = ROL_INF<Real>();
     bool deriv = false;
     // Find minimum of all function evaluations
     if ( fa <= fu && fa <= fv && fa <= fb ) {

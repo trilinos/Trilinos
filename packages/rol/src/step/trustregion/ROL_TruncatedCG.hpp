@@ -95,7 +95,7 @@ public:
 
   void run( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
             const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) { 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     const Real gtol = std::min(tol1_,tol2_*gnorm);
 
     // Gradient Vector
@@ -197,7 +197,7 @@ public:
 #if 0
   void truncatedCG_proj( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                          const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     const Real gtol = std::min(tol1_,tol2_*gnorm);
 

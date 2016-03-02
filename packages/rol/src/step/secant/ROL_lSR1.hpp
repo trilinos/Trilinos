@@ -135,7 +135,7 @@ public:
       byi    = b[i]->dot((state->gradDiff[i])->dual());
       normbi = b[i]->norm();
       normyi = (state->gradDiff[i])->norm();
-      if ( i == state->current && std::abs(byi) < sqrt(ROL_EPSILON)*normbi*normyi ) {
+      if ( i == state->current && std::abs(byi) < sqrt(ROL_EPSILON<Real>())*normbi*normyi ) {
         updateIterate_ = false;
       }
       else {
@@ -180,7 +180,7 @@ public:
       bsi    = (state->iterDiff[i])->dot(b[i]->dual());
       normbi = b[i]->norm();
       normsi = (state->iterDiff[i])->norm();
-      if ( i == state->current && std::abs(bsi) < sqrt(ROL_EPSILON)*normbi*normsi ) {
+      if ( i == state->current && std::abs(bsi) < sqrt(ROL_EPSILON<Real>())*normbi*normsi ) {
         updateIterate_ = false;
       }
       else {

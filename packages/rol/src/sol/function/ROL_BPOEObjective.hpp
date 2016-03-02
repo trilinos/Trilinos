@@ -261,7 +261,7 @@ public:
     GradientSampler_->sumAll(&myval[0],&val[0],2);
     // Compute VaR gradient and BPOE gradient
     Real gvar = 0.0; gradient0_->zero();
-    if ( std::abs(val[0]) >= ROL_EPSILON) {
+    if ( std::abs(val[0]) >= ROL_EPSILON<Real>()) {
       GradientSampler_->sumAll(*sumGrad0_,*gradient0_);
       Real norm = std::pow(val[0],(order_-1.0)/order_); 
       gradient0_->scale(xvar/norm);
@@ -328,7 +328,7 @@ public:
     // Compile partial sums
     HessianSampler_->sumAll(&myval[0],&val[0],5);
     Real hvar = 0.0; hessvec_->zero();
-    if ( std::abs(val[0]) >= ROL_EPSILON ) {
+    if ( std::abs(val[0]) >= ROL_EPSILON<Real>() ) {
       HessianSampler_->sumAll(*sumGrad0_,*gradient0_);
       HessianSampler_->sumAll(*sumGrad1_,*gradient1_);
       HessianSampler_->sumAll(*sumGrad2_,*gradient2_);

@@ -62,7 +62,7 @@ namespace ROL {
   template<class Real>
   Teuchos::SerialDenseMatrix<int, Real> computeDenseHessian(Objective<Real> &obj, const Vector<Real> &x) {
 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     int dim = x.dimension();
     Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
@@ -239,8 +239,8 @@ namespace ROL {
                         Real eps = 0.0 )
       : isInitialized_(false), useSecantPrecond_(useSecantPrecond),
         useSecantHessVec_(useSecantHessVec), eps_(eps) {
-      obj_    = Teuchos::rcp(&obj, false);
-      con_    = Teuchos::rcp(&con, false);
+      obj_    = Teuchos::rcpFromRef(obj);
+      con_    = Teuchos::rcpFromRef(con);
       secant_ = secant;
     }
 

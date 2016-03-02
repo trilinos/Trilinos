@@ -189,36 +189,36 @@ int main(int argc, char *argv[]) {
 
     // Our FFT is only robust for integer periods and numbers of samples that are powers of 2.
     int num_samples=pow(2,10);
-    //double num_periods=12.3456;
+    //RealT num_periods=12.3456;
     int num_periods=12;
-    double epsilon = 3;
-    double kappa=1;
-    double phase = M_PI/7;
-    double amplitude = 9.876;
+    RealT epsilon = 3;
+    RealT kappa=1;
+    RealT phase = M_PI/7;
+    RealT amplitude = 9.876;
 
     Teuchos::RCP<std::vector<RealT> > data_rcp = Teuchos::rcp( new std::vector<RealT> (num_samples, 0.0) );
     Teuchos::RCP<std::vector<RealT> > time_rcp = Teuchos::rcp( new std::vector<RealT> (num_samples, 0.0) );
 
     // This is for a decay
-    double decay=200; // number of periods for an e decay
-    double noise_frequency = 2*4.5; // ratio of this to real frequency
-    double noise_amplitude = 12*0.124; // ratio of this to real amplitude
-    //double noise_frequency(0); // ratio of this to real frequency
-    //double noise_amplitude(0); // ratio of this to real amplitude
-    double noise_phase = M_PI*exp(1.);
+    RealT decay=200; // number of periods for an e decay
+    RealT noise_frequency = 2*4.5; // ratio of this to real frequency
+    RealT noise_amplitude = 12*0.124; // ratio of this to real amplitude
+    //RealT noise_frequency(0); // ratio of this to real frequency
+    //RealT noise_amplitude(0); // ratio of this to real amplitude
+    RealT noise_phase = M_PI*exp(1.);
 
-    double epsilon_0=8.854187817e-12;
-    double mu=1.2566370614e-6;
-    double c = 1./sqrt(epsilon*epsilon_0*mu);
+    RealT epsilon_0=8.854187817e-12;
+    RealT mu=1.2566370614e-6;
+    RealT c = 1./sqrt(epsilon*epsilon_0*mu);
 
     // omega*kappa = c
-    double omega = c/kappa;
-    double frequency = omega/(2*M_PI);
-    double period = 1./frequency;
-    double total_time = num_periods*period;
-    double dt = total_time/(num_samples-1);
-    double exp_const = 1/(decay*period);
-    double noise_omega = noise_frequency*omega;
+    RealT omega = c/kappa;
+    RealT frequency = omega/(2*M_PI);
+    RealT period = 1./frequency;
+    RealT total_time = num_periods*period;
+    RealT dt = total_time/(num_samples-1);
+    RealT exp_const = 1/(decay*period);
+    RealT noise_omega = noise_frequency*omega;
 
     // Generate "measurements" and output to file.
     *outStream << std::endl << "Generating measurements through a noisy computation:" << std::endl;
@@ -226,8 +226,8 @@ int main(int argc, char *argv[]) {
     std::ofstream measfile;
     measfile.open("measurements.txt");
     for (int i=0; i<num_samples; ++i) {
-      double t = dt*i;
-      //double t = total_time*(double)rand()/(double)RAND_MAX;
+      RealT t = dt*i;
+      //RealT t = total_time*(RealT)rand()/(RealT)RAND_MAX;
       (*time_rcp)[i] = t;
       // additive noise
       (*data_rcp)[i] = amplitude*(sin(t*omega+phase)+ noise_amplitude*sin(t*noise_omega+noise_phase))*exp(-exp_const*t);
@@ -283,14 +283,14 @@ int main(int argc, char *argv[]) {
 
     // Output objective values to file given a sweep of parameters.
     *outStream << std::endl << "Sampling calibration objective function:" << std::endl;
-    double omega_first = 0.0*omega;
-    double omega_last = 10*omega;
+    RealT omega_first = 0.0*omega;
+    RealT omega_last = 10*omega;
     int num_omegas = 1000;
-    double tol = 0.0;
+    RealT tol = 0.0;
     std::ofstream objfile;
     objfile.open("cal_obj.txt");
     for (int i=0; i<num_omegas; ++i) {
-      double omega_step = (omega_last-omega_first)/(num_omegas-1)*i+omega_first;
+      RealT omega_step = (omega_last-omega_first)/(num_omegas-1)*i+omega_first;
       (*omega_vec_rcp)[0] = omega_step;
       objfile << "   " <<  std::scientific << std::left << std::setprecision(4) << std::setw(6) << omega_step 
               << "   " << std::right << std::setw(14) << cal_obj.value(omega_rol_vec, tol) << std::endl;      
@@ -320,14 +320,14 @@ int main(int argc, char *argv[]) {
     int   num_inits     = 1000;
     RealT omega_min     = 1e6;
     RealT omega_max     = 1e10;
-    RealT objval_min    = std::numeric_limits<double>::max();
-    RealT solution_min  = std::numeric_limits<double>::max();
+    RealT objval_min    = std::numeric_limits<RealT>::max();
+    RealT solution_min  = std::numeric_limits<RealT>::max();
     for (int i=0; i<num_inits; ++i) {  // start at several initial guesses
-      (*omega_vec_rcp)[0] = omega_min + (double)rand() / ((double)RAND_MAX/(omega_max-omega_min)); 
+      (*omega_vec_rcp)[0] = omega_min + (RealT)rand() / ((RealT)RAND_MAX/(omega_max-omega_min)); 
       ROL::Algorithm<RealT> algo(trstep, status, false);
       algo.run(omega_rol_vec, cal_obj, true, *outStream);
-      double solution = (*omega_vec_rcp)[0];
-      double objval   = cal_obj.value(omega_rol_vec, tol);
+      RealT solution = (*omega_vec_rcp)[0];
+      RealT objval   = cal_obj.value(omega_rol_vec, tol);
       if (objval < objval_min) {
         objval_min = objval;
         solution_min = solution;
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
         vec_sample.push_back(omega_rol_vec.clone());
         // Compute random sample ... this would have to be generalized.
         //(vec_sample.back())->randomize();
-          RealT tmp = omega_min + (double)rand() / ((double)RAND_MAX/(omega_max-omega_min));
+          RealT tmp = omega_min + (RealT)rand() / ((RealT)RAND_MAX/(omega_max-omega_min));
           Teuchos::RCP<std::vector<RealT> > last_vec_rcp =
             (Teuchos::dyn_cast<ROL::StdVector<RealT> >(*(vec_sample.back()))).getVector();
           (*last_vec_rcp)[0] = tmp;

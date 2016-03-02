@@ -154,15 +154,15 @@ int main(int argc, char *argv[]) {
     std::sort((genEigenvals[0]).begin(), (genEigenvals[0]).end());
     std::sort((genEigenvals[1]).begin(), (genEigenvals[1]).end());
 
-    RealT errtol = std::sqrt(ROL::ROL_EPSILON);
+    RealT errtol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     for (unsigned i=0; i<(eigenvals[0]).size(); i++) {
-      if ( std::abs( (genEigenvals[0])[i] - (eigenvals[0])[i] ) > errtol*((eigenvals[0])[i]+ROL::ROL_THRESHOLD) ) {
+      if ( std::abs( (genEigenvals[0])[i] - (eigenvals[0])[i] ) > errtol*((eigenvals[0])[i]+ROL::ROL_THRESHOLD<RealT>()) ) {
         errorFlag++;
-        *outStream << std::scientific << std::setprecision(20) << "Real genEigenvals - eigenvals (" << i << ") = " << std::abs( (genEigenvals[0])[i] - (eigenvals[0])[i] ) << " > " << errtol*((eigenvals[0])[i]+1e4*ROL::ROL_THRESHOLD) << "\n";
+        *outStream << std::scientific << std::setprecision(20) << "Real genEigenvals - eigenvals (" << i << ") = " << std::abs( (genEigenvals[0])[i] - (eigenvals[0])[i] ) << " > " << errtol*((eigenvals[0])[i]+1e4*ROL::ROL_THRESHOLD<RealT>()) << "\n";
       }
-      if ( std::abs( (genEigenvals[1])[i] - (eigenvals[1])[i] ) > errtol*((eigenvals[1])[i]+ROL::ROL_THRESHOLD) ) {
+      if ( std::abs( (genEigenvals[1])[i] - (eigenvals[1])[i] ) > errtol*((eigenvals[1])[i]+ROL::ROL_THRESHOLD<RealT>()) ) {
         errorFlag++;
-        *outStream << std::scientific << std::setprecision(20) << "Imag genEigenvals - eigenvals (" << i << ") = " << std::abs( (genEigenvals[1])[i] - (eigenvals[1])[i] ) << " > " << errtol*((eigenvals[1])[i]+ROL::ROL_THRESHOLD) << "\n";
+        *outStream << std::scientific << std::setprecision(20) << "Imag genEigenvals - eigenvals (" << i << ") = " << std::abs( (genEigenvals[1])[i] - (eigenvals[1])[i] ) << " > " << errtol*((eigenvals[1])[i]+ROL::ROL_THRESHOLD<RealT>()) << "\n";
       }
     }
 

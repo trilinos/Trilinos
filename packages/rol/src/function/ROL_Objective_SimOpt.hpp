@@ -88,7 +88,7 @@ public:
   /** \brief Compute gradient with respect to first component.
   */
   virtual void gradient_1( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
-    Real ftol  = std::sqrt(ROL_EPSILON);
+    Real ftol  = std::sqrt(ROL_EPSILON<Real>());
     Real h     = 0.0;
     this->update(u,z);
     Real v     = this->value(u,z,ftol);
@@ -108,7 +108,7 @@ public:
   /** \brief Compute gradient with respect to second component.
   */
   virtual void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
-    Real ftol  = std::sqrt(ROL_EPSILON);
+    Real ftol  = std::sqrt(ROL_EPSILON<Real>());
     Real h     = 0.0;
     this->update(u,z);
     Real v     = this->value(u,z,ftol);
@@ -144,10 +144,10 @@ public:
   */
   virtual void hessVec_11( Vector<Real> &hv, const Vector<Real> &v, 
                      const Vector<Real> &u,  const Vector<Real> &z, Real &tol ) {
-    Real gtol = std::sqrt(ROL_EPSILON);
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step length
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u+hv,z)
@@ -168,10 +168,10 @@ public:
 
   virtual void hessVec_12( Vector<Real> &hv, const Vector<Real> &v, 
                            const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
-    Real gtol = std::sqrt(ROL_EPSILON);
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step length
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u,z+hv)
@@ -192,10 +192,10 @@ public:
 
   virtual void hessVec_21( Vector<Real> &hv, const Vector<Real> &v, 
                            const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
-    Real gtol = std::sqrt(ROL_EPSILON);
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step length
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u+hv,z)
@@ -216,10 +216,10 @@ public:
 
   virtual void hessVec_22( Vector<Real> &hv, const Vector<Real> &v, 
                      const Vector<Real> &u,  const Vector<Real> &z, Real &tol ) {
-    Real gtol = std::sqrt(ROL_EPSILON);
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step length
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u,z+hv)

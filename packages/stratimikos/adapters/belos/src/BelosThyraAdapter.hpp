@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -253,9 +253,9 @@ namespace Belos {
     //@{
 
     //! Obtain the std::vector length of \c mv.
-    static ptrdiff_t GetGlobalLength( const TMVB& mv ) { 
+    static ptrdiff_t GetGlobalLength( const TMVB& mv ) {
       return Teuchos::as<ptrdiff_t>(mv.range()->dim());
-    } 
+    }
 
     //! Obtain the number of vectors in \c mv
     static int GetNumberVecs( const TMVB& mv )
@@ -350,8 +350,18 @@ namespace Belos {
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
     static void MvNorm( const TMVB& mv, std::vector<magType>& normvec,
-      NormType type = TwoNorm )
-      { Thyra::norms_2(mv, Teuchos::arrayViewFromVector(normvec)); }
+      NormType type = TwoNorm ) {
+      if(type == TwoNorm)
+        Thyra::norms_2(mv, Teuchos::arrayViewFromVector(normvec));
+      else if(type == OneNorm)
+        Thyra::norms_1(mv, Teuchos::arrayViewFromVector(normvec));
+      else if(type == InfNorm)
+        Thyra::norms_inf(mv, Teuchos::arrayViewFromVector(normvec));
+      else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                           "Belos::MultiVecTraits::MvNorm (Thyra specialization): "
+                           "invalid norm type. Must be either TwoNorm, OneNorm or InfNorm");
+    }
 
     //@}
 

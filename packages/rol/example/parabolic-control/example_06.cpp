@@ -363,7 +363,7 @@ private:
     compute_residual(r,up,u,z);
     Real rnorm = compute_norm(r);
     // Define tolerances
-    Real tol   = 1.e2*ROL::ROL_EPSILON;
+    Real tol   = 1.e2*ROL::ROL_EPSILON<Real>();
     Real maxit = 100;
     // Initialize Jacobian storage
     std::vector<Real> d(nx_,0.0);
@@ -385,7 +385,7 @@ private:
       update(utmp,s,-alpha);
       compute_residual(r,up,utmp,z);
       rnorm = compute_norm(r); 
-      while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON) ) {
+      while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON<Real>()) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
         update(utmp,s,-alpha);

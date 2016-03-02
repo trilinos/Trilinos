@@ -68,9 +68,9 @@ public:
                    ScalarFunction<Real> &f,
                    ScalarMinimizationStatusTest<Real> &test) const {
     const Real c = 1.618034;
-    const Real eps = ROL_EPSILON;
+    const Real eps = ROL_EPSILON<Real>();
     const Real lim = 100.0;
-    Real r = 0.0, q = 0.0, u = 0.0, v = 0.0, ulim = 0.0, fu = 0.0, gx = ROL_INF;
+    Real r = 0.0, q = 0.0, u = 0.0, v = 0.0, ulim = 0.0, fu = 0.0, gx = ROL_INF<Real>();
     bool deriv = false;
     // f(a) is assumed to be greater than or equal to f(b)
     if ( fb > fa ) {

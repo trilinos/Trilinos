@@ -284,8 +284,12 @@ namespace Belos {
     //! @name Norm method
     //@{
 
-    /*! \brief Compute the 2-norm of each individual vector of \c mv.
-      Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
+    /*! \brief Compute the norm of each individual vector of \c mv.
+      Upon return, \c normvec[i] holds the value of \f$||mv_i||\f$, the \c i-th column of \c mv.
+
+      @param mv: multi-vector
+      @param normvec: std::vector containing the norm for each vector in mv
+      @param NormType: norm type (default: two-norm)
     */
     static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType type = TwoNorm )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }

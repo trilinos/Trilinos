@@ -207,10 +207,13 @@ int main(int argc, char *argv[]) {
     con.checkInverseAdjointJacobian_1(c,*yup,*up,*zp,true,*outStream);
     *outStream << "\n";
     // CHECK PENALTY OBJECTIVE DERIVATIVES
-    ROL::MoreauYosidaPenalty<RealT> myPen(obj,bnd,x,10.0);
+    Teuchos::RCP<ROL::Objective<RealT> > obj_ptr = Teuchos::rcpFromRef(obj);
+    Teuchos::RCP<ROL::EqualityConstraint<RealT> > con_ptr = Teuchos::rcpFromRef(con);
+    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd_ptr = Teuchos::rcpFromRef(bnd);
+    ROL::MoreauYosidaPenalty<RealT> myPen(obj_ptr,bnd_ptr,x,10.0);
     myPen.checkGradient(x, y, true, *outStream);
     myPen.checkHessVec(x, g, y, true, *outStream);
-    ROL::AugmentedLagrangian<RealT> myAugLag(obj,con,x,c,l,1.,*parlist);
+    ROL::AugmentedLagrangian<RealT> myAugLag(obj_ptr,con_ptr,l,1.,x,c,*parlist);
     myAugLag.checkGradient(x, y, true, *outStream);
     myAugLag.checkHessVec(x, g, y, true, *outStream);
     /*************************************************************************/
@@ -219,13 +222,13 @@ int main(int argc, char *argv[]) {
     // SOLVE USING MOREAU-YOSIDA PENALTY
     ROL::Algorithm<RealT> algoMY("Moreau-Yosida Penalty",*parlist,false);
     zp->set(*zrandp);
-    RealT zerotol = std::sqrt(ROL::ROL_EPSILON);
+    RealT zerotol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     con.solve(c,*up,*zp,zerotol);
     obj.gradient_1(*gup,*up,*zp,zerotol);
     gup->scale(-1.0);
     con.applyInverseAdjointJacobian_1(l,*gup,*up,*zp,zerotol);
     gup->zero(); c.zero();
-    algoMY.run(x, g, l, c, obj, con, bnd, true, *outStream);
+    algoMY.run(x, g, l, c, myPen, con, bnd, true, *outStream);
     Teuchos::RCP<ROL::Vector<RealT> > xMY = x.clone();
     xMY->set(x);
     // SOLVE USING AUGMENTED LAGRANGIAN
@@ -236,7 +239,7 @@ int main(int argc, char *argv[]) {
     gup->scale(-1.0);
     con.applyInverseAdjointJacobian_1(l,*gup,*up,*zp,zerotol);
     gup->zero(); c.zero();
-    algoAL.run(x, g, l, c, obj, con, bnd, true, *outStream);
+    algoAL.run(x, g, l, c, myAugLag, con, bnd, true, *outStream);
     // COMPARE SOLUTIONS
     Teuchos::RCP<ROL::Vector<RealT> > err = x.clone();
     err->set(x); err->axpy(-1.,*xMY);

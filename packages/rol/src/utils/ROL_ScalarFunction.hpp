@@ -59,7 +59,7 @@ public:
   virtual Real value(const Real alpha) = 0;
   virtual Real deriv(const Real alpha) {
     Real val1 = value(alpha);
-    Real eta  = std::sqrt(ROL_EPSILON);
+    Real eta  = std::sqrt(ROL_EPSILON<Real>());
     Real h    = eta*(std::abs(alpha) > eta ? std::abs(alpha) : 1.0);
     Real val0 = value(alpha+h);
     return (val0-val1)/h;

@@ -81,7 +81,7 @@ public:
 
     Real rnorm = b.norm();
     Real rtol = std::min(Krylov<Real>::getAbsoluteTolerance(),Krylov<Real>::getRelativeTolerance()*rnorm);
-    Real itol = std::sqrt(ROL_EPSILON);
+    Real itol = std::sqrt(ROL_EPSILON<Real>());
 
     x.zero();
     r_->set(b);
@@ -119,7 +119,7 @@ public:
         break;
       }
 
-      itol = std::sqrt(ROL_EPSILON);
+      itol = std::sqrt(ROL_EPSILON<Real>());
       M.applyInverse(*v_, *r_, itol);
       tmp  = gv;
       gv   = v_->dot(r_->dual());

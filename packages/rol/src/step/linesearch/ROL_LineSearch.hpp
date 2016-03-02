@@ -114,14 +114,15 @@ public:
       c2_ = 0.9;
     }
     if ( edesc_ == DESCENT_NONLINEARCG ) {
+      Real one(1);
       c2_ = 0.4;
-      c3_ = std::min(1.0-c2_,c3_);
+      c3_ = std::min(one-c2_,c3_);
     }
   }
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
                            Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    grad_ = g.clone(); //Teuchos::rcp(&g, false);
+    grad_ = g.clone();
     xtst_ = x.clone();
     d_    = s.clone();
     g_    = g.clone();
@@ -158,7 +159,7 @@ protected:
                        const Real fold, const Real sgold, const Real fnew, 
                        const Vector<Real> &x, const Vector<Real> &s, 
                        Objective<Real> &obj, BoundConstraint<Real> &con ) { 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     // Check Armijo Condition
     bool armijo = false;
@@ -266,7 +267,7 @@ protected:
     }
     else {
       if (edesc_ == DESCENT_STEEPEST || edesc_ == DESCENT_NONLINEARCG) {
-        Real tol = std::sqrt(ROL_EPSILON);
+        Real tol = std::sqrt(ROL_EPSILON<Real>());
         // Evaluate objective at x + s
         updateIterate(*d_,x,s,1.0,con);
         obj.update(*d_);
@@ -274,7 +275,7 @@ protected:
         ls_neval++;
         // Minimize quadratic interpolate to compute new alpha
         Real denom = (fnew - fval - gs);
-        Real alpha = ((denom > ROL_EPSILON) ? -0.5*gs/denom : 1.0);
+        Real alpha = ((denom > ROL_EPSILON<Real>()) ? -0.5*gs/denom : 1.0);
         val = ((alpha > 1.e-1) ? alpha : 1.0);
 
         alpha0_ = val;

@@ -225,7 +225,7 @@ public:
     algo_state.ncval = 0;
     algo_state.ngrad = 0;
 
-    Real zerotol = std::sqrt(ROL_EPSILON);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
 
     // Update objective and constraint.
     obj.update(x,true,algo_state.iter);
@@ -251,7 +251,7 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con,
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    Real zerotol = std::sqrt(ROL_EPSILON);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
     Real f = 0.0;
     Teuchos::RCP<Vector<Real> > n   = xvec_->clone();
     Teuchos::RCP<Vector<Real> > c   = cvec_->clone();
@@ -302,7 +302,7 @@ public:
 
     Real zero = 0.0;
     Real half = 0.5;
-    Real zerotol = std::sqrt(ROL_EPSILON);//zero;
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());//zero;
     Real ratio = zero;
 
     Teuchos::RCP<Vector<Real> > g   = gvec_->clone();
@@ -459,7 +459,7 @@ public:
   */
   void computeLagrangeMultiplier(Vector<Real> &l, const Vector<Real> &x, const Vector<Real> &gf, EqualityConstraint<Real> &con) {
 
-    Real zerotol = std::sqrt(ROL_EPSILON);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
     std::vector<Real> augiters;
 
     if (infoLM_) {
@@ -533,7 +533,7 @@ public:
 
     Real zero    = 0.0;
     Real one     = 1.0;
-    Real zerotol = std::sqrt(ROL_EPSILON); //zero;
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>()); //zero;
     std::vector<Real> augiters;
 
     /* Compute Cauchy step nCP. */
@@ -647,7 +647,7 @@ public:
                              // the null space projector is good
     Real zero    =  0.0;
     Real one     =  1.0;
-    Real zerotol =  std::sqrt(ROL_EPSILON);
+    Real zerotol =  std::sqrt(ROL_EPSILON<Real>());
     std::vector<Real> augiters;
     iterCG_ = 1;
     flagCG_ = 0;
@@ -984,7 +984,7 @@ public:
     Real one       =  1.0;
     Real two       =  2.0;
     Real half      =  one/two;
-    Real zerotol   =  std::sqrt(ROL_EPSILON);
+    Real zerotol   =  std::sqrt(ROL_EPSILON<Real>());
     std::vector<Real> augiters;
 
     Real pred          = zero;

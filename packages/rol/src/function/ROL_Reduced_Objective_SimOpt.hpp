@@ -206,7 +206,7 @@ public:
     is_adjoint_computed_ = false;
     // Solve state equation
     if ( storage_ ) {
-      Real tol = std::sqrt(ROL_EPSILON);
+      Real tol = std::sqrt(ROL_EPSILON<Real>());
       solve_state_equation(x,tol,flag,iter);
     }
   }

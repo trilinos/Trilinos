@@ -6,6 +6,8 @@
 #include "Teuchos_RCP.hpp"
 #include "ROL_DistributionFactory.hpp"
 
+typedef double RealT;
+
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -22,7 +24,7 @@ int main(int argc, char* argv[]) {
   int errorFlag  = 0;
 
   try {
-    Teuchos::RCP<ROL::Distribution<double> > dist;
+    Teuchos::RCP<ROL::Distribution<RealT> > dist;
 
     // Get ROL parameterlist
     std::string filename = "input_02.xml";
@@ -32,7 +34,7 @@ int main(int argc, char* argv[]) {
     for (ROL::EDistribution ed = ROL::DISTRIBUTION_ARCSINE; ed != ROL::DISTRIBUTION_LAST; ed++) {
       *outStream << ROL::EDistributionToString(ed) << std::endl << std::endl;
       parlist->sublist("SOL").sublist("Distribution").set("Name",ROL::EDistributionToString(ed));
-      dist = ROL::DistributionFactory<double>(*parlist);
+      dist = ROL::DistributionFactory<RealT>(*parlist);
       dist->test(*outStream);
     }
   }

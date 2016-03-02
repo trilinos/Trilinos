@@ -539,14 +539,14 @@ private:
     //gx_ = this->subgradient(0).clone();
     this->gx_->axpy(-1.0,this->subgradient(1));
     Real diffg  = this->gx_->dot(*this->gx_);
-    if ( std::abs(diffg) > ROL_EPSILON ) {
+    if ( std::abs(diffg) > ROL_EPSILON<Real>() ) {
       Real diffa  = (this->alpha(0)-this->alpha(1))/t;
       Real gdiffg = this->subgradient(1).dot(*this->gx_);
       this->setDualVariables(0,std::min(1.0,std::max(0.0,-(gdiffg+diffa)/diffg)));
       this->setDualVariables(1,1.0 - this->getDualVariables(0));
     }
     else {
-      if ( std::abs(this->alpha(0)-this->alpha(1)) > ROL_EPSILON ) {
+      if ( std::abs(this->alpha(0)-this->alpha(1)) > ROL_EPSILON<Real>() ) {
         if ( this->alpha(0) < this->alpha(1) ) {
           this->setDualVariables(0,1.0); this->setDualVariables(1,0.0);
         }

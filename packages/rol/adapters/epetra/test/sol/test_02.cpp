@@ -55,6 +55,8 @@
 #include "ROL_SROMGenerator.hpp"
 #include "ROL_DistributionFactory.hpp"
 
+typedef double RealT;
+
 int main(int argc, char* argv[]) {
   Teuchos::RCP<Epetra_Comm> comm;
 #ifdef HAVE_MPI
@@ -85,19 +87,19 @@ int main(int argc, char* argv[]) {
     size_t dimension = 1;
 
     // Initialize distribution
-    Teuchos::RCP<ROL::Distribution<double> > dist;
-    std::vector<Teuchos::RCP<ROL::Distribution<double> > > distVec(dimension);
+    Teuchos::RCP<ROL::Distribution<RealT> > dist;
+    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(dimension);
     Teuchos::ParameterList Dlist;
     Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
-    double alpha = 1., beta = 4.;
+    RealT alpha = 1., beta = 4.;
     // Fill moment vector and initial guess
     for (size_t d = 0; d < dimension; d++) {
       // Build distribution for dimension d
       alpha++; beta++;
       Dlist.sublist("SOL").sublist("Distribution").sublist("Beta").set("Shape 1",alpha);
       Dlist.sublist("SOL").sublist("Distribution").sublist("Beta").set("Shape 2",beta);
-      dist = ROL::DistributionFactory<double>(Dlist);
-      distVec[d] = ROL::DistributionFactory<double>(Dlist);
+      dist = ROL::DistributionFactory<RealT>(Dlist);
+      distVec[d] = ROL::DistributionFactory<RealT>(Dlist);
     }
 
     // Get ROL parameterlist
@@ -109,12 +111,12 @@ int main(int argc, char* argv[]) {
     Teuchos::Array<int> moments = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
     size_t numMoments = static_cast<size_t>(moments.size());
 
-    Teuchos::RCP<ROL::BatchManager<double> > bman =
-      Teuchos::rcp(new ROL::EpetraBatchManager<double>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<double> > sampler =
-      Teuchos::rcp(new ROL::SROMGenerator<double>(*parlist,bman,distVec));
+    Teuchos::RCP<ROL::BatchManager<RealT> > bman =
+      Teuchos::rcp(new ROL::EpetraBatchManager<RealT>(comm));
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
+      Teuchos::rcp(new ROL::SROMGenerator<RealT>(*parlist,bman,distVec));
 
-    double val = 0., error = 0., data = 0., sum = 0.;
+    RealT val = 0., error = 0., data = 0., sum = 0.;
     *outStream << std::endl;
     *outStream << std::scientific << std::setprecision(11);
     *outStream << std::right << std::setw(20) << "Computed Moment"

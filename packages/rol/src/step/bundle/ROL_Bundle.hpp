@@ -86,8 +86,8 @@ private:
       dualVariables_[j-1]       = dualVariables_[j];
     }
     (subgradients_[size_-1])->zero();
-    linearizationErrors_[size_-1] = ROL_OVERFLOW;
-    distanceMeasures_[size_-1]    = ROL_OVERFLOW;
+    linearizationErrors_[size_-1] = ROL_OVERFLOW<Real>();
+    distanceMeasures_[size_-1]    = ROL_OVERFLOW<Real>();
     dualVariables_[size_-1]       = 0.0;
     for (unsigned i = ind.size()-1; i > 0; --i) {
       for (unsigned j = ind[i-1]+1; j < size_; j++) {
@@ -124,9 +124,9 @@ public:
     subgradients_.clear();
     subgradients_.assign(maxSize,Teuchos::null);
     linearizationErrors_.clear();
-    linearizationErrors_.assign(maxSize_,ROL_OVERFLOW);
+    linearizationErrors_.assign(maxSize_,ROL_OVERFLOW<Real>());
     distanceMeasures_.clear();
-    distanceMeasures_.assign(maxSize_,ROL_OVERFLOW);
+    distanceMeasures_.assign(maxSize_,ROL_OVERFLOW<Real>());
     dualVariables_.clear();
     dualVariables_.assign(maxSize_,0.0);
   }
@@ -163,9 +163,9 @@ public:
   }
 
   const Real computeAlpha(const Real dm, const Real le) const {
-    Real alpha = le;
-    if ( coeff_ > ROL_EPSILON ) {
-      alpha = std::max(coeff_*std::pow(dm,2.0),le);
+    Real alpha = le, two = 2.0;
+    if ( coeff_ > ROL_EPSILON<Real>() ) {
+      alpha = std::max(coeff_*std::pow(dm,two),le);
     }
     return alpha;
   }
@@ -206,7 +206,7 @@ public:
       unsigned loc = size_, cnt = 0;
       std::vector<unsigned> ind(remSize_,0);
       for (unsigned i = size_; i > 0; --i) {
-        if ( std::abs(linearizationErrors_[i-1]) < ROL_EPSILON ) {
+        if ( std::abs(linearizationErrors_[i-1]) < ROL_EPSILON<Real>() ) {
           loc = i-1;
           break;
         }
@@ -389,7 +389,7 @@ private:
     bool flag = true;
     unsigned n = workingSet_.size(); ind = size_;
     if ( n > 0 ) {
-      Real min = ROL_OVERFLOW;
+      Real min = ROL_OVERFLOW<Real>();
       typename std::set<unsigned>::iterator it = workingSet_.begin();
       for (unsigned i = 0; i < n; i++) {
         if ( x[i] < min ) {
@@ -398,16 +398,16 @@ private:
         }
         it++;
       }
-      flag = ((min < -ROL_EPSILON) ? false : true);
+      flag = ((min < -ROL_EPSILON<Real>()) ? false : true);
     }
     return flag;
   }
 
   Real computeAlpha(unsigned &ind, const std::vector<Real> &x, const std::vector<Real> &p) const {
-    Real alpha = 1.0, tmp = 0.0; ind = size_;
+    Real alpha = 1.0, tmp = 0.0, zero = 0.0; ind = size_;
     typename std::set<unsigned>::iterator it;
     for (it = nworkingSet_.begin(); it != nworkingSet_.end(); it++) {
-      if ( p[*it] < -ROL_EPSILON ) {
+      if ( p[*it] < -ROL_EPSILON<Real>() ) {
         tmp = -x[*it]/p[*it];
         if ( alpha >= tmp ) {
           alpha = tmp;
@@ -415,7 +415,7 @@ private:
         }
       }
     }
-    return std::max(0.0,alpha);
+    return std::max(zero,alpha);
   }
 
   unsigned solveEQPsubproblem(std::vector<Real> &s, Real &mu,
@@ -601,8 +601,8 @@ private:
     Real rg = dot(r,g), rg0 = 0.0;
     // Get search direction
     scale(d,-1.0,g);
-    Real alpha = 0.0, kappa = 0.0, beta = 0.0;
-    Real CGtol = std::min(tol,1.e-2*rg);
+    Real alpha = 0.0, kappa = 0.0, beta = 0.0, TOL = 1.e-2;
+    Real CGtol = std::min(tol,TOL*rg);
     unsigned cnt = 0;
     while (rg > CGtol && cnt < 2*n+1) {
       applyMatrix(Ad,d);
@@ -678,15 +678,15 @@ private:
 
   unsigned solveDual_dim2(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
     gx_->set(*subgradients_[0]); gx_->axpy(-1.0,*subgradients_[1]);
-    Real diffg  = gx_->dot(*gx_);
-    if ( std::abs(diffg) > ROL_EPSILON ) {
+    Real diffg  = gx_->dot(*gx_), zero = 0.0, one = 1.0;
+    if ( std::abs(diffg) > ROL_EPSILON<Real>() ) {
       Real diffa  = (alpha(0)-alpha(1))/t;
       Real gdiffg = subgradients_[1]->dot(*gx_);
-      dualVariables_[0] = std::min(1.0,std::max(0.0,-(gdiffg+diffa)/diffg));
+      dualVariables_[0] = std::min(one,std::max(zero,-(gdiffg+diffa)/diffg));
       dualVariables_[1] = 1.0-dualVariables_[0];
     }
     else {
-      if ( std::abs(alpha(0)-alpha(1)) > ROL_EPSILON ) {
+      if ( std::abs(alpha(0)-alpha(1)) > ROL_EPSILON<Real>() ) {
         if ( alpha(0) < alpha(1) ) {
           dualVariables_[0] = 1.0; dualVariables_[1] = 0.0;
         }
@@ -713,7 +713,7 @@ private:
     for (i = 0; i < maxit; i++) {
       CGiter += solveEQPsubproblem(s,mu,g,tol);
       snorm = norm(s);
-      if ( snorm < ROL_EPSILON ) {
+      if ( snorm < ROL_EPSILON<Real>() ) {
         computeLagMult(lam,mu,g);
         nonneg = isNonnegative(ind,lam);
         if ( nonneg ) {
@@ -770,7 +770,7 @@ private:
     std::vector<Real> vsort(size_,0.0);
     vsort.assign(v.begin(),v.end());
     std::sort(vsort.begin(),vsort.end());
-    Real sum = -1.0, lam = 0.0;
+    Real sum = -1.0, lam = 0.0, zero = 0.0;
     for (int i = size_-1; i > 0; i--) {
       sum += vsort[i];
       if ( sum >= ((Real)(size_-i))*vsort[i-1] ) {
@@ -782,7 +782,7 @@ private:
       lam = (sum+vsort[0])/(Real)size_;
     }
     for (int i = 0; i < size_; i++) {
-      x[i] = std::max(0.0,v[i] - lam);
+      x[i] = std::max(zero,v[i] - lam);
     }
   }
 
@@ -805,7 +805,7 @@ private:
 //  void aggregate(Vector<Real> &aggSubGrad, Real &aggLinErr, Real &aggDistMeas) const {
 //    aggSubGrad.zero(); aggLinErr = 0.0; aggDistMeas = 0.0;
 //    for (unsigned i = 0; i < size_; i++) {
-//      //if ( dualVariables_[i] > ROL_EPSILON ) {
+//      //if ( dualVariables_[i] > ROL_EPSILON<Real>() ) {
 //        aggSubGrad.axpy(dualVariables_[i],*(subgradients_[i]));
 //        aggLinErr   += dualVariables_[i]*linearizationErrors_[i];
 //        aggDistMeas += dualVariables_[i]*distanceMeasures_[i];

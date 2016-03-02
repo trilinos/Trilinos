@@ -134,7 +134,7 @@ public:
       isInitialized_ = true;
     }
 
-    Real itol  = std::sqrt(ROL_EPSILON); 
+    Real itol  = std::sqrt(ROL_EPSILON<Real>()); 
 
     // Compute initial residual
     if(useInitialGuess_) {
