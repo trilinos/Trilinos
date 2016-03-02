@@ -56,7 +56,8 @@ struct SelectorNodeType
     UNION,
     INTERSECTION,
     DIFFERENCE,
-    COMPLEMENT
+    COMPLEMENT,
+    FIELD
   };
 };
 
@@ -70,13 +71,19 @@ struct SelectorNode
     m_value.part_ptr = arg_part;
   }
 
+  SelectorNode(FieldBase const* arg_field) : m_type(SelectorNodeType::FIELD)
+  {
+    m_value.field_ptr = arg_field;
+  }
+
   // Either leaf (part_ptr) or unary (no data) or binary (offset from current pos to rhs)
   union value_type
   {
     enum { left_offset = 1 };
     enum { unary_offset = 1 };
 
-    Part const* part_ptr;
+    Part      const* part_ptr;
+    FieldBase const* field_ptr;
     unsigned right_offset; // for binary op
     // no storage required for unary op
   };
@@ -105,27 +112,18 @@ struct SelectorNode
     return m_value.part_ptr;
   }
 
+  FieldBase const* field() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::FIELD);
+    return m_value.field_ptr;
+  }
+
   SelectorNodeType::node_type node_type() const
   {
       return m_type;
   }
 
-  bool operator==(SelectorNode const& arg_rhs) const
-  {
-    if (m_type != arg_rhs.m_type) {
-      return false;
-    }
-    else if (m_type == SelectorNodeType::COMPLEMENT) {
-      // there's no rhs for a SelectorNode of type Complement
-      return true;
-    }
-    else if (m_type == SelectorNodeType::PART) {
-      return m_value.part_ptr == arg_rhs.m_value.part_ptr;
-    }
-    else {
-      return m_value.right_offset == arg_rhs.m_value.right_offset;
-    }
-  }
+  bool operator==(SelectorNode const& arg_rhs) const;
 
   SelectorNodeType::node_type  m_type;
   value_type                   m_value;
@@ -148,6 +146,12 @@ public:
   Selector(const Part & part)
     : m_expr(1, impl::SelectorNode(&part))
   {}
+
+  /** \brief  Bucket has field */
+  Selector(const FieldBase & field)
+    : m_expr(1, impl::SelectorNode(&field))
+  {}
+
 
   bool operator == (const Selector & rhs) const
   { return m_expr == rhs.m_expr; }
@@ -255,7 +259,13 @@ private:
   BulkData* find_mesh() const;
 
   bool is_null() const {
-    return m_expr.size() == 1 && m_expr[0].m_type == SelectorNodeType::PART && m_expr[0].m_value.part_ptr == NULL;
+    if(m_expr.size() > 1) return false;
+    if(m_expr[0].m_type == SelectorNodeType::PART  && m_expr[0].m_value.part_ptr  == nullptr) {
+      return true;
+    } else if(m_expr[0].m_type == SelectorNodeType::FIELD && m_expr[0].m_value.field_ptr == nullptr) {
+      return true;
+    }
+    return false;
   }
 
   Selector& add_binary_op(SelectorNodeType::node_type type, const Selector& rhs)

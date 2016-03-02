@@ -526,6 +526,14 @@ TEST(Verify, usingSelectField)
   stk::mesh::Selector selectFieldA = stk::mesh::selectField(fix.m_fieldA);
   stk::mesh::Selector selectFieldABC = stk::mesh::selectField(fix.m_fieldABC);
 
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+  stk::mesh::Part & partC = fix.m_partC;
+  stk::mesh::Part & partD = fix.m_partD;
+
+  //
+  //  Test selection of buckets
+  //
   const int numEntities = 5;
   bool gold_shouldEntityBeInPartASelector[numEntities]         = {true , true , false, false, false};
   bool gold_shouldEntityBeInPartBSelector[numEntities]         = {false, true , true , false, false};
@@ -536,6 +544,47 @@ TEST(Verify, usingSelectField)
   testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
   testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
   testSelectorWithBuckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
+
+  //
+  //  Test selection of parts.  Part selection returns true if there is overlap between the test part set
+  //  and any part the field was registered on.
+  //
+  EXPECT_TRUE (selectFieldA(partA));
+  EXPECT_FALSE(selectFieldA(partB));
+  EXPECT_FALSE(selectFieldA(partC));
+  EXPECT_FALSE(selectFieldA(partD));
+
+  EXPECT_TRUE (selectFieldABC(partA));
+  EXPECT_TRUE (selectFieldABC(partB));
+  EXPECT_TRUE (selectFieldABC(partC));
+  EXPECT_FALSE(selectFieldABC(partD));
+
+
+  stk::mesh::PartVector partsAB;
+  partsAB.push_back(&partA);
+  partsAB.push_back(&partB);
+
+  stk::mesh::PartVector partsCD;
+  partsAB.push_back(&partC);
+  partsAB.push_back(&partD);
+
+  EXPECT_TRUE (selectFieldA(partsAB));
+  EXPECT_FALSE(selectFieldA(partsCD));
+  
+  //
+  //  Check selection of buckets also works in a mesh modification cycle
+  //
+  fix.get_NonconstBulkData().modification_begin("TEST MODIFICATION");
+
+  testSelectorWithBuckets(fix, selectFieldA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
+  testSelectorWithBuckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
+
+
+  fix.get_NonconstBulkData().modification_end();
+
+
 }
 
 TEST(Verify, selectorContainsPart)
