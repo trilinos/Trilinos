@@ -146,12 +146,12 @@ public:
         }
     }
 
-    void verify_no_air_part_ordinal_in_parallel_graph(const stk::mesh::impl::ParallelGraphInfo& parallel_info) const
+    void verify_no_air_part_ordinal_in_parallel_graph(const stk::mesh::impl::ParallelPartInfo &parallelPartInfo) const
     {
-        for(const auto& item : parallel_info)
+        for(const auto& item : parallelPartInfo)
         {
-            const stk::mesh::impl::ParallelInfo &pinfo = item.second;
-            EXPECT_TRUE(!std::binary_search(pinfo.get_part_ordinals().begin(), pinfo.get_part_ordinals().end(), part->mesh_meta_data_ordinal()));
+            const stk::mesh::impl::PartOrdinals &partOrdinals = item.second;
+            EXPECT_TRUE(!std::binary_search(partOrdinals.begin(), partOrdinals.end(), part->mesh_meta_data_ordinal()));
         }
     }
 
@@ -168,16 +168,16 @@ public:
         }
     }
 
-    void verify_air_part_ordinal_is_in_parallel_graph(const stk::mesh::impl::ParallelGraphInfo& parallel_info) const
+    void verify_air_part_ordinal_is_in_parallel_graph(const stk::mesh::impl::ParallelPartInfo &parallelPartInfo) const
     {
-        for(const auto& item : parallel_info)
+        for(const auto& item : parallelPartInfo)
         {
             const stk::mesh::GraphEdge &edge = item.first;
-            const stk::mesh::impl::ParallelInfo &pinfo = item.second;
+            const stk::mesh::impl::PartOrdinals &partOrdinals = item.second;
             if(edge.elem2%2 == 0)
-                EXPECT_TRUE(std::binary_search(pinfo.get_part_ordinals().begin(), pinfo.get_part_ordinals().end(), part->mesh_meta_data_ordinal()));
+                EXPECT_TRUE(std::binary_search(partOrdinals.begin(), partOrdinals.end(), part->mesh_meta_data_ordinal()));
             else
-                EXPECT_TRUE(!std::binary_search(pinfo.get_part_ordinals().begin(), pinfo.get_part_ordinals().end(), part->mesh_meta_data_ordinal()));
+                EXPECT_TRUE(!std::binary_search(partOrdinals.begin(), partOrdinals.end(), part->mesh_meta_data_ordinal()));
         }
     }
 
@@ -217,20 +217,23 @@ TEST_F(ParallelGraphUpdate, updateAirSelector)
         setup_mesh("generated:4x4x4", stk::mesh::BulkData::NO_AUTO_AURA);
         ElemElemGraphTester graph(get_bulk(), get_meta().locally_owned_part());
 
+        stk::mesh::impl::ParallelPartInfo parallelPartInfo;
+        stk::mesh::impl::populate_part_ordinals_for_remote_edges(get_bulk(), graph, parallelPartInfo);
+
         verify_no_air_in_parallel_graph(graph.get_parallel_info());
-        verify_no_air_part_ordinal_in_parallel_graph(graph.get_parallel_info());
+        verify_no_air_part_ordinal_in_parallel_graph(parallelPartInfo);
 
         move_elements_into_air_and_verify();
         update_parallel_graph_for_air_selector(graph, get_bulk(), get_air()); // Note: would work for skinned selector also!
-        stk::mesh::impl::update_parallel_graph_for_part_ordinals(graph, get_bulk());
+        stk::mesh::impl::populate_part_ordinals_for_remote_edges(get_bulk(), graph, parallelPartInfo);
         verify_air_in_parallel_graph(graph.get_parallel_info());
-        verify_air_part_ordinal_is_in_parallel_graph(graph.get_parallel_info());
+        verify_air_part_ordinal_is_in_parallel_graph(parallelPartInfo);
 
         move_elements_out_of_air();
         update_parallel_graph_for_air_selector(graph, get_bulk(), get_air());
-        stk::mesh::impl::update_parallel_graph_for_part_ordinals(graph, get_bulk());
+        stk::mesh::impl::populate_part_ordinals_for_remote_edges(get_bulk(), graph, parallelPartInfo);
         verify_no_air_in_parallel_graph(graph.get_parallel_info());
-        verify_no_air_part_ordinal_in_parallel_graph(graph.get_parallel_info());
+        verify_no_air_part_ordinal_in_parallel_graph(parallelPartInfo);
     }
 }
 

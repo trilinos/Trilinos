@@ -1,3 +1,4 @@
+#include "ParallelInfoForGraph.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
@@ -14,16 +15,18 @@ namespace impl
 void pack_data_for_part_ordinals(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData);
 void pack_edge(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& edge, int other_proc);
 void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph);
+void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo);
 stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, int proc_id);
 
-void update_parallel_graph_for_part_ordinals(ElemElemGraph& graph, const stk::mesh::BulkData& bulkData)
+void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo)
 {
+    parallelPartInfo.clear();
     stk::CommSparse comm(bulkData.parallel());
     pack_data_for_part_ordinals(comm, graph, bulkData);
     comm.allocate_buffers();
     pack_data_for_part_ordinals(comm, graph, bulkData);
     comm.communicate();
-    unpack_and_update_part_ordinals(comm, bulkData, graph);
+    unpack_and_update_part_ordinals(comm, bulkData, graph, parallelPartInfo);
 }
 
 void pack_data_for_part_ordinals(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData)
@@ -61,7 +64,7 @@ void pack_edge(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::Bul
     comm.send_buffer(other_proc).pack<unsigned>(side2);
 }
 
-void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph)
+void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo)
 {
     for(int i=0;i<bulkData.parallel_size();++i)
     {
@@ -75,10 +78,7 @@ void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::Bul
             for(stk::mesh::PartOrdinal &partOrdinal : partOrdinals)
                 comm.recv_buffer(i).unpack<stk::mesh::PartOrdinal>(partOrdinal);
 
-            stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_graph().get_parallel_graph_info();
-            auto iter = parallel_info.find(edge);
-            stk::ThrowRequireWithSierraHelpMsg(iter!=parallel_info.end());
-            iter->second.set_part_ordinals(partOrdinals);
+            parallelPartInfo[edge] = partOrdinals;
         }
     }
 }

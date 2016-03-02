@@ -195,7 +195,9 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
 {
     std::vector<SideSetEntry> skinnedSideSet;
     const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
-    stk::mesh::impl::update_parallel_graph_for_part_ordinals(eeGraph, bulkData);
+
+    stk::mesh::impl::ParallelPartInfo parallelPartInfo;
+    stk::mesh::impl::populate_part_ordinals_for_remote_edges(bulkData, eeGraph, parallelPartInfo);
 
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     for(const stk::mesh::Bucket* bucket : buckets)
@@ -220,7 +222,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
                     const impl::ParallelInfo &parallel_edge_info = eeGraph.get_parallel_info_for_graph_edge(graphEdge);
                     isElement2InSelector = parallel_edge_info.is_in_body_to_be_skinned();
                     if(!isElement1InSelector && !isElement2InSelector) continue;
-                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallel_edge_info.get_part_ordinals());
+                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge]);
                 }
                 else
                 {
