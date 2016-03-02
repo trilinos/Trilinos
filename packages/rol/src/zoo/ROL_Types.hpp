@@ -1223,6 +1223,19 @@ namespace ROL {
   }
 
 
+namespace Exception {
+
+class NotImplemented : public Teuchos::ExceptionBase {
+public:
+  NotImplemented( const std::string& what_arg ) :
+    Teuchos::ExceptionBase(what_arg) {}
+
+
+}; // class NotImplemented
+ 
+
+} // namespace Exception
+
 
 } // namespace ROL
 
