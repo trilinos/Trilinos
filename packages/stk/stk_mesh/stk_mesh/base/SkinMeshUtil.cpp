@@ -214,7 +214,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
                 bool isElement1InSelector = skinSelector(bucket);
                 bool isElement2InSelector = false;
 
-                bool isParallelEdge = graphEdge.elem2<0;
+                bool isParallelEdge = !impl::is_local_element(graphEdge.elem2);
                 bool should_add_side = false;
 
                 if(isParallelEdge)
@@ -277,7 +277,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
                 bool isElement1InSelector = skinSelector(bucket);
                 bool isElement2InSelector = false;
 
-                bool isParallelEdge = graphEdge.elem2<0;
+                bool isParallelEdge = !impl::is_local_element(graphEdge.elem2);
                 bool should_add_side = false;
 
                 if (isParallelEdge) {
