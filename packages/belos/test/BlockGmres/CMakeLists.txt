@@ -1,4 +1,4 @@
-# mfh 17 Jan 2016: Temporarily disable failing tests, per Github Issue #81.
+
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../MVOPTester)
 
@@ -9,21 +9,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   IF(Teuchos_ENABLE_COMPLEX)
 
     TRIBITS_INCLUDE_DIRECTORIES(../MVOPTester)
-
-    # TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    #   bl_gmres_complex_hb
-    #   SOURCES test_bl_gmres_complex_hb.cpp 
-    #   COMM serial mpi
-    #   ARGS
-    #     "--verbose --filename=mhd1280b.cua"
-    #     "--verbose --filename=mhd1280b.cua --pseudo"
-    #     "--verbose --filename=mhd1280a.cua --subspace-length=200 --tol=1e-4"
-    #     "--verbose --filename=mhd1280a.cua --pseudo --user-defined-iterations=0"
-    #     "--verbose --filename=mhd1280a.cua --pseudo --user-defined-iterations=1"
-    #     "--verbose --filename=mhd1280a.cua --pseudo --user-defined-iterations=10"
-    #   STANDARD_PASS_OUTPUT 
-    #   XHOST KALLIKRATES
-    #   )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_gmres_complex_hb
