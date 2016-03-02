@@ -43,6 +43,8 @@ struct CMD {
   double USE_MEAN;
   double USE_VAR;
   double USE_COR;
+  bool USE_EXPONENTIAL;
+  bool USE_ISOTROPIC;
   double USE_COEFF_SRC;
   double USE_COEFF_ADV;
   bool USE_SPARSE;
@@ -50,6 +52,7 @@ struct CMD {
   bool VTUNE;
   bool VERBOSE;
   bool PRINT;
+  bool PRINT_ITS;
   bool SUMMARIZE;
   int ECHO;
   int ERROR;
@@ -82,6 +85,8 @@ struct CMD {
           USE_MEAN(1),
           USE_VAR(0.1),
           USE_COR(0.25),
+          USE_EXPONENTIAL(false),
+          USE_ISOTROPIC(true),
           USE_COEFF_SRC(1.0),
           USE_COEFF_ADV(0.0),
           USE_SPARSE(false),
@@ -89,6 +94,7 @@ struct CMD {
           VTUNE(false),
           VERBOSE(false),
           PRINT(false),
+          PRINT_ITS(false),
           SUMMARIZE(false)
     {}
 };

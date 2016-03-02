@@ -152,15 +152,15 @@ public:
   
     // Print BHv -> Should be v
     vec->set(s);
-    applyH(*Hvec,*vec,x);
-    applyB(*Bvec,*Hvec,x);
+    applyH(*Hvec,*vec);
+    applyB(*Bvec,*Hvec);
     vec->axpy(-1.0,*Bvec);
     std::cout << " ||BHv-v|| = " << vec->norm() << "\n";
   
     // Print HBv -> Should be v
     vec->set(s);
-    applyB(*Bvec,*vec,x);
-    applyH(*Hvec,*Bvec,x);
+    applyB(*Bvec,*vec);
+    applyH(*Hvec,*Bvec);
     vec->axpy(-1.0,*Hvec);
     std::cout << " ||HBv-v|| = " << vec->norm() << "\n";
   }

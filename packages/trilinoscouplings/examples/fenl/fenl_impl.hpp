@@ -335,6 +335,7 @@ public:
   //----------------------------------------
 
   void solve( const CoeffFunctionType & coeff_function
+            , const bool isotropic
             , const double coeff_source
             , const double coeff_advection
             , const double    bc_lower_value
@@ -388,7 +389,7 @@ public:
                                          dev_config_bc );
 
       // Create element computation functor
-      const ElementComputationType elemcomp( fixture , coeff_function ,
+      const ElementComputationType elemcomp( fixture , coeff_function , isotropic ,
                                              coeff_source , coeff_advection ,
                                              nodal_solution ,
                                              elem_graph ,
@@ -581,6 +582,7 @@ Perf fenl(
   const int use_mean_based ,
   const int use_nodes[] ,
   const CoeffFunctionType& coeff_function ,
+  const bool isotropic,
   const double coeff_source ,
   const double coeff_advection ,
   const double bc_lower_value ,
@@ -624,6 +626,7 @@ Perf fenl(
   for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {
 
     problem.solve( coeff_function
+                 , isotropic
                  , coeff_source
                  , coeff_advection
                  , bc_lower_value

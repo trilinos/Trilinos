@@ -408,7 +408,7 @@ void ModeLaplace2DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
                                     int *numNz) {
 
   // Create Epetra_Matrix for stiffness
-  K = new Epetra_CrsMatrix(Copy, *Map, numNz);
+  K = new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, numNz);
 
   int i;
   int localSize = Map->NumMyElements();
@@ -530,7 +530,7 @@ void ModeLaplace2DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
                                int *numNz) {
 
   // Create Epetra_Matrix for mass
-  M = new Epetra_CrsMatrix(Copy, *Map, numNz);
+  M = new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, numNz);
 
   int i;
   int localSize = Map->NumMyElements();
@@ -762,7 +762,7 @@ int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   }
 
   double *normL2 = vQ + (nMax+1)*localSize;
-  Epetra_MultiVector Qex(View, *Map, vQ, localSize, nMax);
+  Epetra_MultiVector Qex(Epetra_DataAccess::View, *Map, vQ, localSize, nMax);
 
   if ((myPid == 0) && (nMax > 0)) {
     std::cout << std::endl;
@@ -797,14 +797,14 @@ int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
           Qex.ReplaceMyValue(ii, index[i-1+(j-1)*(numX-1)], coeff);
         }
         // Normalize Qex against the mass matrix
-        Epetra_MultiVector MQex(View, *Map, vQ + nMax*localSize, localSize, 1);
-        Epetra_MultiVector Qi(View, Qex, index[i-1+(j-1)*(numX-1)], 1);
+        Epetra_MultiVector MQex(Epetra_DataAccess::View, *Map, vQ + nMax*localSize, localSize, 1);
+        Epetra_MultiVector Qi(Epetra_DataAccess::View, Qex, index[i-1+(j-1)*(numX-1)], 1);
         M->Apply(Qi, MQex);
         double mnorm = 0.0;
         Qi.Dot(MQex, &mnorm); 
         Qi.Scale(1.0/sqrt(mnorm));
         // Compute the L2 norm
-        Epetra_MultiVector shapeInt(View, *Map, vQ + nMax*localSize, localSize, 1);
+        Epetra_MultiVector shapeInt(Epetra_DataAccess::View, *Map, vQ + nMax*localSize, localSize, 1);
         for (ii=0; ii<localSize; ++ii) {
           double iX, iY;
           if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx)

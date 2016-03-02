@@ -115,6 +115,8 @@ private:
 
   int suggested_vector_size;
   int suggested_team_size;
+
+  scalar_persistent_work_view_t permuted_diagonals;
   public:
 
   /**
@@ -126,7 +128,7 @@ private:
     color_set_xadj(), color_sets(), numColors(0),
     permuted_xadj(),  permuted_adj(), permuted_adj_vals(), old_to_new_map(),
     called_symbolic(false), called_numeric(false), permuted_y_vector(), permuted_x_vector(),
-    suggested_vector_size(0), suggested_team_size(0)
+    suggested_vector_size(0), suggested_team_size(0), permuted_diagonals()
     {
     if (gs == GS_DEFAULT){
       this->choose_default_algorithm();
@@ -244,6 +246,13 @@ private:
   }
   void set_old_to_new_map(const row_lno_persistent_work_view_t &old_to_new_map_) {
     this->old_to_new_map = old_to_new_map_;
+  }
+  void set_permuted_diagonals (const scalar_persistent_work_view_t permuted_diagonals_){
+    this->permuted_diagonals = permuted_diagonals_;
+  }
+
+  scalar_persistent_work_view_t get_permuted_diagonals (){
+    return this->permuted_diagonals;
   }
 
   void allocate_x_y_vectors(row_lno_t num_rows, row_lno_t num_cols){

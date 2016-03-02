@@ -133,6 +133,7 @@ ENDIF()
 
 ####   BASKER Tests ####
 IF (${PACKAGE_NAME}_ENABLE_Basker)
+
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Basker_UnitTests
     SOURCES
@@ -141,12 +142,30 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
+
+IF (Tpetra_INST_INT_INT)
+
+   TRIBITS_COPY_FILES_TO_BINARY_DIR(Amesos2BaskerCopyFiles
+     DEST_FILES
+     test_basker_wathen120_mm.xml
+     
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+     DEST_DIR   ${CMAKE_CURRENT_BINARY_DIR}
+    )
+   
+   TRIBITS_ADD_EXECUTABLE(
+    Solver_Test_Basker
+    SOURCES Solver_Test_Basker
+   )
+
+
+ENDIF()
 ENDIF()
 
 ##### MUMPS Tests ####
 #MUMPS requires int/int type
 IF (Tpetra_INST_INT_INT)
-if (${PACKAGE_NAME}_ENABLE_MUMPS)
+IF (${PACKAGE_NAME}_ENABLE_MUMPS)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
    MUMPS_UnitTests
    SOURCES

@@ -110,12 +110,6 @@ namespace Intrepid2 {
     virtual const Basis<Scalar,ArrayType>& getTriangleBasis()      const;
     virtual const Basis<Scalar,ArrayType>& getQuadrilateralBasis() const;
     virtual const Basis<Scalar,ArrayType>& getLineBasis()          const;
-
-    virtual bool isLeftHandedFace(const int faceId) const;
-  };
-
-  enum ELeftHanded {
-    LEFT_HANDED_FACES_TET = 12, // 0 0 1 1 
   };
 
   template<class Scalar, class ArrayType>
@@ -142,7 +136,6 @@ namespace Intrepid2 {
     const Basis<Scalar,ArrayType>& getCellBasis()     const;
     const Basis<Scalar,ArrayType>& getTriangleBasis() const;
     const Basis<Scalar,ArrayType>& getLineBasis()     const;
-    bool isLeftHandedFace(const int faceId) const;
   };
 
 }

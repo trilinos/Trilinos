@@ -570,7 +570,7 @@ namespace MueLu {
       Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
       // parameters from SmootherFactory
-      bool bKeepSmootherData = false; if(paramList.isParameter("keep smoother data")) bKeepSmootherData = paramList.get<bool>("keep smoother data");
+      //bool bKeepSmootherData = false; if(paramList.isParameter("keep smoother data")) bKeepSmootherData = paramList.get<bool>("keep smoother data");
 
       // Read in factory information for smoothers (if available...)
       // NOTE: only a selected number of factories can be used with the Trilinos smoother
@@ -593,7 +593,7 @@ namespace MueLu {
 
       RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(Teuchos::null));
       Teuchos::ParameterList smooFactParams;
-      smooFactParams.set<bool>("keep smoother data",bKeepSmootherData);
+      //smooFactParams.setEntry("keep smoother data", paramList.getEntry("keep smoother data"));
       smooFact->SetParameterList(smooFactParams);
       smooFact->SetSmootherPrototypes(trilSmoo);
       return smooFact;

@@ -126,7 +126,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   int Ni         = IColMap.NumMyElements();
   int_type * Igids    = 0;
   if(Ni>0)
-          IColMap.MyGlobalElementsPtr(Igids);
+    IColMap.MyGlobalElementsPtr(Igids);
 
   if((int)Bcols2Ccols.size() != Nb) Bcols2Ccols.resize(Nb);
   if((int)Icols2Ccols.size() != Ni) Icols2Ccols.resize(Ni);

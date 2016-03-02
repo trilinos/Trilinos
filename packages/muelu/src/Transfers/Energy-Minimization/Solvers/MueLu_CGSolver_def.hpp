@@ -124,7 +124,7 @@ namespace MueLu {
 #endif
 #endif
     R->scale(-one);
-    if (useTpetra)
+    if (!R->isFillComplete())
       R->fillComplete(R->getDomainMap(), R->getRangeMap());
 
     // Z_0 = M^{-1}R_0

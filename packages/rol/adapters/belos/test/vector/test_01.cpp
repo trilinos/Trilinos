@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
       // Make a Belos-Krylov solver if specified
       if(parlist->get("Use Belos",false)) { 
           Teuchos::RCP<ROL::Krylov<RealT> > krylov = Teuchos::rcp(new ROL::BelosKrylov<RealT>(*parlist));   
-          step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist,krylov));  
+          step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist,Teuchos::null,Teuchos::null,krylov));  
       }
       else { // Otherwise use ROL's default
           step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));

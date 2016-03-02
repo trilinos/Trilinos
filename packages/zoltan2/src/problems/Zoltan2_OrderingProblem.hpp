@@ -191,7 +191,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // Need some exception handling here, too.
 
   std::string method = this->params_->template get<std::string>("order_method", "rcm");
-
+  
   // TODO: Ignore case
   try
   {
@@ -228,6 +228,13 @@ void OrderingProblem<Adapter>::solve(bool newData)
                                      this->params_, problemComm_);
           alg.order(this->solution_);
       }
+  }
+  else if (method.compare("scotch") == 0) // BDD Adding scotch ordering
+  {
+    AlgPTScotch<Adapter> alg(this->envConst_,
+                                    problemComm_,
+                                    this->baseInputAdapter_);
+    alg.order(this->solution_);
   }
 
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF

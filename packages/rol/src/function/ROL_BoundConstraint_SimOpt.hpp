@@ -276,6 +276,20 @@ public:
     }
   }
  
+  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) const {
+
+    return Teuchos::rcp( new Vector_SimOpt<Real>( bnd1_->getLowerVectorRCP(),
+                                                  bnd2_->getLowerVectorRCP() ) );
+  }
+
+  const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) const {
+
+    return Teuchos::rcp( new Vector_SimOpt<Real>( bnd1_->getUpperVectorRCP(),
+                                                  bnd2_->getUpperVectorRCP() ) );
+  }
+
+
+
   /** \brief Set the input vector to the upper bound.
 
       This function sets the input vector \f$u\f$ to the upper bound \f$b\f$.

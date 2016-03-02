@@ -143,9 +143,9 @@ int main(int narg, char *arg[]) {
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t ia2(*CommT, "vertex");
   inputAdapter_t::gno_t const *adjacencyIds=NULL;
-  inputAdapter_t::gno_t const *madjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
-  inputAdapter_t::lno_t const *moffsets=NULL;
+  Teuchos::ArrayRCP<inputAdapter_t::lno_t> moffsets;
+  Teuchos::ArrayRCP<inputAdapter_t::gno_t> madjacencyIds;
   ia.print(me);
 
   if (me == 0) std::cout << "REGION-BASED TEST" << std::endl;
@@ -157,14 +157,6 @@ int main(int narg, char *arg[]) {
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
 
   if (ia.availAdjs(primaryEType, adjEType)) {
-    if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
-      ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
-    }
-    else{
-      std::cout << "2nd adjacencies not available" << std::endl;
-      return 2;
-    }
-
     // Create a GraphModel based on this input data.
 
     if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
@@ -181,6 +173,15 @@ int main(int narg, char *arg[]) {
                                       secondAdjEType, moffsets, madjacencyIds);
 
     if (me == 0) std::cout << "        Checking results" << std::endl;
+    if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
+      ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
+    }
+    else{
+      std::cout << "2nd adjacencies not available; cannot check results"
+                << std::endl;
+      return 2;
+    }
+
     for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
       if (offsets[telct+1]-offsets[telct]!=moffsets[telct+1]-moffsets[telct]) {
         std::cout << "Number of adjacencies do not match" << std::endl;
@@ -191,7 +192,7 @@ int main(int narg, char *arg[]) {
         ssize_t in_list = -1;
 
         for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
-          if (adjacencyIds[k] == adjacencyIds[j]) {
+          if (adjacencyIds[k] == madjacencyIds[j]) {
             in_list = k;
             break;
           }
@@ -250,7 +251,7 @@ int main(int narg, char *arg[]) {
         ssize_t in_list = -1;
 
         for (inputAdapter_t::lno_t k=offsets[tnoct]; k<offsets[tnoct+1]; k++) {
-          if (adjacencyIds[k] == adjacencyIds[j]) {
+          if (adjacencyIds[k] == madjacencyIds[j]) {
             in_list = k;
             break;
           }

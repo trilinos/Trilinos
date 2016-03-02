@@ -190,123 +190,135 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a LineSearchStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a Teuchos::ParameterList.  The
+      line-search type, secant type, Krylov type, or nonlinear CG type can
+      be set using user-defined objects.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
-  */
-  LineSearchStep( Teuchos::ParameterList &parlist )
-    : Step<Real>(), desc_(Teuchos::null), secant_(Teuchos::null),
-      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
-      els_(LINESEARCH_BACKTRACKING), econd_(CURVATURECONDITION_WOLFE),
-      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
-    // Parse parameter list
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-    verbosity_ = Glist.get("Print Verbosity",0);
-    // Initialize Line Search
-    lineSearch_ = LineSearchFactory<Real>(parlist);
-  }
-
-  /** \brief Constructor.
-
-      Standard constructor to build a LineSearchStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
-
       @param[in]     lineSearch is a user-defined line search object
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
-  */
-  LineSearchStep( Teuchos::ParameterList &parlist,
-                  const Teuchos::RCP<LineSearch<Real> > &lineSearch )
-    : Step<Real>(), desc_(Teuchos::null), secant_(Teuchos::null),
-      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(lineSearch),
-      els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
-      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
-    // Parse parameter list
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-    verbosity_ = Glist.get("Print Verbosity",0);
-  }
-
-  /** \brief Constructor.
-
-      Constructor to build a LineSearchStep object with a user-defined 
-      secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
-
       @param[in]     secant     is a user-defined secant object
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
-  */
-  LineSearchStep( Teuchos::ParameterList &parlist,
-                  const Teuchos::RCP<Secant<Real> > &secant )
-    : Step<Real>(), desc_(Teuchos::null), secant_(secant),
-      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
-      els_(LINESEARCH_BACKTRACKING), econd_(CURVATURECONDITION_WOLFE),
-      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
-    // Parse parameter list
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-    verbosity_ = Glist.get("Print Verbosity",0);
-    // Initialize Line Search
-    lineSearch_ = LineSearchFactory<Real>(parlist);
-  }
-
-  /** \brief Constructor.
-
-      Standard constructor to build a LineSearchStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
-
       @param[in]     krylov     is a user-defined Krylov object
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
+      @param[in]     nlcg       is a user-defined Nonlinear CG object
   */
   LineSearchStep( Teuchos::ParameterList &parlist,
-                  const Teuchos::RCP<Krylov<Real> > &krylov )
-    : Step<Real>(), desc_(Teuchos::null), secant_(Teuchos::null),
-      krylov_(krylov), nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
-      els_(LINESEARCH_BACKTRACKING), econd_(CURVATURECONDITION_WOLFE),
-      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
-    // Parse parameter list
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false);
-    verbosity_ = Glist.get("Print Verbosity",0);
-    // Initialize Line Search
-    lineSearch_ = LineSearchFactory<Real>(parlist);
-  }
-
-  /** \brief Constructor.
-
-      Constructor to build a LineSearchStep object with a user-defined 
-      secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
-
-      @param[in]     lineSearch is a user-defined line search object
-      @param[in]     secant     is a user-defined secant object
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
-  */
-  LineSearchStep( Teuchos::ParameterList &parlist,
-                  const Teuchos::RCP<LineSearch<Real> > &lineSearch,
-                  const Teuchos::RCP<Secant<Real> > &secant )
+                  const Teuchos::RCP<LineSearch<Real> > &lineSearch = Teuchos::null,
+                  const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
+                  const Teuchos::RCP<Krylov<Real> > &krylov = Teuchos::null,
+                  const Teuchos::RCP<NonlinearCG<Real> > &nlcg = Teuchos::null )
     : Step<Real>(), desc_(Teuchos::null), secant_(secant),
-      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(lineSearch),
+      krylov_(krylov), nlcg_(nlcg), lineSearch_(lineSearch),
       els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
       ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
     // Parse parameter list
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false);
+    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     verbosity_ = Glist.get("Print Verbosity",0);
+    // Initialize Line Search
+    if (lineSearch_ == Teuchos::null) {
+      els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+      lineSearch_ = LineSearchFactory<Real>(parlist);
+    }
   }
+
+//  /** \brief Constructor.
+//
+//      Standard constructor to build a LineSearchStep object.  Algorithmic 
+//      specifications are passed in through a Teuchos::ParameterList.
+//
+//      @param[in]     lineSearch is a user-defined line search object
+//      @param[in]     parlist    is a parameter list containing algorithmic specifications
+//  */
+//  LineSearchStep( Teuchos::ParameterList &parlist,
+//                  const Teuchos::RCP<LineSearch<Real> > &lineSearch )
+//    : Step<Real>(), desc_(Teuchos::null), secant_(Teuchos::null),
+//      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(lineSearch),
+//      els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
+//      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
+//    // Parse parameter list
+//    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+//    Teuchos::ParameterList& Glist = parlist.sublist("General");
+//    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+//    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
+//    verbosity_ = Glist.get("Print Verbosity",0);
+//  }
+//
+//  /** \brief Constructor.
+//
+//      Constructor to build a LineSearchStep object with a user-defined 
+//      secant object.  Algorithmic specifications are passed in through 
+//      a Teuchos::ParameterList.
+//
+//      @param[in]     secant     is a user-defined secant object
+//      @param[in]     parlist    is a parameter list containing algorithmic specifications
+//  */
+//  LineSearchStep( Teuchos::ParameterList &parlist,
+//                  const Teuchos::RCP<Secant<Real> > &secant )
+//    : Step<Real>(), desc_(Teuchos::null), secant_(secant),
+//      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
+//      els_(LINESEARCH_BACKTRACKING), econd_(CURVATURECONDITION_WOLFE),
+//      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
+//    // Parse parameter list
+//    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+//    Teuchos::ParameterList& Glist = parlist.sublist("General");
+//    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+//    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+//    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
+//    verbosity_ = Glist.get("Print Verbosity",0);
+//    // Initialize Line Search
+//    lineSearch_ = LineSearchFactory<Real>(parlist);
+//  }
+//
+//  /** \brief Constructor.
+//
+//      Standard constructor to build a LineSearchStep object.  Algorithmic 
+//      specifications are passed in through a Teuchos::ParameterList.
+//
+//      @param[in]     krylov     is a user-defined Krylov object
+//      @param[in]     parlist    is a parameter list containing algorithmic specifications
+//  */
+//  LineSearchStep( Teuchos::ParameterList &parlist,
+//                  const Teuchos::RCP<Krylov<Real> > &krylov )
+//    : Step<Real>(), desc_(Teuchos::null), secant_(Teuchos::null),
+//      krylov_(krylov), nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
+//      els_(LINESEARCH_BACKTRACKING), econd_(CURVATURECONDITION_WOLFE),
+//      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
+//    // Parse parameter list
+//    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+//    Teuchos::ParameterList& Glist = parlist.sublist("General");
+//    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+//    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+//    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false);
+//    verbosity_ = Glist.get("Print Verbosity",0);
+//    // Initialize Line Search
+//    lineSearch_ = LineSearchFactory<Real>(parlist);
+//  }
+//
+//  /** \brief Constructor.
+//
+//      Constructor to build a LineSearchStep object with a user-defined 
+//      secant object.  Algorithmic specifications are passed in through 
+//      a Teuchos::ParameterList.
+//
+//      @param[in]     lineSearch is a user-defined line search object
+//      @param[in]     secant     is a user-defined secant object
+//      @param[in]     parlist    is a parameter list containing algorithmic specifications
+//  */
+//  LineSearchStep( Teuchos::ParameterList &parlist,
+//                  const Teuchos::RCP<LineSearch<Real> > &lineSearch,
+//                  const Teuchos::RCP<Secant<Real> > &secant )
+//    : Step<Real>(), desc_(Teuchos::null), secant_(secant),
+//      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(lineSearch),
+//      els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
+//      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
+//    // Parse parameter list
+//    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+//    Teuchos::ParameterList& Glist = parlist.sublist("General");
+//    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+//    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false);
+//    verbosity_ = Glist.get("Print Verbosity",0);
+//  }
 
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
                    Objective<Real> &obj, BoundConstraint<Real> &bnd, 
@@ -461,7 +473,7 @@ public:
     std::string desc = desc_->print(algo_state,false);
     desc.erase(std::remove(desc.end()-3,desc.end(),'\n'), desc.end());
     std::string name = desc_->printName();
-    int pos = desc.find(name);
+    size_t pos = desc.find(name);
     if ( pos != std::string::npos ) {
       desc.erase(pos, name.length());
     }

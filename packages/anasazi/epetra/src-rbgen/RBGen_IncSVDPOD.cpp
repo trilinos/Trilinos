@@ -61,14 +61,14 @@ namespace RBGen {
     if (curRank_ == 0 || isInitialized_ == false) {
       return Teuchos::null;
     }
-    return Teuchos::rcp( new Epetra_MultiVector(::View,*U_,0,curRank_) );
+    return Teuchos::rcp( new Epetra_MultiVector(Epetra_DataAccess::View,*U_,0,curRank_) );
   }
 
   Teuchos::RCP<const Epetra_MultiVector> IncSVDPOD::getRightBasis() const {
     if (curRank_ == 0 || isInitialized_ == false) {
       return Teuchos::null;
     }
-    return Teuchos::rcp( new Epetra_MultiVector(::View,*V_,0,curRank_) );
+    return Teuchos::rcp( new Epetra_MultiVector(Epetra_DataAccess::View,*V_,0,curRank_) );
   }
 
   std::vector<double> IncSVDPOD::getSingularValues() const { 
@@ -246,7 +246,7 @@ namespace RBGen {
     // compute the SVD of B
     const int lwork = 5*curRank_;
     int info;
-    Epetra_SerialDenseMatrix Uhat(::Copy,B_->A(),B_->LDA(),curRank_,curRank_), Vhat(curRank_,curRank_);
+    Epetra_SerialDenseMatrix Uhat(Epetra_DataAccess::Copy,B_->A(),B_->LDA(),curRank_,curRank_), Vhat(curRank_,curRank_);
     std::vector<double> Shat(curRank_), work(lwork);
 
     // Note: this actually stores Vhat^T (we remedy this below)

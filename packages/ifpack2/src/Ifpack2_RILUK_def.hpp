@@ -939,14 +939,15 @@ void RILUK<MatrixType>::compute ()
   } 
   else{
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
-    Teuchos::Time timerbasker ("RILUK::basercompute");
+    //Teuchos::Time timerbasker ("RILUK::basercompute");
     {
-      Teuchos::TimeMonitor timeMon(timerbasker);
+      //Teuchos::TimeMonitor timeMon(timerbasker);
     myBasker->Factor_Inc(0);
     }
-    std::cout << "Basker compute time " 
-	      << timerbasker.totalElapsedTime ()
-	      << std::endl;
+    //std::cout << "Basker compute time " 
+    //	      << timerbasker.totalElapsedTime ()
+    //	      << std::endl;
+    //myBasker->DEBUG_PRINT();
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
        0==1, std::runtime_error,

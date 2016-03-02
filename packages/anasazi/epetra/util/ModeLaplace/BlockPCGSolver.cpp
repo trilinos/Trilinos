@@ -126,15 +126,15 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
 
   double *pointer = workSpace;
 
-  Epetra_Vector r(View, X.Map(), pointer);
+  Epetra_Vector r(Epetra_DataAccess::View, X.Map(), pointer);
   pointer = pointer + xr;
 
-  Epetra_Vector p(View, X.Map(), pointer);
+  Epetra_Vector p(Epetra_DataAccess::View, X.Map(), pointer);
   pointer = pointer + xr;
 
   // Note: Kp and z uses the same memory space
-  Epetra_Vector Kp(View, X.Map(), pointer);
-  Epetra_Vector z(View, X.Map(), pointer);
+  Epetra_Vector Kp(Epetra_DataAccess::View, X.Map(), pointer);
+  Epetra_Vector z(Epetra_DataAccess::View, X.Map(), pointer);
 
   double tmp;
   double initNorm = 0.0, rNorm = 0.0, newRZ = 0.0, oldRZ = 0.0, alpha = 0.0;
@@ -286,22 +286,22 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
   // Array to store the residuals
   double *valR = pointer;
   pointer = pointer + xrow*blkSize;
-  Epetra_MultiVector R(View, X.Map(), valR, xrow, blkSize);
+  Epetra_MultiVector R(Epetra_DataAccess::View, X.Map(), valR, xrow, blkSize);
 
   // Array to store the preconditioned residuals
   double *valZ = pointer;
   pointer = pointer + xrow*blkSize;
-  Epetra_MultiVector Z(View, X.Map(), valZ, xrow, blkSize);
+  Epetra_MultiVector Z(Epetra_DataAccess::View, X.Map(), valZ, xrow, blkSize);
 
   // Array to store the search directions
   double *valP = pointer;
   pointer = pointer + xrow*blkSize;
-  Epetra_MultiVector P(View, X.Map(), valP, xrow, blkSize);
+  Epetra_MultiVector P(Epetra_DataAccess::View, X.Map(), valP, xrow, blkSize);
 
   // Array to store the image of the search directions
   double *valKP = pointer;
   pointer = pointer + xrow*blkSize;
-  Epetra_MultiVector KP(View, X.Map(), valKP, xrow, blkSize);
+  Epetra_MultiVector KP(Epetra_DataAccess::View, X.Map(), valKP, xrow, blkSize);
 
   // Pointer to store the solutions
   double *valSOL = (useY == true) ? Y.Values() : pointer;
@@ -319,7 +319,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
     // Set the initial guess to zero
     valSOL = (useY == true) ? Y.Values() + iRHS*xrow : valSOL;
-    Epetra_MultiVector SOL(View, X.Map(), valSOL, xrow, blkSize);
+    Epetra_MultiVector SOL(Epetra_DataAccess::View, X.Map(), valSOL, xrow, blkSize);
     SOL.PutScalar(0.0);
 
     int ii = 0;

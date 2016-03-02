@@ -61,6 +61,7 @@ build_precond (Teuchos::ParameterList& test_params,
   using std::cout;
   using std::endl;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
+  Teuchos::Time timer_init("init");
   Teuchos::Time timer("precond");
   const int myRank = A->getRowMap ()->getComm ()->getRank ();
 
@@ -85,7 +86,13 @@ build_precond (Teuchos::ParameterList& test_params,
   {
     OSTab tab (*out);
     prec->setParameters (tif_params);
-    prec->initialize ();
+    {
+      Teuchos::TimeMonitor timeMon (timer_init);
+      prec->initialize ();
+    }
+     if (myRank == 0) {
+      *out << "Time Init: " << timer_init.totalElapsedTime() << endl;
+     }
     {
       Teuchos::TimeMonitor timeMon (timer);
       prec->compute ();

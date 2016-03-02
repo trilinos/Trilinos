@@ -141,65 +141,65 @@ public:
     }
   }
 
-  /** \brief Constructor.
-
-      Constructor to build a NewtonKrylovStep object with a user-defined 
-      secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
-
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
-      @param[in]     secant     is a user-defined secant object
-  */
-  NewtonKrylovStep(Teuchos::ParameterList &parlist,
-             const Teuchos::RCP<Secant<Real> > &secant)
-    : Step<Real>(), secant_(secant), krylov_(Teuchos::null),
-      esec_(SECANT_USERDEFINED),
-      hessian_(Teuchos::null), precond_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
-    // Parse ParameterList
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-    verbosity_ = Glist.get("Print Verbosity",0);
-    // Initialize secant object
-    if ( useSecantPrecond_ && secant_ == Teuchos::null ) {
-      esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
-      secant_ = SecantFactory<Real>(parlist);
-    }
-    // Initialize Krylov object
-    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
-    krylov_ = KrylovFactory<Real>(parlist);
-  }
-
-  /** \brief Constructor.
-
-      Constructor to build a NewtonKrylovStep object with a user-defined
-      Krylov object.  Algorithmic specifications are passed in through a
-      Teuchos::ParameterList.
-
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
-      @param[in]     krylov     is a user-defined Krylov object
-  */
-  NewtonKrylovStep(Teuchos::ParameterList &parlist,
-             const Teuchos::RCP<Krylov<Real> > &krylov)
-    : Step<Real>(), secant_(Teuchos::null), krylov_(krylov),
-      ekv_(KRYLOV_USERDEFINED),
-      hessian_(Teuchos::null), precond_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
-    // Parse ParameterList
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-    verbosity_ = Glist.get("Print Verbosity",0);
-    // Initialize secant object
-    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
-    if ( useSecantPrecond_ ) {
-      secant_ = SecantFactory<Real>(parlist);
-    }
-    // Initialize Krylov object
-    if ( krylov_ == Teuchos::null ) {
-      ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
-      krylov_ = KrylovFactory<Real>(parlist);
-    }
-  }
+//  /** \brief Constructor.
+//
+//      Constructor to build a NewtonKrylovStep object with a user-defined 
+//      secant object.  Algorithmic specifications are passed in through 
+//      a Teuchos::ParameterList.
+//
+//      @param[in]     parlist    is a parameter list containing algorithmic specifications
+//      @param[in]     secant     is a user-defined secant object
+//  */
+//  NewtonKrylovStep(Teuchos::ParameterList &parlist,
+//             const Teuchos::RCP<Secant<Real> > &secant)
+//    : Step<Real>(), secant_(secant), krylov_(Teuchos::null),
+//      esec_(SECANT_USERDEFINED),
+//      hessian_(Teuchos::null), precond_(Teuchos::null), gp_(Teuchos::null),
+//      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
+//    // Parse ParameterList
+//    Teuchos::ParameterList& Glist = parlist.sublist("General");
+//    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
+//    verbosity_ = Glist.get("Print Verbosity",0);
+//    // Initialize secant object
+//    if ( useSecantPrecond_ && secant_ == Teuchos::null ) {
+//      esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+//      secant_ = SecantFactory<Real>(parlist);
+//    }
+//    // Initialize Krylov object
+//    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
+//    krylov_ = KrylovFactory<Real>(parlist);
+//  }
+//
+//  /** \brief Constructor.
+//
+//      Constructor to build a NewtonKrylovStep object with a user-defined
+//      Krylov object.  Algorithmic specifications are passed in through a
+//      Teuchos::ParameterList.
+//
+//      @param[in]     parlist    is a parameter list containing algorithmic specifications
+//      @param[in]     krylov     is a user-defined Krylov object
+//  */
+//  NewtonKrylovStep(Teuchos::ParameterList &parlist,
+//             const Teuchos::RCP<Krylov<Real> > &krylov)
+//    : Step<Real>(), secant_(Teuchos::null), krylov_(krylov),
+//      ekv_(KRYLOV_USERDEFINED),
+//      hessian_(Teuchos::null), precond_(Teuchos::null), gp_(Teuchos::null),
+//      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
+//    // Parse ParameterList
+//    Teuchos::ParameterList& Glist = parlist.sublist("General");
+//    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
+//    verbosity_ = Glist.get("Print Verbosity",0);
+//    // Initialize secant object
+//    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+//    if ( useSecantPrecond_ ) {
+//      secant_ = SecantFactory<Real>(parlist);
+//    }
+//    // Initialize Krylov object
+//    if ( krylov_ == Teuchos::null ) {
+//      ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
+//      krylov_ = KrylovFactory<Real>(parlist);
+//    }
+//  }
 
   /** \brief Constructor.
 
@@ -284,6 +284,7 @@ public:
       gp_->set(*(step_state->gradientVec));
     }
     obj.update(x,true,algo_state.iter);
+    algo_state.value = obj.value(x,tol);
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

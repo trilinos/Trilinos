@@ -455,6 +455,7 @@ public:
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
   const CoeffFunctionType   coeff_function ;
+  const bool                isotropic ;
   const double              coeff_source ;
   const double              coeff_advection ;
   const Kokkos::DeviceConfig dev_config ;
@@ -470,6 +471,7 @@ public:
     , residual( rhs.residual )
     , jacobian( rhs.jacobian )
     , coeff_function( rhs.coeff_function )
+    , isotropic( rhs.isotropic )
     , coeff_source( rhs.coeff_source )
     , coeff_advection( rhs.coeff_advection )
     , dev_config( rhs.dev_config )
@@ -479,6 +481,7 @@ public:
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
                       const CoeffFunctionType  & arg_coeff_function ,
+                      const bool                 arg_isotropic ,
                       const double             & arg_coeff_source ,
                       const double             & arg_coeff_advection ,
                       const vector_type        & arg_solution ,
@@ -498,6 +501,7 @@ public:
     , residual( arg_residual )
     , jacobian( arg_jacobian )
     , coeff_function( arg_coeff_function )
+    , isotropic( arg_isotropic )
     , coeff_source( arg_coeff_source )
     , coeff_advection( arg_coeff_advection )
     , dev_config( arg_dev_config )
@@ -666,6 +670,72 @@ public:
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
+  void contributeResidualJacobianAnisotropic(
+    const local_scalar_type dof_values[] ,
+    const double  dpsidx[] ,
+    const double  dpsidy[] ,
+    const double  dpsidz[] ,
+    const double  detJ ,
+    const double  integ_weight ,
+    const double  bases_vals[] ,
+    const local_scalar_type  coeff_k ,
+    const double  coeff_src ,
+    const double  advection[] ,
+    local_scalar_type  elem_res[] ,
+    local_scalar_type  elem_mat[][ FunctionCount ] ) const
+  {
+    local_scalar_type value_at_pt = 0 ;
+    local_scalar_type gradx_at_pt = 0 ;
+    local_scalar_type grady_at_pt = 0 ;
+    local_scalar_type gradz_at_pt = 0 ;
+
+    for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
+      value_at_pt += dof_values[m] * bases_vals[m] ;
+      gradx_at_pt += dof_values[m] * dpsidx[m] ;
+      grady_at_pt += dof_values[m] * dpsidy[m] ;
+      gradz_at_pt += dof_values[m] * dpsidz[m] ;
+    }
+
+    const double detJ_weight = detJ * integ_weight;
+
+    const local_scalar_type source_term =
+      coeff_src * value_at_pt * value_at_pt;
+    const local_scalar_type source_deriv =
+      2.0 * coeff_src * value_at_pt;
+
+    const local_scalar_type advection_term =
+      advection[0]*gradx_at_pt +
+      advection[1]*grady_at_pt +
+      advection[2]*gradz_at_pt;
+
+    for ( unsigned m = 0; m < FunctionCount; ++m) {
+      local_scalar_type * const mat = elem_mat[m] ;
+      const double bases_val_m = bases_vals[m];
+      const double dpsidx_m    = dpsidx[m] ;
+      const double dpsidy_m    = dpsidy[m] ;
+      const double dpsidz_m    = dpsidz[m] ;
+
+      elem_res[m] +=
+        detJ_weight * (           dpsidx_m * gradx_at_pt +
+                                  dpsidy_m * grady_at_pt +
+                        coeff_k * dpsidz_m * gradz_at_pt +
+                        ( advection_term  + source_term ) * bases_val_m ) ;
+
+      for( unsigned n = 0; n < FunctionCount; n++) {
+
+        mat[n] +=
+          detJ_weight * (            dpsidx_m * dpsidx[n] +
+                                     dpsidy_m * dpsidy[n] +
+                           coeff_k * dpsidz_m * dpsidz[n] +
+                          ( advection[0] * dpsidx[n] +
+                            advection[1] * dpsidy[n] +
+                            advection[2] * dpsidz[n] +
+                            source_deriv * bases_vals[n] ) * bases_val_m );
+      }
+    }
+  }
+
   typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
   void operator()( const team_member & dev ) const
@@ -756,10 +826,16 @@ public:
       // Evaluate diffusion coefficient
       local_scalar_type coeff_k = coeff_function(pt, ensemble_rank);
 
-      contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz , detJ ,
-                                  elem_data.weights[i] , elem_data.values[i] ,
-                                  coeff_k , coeff_source , advection ,
-                                  elem_vec , elem_mat );
+      if (isotropic)
+        contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz , detJ ,
+                                    elem_data.weights[i] , elem_data.values[i] ,
+                                    coeff_k , coeff_source , advection ,
+                                    elem_vec , elem_mat );
+      else
+        contributeResidualJacobianAnisotropic( val , dpsidx , dpsidy , dpsidz , detJ ,
+                                               elem_data.weights[i] , elem_data.values[i] ,
+                                               coeff_k , coeff_source , advection ,
+                                               elem_vec , elem_mat );
     }
 
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {

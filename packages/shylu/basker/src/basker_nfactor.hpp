@@ -3,7 +3,7 @@
 
 //#define BASKER_DEBUG_NFACTOR 
 
-#define BASKER_TIME
+//#define BASKER_TIME
 
 /*Basker Includes*/
 #include "basker_types.hpp"

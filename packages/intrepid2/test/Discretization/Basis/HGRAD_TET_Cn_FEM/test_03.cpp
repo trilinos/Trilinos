@@ -47,12 +47,14 @@
     \author Created by Kyungjoo Kim
 */
 
-#include "Intrepid2_FieldContainer.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Intrepid2_PointTools.hpp"
+
 #include "Shards_CellTopology.hpp"
+
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_PointTools.hpp"
 
 #if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
 #include "Intrepid2_BasisSet.hpp"
@@ -73,6 +75,13 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
+
+  bool verbose = false;
+  int  maxp = INTREPID2_MAX_ORDER;
+  for (int i=0;i<argc;++i) {
+    if ((strcmp(argv[i],"--verbose")           == 0)) { verbose  = atoi(argv[++i]); continue;}
+    if ((strcmp(argv[i],"--maxp")              == 0)) { maxp     = atoi(argv[++i]); continue;}
+  }
 
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -112,32 +121,36 @@ int main(int argc, char *argv[]) {
   // Let's instantiate a basis
   try {
     OrientationTools<value_type>::verboseStreamPtr = outStream.get();
-    for (int test_order=1;test_order<=10;++test_order) {
+    //for (int test_order=1;test_order<=10;++test_order) {
+    for (int test_order=1;test_order<=maxp;++test_order) {
+      // Step 0 : construct basis function set
+      const int order = test_order;
+      
+      BasisSet_HGRAD_TET_Cn_FEM<double,FieldContainer<double> > basis_set(order , POINTTYPE_EQUISPACED);
+      const auto& cell_basis = basis_set.getCellBasis();
+      const auto& face_basis = basis_set.getTriangleBasis();
+      
+      const shards::CellTopology cell_topo = cell_basis.getBaseCellTopology();
+      const shards::CellTopology face_topo = face_basis.getBaseCellTopology();
+      
+      const int nbf_cell = cell_basis.getCardinality();
+      const int nbf_face = face_basis.getCardinality();
+      
+      const int ndim_cell  = cell_topo.getDimension();
+      const int ndim_face  = face_topo.getDimension();
+      
+      const int npts = PointTools::getLatticeSize(face_topo, order, 1);
+      
       for (int test_face=0;test_face<4;++test_face) {
+        // tricky part
+        const bool left_handed = cell_topo.getNodeMap(2, test_face, 1) > cell_topo.getNodeMap(2, test_face, 2);
+
         for (int test_ort=0;test_ort<6;++test_ort) {
           *outStream << "\n"                                            \
                      << "===============================================================================\n" \
                      << "  Order = " << test_order << " , Face = " << test_face << " , Orientation = " << test_ort << "\n" \
                      << "===============================================================================\n";
-
-          // Step 0 : construct basis function set
-          const int order = test_order;
-
-          BasisSet_HGRAD_TET_Cn_FEM<double,FieldContainer<double> > basis_set(order , POINTTYPE_EQUISPACED);
-          const auto& cell_basis = basis_set.getCellBasis();
-          const auto& face_basis = basis_set.getTriangleBasis();
-
-          const shards::CellTopology cell_topo = cell_basis.getBaseCellTopology();
-          const shards::CellTopology face_topo = face_basis.getBaseCellTopology();
-
-          const int nbf_cell = cell_basis.getCardinality();
-          const int nbf_face = face_basis.getCardinality();
-
-          const int ndim_cell  = cell_topo.getDimension();
-          const int ndim_face  = face_topo.getDimension();
-
-          const int npts = PointTools::getLatticeSize(face_topo, order, 1);
-
+          
           // Step 1 : create reference and modified triangle points
 
           // reference triangle points
@@ -147,11 +160,12 @@ int main(int argc, char *argv[]) {
                                              order, 1);
 
           // modified triangle points
+          const int left_ort[] = { 0, 2, 1, 3, 5, 4 };
           FieldContainer<value_type> ort_face_pts(npts, ndim_face);
           OrientationTools<value_type>::mapToModifiedReference(ort_face_pts,
                                                                ref_face_pts,
                                                                face_topo,
-                                                               test_ort);
+                                                               (left_handed ? left_ort[test_ort] : test_ort));
 
 
           // Step 2 : map face points to cell points appropriately
@@ -160,7 +174,7 @@ int main(int argc, char *argv[]) {
           // create orientation object
           int orts[4] = {};
           orts[test_face] = test_ort;
-
+          
           Orientation ort;
           ort.setFaceOrientation(nface, orts);
 
@@ -187,7 +201,8 @@ int main(int argc, char *argv[]) {
               for (int j=0;j<npts;++j)
                 tmp_cell_vals(i, j) = ort_cell_vals(i, j);
 
-            OrientationTools<value_type>::verbose = true;
+            OrientationTools<value_type>::verbose = verbose;
+            OrientationTools<value_type>::reverse = true; // for point matching only
             OrientationTools<value_type>::getModifiedBasisFunctions(ort_cell_vals,
                                                                     tmp_cell_vals,
                                                                     basis_set,
@@ -207,7 +222,7 @@ int main(int argc, char *argv[]) {
                                                                       face_basis);
           }
 
-          // Step 5 : compare the basis functions to line functions
+          // Step 5 : compare the basis functions to face functions
           {
             // strip the range of cell DOFs
             int off_cell = 0;
@@ -261,9 +276,9 @@ int main(int argc, char *argv[]) {
               }
             }
           }
-        }
-      }
-    }
+        } // test ort
+      } // test face
+    } // test order
   }
   catch (std::exception err) {
     std::cout << " Exeption\n";
@@ -275,7 +290,7 @@ int main(int argc, char *argv[]) {
              << "\t Use -D INTREPID_USING_EXPERIMENTAL_HIGH_ORDER in CMAKE_CXX_FLAGS \n";
 #endif
   if (r_val != 0)
-    std::cout << "End Result: TEST FAILED\n";
+    std::cout << "End Result: TEST FAILED, r_val = " << r_val << "\n";
   else
     std::cout << "End Result: TEST PASSED\n";
 

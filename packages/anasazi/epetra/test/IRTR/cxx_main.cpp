@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
       for (int i=0; i<D.MyLength(); ++i) {
         D[i] = 1.0 / D[i];
       }
-      RCP<Epetra_CrsMatrix> ncP = rcp( new Epetra_CrsMatrix(::Copy,K->RowMap(),K->RowMap(),1,true) );
+      RCP<Epetra_CrsMatrix> ncP = rcp( new Epetra_CrsMatrix(Epetra_DataAccess::Copy,K->RowMap(),K->RowMap(),1,true) );
       for (int i=0; i<D.MyLength(); ++i) {
         ncP->InsertMyValues(i,1,&D[i],&i);
       }

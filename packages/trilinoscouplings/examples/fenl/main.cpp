@@ -56,7 +56,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
-        nelem , linear_diffusion_coefficient, cmd.USE_COEFF_SRC ,
+        nelem , linear_diffusion_coefficient, cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
         cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value , response );
   }
   else {
@@ -65,7 +65,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
-        nelem , linear_diffusion_coefficient, cmd.USE_COEFF_SRC ,
+        nelem , linear_diffusion_coefficient, cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
         cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value , response );
   }
 

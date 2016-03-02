@@ -63,7 +63,7 @@ public:
 
   enum { MAX_THREAD_COUNT = 4096 };
 
-#if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+#if ! KOKKOS_USING_EXP_VIEW
 
   struct Pool
   {
@@ -829,6 +829,7 @@ private:
   inline void set_auto_chunk_size() {
 
     int concurrency = traits::execution_space::thread_pool_size(0)/m_team_alloc;
+    if( concurrency==0 ) concurrency=1;
 
     if(m_chunk_size > 0) {
       if(!Impl::is_integral_power_of_two( m_chunk_size ))

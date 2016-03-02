@@ -60,12 +60,12 @@ namespace RBGen {
       // second block == G is already achieved from previous pass
       // we need to put V in the first block
       {
-        Epetra_MultiVector Z1(::View,*workZ_,0,curRank_);
-        Epetra_MultiVector lclV(::View,*V_,0,curRank_);
+        Epetra_MultiVector Z1(Epetra_DataAccess::View,*workZ_,0,curRank_);
+        Epetra_MultiVector lclV(Epetra_DataAccess::View,*V_,0,curRank_);
         Z1 = lclV;
       }
       // get a pointer to [Z1 Z2]
-      lclZ = Teuchos::rcp( new Epetra_MultiVector(::View,*workZ_,0,2*curRank_) );
+      lclZ = Teuchos::rcp( new Epetra_MultiVector(Epetra_DataAccess::View,*workZ_,0,2*curRank_) );
 
       //
       // compute the Householder QR factorization of the current right basis
@@ -114,7 +114,7 @@ namespace RBGen {
       // compute part of A W:  A Z T
       // put this in workAZT_
       // first, A Z (this consumes a pass through A)
-      lclAZT = Teuchos::rcp( new Epetra_MultiVector(::View,*workAZT_,0,2*curRank_) );
+      lclAZT = Teuchos::rcp( new Epetra_MultiVector(Epetra_DataAccess::View,*workAZT_,0,2*curRank_) );
       info = lclAZT->Multiply('N','N',1.0,*A_,*lclZ,0.0);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,
           "RBGen::ISVDMultiSDA::makePass(): Error calling Epetra_MultiVector::Multiply() for A*Z");
@@ -167,8 +167,8 @@ namespace RBGen {
 
       // get view of new vectors
       {
-        const Epetra_MultiVector Aplus(::View,*A_,numProc_,lup);
-        Epetra_MultiVector Unew(::View,*U_,curRank_,lup);
+        const Epetra_MultiVector Aplus(Epetra_DataAccess::View,*A_,numProc_,lup);
+        Epetra_MultiVector Unew(Epetra_DataAccess::View,*U_,curRank_,lup);
         // put them in U
         if (firstPass) {
           // new vectors are just Aplus
@@ -178,7 +178,7 @@ namespace RBGen {
           // new vectors are Aplus - (A Z T) Z_i^T
           // specifically, Aplus - (A Z T) Z(numProc:numProc+lup-1,1:2*oldRank)^T
           Epetra_LocalMap lclmap(lup,0,A_->Comm());
-          Epetra_MultiVector Zi(::View,lclmap,&Z_A[numProc_],Z_LDA,2*oldRank);
+          Epetra_MultiVector Zi(Epetra_DataAccess::View,lclmap,&Z_A[numProc_],Z_LDA,2*oldRank);
           Unew = Aplus;
           int info = Unew.Multiply('N','T',-1.0,*lclAZT,Zi,1.0);
           TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,
@@ -199,7 +199,7 @@ namespace RBGen {
       int TZTV_LDA;
       int info;
       // get pointer to current V
-      Epetra_MultiVector lclV(::View,*V_,0,curRank_);
+      Epetra_MultiVector lclV(Epetra_DataAccess::View,*V_,0,curRank_);
       // create (local) multivector for T Z^T V
       Epetra_LocalMap lclmap(2*oldRank,0,A_->Comm());
       Epetra_MultiVector TZTV(lclmap,curRank_,false);
@@ -229,9 +229,9 @@ namespace RBGen {
     // we will need it on the next pass 
     //
     {
-      Epetra_MultiVector Z2(::View,*workZ_,curRank_,curRank_);
-      Epetra_MultiVector Ulcl(::View,*U_,0,curRank_);
-      Epetra_MultiVector Vlcl(::View,*V_,0,curRank_);
+      Epetra_MultiVector Z2(Epetra_DataAccess::View,*workZ_,curRank_,curRank_);
+      Epetra_MultiVector Ulcl(Epetra_DataAccess::View,*U_,0,curRank_);
+      Epetra_MultiVector Vlcl(Epetra_DataAccess::View,*V_,0,curRank_);
       // compute A^T U
       int info = Z2.Multiply('T','N',1.0,*A_,Ulcl,0.0);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
@@ -266,8 +266,8 @@ namespace RBGen {
       // Check that A V = U Sigma
       // get pointers to current U and V, create workspace for A V - U Sigma
       Epetra_MultiVector work(U_->Map(),curRank_,false), 
-                         curU(::View,*U_,0,curRank_),
-                         curV(::View,*V_,0,curRank_);
+                         curU(Epetra_DataAccess::View,*U_,0,curRank_),
+                         curV(Epetra_DataAccess::View,*V_,0,curRank_);
       // create local MV for sigmas
       Epetra_LocalMap lclmap(curRank_,0,A_->Comm());
       Epetra_MultiVector curS(lclmap,curRank_,true);

@@ -515,8 +515,6 @@ GraphModel<Adapter>::GraphModel(
                 arcp<const gno_t>(vtxIds, 0, nLocalVertices_, false));
 
   // Get the second adjacencies to construct edges of the dual graph.
-  gno_t const *nborIds=NULL;
-  lno_t const *offsets=NULL;
 
   if (!ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
     // KDDKDD TODO Want to do this differently for local and global graphs?
@@ -527,25 +525,30 @@ GraphModel<Adapter>::GraphModel(
     // KDDKDD TODO only local adjacencies.
     // KDDKDD TODO Does it suffice to pass a serial comm for local graph?
     try {
-      get2ndAdjsViewFromAdjs(ia, comm_, primaryEType, secondAdjEType, offsets,
-                             nborIds);
+      get2ndAdjsViewFromAdjs(ia, comm_, primaryEType, secondAdjEType, eOffsets_,
+                             eGids_);
+      nLocalEdges_ = eOffsets_[nLocalVertices_];
     }
     Z2_FORWARD_EXCEPTIONS;
   }
   else {  // avail2ndAdjs
     // Get the edges
     try {
+      gno_t const *nborIds=NULL;
+      lno_t const *offsets=NULL;
+
       ia->get2ndAdjsView(primaryEType, secondAdjEType, offsets, nborIds);
+      // Save the pointers from the input adapter; we do not control the
+      // offsets and nborIds memory
+      nLocalEdges_ = offsets[nLocalVertices_];
+      eGids_ = arcp_const_cast<gno_t>(
+               arcp<const gno_t>(nborIds, 0, nLocalEdges_, false));
+      eOffsets_ = arcp_const_cast<lno_t>(
+                  arcp<const lno_t>(offsets, 0, nLocalVertices_+1, false));
     }
     Z2_FORWARD_EXCEPTIONS;
   }
 
-  // Save the pointers from the input adapter
-  nLocalEdges_ = offsets[nLocalVertices_];
-  eGids_ = arcp_const_cast<gno_t>(
-                arcp<const gno_t>(nborIds, 0, nLocalEdges_, false));
-  eOffsets_ = arcp_const_cast<lno_t>(
-                   arcp<const lno_t>(offsets, 0, nLocalVertices_+1, false));
 
   // Edge weights
   // Cannot specify edge weights if Zoltan2 computes the second adjacencies;

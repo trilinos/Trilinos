@@ -358,7 +358,7 @@ void ModeLaplace2DQ1::makeStiffness(int *elemTopo, int numEle, int *connectivity
                                     int *numNz) {
 
   // Create Epetra_Matrix for stiffness
-  K = new Epetra_CrsMatrix(Copy, *Map, numNz);
+  K = new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, numNz);
 
   int i;
   int localSize = Map->NumMyElements();
@@ -427,7 +427,7 @@ void ModeLaplace2DQ1::makeMass(int *elemTopo, int numEle, int *connectivity,
                                int *numNz) {
 
   // Create Epetra_Matrix for mass
-  M = new Epetra_CrsMatrix(Copy, *Map, numNz);
+  M = new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, numNz);
 
   int i;
   int localSize = Map->NumMyElements();
@@ -579,7 +579,7 @@ int ModeLaplace2DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   }
 
   double *normL2 = vQ + (nMax+1)*localSize;
-  Epetra_MultiVector Qex(View, *Map, vQ, localSize, nMax);
+  Epetra_MultiVector Qex(Epetra_DataAccess::View, *Map, vQ, localSize, nMax);
 
   if ((myPid == 0) && (nMax > 0)) {
     std::cout << std::endl;
@@ -601,8 +601,8 @@ int ModeLaplace2DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
                                   *sin(j*(M_PI/Ly)*y[ii]) );
         }
         // Compute the L2 norm
-        Epetra_MultiVector shapeInt(View, *Map, vQ + nMax*localSize, localSize, 1);
-        Epetra_MultiVector Qi(View, Qex, index[pos], 1);
+        Epetra_MultiVector shapeInt(Epetra_DataAccess::View, *Map, vQ + nMax*localSize, localSize, 1);
+        Epetra_MultiVector Qi(Epetra_DataAccess::View, Qex, index[pos], 1);
         for (ii=0; ii<localSize; ++ii) {
           double iX = 4.0*sqrt(2.0/Lx)*sin(i*(M_PI/Lx)*x[ii])/hx*
                       pow(sin(i*(M_PI/Lx)*0.5*hx)/(i*M_PI/Lx), 2.0);

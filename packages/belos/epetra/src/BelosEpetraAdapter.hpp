@@ -528,8 +528,7 @@ namespace Belos {
       // wants a nonconst int array argument.  It doesn't actually
       // change the entries of the array.
       std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
-      return Teuchos::rcp (new Epetra_MultiVector (Copy, mv, &tmpind[0], index.size()));
-      // return Teuchos::rcp (new Epetra_MultiVector (::Copy, mv, &tmpind[0], index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::Copy, mv, &tmpind[0], index.size()));
     }
 
     static Teuchos::RCP<Epetra_MultiVector>
@@ -553,7 +552,7 @@ namespace Belos {
                              "number of vectors " << inNumVecs << " in the "
                              "input multivector.");
         }
-      return Teuchos::rcp (new Epetra_MultiVector (Copy, mv, index.lbound(), index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::Copy, mv, index.lbound(), index.size()));
     }
 
     static Teuchos::RCP<Epetra_MultiVector>
@@ -614,7 +613,7 @@ namespace Belos {
       // wants a nonconst int array argument.  It doesn't actually
       // change the entries of the array.
       std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
-      return Teuchos::rcp (new Epetra_MultiVector (View, mv, &tmpind[0], index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::View, mv, &tmpind[0], index.size()));
     }
 
     static Teuchos::RCP<Epetra_MultiVector>
@@ -639,7 +638,7 @@ namespace Belos {
                              "number of vectors " << mv.NumVectors() << " in "
                              "the input multivector.");
         }
-      return Teuchos::rcp (new Epetra_MultiVector (View, mv, index.lbound(), index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::View, mv, index.lbound(), index.size()));
     }
 
     static Teuchos::RCP<const Epetra_MultiVector>
@@ -700,7 +699,7 @@ namespace Belos {
       // wants a nonconst int array argument.  It doesn't actually
       // change the entries of the array.
       std::vector<int>& tmpind = const_cast< std::vector<int>& > (index);
-      return Teuchos::rcp (new Epetra_MultiVector (View, mv, &tmpind[0], index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector (Epetra_DataAccess::View, mv, &tmpind[0], index.size()));
     }
 
     static Teuchos::RCP<Epetra_MultiVector>
@@ -725,7 +724,7 @@ namespace Belos {
                              "number of vectors " << mv.NumVectors() << " in "
                              "the input multivector.");
         }
-      return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
+      return Teuchos::rcp (new Epetra_MultiVector(Epetra_DataAccess::View, mv, index.lbound(), index.size()));
     }
 
     static ptrdiff_t GetGlobalLength( const Epetra_MultiVector& mv )
@@ -750,7 +749,7 @@ namespace Belos {
                      Epetra_MultiVector& mv)
     {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
-      Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(Epetra_DataAccess::View, LocalMap, B.values(), B.stride(), B.numCols());
 
       const int info = mv.Multiply ('N', 'N', alpha, A, B_Pvec, beta);
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -809,7 +808,7 @@ namespace Belos {
       int info = 0;
       std::vector<int> tmp_index (1, 0);
       for (int i = 0; i < numvecs; ++i) {
-        Epetra_MultiVector temp_vec (::View, mv, &tmp_index[0], 1);
+        Epetra_MultiVector temp_vec (Epetra_DataAccess::View, mv, &tmp_index[0], 1);
         info = temp_vec.Scale (alpha[i]);
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraMultiVecFailure,
           "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvScale: "
@@ -823,7 +822,7 @@ namespace Belos {
     static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
     {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
-      Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(Epetra_DataAccess::View, LocalMap, B.values(), B.stride(), B.numCols());
 
       const int info = B_Pvec.Multiply ('T', 'N', alpha, A, mv, 0.0);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0, EpetraMultiVecFailure,

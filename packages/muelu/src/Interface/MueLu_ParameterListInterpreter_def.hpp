@@ -154,10 +154,10 @@ namespace MueLu {
 
     } else {
       // The validator doesn't work correctly for non-serializable data (Hint: template parameters), so strip it out
-      ParameterList validList, nonSerialList;
+      ParameterList serialList, nonSerialList;
 
-      ExtractNonSerializableData(paramList, validList, nonSerialList);
-      Validate(validList);
+      ExtractNonSerializableData(paramList, serialList, nonSerialList);
+      Validate(serialList);
       SetEasyParameterList(paramList);
     }
   }
