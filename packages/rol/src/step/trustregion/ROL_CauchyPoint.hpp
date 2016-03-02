@@ -77,7 +77,7 @@ public:
     : TrustRegion<Real>(parlist), pRed_(0.0), alpha_(-1.0), useCGTCP_(false) {
     // Unravel Parameter List
     Real TRsafe = parlist.sublist("Step").sublist("Trust Region").get("Safeguard Size",100.0);
-    eps_        = TRsafe*ROL_EPSILON;
+    eps_        = TRsafe*ROL_EPSILON<Real>();
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
@@ -115,12 +115,12 @@ private:
                   const Vector<Real> &grad,
                   const Real         &gnorm,
                         ProjectedObjective<Real> &pObj ) {
-    Real tol   = std::sqrt(ROL_EPSILON);
+    Real tol   = std::sqrt(ROL_EPSILON<Real>());
     pObj.hessVec(*Hp_,grad.dual(),x,tol);
     Real gBg   = Hp_->dot(grad);
     Real gg    = gnorm*gnorm;
     Real alpha = del/gnorm;
-    if ( gBg > ROL_EPSILON ) {
+    if ( gBg > ROL_EPSILON<Real>() ) {
       alpha = std::min(gg/gBg, del/gnorm);
     }
 
@@ -134,7 +134,7 @@ private:
 
   void cauchypoint_M( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                       const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     // Parameters
     Real mu0   = 1.e-2;
@@ -220,7 +220,7 @@ private:
 
   void cauchypoint_CGT( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                         const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     bool tmax_flag = true;
     int maxit      = 20;
     Real t         = del/gnorm;

@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  RealT errtol = std::sqrt(ROL::ROL_THRESHOLD);
+  RealT errtol = std::sqrt(ROL::ROL_THRESHOLD<RealT>());
 
   int errorFlag  = 0;
 

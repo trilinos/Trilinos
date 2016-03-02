@@ -62,7 +62,7 @@ namespace ROL {
   template<class Real>
   Teuchos::SerialDenseMatrix<int, Real> computeDenseHessian(Objective<Real> &obj, const Vector<Real> &x) {
 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     int dim = x.dimension();
     Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);

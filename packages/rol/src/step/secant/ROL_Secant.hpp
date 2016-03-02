@@ -103,7 +103,7 @@ public:
     gradDiff->axpy(-1.0,gp);
 
     Real sy = s.dot(gradDiff->dual());
-    if (sy > ROL_EPSILON*snorm*snorm) {
+    if (sy > ROL_EPSILON<Real>()*snorm*snorm) {
       if (state_->current < state_->storage-1) {
         state_->current++;                                // Increment Storage
       }

@@ -73,7 +73,7 @@ private:
       val += xwt * ((power==1) ? xpt : std::pow(xpt,power));
     }
     bman_->sumAll(&val,&sum,1);
-    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? 1.0 : moment);
     return 0.5*std::pow((sum-moment)/denom,2);
   }
 
@@ -94,7 +94,7 @@ private:
     }
     bman_->sumAll(&psum,&scale,1);
     scale -= moment;
-    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? 1.0 : moment);
     scale /= std::pow(denom,2);
   }
 
@@ -130,7 +130,7 @@ private:
       hvp2[k] = power * xpow1 * vpt;
     }
     bman_->sumAll(&psum[0],&scale[0],3);
-    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? 1.0 : moment);
     Real denom2 = denom*denom;
     //const Real moment2 = std::pow(moment,2);
     scale1 = scale[0] * power/denom2;

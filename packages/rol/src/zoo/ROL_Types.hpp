@@ -115,22 +115,35 @@ namespace ROL {
       
   /** \brief  Platform-dependent machine epsilon. 
    */
-  static const double ROL_EPSILON   = std::abs(Teuchos::ScalarTraits<double>::eps());
+  template<class Real>
+  inline Real ROL_EPSILON(void) { return std::abs(Teuchos::ScalarTraits<Real>::eps()); }
+  //static const Real ROL_EPSILON<Real>() = std::abs(Teuchos::ScalarTraits<Real>::eps());
     
   /** \brief  Tolerance for various equality tests.
    */
-  static const double ROL_THRESHOLD = 10.0 * ROL_EPSILON;
+  template<class Real>
+  inline Real ROL_THRESHOLD(void) { return 10.0 * ROL_EPSILON<Real>(); }
+  //static const Real ROL_THRESHOLD = 10.0 * ROL_EPSILON<Real>()<Real>;
 
   /** \brief  Platform-dependent maximum double.
    */ 
-  static const double ROL_OVERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmax());
+  template<class Real>
+  inline Real ROL_OVERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmax()); }
+  //static const double ROL_OVERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmax());
 
-  static const double ROL_INF  = 0.1*ROL_OVERFLOW;
-  static const double ROL_NINF = -ROL_INF;
+  template<class Real>
+  inline Real ROL_INF(void) { return 0.1*ROL_OVERFLOW<Real>(); }
+  //static const double ROL_INF<Real>()  = 0.1*ROL_OVERFLOW;
+
+  template<class Real>
+  inline Real ROL_NINF(void) { return -ROL_INF<Real>(); }
+  //static const double ROL_NINF<Real>() = -ROL_INF<Real>();
 
   /** \brief  Platform-dependent minimum double.
    */ 
-  static const double ROL_UNDERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmin());
+  template<class Real>
+  inline Real ROL_UNDERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmin()); }
+  //static const double ROL_UNDERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmin());
 
   struct removeSpecialCharacters {
     bool operator()(char c) {

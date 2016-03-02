@@ -136,7 +136,7 @@ private:
                    Objective<Real> &obj,
                    EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state) {
-    Real zerotol = std::sqrt(ROL_EPSILON);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     // Update objective and constraint.
     obj.update(x,true,algo_state.iter);

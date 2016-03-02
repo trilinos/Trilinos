@@ -96,7 +96,7 @@ private:
      : xnew_(xnew), g_(g),
        x_(Teuchos::rcp(&x,false)), s_(Teuchos::rcp(&s,false)),
        obj_(Teuchos::rcp(&obj,false)), con_(Teuchos::rcp(&con,false)),
-       ftol_(std::sqrt(ROL_EPSILON)) {}
+       ftol_(std::sqrt(ROL_EPSILON<Real>())) {}
     Real value(const Real alpha) {
       updateIterate(alpha);
       obj_->update(*xnew_);

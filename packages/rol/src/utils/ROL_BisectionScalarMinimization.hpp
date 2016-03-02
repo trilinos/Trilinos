@@ -77,7 +77,7 @@ public:
     Real a = A,         fa = f.value(a); nfval++;
     Real b = B,         fb = f.value(b); nfval++;
     Real m = 0.5*(A+B), fm = f.value(m); nfval++;
-    Real u = 0.0, fu = 0.0, v = 0.0, fv = 0.0, gx = ROL_INF;
+    Real u = 0.0, fu = 0.0, v = 0.0, fv = 0.0, gx = ROL_INF<Real>();
     bool deriv = false;
     // Get minimum of all evaluations
     if ( fa <= fm && fa <= fb ) {

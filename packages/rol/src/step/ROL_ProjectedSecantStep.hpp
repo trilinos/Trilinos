@@ -125,7 +125,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s,
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate and store previous step

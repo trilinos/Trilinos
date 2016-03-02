@@ -206,7 +206,7 @@ public:
       hessian_(Teuchos::null), precond_(Teuchos::null), krylov_(Teuchos::null),
       iterCR_(0), flagCR_(0), itol_(0.),
       maxit_(0), iter_(0), flag_(0), stol_(0.), gtol_(0.), scale_(0.),
-      neps_(-ROL_EPSILON), feasible_(false),
+      neps_(-ROL_EPSILON<Real>()), feasible_(false),
       lambda_(Teuchos::null), xlam_(Teuchos::null), x0_(Teuchos::null),
       xbnd_(Teuchos::null), As_(Teuchos::null), xtmp_(Teuchos::null),
       res_(Teuchos::null), Ag_(Teuchos::null), rtmp_(Teuchos::null),
@@ -261,7 +261,7 @@ public:
     // Project x onto constraint set
     con.project(x);
     // Update objective function, get value, and get gradient
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     obj.update(x,true,algo_state.iter);
     algo_state.value = obj.value(x,tol);
     algo_state.nfval++;
@@ -340,7 +340,7 @@ public:
       /********************************************************************/
       // APPLY HESSIAN TO ACTIVE COMPONENTS OF s AND REMOVE INACTIVE
       /********************************************************************/
-      itol_ = std::sqrt(ROL_EPSILON);
+      itol_ = std::sqrt(ROL_EPSILON<Real>());
       if ( useSecantHessVec_ && secant_ != Teuchos::null ) {        // IHAs = H*As
         secant_->applyB(*gtmp_,*As_);
       }
@@ -437,7 +437,7 @@ public:
     feasible_ = con.isFeasible(x);
     algo_state.snorm = s.norm();
     algo_state.iter++;
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     obj.update(x,true,algo_state.iter);
     algo_state.value = obj.value(x,tol);
     algo_state.nfval++;
@@ -552,7 +552,7 @@ public:
 //             Objective<Real> &obj, BoundConstraint<Real> &con) {
 //    Real rnorm  = rhs.norm(); 
 //    Real rtol   = std::min(tol1_,tol2_*rnorm);
-//    itol_ = std::sqrt(ROL_EPSILON);
+//    itol_ = std::sqrt(ROL_EPSILON<Real>());
 //    sol.zero();
 //
 //    Teuchos::RCP<Vector<Real> > res = rhs.clone();

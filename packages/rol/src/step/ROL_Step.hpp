@@ -96,7 +96,7 @@ public:
   virtual void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
                            Objective<Real> &obj, BoundConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     // Initialize state descent direction and gradient storage
     state_->descentVec   = s.clone();
     state_->gradientVec  = g.clone();

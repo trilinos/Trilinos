@@ -121,7 +121,7 @@ private:
     neval = 0;
     // ---> Set algorithmic constants
     const Real c   = 0.5*(3.0 - std::sqrt(5.0));
-    const Real eps = std::sqrt(ROL_EPSILON);
+    const Real eps = std::sqrt(ROL_EPSILON<Real>());
     // ---> Set end points and initial guess
     Real a = A, b = B;
     alpha = a + c*(b-a);
@@ -240,7 +240,7 @@ private:
                          std::abs(avector[i]-alpha)/avector[i]);
       error = std::max(error,error_i);
     }
-    return (error < 3.0*(std::sqrt(ROL_EPSILON)*avector[18]+tol_)) ? true : false;
+    return (error < 3.0*(std::sqrt(ROL_EPSILON<Real>())*avector[18]+tol_)) ? true : false;
   }
 
 };

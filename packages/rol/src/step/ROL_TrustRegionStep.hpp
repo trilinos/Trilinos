@@ -194,7 +194,7 @@ private:
       algo_state.ngrad++;
     }
     else {
-      Real gtol = std::sqrt(ROL_EPSILON);
+      Real gtol = std::sqrt(ROL_EPSILON<Real>());
       obj.gradient(*(state->gradientVec),x,gtol);
       algo_state.ngrad++;
       algo_state.gnorm = computeCriticalityMeasure(*(state->gradientVec),x,con);
@@ -353,8 +353,8 @@ public:
 
     trustRegion_->initialize(x,s,g);
 
-    Real htol = std::sqrt(ROL_EPSILON);
-    Real ftol = 0.1*ROL_OVERFLOW; 
+    Real htol = std::sqrt(ROL_EPSILON<Real>());
+    Real ftol = 0.1*ROL_OVERFLOW<Real>(); 
 
     step_state->descentVec  = s.clone();
     step_state->gradientVec = g.clone();
@@ -397,7 +397,7 @@ public:
       }
       Real gBg = Bg->dot(*(step_state->gradientVec));
       Real alpha = 1.0;
-      if ( gBg > ROL_EPSILON ) {
+      if ( gBg > ROL_EPSILON<Real>() ) {
         alpha = algo_state.gnorm*algo_state.gnorm/gBg;
       }
       // Evaluate the objective function at the Cauchy point
@@ -416,14 +416,14 @@ public:
       // Perform cubic interpolation to determine initial trust region radius
       Real gs = cp->dot((step_state->gradientVec)->dual());
       Real a  = fnew - algo_state.value - gs - 0.5*alpha*alpha*gBg;
-      if ( std::abs(a) < ROL_EPSILON ) { 
+      if ( std::abs(a) < ROL_EPSILON<Real>() ) { 
         // a = 0 implies the objective is quadratic in the negative gradient direction
         step_state->searchSize = std::min(alpha*algo_state.gnorm,delMax_);
       }
       else {
         Real b  = 0.5*alpha*alpha*gBg;
         Real c  = gs;
-        if ( b*b-3.0*a*c > ROL_EPSILON ) {
+        if ( b*b-3.0*a*c > ROL_EPSILON<Real>() ) {
           // There is at least one critical point
           Real t1 = (-b-std::sqrt(b*b-3.0*a*c))/(3.0*a);
           Real t2 = (-b+std::sqrt(b*b-3.0*a*c))/(3.0*a);
@@ -492,7 +492,7 @@ public:
                AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     Real eps = 0.0;
     if ( con.isActivated() ) {

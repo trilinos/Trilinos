@@ -55,7 +55,7 @@ void EqualityConstraint<Real>::applyJacobian(Vector<Real> &jv,
 
   // By default we compute the finite-difference approximation.
 
-  Real ctol = std::sqrt(ROL_EPSILON);
+  Real ctol = std::sqrt(ROL_EPSILON<Real>());
 
   // Get step length.
   Real h = std::max(1.0,x.norm()/v.norm())*tol;
@@ -104,7 +104,7 @@ void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
   // This requires the implementation of a vector-space basis for the optimization variables.
   // The default implementation requires that the constraint space is equal to its dual.
 
-  Real ctol = std::sqrt(ROL_EPSILON);
+  Real ctol = std::sqrt(ROL_EPSILON<Real>());
 
   Real h = 0.0;
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -136,7 +136,7 @@ void EqualityConstraint<Real>::applyHessian(Vector<Real> &huv,
                                             const Vector<Real> &v,
                                             const Vector<Real> &x,
                                             Real &tol ) {
-  Real jtol = std::sqrt(ROL_EPSILON);
+  Real jtol = std::sqrt(ROL_EPSILON<Real>());
 
   // Get step length.
   Real h = std::max(1.0,x.norm()/v.norm())*tol;
@@ -374,7 +374,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
   using Finite_Difference_Arrays::shifts;
   using Finite_Difference_Arrays::weights;
 
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
 
   int numSteps = steps.size();
   int numVals = 4;
@@ -471,7 +471,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
                                                                                     const bool printToStream,
                                                                                     std::ostream & outStream,
                                                                                     const int numSteps) {
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
 
   int numVals = 4;
   std::vector<Real> tmp(numVals);
@@ -565,7 +565,7 @@ Real EqualityConstraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real
                                                                const Vector<Real> &dualv,
                                                                const bool printToStream,
                                                                std::ostream & outStream) {
-  Real tol = ROL_EPSILON;
+  Real tol = ROL_EPSILON<Real>();
 
   Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
   Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
@@ -584,7 +584,7 @@ Real EqualityConstraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real
     hist << "\nTest Consistency of Jacobian and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
          << diff << "\n";
     hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
-    hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+    hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW<Real>()) << "\n";
     outStream << hist.str();
   }
   return diff;
@@ -621,7 +621,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
   using Finite_Difference_Arrays::shifts;
   using Finite_Difference_Arrays::weights;
 
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
 
   int numSteps = steps.size();
   int numVals = 4;

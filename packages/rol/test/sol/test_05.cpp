@@ -62,6 +62,7 @@
 #include "test_05.hpp"
 
 typedef double RealT;
+
 typedef H1VectorPrimal<RealT> PrimalStateVector;
 typedef H1VectorDual<RealT> DualStateVector;
 typedef L2VectorPrimal<RealT> PrimalControlVector;
@@ -139,7 +140,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
-    RealT tol = std::sqrt(ROL::ROL_EPSILON);
+    RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     for (int i = sampler->start(); i < sampler->numMySamples(); i++) {
 //      *outStream << "(" << sampler->getMyPoint(i)[0] << ", "
 //                        << sampler->getMyPoint(i)[1] << ", "

@@ -122,7 +122,7 @@ public:
       aggLinErrNew_(0.), aggLinErrOld_(0.), aggDistMeasNew_(0.),
       T_(0.), tol_(0.), m1_(0.), m2_(0.), m3_(0.), nu_(0.),
       ls_maxit_(0), first_print_(true), isConvex_(false),
-      ftol_(ROL_EPSILON) {
+      ftol_(ROL_EPSILON<Real>()) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->searchSize = parlist.sublist("Step").sublist("Bundle").get("Initial Trust-Region Parameter", 1.e3);
     T_   = parlist.sublist("Step").sublist("Bundle").get("Maximum Trust-Region Parameter",       1.e8); 

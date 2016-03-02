@@ -41,68 +41,70 @@
 // ************************************************************************
 // @HEADER
 
-/** \brief An example equality constrained problem combining ROL and Sacado 
-           This is the same problem as found in rol/examples/simple-eq-constr
-           with the objective gradient, objective Hessian direction, constraint 
-           Jacobian direction, constraint adjoint Jacobian direction, and
-           constraint adjoint Hessian direction computed via automatic 
-           differentiation with Sacado.  
+#ifndef ROL_QUADRATIC_OBJECTIVE_H
+#define ROL_QUADRATIC_OBJECTIVE_H
 
-    \author Created by G. von Winckel
-**/
+#include "ROL_Objective.hpp"
+#include "ROL_Vector.hpp"
+#include "Teuchos_RCP.hpp"
 
+/** @ingroup func_group
+    \class ROL::QuadraticObjective
+    \brief Provides the interface to evaluate quadratic objective functions.
 
+    This class implements the quadratic objective function
+    \f[
+       f(x) = \langle Hx, x\rangle_{\mathcal{X}^*,\mathcal{X}}
+            + \langle c,  x\rangle_{\mathcal{X}^*,\mathcal{X}}
+    \f]
+    for fixed \f$H\in\mathcal{L}(\mathcal{X},\mathcal{X}^*)\f$ and
+    \f$c\in\mathcal{X}^*\f$.
 
-#include "ROL_StdVector.hpp"
-
-using namespace ROL;
-
-template<class Real>
-class Zakharov {
-
-    public:
-
-        template<class ScalarT>
-        ScalarT value(const Vector<ScalarT> &x, Real &tol );
-
-};
+    ---
+*/
 
 
+namespace ROL {
 
-/** \brief A Sacado-accessible version of the Zakharov function to differentiate
-    \f[f(\mathbf{x}) = \mathbf{x}^\top\mathbf{x} 
-                     + \frac{1}{4}(\mathbf{k}^\top \mathbf{x})^2 +
-                       \frac{1}{16}(\mathbf{k}^\top \mathbf{x})^4 \f]
-    Where \f$\mathbf{k}=(1,\cdots,n)\f$
+template <class Real>
+class QuadraticObjective : public Objective<Real> {
+private:
+  const Teuchos::RCP<const LinearOperator<Real> > op_;
+  const Teuchos::RCP<const Vector<Real> > vec__;
+  Teuchos::RCP<Vector<Real> > tmp_;
 
-    @param[in] x is the optimization vector 
+public:
+  QuadraticObjective(const Teuchos::RCP<const LinearOperator<Real> > &op,
+                  const Teuchos::RCP<const Vector<Real> > &vec)
+    : op_(op), vec_(vec) {
+    tmp_ = vec_->dual().clone();
+  }
 
-    Returns the value of the objective function.  
-*/ 
-template<class Real>
-template<class ScalarT>
-ScalarT Zakharov<Real>::value(const Vector<ScalarT>& x, Real &tol) {
+  void update(const Vector<Real> &x, bool flag = true, int iter = -1) {
+    op_->update(x,flag,iter);
+  }
 
-    using Teuchos::RCP;  using Teuchos::dyn_cast;
+  Real value( const Vector<Real> &x, Real &tol ) {
+    op_->apply(*tmp_,x,tol);
+    tmp_->scale(0.5); tmp_->plus(*vec_);
+    return x.dot(tmp_->dual());
+  }
 
-    RCP<const std::vector<ScalarT> > xp = (dyn_cast<const StdVector<ScalarT> >(x)).getVector();
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+    op_->apply(*tmp_,x,tol);
+    g.set(*tmp_); g.plus(*vec_);
+  }
 
-    int n = xp->size();
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    op_->apply(hv,v,tol);
+  }
 
-    ScalarT xdotx = 0;
-    ScalarT kdotx = 0;
-    ScalarT J = 0;
-   
-    // Compute dot products 
-    for(int i=0; i<n; ++i) {
-        xdotx += pow((*xp)[i],2);       // (k,x)
-        kdotx += Real(i+1)*(*xp)[i];  // (x,x)
-    }
+  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    op_->applyInverse(hv,v,tol);
+  }
 
-    // Sum terms in objective function
-    J = xdotx + pow(kdotx,2)/4.0 + pow(kdotx,4)/16.0;
-    
-    return J;
-}
+}; // class QuadraticObjective
 
+} // namespace ROL
 
+#endif

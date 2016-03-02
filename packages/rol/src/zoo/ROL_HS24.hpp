@@ -183,7 +183,7 @@ Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint_HS24( void ) {
   Teuchos::RCP<std::vector<Real> > lp = Teuchos::rcp( new std::vector<Real>(2,0.0) );
   
   // No upper bound
-  Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp( new std::vector<Real>(2,ROL_INF) );
+  Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp( new std::vector<Real>(2,ROL_INF<Real>()) );
  
   Teuchos::RCP<Vector<Real> > l = Teuchos::rcp( new StdVector<Real>(lp) );
   Teuchos::RCP<Vector<Real> > u = Teuchos::rcp( new StdVector<Real>(up) );

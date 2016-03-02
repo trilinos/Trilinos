@@ -162,10 +162,10 @@ void getHS2( Teuchos::RCP<Objective<Real> >       &obj,
 
   // Instantiate BoundConstraint
   Teuchos::RCP<std::vector<Real> > lp = Teuchos::rcp(new std::vector<Real>(n,0.0));
-  (*lp)[0] = ROL_NINF; (*lp)[1] = 1.5;
+  (*lp)[0] = ROL_NINF<Real>(); (*lp)[1] = 1.5;
   Teuchos::RCP<Vector<Real> > l = Teuchos::rcp( new StdVector<Real>(lp) );
   Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp(new std::vector<Real>(n,0.0));
-  (*up)[0] = ROL_INF; (*up)[1] = ROL_INF; 
+  (*up)[0] = ROL_INF<Real>(); (*up)[1] = ROL_INF<Real>(); 
   Teuchos::RCP<Vector<Real> > u = Teuchos::rcp( new StdVector<Real>(up) );
   con = Teuchos::rcp(new BoundConstraint<Real>(l,u));
 }

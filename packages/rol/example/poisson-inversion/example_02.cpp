@@ -279,7 +279,7 @@ public:
     using Teuchos::RCP;
 
     if ( flag && useCorrection_ ) {
-      Real tol = std::sqrt(ROL::ROL_EPSILON);
+      Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
       H_.shape(nz_,nz_); 
       RCP<V> e = z.clone();
       RCP<V> h = z.clone();
@@ -296,13 +296,13 @@ public:
       Real inertia = (eigenvals[0])[0];
       Real correction = 0.0;
       if ( inertia <= 0.0 ) {
-        correction = (1.0+std::sqrt(ROL::ROL_EPSILON))*std::abs(inertia);
+        correction = (1.0+std::sqrt(ROL::ROL_EPSILON<Real>()))*std::abs(inertia);
         if ( inertia == 0.0 ) {
           uint cnt = 0;
           while ( eigenvals[0][cnt] == 0.0 ) {
             cnt++;
           }
-          correction = std::sqrt(ROL::ROL_EPSILON)*eigenvals[0][cnt];
+          correction = std::sqrt(ROL::ROL_EPSILON<Real>())*eigenvals[0][cnt];
           if ( cnt == nz_-1 ) {
             correction = 1.0;
           }
@@ -572,7 +572,7 @@ int main(int argc, char *argv[]) {
     diff->axpy(-1.0,y);
     RealT error = diff->norm()/std::sqrt((RealT)dim-1.0);
     std::cout << "\nError between PDAS solution and TR solution is " << error << "\n";
-    errorFlag = ((error > 1.e2*std::sqrt(ROL::ROL_EPSILON)) ? 1 : 0);
+    errorFlag = ((error > 1.e2*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
 
   }
   catch (std::logic_error err) {

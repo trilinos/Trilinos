@@ -97,7 +97,7 @@ public:
 
   // Constructor
   TrustRegion( Teuchos::ParameterList & parlist )
-    : ftol_old_(ROL_OVERFLOW), cnt_(0), verbosity_(0) {
+    : ftol_old_(ROL_OVERFLOW<Real>()), cnt_(0), verbosity_(0) {
     // Unravel Parameter List
     // Trust-Region Parameters
     Teuchos::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
@@ -109,7 +109,7 @@ public:
     gamma1_ = list.get("Radius Shrinking Rate (Positive rho)",0.25);
     gamma2_ = list.get("Radius Growing Rate",2.5);
     TRsafe_ = list.get("Safeguard Size",100.0);
-    eps_    = TRsafe_*ROL_EPSILON;
+    eps_    = TRsafe_*ROL_EPSILON<Real>();
 
     // Inexactness Information
     useInexact_.clear();
@@ -141,7 +141,7 @@ public:
                  const Vector<Real>      &g, 
                        int               iter,
                        ProjectedObjective<Real> &pObj ) { 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     // Compute updated iterate vector
     xupdate_->set(x);
@@ -155,9 +155,9 @@ public:
       if ( !(cnt_%updateIter_) && (cnt_ != 0) ) {
         force_ *= forceFactor_;
       }
-      Real c = scale_*std::max(1.e-2,std::min(1.0,1.e4*std::max(pRed_,std::sqrt(ROL_EPSILON))));
+      Real c = scale_*std::max(1.e-2,std::min(1.0,1.e4*std::max(pRed_,std::sqrt(ROL_EPSILON<Real>()))));
       ftol   = c*std::pow(std::min(eta1_,1.0-eta2_)
-                *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON)),force_),1.0/omega_);
+                *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON<Real>())),force_),1.0/omega_);
       if ( ftol_old_ > ftol || cnt_ == 0 ) {
         ftol_old_ = ftol;
         fold1 = pObj.value(x,ftol_old_);
@@ -322,7 +322,7 @@ public:
       xtmp->set(x);
       xtmp->axpy(1.0,*stmp);
       // Compute model components for alpha = 1.0
-      Real tol   = std::sqrt(ROL_EPSILON);
+      Real tol   = std::sqrt(ROL_EPSILON<Real>());
       Teuchos::RCP<Vector<Real> > Bs = x.clone();
       pObj.hessVec(*Bs,*stmp,x,tol);
       Real sBs   = Bs->dot(*stmp);

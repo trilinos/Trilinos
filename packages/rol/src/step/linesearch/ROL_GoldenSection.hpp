@@ -80,7 +80,7 @@ public:
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
             Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     ls_neval = 0; 
     ls_ngrad = 0;
     // Get initial line search parameter
@@ -200,7 +200,7 @@ public:
     alpha = t;
     fval  = val_t;  
 
-    if ( alpha < ROL_EPSILON ) {
+    if ( alpha < ROL_EPSILON<Real>() ) {
       btls_->run(alpha,fval,ls_neval,ls_ngrad,gs,s,x,obj,con);
     }
   }

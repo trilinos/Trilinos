@@ -228,7 +228,7 @@ public:
     // Update expected value
     ValueSampler_->sumAll(&myval,&val,1);
     // Return HMCR value
-    if (std::abs(val) < ROL_EPSILON) {
+    if (std::abs(val) < ROL_EPSILON<Real>()) {
       return xvar;
     }
     return xvar + ((order_ == 1.0) ? val
@@ -270,7 +270,7 @@ public:
     Real gvar = 1.0; gradient0_->zero();
     // Combine partial sums
     GradientSampler_->sumAll(&myval[0],&val[0],2);
-    if (std::abs(val[0]) >= ROL_EPSILON) {
+    if (std::abs(val[0]) >= ROL_EPSILON<Real>()) {
       GradientSampler_->sumAll(*sumGrad0_,*gradient0_);
       // Compute VaR gradient and HMCR gradient
       Real norm = ((order_ == 1.0) ? 1.0
@@ -339,7 +339,7 @@ public:
     }
     Real hvar = 0.0; hessvec_->zero();
     HessianSampler_->sumAll(&myval[0],&val[0],5);
-    if (std::abs(val[0]) >= ROL_EPSILON) {
+    if (std::abs(val[0]) >= ROL_EPSILON<Real>()) {
     // Compile partial sums
       HessianSampler_->sumAll(*sumGrad0_,*gradient0_);
       HessianSampler_->sumAll(*sumGrad1_,*gradient1_);

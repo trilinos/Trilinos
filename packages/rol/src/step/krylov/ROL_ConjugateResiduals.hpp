@@ -85,7 +85,7 @@ public:
     // Initialize
     Real rnorm = b.norm(); 
     Real rtol = std::min(Krylov<Real>::getAbsoluteTolerance(),Krylov<Real>::getRelativeTolerance()*rnorm);
-    Real itol = std::sqrt(ROL_EPSILON);
+    Real itol = std::sqrt(ROL_EPSILON<Real>());
     x.zero(); 
 
     // Apply preconditioner to residual
@@ -116,7 +116,7 @@ public:
     Real gHg   = r_->dot(v_->dual()); 
 
     for (iter = 0; iter < (int)Krylov<Real>::getMaximumIteration(); iter++) {
-      itol = std::sqrt(ROL_EPSILON);
+      itol = std::sqrt(ROL_EPSILON<Real>());
       M.applyInverse(*MAp_, *Ap_, itol);
       kappa = MAp_->dot(Ap_->dual());
       //if ( gHg <= 0.0 || kappa <= 0.0 ) { 
