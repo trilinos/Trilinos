@@ -54,13 +54,12 @@ public:
       m_topologies(topologies),
       m_detector(detector) {}
 
-    SparseGraph extract_coincident_sides();
+    void extract_coincident_sides(SparseGraph& extractedCoincidentSides);
     void append_extracted_coincident_sides(const std::vector<impl::LocalId> &elemIds,
                                            SparseGraph &coincidentEdges);
 private:
     CoincidentSideExtractor();
 
-    void extract_coincident_sides(SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector);
     void extract_coincident_sides_for_element(LocalId elemId, GraphEdgeVector &coincidentSides, const CoincidenceDetector &detector);
     void extract_coincident_sides_for_element(LocalId elemId, SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector);
     void delete_edges(const GraphEdgeVector& edgesToDelete);

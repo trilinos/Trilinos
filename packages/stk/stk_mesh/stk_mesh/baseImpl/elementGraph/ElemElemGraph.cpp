@@ -99,7 +99,7 @@ void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids()
     impl::BulkDataCoincidenceDetector detector(m_bulk_data, m_graph, m_element_topologies, m_local_id_to_element_entity, m_parallelInfoForGraphEdges);
     impl::CoincidentSideExtractor extractor(m_graph, m_element_topologies, detector);
     impl::BulkDataIdMapper idMapper(m_bulk_data, m_local_id_to_element_entity, m_entity_to_local_id);
-    m_coincidentGraph = extractor.extract_coincident_sides();
+    extractor.extract_coincident_sides(m_coincidentGraph);
     make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(m_graph,
                                            m_parallelInfoForGraphEdges,
                                            m_coincidentGraph,

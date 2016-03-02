@@ -70,7 +70,8 @@ void test_extracting_coincident_hex8s(stk::mesh::Graph &graph, const std::vector
     std::vector<stk::topology> topologies = {stk::topology::HEX_8, stk::topology::HEX_8};
     stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
     stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
-    stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
+    stk::mesh::impl::SparseGraph extractedCoincidentElements;
+    extractor.extract_coincident_sides(extractedCoincidentElements);
 
     expect_num_edges_remaining_per_element(graph, {0u, 0u});
     expect_coincident_elements_edges_were_extracted(extractedCoincidentElements, elemDescs[0]);
@@ -97,7 +98,8 @@ void test_extracting_coincident_hex8s_with_adjacent_hex(stk::mesh::Graph &graph)
     std::vector<stk::topology> topologies = {stk::topology::HEX_8, stk::topology::HEX_8, stk::topology::HEX_8};
     stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
     stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
-    stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
+    stk::mesh::impl::SparseGraph extractedCoincidentElements;
+    extractor.extract_coincident_sides(extractedCoincidentElements);
     expect_coincident_edges_removed_others_remain(graph, extractedCoincidentElements);
 }
 
@@ -189,7 +191,8 @@ TEST(CoincidentElements, CorrectFaceId)
         //MockCoincidenceDetector detector;
         stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
         stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
-        stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
+        stk::mesh::impl::SparseGraph extractedCoincidentElements;
+        extractor.extract_coincident_sides(extractedCoincidentElements);
 
         std::vector<stk::mesh::EntityId> globalIds = {1, 2};
         if(stk::parallel_machine_rank(comm) == 1)

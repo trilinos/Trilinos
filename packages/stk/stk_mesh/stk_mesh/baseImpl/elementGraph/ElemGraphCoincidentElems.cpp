@@ -81,19 +81,11 @@ void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemI
     //detector.report_coincident_sides(std::cerr, coincidentSides);
 }
 
-void CoincidentSideExtractor::extract_coincident_sides(SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector)
+void CoincidentSideExtractor::extract_coincident_sides(SparseGraph& extractedCoincidentSides)
 {
     for(size_t elemId = 0; elemId < m_graph.get_num_elements_in_graph(); elemId++)
-        extract_coincident_sides_for_element(elemId, extractedCoincidentSides, detector);
+        extract_coincident_sides_for_element(elemId, extractedCoincidentSides, m_detector);
 }
-
-SparseGraph CoincidentSideExtractor::extract_coincident_sides()
-{
-    SparseGraph extractedCoincidentSides;
-    extract_coincident_sides(extractedCoincidentSides, m_detector);
-    return extractedCoincidentSides;
-}
-
 
 typedef std::map<stk::mesh::impl::ElementSidePair, std::vector<stk::mesh::GraphEdge>> ElemSideAndEdges;
 
