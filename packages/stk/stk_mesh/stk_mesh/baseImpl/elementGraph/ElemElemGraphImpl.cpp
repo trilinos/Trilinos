@@ -458,8 +458,8 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
         comm.send_buffer(sharing_proc).pack<bool>(isInPart);
         comm.send_buffer(sharing_proc).pack<bool>(isAir);
-        std::vector<PartOrdinal> elementBlockPartOrdinals = stk::mesh::impl::get_element_block_part_ordinals(localEntity, bulkData);
-        impl::pack_vector_to_proc(comm, elementBlockPartOrdinals, sharing_proc);
+//        std::vector<PartOrdinal> elementBlockPartOrdinals = stk::mesh::impl::get_element_block_part_ordinals(localEntity, bulkData);
+//        impl::pack_vector_to_proc(comm, elementBlockPartOrdinals, sharing_proc);
         comm.send_buffer(sharing_proc).pack<stk::topology>(bulkData.bucket(localEntity).topology());
         comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
         for(size_t i=0; i<numNodes; ++i)

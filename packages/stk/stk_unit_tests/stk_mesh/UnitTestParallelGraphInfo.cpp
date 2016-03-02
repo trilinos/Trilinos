@@ -7,7 +7,7 @@
 #include <stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
-
+#include <stk_mesh/baseImpl/elementGraph/ParallelInfoForGraph.hpp>
 
 class ElemElemGraphTester : public stk::mesh::ElemElemGraph
 {
@@ -84,90 +84,6 @@ void update_parallel_graph_for_air_selector(ElemElemGraphTester& graph, const st
     pack_data_for_air(comm, graph, bulkData, air);
     comm.communicate();
     unpack_and_update_air(comm, bulkData, graph);
-}
-
-void pack_edge(stk::CommSparse &comm, ElemElemGraphTester& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& edge, int other_proc)
-{
-    stk::mesh::EntityId id1 = bulkData.identifier(graph.get_entity(edge.elem1));
-    unsigned side1 = edge.side1;
-    stk::mesh::EntityId id2 = -edge.elem2;
-    unsigned side2 = edge.side2;
-    comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(id1);
-    comm.send_buffer(other_proc).pack<unsigned>(side1);
-    comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(id2);
-    comm.send_buffer(other_proc).pack<unsigned>(side2);
-}
-
-void pack_data_for_part_ordinals(stk::CommSparse &comm, ElemElemGraphTester& graph, const stk::mesh::BulkData& bulkData)
-{
-    stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_info();
-    for(const auto& item : parallel_info)
-    {
-        const stk::mesh::GraphEdge &edge = item.first;
-        const stk::mesh::impl::ParallelInfo &pinfo = item.second;
-        stk::mesh::Entity local_element = graph.get_entity(edge.elem1);
-        std::vector<stk::mesh::PartOrdinal> partOrdinals = stk::mesh::impl::get_element_block_part_ordinals(local_element, bulkData);
-
-        bool didPartChangesOccur = true;
-
-        if(didPartChangesOccur)
-        {
-            pack_edge(comm, graph, bulkData, edge, pinfo.get_proc_rank_of_neighbor());
-
-            comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<size_t>(partOrdinals.size());
-            for(stk::mesh::PartOrdinal partOrdinal : partOrdinals)
-                comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<stk::mesh::PartOrdinal>(partOrdinal);
-        }
-    }
-}
-
-stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemElemGraphTester& graph, int proc_id)
-{
-    stk::mesh::EntityId id1 = 0, id2 = 0;
-    unsigned side1 = 0, side2 = 0;
-    comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(id1);
-    comm.recv_buffer(proc_id).unpack<unsigned>(side1);
-    comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(id2);
-    comm.recv_buffer(proc_id).unpack<unsigned>(side2);
-
-    stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, id2);
-    stk::ThrowRequireWithSierraHelpMsg(bulkData.is_valid(element));
-
-    stk::mesh::impl::LocalId localId2 = graph.get_local_element_id(element);
-    stk::mesh::GraphEdge edge(localId2, side2, -id1, side1);
-    return edge;
-}
-
-void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraphTester& graph)
-{
-    for(int i=0;i<bulkData.parallel_size();++i)
-    {
-        while(comm.recv_buffer(i).remaining())
-        {
-            stk::mesh::GraphEdge edge = unpack_edge(comm, bulkData, graph, i);
-
-            size_t num_ordinals = 0;
-            comm.recv_buffer(i).unpack<size_t>(num_ordinals);
-            std::vector<stk::mesh::PartOrdinal> partOrdinals(num_ordinals);
-            for(stk::mesh::PartOrdinal &partOrdinal : partOrdinals)
-                comm.recv_buffer(i).unpack<stk::mesh::PartOrdinal>(partOrdinal);
-
-            stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_info();
-            auto iter = parallel_info.find(edge);
-            stk::ThrowRequireWithSierraHelpMsg(iter!=parallel_info.end());
-            iter->second.set_part_ordinals(partOrdinals);
-        }
-    }
-}
-
-void update_parallel_graph_for_part_ordinals(ElemElemGraphTester& graph, const stk::mesh::BulkData& bulkData)
-{
-    stk::CommSparse comm(bulkData.parallel());
-    pack_data_for_part_ordinals(comm, graph, bulkData);
-    comm.allocate_buffers();
-    pack_data_for_part_ordinals(comm, graph, bulkData);
-    comm.communicate();
-    unpack_and_update_part_ordinals(comm, bulkData, graph);
 }
 
 class ParallelGraphUpdate : public stk::unit_test_util::MeshFixture
@@ -306,13 +222,13 @@ TEST_F(ParallelGraphUpdate, updateAirSelector)
 
         move_elements_into_air_and_verify();
         update_parallel_graph_for_air_selector(graph, get_bulk(), get_air()); // Note: would work for skinned selector also!
-        update_parallel_graph_for_part_ordinals(graph, get_bulk());
+        stk::mesh::impl::update_parallel_graph_for_part_ordinals(graph, get_bulk());
         verify_air_in_parallel_graph(graph.get_parallel_info());
         verify_air_part_ordinal_is_in_parallel_graph(graph.get_parallel_info());
 
         move_elements_out_of_air();
         update_parallel_graph_for_air_selector(graph, get_bulk(), get_air());
-        update_parallel_graph_for_part_ordinals(graph, get_bulk());
+        stk::mesh::impl::update_parallel_graph_for_part_ordinals(graph, get_bulk());
         verify_no_air_in_parallel_graph(graph.get_parallel_info());
         verify_no_air_part_ordinal_in_parallel_graph(graph.get_parallel_info());
     }

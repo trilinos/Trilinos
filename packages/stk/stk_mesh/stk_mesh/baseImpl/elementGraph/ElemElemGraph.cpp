@@ -541,7 +541,7 @@ void ElemElemGraph::communicate_remote_edges_for_pre_existing_graph_nodes(const 
                 std::vector<PartOrdinal> part_ords;
                 comm.recv_buffer(proc_id).unpack<bool>(isInPart);
                 comm.recv_buffer(proc_id).unpack<bool>(isInAir);
-                unpack_into_vector_of_data(comm, part_ords, proc_id);
+//                unpack_into_vector_of_data(comm, part_ords, proc_id);
                 remoteEdgeInfo.set_body_to_be_skinned(isInPart);
                 remoteEdgeInfo.set_is_in_air(isInAir);
                 remoteEdgeInfo.set_part_ordinals(part_ords);

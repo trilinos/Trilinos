@@ -3,14 +3,16 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/util/SortAndUnique.hpp>
-#include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/FaceCreator.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
+#include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ParallelInfoForGraph.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
+
 
 namespace stk
 {
@@ -18,7 +20,7 @@ namespace mesh
 {
 
 
-SkinMeshUtil::SkinMeshUtil(const ElemElemGraph& elemElemGraph,
+SkinMeshUtil::SkinMeshUtil(ElemElemGraph& elemElemGraph,
                            const stk::mesh::PartVector& skinParts,
                            const stk::mesh::Selector& inputSkinSelector,
                            const stk::mesh::Selector* inputAirSelector)
@@ -193,8 +195,9 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
 {
     std::vector<SideSetEntry> skinnedSideSet;
     const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
-    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+    stk::mesh::impl::update_parallel_graph_for_part_ordinals(eeGraph, bulkData);
 
+    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     for(const stk::mesh::Bucket* bucket : buckets)
     {
         for(size_t i=0;i<bucket->size();++i)

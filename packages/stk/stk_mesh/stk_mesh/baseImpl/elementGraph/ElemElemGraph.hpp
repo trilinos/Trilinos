@@ -134,6 +134,7 @@ public:
         return m_graph;
     }
 
+    stk::mesh::ParallelInfoForGraphEdges& get_parallel_graph() { return m_parallelInfoForGraphEdges; }
     const stk::mesh::ParallelInfoForGraphEdges& get_parallel_graph() const { return m_parallelInfoForGraphEdges; }
 
     void create_side_entities(const std::vector<int> &exposedSides,
@@ -141,6 +142,8 @@ public:
                               const stk::mesh::PartVector& skin_parts,
                               std::vector<stk::mesh::sharing_info> &shared_modified);
     void write_graph(std::ostream& out) const;
+
+    stk::mesh::Entity get_entity(stk::mesh::impl::LocalId local_id) const { return m_local_id_to_element_entity[local_id]; }
 
 protected:
     void fill_graph();
