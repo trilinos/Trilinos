@@ -54,7 +54,7 @@ namespace mesh
 
 ///////////////////////////////////////////////////////////////////////////
 
-void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, stk::mesh::Selector* air)
+void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, stk::mesh::Selector* air)
 {
     ElemElemGraph elemElemGraph(bulkData, blocksToSkin, air);
     SkinMeshUtil skinMesh(elemElemGraph, partToPutSidesInto, blocksToSkin, air);
@@ -63,10 +63,10 @@ void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToS
     FaceCreator(bulkData, elemElemGraph).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
 }
 
-void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto)
+void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto)
 {
     stk::mesh::Selector *air = nullptr;
-    create_exposed_boundary_sides(bulkData, blocksToSkin, partToPutSidesInto, air);
+    create_exposed_block_boundary_sides(bulkData, blocksToSkin, partToPutSidesInto, air);
 }
 
 void create_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto)
@@ -179,7 +179,7 @@ stk::mesh::EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData,
 }
 
 
-bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart, std::ostream &stream)
+bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart, std::ostream &stream)
 {
     ElemElemGraph elemElemGraph(bulkData, skinnedBlock);
     SkinMeshUtil skinMesh(elemElemGraph, {&skinnedPart}, skinnedBlock);
@@ -190,9 +190,9 @@ bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlo
     return is_sideset_equivalent_to_skin(bulkData, sidesetSides, skinnedPart, reporter);
 }
 
-bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart)
+bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart)
 {
-    return check_exposed_boundary_sides(bulkData, skinnedBlock, skinnedPart, std::cerr);
+    return check_exposed_block_boundary_sides(bulkData, skinnedBlock, skinnedPart, std::cerr);
 }
 
 bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part &skinnedPart, std::ostream &stream)

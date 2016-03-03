@@ -268,7 +268,7 @@ TEST_F(HexShellShell, Skin)
     {
         setup_hex_shell_shell_on_procs({0, 1, 0});
 
-        stk::mesh::create_exposed_boundary_sides(get_bulk(), get_meta().universal_part(), {});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_meta().universal_part(), {});
 
         stk::mesh::Selector ownedOrShared = get_meta().locally_owned_part() | get_meta().globally_shared_part();
 
