@@ -122,9 +122,25 @@ public:
   Real apply( const Real &x ) const {
     return std::max(threshold_,x);
   }
+}; 
+
+template<class Real>
+class ThresholdLower : public UnaryFunction<Real> {
+
+private:
+  const Real threshold_;
+
+public:
+  ThresholdLower( const Real threshold ) : 
+    threshold_(threshold) {}
+
+  Real apply( const Real &x ) const {
+    return std::min(threshold_,x);
+  }
 
 
 }; 
+
 
 
 template<class Real> 

@@ -37,6 +37,7 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
+#include "ROL_BarrierFunctions.hpp"
 
 namespace ROL {
 

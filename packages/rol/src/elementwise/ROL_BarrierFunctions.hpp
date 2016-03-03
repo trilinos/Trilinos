@@ -51,7 +51,7 @@ class BarrierFunctionFactory {
 private:
 
   enum EBarrierType {
-    BARRIER_LOGARITHMIC = 0,
+    BARRIER_LOGARITHM = 0,
     BARRIER_QUADRATIC,
     BARRIER_LAST
   } eBarrierType_; 
@@ -72,6 +72,7 @@ private:
         retString = "Invalid EBarrierType";
         break;
     }
+    return retString;
   }
 
   inline EBarrierType StringToEBarrierType( std::string s ) {
@@ -92,7 +93,7 @@ public:
     Teuchos::ParameterList &bflist = parlist.sublist("Barrier Function");
     std::string bfstring = bflist.get("Type","Logarithmic");
 
-    eBarrierType_ = StringToBarrierType(bfString); 
+    eBarrierType_ = StringToEBarrierType(bfstring); 
      
   }
 
@@ -102,6 +103,8 @@ public:
     Teuchos::RCP<UnaryFunction<Real> > deriv;
     Teuchos::RCP<UnaryFunction<Real> > deriv2;
 
+    Teuchos::RCP<UnaryFunction<Real> > sqr = Teuchos::rcp(new Power<Real>(2.0));
+
     switch( eBarrierType_ ) {
 
       case BARRIER_LOGARITHM:  
@@ -109,7 +112,6 @@ public:
         Teuchos::RCP<UnaryFunction<Real> > log = Teuchos::rcp(new Logarithm<Real>);
         Teuchos::RCP<UnaryFunction<Real> > inv = Teuchos::rcp(new Reciprocal<Real>);  
         Teuchos::RCP<UnaryFunction<Real> > neg = Teuchos::rcp(new Scale<Real>(-1.0));
-        Teuchos::RCP<UnaryFunction<Real> > sqr = Teuchos::rcp(new Power<Real>(2.0));
 
         value  = Teuchos::rcp(new Composition<Real>(neg,log));
         deriv  = Teuchos::rcp(new Composition<Real>(neg,inv));
@@ -119,10 +121,8 @@ public:
         
       case BARRIER_QUADRATIC:
         Teuchos::RCP<UnaryFunction<Real> > thl = Teuchos::rcp(new ThresholdLower<Real>(0.0) );
-        Teuchos::RCP<UnaryFunction<Real> > sqr = Teuchos::rcp(new Power<Real>(2.0) );
         Teuchos::RCP<UnaryFunction<Real> > two = Teuchos::rcp(new Scale<Real>(2.0) );
  
-        template<class Real>
         class Indicator : public UnaryFunction<Real> {
         public:
           Real apply( const Real &x ) const {
@@ -141,7 +141,7 @@ public:
 
         value  = Teuchos::rcp(new Composition<Real>(sqr,thl) );
         deriv  = Teuchos::rcp(new Composition<Real>(two,thl) );
-        deriv2 = Teuchos::rcp(new Indicator<Real>);
+        deriv2 = Teuchos::rcp(new Indicator);
    
         break;
       default:
