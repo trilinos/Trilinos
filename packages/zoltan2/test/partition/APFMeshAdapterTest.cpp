@@ -315,7 +315,7 @@ int main(int narg, char *arg[]) {
       pparams.set("ghost_layers",layers);
       pparams.set("ghost_bridge",m->getDimension()-1);
     }
-    params.set("compute_metrics","yes");
+    //params.set("compute_metrics","yes");
     adjacency="vertex";
   }
   else if (action=="zoltan_hg") {
@@ -423,7 +423,7 @@ int main(int narg, char *arg[]) {
 
     if (!me) {
       metricObject->printMetrics(cout);
-      problem.printMetrics(cout);
+      //problem.printMetrics(cout);
     }
   }
   else {
