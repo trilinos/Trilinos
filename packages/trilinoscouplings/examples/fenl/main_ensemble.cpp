@@ -8,6 +8,7 @@
 
 #include <fenl_ensemble.hpp>
 #include <fenl_utils.hpp>
+#include <SampleGrouping.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -37,6 +38,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   using Teuchos::Array;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::Ordinal;
   typedef Stokhos::OneDOrthogPolyBasis<int,double> one_d_basis;
   typedef Stokhos::LegendreBasis<int,double> legendre_basis;
   typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > order_type;
@@ -86,12 +88,14 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   using Kokkos::Example::FENL::ElementComputationKLCoefficient;
   using Kokkos::Example::FENL::ExponentialKLCoefficient;
+  using Kokkos::Example::FENL::Problem;
   using Kokkos::Example::BoxElemPart;
   using Kokkos::Example::FENL::fenl;
   using Kokkos::Example::FENL::Perf;
 
   const double bc_lower_value = 1 ;
   const double bc_upper_value = 2 ;
+  const double geom_bubble[3] = { 1.0 , 1.0 , 1.0 };
 
   const double kl_mean = cmd.USE_MEAN;
   const double kl_variance = cmd.USE_VAR;
@@ -107,6 +111,11 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   typedef Stokhos::DynamicStorage<int,double,Device> PCEStorage;
   typedef Sacado::UQ::PCE<PCEStorage> PCEScalar;
   PCEScalar response_pce( typename PCEScalar::cijk_type(), basis->size() );
+
+  // Read in any params from xml file
+  Teuchos::RCP<Teuchos::ParameterList> fenlParams = Teuchos::parameterList();
+  Teuchos::updateParametersFromXmlFileAndBroadcast(
+    cmd.USE_FENL_XML_FILE, fenlParams.ptr(), *comm);
 
   // Compute PCE of response propagating blocks of quadrature
   // points at a time
@@ -126,40 +135,52 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     RV rv = diffusion_coefficient.getRandomVariables();
     HRV hrv = Kokkos::create_mirror_view(rv);
 
-    const int num_qp_blocks = ( num_quad_points + VectorSize-1 ) / VectorSize;
+    // Problem setup
+    typedef Problem< Scalar, Device , BoxElemPart::ElemLinear > ProblemType;
+    ProblemType problem( comm , node , nelem , geom_bubble , cmd.PRINT );
 
-    // Loop over quadrature points
-    for (int qp_block=0; qp_block<num_qp_blocks; ++qp_block) {
-      const int qp_begin = qp_block * VectorSize;
-      const int qp_end = qp_begin + VectorSize <= num_quad_points ?
-        qp_begin+VectorSize : num_quad_points;
+    // Grouping method
+    RCP< Kokkos::Example::FENL::SampleGrouping<double> > grouper;
+    if (cmd.USE_GROUPING == GROUPING_NATURAL)
+      grouper = rcp(new Kokkos::Example::FENL::NaturalGrouping<double>);
+    else if (cmd.USE_GROUPING == GROUPING_MAX_ANISOTROPY) {
+      typedef ExponentialKLCoefficient< double, double, Device > DKL;
+      DKL diff_coeff( kl_mean, kl_variance, kl_correlation, dim, kl_exp );
+      typedef typename ProblemType::FixtureType Mesh;
+      grouper = rcp(new Kokkos::Example::FENL::MaxAnisotropyGrouping<double,Mesh,DKL>(
+                      comm, problem.fixture, diff_coeff));
+    }
+    Array< Array<Ordinal> > groups;
+    Ordinal num_duplicate = 0;
+    grouper->group(VectorSize, quad_points, groups, num_duplicate);
+
+    const int num_groups = groups.size();
+
+    // Loop over quadrature point groups
+    for (int group=0; group<num_groups; ++group) {
 
       // Set random variables
-      for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j)
-        for (int i=0; i<dim; ++i)
-          hrv(i).fastAccessCoeff(j) = quad_points[qp][i];
-      if (qp_end - qp_begin < VectorSize)
-        for (int j=qp_end-qp_begin; j<VectorSize; ++j)
-          for (int i=0; i<dim; ++i)
-            hrv(i).fastAccessCoeff(j) = quad_points[qp_end-1][i];
+      for (int qp=0; qp<VectorSize; ++qp)
+        for (int i=0; i<dim; ++i) {
+          hrv(i).fastAccessCoeff(qp) = quad_points[groups[group][qp]][i];
+        }
       Kokkos::deep_copy( rv, hrv );
 
       // Evaluate response on qp block
       Scalar response = 0;
       Perf perf =
-        fenl< Scalar , Device , BoxElemPart::ElemLinear >
-        ( comm , node , cmd.USE_FENL_XML_FILE ,
-          cmd.PRINT , cmd.USE_TRIALS ,
-          cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
-          cmd.USE_MEANBASED ,
-          nelem , diffusion_coefficient , cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
-          cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
-          response);
+        fenl( problem , fenlParams ,
+              cmd.PRINT , cmd.USE_TRIALS , cmd.USE_ATOMIC ,
+              cmd.USE_BELOS , cmd.USE_MUELU , cmd.USE_MEANBASED ,
+              diffusion_coefficient , cmd.USE_ISOTROPIC ,
+              cmd.USE_COEFF_SRC , cmd.USE_COEFF_ADV ,
+              bc_lower_value , bc_upper_value ,
+              response);
 
       if (cmd.PRINT_ITS && 0 == comm_rank) {
-        std::cout << qp_begin << " : " << perf.cg_iter_count << " ( ";
-        for (int i=0; i<dim; ++i)
-          std::cout << hrv(i) << " ";
+        std::cout << group << " : " << perf.cg_iter_count << " ( ";
+        for (int qp=0; qp<VectorSize; ++qp)
+          std::cout << groups[group][qp] << " ";
         std::cout << ")" << std::endl;
       }
 
@@ -174,11 +195,14 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       perf_total.increment(perf, !cmd.USE_BELOS);
 
       // Sum response into integral computing response PCE coefficients
-      for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j) {
-        double r = response.coeff(j);
-        double w = quad_weights[qp];
+      // Be careful to not include duplicate points
+      const int num_qp =
+        group == num_groups-1 ? VectorSize-num_duplicate : VectorSize;
+      for (int qp=0; qp<num_qp; ++qp) {
+        double r = response.coeff(qp);
+        double w = quad_weights[groups[group][qp]];
         for (int i=0; i<basis->size(); ++i)
-          response_pce.fastAccessCoeff(i) += r*w*quad_values[qp][i];
+          response_pce.fastAccessCoeff(i) += r*w*quad_values[groups[group][qp]][i];
       }
 
     }
@@ -197,6 +221,10 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     RV rv = diffusion_coefficient.getRandomVariables();
     HRV hrv = Kokkos::create_mirror_view(rv);
 
+    // Problem setup
+    Problem< Scalar, Device , BoxElemPart::ElemLinear > problem(
+      comm , node , nelem , geom_bubble , cmd.PRINT );
+
     // Loop over quadrature points
     for (int qp=0; qp<num_quad_points; ++qp) {
 
@@ -208,14 +236,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       // Evaluate response on qp block
       Scalar response = 0;
       Perf perf =
-        fenl< Scalar , Device , BoxElemPart::ElemLinear >
-        ( comm , node , cmd.USE_FENL_XML_FILE ,
-          cmd.PRINT , cmd.USE_TRIALS ,
-          cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
-          cmd.USE_MEANBASED ,
-          nelem , diffusion_coefficient , cmd.USE_ISOTROPIC , cmd.USE_COEFF_SRC ,
-          cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
-          response);
+        fenl( problem , fenlParams ,
+              cmd.PRINT , cmd.USE_TRIALS , cmd.USE_ATOMIC ,
+              cmd.USE_BELOS , cmd.USE_MUELU , cmd.USE_MEANBASED ,
+              diffusion_coefficient , cmd.USE_ISOTROPIC ,
+              cmd.USE_COEFF_SRC , cmd.USE_COEFF_ADV ,
+              bc_lower_value , bc_upper_value ,
+              response);
 
       if (cmd.PRINT_ITS && 0 == comm_rank) {
         std::cout << qp << " : " << perf.cg_iter_count << " ( ";

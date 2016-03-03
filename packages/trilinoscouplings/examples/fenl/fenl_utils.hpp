@@ -11,9 +11,21 @@
 //----------------------------------------------------------------------------
 // Command line processing:
 
-enum clp_return_type {CLP_HELP=0,
-      CLP_ERROR,
-      CLP_OK};
+enum clp_return_type {
+  CLP_HELP=0,
+  CLP_ERROR,
+  CLP_OK
+};
+
+enum GroupingType {
+  GROUPING_NATURAL=0,
+  GROUPING_MAX_ANISOTROPY,
+  GROUPING_MORTAN_Z
+};
+const int num_grouping_types = 3;
+const GroupingType grouping_values[] = {
+  GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z };
+const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z" };
 
 struct CMD {
   bool USE_SERIAL;
@@ -49,6 +61,7 @@ struct CMD {
   double USE_COEFF_ADV;
   bool USE_SPARSE;
   int USE_UQ_ENSEMBLE;
+  GroupingType USE_GROUPING;
   bool VTUNE;
   bool VERBOSE;
   bool PRINT;
@@ -91,6 +104,7 @@ struct CMD {
           USE_COEFF_ADV(0.0),
           USE_SPARSE(false),
           USE_UQ_ENSEMBLE(0),
+          USE_GROUPING(GROUPING_NATURAL),
           VTUNE(false),
           VERBOSE(false),
           PRINT(false),

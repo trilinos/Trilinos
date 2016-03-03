@@ -67,6 +67,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("coeff-adv",                &cmdline.USE_COEFF_ADV,  "Coefficient for advection term");
   clp.setOption("sparse", "tensor",         &cmdline.USE_SPARSE ,  "use sparse or tensor grid");
   clp.setOption("ensemble",                 &cmdline.USE_UQ_ENSEMBLE,  "UQ ensemble size.  This needs to be a valid choice based on available instantiations.");
+  clp.setOption("grouping", &cmdline.USE_GROUPING, num_grouping_types, grouping_values, grouping_names, "Sample grouping method for ensemble propagation");
 
   clp.setOption("vtune", "no-vtune",       &cmdline.VTUNE ,  "connect to vtune");
   clp.setOption("verbose", "no-verbose",   &cmdline.VERBOSE, "print verbose intialization info");
@@ -154,6 +155,7 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
   }
   if ( cmd.USE_UQ_ENSEMBLE  ) {
     s << " UQ ensemble(" << cmd.USE_UQ_ENSEMBLE << ")" ;
+    s << " Ensemble grouping(" << grouping_names[cmd.USE_GROUPING] << ")";
   }
   if ( cmd.USE_UQ_FAKE ) {
     s << " UQ fake(" << cmd.USE_UQ_FAKE  << ")" ;
@@ -295,6 +297,7 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
      }
      if ( cmd.USE_UQ_ENSEMBLE  ) {
        s << " , USING UQ ENSEMBLE , " << cmd.USE_UQ_ENSEMBLE ;
+       s << " , GROUPING METHOD , " << grouping_names[cmd.USE_GROUPING] ;
      }
      if ( cmd.USE_MEANBASED  ) { s << " , MEAN-BASED PREC" ; }
    }
