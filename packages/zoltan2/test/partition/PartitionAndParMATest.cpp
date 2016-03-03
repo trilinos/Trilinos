@@ -275,7 +275,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
       pparams.set("ghost_layers",3);
       pparams.set("ghost_bridge",m->getDimension()-1);
     }
-    params.set("compute_metrics","yes");
+    //params.set("compute_metrics","yes");
     adjacency="vertex";
   }
   else if (action=="zoltan_hg") {
@@ -335,7 +335,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
 
   if (!me) {
     metricObject->printMetrics(cout);
-    problem.printMetrics(cout);
+    //problem.printMetrics(cout);
   }
  
   //Print the stats after partitioning
