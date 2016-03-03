@@ -37,7 +37,7 @@ TEST_F(DGTetFixture, tet)
 
     std::cerr << "num elements: " << elements.size() << std::endl;
 
-    stk::mesh::create_exposed_boundary_sides(get_bulk(), get_meta().locally_owned_part(), {get_skin_part()});
+    stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_meta().locally_owned_part(), {get_skin_part()});
 
     unsigned num_faces = get_bulk().num_faces(elements[0]);
     const stk::mesh::Entity* faces = get_bulk().begin_faces(elements[0]);
