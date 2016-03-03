@@ -10,7 +10,7 @@
 namespace
 {
 
-class FaceCreatorUsingBDFaceSharingTester : public FaceCreatorFixture
+class FaceCreatorUsingBulkDataFaceSharingTester : public FaceCreatorFixture
 {
 protected:
 
@@ -118,7 +118,7 @@ private:
     }
 };
 
-TEST_F(FaceCreatorUsingBDFaceSharingTester, twoHexesTwoProcsCreateTwoFacesWithAura)
+TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, twoHexesTwoProcsCreateTwoFacesWithAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
@@ -127,7 +127,11 @@ TEST_F(FaceCreatorUsingBDFaceSharingTester, twoHexesTwoProcsCreateTwoFacesWithAu
     }
 }
 
-TEST_F(FaceCreatorUsingBDFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithAura)
+//  These two tests demonstrate that if faces are created with a permutation other than 0 then
+//  the graph parallel info is incorrect because it assumes all faces are created with permutation
+//  0 on the originating element/side.  If we can guarantee all faces are created through
+//  declare_element_side, then this issue goes away.
+TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
@@ -137,7 +141,7 @@ TEST_F(FaceCreatorUsingBDFaceSharingTester, DISABLED_testFaceDataUsingElemElemGr
     }
 }
 
-TEST_F(FaceCreatorUsingBDFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithoutAura)
+TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithoutAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {

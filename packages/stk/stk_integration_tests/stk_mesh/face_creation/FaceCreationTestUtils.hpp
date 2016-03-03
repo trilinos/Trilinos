@@ -127,6 +127,16 @@ inline void expect_all_sides_connected_as_specified_in_test_case(stk::mesh::Bulk
     EXPECT_TRUE(stk::mesh::check_all_sides(bulkData, skinnedThings, skinnedPart));
 }
 
+inline void expect_all_boundary_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
+                                                                 const SideTestUtil::TestCase& testCase,
+                                                                 stk::mesh::Selector skinnedThings,
+                                                                 stk::mesh::Part &skinnedPart)
+{
+    SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);
+    SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
+//    EXPECT_TRUE(stk::mesh::check_all_boundary_sides(bulkData, skinnedThings, skinnedPart));
+}
+
 
 class SideCreationTester
 {

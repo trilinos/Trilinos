@@ -54,62 +54,66 @@ const SideTestUtil::TestCaseData userCreatedFaceTestCases = {
 
     {"ARReB.e",   3,        1,    {{1, 5}, {2, 1}}},
 
-    // Tests either fail because of incorrect SideSetFaceCreationBehavior being set to ....CURRENT
-    // and if set to .....CLASSIC, sides are not connected properly, and hence other tests fail. Need
-    // to get declare_element_side(...) code to not duplicate sides between 2 elements (local to a processor) even before
-    // mod_end() is called.
-
-    // {"ALReB.e",   3,        1,    {{1, 5}, {2, 1}}}, // due to SideSetFaceCreationBehavior in StkIoBroker
-
     //A=1, e=2, B=3 (global ids)
-    // {"ADeDB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    // {"ADeLB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    // {"ADeRB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    // {"ALeDB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    // {"ALeLB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    // {"ALeRB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    // {"AReDB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
     {"AReLB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    // {"AReRB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-
-
-    //A=1, e=3, A=2 (global ids)
-    // {"ADReA.e",   3,        1,    {{1, 5}, {3, 1}}},  // Waiting for declare_element_side story
-    // {"ALReA.e",   3,        1,    {{1, 5}, {3, 1}}},
-    // {"ARReA.e",   3,        1,    {{1, 5}, {3, 1}}},
-
-    //A=1, e=2, B=3 (global ids)
-    //{"ADReB.e",   3,        1,    {{1, 5}, {2, 1}}},
-
-    //A=1, e=3, A=2 (global ids)
-    //{"ALeRA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-    //{"ADeDA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-    //{"ADeLA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-    // {"ADeRA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-    // {"ALeDA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-    // {"ALeLA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-    // {"AReDA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-    // {"AReLA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-    // {"AReRA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
-
-    //A=1, e=3, f=4, A/B=2 (global ids)
-//    {"ALefRA.e",  4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
-//    {"ARefLA.e",  4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
-//    {"ALeDfRA.e", 4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
-//    {"ALeXfRA.e", 4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
-//    {"ALeDfRB.e", 4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
-//    {"AeDfA.e",   4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
-//    {"ALJ.e",     3,        1,    {{1, 5}, {2, 4}, {3, 4}}},
 
     {"ADDA_doubleKissing.e", 2, 2, {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
     {"ARRA_doubleKissing.e", 2, 2, {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
     {"ALLA_doubleKissing.e", 2, 2, {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
     {"ALRA_doubleKissing.e", 2, 2, {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
-    // {"basic.e", 4, 2, {{3,3}, {4,3}, {5,1}, {6,1}}}, // Ticket 13009 - Disabled. Get this working. 2D example.
-
     {"TDg.e", 2, 2, {{1, 1}, {2, 1}}}, // Tet adjacent to degenerate quad
     {"ZDZ.e", 2, 1, {{1, 5}, {2, 4}}}, // degenerate Hex adjacent to degenerate Hex
+};
+
+const SideTestUtil::TestCaseData failingUserCreatedFaceTestCases = {
+    // Tests either fail because of incorrect SideSetFaceCreationBehavior being set to ....CURRENT
+    // and if set to .....CLASSIC, sides are not connected properly, and hence other tests fail. Need
+    // to get declare_element_side(...) code to not duplicate sides between 2 elements (local to a processor) even before
+    // mod_end() is called.
+
+    {"ALReB.e",   3,        1,    {{1, 5}, {2, 1}}}, // due to SideSetFaceCreationBehavior in StkIoBroker
+
+    //A=1, e=2, B=3 (global ids)
+    {"ADeDB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+    {"ADeLB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+    {"ADeRB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+    {"ALeDB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+    {"ALeLB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+    {"ALeRB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+    {"AReDB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+    {"AReRB.e",   3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+
+
+    //A=1, e=3, A=2 (global ids)
+    {"ADReA.e",   3,        1,    {{1, 5}, {3, 1}}},  // Waiting for declare_element_side story
+    {"ALReA.e",   3,        1,    {{1, 5}, {3, 1}}},
+    {"ARReA.e",   3,        1,    {{1, 5}, {3, 1}}},
+
+    //A=1, e=2, B=3 (global ids)
+    {"ADReB.e",   3,        1,    {{1, 5}, {2, 1}}},
+
+    //A=1, e=3, A=2 (global ids)
+    {"ALeRA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+    {"ADeDA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+    {"ADeLA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+    {"ADeRA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+    {"ALeDA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+    {"ALeLA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+    {"AReDA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+    {"AReLA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+    {"AReRA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
+
+    //A=1, e=3, f=4, A/B=2 (global ids)
+    {"ALefRA.e",  4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
+    {"ARefLA.e",  4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
+    {"ALeDfRA.e", 4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
+    {"ALeXfRA.e", 4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
+    {"ALeDfRB.e", 4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
+    {"AeDfA.e",   4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
+    {"ALJ.e",     3,        1,    {{1, 5}, {2, 4}, {3, 4}}},
+
+    {"basic.e", 4, 2, {{3,3}, {4,3}, {5,1}, {6,1}}}, // Ticket 13009 - Get this working. 2D example.
 };
 
 class UserCreatedSidesTester : public SideTestUtil::SideCreationTester
@@ -173,6 +177,11 @@ TEST(UserCreatedFaces, parallel_read_all_files_no_aura)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1)
         UserCreatedSidesTester().run_all_test_cases(userCreatedFaceTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(UserCreatedFaces, DISABLED_failing_parallel_read_all_files_aura)
+{
+    UserCreatedSidesTester().run_all_test_cases(failingUserCreatedFaceTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
 
 } //namespace
