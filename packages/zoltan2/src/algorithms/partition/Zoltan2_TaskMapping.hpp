@@ -1167,7 +1167,7 @@ protected:
 
 
       inpFile << std::endl;
-      ArrayView<part_t> a = this->getAssignedTaksForProc(i);
+      ArrayView<part_t> a = this->getAssignedTasksForProc(i);
       for(int k = 0; k <  a.size(); ++k){
         int j = a[k];
         //cout << "i:" << i << " j:"
@@ -1213,7 +1213,7 @@ protected:
     for(part_t i = 0; i < this->nprocs; ++i){
 
       //inpFile << std::endl;
-      ArrayView<part_t> a = this->getAssignedTaksForProc(i);
+      ArrayView<part_t> a = this->getAssignedTasksForProc(i);
       if (a.size() == 0){
         continue;
       }
@@ -1789,7 +1789,7 @@ public:
     numParts = taskend - task_begin;
   }
 
-  ArrayView<part_t> getAssignedTaksForProc(part_t procId){
+  ArrayView<part_t> getAssignedTasksForProc(part_t procId){
     part_t task_begin = this->proc_to_task_xadj[procId];
     part_t taskend = this->proc_to_task_xadj[procId+1];
 
