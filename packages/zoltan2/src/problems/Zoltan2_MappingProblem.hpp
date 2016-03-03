@@ -62,3 +62,4 @@ MappingProblem(
 In general, the input Adapters' applyPartitioningSolution method should take an 
 optional MappingSolution.
 
+Should MappingSolution provide a re-numbered communicator reflecting the new mapping?
