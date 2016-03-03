@@ -758,7 +758,7 @@ namespace BaskerNS
     BASKER_ENTRY btf_large;
     
     //AMD Ordering Options
-    BASKER_BOOL  amd_domains;
+    BASKER_BOOL  amd_dom;
     BASKER_BOOL  amd_btf;
     
     //Pivot Options
