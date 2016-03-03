@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 
   int errorFlag = 0;
 
-  double errtol = ROL::ROL_THRESHOLD;
+  RealT errtol = ROL::ROL_THRESHOLD<RealT>();
   try {
     
     int k = 5;

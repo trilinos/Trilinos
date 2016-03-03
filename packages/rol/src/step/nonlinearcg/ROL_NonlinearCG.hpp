@@ -130,14 +130,14 @@ public:
     s.set(g.dual());
 
     if ((state_->iter % state_->restart) != 0) {
-      Real beta = 0.0;
+      Real beta = 0.0, zero = 0.0;
       switch(state_->nlcg_type) {
 
         case NONLINEARCG_HESTENES_STIEFEL: {
           y_->set(g);
           y_->axpy(-1.0, *(state_->grad[0]));
           beta =  - g.dot(*y_) / (state_->pstep[0]->dot(y_->dual()));
-          beta = std::max(beta, 0.0);
+          beta = std::max(beta, zero);
           break;
           }
 
@@ -150,7 +150,7 @@ public:
           Real htol = 0.0;
           obj.hessVec( *y_, *(state_->pstep[0]), x, htol );
           beta = - g.dot(*y_) / (state_->pstep[0])->dot(y_->dual());
-          beta = std::max(beta, 0.0);
+          beta = std::max(beta, zero);
           break;
           }
 
@@ -158,7 +158,7 @@ public:
           y_->set(g);
           y_->axpy(-1.0, *(state_->grad[0]));
           beta = g.dot(*y_) / (state_->grad[0])->dot(*(state_->grad[0]));
-          beta = std::max(beta, 0.0);
+          beta = std::max(beta, zero);
           break;
           }
 

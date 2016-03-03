@@ -196,6 +196,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   quadmath        "cmake/TPLs/"    EX
   CAMAL           "cmake/TPLs/"    SS
   RTlib           "cmake/TPLs/"    SS
+  DLlib           "cmake/TPLs/"    SS
   AmgX            "cmake/TPLs/"    EX
   CGAL            "cmake/TPLs/"    EX
   VTune           "cmake/TPLs/"    SS

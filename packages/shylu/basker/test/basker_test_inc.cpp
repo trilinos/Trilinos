@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
   mybasker.Options.realloc    = true;
   mybasker.Options.btf        = false;
   mybasker.Options.matching   = false;
-  mybasker.Options.amd_domains = false;
+  mybasker.Options.amd_dom    = false;
   mybasker.Options.incomplete = true;
   mybasker.Options.incomplete_type = 
     BASKER_INCOMPLETE_LVL;

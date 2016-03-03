@@ -122,9 +122,51 @@ public:
   Real apply( const Real &x ) const {
     return std::max(threshold_,x);
   }
+}; 
+
+template<class Real>
+class ThresholdLower : public UnaryFunction<Real> {
+
+private:
+  const Real threshold_;
+
+public:
+  ThresholdLower( const Real threshold ) : 
+    threshold_(threshold) {}
+
+  Real apply( const Real &x ) const {
+    return std::min(threshold_,x);
+  }
 
 
 }; 
+
+
+
+template<class Real> 
+class Scale : public UnaryFunction<Real> {
+private:
+  Real value_;
+public:
+  Scale( const Real value ) : value_(value) {}
+  Real apply( const Real &x ) const {
+    return value_*x;
+  }
+};
+
+
+template<class Real> 
+class Plus : public UnaryFunction<Real> {
+private:
+  Real value_;
+public:
+  Plus( const Real value ) : value_(value) {} 
+  Real apply( const Real &x ) const {
+    return value_+x;  
+  }
+};
+
+
 
 
 template<class Real>
@@ -137,6 +179,26 @@ public:
 
 };
 
+
+
+
+
+// Evaluate g(f(x))
+template<class Real> 
+class Composition : public UnaryFunction<Real> {
+
+private:
+  
+  Teuchos::RCP<UnaryFunction<Real> > f_;
+  Teuchos::RCP<UnaryFunction<Real> > g_; 
+  
+public:
+  Composition( const Teuchos::RCP<const UnaryFunction<Real> > &f,
+               const Teuchos::RCP<const UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
+  Real apply( const Real &x ) const {
+    return g_->apply(f_->apply(x));
+  }
+};
 
 
 

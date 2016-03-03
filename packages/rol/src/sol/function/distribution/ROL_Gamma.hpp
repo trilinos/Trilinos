@@ -107,7 +107,7 @@ public:
     Real fx = evaluateCDF(x)-input;
     Real s = 0., xs = 0., a = 1., tmp = 0.;
     for (size_t i = 0; i < 100; i++) {
-      if ( std::abs(fx) < ROL_EPSILON ) { break; }
+      if ( std::abs(fx) < ROL_EPSILON<Real>() ) { break; }
       s   = -fx/evaluatePDF(x);
       a   = 1.0;
       xs  = x + a*s;
@@ -138,7 +138,7 @@ public:
   }
  
   Real upperBound(void) const {
-    return ROL_INF;
+    return ROL_INF<Real>();
   }
  
   void test(std::ostream &outStream = std::cout ) const {

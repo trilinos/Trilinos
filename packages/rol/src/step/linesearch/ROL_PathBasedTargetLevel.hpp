@@ -70,8 +70,8 @@ public:
 
   // Constructor
   PathBasedTargetLevel( Teuchos::ParameterList &parlist ) 
-    : LineSearch<Real>(parlist), min_value_(ROL::ROL_OVERFLOW), rec_value_(ROL::ROL_OVERFLOW), 
-      target_(0.0), sigma_(0.0) {
+    : LineSearch<Real>(parlist), min_value_(ROL::ROL_OVERFLOW<Real>()),
+      rec_value_(ROL::ROL_OVERFLOW<Real>()),  target_(0.0), sigma_(0.0) {
     delta_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Path-Based Target Level").get("Target Relaxation Parameter",0.1);
     bound_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Path-Based Target Level").get("Upper Bound on Path Length",1.0);
   }
@@ -86,7 +86,7 @@ public:
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
             Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     ls_neval = 0;
     ls_ngrad = 0;
     // Update target objective value

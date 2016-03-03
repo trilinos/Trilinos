@@ -94,7 +94,7 @@ public:
         ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of coefficient array out of range!");
       sum += coeff_[i];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-1.) > std::sqrt(ROL_EPSILON)),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-1.) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
       ">>> ERROR (ROL::MixedQuantileQuadrangle): Coefficients do not sum to one!");
     // Build (approximate) plus function
     plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
@@ -125,7 +125,7 @@ public:
       coeff_.push_back(coeff_[i]);
       sum += coeff[i];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-1.) > std::sqrt(ROL_EPSILON)),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-1.) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
       ">>> ERROR (ROL::MixedQuantileQuadrangle): Coefficients do not sum to one!");
     // Initialize temporary storage
     xvar_.clear(); xvar_.resize(size_,0.0);

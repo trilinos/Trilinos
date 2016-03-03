@@ -81,7 +81,7 @@ public:
 
   void run( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
             const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) { 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     // Compute quasi-Newton step
     pObj.reducedInvHessVec(*s_,grad,x,grad,x,tol);
     s_->scale(-1.0);

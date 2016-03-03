@@ -107,7 +107,7 @@ public:
   }
 
   Real upperBound(void) const {
-    return ROL_INF;
+    return ROL_INF<Real>();
   }
  
   void test(std::ostream &outStream = std::cout ) const {

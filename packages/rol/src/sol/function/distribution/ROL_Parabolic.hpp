@@ -97,7 +97,7 @@ public:
       c  = (a+b)*0.5;
       fc = evaluateCDF(c) - input;
       sc = ((fc < 0.) ? -1. : ((fc > 0.) ? 1. : 0.));
-      if ( fc == 0. || (b-a)*0.5 < ROL_EPSILON ) {
+      if ( fc == 0. || (b-a)*0.5 < ROL_EPSILON<Real>() ) {
         break;
       }
       if ( sc == sa ) { a = c; fa = fc; sa = sc; }

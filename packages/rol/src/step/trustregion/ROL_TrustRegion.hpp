@@ -97,7 +97,7 @@ public:
 
   // Constructor
   TrustRegion( Teuchos::ParameterList & parlist )
-    : ftol_old_(ROL_OVERFLOW), cnt_(0), verbosity_(0) {
+    : ftol_old_(ROL_OVERFLOW<Real>()), cnt_(0), verbosity_(0) {
     // Unravel Parameter List
     // Trust-Region Parameters
     Teuchos::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
@@ -109,7 +109,7 @@ public:
     gamma1_ = list.get("Radius Shrinking Rate (Positive rho)",0.25);
     gamma2_ = list.get("Radius Growing Rate",2.5);
     TRsafe_ = list.get("Safeguard Size",100.0);
-    eps_    = TRsafe_*ROL_EPSILON;
+    eps_    = TRsafe_*ROL_EPSILON<Real>();
 
     // Inexactness Information
     useInexact_.clear();
@@ -141,23 +141,23 @@ public:
                  const Vector<Real>      &g, 
                        int               iter,
                        ProjectedObjective<Real> &pObj ) { 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1.0);
 
     // Compute updated iterate vector
     xupdate_->set(x);
-    xupdate_->axpy(1.0,s);
+    xupdate_->axpy(one,s);
     /***************************************************************************************************/
     // BEGIN OBJECTIVE FUNCTION COMPUTATION
     /***************************************************************************************************/
     // Update inexact objective function
-    Real fold1 = fold, ftol = tol;
+    Real fold1 = fold, ftol = tol, TOL = 1.e-2;
     if ( useInexact_[0] ) {
       if ( !(cnt_%updateIter_) && (cnt_ != 0) ) {
         force_ *= forceFactor_;
       }
-      Real c = scale_*std::max(1.e-2,std::min(1.0,1.e4*std::max(pRed_,std::sqrt(ROL_EPSILON))));
-      ftol   = c*std::pow(std::min(eta1_,1.0-eta2_)
-                *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON)),force_),1.0/omega_);
+      Real c = scale_*std::max(TOL,std::min(one,1.e4*std::max(pRed_,std::sqrt(ROL_EPSILON<Real>()))));
+      ftol   = c*std::pow(std::min(eta1_,one-eta2_)
+                *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON<Real>())),force_),one/omega_);
       if ( ftol_old_ > ftol || cnt_ == 0 ) {
         ftol_old_ = ftol;
         fold1 = pObj.value(x,ftol_old_);
@@ -179,10 +179,10 @@ public:
     // If constraints are turned on, then compute a different predicted reduction
     if (pObj.isConActivated()) {
       xupdate_->set(x);
-      xupdate_->axpy(-1.0,g.dual());
+      xupdate_->axpy(-one,g.dual());
       pObj.project(*xupdate_);
-      xupdate_->axpy(-1.0,x);
-      xupdate_->scale(-1.0);
+      xupdate_->axpy(-one,x);
+      xupdate_->scale(-one);
  
       pObj.reducedHessVec(*Hs_,s,x,xupdate_->dual(),x,tol);
       pRed_  = -0.5*s.dot(Hs_->dual());
@@ -202,15 +202,15 @@ public:
     }
 
     // Compute Ratio of Actual and Predicted Reduction
-    aRed  -= eps_*((1.0 > std::abs(fold1)) ? 1.0 : std::abs(fold1));
-    pRed_ -= eps_*((1.0 > std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    aRed  -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
+    pRed_ -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
     Real rho  = 0.0; 
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
-      rho = 1.0; 
+      rho = one; 
       flagTR = TRUSTREGION_FLAG_SUCCESS;
     }
     else if ( std::isnan(aRed) || std::isnan(pRed_) ) {
-      rho = -1.0;
+      rho = -one;
       flagTR = TRUSTREGION_FLAG_NAN;
     }
     else {
@@ -241,19 +241,19 @@ public:
     if ( pObj.isConActivated() && (std::abs(aRed) > eps_) ) { 
       // Compute Criticality Measure || x - P( x - g ) ||
       xupdate_->set(x);
-      xupdate_->axpy(-1.0,g.dual());
+      xupdate_->axpy(-one,g.dual());
       pObj.project(*xupdate_);
-      xupdate_->scale(-1.0);
+      xupdate_->scale(-one);
       xupdate_->plus(x);
       Real pgnorm = xupdate_->norm();
       // Compute Scaled Measure || x - P( x - lam * PI(g) ) ||
       xupdate_->set(g.dual());
       pObj.pruneActive(*xupdate_,g,x);
-      Real lam = std::min(1.0, del/xupdate_->norm());
+      Real lam = std::min(one, del/xupdate_->norm());
       xupdate_->scale(-lam);
       xupdate_->plus(x);
       pObj.project(*xupdate_);
-      xupdate_->scale(-1.0);
+      xupdate_->scale(-one);
       xupdate_->plus(x);      
       pgnorm *= xupdate_->norm();
       // Sufficient decrease?
@@ -283,7 +283,7 @@ public:
         Real modelVal = s.dot(Hs_->dual());
         modelVal *= 0.5;
         modelVal += gs + fold1;
-        Real theta = (1.0-eta2_)*gs/((1.0-eta2_)*(fold1+gs)+eta2_*modelVal-fnew);
+        Real theta = (one-eta2_)*gs/((one-eta2_)*(fold1+gs)+eta2_*modelVal-fnew);
         del = std::min(gamma1_*snorm,std::max(gamma0_,theta)*del);
       }
       else { // Shrink trust-region radius
@@ -292,7 +292,7 @@ public:
     }
     else if ((rho >= eta0_ && flagTR != TRUSTREGION_FLAG_NPOSPREDNEG) || 
       flagTR == TRUSTREGION_FLAG_POSPREDNEG) { // Step Accepted
-      x.axpy(1.0,s);
+      x.axpy(one,s);
       pObj.update(x,true,iter);
       if (rho >= eta2_) { // Increase trust-region radius
         del = std::min(gamma2_*del,delmax_);
@@ -322,7 +322,7 @@ public:
       xtmp->set(x);
       xtmp->axpy(1.0,*stmp);
       // Compute model components for alpha = 1.0
-      Real tol   = std::sqrt(ROL_EPSILON);
+      Real tol   = std::sqrt(ROL_EPSILON<Real>());
       Teuchos::RCP<Vector<Real> > Bs = x.clone();
       pObj.hessVec(*Bs,*stmp,x,tol);
       Real sBs   = Bs->dot(*stmp);

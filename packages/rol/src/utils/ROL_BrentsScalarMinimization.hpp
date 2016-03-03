@@ -75,7 +75,7 @@ public:
     nfval = 0; ngrad = 0;
     // ---> Set algorithmic constants
     const Real c   = 0.5*(3.0 - std::sqrt(5.0));
-    const Real eps = std::sqrt(ROL_EPSILON);
+    const Real eps = std::sqrt(ROL_EPSILON<Real>());
     // ---> Set end points and initial guess
     Real a = A, b = B;
     x = a + c*(b-a);
@@ -85,7 +85,7 @@ public:
     // ---> Initialize algorithm storage
     Real v = x, w = v, u = 0.0, fu = 0.0;
     Real p = 0.0, q = 0.0, r = 0.0, d = 0.0, e = 0.0;
-    Real fv = fx, fw = fx, tol = 0.0, t2 = 0.0, m = 0.0, gx = ROL_INF;
+    Real fv = fx, fw = fx, tol = 0.0, t2 = 0.0, m = 0.0, gx = ROL_INF<Real>();
     bool deriv = false;
     for (int i = 0; i < niter_; i++) {
       m = 0.5*(a+b);

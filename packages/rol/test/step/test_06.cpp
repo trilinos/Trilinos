@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
         e->set(*x);
         e->axpy(-1.0,*z);
         *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
-        //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON)); 
+        //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON<RealT>())); 
       }
     }
   }

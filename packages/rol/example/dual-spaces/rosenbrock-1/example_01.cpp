@@ -312,13 +312,13 @@ int main(int argc, char *argv[]) {
     RealT relerr = abserr/xtrue.norm();
     *outStream << std::scientific << "\n   Absolute solution error: " << abserr;
     *outStream << std::scientific << "\n   Relative solution error: " << relerr;
-    if ( relerr > sqrt(ROL::ROL_EPSILON) ) {
+    if ( relerr > sqrt(ROL::ROL_EPSILON<RealT>()) ) {
       errorFlag += 1;
     }
     Teuchos::RCP<std::vector<RealT> > vec_err_rcp = Teuchos::rcp( new std::vector<RealT> (std_vec_err) );
     ROL::StdVector<RealT> vec_err(vec_err_rcp);
     *outStream << std::scientific << "\n   Linear algebra error: " << vec_err.norm() << std::endl;
-    if ( vec_err.norm() > 1e2*ROL::ROL_EPSILON ) {
+    if ( vec_err.norm() > 1e2*ROL::ROL_EPSILON<RealT>() ) {
       errorFlag += 1;
     }
   }

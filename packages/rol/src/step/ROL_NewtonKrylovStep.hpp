@@ -72,9 +72,6 @@ private:
   EKrylov ekv_;
   ESecant esec_;
 
-  Teuchos::RCP<LinearOperator<Real> > hessian_;
-  Teuchos::RCP<LinearOperator<Real> > precond_;
-
   Teuchos::RCP<Vector<Real> > gp_;
  
   int iterKrylov_; ///< Number of Krylov iterations (used for inexact Newton)
@@ -125,8 +122,8 @@ public:
   */
   NewtonKrylovStep( Teuchos::ParameterList &parlist )
     : Step<Real>(), secant_(Teuchos::null), krylov_(Teuchos::null),
-      hessian_(Teuchos::null), precond_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
+      gp_(Teuchos::null), iterKrylov_(0), flagKrylov_(0),
+      verbosity_(0), useSecantPrecond_(false) {
     // Parse ParameterList
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
@@ -140,66 +137,6 @@ public:
       secant_ = SecantFactory<Real>(parlist);
     }
   }
-
-//  /** \brief Constructor.
-//
-//      Constructor to build a NewtonKrylovStep object with a user-defined 
-//      secant object.  Algorithmic specifications are passed in through 
-//      a Teuchos::ParameterList.
-//
-//      @param[in]     parlist    is a parameter list containing algorithmic specifications
-//      @param[in]     secant     is a user-defined secant object
-//  */
-//  NewtonKrylovStep(Teuchos::ParameterList &parlist,
-//             const Teuchos::RCP<Secant<Real> > &secant)
-//    : Step<Real>(), secant_(secant), krylov_(Teuchos::null),
-//      esec_(SECANT_USERDEFINED),
-//      hessian_(Teuchos::null), precond_(Teuchos::null), gp_(Teuchos::null),
-//      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
-//    // Parse ParameterList
-//    Teuchos::ParameterList& Glist = parlist.sublist("General");
-//    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-//    verbosity_ = Glist.get("Print Verbosity",0);
-//    // Initialize secant object
-//    if ( useSecantPrecond_ && secant_ == Teuchos::null ) {
-//      esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
-//      secant_ = SecantFactory<Real>(parlist);
-//    }
-//    // Initialize Krylov object
-//    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
-//    krylov_ = KrylovFactory<Real>(parlist);
-//  }
-//
-//  /** \brief Constructor.
-//
-//      Constructor to build a NewtonKrylovStep object with a user-defined
-//      Krylov object.  Algorithmic specifications are passed in through a
-//      Teuchos::ParameterList.
-//
-//      @param[in]     parlist    is a parameter list containing algorithmic specifications
-//      @param[in]     krylov     is a user-defined Krylov object
-//  */
-//  NewtonKrylovStep(Teuchos::ParameterList &parlist,
-//             const Teuchos::RCP<Krylov<Real> > &krylov)
-//    : Step<Real>(), secant_(Teuchos::null), krylov_(krylov),
-//      ekv_(KRYLOV_USERDEFINED),
-//      hessian_(Teuchos::null), precond_(Teuchos::null), gp_(Teuchos::null),
-//      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
-//    // Parse ParameterList
-//    Teuchos::ParameterList& Glist = parlist.sublist("General");
-//    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-//    verbosity_ = Glist.get("Print Verbosity",0);
-//    // Initialize secant object
-//    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
-//    if ( useSecantPrecond_ ) {
-//      secant_ = SecantFactory<Real>(parlist);
-//    }
-//    // Initialize Krylov object
-//    if ( krylov_ == Teuchos::null ) {
-//      ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
-//      krylov_ = KrylovFactory<Real>(parlist);
-//    }
-//  }
 
   /** \brief Constructor.
 
@@ -216,8 +153,8 @@ public:
              const Teuchos::RCP<Secant<Real> > &secant)
     : Step<Real>(), secant_(secant), krylov_(krylov),
       ekv_(KRYLOV_USERDEFINED), esec_(SECANT_USERDEFINED),
-      hessian_(Teuchos::null), precond_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
+      gp_(Teuchos::null), iterKrylov_(0), flagKrylov_(0),
+      verbosity_(0), useSecantPrecond_(false) {
     // Parse ParameterList
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
@@ -238,7 +175,9 @@ public:
                    Objective<Real> &obj, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
     Step<Real>::initialize(x,s,g,obj,bnd,algo_state);
-    gp_ = g.clone();
+    if ( useSecantPrecond_ ) {
+      gp_ = g.clone();
+    }
   }
 
   void compute( Vector<Real> &s, const Vector<Real> &x,
@@ -247,18 +186,20 @@ public:
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     // Build Hessian and Preconditioner object
-    Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcp(&obj, false);
-    hessian_ = Teuchos::rcp(new HessianNK(obj_ptr,algo_state.iterateVec));
+    Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcpFromRef(obj);
+    Teuchos::RCP<LinearOperator<Real> > hessian
+      = Teuchos::rcp(new HessianNK(obj_ptr,algo_state.iterateVec));
+    Teuchos::RCP<LinearOperator<Real> > precond;
     if ( useSecantPrecond_ ) {
-      precond_ = secant_;
+      precond = secant_;
     }
     else {
-      precond_ = Teuchos::rcp(new PrecondNK(obj_ptr,algo_state.iterateVec));
+      precond = Teuchos::rcp(new PrecondNK(obj_ptr,algo_state.iterateVec));
     }
 
     // Run Krylov method
     flagKrylov_ = 0;
-    krylov_->run(s,*hessian_,*(step_state->gradientVec),*precond_,iterKrylov_,flagKrylov_);
+    krylov_->run(s,*hessian,*(step_state->gradientVec),*precond,iterKrylov_,flagKrylov_);
 
     // Check Krylov flags
     if ( flagKrylov_ == 2 && iterKrylov_ <= 1 ) {
@@ -270,7 +211,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s,
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate

@@ -62,7 +62,7 @@ public:
 
   RiskBoundConstraint(Teuchos::ParameterList &parlist,
                 const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
-   : BoundConstraint<Real>(), bc_(bc), augmented_(false), lower_(ROL_NINF), upper_(ROL_INF) {
+   : BoundConstraint<Real>(), bc_(bc), augmented_(false), lower_(ROL_NINF<Real>()), upper_(ROL_INF<Real>()) {
     std::string type = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
     if ( type == "CVaR" || type == "HMCR" ||
          type == "Log-Exponential Quadrangle" ||
@@ -78,8 +78,8 @@ public:
 
   RiskBoundConstraint(const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null,
                       const bool augmented = false,
-                      const Real lower = ROL_NINF,
-                      const Real upper = ROL_INF)
+                      const Real lower = ROL_NINF<Real>(),
+                      const Real upper = ROL_INF<Real>())
     : bc_(bc), augmented_(augmented) {
     lower_ = std::min(lower,upper);
     upper_ = std::max(lower,upper);
@@ -90,7 +90,7 @@ public:
 
   RiskBoundConstraint(const std::string name,
                       const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
-    : bc_(bc), augmented_(true), lower_(ROL_NINF), upper_(ROL_INF) {
+    : bc_(bc), augmented_(true), lower_(ROL_NINF<Real>()), upper_(ROL_INF<Real>()) {
     if ( name == "BPOE" ) { lower_ = 0.; }
   }
 

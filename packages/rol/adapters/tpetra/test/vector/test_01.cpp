@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
     int errorFlag = 0;
 
-    double errtol = ROL::ROL_THRESHOLD;
+    RealT errtol = ROL::ROL_THRESHOLD<RealT>();
 
     try {
         // Dimension of the optimization vector
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
         // Compute Error
         RealT abserr = x.norm();
         outStream << std::scientific << "\n   Absolute Error: " << abserr << std::endl;
-        if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
+        if ( abserr > sqrt(ROL::ROL_EPSILON<RealT>()) ) {
             errorFlag += 1;
         }
         /*---[ End Test of optimization using ROL::TpetraMultiVector ]---*/

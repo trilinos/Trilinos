@@ -37,6 +37,7 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
+#include "ROL_BarrierFunctions.hpp"
 
 namespace ROL {
 
@@ -62,7 +63,7 @@ private:
   public: 
   
     Real apply( const Real &x, const Real &y ) const {
-      return y>ROL_NINF ? std::log(x-y) : 0.0;   
+      return y>ROL_NINF<Real>() ? std::log(x-y) : 0.0;   
     }
   };
 
@@ -70,7 +71,7 @@ private:
   public:
    
     Real apply( const Real &x, const Real &y ) const {
-      return y<ROL_INF ? std::log(y-x) : 0.0;
+      return y<ROL_INF<Real>() ? std::log(y-x) : 0.0;
     }
   };
 
@@ -78,7 +79,7 @@ private:
   public:
     
     Real apply( const Real &x, const Real &y ) const {
-      return y>ROL_NINF ? 1.0/(x-y) : 0.0;
+      return y>ROL_NINF<Real>() ? 1.0/(x-y) : 0.0;
     }
   };
 
@@ -86,7 +87,7 @@ private:
   public:
    
     Real apply( const Real &x, const Real &y ) const {
-      return y<ROL_INF ? 1./(y-x) : 0.0;
+      return y<ROL_INF<Real>() ? 1./(y-x) : 0.0;
     }
   };
 

@@ -66,7 +66,7 @@ private:
 public: 
   AbsoluteValue(Real param = 1., EAbsoluteValue eav = ABSOLUTEVALUE_TRUE)
     : param_(1./param), eav_(eav) {
-    if ( eav != ABSOLUTEVALUE_TRUE && std::abs(param) < ROL_EPSILON ) { param_ = 1.e2; }
+    if ( eav != ABSOLUTEVALUE_TRUE && std::abs(param) < ROL_EPSILON<Real>() ) { param_ = 1.e2; }
   }
 
   AbsoluteValue(Teuchos::ParameterList &parlist) {
@@ -97,7 +97,7 @@ public:
 private:
   Real true_absolute_value( Real input, int deriv ) {
     Real output = 0.0, e = 0.0;
-    if ( std::abs(param_) > ROL_EPSILON ) { e = 0.5/param_; }
+    if ( std::abs(param_) > ROL_EPSILON<Real>() ) { e = 0.5/param_; }
 
     int region = 0;
     if ( input < -e )     { region = -1; }
@@ -133,7 +133,7 @@ private:
 
   Real c2_absolute_value( Real input, int deriv ) {
     Real output = 0.0, e = 1.0;
-    if ( std::abs(param_) > ROL_EPSILON ) { e = 0.5/param_; }
+    if ( std::abs(param_) > ROL_EPSILON<Real>() ) { e = 0.5/param_; }
 
     int region = 0;
     if ( input < -e )     { region = -1; }

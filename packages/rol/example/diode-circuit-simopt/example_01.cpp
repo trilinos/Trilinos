@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
     }
     soln.axpy(-1.0, z);
     *outStream << "Norm of error: " << soln.norm() << std::endl;
-    if (soln.norm() > 1e4*ROL::ROL_EPSILON) {
+    if (soln.norm() > 1e4*ROL::ROL_EPSILON<RealT>()) {
       errorFlag = 1;
     }
   }
