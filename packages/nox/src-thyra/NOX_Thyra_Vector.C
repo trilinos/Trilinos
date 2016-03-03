@@ -273,9 +273,6 @@ Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Thyra::Vector::
 createMultiVector(int numVecs, NOX::CopyType type) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(nonnull(weightVec_), std::logic_error,
-                 "Can NOT create NOX::Thyra::MultiVector from a NOX::Thyra::Vector that contains a weighting vector! ");
-
   // Get vector space
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > space =
     thyraVec->space();
@@ -295,6 +292,9 @@ createMultiVector(int numVecs, NOX::CopyType type) const
   // Create multi-vector
   Teuchos::RCP<NOX::Thyra::MultiVector> nmv =
     Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
+
+  nmv->setImplicitWeighting(do_implicit_weighting_);
+  nmv->setWeightVector(weightVec_);
 
   return nmv;
 }

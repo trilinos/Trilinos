@@ -65,14 +65,16 @@ LOCA::Thyra::Group::Group(
         const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
         const LOCA::ParameterVector& p,
         int p_index,
-        bool impl_dfdp) :
-  NOX::Thyra::Group(initial_guess, model),
+        bool impl_dfdp,
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector) :
+  NOX::Thyra::Group(initial_guess, model, weight_vector),
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
   params(p),
   param_index(p_index),
   saveDataStrategy(),
-  implement_dfdp(impl_dfdp)
+  implement_dfdp(impl_dfdp),
+  weight_vec_(weight_vector)
 {
   updateThyraParamView();
   updateThyraXDot();
