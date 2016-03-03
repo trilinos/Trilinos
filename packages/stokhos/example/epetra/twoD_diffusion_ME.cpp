@@ -58,8 +58,6 @@ namespace {
                       double mean_, double std_dev,
                       double L, int num_KL) : mean(mean_), point(2)
     {
-      Kokkos::initialize();
-
       Teuchos::ParameterList rfParams;
       rfParams.set("Number of KL Terms", num_KL);
       rfParams.set("Mean", mean);
@@ -81,7 +79,6 @@ namespace {
     }
 
     ~KL_Diffusion_Func() {
-      Kokkos::finalize();
     }
 
     double operator() (double x, double y, int k) const {
@@ -176,6 +173,8 @@ twoD_diffusion_ME(
   eliminate_bcs(eliminate_bcs_),
   precParams(precParams_)
 {
+  Kokkos::initialize();
+
   //////////////////////////////////////////////////////////////////////////////
   // Construct the mesh.
   // The mesh is uniform and the nodes are numbered
@@ -321,6 +320,12 @@ twoD_diffusion_ME(
     precFactory =
       Teuchos::rcp(new Stokhos::PreconditionerFactory(name, p));
   }
+}
+
+twoD_diffusion_ME::
+~twoD_diffusion_ME()
+{
+  Kokkos::finalize();
 }
 
 // Overridden from EpetraExt::ModelEvaluator
