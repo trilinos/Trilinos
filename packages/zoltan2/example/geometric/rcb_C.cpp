@@ -157,6 +157,8 @@ int main(int argc, char *argv[])
   problem1->solve();
 
   // An environment.  This is usually created by the problem.
+  // Note:  These RCPs will go away in Spring 2016 when we finish simplication
+  // of the EvaluatePartition interface.
 
   RCP<const Zoltan2::Environment> env1 = problem1->getEnvironment();
 
@@ -165,9 +167,9 @@ int main(int argc, char *argv[])
 
   // create metric object (also usually created by a problem)
 
-  RCP<quality_t>metricObject1=rcp(new quality_t(env1,problem1->getComm(),bia1,
+  quality_t *metricObject1 = new quality_t(env1,problem1->getComm(),bia1,
 						&problem1->getSolution(),
-						false));
+						false);
   // Check the solution.
 
   if (rank == 0) {
@@ -183,6 +185,7 @@ int main(int argc, char *argv[])
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject1;
    
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
@@ -221,6 +224,8 @@ int main(int argc, char *argv[])
   problem2->solve();
 
   // An environment.  This is usually created by the problem.
+  // Note:  These RCPs will go away in Spring 2016 when we finish simplication
+  // of the EvaluatePartition interface.
 
   RCP<const Zoltan2::Environment> env2 = problem2->getEnvironment();
 
@@ -229,9 +234,9 @@ int main(int argc, char *argv[])
 
   // create metric object (also usually created by a problem)
 
-  RCP<quality_t>metricObject2=rcp(new quality_t(env2,problem2->getComm(),bia2,
+  quality_t *metricObject2 = new quality_t(env2,problem2->getComm(),bia2,
 						&problem2->getSolution(),
-						false));
+						false);
   // Check the solution.
 
   if (rank == 0) {
@@ -247,6 +252,7 @@ int main(int argc, char *argv[])
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject2;
 
   if (localCount > 0){
     delete [] weights;
@@ -296,6 +302,8 @@ int main(int argc, char *argv[])
   problem3->solve();
 
   // An environment.  This is usually created by the problem.
+  // Note:  These RCPs will go away in Spring 2016 when we finish simplication
+  // of the EvaluatePartition interface.
 
   RCP<const Zoltan2::Environment> env3 = problem3->getEnvironment();
 
@@ -304,9 +312,9 @@ int main(int argc, char *argv[])
 
   // create metric object (also usually created by a problem)
 
-  RCP<quality_t>metricObject3=rcp(new quality_t(env3,problem3->getComm(),bia3,
+  quality_t *metricObject3 = new quality_t(env3,problem3->getComm(),bia3,
 						&problem3->getSolution(),
-						false));
+						false);
   // Check the solution.
 
   if (rank == 0) {
@@ -322,6 +330,7 @@ int main(int argc, char *argv[])
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject3;
 
   ///////////////////////////////////////////////////////////////////////
   // Try the other multicriteria objectives.
@@ -338,8 +347,8 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = rcp(new quality_t(env3, problem3->getComm(), bia3,
-				    &problem3->getSolution(), false));
+  metricObject3 = new quality_t(env3, problem3->getComm(), bia3,
+				    &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
     scalar_t imb;
@@ -350,6 +359,7 @@ int main(int argc, char *argv[])
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject3;
 
   params.set("partitioning_objective", "multicriteria_balance_total_maximum");
   problem3->resetParameters(&params);
@@ -361,8 +371,8 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = rcp(new quality_t(env3, problem3->getComm(), bia3,
-				    &problem3->getSolution(), false));
+  metricObject3 = new quality_t(env3, problem3->getComm(), bia3,
+				    &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
     scalar_t imb;
@@ -373,6 +383,7 @@ int main(int argc, char *argv[])
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject3;
 
   if (localCount > 0){
     delete [] weights;
@@ -431,8 +442,8 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject1 = rcp(new quality_t(env1, problem1->getComm(), bia1,
-				    &problem1->getSolution(), false));
+  metricObject1 = new quality_t(env1, problem1->getComm(), bia1,
+				    &problem1->getSolution(), false);
   // Check the solution.
 
   if (rank == 0) {
@@ -448,6 +459,7 @@ int main(int argc, char *argv[])
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
+  delete metricObject1;
 
   if (coords)
     delete [] coords;
