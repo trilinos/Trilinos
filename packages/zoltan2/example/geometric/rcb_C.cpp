@@ -168,8 +168,8 @@ int main(int argc, char *argv[])
   // create metric object (also usually created by a problem)
 
   quality_t *metricObject1 = new quality_t(env1,problem1->getComm(),bia1,
-						&problem1->getSolution(),
-						false);
+                                           &problem1->getSolution(),
+                                           false);
   // Check the solution.
 
   if (rank == 0) {
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
   weightVec[0] = weights; weightStrides[0] = 1;
 
   inputAdapter_t *ia2=new inputAdapter_t(localCount, globalIds, coordVec, 
-					 coordStrides,weightVec,weightStrides);
+                                         coordStrides,weightVec,weightStrides);
 
   // Create a Zoltan2 partitioning problem
 
@@ -235,8 +235,8 @@ int main(int argc, char *argv[])
   // create metric object (also usually created by a problem)
 
   quality_t *metricObject2 = new quality_t(env2,problem2->getComm(),bia2,
-						&problem2->getSolution(),
-						false);
+                                           &problem2->getSolution(),
+                                           false);
   // Check the solution.
 
   if (rank == 0) {
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
   weightVec[2] = weights+2; weightStrides[2] = 3;
 
   inputAdapter_t *ia3=new inputAdapter_t(localCount, globalIds, coordVec,
-					 coordStrides,weightVec,weightStrides);
+                                         coordStrides,weightVec,weightStrides);
 
   // Create a Zoltan2 partitioning problem.
 
@@ -313,8 +313,8 @@ int main(int argc, char *argv[])
   // create metric object (also usually created by a problem)
 
   quality_t *metricObject3 = new quality_t(env3,problem3->getComm(),bia3,
-						&problem3->getSolution(),
-						false);
+                                           &problem3->getSolution(),
+                                           false);
   // Check the solution.
 
   if (rank == 0) {
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
   // Solution changed!
 
   metricObject3 = new quality_t(env3, problem3->getComm(), bia3,
-				    &problem3->getSolution(), false);
+                                &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
     scalar_t imb;
@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
   // Solution changed!
 
   metricObject3 = new quality_t(env3, problem3->getComm(), bia3,
-				    &problem3->getSolution(), false);
+                                &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
     scalar_t imb;
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
   // Solution changed!
 
   metricObject1 = new quality_t(env1, problem1->getComm(), bia1,
-				    &problem1->getSolution(), false);
+                                &problem1->getSolution(), false);
   // Check the solution.
 
   if (rank == 0) {
