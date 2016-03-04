@@ -93,7 +93,8 @@ public:
       nStat_     = prob.size();
       stat_.resize(nStat_,stat);
     }
-    else if ( type == "Quantile-Radius Quadrangle" ) {
+    else if ( type == "Quantile-Radius Quadrangle" ||
+              type == "Chi-Squared Divergence" ) {
       augmented_ = true;
       nStat_     = 2;
       stat_.resize(nStat_,stat);
@@ -171,6 +172,10 @@ public:
   }
 
   Teuchos::RCP<const Vector<Real> > getVector() const {
+    return vec_;
+  }
+
+  Teuchos::RCP<Vector<Real> > getVector() {
     return vec_;
   }
 

@@ -108,7 +108,7 @@ public:
     switch( eBarrierType_ ) {
 
       case BARRIER_LOGARITHM:  
-
+      {
         Teuchos::RCP<UnaryFunction<Real> > log = Teuchos::rcp(new Logarithm<Real>);
         Teuchos::RCP<UnaryFunction<Real> > inv = Teuchos::rcp(new Reciprocal<Real>);  
         Teuchos::RCP<UnaryFunction<Real> > neg = Teuchos::rcp(new Scale<Real>(-1.0));
@@ -118,8 +118,9 @@ public:
         deriv2 = Teuchos::rcp(new Composition<Real>(sqr,inv)); 
         
         break;
-        
+      }  
       case BARRIER_QUADRATIC:
+      {
         Teuchos::RCP<UnaryFunction<Real> > thl = Teuchos::rcp(new ThresholdLower<Real>(0.0) );
         Teuchos::RCP<UnaryFunction<Real> > two = Teuchos::rcp(new Scale<Real>(2.0) );
  
@@ -144,10 +145,12 @@ public:
         deriv2 = Teuchos::rcp(new Indicator);
    
         break;
+      }
       default:
+      {
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>> (BarrierFunctionFactory::getBarrierFunction): Undefined barrier function type!");
-
+      }
     } 
     return Teuchos::rcp( new BarrierFunction<Real>(value, deriv, deriv2) );
   } 

@@ -213,8 +213,10 @@ int main(int argc, char *argv[]) {
     }
     Teuchos::RCP<ROL::BoundConstraint<RealT> > Zbnd
       = Teuchos::rcp(new L2BoundConstraint<RealT>(Zlo,Zhi,fem));
+    Teuchos::ParameterList list;
+    list.sublist("SOL").set("Stochastic Optimization Type","BPOE");
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::RiskBoundConstraint<RealT>("BPOE",Zbnd));
+      = Teuchos::rcp(new ROL::RiskBoundConstraint<RealT>(list,Zbnd));
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/

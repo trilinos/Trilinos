@@ -324,7 +324,16 @@ int main(int argc, char* argv[]) {
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
     /**********************************************************************************************/
-    /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
+    /************************* CHI-SQUARED DIVERGENCE *********************************************/
+    /**********************************************************************************************/
+    *outStream << "\nCHI-SQUARED DIVERGENCE DISTRIBUTIONALLY ROBUST\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Chi-Squared Divergence");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* KL DIVERGENCE ******************************************************/
     /**********************************************************************************************/
     *outStream << "\nKL DIVERGENCE DISTRIBUTIONALLY ROBUST\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 

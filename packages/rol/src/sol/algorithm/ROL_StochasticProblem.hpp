@@ -331,17 +331,8 @@ public:
       if ( type == "Risk Neutral" || type == "Mean Value" ) {
         bnd_ = bnd;
       }
-      else if ( type == "Risk Averse" ) {
-        std::string name = parlist_->sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
-        if ( name == "KL Divergence" ) {
-          bnd_ = Teuchos::rcp(new RiskBoundConstraint<Real>("BPOE",bnd));
-        }
-        else {
-          bnd_ = Teuchos::rcp(new RiskBoundConstraint<Real>(*parlist_,bnd));
-        }
-      }
-      else if ( type == "BPOE" ) {
-        bnd_ = Teuchos::rcp(new RiskBoundConstraint<Real>("BPOE",bnd));
+      else if ( type == "Risk Averse" || type == "BPOE" ) {
+        bnd_ = Teuchos::rcp(new RiskBoundConstraint<Real>(*parlist_,bnd));
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
