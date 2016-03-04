@@ -54,6 +54,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
 namespace stk { namespace mesh { class Bucket; } }
 
 
@@ -518,6 +519,111 @@ TEST(Verify, usingCopyConstructor)
     EXPECT_TRUE(selector == anotherSelector);
 }
 
+TEST(Verify, selectorAlgorithmicComplexity)
+{
+    //
+    //  Verify expected algorithmic complexity is obtained by selector classes.
+    //  Only test serial, in parallel this gets a bit ill posed as some procs have empty bucket selections
+    //  and the complexity is not meaningful.
+    //
+
+    SelectorFixture fix;
+    initialize(fix);
+
+    if (fix.get_BulkData().parallel_size() > 1) return;
+
+
+    stk::mesh::Part & partA = fix.m_partA;
+    stk::mesh::Part & partB = fix.m_partB;
+    stk::mesh::Part & partC = fix.m_partC;
+    stk::mesh::Part & partD = fix.m_partD;
+
+    stk::mesh::Selector selectABC = partA & partB & partC;
+    stk::mesh::Selector selectA   = partA;
+    stk::mesh::Selector selectB   = partB;
+    stk::mesh::Selector selectC   = partC;
+    stk::mesh::Selector selectD   = partD;
+
+    unsigned numCopiesBase = 1000000;
+    std::vector<unsigned> trialLen;
+
+    trialLen.push_back(128);
+    trialLen.push_back(256);
+    trialLen.push_back(512);
+    trialLen.push_back(1024);
+    trialLen.push_back(2048);
+    trialLen.push_back(4096);
+
+    std::vector<double> elapsedTime(trialLen.size());
+
+
+    //
+    //  Test complexity of construction of large binary selector as would be made of selectUnion of a large number of parts
+    //
+    for(unsigned j=0; j<trialLen.size(); ++j) {
+
+      unsigned numCopies = (numCopiesBase/2)/trialLen[j];
+
+      double startTime = stk::cpu_time();
+      for(unsigned i=0; i<numCopies; ++i) {
+        stk::mesh::Selector selectBig ;
+        for(unsigned i=0; i< trialLen[j] ; ++i) {
+          selectBig |= selectC & selectD;
+        }
+      }
+      elapsedTime[j] = (stk::cpu_time()-startTime)/(double)numCopies;
+      std::cout<<"Selector Constructor Complexity Check, Length: "<<trialLen[j]
+               <<" time: "<<elapsedTime[j]<<" Expecting linear complexity"<<std::endl;
+    }
+    //  Expected factor = N, which implies the |= algorithm is O(N) where N is the number of times or is called
+    //  Due to cache effects and random runtime variability though keep a pretty loose tolerane around this expectation
+    double expectedFactor = ((double)trialLen.back())/trialLen[0];
+    double factor         = elapsedTime.back()/elapsedTime[0];
+    EXPECT_TRUE(std::abs(expectedFactor-factor)/expectedFactor < 0.35);
+
+    std::cout<<"  Speedup factors: "<<expectedFactor<<" vs. "<<factor<<std::endl;
+
+    //
+    //  Test complexity of traversal of the large selector.  Some buckets will be found immediately and some will require traversal of
+    //  the entire selector to exclude thus this operation should be O(N) in selector size.
+    const stk::mesh::BucketVector& buckets = fix.get_BulkData().get_buckets(stk::topology::NODE_RANK, fix.get_MetaData().locally_owned_part());
+    
+
+    for(unsigned j=0; j<trialLen.size(); ++j) {
+      unsigned count=0;
+
+      unsigned numCopies = numCopiesBase/trialLen[j];
+
+      stk::mesh::Selector selectCD = selectC | selectD;
+      stk::mesh::Selector selectBig = selectCD;
+      for(int i=0; i< ((int)trialLen[j]-1) ; ++i) {
+        selectBig &= selectCD;
+      }
+      double startTime = stk::cpu_time();
+      for(unsigned i=0; i<numCopies; ++i) {
+        for(unsigned ibucket=0, n=buckets.size(); ibucket<n; ++ibucket) {
+          if(selectBig(*(buckets[ibucket]))) {
+            count++;
+          }
+        }
+      }
+
+      EXPECT_TRUE(count == 2 * numCopies);
+
+      elapsedTime[j] = (stk::cpu_time()-startTime)/(double)numCopies;
+      std::cout<<"Selector Traversal Complexity Check, Length: "<<trialLen[j]
+               <<" time: "<<elapsedTime[j]<<" Expecting linear complexity"<<std::endl;
+    }
+
+    expectedFactor = ((double)trialLen.back())/trialLen[0];
+    factor         = elapsedTime.back()/elapsedTime[0];
+
+    std::cout<<"  Speedup factors: "<<expectedFactor<<" vs. "<<factor<<std::endl;
+
+    EXPECT_TRUE(std::abs(expectedFactor-factor)/expectedFactor < 0.35);
+
+}
+
 TEST(Verify, usingSelectField)
 {
   SelectorFixture fix ;
@@ -838,6 +944,9 @@ TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
       check_selector_does_not_return_root_topology_parts(pm, "topo_part" , test_topologies[i]);
     }
 }
+
+
+
 
 TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
 {

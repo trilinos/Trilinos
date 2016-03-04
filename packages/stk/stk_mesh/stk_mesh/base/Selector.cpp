@@ -103,11 +103,11 @@ bool select_bucket_impl(Bucket const& bucket, SelectorNode const* root)
 {
   switch(root->m_type) {
   case SelectorNodeType::UNION:
-    return select_bucket_impl(bucket, root->lhs()) || select_bucket_impl(bucket, root->rhs());
+    return select_bucket_impl(bucket, root->rhs()) || select_bucket_impl(bucket, root->lhs());
   case SelectorNodeType::INTERSECTION:
-    return select_bucket_impl(bucket, root->lhs()) && select_bucket_impl(bucket, root->rhs());
+    return select_bucket_impl(bucket, root->rhs()) && select_bucket_impl(bucket, root->lhs());
   case SelectorNodeType::DIFFERENCE:
-    return select_bucket_impl(bucket, root->lhs()) && !select_bucket_impl(bucket, root->rhs());
+    return !select_bucket_impl(bucket, root->rhs()) && select_bucket_impl(bucket, root->lhs());
   case SelectorNodeType::COMPLEMENT:
     return !select_bucket_impl(bucket, root->unary());
   case SelectorNodeType::PART:
@@ -146,11 +146,11 @@ bool select_part_impl(Part const& part, SelectorNode const* root)
 {
   switch(root->m_type) {
   case SelectorNodeType::UNION:
-    return select_part_impl(part, root->lhs()) || select_part_impl(part, root->rhs());
+    return select_part_impl(part, root->rhs()) || select_part_impl(part, root->lhs());
   case SelectorNodeType::INTERSECTION:
-    return select_part_impl(part, root->lhs()) && select_part_impl(part, root->rhs());
+    return select_part_impl(part, root->rhs()) && select_part_impl(part, root->lhs());
   case SelectorNodeType::DIFFERENCE:
-    return select_part_impl(part, root->lhs()) && !select_part_impl(part, root->rhs());
+    return !select_part_impl(part, root->rhs()) && select_part_impl(part, root->lhs());
   case SelectorNodeType::COMPLEMENT:
     return !select_part_impl(part, root->unary());
   case SelectorNodeType::PART:
@@ -176,7 +176,7 @@ bool is_all_union_impl(SelectorNode const* root)
 {
   switch(root->m_type) {
   case SelectorNodeType::UNION:
-    return is_all_union_impl(root->lhs()) && is_all_union_impl(root->rhs());
+    return is_all_union_impl(root->rhs()) && is_all_union_impl(root->lhs());
   case SelectorNodeType::INTERSECTION:
   case SelectorNodeType::DIFFERENCE:
   case SelectorNodeType::COMPLEMENT:
@@ -226,11 +226,11 @@ bool select_part_vector_impl(PartVector const& parts, SelectorNode const* root)
 {
   switch(root->m_type) {
   case SelectorNodeType::UNION:
-    return select_part_vector_impl(parts, root->lhs()) || select_part_vector_impl(parts, root->rhs());
+    return select_part_vector_impl(parts, root->rhs()) || select_part_vector_impl(parts, root->lhs());
   case SelectorNodeType::INTERSECTION:
-    return select_part_vector_impl(parts, root->lhs()) && select_part_vector_impl(parts, root->rhs());
+    return select_part_vector_impl(parts, root->rhs()) && select_part_vector_impl(parts, root->lhs());
   case SelectorNodeType::DIFFERENCE:
-    return select_part_vector_impl(parts, root->lhs()) && !select_part_vector_impl(parts, root->rhs());
+    return !select_part_vector_impl(parts, root->rhs()) && select_part_vector_impl(parts, root->lhs());
   case SelectorNodeType::COMPLEMENT:
     return !select_part_vector_impl(parts, root->unary());
   case SelectorNodeType::FIELD:
@@ -270,7 +270,7 @@ bool select_part_vector_impl(PartVector const& parts, SelectorNode const* root)
 
 std::ostream & operator<<( std::ostream & out, const Selector & selector)
 {
-  return print_expr_impl(out, &selector.m_expr[0]);
+  return print_expr_impl(out, &selector.m_expr.back());
 }
 
 bool SelectorNode::operator==(SelectorNode const& arg_rhs) const
@@ -303,37 +303,39 @@ bool SelectorNode::operator==(SelectorNode const& arg_rhs) const
 
 bool Selector::operator()( const Part & part ) const
 {
-  return select_part_impl(part, &m_expr[0]);
+  return select_part_impl(part, &m_expr.back());
 }
 
 bool Selector::operator()( const Part * part ) const
 {
-  return select_part_impl(*part, &m_expr[0]);
+  return select_part_impl(*part, &m_expr.back());
 }
 
 bool Selector::operator()( const Bucket & bucket ) const
 {
-  return select_bucket_impl(bucket, &m_expr[0]);
+  return select_bucket_impl(bucket, &m_expr.back());
 }
 
 bool Selector::operator()( const Bucket * bucket ) const
 {
-  return select_bucket_impl(*bucket, &m_expr[0]);
+  return select_bucket_impl(*bucket, &m_expr.back());
 }
 
 bool Selector::operator()(const PartVector& parts) const
 {
-  return select_part_vector_impl(parts, &m_expr[0]);
+  return select_part_vector_impl(parts, &m_expr.back());
 }
+
 
 bool Selector::operator<(const Selector& rhs) const
 {
+
   // kinda arbitrary, but should work as long as all we need is a consistent ordering
   if (m_expr.size() != rhs.m_expr.size()) {
     return m_expr.size() < rhs.m_expr.size();
   }
 
-  for (size_t i = 0, ie = m_expr.size(); i < ie; ++i) {
+  for (unsigned i = 0, n = m_expr.size(); i < n; ++i) {
     if (m_expr[i].m_type != rhs.m_expr[i].m_type) {
       return m_expr[i].m_type < rhs.m_expr[i].m_type;
     }
@@ -341,7 +343,6 @@ bool Selector::operator<(const Selector& rhs) const
         m_expr[i].part() != rhs.m_expr[i].part()) {
       Part const* lhs_part = m_expr[i].part();
       Part const* rhs_part = rhs.m_expr[i].part();
-
       if (lhs_part != NULL && rhs_part != NULL) {
         return lhs_part->mesh_meta_data_ordinal() < rhs_part->mesh_meta_data_ordinal();
       }
@@ -376,20 +377,19 @@ bool Selector::operator<(const Selector& rhs) const
 
 void Selector::get_parts(PartVector& parts) const
 {
-  gather_parts_impl(parts, &m_expr[0]);
+  gather_parts_impl(parts, &m_expr.back());
 }
 
 BulkData* Selector::find_mesh() const
 {
-    BulkData* mesh = NULL;
-    for(size_t i=0; i<m_expr.size(); ++i) {
+    for (unsigned i = 0; i < m_expr.size(); ++i) {
         if (m_expr[i].node_type() == SelectorNodeType::PART  && m_expr[i].part()  != NULL) {
-            mesh = &m_expr[i].part()->mesh_bulk_data();
+            return &m_expr[i].part()->mesh_bulk_data();
         } else if (m_expr[i].node_type() == SelectorNodeType::FIELD && m_expr[i].field() != NULL) {
-            mesh = &m_expr[i].field()->get_mesh();
+            return &m_expr[i].field()->get_mesh();
         }
     }
-    return mesh;
+    return NULL;
 }
 
 BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
@@ -430,7 +430,7 @@ bool Selector::is_empty(EntityRank entity_rank) const
 
 bool Selector::is_all_unions() const
 {
-  return is_all_union_impl(&m_expr[0]);
+  return is_all_union_impl(&m_expr.back());
 }
 
 template <typename PartVectorType>
@@ -488,10 +488,10 @@ bool is_subset(Selector const& lhs, Selector const& rhs)
 {
   // If either selector has complements or intersections, it becomes
   // much harder to determine if one is a subset of the other
-  if (lhs.is_all_unions() && rhs.is_all_unions()) {
+  if (rhs.is_all_unions() && lhs.is_all_unions()) {
     PartVector lhs_parts, rhs_parts;
-    lhs.get_parts(lhs_parts);
     rhs.get_parts(rhs_parts);
+    lhs.get_parts(lhs_parts);
     for (size_t l = 0, le = lhs_parts.size(); l < le; ++l) {
       Part const& lhs_part = *lhs_parts[l];
       bool found = false;

@@ -75,35 +75,65 @@ struct SelectorNode
   {
     m_value.field_ptr = arg_field;
   }
+  //
+  //  Data structure deisgn:
+  //
+  //  Selector is orgainzed such that the right most (back) entry of the selector is the root node.
+  //
+  //  Examples: 
+  //
+  //    left_offset    = L
+  //    right_offset   = R
+  //    uranary_offset = U 
+  //
+  //  Uranary selector:  !(S1)
+  //
+  //     +--U--+<--(Root Node)
+  //     |     |
+  //     V     |
+  //    S1     ! 
+  //
+  //  Complex selector: (S1 & S2) & (!S3)
+  //
+  //               +------L------+<--(Root Node)
+  //               |             |
+  //               V        +--R-+
+  //     +----L----+        |    |
+  //     |         |        V    |
+  //     |     +-R-+    +-U-+    |
+  //     |     |   |    |   |    |
+  //     V     V   |    V   |    |
+  //    S1    S2   &   S3   !    &
+  //
 
   // Either leaf (part_ptr) or unary (no data) or binary (offset from current pos to rhs)
   union value_type
   {
-    enum { left_offset = 1 };
+    enum { right_offset = 1 };
     enum { unary_offset = 1 };
 
     Part      const* part_ptr;
     FieldBase const* field_ptr;
-    unsigned right_offset; // for binary op
+    unsigned left_offset; // for binary op
     // no storage required for unary op
   };
 
   SelectorNode const* lhs() const
   {
     ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
-    return this + m_value.left_offset;
+    return this - m_value.left_offset;
   }
 
   SelectorNode const* rhs() const
   {
     ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
-    return this + m_value.right_offset;
+    return this - m_value.right_offset;
   }
 
   SelectorNode const* unary() const
   {
     ThrowAssert(m_type == SelectorNodeType::COMPLEMENT);
-    return this + m_value.unary_offset;
+    return this - m_value.unary_offset;
   }
 
   Part const* part() const
@@ -210,7 +240,8 @@ public:
     impl::SelectorNode root;
     root.m_type = SelectorNodeType::COMPLEMENT;
 
-    m_expr.insert(m_expr.begin(), root);
+    m_expr.push_back(root);
+
     return *this;
   }
 
@@ -260,9 +291,9 @@ private:
 
   bool is_null() const {
     if(m_expr.size() > 1) return false;
-    if(m_expr[0].m_type == SelectorNodeType::PART  && m_expr[0].m_value.part_ptr  == nullptr) {
+    if(m_expr.back().m_type == SelectorNodeType::PART  && m_expr.back().m_value.part_ptr  == nullptr) {
       return true;
-    } else if(m_expr[0].m_type == SelectorNodeType::FIELD && m_expr[0].m_value.field_ptr == nullptr) {
+    } else if(m_expr.back().m_type == SelectorNodeType::FIELD && m_expr.back().m_value.field_ptr == nullptr) {
       return true;
     }
     return false;
@@ -272,10 +303,10 @@ private:
   {
     impl::SelectorNode root;
     root.m_type = type;
-    root.m_value.right_offset = 1 + m_expr.size();
+    root.m_value.left_offset = 1 + rhs.m_expr.size();
 
-    m_expr.insert(m_expr.begin(), root);
     m_expr.insert(m_expr.end(), rhs.m_expr.begin(), rhs.m_expr.end());
+    m_expr.push_back(root);
 
     return *this;
   }
