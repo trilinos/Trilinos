@@ -122,6 +122,9 @@ public:
     LocalId get_element_local_id() const { return m_elementLocalId; }
     unsigned get_element_side_index() const { return m_sideIndex; }
 
+    bool is_parallel_edge() const { return false; }
+    int get_proc_rank_of_neighbor() const { return -1; }
+
     void clear_side_nodes() { m_sideNodes.clear(); }
     void resize_side_nodes(size_t n) { m_sideNodes.resize(n); }
 
@@ -423,11 +426,8 @@ void add_shell_element_if_coincident(const stk::mesh::BulkData& mesh,
     // for shell element, want the nodes of the solid to be in opposite order. So getting non-matching side ordinals
     // means the normals oppose
     bool does_local_shell_side_normal_oppose_other_element_side_normal = (localElemOrdAndPerm.first == sideOrdinal);
-
     if (does_local_shell_side_normal_oppose_other_element_side_normal)
-    {
         filteredConnectedElements.push_back(connectedElem);
-    }
 }
 
 template <typename SideData>
@@ -488,14 +488,10 @@ void add_shell_connections_to_this_solid_if_normals_oppose(const stk::mesh::Bulk
     }
 
     if (!filteredConnectedElements.empty())
-    {
         connectedElementData.swap(filteredConnectedElements);
-    }
 
     if (!foundAnySingleElementThatIsEquivalentToLocalElement)
-    {
         connectedElementData.clear();
-    }
 }
 
 

@@ -59,7 +59,6 @@ struct RemoteEdge;
 class ElemElemGraph
 {
 public:
-
     ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr);
 
     virtual ~ElemElemGraph();
@@ -144,6 +143,7 @@ public:
 
     stk::mesh::Entity get_entity(stk::mesh::impl::LocalId local_id) const { return m_local_id_to_element_entity[local_id]; }
 
+    std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_coincident_elements();
 protected:
     void fill_graph();
     void update_number_of_parallel_edges();
@@ -231,8 +231,8 @@ protected:
     size_t m_num_parallel_edges;
     stk::mesh::SideIdPool m_sideIdPool;
     impl::SparseGraph m_coincidentGraph;
+    std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > m_splitCoincidents;
 private:
-
     void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
@@ -261,7 +261,9 @@ private:
                               const std::vector<unsigned>& side_counts,
                               std::vector<stk::mesh::sharing_info>& shared_modified);
 
-private:
+    void extract_split_coincident_connections(stk::mesh::Entity localElem, const impl::ParallelElementData &localElementData, const impl::ParallelElementDataVector &elementsConnectedToThisElementSide);
+    void add_split_coincident_connection(stk::mesh::Entity localElem, const impl::ParallelElementData & connectedElemParallelData);
+
     void update_all_local_neighbors(const stk::mesh::Entity elemToSend,
                                     const int destination_proc,
                                     impl::ParallelGraphInfo &newParallelGraphEntries);

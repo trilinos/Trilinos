@@ -711,6 +711,53 @@ void ElemElemGraph::add_parallel_edge_and_info(const stk::mesh::impl::ElemSideTo
     }
 }
 
+void ElemElemGraph::add_split_coincident_connection(stk::mesh::Entity localElem, const impl::ParallelElementData & connectedElemParallelData)
+{
+    m_splitCoincidents[m_bulk_data.identifier(localElem)] = {connectedElemParallelData.get_element_identifier(), connectedElemParallelData.get_proc_rank_of_neighbor()};
+}
+
+bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, stk::topology localTopology, const stk::mesh::EntityVector &sideNodes)
+{
+    stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(bulkData, localElem, bulkData.mesh_meta_data().side_rank(), sideNodes);
+    return (INVALID_CONNECTIVITY_ORDINAL != connectedOrdAndPerm.first && localTopology.is_positive_polarity(connectedOrdAndPerm.second));
+}
+
+struct TopologyChecker
+{
+    bool are_both_shells()
+    {
+        return localTopology.is_shell() && remoteTopology.is_shell();
+    }
+
+    bool are_both_not_shells()
+    {
+        return !localTopology.is_shell() && !remoteTopology.is_shell();
+    }
+
+    stk::topology localTopology;
+    stk::topology remoteTopology;
+};
+
+
+bool is_split_coincident_connection(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, const impl::ParallelElementData & connectedElemParallelData, const stk::mesh::EntityVector &sideNodes)
+{
+    TopologyChecker topologyChecker {bulkData.bucket(localElem).topology(), connectedElemParallelData.get_element_topology()};
+    if(topologyChecker.are_both_shells())
+        return true;
+    else if(topologyChecker.are_both_not_shells())
+        return is_side_node_permutation_positive(bulkData, localElem, topologyChecker.localTopology, sideNodes);
+    return false;
+}
+
+void ElemElemGraph::extract_split_coincident_connections(stk::mesh::Entity localElem, const impl::ParallelElementData &localElementData, const impl::ParallelElementDataVector &elementsConnectedToThisElementSide)
+{
+    for(const impl::ParallelElementData & connectedElemParallelData : elementsConnectedToThisElementSide)
+        if(connectedElemParallelData.is_parallel_edge())
+            if(is_split_coincident_connection(m_bulk_data, localElem, connectedElemParallelData, localElementData.get_side_nodes()))
+                add_split_coincident_connection(localElem, connectedElemParallelData);
+}
+
+
 void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideDataSent,
                                                                                stk::mesh::impl::ParallelElementDataVector & allElementsConnectedToSideNodes,
                                                                                std::vector<impl::SharedEdgeInfo> &newlySharedEdges)
@@ -721,13 +768,15 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
 
     for (impl::ParallelElementData elementData: localElementsAttachedToReceivedNodes)
     {
-        stk::mesh::Entity localElem = this->get_entity_from_local_id(elementData.get_element_local_id());
+        stk::mesh::Entity localElem = get_entity_from_local_id(elementData.get_element_local_id());
 
         unsigned side_index = elementData.get_element_side_index();
         if (elementData.get_side_nodes().size() == sideNodesOfReceivedElement.size())
         {
             impl::ParallelElementDataVector elementsConnectedToThisElementSide = allElementsConnectedToSideNodes;
             impl::filter_out_invalid_solid_shell_connections(m_bulk_data, localElem, side_index, elementsConnectedToThisElementSide);
+
+            extract_split_coincident_connections(localElem, elementData, elementsConnectedToThisElementSide);
 
             add_parallel_edge_and_info(elemSideDataSent, elementsConnectedToThisElementSide, elementData, newlySharedEdges);
         }
@@ -1963,6 +2012,11 @@ unsigned ElemElemGraph::get_max_num_sides_per_element() const
     return 6;
 }
 
+
+std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > ElemElemGraph::get_split_coincident_elements()
+{
+    return m_splitCoincidents;
+}
 
 }} // end namespaces stk mesh
 
