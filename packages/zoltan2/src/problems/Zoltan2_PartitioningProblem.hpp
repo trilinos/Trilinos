@@ -627,6 +627,24 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                           //,task_communication_xadj,
                           //task_communication_adj
                           );
+
+    // KDD  For now, we would need to re-map the part numbers in the solution.
+    // KDD  I suspect we'll later need to distinguish between part numbers and 
+    // KDD  process numbers to provide separation between partitioning and
+    // KDD  mapping.  For example, does this approach here assume #parts == #procs?
+    // KDD  If we map k tasks to p processes with k > p, do we effectively reduce
+    // KDD  the number of tasks (parts) in the solution?
+
+#ifdef KDD_READY
+    const partId_t *oldParts = solution_->getPartListView();
+    size_t nLocal = ia->getNumLocalIds();
+    for (size_t i = 0; i < nLocal; i++) {
+      // kind of cheating since oldParts is a view; probably want an interface in solution 
+      // for resetting the PartList rather than hacking in like this.
+      oldParts[i] = ctm->getAssignedProcForTask(oldParts[i]);  
+    }
+#endif 
+
     //for now just delete the object.
     delete ctm;
   }

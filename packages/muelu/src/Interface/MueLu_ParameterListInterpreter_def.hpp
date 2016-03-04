@@ -562,6 +562,7 @@ namespace MueLu {
         paramList.isParameter("coarse: type")   ||
         paramList.isParameter("coarse: params");
     if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "coarse: type", std::string, "none")) {
+      this->GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
       manager.SetFactory("CoarseSolver", Teuchos::null);
 
     } else if (isCustomCoarseSolver) {
@@ -591,13 +592,14 @@ namespace MueLu {
           coarseType == "LINESMOOTHING_BANDED_RELAXATION" ||
           coarseType == "LINESMOOTHING_BANDED RELAXATION")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
-      else
+      else {
 #ifdef HAVE_MUELU_MATLAB
-        if(coarseType == "matlab")
+        if (coarseType == "matlab")
           coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
         else
 #endif
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
+      }
 
       manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
     }

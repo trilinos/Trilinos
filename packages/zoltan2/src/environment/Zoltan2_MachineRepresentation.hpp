@@ -16,13 +16,19 @@ private:
     int networkDim;
     int numProcs;
 
-    pcoord_t **procCoords;
-    const RCP<const Comm<int> > comm;
+    pcoord_t **procCoords;   // KDD Maybe should be RCP?  But we do clean it up in destructor
+    const RCP<const Comm<int> > comm;  // KDD Do we need to keep the communicator? 
+                                       // KDD Maybe just keep myRank?  Or maybe MPI_Proc_name?
 
 public:
     /*! \brief Constructor MachineRepresentation Class
      *  \param comm_ Communication object.
      */
+
+    // KDD Do we really need separate constructors for "const Comm" and "Comm"?  Easier to 
+    // KDD maintain one constructor
+    // KDD If don't store the communicator, arg can be "const Comm<int> &comm".
+
     MachineRepresentation(const RCP<const Comm<int> > &comm_):
       networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(comm_){
         // WIll need this constructor to be specific to RAAMP (MD).
@@ -54,7 +60,7 @@ public:
         }
         //obtain the coordinate of the processor.
         this->getMyCoordinate(/*pcoord_t &xyz[networkDim]*/);
-        // copy xyz into appropriate spot in procCoords. (MD)
+        // copy xyz into appropriate spot in procCoords. (MD)  // KDD I agree with this
 
         //reduceAll the coordinates of each processor.
         this->gatherMachineCoordinates();
@@ -95,7 +101,7 @@ public:
         }
         //obtain the coordinate of the processor.
         this->getMyCoordinate(/*pcoord_t &xyz[networkDim]*/);
-        // copy xyz into appropriate spot in procCoords. (MD)
+        // copy xyz into appropriate spot in procCoords. (MD)  // KDD I Agree.
 
         //reduceAll the coordinates of each processor.
         this->gatherMachineCoordinates();
@@ -105,12 +111,18 @@ public:
     /*! \brief getMyCoordinate function
      *  stores the coordinate of the current processor in procCoords[*][rank]
      */
-    void getMyCoordinate(/* pcoord_t &xyz[networkDim]*/){
+    void getMyCoordinate(/* pcoord_t &xyz[networkDim]*/){  // KDD Enable the argument rather
+                                                           // KDD than writing into array here
 
         // Call RAAMP system to get coordinates and store in xyz (MD)
         // What is the RAAMP call?  (AG)
         // AG will return a view (pointer) to RAAMP's data.
         // We will copy it into xyz.
+
+//KDD #if defined(HAVE_ZOLTAN2_LDMS)
+//KDD #elif defined(HAVE_ZOLTAN2_TOPOMGR)
+//KDD #elif defined(HAVE_ZOLTAN2_RCA)
+//KDD #else
 
         // The code below may be good for the default constructor, perhaps,
         // but it should copy the data into xyz instead of the procCoords.
@@ -123,12 +135,16 @@ public:
             procCoords[i][myRank] = m / int(pow(slice, double(networkDim - i - 1)));
             m = m % int(pow(double(slice), double(networkDim - i - 1)));
         }
+//KDD #endif
     }
+
+    // KDD Need to return coordinate of any rank?
+    // void getCoordinate(partId_t rank, pcoord_t &xyz[networkDim]) { }
 
     /*! \brief gatherMachineCoordinates function
      *  reduces and stores all machine coordinates.
      */
-    void gatherMachineCoordinates(){
+    void gatherMachineCoordinates(){  // KDD Should be private
         pcoord_t *tmpVect = new pcoord_t [numProcs];
 
         for (int i = 0; i < networkDim; ++i){
@@ -152,7 +168,7 @@ public:
         for (int i = 0; i < networkDim; ++i){
             delete [] procCoords[i];
         }
-        delete []procCoords;
+        delete [] procCoords;
         // Free/release THE RAAMP Data Object.
         // Deinitialize/finalize/whatever (AG)
     }
@@ -160,14 +176,14 @@ public:
     /*! \brief getProcDim function
      * returns the dimension of the physical processor layout.
      */
-    int getProcDim() const{
+    int getProcDim() const{  // KDD Maybe getNetworkDim or getProcCoordDim
         return networkDim;
     }
 
     /*! \brief getProcDim function
      * returns the coordinates of processors in two dimensional array.
      */
-    pcoord_t** getProcCoords() const{
+    pcoord_t** getProcCoords() const{  // KDD Make clear that returning a View; maybe return ArrayView
         return procCoords;
     }
 
@@ -177,6 +193,8 @@ public:
     int getNumProcs() const{
         return numProcs;
     }
+
+    // KDD TODO:  Need more for full LDMS interface.
 
 };
 }

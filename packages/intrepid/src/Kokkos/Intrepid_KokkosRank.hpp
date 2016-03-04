@@ -11,7 +11,49 @@ struct CheckType{static const bool value = false; };
 
 template<class A>
 struct Rank{static const int value = -1;};
+
+template<class A,class Scalar>
+struct Return_Type{
+    typedef Scalar& return_type;
+    typedef Scalar const_return_type;
+    };
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 #ifdef HAVE_INTREPID_KOKKOSCORE
+#if KOKKOS_USING_EXP_VIEW
+
+template< class T , class ... P >
+struct Rank<Kokkos::View<T,P...> >{
+static const int value=Kokkos::View<T,P...>::Rank;
+};
+
+template< class T , class ... P >
+struct Rank<const Kokkos::View<T,P...> > {
+static const int value=Kokkos::View<T,P...>::Rank;
+};
+
+template< class T , class ... P >
+struct CheckType< Kokkos::View<T,P...> > {
+static const bool value = true;
+};
+
+template< class T , class ... P , class Scalar>
+struct Return_Type<const Kokkos::View<T,P...>, Scalar>{
+      typedef Kokkos::View<T,P...> ViewType;
+      typedef typename ViewType::reference_type return_type;
+      typedef typename ViewType::reference_type const_return_type;
+};
+
+template< class T , class ... P , class Scalar>
+struct Return_Type< Kokkos::View<T,P...>, Scalar>{
+      typedef Kokkos::View<T,P...> ViewType;
+      typedef typename ViewType::reference_type return_type;
+      typedef typename ViewType::reference_type const_return_type;
+};
+
+#else
+
 template<class arg1, class arg2, class arg3, class arg4, class arg5>
 struct Rank<Kokkos::View<arg1,arg2,arg3,arg4,arg5> >{
 static const int value=Kokkos::View<arg1,arg2,arg3,arg4, arg5>::Rank;
@@ -26,15 +68,6 @@ template<class arg1, class arg2, class arg3, class arg4, class arg5>
 struct CheckType<Kokkos::View<arg1,arg2,arg3,arg4,arg5> >{
 static const bool value = true;
 };
-#endif
-
-template<class A,class Scalar>
-struct Return_Type{
-    typedef Scalar& return_type;
-    typedef Scalar const_return_type;
-    };
-
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 
 template<class arg1, class arg2, class arg3, class arg4, class arg5, class Scalar>
 struct Return_Type<const Kokkos::View<arg1,arg2,arg3,arg4,arg5>, Scalar>{
@@ -66,7 +99,12 @@ struct Return_Type< Kokkos::View<arg1,arg2,arg3,arg4,Kokkos::Impl::ViewSpecializ
       typedef typename ViewType::fad_view_type const_return_type;
 };
 */
+
 #endif
+#endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 template<class DataT,int leftrank>
 struct RankSpec{};
