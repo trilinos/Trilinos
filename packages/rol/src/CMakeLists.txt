@@ -93,6 +93,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/distribution
                     ${DIR}/function/riskmeasure
                     ${DIR}/function/riskmeasure/quadrangle
+                    ${DIR}/function/riskmeasure/fdivergence
                     ${DIR}/algorithm
                     ${DIR}/vector
                     ${DIR}/sampler
@@ -102,6 +103,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/distribution/*.hpp
                     ${DIR}/function/riskmeasure/*.hpp
                     ${DIR}/function/riskmeasure/quadrangle/*.hpp
+                    ${DIR}/function/riskmeasure/fdivergence/*.hpp
                     ${DIR}/algorithm/*.hpp
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
