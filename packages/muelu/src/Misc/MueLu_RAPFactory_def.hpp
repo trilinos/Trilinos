@@ -158,7 +158,6 @@ namespace MueLu {
       // Allow optimization of storage.
       // This is necessary for new faster Epetra MM kernels.
       // Seems to work with matrix modifications to repair diagonal entries.
-      bool doOptimizeStorage = true; //!pL.get<bool>("RepairMainDiagonal");
 
       if (pL.get<bool>("transpose: use implicit") == true) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
