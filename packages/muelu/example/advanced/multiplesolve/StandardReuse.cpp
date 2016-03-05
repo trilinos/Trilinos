@@ -359,19 +359,20 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   const int nIts = 9;
 
-  std::string thickSeparator = "==========================================================================================================================";
-  std::string thinSeparator  = "--------------------------------------------------------------------------------------------------------------------------";
+  std::string thickSeparator = "=============================================================";
+  std::string thinSeparator  = "-------------------------------------------------------------";
 
   // =========================================================================
   // Setup #1 (no reuse)
   // =========================================================================
-  out << thickSeparator << std::endl;
+  out << thickSeparator << " no reuse " << thickSeparator << std::endl;
   {
     RCP<Hierarchy> H;
 
     // Run multiple builds for matrix A and time them
     RCP<Teuchos::Time> tm = TimeMonitor::getNewTimer("Setup #1: no reuse");
     for (int i = 0; i <= numRebuilds; i++) {
+      out << thinSeparator << " no reuse (rebuild #" << i << ") " << thinSeparator << std::endl;
       // Start timing (skip first build to reduce jitter)
       if (!(numRebuilds && i == 0))
         tm->start();
@@ -408,11 +409,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   reuseTypes.push_back("RP"); reuseNames.push_back("smoothed P and R");
 
   for (size_t k = 0; k < reuseTypes.size(); k++) {
-    out << thickSeparator << std::endl;
+    out << thickSeparator << " " << reuseTypes[k] << " " << thickSeparator << std::endl;
     A->SetMaxEigenvalueEstimate(-one);
 
     paramList.set("reuse: type", reuseTypes[k]);
 
+    out << thinSeparator << " " << reuseTypes[k] << " (initial) " << thinSeparator << std::endl;
     RCP<Hierarchy> H = CreateHierarchy(A, paramList, coordinates);
 
     X->putScalar(zero);
@@ -422,8 +424,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     // Reuse setup
     RCP<Matrix> Bcopy = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(B);
 
-    RCP<Teuchos::Time> tm = TimeMonitor::getNewTimer("Setup #2: reuse " + reuseNames[k]);
+    RCP<Teuchos::Time> tm = TimeMonitor::getNewTimer("Setup #" + MueLu::toString(k+2) + ": reuse " + reuseNames[k]);
     for (int i = 0; i <= numRebuilds; i++) {
+      out << thinSeparator << " " << reuseTypes[k] << " (rebuild #" << i << ") " << thinSeparator << std::endl;
+
       // Start timing (skip first build to reduce jitter)
       if (!(numRebuilds && i == 0))
         tm->start();
@@ -445,7 +449,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       B.swap(Bcopy);
     }
   }
-  out << thickSeparator << std::endl;
+  out << thickSeparator << thickSeparator << std::endl;
 
   {
     const bool alwaysWriteLocal = true;
