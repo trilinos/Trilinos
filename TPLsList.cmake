@@ -200,6 +200,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   AmgX            "cmake/TPLs/"    EX
   CGAL            "cmake/TPLs/"    EX
   VTune           "cmake/TPLs/"    SS
+  TASMANIAN       "cmake/TPLs/"    EX
   )
 
 # NOTES:
