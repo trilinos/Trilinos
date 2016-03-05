@@ -556,7 +556,6 @@ TEST(Verify, selectorAlgorithmicComplexity)
 
     std::vector<double> elapsedTime(trialLen.size());
 
-
     //
     //  Test complexity of construction of large binary selector as would be made of selectUnion of a large number of parts
     //
@@ -567,7 +566,7 @@ TEST(Verify, selectorAlgorithmicComplexity)
       double startTime = stk::cpu_time();
       for(unsigned i=0; i<numCopies; ++i) {
         stk::mesh::Selector selectBig ;
-        for(unsigned i=0; i< trialLen[j] ; ++i) {
+        for(unsigned k=0; k< trialLen[j] ; ++k) {
           selectBig |= selectC & selectD;
         }
       }
