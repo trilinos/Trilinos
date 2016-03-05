@@ -28,7 +28,7 @@ public:
     const Teuchos::Ordinal group_size,
     const Teuchos::Array< Teuchos::Array<Scalar> >& samples,
     Teuchos::Array< Teuchos::Array<Teuchos::Ordinal> >& groups,
-    Teuchos::Ordinal& num_duplicate) = 0;
+    Teuchos::Ordinal& num_duplicate) const = 0;
 };
 
 // Grouping based on the natural ordering of the samples as provided
@@ -46,7 +46,7 @@ public:
     const Teuchos::Ordinal group_size,
     const Teuchos::Array< Teuchos::Array<Scalar> >& samples,
     Teuchos::Array< Teuchos::Array<Teuchos::Ordinal> >& groups,
-    Teuchos::Ordinal& num_duplicate)
+    Teuchos::Ordinal& num_duplicate) const
   {
     using Teuchos::Ordinal;
 
@@ -100,7 +100,7 @@ public:
     const Teuchos::Ordinal group_size,
     const Teuchos::Array< Teuchos::Array<Scalar> >& samples,
     Teuchos::Array< Teuchos::Array<Teuchos::Ordinal> >& groups,
-    Teuchos::Ordinal& num_duplicate)
+    Teuchos::Ordinal& num_duplicate) const
   {
     using Teuchos::Ordinal;
 

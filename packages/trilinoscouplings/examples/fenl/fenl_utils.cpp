@@ -53,9 +53,13 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   if(cmdline.USE_MUELU || cmdline.USE_MEANBASED)
     cmdline.USE_BELOS = true;
 
+  clp.setOption("sampling", &cmdline.USE_UQ_SAMPLING, num_sampling_types, sampling_values, sampling_names, "UQ sampling method");
   clp.setOption("uq-fake",                  &cmdline.USE_UQ_FAKE,  "setup a fake UQ problem of this size");
   clp.setOption("uq-dim",                   &cmdline.USE_UQ_DIM,  "UQ dimension");
   clp.setOption("uq-order",                 &cmdline.USE_UQ_ORDER,  "UQ order");
+  clp.setOption("uq-init-level",            &cmdline.USE_UQ_INIT_LEVEL,  "Initial adaptive sparse grid level");
+  clp.setOption("uq-max-level",             &cmdline.USE_UQ_MAX_LEVEL,  "Max adaptive sparse grid level");
+  clp.setOption("uq-tol",                   &cmdline.USE_UQ_TOL,  "Adaptive sparse grid tolerance");
   clp.setOption("diff-coeff-linear",        &cmdline.USE_DIFF_COEFF_LINEAR,  "Linear term in diffusion coefficient");
   clp.setOption("diff-coeff-constant",      &cmdline.USE_DIFF_COEFF_CONSTANT,  "Constant term in diffusion coefficient");
   clp.setOption("mean",                     &cmdline.USE_MEAN,  "KL diffusion mean");

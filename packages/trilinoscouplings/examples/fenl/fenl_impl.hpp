@@ -135,6 +135,8 @@ template < class Scalar, class Device , BoxElemPart::ElemOrder ElemOrder >
 class Problem {
 public:
 
+  typedef Scalar ScalarType;
+  typedef Device DeviceType;
   typedef BoxElemFixture< Device , ElemOrder >  FixtureType ;
 
   typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type  Magnitude;
