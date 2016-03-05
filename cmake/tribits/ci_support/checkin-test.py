@@ -946,10 +946,18 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     +" [default]" )
   clp.add_option(
     "--skip-case-no-email", dest="skipCaseSendEmail", action="store_false",
-    help="If set then if a build/test case is skipped for some reason (i.e." \
+    help="If set, then if a build/test case is skipped for some reason (i.e." \
     +" because no packages are enabled) then no email will go out for that case." \
-    +" [default]",
+    +" (opposite of --skip-case-send-email) [default]",
     default=True )
+
+  addOptionParserChoiceOption(
+    "--send-build-case-email", "sendBuildCaseEmail",
+    ('always', 'only-on-failure', 'never'), 0,
+    "Determines when email goes out to --send-email-to=<email> for a build" \
+    +" case.  But the final status email will still go out if --send-email-to=<email>" \
+    +" is not empty. [default = 'always']",
+    clp )
 
   clp.add_option(
     "--send-email-for-all", dest="sendEmailOnlyOnFailure", action="store_false",
@@ -1160,6 +1168,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --skip-case-send-email \\"
   else:
     print "  --skip-case-no-email \\"
+  print "  --send-build-case-email="+str(options.sendBuildCaseEmail)+" \\"
   if not options.sendEmailOnlyOnFailure:
     print "  --send-email-for-all \\"
   else:

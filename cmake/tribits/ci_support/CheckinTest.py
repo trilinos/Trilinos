@@ -896,15 +896,13 @@ def createConfigureFile(cmakeOptions, baseCmnd, srcDir, configFileName):
     doConfigStr = ""
   
     doConfigStr += \
-      "EXTRA_ARGS=$@\n" \
-      "\n" \
-      +baseCmnd+ " \\\n"
+      baseCmnd+ " \\\n"
   
     for opt in cmakeOptions:
       doConfigStr += opt + " \\\n"
     
     doConfigStr += \
-      "$EXTRA_ARGS"
+      "\"$@\""
 
     if srcDir:
       doConfigStr += " \\\n"+srcDir
@@ -1223,6 +1221,20 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
 
     print buildTestCaseName + ": Skipping sending build/test case email because" \
       +" there were no enables and --abort-gracefully-if-no-enables was set!"
+
+
+  elif inOptions.sendEmailTo and inOptions.sendBuildCaseEmail=="only-on-failure" \
+    and overallPassed \
+    :
+
+    print buildTestCaseName + ": Skipping sending build/test case email because" \
+      +" everything passed and --send-build-case-email=only-on-failure was set!"
+
+  elif inOptions.sendEmailTo and inOptions.sendBuildCaseEmail=="never" \
+    :
+
+    print buildTestCaseName + ": Skipping sending build/test case email because" \
+      +" everything passed and --send-build-case-email=never was set!"
 
   elif inOptions.sendEmailTo and inOptions.sendEmailOnlyOnFailure and success:
 
