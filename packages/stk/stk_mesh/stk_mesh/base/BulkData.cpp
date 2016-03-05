@@ -4038,11 +4038,25 @@ void BulkData::add_comm_list_entries_for_entities(const std::vector<stk::mesh::E
 //  * All shared entities have parallel-consistent owner
 //  * Part membership of shared entities is up-to-date
 //  * m_entity_comm is up-to-date
-void BulkData::internal_resolve_parallel_create()
+void BulkData::internal_resolve_parallel_create_nodes()
+{
+    std::vector<stk::mesh::EntityRank> ranks={stk::topology::NODE_RANK};
+    this->internal_resolve_parallel_create(ranks);
+}
+
+void BulkData::internal_resolve_parallel_create_edges_and_faces()
+{
+    std::vector<stk::mesh::EntityRank> ranks;
+    for(EntityRank rank=stk::topology::EDGE_RANK; rank<=mesh_meta_data().side_rank(); rank++)
+        ranks.push_back(rank);
+    this->internal_resolve_parallel_create(ranks);
+}
+
+void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::EntityRank>& ranks)
 {
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
-  for(EntityRank rank=stk::topology::NODE_RANK; rank<=mesh_meta_data().side_rank(); ++rank)
+  for(EntityRank rank : ranks)
   {
       std::vector<Entity> shared_modified;
 

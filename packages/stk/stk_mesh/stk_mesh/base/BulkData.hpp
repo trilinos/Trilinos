@@ -80,6 +80,7 @@ namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
 namespace stk { namespace mesh { class ModificationObserver; } }
+namespace stk { namespace io { class StkMeshIoBroker; } }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
@@ -743,7 +744,21 @@ public:
 
   void register_observer(stk::mesh::ModificationObserver *observer);
 
+  virtual void initialize_graph() {}
+  virtual stk::mesh::ElemElemGraph& get_graph() { ThrowRequireWithSierraHelpMsg(false); stk::mesh::ElemElemGraph *graph = nullptr; return *graph;}
+
 protected: //functions
+
+  bool resolve_node_sharing()
+  {
+      return m_meshModification.resolve_node_sharing();
+  }
+
+  bool modification_end_after_node_sharing_resolution()
+  {
+      notifier.notify_started_modification_end();
+      return m_meshModification.modification_end_after_node_sharing_resolution();
+  }
 
   void make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
                                                          const stk::mesh::EntityVector& deletedSides,
@@ -881,7 +896,10 @@ protected: //functions
           PartStorage& part_storage, stk::CommSparse& comm);
 
   void internal_resolve_shared_membership(); // Mod Mark
-  void internal_resolve_parallel_create(); // Mod Mark
+  void internal_resolve_parallel_create(const std::vector<stk::mesh::EntityRank>& ranks); // Mod Mark
+  void internal_resolve_parallel_create_nodes();
+  void internal_resolve_parallel_create_edges_and_faces();
+
   void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new ); // Mod Mark
   void internal_send_part_memberships_from_owner(const std::vector<EntityProc> &send_list);
 
@@ -1256,6 +1274,7 @@ private:
   friend class ::stk::mesh::ElemElemGraph;
   friend class ::stk::mesh::FaceCreator;
   friend class ::stk::mesh::EntityLess;
+  friend class ::stk::io::StkMeshIoBroker;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
