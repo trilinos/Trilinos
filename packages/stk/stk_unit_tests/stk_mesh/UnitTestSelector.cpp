@@ -619,8 +619,9 @@ TEST(Verify, selectorAlgorithmicComplexity)
 
     std::cout<<"  Speedup factors: "<<expectedFactor<<" vs. "<<factor<<std::endl;
 
-    EXPECT_TRUE(std::abs(expectedFactor-factor)/expectedFactor < 0.35);
-
+    double relative_factor = std::abs(expectedFactor-factor)/expectedFactor;
+    std::cout <<" relative_factor= " << relative_factor << "\n";
+    EXPECT_TRUE( relative_factor < 0.35);
 }
 
 TEST(Verify, usingSelectField)
