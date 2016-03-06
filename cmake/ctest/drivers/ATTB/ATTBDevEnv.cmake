@@ -30,8 +30,10 @@ SET(Trilinos_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
   "Set by default in gcc-4.8.3-base-options.cmake")
 
 # Turn of 'int' as a global ordinal
-SET(Tpetra_INST_INT_INT OFF CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
+#SET(Tpetra_INST_INT_INT OFF CACHE BOOL
+#  "Set by default in gcc-4.8.3-base-options.cmake")
+# NOT: We have to keep int as a global ordinal in order to support Epetra
+# adapters.
 
 # Turn off float and complex
 SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL
