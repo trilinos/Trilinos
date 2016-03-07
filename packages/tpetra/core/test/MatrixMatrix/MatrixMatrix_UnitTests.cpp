@@ -263,7 +263,6 @@ mult_test_results multiply_test(
   RCP<const Comm<Ordinal> > comm,
   FancyOStream& out)
 {
-
   typedef Map<int, int, node_type> Map_t;
   RCP<const Map_t> map = C->getRowMap();
 
@@ -271,20 +270,23 @@ mult_test_results multiply_test(
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
-  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-    name+"_calculated.mtx",computedC);
-  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-    name+"_real.mtx",C);
 
-  double cNorm = C->getFrobeniusNorm ();
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedC);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", C);
+#endif
+
   RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<double, int, int, node_type>(C->getRowMap());
   Tpetra::MatrixMatrix::Add(*C, false, -1.0, *computedC, false, 1.0, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
-  double compNorm = diffMatrix->getFrobeniusNorm ();
+
   mult_test_results results;
-  results.epsilon = compNorm/cNorm;
-  results.cNorm = cNorm;
-  results.compNorm = compNorm;
+  results.cNorm    = C->getFrobeniusNorm ();
+  results.compNorm = diffMatrix->getFrobeniusNorm ();
+  results.epsilon  = results.compNorm/results.cNorm;
+
   return results;
 }
 
@@ -339,6 +341,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   using std::endl;
 
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+
   ParameterList defaultParameters;
   RCP<node_type> node = rcp(new node_type(defaultParameters));
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
@@ -352,6 +355,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       "Bad tag's name: " << it->first <<
       "Type name: " << it->second.getAny().typeName() <<
       std::endl << std::endl);
+
     ParameterList currentSystem = matrixSystems->sublist (it->first);
     std::string name = currentSystem.name();
     std::string A_file = currentSystem.get<std::string> ("A");
@@ -396,14 +400,15 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
         }
         TEST_COMPARE(theResults.epsilon, <, epsilon)
 
-          }
+      }
     }
-    else if(op == "add"){
-      if (verbose) {
+    else if (op == "add") {
+      if (verbose)
         out << "Running 3-argument add test (nonnull C on input) for "
             << currentSystem.name() << endl;
-      }
-      add_test_results results = regular_add_test(A,B,AT,BT,C,comm);
+
+      add_test_results results = regular_add_test(A, B, AT, BT, C, comm);
+
       TEST_COMPARE(results.epsilon, <, epsilon)
       out << "Regular Add Test Results: " << endl;
       out << "\tCorrect Norm: " << results.correctNorm << endl;
@@ -414,19 +419,21 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       // don't think anyone ever exercised the case where C is null on
       // input before.  I'm disabling this test for now until I have a
       // chance to fix that case.
-      if (verbose) {
+      if (verbose)
         out << "Running 3-argument add test (null C on input) for "
             << currentSystem.name() << endl;
-      }
+
       TEUCHOS_TEST_FOR_EXCEPTION(A.is_null (), std::logic_error,
                                  "Before null_add_test: A is null");
       TEUCHOS_TEST_FOR_EXCEPTION(B.is_null (), std::logic_error,
                                  "Before null_add_test: B is null");
       TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
                                  "Before null_add_test: C is null");
+
       results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C, out);
+
       TEST_COMPARE(results.epsilon, <, epsilon)
-        out << "Null Add Test Results: " << endl;
+      out << "Null Add Test Results: " << endl;
       out << "\tCorrect Norm: " << results.correctNorm << endl;
       out << "\tComputed norm: " << results.computedNorm << endl;
       out << "\tEpsilon: " << results.epsilon << endl;
@@ -434,10 +441,10 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       B = Reader<Matrix_t >::readSparseFile(B_file, comm, node, false);
 
       if (! BT) {
-        if (verbose) {
+        if (verbose)
           out << "Running 2-argument add test for "
               << currentSystem.name() << endl;
-        }
+
         results = add_into_test(A,B,AT,C,comm);
         TEST_COMPARE(results.epsilon, <, epsilon)
         out << "Add Into Test Results: " << endl;

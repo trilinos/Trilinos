@@ -81,7 +81,7 @@ A*B
 		<Parameter name="C" value="matrices/synBTc.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
-	</ParameterList> 
+	</ParameterList>
   <ParameterList name="smallBT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/smallBTa.mtx" type="string"/>
@@ -89,7 +89,7 @@ A*B
 		<Parameter name="C" value="matrices/smallBTc.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
-	</ParameterList> 
+	</ParameterList>
   <ParameterList name="cdt_system">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/cdt_m.mtx" type="string"/>
@@ -98,7 +98,7 @@ A*B
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 		<Parameter name="epsilon" value="1e-04" type="double"/>
-	</ParameterList> 
+	</ParameterList>
 	<ParameterList name="syntheticAT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synATa.mtx" type="string"/>
@@ -163,5 +163,5 @@ A*B
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
-  
+
 </ParameterList>
