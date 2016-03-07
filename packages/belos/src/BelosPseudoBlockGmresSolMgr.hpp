@@ -383,7 +383,9 @@ namespace Belos {
     /// (short-circuiting OR, like the || operator in C++) after
     /// Pseudoblock GMRES' standard convergence test.
     virtual void setUserConvStatusTest(
-      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
+      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest,
+      const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &comboType =
+          StatusTestCombo<ScalarType,MV,OP>::SEQ
       );
 
     /// \brief Set a debug status test.
@@ -482,6 +484,7 @@ namespace Belos {
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
     Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > impConvTest_, expConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    typename StatusTestCombo<ScalarType,MV,OP>::ComboType comboType_;
 
     // Orthogonalization manager.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
@@ -578,7 +581,6 @@ const std::string PseudoBlockGmresSolMgr<ScalarType,MV,OP>::orthoType_default_ =
 
 template<class ScalarType, class MV, class OP>
 const Teuchos::RCP<std::ostream> PseudoBlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
-
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
@@ -1081,10 +1083,12 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 template<class ScalarType, class MV, class OP>
 void
 PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setUserConvStatusTest(
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest,
+  const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &comboType
   )
 {
   userConvStatusTest_ = userConvStatusTest;
+  comboType_ = comboType;
 }
 
 template<class ScalarType, class MV, class OP>
@@ -1227,7 +1231,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   if (nonnull(userConvStatusTest_) ) {
     // Override the overall convergence test with the users convergence test
     convTest_ = Teuchos::rcp(
-      new StatusTestCombo_t( StatusTestCombo_t::SEQ, convTest_, userConvStatusTest_ ) );
+      new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
     // NOTE: Above, you have to run the other convergence tests also because
     // the logic in this class depends on it.  This is very unfortunate.
   }
