@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -50,15 +50,15 @@
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
 #include "Stokhos_MueLu_MP_Vector.hpp"
 
-#include "MueLu_HierarchyHelpers_def.hpp"
+#include "MueLu_FilteredAFactory_kokkos_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::TopRAPFactory<S, LO, GO, N>; \
-  template class MueLu::TopSmootherFactory<S, LO, GO, N>; \
-  template class MueLu::HierarchyUtils<S, LO, GO, N>;
+  template class MueLu::FilteredAFactory_kokkos<S, LO, GO, N>;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(MUELU_INST_S_LO_GO_N)
+INSTANTIATE_TPETRA_MP_VECTOR_SERIAL(MUELU_INST_S_LO_GO_N)
+
+#endif
 
 #endif

@@ -1,11 +1,12 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,11 +35,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
+//
 // @HEADER
-
 
 
 
@@ -47,21 +51,15 @@
 
 #if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
-#include "Stokhos_MueLu_MP_Vector.hpp"
+// Sacado headers must be included first so that overloaded operators
+// are defined in the muelu template code
+#include "Stokhos_Sacado.hpp"
+#include "MueLu_SemiCoarsenPFactory_def.hpp"
 
-#include "MueLu_HierarchyHelpers_def.hpp"
-
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::TopRAPFactory<S, LO, GO, N>; \
-  template class MueLu::TopSmootherFactory<S, LO, GO, N>; \
-  template class MueLu::HierarchyUtils<S, LO, GO, N>;
-
-#define MUELU_INST_N(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-INSTANTIATE_TPETRA_UQ_PCE_OPENMP(MUELU_INST_N)
+typedef Stokhos::StandardStorage<int,double> Storage;
+typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
+template class MueLu::SemiCoarsenPFactory<pce_type, int, int>;
 
 #endif
+
+
