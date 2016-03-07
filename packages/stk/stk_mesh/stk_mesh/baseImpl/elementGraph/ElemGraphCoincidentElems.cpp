@@ -1,7 +1,6 @@
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "ElemElemGraph.hpp"
-#include "FullyCoincidentElementDetector.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -26,119 +25,73 @@ namespace mesh
 namespace impl
 {
 
-unsigned count_shared_sides(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
+bool are_side_nodes_degenerate(const stk::mesh::EntityVector &sideNodes)
 {
-    unsigned numSharedSides = 0;
-    for(size_t i=0; i < graph.get_num_edges_for_element(graphEdge.elem1); i++)
-    {
-        const stk::mesh::GraphEdge &elem1GraphEdge = graph.get_edge_for_element(graphEdge.elem1, i);
-        if(elem1GraphEdge.elem2 == graphEdge.elem2)
-            numSharedSides++;
-    }
-    return numSharedSides;
+    std::set<stk::mesh::Entity> sortedNodes;
+
+    for(const stk::mesh::Entity& node : sideNodes)
+        sortedNodes.insert(node);
+
+    return sortedNodes.size() != sideNodes.size();
 }
 
-bool are_all_sides_shared(const stk::mesh::Graph &graph, const stk::mesh::GraphEdge &graphEdge)
+struct TopologyChecker
 {
-    size_t numEdges = graph.get_num_edges_for_element(graphEdge.elem1);
-    for(size_t i=0; i < numEdges; i++)
+    bool are_both_shells() const
     {
-        const stk::mesh::GraphEdge &elem1GraphEdge = graph.get_edge_for_element(graphEdge.elem1, i);
-        if(elem1GraphEdge.elem2 != graphEdge.elem2)
-            return false;
+        return localTopology.is_shell() && remoteTopology.is_shell();
     }
-    return true;
+
+    bool are_both_not_shells() const
+    {
+        return !localTopology.is_shell() && !remoteTopology.is_shell();
+    }
+
+    stk::topology localTopology;
+    stk::topology remoteTopology;
+};
+
+bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, unsigned sideIndex, const stk::mesh::EntityVector &otherElemSideNodes)
+{
+    stk::mesh::EntityVector thisElemSideNodes = impl::get_element_side_nodes_from_topology(bulkData, localElem, sideIndex);
+    stk::topology localTopology = bulkData.bucket(localElem).topology();
+    stk::topology localSideTopology = localTopology.side_topology(sideIndex);
+    std::pair<bool, unsigned> result = localSideTopology.equivalent(otherElemSideNodes, thisElemSideNodes);
+    return result.first && localSideTopology.is_positive_polarity(result.second);
 }
 
-bool are_graph_edge_elements_fully_coincident(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
+bool is_nondegenerate_coincident_connection(const stk::mesh::BulkData &bulkData,
+                                            stk::mesh::Entity localElem,
+                                            unsigned sideIndex,
+                                            stk::topology otherElemTopology,
+                                            const stk::mesh::EntityVector &otherElemSideNodes)
 {
-    unsigned numTopologySides = topologies[graphEdge.elem1].num_sides();
-    unsigned numEdges = graph.get_num_edges_for_element(graphEdge.elem1);
-    if (numEdges < numTopologySides) {
+    stk::topology localTopology = bulkData.bucket(localElem).topology();
+    TopologyChecker topologyChecker {localTopology, otherElemTopology};
+    if(topologyChecker.are_both_shells())
+        return true;
+    if(topologyChecker.are_both_not_shells())
+        return is_side_node_permutation_positive(bulkData, localElem, sideIndex, otherElemSideNodes);
+    return false;
+}
+
+bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
+                              stk::mesh::Entity localElem,
+                              unsigned sideIndex,
+                              stk::topology otherElemTopology,
+                              const stk::mesh::EntityVector &otherElemSideNodes)
+{
+    if(are_side_nodes_degenerate(otherElemSideNodes))
         return false;
-    }
-    if (numEdges == numTopologySides) {
-        return are_all_sides_shared(graph, graphEdge);
-    }
-    unsigned numSharedSides = count_shared_sides(graph, topologies, graphEdge);
-    return (numSharedSides == numTopologySides);
-}
-
-void CoincidentSideExtractor::delete_edges(const GraphEdgeVector& edgesToDelete)
-{
-    for(const GraphEdge& edgeToDelete : edgesToDelete)
-        m_graph.delete_edge(edgeToDelete);
-}
-
-void CoincidentSideExtractor::add_edges(const GraphEdgeVector& edgesToDelete, SparseGraph& extractedCoincidentSides)
-{
-    for(const GraphEdge& edgeToDelete : edgesToDelete)
-        extractedCoincidentSides.add_edge(edgeToDelete);
-}
-
-void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemId,
-                                                                   GraphEdgeVector &coincidentSides,
-                                                                   const CoincidenceDetector &detector)
-{
-    ScratchEntityVectors scratch;
-    for(size_t edgeIndex = 0; edgeIndex < m_graph.get_num_edges_for_element(elemId); edgeIndex++)
-    {
-        const GraphEdge &graphEdge = m_graph.get_edge_for_element(elemId, edgeIndex);
-        if(detector.are_graph_edge_elements_coincident(graphEdge, scratch))
-            coincidentSides.push_back(graphEdge);
-    }
-}
-
-void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemId,
-                                                                   SparseGraph& extractedCoincidentSides,
-                                                                   const CoincidenceDetector &detector)
-{
-    GraphEdgeVector coincidentSides;
-    extract_coincident_sides_for_element(elemId, coincidentSides, detector);
-    add_edges(coincidentSides, extractedCoincidentSides);
-    delete_edges(coincidentSides);
-    //detector.report_coincident_sides(std::cerr, coincidentSides);
-}
-
-void CoincidentSideExtractor::extract_coincident_sides(SparseGraph& extractedCoincidentSides)
-{
-    for(size_t elemId = 0; elemId < m_graph.get_num_elements_in_graph(); elemId++)
-        extract_coincident_sides_for_element(elemId, extractedCoincidentSides, m_detector);
+    return is_nondegenerate_coincident_connection(bulkData, localElem, sideIndex, otherElemTopology, otherElemSideNodes);
 }
 
 typedef std::map<stk::mesh::impl::ElementSidePair, std::vector<stk::mesh::GraphEdge>> ElemSideAndEdges;
-
-void choose_consistent_face_ids_on_procs_that_own_coincident_elements(const stk::mesh::Graph& graph,
-                                                 stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
-                                                 const stk::mesh::impl::SparseGraph& extractedCoincidentElements,
-                                                 const IdMapper &idMapper,
-                                                 ElemSideAndEdges& elemSidesAndEdges,
-                                                 MPI_Comm comm);
-
-void update_chosen_ids_on_other_procs_for_edges_with_coincident_elements(const ElemSideAndEdges &elemSidesAndEdges,
-                                        const stk::mesh::Graph &graph,
-                                        const stk::mesh::impl::SparseGraph &coincidentEdges,
-                                        stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
-                                        const IdMapper& idMapper,
-                                        MPI_Comm comm);
-
-
 
 // AefB.e: A and B are ANCE, e is MCE, f is SCE ( e is MCE because it has smallest id of stacked elements e,f )
 // master coincident element        MCE
 // slave coincident element         SCE
 // adjacent non-coincident element  ANCE
-
-void make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(const stk::mesh::Graph &graph,
-                                            stk::mesh::ParallelInfoForGraphEdges &parInfosForEdges,
-                                            const stk::mesh::impl::SparseGraph &coincidentEdges,
-                                            const IdMapper &idMapper,
-                                            MPI_Comm comm)
-{
-    ElemSideAndEdges elemSidesAndEdges;
-    choose_consistent_face_ids_on_procs_that_own_coincident_elements(graph, parInfosForEdges, coincidentEdges, idMapper, elemSidesAndEdges, comm);
-    update_chosen_ids_on_other_procs_for_edges_with_coincident_elements(elemSidesAndEdges, graph, coincidentEdges, parInfosForEdges, idMapper, comm);
-}
 
 void pack_graph_edge_and_chosen_side_id_to_proc(stk::CommSparse& commSparse, int otherProc, const stk::mesh::GraphEdge& graphEdge, stk::mesh::EntityId chosenSideId)
 {
@@ -322,29 +275,16 @@ std::vector<stk::mesh::GraphEdge> getMCEtoSCEedges(const std::vector<stk::mesh::
 }
 
 std::vector<stk::mesh::GraphEdge> getANCEtoSCEedges(const std::vector<stk::mesh::GraphEdge>& MCEtoANCEedges,
-                                                    const std::vector<stk::mesh::GraphEdge>& MCEtoSCEedges)
+                                                    const std::vector<stk::mesh::GraphEdge>& allMCEtoSCEedges,
+                                                    int sideIndex)
 {
+    std::vector<stk::mesh::GraphEdge> MCEtoSCEedges = getMCEtoSCEedges(allMCEtoSCEedges, sideIndex);
+
     std::vector<stk::mesh::GraphEdge> ANCEtoSCEedges;
     for(const stk::mesh::GraphEdge& MCEtoANCE : MCEtoANCEedges)
         for(const stk::mesh::GraphEdge& MCEtoSCE : MCEtoSCEedges)
             ANCEtoSCEedges.push_back(stk::mesh::GraphEdge(MCEtoANCE.elem2, MCEtoANCE.side2, MCEtoSCE.elem2, MCEtoSCE.side2));
     return ANCEtoSCEedges;
-}
-
-void appendSCEtoSCEedges(const std::vector<stk::mesh::GraphEdge>& MCEtoSCEedges,
-                         std::vector<stk::mesh::GraphEdge> &collectedEdges)
-{
-    for(const stk::mesh::GraphEdge& MCEtoSCE1 : MCEtoSCEedges)
-    {
-        for(const stk::mesh::GraphEdge& MCEtoSCE2 : MCEtoSCEedges)
-        {
-            if(MCEtoSCE1.elem2 != MCEtoSCE2.elem2)
-            {
-                collectedEdges.push_back(stk::mesh::GraphEdge(MCEtoSCE1.elem2, MCEtoSCE1.side2, MCEtoSCE2.elem2, MCEtoSCE2.side2));
-                collectedEdges.push_back(stk::mesh::GraphEdge(MCEtoSCE2.elem2, MCEtoSCE2.side2, MCEtoSCE1.elem2, MCEtoSCE1.side2));
-            }
-        }
-    }
 }
 
 void appendTransposeEdges(const std::vector<stk::mesh::GraphEdge>& graphEdges, std::vector<stk::mesh::GraphEdge> &collectedEdges)
@@ -361,6 +301,21 @@ int get_num_sides_of_coincident_element(const std::vector<stk::mesh::GraphEdge>&
     return maxSideId + 1;
 }
 
+std::vector<stk::mesh::GraphEdge> get_all_edges_for_this_side(const stk::mesh::Graph& graph, const stk::mesh::impl::LocalId MCE , int sideIndex, const std::vector<stk::mesh::GraphEdge>& allMCEtoSCEedges)
+{
+    std::vector<stk::mesh::GraphEdge> allEdgesForThisSide;
+    std::vector<stk::mesh::GraphEdge> MCEtoANCEedges = getMCEtoANCEedges(graph, MCE, sideIndex);
+    std::vector<stk::mesh::GraphEdge> ANCEtoSCEedges = getANCEtoSCEedges(MCEtoANCEedges, allMCEtoSCEedges, sideIndex);
+
+    allEdgesForThisSide.insert(allEdgesForThisSide.end(), MCEtoANCEedges.begin(), MCEtoANCEedges.end());
+    allEdgesForThisSide.insert(allEdgesForThisSide.end(), ANCEtoSCEedges.begin(), ANCEtoSCEedges.end());
+    appendTransposeEdges(MCEtoANCEedges, allEdgesForThisSide);
+    appendTransposeEdges(ANCEtoSCEedges, allEdgesForThisSide);
+
+    return allEdgesForThisSide;
+}
+
+
 void match_chosen_ids_for_edges_this_proc(const stk::mesh::Graph& graph,
                             stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges,
                             const std::vector<stk::mesh::GraphEdge>& allMCEtoSCEedges,
@@ -373,18 +328,7 @@ void match_chosen_ids_for_edges_this_proc(const stk::mesh::Graph& graph,
 
     for(int sideIndex = 0; sideIndex < numMCEsides; sideIndex++)
     {
-        std::vector<stk::mesh::GraphEdge> MCEtoANCEedges = getMCEtoANCEedges(graph, MCE, sideIndex);
-        std::vector<stk::mesh::GraphEdge> MCEtoSCEedges = getMCEtoSCEedges(allMCEtoSCEedges, sideIndex);
-        std::vector<stk::mesh::GraphEdge> ANCEtoSCEedges = getANCEtoSCEedges(MCEtoANCEedges, MCEtoSCEedges);
-
-        std::vector<stk::mesh::GraphEdge> allEdgesForThisSide;
-        allEdgesForThisSide.insert(allEdgesForThisSide.end(), MCEtoANCEedges.begin(), MCEtoANCEedges.end());
-        allEdgesForThisSide.insert(allEdgesForThisSide.end(), MCEtoSCEedges.begin(), MCEtoSCEedges.end());
-        allEdgesForThisSide.insert(allEdgesForThisSide.end(), ANCEtoSCEedges.begin(), ANCEtoSCEedges.end());
-        appendTransposeEdges(MCEtoANCEedges, allEdgesForThisSide);
-        appendTransposeEdges(MCEtoSCEedges, allEdgesForThisSide);
-        appendTransposeEdges(ANCEtoSCEedges, allEdgesForThisSide);
-        appendSCEtoSCEedges(MCEtoSCEedges, allEdgesForThisSide);
+        std::vector<stk::mesh::GraphEdge> allEdgesForThisSide = get_all_edges_for_this_side(graph, MCE, sideIndex, allMCEtoSCEedges);
 
         GraphEdgeToParInfoMap coincidentParInfos;
         fill_par_infos_for_edges(allEdgesForThisSide, parallelInfoForGraphEdges, coincidentParInfos);
@@ -418,6 +362,17 @@ void choose_consistent_face_ids_on_procs_that_own_coincident_elements(const stk:
         if(is_master_coincident_element(possibleMCE, coincidentEdgesForElem, idMapper))
             match_chosen_ids_for_edges_this_proc(graph, parallelInfoForGraphEdges, coincidentEdgesForElem, possibleMCE, idMapper, elemSidesAndEdges, comm);
     }
+}
+
+void make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(const stk::mesh::Graph &graph,
+                                            stk::mesh::ParallelInfoForGraphEdges &parInfosForEdges,
+                                            const stk::mesh::impl::SparseGraph &coincidentEdges,
+                                            const IdMapper &idMapper,
+                                            MPI_Comm comm)
+{
+    ElemSideAndEdges elemSidesAndEdges;
+    choose_consistent_face_ids_on_procs_that_own_coincident_elements(graph, parInfosForEdges, coincidentEdges, idMapper, elemSidesAndEdges, comm);
+    update_chosen_ids_on_other_procs_for_edges_with_coincident_elements(elemSidesAndEdges, graph, coincidentEdges, parInfosForEdges, idMapper, comm);
 }
 
 }}} // end namespaces stk mesh impl

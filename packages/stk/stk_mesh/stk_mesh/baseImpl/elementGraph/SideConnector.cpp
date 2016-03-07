@@ -3,6 +3,7 @@
 #include "ElemGraphCoincidentElems.hpp"
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
 
 namespace stk
 {
@@ -12,7 +13,7 @@ namespace mesh
 void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
 {
     connect_side_to_elem(sideEntity, elemEntity, elemSide);
-    stk::mesh::impl::LocalId elemLocalId = m_entity_to_local_id[elemEntity.local_offset()];
+    stk::mesh::impl::LocalId elemLocalId = m_localMapper.entity_to_local(elemEntity);
     connect_side_to_coincident_elements(sideEntity, elemLocalId, elemSide);
     connect_side_to_adjacent_elements(sideEntity, elemLocalId, elemSide);
 }
@@ -50,7 +51,7 @@ void SideConnector::connect_side_entity_to_other_element(stk::mesh::Entity sideE
 stk::mesh::Entity SideConnector::get_entity_for_local_id(stk::mesh::impl::LocalId localId) const
 {
     if(impl::is_local_element(localId))
-        return m_local_id_to_element_entity[localId];
+        return m_localMapper.local_to_entity(localId);
     else
         return m_bulk_data.get_entity(stk::topology::ELEM_RANK, -localId);
 }

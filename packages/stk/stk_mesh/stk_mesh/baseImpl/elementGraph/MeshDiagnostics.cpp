@@ -16,11 +16,66 @@
 
 namespace stk { namespace mesh {
 
-std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_coincident_elements(stk::mesh::BulkData& bulkData)
+void fill_single_split_coincident_connection(const stk::mesh::BulkData &bulk, stk::mesh::Entity localElem, const impl::ParallelElementData & connectedElemParallelData,
+                                               SplitCoincidentInfo & splitCoincidents)
 {
-    stk::mesh::Selector sel = bulkData.mesh_meta_data().locally_owned_part();
-    ElemElemGraph graph(bulkData, sel);
-    return graph.get_split_coincident_elements();
+    splitCoincidents[bulk.identifier(localElem)] = {connectedElemParallelData.get_element_identifier(), connectedElemParallelData.get_proc_rank_of_neighbor()};
+}
+
+void fill_split_coincident_connections_for_elem(const stk::mesh::BulkData &bulk, stk::mesh::Entity localElem, const impl::ParallelElementData &localElementData, const impl::ParallelElementDataVector &elementsConnectedToThisElementSide,
+                                                  SplitCoincidentInfo & splitCoincidents)
+{
+    for(const impl::ParallelElementData & connectedElemParallelData : elementsConnectedToThisElementSide)
+        if(connectedElemParallelData.is_parallel_edge())
+            if(impl::is_coincident_connection(bulk, localElem, localElementData.get_element_side_index(), connectedElemParallelData.get_element_topology(), connectedElemParallelData.get_side_nodes()))
+                fill_single_split_coincident_connection(bulk, localElem, connectedElemParallelData, splitCoincidents);
+}
+
+void fill_split_coincident_connections(const stk::mesh::BulkData & bulk, const impl::ElementLocalIdMapper & localMapper,
+                                         const impl::ParallelElementDataVector &localElementsAttachedToReceivedNodes,
+                                         stk::mesh::impl::ParallelElementDataVector & remoteElementsConnectedToSideNodes,
+                                         SplitCoincidentInfo & splitCoincidents)
+{
+    const size_t numReceivedNodes = remoteElementsConnectedToSideNodes[0].get_side_nodes().size();
+    for (const impl::ParallelElementData &localElementData: localElementsAttachedToReceivedNodes)
+    {
+        stk::mesh::Entity localElem = localMapper.local_to_entity(localElementData.get_element_local_id());
+        if (localElementData.get_side_nodes().size() == numReceivedNodes)
+            fill_split_coincident_connections_for_elem(bulk, localElem, localElementData, remoteElementsConnectedToSideNodes, splitCoincidents);
+    }
+}
+
+SideNodeToReceivedElementDataMap get_element_sides_from_other_procs(stk::mesh::BulkData & bulkData, SideIdPool & sideIdPool)
+{
+    impl::ElemSideToProcAndFaceId elementSideIdsToSend = impl::gather_element_side_ids_to_send(bulkData);
+    impl::fill_suggested_side_ids(sideIdPool, elementSideIdsToSend);
+    SharedSidesCommunication sharedSidesCommunication(bulkData, bulkData.mesh_meta_data().locally_owned_part(), nullptr, elementSideIdsToSend);
+    return sharedSidesCommunication.get_received_element_sides();
+}
+
+SplitCoincidentInfo get_split_coincident_elements_from_received_element_sides(stk::mesh::BulkData& bulkData, const impl::ElementLocalIdMapper & localIdMapper, SideNodeToReceivedElementDataMap & elementSidesReceived)
+{
+    SplitCoincidentInfo splitCoincidents;
+    for (SideNodeToReceivedElementDataMap::value_type & receivedElementData: elementSidesReceived)
+    {
+        stk::mesh::impl::ParallelElementDataVector &parallelElementDatas = receivedElementData.second;
+        impl::ParallelElementDataVector localElementsAttachedToReceivedNodes = impl::get_elements_connected_via_sidenodes<impl::ParallelElementData>(bulkData, localIdMapper, parallelElementDatas[0].get_side_nodes());
+        fill_split_coincident_connections(bulkData, localIdMapper, localElementsAttachedToReceivedNodes, parallelElementDatas, splitCoincidents);
+    }
+    return splitCoincidents;
+}
+
+SplitCoincidentInfo get_split_coincident_elements(stk::mesh::BulkData& bulkData)
+{
+    SideIdPool sideIdPool(bulkData);
+    unsigned numSideIdsNeeded = 6 * stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
+    sideIdPool.generate_initial_ids(numSideIdsNeeded);
+
+    SideNodeToReceivedElementDataMap elementSidesReceived = get_element_sides_from_other_procs(bulkData, sideIdPool);
+
+    impl::ElementLocalIdMapper localIdMapper;
+    localIdMapper.initialize(bulkData);
+    return get_split_coincident_elements_from_received_element_sides(bulkData, localIdMapper, elementSidesReceived);
 }
 
 std::vector<std::string> get_messages_for_split_coincident_elements(const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > & splitCoincidentElements)

@@ -156,8 +156,11 @@ protected:
     {
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, communicator, auraOption);
-        SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
-        test_side_creation(bulkData, testCase);
+//        if(testCase.filename.find("f") == std::string::npos && testCase.filename.find("J") == std::string::npos && testCase.filename.find("P") == std::string::npos)
+//        {
+            SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
+            test_side_creation(bulkData, testCase);
+//        }
     }
 
     virtual void test_side_creation(stk::mesh::BulkData& bulkData,

@@ -33,12 +33,8 @@ const SideTestUtil::TestCaseData allSidesTestCases =
     {"AA.e",        2,      11,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}}},
     {"AB.e",        2,      11,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}}},
     {"Ae.e",        2,       7,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}}},
-    {"Aef.e",       3,       7,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}}},
     {"AeA.e",       3,      12,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}, {3, 0}, {3, 1}}},
     {"AeB.e",       3,      12,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 4}, {3, 5}}},
-    {"AefA.e",      2,      12,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}}},
-    {"AefB.e",      4,      12,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 4}, {4, 5}}},
-    {"ef.e",        2,       2,     {{1, 0}, {1, 1}, {2, 0}, {2, 1}}},
 
     {"AB_doubleKissing.e",  2, 10,  {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}}},
 
@@ -53,6 +49,14 @@ const SideTestUtil::TestCaseData failingAllSidesTestCases =
     {"ALRA_doubleKissing.e", 2, 10,  {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}}},
     //np3 fails consistency checks due to face having different node ordering on different procs.  Maybe due to split coincidents
     {"AefA.e",      4,      12,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}}},
+};
+
+const SideTestUtil::TestCaseData allSidesCoincidentElementTestCases =
+{
+    {"Aef.e",       3,       7,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}}},
+    {"AefA.e",      2,      12,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}}},
+    {"AefB.e",      4,      12,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 4}, {4, 5}}},
+    {"ef.e",        2,       2,     {{1, 0}, {1, 1}, {2, 0}, {2, 1}}},
 };
 
 class AllSidesTester : public SideTestUtil::SideCreationTester
@@ -79,10 +83,20 @@ TEST(AllSidesTest, run_all_test_cases_no_aura)
 {
     AllSidesTester().run_all_test_cases(allSidesTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
-
+// np3 fails consistency checks due to face having different node ordering on different procs.  Maybe due to split coincidents
+// (failing before split coincident element support was removed)
 TEST(AllSidesTest, DISABLED_run_all_failing_test_cases_aura)
 {
     AllSidesTester().run_all_test_cases(failingAllSidesTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
-
+// disabled due to split coincident elements
+TEST(AllSidesTest, DISABLED_run_coincident_element_test_cases_no_aura)
+{
+    AllSidesTester().run_all_test_cases(allSidesCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+TEST(AllSidesTest, np1_run_coincident_element_test_cases_no_aura)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+        AllSidesTester().run_all_test_cases(allSidesCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
 }

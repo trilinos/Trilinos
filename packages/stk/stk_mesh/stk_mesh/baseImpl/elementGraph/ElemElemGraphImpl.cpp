@@ -12,6 +12,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
+#include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -23,46 +24,15 @@ namespace stk { namespace mesh {
 namespace impl
 {
 
-void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData,
-                                                            stk::mesh::EntityVector& local_id_to_element_entity,
-                                                            std::vector<stk::topology>& element_topologies)
-{
-    const stk::mesh::BucketVector& elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    size_t local_id = 0;
-    for(size_t i=0; i<elemBuckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *elemBuckets[i];
-        for(size_t j=0; j<bucket.size(); ++j)
-        {
-            local_id_to_element_entity[local_id] = bucket[j];
-            element_topologies[local_id] = bucket.topology();
-            bulkData.set_local_id(bucket[j], local_id);
-            local_id++;
-        }
-    }
-}
-
-void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData,
-                                                             stk::mesh::EntityVector& local_id_to_element_entity,
-                                                             std::vector<impl::LocalId>& entity_to_local_id,
+void fill_topologies(stk::mesh::BulkData& bulkData,
+                                                             stk::mesh::impl::ElementLocalIdMapper & localMapper,
                                                              std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    size_t local_id = 0;
-    for(size_t i=0; i<elemBuckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *elemBuckets[i];
-        for(size_t j=0; j<bucket.size(); ++j)
-        {
-            local_id_to_element_entity[local_id] = bucket[j];
-            element_topologies[local_id] = bucket.topology();
-            entity_to_local_id[bucket[j].local_offset()] = local_id;
-            local_id++;
-        }
-    }
+    for(const stk::mesh::Bucket* bucket : elemBuckets)
+        for(stk::mesh::Entity element : *bucket)
+            element_topologies[localMapper.entity_to_local(element)] = bucket->topology();
 }
-
-
 
 ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &element_list)
 {
@@ -89,7 +59,8 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
 }
 
 
-ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate)
+ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,
+                                                           const stk::mesh::EntityVector &elements_to_communicate)
 {
     ElemSideToProcAndFaceId elem_side_comm;
 

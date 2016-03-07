@@ -14,6 +14,7 @@ namespace stk { namespace mesh { struct sharing_info; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { namespace mesh { class Graph; } }
 namespace stk { namespace mesh { class ParallelInfoForGraphEdges; } }
+namespace stk { namespace mesh { namespace impl { class ElementLocalIdMapper; } } }
 namespace stk { class CommSparse; }
 
 namespace stk { namespace mesh {
@@ -322,8 +323,7 @@ NAMED_PAIR( ProcVecFaceIdPair , std::vector<int> , proc_vec , stk::mesh::EntityI
 
 typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
-void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies);
-void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<LocalId>& entity_to_local_id, std::vector<stk::topology>& element_topologies);
+void fill_topologies(stk::mesh::BulkData& bulkData, stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
 
 ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData);
 ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &element_list);

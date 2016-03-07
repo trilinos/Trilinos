@@ -23,7 +23,7 @@
 namespace
 {
 
-struct split_element_info
+struct SplitElementInfo
 {
     stk::mesh::EntityId localElementId;
     stk::mesh::EntityId remoteElementId;
@@ -34,7 +34,7 @@ struct TestCase
 {
     std::string filename;
     int maxNumProcs;
-    std::vector<split_element_info> expected_split_elements;
+    std::vector<std::vector<SplitElementInfo>> expectedSplitElementsPerProc;
 };
 
 typedef std::vector<TestCase> TestCaseData;
@@ -42,10 +42,10 @@ typedef std::vector<TestCase> TestCaseData;
 const TestCaseData badDecomps =
 {
   /* filename, #procs,      {local element id, remoted element id, remote proc} */
-    {"Aef.e",     2,        { {3u, 2u, 1}, {2u, 3u, 0} }},
-    {"ef.e",      2,        { {1u, 2u, 1}, {2u, 1u, 0} }},
-    {"AefB.e",    3,        { {}, {2u, 3u, 2}, {3u, 2u, 1} }},
-    {"AP.e",      2,        { {1u, 2u, 1}, {2u, 1u, 0}} }
+    {"Aef.e",     2,        { {{3u, 2u, 1} }, {{2u, 3u, 0}} }},
+    {"ef.e",      2,        { {{1u, 2u, 1} }, {{2u, 1u, 0}} }},
+    {"AefB.e",    3,        { {}, {{2u, 3u, 2}},{{3u, 2u, 1}} }},
+    {"AP.e",      2,        { {{1u, 2u, 1} }, {{2u, 1u, 0}} }}
 };
 
 class MeshChecker : public ::testing::Test
@@ -63,8 +63,7 @@ public:
                 EXPECT_THROW(test_one_case(testCase, auraOption), std::logic_error);
     }
 
-    void test_one_case(const TestCase &testCase,
-                       stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void test_one_case(const TestCase &testCase, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, get_comm(), auraOption);
@@ -72,17 +71,16 @@ public:
 
         std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
 
-        for(const auto& item : splitCoincidentElements)
+        const std::vector<SplitElementInfo> &expectedSplits = testCase.expectedSplitElementsPerProc[bulkData.parallel_rank()];
+        ASSERT_EQ(expectedSplits.size(), splitCoincidentElements.size());
+        auto foundSplitCoincident = splitCoincidentElements.begin();
+        for(size_t i = 0; i < expectedSplits.size(); i++)
         {
-            stk::mesh::EntityId localElementId = item.first;
-            stk::mesh::EntityId remoteElementId = item.second.first;
-            int neighboringProc = item.second.second;
-
-            EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].localElementId, localElementId);
-            EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].remoteElementId, remoteElementId);
-            EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].neighboringProc, neighboringProc);
+            EXPECT_EQ(expectedSplits[i].localElementId,  foundSplitCoincident->first);
+            EXPECT_EQ(expectedSplits[i].remoteElementId, foundSplitCoincident->second.first);
+            EXPECT_EQ(expectedSplits[i].neighboringProc, foundSplitCoincident->second.second);
+            foundSplitCoincident++;
         }
-
         stk::mesh::throw_if_any_proc_has_false(bulkData.parallel(), splitCoincidentElements.empty());
     }
 

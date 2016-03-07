@@ -18,13 +18,6 @@ namespace mesh
 namespace impl
 {
 
-struct CoincidentElementDescription
-{
-    int numSides;
-    stk::mesh::impl::LocalId elem1;
-    stk::mesh::impl::LocalId elem2;
-};
-
 class IdMapper
 {
 public:
@@ -33,50 +26,11 @@ public:
     virtual stk::mesh::impl::LocalId globalToLocal(stk::mesh::EntityId global) const = 0;
 };
 
-struct ScratchEntityVectors {
-  stk::mesh::EntityVector vec1;
-  stk::mesh::EntityVector vec2;
-};
-
-
-class CoincidenceDetector
-{
-public:
-    virtual ~CoincidenceDetector() {}
-
-    virtual bool are_graph_edge_elements_coincident(const stk::mesh::GraphEdge &graphEdge, ScratchEntityVectors& scratch) const = 0;
-
-    virtual void report_coincident_sides(std::ostream &stream,
-                                         const GraphEdgeVector& coincidentSides) const {};
-};
-
-class CoincidentSideExtractor
-{
-public:
-    CoincidentSideExtractor(stk::mesh::Graph &graph,
-                            const std::vector<stk::topology> &topologies,
-                            const CoincidenceDetector &detector)
-    : m_graph(graph),
-      m_topologies(topologies),
-      m_detector(detector) {}
-
-    void extract_coincident_sides(SparseGraph& extractedCoincidentSides);
-    void append_extracted_coincident_sides(const std::vector<impl::LocalId> &elemIds,
-                                           SparseGraph &coincidentEdges);
-private:
-    CoincidentSideExtractor();
-
-    void extract_coincident_sides_for_element(LocalId elemId, GraphEdgeVector &coincidentSides, const CoincidenceDetector &detector);
-    void extract_coincident_sides_for_element(LocalId elemId, SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector);
-    void delete_edges(const GraphEdgeVector& edgesToDelete);
-    void add_edges(const GraphEdgeVector& edgesToDelete, SparseGraph& extractedCoincidentSides);
-
-    stk::mesh::Graph &m_graph;
-    const std::vector<stk::topology> &m_topologies;
-    const CoincidenceDetector &m_detector;
-};
-
-bool are_graph_edge_elements_fully_coincident(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge);
+bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
+                              stk::mesh::Entity localElem,
+                              unsigned sideIndex,
+                              stk::topology otherElemTopology,
+                              const stk::mesh::EntityVector &otherElemSideNodes);
 
 void make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(const stk::mesh::Graph &graph,
                                             stk::mesh::ParallelInfoForGraphEdges &parallelInfoForGraphEdges,

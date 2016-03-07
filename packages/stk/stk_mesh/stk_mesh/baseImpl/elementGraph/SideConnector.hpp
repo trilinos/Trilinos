@@ -3,11 +3,13 @@
 
 #include <vector>
 #include <stk_mesh/base/Types.hpp>
+#include "BulkDataIdMapper.hpp"
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { namespace impl { class ElementLocalIdMapper; } } }
 
 namespace stk
 {
@@ -20,13 +22,11 @@ public:
     SideConnector(stk::mesh::BulkData &b,
                   const stk::mesh::Graph &g,
                   const stk::mesh::impl::SparseGraph &cg,
-                  const stk::mesh::EntityVector &localToElement,
-                  const std::vector<impl::LocalId> &elemToLocal) :
+                  const stk::mesh::impl::ElementLocalIdMapper & localMapper) :
             m_bulk_data(b),
             m_graph(g),
             m_coincidentGraph(cg),
-            m_local_id_to_element_entity(localToElement),
-            m_entity_to_local_id(elemToLocal)
+            m_localMapper(localMapper)
     {
     }
     void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
@@ -52,8 +52,7 @@ private:
     stk::mesh::BulkData &m_bulk_data;
     const stk::mesh::Graph &m_graph;
     const stk::mesh::impl::SparseGraph &m_coincidentGraph;
-    const stk::mesh::EntityVector &m_local_id_to_element_entity;
-    const std::vector<impl::LocalId> &m_entity_to_local_id;
+    const stk::mesh::impl::ElementLocalIdMapper & m_localMapper;
 };
 
 }
