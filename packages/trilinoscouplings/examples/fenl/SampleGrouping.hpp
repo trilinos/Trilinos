@@ -166,8 +166,9 @@ public:
     TEUCHOS_ASSERT( groups.size() == num_groups );
   }
 
-private:
+public:
 
+  // Needs to be a public nested class for Cuda
   struct MaxMinFunctor {
 
     typedef Kokkos::Example::HexElement_Data< MeshType::ElemNode > elem_data_type;
@@ -267,6 +268,8 @@ private:
     }
 
   };
+
+private:
 
   Teuchos::RCP<const Teuchos::Comm<int> > m_comm;
   MaxMinFunctor m_max_min_functor;
