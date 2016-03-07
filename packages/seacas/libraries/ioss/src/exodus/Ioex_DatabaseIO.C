@@ -909,39 +909,37 @@ namespace Ioex {
       int ierr = ex_get_variable_param(get_file_pointer(), type, &nvar);
       if (ierr < 0) {
 	Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-}
+      }
     }
 
     if (nvar > 0) {
       if (truth_table.empty()) {
 	truth_table.resize(block_count * nvar);
-      }
 
-      // Read and store the truth table (Should be there since we only
-      // get to this routine if there are variables...)
-      if (!truth_table.empty()) {
-	{
+	// Read and store the truth table (Should be there since we only
+	// get to this routine if there are variables...)
+
+	if (type == EX_NODE_BLOCK || type == EX_GLOBAL) {
+	  // These types don't have a truth table in the exodus api...
+	  // They do in Ioss just for some consistency...
+	  std::fill(truth_table.begin(), truth_table.end(), 1);
+	}
+	else {
 	  Ioss::SerializeIO   serializeIO__(this);
-
-	  if (type == EX_NODE_BLOCK || type == EX_GLOBAL) {
-	    // These types don't have a truth table in the exodus api...
-	    // They do in Ioss just for some consistency...
-	    std::fill(truth_table.begin(), truth_table.end(), 1);
-	  }
-	  else {
-	    int ierr = ex_get_truth_table(get_file_pointer(), type, block_count, nvar, &truth_table[0]);
-	    if (ierr < 0) {
-	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-}
+	  int ierr = ex_get_truth_table(get_file_pointer(), type,
+					block_count, nvar,
+					TOPTR(truth_table));
+	  if (ierr < 0) {
+	    Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
 	}
 
-	// If parallel, then synchronize the truth table among all processors...
-	// Need to know that block_X has variable_Y even if block_X is
-	// empty on a specific processor...  The truth table contains 0
-	// if the variable doesn't exist and 1 if it does, so we just
-	// take the maximum at each location...
-	// This is a collective call...
+	// If parallel, then synchronize the truth table among all
+	// processors...  Need to know that block_X has variable_Y
+	// even if block_X is empty on a specific processor...  The
+	// truth table contains 0 if the variable doesn't exist and 1
+	// if it does, so we just take the maximum at each location...
+	// This is a collective call... Make sure not in Serialize
 	if (isParallel) {
 	  util().global_array_minmax(truth_table, Ioss::ParallelUtils::DO_MAX);
 	}
