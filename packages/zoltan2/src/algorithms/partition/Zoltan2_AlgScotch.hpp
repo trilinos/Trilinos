@@ -798,20 +798,17 @@ int AlgPTScotch<Adapter>::order(
   ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr,
                             solution->getPermutation(false),
                             solution->getPermutation(true),
-                            &solution->getSepColBlock(),
-                            solution->getSepRange(),
-                            solution->getSepTree());
+                            &solution->NumSeparatorBlocks(),
+                            solution->getSeparatorRange(),
+                            solution->getSeparatorTree());
 
   if (ierr != 0) {
     throw std::runtime_error("Could not compute ordering!!");
   } else if(isVerbose && me == 0) {
     std::cout << "Ordering computed." << std::endl;
   }
- 
-  solution->setHavePerm(true); 
-  solution->setHaveInverse(true); 
-  solution->setHaveSepRange(true); 
-  solution->setHaveSepTree(true); 
+
+  solution->setHaveSeparator(true); 
 
   // reclaim memory
   // Clean up copies made due to differing data sizes.
