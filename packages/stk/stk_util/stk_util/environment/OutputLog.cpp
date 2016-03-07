@@ -307,13 +307,9 @@ register_ostream(
   OStreamTeeStreambufMap::iterator it = ostream_tee_streambuf_map.find(name);
 
   if (it != ostream_tee_streambuf_map.end()) {
-//     delete (*it).second;
-//     ostream_tee_streambuf_map.erase(it);
-//   }
-    std::ostringstream s;
-    s << "Output stream " << name << " has already been registered";
-
-    throw std::runtime_error(s.str());
+     delete (*it).second;
+     ostream_tee_streambuf_map.erase(it);
+     os << "Warning, re-registering output stream, '"<<name<<"' was previously registered."<<std::endl;
   }
 
   ostream_tee_streambuf_map[name] = new OStreamTeeStreambuf(os);
