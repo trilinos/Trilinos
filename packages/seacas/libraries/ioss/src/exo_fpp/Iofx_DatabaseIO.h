@@ -95,6 +95,13 @@ namespace Iofx {
       void get_step_times();
 
     private:
+      bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
+			   bool abort_if_error) const;
+      bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
+			      bool overwrite, bool abort_if_error) const;
+      bool check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
+				bool abort_if_error) const;
+
       int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
 				 void *data, size_t data_size) const;
       int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
