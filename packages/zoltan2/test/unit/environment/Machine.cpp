@@ -68,10 +68,7 @@ int checkAllCoords(const Teuchos::Comm<int> &comm,
 
   nCoord_t *xyz = new nCoord_t[dim];
 
-  nCoord_t *all = new nCoord_t[dim*np];
-  nCoord_t **allCoords = new nCoord_t *[dim];
-  allCoords[0] = all;
-  for (int i = 1; i < dim; i++) allCoords[i] = allCoords[i-1]+np;
+  nCoord_t **allCoords;
 
   bool haveExtent = mach.getMachineExtent(nxyz);
 
@@ -102,8 +99,6 @@ int checkAllCoords(const Teuchos::Comm<int> &comm,
 
   delete [] xyz;
   delete [] nxyz;
-  delete [] all;
-  delete [] allCoords;
 
   return fail;
 }
