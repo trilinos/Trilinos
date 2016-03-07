@@ -255,7 +255,6 @@ void run_stokhos(
   perf_total.response_std_dev = response_pce.standard_deviation();
 }
 
-#ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
 template< class ProblemType, class CoeffFunctionType >
 void run_tasmanian(
   const Teuchos::Comm<int>& comm ,
@@ -268,6 +267,8 @@ void run_tasmanian(
   const double bc_upper_value,
   Kokkos::Example::FENL::Perf& perf_total)
 {
+#ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
+
   using Teuchos::Array;
 
   // Start up Tasmanian
@@ -344,8 +345,14 @@ void run_tasmanian(
   s[0] *= weight; s[1] *= weight;
   perf_total.response_mean = s[0];
   perf_total.response_std_dev = std::sqrt(s[1]-s[0]*s[0]);
-}
+
+#else
+
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TASMANIAN not available.  Please re-configure with TASMANIAN TPL enabled.");
+
 #endif
+}
+
 
 template< class ProblemType, class CoeffFunctionType >
 void run_file(
@@ -476,12 +483,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       run_stokhos(*comm, problem, diffusion_coefficient, grouper,
                   fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_TASMANIAN)
-#ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
       run_tasmanian(*comm, problem, diffusion_coefficient, grouper,
                     fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TASMANIAN  method not available.  Please configure with TASMANIAN TPL enabled.");
-#endif
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_FILE)
       run_file(*comm, problem, diffusion_coefficient, grouper,
                fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
@@ -503,12 +506,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       run_stokhos(*comm, problem, diffusion_coefficient, Teuchos::null,
                   fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_TASMANIAN)
-#ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
       run_tasmanian(*comm, problem, diffusion_coefficient, Teuchos::null,
                     fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TASMANIAN  method not available.  Please configure with TASMANIAN TPL enabled.");
-#endif
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_FILE)
       run_file(*comm, problem, diffusion_coefficient, Teuchos::null,
                fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
