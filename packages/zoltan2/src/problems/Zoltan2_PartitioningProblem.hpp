@@ -361,7 +361,7 @@ private:
 
   RCP<PartitioningSolution<Adapter> > solution_;
 
-  RCP<MachineRepresentation <typename Adapter::base_adapter_t::scalar_t>  > machine_;
+  RCP<MachineRepresentation<scalar_t,part_t> > machine_;
 
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
@@ -437,7 +437,8 @@ template <typename Adapter>
   problemComm_ = this->comm_->duplicate();
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
-  machine_ = RCP <Zoltan2::MachineRepresentation<typename Adapter::scalar_t> >(new Zoltan2::MachineRepresentation<typename Adapter::scalar_t>(problemComm_));
+  machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
+                 new MachineRepresentation<scalar_t,part_t>(*problemComm_));
 
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
@@ -636,7 +637,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     // KDD  the number of tasks (parts) in the solution?
 
 #ifdef KDD_READY
-    const partId_t *oldParts = solution_->getPartListView();
+    const part_t *oldParts = solution_->getPartListView();
     size_t nLocal = ia->getNumLocalIds();
     for (size_t i = 0; i < nLocal; i++) {
       // kind of cheating since oldParts is a view; probably want an interface in solution 
