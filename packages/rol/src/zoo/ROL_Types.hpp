@@ -70,10 +70,18 @@
  */
 #define ROL_NUM_CHECKDERIV_STEPS 13
 
-#define TO_STRING(x) static_cast<std::stringstream &> \
-        ( std::ostringstream() << std::dec << x ).str() 
+
 
 namespace ROL {
+
+template<class T>
+std::string NumberToString( T Number )
+{
+  std::ostringstream ss;
+  ss << Number;
+  return ss.str();
+}
+
 
   /** \brief  State for algorithm class.  Will be used for restarts.
    */

@@ -609,7 +609,7 @@ public:
       hist << "\n";
       hist << "  tr_flag - Trust-Region flag" << "\n";
       for( int flag = TRUSTREGION_FLAG_SUCCESS; flag != TRUSTREGION_FLAG_UNDEFINED; ++flag ) {
-        hist << "    " << TO_STRING(flag) << " - " 
+        hist << "    " << NumberToString(flag) << " - " 
              << ETrustRegionFlagToString(static_cast<ETrustRegionFlag>(flag)) << "\n";
           
       } 
@@ -619,7 +619,7 @@ public:
         hist << "  iterCG - Number of Truncated CG iterations\n\n";
         hist << "  flagGC - Trust-Region Truncated CG flag" << "\n";
         for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
-          hist << "    " << TO_STRING(flag) << " - "
+          hist << "    " << NumberToString(flag) << " - "
                << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n"; 
         }            
       }
