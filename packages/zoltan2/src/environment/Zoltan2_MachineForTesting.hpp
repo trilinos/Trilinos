@@ -55,9 +55,10 @@ public:
   int getMachineDim() const { return networkDim; }
 
   bool getMachineExtent(part_t *nxyz) const { 
-    nxyz[0] = 10;
-    nxyz[1] = 20;
-    nxyz[2] = 30;
+    // Ficticious machine extent
+    nxyz[0] = this->numRanks;
+    nxyz[1] = 2*this->numRanks;
+    nxyz[2] = 3*this->numRanks;
     return true; 
   }
 
@@ -67,13 +68,17 @@ public:
 
   bool getMachineCoordinate(const part_t rank, pcoord_t *xyz) {
     // Ficticious machine coordinates
-    part_t slice = part_t(pow(double(this->numRanks), double(1.0/networkDim))
-                              + 0.5);
-    part_t m = rank;
-    for (int i = 0; i < networkDim; ++i){
-      xyz[i] = m / part_t(pow(slice, double(networkDim - i - 1)));
-      m = m % part_t(pow(double(slice), double(networkDim - i - 1)));
-    }
+    // part_t slice = part_t(pow(double(this->numRanks), double(1.0/networkDim))
+    //                           + 0.5);
+    // part_t m = rank;
+    // for (int i = 0; i < networkDim; ++i){
+    //   xyz[i] = m / part_t(pow(slice, double(networkDim - i - 1)));
+    //   m = m % part_t(pow(double(slice), double(networkDim - i - 1)));
+    // }
+
+    xyz[0] = rank;
+    xyz[1] = this->numRanks;
+    xyz[2] = this->numRanks+1;
     return true;
   }
 

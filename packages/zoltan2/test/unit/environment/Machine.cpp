@@ -77,10 +77,13 @@ int checkAllCoords(const Teuchos::Comm<int> &comm,
     // Check all ranks
     for (int i = 0; i < np; i++) {
       if (mach.getMachineCoordinate(i, xyz)) {
+        if (me == 0) std::cout << "RANK " << i << " COORD ";
         for (int d = 0; d < dim; d++) {
+          if (me == 0) std::cout << " " << xyz[d];
           if (xyz[d] != allCoords[d][i]) fail = failval;
           if (haveExtent && (xyz[d] < 0 || xyz[d] >= nxyz[d])) fail = failval;
         }
+        if (me == 0) std::cout << std::endl;
       }
       else
         fail = failval;  // getMachineCoordinate failed
@@ -166,11 +169,14 @@ int main(int argc, char *argv[])
 
     int nxyz[3];
     if (!mach.getMachineExtent(nxyz)) fail += 100;
-    if (nxyz[0] != 10 || nxyz[1] != 20 || nxyz[2] != 30)
+    if (nxyz[0] != np || nxyz[1] != 2*np || nxyz[2] != 3*np)  
+      // Depends on ficticious extent in Zoltan2_MachineForTesting.hpp
       fail += 1000;
 
     ncoord_t xyz[3];
-    ncoord_t xyz_expected[3] = {10, 20, 30};  // TODO FIX
+
+    // Depends on ficticious coordinates in Zoltan2_MachineForTesting.hpp
+    ncoord_t xyz_expected[3] = {me, np, np+1}; 
 
     if (!mach.getMyMachineCoordinate(xyz)) fail += 1000;
   
