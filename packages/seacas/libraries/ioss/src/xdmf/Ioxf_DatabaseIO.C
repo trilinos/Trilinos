@@ -125,8 +125,7 @@ namespace Ioxf {
 			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 			 const Ioss::PropertyManager &properties_x) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, properties_x),
-    databaseTitle(""), spatialDimension(0),
-    nodeCount(0), elementCount(0),
+    databaseTitle(""), spatialDimension(0), nodeCount(0), elementCount(0),
     nodeBlockCount(0), elementBlockCount(0), nodesetCount(0), sidesetCount(0),
     nodeCmapIds(nullptr), nodeCmapNodeCnts(nullptr), elemCmapIds(nullptr),
     elemCmapElemCnts(nullptr), commsetNodeCount(0), commsetElemCount(0),
