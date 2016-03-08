@@ -59,10 +59,7 @@
 #ifdef HAVE_BELOS_TSQR
 #  include "BelosTsqrOrthoManager.hpp"
 #endif // HAVE_BELOS_TSQR
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestGenResNorm.hpp"
-#include "BelosStatusTestImpResNorm.hpp"
-#include "BelosStatusTestCombo.hpp"
+#include "BelosStatusTestFactory.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -663,7 +660,12 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   if (params_ == Teuchos::null) {
     params_ = parameterList (*getValidParameters ());
   } else {
-    params->validateParameters (*getValidParameters ());
+    // TAW: 3/8/2016: do not validate sub parameter lists as they
+    //                might not have a pre-defined structure
+    //                e.g. user-specified status tests
+    // The Belos Pseudo Block GMRES parameters on the first level are
+    // not affected and verified.
+    params->validateParameters (*getValidParameters (), 0);
   }
 
   // Check for maximum number of restarts
@@ -823,6 +825,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     if (! outputTest_.is_null ()) {
       isSTSet_ = false;
     }
+
+    // Check if user has specified his own status tests
+    if (params->isSublist ("User Status Tests")) {
+      Teuchos::ParameterList userStatusTestsList = params->sublist("User Status Tests",true);
+      std::string userCombo_string = params->get<std::string>("User Status Tests Combo Type", "SEQ");
+      Teuchos::RCP<StatusTestFactory<ScalarType,MV,OP> > testFactory = Teuchos::rcp(new StatusTestFactory<ScalarType,MV,OP>());
+      setUserConvStatusTest( testFactory->buildStatusTests(userStatusTestsList), testFactory->stringToComboType(userCombo_string) );
+    }
   }
 
   // output stream
@@ -869,19 +879,19 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
       expConvTest_->setTolerance (convtol_);
     }
   }
-  
+
   // Grab the user defined residual scaling
   bool userDefinedResidualScalingUpdated = false;
   if (params->isParameter ("User Defined Residual Scaling")) {
-    const MagnitudeType tempResScaleFactor = 
+    const MagnitudeType tempResScaleFactor =
       Teuchos::getParameter<MagnitudeType> (*params, "User Defined Residual Scaling");
-    
+
     // Only update the scaling if it's different.
     if (resScaleFactor_ != tempResScaleFactor) {
       resScaleFactor_ = tempResScaleFactor;
       userDefinedResidualScalingUpdated = true;
     }
-    
+
     if(userDefinedResidualScalingUpdated)
     {
       if (! params->isParameter ("Implicit Residual Scaling") && ! impConvTest_.is_null ()) {
@@ -893,7 +903,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
           // Make sure the convergence test gets constructed again.
           isSTSet_ = false;
         }
-      }  
+      }
       if (! params->isParameter ("Explicit Residual Scaling") && ! expConvTest_.is_null ()) {
         try {
           if(expResScale_ == "User Provided")
@@ -934,7 +944,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     }
     else if (userDefinedResidualScalingUpdated) {
       Belos::ScaleType impResScaleType = convertStringToScaleType (impResScale_);
-      
+
       if (! impConvTest_.is_null ()) {
         try {
           if(impResScale_ == "User Provided")
@@ -974,7 +984,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     }
     else if (userDefinedResidualScalingUpdated) {
       Belos::ScaleType expResScaleType = convertStringToScaleType (expResScale_);
-      
+
       if (! expConvTest_.is_null ()) {
         try {
           if(expResScale_ == "User Provided")
@@ -1155,6 +1165,10 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Orthogonalization Constant",orthoKappa_default_,
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
+    pl->sublist("User Status Tests");
+    pl->set("User Status Tests Combo Type", "SEQ",
+        "Type of logical combination operation of user-defined\n"
+        "and/or solver-specific status tests.");
     validPL = pl;
   }
   return validPL;
@@ -1197,7 +1211,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
     if(expResScale_ == "User Provided")
       tmpExpConvTest->defineScaleForm( convertStringToScaleType(expResScale_), Belos::TwoNorm, resScaleFactor_ );
     else
-      tmpExpConvTest->defineScaleForm( convertStringToScaleType(expResScale_), Belos::TwoNorm );     
+      tmpExpConvTest->defineScaleForm( convertStringToScaleType(expResScale_), Belos::TwoNorm );
     tmpExpConvTest->setShowMaxResNormOnly( showMaxResNormOnly_ );
     expConvTest_ = tmpExpConvTest;
 
@@ -1213,7 +1227,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
     if(impResScale_ == "User Provided")
       tmpImpConvTest->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm, resScaleFactor_ );
     else
-      tmpImpConvTest->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );     
+      tmpImpConvTest->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );
     tmpImpConvTest->setShowMaxResNormOnly( showMaxResNormOnly_ );
     impConvTest_ = tmpImpConvTest;
 
@@ -1232,6 +1246,8 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
     // Override the overall convergence test with the users convergence test
     convTest_ = Teuchos::rcp(
       new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
+    // brief output style not compatible with more general combinations
+    outputStyle_ = Belos::General;
     // NOTE: Above, you have to run the other convergence tests also because
     // the logic in this class depends on it.  This is very unfortunate.
   }
