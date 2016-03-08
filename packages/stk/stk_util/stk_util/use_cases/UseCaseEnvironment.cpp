@@ -42,6 +42,7 @@
 #include <stk_util/util/IndentStreambuf.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/environment/EnvData.hpp>
 
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
@@ -305,15 +306,8 @@ UseCaseEnvironment::UseCaseEnvironment(
 
 void UseCaseEnvironment::initialize(int* argc, char*** argv)
 {
-  stk::register_log_ostream(std::cout, "cout");
-  stk::register_log_ostream(std::cerr, "cerr");
-
-  stk::register_ostream(out(), "out");
-  stk::register_ostream(pout(), "pout");
-  stk::register_ostream(dout(), "dout");
-  stk::register_ostream(tout(), "tout");
-
-  static_cast<stk::indent_streambuf *>(dwout().rdbuf())->redirect(dout().rdbuf());
+  // Trigger initialization of all the output streams needed below
+  stk::EnvData::instance();
 
   stk::set_report_handler(report_handler);
 
