@@ -132,6 +132,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   METIS           "cmake/TPLs/"    TS
   ParMETIS        "cmake/TPLs/"    SS
   PuLP            "cmake/TPLs/"    EX
+  TopoManager     "cmake/TPLs/"    EX
   LibTopoMap      "cmake/TPLs/"    SS
   PaToH           "cmake/TPLs/"    SS
   CppUnit         "cmake/TPLs/"    SS

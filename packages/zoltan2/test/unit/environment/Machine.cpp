@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
     if (checkErrorCode(*comm, fail))
       return 1;
   }
-#elif defined(HAVE_ZOLTAN2_TOPOMGR)
+#elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
   { // Add tests specific to TopoMgr
     if (checkErrorCode(*comm, fail))
       return 1;

@@ -24,6 +24,8 @@ public:
       numRanks(comm.getSize()), myRank(comm.getRank())
     { }
 
+    virtual ~Machine(){ }
+
     /*! \brief indicates whether or not the machine has coordinates
      */
     bool hasMachineCoordinates() const {

@@ -162,7 +162,7 @@ public:
   /*! \brief destructor of the class
    * free memory in procCoords.
    */
-  ~MachineRepresentation() {
+  virtual ~MachineRepresentation() {
     for (int i = 0; i < networkDim; ++i){
       delete [] procCoords[i];
     }

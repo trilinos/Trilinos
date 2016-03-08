@@ -1,9 +1,13 @@
-#ifndef _ZOLTAN2_MACHINEFORTESTING_HPP_
-#define _ZOLTAN2_MACHINEFORTESTING_HPP_
+#ifndef _ZOLTAN2_MACHINE_TOPOMANAGER_HPP_
+#define _ZOLTAN2_MACHINE_TOPOMANAGER_HPP_
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_Machine.hpp>
+
+#ifdef HAVE_ZOLTAN2_TOPOMANAGER
+#include <TopoManager.h>
+#endif
 
 namespace Zoltan2{
 
@@ -12,17 +16,22 @@ namespace Zoltan2{
  */
 
 template <typename pcoord_t, typename part_t>
-class MachineForTesting : public Machine<pcoord_t, part_t> {
+class Zoltan2_MachineTopoMgr : public Machine <pcoord_t, part_t> {
 
 public:
-  /*! \brief Constructor: A default machine description used only for testing; 
-   * it does not contain actual machine information.
+  /*! \brief Constructor: A BlueGeneQ network machine description;
    *  \param comm Communication object.
    */
 
-  MachineForTesting(const Teuchos::Comm<int> &comm): 
+  Zoltan2_MachineTopoMgr(const Teuchos::Comm<int> &comm):
     Machine<pcoord_t,part_t>(comm),
+#if defined (CMK_BLUEGENEQ)
+    networkDim(6),  tmgr(comm.getSize()),
+#elif defined (CMK_BLUEGENEP)
+    networkDim(4), tmgr(comm.getSize()),
+#else
     networkDim(3),
+#endif
     procCoords(NULL)
   {
     //allocate memory for processor coordinates.
@@ -54,33 +63,35 @@ public:
 
   int getMachineDim() const { return networkDim; }
 
-  bool getMachineExtent(part_t *nxyz) const { 
-    // Ficticious machine extent
-    nxyz[0] = this->numRanks;
-    nxyz[1] = 2*this->numRanks;
-    nxyz[2] = 3*this->numRanks;
-    return true; 
+  bool getMachineExtent(part_t *nxyz) const {
+#if defined (CMK_BLUEGENEQ)
+    nxyz[0] = tmgr.getDimNA();
+    nxyz[1] = tmgr.getDimNB();
+    nxyz[2] = tmgr.getDimNC();
+    nxyz[3] = tmgr.getDimND();
+    nxyz[4] = tmgr.getDimNE();
+    nxyz[5] = tmgr.getDimNT());
+#elif defined (CMK_BLUEGENEP)
+    nxyz[0] = tmgr.getDimNX();
+    nxyz[1] = tmgr.getDimNY();
+    nxyz[2] = tmgr.getDimNZ();
+    nxyz[3] = tmgr.getDimNT();
+#else
+#endif
+    return true;
   }
 
   bool getMyMachineCoordinate(pcoord_t *xyz) {
-    return getMachineCoordinate(this->myRank, xyz);
+
+#if defined (CMK_BLUEGENEQ)
+    tmgr.rankToCoordinates(i, xyz[0], xyz[1], xyz[2], xyz[3], xyz[4], xyz[5]);
+#elif defined (CMK_BLUEGENEP)
+    tmgr.rankToCoordinates(i, xyz[0], xyz[1], xyz[2], xyz[3]);
+#else
+#endif
   }
 
-  bool getMachineCoordinate(const part_t rank, pcoord_t *xyz) {
-    // Ficticious machine coordinates
-    // part_t slice = part_t(pow(double(this->numRanks), double(1.0/networkDim))
-    //                           + 0.5);
-    // part_t m = rank;
-    // for (int i = 0; i < networkDim; ++i){
-    //   xyz[i] = m / part_t(pow(slice, double(networkDim - i - 1)));
-    //   m = m % part_t(pow(double(slice), double(networkDim - i - 1)));
-    // }
 
-    xyz[0] = rank;
-    xyz[1] = this->numRanks;
-    xyz[2] = this->numRanks+1;
-    return true;
-  }
 
   bool getMachineCoordinate(const char *nodename, pcoord_t *xyz) {
     return false;  // cannot yet return from nodename
@@ -95,9 +106,13 @@ private:
 
   int networkDim;
 
+#ifdef HAVE_ZOLTAN2_TOPOMANAGER
+  TopoManager tmgr;
+#endif
   pcoord_t **procCoords;   // KDD Maybe should be RCP?
 
-  void gatherMachineCoordinates(const Teuchos::Comm<int> &comm) {  
+
+  void gatherMachineCoordinates(const Teuchos::Comm<int> &comm) {
     // reduces and stores all machine coordinates.
     pcoord_t *tmpVect = new pcoord_t [this->numRanks];
 
