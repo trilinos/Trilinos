@@ -121,7 +121,7 @@ namespace MueLu {
 
       // Reuse pattern if available (multiple solve)
       if (coarseLevel.IsAvailable("AP graph", this)) {
-        GetOStream(Runtime0) << "Reusing previous AP graph" << std::endl;
+        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP graph" << std::endl;
 
         AP = coarseLevel.Get< RCP<Matrix> >("AP graph", this);
       }
@@ -135,7 +135,7 @@ namespace MueLu {
 
       // Reuse coarse matrix memory if available (multiple solve)
       if (coarseLevel.IsAvailable("RAP graph", this)) {
-        GetOStream(Runtime0) << "Reusing previous RAP graph" << std::endl;
+        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP graph" << std::endl;
 
         Ac = coarseLevel.Get< RCP<Matrix> >("RAP graph", this);
         // Some eigenvalue may have been cached with the matrix in the previous run.

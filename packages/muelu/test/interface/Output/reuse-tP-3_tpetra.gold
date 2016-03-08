@@ -247,6 +247,8 @@ Level 1
 
  Computing Ac (MueLu::RebalanceAcFactory)
   Computing Ac (MueLu::RAPFactory)
+   Reusing previous AP graph
+   Reusing previous RAP graph
   Build (MueLu::CoordinatesTransferFactory)
   write start = -1   [default]
   write end = -1   [default]

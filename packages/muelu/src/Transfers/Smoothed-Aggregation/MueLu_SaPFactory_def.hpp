@@ -125,7 +125,7 @@ namespace MueLu {
 
     // Reuse pattern if available
     if (coarseLevel.IsAvailable("AP graph", this)) {
-      GetOStream(Runtime0) << "Reusing previous AP graph" << std::endl;
+      GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP graph" << std::endl;
 
       finalP = coarseLevel.Get< RCP<Matrix> >("AP graph", this);
     }
