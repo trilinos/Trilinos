@@ -236,7 +236,7 @@ public:
     if (this->haveSeparators()) {
       *numBlocks = this->getNumSeparatorBlocks();
       range = this->getSeparatorRange();
-      range = this->getSeparatorTree();
+      tree = this->getSeparatorTree();
       return true;
     }
 
