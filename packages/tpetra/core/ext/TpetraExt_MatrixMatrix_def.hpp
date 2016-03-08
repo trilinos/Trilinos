@@ -1498,25 +1498,22 @@ void mult_A_B_reuse(
   RCP<const map_type>    Ccolmap = C.getColMap();
 
   Array<LO> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
-
-  if (Bview.importMatrix.is_null()) {
-    // Bcol2Ccol is trivial
-    for (size_t i = 0; i < Bview.colMap->getNodeNumElements(); i++)
-      Bcol2Ccol[i] = Teuchos::as<LO>(i);
-
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
-      std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
-
-    // NOTE: This is not efficient and should be folded into setUnion
-    Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
+  {
+    // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
+    // So, column map of C may be a strict subset of the column map of B
     ArrayView<const GO> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
-    ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
-
     for (size_t i = 0; i < Bview.origMatrix->getColMap()->getNodeNumElements(); i++)
       Bcol2Ccol[i] = Ccolmap->getLocalElement(Bgid[i]);
-    for (size_t i = 0; i < Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
-      Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
+
+    if (!Bview.importMatrix.is_null()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
+        std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
+
+      Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
+      ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
+      for (size_t i = 0; i < Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
+        Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
+    }
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1603,7 +1600,8 @@ void mult_A_B_reuse(
           LO Cij = Bcol2Ccol[Bkj];
 
           TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-            std::runtime_error, "Trying to insert a new entry into a static graph");
+            std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
+            "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
 
           Cvals[c_status[Cij]] += Aval * Bvals[j];
         }
@@ -1616,7 +1614,8 @@ void mult_A_B_reuse(
           LO Cij = Icol2Ccol[Ikj];
 
           TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-            std::runtime_error, "Trying to insert a new entry into a static graph");
+            std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
+            "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
 
           Cvals[c_status[Cij]] += Aval * Ivals[j];
         }
@@ -1920,6 +1919,8 @@ void jacobi_A_B_reuse(
 
   if (Bview.importMatrix.is_null()) {
     // Bcol2Ccol is trivial
+    // This is possible. This situation is different from mult_A_B_reuse, as we
+    // always add B
     for (size_t i = 0; i < Bview.colMap->getNodeNumElements(); i++)
       Bcol2Ccol[i] = Teuchos::as<LO>(i);
 
