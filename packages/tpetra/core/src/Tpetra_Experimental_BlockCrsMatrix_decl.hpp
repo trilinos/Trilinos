@@ -111,7 +111,7 @@ namespace Experimental {
 ///     // Blocks are stored in row-major format.
 ///     for (LO j = 0; j < blockSize; ++j) {
 ///       for (LO i = 0; i < blockSize; ++i) {
-///         const Scalar curVal = curBlock[i + j * blockSize];
+///         const Scalar curVal = &curBlock[i + j * blockSize];
 ///         // Some function f of the current value and mesh point
 ///         curBlock[i + j * blockSize] = f (curVal, localColInds[k], ...);
 ///       }
