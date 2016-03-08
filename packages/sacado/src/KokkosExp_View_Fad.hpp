@@ -867,6 +867,7 @@ public:
                                                   , extents.domain_offset(6)
                                                   , extents.domain_offset(7)
                                                   ) );
+      dst.m_fad_size = src.m_fad_size;
     }
 
 };

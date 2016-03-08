@@ -587,6 +587,62 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = true;
 }
 
+// This requires the experimental view because subview's don't work
+// with original
+//
+// Test is currently disabled due to a subview issue in Kokkos when
+// FadType == SFad
+#if 0 && defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Subview, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType**,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", num_rows, num_cols, fad_size+1);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      h_v(i,j) = f;
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  // Create subview of first column
+  size_type col = 1;
+  auto s = Kokkos::subview(v, Kokkos::ALL(), col);
+
+  // Copy back
+  typedef decltype(s) SubviewType;
+  typedef typename SubviewType::HostMirror HostSubviewType;
+  HostSubviewType h_s = Kokkos::create_mirror_view(s);
+  Kokkos::deep_copy(h_s, s);
+
+  // Check
+  success = true;
+#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
+#endif
+  for (size_type i=0; i<num_rows; ++i) {
+    FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, col);
+    success = success && checkFads(f, h_s(i), out);
+  }
+}
+#else
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Subview, FadType, Layout, Device )
+{
+}
+#endif
+
 // Tests that require view spec
 
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
@@ -852,6 +908,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyMixed, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Rank8, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Subview, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
 
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
