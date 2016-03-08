@@ -475,7 +475,7 @@ namespace Experimental {
     const LO blockSize = getBlockSize ();
     Teuchos::Array<impl_scalar_type> localMem (blockSize);
     Teuchos::Array<impl_scalar_type> localMat (blockSize*blockSize);
-    little_vec_type X_lcl (localMem.getRawPtr (), blockSize, 1);
+    little_vec_type X_lcl (localMem.getRawPtr (), blockSize);
 
     // FIXME (mfh 12 Aug 2014) This probably won't work if LO is unsigned.
     LO rowBegin = 0, rowEnd = 0, rowStride = 0;
@@ -1159,7 +1159,7 @@ namespace Experimental {
     // on making this fast for GPUs.
     const LO blockSize = getBlockSize ();
     Teuchos::Array<impl_scalar_type> localMem (blockSize);
-    little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
+    little_vec_type Y_lcl (localMem.getRawPtr (), blockSize);
 
     if (numVecs == 1) {
       for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
@@ -1290,7 +1290,7 @@ namespace Experimental {
   {
     // Row major blocks
     const LO rowStride = blockSize_;
-    return const_little_block_type (val + pointOffset, blockSize_, rowStride, 1);
+    return const_little_block_type (val + pointOffset, blockSize_, rowStride);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1301,7 +1301,7 @@ namespace Experimental {
   {
     // Row major blocks
     const LO rowStride = blockSize_;
-    return little_block_type (val + pointOffset, blockSize_, rowStride, 1);
+    return little_block_type (val + pointOffset, blockSize_, rowStride);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1313,7 +1313,7 @@ namespace Experimental {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
       // memory corruption in case there is a bug.
-      return const_little_block_type (NULL, 0, 0, 0);
+      return const_little_block_type ();
     } else {
       const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
       return getConstLocalBlockFromInput (val_, absPointOffset);
@@ -1337,7 +1337,7 @@ namespace Experimental {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
       // memory corruption in case there is a bug.
-      return const_little_block_type (NULL, 0, 0, 0);
+      return const_little_block_type ();
     }
     else {
       const size_t relPointOffset = relMeshOffset * this->offsetPerBlock ();
@@ -1356,7 +1356,7 @@ namespace Experimental {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
       // memory corruption in case there is a bug.
-      return little_block_type (NULL, 0, 0, 0);
+      return little_block_type ();
     } else {
       const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
       return getNonConstLocalBlockFromInput (const_cast<impl_scalar_type*> (val_),
@@ -1378,7 +1378,7 @@ namespace Experimental {
       return getNonConstLocalBlockFromAbsOffset (absBlockOffset);
     }
     else {
-      return little_block_type (NULL, 0, 0, 0);
+      return little_block_type ();
     }
   }
 

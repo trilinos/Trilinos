@@ -96,7 +96,7 @@ struct AbsMax<ViewType1, ViewType2, 2> {
   ///   for all (i,j).
   static void run (const ViewType2& Y, const ViewType1& X)
   {
-    static_assert (ViewType1::rank == ViewType2::rank,
+    static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AbsMax: ViewType1 and ViewType2 must have the same rank.");
     typedef typename std::remove_reference<decltype (Y(0,0)) >::type STY;
     static_assert(! std::is_const<STY>::value,
@@ -106,8 +106,10 @@ struct AbsMax<ViewType1, ViewType2, 2> {
       "AbsMax: The type of each entry of X and Y must be the same.");
     typedef Kokkos::Details::ArithTraits<STY> KAT;
 
-    for (int j = 0; j < Y.dimension_1 (); ++j) {
-      for (int i = 0; i < Y.dimension_0 (); ++i) {
+    const int numCols = Y.dimension_1 ();
+    const int numRows = Y.dimension_0 ();
+    for (int j = 0; j < numCols; ++j) {
+      for (int i = 0; i < numRows; ++i) {
         STY& Y_ij = Y(i,j); // use ref here to avoid 2nd op() call on Y
         const STX X_ij = X(i,j);
         // NOTE: no std::max (not a CUDA __device__ function); must
@@ -133,7 +135,7 @@ struct AbsMax<ViewType1, ViewType2, 1> {
   ///   for all i.
   static void run (const ViewType2& Y, const ViewType1& X)
   {
-    static_assert (ViewType1::rank == ViewType2::rank,
+    static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AbsMax: ViewType1 and ViewType2 must have the same rank.");
 
     typedef typename std::remove_reference<decltype (Y(0)) >::type STY;
@@ -144,7 +146,8 @@ struct AbsMax<ViewType1, ViewType2, 1> {
       "AbsMax: The type of each entry of X and Y must be the same.");
     typedef Kokkos::Details::ArithTraits<STY> KAT;
 
-    for (int i = 0; i < Y.dimension_0 (); ++i) {
+    const int numRows = Y.dimension_0 ();
+    for (int i = 0; i < numRows; ++i) {
       STY& Y_i = Y(i); // use ref here to avoid 2nd op() call on Y
       const STX X_i = X(i);
       // NOTE: no std::max (not a CUDA __device__ function); must
@@ -166,7 +169,7 @@ struct AbsMax<ViewType1, ViewType2, 1> {
 /// ABSMAX CombineMode.
 template<class ViewType1, class ViewType2, const int rank = ViewType1::rank>
 void absMax (const ViewType2& Y, const ViewType1& X) {
-  static_assert (ViewType1::rank == ViewType2::rank,
+  static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                  "absMax: ViewType1 and ViewType2 must have the same rank.");
   AbsMax<ViewType1, ViewType2, rank>::run (Y, X);
 }
@@ -328,7 +331,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
        const ViewType1& x,
        const ViewType2& y)
   {
-    static_assert (ViewType1::rank == ViewType2::rank,
+    static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AXPY: x and y must have the same rank.");
     const IndexType numRows = static_cast<IndexType> (y.dimension_0 ());
     if (alpha != 0.0) {
@@ -383,7 +386,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::
        const ViewType1& X,
        const ViewType2& Y)
   {
-    static_assert (ViewType1::rank == ViewType2::rank,
+    static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AXPY: X and Y must have the same rank.");
     typedef typename std::decay<decltype (X(0,0)) >::type SX;
     typedef typename std::decay<decltype (Y(0,0)) >::type SY;
@@ -674,7 +677,7 @@ AXPY (const CoefficientType& alpha,
       const ViewType1& x,
       const ViewType2& y)
 {
-  static_assert (ViewType1::rank == ViewType2::rank,
+  static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                  "AXPY: x and y must have the same rank.");
   Impl::AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, rank>::run (alpha, x, y);
 }

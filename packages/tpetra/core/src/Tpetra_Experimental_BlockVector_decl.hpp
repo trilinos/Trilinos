@@ -96,6 +96,8 @@ public:
   typedef typename base_type::global_ordinal_type global_ordinal_type;
   //! The Kokkos Node type.
   typedef typename base_type::node_type node_type;
+  //! The Kokkos Device type.
+  typedef typename Node::device_type device_type;
 
   //! The specialization of Tpetra::Map that this class uses.
   typedef Tpetra::Map<LO, GO, Node> map_type;
@@ -118,13 +120,21 @@ public:
   /// little_vec_type or const_little_vec_type.  This gives us a
   /// porting strategy to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-  typedef LittleVector<impl_scalar_type, LO> little_vec_type;
+  typedef Kokkos::View<impl_scalar_type*,
+                       Kokkos::LayoutRight,
+                       device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+          little_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point.
   ///
   /// This is just like little_vec_type, except that you can't modify
   /// its entries.
-  typedef LittleVector<const impl_scalar_type, LO> const_little_vec_type;
+  typedef Kokkos::View<const impl_scalar_type*,
+                       Kokkos::LayoutRight,
+                       device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+          const_little_vec_type;
 
   //@}
   //! \name Constructors
