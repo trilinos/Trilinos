@@ -202,6 +202,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   CGAL            "cmake/TPLs/"    EX
   VTune           "cmake/TPLs/"    SS
   TASMANIAN       "cmake/TPLs/"    EX
+  ArrayFireCPU    "cmake/TPLs/"    EX
   )
 
 # NOTES:
