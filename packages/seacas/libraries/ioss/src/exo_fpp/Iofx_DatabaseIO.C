@@ -190,52 +190,55 @@ namespace Iofx {
     if (isParallel) {
       global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
     }
-    if (global_file_ptr < 0 && (write_message || error_msg != nullptr || bad_count != nullptr)) {
-      Ioss::IntVector status;
-      if (isParallel) {
-        util().all_gather(exodusFilePtr, status);
-      }
-      else {
-        status.push_back(exodusFilePtr);
-      }
 
-      std::string open_create = is_input() ? "open input" : "create output";
-      if (write_message || error_msg != nullptr) {
-        // See which processors could not open/create the file...
-        std::ostringstream errmsg;
-        if (isParallel) {
-          errmsg << "ERROR: Unable to " << open_create << " exodus decomposed database files:\n";
-          for (int i=0; i < util().parallel_size(); i++) {
-            if (status[i] < 0) {
-              std::string proc_filename = Ioss::Utils::decode_filename(get_filename(),
-                                                                       i, util().parallel_size());
-              errmsg << "\t" << proc_filename << "\n";
-            }
-          }
-        }
-        else {
-          errmsg << "ERROR: Unable to " << open_create
-                 << " database '" << get_filename() << "' of type 'exodusII'";
-        }
-        if (error_msg != nullptr) {
-          *error_msg = errmsg.str();
-        }
-        if (write_message && myProcessor == 0) {
-          errmsg << "\n";
-          std::cerr << errmsg.str();
-        }
-      }
-      if (bad_count != nullptr) {
-        for (int i=0; i < util().parallel_size(); i++) {
-          if (status[i] < 0) {
-            (*bad_count)++;
-          }
-        }
-      }
-      if (abort_if_error) {
-        std::ostringstream errmsg;
-	errmsg << "ERROR: Cannot " << open_create << " file '" << get_filename() << "'";
-	IOSS_ERROR(errmsg);
+    if (global_file_ptr < 0) {
+      if (write_message || error_msg != nullptr || bad_count != nullptr) {
+	Ioss::IntVector status;
+	if (isParallel) {
+	  util().all_gather(exodusFilePtr, status);
+	}
+	else {
+	  status.push_back(exodusFilePtr);
+	}
+
+	std::string open_create = is_input() ? "open input" : "create output";
+	if (write_message || error_msg != nullptr) {
+	  // See which processors could not open/create the file...
+	  std::ostringstream errmsg;
+	  if (isParallel) {
+	    errmsg << "ERROR: Unable to " << open_create << " exodus decomposed database files:\n";
+	    for (int i=0; i < util().parallel_size(); i++) {
+	      if (status[i] < 0) {
+		std::string proc_filename = Ioss::Utils::decode_filename(get_filename(),
+									 i, util().parallel_size());
+		errmsg << "\t" << proc_filename << "\n";
+	      }
+	    }
+	  }
+	  else {
+	    errmsg << "ERROR: Unable to " << open_create
+		   << " database '" << get_filename() << "' of type 'exodusII'";
+	  }
+	  if (error_msg != nullptr) {
+	    *error_msg = errmsg.str();
+	  }
+	  if (write_message && myProcessor == 0) {
+	    errmsg << "\n";
+	    std::cerr << errmsg.str();
+	  }
+	}
+	if (bad_count != nullptr) {
+	  for (int i=0; i < util().parallel_size(); i++) {
+	    if (status[i] < 0) {
+	      (*bad_count)++;
+	    }
+	  }
+	}
+	if (abort_if_error) {
+	  std::ostringstream errmsg;
+	  errmsg << "ERROR: Cannot " << open_create << " file '" << get_filename() << "'";
+	  IOSS_ERROR(errmsg);
+	}
       }
       return false;
     }
