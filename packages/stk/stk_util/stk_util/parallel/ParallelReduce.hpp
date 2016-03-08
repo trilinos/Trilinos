@@ -77,14 +77,6 @@ void all_reduce_sum( ParallelMachine comm , const T * local , T * global , unsig
   all_reduce_impl(comm, local, global, count, MPI_SUM);
 }
 
-inline bool is_true_on_all_procs(ParallelMachine comm , const bool truthValue)
-{
-    unsigned localResult = truthValue;
-    unsigned globalResult = 0;
-    stk::all_reduce_min<unsigned>( comm, &localResult, &globalResult , 1 );
-    return (0 != globalResult);
-}
-
 template<typename T, typename IdType>
 void
 all_reduce_loc_impl(ParallelMachine comm,

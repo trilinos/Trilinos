@@ -307,16 +307,6 @@ void ElemElemGraph::fill_graph()
     }
 }
 
-template <typename T>
-void unpack_into_vector_of_data(stk::CommSparse& comm, T& data, int fromProc)
-{
-    unsigned num_items = 0;
-    comm.recv_buffer(fromProc).unpack<unsigned>(num_items);
-    data.resize(num_items);
-    for(unsigned i=0;i<num_items;++i)
-        comm.recv_buffer(fromProc).unpack<typename T::value_type>(data[i]);
-}
-
 stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKey>& keys)
 {
         stk::mesh::EntityVector entities;
@@ -374,7 +364,7 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& element_s
                 }
 
                 std::vector<stk::mesh::EntityKey> node_keys;
-                unpack_into_vector_of_data(comm, node_keys, proc_id);
+                stk::unpack_into_vector_of_data(comm, node_keys, proc_id);
                 elementData.set_element_side_nodes(convert_keys_to_entities(m_bulk_data, node_keys));
 
                 stk::mesh::EntityVector sortedSideNodes = elementData.get_side_nodes();

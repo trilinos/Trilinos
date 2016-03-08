@@ -35,7 +35,7 @@ void MeshDiagnosticObserver::finished_modification_end_notification()
     std::vector<stk::mesh::EntityKeyProc> badKeyProcs = stk::mesh::get_non_unique_key_procs(m_bulkData);
     std::vector<std::string> nonUniqueKeyErrors = stk::mesh::get_non_unique_key_messages(m_bulkData, badKeyProcs);
 
-    std::vector<stk::mesh::EntityKey> orphanedSides = stk::mesh::get_orphaned_owned_sides(m_bulkData);
+    std::vector<stk::mesh::Entity> orphanedSides = stk::mesh::get_orphaned_owned_sides(m_bulkData);
     std::vector<std::string> orphanedSideErrors = stk::mesh::get_messages_for_orphaned_owned_sides(m_bulkData, orphanedSides);
 
     gather_new_errors(out, splitCoincidentErrors);
