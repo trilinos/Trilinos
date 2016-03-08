@@ -89,6 +89,39 @@ namespace fixtures {
 
 }
 
+  HexFixture::HexFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , bool auraOn
+              , ConnectivityMap const* connectivity_map
+            )
+  : m_spatial_dimension(3),
+    m_nx(nx),
+    m_ny(ny),
+    m_nz(nz),
+    m_meta( m_spatial_dimension ),
+    m_bulk_data(  m_meta
+                , pm
+                , auraOn ? stk::mesh::BulkData::AUTO_AURA : stk::mesh::BulkData::NO_AUTO_AURA
+#ifdef SIERRA_MIGRATION
+                , false
+#endif
+                , connectivity_map
+               ),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("hex_part", stk::topology::HEX_8) ),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
+{
+
+  //put coord-field on all nodes:
+  put_field(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension);
+
+}
+
 void HexFixture::generate_mesh(const CoordinateMapping & coordMap)
 {
   std::vector<EntityId> element_ids_on_this_processor;
