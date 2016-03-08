@@ -770,9 +770,9 @@ ArrayRCP<const T>::view (size_type lowerOffset_in, size_type size_in) const
   debug_assert_valid_ptr();
   debug_assert_in_range(lowerOffset_in,size_in);
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  return ArrayView<const T> (persistingView (lowerOffset_in, size_in).create_weak ());
+  return ArrayView<const T>(persistingView(lowerOffset_in, size_in).create_weak());
 #else
-  return arrayView (ptr_ + lowerOffset_in, size_in);
+  return arrayView(ptr_ + lowerOffset_in, size_in);
 #endif
   // ToDo: Implement checks for dangling references!
 }
@@ -805,7 +805,7 @@ template<class T> inline
 ArrayView<const T> ArrayRCP<const T>::operator()() const
 {
   if (size()) {
-    return view (lowerOffset_, size ());
+    return view(lowerOffset_, size());
   }
   return null;
 }
