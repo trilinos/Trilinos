@@ -853,6 +853,52 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+// This test requires experimental view and checks we can allocate a view
+// with SFad without specifying the fad size in the constructor
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, SFadNoSizeArg, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType**,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", num_rows, num_cols);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      h_v(i,j) = f;
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  // Copy back
+  Kokkos::deep_copy(h_v, v);
+
+  // Check
+  success = true;
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_v), fad_size+1, out, success);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      success = success && checkFads(f, h_v(i,j), out);
+    }
+  }
+}
+#else
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, SFadNoSizeArg, FadType, Layout, Device )
+{
+}
+#endif
+
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -888,6 +934,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst2, FadType, Layout, Device ) {}
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, SFadNoSizeArg, FadType, Layout, Device ) {}
+
 #endif
 
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
@@ -911,12 +960,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Subview, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
 
+#define VIEW_FAD_TESTS_SFLD( F, L, D )                                   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SFadNoSizeArg, F, L, D )
+
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
   using Kokkos::LayoutLeft;                                             \
   using Kokkos::LayoutRight;                                            \
   VIEW_FAD_TESTS_FLD( F, NoLayout, D)                                   \
   VIEW_FAD_TESTS_FLD( F, LayoutLeft, D)                                 \
   VIEW_FAD_TESTS_FLD( F, LayoutRight, D)
+
+#define VIEW_FAD_TESTS_SFD( F, D )                                      \
+  using Kokkos::LayoutLeft;                                             \
+  using Kokkos::LayoutRight;                                            \
+  VIEW_FAD_TESTS_SFLD( F, NoLayout, D)                                   \
+  VIEW_FAD_TESTS_SFLD( F, LayoutLeft, D)                                 \
+  VIEW_FAD_TESTS_SFLD( F, LayoutRight, D)
 
 typedef Sacado::Fad::DFad<double> DFadType;
 typedef Sacado::Fad::SLFad<double,2*global_fad_size> SLFadType;
@@ -948,7 +1007,11 @@ typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheSFadType;
   VIEW_FAD_TESTS_FD( CacheDFadType, D )                  \
   VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )               \
   VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )              \
-  VIEW_FAD_TESTS_FD( ELRCacheDFadType, D )
+  VIEW_FAD_TESTS_FD( ELRCacheDFadType, D )               \
+  VIEW_FAD_TESTS_SFD( SFadType, D )                      \
+  VIEW_FAD_TESTS_SFD( ELRSFadType, D )                   \
+  VIEW_FAD_TESTS_SFD( CacheSFadType, D )                 \
+  VIEW_FAD_TESTS_SFD( ELRCacheSFadType, D )
 #else
 #define VIEW_FAD_TESTS_D( D )                        \
   VIEW_FAD_TESTS_FD( SFadType, D )                   \
@@ -958,5 +1021,9 @@ typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheSFadType;
   VIEW_FAD_TESTS_FD( CacheSFadType, D )              \
   VIEW_FAD_TESTS_FD( CacheSLFadType, D )             \
   VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )           \
-  VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )
+  VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )          \
+  VIEW_FAD_TESTS_SFD( SFadType, D )                  \
+  VIEW_FAD_TESTS_SFD( ELRSFadType, D )               \
+  VIEW_FAD_TESTS_SFD( CacheSFadType, D )             \
+  VIEW_FAD_TESTS_SFD( ELRCacheSFadType, D )
 #endif
