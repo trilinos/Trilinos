@@ -234,28 +234,41 @@ void unpack_side_key_and_response(const stk::mesh::BulkData& bulkData,
     }
 }
 
+void exchange_side_connection_info(const stk::mesh::BulkData& bulkData,
+                                   const std::vector<stk::mesh::Entity> &orphanedSides,
+                                   std::map< std::pair<stk::mesh::EntityKey, int>, bool > &sideKeyProcMap)
+{
+    stk::CommSparse comm(bulkData.parallel());
+    pack_side_node_keys(orphanedSides, bulkData, comm);
+    comm.allocate_buffers();
+
+    pack_side_node_keys(orphanedSides, bulkData, comm);
+    comm.communicate();
+
+    unpack_side_nodes_and_check_for_attached_elements(bulkData, comm, sideKeyProcMap);
+}
+
+void populate_side_key_map(const stk::mesh::BulkData& bulkData,
+                           const std::map< std::pair<stk::mesh::EntityKey, int>, bool > &sideKeyProcMap,
+                           std::map<stk::mesh::EntityKey, bool> &sideKeyMap)
+{
+    stk::CommSparse comm(bulkData.parallel());
+    pack_side_key_and_response(sideKeyProcMap, comm);
+    comm.allocate_buffers();
+
+    pack_side_key_and_response(sideKeyProcMap, comm);
+    comm.communicate();
+
+    unpack_side_key_and_response(bulkData, comm, sideKeyMap);
+}
+
 void communicate_side_nodes_and_check_for_attached_elements(const stk::mesh::BulkData& bulkData,
                                                             const std::vector<stk::mesh::Entity> &orphanedSides,
                                                             std::map<stk::mesh::EntityKey, bool> &sideKeyMap)
 {
-    stk::CommSparse comm_from(bulkData.parallel());
-    pack_side_node_keys(orphanedSides, bulkData, comm_from);
-    comm_from.allocate_buffers();
-
-    pack_side_node_keys(orphanedSides, bulkData, comm_from);
-    comm_from.communicate();
-
     std::map< std::pair<stk::mesh::EntityKey, int>, bool > sideKeyProcMap;
-    unpack_side_nodes_and_check_for_attached_elements(bulkData, comm_from, sideKeyProcMap);
-
-    stk::CommSparse comm_to(bulkData.parallel());
-    pack_side_key_and_response(sideKeyProcMap, comm_to);
-    comm_to.allocate_buffers();
-
-    pack_side_key_and_response(sideKeyProcMap, comm_to);
-    comm_to.communicate();
-
-    unpack_side_key_and_response(bulkData, comm_to, sideKeyMap);
+    exchange_side_connection_info(bulkData, orphanedSides, sideKeyProcMap);
+    populate_side_key_map(bulkData, sideKeyProcMap, sideKeyMap);
 }
 
 std::vector<stk::mesh::Entity> get_orphaned_sides_with_attached_element_on_different_proc(const stk::mesh::BulkData& bulkData)

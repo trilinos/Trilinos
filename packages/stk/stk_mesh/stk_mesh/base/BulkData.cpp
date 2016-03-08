@@ -78,6 +78,7 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 
+#include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
 
 namespace stk {
 namespace mesh {
@@ -505,6 +506,8 @@ BulkData::BulkData( MetaData & mesh_meta_data
   internal_create_ghosting( "shared" );
   //shared part should reside in m_ghost_parts[0]
   internal_create_ghosting( "shared_aura" );
+
+  register_observer(new stk::mesh::MeshDiagnosticObserver(*this));
 
   m_meshModification.set_sync_state_synchronized();
 }
