@@ -22,20 +22,12 @@ enum GroupingType {
   GROUPING_MAX_ANISOTROPY,
   GROUPING_MORTAN_Z
 };
-const int num_grouping_types = 3;
-const GroupingType grouping_values[] = {
-  GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z };
-const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z" };
 
 enum SamplingType {
   SAMPLING_STOKHOS=0,
   SAMPLING_TASMANIAN,
   SAMPLING_FILE
 };
-const int num_sampling_types = 3;
-const SamplingType sampling_values[] = {
-  SAMPLING_STOKHOS, SAMPLING_TASMANIAN, SAMPLING_FILE };
-const char *sampling_names[] = { "stokhos", "tasmanian", "file" };
 
 struct CMD {
   bool USE_SERIAL;

@@ -29,6 +29,16 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
 
+  const int num_grouping_types = 3;
+  const GroupingType grouping_values[] = {
+    GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z };
+  const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z" };
+
+  const int num_sampling_types = 3;
+  const SamplingType sampling_values[] = {
+    SAMPLING_STOKHOS, SAMPLING_TASMANIAN, SAMPLING_FILE };
+  const char *sampling_names[] = { "stokhos", "tasmanian", "file" };
+
   clp.setOption("serial", "no-serial",     &cmdline.USE_SERIAL, "use the serial device");
   clp.setOption("threads",                 &cmdline.USE_THREADS, "number of pthreads threads");
   clp.setOption("openmp",                  &cmdline.USE_OPENMP,  "number of openmp threads");
@@ -159,7 +169,6 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
   }
   if ( cmd.USE_UQ_ENSEMBLE  ) {
     s << " UQ ensemble(" << cmd.USE_UQ_ENSEMBLE << ")" ;
-    s << " Ensemble grouping(" << grouping_names[cmd.USE_GROUPING] << ")";
   }
   if ( cmd.USE_UQ_FAKE ) {
     s << " UQ fake(" << cmd.USE_UQ_FAKE  << ")" ;
@@ -301,7 +310,6 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
      }
      if ( cmd.USE_UQ_ENSEMBLE  ) {
        s << " , USING UQ ENSEMBLE , " << cmd.USE_UQ_ENSEMBLE ;
-       s << " , GROUPING METHOD , " << grouping_names[cmd.USE_GROUPING] ;
      }
      if ( cmd.USE_MEANBASED  ) { s << " , MEAN-BASED PREC" ; }
    }
