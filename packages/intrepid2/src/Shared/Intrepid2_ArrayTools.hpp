@@ -52,7 +52,6 @@
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_Assert.hpp"
 #include <Intrepid2_KokkosRank.hpp>
 #include "Kokkos_Core.hpp"

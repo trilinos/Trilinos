@@ -570,8 +570,8 @@ namespace Intrepid2 {
       \return 1 if the argument is valid computational engine; 0 otherwise
    */
   inline int isValidCompEngine(const ECompEngine compEngType){
-    return ( (compEngType == COMP_CPP) ||
-             (compEngType == COMP_BLAS) );
+    //at the moment COMP_BLAS is not a valid CompEngine.
+    return (compEngType == COMP_CPP);
   }
 
 } //namespace Intrepid2
