@@ -125,12 +125,14 @@ namespace
       EXPECT_STREQ(format_line.c_str(), expected_format_line.c_str());
       EXPECT_TRUE(!std::getline(heartbeat, header_line).fail());
       EXPECT_STREQ(header_line.c_str(), expected_header_line.c_str());
+      EXPECT_TRUE(!std::getline(heartbeat, header_line).fail());
+      EXPECT_STREQ(header_line.c_str(), expected_header_line.c_str());
       EXPECT_TRUE(!std::getline(heartbeat, data_line).fail());
       EXPECT_STREQ(data_line.c_str(), expected_data_line.c_str());
     }
 
     // ========================================================================
     // CLEANUP:
-    unlink(file_name.c_str());
+    //    unlink(file_name.c_str());
   }
 }
