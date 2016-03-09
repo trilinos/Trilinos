@@ -228,7 +228,7 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::initializeTags() {
   // Basis-independent function, sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
   Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
                               this -> ordinalToTag_,
-                              &tags[0],
+                               &tags(0,0),
                               this -> basisCardinality_,
                               tagSize,
                               posScDim,
