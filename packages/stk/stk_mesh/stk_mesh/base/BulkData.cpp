@@ -78,7 +78,6 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 
-#include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
 
 namespace stk {
 namespace mesh {
@@ -490,7 +489,8 @@ BulkData::BulkData( MetaData & mesh_meta_data
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         bucket_capacity),
     m_use_identifiers_for_resolving_sharing(false),
-    m_modSummary(*this)
+    m_modSummary(*this),
+    m_meshDiagnosticObserver(*this)
 {
   mesh_meta_data.set_mesh_bulk_data(this);
   m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
@@ -507,7 +507,13 @@ BulkData::BulkData( MetaData & mesh_meta_data
   //shared part should reside in m_ghost_parts[0]
   internal_create_ghosting( "shared_aura" );
 
-  register_observer(new stk::mesh::MeshDiagnosticObserver(*this));
+  register_observer(&m_meshDiagnosticObserver);
+
+  //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+
+#ifndef NDEBUG
+  m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+#endif
 
   m_meshModification.set_sync_state_synchronized();
 }
@@ -7191,6 +7197,11 @@ void BulkData::sort_entities(const stk::mesh::EntitySorterBase& sorter)
 
     if(parallel_size() > 1)
         check_mesh_consistency();
+}
+
+void BulkData::enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag)
+{
+    m_meshDiagnosticObserver.enable_rule(flag);
 }
 
 #ifdef SIERRA_MIGRATION

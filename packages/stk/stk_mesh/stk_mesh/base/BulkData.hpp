@@ -68,6 +68,7 @@
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
+#include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
 
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -747,6 +748,8 @@ public:
   virtual void initialize_graph() {}
   virtual stk::mesh::ElemElemGraph& get_graph() { ThrowRequireWithSierraHelpMsg(false); stk::mesh::ElemElemGraph *graph = nullptr; return *graph;}
 
+  void enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag);
+
 protected: //functions
 
   bool resolve_node_sharing()
@@ -1407,6 +1410,7 @@ private: // data
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   //stk::ModificationSummary m_modSummary;
+  stk::mesh::MeshDiagnosticObserver m_meshDiagnosticObserver;
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);
