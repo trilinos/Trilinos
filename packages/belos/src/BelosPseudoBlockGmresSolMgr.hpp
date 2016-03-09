@@ -383,9 +383,12 @@ namespace Belos {
     /// (short-circuiting OR, like the || operator in C++) after
     /// Pseudoblock GMRES' standard convergence test.
     virtual void setUserConvStatusTest(
+      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
+      );
+
+    virtual void setUserConvStatusTest(
       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest,
-      const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &comboType =
-          StatusTestCombo<ScalarType,MV,OP>::SEQ
+      const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &comboType
       );
 
     /// \brief Set a debug status test.
@@ -1077,6 +1080,17 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Inform the solver manager that the current parameters were set.
   isSet_ = true;
+}
+
+
+template<class ScalarType, class MV, class OP>
+void
+PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setUserConvStatusTest(
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
+  )
+{
+  userConvStatusTest_ = userConvStatusTest;
+  comboType_ = StatusTestCombo<ScalarType,MV,OP>::SEQ;
 }
 
 
