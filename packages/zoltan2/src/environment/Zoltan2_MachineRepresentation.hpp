@@ -3,7 +3,7 @@
 
 #include <Teuchos_Comm.hpp>
 #include <Zoltan2_MachineForTesting.hpp>
-
+#include <Zoltan2_MachineTopoMgr.hpp>
 namespace Zoltan2{
 
 /*! \brief MachineRepresentation Class
@@ -18,7 +18,7 @@ public:
     typedef MachineLDMS<pcoord_t,part_t> machine_t;
 #elif defined(HAVE_ZOLTAN2_RCA)
     typedef MachineRCA<pcoord_t,part_t> machine_t;
-#elif defined(HAVE_ZOLTAN2_TOPOMGR)
+#elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
     typedef MachineTopoMgr<pcoord_t,part_t> machine_t;
 #else
     typedef MachineForTesting<pcoord_t,part_t> machine_t;

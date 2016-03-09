@@ -16,14 +16,14 @@ namespace Zoltan2{
  */
 
 template <typename pcoord_t, typename part_t>
-class Zoltan2_MachineTopoMgr : public Machine <pcoord_t, part_t> {
+class MachineTopoMgr : public Machine <pcoord_t, part_t> {
 
 public:
   /*! \brief Constructor: A BlueGeneQ network machine description;
    *  \param comm Communication object.
    */
 
-  Zoltan2_MachineTopoMgr(const Teuchos::Comm<int> &comm):
+  MachineTopoMgr(const Teuchos::Comm<int> &comm):
     Machine<pcoord_t,part_t>(comm),
 #if defined (CMK_BLUEGENEQ)
     networkDim(6),  tmgr(comm.getSize()),
@@ -52,7 +52,7 @@ public:
     gatherMachineCoordinates(comm);
   }
 
-  virtual ~MachineForTesting() {
+  virtual ~MachineTopoMgr() {
     for (int i = 0; i < networkDim; i++){
       delete [] procCoords[i];
     }
@@ -70,7 +70,7 @@ public:
     nxyz[2] = tmgr.getDimNC();
     nxyz[3] = tmgr.getDimND();
     nxyz[4] = tmgr.getDimNE();
-    nxyz[5] = tmgr.getDimNT());
+    nxyz[5] = tmgr.getDimNT();
 #elif defined (CMK_BLUEGENEP)
     nxyz[0] = tmgr.getDimNX();
     nxyz[1] = tmgr.getDimNY();
@@ -82,13 +82,18 @@ public:
   }
 
   bool getMyMachineCoordinate(pcoord_t *xyz) {
-
+    int a,b,c,d,e,t;
 #if defined (CMK_BLUEGENEQ)
-    tmgr.rankToCoordinates(i, xyz[0], xyz[1], xyz[2], xyz[3], xyz[4], xyz[5]);
+    tmgr.rankToCoordinates(this->myRank, a,b,c,d,e,t);
+    xyz[0] = a; xyz[1] = b; xyz[2] = c; xyz[3] = d; xyz[4] = e; xyz[5] = t;
+    //std::cout << "me:" << this->myRank << " " << a << " " << b << " " << c << " " << d << " " << e << " " << t << std::endl;
 #elif defined (CMK_BLUEGENEP)
-    tmgr.rankToCoordinates(i, xyz[0], xyz[1], xyz[2], xyz[3]);
+    tmgr.rankToCoordinates(this->myRank, a,b,c,t);
+    xyz[0] = a; xyz[1] = b; xyz[2] = c; xyz[3] = t;
 #else
 #endif
+   	
+    return true;
   }
 
 
