@@ -2862,6 +2862,16 @@ namespace Tpetra {
 #endif
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertLocalIndices (const LocalOrdinal localRow,
+		      const LocalOrdinal numEnt,
+		      const LocalOrdinal inds[])
+  {
+    Teuchos::ArrayView<const LocalOrdinal> indsT (inds, numEnt);
+    this->insertLocalIndices (localRow, indsT);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
@@ -2993,6 +3003,18 @@ namespace Tpetra {
       std::logic_error,
       ": Violated stated post-conditions. Please contact Tpetra team.");
 #endif
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertGlobalIndices (const GlobalOrdinal globalRow,
+		       const LocalOrdinal numEnt,
+                       const GlobalOrdinal inds[])
+  {
+    Teuchos::ArrayView<const GlobalOrdinal> indsT (inds, numEnt);
+    this->insertGlobalIndices (globalRow, indsT);
   }
 
 

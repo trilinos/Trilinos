@@ -614,8 +614,19 @@ namespace Tpetra {
     /// indices will be eliminated.  This may happen either at
     /// insertion or during the next call to fillComplete().
     void
-    insertGlobalIndices (GlobalOrdinal globalRow,
+    insertGlobalIndices (const GlobalOrdinal globalRow,
                          const Teuchos::ArrayView<const GlobalOrdinal>& indices);
+
+    /// \brief Epetra compatibility version of insertGlobalIndices
+    ///   (see above) that takes input as a raw pointer, rather than
+    ///   Teuchos::ArrayView.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsGraph::InsertGlobalIndices.
+    void
+    insertGlobalIndices (const GlobalOrdinal globalRow,
+			 const LocalOrdinal numEnt,
+                         const GlobalOrdinal inds[]);
 
     //! Insert local indices into the graph.
     /**
@@ -635,6 +646,17 @@ namespace Tpetra {
     void
     insertLocalIndices (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal> &indices);
+
+    /// \brief Epetra compatibility version of insertLocalIndices
+    ///   (see above) that takes input as a raw pointer, rather than
+    ///   Teuchos::ArrayView.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsGraph::InsertMyIndices.
+    void
+    insertLocalIndices (const LocalOrdinal localRow,
+			const LocalOrdinal numEnt,
+			const LocalOrdinal inds[]);
 
     //! Remove all graph indices from the specified local row.
     /**
