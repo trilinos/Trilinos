@@ -39,6 +39,7 @@ void run_samples(
   const double bc_upper_value,
   const Teuchos::Array< Teuchos::Array<double> >& points,
   Teuchos::Array<double>& responses,
+  Teuchos::Array<int>& iterations,
   Kokkos::Example::FENL::Perf& perf_total)
 {
   typedef typename CoeffFunctionType::RandomVariableView RV;
@@ -67,6 +68,7 @@ void run_samples(
             response);
 
     responses[sample] = response;
+    iterations[sample] = perf.cg_iter_count;
 
     if (cmd.PRINT_ITS && 0 == comm.getRank()) {
       std::cout << sample << " : " << perf.cg_iter_count << " ( ";
@@ -96,6 +98,7 @@ void run_samples(
   const double bc_upper_value,
   const Teuchos::Array< Teuchos::Array<double> >& points,
   Teuchos::Array<double>& responses,
+  Teuchos::Array<int>& iterations,
   Kokkos::Example::FENL::Perf& perf_total)
 {
   using Teuchos::Array;
@@ -136,9 +139,12 @@ void run_samples(
             bc_lower_value , bc_upper_value ,
             response);
 
-    // Save response
-    for (int qp=0; qp<VectorSize; ++qp)
+    // Save response -- note currently all samples within an ensemble
+    // get the same number of iterations
+    for (int qp=0; qp<VectorSize; ++qp) {
       responses[groups[group][qp]] = response.coeff(qp);
+      iterations[groups[group][qp]] = perf.cg_iter_count;
+    }
 
     if (cmd.PRINT_ITS && 0 == comm.getRank()) {
       std::cout << group << " : " << perf.cg_iter_count << " ( ";
@@ -236,10 +242,11 @@ void run_stokhos(
 
   // Evaluate response at each quadrature point
   Array<double> responses(num_quad_points);
+  Array<int> iterations(num_quad_points);
   run_samples(comm, problem, coeff_function, grouper,
               fenlParams, cmd,
               bc_lower_value, bc_upper_value,
-              quad_points, responses, perf_total);
+              quad_points, responses, iterations, perf_total);
 
   // Integrate responses into PCE
   for (int qp=0; qp<num_quad_points; ++qp) {
@@ -312,10 +319,11 @@ void run_tasmanian(
 
     // Evaluate response on those points
     Array<double> responses(num_new_points);
+    Array<int> iterations(num_new_points);
     run_samples(comm, problem, coeff_function, grouper,
                 fenlParams, cmd,
                 bc_lower_value, bc_upper_value,
-                quad_points, responses, perf_total);
+                quad_points, responses, iterations, perf_total);
 
     // Load responses back into Tasmanian
     Array<double> tas_responses(qoi*num_new_points);
@@ -385,18 +393,21 @@ void run_file(
 
   // Evaluate response at each quadrature point
   Array<double> responses(num_quad_points);
+  Array<int> iterations(num_quad_points);
   run_samples(comm, problem, coeff_function, grouper,
               fenlParams, cmd,
               bc_lower_value, bc_upper_value,
-              quad_points, responses, perf_total);
+              quad_points, responses, iterations, perf_total);
 
-  // Write responses to file
-  std::ofstream fout("responses.txt");
-  fout << num_quad_points << std::endl;
-  for (int i=0; i<num_quad_points; ++i) {
-    fout << responses[i] << std::endl;
+  // Write responses to file, including solver iterations
+  if (comm.getRank() == 0) {
+    std::ofstream fout("responses.txt");
+    fout << num_quad_points << std::endl;
+    for (int i=0; i<num_quad_points; ++i) {
+      fout << responses[i] << " " << iterations[i] << std::endl;
+    }
+    fout.close();
   }
-  fout.close();
 
   perf_total.response_mean = 0.0;
   perf_total.response_std_dev = 0.0;
