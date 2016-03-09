@@ -1812,11 +1812,11 @@ namespace Tpetra {
 
     /// \brief Implementation detail of CrsMatrix::replaceLocalValues.
     ///
-    /// \tparam LocalIndicesViewType Kokkos::View specialization that
-    ///   is a 1-D array of LocalOrdinal.
     /// \tparam OutputScalarViewType Kokkos::View specialization that is
     ///   a 1-D array of the type of values in the sparse matrix (that
     ///   type is CrsMatrix::impl_scalar_type).
+    /// \tparam LocalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of LocalOrdinal.
     /// \tparam InputScalarViewType Kokkos::View specialization that
     ///   is a 1-D array of the type of values in the sparse matrix,
     ///   but with a possibly different memory space than how the
@@ -1829,6 +1829,11 @@ namespace Tpetra {
     /// \param inds [in] Local column indices of that row to modify.
     /// \param newVals [in] For each k, replace the value
     ///   corresponding to local column index inds[k] with newVals[k].
+    ///
+    /// \return The number of valid input column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     template<class OutputScalarViewType,
              class LocalIndicesViewType,
              class InputScalarViewType>
@@ -1867,7 +1872,7 @@ namespace Tpetra {
 
       // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
       // accurately, it assumes that the host execution space can
-      // access data in both InputMemorySpace and ValsMemorySpace.
+      // access data in all the Views.
 
       if (isLocallyIndexed ()) {
         // Get a view of the column indices in the row.  This amortizes
@@ -2014,6 +2019,113 @@ namespace Tpetra {
             else {
               rowVals(k) += newVals(j);
             }
+            hint = k+1;
+            numValid++;
+          }
+        }
+      }
+      // If the graph is neither locally nor globally indexed on the
+      // calling process, that means the calling process has no graph
+      // entries.  Thus, none of the input column indices are valid.
+
+      return numValid;
+    }
+
+    /// \brief Implementation detail of CrsMatrix::replaceGlobalValues.
+    ///
+    /// \tparam OutputScalarViewType Kokkos::View specialization that is
+    ///   a 1-D array of the type of values in the sparse matrix (that
+    ///   type is CrsMatrix::impl_scalar_type).
+    /// \tparam GlobalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of GlobalOrdinal.
+    /// \tparam InputScalarViewType Kokkos::View specialization that
+    ///   is a 1-D array of the type of values in the sparse matrix,
+    ///   but with a possibly different memory space than how the
+    ///   matrix stores its values.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo on the index of the
+    ///   local row of the matrix to modify.
+    /// \param rowVals [in/out] On input: Values of the row of the
+    ///   sparse matrix to modify.  On output: The modified values.
+    /// \param inds [in] Global column indices of that row to modify.
+    /// \param newVals [in] For each k, replace the value in rowVals
+    ///   corresponding to global column index inds[k] with newVals[k].
+    ///
+    /// \return The number of valid input column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+    template<class OutputScalarViewType,
+             class GlobalIndicesViewType,
+             class InputScalarViewType>
+    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
+                            Kokkos::is_view<GlobalIndicesViewType>::value &&
+                            Kokkos::is_view<InputScalarViewType>::value &&
+                            std::is_same<typename OutputScalarViewType::non_const_value_type,
+                                         typename InputScalarViewType::non_const_value_type>::value &&
+                            std::is_same<typename GlobalIndicesViewType::non_const_value_type,
+                                         global_ordinal_type>::value,
+                            LocalOrdinal>::type
+    replaceGlobalValues (const RowInfo& rowInfo,
+			 const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
+			 const typename UnmanagedView<GlobalIndicesViewType>::type& inds,
+			 const typename UnmanagedView<InputScalarViewType>::type& newVals) const
+    {
+      typedef LocalOrdinal LO;
+
+      if (newVals.dimension_0 () != inds.dimension_0 ()) {
+        // The dimensions of the input arrays must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      size_t hint = 0; // guess at the index's relative offset in the row
+      LO numValid = 0; // number of valid input column indices
+
+      // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
+      // accurately, it assumes that the host execution space can
+      // access data in all the Views.
+
+      if (isLocallyIndexed ()) {
+        // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
+        // pointer does NOT change its reference count.  Thus, this
+        // code is still thread safe.
+        if (colMap_.is_null ()) {
+          // NO input column indices are valid in this case, since if
+          // the column Map is null on the calling process, then the
+          // calling process owns no graph entries.
+          return numValid;
+        }
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getLocalKokkosRowView (rowInfo);
+        const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const LO lclColInd = this->colMap_->getLocalElement (inds(j));
+          if (lclColInd != LINV) {
+            const size_t k =
+              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
+            if (k != STINV) {
+	      rowVals(k) = newVals(j);
+              hint = k+1;
+              numValid++;
+            }
+          }
+        }
+      }
+      else if (isGloballyIndexed ()) {
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const size_t k =
+            this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
+          if (k != STINV) {
+	    rowVals(k) = newVals(j);
             hint = k+1;
             numValid++;
           }

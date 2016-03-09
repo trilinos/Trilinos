@@ -1987,8 +1987,8 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceLocalValues (const LocalOrdinal localRow,
-                      const Teuchos::ArrayView<const LocalOrdinal> &indices,
-                      const Teuchos::ArrayView<const Scalar>& values) const
+                      const Teuchos::ArrayView<const LocalOrdinal>& inputInds,
+                      const Teuchos::ArrayView<const Scalar>& inputVals) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
@@ -1996,14 +1996,14 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef device_type DD;
     typedef typename View<LO*, DD>::HostMirror::device_type HD;
-    typedef View<const ST*, HD, MemoryUnmanaged> ISVT;
-    typedef View<const LO*, HD, MemoryUnmanaged> LIVT;
+    // inputInds and inputVals come from the user, so they are host data.
+    typedef View<const ST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+    typedef View<const LO*, HD, MemoryUnmanaged> LIVT; // lcl ind view type
 
     if (! isFillActive () || staticGraph_.is_null ()) {
       // Fill must be active and the graph must exist.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-
     const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
     if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       // The input local row is invalid on the calling process,
@@ -2012,38 +2012,15 @@ namespace Tpetra {
     }
 
     auto curVals = this->getRowViewNonConst (rowInfo);
-    typedef typename std::remove_const<typename std::remove_reference<decltype (curVals)>::type>::type OSVT;
-    const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
-    ISVT valsIn (valsRaw, values.size ());
-    LIVT indsIn (indices.getRawPtr (), indices.size ());
+    // output scalar view type
+    typedef typename std::decay<decltype (curVals)>::type OSVT;
+    const ST* valsInRaw = reinterpret_cast<const ST*> (inputVals.getRawPtr ());
+    ISVT valsIn (valsInRaw, inputVals.size ());
+    LIVT indsIn (inputInds.getRawPtr (), inputInds.size ());
     return staticGraph_->template replaceLocalValues<OSVT, LIVT, ISVT> (rowInfo,
                                                                         curVals,
                                                                         indsIn,
                                                                         valsIn);
-  }
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  LocalOrdinal
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceGlobalValues (const GlobalOrdinal globalRow,
-                       const Kokkos::View<const GlobalOrdinal*, device_type,
-                         Kokkos::MemoryUnmanaged>& inputInds,
-                       const Kokkos::View<const impl_scalar_type*, device_type,
-                         Kokkos::MemoryUnmanaged>& inputVals) const
-  {
-    typedef impl_scalar_type ST;
-    typedef device_type DD;
-    // project2nd is a binary function that returns its second
-    // argument.  This replaces entries in the given row with their
-    // corresponding entry of values.
-    typedef Tpetra::project2nd<ST, ST> BF;
-
-    // It doesn't make sense for replace to use atomic updates, since
-    // the result of multiple threads replacing the same value
-    // concurrently is undefined.
-    return this->template transformGlobalValues<BF, DD> (globalRow, inputInds,
-                                                         inputVals, BF (), false);
   }
 
 
@@ -2056,27 +2033,21 @@ namespace Tpetra {
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
-    typedef impl_scalar_type ST;
+    typedef impl_scalar_type IST;
     typedef GlobalOrdinal GO;
     typedef device_type DD;
     typedef typename View<GO*, DD>::HostMirror::device_type HD;
-    // project2nd is a binary function that returns its second
-    // argument.  This replaces entries in the given row with their
-    // corresponding entry of values.
-    typedef Tpetra::project2nd<ST, ST> BF;
+    // inputInds and inputVals come from the user, so they are host data.
+    typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
+    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
 
-    const ST* const rawInputVals =
-      reinterpret_cast<const ST*> (inputVals.getRawPtr ());
-    // 'indices' and 'values' come from the user, so they are host data.
-    View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals,
-                                                     inputVals.size ());
-    View<const GO*, HD, MemoryUnmanaged> inputIndsK (inputInds.getRawPtr (),
-                                                     inputInds.size ());
-    // It doesn't make sense for replace to use atomic updates, since
-    // the result of multiple threads replacing the same value
-    // concurrently is undefined.
-    return this->template transformGlobalValues<BF, HD> (globalRow, inputIndsK,
-                                                         inputValsK, BF (), false);
+    const IST* inputValsRaw = 
+      reinterpret_cast<const IST*> (inputVals.getRawPtr ());
+    GIVT indsK (inputInds.getRawPtr (), inputInds.size ());
+    ISVT valsK (inputValsRaw, inputVals.size ());
+    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow, 
+							   indsK,
+							   valsK);
   }
 
 
@@ -2157,7 +2128,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef device_type DD;
     typedef typename View<LO*, DD>::HostMirror::device_type HD;
-
     typedef View<const ST*, HD, MemoryUnmanaged> IVT;
     typedef View<const LO*, HD, MemoryUnmanaged> IIT;
 

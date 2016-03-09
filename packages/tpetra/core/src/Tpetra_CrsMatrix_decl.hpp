@@ -877,12 +877,42 @@ namespace Tpetra {
     ///   <li> <tt>! isFillActive ()</tt> </li>
     ///   <li> <tt> cols.dimension_0 () != vals.dimension_0 ()</tt> </li>
     ///   </ul>
-    LocalOrdinal
+    template<class GlobalIndicesViewType,
+             class ImplScalarViewType>
+    typename std::enable_if<Kokkos::is_view<GlobalIndicesViewType>::value &&
+                            Kokkos::is_view<ImplScalarViewType>::value &&
+                            std::is_same<typename GlobalIndicesViewType::non_const_value_type,
+                                         global_ordinal_type>::value &&
+                            std::is_same<typename ImplScalarViewType::non_const_value_type,
+                                         impl_scalar_type>::value, 
+			    LocalOrdinal>::type
     replaceGlobalValues (const GlobalOrdinal globalRow,
-                         const Kokkos::View<const GlobalOrdinal*, device_type,
-                           Kokkos::MemoryUnmanaged>& cols,
-                         const Kokkos::View<const impl_scalar_type*, device_type,
-                           Kokkos::MemoryUnmanaged>& vals) const;
+			 const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
+			 const typename UnmanagedView<ImplScalarViewType>::type& inputVals) const
+    {
+      typedef LocalOrdinal LO;
+      typedef ImplScalarViewType ISVT;
+      typedef GlobalIndicesViewType GIVT;
+
+      if (! isFillActive () || staticGraph_.is_null ()) {
+	// Fill must be active and the graph must exist.
+	return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+      const RowInfo rowInfo = staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
+      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+	// The input local row is invalid on the calling process,
+	// which means that the calling process summed 0 entries.
+	return static_cast<LO> (0);
+      }
+
+      auto curVals = this->getRowViewNonConst (rowInfo);
+      // output scalar view type
+      typedef typename std::decay<decltype (curVals)>::type OSVT;
+      return staticGraph_->template replaceGlobalValues<OSVT, GIVT, ISVT> (rowInfo,
+									   curVals,
+									   inputInds,
+									   inputVals);
+    }
 
     /// \brief Backwards compatibility version of replaceGlobalValues,
     ///   that takes Teuchos::ArrayView instead of Kokkos::View.
@@ -953,7 +983,7 @@ namespace Tpetra {
       }
 
       auto curVals = this->getRowViewNonConst (rowInfo);
-      typedef typename std::remove_const<typename std::remove_reference<decltype (curVals)>::type>::type OSVT;
+      typedef typename std::decay<decltype (curVals) >::type OSVT;
       typedef typename UnmanagedView<LocalIndicesViewType>::type LIVT;
       typedef typename UnmanagedView<ImplScalarViewType>::type ISVT;
       return staticGraph_->template replaceLocalValues<OSVT, LIVT, ISVT> (rowInfo,
