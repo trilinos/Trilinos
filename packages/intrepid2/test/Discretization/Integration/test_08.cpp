@@ -112,8 +112,8 @@ void computeIntegral(Teuchos::Array<double>& testIntFixDeg, int cubDegree) {
   int inc = 1;
   double alpha = 1.0;
   double beta  = 0.0;
-  myblas.GEMV(Teuchos::NO_TRANS, numPolys, numCubPoints, alpha, &functValues[0], numPolys,
-              &cubWeights[0], inc, beta, &testIntFixDeg[0], inc);
+  myblas.GEMV(Teuchos::NO_TRANS, numPolys, numCubPoints, alpha, &functValues(0), numPolys,
+              &cubWeights(0), inc, beta, &testIntFixDeg[0], inc);
 }
 
 

@@ -102,7 +102,7 @@ double computeIntegral(shards::CellTopology & cellTopology, int cubDegree, int x
 
   Teuchos::BLAS<int, double> myblas;
   int inc = 1;
-  val = myblas.DOT(numCubPoints, &functValues[0], inc, &cubWeights[0], inc);
+  val = myblas.DOT(numCubPoints, &functValues(0), inc, &cubWeights(0), inc);
 
   return val;
 }

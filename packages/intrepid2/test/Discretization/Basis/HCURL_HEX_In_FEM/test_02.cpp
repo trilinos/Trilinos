@@ -264,10 +264,10 @@ int main(int argc, char *argv[]) {
 	      
 	      // solve linear system
 
- 	      solver.GESV(numFields, 1, &fe_matrix[0], numFields, &ipiv(0), &rhs_and_soln_vec[0], 
+ 	      solver.GESV(numFields, 1, &fe_matrix(0,0,0), numFields, &ipiv(0), &rhs_and_soln_vec(0,0), 
  			  numFields, &info);
-// 	      solver.POTRF('L',numFields,&fe_matrix[0],numFields,&info);
-// 	      solver.POTRS('L',numFields,1,&fe_matrix[0],numFields,&rhs_and_soln_vec[0],numFields,&info);
+// 	      solver.POTRF('L',numFields,&fe_matrix(0,0,0),numFields,&info);
+// 	      solver.POTRS('L',numFields,1,&fe_matrix(0,0,0),numFields,&rhs_and_soln_vec(0,0),numFields,&info);
 	      
 	      interp_points_ref.resize(1,numInterpPoints,cellDim);
 	      // get exact solution for comparison

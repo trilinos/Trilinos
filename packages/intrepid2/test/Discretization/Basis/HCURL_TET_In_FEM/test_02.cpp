@@ -266,10 +266,10 @@ int main(int argc, char *argv[]) {
 	      
 	      // solve linear system
 
-// 	      solver.GESV(numFields, 1, &fe_matrix[0], numFields, &ipiv(0), &rhs_and_soln_vec[0], 
+// 	      solver.GESV(numFields, 1, &fe_matrix(0,0,0), numFields, &ipiv(0), &rhs_and_soln_vec(0,0), 
 // 			  numFields, &info);
-	      solver.POTRF('L',numFields,&fe_matrix[0],numFields,&info);
-	      solver.POTRS('L',numFields,1,&fe_matrix[0],numFields,&rhs_and_soln_vec[0],numFields,&info);
+	      solver.POTRF('L',numFields,&fe_matrix(0,0,0),numFields,&info);
+	      solver.POTRS('L',numFields,1,&fe_matrix(0,0,0),numFields,&rhs_and_soln_vec(0,0),numFields,&info);
 	      
 	      interp_points_ref.resize(1,numInterpPoints,cellDim);
 	      // get exact solution for comparison
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
 	      
 	      RealSpaceTools<double>::subtract(interpolant,exact_solution);
 	      
-	      double nrm= RealSpaceTools<double>::vectorNorm(&interpolant[0],interpolant.dimension(1), NORM_TWO);
+	      double nrm= RealSpaceTools<double>::vectorNorm(&interpolant(0,0),interpolant.dimension(1), NORM_TWO);
 	      
 	      *outStream << "\nNorm-2 error between scalar components of exact solution of order ("
 			 << x_order << ", " << y_order << ", " << z_order
