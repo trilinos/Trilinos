@@ -84,11 +84,12 @@ public:
   void compute( Vector<Real> &s, const Vector<Real> &x,
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
+    Real one(1);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     // Compute search direction
     s.set((step_state->gradientVec)->dual());
-    s.scale(-1.0);
+    s.scale(-one);
   }
 
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
@@ -98,7 +99,7 @@ public:
 
     // Update iterate and store step
     algo_state.iter++;
-    x.axpy(1.0, s);
+    x.plus(s);
     (step_state->descentVec)->set(s);
     algo_state.snorm = s.norm();
 

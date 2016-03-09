@@ -61,9 +61,10 @@ public:
   void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const {
     // Get Generic Secant State
     const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    Real zero(0);
 
     Hv.set(v.dual());
-    std::vector<Real> alpha(state->current+1,0.0);
+    std::vector<Real> alpha(state->current+1,zero);
     for (int i = state->current; i>=0; i--) {
       alpha[i]  = state->iterDiff[i]->dot(Hv);
       alpha[i] /= state->product[i];
@@ -75,7 +76,7 @@ public:
     Secant<Real>::applyH0(*tmp,Hv.dual());
     Hv.set(*tmp);
 
-    Real beta = 0.0;
+    Real beta(0);
     for (int i = 0; i <= state->current; i++) {
       beta  = Hv.dot((state->gradDiff[i])->dual());
       beta /= state->product[i];
@@ -87,17 +88,18 @@ public:
   void applyB( Vector<Real> &Bv, const Vector<Real> &v ) const {
     // Get Generic Secant State
     const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    Real one(1);
 
     // Apply initial Hessian approximation to v
     Secant<Real>::applyB0(Bv,v);
 
     std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
     std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
-    Real bv = 0.0, av = 0.0, bs = 0.0, as = 0.0;
+    Real bv(0), av(0), bs(0), as(0);
     for (int i = 0; i <= state->current; i++) {
       b[i] = Bv.clone();
       b[i]->set(*(state->gradDiff[i]));
-      b[i]->scale(1.0/sqrt(state->product[i]));
+      b[i]->scale(one/sqrt(state->product[i]));
       bv = v.dot(b[i]->dual());
       Bv.axpy(bv,*b[i]);
 
@@ -111,7 +113,7 @@ public:
         a[i]->axpy(-as,*a[j]);
       }
       as = (state->iterDiff[i])->dot(a[i]->dual());
-      a[i]->scale(1.0/sqrt(as));
+      a[i]->scale(one/sqrt(as));
       av = v.dot(a[i]->dual());
       Bv.axpy(-av,*a[i]);
     }

@@ -108,6 +108,7 @@ public:
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    Real one(1);
 
     // Compute projected secant step
     // ---> Apply inactive-inactive block of inverse secant to gradient
@@ -119,22 +120,22 @@ public:
     gp_->set(*(step_state->gradientVec));
     bnd.pruneInactive(*d_,*(step_state->gradientVec),x,algo_state.gnorm);
     s.plus(gp_->dual());
-    s.scale(-1.0);
+    s.scale(-one);
   }
 
   void update( Vector<Real> &x, const Vector<Real> &s,
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate and store previous step
     algo_state.iter++;
     d_->set(x);
-    x.axpy(1.0, s);
+    x.plus(s);
     bnd.project(x);
     (step_state->descentVec)->set(x);
-    (step_state->descentVec)->axpy(-1.0,*d_);
+    (step_state->descentVec)->axpy(-one,*d_);
     algo_state.snorm = s.norm();
 
     // Compute new gradient
@@ -156,9 +157,9 @@ public:
     }
     else {
       d_->set(x);
-      d_->axpy(-1.0,(step_state->gradientVec)->dual());
+      d_->axpy(-one,(step_state->gradientVec)->dual());
       bnd.project(*d_);
-      d_->axpy(-1.0,x);
+      d_->axpy(-one,x);
       algo_state.gnorm = d_->norm();
     }
   }

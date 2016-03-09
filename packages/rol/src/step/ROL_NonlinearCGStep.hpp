@@ -97,10 +97,11 @@ public:
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    Real one(1);
 
     // Compute search direction
     nlcg_->run(s,*(step_state->gradientVec),x,obj);
-    s.scale(-1.0);
+    s.scale(-one);
   }
 
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
@@ -110,7 +111,7 @@ public:
 
     // Update iterate
     algo_state.iter++;
-    x.axpy(1.0, s);
+    x.plus(s);
     (step_state->descentVec)->set(s);
     algo_state.snorm = s.norm();
 

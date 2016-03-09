@@ -92,6 +92,7 @@ public:
   virtual void updateStorage( const Vector<Real> &x,  const Vector<Real> &grad,
                               const Vector<Real> &gp, const Vector<Real> &s,
                               const Real snorm,       const int iter ) {
+    Real one(1);
     if ( !isInitialized_ ) {
       state_->iterate = x.clone();
       isInitialized_ = true;
@@ -100,7 +101,7 @@ public:
     state_->iter = iter;
     Teuchos::RCP<Vector<Real> > gradDiff = grad.clone();
     gradDiff->set(grad);
-    gradDiff->axpy(-1.0,gp);
+    gradDiff->axpy(-one,gp);
 
     Real sy = s.dot(gradDiff->dual());
     if (sy > ROL_EPSILON<Real>()*snorm*snorm) {
@@ -149,19 +150,20 @@ public:
     Teuchos::RCP<Vector<Real> > vec  = x.clone();
     Teuchos::RCP<Vector<Real> > Hvec = x.clone();
     Teuchos::RCP<Vector<Real> > Bvec = x.clone();
+    Real one(1);
   
     // Print BHv -> Should be v
     vec->set(s);
     applyH(*Hvec,*vec);
     applyB(*Bvec,*Hvec);
-    vec->axpy(-1.0,*Bvec);
+    vec->axpy(-one,*Bvec);
     std::cout << " ||BHv-v|| = " << vec->norm() << "\n";
   
     // Print HBv -> Should be v
     vec->set(s);
     applyB(*Bvec,*vec);
     applyH(*Hvec,*Bvec);
-    vec->axpy(-1.0,*Hvec);
+    vec->axpy(-one,*Hvec);
     std::cout << " ||HBv-v|| = " << vec->norm() << "\n";
   }
 

@@ -132,31 +132,32 @@ public:
   AugmentedLagrangianStep(Teuchos::ParameterList &parlist)
     : Step<Real>(), algo_(Teuchos::null),
       x_(Teuchos::null), parlist_(parlist), subproblemIter_(0) {
+    Real one(1), p1(0.1), p9(0.9), ten(1.e1), oe8(1.e8), oem8(1.e-8);
     Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
-    Step<Real>::getState()->searchSize = sublist.get("Initial Penalty Parameter",1.e1);
+    Step<Real>::getState()->searchSize = sublist.get("Initial Penalty Parameter",ten);
     // Multiplier update parameters
     scaleLagrangian_      = sublist.get("Use Scaled Augmented Lagrangian",          false);
-    minPenaltyLowerBound_ = sublist.get("Penalty Parameter Reciprocal Lower Bound", 0.1);
-    minPenaltyReciprocal_ = 0.1;
-    penaltyUpdate_        = sublist.get("Penalty Parameter Growth Factor",          1.e1);
-    maxPenaltyParam_      = sublist.get("Maximum Penalty Parameter",                1.e8);
+    minPenaltyLowerBound_ = sublist.get("Penalty Parameter Reciprocal Lower Bound", p1);
+    minPenaltyReciprocal_ = p1;
+    penaltyUpdate_        = sublist.get("Penalty Parameter Growth Factor",          ten);
+    maxPenaltyParam_      = sublist.get("Maximum Penalty Parameter",                oe8);
     // Optimality tolerance update
-    optIncreaseExponent_ = sublist.get("Optimality Tolerance Update Exponent",    1.0);
-    optDecreaseExponent_ = sublist.get("Optimality Tolerance Decrease Exponent",  1.0);
-    optToleranceInitial_ = sublist.get("Initial Optimality Tolerance",            1.0);
+    optIncreaseExponent_ = sublist.get("Optimality Tolerance Update Exponent",    one);
+    optDecreaseExponent_ = sublist.get("Optimality Tolerance Decrease Exponent",  one);
+    optToleranceInitial_ = sublist.get("Initial Optimality Tolerance",            one);
     // Feasibility tolerance update    
-    feasIncreaseExponent_ = sublist.get("Feasibility Tolerance Update Exponent",   0.1);
-    feasDecreaseExponent_ = sublist.get("Feasibility Tolerance Decrease Exponent", 0.9);
-    feasToleranceInitial_ = sublist.get("Initial Feasibility Tolerance",           1.0);
+    feasIncreaseExponent_ = sublist.get("Feasibility Tolerance Update Exponent",   p1);
+    feasDecreaseExponent_ = sublist.get("Feasibility Tolerance Decrease Exponent", p9);
+    feasToleranceInitial_ = sublist.get("Initial Feasibility Tolerance",           one);
     // Subproblem information
     print_   = sublist.get("Print Intermediate Optimization History", false);
     maxit_   = sublist.get("Subproblem Iteration Limit",              1000);
     subStep_ = sublist.get("Subproblem Step Type",                    "Trust Region");
     parlist_.sublist("Status Test").set("Iteration Limit",maxit_);
     // Outer iteration tolerances
-    outerFeasTolerance_ = parlist.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
-    outerOptTolerance_  = parlist.sublist("Status Test").get("Gradient Tolerance", 1.e-8);
-    outerStepTolerance_ = parlist.sublist("Status Test").get("Step Tolerance", 1.e-8);
+    outerFeasTolerance_ = parlist.sublist("Status Test").get("Constraint Tolerance", oem8);
+    outerOptTolerance_  = parlist.sublist("Status Test").get("Gradient Tolerance",   oem8);
+    outerStepTolerance_ = parlist.sublist("Status Test").get("Step Tolerance",       oem8);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -207,6 +208,7 @@ public:
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, AlgorithmState<Real> &algo_state ) {
+    Real one(1);
     AugmentedLagrangian<Real> &augLag
       = Teuchos::dyn_cast<AugmentedLagrangian<Real> >(obj);
     parlist_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
@@ -219,7 +221,7 @@ public:
     else {
       algo_->run(*x_,augLag,print_);
     }
-    s.set(*x_); s.axpy(-1.,x);
+    s.set(*x_); s.axpy(-one,x);
     subproblemIter_ = (algo_->getState())->iter;
   }
 
@@ -229,6 +231,7 @@ public:
                Objective<Real> &obj, EqualityConstraint<Real> &con,
                BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
+    Real one(1), oem2(1.e-2);
     AugmentedLagrangian<Real> &augLag
       = Teuchos::dyn_cast<AugmentedLagrangian<Real> >(obj);
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
@@ -253,12 +256,12 @@ public:
     augLag.update(x,true,algo_state.iter);
     bnd.update(x,true,algo_state.iter);
     // Update multipliers
-    minPenaltyReciprocal_ = std::min(1./state->searchSize,minPenaltyLowerBound_);
+    minPenaltyReciprocal_ = std::min(one/state->searchSize,minPenaltyLowerBound_);
     if ( algo_state.cnorm < feasTolerance_ ) {
       l.axpy(state->searchSize,(state->constraintVec)->dual());
-      optTolerance_  = std::max(1.e-2*outerOptTolerance_,
+      optTolerance_  = std::max(oem2*outerOptTolerance_,
                        optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
-      feasTolerance_ = std::max(1.e-2*outerFeasTolerance_,
+      feasTolerance_ = std::max(oem2*outerFeasTolerance_,
                        feasTolerance_*std::pow(minPenaltyReciprocal_,feasIncreaseExponent_));
       // Update Algorithm State
       algo_state.snorm += state->searchSize*algo_state.cnorm;
@@ -266,9 +269,9 @@ public:
     }
     else {
       state->searchSize = std::min(penaltyUpdate_*state->searchSize,maxPenaltyParam_);
-      optTolerance_     = std::max(1.e-2*outerOptTolerance_,
+      optTolerance_     = std::max(oem2*outerOptTolerance_,
                           optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
-      feasTolerance_    = std::max(1.e-2*outerFeasTolerance_,
+      feasTolerance_    = std::max(oem2*outerFeasTolerance_,
                           feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
     }
     augLag.reset(l,state->searchSize);

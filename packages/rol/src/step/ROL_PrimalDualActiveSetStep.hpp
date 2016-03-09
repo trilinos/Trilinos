@@ -183,12 +183,13 @@ private:
              @param[in]    tol   is a tolerance for inexact evaluations of the objective function
   */ 
   Real computeCriticalityMeasure(Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, Real tol) {
+    Real one(1);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     obj.gradient(*(step_state->gradientVec),x,tol);
     xtmp_->set(x);
-    xtmp_->axpy(-1.0,(step_state->gradientVec)->dual());
+    xtmp_->axpy(-one,(step_state->gradientVec)->dual());
     con.project(*xtmp_);
-    xtmp_->axpy(-1.0,x);
+    xtmp_->axpy(-one,x);
     return xtmp_->norm();
   }
 
@@ -201,8 +202,8 @@ public:
   */
   PrimalDualActiveSetStep( Teuchos::ParameterList &parlist ) 
     : Step<Real>::Step(), krylov_(Teuchos::null),
-      iterCR_(0), flagCR_(0), itol_(0.),
-      maxit_(0), iter_(0), flag_(0), stol_(0.), gtol_(0.), scale_(0.),
+      iterCR_(0), flagCR_(0), itol_(0),
+      maxit_(0), iter_(0), flag_(0), stol_(0), gtol_(0), scale_(0),
       neps_(-ROL_EPSILON<Real>()), feasible_(false),
       lambda_(Teuchos::null), xlam_(Teuchos::null), x0_(Teuchos::null),
       xbnd_(Teuchos::null), As_(Teuchos::null), xtmp_(Teuchos::null),
@@ -210,11 +211,12 @@ public:
       gtmp_(Teuchos::null),
       esec_(SECANT_LBFGS), secant_(Teuchos::null), useSecantPrecond_(false),
       useSecantHessVec_(false) {
+    Real one(1), oem6(1.e-6), oem8(1.e-8);
     // Algorithmic parameters
     maxit_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Iteration Limit",10);
-    stol_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Relative Step Tolerance",1.e-8);
-    gtol_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Relative Gradient Tolerance",1.e-6);
-    scale_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Dual Scaling", 1.0);
+    stol_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Relative Step Tolerance",oem8);
+    gtol_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Relative Gradient Tolerance",oem6);
+    scale_ = parlist.sublist("Step").sublist("Primal Dual Active Set").get("Dual Scaling", one);
     // Build secant object
     esec_ = StringToESecant(parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
     useSecantHessVec_ = parlist.sublist("General").sublist("Secant").get("Use as Hessian", false); 
@@ -241,10 +243,11 @@ public:
                    Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    Real zero(0), one(1);
     // Initialize state descent direction and gradient storage
     step_state->descentVec  = s.clone();
     step_state->gradientVec = g.clone();
-    step_state->searchSize  = 0.0;
+    step_state->searchSize  = zero;
     // Initialize additional storage
     xlam_ = x.clone(); 
     x0_   = x.clone();
@@ -267,7 +270,7 @@ public:
     // Initialize dual variable
     lambda_ = s.clone(); 
     lambda_->set((step_state->gradientVec)->dual());
-    lambda_->scale(-1.0);
+    lambda_->scale(-one);
     //con.setVectorToLowerBound(*lambda_);
   }
 
@@ -299,6 +302,7 @@ public:
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    Real zero(0), one(1);
     s.zero();
     x0_->set(x);
     res_->set(*(step_state->gradientVec));
@@ -314,17 +318,17 @@ public:
       As_->zero();                               // As   = 0
    
       con.setVectorToUpperBound(*xbnd_);         // xbnd = u
-      xbnd_->axpy(-1.0,x);                       // xbnd = u - x
+      xbnd_->axpy(-one,x);                       // xbnd = u - x
       xtmp_->set(*xbnd_);                        // tmp  = u - x
       con.pruneUpperActive(*xtmp_,*xlam_,neps_); // tmp  = I(u - x)
-      xbnd_->axpy(-1.0,*xtmp_);                  // xbnd = A(u - x)
+      xbnd_->axpy(-one,*xtmp_);                  // xbnd = A(u - x)
       As_->plus(*xbnd_);                         // As  += A(u - x)
 
       con.setVectorToLowerBound(*xbnd_);         // xbnd = l
-      xbnd_->axpy(-1.0,x);                       // xbnd = l - x
+      xbnd_->axpy(-one,x);                       // xbnd = l - x
       xtmp_->set(*xbnd_);                        // tmp  = l - x
       con.pruneLowerActive(*xtmp_,*xlam_,neps_); // tmp  = I(l - x)
-      xbnd_->axpy(-1.0,*xtmp_);                  // xbnd = A(l - x)
+      xbnd_->axpy(-one,*xtmp_);                  // xbnd = A(l - x)
       As_->plus(*xbnd_);                         // As  += A(l - x)
       /********************************************************************/
       // APPLY HESSIAN TO ACTIVE COMPONENTS OF s AND REMOVE INACTIVE
@@ -344,14 +348,14 @@ public:
       con.pruneActive(*rtmp_,*xlam_,neps_);
 
       Ag_->set(*(step_state->gradientVec));     // Active components
-      Ag_->axpy(-1.0,*rtmp_);
+      Ag_->axpy(-one,*rtmp_);
       /********************************************************************/
       // SOLVE REDUCED NEWTON SYSTEM 
       /********************************************************************/
       rtmp_->plus(*gtmp_);
-      rtmp_->scale(-1.0);                        // rhs = -Ig - I(H*As)
+      rtmp_->scale(-one);                        // rhs = -Ig - I(H*As)
       s.zero();
-      if ( rtmp_->norm() > 0.0 ) {             
+      if ( rtmp_->norm() > zero ) {             
         // Initialize Hessian and preconditioner
         Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcpFromRef(obj);
         Teuchos::RCP<BoundConstraint<Real> > con_ptr = Teuchos::rcpFromRef(con);
@@ -378,9 +382,9 @@ public:
       gtmp_->set(*rtmp_);
       con.pruneActive(*gtmp_,*xlam_,neps_);
       lambda_->set(*rtmp_);
-      lambda_->axpy(-1.0,*gtmp_);
+      lambda_->axpy(-one,*gtmp_);
       lambda_->plus(*Ag_);
-      lambda_->scale(-1.0);
+      lambda_->scale(-one);
       /********************************************************************/
       // UPDATE STEP 
       /********************************************************************/
@@ -390,9 +394,9 @@ public:
       res_->plus(*rtmp_);
       // Compute criticality measure  
       xtmp_->set(*x0_);
-      xtmp_->axpy(-1.0,res_->dual());
+      xtmp_->axpy(-one,res_->dual());
       con.project(*xtmp_);
-      xtmp_->axpy(-1.0,*x0_);
+      xtmp_->axpy(-one,*x0_);
 //      std::cout << s.norm()               << "  " 
 //                << tmp->norm()            << "  " 
 //                << res_->norm()           << "  " 

@@ -109,10 +109,7 @@ public:
     // Initialize scalar quantities
     iter = 0; 
     flag = 0;
-    Real kappa = 0.0; 
-    Real beta  = 0.0; 
-    Real alpha = 0.0; 
-    Real tmp   = 0.0;
+    Real kappa(0), beta(0), alpha(0), tmp(0);
     Real gHg   = r_->dot(v_->dual()); 
 
     for (iter = 0; iter < (int)Krylov<Real>::getMaximumIteration(); iter++) {
@@ -142,10 +139,10 @@ public:
       beta = gHg/tmp;
 
       p_->scale(beta);
-      p_->axpy(1.0,*r_);
+      p_->plus(*r_);
 
       Ap_->scale(beta);
-      Ap_->axpy(1.0,*v_); 
+      Ap_->plus(*v_); 
     }
     if ( iter == (int)Krylov<Real>::getMaximumIteration() ) {
       flag = 1;

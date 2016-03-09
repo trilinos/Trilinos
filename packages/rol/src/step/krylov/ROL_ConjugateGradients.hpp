@@ -92,10 +92,7 @@ public:
     iter = 0;
     flag = 0;
 
-    Real kappa = 0.0;
-    Real beta  = 0.0;
-    Real alpha = 0.0;
-    Real tmp   = 0.0;
+    Real kappa(0), beta(0), alpha(0), tmp(0), zero(0);
     Real gv    = v_->dot(r_->dual());
 
     for (iter = 0; iter < (int)Krylov<Real>::getMaximumIteration(); iter++) {
@@ -105,7 +102,7 @@ public:
       A.apply(*Ap_, *p_, itol);
 
       kappa = p_->dot(Ap_->dual());
-      if ( kappa <= 0.0 ) {
+      if ( kappa <= zero ) {
         flag = 2;
         break;
       }
@@ -126,7 +123,7 @@ public:
       beta = gv/tmp;
  
       p_->scale(beta);
-      p_->axpy(1.0,*v_);
+      p_->plus(*v_);
     }
     if ( iter == (int)Krylov<Real>::getMaximumIteration() ) {
       flag = 1;
