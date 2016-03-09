@@ -2023,6 +2023,30 @@ namespace Tpetra {
                                                                         valsIn);
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  replaceLocalValues (const LocalOrdinal localRow,
+		      const LocalOrdinal numEnt,
+		      const Scalar inputVals[],
+		      const LocalOrdinal inputCols[]) const
+  {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
+    typedef device_type DD;
+    typedef typename View<LO*, DD>::HostMirror::device_type HD;
+    // inputInds and inputVals come from the user, so they are host data.
+    typedef View<const LO*, HD, MemoryUnmanaged> LIVT; // lcl ind view type
+    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+
+    LIVT indsK (inputCols, numEnt);
+    ISVT valsK (reinterpret_cast<const IST*> (inputVals), numEnt);
+    return this->template replaceLocalValues<LIVT, ISVT> (localRow,
+							  indsK, 
+							  valsK);
+  }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
@@ -2045,6 +2069,32 @@ namespace Tpetra {
       reinterpret_cast<const IST*> (inputVals.getRawPtr ());
     GIVT indsK (inputInds.getRawPtr (), inputInds.size ());
     ISVT valsK (inputValsRaw, inputVals.size ());
+    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow, 
+							   indsK,
+							   valsK);
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  replaceGlobalValues (const GlobalOrdinal globalRow,
+		       const LocalOrdinal numEnt,
+		       const Scalar inputVals[],
+		       const GlobalOrdinal inputCols[]) const
+  {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef GlobalOrdinal GO;
+    typedef device_type DD;
+    typedef typename View<GO*, DD>::HostMirror::device_type HD;
+    // inputInds and inputVals come from the user, so they are host data.
+    typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
+    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+
+    GIVT indsK (inputCols, numEnt);
+    ISVT valsK (reinterpret_cast<const IST*> (inputVals), numEnt);
     return this->template replaceGlobalValues<GIVT, ISVT> (globalRow, 
 							   indsK,
 							   valsK);

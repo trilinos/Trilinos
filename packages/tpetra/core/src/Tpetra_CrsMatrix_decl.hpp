@@ -914,12 +914,25 @@ namespace Tpetra {
 									   inputVals);
     }
 
-    /// \brief Backwards compatibility version of replaceGlobalValues,
-    ///   that takes Teuchos::ArrayView instead of Kokkos::View.
+    /// \brief Backwards compatibility version of replaceGlobalValues
+    ///   (see above), that takes Teuchos::ArrayView (host pointers)
+    ///   instead of Kokkos::View.
     LocalOrdinal
     replaceGlobalValues (const GlobalOrdinal globalRow,
                          const Teuchos::ArrayView<const GlobalOrdinal>& cols,
                          const Teuchos::ArrayView<const Scalar>& vals) const;
+
+    /// \brief Epetra compatibility version of replaceGlobalValues
+    ///   (see above), that takes raw pointers instead of
+    ///   Kokkos::View.
+    ///
+    /// This version of the method takes the same arguments in the
+    /// same order as Epetra_CrsMatrix::ReplaceGlobalValues.
+    LocalOrdinal
+    replaceGlobalValues (const GlobalOrdinal globalRow,
+			 const LocalOrdinal numEnt,
+                         const Scalar vals[],
+                         const GlobalOrdinal cols[]) const;
 
     /// \brief Replace one or more entries' values, using local
     ///   row and column indices.
@@ -992,11 +1005,24 @@ namespace Tpetra {
                                                                           inputVals);
     }
 
-    //! Backwards compatibility version of replaceLocalValues (see above).
+    /// \brief Backwards compatibility version of replaceLocalValues
+    ///   (see above), that takes Teuchos::ArrayView (host pointers)
+    ///   instead of Kokkos::View.
     LocalOrdinal
     replaceLocalValues (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal>& cols,
                         const Teuchos::ArrayView<const Scalar>& vals) const;
+
+    /// \brief Epetra compatibility version of replaceLocalValues,
+    ///   that takes raw pointers instead of Kokkos::View.
+    ///
+    /// This version of the method takes the same arguments in the
+    /// same order as Epetra_CrsMatrix::ReplaceMyValues.
+    LocalOrdinal
+    replaceLocalValues (const LocalOrdinal localRow,
+			const LocalOrdinal numEnt,
+			const Scalar inputVals[],
+			const LocalOrdinal inputCols[]) const;
 
   private:
     /// \brief Whether sumIntoLocalValues should use atomic updates by
