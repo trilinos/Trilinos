@@ -109,7 +109,7 @@ class AlgRCM : public Algorithm<Adapter>
 #endif
   
     // RCM constructs invPerm, not perm
-    ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
+    const ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
   
     // Check if there are actually edges to reorder.
     // If there are not, then just use the natural ordering.
