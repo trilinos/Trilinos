@@ -1599,6 +1599,19 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertLocalValues (const LocalOrdinal localRow,
+		     const LocalOrdinal numEnt,
+		     const Scalar vals[],
+		     const LocalOrdinal cols[])
+  {
+    Teuchos::ArrayView<const LocalOrdinal> colsT (cols, numEnt);
+    Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
+    this->insertLocalValues (localRow, colsT, valsT);
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   insertLocalValuesFiltered (const LocalOrdinal localRow,
                              const Teuchos::ArrayView<const LocalOrdinal>& indices,
                              const Teuchos::ArrayView<const Scalar>& values)
@@ -1862,6 +1875,20 @@ namespace Tpetra {
         << " entries.  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
     }
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertGlobalValues (const GlobalOrdinal globalRow,
+		      const LocalOrdinal numEnt,
+		      const Scalar vals[],
+		      const GlobalOrdinal inds[])
+  {
+    Teuchos::ArrayView<const GlobalOrdinal> indsT (inds, numEnt);
+    Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
+    this->insertGlobalValues (globalRow, indsT, valsT);
   }
 
 

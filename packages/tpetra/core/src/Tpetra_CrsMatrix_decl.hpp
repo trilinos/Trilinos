@@ -799,6 +799,18 @@ namespace Tpetra {
                         const Teuchos::ArrayView<const GlobalOrdinal>& cols,
                         const Teuchos::ArrayView<const Scalar>& vals);
 
+    /// \brief Epetra compatibility version of insertGlobalValues (see
+    ///   above) that takes arguments as raw pointers, rather than
+    ///   Teuchos::ArrayView.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsMatrix::InsertGlobalValues.
+    void
+    insertGlobalValues (const GlobalOrdinal globalRow,
+			const LocalOrdinal numEnt,
+			const Scalar vals[],
+			const GlobalOrdinal inds[]);
+
     /// \brief Insert one or more entries into the matrix, using local indices.
     ///
     /// \param LocalRow [in] Local index of the row into which to
@@ -840,8 +852,20 @@ namespace Tpetra {
     /// </ol>
     void
     insertLocalValues (const LocalOrdinal localRow,
-                       const ArrayView<const LocalOrdinal> &cols,
-                       const ArrayView<const Scalar> &vals);
+                       const Teuchos::ArrayView<const LocalOrdinal> &cols,
+                       const Teuchos::ArrayView<const Scalar> &vals);
+
+    /// \brief Epetra compatibility version of insertLocalValues (see
+    ///   above) that takes arguments as raw pointers, rather than
+    ///   Teuchos::ArrayView.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsMatrix::InsertMyValues.
+    void
+    insertLocalValues (const LocalOrdinal localRow,
+		       const LocalOrdinal numEnt,
+		       const Scalar vals[],
+		       const LocalOrdinal cols[]);
 
     /// \brief Replace one or more entries' values, using global indices.
     ///
