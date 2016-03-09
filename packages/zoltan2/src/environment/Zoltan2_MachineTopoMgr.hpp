@@ -77,20 +77,23 @@ public:
     nxyz[2] = tmgr.getDimNZ();
     nxyz[3] = tmgr.getDimNT();
 #else
+    return false;
 #endif
     return true;
   }
 
   bool getMyMachineCoordinate(pcoord_t *xyz) {
-    int a,b,c,d,e,t;
 #if defined (CMK_BLUEGENEQ)
+    int a,b,c,d,e,t;
     tmgr.rankToCoordinates(this->myRank, a,b,c,d,e,t);
     xyz[0] = a; xyz[1] = b; xyz[2] = c; xyz[3] = d; xyz[4] = e; xyz[5] = t;
     //std::cout << "me:" << this->myRank << " " << a << " " << b << " " << c << " " << d << " " << e << " " << t << std::endl;
 #elif defined (CMK_BLUEGENEP)
+    int a,b,c,t;
     tmgr.rankToCoordinates(this->myRank, a,b,c,t);
     xyz[0] = a; xyz[1] = b; xyz[2] = c; xyz[3] = t;
 #else
+    return false;
 #endif
    	
     return true;
