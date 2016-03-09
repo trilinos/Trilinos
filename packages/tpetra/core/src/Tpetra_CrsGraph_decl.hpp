@@ -1610,14 +1610,7 @@ namespace Tpetra {
              class LocalIndicesViewType,
              class InputScalarViewType,
              class BinaryFunction>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     transformLocalValues (const RowInfo& rowInfo,
                           const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                           const typename UnmanagedView<LocalIndicesViewType>::type& inds,
@@ -1625,6 +1618,42 @@ namespace Tpetra {
                           BinaryFunction f,
                           const bool atomic = useAtomicUpdatesByDefault) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
+		     "Template parameter OutputScalarViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "Template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
+		     "Template parameter InputScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+		     "Template parameter OutputScalarViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "Template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
+		     "Template parameter InputScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename OutputScalarViewType::non_const_value_type,
+		       typename InputScalarViewType::non_const_value_type>::value,
+		     "Template parameters OutputScalarViewType and "
+		     "InputScalarViewType must contain values of the same "
+		     "type.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "Template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+
       typedef typename OutputScalarViewType::non_const_value_type ST;
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -1735,23 +1764,54 @@ namespace Tpetra {
     /// \param inds [in] Local column indices of that row to modify.
     /// \param newVals [in] For each k, increment the value in rowVals
     ///   corresponding to local column index inds[k] by newVals[k].
+    /// \param atomic [in] Whether to use atomic updates (+=) when
+    ///   incrementing values.
     template<class OutputScalarViewType,
              class LocalIndicesViewType,
              class InputScalarViewType>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     sumIntoLocalValues (const RowInfo& rowInfo,
                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                         const typename UnmanagedView<LocalIndicesViewType>::type& inds,
                         const typename UnmanagedView<InputScalarViewType>::type& newVals,
                         const bool atomic = useAtomicUpdatesByDefault) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
+		     "Template parameter OutputScalarViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "Template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
+		     "Template parameter InputScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+		     "Template parameter OutputScalarViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "Template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
+		     "Template parameter InputScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename OutputScalarViewType::non_const_value_type,
+		       typename InputScalarViewType::non_const_value_type>::value,
+		     "Template parameters OutputScalarViewType and "
+		     "InputScalarViewType must contain values of the same "
+		     "type.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "Template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
 
@@ -1859,19 +1919,48 @@ namespace Tpetra {
     template<class OutputScalarViewType,
              class LocalIndicesViewType,
              class InputScalarViewType>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     replaceLocalValues (const RowInfo& rowInfo,
                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                         const typename UnmanagedView<LocalIndicesViewType>::type& inds,
                         const typename UnmanagedView<InputScalarViewType>::type& newVals) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
+		     "Template parameter OutputScalarViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "Template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
+		     "Template parameter InputScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+		     "Template parameter OutputScalarViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "Template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
+		     "Template parameter InputScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename OutputScalarViewType::non_const_value_type,
+		       typename InputScalarViewType::non_const_value_type>::value,
+		     "Template parameters OutputScalarViewType and "
+		     "InputScalarViewType must contain values of the same "
+		     "type.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "Template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
 
@@ -2080,19 +2169,48 @@ namespace Tpetra {
     template<class OutputScalarViewType,
              class GlobalIndicesViewType,
              class InputScalarViewType>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<GlobalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename GlobalIndicesViewType::non_const_value_type,
-                                         global_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     replaceGlobalValues (const RowInfo& rowInfo,
 			 const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
 			 const typename UnmanagedView<GlobalIndicesViewType>::type& inds,
 			 const typename UnmanagedView<InputScalarViewType>::type& newVals) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
+		     "Template parameter OutputScalarViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value, 
+		     "Template parameter GlobalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
+		     "Template parameter InputScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+		     "Template parameter OutputScalarViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (GlobalIndicesViewType::rank) == 1,
+		     "Template parameter GlobalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
+		     "Template parameter InputScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename OutputScalarViewType::non_const_value_type,
+		       typename InputScalarViewType::non_const_value_type>::value,
+		     "Template parameters OutputScalarViewType and "
+		     "InputScalarViewType must contain values of the same "
+		     "type.");
+      static_assert (std::is_same<
+		       typename GlobalIndicesViewType::non_const_value_type,
+		       global_ordinal_type>::value,
+		     "Template parameter GlobalIndicesViewType must "
+		     "contain values of type global_ordinal_type.");
+
       typedef LocalOrdinal LO;
 
       if (newVals.dimension_0 () != inds.dimension_0 ()) {

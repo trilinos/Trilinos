@@ -726,13 +726,14 @@ namespace Tpetra {
     //! @name Methods for inserting, modifying, or removing entries
     //@{
 
-    /// \brief Insert one or more entries into the matrix, using global indices.
+    /// \brief Insert one or more entries into the matrix, using
+    ///   global column indices.
     ///
     /// \param globalRow [in] Global index of the row into which to
     ///   insert the entries.
     /// \param cols [in] Global indices of the columns into which
     ///   to insert the entries.
-    /// \param values [in] Values to insert into the above columns.
+    /// \param vals [in] Values to insert into the above columns.
     ///
     /// For all k in 0, ..., <tt>col.size()-1</tt>, insert the value
     /// <tt>values[k]</tt> into entry <tt>(globalRow, cols[k])</tt> of
@@ -805,21 +806,30 @@ namespace Tpetra {
     ///
     /// Arguments are the same and in the same order as
     /// Epetra_CrsMatrix::InsertGlobalValues.
+    ///
+    /// \param globalRow [in] Global index of the row into which to
+    ///   insert the entries.
+    /// \param numEnt [in] Number of entries to insert; number of
+    ///   valid entries in \c vals and \c inds.
+    /// \param vals [in] Values to insert.
+    /// \param inds [in] Global indices of the columns into which
+    ///   to insert the entries.
     void
     insertGlobalValues (const GlobalOrdinal globalRow,
 			const LocalOrdinal numEnt,
 			const Scalar vals[],
 			const GlobalOrdinal inds[]);
 
-    /// \brief Insert one or more entries into the matrix, using local indices.
+    /// \brief Insert one or more entries into the matrix, using local
+    ///   column indices.
     ///
-    /// \param LocalRow [in] Local index of the row into which to
+    /// \param localRow [in] Local index of the row into which to
     ///   insert the entries.  It must be owned by the row Map on the
     ///   calling process.
     /// \param cols [in] Local indices of the columns into which to
     ///   insert the entries.  All of the column indices must be owned
     ///   by the column Map on the calling process.
-    /// \param values [in] Values to insert into the above columns.
+    /// \param vals [in] Values to insert into the above columns.
     ///
     /// For all k in 0, ..., <tt>cols.size()-1</tt>, insert the value
     /// <tt>values[k]</tt> into entry <tt>(globalRow, cols[k])</tt> of
@@ -861,6 +871,14 @@ namespace Tpetra {
     ///
     /// Arguments are the same and in the same order as
     /// Epetra_CrsMatrix::InsertMyValues.
+    ///
+    /// \param localRow [in] Local index of the row into which to
+    ///   insert the entries.
+    /// \param numEnt [in] Number of entries to insert; number of
+    ///   valid entries in \c vals and \c cols.
+    /// \param vals [in] Values to insert.
+    /// \param cols [in] Global indices of the columns into which
+    ///   to insert the entries.
     void
     insertLocalValues (const LocalOrdinal localRow,
 		       const LocalOrdinal numEnt,
@@ -872,17 +890,18 @@ namespace Tpetra {
     /// \param globalRow [in] Global index of the row in which to
     ///   replace the entries.  This row <i>must</i> be owned by the
     ///   calling process.
-    /// \param cols [in] Global indices of the columns in which to
-    ///   replace the entries.
-    /// \param vals [in] Values to use for replacing the entries.
+    /// \param inputInds [in] Kokkos::View of the global indices of
+    ///   the columns in which to replace the entries.
+    /// \param inputVals [in] Kokkos::View of the values to use for
+    ///   replacing the entries.
     ///
-    /// For all k in 0, ..., <tt>cols.dimension_0()-1</tt>, replace
-    /// the value at entry <tt>(globalRow, cols(k))</tt> of the matrix
-    /// with <tt>vals(k)</tt>.  That entry must exist in the matrix
-    /// already.
+    /// For all k in 0, ..., <tt>inputInds.dimension_0()-1</tt>,
+    /// replace the value at entry <tt>(globalRow, inputInds(k))</tt>
+    /// of the matrix with <tt>inputVals(k)</tt>.  That entry must
+    /// exist in the matrix already.
     ///
-    /// If <tt>(globalRow, cols(k))</tt> corresponds to an entry that
-    /// is duplicated in this matrix row (likely because it was
+    /// If <tt>(globalRow, inputInds(k))</tt> corresponds to an entry
+    /// that is duplicated in this matrix row (likely because it was
     /// inserted more than once and fillComplete() has not been called
     /// in the interim), the behavior of this method is not defined.
     ///
@@ -891,29 +910,53 @@ namespace Tpetra {
     ///
     /// If the returned value N satisfies
     ///
-    /// <tt>0 <= N < cols.dimension_0()</tt>,
+    /// <tt>0 <= N < inputInds.dimension_0()</tt>,
     ///
-    /// then <tt>cols.dimension_0() - N</tt> of the entries of <tt>cols</tt>
-    /// are not valid global column indices.  If the returned value is
-    /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), then at least
-    /// one of the following is true:
-    ///   <ul>
-    ///   <li> <tt>! isFillActive ()</tt> </li>
-    ///   <li> <tt> cols.dimension_0 () != vals.dimension_0 ()</tt> </li>
-    ///   </ul>
+    /// then <tt>inputInds.dimension_0() - N</tt> of the entries of
+    /// <tt>cols</tt> are not valid global column indices.  If the
+    /// returned value is
+    /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>, then
+    /// at least one of the following is true:
+    /// <ul>
+    /// <li> <tt>! isFillActive ()</tt> </li>
+    /// <li> <tt> inputInds.dimension_0 () != inputVals.dimension_0 ()</tt> </li>
+    /// </ul>
     template<class GlobalIndicesViewType,
              class ImplScalarViewType>
-    typename std::enable_if<Kokkos::is_view<GlobalIndicesViewType>::value &&
-                            Kokkos::is_view<ImplScalarViewType>::value &&
-                            std::is_same<typename GlobalIndicesViewType::non_const_value_type,
-                                         global_ordinal_type>::value &&
-                            std::is_same<typename ImplScalarViewType::non_const_value_type,
-                                         impl_scalar_type>::value, 
-			    LocalOrdinal>::type
+    LocalOrdinal
     replaceGlobalValues (const GlobalOrdinal globalRow,
 			 const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
 			 const typename UnmanagedView<ImplScalarViewType>::type& inputVals) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value, 
+		     "First template parameter GlobalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<ImplScalarViewType>::value, 
+		     "Second template parameter ImplScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (GlobalIndicesViewType::rank) == 1,
+		     "First template parameter GlobalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (ImplScalarViewType::rank) == 1, 
+		     "Second template parameter ImplScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename GlobalIndicesViewType::non_const_value_type,
+		       global_ordinal_type>::value,
+		     "First template parameter GlobalIndicesViewType must "
+		     "contain values of type global_ordinal_type.");
+      static_assert (std::is_same<
+		       typename ImplScalarViewType::non_const_value_type,
+		       impl_scalar_type>::value, 
+		     "Second template parameter ImplScalarViewType must "
+		     "contain values of type impl_scalar_type.");
+
       typedef LocalOrdinal LO;
       typedef ImplScalarViewType ISVT;
       typedef GlobalIndicesViewType GIVT;
@@ -952,6 +995,15 @@ namespace Tpetra {
     ///
     /// This version of the method takes the same arguments in the
     /// same order as Epetra_CrsMatrix::ReplaceGlobalValues.
+    ///
+    /// \param globalRow [in] Global index of the row in which to
+    ///   replace the entries.  This row <i>must</i> be owned by the
+    ///   calling process.
+    /// \param numEnt [in] Number of entries to replace; number of
+    ///   valid entries in \c vals and \c cols.
+    /// \param vals [in] Values to use for replacing the entries.
+    /// \param cols [in] Global indices of the columns in which to
+    ///   replace the entries.
     LocalOrdinal
     replaceGlobalValues (const GlobalOrdinal globalRow,
 			 const LocalOrdinal numEnt,
@@ -995,16 +1047,40 @@ namespace Tpetra {
     ///   </ul>
     template<class LocalIndicesViewType,
              class ImplScalarViewType>
-    typename std::enable_if<Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<ImplScalarViewType>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value &&
-                            std::is_same<typename ImplScalarViewType::non_const_value_type,
-                                         impl_scalar_type>::value, LocalOrdinal>::type
+    LocalOrdinal
     replaceLocalValues (const LocalOrdinal localRow,
                         const typename UnmanagedView<LocalIndicesViewType>::type& inputInds,
                         const typename UnmanagedView<ImplScalarViewType>::type& inputVals) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "First template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<ImplScalarViewType>::value, 
+		     "Second template parameter ImplScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "First template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (ImplScalarViewType::rank) == 1, 
+		     "Second template parameter ImplScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "First template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+      static_assert (std::is_same<
+		       typename ImplScalarViewType::non_const_value_type,
+		       impl_scalar_type>::value, 
+		     "Second template parameter ImplScalarViewType must "
+		     "contain values of type impl_scalar_type.");
+
       typedef LocalOrdinal LO;
 
       if (! isFillActive () || staticGraph_.is_null ()) {
@@ -1042,6 +1118,18 @@ namespace Tpetra {
     ///
     /// This version of the method takes the same arguments in the
     /// same order as Epetra_CrsMatrix::ReplaceMyValues.
+    ///
+    /// \param localRow [in] local index of the row in which to
+    ///   replace the entries.  This row <i>must</i> be owned by the
+    ///   calling process.
+    /// \param numEnt [in] Number of entries to replace; number of
+    ///   valid entries in \c inputVals and \c inputCols.
+    /// \param inputVals [in] Values to use for replacing the entries.
+    /// \param inputCols [in] Local indices of the columns in which to
+    ///   replace the entries.
+    ///
+    /// \return The number of indices for which values were actually
+    ///   replaced; the number of "correct" indices.
     LocalOrdinal
     replaceLocalValues (const LocalOrdinal localRow,
 			const LocalOrdinal numEnt,
@@ -1049,8 +1137,8 @@ namespace Tpetra {
 			const LocalOrdinal inputCols[]) const;
 
   private:
-    /// \brief Whether sumIntoLocalValues should use atomic updates by
-    ///   default.
+    /// \brief Whether sumIntoLocalValues and sumIntoGlobalValues
+    ///   should use atomic updates by default.
     ///
     /// \warning This is an implementation detail.
     static const bool useAtomicUpdatesByDefault =
@@ -1076,11 +1164,13 @@ namespace Tpetra {
     /// That method communicates data for nonowned rows to the
     /// processes that own those rows.  Then, globalAssemble() does
     /// one of the following:
-    /// - It calls insertGlobalValues() for that data if the matrix
-    ///   has a dynamic graph.
-    /// - It calls sumIntoGlobalValues() for that data if the matrix
-    ///   has a static graph.  The matrix silently ignores
-    ///   (row,column) pairs that do not exist in the graph.
+    /// <ul>
+    /// <li> It calls insertGlobalValues() for that data if the matrix
+    ///      has a dynamic graph. </li>
+    /// <li> It calls sumIntoGlobalValues() for that data if the matrix
+    ///      has a static graph.  The matrix silently ignores
+    ///      (row,column) pairs that do not exist in the graph.
+    /// </ul>
     ///
     /// \param globalRow [in] The global index of the row in which to
     ///   sum into the matrix entries.
@@ -1105,9 +1195,24 @@ namespace Tpetra {
     ///   (see above), that takes input as raw pointers instead of
     ///   Kokkos::View.
     ///
-    /// Arguments are the same and in the same order as
+    /// Arguments are the same and in the same order as those of
     /// Epetra_CrsMatrix::SumIntoGlobalValues, except for \c atomic,
     /// which is as above.
+    ///
+    /// \param globalRow [in] The global index of the row in which to
+    ///   sum into the matrix entries.
+    /// \param numEnt [in] Number of valid entries in \c vals and
+    ///   \c cols.  This has type \c LocalOrdinal because we assume
+    ///   that users will never want to insert more column indices
+    ///   in one call than the matrix has columns.
+    /// \param vals [in] \c numEnt values corresponding to the column
+    ///   indices in \c cols.  That is, \c vals[k] is the value
+    ///   corresponding to \c cols[k].
+    /// \param cols [in] \c numEnt global column indices.
+    /// \param atomic [in] Whether to use atomic updates.
+    ///
+    /// \return The number of indices for which values were actually
+    ///   modified; the number of "correct" indices.
     LocalOrdinal
     sumIntoGlobalValues (const GlobalOrdinal globalRow,
 			 const LocalOrdinal numEnt,
@@ -1153,17 +1258,41 @@ namespace Tpetra {
     /// meaning as replaceLocalValues() (which see).
     template<class LocalIndicesViewType,
              class ImplScalarViewType>
-    typename std::enable_if<Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<ImplScalarViewType>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value &&
-                            std::is_same<typename ImplScalarViewType::non_const_value_type,
-                                         impl_scalar_type>::value, LocalOrdinal>::type
+    LocalOrdinal
     sumIntoLocalValues (const LocalOrdinal localRow,
                         const typename UnmanagedView<LocalIndicesViewType>::type& inputInds,
                         const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
                         const bool atomic = useAtomicUpdatesByDefault) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "First template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<ImplScalarViewType>::value, 
+		     "Second template parameter ImplScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "First template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (ImplScalarViewType::rank) == 1, 
+		     "Second template parameter ImplScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "First template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+      static_assert (std::is_same<
+		       typename ImplScalarViewType::non_const_value_type,
+		       impl_scalar_type>::value, 
+		     "Second template parameter ImplScalarViewType must "
+		     "contain values of type impl_scalar_type.");
+
       typedef LocalOrdinal LO;
 
       if (! this->isFillActive () || this->staticGraph_.is_null ()) {
@@ -1230,6 +1359,21 @@ namespace Tpetra {
     /// Arguments are the same and in the same order as
     /// Epetra_CrsMatrix::SumIntoMyValues, except for the \c atomic
     /// last argument, which is as above.
+    ///
+    /// \param localRow [in] The local index of the row in which to
+    ///   sum into the matrix entries.
+    /// \param numEnt [in] Number of valid entries in \c vals and
+    ///   \c cols.  This has type \c LocalOrdinal because we assume
+    ///   that users will never want to insert more column indices
+    ///   in one call than the matrix has columns.
+    /// \param vals [in] \c numEnt values corresponding to the column
+    ///   indices in \c cols.  That is, \c vals[k] is the value
+    ///   corresponding to \c cols[k].
+    /// \param cols [in] \c numEnt local column indices.
+    /// \param atomic [in] Whether to use atomic updates.
+    ///
+    /// \return The number of indices for which values were actually
+    ///   modified; the number of "correct" indices.
     LocalOrdinal
     sumIntoLocalValues (const LocalOrdinal localRow,
 			const LocalOrdinal numEnt,
@@ -1283,18 +1427,42 @@ namespace Tpetra {
     template<class LocalIndicesViewType,
              class ImplScalarViewType,
              class BinaryFunction>
-    typename std::enable_if<Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<ImplScalarViewType>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value &&
-                            std::is_same<typename ImplScalarViewType::non_const_value_type,
-                                         impl_scalar_type>::value, LocalOrdinal>::type
+    LocalOrdinal
     transformLocalValues (const LocalOrdinal localRow,
                           const typename UnmanagedView<LocalIndicesViewType>::type& inputInds,
                           const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
                           BinaryFunction f,
                           const bool atomic = useAtomicUpdatesByDefault) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "First template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<ImplScalarViewType>::value, 
+		     "Second template parameter ImplScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "First template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (ImplScalarViewType::rank) == 1, 
+		     "Second template parameter ImplScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "First template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+      static_assert (std::is_same<
+		       typename ImplScalarViewType::non_const_value_type,
+		       impl_scalar_type>::value, 
+		     "Second template parameter ImplScalarViewType must "
+		     "contain values of type impl_scalar_type.");
+
       typedef LocalOrdinal LO;
       typedef BinaryFunction BF;
 
@@ -1311,7 +1479,7 @@ namespace Tpetra {
       }
 
       auto curRowVals = this->getRowViewNonConst (rowInfo);
-      typedef typename std::remove_const<typename std::remove_reference<decltype (curRowVals)>::type>::type OSVT;
+      typedef typename std::decay<decltype (curRowVals) >::type OSVT;
       typedef typename UnmanagedView<LocalIndicesViewType>::type LIVT;
       typedef typename UnmanagedView<ImplScalarViewType>::type ISVT;
       return staticGraph_->template transformLocalValues<OSVT, LIVT, ISVT, BF> (rowInfo,
