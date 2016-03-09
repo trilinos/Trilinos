@@ -93,7 +93,7 @@ class AlgBlock : public Algorithm<Adapter>
 
 private:
   const RCP<const Environment> env;
-  const RCP<Comm<int> > problemComm;
+  const RCP<const Comm<int> > problemComm;
   const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > ids;
 
 public:
@@ -105,7 +105,7 @@ public:
   // Constructor
   AlgBlock(
     const RCP<const Environment> &env_,
-    const RCP<Comm<int> > &problemComm_,
+    const RCP<const Comm<int> > &problemComm_,
     const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids_
   ) : 
     env(env_), problemComm(problemComm_), ids(ids_)

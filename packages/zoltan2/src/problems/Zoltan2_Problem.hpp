@@ -79,7 +79,9 @@ public:
   {
     RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
                                            Teuchos::opaqueWrapper(comm);
-    comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+    RCP<const Comm<int> > tmp = 
+                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+    comm_ = tmp->duplicate();
     setupProblemEnvironment(params);
   }
 #endif
@@ -94,7 +96,8 @@ public:
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
         params_(), comm_(), env_(), envConst_(), timer_()
   {
-    comm_ = DefaultComm<int>::getComm();
+    RCP<const Comm<int> > tmp = DefaultComm<int>::getComm();
+    comm_ = tmp->duplicate();
     setupProblemEnvironment(params);
   }
 
@@ -107,8 +110,9 @@ public:
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(comm), env_(), envConst_(), timer_()
+        params_(), comm_(), env_(), envConst_(), timer_()
   {
+    comm_ = comm->duplicate();
     setupProblemEnvironment(params);
   }
 

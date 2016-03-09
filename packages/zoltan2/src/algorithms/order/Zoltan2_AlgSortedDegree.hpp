@@ -66,7 +66,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
 
   const RCP<GraphModel<Adapter> > model;
   const RCP<Teuchos::ParameterList> pl;
-  const RCP<Teuchos::Comm<int> > comm;
+  const RCP<const Teuchos::Comm<int> > comm;
 
   public:
 
@@ -77,7 +77,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
   AlgSortedDegree(
     const RCP<GraphModel<Adapter> > &model__,
     const RCP<Teuchos::ParameterList> &pl__,
-    const RCP<Teuchos::Comm<int> > &comm__
+    const RCP<const Teuchos::Comm<int> > &comm__
   ) : model(model__), pl(pl__), comm(comm__)
   {
   }

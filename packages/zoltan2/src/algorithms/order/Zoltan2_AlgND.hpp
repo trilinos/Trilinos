@@ -96,7 +96,7 @@ private:
 
 
   const RCP<const Environment> mEnv;
-  const RCP<Comm<int> > mProblemComm;
+  const RCP<const Comm<int> > mProblemComm;
 
   //  const RCP<const GraphModel<Adapter> > mGraphModel;
   const RCP<GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
@@ -116,7 +116,7 @@ private:
 public:
   // Constructor
   AlgND(const RCP<const Environment> &env_,
-	  const RCP<Comm<int> > &problemComm_,
+        const RCP<const Comm<int> > &problemComm_,
 	const RCP<GraphModel<typename Adapter::base_adapter_t> > &gModel_,
 	const RCP<CoordinateModel<typename Adapter::base_adapter_t> > &cModel_,
 	const RCP<const typename Adapter::base_adapter_t> baseInputAdapter_
@@ -164,12 +164,10 @@ int AlgND<Adapter>::order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_)
     RCP<PartitioningSolution<Adapter> > partSoln;
     int nUserWts=0;
 
-    RCP<const Comm<int> > comm1 = mProblemComm; //replace this with cast
-
        std::cout << "HERE1" << std::endl;
 
     partSoln =
-      RCP<PartitioningSolution<Adapter> > (new PartitioningSolution<Adapter>(this->mEnv, comm1, nUserWts));
+      RCP<PartitioningSolution<Adapter> > (new PartitioningSolution<Adapter>(this->mEnv, mProblemComm, nUserWts));
 
        AlgZoltan<Adapter> algZoltan(this->mEnv, mProblemComm, this->mBaseInputAdapter);
 
