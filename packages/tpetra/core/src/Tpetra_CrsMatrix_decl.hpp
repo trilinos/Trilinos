@@ -1077,6 +1077,20 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const Scalar>& vals,
                          const bool atomic = useAtomicUpdatesByDefault);
 
+    /// \brief Epetra compatibility version of sumIntoGlobalValues
+    ///   (see above), that takes input as raw pointers instead of
+    ///   Kokkos::View.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsMatrix::SumIntoGlobalValues, except for \c atomic,
+    /// which is as above.
+    LocalOrdinal
+    sumIntoGlobalValues (const GlobalOrdinal globalRow,
+			 const LocalOrdinal numEnt,
+                         const Scalar vals[],
+                         const GlobalOrdinal cols[],
+                         const bool atomic = useAtomicUpdatesByDefault);
+
     /// \brief Sum into one or more sparse matrix entries, using local
     ///   row and column indices.
     ///
@@ -1184,6 +1198,19 @@ namespace Tpetra {
     sumIntoLocalValues (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal>& cols,
                         const Teuchos::ArrayView<const Scalar>& vals,
+                        const bool atomic = useAtomicUpdatesByDefault) const;
+
+    /// \brief Epetra compatibility version of sumIntoLocalValues (see
+    ///   above) that takes raw pointers instead of Kokkos::View.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsMatrix::SumIntoMyValues, except for the \c atomic
+    /// last argument, which is as above.
+    LocalOrdinal
+    sumIntoLocalValues (const LocalOrdinal localRow,
+			const LocalOrdinal numEnt,
+                        const Scalar vals[],
+                        const LocalOrdinal cols[],
                         const bool atomic = useAtomicUpdatesByDefault) const;
 
     /// \brief Transform CrsMatrix entries in place, using local
