@@ -512,7 +512,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
   //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
 
 #ifndef NDEBUG
-  m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+  //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
 #endif
 
   m_meshModification.set_sync_state_synchronized();
