@@ -48,7 +48,7 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, setParameterList ) {
 
   // Test that StepperBuilder validates its parameter list
 #if !( (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ == 8) )
-  // For some reason, GCC 4.8.x has a problem with catching exeptions when you
+  // For some reason, GCC 4.8.x has a problem with catching exceptions when you
   // set an RCP to null.  For for GCC 4.8 we will skip all of these tests
   // below.
   pl->set("Hello","World"); // This changes the parameter list inside the builder.
