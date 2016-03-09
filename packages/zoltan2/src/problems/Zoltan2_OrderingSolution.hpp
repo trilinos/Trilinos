@@ -94,7 +94,7 @@ public:
 
   /*! \brief Do we have the direct permutation?
    */
-  bool havePerm()
+  bool havePerm() const
   {
     return havePerm_; 
   }
@@ -109,7 +109,7 @@ public:
 
   /*! \brief Do we have the inverse permutation?
    */
-  bool haveInverse()
+  bool haveInverse() const
   {
     return haveInverse_; 
   }
@@ -131,7 +131,7 @@ public:
  } 
   /*! \brief Do we have the seperator range?
    */
-  bool haveSeparatorRange()
+  bool haveSeparatorRange() const
   {
     return haveSeparatorRange_; 
   }
@@ -145,14 +145,14 @@ public:
   
   /*! \brief Do we have the seperator tree?
    */
-  bool haveSeparatorTree()
+  bool haveSeparatorTree() const
   {
     return haveSeparatorTree_; 
   }
   
   /*! \brief Do we have the seperators?
    */
-  bool haveSeparators()
+  bool haveSeparators() const
   {
     return haveSeparatorRange() && haveSeparatorTree(); 
   }
@@ -204,11 +204,11 @@ public:
 
   /*! \brief Get (local) size of permutation.
    */
-  inline size_t getPermutationSize() {return perm_size_;}
+  inline size_t getPermutationSize() const {return perm_size_;}
   
   /*! \brief Get number of separator column blocks.
    */
-  inline lno_t getNumSeparatorBlocks() {return separatorColBlocks_;}
+  inline lno_t getNumSeparatorBlocks() const {return separatorColBlocks_;}
 
   /*! \brief Get (local) permuted GIDs by RCP.
    */
@@ -219,7 +219,7 @@ public:
    *  By default, perm[i] is where new index i can be found in the old ordering.
    *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
    */
-  inline ArrayRCP<lno_t> &getPermutationRCP(bool inverse=false) 
+  inline const ArrayRCP<lno_t> &getPermutationRCP(bool inverse=false) const
   {
     if (inverse)
       return invperm_;
@@ -229,12 +229,12 @@ public:
   
   /*! \brief return vertex separator variables by reference.
     */
-  bool getVertexSeparator(  lno_t *numBlocks,
-                            lno_t *range,
-                            lno_t *tree) const {
+  bool getVertexSeparator (lno_t &numBlocks,
+                           lno_t *range,
+                           lno_t *tree) const {
 
     if (this->haveSeparators()) {
-      *numBlocks = this->getNumSeparatorBlocks();
+      numBlocks = this->getNumSeparatorBlocks();
       range = this->getSeparatorRange();
       tree = this->getSeparatorTree();
       return true;
@@ -245,14 +245,14 @@ public:
 
   /*! \brief Get (local) seperator range by RCP.
    */
-  inline ArrayRCP<lno_t> &getSeparatorRangeRCP() 
+  inline ArrayRCP<lno_t> &getSeparatorRangeRCP() const
   {
     return separatorRange_;
   }
   
   /*! \brief Get (local) seperator tree by RCP.
    */
-  inline ArrayRCP<lno_t> &getSeparatorTreeRCP() 
+  inline ArrayRCP<lno_t> &getSeparatorTreeRCP() const
   {
     return separatorTree_;
   }
@@ -279,14 +279,14 @@ public:
   
   /*! \brief Get (local) seperator range by const RCP.
    */
-  inline ArrayRCP<lno_t> &getSeparatorRangeRCPConst() 
+  inline ArrayRCP<lno_t> &getSeparatorRangeRCPConst() const
   {
     return const_cast<ArrayRCP<lno_t> & > (separatorRange_);
   }
   
   /*! \brief Get (local) seperator tree by const RCP.
    */
-  inline ArrayRCP<lno_t> &getSeparatorTreeRCPConst() 
+  inline ArrayRCP<lno_t> &getSeparatorTreeRCPConst() const
   {
     return const_cast<ArrayRCP<lno_t> & > (separatorTree_);
   }
@@ -303,7 +303,7 @@ public:
    *  By default, perm[i] is where new index i can be found in the old ordering.
    *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
    */
-  inline lno_t *getPermutation(bool inverse = false)
+  inline lno_t *getPermutation(bool inverse = false) const
   {
     if (inverse)
       return invperm_.getRawPtr();
@@ -313,14 +313,14 @@ public:
   
   /*! \brief Get pointer to (local) serparator range.
    */
-  inline lno_t *getSeparatorRange()
+  inline lno_t *getSeparatorRange() const
   {
     return separatorRange_.getRawPtr();
   }
 
   /*! \brief Get pointer to (local) serparator tree.
    */
-  inline lno_t *getSeparatorTree()
+  inline lno_t *getSeparatorTree() const
   {
     return separatorTree_.getRawPtr();
   }
