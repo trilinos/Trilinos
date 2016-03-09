@@ -50,6 +50,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosLinearProblem.hpp"
+#include "BelosStatusTestCombo.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
