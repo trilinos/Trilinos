@@ -78,8 +78,7 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         m_bulkData.update_comm_list_based_on_changes_in_comm_map();
 
         // Resolve creation of entities: discover sharing and set unique ownership.
-        m_bulkData.internal_resolve_parallel_create_nodes();
-        m_bulkData.internal_resolve_parallel_create_edges_and_faces();
+        m_bulkData.internal_resolve_parallel_create();
 
         // Manoj: consider adding check_sharing_comm_maps here which is currently
         // in BulkDataTester in UnitTestModificationEnd.cpp

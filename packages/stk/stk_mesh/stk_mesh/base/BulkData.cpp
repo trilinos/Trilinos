@@ -4061,6 +4061,12 @@ void BulkData::internal_resolve_parallel_create_edges_and_faces()
     this->internal_resolve_parallel_create(ranks);
 }
 
+void BulkData::internal_resolve_parallel_create()
+{
+    this->internal_resolve_parallel_create_nodes();
+    this->internal_resolve_parallel_create_edges_and_faces();
+}
+
 void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::EntityRank>& ranks)
 {
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");

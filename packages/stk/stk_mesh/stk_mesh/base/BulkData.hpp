@@ -899,7 +899,9 @@ protected: //functions
           PartStorage& part_storage, stk::CommSparse& comm);
 
   void internal_resolve_shared_membership(); // Mod Mark
-  void internal_resolve_parallel_create(const std::vector<stk::mesh::EntityRank>& ranks); // Mod Mark
+  virtual void internal_resolve_parallel_create();
+
+  virtual void internal_resolve_parallel_create(const std::vector<stk::mesh::EntityRank>& ranks); // Mod Mark
   void internal_resolve_parallel_create_nodes();
   void internal_resolve_parallel_create_edges_and_faces();
 
@@ -909,7 +911,7 @@ protected: //functions
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
   void extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new);
   virtual void fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
-  virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_node_rank(stk::mesh::EntityVector& shared_new);
+  void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_node_rank(stk::mesh::EntityVector& shared_new);
 
   virtual void internal_resolve_send_ghost_membership();
   virtual bool should_sort_buckets_by_first_entity_identifier() const { return false; }

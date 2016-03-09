@@ -1487,11 +1487,9 @@ namespace stk {
 
         bulk_data().resolve_node_sharing();
 
-        bulk_data().initialize_graph();
-        process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
-
         if(m_sideset_face_creation_behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
         {
+            process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
             bool saveOption = bulk_data().use_entity_ids_for_resolving_sharing();
             bulk_data().set_use_entity_ids_for_resolving_sharing(true);
             bulk_data().modification_end_after_node_sharing_resolution();
@@ -1499,6 +1497,8 @@ namespace stk {
         }
         else
         {
+            bulk_data().initialize_graph();
+            process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
             bulk_data().modification_end_after_node_sharing_resolution();
         }
 
