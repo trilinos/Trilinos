@@ -67,26 +67,6 @@ template<typename Adapter>
 class Problem {
 public:
   
-#ifdef HAVE_ZOLTAN2_MPI
-  /*! \brief Constructor for MPI builds
-   */
-  Problem(const Adapter *input, ParameterList *params, MPI_Comm comm):
-        inputAdapter_(rcp(input,false)),
-        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
-                              false)),
-        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
-  {
-    RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
-                                           Teuchos::opaqueWrapper(comm);
-    RCP<const Comm<int> > tmp = 
-                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
-    comm_ = tmp->duplicate();
-    setupProblemEnvironment(params);
-  }
-#endif
-
-
   /*! \brief Constructor where communicator is Teuchos default.
    */
   Problem(const Adapter *input, ParameterList *params):
@@ -115,6 +95,25 @@ public:
     comm_ = comm->duplicate();
     setupProblemEnvironment(params);
   }
+
+#ifdef HAVE_ZOLTAN2_MPI
+  /*! \brief Constructor for MPI builds
+   */
+  Problem(const Adapter *input, ParameterList *params, MPI_Comm comm):
+        inputAdapter_(rcp(input,false)),
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
+  {
+    RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
+                                           Teuchos::opaqueWrapper(comm);
+    RCP<const Comm<int> > tmp = 
+                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+    comm_ = tmp->duplicate();
+    setupProblemEnvironment(params);
+  }
+#endif
 
   /*! \brief Destructor
    */
