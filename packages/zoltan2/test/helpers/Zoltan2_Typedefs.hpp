@@ -51,9 +51,9 @@
 #define ZOLTAN2_TYPEDEFS
 
 #include "Zoltan2_TestHelpers.hpp"
-#include <Tpetra_MultiVector_decl.hpp>
-#include <Tpetra_Vector_decl.hpp>
-#include <Tpetra_CrsMatrix_decl.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 //#include <Tpetra_Map.hpp>
 //#include <Xpetra_Vector_decl.hpp>
 //#include <Xpetra_CrsMatrix_decl.hpp>
