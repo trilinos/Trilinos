@@ -54,7 +54,7 @@ public:
 
   int getMachineDim() const { return networkDim; }
 
-  bool getMachineExtent(part_t *nxyz) const { 
+  bool getMachineExtent(int *nxyz) const { 
     // Ficticious machine extent
     nxyz[0] = this->numRanks;
     nxyz[1] = 2*this->numRanks;

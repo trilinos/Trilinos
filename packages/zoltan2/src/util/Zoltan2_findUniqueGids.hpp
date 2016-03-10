@@ -164,7 +164,7 @@ size_t findUniqueGids(
   for (size_t i = 0; i < num_keys; i++) {
     for (size_t v = 0; v < num_entries; v++) {
       ZOLTAN_ID_PTR ddkey = &(ddkeys[idx]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(ddkey, tmpKeyVecs[v][i]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(ddkey, tmpKeyVecs[v][i]);
       idx += TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID;
     }
   }
@@ -241,7 +241,7 @@ size_t findUniqueGids(
   for (size_t i = 0; i < num_keys; i++) {
     for (size_t v = 0; v < num_entries; v++) {
       ZOLTAN_ID_PTR ddkey = &(ddkeys[idx]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(ddkey, keys[i][v]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(ddkey, keys[i][v]);
       idx += TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID;
     }
   }

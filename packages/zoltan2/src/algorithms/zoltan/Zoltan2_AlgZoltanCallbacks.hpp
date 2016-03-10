@@ -95,9 +95,9 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
   adp->getIDsView(myids);
   for (size_t i = 0; i < mynObj; i++) {
     ZOLTAN_ID_PTR idPtr = &(gids[i*nGidEnt]);
-    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, myids[i]);
+    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, myids[i]);
     idPtr = &(lids[i*nLidEnt]);
-    TPL_Traits<ZOLTAN_ID_PTR,lno_t>::ASSIGN_TPL_T(idPtr, lno_t(i));
+    TPL_Traits<ZOLTAN_ID_PTR,lno_t>::ASSIGN(idPtr, lno_t(i));
   }
 
   if (wdim) {
@@ -135,7 +135,7 @@ static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
   // User parts from input adapter
   for (int i = 0; i < nObj; i++) {
     lno_t lidx;
-    TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(lidx, &(lids[i*nLidEnt]));
+    TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
     parts[i] = int(myparts[lidx]);
   }
 }
@@ -167,7 +167,7 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
     adp->getCoordinatesView(mycoords, mystride, d);
     for (int i = 0; i < nObj; i++) {
       lno_t lidx;
-      TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN_TPL_T(lidx, &(lids[i*nLidEnt]));
+      TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
       coords[i*nDim+d] = double(mycoords[lidx*mystride]);
     }
   }
@@ -264,13 +264,13 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
     // copy into Zoltan's memory
     for (int i=0; i < nLists; i++) {
       ZOLTAN_ID_PTR idPtr = &(listIds[i*nGidEnt]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, Ids[i]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, Ids[i]);
       listIdx[i] = Teuchos::as<int>(offsets[i]);
     }
     listIdx[nLists] = Teuchos::as<int>(offsets[nLists]);
     for (int i=0; i < nPins; i++) {
       ZOLTAN_ID_PTR idPtr = &(pinIds[i*nGidEnt]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, pIds[i]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, pIds[i]);
     }
   }
 }
@@ -377,13 +377,13 @@ static void zoltanHGCS_withMeshAdapter(
     // copy into Zoltan's memory
     for (int i=0; i < nLists; i++) {
       ZOLTAN_ID_PTR idPtr = &(listIds[i*nGidEnt]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, Ids[i]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, Ids[i]);
       listIdx[i] = Teuchos::as<int>(offsets[i]);
     }
     listIdx[nLists] = Teuchos::as<int>(offsets[nLists]);
     for (int i=0; i < nPins; i++) {
       ZOLTAN_ID_PTR idPtr = &(pinIds[i*nGidEnt]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, adjIds[i]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, adjIds[i]);
     }
   }
 }
@@ -426,9 +426,9 @@ static void zoltanHGObjList_withModel(void *data, int nGidEnt, int nLidEnt,
   for (size_t i=0;i<num_verts;i++) {
     if (isOwner[i]) {
       ZOLTAN_ID_PTR idPtr = &(gids[j*nGidEnt]);
-      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, Ids[i]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, Ids[i]);
       idPtr = &(lids[j*nLidEnt]);
-      TPL_Traits<ZOLTAN_ID_PTR,lno_t>::ASSIGN_TPL_T(idPtr, lno_t(i));
+      TPL_Traits<ZOLTAN_ID_PTR,lno_t>::ASSIGN(idPtr, lno_t(i));
       j++;
     }
   }
@@ -500,13 +500,13 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
   mdl->getPinList(pinIds_,offsets,pin_wgts);
   for (int i=0;i<nEdges;i++) {
     ZOLTAN_ID_PTR idPtr = &(edgeIds[i*nGidEnt]);
-    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, Ids[i]);
+    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, Ids[i]);
     edgeIdx[i] = Teuchos::as<int>(offsets[i]);
   }
   
   for (int i=0;i<nPins;i++) {
     ZOLTAN_ID_PTR idPtr = &(pinIds[i*nGidEnt]);
-    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, pinIds_[i]);
+    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, pinIds_[i]);
   }
 }
 

@@ -15,6 +15,12 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleDenseMatrixBase_Pthreads.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseMatrixView_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseMatrixView_Pthreads.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_Cuda)

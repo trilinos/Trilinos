@@ -1,5 +1,5 @@
-#ifndef __TACHO_EXAMPLE_DENSE_MATRIX_BASE_HPP__
-#define __TACHO_EXAMPLE_DENSE_MATRIX_BASE_HPP__
+#ifndef __TACHO_EXAMPLE_DENSE_MATRIX_VIEW_HPP__
+#define __TACHO_EXAMPLE_DENSE_MATRIX_VIEW_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -8,6 +8,7 @@
 
 #include "Tacho_Util.hpp"
 #include "Tacho_DenseMatrixBase.hpp"
+#include "Tacho_DenseMatrixView.hpp"
 #include "Tacho_DenseMatrixTools.hpp"
 
 namespace Tacho {
@@ -17,7 +18,7 @@ namespace Tacho {
            typename SizeType,
            typename DeviceSpaceType>
   KOKKOS_INLINE_FUNCTION
-  int exampleDenseMatrixBase(const OrdinalType mmin,
+  int exampleDenseMatrixView(const OrdinalType mmin,
                              const OrdinalType mmax,
                              const OrdinalType minc,
                              const bool verbose) {
@@ -26,6 +27,8 @@ namespace Tacho {
     
     typedef DenseMatrixBase<ValueType,OrdinalType,SizeType,HostSpaceType>   DenseMatrixBaseHostType;
     typedef DenseMatrixBase<ValueType,OrdinalType,SizeType,DeviceSpaceType> DenseMatrixBaseDeviceType;
+
+    typedef DenseMatrixView<DenseMatrixBaseDeviceType> DenseMatrixViewDeviceType;
 
     int r_val = 0;
 
@@ -44,10 +47,10 @@ namespace Tacho {
       }
       if (verbose)
         std::cout << TT << std::endl;
-
+      
       DenseMatrixBaseDeviceType AA("AA"); 
       AA.createConfTo(TT);
-
+      
       timer.reset();
       AA.mirror(TT);
       double t_mirror = timer.seconds();
@@ -55,8 +58,10 @@ namespace Tacho {
       DenseMatrixBaseDeviceType BB("BB");
       BB.createConfTo(AA);
 
+      DenseMatrixViewDeviceType A(AA), B(BB);     
+
       timer.reset();
-      DenseMatrixTools::copy(BB, AA);
+      DenseMatrixTools::copy(B, A);
       double t_copy = timer.seconds();
 
       // check

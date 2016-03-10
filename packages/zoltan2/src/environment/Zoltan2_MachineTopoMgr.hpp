@@ -63,7 +63,7 @@ public:
 
   int getMachineDim() const { return networkDim; }
 
-  bool getMachineExtent(part_t *nxyz) const {
+  bool getMachineExtent(int *nxyz) const {
 #if defined (CMK_BLUEGENEQ)
     nxyz[0] = tmgr.getDimNA();
     nxyz[1] = tmgr.getDimNB();
