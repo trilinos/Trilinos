@@ -21,10 +21,16 @@ SET(CMAKE_Fortran_COMPILER "$ENV{MPIf90}" CACHE FILEPATH
   "Set in gcc-4.8.4-base-options.cmake")
 
 # Add rpath for compiler libraries and gomp for parts built with OpenMP
-ASSERT_DEFINED(ENV{GCCROOT})
+IF (TPL_FIND_SHARED_LIBS)
+  SET(LDL_LINK_ARG " -lldl")
+ELSE()
+  SET(LDL_LINK_ARG)
+ENDIF()
+ASSERT_DEFINED(ENV{GCC_PATH})
 SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS
-  "-lgomp -lgfortran -Wl,-rpath,$ENV{GCCROOT}/lib64"
+  "-lgomp -lgfortran${LDL_LINK_ARG}"
   CACHE STRING "")
+#  -Wl,-rpath,$ENV{GCC_PATH}/lib64
 
 # Point to the right MPI
 ASSERT_DEFINED(ENV{MPI_ROOT})
