@@ -339,7 +339,7 @@ void AlgPTScotch<Adapter>::partition(
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   SCOTCH_Num partnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(partnbr, numGlobalParts);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(partnbr, numGlobalParts);
 
 #ifdef HAVE_ZOLTAN2_MPI
   int ierr = 0;
@@ -364,7 +364,7 @@ void AlgPTScotch<Adapter>::partition(
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   size_t nVtx = model->getVertexList(vtxID, vwgts);
   SCOTCH_Num vertlocnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertlocnbr, nVtx);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(vertlocnbr, nVtx);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
 
   // Get edge info
@@ -375,14 +375,14 @@ void AlgPTScotch<Adapter>::partition(
   size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
 
   SCOTCH_Num edgelocnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(edgelocnbr, nEdge);
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets);
+  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_ARRAY(&vertloctab, offsets);
 
   SCOTCH_Num *edgeloctab;  // adjacencies
-  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds);
+  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_ARRAY(&edgeloctab, edgeIds);
 
   // We don't use these arrays, but we need them as arguments to Scotch.
   SCOTCH_Num *vendloctab = NULL;  // Assume consecutive storage for adj
@@ -430,18 +430,9 @@ void AlgPTScotch<Adapter>::partition(
     !ierr, BASIC_ASSERTION, problemComm);
 
   // Create array for Scotch to return results in.
-  ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx,true);
-  SCOTCH_Num *partloctab = NULL;
-  if (nVtx && (sizeof(SCOTCH_Num) == sizeof(part_t))) {
-    // Can write directly into the solution's memory
-    partloctab = (SCOTCH_Num *) partList.getRawPtr();
-  }
-  else {
-    // Can't use solution memory directly; will have to copy later.
-    // Note:  Scotch does not like NULL arrays, so add 1 to always have non-null.
-    //        ParMETIS has this same "feature."  See Zoltan bug 4299.
-    partloctab = new SCOTCH_Num[nVtx+1];
-  }
+  SCOTCH_Num *partloctab = new SCOTCH_Num[nVtx+1];
+    // Note: Scotch does not like NULL arrays, so add 1 to always have non-null.
+    //       ParMETIS has this same "feature."  See Zoltan bug 4299.
 
   // Get target part sizes
   float *partsizes = new float[numGlobalParts];
@@ -500,18 +491,18 @@ void AlgPTScotch<Adapter>::partition(
 
   // Load answer into the solution.
 
-  if ((sizeof(SCOTCH_Num) != sizeof(part_t)) || (nVtx == 0)) {
-    for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
-    delete [] partloctab;
-  }
+  ArrayRCP<part_t> partList;
+  if (nVtx > 0)
+    TPL_Traits<part_t, SCOTCH_Num>::SAVE_ARRAYRCP(&partList, partloctab, nVtx);
+  TPL_Traits<SCOTCH_Num, part_t>::DELETE_ARRAY(&partloctab);
 
   solution->setParts(partList);
 
   env->memory("Zoltan2-Scotch: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<SCOTCH_Num, const lno_t>::DELETE_TPL_T_ARRAY(&vertloctab);
-  TPL_Traits<SCOTCH_Num, const gno_t>::DELETE_TPL_T_ARRAY(&edgeloctab);
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&vertloctab);
+  TPL_Traits<SCOTCH_Num, gno_t>::DELETE_ARRAY(&edgeloctab);
 
   if (nVwgts) delete [] velotab;
   if (nEwgts) delete [] edlotab;
@@ -694,7 +685,7 @@ int AlgPTScotch<Adapter>::order(
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   size_t nVtx = model->getVertexList(vtxID, vwgts);
   SCOTCH_Num vertnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertnbr, nVtx);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(vertnbr, nVtx);
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
@@ -703,13 +694,13 @@ int AlgPTScotch<Adapter>::order(
 
   size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
   SCOTCH_Num edgenbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgenbr, nEdge);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(edgenbr, nEdge);
   
   SCOTCH_Num *verttab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_TPL_T_ARRAY(&verttab, offsets);
+  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_ARRAY(&verttab, offsets);
 
   SCOTCH_Num *edgetab;  // adjacencies
-  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_TPL_T_ARRAY(&edgetab, edgeIds);
+  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_ARRAY(&edgetab, edgeIds);
   
   // We don't use these arrays, but we need them as arguments to Scotch.
   SCOTCH_Num *vendtab = NULL;  // Assume consecutive storage for adj
@@ -775,32 +766,49 @@ int AlgPTScotch<Adapter>::order(
   }
 
   // Allocate results
-  //SCOTCH_Num cblk = 0;
-  //SCOTCH_Num *permtab;  // permutation arry
+  SCOTCH_Num cblk = 0;
+  SCOTCH_Num *permtab = new SCOTCH_Num[nVtx];  // permutation array
   //auto arv_perm = solution->getPermutationRCP(false)(); // array view
   //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&permtab, arv_perm);
 
   //auto arv_peri = solution->getPermutationRCP(true)(); // array view
-  //SCOTCH_Num *peritab;  // inverse permutation array
+  SCOTCH_Num *peritab = new SCOTCH_Num[nVtx];  // inverse permutation array
   //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&peritab, arv_peri);
   //
-  //SCOTCH_Num *rangetab;  // separator range array
+  SCOTCH_Num *rangetab = new SCOTCH_Num[nVtx+1];  // separator range array
   //auto arv_range = solution->getSepRangeRCP()(); // array view
   //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&rangetab, arv_range);
   //
-  //SCOTCH_Num *treetab;  // separator tree
+  SCOTCH_Num *treetab = new SCOTCH_Num[nVtx];  // separator tree
   //auto arv_tree = solution->getSepTreeRCP()(); // array view
   //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&treetab, arv_tree);
 
-  //ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr, permtab, peritab, 
-  //                          &cblk, rangetab, treetab);
+  ierr = SCOTCH_graphOrder(&c_graph_ptr, &c_strat_ptr, permtab, peritab, 
+                           &cblk, rangetab, treetab);
   
-  ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr,
-                            solution->getPermutation(false),
-                            solution->getPermutation(true),
-                            &solution->NumSeparatorBlocks(),
-                            solution->getSeparatorRange(),
-                            solution->getSeparatorTree());
+  //ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr,
+  //                          solution->getPermutation(false),
+  //                          solution->getPermutation(true),
+  //                          &solution->NumSeparatorBlocks(),
+  //                          solution->getSeparatorRange(),
+  //                          solution->getSeparatorTree());
+
+  ArrayRCP<lno_t> arv_perm;
+  TPL_Traits<lno_t, SCOTCH_Num>::SAVE_ARRAYRCP(&arv_perm, permtab, nVtx);
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&permtab);
+  ArrayRCP<lno_t> arv_peri;
+  TPL_Traits<lno_t, SCOTCH_Num>::SAVE_ARRAYRCP(&arv_peri, peritab, nVtx);
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&peritab);
+  ArrayRCP<lno_t> arv_range;
+  TPL_Traits<lno_t, SCOTCH_Num>::SAVE_ARRAYRCP(&arv_range, rangetab, cblk+1);
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&rangetab);
+  ArrayRCP<lno_t> arv_tree;
+  TPL_Traits<lno_t, SCOTCH_Num>::SAVE_ARRAYRCP(&arv_tree, treetab, cblk);
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&treetab);
+  lno_t nblks;
+  TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(nblks, cblk);
+
+  solution->setOrder(nblks, arv_perm, arv_peri, arv_range, arv_tree);
 
   if (ierr != 0) {
     throw std::runtime_error("Could not compute ordering!!");
@@ -812,8 +820,8 @@ int AlgPTScotch<Adapter>::order(
 
   // reclaim memory
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<SCOTCH_Num, const lno_t>::DELETE_TPL_T_ARRAY(&verttab);
-  TPL_Traits<SCOTCH_Num, const gno_t>::DELETE_TPL_T_ARRAY(&edgetab);
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&verttab);
+  TPL_Traits<SCOTCH_Num, gno_t>::DELETE_ARRAY(&edgetab);
 
   if (nVwgts) delete [] velotab;
   if (nEwgts) delete [] edlotab;
