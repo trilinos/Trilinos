@@ -482,6 +482,7 @@ namespace Belos {
     Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > impConvTest_, expConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
     typename StatusTestCombo<ScalarType,MV,OP>::ComboType comboType_;
+    Teuchos::RCP<std::map<std::string, Teuchos::RCP<StatusTest<ScalarType, MV, OP> > > > taggedTests_;
 
     // Orthogonalization manager.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
@@ -583,6 +584,7 @@ const Teuchos::RCP<std::ostream> PseudoBlockGmresSolMgr<ScalarType,MV,OP>::outpu
 template<class ScalarType, class MV, class OP>
 PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
   outputStream_(outputStream_default_),
+  taggedTests_(Teuchos::null),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
@@ -614,6 +616,7 @@ PseudoBlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &pr
                         const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
   outputStream_(outputStream_default_),
+  taggedTests_(Teuchos::null),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
@@ -832,6 +835,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
       std::string userCombo_string = params->get<std::string>("User Status Tests Combo Type", "SEQ");
       Teuchos::RCP<StatusTestFactory<ScalarType,MV,OP> > testFactory = Teuchos::rcp(new StatusTestFactory<ScalarType,MV,OP>());
       setUserConvStatusTest( testFactory->buildStatusTests(userStatusTestsList), testFactory->stringToComboType(userCombo_string) );
+      taggedTests_ = testFactory->getTaggedTests();
     }
   }
 
@@ -1247,16 +1251,20 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
     convTest_ = Teuchos::rcp(
       new StatusTestCombo_t( comboType_, convTest_, userConvStatusTest_ ) );
     // brief output style not compatible with more general combinations
-    outputStyle_ = Belos::General;
+    //outputStyle_ = Belos::General;
     // NOTE: Above, you have to run the other convergence tests also because
     // the logic in this class depends on it.  This is very unfortunate.
   }
 
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
+  /*if(taggedTests_ != Teuchos::null) {
+    std::cout << "# tagged tests " << taggedTests_->size() << std::endl;
+  }*/
+
   // Create the status test output class.
   // This class manages and formats the output from the status test.
-  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_, taggedTests_ );
   outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
   // Set the solver string for the output test
