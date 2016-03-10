@@ -183,8 +183,6 @@ void handle_invalid_arg(const char* expr,
 /// @}
 ///
 
-void ThrowRequireWithSierraHelpMsg(bool condition);
-
 } // namespace stk
 
 ///
@@ -299,6 +297,7 @@ void ThrowRequireWithSierraHelpMsg(bool condition);
 // 2) Check method argument foo is not NULL
 //   ThrowInvalidArgMsgIf(foo != NULL, "Arg foo is NULL");
 
+#define ThrowRequireWithSierraHelpMsg(expr) ThrowGenericCond(expr, "Program error. Contact sierra-help@sandia.gov for support.", handle_assert)
 #define ThrowRequireMsg(expr,message) ThrowGenericCond(expr, message, handle_assert)
 #define ThrowRequire(expr)            ThrowRequireMsg(expr, "")
 
