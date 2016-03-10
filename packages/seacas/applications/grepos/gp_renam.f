@@ -1,4 +1,4 @@
-C Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract
+C Copyright(C) 2016 Sandia Corporation.  Under the terms of Contract
 C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 C certain rights in this software
 C 
@@ -31,9 +31,31 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C     -*- Mode: fortran -*-
-      QAINFO(1) = 'Grepos                          '
-      QAINFO(2) = '2016/03/10                      '
-      QAINFO(3) = ' 1.75                           '
+C=======================================================================
+      SUBROUTINE RENAM (TYPE, NAMLST, NUMNM, OLD, NEW)
+C=======================================================================
+C
+      CHARACTER*(*) TYPE
+      CHARACTER*(*) NAMLST(NUMNM), OLD, NEW
+      CHARACTER*1024 STRING
+      CHARACTER*16 STRA, STRB
 
+C ... Determine location of NAME to be changed
 
+      IMAT = LOCSTR (OLD, NUMNM, NAMLST)
+      IF (IMAT .EQ. 0) THEN
+         WRITE (STRING, 90) OLD, TYPE
+   90    FORMAT (A,' does not exist in ',A,' variable list.')
+         CALL SQZSTR (STRING, LSTR)
+         CALL PRTERR ('ERROR', STRING(:LSTR))
+         RETURN
+      ELSE
+         NAMLST(IMAT) = NEW
+         WRITE (STRING, 100) TYPE, OLD, NEW
+  100    FORMAT (A,' variable name ',A,' changed to ',A)
+         CALL SQZSTR (STRING, LSTR)
+         CALL PRTERR ('CMDSPEC', STRING(:LSTR))
+      END IF
+
+      RETURN
+      END
