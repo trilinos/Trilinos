@@ -8,6 +8,7 @@
  
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
+#include <impl/Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -201,21 +202,35 @@ int main(int argc, char* argv[])
   mybasker.Options.incomplete = true;
   mybasker.Options.incomplete_type = 
     BASKER_INCOMPLETE_LVL;
-  mybasker.Options.inc_lvl    = 3;
+  mybasker.Options.inc_lvl    = 2;
   mybasker.Options.user_fill  = 1.0;
+  mybasker.Options.same_pattern = false;
 
   mybasker.SetThreads(numthreads);
   cout << "--------------Done Setting Threads----------" << endl;
   mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,vals);
   cout << "--------------Done SFactor------------------" << endl;
+  Kokkos::Impl::Timer timer;
   mybasker.Factor_Inc(0);
   cout << "--------------Done NFactor-----------------" << endl;
+  cout << "First Factor Time: " << timer.seconds() << endl;
   mybasker.DEBUG_PRINT();
   cout << "--------------Done Print----------------------"<<endl;
-  // mybasker.SolveTest();
-  //mybasker.Solve(y,x);
-  //cout << "--------------Done Solve----------------------"<<endl;
 
+
+  //----------------RECALL TEST----------------//
+  
+  mybasker.Options.same_pattern = true;
+  cout << "Calling Factor" << endl;
+  timer.reset();
+  mybasker.Factor(m,n,nnz,col_ptr,row_idx,vals);
+  cout << "Done with recall Factor" << endl;
+  cout << "Second Factor Time: " << timer.seconds() << endl;
+  mybasker.DEBUG_PRINT();
+  cout << "Done with second print " << endl;
+  
+
+ 
   /*
   Int *lperm;
   Int *rperm;

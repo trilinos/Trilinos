@@ -125,11 +125,11 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::init_tree_thread()
   {
-    #ifdef BASKER_DEBUG_TREE
+    //#ifdef BASKER_DEBUG_TREE
     printf("----init_tree_thread()----\n");
     printf("---Starting Tree----\n");
     part_tree.info();
-    #endif
+    //#endif
 
     //Note: Convert this to use these values everywhere
     INT_1DARRAY ttemp;
@@ -1498,6 +1498,33 @@ namespace BaskerNS
 
       }
     */
+
+    //If same pattern, permute using pivot, and reset
+    if((Options.same_pattern == BASKER_TRUE))
+      {
+	if(same_pattern_flag == BASKER_FALSE)
+	  {
+	    MALLOC_INT_1DARRAY(gperm_same, gn);
+	    for(Int i = 0; i < gn; i++)
+	      {
+		gperm_same(i) = gperm(i);
+		gperm(i) = BASKER_MAX_IDX;
+	      }
+	    same_pattern_flag = BASKER_TRUE;
+	  }
+	else
+	  {
+	    for(Int i = 0; i < gn; i++)
+	      {
+		gperm(i) = BASKER_MAX_IDX;
+	      }
+	  }
+	//Everyone permutes
+	//JDB: come back
+      }
+
+
+
 
 
     //test
