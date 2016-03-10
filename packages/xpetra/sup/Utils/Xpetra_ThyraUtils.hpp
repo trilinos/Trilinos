@@ -139,6 +139,7 @@ public:
     typedef Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node> MapFactory;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyUtils;
 
+    RCP<Map> resultMap = Teuchos::null;
     RCP<const ThyProdVecSpaceBase > prodVectorSpace = rcp_dynamic_cast<const ThyProdVecSpaceBase >(vectorSpace);
     if(prodVectorSpace != Teuchos::null) {
       // SPECIAL CASE: product Vector space
@@ -169,10 +170,7 @@ public:
       // create full map
       const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
       Teuchos::ArrayView<GO> gidsView(&gids[0], gids.size());
-      RCP<Map> fullMap = MapFactory::Build(maps[0]->lib(), INVALID, gidsView, maps[0]->getIndexBase(), comm);
-
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fullMap));
-      return fullMap;
+      resultMap = MapFactory::Build(maps[0]->lib(), INVALID, gidsView, maps[0]->getIndexBase(), comm);
     } else {
 #ifdef HAVE_XPETRA_TPETRA
       // STANDARD CASE: no product map
@@ -190,16 +188,13 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgTpetraVec));
       RCP<const TpMap> rgTpetraMap = rgTpetraVec->getMap();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgTpetraMap));
-
-      RCP<Map> rgXpetraMap = Xpetra::toXpetraNonConst(rgTpetraMap);
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
-      return rgXpetraMap;
+      resultMap = Xpetra::toXpetraNonConst(rgTpetraMap);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::VectorSpace to Xpetra::Map. This is the general implementation for Tpetra only, but Tpetra is disabled.");
 #endif
     } // end standard case (no product map)
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::VectorSpace to Xpetra::Map.");
-    return Teuchos::null;
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(resultMap));
+    return resultMap;
   }
 
   // const version
@@ -245,8 +240,6 @@ public:
           }
         }
       }
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
-      return xpMultVec;
     } else {
       // STANDARD CASE: no product vector
 #ifdef HAVE_XPETRA_TPETRA
@@ -264,14 +257,12 @@ public:
       RCP<TpMultVec> tpNonConstMultVec = Teuchos::rcp_const_cast<TpMultVec>(tpMultVec);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpNonConstMultVec));
       xpMultVec = rcp(new XpTpMultVec(tpNonConstMultVec));
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
-      return xpMultVec;
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector. This is the general implementation for Tpetra only, but Teptra is disabled.");
 #endif
     } // end standard case
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector.");
-    return Teuchos::null;
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
+    return xpMultVec;
   }
 
   // non-const version
@@ -717,6 +708,8 @@ public:
     typedef Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node> MapFactory;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyUtils;
 
+    RCP<Map> resultMap = Teuchos::null;
+
     RCP<const ThyProdVecSpaceBase > prodVectorSpace = rcp_dynamic_cast<const ThyProdVecSpaceBase >(vectorSpace);
     if(prodVectorSpace != Teuchos::null) {
       // SPECIAL CASE: product Vector space
@@ -747,10 +740,7 @@ public:
       // create full map
       const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
       Teuchos::ArrayView<GO> gidsView(&gids[0], gids.size());
-      RCP<Map> fullMap = MapFactory::Build(maps[0]->lib(), INVALID, gidsView, maps[0]->getIndexBase(), comm);
-
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fullMap));
-      return fullMap;
+      resultMap = MapFactory::Build(maps[0]->lib(), INVALID, gidsView, maps[0]->getIndexBase(), comm);
     } else {
       // STANDARD CASE: no product map
       // Epetra/Tpetra specific code to access the underlying map data
@@ -783,9 +773,7 @@ public:
         RCP<const TpMap> rgTpetraMap = rgTpetraVec->getMap();
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgTpetraMap));
 
-        RCP<Map> rgXpetraMap = Xpetra::toXpetraNonConst(rgTpetraMap);
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
-        return rgXpetraMap;
+        resultMap = Xpetra::toXpetraNonConst(rgTpetraMap);
 #else
         throw Xpetra::Exceptions::RuntimeError("Problem AAA. Add TPETRA_INST_INT_INT:BOOL=ON in your configuration.");
 #endif
@@ -798,17 +786,16 @@ public:
         RCP<const Epetra_Map>
         epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(vectorSpace,"epetra_map");
         if(!Teuchos::is_null(epetra_map)) {
-          Teuchos::RCP<Map> rgXpetraMap = Teuchos::rcp(new Xpetra::EpetraMapT<GlobalOrdinal,Node>(epetra_map));
-          TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
-          return rgXpetraMap;
+          resultMap = Teuchos::rcp(new Xpetra::EpetraMapT<GlobalOrdinal,Node>(epetra_map));
+          TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(resultMap));
         } else {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "No Epetra_Map data found in Thyra::VectorSpace.");
         }
       }
 #endif
     } // end standard case (no product map)
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::VectorSpace to Xpetra::Map.");
-    return Teuchos::null;
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(resultMap));
+    return resultMap;
   }
 
   // const version
@@ -884,8 +871,6 @@ public:
         RCP<TpMultVec> tpNonConstMultVec = Teuchos::rcp_const_cast<TpMultVec>(tpMultVec);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpNonConstMultVec));
         xpMultVec = rcp(new XpTpMultVec(tpNonConstMultVec));
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
-        return xpMultVec;
       }
 #endif
 #endif
@@ -904,10 +889,10 @@ public:
         RCP<Epetra_MultiVector> epNonConstMultVec = Teuchos::rcp_const_cast<Epetra_MultiVector>(epMultVec);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epNonConstMultVec));
         xpMultVec = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>(epNonConstMultVec));
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
-        return xpMultVec;
       }
 #endif
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
+      return xpMultVec;
     } // end standard case
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector.");
     return Teuchos::null;
