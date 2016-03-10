@@ -768,20 +768,9 @@ int AlgPTScotch<Adapter>::order(
   // Allocate results
   SCOTCH_Num cblk = 0;
   SCOTCH_Num *permtab = new SCOTCH_Num[nVtx];  // permutation array
-  //auto arv_perm = solution->getPermutationRCP(false)(); // array view
-  //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&permtab, arv_perm);
-
-  //auto arv_peri = solution->getPermutationRCP(true)(); // array view
   SCOTCH_Num *peritab = new SCOTCH_Num[nVtx];  // inverse permutation array
-  //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&peritab, arv_peri);
-  //
   SCOTCH_Num *rangetab = new SCOTCH_Num[nVtx+1];  // separator range array
-  //auto arv_range = solution->getSepRangeRCP()(); // array view
-  //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&rangetab, arv_range);
-  //
   SCOTCH_Num *treetab = new SCOTCH_Num[nVtx];  // separator tree
-  //auto arv_tree = solution->getSepTreeRCP()(); // array view
-  //TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&treetab, arv_tree);
 
   ierr = SCOTCH_graphOrder(&c_graph_ptr, &c_strat_ptr, permtab, peritab, 
                            &cblk, rangetab, treetab);

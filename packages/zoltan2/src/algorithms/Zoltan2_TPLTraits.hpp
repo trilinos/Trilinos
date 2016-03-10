@@ -250,6 +250,10 @@ struct TPL_Traits<ZOLTAN_ID_PTR, second_t> {
   }
 };
 
+/////////////////////////////////////////////////////
+// Special case:  second_t == Zoltan ZOLTAN_ID_PTR  //
+/////////////////////////////////////////////////////
+
 template <typename first_t>
 struct TPL_Traits<first_t, ZOLTAN_ID_PTR> {
 
