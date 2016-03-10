@@ -64,6 +64,10 @@
 #include "Ioss_State.h"
 #include "Ioss_SurfaceSplit.h"
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 namespace {
   void log_field(const char *symbol, const Ioss::GroupingEntity *entity,
 		 const Ioss::Field &field, bool single_proc_only,
@@ -73,8 +77,9 @@ namespace {
   bool internal_parallel_consistent(bool single_proc_only, const Ioss::GroupingEntity *ge,
 				    const Ioss::Field &field, int in_out, const Ioss::ParallelUtils &util)
   {
-    if (single_proc_only)
+    if (single_proc_only) {
       return true;
+}
 
     std::string ge_name = ge->name();
     std::string field_name = field.get_name();
@@ -91,9 +96,9 @@ namespace {
       errmsg += "'\n";
       IOSS_WARNING << errmsg;
       return false;
-    } else {
+    } 
       return true;
-    }
+    
   }
 #endif
   double my_min(double x1, double x2)
@@ -151,11 +156,11 @@ namespace {
 }
 
 namespace Ioss {
-  DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
+  DatabaseIO::DatabaseIO(Region* region, std::string  filename,
 			 DatabaseUsage db_usage,
 			 MPI_Comm communicator,
 			 const PropertyManager &props)
-    : properties(props), commonSideTopology(nullptr), DBFilename(filename), dbState(STATE_INVALID),
+    : properties(props), commonSideTopology(nullptr), DBFilename(std::move(filename)), dbState(STATE_INVALID),
       isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
       timeScaleFactor(1.0), splitType(SPLIT_BY_TOPOLOGIES),
       dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
@@ -181,7 +186,7 @@ namespace Ioss {
         if (property.size() != 2) {
           std::ostringstream errmsg;
           errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
-              << "       Found '" << elem << "' which is not of the correct PROPERTY=VALUE form";
+		 << "       Found '" << elem << "' which is not of the correct PROPERTY=VALUE form";
           IOSS_ERROR(errmsg);
         }
         std::string prop = Utils::uppercase(property[0]);
@@ -189,10 +194,11 @@ namespace Ioss {
         std::string up_value = Utils::uppercase(value);
         bool all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
-        if (myProcessor == 0)
+        if (myProcessor == 0) {
           std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
 
-        if (all_digit) {
+        
+	}if (all_digit) {
           int int_value = std::strtol(value.c_str(), nullptr, 10);
           properties.add(Property(prop, int_value));
         }
@@ -237,16 +243,15 @@ namespace Ioss {
   }
 
   DatabaseIO::~DatabaseIO()
-  {
-  }
+    = default;
 
   int DatabaseIO::int_byte_size_api() const
   {
     if (dbIntSizeAPI == USE_INT32_API) {
       return 4;
-    } else {
-      return 8;
-    }
+    } 
+    return 8;
+    
   }
 
   void DatabaseIO::set_int_byte_size_api(DataSize size) const
@@ -340,9 +345,12 @@ namespace Ioss {
 
   void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field, int in_out) const
   {
-    assert(!is_parallel_consistent() || internal_parallel_consistent(singleProcOnly, ge, field, in_out, util_));
+    if (ge != nullptr) {
+      assert(!is_parallel_consistent() ||
+	     internal_parallel_consistent(singleProcOnly, ge, field, in_out, util_));
+    }
     if (get_logging()) {
-      log_field(">", ge, field, singleProcOnly, util_);
+      log_field(in_out == 1? ">" : "<", ge, field, singleProcOnly, util_);
     }
   }
 
@@ -381,8 +389,9 @@ namespace Ioss {
   void DatabaseIO::create_groups(const std::string &property_name, EntityType type,
 				 const std::string &type_name, const T* set_type)
   {
-    if (!properties.exists(property_name))
+    if (!properties.exists(property_name)) {
       return;
+    }
 
     std::string prop = properties.get(property_name).get_string();
     std::vector<std::string> groups = tokenize(prop, ":");
@@ -417,14 +426,15 @@ namespace Ioss {
 				const std::vector<std::string> &group_spec, const SideSet* set_type)
   {
     // Not generalized yet... This only works for T == SideSet
-    if (type != SIDESET)
+    if (type != SIDESET) {
       return;
+    }
 	
     int64_t entity_count = 0;
     int64_t df_count = 0;
 
     // Create the new set...
-    SideSet* new_set = new SideSet(this, group_spec[0]);
+    auto  new_set = new SideSet(this, group_spec[0]);
 	
     get_region()->add(new_set);
 	
@@ -435,10 +445,10 @@ namespace Ioss {
 	SideBlockContainer side_blocks = set->get_side_blocks();
 	for (auto &sbold : side_blocks) {
 	  size_t side_count = sbold->get_property("entity_count").get_int();
-	  SideBlock *sbnew = new SideBlock(this, sbold->name(),
-					   sbold->topology()->name(),
-					   sbold->parent_element_topology()->name(),
-					   side_count);
+	  auto sbnew = new SideBlock(this, sbold->name(),
+				     sbold->topology()->name(),
+				     sbold->parent_element_topology()->name(),
+				     side_count);
 	  int64_t id = sbold->get_property("id").get_int();
 	  sbnew->property_add(Property("set_offset", entity_count));
 	  sbnew->property_add(Property("set_df_offset", df_count));
@@ -475,27 +485,25 @@ namespace Ioss {
   {
     DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 
-    ElementBlockContainer element_blocks =
-      get_region()->get_element_blocks();
-    ElementBlockContainer::const_iterator I  = element_blocks.begin();
-    ElementBlockContainer::const_iterator IE = element_blocks.end();
-
-    while (I != IE) {
-      size_t element_count = (*I)->get_property("entity_count").get_int();
+    bool first = true;
+    ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+    for (auto block : element_blocks) {
+      size_t element_count = block->get_property("entity_count").get_int();
 
       // Check face types.
       if (element_count > 0) {
-	if (commonSideTopology != nullptr || I == element_blocks.begin()) {
-	  ElementTopology* side_type = (*I)->topology()->boundary_type();
-	  if (commonSideTopology == nullptr) // First block
+	if (commonSideTopology != nullptr || first) {
+	  first = false;
+	  ElementTopology* side_type = block->topology()->boundary_type();
+	  if (commonSideTopology == nullptr) { // First block
 	    new_this->commonSideTopology = side_type;
+	  }
 	  if (commonSideTopology != side_type) { // Face topologies differ in mesh
 	    new_this->commonSideTopology = nullptr;
 	    return;
 	  }
 	}
       }
-      ++I;
     }
   }
 
@@ -654,31 +662,48 @@ namespace {
       initial_time = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
     }
 
-    std::vector<int64_t> all_sizes;
-    if (single_proc_only) {
-      all_sizes.push_back(field.get_size());
-    } else {
-      util.gather((int64_t)field.get_size(), all_sizes);
-    }
-
-    if (util.parallel_rank() == 0 || single_proc_only) {
-      std::string name = entity->name();
-      std::ostringstream strm;
-      gettimeofday(&tp, nullptr);
-      double time_now = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
-      strm << symbol << " [" << std::fixed << std::setprecision(3)
-	   << time_now-initial_time << "]\t";
-
-      int64_t total = 0;
-      // Now append each processors size onto the stream...
-      for (auto &p_size : all_sizes) {
-	strm << std::setw(8) << p_size << ":";
-	total += p_size;
+    if (entity != nullptr) {
+      std::vector<int64_t> all_sizes;
+      if (single_proc_only) {
+	all_sizes.push_back(field.get_size());
+      } else {
+	util.gather((int64_t)field.get_size(), all_sizes);
       }
-      if (util.parallel_size() > 1)
-	strm << std::setw(8) << total;
-      strm << "\t" << name << "/" << field.get_name() << "\n";
-      std::cout << strm.str();
+
+      if (util.parallel_rank() == 0 || single_proc_only) {
+	std::string name = entity->name();
+	std::ostringstream strm;
+	gettimeofday(&tp, nullptr);
+	double time_now = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
+	strm << symbol << " [" << std::fixed << std::setprecision(3)
+	     << time_now-initial_time << "]\t";
+
+	int64_t total = 0;
+	// Now append each processors size onto the stream...
+	for (auto &p_size : all_sizes) {
+	  strm << std::setw(8) << p_size << ":";
+	  total += p_size;
+	}
+	if (util.parallel_size() > 1) {
+	  strm << std::setw(8) << total;
+	}
+	strm << "\t" << name << "/" << field.get_name() << "\n";
+	std::cout << strm.str();
+      }
+    } else {
+#ifdef HAVE_MPI
+      if (!single_proc_only) {
+	MPI_Barrier(util.communicator());
+      }
+#endif
+      if (util.parallel_rank() == 0 || single_proc_only) {
+	std::ostringstream strm;
+	gettimeofday(&tp, nullptr);
+	double time_now = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
+	strm << symbol << " [" << std::fixed << std::setprecision(3)
+	     << time_now-initial_time << "]\n";
+	std::cout << strm.str();
+      }
     }
   }
 }

@@ -35,10 +35,12 @@
 
 #include <stdint.h>
 #include <vector>
+#include <string>
 
 namespace Ioss {
-  typedef std::vector<int> IntVector;
-  typedef std::vector<int64_t> Int64Vector;
+  using IntVector = std::vector<int>;
+  using Int64Vector = std::vector<int64_t>;
+  using NameList = std::vector<std::string>;
 }
 
 #if defined(PARALLEL_AWARE_EXODUS)
@@ -60,7 +62,7 @@ namespace Ioss {
 #else
 #ifndef MPI_COMM_WORLD
 #define MPI_COMM_WORLD 0
-typedef int MPI_Comm;
+using MPI_Comm = int;
 #endif
 #endif
 
@@ -70,8 +72,8 @@ typedef int MPI_Comm;
 //when this header is compiled...
 //If FOUR_BYTE_REAL is defined then we know we need float, otherwise
 //stick with double.
-typedef std::complex<float> Complex;
+using Complex = std::complex<float>;
 #else
-typedef std::complex<double> Complex;
+using Complex = std::complex<double>;
 #endif
 #endif 

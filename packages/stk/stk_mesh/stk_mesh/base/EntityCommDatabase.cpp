@@ -300,8 +300,7 @@ const EntityComm* EntityCommDatabase::entity_comm( const EntityKey & key ) const
 {
   if (!cached_find(key)) return NULL;
 
-  const EntityComm& entity_comm = m_last_lookup->second;
-  return &entity_comm;
+  return &(m_last_lookup->second);
 }
 
 EntityComm* EntityCommDatabase::entity_comm( const EntityKey & key )

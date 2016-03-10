@@ -190,34 +190,35 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
   int option_index = options_.parse(argc, argv);
-  if ( option_index < 1 )
+  if ( option_index < 1 ) {
     return false;
+}
 
-  if (options_.retrieve("help")) {
+  if (options_.retrieve("help") != nullptr) {
     options_.usage();
     std::cerr << "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for io_shell support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("version")) {
+  if (options_.retrieve("version") != nullptr) {
     // Version is printed up front, just exit...
     exit(0);
   }
   
-  if (options_.retrieve("64-bit")) {
+  if (options_.retrieve("64-bit") != nullptr) {
     ints_64_bit = true;
   }
 
-  if (options_.retrieve("float")) {
+  if (options_.retrieve("float") != nullptr) {
     reals_32_bit = true;
   }
 
-  if (options_.retrieve("netcdf4")) {
+  if (options_.retrieve("netcdf4") != nullptr) {
     netcdf4 = true;
   }
 
-  if (options_.retrieve("shuffle")) {
+  if (options_.retrieve("shuffle") != nullptr) {
     shuffle = true;
   }
 
@@ -228,51 +229,51 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("rcb")) {
+  if (options_.retrieve("rcb") != nullptr) {
     decomp_method = "RCB";
   }
 
-  if (options_.retrieve("rib")) {
+  if (options_.retrieve("rib") != nullptr) {
     decomp_method = "RIB";
   }
 
-  if (options_.retrieve("hsfc")) {
+  if (options_.retrieve("hsfc") != nullptr) {
     decomp_method = "HSFC";
   }
 
-  if (options_.retrieve("metis_sfc")) {
+  if (options_.retrieve("metis_sfc") != nullptr) {
     decomp_method = "METIS_SFC";
   }
 
-  if (options_.retrieve("kway")) {
+  if (options_.retrieve("kway") != nullptr) {
     decomp_method = "KWAY";
   }
 
-  if (options_.retrieve("kway_geom")) {
+  if (options_.retrieve("kway_geom") != nullptr) {
     decomp_method = "KWAY_GEOM";
   }
 
-  if (options_.retrieve("linear")) {
+  if (options_.retrieve("linear") != nullptr) {
     decomp_method = "LINEAR";
   }
 
-  if (options_.retrieve("cyclic")) {
+  if (options_.retrieve("cyclic") != nullptr) {
     decomp_method = "CYCLIC";
   }
 
-  if (options_.retrieve("random")) {
+  if (options_.retrieve("random") != nullptr) {
     decomp_method = "RANDOM";
   }
 
-  if (options_.retrieve("external")) {
+  if (options_.retrieve("external") != nullptr) {
     decomp_method = "EXTERNAL";
   }
 
-  if (options_.retrieve("debug")) {
+  if (options_.retrieve("debug") != nullptr) {
     debug = true;
   }
 
-  if (options_.retrieve("statistics")) {
+  if (options_.retrieve("statistics") != nullptr) {
     statistics = true;
   }
 
@@ -314,12 +315,13 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("surface_split_scheme");
     if (temp != nullptr) {
-      if (std::strcmp(temp, "TOPOLOGY") == 0)
+      if (std::strcmp(temp, "TOPOLOGY") == 0) {
         surface_split_type = 1;
-      else if (std::strcmp(temp, "ELEMENT_BLOCK") == 0)
+      } else if (std::strcmp(temp, "ELEMENT_BLOCK") == 0) {
         surface_split_type = 2;
-      else if (std::strcmp(temp, "NO_SPLIT") == 0)
+      } else if (std::strcmp(temp, "NO_SPLIT") == 0) {
         surface_split_type = 3;
+}
     }
   }
 
@@ -337,7 +339,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("copyright")) {
+  if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
 	      << "Copyright(C) 2013 Sandia Corporation.  Under the terms of Contract\n"
 	      << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"

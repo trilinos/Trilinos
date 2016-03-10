@@ -64,8 +64,6 @@ Level 1
    write end = -1   [default]
 
    transpose: use implicit = 0   [default]
-   Keep AP Pattern = 0   [default]
-   Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
 
@@ -159,8 +157,6 @@ Level 2
    write end = -1   [default]
 
    transpose: use implicit = 0   [default]
-   Keep AP Pattern = 0   [default]
-   Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
 
@@ -242,6 +238,7 @@ Level 1
    filtered matrix: reuse graph = 1   [default]
    filtered matrix: reuse eigenvalue = 1   [default]
 
+   Reusing previous AP graph
   sa: damping factor = 1.33   [default]
   sa: calculate eigenvalue estimate = 0   [default]
   sa: eigenvalue estimate num iterations = 10   [default]
@@ -266,13 +263,13 @@ Level 1
 
  Computing Ac (MueLu::RebalanceAcFactory)
   Computing Ac (MueLu::RAPFactory)
+   Reusing previous AP graph
+   Reusing previous RAP graph
   Build (MueLu::CoordinatesTransferFactory)
   write start = -1   [default]
   write end = -1   [default]
 
   transpose: use implicit = 0   [default]
-  Keep AP Pattern = 0   [default]
-  Keep RAP Pattern = 0   [default]
   CheckMainDiagonal = 0   [default]
   RepairMainDiagonal = 0   [default]
 
@@ -304,6 +301,7 @@ Level 2
    filtered matrix: reuse graph = 1   [default]
    filtered matrix: reuse eigenvalue = 1   [default]
 
+   Reusing previous AP graph
   sa: damping factor = 1.33   [default]
   sa: calculate eigenvalue estimate = 0   [default]
   sa: eigenvalue estimate num iterations = 10   [default]
@@ -328,13 +326,13 @@ Level 2
 
  Computing Ac (MueLu::RebalanceAcFactory)
   Computing Ac (MueLu::RAPFactory)
+   Reusing previous AP graph
+   Reusing previous RAP graph
   Build (MueLu::CoordinatesTransferFactory)
   write start = -1   [default]
   write end = -1   [default]
 
   transpose: use implicit = 0   [default]
-  Keep AP Pattern = 0   [default]
-  Keep RAP Pattern = 0   [default]
   CheckMainDiagonal = 0   [default]
   RepairMainDiagonal = 0   [default]
 

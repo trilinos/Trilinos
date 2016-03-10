@@ -108,8 +108,9 @@ int ex_get_nodal_var (int   exoid,
   /* inquire previously defined variable */
 
   /* Need to see how this works in the parallel-aware exodus... */
-  if (num_nodes == 0)
+  if (num_nodes == 0) {
     return EX_NOERR;
+}
   
   /* Verify that time_step is within bounds */
   {

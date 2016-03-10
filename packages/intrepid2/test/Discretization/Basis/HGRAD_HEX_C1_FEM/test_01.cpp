@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -522,23 +521,20 @@ int main(int argc, char *argv[]) {
       vals.resize(numFields, numPoints, DkCardin);    
 
       hexBasis.getValues(vals, hexNodes, op);
-      for (int i = 0; i < vals.size(); i++) {
-        if (std::abs(vals[i]) > INTREPID_TOL) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      for (int i1 = 0; i1 < numFields; i1++) 
+        for (int i2 = 0; i2 < numPoints; i2++) 
+          for (int i3 = 0; i3 < DkCardin; i3++) {
+            if (std::abs(vals(i1,i2,i3)) > INTREPID_TOL) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           
-          // Get the multi-index of the value where the error is and the operator order
-          std::vector<int> myIndex;
-          vals.getMultiIndex(myIndex,i);
-          int ord = Intrepid2::getOperatorOrder(op);
-          *outStream << " At multi-index { ";
-          for(int j = 0; j < vals.rank(); j++) {
-            *outStream << myIndex[j] << " ";
+              // Get the multi-index of the value where the error is and the operator order
+              int ord = Intrepid2::getOperatorOrder(op);
+              *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
+              *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3) 
+                         << " but reference D" << ord << " component:  0 \n";
+            }
           }
-          *outStream << "}  computed D"<< ord <<" component: " << vals[i] 
-            << " but reference D" << ord << " component:  0 \n";
-        }
-      }
     }    
   }
   

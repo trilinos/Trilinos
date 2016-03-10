@@ -323,10 +323,11 @@ int ex_put_concat_all_blocks (int    exoid,
   /* Iterate over edge blocks ... */
   for (iblk = 0; iblk < num_edge_blk; ++iblk) {
     ex_entity_id eb_id;
-    if (ids_int64)
+    if (ids_int64) {
       eb_id = edge_id_int64[iblk];
-    else
+    } else {
       eb_id = edge_id_int[iblk];
+}
       
     cur_num_edge_blk=ex_get_file_item(exoid, ex_get_counter_list(EX_EDGE_BLOCK));
     if (cur_num_edge_blk >= (int)num_edge_blk) {
@@ -342,8 +343,9 @@ int ex_put_concat_all_blocks (int    exoid,
        for a specific file and returns that value incremented. */
     cur_num_edge_blk=ex_inc_file_item(exoid, ex_get_counter_list(EX_EDGE_BLOCK));
 
-    if (param->num_edge_this_blk[iblk] == 0) /* Is this a NULL edge block? */
+    if (param->num_edge_this_blk[iblk] == 0) { /* Is this a NULL edge block? */
       continue;
+}
 
     /* define some dimensions and variables*/
     if ((status = nc_def_dim(exoid,
@@ -396,10 +398,11 @@ int ex_put_concat_all_blocks (int    exoid,
   /* Iterate over face blocks ... */
   for (iblk = 0; iblk < num_face_blk; ++iblk) {
     ex_entity_id fb_id;
-    if (ids_int64)
+    if (ids_int64) {
       fb_id = face_id_int64[iblk];
-    else
+    } else {
       fb_id = face_id_int[iblk];
+}
 
     cur_num_face_blk=ex_get_file_item(exoid, ex_get_counter_list(EX_FACE_BLOCK));
     if (cur_num_face_blk >= (int)num_face_blk) {
@@ -415,8 +418,9 @@ int ex_put_concat_all_blocks (int    exoid,
        for a specific file and returns that value incremented. */
     cur_num_face_blk=ex_inc_file_item(exoid, ex_get_counter_list(EX_FACE_BLOCK));
 
-    if (param->num_face_this_blk[iblk] == 0) /* Is this a NULL face block? */
+    if (param->num_face_this_blk[iblk] == 0) { /* Is this a NULL face block? */
       continue;
+}
 
     /* define some dimensions and variables*/
     if ((status = nc_def_dim (exoid,
@@ -468,10 +472,11 @@ int ex_put_concat_all_blocks (int    exoid,
   /* Iterate over element blocks ... */
   for (iblk = 0; iblk < num_elem_blk; ++iblk) {
     ex_entity_id eb_id;
-    if (ids_int64)
+    if (ids_int64) {
       eb_id = elem_id_int64[iblk];
-    else
+    } else {
       eb_id = elem_id_int[iblk];
+}
 
     cur_num_elem_blk=ex_get_file_item(exoid, ex_get_counter_list(EX_ELEM_BLOCK));
     if (cur_num_elem_blk >= (int)num_elem_blk) {
@@ -487,8 +492,9 @@ int ex_put_concat_all_blocks (int    exoid,
        for a specific file and returns that value incremented. */
     cur_num_elem_blk=ex_inc_file_item(exoid, ex_get_counter_list(EX_ELEM_BLOCK));
 
-    if (param->num_elem_this_blk[iblk] == 0) /* Is this a NULL element block? */
+    if (param->num_elem_this_blk[iblk] == 0) { /* Is this a NULL element block? */
       continue;
+}
 
     /* define some dimensions and variables*/
     if ((status = nc_def_dim (exoid,

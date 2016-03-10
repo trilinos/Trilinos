@@ -69,8 +69,11 @@ namespace Iovs {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props) :
-                         Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
-
+                         Ioss::DatabaseIO (region, filename, db_usage, communicator, props),
+                         isInput(false), singleProcOnly(false), doLogging(false),
+                         enableLogging(0), debugLevel(0), underscoreVectors(0),
+                         applyDisplacements(0), createSideSets(0), createNodeSets(0),
+                         nodeCount(0), elementCount(0), nodeBlockCount(0), elementBlockCount(0)
   {
 
     std::ostringstream errmsg;
@@ -170,7 +173,7 @@ namespace Iovs {
     this->debugLevel = 0;
     if(props.exists("CATALYST_DEBUG_LEVEL"))
       {
-      this->debugLevel = props.get("CATALYST_DEBUG_LEVEL").get_int();
+      this->enableLogging = props.get("CATALYST_DEBUG_LEVEL").get_int();
       }
 
     this->catalyst_output_directory = "";
@@ -822,30 +825,30 @@ namespace Iovs {
       if (nodeMap.map.empty()) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap was empty, resizing and tagging serial\n";
         nodeMap.map.resize(nodeCount+1);
-    nodeMap.map[0] = -1;
+	nodeMap.map[0] = -1;
       }
 
       if (nodeMap.map[0] == -1) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing mapping\n";
-    if (int_byte_size_api() == 4) {
-      nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
-    } else {
-      nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
-    }
+	if (int_byte_size_api() == 4) {
+	  nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
+	} else {
+	  nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
+	}
       }
 
-    nodeMap.build_reverse_map(myProcessor);
-
-    // Only a single nodeblock and all set
-    if (num_to_get == nodeCount) {
-      assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
-    }
-    assert(get_region()->get_property("node_block_count").get_int() == 1);
+      nodeMap.build_reverse_map();
+      
+      // Only a single nodeblock and all set
+      if (num_to_get == nodeCount) {
+	assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
       }
-
-      nodeMap.build_reorder_map(0, num_to_get);
-      return num_to_get;
+      assert(get_region()->get_property("node_block_count").get_int() == 1);
     }
+
+    nodeMap.build_reorder_map(0, num_to_get);
+    return num_to_get;
+  }
 
       size_t handle_block_ids(const Ioss::EntityBlock *eb,
                   ex_entity_type map_type,
@@ -922,7 +925,7 @@ namespace Iovs {
 
     // Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
     if (db_state == Ioss::STATE_MODEL) {
-      entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
+      entity_map.build_reverse_map(num_to_get, eb_offset);
         }
 
     // Build the reorderEntityMap which does a direct mapping from

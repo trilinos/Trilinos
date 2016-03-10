@@ -80,8 +80,11 @@ namespace Iopx {
     DatabaseIO(Ioss::Region *region, const std::string& filename,
 	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 	       const Ioss::PropertyManager &properties);
+    DatabaseIO(const DatabaseIO& from) =delete;
+    DatabaseIO& operator=(const DatabaseIO& from) =delete;
     ~DatabaseIO();
 
+    void release_memory() override;
     bool needs_shared_node_information() const {return true;}
     void compute_node_status() const;
     
@@ -96,9 +99,9 @@ namespace Iopx {
 
     void get_step_times();
 
-    void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const;
-
   private:
+    int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+			       void *data, size_t data_size) const;
     int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
     int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
@@ -122,6 +125,8 @@ namespace Iopx {
     int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
 
+    int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+			       void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
@@ -149,10 +154,6 @@ namespace Iopx {
 				const Ioss::Field& field, void *data, size_t data_size) const;
     int64_t get_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet* ns,
 				const Ioss::Field& field, void *data, size_t data_size) const;
-
-    // Private member functions
-    DatabaseIO(const DatabaseIO& from); // do not implement
-    DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
     int get_file_pointer() const; // Open file and set exodusFilePtr.
 

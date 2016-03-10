@@ -74,7 +74,7 @@ public:
 #endif
 
   const Teuchos::Comm<int> *comm;
-  const Zoltan2::MachineRepresentation <scalar_t> *machine;
+  const Zoltan2::MachineRepresentation<scalar_t,part_t> *machine;
   const Zoltan2::Model<typename Adapter::base_adapter_t> *model;
   const Zoltan2::PartitioningSolution<Adapter> *soln;
   const Environment *env;
@@ -87,7 +87,7 @@ public:
  */
   PartitionMapping(
     const Teuchos::Comm<int> *comm_,
-    const Zoltan2::MachineRepresentation<scalar_t> *machine_, // If NULL, assume homogeneous
+    const Zoltan2::MachineRepresentation<scalar_t,part_t> *machine_, // If NULL, assume homogeneous
                                                   // Make optional
     const Zoltan2::Model<typename Adapter::base_adapter_t> *model_, // Needed to get information about
                                          // the application data (coords, graph)
@@ -119,7 +119,7 @@ public:
   PartitionMapping(
           const Environment *envConst_,
           const Teuchos::Comm<int> *comm_,
-          const MachineRepresentation<scalar_t> *machine_
+          const MachineRepresentation<scalar_t,part_t> *machine_
           ):
           comm(comm_),
           machine(machine_),

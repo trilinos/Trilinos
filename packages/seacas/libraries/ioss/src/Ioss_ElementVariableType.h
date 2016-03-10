@@ -41,9 +41,10 @@ namespace Ioss {
   class ElementVariableType : public Ioss::VariableType
     {
     public:
-      std::string label(int, const char) const {return "";}
-      std::string label_name(const std::string& base, int,const char) const {return base;}
-      int suffix_count() const {return 0;}
+      std::string label(int /*which*/, const char /*suffix_sep*/) const override {return "";}
+      std::string label_name(const std::string& base, int /*which*/,const char /*suffix_sep*/) const override
+	{return base;}
+      int suffix_count() const override {return 0;}
     protected:
       ElementVariableType(const std::string& type, int comp_count);
     };

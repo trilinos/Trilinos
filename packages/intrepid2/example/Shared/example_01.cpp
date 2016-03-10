@@ -35,9 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -55,6 +54,11 @@ using namespace std;
 using namespace Intrepid2;
  
  int main(){
+ 
+//Test heavely uses operator [].
+//Need to convert operator [] into operator() or remove test. 
+return 1;
+/*
 	 Teuchos::GlobalMPISession mpiSession();
 Kokkos::initialize();
 	typedef ArrayTools art; 
@@ -165,5 +169,6 @@ Kokkos::initialize();
       art::scalarMultiplyDataData<double>(outi_c_p_d, datainv_c_p, out_c_p_d, true);	 
 	 Kokkos::finalize();
 return 0;	 
+*/
 	 }
 

@@ -22,10 +22,12 @@ enum GroupingType {
   GROUPING_MAX_ANISOTROPY,
   GROUPING_MORTAN_Z
 };
-const int num_grouping_types = 3;
-const GroupingType grouping_values[] = {
-  GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z };
-const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z" };
+
+enum SamplingType {
+  SAMPLING_STOKHOS=0,
+  SAMPLING_TASMANIAN,
+  SAMPLING_FILE
+};
 
 struct CMD {
   bool USE_SERIAL;
@@ -47,9 +49,13 @@ struct CMD {
   bool USE_MUELU;
   bool USE_MEANBASED;
   bool USE_UQ;
+  SamplingType USE_UQ_SAMPLING;
   int USE_UQ_FAKE;
   int USE_UQ_DIM;
   int USE_UQ_ORDER;
+  int USE_UQ_INIT_LEVEL;
+  int USE_UQ_MAX_LEVEL;
+  double USE_UQ_TOL;
   double USE_DIFF_COEFF_LINEAR;
   double USE_DIFF_COEFF_CONSTANT;
   double USE_MEAN;
@@ -90,9 +96,13 @@ struct CMD {
           USE_MUELU(false),
           USE_MEANBASED(false),
           USE_UQ(false),
+          USE_UQ_SAMPLING(SAMPLING_STOKHOS),
           USE_UQ_FAKE(0),
           USE_UQ_DIM(3),
           USE_UQ_ORDER(2),
+          USE_UQ_INIT_LEVEL(1),
+          USE_UQ_MAX_LEVEL(7),
+          USE_UQ_TOL(1e-2),
           USE_DIFF_COEFF_LINEAR(0.0),
           USE_DIFF_COEFF_CONSTANT(1.0),
           USE_MEAN(1),

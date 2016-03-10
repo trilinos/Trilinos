@@ -76,7 +76,7 @@ Ioss::Node::Node()
   Ioss::ElementTopology::alias("node", "NODE");
 }
 
-Ioss::Node::~Node() {}
+Ioss::Node::~Node() = default;
 
 int Ioss::Node::parametric_dimension()           const {return  0;}
 int Ioss::Node::spatial_dimension()           const {return  3;}
@@ -119,8 +119,9 @@ Ioss::IntVector Ioss::Node::face_connectivity(int face_number) const
 Ioss::IntVector Ioss::Node::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 

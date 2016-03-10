@@ -32,8 +32,8 @@
 
 #include <Ioss_Field.h>
 #include <Ioss_VariableType.h>
-#include <math.h>
-#include <stddef.h>
+#include <cmath>
+#include <cstddef>
 #include <transform/Iotr_VectorMagnitude.h>
 #include <string>
 
@@ -53,7 +53,7 @@ namespace Iotr {
     Factory::alias("vector magnitude", "length");
   }
 
-  Ioss::Transform* VM_Factory::make(const std::string&) const
+  Ioss::Transform* VM_Factory::make(const std::string& /*unused*/) const
   { return new VectorMagnitude(); }
 
   VectorMagnitude::VectorMagnitude() {}
@@ -66,9 +66,9 @@ namespace Iotr {
     static const Ioss::VariableType *sca = Ioss::VariableType::factory("scalar");
     if (in == v2d || in == v3d) {
       return sca;
-    } else {
+    } 
       return nullptr;
-    }
+    
   }
 
   int VectorMagnitude::output_count(int in) const
@@ -86,14 +86,14 @@ namespace Iotr {
     if (field.transformed_storage()->component_count() == 3) {
       int j = 0;
       for (size_t i = 0; i < count; i++) {
-	rdata[i] = sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1] +
-			rdata[j+2]*rdata[j+2]);
+	rdata[i] = std::sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1] +
+			     rdata[j+2]*rdata[j+2]);
 	j+=3;
       }
     } else {
       int j = 0;
       for (size_t i = 0; i < count; i++) {
-	rdata[i] = sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1]);
+	rdata[i] = std::sqrt(rdata[j]*rdata[j] + rdata[j+1]*rdata[j+1]);
 	j+=2;
       }
     }

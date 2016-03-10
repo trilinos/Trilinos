@@ -60,12 +60,13 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database,
   std::string vector_name;
   assert(degrees_of_freedom == 1 || degrees_of_freedom == 2 || degrees_of_freedom == 3);
 
-  if (degrees_of_freedom == 1)
+  if (degrees_of_freedom == 1) {
     vector_name = SCALAR();
-  else if (degrees_of_freedom == 2)
+  } else if (degrees_of_freedom == 2) {
     vector_name = VECTOR_2D();
-  else if (degrees_of_freedom == 3)
+  } else if (degrees_of_freedom == 3) {
     vector_name = VECTOR_3D();
+}
   
   fields.add(Ioss::Field("mesh_model_coordinates",
 			 Ioss::Field::REAL, vector_name,
@@ -75,15 +76,17 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database,
   fields.add(Ioss::Field("mesh_model_coordinates_x",
 			 Ioss::Field::REAL, SCALAR(),
 			 Ioss::Field::MESH, node_count));
-  if (degrees_of_freedom > 1)
+  if (degrees_of_freedom > 1) {
     fields.add(Ioss::Field("mesh_model_coordinates_y",
 			   Ioss::Field::REAL, SCALAR(),
 			   Ioss::Field::MESH, node_count));
+}
 
-  if (degrees_of_freedom > 2)
+  if (degrees_of_freedom > 2) {
     fields.add(Ioss::Field("mesh_model_coordinates_z",
 			   Ioss::Field::REAL, SCALAR(),
 			   Ioss::Field::MESH, node_count));
+}
   
   fields.add(Ioss::Field("node_connectivity_status",
 			 Ioss::Field::CHARACTER, SCALAR(),
@@ -102,7 +105,7 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database,
 			 Ioss::Field::MESH, node_count));
 }
 
-Ioss::NodeBlock::~NodeBlock() {}
+Ioss::NodeBlock::~NodeBlock() = default;
 
 Ioss::Property
 Ioss::NodeBlock::get_implicit_property(const std::string& my_name) const

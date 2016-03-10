@@ -94,8 +94,9 @@ int ex_get_partial_one_attr( int   exoid,
 
   exerrval = 0; /* clear error code */
 
-  if (num_ent == 0)
+  if (num_ent == 0) {
     return 0;
+}
   /* Determine index of obj_id in vobjids array */
   if (obj_type != EX_NODAL) {
     obj_id_ndx = ex_id_lkup(exoid,obj_type,obj_id);
@@ -106,13 +107,13 @@ int ex_get_partial_one_attr( int   exoid,
 		ex_name_of_object(obj_type),obj_id,exoid);
 	ex_err("ex_get_partial_one_attr",errmsg,EX_NULLENTITY);
 	return (EX_WARN);              /* no attributes for this object */
-      } else {
+      } 
 	sprintf(errmsg,
 		"Warning: failed to locate %s id%"PRId64" in id array in file id %d",
 		ex_name_of_object(obj_type),obj_id, exoid);
 	ex_err("ex_get_partial_one_attr",errmsg,exerrval);
 	return (EX_WARN);
-      }
+      
     }
   }
 
@@ -172,8 +173,9 @@ int ex_get_partial_one_attr( int   exoid,
   }
 
   /* inquire id's of previously defined dimensions  */
-  if (ex_get_dimension(exoid, dnumobjent,"entries", &num_entries_this_obj, &temp, "ex_get_partial_one_attr") != NC_NOERR)
+  if (ex_get_dimension(exoid, dnumobjent,"entries", &num_entries_this_obj, &temp, "ex_get_partial_one_attr") != NC_NOERR) {
     return EX_FATAL;
+}
   
   if (start_num + num_ent -1 > num_entries_this_obj) {
     exerrval = EX_BADPARAM;
@@ -184,8 +186,9 @@ int ex_get_partial_one_attr( int   exoid,
     return (EX_FATAL);
   }
   
-  if (ex_get_dimension(exoid, dnumobjatt,"attributes", &num_attr, &temp, "ex_get_partial_one_attr") != NC_NOERR)
+  if (ex_get_dimension(exoid, dnumobjatt,"attributes", &num_attr, &temp, "ex_get_partial_one_attr") != NC_NOERR) {
     return EX_FATAL;
+}
 
   if (attrib_index < 1 || attrib_index > (int)num_attr) {
     exerrval = EX_FATAL;

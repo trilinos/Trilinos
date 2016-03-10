@@ -332,7 +332,7 @@ void run(const UserInputForTests &uinput,
     if (solution->haveSeparators() ) {
       
       std::ostringstream sol;
-      sol << "Number of column blocks: " << solution->getSepColBlockCount() << std::endl;
+      sol << "Number of column blocks: " << solution->getNumSeparatorBlocks() << std::endl;
       if (solution->getPermutationSize() < 100) {
         if (solution->havePerm()) {
           sol << "permutation: {";
@@ -346,15 +346,15 @@ void run(const UserInputForTests &uinput,
           sol << "}" << std::endl;
        }
         
-       if (solution->haveSepRange()) {
+       if (solution->haveSeparatorRange()) {
           sol << "separator range: {";
-          for (auto &x : solution->getSepRangeRCPConst()) sol << " " << x;
+          for (auto &x : solution->getSeparatorRangeRCPConst()) sol << " " << x;
           sol << "}" << std::endl;
        }
        
-        if (solution->haveSepTree()) { 
+        if (solution->haveSeparatorTree()) { 
           sol << "separator tree: {";
-          for (auto &x : solution->getSepTreeRCPConst()) sol << " " << x;
+          for (auto &x : solution->getSeparatorTreeRCPConst()) sol << " " << x;
           sol << "}" << std::endl;
         }
       }

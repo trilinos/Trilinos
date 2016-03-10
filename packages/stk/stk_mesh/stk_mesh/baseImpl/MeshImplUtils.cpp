@@ -218,12 +218,12 @@ void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const s
                 if(bulkData.is_valid(rel_entities[j]) && bulkData.state(rel_entities[j]) != Deleted)
                 {
                     bool relationDestoryed = bulkData.destroy_relation(rel_entities[j], entity, rel_ordinals[j]);
-                    ThrowRequireMsg(relationDestoryed==true, "Program error. Contact sierra-help@sandia.gov for support.");
+                    ThrowRequireWithSierraHelpMsg(relationDestoryed);
                 }
             }
         }
         bool successfully_destroyed = bulkData.destroy_entity(entity);
-        ThrowRequireMsg(successfully_destroyed==true, "Program error. Contact sierra-help@sandia.gov for support.");
+        ThrowRequireWithSierraHelpMsg(successfully_destroyed);
     }
 }
 
@@ -1030,7 +1030,7 @@ void move_unowned_entities_for_owner_to_ghost(
 
             stk::mesh::Entity const e = mesh.get_entity(entity_key);
 
-            ThrowRequireMsg(mesh.is_valid(e) && mesh.parallel_owner_rank(e) == myProcId, "Ghosting error. Contact sierra-help@sandia.gov for support.");
+            ThrowRequireWithSierraHelpMsg(mesh.is_valid(e) && mesh.parallel_owner_rank(e) == myProcId);
 
             if(myProcId != procToGhost)
             {

@@ -106,7 +106,7 @@ Ioss::Hex8::Hex8()
   Ioss::ElementTopology::alias("hex8", "Solid_Hex_8_3D");
 }
 
-Ioss::Hex8::~Hex8() {}
+Ioss::Hex8::~Hex8() = default;
 
 int Ioss::Hex8::parametric_dimension()           const {return  3;}
 int Ioss::Hex8::spatial_dimension()           const {return  3;}
@@ -138,8 +138,9 @@ Ioss::IntVector Ioss::Hex8::edge_connectivity(int edge_number) const
   assert(edge_number > 0 && edge_number <= Constants::nedge);
   Ioss::IntVector connectivity(Constants::nedgenode);
 
-  for (int i=0; i < Constants::nedgenode; i++)
+  for (int i=0; i < Constants::nedgenode; i++) {
     connectivity[i] = Constants::edge_node_order[edge_number-1][i];
+}
 
   return connectivity;
 }
@@ -149,8 +150,9 @@ Ioss::IntVector Ioss::Hex8::face_connectivity(int face_number) const
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(Constants::nodes_per_face[face_number]);
 
-  for (int i=0; i < Constants::nodes_per_face[face_number]; i++)
+  for (int i=0; i < Constants::nodes_per_face[face_number]; i++) {
     connectivity[i] = Constants::face_node_order[face_number-1][i];
+}
 
   return connectivity;
 }
@@ -158,8 +160,9 @@ Ioss::IntVector Ioss::Hex8::face_connectivity(int face_number) const
 Ioss::IntVector Ioss::Hex8::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 
@@ -191,8 +194,9 @@ Ioss::IntVector Ioss::Hex8::face_edge_connectivity(int face_number) const
   int nface_edge = number_edges_face(face_number);
   Ioss::IntVector fcon(nface_edge);
 
-  for (int i=0; i < nface_edge; i++)
+  for (int i=0; i < nface_edge; i++) {
     fcon[i] = Constants::face_edge_order[face_number-1][i];
+}
 
   return fcon;
 }

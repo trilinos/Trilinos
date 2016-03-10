@@ -93,10 +93,11 @@ int ex_get_side_set_node_list_len(int exoid,
 
   exerrval = 0; /* clear error code */
 
-    if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+    if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       *(int64_t*)side_set_node_list_len = 0; /* default value */
-    else
+    } else {
       *(int*)side_set_node_list_len = 0; /* default value */
+}
       
   /* first check if any side sets are specified */
   /* inquire how many side sets have been stored */
@@ -162,24 +163,27 @@ int ex_get_side_set_node_list_len(int exoid,
     return(EX_FATAL);
   }
 
-  if (tot_num_ss_elem == 0) /* NULL side set? */
+  if (tot_num_ss_elem == 0) { /* NULL side set? */
     return (EX_NOERR); /* return zero */
+}
 
   /* Minor optimization/kluge -- If num_df is nonzero, or 1 per face
      then assume that it matches the number of nodes in the sideset... */
   if (num_df > 0 && num_df != tot_num_ss_elem) {
-    if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+    if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       *(int64_t*)side_set_node_list_len = num_df;
-    else
+    } else {
       *(int*)side_set_node_list_len = num_df;
+}
     return(EX_NOERR);
   }
 
   /* Allocate space for the side set element list */
   {
     int int_size = sizeof(int);
-    if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+    if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       int_size = sizeof(int64_t);
+}
     if (!(side_set_elem_list=malloc(tot_num_ss_elem*int_size))) {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
@@ -230,12 +234,14 @@ int ex_get_side_set_node_list_len(int exoid,
 
   /* Sort side set element list into index array  - non-destructive */
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    for (i=0;i<tot_num_ss_elem;i++)
+    for (i=0;i<tot_num_ss_elem;i++) {
       ss_elem_ndx_64[i] = i; /* init index array to current position */
+}
     ex_iqsort64(side_set_elem_list, ss_elem_ndx_64,tot_num_ss_elem);
   } else {
-    for (i=0;i<tot_num_ss_elem;i++)
+    for (i=0;i<tot_num_ss_elem;i++) {
       ss_elem_ndx[i] = i; /* init index array to current position */
+}
     ex_iqsort(side_set_elem_list, ss_elem_ndx,tot_num_ss_elem);
   }
 
@@ -313,9 +319,11 @@ int ex_get_side_set_node_list_len(int exoid,
 
     for (j=0; j<num_elem_blks; j++)
     {
-      if (elem_blk_parms[j].elem_type_val != EX_EL_NULL_ELEMENT)
-        if (elem <= elem_blk_parms[j].elem_ctr)
+      if (elem_blk_parms[j].elem_type_val != EX_EL_NULL_ELEMENT) {
+        if (elem <= elem_blk_parms[j].elem_ctr) {
           break; /* stop because we found the parameters for this element */
+}
+}
     }
     if (j >= num_elem_blks)
     {
@@ -330,10 +338,11 @@ int ex_get_side_set_node_list_len(int exoid,
     list_len += elem_blk_parms[j].num_nodes_per_side[side-1];
   }
 
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     *(int64_t*)side_set_node_list_len = list_len;
-  else
+  } else {
     *(int*)side_set_node_list_len = list_len;
+}
 
   /* All done: release element block ids array,
      element block parameters array, and side set element index array */

@@ -156,10 +156,10 @@ int main(int argc, char *argv[]) {
     M.SetFactory("A", AcFact);
 
     if (optRecyclingRAPpattern) {
-      H.Keep("RAP Pattern", AcFact.get());
+      H.Keep("RAP graph", AcFact.get());
     }
     if (optRecyclingAPpattern) {
-      H.Keep("AP Pattern", AcFact.get());
+      H.Keep("AP graph", AcFact.get());
     }
     //
 
@@ -226,10 +226,10 @@ int main(int argc, char *argv[]) {
       H.Delete("P",           M.GetFactory("Ptent").get());
     }
     if (optRecyclingRAPpattern) {
-      H.Delete("RAP Pattern", M.GetFactory("A").get());
+      H.Delete("RAP graph", M.GetFactory("A").get());
     }
     if (optRecyclingAPpattern) {
-      H.Delete("AP Pattern", M.GetFactory("A").get());
+      H.Delete("AP graph", M.GetFactory("A").get());
     }
 
     std::cout << "Status of the preconditioner at the end:" << std::endl;

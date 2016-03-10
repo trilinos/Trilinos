@@ -149,7 +149,7 @@ namespace {
    */
    
   template <typename INT>
-  INT gds_median3(INT v[], size_t left, size_t right)
+  size_t gds_median3(INT v[], size_t left, size_t right)
   {
     size_t center;
     center = (left + right) / 2;

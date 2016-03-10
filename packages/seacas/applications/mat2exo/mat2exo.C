@@ -68,6 +68,9 @@
 #include <assert.h>
 #include "add_to_log.h"                 // for add_to_log
 #include "matio.h"                      // for matvar_t, Mat_VarFree, etc
+#if MATIO_VERSION < 151
+#error "MatIO Version 1.5.1 or greater is required"
+#endif
 
 /**********************************************************************/
 #if __cplusplus > 199711L
@@ -192,12 +195,12 @@ int main (int argc, char *argv[]) {
     ex_put_coord(exo_file, TOPTR(x), TOPTR(y), TOPTR(z));
   }
 
-  std::vector<int> ids;
 
   /* side sets */
   std::vector<int> num_sideset_sides(num_side_sets);
   if(num_side_sets > 0) {
 
+    std::vector<int> ids;
     matGetInt("ssids",num_side_sets, 1, ids);
     matGetInt("nsssides",num_side_sets,1,num_sideset_sides);
     std::vector<int> nssdfac(num_side_sets);
@@ -229,6 +232,7 @@ int main (int argc, char *argv[]) {
   std::vector<int> num_nodeset_nodes;
   if(num_node_sets > 0) {
 
+    std::vector<int> ids;
     matGetInt("nsids",num_node_sets, 1, ids);
     matGetInt("nnsnodes",num_node_sets,1,num_nodeset_nodes);
     std::vector<int> nnsdfac;
@@ -253,29 +257,32 @@ int main (int argc, char *argv[]) {
 
 
   /* element blocks */
-  matGetInt("blkids",num_blocks,1, ids);
-
-  /* get elem block types */
-  char *blknames = (char *) calloc(num_blocks*(MAX_STR_LENGTH+1),sizeof(char));
-  matGetStr("blknames",blknames);
   std::vector<int> num_elem_in_block(num_blocks);
-  std::vector<int> connect;
-  char *curr = blknames;
-  curr = strtok(curr,"\n");
-  for (int i=0; i<num_blocks; i++) {
-    char name[32];
+  {
+    std::vector<int> ids;
+    matGetInt("blkids",num_blocks,1, ids);
 
-    sprintf(name,"blk%02d",i+1);
-    int num_node_per_elem = matArrNRow(name);
-    num_elem_in_block[i]  = matArrNCol(name);
-    matGetInt(name,num_node_per_elem, num_elem_in_block[i],connect);
+    /* get elem block types */
+    char *blknames = (char *) calloc(num_blocks*(MAX_STR_LENGTH+1),sizeof(char));
+    matGetStr("blknames",blknames);
+    std::vector<int> connect;
+    char *curr = blknames;
+    curr = strtok(curr,"\n");
+    for (int i=0; i<num_blocks; i++) {
+      char name[32];
 
-    ex_put_block(exo_file, EX_ELEM_BLOCK, ids[i], curr,
-                 num_elem_in_block[i], num_node_per_elem, 0, 0, 0);
-    ex_put_conn(exo_file,EX_ELEM_BLOCK,ids[i], TOPTR(connect),nullptr,nullptr);
-    curr = strtok(nullptr, "\n");
+      sprintf(name,"blk%02d",i+1);
+      int num_node_per_elem = matArrNRow(name);
+      num_elem_in_block[i]  = matArrNCol(name);
+      matGetInt(name,num_node_per_elem, num_elem_in_block[i],connect);
+      
+      ex_put_block(exo_file, EX_ELEM_BLOCK, ids[i], curr,
+		   num_elem_in_block[i], num_node_per_elem, 0, 0, 0);
+      ex_put_conn(exo_file,EX_ELEM_BLOCK,ids[i], TOPTR(connect),nullptr,nullptr);
+      curr = strtok(nullptr, "\n");
+    }
+    free(blknames);
   }
-  free(blknames);
 
   /* time values */
   if (num_time_steps > 0) {
@@ -320,6 +327,7 @@ int main (int argc, char *argv[]) {
 
   /* element variables */
   if (num_element_vars > 0) {
+    std::vector<int> ids;
     matGetInt("blkids",num_blocks,1, ids);
     get_put_names(exo_file, EX_ELEM_BLOCK, num_element_vars, "enames");
 
@@ -329,6 +337,7 @@ int main (int argc, char *argv[]) {
 
   /* nodeset variables */
   if (num_nodeset_vars > 0) {
+    std::vector<int> ids;
     matGetInt("nsids",num_node_sets, 1, ids);
     get_put_names(exo_file, EX_NODE_SET, num_nodeset_vars, "nsnames");
 
@@ -338,6 +347,7 @@ int main (int argc, char *argv[]) {
 
   /* sideset variables */
   if (num_sideset_vars > 0) {
+    std::vector<int> ids;
     matGetInt("ssids",num_side_sets, 1, ids);
     get_put_names(exo_file, EX_SIDE_SET, num_sideset_vars, "ssnames");
 
@@ -346,12 +356,18 @@ int main (int argc, char *argv[]) {
   }
 
   /* node and element number maps */
-  if ( !matGetInt("node_num_map",num_nodes,1, ids)) {
-    ex_put_node_num_map(exo_file,TOPTR(ids));
+  {
+    std::vector<int> ids;
+    if ( !matGetInt("node_num_map",num_nodes,1, ids)) {
+      ex_put_node_num_map(exo_file,TOPTR(ids));
+    }
   }
 
-  if ( !matGetInt("elem_num_map",num_elements,1,ids)) {
-    ex_put_elem_num_map(exo_file,TOPTR(ids));
+  {
+    std::vector<int> ids;
+    if ( !matGetInt("elem_num_map",num_elements,1,ids)) {
+      ex_put_elem_num_map(exo_file,TOPTR(ids));
+    }
   }
 
   ex_close(exo_file);

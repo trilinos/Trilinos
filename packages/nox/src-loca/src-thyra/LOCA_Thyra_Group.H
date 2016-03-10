@@ -79,7 +79,8 @@ namespace LOCA {
         const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
         const LOCA::ParameterVector& p,
         int p_index,
-        bool implement_dfdp = false);
+        bool implement_dfdp = false,
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
 
       /*!
        * \brief Copy constructor. If type is DeepCopy, takes ownership of
@@ -257,6 +258,12 @@ namespace LOCA {
 
       //! Whether we should implement df/dp, or use DerivUtils
       bool implement_dfdp;
+
+      /** \brief Optional weighting vector for function scaling
+
+           This is pulled out of the initial guess vector
+      */
+      Teuchos::RCP<const ::Thyra::VectorBase<double> > weight_vec_;
 
 
     private:

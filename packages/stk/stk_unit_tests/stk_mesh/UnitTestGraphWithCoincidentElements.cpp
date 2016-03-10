@@ -57,11 +57,11 @@ void expect_num_edges_remaining_per_element(const stk::mesh::Graph &graph, const
 void expect_coincident_elements_edges_were_extracted(stk::mesh::impl::SparseGraph &extractedCoincidentElements,
                                                      const stk::mesh::impl::CoincidentElementDescription &elemDesc)
 {
-    EXPECT_EQ(2u, extractedCoincidentElements.size());
+    EXPECT_EQ(2u, extractedCoincidentElements.get_num_elements_in_graph());
     for(int side = 0; side < elemDesc.numSides; side++)
     {
-        EXPECT_EQ(stk::mesh::GraphEdge(elemDesc.elem1, side, elemDesc.elem2, side), extractedCoincidentElements[elemDesc.elem1][side]);
-        EXPECT_EQ(stk::mesh::GraphEdge(elemDesc.elem2, side, elemDesc.elem1, side), extractedCoincidentElements[elemDesc.elem2][side]);
+        EXPECT_EQ(stk::mesh::GraphEdge(elemDesc.elem1, side, elemDesc.elem2, side), extractedCoincidentElements.get_edges_for_element(elemDesc.elem1)[side]);
+        EXPECT_EQ(stk::mesh::GraphEdge(elemDesc.elem2, side, elemDesc.elem1, side), extractedCoincidentElements.get_edges_for_element(elemDesc.elem2)[side]);
     }
 }
 
@@ -70,7 +70,8 @@ void test_extracting_coincident_hex8s(stk::mesh::Graph &graph, const std::vector
     std::vector<stk::topology> topologies = {stk::topology::HEX_8, stk::topology::HEX_8};
     stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
     stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
-    stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
+    stk::mesh::impl::SparseGraph extractedCoincidentElements;
+    extractor.extract_coincident_sides(extractedCoincidentElements);
 
     expect_num_edges_remaining_per_element(graph, {0u, 0u});
     expect_coincident_elements_edges_were_extracted(extractedCoincidentElements, elemDescs[0]);
@@ -97,7 +98,8 @@ void test_extracting_coincident_hex8s_with_adjacent_hex(stk::mesh::Graph &graph)
     std::vector<stk::topology> topologies = {stk::topology::HEX_8, stk::topology::HEX_8, stk::topology::HEX_8};
     stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
     stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
-    stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
+    stk::mesh::impl::SparseGraph extractedCoincidentElements;
+    extractor.extract_coincident_sides(extractedCoincidentElements);
     expect_coincident_edges_removed_others_remain(graph, extractedCoincidentElements);
 }
 
@@ -116,7 +118,7 @@ void add_remote_edge_to_graph(stk::mesh::Graph &graph,
                               stk::mesh::EntityId chosenFaceId)
 {
     graph.add_edge(graphEdge);
-    stk::mesh::impl::parallel_info parInfo(otherProc, 0, chosenFaceId, stk::topology::HEX_8, true);
+    stk::mesh::impl::ParallelInfo parInfo(otherProc, 0, chosenFaceId, stk::topology::HEX_8, true);
     parallelInfoForGraphEdges.insert_parallel_info_for_graph_edge(graphEdge, parInfo);
 }
 
@@ -171,7 +173,7 @@ void expect_chosen_side_id_for_graph_edge(const stk::mesh::ParallelInfoForGraphE
                                           const stk::mesh::GraphEdge &graphEdge,
                                           stk::mesh::EntityId expectedChosenSideId)
 {
-    const stk::mesh::impl::parallel_info &parInfo =
+    const stk::mesh::impl::ParallelInfo &parInfo =
             parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge);
     EXPECT_EQ(expectedChosenSideId, parInfo.m_chosen_side_id);
 }
@@ -189,7 +191,8 @@ TEST(CoincidentElements, CorrectFaceId)
         //MockCoincidenceDetector detector;
         stk::mesh::impl::FullyCoincidentElementDetector detector(graph, topologies);
         stk::mesh::impl::CoincidentSideExtractor extractor(graph, topologies, detector);
-        stk::mesh::impl::SparseGraph extractedCoincidentElements = extractor.extract_coincident_sides();
+        stk::mesh::impl::SparseGraph extractedCoincidentElements;
+        extractor.extract_coincident_sides(extractedCoincidentElements);
 
         std::vector<stk::mesh::EntityId> globalIds = {1, 2};
         if(stk::parallel_machine_rank(comm) == 1)

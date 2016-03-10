@@ -37,6 +37,8 @@
 #include <map>                          // for map, map<>::value_compare
 #include <string>                       // for string
 #include <vector>                       // for vector
+#include <Ioss_CodeTypes.h>
+
 namespace Ioss { class Field; }
 namespace Ioss { class VariableType; }
 namespace Iotr { class Factory; }
@@ -68,18 +70,14 @@ namespace Ioss {
 }
 
 namespace Iotr {
-
-
-  typedef std::vector<std::string> NameList;
-  typedef std::map<std::string, Factory*, std::less<std::string> > FactoryMap;
-  typedef FactoryMap::value_type FactoryValuePair;
+  using FactoryMap = std::map<std::string, Factory*, std::less<std::string>>;
 
   class Factory {
   public:
-    virtual ~Factory() {};
+    virtual ~Factory() = default;
     static Ioss::Transform* create(const std::string& type);
 
-    static int describe(NameList *names);
+    static int describe(Ioss::NameList *names);
 
   protected:
     explicit Factory(const std::string& type);

@@ -103,7 +103,7 @@ defaults = [
   \"--st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST\",
   \"--disable-packages=$DISABLE_PACKAGES\",
   \"--skip-case-no-email\",
-  \"--ctest-options=\\\"-E '(MueLu_ParameterListInterpreterEpetra|MueLu_ParameterListInterpreterTpetra)'\\\"\",
+  \"--ctest-options=-E '(MueLu_ParameterListInterpreterEpetra|MueLu_ParameterListInterpreterTpetra|Belos_pseudo_ptfqmr_hb_1_MPI_4|Belos_pseudo_ptfqmr_hb_3_MPI_4)'\",
   ]
   " > $_LOCAL_CHECKIN_TEST_DEFAULTS
 fi
@@ -121,8 +121,3 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 # NOTE: By default we use 16 processes which is 1/2 of the 32 processes on a
 # fissile 4 machine.  This way two people can build and test without taxing
 # the machine too much.
-
-# Here is the template for excluding tests that can be aded to
-# checkin-test.py call above
-#
-#   --ctest-options="-E '(Test1|Test2)'" \

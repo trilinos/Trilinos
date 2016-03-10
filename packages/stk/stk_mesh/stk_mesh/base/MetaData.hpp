@@ -612,7 +612,6 @@ private:
   std::vector<shards::CellTopologyManagedData*> m_created_topologies;
 
   unsigned m_spatial_dimension;
-  EntityRank m_side_rank;
 
   std::vector<PartFieldBase*> m_part_fields;
 

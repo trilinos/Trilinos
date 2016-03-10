@@ -59,3 +59,6 @@
 
 /* Define if Belos is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_BELOS
+
+/* Define if TASMANIAN TPL is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_TASMANIAN

@@ -144,7 +144,8 @@ int ex_put_loadbal_param(int   exoid,
   }
 
   /* Output the file version */
-  if ((status=ex_put_nemesis_version(exoid)) < 0) return (status);
+  if ((status=ex_put_nemesis_version(exoid)) < 0) { return (status);
+}
 
   /* Define the status variables for the nodal vectors */
   if (nc_inq_varid(exoid, VAR_INT_N_STAT, &varid) != NC_NOERR) {
@@ -518,8 +519,9 @@ int ex_put_loadbal_param(int   exoid,
   } /* End "if (num_elem_cmaps > 0)" */
 
   /* Leave define mode */
-  if (ex_leavedef(exoid, func_name) != EX_NOERR)
+  if (ex_leavedef(exoid, func_name) != EX_NOERR) {
     return (EX_FATAL);
+}
 
   /*
   ** Set up status vector for internal node map

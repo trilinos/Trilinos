@@ -2,200 +2,101 @@
 #define _ZOLTAN2_MACHINEREPRESENTATION_HPP_
 
 #include <Teuchos_Comm.hpp>
-#include <Teuchos_CommHelpers.hpp>
+#include <Zoltan2_MachineForTesting.hpp>
+#include <Zoltan2_MachineTopoMgr.hpp>
 namespace Zoltan2{
 
 /*! \brief MachineRepresentation Class
- * Finds the coordinate of the processor.
- * Used to find the processor coordinates or graph.
+ *  Base class for representing machine coordinates, networks, etc.
  */
-template <typename pcoord_t>
+template <typename pcoord_t, typename part_t>
 class MachineRepresentation{
 
-private:
-    int networkDim;
-    int numProcs;
-
-    pcoord_t **procCoords;   // KDD Maybe should be RCP?  But we do clean it up in destructor
-    const RCP<const Comm<int> > comm;  // KDD Do we need to keep the communicator? 
-                                       // KDD Maybe just keep myRank?  Or maybe MPI_Proc_name?
-
 public:
-    /*! \brief Constructor MachineRepresentation Class
-     *  \param comm_ Communication object.
-     */
 
-    // KDD Do we really need separate constructors for "const Comm" and "Comm"?  Easier to 
-    // KDD maintain one constructor
-    // KDD If don't store the communicator, arg can be "const Comm<int> &comm".
-
-    MachineRepresentation(const RCP<const Comm<int> > &comm_):
-      networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(comm_){
-        // WIll need this constructor to be specific to RAAMP (MD).
-        // Will need a default constructor using, e.g., GeometricGenerator
-        // or nothing at all, for when RAAMP is not available as TPL.
-        //
-        // (AG) In addition, need to be able to run without special
-        // privileges in system (e.g., on hopper).
-        // Notes:  For now, all cores connected to same NIC will get the
-        // same coordinates; later, we could add extra coordinate dimensions
-        // to represent nodes or dies (using hwloc info through RAAMP
-        // data object).
-
-        // (MD) will modify mapping test to use machine representation
-        // #ifdef HAVE_ZOLTAN2_OVIS
-
-        // Call initializer for RAAMP data object (AG)
-
-        //get network dimension.
-        //TODO change.
-        // Call RAAMP Data Object to get the network dimension (AG)
-        networkDim = 3;
-
-        //allocate memory for processor coordinates.
-        procCoords = new pcoord_t *[networkDim];
-        for (int i = 0; i < networkDim; ++i){
-            procCoords[i] = new pcoord_t [numProcs];
-            memset (procCoords[i], 0, sizeof(pcoord_t) * numProcs);
-        }
-        //obtain the coordinate of the processor.
-        this->getMyCoordinate(/*pcoord_t &xyz[networkDim]*/);
-        // copy xyz into appropriate spot in procCoords. (MD)  // KDD I agree with this
-
-        //reduceAll the coordinates of each processor.
-        this->gatherMachineCoordinates();
-    }
-
+#if defined(HAVE_ZOLTAN2_LDMS)
+    typedef MachineLDMS<pcoord_t,part_t> machine_t;
+#elif defined(HAVE_ZOLTAN2_RCA)
+    typedef MachineRCA<pcoord_t,part_t> machine_t;
+#elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
+    typedef MachineTopoMgr<pcoord_t,part_t> machine_t;
+#else
+    typedef MachineForTesting<pcoord_t,part_t> machine_t;
+#endif
 
     /*! \brief Constructor MachineRepresentation Class
      *  \param comm_ Communication object.
      */
-    MachineRepresentation(const RCP<Comm<int> > &comm_):
-        networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(comm_){
-        // WIll need this constructor to be specific to RAAMP (MD).
-        // Will need a default constructor using, e.g., GeometricGenerator
-        // or nothing at all, for when RAAMP is not available as TPL.
-        //
-        // (AG) In addition, need to be able to run without special
-        // privileges in system (e.g., on hopper).  
-        // Notes:  For now, all cores connected to same NIC will get the
-        // same coordinates; later, we could add extra coordinate dimensions
-        // to represent nodes or dies (using hwloc info through RAAMP
-        // data object).
 
-        // (MD) will modify mapping test to use machine representation
-        // #ifdef HAVE_ZOLTAN2_OVIS
+    MachineRepresentation(const Teuchos::Comm<int> &comm) :
+      machine(new machine_t(comm)) { }
 
-        // Call initializer for RAAMP data object (AG)
+    ~MachineRepresentation() {delete machine;}
 
-        //get network dimension.
-        //TODO change.
-        // Call RAAMP Data Object to get the network dimension (AG)
-        networkDim = 3;
+    // Interface functions follow.
+    // They are just wrappers around the specific machine's functions.
 
-        //allocate memory for processor coordinates.
-        procCoords = new pcoord_t *[networkDim];
-        for (int i = 0; i < networkDim; ++i){
-            procCoords[i] = new pcoord_t [numProcs];
-            memset (procCoords[i], 0, sizeof(pcoord_t) * numProcs);
-        }
-        //obtain the coordinate of the processor.
-        this->getMyCoordinate(/*pcoord_t &xyz[networkDim]*/);
-        // copy xyz into appropriate spot in procCoords. (MD)  // KDD I Agree.
-
-        //reduceAll the coordinates of each processor.
-        this->gatherMachineCoordinates();
+    /*! \brief indicates whether or not the machine has coordinates
+     */
+    inline bool hasMachineCoordinates() const { 
+      return machine->hasMachineCoordinates();
     }
 
+    /*! \brief returns the dimension (number of coords per node) in the machine
+     */
+    inline int getMachineDim() const { return machine->getMachineDim(); }
+
+    /*! \brief sets the number of unique coordinates in each machine dimension
+     *  return true if coordinates are available
+     */
+    inline bool getMachineExtent(int *nxyz) const { 
+      return machine->getMachineExtent(nxyz);
+    }
 
     /*! \brief getMyCoordinate function
-     *  stores the coordinate of the current processor in procCoords[*][rank]
+     *  set the machine coordinate xyz of the current process
+     *  return true if current process' coordinates are available
      */
-    void getMyCoordinate(/* pcoord_t &xyz[networkDim]*/){  // KDD Enable the argument rather
-                                                           // KDD than writing into array here
-
-        // Call RAAMP system to get coordinates and store in xyz (MD)
-        // What is the RAAMP call?  (AG)
-        // AG will return a view (pointer) to RAAMP's data.
-        // We will copy it into xyz.
-
-//KDD #if defined(HAVE_ZOLTAN2_LDMS)
-//KDD #elif defined(HAVE_ZOLTAN2_TOPOMGR)
-//KDD #elif defined(HAVE_ZOLTAN2_RCA)
-//KDD #else
-
-        // The code below may be good for the default constructor, perhaps,
-        // but it should copy the data into xyz instead of the procCoords.
-        int myRank = comm->getRank();
-
-        int slice = int (pow( double(numProcs), double(1.0 / networkDim)) + 0.5 );
-
-        int m = myRank;
-        for (int i = 0; i < networkDim; ++i){
-            procCoords[i][myRank] = m / int(pow(slice, double(networkDim - i - 1)));
-            m = m % int(pow(double(slice), double(networkDim - i - 1)));
-        }
-//KDD #endif
+    inline bool getMyMachineCoordinate(pcoord_t *xyz) const { 
+      return machine->getMyMachineCoordinate(xyz);
     }
 
-    // KDD Need to return coordinate of any rank?
-    // void getCoordinate(partId_t rank, pcoord_t &xyz[networkDim]) { }
-
-    /*! \brief gatherMachineCoordinates function
-     *  reduces and stores all machine coordinates.
+    /*! \brief getCoordinate function
+     *  set the machine coordinate xyz of any rank process
+     *  return true if coordinates are available by rank
      */
-    void gatherMachineCoordinates(){  // KDD Should be private
-        pcoord_t *tmpVect = new pcoord_t [numProcs];
-
-        for (int i = 0; i < networkDim; ++i){
-            reduceAll<int, pcoord_t>(
-                    *comm,
-                    Teuchos::REDUCE_SUM,
-                    numProcs,
-                    procCoords[i],
-                    tmpVect);
-            pcoord_t *tmp = tmpVect;
-            tmpVect = procCoords[i];
-            procCoords[i] = tmp;
-        }
-        delete [] tmpVect;
+    inline bool getMachineCoordinate(const part_t rank,
+                                     pcoord_t *xyz) const {
+      return machine->getMachineCoordinate(rank, xyz);
     }
 
-    /*! \brief destructor of the class
-     * free memory in procCoords.
+    /*! \brief getCoordinate function
+     *  set the machine coordinate xyz of any node by nodename
+     *  return true if coordinates are available by nodename
      */
-    ~MachineRepresentation() {
-        for (int i = 0; i < networkDim; ++i){
-            delete [] procCoords[i];
-        }
-        delete [] procCoords;
-        // Free/release THE RAAMP Data Object.
-        // Deinitialize/finalize/whatever (AG)
+    inline bool getMachineCoordinate(const char *nodename,
+                                     pcoord_t *xyz) const {
+      return machine->getMachineCoordinate(nodename, xyz);
     }
 
     /*! \brief getProcDim function
-     * returns the dimension of the physical processor layout.
+     *  set the coordinates of all ranks 
+     *  allCoords[i][j], i=0,...,getMachineDim(), j=0,...,getNumRanks(),
+     *  is the i-th dimensional coordinate for rank j.
+     *  return true if coordinates are available for all ranks
      */
-    int getProcDim() const{  // KDD Maybe getNetworkDim or getProcCoordDim
-        return networkDim;
+    inline bool getAllMachineCoordinatesView(pcoord_t **&allCoords) const { 
+      return machine->getAllMachineCoordinatesView(allCoords);
     }
 
-    /*! \brief getProcDim function
-     * returns the coordinates of processors in two dimensional array.
+    /*! \brief return the number of ranks.
      */
-    pcoord_t** getProcCoords() const{  // KDD Make clear that returning a View; maybe return ArrayView
-        return procCoords;
-    }
+    inline int getNumRanks() const { return machine->getNumRanks(); }
 
-    /*! \brief getNumProcs function
-     * returns the number of processors.
-     */
-    int getNumProcs() const{
-        return numProcs;
-    }
+    // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
 
-    // KDD TODO:  Need more for full LDMS interface.
-
+private:
+    machine_t *machine;
 };
 }
 #endif

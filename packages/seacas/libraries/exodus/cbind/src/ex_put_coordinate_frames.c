@@ -75,14 +75,17 @@ int ex_put_coordinate_frames( int exoid,
   int i;                           /* general indices */
   int int_type;
   
-  if ( exoid < 0 )
+  if ( exoid < 0 ) {
     return exoid;
+}
 
-  if ( nframes == 0 ) /* write nothing */
+  if ( nframes == 0 ) { /* write nothing */
     return (EX_NOERR);
+}
 
-  if ( nframes<0 )
+  if ( nframes<0 ) {
     return 1;
+}
 
   assert( cf_ids!=0 );
   assert( pt_coordinates !=0 );
@@ -138,13 +141,14 @@ int ex_put_coordinate_frames( int exoid,
 
   /* check variables consistency */
   exerrval = EX_NOERR;
-  for (i=0;i<nframes;i++)
+  for (i=0;i<nframes;i++) {
     if ( strchr("RrCcSs",tags[i])==0 ){
       sprintf(errmsg,"Warning: Unrecognized coordinate frame tag: '%c'.",
 	      tags[i]);
       exerrval=2;
       ex_err(PROCNAME,errmsg,exerrval);
     }
+}
   /* could also check vectors. Leave this up to the application */
 
   /* put the variables into the file */

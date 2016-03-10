@@ -100,7 +100,11 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   }
 
   const NOX::Thyra::Vector initialGuess(*model->getNominalValues().get_x());
-  group_ = Teuchos::rcp(new LOCA::Thyra::Group(globalData_, initialGuess, model, paramVector_, l));
+  // FIXME: set scaling_vector_ = absolute value of row sum (from NOX_PrePostOperator_RowSumScaling.C)
+  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_ = Thyra::createMember(*model->get_x_space());
+  Thyra::assign(scaling_vector_.ptr(),1.0);
+
+  group_ = Teuchos::rcp(new LOCA::Thyra::Group(globalData_, initialGuess, model, paramVector_, l, false, scaling_vector_));
   group_->setSaveDataStrategy(saveDataStrategy_);
 
   // TODO: Create non-trivial stopping criterion for the stepper

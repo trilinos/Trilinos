@@ -154,8 +154,9 @@ int main(int argc, char *argv[])
 
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
-  if (ind != std::string::npos)
+  if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
+}
 
   Ioss::Init::Initializer io;
 #ifndef NO_XDMF_SUPPORT
@@ -256,8 +257,9 @@ namespace {
   
     dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
     dbi->set_field_separator(interface.field_suffix_separator());
-    if (interface.ints_64_bit())
+    if (interface.ints_64_bit()) {
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
+    }
     
     if (!interface.groupname().empty()) {
       bool success = dbi->open_group(interface.groupname());
@@ -296,7 +298,7 @@ namespace {
              << "    Maximum time = " << state_time_max.second << " at step " << state_time_max.first << "\n\n";
     }
 
-    if (!interface.summary()) {
+    if (interface.summary() == 0) {
       summary = false;
       info_properties(&region);
       info_nodeblock(region,    interface, summary);
@@ -357,9 +359,10 @@ namespace {
               }
             }
           }
-          if (header)
+          if (header) {
             OUTPUT << "\n";
-        }
+        
+	  }}
         info_aliases(region, nb, false, true);
         info_fields(nb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
         info_fields(nb, Ioss::Field::TRANSIENT, "\tTransient: ");
@@ -680,17 +683,20 @@ namespace {
   {
     std::vector<std::string> aliases;
     if (region.get_aliases(ige->name(), aliases) > 0) {
-      if (nl_pre)
+      if (nl_pre) {
         OUTPUT << "\n";
-      OUTPUT << "\tAliases: ";
+      
+      }OUTPUT << "\tAliases: ";
       for (size_t i=0; i < aliases.size(); i++) {
-        if (i > 0)
+        if (i > 0) {
           OUTPUT << ", ";
-        OUTPUT << aliases[i];
+        
+	}OUTPUT << aliases[i];
       }
-      if (nl_post)
+      if (nl_post) {
         OUTPUT << "\n";
-    }
+    
+      }}
   }
 
   void info_fields(Ioss::GroupingEntity *ige,
@@ -700,8 +706,9 @@ namespace {
     Ioss::NameList fields;
     ige->field_describe(role, &fields);
 
-    if (fields.empty())
+    if (fields.empty()) {
       return;
+    }
     
     if (!header.empty()) {
       OUTPUT << header;

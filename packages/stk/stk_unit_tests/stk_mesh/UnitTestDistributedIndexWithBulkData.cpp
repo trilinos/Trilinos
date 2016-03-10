@@ -54,7 +54,7 @@ public:
 
 
 
-void updateDistributedIndexUsingStkMesh(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData, stk::parallel::DistributedIndex& distributedIndex)
+void updateDistributedIndexUsingStkMesh(stk::unit_test_util::BulkDataTester &stkMeshBulkData, stk::parallel::DistributedIndex& distributedIndex)
 {
     stk::parallel::DistributedIndex::KeyTypeVector local_created_or_modified; // only store locally owned/shared entities
 
@@ -103,7 +103,7 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::impl::convert_entity_keys_to_spans(stkMeshMetaData);
         DistributedIndexTester distributedIndex(communicator, spans);
@@ -307,7 +307,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
         const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         int sharedNodeIds[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18 };
 
@@ -399,7 +399,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
     }
 }
 
-void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::unit_test::BulkDataTester &stkMeshBulkData)
+void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::unit_test_util::BulkDataTester &stkMeshBulkData)
 {
     int sharedNodeIds[] = { 19, 20, 21, 22, 23, 24, 25, 26, 27 };
 
@@ -434,7 +434,7 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -507,7 +507,7 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -575,7 +575,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -663,7 +663,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -755,7 +755,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -835,7 +835,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
     }
 }
 
-void testReceivingProcHasOneNodeGhosted(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testReceivingProcHasOneNodeGhosted(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int owningProc)
@@ -855,7 +855,7 @@ void testReceivingProcHasOneNodeGhosted(stk::mesh::unit_test::BulkDataTester &st
     EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
 }
 
-void testOwningProcHasOneNodeGhosted(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testOwningProcHasOneNodeGhosted(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int ghostReceivingProc)
@@ -871,7 +871,7 @@ void testOwningProcHasOneNodeGhosted(stk::mesh::unit_test::BulkDataTester &stkMe
     EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
 }
 
-void testReceivingProcHasNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testReceivingProcHasNoGhosts(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int owningProc)
@@ -880,7 +880,7 @@ void testReceivingProcHasNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshB
     EXPECT_FALSE(stkMeshBulkData.is_valid(ghostedNode));
 }
 
-void testOwningProcHasNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testOwningProcHasNoGhosts(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int ghostReceivingProc)
@@ -891,7 +891,7 @@ void testOwningProcHasNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshBulk
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
 }
 
-void testReceivingProcAfterOneGhostingDestroyed(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testReceivingProcAfterOneGhostingDestroyed(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int owningProc)
@@ -908,7 +908,7 @@ void testReceivingProcAfterOneGhostingDestroyed(stk::mesh::unit_test::BulkDataTe
     EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
 }
 
-void testOwningProcAfterOneGhostingDestroyed(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testOwningProcAfterOneGhostingDestroyed(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int ghostReceivingProc)
@@ -921,7 +921,7 @@ void testOwningProcAfterOneGhostingDestroyed(stk::mesh::unit_test::BulkDataTeste
     EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
 }
 
-void testOneNodeGhostedTwice(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testOneNodeGhostedTwice(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                         stk::mesh::Ghosting &ghosting1,
                         stk::mesh::Ghosting &ghosting2,
                         int nodeIdToGhost,
@@ -939,7 +939,7 @@ void testOneNodeGhostedTwice(stk::mesh::unit_test::BulkDataTester &stkMeshBulkDa
     }
 }
 
-void testNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testNoGhosts(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                         stk::mesh::Ghosting &ghosting1,
                         stk::mesh::Ghosting &ghosting2,
                         int nodeIdToGhost,
@@ -957,7 +957,7 @@ void testNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
     }
 }
 
-void testOneGhostingDestroyed(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
+void testOneGhostingDestroyed(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
                         stk::mesh::Ghosting &ghosting1,
                         stk::mesh::Ghosting &ghosting2,
                         int nodeIdToGhost,
@@ -990,7 +990,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
         int ghostReceivingProc = 1;
         int nodeIdToGhost = 2;
 
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         stkMeshBulkData.modification_begin();
         stk::mesh::Ghosting &ghosting1 = stkMeshBulkData.create_ghosting("Ghosting For Algorithm 1");
@@ -1036,7 +1036,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
         int ghostReceivingProc = 1;
         int nodeIdToGhost = 2;
 
-        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         stkMeshBulkData.modification_begin();
         stk::mesh::Ghosting &ghosting1 = stkMeshBulkData.create_ghosting("Ghosting For Algorithm 1");

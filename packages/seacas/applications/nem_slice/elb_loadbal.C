@@ -42,13 +42,13 @@
  *	elemental_dist()
  *	ilog2i()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-#include <assert.h>                     // for assert
-#include <float.h>                      // for FLT_MAX
-#include <limits.h>                     // for INT_MAX
-#include <math.h>           /* Needed for ZPINCH_assign */
-#include <stdio.h>                      // for printf, nullptr, fprintf, etc
-#include <stdlib.h>                     // for malloc, free, realloc, exit, etc
-#include <string.h>                     // for strcat, strcpy
+#include <cassert>                     // for assert
+#include <cfloat>                      // for FLT_MAX
+#include <climits>                     // for INT_MAX
+#include <cmath>           /* Needed for ZPINCH_assign */
+#include <cstdio>                      // for printf, nullptr, fprintf, etc
+#include <cstdlib>                     // for malloc, free, realloc, exit, etc
+#include <cstring>                     // for strcat, strcpy
 
 #include "chaco.h"                      // for input_assign, interface
 #include "elb.h"                  // for LB_Description<INT>, etc
@@ -237,8 +237,16 @@ int generate_loadbal(Machine_Description* machine,
       graph->adj[cnt]++;
   }
 
-  if(problem->read_coords == ELB_TRUE)
+  if ((problem->type == ELEMENTAL) && 
+      (lb->type == INERTIAL || lb->type == ZPINCH || lb->type == BRICK ||
+       lb->type == ZOLTAN_RCB || lb->type == ZOLTAN_RIB || 
+       lb->type == ZOLTAN_HSFC))
     {
+      if (problem->read_coords != ELB_TRUE) {
+	Gen_Error(0, "FATAL: internal logic error. Reading coordinates, but read_coords not set");
+	return 0;
+      }
+
       switch(mesh->num_dims) {
       case 3:
 	x_node_ptr = (mesh->coords);
@@ -277,6 +285,10 @@ int generate_loadbal(Machine_Description* machine,
        lb->type == ZOLTAN_RCB || lb->type == ZOLTAN_RIB || 
        lb->type == ZOLTAN_HSFC))
     {
+      if (problem->read_coords != ELB_TRUE) {
+	Gen_Error(0, "FATAL: internal logic error. Reading coordinates, but read_coords not set");
+	return 0;
+      }
       /* just check to make sure that there are vertices to get coords for */
       if (problem->num_vertices > 0) {
 	/* allocate memory for element coordinates */
@@ -2349,7 +2361,7 @@ namespace {
 	else            theta = 3. * M_PI_2;
       }
       else {
-	theta = atan(y[i] / x[i]);   /* In range -M_PI_2 to M_PI_2 */
+	theta = std::atan2(y[i], x[i]);   /* In range -M_PI_2 to M_PI_2 */
 
 	/* Convert to range 0 to 2*M_PI */
 	if (x[i] < 0.)       theta += M_PI;

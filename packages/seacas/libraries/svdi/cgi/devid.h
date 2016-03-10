@@ -65,6 +65,7 @@ static struct device_ids device_values[MAX_DEVID] =
    {"tal", 33.}, {"nws", 34.}, {"x10", 35.}
    };
 
+#if !defined(NO_GET_DEVID_CHAR)
 /*                                                                          *
  *  function get_devid_char will return a pointer to the character string   *
  *  associated with a floating point number for cgid inquiries.             *
@@ -83,4 +84,5 @@ int i;
 
    return(0);
 }
+#endif
 /* end devid.h */

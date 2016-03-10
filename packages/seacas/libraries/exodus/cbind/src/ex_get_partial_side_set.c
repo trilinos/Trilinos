@@ -99,14 +99,14 @@ int ex_get_partial_side_set (int   exoid,
               side_set_id,exoid);
       ex_err("ex_get_partial_side_set",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
 
       sprintf(errmsg,
 	      "Error: failed to locate side set id %"PRId64" in %s array in file id %d",
               side_set_id, VAR_SS_IDS, exoid);
       ex_err("ex_get_partial_side_set",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire id's of previously defined dimensions and variables */

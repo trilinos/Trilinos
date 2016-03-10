@@ -83,6 +83,16 @@ namespace Xpetra {
       XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
       int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
+      if (haveMultiplyDoFillComplete) {
+        // Due to Epetra wrapper intricacies, we need to explicitly call
+        // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
+        // only keeps an internal variable to check whether we are in resumed
+        // state or not, but never touches the underlying Epetra object. As
+        // such, we need to explicitly update the state of Xpetra matrix to
+        // that of Epetra one afterwords
+        C.fillComplete();
+      }
+
       if (i != 0) {
         std::ostringstream buf;
         buf << i;
@@ -107,7 +117,7 @@ namespace Xpetra {
 #endif
     }
 
-    if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
+    if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
       RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
       params->set("Optimize Storage", doOptimizeStorage);
       C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);
@@ -155,6 +165,16 @@ namespace Xpetra {
       XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
       int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
+      if (haveMultiplyDoFillComplete) {
+        // Due to Epetra wrapper intricacies, we need to explicitly call
+        // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
+        // only keeps an internal variable to check whether we are in resumed
+        // state or not, but never touches the underlying Epetra object. As
+        // such, we need to explicitly update the state of Xpetra matrix to
+        // that of Epetra one afterwords
+        C.fillComplete();
+      }
+
       if (i != 0) {
         std::ostringstream buf;
         buf << i;
@@ -179,7 +199,7 @@ namespace Xpetra {
 #endif
     }
 
-    if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
+    if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
       RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
       params->set("Optimize Storage", doOptimizeStorage);
       C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);

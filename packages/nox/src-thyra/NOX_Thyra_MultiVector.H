@@ -52,6 +52,7 @@
 #define NOX_THYRA_MULTIVECTOR_H
 
 #include "NOX_Abstract_MultiVector.H" // base class
+#include "NOX_Abstract_ImplicitWeighting.H" // base class
 #include "Teuchos_RCP.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include <vector>
@@ -71,7 +72,8 @@ namespace NOX {
   namespace Thyra {
 
     //! Implementation of NOX::Abstract::MultiVector for %Thyra multi-vectors.
-    class MultiVector : public virtual NOX::Abstract::MultiVector {
+    class MultiVector : public virtual NOX::Abstract::MultiVector,
+           public NOX::Abstract::ImplicitWeighting {
 
     public:
 
@@ -249,6 +251,24 @@ namespace NOX {
       //! Print the vector.  This is meant for debugging purposes only
       virtual void print(std::ostream& stream) const;
 
+      //! Set the weighting vector used for inner products and norms.
+      void setWeightVector(const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVec);
+
+      bool hasWeightVector() const;
+
+      //! Returns a weighting vector if one was set, otherwise throws.
+      Teuchos::RCP<const ::Thyra::VectorBase<double> >
+      getWeightVector() const;
+
+      //@{ \name Derived from NOX::Abstract::ImplicitWeighting
+
+      bool getImplicitWeighting() const;
+
+      void setImplicitWeighting(bool do_implicit_weighting);
+
+      //@}
+
+
     protected:
 
       //! Check whether an index array is contiguous
@@ -266,6 +286,14 @@ namespace NOX {
        */
       mutable std::vector< Teuchos::RCP<NOX::Thyra::Vector> > noxThyraVectors;
 
+      //! Thyra vector used for weighting inner product and norms
+      Teuchos::RCP<const ::Thyra::VectorBase<double> > weightVec_;
+
+      //! Thyra vector used for weighting inner product and norms
+      Teuchos::RCP< ::Thyra::MultiVectorBase<double> > tmpMultiVec_;
+
+      //! True if implicit weighting is enabled (i.e. a nonnull wieghtVec_)
+      bool do_implicit_weighting_;
     };
   } // namespace Thyra
 } // namespace NOX

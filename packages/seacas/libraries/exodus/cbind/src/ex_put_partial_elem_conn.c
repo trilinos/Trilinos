@@ -87,14 +87,14 @@ int ex_put_partial_elem_conn (int  exoid,
 		elem_blk_id, exoid);
 	ex_err("ex_put_partial_elem_conn",errmsg,EX_NULLENTITY);
 	return (EX_WARN);
-      } else {
+      } 
 
 	sprintf(errmsg,
 		"Error: failed to locate element block id %"PRId64" in %s array in file id %d",
 		elem_blk_id,VAR_ID_EL_BLK, exoid);
 	ex_err("ex_put_partial_elem_conn",errmsg,exerrval);
 	return (EX_FATAL);
-      }
+      
     }
 
   /* inquire id's of previously defined dimensions  */
@@ -162,8 +162,9 @@ int ex_put_partial_elem_conn (int  exoid,
   count[0] = num_elems;
   count[1] = num_nod_per_elem;
 
-  if (count[0] == 0)
+  if (count[0] == 0) {
     start[0] = 0;
+}
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_vara_longlong(exoid, connid, start, count, connect);

@@ -132,6 +132,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   METIS           "cmake/TPLs/"    TS
   ParMETIS        "cmake/TPLs/"    SS
   PuLP            "cmake/TPLs/"    EX
+  TopoManager     "cmake/TPLs/"    EX
   LibTopoMap      "cmake/TPLs/"    SS
   PaToH           "cmake/TPLs/"    SS
   CppUnit         "cmake/TPLs/"    SS
@@ -200,6 +201,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   AmgX            "cmake/TPLs/"    EX
   CGAL            "cmake/TPLs/"    EX
   VTune           "cmake/TPLs/"    SS
+  TASMANIAN       "cmake/TPLs/"    EX
+  ArrayFireCPU    "cmake/TPLs/"    EX
   )
 
 # NOTES:

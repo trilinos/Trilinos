@@ -75,13 +75,14 @@ int ex_get_partial_var( int   exoid,
   size_t start[2], count[2];
   char errmsg[MAX_ERR_LENGTH];
 
-  if (num_entities == 0)
+  if (num_entities == 0) {
     return status;
+}
   
   if (var_type == EX_NODAL) {
     /* FIXME: Special case: ignore obj_id, possible large_file complications, etc. */
     return ex_get_partial_nodal_var( exoid, time_step, var_index, start_index, num_entities, var_vals );
-  } else if (var_type == EX_GLOBAL) {
+  } if (var_type == EX_GLOBAL) {
     /* FIXME: Special case: all vars stored in 2-D single array. */
     return ex_get_glob_vars( exoid, time_step, num_entities, var_vals );
   }
@@ -97,13 +98,13 @@ int ex_get_partial_var( int   exoid,
 	      ex_name_of_object(var_type), obj_id,exoid);
       ex_err("ex_get_partial_var",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to locate %s id %"PRId64" in id variable in file id %d",
 	      ex_name_of_object(var_type), obj_id, exoid);
       ex_err("ex_get_partial_var",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire previously defined variable */

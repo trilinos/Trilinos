@@ -107,7 +107,7 @@ Ioss::Wedge15::Wedge15()
   Ioss::ElementTopology::alias("wedge15", "Solid_Wedge_15_3D");
 }
 
-Ioss::Wedge15::~Wedge15() {}
+Ioss::Wedge15::~Wedge15() = default;
 
 int Ioss::Wedge15::parametric_dimension()           const {return  3;}
 int Ioss::Wedge15::spatial_dimension()           const {return  3;}
@@ -140,8 +140,9 @@ Ioss::IntVector Ioss::Wedge15::edge_connectivity(int edge_number) const
 {
   Ioss::IntVector connectivity(number_nodes_edge(edge_number));
 
-  for (int i=0; i < number_nodes_edge(edge_number); i++)
+  for (int i=0; i < number_nodes_edge(edge_number); i++) {
     connectivity[i] = Constants::edge_node_order[edge_number-1][i];
+  }
 
   return connectivity;
 }
@@ -151,8 +152,9 @@ Ioss::IntVector Ioss::Wedge15::face_connectivity(int face_number) const
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(number_nodes_face(face_number));
 
-  for (int i=0; i < number_nodes_face(face_number); i++)
+  for (int i=0; i < number_nodes_face(face_number); i++) {
     connectivity[i] = Constants::face_node_order[face_number-1][i];
+  }
 
   return connectivity;
 }
@@ -160,22 +162,25 @@ Ioss::IntVector Ioss::Wedge15::face_connectivity(int face_number) const
 Ioss::IntVector Ioss::Wedge15::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+  }
   return connectivity;
 }
 
 Ioss::ElementTopology* Ioss::Wedge15::face_type(int face_number) const
 {
   assert(face_number >= 0 && face_number <= number_faces());
-  if (face_number == 0)
+  if (face_number == 0) {
     return (Ioss::ElementTopology*)nullptr;
-  else if (face_number <= 3)
-//    return Ioss::ElementTopology::factory("quadface8");
+  }
+  else if (face_number <= 3) {
+    //    return Ioss::ElementTopology::factory("quadface8");
     return Ioss::ElementTopology::factory("quad8");
-  else
-//    return Ioss::ElementTopology::factory("triface6");
+  } else {
+    //    return Ioss::ElementTopology::factory("triface6");
     return Ioss::ElementTopology::factory("tri6");
+  }
 }
 
 Ioss::ElementTopology* Ioss::Wedge15::edge_type(int edge_number) const
@@ -191,8 +196,9 @@ Ioss::IntVector Ioss::Wedge15::face_edge_connectivity(int face_number) const
   int nface_edge = number_edges_face(face_number);
   Ioss::IntVector fcon(nface_edge);
 
-  for (int i=0; i < nface_edge; i++)
+  for (int i=0; i < nface_edge; i++) {
     fcon[i] = Constants::face_edge_order[face_number-1][i];
+  }
 
   return fcon;
 }

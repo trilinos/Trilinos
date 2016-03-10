@@ -68,7 +68,7 @@
 #include "MueLu_RebalanceBlockAcFactory_decl.hpp"
 
 #include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"

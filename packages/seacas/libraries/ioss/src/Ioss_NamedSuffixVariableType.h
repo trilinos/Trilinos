@@ -45,7 +45,7 @@ namespace Ioss {
   public:
     
     //  'which' is 1-based
-    std::string label(int which, const char suffix_sep='_') const
+    std::string label(int which, const char suffix_sep='_') const override
       {
 	return suffixList[which-1];
       }

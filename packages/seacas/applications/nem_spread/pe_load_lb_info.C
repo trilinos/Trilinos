@@ -72,7 +72,7 @@ template void NemSpread<float,int64_t>::load_lb_info(void);
 template void NemSpread<double,int64_t>::load_lb_info(void);
 
 template <typename T, typename INT>
-void NemSpread<T,INT>::load_lb_info(void)
+void NemSpread<T,INT>::load_lb_info()
 
 /*
  *       load_lb_info:

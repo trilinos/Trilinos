@@ -345,8 +345,9 @@ template void Ioss::ParallelUtils::global_array_minmax(std::vector<double>&,  Mi
 template <typename T>
 void Ioss::ParallelUtils::global_array_minmax(std::vector<T> &local_minmax,  MinMax which) const
 {
-  if (!local_minmax.empty())
+  if (!local_minmax.empty()) {
     global_array_minmax(&local_minmax[0], local_minmax.size(), which);
+}
 }
 
 template void Ioss::ParallelUtils::gather(int, std::vector<int>&) const;

@@ -40,7 +40,7 @@
 #include <vector>                       // for vector
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
-#include <unit_tests/BulkDataTester.hpp>
+#include "../../stk_unit_test_utils/BulkDataTester.hpp"
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
@@ -79,11 +79,11 @@ class SelectorFixture {
   const stk::mesh::MetaData & get_MetaData() const { return m_meta_data ; }
   stk::mesh::MetaData       & get_NonconstMetaData() { return m_meta_data ; }
 
-  const stk::mesh::unit_test::BulkDataTester& get_BulkData() const { return m_bulk_data ; }
-  stk::mesh::unit_test::BulkDataTester& get_NonconstBulkData() { return m_bulk_data ; }
+  const stk::unit_test_util::BulkDataTester& get_BulkData() const { return m_bulk_data ; }
+  stk::unit_test_util::BulkDataTester& get_NonconstBulkData() { return m_bulk_data ; }
 
   stk::mesh::MetaData m_meta_data ;
-  stk::mesh::unit_test::BulkDataTester m_bulk_data ;
+  stk::unit_test_util::BulkDataTester m_bulk_data ;
 
   stk::mesh::Part & m_partA ;
   stk::mesh::Part & m_partB ;

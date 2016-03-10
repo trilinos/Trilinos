@@ -88,13 +88,13 @@ int ex_put_attr_names(int   exoid,
 	      ex_name_of_object(blk_type),blk_id,exoid);
       ex_err("ex_put_attr_names",errmsg,EX_NULLENTITY);
       return (EX_WARN);              /* no attributes for this block */
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: no %s id %"PRId64" in %s array in file id %d",
 	      ex_name_of_object(blk_type), blk_id, VAR_ID_EL_BLK, exoid);
       ex_err("ex_put_attr_names",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire id's of previously defined dimensions  */

@@ -47,9 +47,9 @@ static int64_t get_node(void_int *connect, size_t index, size_t int_size)
 {
   if (int_size == sizeof(int64_t)) {
     return ((int64_t*)connect)[index];
-  } else {
+  } 
     return ((int*)connect)[index];
-  }
+  
 }
 
 static void put_side(void_int *side_list, size_t index, size_t value, size_t int_size)
@@ -308,16 +308,19 @@ int ex_cvt_nodes_to_sides(int exoid,
   ndim = ex_inquire_int(exoid, EX_INQ_DIM);
 
   int_size = sizeof(int);
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     int_size = sizeof(int64_t);
+}
 
   /* First count up # of elements in the side sets*/
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    for (i=0;i<num_side_sets;i++)
+    for (i=0;i<num_side_sets;i++) {
       tot_num_ss_elem += ((int64_t*)num_elem_per_set)[i];
+}
   } else {
-    for (i=0;i<num_side_sets;i++)
+    for (i=0;i<num_side_sets;i++) {
       tot_num_ss_elem += ((int*)num_elem_per_set)[i];
+}
   }
 
   /* Allocate space for the ss element index array */
@@ -454,7 +457,8 @@ int ex_cvt_nodes_to_sides(int exoid,
     for (i=0,k=0;i<tot_num_ss_elem;i++) {
       int64_t elem = ((int64_t*)side_sets_elem_list)[i];
       for (j=0; j<num_elem_blks; j++) {
-	if (elem <= elem_blk_parms[j].elem_ctr) break;
+	if (elem <= elem_blk_parms[j].elem_ctr) { break;
+}
       }
 
       if (j >= num_elem_blks) {
@@ -479,7 +483,8 @@ int ex_cvt_nodes_to_sides(int exoid,
 	same_elem_type[k] = EX_TRUE;
       }
 
-      if (el_type != elem_blk_parms[j].elem_type_val) same_elem_type[k] = EX_FALSE;
+      if (el_type != elem_blk_parms[j].elem_type_val) { same_elem_type[k] = EX_FALSE;
+}
     }
 
     /* Build side set element to node list index and side set element
@@ -511,7 +516,8 @@ int ex_cvt_nodes_to_sides(int exoid,
       /* determine which side set this element is in; assign to kth side set */
       if (i >= elem_ctr) {
 	/* skip over NULL side sets */
-	while ( ((int64_t*)num_elem_per_set)[++k] == 0);
+	while ( ((int64_t*)num_elem_per_set)[++k] == 0) {;
+}
 	elem_ctr += ((int64_t*)num_elem_per_set)[k];
       }
 
@@ -530,7 +536,8 @@ int ex_cvt_nodes_to_sides(int exoid,
       int elem = ((int*)side_sets_elem_list)[i];
 
       for (j=0; j<num_elem_blks; j++) {
-	if (elem <= elem_blk_parms[j].elem_ctr) break;
+	if (elem <= elem_blk_parms[j].elem_ctr) { break;
+}
       }
 
       if (j >= num_elem_blks) {
@@ -555,7 +562,8 @@ int ex_cvt_nodes_to_sides(int exoid,
 	same_elem_type[k] = EX_TRUE;
       }
 
-      if (el_type != elem_blk_parms[j].elem_type_val) same_elem_type[k] = EX_FALSE;
+      if (el_type != elem_blk_parms[j].elem_type_val) { same_elem_type[k] = EX_FALSE;
+}
     }
 
     /* Build side set element to node list index and side set element
@@ -587,7 +595,8 @@ int ex_cvt_nodes_to_sides(int exoid,
       /* determine which side set this element is in; assign to kth side set */
       if (i >= elem_ctr) {
 	/* skip over NULL side sets */
-	while ( ((int*)num_elem_per_set)[++k] == 0);
+	while ( ((int*)num_elem_per_set)[++k] == 0) {;
+}
 	elem_ctr += ((int*)num_elem_per_set)[k];
       }
 
@@ -630,8 +639,9 @@ int ex_cvt_nodes_to_sides(int exoid,
       if (elem > elem_ctr)
 	{
 	  /* release connectivity array space and get next one */
-	  if (elem_ctr > 0)
+	  if (elem_ctr > 0) {
 	    ex_safe_free(connect);
+}
 
 	  /* Allocate space for the connectivity array for new element block */
 	  if (!(connect= malloc(elem_blk_parms[p_ndx].num_elem_in_blk*
@@ -754,41 +764,45 @@ int ex_cvt_nodes_to_sides(int exoid,
 	      {
 		/* use table to find which node to compare to next */
 
-		if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+		if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
 		  num_node_per_side = ((int64_t*)ss_elem_node_ndx)[idx+1] - ((int64_t*)ss_elem_node_ndx)[idx];
-		else
+		} else {
 		  num_node_per_side = ((int*)ss_elem_node_ndx)[idx+1] - ((int*)ss_elem_node_ndx)[idx];
+}
 
 
 		if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
 					 (shell_table[0][2*n]-1),int_size))
 		  {
-		    if (num_node_per_side >= 4)
+		    if (num_node_per_side >= 4) {
 		      /* 4- or 8-node side (front or back face) */
 		      put_side(side_sets_side_list,idx,shell_table[1][2*n],int_size);
-		    else
+		    } else {
 		      /* 2- or 3-node side (edge of shell) */
 		      put_side(side_sets_side_list,idx,shell_edge_table[1][2*n],int_size);
+}
 		  }
 		else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
 					      (shell_table[0][2*n+1]-1),int_size))
 		  {
-		    if (num_node_per_side >= 4)
+		    if (num_node_per_side >= 4) {
 		      /* 4- or 8-node side (front or back face) */
 		      put_side(side_sets_side_list,idx,shell_table[1][2*n+1],int_size);
-		    else
+		    } else {
 		      /* 2- or 3-node side (edge of shell) */
 		      put_side(side_sets_side_list,idx,shell_edge_table[1][2*n+1],int_size);
+}
 		  }
 		else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
 					      (shell_table[0][2*n+2]-1),int_size))
 		  {
-		    if (num_node_per_side >= 4)
+		    if (num_node_per_side >= 4) {
 		      /* 4- or 8-node side (front or back face) */
 		      put_side(side_sets_side_list,idx,shell_table[1][2*n+2],int_size);
-		    else
+		    } else {
 		      /* 2- or 3-node side (edge of shell) */
 		      put_side(side_sets_side_list,idx,shell_edge_table[1][2*n+2],int_size);
+}
 		  }
 		else
 		  {
@@ -811,15 +825,15 @@ int ex_cvt_nodes_to_sides(int exoid,
 		/* use table to find which node to compare to next */
 
 		if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
-					 (hex_table[0][3*n]-1),int_size))
+					 (hex_table[0][3*n]-1),int_size)) {
 		  put_side(side_sets_side_list,idx,hex_table[1][3*n],int_size);
-		else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
-					      (hex_table[0][3*n+1]-1),int_size))
+		} else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
+					      (hex_table[0][3*n+1]-1),int_size)) {
 		  put_side(side_sets_side_list,idx,hex_table[1][3*n+1],int_size);
-		else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
-					      (hex_table[0][3*n+2]-1),int_size))
+		} else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
+					      (hex_table[0][3*n+2]-1),int_size)) {
 		  put_side(side_sets_side_list,idx,hex_table[1][3*n+2],int_size);
-		else
+		} else
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
@@ -839,15 +853,15 @@ int ex_cvt_nodes_to_sides(int exoid,
 		/* use table to find which node to compare to next */
 
 		if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
-					 (tetra_table[0][3*n]-1),int_size))
+					 (tetra_table[0][3*n]-1),int_size)) {
 		  put_side(side_sets_side_list,idx,tetra_table[1][3*n],int_size);
-		else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
-					      (tetra_table[0][3*n+1]-1),int_size))
+		} else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
+					      (tetra_table[0][3*n+1]-1),int_size)) {
 		  put_side(side_sets_side_list,idx,tetra_table[1][3*n+1],int_size);
-		else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
-					      (tetra_table[0][3*n+2]-1),int_size))
+		} else if (ss_node1 == get_node(connect,num_nodes_per_elem*(elem_num_pos)+
+					      (tetra_table[0][3*n+2]-1),int_size)) {
 		  put_side(side_sets_side_list,idx,tetra_table[1][3*n+2],int_size);
-		else
+		} else
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,

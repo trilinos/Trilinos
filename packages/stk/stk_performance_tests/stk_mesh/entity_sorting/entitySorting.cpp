@@ -4,7 +4,7 @@
 #include <stk_mesh/baseImpl/Partition.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>  // for BulkDataTester
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/PerformanceTester.hpp>
 
@@ -14,7 +14,7 @@ namespace
 class EntitySortingPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
-    EntitySortingPerformance(stk::mesh::unit_test::BulkDataTester &bulk) :
+    EntitySortingPerformance(stk::unit_test_util::BulkDataTester &bulk) :
             stk::unit_test_util::PerformanceTester(bulk.parallel()),
             bulkData(bulk)
     {
@@ -34,7 +34,7 @@ protected:
 
 
 private:
-    stk::mesh::unit_test::BulkDataTester &bulkData;
+    stk::unit_test_util::BulkDataTester &bulkData;
     size_t numTimesToSort = 1000;
 
     void sort_bucket_repository(stk::mesh::impl::BucketRepository& bucketRepository)
@@ -48,7 +48,7 @@ private:
 class SortEntitiesCustomLess : public ::testing::Test
 {
 protected:
-    void run_entity_sort_performance_test(stk::mesh::unit_test::BulkDataTester& bulk)
+    void run_entity_sort_performance_test(stk::unit_test_util::BulkDataTester& bulk)
     {
         EntitySortingPerformance perfTester(bulk);
         perfTester.run_performance_test();
@@ -58,7 +58,7 @@ protected:
 TEST_F(SortEntitiesCustomLess, test_entity_sorting_performance)
 {
     stk::mesh::MetaData meta;
-    stk::mesh::unit_test::BulkDataTester bulk(meta, MPI_COMM_WORLD);
+    stk::unit_test_util::BulkDataTester bulk(meta, MPI_COMM_WORLD);
     stk::unit_test_util::fill_mesh_using_stk_io("generated:100x100x100",bulk,bulk.parallel());
     run_entity_sort_performance_test(bulk);
 }

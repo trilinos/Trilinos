@@ -4,11 +4,14 @@ IFS=$'\n'
 
 classListDir=../../../../muelu/src/Utils/ClassList/
 
-for i in SC-LO-GO-NO-LMO SC-LO-GO SC-LO
+for i in SC-LO-GO-NO LO-GO-NO
   do
 
   classList=$classListDir/$i.classList
-  tmpl=$i.tmpl
+  # TAW: The MueLu ETI system has changed and only knows 
+  #      SC-LO-GO-NO and LO-GO-NO class lists any more
+  # The SC-LO-GO-NO-LMO.tmpl should cover both cases
+  tmpl=SC-LO-GO-NO-LMO.tmpl
 
   for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
     do

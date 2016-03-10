@@ -50,12 +50,12 @@
  *      find_min()
  *      find_inter()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-#include <math.h>
-#include <assert.h>                     // for assert
-#include <ctype.h>                      // for isupper, tolower
-#include <stddef.h>                     // for size_t
-#include <stdlib.h>
-#include <string.h>                     // for strlen
+#include <cmath>
+#include <cassert>                     // for assert
+#include <cctype>                      // for isupper, tolower
+#include <cstddef>                     // for size_t
+#include <cstdlib>
+#include <cstring>                     // for strlen
 #include "elb_util.h"
 
 /*****************************************************************************/
@@ -244,7 +244,7 @@ namespace {
   }
 
   template <typename INT>
-  INT gds_median3(INT v[], size_t left, size_t right)
+  size_t gds_median3(INT v[], size_t left, size_t right)
   {
     size_t center;
     center = (left + right) / 2;
@@ -479,8 +479,8 @@ int roundfloat(const float value)
   float high, low;
   int ans;
 
-  high = (float) ceil(value);
-  low = (float) floor(value);
+  high = (float) std::ceil(value);
+  low = (float) std::floor(value);
 
   if ((value - low) < (high - value))
     ans = (int) low;

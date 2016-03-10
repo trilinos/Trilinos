@@ -51,14 +51,14 @@
 
 Ioss::GroupingEntity::GroupingEntity()
   : entityCount(0), entityName("invalid"), database_(nullptr), entityState(STATE_CLOSED),
-    attributeCount(0)
+    attributeCount(0), hash_(0)
 {}
 
 Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
 				     const std::string& my_name,
 				     int64_t entity_count)
   : entityCount(entity_count), entityName(my_name), database_(io_database),
-    entityState(STATE_CLOSED), attributeCount(0)    
+    entityState(STATE_CLOSED), attributeCount(0), hash_(Ioss::Utils::hash(my_name))
 {
   properties.add(Ioss::Property("name", my_name));
 
@@ -69,8 +69,9 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
 
   if (my_name != "null_entity") {
     Ioss::Field::BasicType int_type = Ioss::Field::INTEGER;
-    if (io_database != nullptr)
+    if (io_database != nullptr) {
       int_type = field_int_type();
+    }
     fields.add(Ioss::Field("ids", int_type, "scalar",
 			   Ioss::Field::MESH, entity_count));
   }
@@ -117,10 +118,12 @@ Ioss::DatabaseIO* Ioss::GroupingEntity::get_database() const
 std::string Ioss::GroupingEntity::get_filename() const
 {
   // Ok for database_ to be nullptr at this point.
-  if (database_ == nullptr)
+  if (database_ == nullptr) {
     return std::string();
-  else
+  }
+  else {
     return database_->get_filename();
+  }
 }
 
 void Ioss::GroupingEntity::set_database(Ioss::DatabaseIO *io_database)
@@ -192,8 +195,9 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   int retval = internal_get_field_data(field, data, data_size);
 
   // At this point, transform the field if specified...
-  if (retval >= 0)
+  if (retval >= 0) {
     field.transform(data);
+}
 
   return retval;
 }
@@ -221,8 +225,9 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   int retval = internal_get_field_data(field, TOPTR(data), data_size);
 
   // At this point, transform the field if specified...
-  if (retval >= 0)
+  if (retval >= 0) {
     field.transform(TOPTR(data));
+}
 
   return retval;
 }
@@ -240,8 +245,9 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   int retval = internal_get_field_data(field, TOPTR(data), data_size);
 
   // At this point, transform the field if specified...
-  if (retval >= 0)
+  if (retval >= 0) {
     field.transform(TOPTR(data));
+}
 
   return retval;
 }
@@ -259,8 +265,9 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   int retval = internal_get_field_data(field, TOPTR(data), data_size);
 
   // At this point, transform the field if specified...
-  if (retval >= 0)
+  if (retval >= 0) {
     field.transform(TOPTR(data));
+}
 
   return retval;
 }
@@ -278,8 +285,9 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   int retval = internal_get_field_data(field, TOPTR(data), data_size);
 
   // At this point, transform the field if specified...
-  if (retval >= 0)
+  if (retval >= 0) {
     field.transform(TOPTR(data));
+}
 
   return retval;
 }
@@ -298,8 +306,9 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   int retval = internal_get_field_data(field, TOPTR(data), data_size);
 
   // At this point, transform the field if specified...
-  if (retval >= 0)
+  if (retval >= 0) {
     field.transform(TOPTR(data));
+}
 
   return retval;
 }
@@ -373,8 +382,9 @@ size_t Ioss::GroupingEntity::field_count(Ioss::Field::RoleType role) const
 
 void Ioss::GroupingEntity::count_attributes() const
 {
-  if (attributeCount > 0)
+  if (attributeCount > 0) {
     return;
+  }
   else {
     // If the set has a field named "attribute", then the number of
     // attributes is equal to the component count of that field...

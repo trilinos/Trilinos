@@ -46,10 +46,11 @@ Ioss::ConstructedVariableType::ConstructedVariableType(int number_components, bo
 		       number_components, delete_me)
 {}
 
-std::string Ioss::ConstructedVariableType::label(int which, const char) const
+std::string Ioss::ConstructedVariableType::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
-  if (component_count() == 1)
+  if (component_count() == 1) {
     return "";
-  return VariableType::numeric_label(which, component_count(), name());
+  
+}return VariableType::numeric_label(which, component_count(), name());
 }

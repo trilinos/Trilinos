@@ -69,9 +69,10 @@ public:
 
   // Constructor
   Brents( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
+    Real oem10(1.e-10);
     Teuchos::ParameterList &list
       = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Brent's");
-    tol_ = list.get("Tolerance",1.e-10);
+    tol_ = list.get("Tolerance",oem10);
     niter_ = list.get("Iteration Limit",1000);
     test_ = list.get("Run Test Upon Initialization",true);
 //    tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",1.e-8);
@@ -109,7 +110,7 @@ public:
     Teuchos::RCP<typename LineSearch<Real>::ScalarFunction> phi
       = Teuchos::rcp(new typename LineSearch<Real>::Phi(*xnew_,x,s,obj,con));
     int neval = 0;
-    Real A = 0.0, B = alpha;
+    Real A(0), B = alpha;
     run_brents(neval, fval, alpha, *phi, A, B);
     ls_neval += neval;
   }
@@ -120,7 +121,8 @@ private:
                   const Real A, const Real B) const {
     neval = 0;
     // ---> Set algorithmic constants
-    const Real c   = 0.5*(3.0 - std::sqrt(5.0));
+    const Real zero(0), half(0.5), one(1), two(2), three(3), five(5);
+    const Real c   = half*(three - std::sqrt(five));
     const Real eps = std::sqrt(ROL_EPSILON<Real>());
     // ---> Set end points and initial guess
     Real a = A, b = B;
@@ -129,28 +131,28 @@ private:
     Real fx = phi.value(alpha);
     neval++;
     // ---> Initialize algorithm storage
-    Real v = alpha, w = v, u = 0.0, fu = 0.0;
-    Real p = 0.0, q = 0.0, r = 0.0, d = 0.0, e = 0.0;
-    Real fv = fx, fw = fx, tol = 0.0, t2 = 0.0, m = 0.0;
+    Real v = alpha, w = v, u(0), fu(0);
+    Real p(0), q(0), r(0), d(0), e(0);
+    Real fv = fx, fw = fx, tol(0), t2(0), m(0);
     for (int i = 0; i < niter_; i++) {
-      m = 0.5*(a+b);
-      tol = eps*std::abs(alpha) + tol_; t2 = 2.0*tol;
+      m = half*(a+b);
+      tol = eps*std::abs(alpha) + tol_; t2 = two*tol;
       // Check stopping criterion
-      if (std::abs(alpha-m) <= t2 - 0.5*(b-a)) {
+      if (std::abs(alpha-m) <= t2 - half*(b-a)) {
         break;
       }
-      p = 0.0; q = 0.0; r = 0.0;
+      p = zero; q = zero; r = zero;
       if ( std::abs(e) > tol ) {
         // Fit parabola
         r = (alpha-w)*(fx-fv);         q = (alpha-v)*(fx-fw);
-        p = (alpha-v)*q - (alpha-w)*r; q = 2.0*(q-r);
-        if ( q > 0.0 ) {
-          p *= -1.0;
+        p = (alpha-v)*q - (alpha-w)*r; q = two*(q-r);
+        if ( q > zero ) {
+          p *= -one;
         }
         q = std::abs(q);
         r = e; e = d;
       }
-      if ( std::abs(p) < std::abs(0.5*q*r) && p > q*(a-alpha) && p < q*(b-alpha) ) {
+      if ( std::abs(p) < std::abs(half*q*r) && p > q*(a-alpha) && p < q*(b-alpha) ) {
         // A parabolic interpolation step
         d = p/q; u = alpha + d;
         // f must not be evaluated too close to a or b
@@ -163,7 +165,7 @@ private:
         e = ((alpha < m) ? b : a) - alpha; d = c*e;
       }
       // f must not be evaluated too close to alpha
-      u  = alpha + ((std::abs(d) >= tol) ? d : ((d > 0.0) ? tol : -tol));
+      u  = alpha + ((std::abs(d) >= tol) ? d : ((d > zero) ? tol : -tol));
       fu = phi.value(u);
       neval++;
       // Update a, b, v, w, and alpha
@@ -197,10 +199,10 @@ private:
   class testFunction : public LineSearch<Real>::ScalarFunction {
   public:
     Real value(const Real x) {
-      Real val = 0.0, I = 0.0;
+      Real val(0), I(0), two(2), five(5);
       for (int i = 0; i < 20; i++) {
         I = (Real)(i+1);
-        val += std::pow((2.0*I - 5.0)/(x-(I*I)),2.0);
+        val += std::pow((two*I - five)/(x-(I*I)),two);
       }
       return val;
     }
@@ -209,10 +211,11 @@ private:
   bool test_brents(void) const {
     Teuchos::RCP<typename LineSearch<Real>::ScalarFunction> phi
        = Teuchos::rcp(new testFunction());
-    Real A = 0.0, B = 0.0, alpha = 0.0, fval = 0.0;
-    Real error = 0.0, error_i = 0.0;
+    Real A(0), B(0), alpha(0), fval(0);
+    Real error(0), error_i(0);
+    Real zero(0), two(2), three(3);
     int neval = 0;
-    std::vector<Real> fvector(19,0.0), avector(19,0.0);
+    std::vector<Real> fvector(19,zero), avector(19,zero);
     fvector[0]  = 3.6766990169; avector[0]  =   3.0229153;
     fvector[1]  = 1.1118500100; avector[1]  =   6.6837536;
     fvector[2]  = 1.2182217637; avector[2]  =  11.2387017;
@@ -233,14 +236,14 @@ private:
     fvector[17] = 6.8539024631; avector[17] = 342.1369454;
     fvector[18] = 6.6008470481; avector[18] = 380.2687097;
     for ( int i = 0; i < 19; i++ ) {
-      A = std::pow((Real)(i+1),2.0);
-      B = std::pow((Real)(i+2),2.0);
+      A = std::pow((Real)(i+1),two);
+      B = std::pow((Real)(i+2),two);
       run_brents(neval, fval, alpha, *phi, A, B);
       error_i = std::max(std::abs(fvector[i]-fval)/fvector[i],
                          std::abs(avector[i]-alpha)/avector[i]);
       error = std::max(error,error_i);
     }
-    return (error < 3.0*(std::sqrt(ROL_EPSILON<Real>())*avector[18]+tol_)) ? true : false;
+    return (error < three*(std::sqrt(ROL_EPSILON<Real>())*avector[18]+tol_)) ? true : false;
   }
 
 };

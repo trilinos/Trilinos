@@ -152,8 +152,9 @@ int ex_get_variable_param (int   exoid,
 
   if ((status = nc_inq_dimid (exoid, dnumvar, &dimid)) != NC_NOERR) {
     *num_vars = 0;
-    if (status == NC_EBADDIM)
+    if (status == NC_EBADDIM) {
       return(EX_NOERR);      /* no global variables defined */
+    }
     else {
       exerrval = status;
       sprintf(errmsg,

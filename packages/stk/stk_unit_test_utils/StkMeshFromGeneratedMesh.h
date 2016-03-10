@@ -2,7 +2,7 @@
 #define STKMESHFROMGENERATEDMESH_H_
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <unit_tests/BulkDataTester.hpp>
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -24,7 +24,7 @@ public:
     {
         const int spatialDim = 3;
         m_stkMeshMetaData = new stk::mesh::MetaData(spatialDim);
-        m_stkMeshBulkData = new stk::mesh::unit_test::BulkDataTester(*m_stkMeshMetaData, communicator);
+        m_stkMeshBulkData = new stk::unit_test_util::BulkDataTester(*m_stkMeshMetaData, communicator);
 
         readExodusFileIntoStkMesh(generatedMeshSpec, *m_stkMeshBulkData, communicator);
     }
@@ -36,7 +36,7 @@ public:
     }
 
     stk::mesh::MetaData* getMetaData() { return m_stkMeshMetaData; }
-    stk::mesh::unit_test::BulkDataTester* getBulkData() { return m_stkMeshBulkData; }
+    stk::unit_test_util::BulkDataTester* getBulkData() { return m_stkMeshBulkData; }
 
 private:
 
@@ -47,7 +47,7 @@ private:
 
 private:
     stk::mesh::MetaData *m_stkMeshMetaData;
-    stk::mesh::unit_test::BulkDataTester *m_stkMeshBulkData;
+    stk::unit_test_util::BulkDataTester *m_stkMeshBulkData;
 };
 
 } // namespace exampleMeshes

@@ -2,7 +2,7 @@
 #include <algorithm>                    // for lower_bound
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <vector>                       // for vector
-#include "BulkDataTester.hpp"           // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>           // for BulkDataTester
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityCommListInfo.hpp"
@@ -34,7 +34,7 @@ const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline bool isEntityValidOnCommList(stk::mesh::unit_test::BulkDataTester& stkMeshBulkData, stk::mesh::Entity entity)
+inline bool isEntityValidOnCommList(stk::unit_test_util::BulkDataTester& stkMeshBulkData, stk::mesh::Entity entity)
 {
     EntityKey entityKey = stkMeshBulkData.entity_key(entity);
     stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData.my_internal_comm_list().begin(), stkMeshBulkData.my_internal_comm_list().end(), entityKey);
@@ -78,7 +78,7 @@ enum EntityStates {
   STATE_MESH_DELETED
 };
 
-bool check_state(const stk::mesh::unit_test::BulkDataTester & mesh, const EntityKey & entityKey, EntityStates state,
+bool check_state(const stk::unit_test_util::BulkDataTester & mesh, const EntityKey & entityKey, EntityStates state,
                  int p0 = -1, int p1 = -1, int p2 = -1, int p3 = -1, int p4 = -1, int p5 = -1);
 
 bool check_parts(const stk::mesh::BulkData & mesh, const EntityKey & entityKey,
@@ -100,78 +100,78 @@ bool check_relns(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////// 2Elem2ProcMove //////////////////////////////////////
-void fillMeshfor2Elem2ProcMoveAndTest(stk::mesh::unit_test::BulkDataTester& bulk, stk::mesh::MetaData &meta, std::vector<stk::mesh::Entity>& elems);
+void fillMeshfor2Elem2ProcMoveAndTest(stk::unit_test_util::BulkDataTester& bulk, stk::mesh::MetaData &meta, std::vector<stk::mesh::Entity>& elems);
 
-void checkStatesAfterCEO_2Elem2ProcMove(stk::mesh::unit_test::BulkDataTester &bulk);
+void checkStatesAfterCEO_2Elem2ProcMove(stk::unit_test_util::BulkDataTester &bulk);
 
 // valid vs not valid, owned.... shared vs not shared, ghosted_from vs not ghosted_from
 // ghosted_to vs not_ghosted_to
 
-void checkStatesAfterCEOME_2Elem2ProcMove(stk::mesh::unit_test::BulkDataTester &bulk);
+void checkStatesAfterCEOME_2Elem2ProcMove(stk::unit_test_util::BulkDataTester &bulk);
 
 //////////////////////////////////// 2Elem2ProcFlip //////////////////////////////////////
 
-void fillMeshfor2Elem2ProcFlipAndTest(stk::mesh::unit_test::BulkDataTester& mesh, stk::mesh::MetaData &meta);
+void fillMeshfor2Elem2ProcFlipAndTest(stk::unit_test_util::BulkDataTester& mesh, stk::mesh::MetaData &meta);
 
-void checkStatesAfterCEOME_2Elem2ProcFlip(stk::mesh::unit_test::BulkDataTester& mesh);
+void checkStatesAfterCEOME_2Elem2ProcFlip(stk::unit_test_util::BulkDataTester& mesh);
 
-void checkStatesAfterCEO_2Elem2ProcFlip(stk::mesh::unit_test::BulkDataTester& mesh);
+void checkStatesAfterCEO_2Elem2ProcFlip(stk::unit_test_util::BulkDataTester& mesh);
 
 //////////////////////////////////// 3Elem2ProcMoveRight //////////////////////////////////////
 
-void fillMeshfor3Elem2ProcMoveRightAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector& elements);
+void fillMeshfor3Elem2ProcMoveRightAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector& elements);
 
-void checkStatesAfterCEO_3Elem2ProcMoveRight(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEO_3Elem2ProcMoveRight(stk::unit_test_util::BulkDataTester &mesh);
 
-void checkStatesAfterCEOME_3Elem2ProcMoveRight(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEOME_3Elem2ProcMoveRight(stk::unit_test_util::BulkDataTester &mesh);
 
 //////////////////////////////////// 3Elem2ProcMoveLeft //////////////////////////////////////
 
-void fillMeshfor3Elem2ProcMoveLeftAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector &elements);
+void fillMeshfor3Elem2ProcMoveLeftAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector &elements);
 
-void checkStatesAfterCEO_3Elem2ProcMoveLeft(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEO_3Elem2ProcMoveLeft(stk::unit_test_util::BulkDataTester &mesh);
 
-void checkStatesAfterCEOME_3Elem2ProcMoveLeft(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEOME_3Elem2ProcMoveLeft(stk::unit_test_util::BulkDataTester &mesh);
 
 //////////////////////////////////// 4Elem4ProcEdge //////////////////////////////////////
 
-void fillMeshfor4Elem4ProcEdgeAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta_data,
+void fillMeshfor4Elem4ProcEdgeAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta_data,
         EntityKey &elem_key_chg_own);
 
-void checkStatesAfterCEO_4Elem4ProcEdge(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEO_4Elem4ProcEdge(stk::unit_test_util::BulkDataTester &mesh);
 
-void checkStatesAfterCEOME_4Elem4ProcEdge(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEOME_4Elem4ProcEdge(stk::unit_test_util::BulkDataTester &mesh);
 
 //////////////////////////////////// 8Elem4ProcMoveTop //////////////////////////////////////
 
-void fillMeshfor8Elem4ProcMoveTopAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta);
+void fillMeshfor8Elem4ProcMoveTopAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
 
-void checkStatesAfterCEO_8Elem4ProcMoveTop(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEO_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester &mesh);
 
-void checkStatesAfterCEOME_8Elem4ProcMoveTop(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEOME_8Elem4ProcMoveTop(stk::unit_test_util::BulkDataTester &mesh);
 
 //////////////////////////////////// 4Elem4ProcRotate //////////////////////////////////////
 
-void fillMeshfor4Elem4ProcRotateAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta);
+void fillMeshfor4Elem4ProcRotateAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
 
-void checkStatesAfterCEO_4Elem4ProcRotate(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta);
+void checkStatesAfterCEO_4Elem4ProcRotate(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
 
-void checkStatesAfterCEOME_4Elem4ProcRotate(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta);
+void checkStatesAfterCEOME_4Elem4ProcRotate(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
 
 //////////////////////////////////// 3Elem4Proc1Edge3D //////////////////////////////////////
 
-void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta);
+void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta);
 
-void checkStatesAfterCEO_3Elem4Proc1Edge3D(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEO_3Elem4Proc1Edge3D(stk::unit_test_util::BulkDataTester &mesh);
 
-void checkStatesAfterCEOME_3Elem4Proc1Edge3D(stk::mesh::unit_test::BulkDataTester &mesh);
+void checkStatesAfterCEOME_3Elem4Proc1Edge3D(stk::unit_test_util::BulkDataTester &mesh);
 
 //these tests are for turning regenerate_aura off in various places
 
-void checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(stk::mesh::unit_test::BulkDataTester &bulk);
+void checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(stk::unit_test_util::BulkDataTester &bulk);
 
-void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(stk::mesh::unit_test::BulkDataTester& mesh, stk::mesh::MetaData &meta);
+void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(stk::unit_test_util::BulkDataTester& mesh, stk::mesh::MetaData &meta);
 
-void checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(stk::mesh::unit_test::BulkDataTester& mesh);
+void checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(stk::unit_test_util::BulkDataTester& mesh);
 
 } //namespace CEOUtils

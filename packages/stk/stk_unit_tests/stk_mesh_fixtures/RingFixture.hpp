@@ -39,9 +39,9 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
 #include <vector>                       // for vector
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
+#include "../../stk_unit_test_utils/BulkDataTester.hpp"
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -60,7 +60,7 @@ class RingFixture {
  public:
   const int             m_spatial_dimension;
   MetaData              m_meta_data;
-  stk::mesh::unit_test::BulkDataTester m_bulk_data;
+  stk::unit_test_util::BulkDataTester m_bulk_data;
   PartVector            m_element_parts ;
   Part &                m_element_part_extra ;
   const size_t          m_num_element_per_proc ;

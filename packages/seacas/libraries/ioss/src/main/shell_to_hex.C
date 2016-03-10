@@ -125,8 +125,9 @@ int main(int argc, char *argv[])
 
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
-  if (ind != std::string::npos)
+  if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
+}
 
   // Check the program name to see if of the form 'exosaf' or 'safexo'
   // and if it is, set the in_type and out_type accordingly...
@@ -222,13 +223,15 @@ int main(int argc, char *argv[])
 
   std::cerr  << "Input:    '" << in_file  << "', Type: " << in_type  << '\n';
   std::cerr  << "Output:   '" << out_file << "', Type: " << out_type << '\n';
-  if (globals.reverse_normals)
+  if (globals.reverse_normals) {
     std::cerr << "Reversing Normals\n";
-  std::cerr << "Thickness:  " << globals.thickness << "\n";
+  
+}std::cerr << "Thickness:  " << globals.thickness << "\n";
   std::cerr  << '\n';
 
-  if (globals.do_normals)
+  if (globals.do_normals) {
     globals.debug = false;
+}
 
   file_copy(in_file, in_type, out_file, out_type, globals);
 
@@ -292,8 +295,9 @@ namespace {
     output_region.property_add(Ioss::Property(std::string("code_name"), codename));
     output_region.property_add(Ioss::Property(std::string("code_version"), version));
 
-    if (globals.debug) std::cerr  << "DEFINING MODEL ... \n";
-    if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
+    if (globals.debug) { std::cerr  << "DEFINING MODEL ... \n";
+    
+}if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
       std::cerr  << "ERROR: Could not put output region into define model state\n";
       std::exit(EXIT_FAILURE);
     }
@@ -303,12 +307,14 @@ namespace {
     transfer_nodeblock(region, output_region, globals.debug);
     transfer_elementblock(region, output_region, globals.debug);
 
-    if (globals.debug) std::cerr  << "END STATE_DEFINE_MODEL... " << '\n';
-    output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
+    if (globals.debug) { std::cerr  << "END STATE_DEFINE_MODEL... " << '\n';
+    
+}output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
-    if (globals.debug) std::cerr  << "TRANSFERRING MESH FIELD DATA ... " << '\n';
+    if (globals.debug) { std::cerr  << "TRANSFERRING MESH FIELD DATA ... " << '\n';
     // Model defined, now fill in the model data...
-    output_region.begin_mode(Ioss::STATE_MODEL);
+    
+}output_region.begin_mode(Ioss::STATE_MODEL);
     output_normals(region, output_region, globals.reverse_normals, globals.thickness);
     output_region.end_mode(Ioss::STATE_MODEL);
 
@@ -321,8 +327,9 @@ namespace {
     int id = 1;
     while (i != nbs.end()) {
       std::string name      = (*i)->name();
-      if (debug) std::cerr  << name << ", ";
-      int    num_nodes = (*i)->get_property("entity_count").get_int();
+      if (debug) { std::cerr  << name << ", ";
+      
+}int    num_nodes = (*i)->get_property("entity_count").get_int();
       int    degree    = (*i)->get_property("component_degree").get_int();
       if (!debug) {
 	std::cerr  << " Number of coordinates per node       =" << std::setw(9) << degree << "\n";
@@ -334,8 +341,9 @@ namespace {
       ++i;
       ++id;
     }
-    if (debug) std::cerr  << '\n';
-  }
+    if (debug) { std::cerr  << '\n';
+  
+}}
 
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
@@ -344,18 +352,20 @@ namespace {
     int total_elements = 0;
     while (i != ebs.end()) {
       std::string name      = (*i)->name();
-      if (debug) std::cerr  << name << ", ";
-      int    num_elem  = (*i)->get_property("entity_count").get_int();
+      if (debug) { std::cerr  << name << ", ";
+      
+}int    num_elem  = (*i)->get_property("entity_count").get_int();
       total_elements += num_elem;
 
       std::string type;
       int num_node_per_elem = (*i)->topology()->number_nodes();
-      if (num_node_per_elem == 4)
+      if (num_node_per_elem == 4) {
 	type = "hex";
-      else
+      } else {
 	type = "wedge";
       
-      Ioss::ElementBlock *eb = new Ioss::ElementBlock(output_region.get_database(), name, type, num_elem);
+      
+}Ioss::ElementBlock *eb = new Ioss::ElementBlock(output_region.get_database(), name, type, num_elem);
       output_region.add(eb);
       ++i;
     }
@@ -376,8 +386,9 @@ namespace {
     // Iterate through properties and transfer to output database...
     Ioss::NameList::const_iterator I;
     for (I = names.begin(); I != names.end(); ++I) {
-      if (!oge->property_exists(*I))
+      if (!oge->property_exists(*I)) {
 	oge->property_add(ige->get_property(*I));
+}
     }
   }
 
@@ -540,8 +551,9 @@ namespace {
 
 	vector3d plnorm = vector3d::plane_normal(local[0], local[1], local[2]);
 	plnorm.normalize();
-	if (reverse_normals)
+	if (reverse_normals) {
 	  plnorm.reverse();
+}
 
 	for (int i=0; i < 3; i++) {
 	  int node = conn[ioff+i];
@@ -569,8 +581,9 @@ namespace {
 
 	  vector3d a = vector3d::plane_normal(local[nb], local[i], local[na]);
 	  a.normalize();
-	  if (reverse_normals)
+	  if (reverse_normals) {
 	    a.reverse();
+}
 
 	  int node = conn[ioff+i];
 	  node_normal[node*3+0] += a.x;

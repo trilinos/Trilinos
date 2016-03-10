@@ -617,7 +617,7 @@ C   --"Munch" the element side sets
      &     IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS), IA(KIXDSS),
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS), 
      &     IA(KLTESO), IA(KLTSSO), A(KFACS0), IA(KIXESO), IA(KIXDS0),
-     &     IA(KNESO), IA(KNDS0), IA(KISCR))
+     &     IA(KNESO), IA(KNDS0), IA(KISCR), USESDF)
 
          CALL MDDEL ('LTEESO')
          CALL MDDEL ('LTSSO')
@@ -635,7 +635,8 @@ C      --Squeeze the element side sets
          IF (DELEL) THEN
            CALL ZMESS (NEWESS, NEWSEL, NEWSDL, 
      &       IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS),
-     *       IA(KIXDSS), IA(KLTESS), IA(KLTSSS), IA(KLTSNC), A(KFACSS))
+     *       IA(KIXDSS), IA(KLTESS), IA(KLTSSS), IA(KLTSNC),
+     *       A(KFACSS), USESDF)
          END IF
 
          CALL MDLONG ('IDESS', KIDSS, NEWESS)

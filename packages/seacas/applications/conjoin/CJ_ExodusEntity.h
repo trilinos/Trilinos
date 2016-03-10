@@ -104,7 +104,7 @@ namespace Excn {
       std::strcpy(elType, other.elType);
     }
     
-    ~Block() {}
+    ~Block() = default;
     
     size_t entity_count() const {return elementCount;}
     

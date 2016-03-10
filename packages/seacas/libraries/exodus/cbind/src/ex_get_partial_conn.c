@@ -126,14 +126,14 @@ int ex_get_partial_conn( int   exoid,
 	  ex_err("ex_get_partial_conn",errmsg,EX_NULLENTITY);
 	  return (EX_WARN); /* no connectivity array for this element block */
 	}
-      else
-	{
+      
+	
 	  sprintf(errmsg,
 		  "Error: failed to locate %s id %"PRId64" in id array in file id %d",
 		  ex_name_of_object(blk_type),blk_id,exoid);
 	  ex_err("ex_get_partial_conn",errmsg,exerrval);
 	  return (EX_FATAL);
-	}
+	
     }
 
   switch (blk_type) {

@@ -66,14 +66,14 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     RCP<GraphModel<typename Adapter::base_adapter_t> > model_;
     RCP<Teuchos::ParameterList> pl_;
     RCP<Environment> env_;
-    RCP<Teuchos::Comm<int> > comm_;
+    RCP<const Teuchos::Comm<int> > comm_;
   
   public:
   AlgSerialGreedy(
     const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
     const RCP<Teuchos::ParameterList> &pl,
     const RCP<Environment> &env,
-    const RCP<Teuchos::Comm<int> > &comm
+    const RCP<const Teuchos::Comm<int> > &comm
   ) : model_(model), pl_(pl), env_(env), comm_(comm)
   {
   }

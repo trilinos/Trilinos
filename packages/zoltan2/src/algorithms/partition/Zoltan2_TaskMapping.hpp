@@ -1388,7 +1388,7 @@ public:
    */
   CoordinateTaskMapper(
       const Teuchos::Comm<int> *comm_,
-      const MachineRepresentation<pcoord_t> *machine_,
+      const MachineRepresentation<pcoord_t,part_t> *machine_,
       const Zoltan2::Model<typename Adapter::base_adapter_t> *model_,
       const Zoltan2::PartitioningSolution<Adapter> *soln_,
       const Environment *envConst):
@@ -1401,12 +1401,24 @@ public:
         task_communication_xadj(0),
         task_communication_adj(0){
 
+    if (!machine_->hasMachineCoordinates()) {
+      throw std::runtime_error("Existing machine does not provide coordinates "
+                               "for coordinate task mapping");
+    }
     pcoord_t *task_communication_edge_weight_ = NULL;
     //if mapping type is 0 then it is coordinate mapping
-    int procDim = machine_->getProcDim();
-    this->nprocs = machine_->getNumProcs();
+    int procDim = machine_->getMachineDim();
+    this->nprocs = machine_->getNumRanks();
     //get processor coordinates.
-    pcoord_t **procCoordinates = machine_->getProcCoords();
+    pcoord_t **procCoordinates = NULL;
+    if (!machine_->getAllMachineCoordinatesView(procCoordinates)) {
+      throw std::runtime_error("Existing machine does not implement "
+                               "getAllMachineCoordinatesView");
+    }
+
+// KDDKDD ASK MEHMET:  SHOULD WE GET AND USE machine_dimension HERE IF IT
+// KDDKDD ASK MEHMET:  IS PROVIDED BY THE MACHINE REPRESENTATION?
+// KDDKDD ASK MEHMET:  IF NOT HERE, THEN WHERE?
 
     int coordDim = ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_)->getCoordinateDim();
     this->ntasks = soln_->getActualGlobalNumberOfParts();

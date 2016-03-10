@@ -134,13 +134,14 @@ private:
 
     bool check(Real &x, Real &fx, Real &gx,
                int &nfval, int &ngval, const bool deriv = false) {
+      Real one(1), two(2);
       bool armijo = (fx <= f0_ + c1_*x*g0_);
 //      bool itcond = (nfval >= max_nfval_);
       bool curvcond = false;
 //      if (armijo && !itcond) {
       if (armijo) {
         if (econd_ == CURVATURECONDITION_GOLDSTEIN) {
-          curvcond = (fx >= f0_ + (1.0-c1_)*x*g0_);
+          curvcond = (fx >= f0_ + (one-c1_)*x*g0_);
         }
         else if (econd_ == CURVATURECONDITION_NULL) {
           curvcond = true;
@@ -159,7 +160,7 @@ private:
             curvcond = (c2_*g0_ <= gx && gx <= -c3_*g0_);
           }
           else if (econd_ == CURVATURECONDITION_APPROXIMATEWOLFE) {
-            curvcond = (c2_*g0_ <= gx && gx <= (2.0*c1_ - 1.0)*g0_);
+            curvcond = (c2_*g0_ <= gx && gx <= (two*c1_ - one)*g0_);
           }
         }
       }
@@ -172,13 +173,14 @@ public:
   // Constructor
   ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist )
     : LineSearch<Real>(parlist) {
+    Real zero(0), p4(0.4), p6(0.6), p9(0.9), oem4(1.e-4), oem10(1.e-10), one(1);
     Teuchos::ParameterList &list0 = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList &list  = list0.sublist("Line-Search Method");
     // Get Bracketing Method
     br_ = Teuchos::rcp(new Bracketing<Real>());
     // Get ScalarMinimization Method
     std::string type = list.get("Type","Brent's");
-    Real tol         = list.sublist(type).get("Tolerance",1.e-10);
+    Real tol         = list.sublist(type).get("Tolerance",oem10);
     int niter        = list.sublist(type).get("Iteration Limit",1000);
     Teuchos::ParameterList plist;
     plist.sublist("Scalar Minimization").set("Type",type);
@@ -200,21 +202,21 @@ public:
     // Status test for line search
     econd_ = StringToECurvatureCondition(list0.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
     max_nfval_ = list0.get("Function Evaluation Limit",20);
-    c1_        = list0.get("Sufficient Decrease Tolerance",1.e-4);
-    c2_        = list0.sublist("Curvature Condition").get("General Parameter",0.9);
-    c3_        = list0.sublist("Curvature Condition").get("Generalized Wolfe Parameter",0.6);
+    c1_        = list0.get("Sufficient Decrease Tolerance",oem4);
+    c2_        = list0.sublist("Curvature Condition").get("General Parameter",p9);
+    c3_        = list0.sublist("Curvature Condition").get("Generalized Wolfe Parameter",p6);
     // Check status test inputs
-    c1_ = ((c1_ < 0.0) ? 1.e-4 : c1_);
-    c2_ = ((c2_ < 0.0) ? 0.9   : c2_);
-    c3_ = ((c3_ < 0.0) ? 0.9   : c3_);
+    c1_ = ((c1_ < zero) ? oem4 : c1_);
+    c2_ = ((c2_ < zero) ? p9   : c2_);
+    c3_ = ((c3_ < zero) ? p9   : c3_);
     if ( c2_ <= c1_ ) {
-      c1_ = 1.e-4;
-      c2_ = 0.9;
+      c1_ = oem4;
+      c2_ = p9;
     }
     EDescent edesc = StringToEDescent(list0.sublist("Descent Method").get("Type","Quasi-Newton Method"));
     if ( edesc == DESCENT_NONLINEARCG ) {
-      c2_ = 0.4;
-      c3_ = std::min(1.0-c2_,c3_);
+      c2_ = p4;
+      c3_ = std::min(one-c2_,c3_);
     }
   }
 
@@ -246,7 +248,7 @@ public:
 
     // Run Bracketing
     int nfval = 0, ngrad = 0;
-    Real A = 0.0,   fA = fval;
+    Real A(0),      fA = fval;
     Real B = alpha, fB = phi->value(B);
     br_->run(alpha,fval,A,fA,B,fB,nfval,ngrad,*phi,*test); 
     B = alpha;

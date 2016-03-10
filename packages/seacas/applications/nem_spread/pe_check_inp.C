@@ -45,7 +45,7 @@ template int NemSpread<double,int64_t>::check_inp(void);
 template int NemSpread<float,int64_t>::check_inp(void);
 
 template<typename T, typename INT>
-int NemSpread<T,INT>::check_inp(void)
+int NemSpread<T,INT>::check_inp()
 {
   const char  *yo = "check_inp";
 

@@ -48,22 +48,28 @@ namespace Ioss {
 
   class Map {
   public:
-    Map() : entityType("unknown"), defined(false)
+    Map() : entityType("unknown"), filename("undefined"), myProcessor(0), defined(false)
       {} 
-    Map(const std::string &entity_type) : entityType(entity_type), defined(false)
+      Map(std::string entity_type, std::string file_name, int processor) :
+	entityType(std::move(entity_type)), filename(std::move(file_name)),
+	myProcessor(processor), defined(false)
       {}
+    Map(const Map& from) =delete;
+    Map& operator=(const Map& from) =delete;
+    ~Map() =default;
     
     int64_t global_to_local(int64_t global, bool must_exist = true) const;
 
     template <typename INT>
       void set_map(INT *ids, size_t count, size_t offset);
 
-    void build_reverse_map(int processor);
-    void build_reverse_map(int64_t num_to_get, int64_t offset, int processor);
+    void build_reverse_map();
+    void build_reverse_map(int64_t num_to_get, int64_t offset);
 
     void release_memory(); //! Release memory for all maps.
       
     void reverse_map_data(void *data, const Ioss::Field &field, size_t count) const;
+    void verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map);
 
     void map_data(void *data, const Ioss::Field &field, size_t count) const;
 
@@ -79,11 +85,9 @@ namespace Ioss {
     MapContainer        reorder;
     ReverseMapContainer reverse;
     std::string         entityType; // node, element, edge, face
+    std::string         filename;  // For error messages only.
+    int                 myProcessor; // For error messages...
     bool defined; // For use by some clients; not all, so don't read too much into value...
-    
-  private:
-    Map(const Map& from); // do not implement
-    Map& operator=(const Map& from); // do not implement
   };
 }
 

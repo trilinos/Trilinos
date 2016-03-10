@@ -63,7 +63,7 @@ Ioss::Transform* Factory::create(const std::string& type)
   return transform;
 }
 
-int Factory::describe(NameList *names)
+int Factory::describe(Ioss::NameList *names)
 {
   int count = 0;
   FactoryMap::const_iterator I;
@@ -76,13 +76,13 @@ int Factory::describe(NameList *names)
 
 Factory::Factory(const std::string& type)
 {
-  registry()->insert(FactoryValuePair(type, this));
+  registry()->insert(std::make_pair(type, this));
 }
 
 void Factory::alias(const std::string& base, const std::string& syn)
 {
   Factory* factory = (*registry()->find(base)).second;
-  registry()->insert(FactoryValuePair(syn, factory));
+  registry()->insert(std::make_pair(syn, factory));
 }
 
 FactoryMap* Factory::registry()

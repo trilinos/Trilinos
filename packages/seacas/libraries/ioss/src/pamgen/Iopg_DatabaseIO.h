@@ -86,6 +86,8 @@ namespace Iopg {
     DatabaseIO(Ioss::Region *region, const std::string& filename,
 	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 	       const Ioss::PropertyManager &properties);
+    DatabaseIO(const DatabaseIO& from) =delete;
+    DatabaseIO& operator=(const DatabaseIO& from) =delete;
     ~DatabaseIO();
 
     int64_t node_global_to_local(int64_t /* global */, bool /* must_exist */) const {return 0;}
@@ -123,7 +125,6 @@ namespace Iopg {
     void get_block_adjacencies(const Ioss::ElementBlock *eb,
 			       std::vector<std::string> &block_adjacency) const;
 
-    void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const;
     void compute_block_membership(Ioss::SideBlock *efblock,
 				  std::vector<std::string> &block_membership) const;
 
@@ -197,9 +198,6 @@ namespace Iopg {
     int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
 
-    // Private member functions
-    DatabaseIO(const DatabaseIO& from); // do not implement
-    DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
     std::string databaseTitle;
 

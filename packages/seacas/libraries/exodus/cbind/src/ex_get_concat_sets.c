@@ -116,13 +116,13 @@ int ex_get_concat_sets (int   exoid,
 	      ex_name_of_object(set_type), exoid);
       ex_err("ex_get_concat_sets",errmsg,exerrval);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to locate %ss defined in file id %d", 
 	      ex_name_of_object(set_type), exoid);
       ex_err("ex_get_concat_sets",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire how many sets have been stored */
@@ -165,8 +165,9 @@ int ex_get_concat_sets (int   exoid,
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       if (ex_get_set_param(exoid, set_type, set_id, 
 			   &(((int64_t*)num_entries_per_set)[i]),
-			   &(((int64_t*)num_dist_per_set)[i])) != NC_NOERR)
+			   &(((int64_t*)num_dist_per_set)[i])) != NC_NOERR) {
 	return(EX_FATAL); /* error will be reported by sub */
+}
       
       if (i < num_sets-1) {
 	/* fill in entry and dist factor index arrays */
@@ -174,8 +175,9 @@ int ex_get_concat_sets (int   exoid,
 	((int64_t*)sets_dist_index)[i+1] = ((int64_t*)sets_dist_index)[i]+((int64_t*)num_dist_per_set)[i];
       }
 
-      if (((int64_t*)num_entries_per_set)[i] == 0) /* NULL  set? */
+      if (((int64_t*)num_entries_per_set)[i] == 0) { /* NULL  set? */
 	continue;
+}
 
       {
 	/* Now, use ExodusII call to get sets */
@@ -189,8 +191,9 @@ int ex_get_concat_sets (int   exoid,
     } else {
       if (ex_get_set_param(exoid, set_type, set_id, 
 			   &(((int*)num_entries_per_set)[i]),
-			   &(((int*)num_dist_per_set)[i])) != NC_NOERR)
+			   &(((int*)num_dist_per_set)[i])) != NC_NOERR) {
 	return(EX_FATAL); /* error will be reported by sub */
+}
       
       if (i < num_sets-1) {
 	/* fill in entry and dist factor index arrays */
@@ -198,8 +201,9 @@ int ex_get_concat_sets (int   exoid,
 	((int*)sets_dist_index)[i+1] = ((int*)sets_dist_index)[i]+((int*)num_dist_per_set)[i];
       }
 
-      if (((int*)num_entries_per_set)[i] == 0) /* NULL  set? */
+      if (((int*)num_entries_per_set)[i] == 0) { /* NULL  set? */
 	continue;
+}
 
       {
 	/* Now, use ExodusII call to get sets */
@@ -212,8 +216,9 @@ int ex_get_concat_sets (int   exoid,
       }
     }
 
-    if (status != NC_NOERR)
+    if (status != NC_NOERR) {
       return(EX_FATAL); /* error will be reported by subroutine */
+}
     
     /* get distribution factors for this set */
     if (sets_dist_fact != 0) {

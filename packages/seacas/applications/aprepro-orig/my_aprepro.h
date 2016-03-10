@@ -85,8 +85,8 @@ struct symrec
   char *name;
   char *syntax;
   char *info;
-  unsigned short type;
-  unsigned short isInternal:1; 
+  unsigned int  type:16;
+  unsigned int  isInternal:1; 
   union {
     double var;
     double (*fnctptr)();

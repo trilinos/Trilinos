@@ -263,7 +263,6 @@ mult_test_results multiply_test(
   RCP<const Comm<Ordinal> > comm,
   FancyOStream& out)
 {
-
   typedef Map<int, int, node_type> Map_t;
   RCP<const Map_t> map = C->getRowMap();
 
@@ -271,20 +270,96 @@ mult_test_results multiply_test(
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
-  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-    name+"_calculated.mtx",computedC);
-  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-    name+"_real.mtx",C);
 
-  double cNorm = C->getFrobeniusNorm ();
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedC);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", C);
+#endif
+
   RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<double, int, int, node_type>(C->getRowMap());
   Tpetra::MatrixMatrix::Add(*C, false, -1.0, *computedC, false, 1.0, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
-  double compNorm = diffMatrix->getFrobeniusNorm ();
+
   mult_test_results results;
-  results.epsilon = compNorm/cNorm;
-  results.cNorm = cNorm;
-  results.compNorm = compNorm;
+  results.cNorm    = C->getFrobeniusNorm ();
+  results.compNorm = diffMatrix->getFrobeniusNorm ();
+  results.epsilon  = results.compNorm/results.cNorm;
+
+  return results;
+}
+
+
+template<class Ordinal>
+mult_test_results multiply_reuse_test(
+  const std::string& name,
+  RCP<Matrix_t> A,
+  RCP<Matrix_t> B,
+  bool AT,
+  bool BT,
+  RCP<Matrix_t> C,
+  RCP<const Comm<Ordinal> > comm,
+  FancyOStream& out)
+{
+  typedef Map<int, int, node_type> Map_t;
+  typedef Vector<double,int,int,node_type> Vector_t;
+
+  RCP<const Map_t> map = C->getRowMap();
+
+  // Scaling vectors
+  Teuchos::Array<typename Teuchos::ScalarTraits<double>::magnitudeType> norms(1);
+
+  RCP<Vector_t> leftScaling  = rcp( new Vector_t(C->getRangeMap()) );
+  leftScaling->randomize();
+  leftScaling->norm2(norms);
+  leftScaling->scale(1.0/norms[0]);
+
+  RCP<Vector_t> rightScaling = rcp( new Vector_t(C->getDomainMap()) );
+  rightScaling->randomize();
+  rightScaling->norm2(norms);
+  rightScaling->scale(1.0/norms[0]);
+
+  // computedC1 = leftScaling * (op(A)*op(B)) * rightScaling
+  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, 1));
+  Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC1, false/*call_FillCompleteOnResult*/);
+  computedC1->fillComplete(C->getDomainMap(), C->getRangeMap());
+  computedC1->leftScale (*leftScaling);
+  computedC1->rightScale(*rightScaling);
+
+  RCP<node_type> node = KokkosClassic::Details::getNode<node_type>();
+
+  // As = leftScaling * op(A) =
+  //   leftScaling * A, if AT=false
+  //   A*leftScaling,   if AT=true
+  RCP<Matrix_t> As = A->clone(node);
+  if (AT == false) As->leftScale (*leftScaling);
+  else             As->rightScale(*leftScaling);
+
+  // Bs = op(B) * rightScaling =
+  //   B * rightScaling, if BT=false
+  //   rightScaling*B,   if BT=true
+  RCP<Matrix_t> Bs = B->clone(node);
+  if (BT == false) Bs->rightScale(*rightScaling);
+  else             Bs->leftScale (*rightScaling);
+
+  // computedC2 = op(As) * op(Bs)
+  RCP<Matrix_t> computedC2 = rcp( new Matrix_t(C->getCrsGraph()) );
+  computedC2->fillComplete(C->getDomainMap(), C->getRangeMap());
+
+  computedC2->resumeFill();
+  Tpetra::MatrixMatrix::Multiply(*As, AT, *Bs, BT, *computedC2, true/*call_FillCompleteOnResult*/);
+
+  // diffMatrix = computedC2 - computedC1
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<double, int, int, node_type>(C->getRowMap());
+  Tpetra::MatrixMatrix::Add(*computedC1, false, -1.0, *computedC2, false, 1.0, diffMatrix);
+  diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
+
+  mult_test_results results;
+  results.cNorm    = C->getFrobeniusNorm ();
+  results.compNorm = diffMatrix->getFrobeniusNorm ();
+  results.epsilon  = results.compNorm/results.cNorm;
+
   return results;
 }
 
@@ -331,6 +406,55 @@ mult_test_results jacobi_test(
 }
 
 
+mult_test_results jacobi_reuse_test(
+  const std::string& name,
+  RCP<Matrix_t> A,
+  RCP<Matrix_t> B,
+  RCP<const Comm<int> > comm,
+  FancyOStream& out)
+{
+  typedef Vector<double,int,int,node_type> Vector_t;
+  typedef Map<int, int, node_type> Map_t;
+
+  RCP<const Map_t> map = A->getRowMap();
+
+  // Scaling vectors
+  Teuchos::Array<typename Teuchos::ScalarTraits<double>::magnitudeType> norms(1);
+  RCP<Vector_t> rightScaling = rcp( new Vector_t(B->getDomainMap()) );
+  rightScaling->randomize();
+  rightScaling->norm2(norms);
+  rightScaling->scale(1.0/norms[0]);
+
+  double omega = 1.0;
+  Vector_t Dinv(B->getRowMap());
+  Dinv.putScalar(1.0);
+
+  // Jacobi version
+  RCP<Matrix_t> computedC1 = rcp(new Matrix_t(B->getRowMap(), 0));
+  Tpetra::MatrixMatrix::Jacobi(omega, Dinv, *A, *B, *computedC1);
+  computedC1->rightScale(*rightScaling);
+
+  // Bs = B * rightScaling
+  RCP<node_type> node = KokkosClassic::Details::getNode<node_type>();
+  RCP<Matrix_t> Bs = B->clone(node);
+  Bs->rightScale(*rightScaling);
+
+  // computedC2 = (I - Dinv*A)*Bs
+  RCP<Matrix_t> computedC2 = rcp( new Matrix_t(computedC1->getCrsGraph()) );
+  Tpetra::MatrixMatrix::Jacobi(omega, Dinv, *A, *Bs, *computedC2);
+
+  // diffMatrix = computedC2 - computedC1
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<double, int, int, node_type>(computedC1->getRowMap());
+  Tpetra::MatrixMatrix::Add(*computedC1, false, -1.0, *computedC2, false, 1.0, diffMatrix);
+  diffMatrix->fillComplete(computedC1->getDomainMap(), computedC1->getRangeMap());
+
+  mult_test_results results;
+  results.cNorm    = computedC1->getFrobeniusNorm ();
+  results.compNorm = diffMatrix->getFrobeniusNorm ();
+  results.epsilon  = results.compNorm/results.cNorm;
+
+  return results;
+}
 
 
 
@@ -339,6 +463,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   using std::endl;
 
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+
   ParameterList defaultParameters;
   RCP<node_type> node = rcp(new node_type(defaultParameters));
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
@@ -352,6 +477,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       "Bad tag's name: " << it->first <<
       "Type name: " << it->second.getAny().typeName() <<
       std::endl << std::endl);
+
     ParameterList currentSystem = matrixSystems->sublist (it->first);
     std::string name = currentSystem.name();
     std::string A_file = currentSystem.get<std::string> ("A");
@@ -369,41 +495,69 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
     TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
       "Unrecognized Matrix Operation: " << op);
 
-    if (op == "multiply"){
-      if(verbose){
+    if (op == "multiply") {
+      if (verbose)
         out << "Running multiply test for " << currentSystem.name() << endl;
-      }
-      mult_test_results results = multiply_test(name, A,B,AT,BT,C,comm, out);
+
+      mult_test_results results = multiply_test(name, A, B, AT, BT, C, comm, out);
+
       if (verbose) {
-        out << "Results:" <<endl;
-        out << "\tEpsilon: " << results.epsilon << endl;
-        out << "\tcNorm: " << results.cNorm << endl;
+        out << "Results:"     << endl;
+        out << "\tEpsilon: "  << results.epsilon  << endl;
+        out << "\tcNorm: "    << results.cNorm    << endl;
         out << "\tcompNorm: " << results.compNorm << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon)
 
-      // Do we try Jacobi?
-      if(AT==false && BT == false && A->getDomainMap()->isSameAs(*A->getRangeMap())) {
-        if(verbose){
-          out << "Running jacobi test for " << currentSystem.name() << endl;
-        }
-        mult_test_results theResults = jacobi_test(name, A,B,comm, out);
-        if (verbose) {
-          out << "Results:" <<endl;
-          out << "\tEpsilon: " << theResults.epsilon << endl;
-          out << "\tcNorm: " << theResults.cNorm << endl;
-          out << "\tcompNorm: " << theResults.compNorm << endl;
-        }
-        TEST_COMPARE(theResults.epsilon, <, epsilon)
+      if (verbose)
+        out << "Running multiply reuse test for " << currentSystem.name() << endl;
 
-          }
-    }
-    else if(op == "add"){
+      results = multiply_reuse_test(name, A, B, AT, BT, C, comm, out);
+
       if (verbose) {
+        out << "Results:"     << endl;
+        out << "\tEpsilon: "  << results.epsilon  << endl;
+        out << "\tcNorm: "    << results.cNorm    << endl;
+        out << "\tcompNorm: " << results.compNorm << endl;
+      }
+      TEST_COMPARE(results.epsilon, <, epsilon)
+
+
+      // Do we try Jacobi?
+      if (AT == false && BT == false && A->getDomainMap()->isSameAs(*A->getRangeMap())) {
+        if (verbose)
+          out << "Running jacobi test for " << currentSystem.name() << endl;
+
+        results = jacobi_test(name, A, B, comm, out);
+        if (verbose) {
+          out << "Results:"     << endl;
+          out << "\tEpsilon: "  << results.epsilon  << endl;
+          out << "\tcNorm: "    << results.cNorm    << endl;
+          out << "\tcompNorm: " << results.compNorm << endl;
+        }
+        TEST_COMPARE(results.epsilon, <, epsilon)
+
+        if (verbose)
+          out << "Running jacobi reuse test for " << currentSystem.name() << endl;
+
+        results = jacobi_reuse_test(name, A, B, comm, out);
+
+        if (verbose) {
+          out << "Results:"     << endl;
+          out << "\tEpsilon: "  << results.epsilon  << endl;
+          out << "\tcNorm: "    << results.cNorm    << endl;
+          out << "\tcompNorm: " << results.compNorm << endl;
+        }
+        TEST_COMPARE(results.epsilon, <, epsilon)
+      }
+    }
+    else if (op == "add") {
+      if (verbose)
         out << "Running 3-argument add test (nonnull C on input) for "
             << currentSystem.name() << endl;
-      }
-      add_test_results results = regular_add_test(A,B,AT,BT,C,comm);
+
+      add_test_results results = regular_add_test(A, B, AT, BT, C, comm);
+
       TEST_COMPARE(results.epsilon, <, epsilon)
       out << "Regular Add Test Results: " << endl;
       out << "\tCorrect Norm: " << results.correctNorm << endl;
@@ -414,19 +568,21 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       // don't think anyone ever exercised the case where C is null on
       // input before.  I'm disabling this test for now until I have a
       // chance to fix that case.
-      if (verbose) {
+      if (verbose)
         out << "Running 3-argument add test (null C on input) for "
             << currentSystem.name() << endl;
-      }
+
       TEUCHOS_TEST_FOR_EXCEPTION(A.is_null (), std::logic_error,
                                  "Before null_add_test: A is null");
       TEUCHOS_TEST_FOR_EXCEPTION(B.is_null (), std::logic_error,
                                  "Before null_add_test: B is null");
       TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
                                  "Before null_add_test: C is null");
+
       results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C, out);
+
       TEST_COMPARE(results.epsilon, <, epsilon)
-        out << "Null Add Test Results: " << endl;
+      out << "Null Add Test Results: " << endl;
       out << "\tCorrect Norm: " << results.correctNorm << endl;
       out << "\tComputed norm: " << results.computedNorm << endl;
       out << "\tEpsilon: " << results.epsilon << endl;
@@ -434,10 +590,10 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       B = Reader<Matrix_t >::readSparseFile(B_file, comm, node, false);
 
       if (! BT) {
-        if (verbose) {
+        if (verbose)
           out << "Running 2-argument add test for "
               << currentSystem.name() << endl;
-        }
+
         results = add_into_test(A,B,AT,C,comm);
         TEST_COMPARE(results.epsilon, <, epsilon)
         out << "Add Into Test Results: " << endl;

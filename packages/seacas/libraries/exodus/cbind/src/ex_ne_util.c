@@ -244,8 +244,9 @@ int ex_get_file_type(int exoid,
   }
 
   /* Set the appropriate character */
-  if (lftype == 0)       strcpy(ftype, "p");
-  else if (lftype == 1)  strcpy(ftype, "s");
+  if (lftype == 0) {       strcpy(ftype, "p");
+  } else if (lftype == 1) {  strcpy(ftype, "s");
+}
 
   return (EX_NOERR);
 }
@@ -351,7 +352,7 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
   int      status;
   int      varid;
   size_t   start[1], count[1];
-#if defined(ENABLE_NETCDF4)
+#if NC_HAS_HDF5
   long long varidx[2];
 #else
   int varidx[2];
@@ -380,7 +381,7 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
       count[0] = 2;
     }
 
-#if defined(ENABLE_NETCDF4)
+#if NC_HAS_HDF5
     status = nc_get_vara_longlong(exoid, varid, start, count, varidx);
 #else
     status = nc_get_vara_int(exoid, varid, start, count, varidx);

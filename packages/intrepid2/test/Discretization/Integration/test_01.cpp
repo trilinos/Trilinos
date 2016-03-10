@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -142,7 +141,7 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
   myCub->getCubature(cubPoints, cubWeights);
 
   for (int i=0; i<numCubPoints; i++)
-    vol += cubWeights[i];
+    vol += cubWeights(i);
 
   return vol;
 }
@@ -422,7 +421,7 @@ Kokkos::initialize();
       hypercubeCub.getCubature(cubPoints, cubWeights);
       testVol = 0;
       for (int i=0; i<numCubPoints; i++)
-        testVol += cubWeights[i];
+        testVol += cubWeights(i);
       *outStream << std::setw(30) << "5-D Hypercube volume --> " << std::setw(10) << std::scientific << testVol <<
                     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[8]) << "\n";
       if (std::abs(testVol - volumeList[8])/std::abs(testVol) > tol) {

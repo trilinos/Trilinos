@@ -34,6 +34,7 @@
 #define IOSS_Iogn_GeneratedMesh_h
 
 #include <Ioss_EntityType.h>            // for EntityType
+#include <Ioss_CodeTypes.h>
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for int64_t
 #include <map>                          // for map, etc
@@ -43,8 +44,6 @@
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;
-  typedef std::vector<int64_t> Int64Vector;
-  typedef std::vector<int>     IntVector;
 
   class GeneratedMesh
   {
@@ -331,7 +330,7 @@ namespace Iogn {
     /**
      * Return number of shell elements in all element blocks in the model.
      */
-    int64_t shell_element_count(ShellLocation) const;
+    int64_t shell_element_count(ShellLocation /*loc*/) const;
 
     /**
      * Return number of elements in all element blocks on this processor.
@@ -341,7 +340,7 @@ namespace Iogn {
     /**
      * Return number of shell elements in all element blocks on this processor.
      */
-    int64_t shell_element_count_proc(ShellLocation) const;
+    int64_t shell_element_count_proc(ShellLocation /*loc*/) const;
 
     int64_t timestep_count() const {return timestepCount;}
     /**
@@ -375,7 +374,7 @@ namespace Iogn {
      * processor.
      */
     virtual void node_map(MapVector &map) const;
-    virtual void node_map(IntVector &map) const;
+    virtual void node_map(Ioss::IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
@@ -383,7 +382,7 @@ namespace Iogn {
      * processor in block "block_number".
      */
     virtual void element_map(int64_t block_number, MapVector &map) const;
-    virtual void element_map(int64_t block_number, IntVector &map) const;
+    virtual void element_map(int64_t block_number, Ioss::IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
@@ -391,7 +390,7 @@ namespace Iogn {
      * processor 
      */
     virtual void element_map(MapVector &map) const;
-    virtual void element_map(IntVector &map) const;
+    virtual void element_map(Ioss::IntVector &map) const;
     
     /** 
      * Fill the passed in 'map' argument with the element map pair
@@ -412,8 +411,8 @@ namespace Iogn {
      * size required to contain the nodal connectivity for the
      * specified block; all information in 'connect' will be overwritten.
      */
-    void connectivity(int64_t block_number, Int64Vector &connect) const;
-    void connectivity(int64_t block_number, IntVector &connect) const;
+    void connectivity(int64_t block_number, Ioss::Int64Vector &connect) const;
+    void connectivity(int64_t block_number, Ioss::IntVector &connect) const;
     void connectivity(int64_t block_number, int64_t* connect) const;
     virtual void connectivity(int64_t block_number, int* connect) const;
 
@@ -453,7 +452,7 @@ namespace Iogn {
      * The 'nodes' vector will be resized to the size required to
      * contain the node list. The ids are global ids.
      */
-    virtual void nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const;
+    virtual void nodeset_nodes(int64_t id, Ioss::Int64Vector &nodes) const;
 
     /**
      * Return the list of the face/ordinal pairs
@@ -464,7 +463,7 @@ namespace Iogn {
      * required to contain the list. The element ids are global ids,
      * the side ordinal is 0-based.
      */
-    virtual void sideset_elem_sides(int64_t nset_id, Int64Vector &elem_sides) const;
+    virtual void sideset_elem_sides(int64_t id, Ioss::Int64Vector &elem_sides) const;
 
     virtual std::vector<std::string> sideset_touching_blocks(int64_t set_id) const;
 

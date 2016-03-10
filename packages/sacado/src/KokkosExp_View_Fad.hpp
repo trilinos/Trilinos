@@ -343,6 +343,7 @@ private:
     std::add_const< fad_value_type >::type  const_fad_value_type ;
 
   enum { FadStaticDimension = Sacado::StaticSize< fad_type >::value };
+  typedef Sacado::integral_nonzero< unsigned , FadStaticDimension > sacado_size_type;
 
   // Only LayoutRight has a static stride one
   enum { FadStaticStride =
@@ -363,7 +364,7 @@ private:
 
   handle_type  m_handle ;
   offset_type  m_offset ;
-  unsigned     m_fad_size ;
+  sacado_size_type m_fad_size ;
 
 public:
 
@@ -430,7 +431,7 @@ public:
 
   // Size of sacado scalar dimension
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
-    { return m_fad_size+1; }
+    { return m_fad_size.value+1; }
 
   //----------------------------------------
   // Range of mapping
@@ -459,7 +460,7 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference() const
     { return reference_type( m_handle
-                           , m_fad_size
+                           , m_fad_size.value
                            , 1 ); }
 
   template< typename I0 >
@@ -467,14 +468,14 @@ public:
   reference_type
   reference( const I0 & i0 ) const
     { return reference_type( m_handle + m_offset(i0,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_1() ); }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 ) const
     { return reference_type( m_handle + m_offset(i0,i1,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_2() ); }
 
 
@@ -482,14 +483,14 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_3() ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_4() ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
@@ -498,7 +499,7 @@ public:
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_5() ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
@@ -507,7 +508,7 @@ public:
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_6() ); }
 
 
@@ -517,7 +518,7 @@ public:
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_7() ); }
 
   //----------------------------------------
@@ -733,7 +734,7 @@ public:
       dst.m_offset  = dst_offset_type( src.m_offset );
       dst.m_handle  = src.m_handle ;
 
-      ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst , src.m_fad_size );
+      ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst , src.m_fad_size.value );
     }
 };
 
@@ -867,6 +868,7 @@ public:
                                                   , extents.domain_offset(6)
                                                   , extents.domain_offset(7)
                                                   ) );
+      dst.m_fad_size = src.m_fad_size;
     }
 
 };

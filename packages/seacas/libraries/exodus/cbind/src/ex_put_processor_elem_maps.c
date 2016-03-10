@@ -98,10 +98,11 @@ int ex_put_processor_elem_maps(int  exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 's')
+  if (ftype[0] == 's') {
     start[0] = processor;
-  else
+  } else {
     start[0] = 0;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
@@ -187,10 +188,11 @@ int ex_put_processor_elem_maps(int  exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 's')
+  if (ftype[0] == 's') {
     start[0] = processor;
-  else
+  } else {
     start[0] = 0;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;

@@ -88,7 +88,7 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
 
   BoxFixture fixture(pm);
   MetaData& meta = fixture.fem_meta();
-  stk::mesh::unit_test::BulkDataTester& bulk = fixture.bulk_data();
+  stk::unit_test_util::BulkDataTester& bulk = fixture.bulk_data();
 
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
 

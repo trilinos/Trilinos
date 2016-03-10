@@ -49,7 +49,7 @@ namespace Iotr {
       static const VM_Factory* factory();
     private:
       VM_Factory();
-      Ioss::Transform* make(const std::string&) const;
+      Ioss::Transform* make(const std::string& /*unused*/ /*unused*/) const;
     };
 
   class VectorMagnitude: public Ioss::Transform

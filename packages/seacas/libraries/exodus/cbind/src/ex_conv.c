@@ -75,7 +75,8 @@ struct ex_file_item* ex_find_file_item(int exoid)
   int base_exoid = (unsigned)exoid & EX_FILE_ID_MASK;
   struct ex_file_item *ptr = file_list;
   while (ptr) {						\
-    if( ptr->file_id == base_exoid ) break;				\
+    if( ptr->file_id == base_exoid ) { break;				
+}\
     ptr = ptr->next;						\
   }								\
   return ptr;
@@ -137,10 +138,11 @@ int ex_conv_ini( int  exoid,
 
   /* check to see if requested word sizes are valid */
   if (!*io_wordsize ) {
-    if (!file_wordsize )
+    if (!file_wordsize ) {
       *io_wordsize = NC_FLOAT_WORDSIZE;
-    else
+    } else {
       *io_wordsize = file_wordsize;
+}
   }
 
   else if (*io_wordsize != 4 && *io_wordsize != 8 ) {
@@ -207,14 +209,19 @@ int ex_conv_ini( int  exoid,
   new_file->is_parallel = is_parallel;
   new_file->is_mpiio    = is_mpiio;
   new_file->is_pnetcdf  = is_pnetcdf;
+  new_file->has_nodes = 1; /* default to yes in case not set */
+  new_file->has_edges = 1;
+  new_file->has_faces = 1;
+  new_file->has_elems = 1;
   
   new_file->next = file_list;
   file_list = new_file;
 
-  if (*io_wordsize == NC_FLOAT_WORDSIZE)
+  if (*io_wordsize == NC_FLOAT_WORDSIZE) {
     new_file->netcdf_type_code = NC_FLOAT;
-  else
+  } else {
     new_file->netcdf_type_code = NC_DOUBLE;
+}
 
   return(EX_NOERR);
 }
@@ -241,7 +248,8 @@ void ex_conv_exit( int exoid )
 
   exerrval = 0; /* clear error code */
   while( file ) {
-    if (file->file_id == exoid ) break;
+    if (file->file_id == exoid ) { break;
+}
 
     prev = file;
     file = file->next;
@@ -254,10 +262,11 @@ void ex_conv_exit( int exoid )
     return;
   }
 
-  if (prev )
+  if (prev ) {
     prev->next = file->next;
-  else
+  } else {
     file_list = file->next;
+}
 
   free( file );
 }
@@ -378,8 +387,10 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
     /* Check whether file type supports compression... */
     if (file->file_type == 2 || file->file_type == 3) {
       int value = option_value;
-      if (value > 9) value = 9;
-      if (value < 0) value = 0;
+      if (value > 9) { value = 9;
+}
+      if (value < 0) { value = 0;
+}
       file->compression_level = value;
     }
     else {

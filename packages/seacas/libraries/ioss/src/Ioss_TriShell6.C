@@ -97,7 +97,7 @@ Ioss::TriShell6::TriShell6()
   Ioss::ElementTopology::alias("trishell6", "SHELL6");
 }
 
-Ioss::TriShell6::~TriShell6() {}
+Ioss::TriShell6::~TriShell6() = default;
 
 int Ioss::TriShell6::parametric_dimension()           const {return  2;}
 int Ioss::TriShell6::spatial_dimension()           const {return  3;}
@@ -129,8 +129,9 @@ Ioss::IntVector Ioss::TriShell6::edge_connectivity(int edge_number) const
   assert(edge_number > 0 && edge_number <= Constants::nedge);
   Ioss::IntVector connectivity(Constants::nedgenode);
 
-  for (int i=0; i < Constants::nedgenode; i++)
+  for (int i=0; i < Constants::nedgenode; i++) {
     connectivity[i] = Constants::edge_node_order[edge_number-1][i];
+}
 
   return connectivity;
 }
@@ -140,8 +141,9 @@ Ioss::IntVector Ioss::TriShell6::face_connectivity(int face_number) const
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(Constants::nodes_per_face[face_number]);
 
-  for (int i=0; i < Constants::nodes_per_face[face_number]; i++)
+  for (int i=0; i < Constants::nodes_per_face[face_number]; i++) {
     connectivity[i] = Constants::face_node_order[face_number-1][i];
+}
 
   return connectivity;
 }
@@ -149,8 +151,9 @@ Ioss::IntVector Ioss::TriShell6::face_connectivity(int face_number) const
 Ioss::IntVector Ioss::TriShell6::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 

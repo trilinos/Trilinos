@@ -6,6 +6,7 @@
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/baseImpl/elementGraph/SparseGraph.hpp>
 
 namespace stk { namespace mesh { class Graph; } }
 namespace stk { namespace mesh { class ParallelInfoForGraphEdges; } }
@@ -23,8 +24,6 @@ struct CoincidentElementDescription
     stk::mesh::impl::LocalId elem1;
     stk::mesh::impl::LocalId elem2;
 };
-
-typedef std::map<stk::mesh::impl::LocalId, std::vector<stk::mesh::GraphEdge>> SparseGraph;
 
 class IdMapper
 {
@@ -55,13 +54,12 @@ public:
       m_topologies(topologies),
       m_detector(detector) {}
 
-    SparseGraph extract_coincident_sides();
+    void extract_coincident_sides(SparseGraph& extractedCoincidentSides);
     void append_extracted_coincident_sides(const std::vector<impl::LocalId> &elemIds,
                                            SparseGraph &coincidentEdges);
 private:
     CoincidentSideExtractor();
 
-    void extract_coincident_sides(SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector);
     void extract_coincident_sides_for_element(LocalId elemId, GraphEdgeVector &coincidentSides, const CoincidenceDetector &detector);
     void extract_coincident_sides_for_element(LocalId elemId, SparseGraph& extractedCoincidentSides, const CoincidenceDetector &detector);
     void delete_edges(const GraphEdgeVector& edgesToDelete);

@@ -363,7 +363,6 @@ int Excn::Internals::put_metadata(const Mesh<INT> &mesh,
   }
 
   {
-    int varid = 0;
     dim[0] = timedim;
     if ((status = nc_def_var(exodusFilePtr, VAR_WHOLE_TIME, nc_flt_code(exodusFilePtr), 1, dim, &varid)) != NC_NOERR) {
       exerrval = status;

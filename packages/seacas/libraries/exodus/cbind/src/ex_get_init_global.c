@@ -83,7 +83,8 @@ int ex_get_init_global(int   exoid,
   exerrval = 0; /* clear error flag */
 
   /* Check the file version information */
-  if ((dimid=ne_check_file_version(exoid)) != EX_NOERR) return (dimid);
+  if ((dimid=ne_check_file_version(exoid)) != EX_NOERR) { return (dimid);
+}
 
   /* Get the dimension ID for the number of global FEM nodes */
   if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES_GLOBAL, &dimid)) != NC_NOERR) {

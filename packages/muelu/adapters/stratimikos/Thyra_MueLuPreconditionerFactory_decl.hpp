@@ -75,7 +75,7 @@
 
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_HierarchyManager.hpp>
-#include <MueLu_HierarchyHelpers.hpp>
+#include <MueLu_HierarchyUtils.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>

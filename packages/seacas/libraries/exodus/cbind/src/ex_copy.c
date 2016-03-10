@@ -65,14 +65,14 @@ struct ncatt {                  /* attribute */
 };
 
 static size_t type_size(nc_type type);
-static int cpy_att    (int, int, int, int);
-static int cpy_var_def(int, int, int, char*);
-static int cpy_var_val(int, int, char*);
+static int cpy_att    (int /*in_id*/, int /*out_id*/, int /*var_in_id*/, int /*var_out_id*/);
+static int cpy_var_def(int /*in_id*/, int /*out_id*/, int /*rec_dim_id*/, char* /*var_nm*/);
+static int cpy_var_val(int /*in_id*/, int /*out_id*/, char* /*var_nm*/);
 static int cpy_coord_def(int in_id,int out_id,int rec_dim_id,
 			 char *var_nm, int in_large, int out_large);
 static int cpy_coord_val(int in_id,int out_id,char *var_nm,
 			 int in_large, int out_large);
-static void update_internal_structs( int, ex_inquiry, struct list_item** );
+static void update_internal_structs( int /*out_exoid*/, ex_inquiry /*inqcode*/, struct list_item**  /*ctr_list*/);
 /*! \endcond */
 
 /*!
@@ -495,8 +495,9 @@ int cpy_coord_def(int in_id,int out_id,int rec_dim_id,char *var_nm,
     /* input file has coordx, coordy, coordz (if 3d); output will only
        have "coord".  See if is already defined in output file. */
     status = nc_inq_varid(out_id, VAR_COORD, &var_out_id);
-    if (status == NC_NOERR)
+    if (status == NC_NOERR) {
       return NC_NOERR; /* already defined in output file */
+}
 
     /* Get dimid of the spatial dimension and num_nodes dimensions in output file... */
     (void)nc_inq_dimid(out_id, DIM_NUM_DIM,   &dim_out_id[0]);
@@ -538,8 +539,9 @@ int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
 
   /* See if the requested variable is already in the output file. */
   status = nc_inq_varid(out_id, var_nm, &var_out_id);
-  if(status == NC_NOERR)
+  if(status == NC_NOERR) {
     return var_out_id;
+}
 
   /* See if the requested variable is in the input file. */
   (void)nc_inq_varid(in_id, var_nm, &var_in_id);
@@ -678,8 +680,9 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
   } /* end loop over dim */
 
   /* Allocate enough space to hold the variable */
-  if (var_sz > 0)
+  if (var_sz > 0) {
     void_ptr=calloc(var_sz, type_size(var_type_in));
+}
 
   /* Get the variable */
 
@@ -785,8 +788,9 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
   void *void_ptr = NULL;
 
   /* Handle easiest situation first: in_large matches out_large */
-  if (in_large == out_large)
+  if (in_large == out_large) {
     return cpy_var_val(in_id, out_id, var_nm);
+}
   
   /* At this point, know that in_large != out_large, so will need to
      either copy a vector to multiple scalars or vice-versa.  Also
@@ -807,8 +811,9 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
     (void)nc_inq_vartype( in_id, var_in_id,     &var_type_in);
     (void)nc_inq_vartype(out_id, var_out_id[0], &var_type_out);
 
-    if (num_nodes > 0)
+    if (num_nodes > 0) {
         void_ptr=malloc(num_nodes * type_size(var_type_in));
+}
 
     /* Copy each component of the variable... */
     for (i=0; i < spatial_dim; i++) {
@@ -836,8 +841,9 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
     (void)nc_inq_vartype(in_id,  var_in_id[0], &var_type_in);
     (void)nc_inq_vartype(out_id, var_out_id,   &var_type_out);
 
-    if (num_nodes > 0)
+    if (num_nodes > 0) {
         void_ptr=malloc(num_nodes * type_size(var_type_in));
+}
 
     /* Copy each component of the variable... */
     for (i=0; i < spatial_dim; i++) {
@@ -868,25 +874,27 @@ void update_internal_structs( int out_exoid, ex_inquiry inqcode, struct list_ite
   int number = ex_inquire_int (out_exoid, inqcode);
 
   if (number > 0) {
-    for (i=0; i<number; i++)
+    for (i=0; i<number; i++) {
       ex_inc_file_item (out_exoid, ctr_list);
+}
   }
 }
 
 size_t type_size(nc_type type)
 {
-  if (type == NC_CHAR)
+  if (type == NC_CHAR) {
     return sizeof(char);
-  else if (type == NC_INT)
+  } else if (type == NC_INT) {
     return sizeof(int);
-  else if (type == NC_INT64)
+  } else if (type == NC_INT64) {
     return sizeof(int64_t);
-  else if (type == NC_FLOAT)
+  } else if (type == NC_FLOAT) {
     return sizeof(float);
-  else if (type == NC_DOUBLE)
+  } else if (type == NC_DOUBLE) {
     return sizeof(double);
-  else
+  } else {
     return 0;
+  }
 }
 
 /* \endcond */

@@ -1016,7 +1016,7 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
   /*****************************************************************************/
 
   template <typename T, typename INT>
-    void NemSpread<T,INT>::extract_elem_blk (void)
+    void NemSpread<T,INT>::extract_elem_blk ()
 
     /* Function which calculates the element block information for the current
      * processor, given the global element block information.  If an error is

@@ -229,7 +229,6 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
-    m_side_rank(stk::topology::INVALID_RANK),
     m_part_fields()
 {
   // Declare the predefined parts
@@ -256,7 +255,6 @@ MetaData::MetaData()
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
-    m_side_rank(stk::topology::INVALID_RANK),
     m_part_fields()
 {
   // Declare the predefined parts
@@ -272,6 +270,7 @@ MetaData::MetaData()
 void MetaData::initialize(size_t spatial_dimension, const std::vector<std::string> &rank_names)
 {
   ThrowErrorMsgIf( !m_entity_rank_names.empty(), "already initialized");
+  ThrowErrorMsgIf( spatial_dimension == 0, "Min spatial dimension is 1");
   ThrowErrorMsgIf( spatial_dimension > 3, "Max spatial dimension is 3");
 
   if ( rank_names.empty() ) {
@@ -285,7 +284,6 @@ void MetaData::initialize(size_t spatial_dimension, const std::vector<std::strin
   }
 
   m_spatial_dimension = spatial_dimension;
-  m_side_rank = side_rank();
 
   internal_declare_known_cell_topology_parts();
 }

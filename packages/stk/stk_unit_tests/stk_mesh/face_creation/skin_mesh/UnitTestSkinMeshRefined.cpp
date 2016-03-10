@@ -112,7 +112,7 @@ TEST(ElementGraph, RefinedQuad)
         stk::mesh::Selector active_sel = active;
         stk::mesh::Selector air = !active;
 
-        stk::mesh::create_exposed_boundary_sides(mesh, active_sel, {}, &air);
+        stk::mesh::create_exposed_block_boundary_sides(mesh, active_sel, {}, &air);
 
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(mesh, mesh_counts);

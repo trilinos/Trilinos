@@ -139,21 +139,21 @@ private:
   void setCallbacksGraph(
     const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
   {
-    std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
-    std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MeshAdapter<user_t> > &adp)
   {
-    std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 
@@ -421,7 +421,7 @@ void AlgZoltan<Adapter>::partition(
   ArrayRCP<part_t> partList(new part_t[numObjects], 0, numObjects, true);
   for (int i = 0; i < nObj; i++) {
     lno_t tmp;
-    TPL_Traits<lno_t, ZOLTAN_ID_PTR>::ASSIGN_TPL_T(tmp, &(oLids[i*nLidEnt]));
+    TPL_Traits<lno_t, ZOLTAN_ID_PTR>::ASSIGN(tmp, &(oLids[i*nLidEnt]));
     partList[tmp] = oParts[i];
   }
   

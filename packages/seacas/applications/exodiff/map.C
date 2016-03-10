@@ -33,8 +33,7 @@
 
 #include <cstdlib>
 #include <iomanip>
-#include <math.h>
-#include <float.h>
+#include <cfloat>
 
 #include "Tolerance.h"
 #include "smart_assert.h"
@@ -76,15 +75,15 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
   {for (size_t e = 0; e < num_elmts; ++e) id[e] = e;}
   
   // Get map storage.
-  node_map = new INT[num_nodes];  SMART_ASSERT(node_map != 0);
+  node_map = new INT[num_nodes];  SMART_ASSERT(node_map != nullptr);
   {for (size_t i = 0; i < num_nodes; ++i) node_map[i] = -1; }
-  elmt_map = new INT[num_elmts];  SMART_ASSERT(elmt_map != 0);
+  elmt_map = new INT[num_elmts];  SMART_ASSERT(elmt_map != nullptr);
   
   // Create storage for midpoints.
   double *x2 = nullptr, *y2 = nullptr, *z2 = nullptr;
-  x2 = new double[num_elmts];  SMART_ASSERT(x2 != 0);
-  if (dim > 1) { y2 = new double[num_elmts];  SMART_ASSERT(y2 != 0); }
-  if (dim > 2) { z2 = new double[num_elmts];  SMART_ASSERT(z2 != 0); }
+  x2 = new double[num_elmts];  SMART_ASSERT(x2 != nullptr);
+  if (dim > 1) { y2 = new double[num_elmts];  SMART_ASSERT(y2 != nullptr); }
+  if (dim > 2) { z2 = new double[num_elmts];  SMART_ASSERT(z2 != nullptr); }
   
   // Load coordinates for file 2 and get pointers to them.
   file2.Load_Nodal_Coordinates();
@@ -204,7 +203,7 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
 	    file2.Global_to_Block_Local(e2+1, b2, l2);
         
 	    const Exo_Block<INT>* block2 = file2.Get_Elmt_Block_by_Index(b2);
-	    SMART_ASSERT(block2 != 0);
+	    SMART_ASSERT(block2 != nullptr);
         
 	    // Check that the element types are the same.
 	    if (num_nodes_per_elmt != block2->Num_Nodes_per_Elmt())
@@ -365,16 +364,16 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
   {for (size_t e = 0; e < num_elmts2; ++e) id2[e] = e;}
   
   // Get map storage.
-  node_map = new INT[num_nodes1];  SMART_ASSERT(node_map != 0);
+  node_map = new INT[num_nodes1];  SMART_ASSERT(node_map != nullptr);
   {for (size_t i = 0; i < num_nodes1; ++i) node_map[i] = -1; }
-  elmt_map = new INT[num_elmts1];  SMART_ASSERT(elmt_map != 0);
+  elmt_map = new INT[num_elmts1];  SMART_ASSERT(elmt_map != nullptr);
   {for (size_t i = 0; i < num_elmts1; ++i) elmt_map[i] = -1; }
 
   // Create storage for midpoints.
   double *x2 = nullptr, *y2 = nullptr, *z2 = nullptr;
-  x2 = new double[num_elmts2];  SMART_ASSERT(x2 != 0);
-  if (dim > 1) { y2 = new double[num_elmts2];  SMART_ASSERT(y2 != 0); }
-  if (dim > 2) { z2 = new double[num_elmts2];  SMART_ASSERT(z2 != 0); }
+  x2 = new double[num_elmts2];  SMART_ASSERT(x2 != nullptr);
+  if (dim > 1) { y2 = new double[num_elmts2];  SMART_ASSERT(y2 != nullptr); }
+  if (dim > 2) { z2 = new double[num_elmts2];  SMART_ASSERT(z2 != nullptr); }
   
   // Load coordinates for file 2 and get pointers to them.
   file2.Load_Nodal_Coordinates();
@@ -499,7 +498,7 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
 	file2.Global_to_Block_Local(e2+1, b2, l2);
         
         const Exo_Block<INT>* block2 = file2.Get_Elmt_Block_by_Index(b2);
-        SMART_ASSERT(block2 != 0);
+        SMART_ASSERT(block2 != nullptr);
         
         // Check that the element types are the same.
         if (num_nodes_per_elmt != block2->Num_Nodes_per_Elmt())
@@ -676,7 +675,7 @@ void Compute_FileId_Maps(INT*& node_map, INT*& elmt_map,
     size_t num_nodes = file1.Num_Nodes();
     SMART_ASSERT(num_nodes == file2.Num_Nodes());
 
-    node_map = new INT[num_nodes];  SMART_ASSERT(node_map != 0);
+    node_map = new INT[num_nodes];  SMART_ASSERT(node_map != nullptr);
     file1.Load_Node_Map();
     file2.Load_Node_Map();
     const INT *node_id_map1 = file1.Get_Node_Map();
@@ -691,7 +690,7 @@ void Compute_FileId_Maps(INT*& node_map, INT*& elmt_map,
   {
     size_t num_elmts = file1.Num_Elmts();
     SMART_ASSERT(num_elmts == file2.Num_Elmts());
-    elmt_map = new INT[num_elmts];  SMART_ASSERT(elmt_map != 0);
+    elmt_map = new INT[num_elmts];  SMART_ASSERT(elmt_map != nullptr);
     file1.Load_Elmt_Map();
     file2.Load_Elmt_Map();
     const INT *elem_id_map1 = file1.Get_Elmt_Map();
@@ -890,7 +889,7 @@ namespace {
 	      INT *id, size_t N, int dim, size_t block_id,
 	      bool ignore_dups)
   {
-    SMART_ASSERT(x != 0);
+    SMART_ASSERT(x != nullptr);
     SMART_ASSERT(N > 0);
     
     // Cannot ignore the comparisons, so make sure the coord_tol_type

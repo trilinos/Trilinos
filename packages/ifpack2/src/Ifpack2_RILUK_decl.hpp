@@ -603,6 +603,7 @@ protected:
   bool isAllocated_;
   bool isInitialized_;
   bool isComputed_;
+  bool isExperimental_;
 
   int numInitialize_;
   int numCompute_;
@@ -615,8 +616,6 @@ protected:
   magnitude_type RelaxValue_;
   magnitude_type Athresh_;
   magnitude_type Rthresh_;
-
-  bool isExperimental_;
 
 };
 
