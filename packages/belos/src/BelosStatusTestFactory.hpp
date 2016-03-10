@@ -64,7 +64,9 @@ namespace Belos {
     typedef StatusTestCombo<Scalar,MV,OP> combo_test;
 
     //! Constructor
-    StatusTestFactory() { };
+    StatusTestFactory() {
+      tagged_tests_ = Teuchos::rcp(new std::map<std::string, Teuchos::RCP<base_test> > );
+    };
 
     //! Destructor
     virtual ~StatusTestFactory() { };
@@ -96,7 +98,10 @@ namespace Belos {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
       }
 
-      // TODO introduce tagging
+      // collect tagged status tests
+      if ( Teuchos::isParameterType<std::string>(p, "Tag") ) {
+        (*tagged_tests_)[Teuchos::getParameter<std::string>(p, "Tag")] = status_test;
+      }
 
       return status_test;
     }
@@ -111,7 +116,13 @@ namespace Belos {
       return userCombo;
     }
 
+    Teuchos::RCP<std::map<std::string, Teuchos::RCP<base_test> > > getTaggedTests() const {return tagged_tests_; }
+
   private:
+
+    //! maps test names (defined by the "Tag" parameter) to the corresponding status test
+    Teuchos::RCP<std::map<std::string, Teuchos::RCP<base_test> > > tagged_tests_;
+
     Teuchos::RCP<base_test> buildComboTest(Teuchos::ParameterList& p) const {
       typedef typename combo_test::ComboType comboType;
 
