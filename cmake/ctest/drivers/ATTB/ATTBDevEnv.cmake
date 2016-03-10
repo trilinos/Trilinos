@@ -7,7 +7,11 @@ IF ("$ENV{ATTB_ENV}" STREQUAL "")
     " in order to make sure that the ATTB env is set up correctly.")
 ENDIF()
 
-MESSAGE("Setting compilers and TPL paths for ATTB system ...")
+MESSAGE("-- Setting compilers and TPL paths for ATTB system ...")
+
+MESSAGE("-- Zeroing out env var LIBRARY_PATH to avoid problems with CMake not adding lib paths ...")
+SET(ENV{LIBRARY_PATH} "")
+#MESSAGE("-- ENV{LIBRARY_PATH} = $ENV{LIBRARY_PATH}")
 
 # Define cmpilers
 ASSERT_DEFINED(ENV{MPICC})
@@ -28,7 +32,7 @@ ELSE()
 ENDIF()
 ASSERT_DEFINED(ENV{GCC_PATH})
 SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS
-  "-lgomp -lgfortran${LDL_LINK_ARG}"
+  "-lgomp -lgfortran${LDL_LINK_ARG} -ldl"
   CACHE STRING "")
 #  -Wl,-rpath,$ENV{GCC_PATH}/lib64
 
@@ -97,9 +101,10 @@ SET(BoostLib_LIBRARY_DIRS "$ENV{BOOST_ROOT}/lib"
 ASSERT_DEFINED(ENV{NETCDF_ROOT})
 ASSERT_DEFINED(ENV{PNETCDF_ROOT})
 ASSERT_DEFINED(ENV{HDF5_ROOT})
-SET(TPL_Netcdf_INCLUDE_DIRS "$ENV{PNETCDF_ROOT}/include;$ENV{NETCDF_ROOT}/include;$ENV{HDF5_ROOT}/include"
+ASSERT_DEFINED(ENV{ZLIB_ROOT})
+SET(TPL_Netcdf_INCLUDE_DIRS "$ENV{NETCDF_ROOT}/include;$ENV{PNETCDF_ROOT}/include;$ENV{HDF5_ROOT}/include"
   CACHE PATH "Set in ATTBDevEnv.cmake"  CACHE PATH "Set in ATTBDevEnv.cmake")
-SET(Netcdf_LIBRARY_DIRS "$ENV{PNETCDF_ROOT}/lib;$ENV{NETCDF_ROOT}/lib;$ENV{HDF5_ROOT}/lib"
+SET(Netcdf_LIBRARY_DIRS "$ENV{NETCDF_ROOT}/lib;$ENV{PNETCDF_ROOT}/lib;$ENV{HDF5_ROOT}/lib;$ENV{ZLIB_ROOT}/lib"
   CACHE PATH "Set in ATTBDevEnv.cmake")
-SET(Netcdf_LIBRARY_NAMES "pnetcdf;netcdf;hdf5_hl;hdf5_fortran;hdf5;z"
+SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;hdf5_hl;hdf5_fortran;hdf5;z"
   CACHE PATH "Set in ATTBDevEnv.cmake")
