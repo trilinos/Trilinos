@@ -146,3 +146,10 @@ SET(Netcdf_LIBRARY_DIRS "$ENV{NETCDF_ROOT}/lib;$ENV{PNETCDF_ROOT}/lib;${HDF5_LIB
   CACHE PATH "Set in ATTBDevEnv.cmake")
 SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
   CACHE STRING "Set in ATTBDevEnv.cmake")
+
+#
+# Test disables
+#
+
+SET(STKUnit_tests_util_parallel_UnitTest_MPI_4_DISABLE ON
+  CACHE BOOL  "Set in ATTBDevEnv.cmake")
