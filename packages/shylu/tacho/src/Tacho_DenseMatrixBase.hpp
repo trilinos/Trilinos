@@ -2,7 +2,7 @@
 #define __TACHO_DENSE_MATRIX_BASE_HPP__
 
 /// \file Tacho_DenseMatrixBase.hpp
-/// \brief dense matrix base object interfaces 
+/// \brief dense matrix base object.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho_Util.hpp"
@@ -10,7 +10,9 @@
 namespace Tacho { 
 
   /// \class DenseMatrixBase
-  /// \breif Dense matrix base object using Kokkos view and subview
+  /// \breif Dense matrix base object using Kokkos view. 
+  ///        The base object hold actual matrix storage (1D) and 
+  ///        is responsible for mirroring to a device.
   template<typename ValueType,
            typename OrdinalType, 
            typename SizeType = OrdinalType,
@@ -27,7 +29,7 @@ namespace Tacho {
     typedef Kokkos::View<ordinal_type*,space_type> ordinal_type_array;
 
     template<typename, typename, typename, typename>
-    friend class DenseMatrixBase ;
+    friend class DenseMatrixBase;
     
   private:                          
     char               _label[Util::LabelSize]; //!< object label
@@ -42,9 +44,9 @@ namespace Tacho {
     
   protected:
 
-    /// Callable: Device (o), KokkosFunctors (x)
-
-    KOKKOS_INLINE_FUNCTION    
+    /// Properties: 
+    /// - Compile with Device (o), 
+    /// - Callable in KokkosFunctors (x)
     void createInternalArrays(const ordinal_type m, 
                               const ordinal_type n,
                               const ordinal_type rs,
@@ -86,7 +88,9 @@ namespace Tacho {
       }
     }
 
-    KOKKOS_INLINE_FUNCTION    
+    /// Properties: 
+    /// - Compile with Device (o), 
+    /// - Callable in KokkosFunctors (x)
     void createInternalArrays(const ordinal_type m, 
                               const ordinal_type n) {
       createInternalArrays(m, n, 1, m);
@@ -94,8 +98,17 @@ namespace Tacho {
 
   public:
 
-    /// Callable: Device (o), KokkosFunctors (o)
-    
+    /// Interface functions
+    /// ------------------------------------------------------------------
+    /// Properties: 
+    /// - Compile with Device (o), 
+    /// - Callable in KokkosFunctors (o)
+
+    KOKKOS_INLINE_FUNCTION    
+    bool isValueArrayNull() const {
+      return _a.is_null();
+    }
+
     KOKKOS_INLINE_FUNCTION    
     void setLabel(const char *label) { 
       strncpy(_label, label, Util::min(strlen(label)+1, Util::LabelSize));
@@ -142,9 +155,17 @@ namespace Tacho {
     value_type* ValuePtr() const { return &_a[0]; }
 
     KOKKOS_INLINE_FUNCTION
-    value_type_array ValueArray() const { return _a; }
+    value_type_array& ValueArray() const { return _a; }
+
+    /// ------------------------------------------------------------------
     
-    /// Callable: Device (o), KokkosFunctors (x)
+    /// Constructors
+    /// ------------------------------------------------------------------
+    /// Properties: 
+    /// - Compile with Device (o), 
+    /// - Callable in KokkosFunctors 
+    ///   - Default and copy constructors are allowed in KokkosFunctors.
+    ///   - Creating internal workspace is not allowed in KokkosFunctors.
 
     /// \brief Default constructor.
     KOKKOS_INLINE_FUNCTION
@@ -159,7 +180,7 @@ namespace Tacho {
     }
 
     /// \brief Constructor with label
-    //KOKKOS_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     DenseMatrixBase(const char *label) 
       : _m(0),
         _n(0),
@@ -187,19 +208,6 @@ namespace Tacho {
       setLabel(b._label); 
     }
     
-    /// \brief Constructor to allocate internal data structures.
-    ///        By default, it uses the column oriented format.
-    //KOKKOS_INLINE_FUNCTION
-    DenseMatrixBase(const char *label,
-                    const ordinal_type m, 
-                    const ordinal_type n)
-      : _m(m),
-        _n(n)
-    { 
-      setLabel(label); 
-      createInternalArrays(m, n);
-    }
-      
     /// \brief Constructor to attach external arrays to the matrix.
     ///        This is advanced constructor and trust user inputs
     ///        Todo :: later get an input of 2D container
@@ -219,6 +227,26 @@ namespace Tacho {
       setLabel(label); 
     }
 
+    /// \brief Constructor to allocate internal data structures.
+    ///        By default, it uses the column oriented format.
+    DenseMatrixBase(const char *label,
+                    const ordinal_type m, 
+                    const ordinal_type n)
+      : _m(m),
+        _n(n)
+    { 
+      setLabel(label); 
+      createInternalArrays(m, n);
+    }
+
+    /// ------------------------------------------------------------------
+
+    /// Creationg and mirroring
+    /// ------------------------------------------------------------------
+    /// Properties: 
+    /// - Compile with Device (o), 
+    /// - Callable in KokkosFunctors (x) 
+      
     template<typename SpT>
     KOKKOS_INLINE_FUNCTION
     void 
@@ -252,116 +280,16 @@ namespace Tacho {
         space_type::execution_space::fence();
       }
     }
+    /// ------------------------------------------------------------------
 
-    /// \brief elementwise copy of matrix b
-    /// Callable: Device (o), KokkosFunctors (o), Blocking (o)
-    KOKKOS_INLINE_FUNCTION
-    void
-    copy(const DenseMatrixBase &b,
-         const ordinal_type_array &ip = ordinal_type_array(),
-         const ordinal_type_array &jp = ordinal_type_array()) { 
-      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
-      
-      const auto ip_dim = ip.dimension_0();
-      const auto jp_dim = jp.dimension_0();
 
-      space_type::execution_space::fence();      
+    /// Print out 
+    /// ------------------------------------------------------------------
+    /// Properties: 
+    /// - Compile with Device (x), 
+    /// - Callable in KokkosFunctors (x) 
 
-      // loop fusion assumes column major format. 
-      if (ip_dim && jp_dim) { 
-        // row/col permutation
-        Kokkos::parallel_for( range_policy(0, b._n), 
-                              [&](const ordinal_type j) 
-                              {
-#pragma unroll 
-                                for (auto i=0;i<b._m;++i)
-                                  this->Value(i, j) = b.Value(ip(i), jp(j));
-                              } );
-      } else if (ip_dim) {
-        // row permutation
-        Kokkos::parallel_for( range_policy(0, b._n), 
-                              [&](const ordinal_type j) 
-                              {
-#pragma unroll 
-                                for (auto i=0;i<b._m;++i)
-                                  this->Value(i, j) = b.Value(ip(i), j);
-                              } );
-      } else if (jp_dim) {
-        // col permutation
-        Kokkos::parallel_for( range_policy(0, b._n), 
-                              [&](const ordinal_type j) 
-                              {
-                                const ordinal_type jj = jp(j);
-#pragma unroll 
-                                for (auto i=0;i<b._m;++i)
-                                  this->Value(i, j) = b.Value(i, jj);
-                              } );
-      } else {
-        // no permutation
-        Kokkos::parallel_for( range_policy(0, b._n), 
-                              [&](const ordinal_type j) 
-                              {
-#pragma unroll
-                                for (auto i=0;i<b._m;++i)
-                                  this->Value(i,j) = b.Value(i,j);
-                              } );
-
-        // // fused loop
-        // Kokkos::View<Kokkos::pair<ordinal_type,ordinal_type>,space_type> idx;
-        // Kokkos::parallel_for( range_policy(0, b._m*b._n), 
-        //                       [=](const ordinal_type k) 
-        //                       {
-        //                         Util::unrollIndex(idx(), k, b._m);
-        //                         this->Value(idx().first, idx().second) = b.Value(idx().first, idx().second);
-        //                       } );
-      }
-
-      space_type::execution_space::fence();
-    }
-
-    /// \brief elementwise copy of lower/upper triangular of matrix b
-    /// Callable: Device (o), KokkosFunctors (o)
-    template<typename VT,
-             typename OT,
-             typename ST>
-    KOKKOS_INLINE_FUNCTION
-    void
-    copy(const int uplo, 
-         const DenseMatrixBase<VT,OT,ST,space_type> &b) { 
-
-      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Dynamic> > range_policy;
-
-      space_type::execution_space::fence();
-
-      switch (uplo) {
-      case Uplo::Lower: {
-        Kokkos::parallel_for( range_policy(0, b._n), 
-                              [&](const ordinal_type j) 
-                              { 
-#pragma unroll 
-                                for (ordinal_type i=j;i<b._m;++i) 
-                                  this->Value(i, j) = b.Value(i, j);
-                              } );
-        break;
-      }
-      case Uplo::Upper: {
-        Kokkos::parallel_for( range_policy(0, b._n), 
-                              [&](const ordinal_type j) 
-                              { 
-#pragma unroll 
-                                for (ordinal_type i=0;i<(j+1);++i) 
-                                  this->Value(i, j) = b.Value(i, j);
-                              } );
-        break;
-      }
-      }
-
-      space_type::execution_space::fence();
-    }
-
-    /// \brief debugging output
-    /// Callable: Device (x), KokkosFunctors (x)
-    
+    /// \brief print out to stream
     std::ostream& showMe(std::ostream &os) const {
       std::streamsize prec = os.precision();
       os.precision(8);
@@ -393,10 +321,13 @@ namespace Tacho {
       return os;
     }
 
-    template<typename VT, typename OT, typename ST, typename SpT>
-    friend std::ostream& std::operator<<(std::ostream &os, const DenseMatrixBase<VT,OT,ST,SpT> &self) {
+    /// \brief stream operator over-riding.
+    template<typename T0, typename T1, typename T2, typename T3>
+    friend std::ostream& std::operator<<(std::ostream &os, const DenseMatrixBase<T0,T1,T2,T3> &self) {
       return self.showMe(os);
     }
+
+    /// ------------------------------------------------------------------
   };
   
 }
