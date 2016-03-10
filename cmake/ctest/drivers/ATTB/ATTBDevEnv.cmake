@@ -71,19 +71,45 @@ SET(Anasazi_ENABLE_COMPLEX OFF CACHE BOOL
 SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL
   "Set by default in gcc-4.8.3-base-options.cmake")
 
+#
 # Set up TPL stuff
+#
+# These ATTB systems are currently set up to only have static libs.
+#
+# We disable TPLs that we know are not on this system so that we disable
+# downstream SE packages that have required dependencies on these TPLs
+# (e.g. some SEACAS and STK subpackages).
+#
+# We default enable all of the TPLs that we know are on this system.  In this
+# way, support for these TPLs will be turned on by default.
+#
+
+# Always find and use static libs on this system
+SET(TPL_FIND_SHARED_LIBS OFF CACHE BOOL
+  "Set in ATTBDevEnv.cmake")
+SET(Trilinos_LINK_SEARCH_START_STATIC ON  CACHE BOOL
+  "Set in ATTBDevEnv.cmake")
+
+# Disable a bunch of TPLs that are not on this system
+SET(TPL_ENABLE_GLM OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(TPL_ENABLE_Matio OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(TPL_ENABLE_SuperLU OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(TPL_ENABLE_X11 OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
 
 # BLAS
+SET(TPL_ENABLE_BLAS ON CACHE BOOL "Set in ATTBDevEnv.cmake")
 ASSERT_DEFINED(ENV{BLAS_ROOT})
 SET(BLAS_LIBRARY_DIRS "$ENV{BLAS_ROOT}/lib"
   CACHE PATH "Set in ATTBDevEnv.cmake")
 
 # LAPACK
+SET(TPL_ENABLE_LAPACK ON CACHE BOOL "Set in ATTBDevEnv.cmake")
 ASSERT_DEFINED(ENV{LAPACK_ROOT})
 SET(LAPACK_LIBRARY_DIRS "$ENV{LAPACK_ROOT}/lib"
   CACHE PATH "Set in ATTBDevEnv.cmake")
 
 # Boost
+SET(TPL_ENABLE_Boost ON CACHE BOOL "Set in ATTBDevEnv.cmake")
 ASSERT_DEFINED(ENV{BOOST_ROOT})
 SET(Boost_INCLUDE_DIRS "$ENV{BOOST_ROOT}/include"
   CACHE PATH "Set in ATTBDevEnv.cmake")
@@ -91,20 +117,32 @@ SET(Boost_LIBRARY_DIRS "$ENV{BOOST_ROOT}/lib"
   CACHE PATH "Set in ATTBDevEnv.cmake")
 
 # BoostLib
+SET(TPL_ENABLE_BoostLib ON CACHE BOOL "Set in ATTBDevEnv.cmake")
 ASSERT_DEFINED(ENV{BOOST_ROOT})
 SET(BoostLib_INCLUDE_DIRS "$ENV{BOOST_ROOT}/include"
   CACHE PATH "Set in ATTBDevEnv.cmake")
 SET(BoostLib_LIBRARY_DIRS "$ENV{BOOST_ROOT}/lib"
   CACHE PATH "Set in ATTBDevEnv.cmake")
 
+# HDF5
+SET(TPL_ENABLE_HDF5 ON CACHE BOOL "Set in ATTBDevEnv.cmake")
+ASSERT_DEFINED(ENV{HDF5_ROOT})
+ASSERT_DEFINED(ENV{ZLIB_ROOT})
+SET(TPL_HDF5_INCLUDE_DIRS "$ENV{HDF5_ROOT}/include;$ENV{ZLIB_ROOT}/include"
+  CACHE PATH "Set in ATTBDevEnv.cmake")
+SET(HDF5_LIBRARY_DIRS "$ENV{HDF5_ROOT}/lib;$ENV{ZLIB_ROOT}/lib"
+  CACHE PATH "Set in ATTBDevEnv.cmake")
+SET(HDF5_LIBRARY_NAMES "hdf5_hl;hdf5_fortran;hdf5;z"
+  CACHE STRING "Set in ATTBDevEnv.cmake")
+
 # Netcdf
+SET(TPL_ENABLE_Netcdf ON CACHE BOOL "Set in ATTBDevEnv.cmake")
 ASSERT_DEFINED(ENV{NETCDF_ROOT})
 ASSERT_DEFINED(ENV{PNETCDF_ROOT})
 ASSERT_DEFINED(ENV{HDF5_ROOT})
-ASSERT_DEFINED(ENV{ZLIB_ROOT})
-SET(TPL_Netcdf_INCLUDE_DIRS "$ENV{NETCDF_ROOT}/include;$ENV{PNETCDF_ROOT}/include;$ENV{HDF5_ROOT}/include"
-  CACHE PATH "Set in ATTBDevEnv.cmake"  CACHE PATH "Set in ATTBDevEnv.cmake")
-SET(Netcdf_LIBRARY_DIRS "$ENV{NETCDF_ROOT}/lib;$ENV{PNETCDF_ROOT}/lib;$ENV{HDF5_ROOT}/lib;$ENV{ZLIB_ROOT}/lib"
+SET(TPL_Netcdf_INCLUDE_DIRS "$ENV{NETCDF_ROOT}/include;$ENV{PNETCDF_ROOT}/include;${TPL_HDF5_INCLUDE_DIRS}"
   CACHE PATH "Set in ATTBDevEnv.cmake")
-SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;hdf5_hl;hdf5_fortran;hdf5;z"
+SET(Netcdf_LIBRARY_DIRS "$ENV{NETCDF_ROOT}/lib;$ENV{PNETCDF_ROOT}/lib;${HDF5_LIBRARY_DIRS}"
   CACHE PATH "Set in ATTBDevEnv.cmake")
+SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
+  CACHE STRING "Set in ATTBDevEnv.cmake")
