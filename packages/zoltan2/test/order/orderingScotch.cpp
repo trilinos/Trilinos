@@ -328,10 +328,10 @@ int main(int narg, char** arg)
   if (testReturn) goto End;
 
   // Validate RangTab.
-  // Should be monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
+  // Should be monitonically increasing, RT[0] = 0; RT[NumBlocks]=nVtx;
   testReturn = RangTab[0];
   if (testReturn) goto End;
-  for (size_t i=0; i<checkLength; i++){
+  for (size_t i=0; i<NumBlocks; i++){
     testReturn = !(RangTab[i] < RangTab[i+1]);
     if (testReturn) goto End;
   }
