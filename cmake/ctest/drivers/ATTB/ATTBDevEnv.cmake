@@ -7,9 +7,9 @@ IF ("$ENV{ATTB_ENV}" STREQUAL "")
     " in order to make sure that the ATTB env is set up correctly.")
 ENDIF()
 
-MESSAGE("-- Setting compilers and TPL paths for ATTB system ...")
+MESSAGE("-- ATTB: Setting compilers and TPL paths for ATTB system ...")
 
-MESSAGE("-- Zeroing out env var LIBRARY_PATH to avoid problems with CMake not adding lib paths ...")
+MESSAGE("-- ATTB: Zeroing out env var LIBRARY_PATH to avoid problems with CMake not adding lib paths ...")
 SET(ENV{LIBRARY_PATH} "")
 #MESSAGE("-- ENV{LIBRARY_PATH} = $ENV{LIBRARY_PATH}")
 
