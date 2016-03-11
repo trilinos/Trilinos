@@ -58,16 +58,19 @@ int ex_get_sets (int   exoid,
       sets[i].num_entry = num_entry;
       sets[i].num_distribution_factor = num_dist;
     }
-    if (stat != EX_NOERR) status = (status == EX_FATAL) ? EX_FATAL : stat;
+    if (stat != EX_NOERR) { status = (status == EX_FATAL) ? EX_FATAL : stat;
+}
 
     if (stat == EX_NOERR && (sets[i].entry_list != NULL || sets[i].extra_list != NULL)) {
       stat = ex_get_set(exoid, sets[i].type, sets[i].id, sets[i].entry_list, sets[i].extra_list);
-      if (stat != EX_NOERR) status = (status == EX_FATAL) ? EX_FATAL : stat;
+      if (stat != EX_NOERR) { status = (status == EX_FATAL) ? EX_FATAL : stat;
+}
     }
 
     if (stat == EX_NOERR && sets[i].distribution_factor_list != NULL) {
       stat = ex_get_set_dist_fact(exoid, sets[i].type, sets[i].id, sets[i].distribution_factor_list);
-      if (stat != EX_NOERR) status = (status == EX_FATAL) ? EX_FATAL : stat;
+      if (stat != EX_NOERR) { status = (status == EX_FATAL) ? EX_FATAL : stat;
+}
     }
   }
   return status;

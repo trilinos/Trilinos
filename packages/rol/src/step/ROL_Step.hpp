@@ -96,11 +96,11 @@ public:
   virtual void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
                            Objective<Real> &obj, BoundConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1), zero(0);
     // Initialize state descent direction and gradient storage
-    state_->descentVec   = s.clone();
-    state_->gradientVec  = g.clone();
-    state_->searchSize = 0.0;
+    state_->descentVec  = s.clone();
+    state_->gradientVec = g.clone();
+    state_->searchSize  = zero;
     // Project x onto constraint set
     if ( con.isActivated() ) {
       con.project(x);
@@ -114,9 +114,9 @@ public:
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
       xnew->set(x);
-      xnew->axpy(-1.0,(Step<Real>::state_->gradientVec)->dual());
+      xnew->axpy(-one,(Step<Real>::state_->gradientVec)->dual());
       con.project(*xnew);
-      xnew->axpy(-1.0,x);
+      xnew->axpy(-one,x);
       algo_state.gnorm = xnew->norm();
     }
     else {

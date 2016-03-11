@@ -44,28 +44,28 @@ namespace Ioss {
 
   public:
     static void factory();
-    ~Unknown();
+    ~Unknown() override;
 
-    ElementShape shape() const {return ElementShape::UNKNOWN;}
-    int spatial_dimension()           const;
-    int parametric_dimension()       const;
-    int order()               const;
+    ElementShape shape() const override {return ElementShape::UNKNOWN;}
+    int spatial_dimension()           const override;
+    int parametric_dimension()       const override;
+    int order()               const override;
 
-    int number_corner_nodes() const;
-    int number_nodes()        const;
-    int number_edges()        const;
-    int number_faces()        const;
+    int number_corner_nodes() const override;
+    int number_nodes()        const override;
+    int number_edges()        const override;
+    int number_faces()        const override;
 
-    int number_nodes_edge(int edge=0)   const;
-    int number_nodes_face(int face=0)   const;
-    int number_edges_face(int face=0)   const;
+    int number_nodes_edge(int edge=0)   const override;
+    int number_nodes_face(int face=0)   const override;
+    int number_edges_face(int face=0)   const override;
 
-    Ioss::IntVector edge_connectivity(int edge_number) const;
-    Ioss::IntVector face_connectivity(int face_number) const;
-    Ioss::IntVector element_connectivity()             const;
+    Ioss::IntVector edge_connectivity(int edge_number) const override;
+    Ioss::IntVector face_connectivity(int face_number) const override;
+    Ioss::IntVector element_connectivity()             const override;
 
-    Ioss::ElementTopology* face_type(int face_number = 0) const;
-    Ioss::ElementTopology* edge_type(int edge_number = 0) const;
+    Ioss::ElementTopology* face_type(int face_number = 0) const override;
+    Ioss::ElementTopology* edge_type(int edge_number = 0) const override;
 
   protected:
     Unknown();

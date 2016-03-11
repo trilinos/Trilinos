@@ -40,7 +40,7 @@
 
 Ioss::FieldManager::FieldManager() {}
 
-Ioss::FieldManager::~FieldManager() {}
+Ioss::FieldManager::~FieldManager() = default;
 
 void Ioss::FieldManager::add(const Ioss::Field& new_field)
 {
@@ -57,14 +57,14 @@ bool Ioss::FieldManager::exists(const std::string& field_name) const
 
 Ioss::Field Ioss::FieldManager::get(const std::string& field_name) const
 {
-  FieldMapType::const_iterator iter = fields.find(field_name);
+  auto iter = fields.find(field_name);
   assert(iter != fields.end());
   return (*iter).second;
 }
 
 const Ioss::Field &Ioss::FieldManager::getref(const std::string& field_name) const
 {
-  FieldMapType::const_iterator iter = fields.find(field_name);
+  auto iter = fields.find(field_name);
   assert(iter != fields.end());
   return (*iter).second;
 }
@@ -73,7 +73,7 @@ const Ioss::Field &Ioss::FieldManager::getref(const std::string& field_name) con
 void Ioss::FieldManager::erase(const std::string& field_name)
 {
   assert(exists(field_name));
-  FieldMapType::iterator iter = fields.find(field_name);
+  auto iter = fields.find(field_name);
   if (iter != fields.end()) {
     fields.erase(iter);
   }

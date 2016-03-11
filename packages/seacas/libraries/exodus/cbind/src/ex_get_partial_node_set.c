@@ -95,14 +95,14 @@ int ex_get_partial_node_set (int   exoid,
               node_set_id,exoid);
       ex_err("ex_get_partial_node_set",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
 
       sprintf(errmsg,
               "Error: failed to locate node set %"PRId64" in %s in file id %d",
               node_set_id,VAR_NS_IDS,exoid);
       ex_err("ex_get_partial_node_set",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire id's of previously defined dimensions and variables */

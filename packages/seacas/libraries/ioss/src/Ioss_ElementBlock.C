@@ -60,7 +60,7 @@ namespace Ioss {
          Ioss::Field::MESH, number_elements));
   }
 
-  ElementBlock::~ElementBlock() {}
+  ElementBlock::~ElementBlock() = default;
 
   Property ElementBlock::get_implicit_property(const std::string& my_name) const
   {

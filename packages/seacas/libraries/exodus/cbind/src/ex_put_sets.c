@@ -131,8 +131,9 @@ int ex_put_sets (int   exoid,
     }
     
     for (i=0; i < set_count; i++) {
-      if (sets_to_define[i] == 0)
+      if (sets_to_define[i] == 0) {
 	continue;
+}
       
       if (sets_to_define[i] > 0) {
 	/*   NOTE: ex_inc_file_item finds the current number of sets defined
@@ -147,8 +148,9 @@ int ex_put_sets (int   exoid,
 	sets_to_define[i] = set_id_ndx;
       }
 
-      if (sets[i].num_entry == 0)
+      if (sets[i].num_entry == 0) {
 	continue;
+}
       
       /* setup pointers based on set_type */
       if (sets[i].type == EX_NODE_SET) {
@@ -345,7 +347,8 @@ int ex_put_sets (int   exoid,
       /* write out set id */
       start[0] = sets_to_define[i]-1;
       long long id = sets[i].id;
-      if (id < 0) id = -id;
+      if (id < 0) { id = -id;
+}
       status = nc_put_var1_longlong(exoid, varid, start, &id);
     
       if (status != NC_NOERR) {
@@ -389,16 +392,19 @@ int ex_put_sets (int   exoid,
   for (i=0; i < set_count; i++) {
     int stat;
     long long id = sets[i].id;
-    if (id < 0) id = -id;
+    if (id < 0) { id = -id;
+}
     if (sets[i].entry_list != NULL || sets[i].extra_list != NULL) {
       /* NOTE: ex_put_set will write the warning/error message... */
       stat = ex_put_set(exoid, sets[i].type, id, sets[i].entry_list, sets[i].extra_list);
-      if (stat != EX_NOERR) status = EX_FATAL;
+      if (stat != EX_NOERR) { status = EX_FATAL;
+}
     }
     if (sets[i].num_distribution_factor > 0 && sets[i].distribution_factor_list != NULL) {
       /* NOTE: ex_put_set_dist_fact will write the warning/error message... */
       stat = ex_put_set_dist_fact(exoid, sets[i].type, id, sets[i].distribution_factor_list);
-      if (stat != EX_NOERR) status = EX_FATAL;
+      if (stat != EX_NOERR) { status = EX_FATAL;
+}
     }
   }  
   return (status);

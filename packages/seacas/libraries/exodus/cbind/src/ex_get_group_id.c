@@ -54,13 +54,7 @@ int ex_get_group_id (int parent_id, const char *group_name, int *group_id)
    
   exerrval = 0; /* clear error code */
 
-#if !defined(ENABLE_NETCDF4)
-  exerrval = NC_ENOTNC4;
-  sprintf(errmsg,
-	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
-  ex_err("ex_get_group_id",errmsg,exerrval);
-  return (EX_FATAL);
-#else
+#if NC_HAS_HDF5
   /* See if name contains "/" indicating it is a full path name... */
   if (group_name == NULL) {
     /* Return root */
@@ -91,5 +85,11 @@ int ex_get_group_id (int parent_id, const char *group_name, int *group_id)
     }
   }
   return (EX_NOERR);
+#else
+  exerrval = NC_ENOTNC4;
+  sprintf(errmsg,
+	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
+  ex_err("ex_get_group_id",errmsg,exerrval);
+  return (EX_FATAL);
 #endif
 }

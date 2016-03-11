@@ -231,8 +231,9 @@ int ex_put_truth_table (int  exoid,
     }
   } else {
     /* status array doesn't exist (V2.00), dummy one up for later checking */
-    for(i=0;i<num_blk;i++)
+    for(i=0;i<num_blk;i++) {
       stat_vals[i] = 1;
+}
   }
 
   /* put netcdf file into define mode  */

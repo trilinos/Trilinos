@@ -614,8 +614,19 @@ namespace Tpetra {
     /// indices will be eliminated.  This may happen either at
     /// insertion or during the next call to fillComplete().
     void
-    insertGlobalIndices (GlobalOrdinal globalRow,
+    insertGlobalIndices (const GlobalOrdinal globalRow,
                          const Teuchos::ArrayView<const GlobalOrdinal>& indices);
+
+    /// \brief Epetra compatibility version of insertGlobalIndices
+    ///   (see above) that takes input as a raw pointer, rather than
+    ///   Teuchos::ArrayView.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsGraph::InsertGlobalIndices.
+    void
+    insertGlobalIndices (const GlobalOrdinal globalRow,
+			 const LocalOrdinal numEnt,
+                         const GlobalOrdinal inds[]);
 
     //! Insert local indices into the graph.
     /**
@@ -635,6 +646,17 @@ namespace Tpetra {
     void
     insertLocalIndices (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal> &indices);
+
+    /// \brief Epetra compatibility version of insertLocalIndices
+    ///   (see above) that takes input as a raw pointer, rather than
+    ///   Teuchos::ArrayView.
+    ///
+    /// Arguments are the same and in the same order as
+    /// Epetra_CrsGraph::InsertMyIndices.
+    void
+    insertLocalIndices (const LocalOrdinal localRow,
+			const LocalOrdinal numEnt,
+			const LocalOrdinal inds[]);
 
     //! Remove all graph indices from the specified local row.
     /**
@@ -1588,14 +1610,7 @@ namespace Tpetra {
              class LocalIndicesViewType,
              class InputScalarViewType,
              class BinaryFunction>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     transformLocalValues (const RowInfo& rowInfo,
                           const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                           const typename UnmanagedView<LocalIndicesViewType>::type& inds,
@@ -1603,6 +1618,42 @@ namespace Tpetra {
                           BinaryFunction f,
                           const bool atomic = useAtomicUpdatesByDefault) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
+		     "Template parameter OutputScalarViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "Template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
+		     "Template parameter InputScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+		     "Template parameter OutputScalarViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "Template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
+		     "Template parameter InputScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename OutputScalarViewType::non_const_value_type,
+		       typename InputScalarViewType::non_const_value_type>::value,
+		     "Template parameters OutputScalarViewType and "
+		     "InputScalarViewType must contain values of the same "
+		     "type.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "Template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+
       typedef typename OutputScalarViewType::non_const_value_type ST;
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -1713,23 +1764,54 @@ namespace Tpetra {
     /// \param inds [in] Local column indices of that row to modify.
     /// \param newVals [in] For each k, increment the value in rowVals
     ///   corresponding to local column index inds[k] by newVals[k].
+    /// \param atomic [in] Whether to use atomic updates (+=) when
+    ///   incrementing values.
     template<class OutputScalarViewType,
              class LocalIndicesViewType,
              class InputScalarViewType>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     sumIntoLocalValues (const RowInfo& rowInfo,
                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                         const typename UnmanagedView<LocalIndicesViewType>::type& inds,
                         const typename UnmanagedView<InputScalarViewType>::type& newVals,
                         const bool atomic = useAtomicUpdatesByDefault) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
+		     "Template parameter OutputScalarViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "Template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
+		     "Template parameter InputScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+		     "Template parameter OutputScalarViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "Template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
+		     "Template parameter InputScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename OutputScalarViewType::non_const_value_type,
+		       typename InputScalarViewType::non_const_value_type>::value,
+		     "Template parameters OutputScalarViewType and "
+		     "InputScalarViewType must contain values of the same "
+		     "type.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "Template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
 
@@ -1812,11 +1894,11 @@ namespace Tpetra {
 
     /// \brief Implementation detail of CrsMatrix::replaceLocalValues.
     ///
-    /// \tparam LocalIndicesViewType Kokkos::View specialization that
-    ///   is a 1-D array of LocalOrdinal.
     /// \tparam OutputScalarViewType Kokkos::View specialization that is
     ///   a 1-D array of the type of values in the sparse matrix (that
     ///   type is CrsMatrix::impl_scalar_type).
+    /// \tparam LocalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of LocalOrdinal.
     /// \tparam InputScalarViewType Kokkos::View specialization that
     ///   is a 1-D array of the type of values in the sparse matrix,
     ///   but with a possibly different memory space than how the
@@ -1829,22 +1911,56 @@ namespace Tpetra {
     /// \param inds [in] Local column indices of that row to modify.
     /// \param newVals [in] For each k, replace the value
     ///   corresponding to local column index inds[k] with newVals[k].
+    ///
+    /// \return The number of valid input column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     template<class OutputScalarViewType,
              class LocalIndicesViewType,
              class InputScalarViewType>
-    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
-                            Kokkos::is_view<LocalIndicesViewType>::value &&
-                            Kokkos::is_view<InputScalarViewType>::value &&
-                            std::is_same<typename OutputScalarViewType::non_const_value_type,
-                                         typename InputScalarViewType::non_const_value_type>::value &&
-                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
-                                         local_ordinal_type>::value,
-                            LocalOrdinal>::type
+    LocalOrdinal
     replaceLocalValues (const RowInfo& rowInfo,
                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
                         const typename UnmanagedView<LocalIndicesViewType>::type& inds,
                         const typename UnmanagedView<InputScalarViewType>::type& newVals) const
     {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
+		     "Template parameter OutputScalarViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
+		     "Template parameter LocalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
+		     "Template parameter InputScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+		     "Template parameter OutputScalarViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
+		     "Template parameter LocalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
+		     "Template parameter InputScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename OutputScalarViewType::non_const_value_type,
+		       typename InputScalarViewType::non_const_value_type>::value,
+		     "Template parameters OutputScalarViewType and "
+		     "InputScalarViewType must contain values of the same "
+		     "type.");
+      static_assert (std::is_same<
+		       typename LocalIndicesViewType::non_const_value_type,
+		       local_ordinal_type>::value,
+		     "Template parameter LocalIndicesViewType must "
+		     "contain values of type local_ordinal_type.");
+
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
 
@@ -1867,7 +1983,7 @@ namespace Tpetra {
 
       // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
       // accurately, it assumes that the host execution space can
-      // access data in both InputMemorySpace and ValsMemorySpace.
+      // access data in all the Views.
 
       if (isLocallyIndexed ()) {
         // Get a view of the column indices in the row.  This amortizes
@@ -2014,6 +2130,142 @@ namespace Tpetra {
             else {
               rowVals(k) += newVals(j);
             }
+            hint = k+1;
+            numValid++;
+          }
+        }
+      }
+      // If the graph is neither locally nor globally indexed on the
+      // calling process, that means the calling process has no graph
+      // entries.  Thus, none of the input column indices are valid.
+
+      return numValid;
+    }
+
+    /// \brief Implementation detail of CrsMatrix::replaceGlobalValues.
+    ///
+    /// \tparam OutputScalarViewType Kokkos::View specialization that is
+    ///   a 1-D array of the type of values in the sparse matrix (that
+    ///   type is CrsMatrix::impl_scalar_type).
+    /// \tparam GlobalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of GlobalOrdinal.
+    /// \tparam InputScalarViewType Kokkos::View specialization that
+    ///   is a 1-D array of the type of values in the sparse matrix,
+    ///   but with a possibly different memory space than how the
+    ///   matrix stores its values.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo on the index of the
+    ///   local row of the matrix to modify.
+    /// \param rowVals [in/out] On input: Values of the row of the
+    ///   sparse matrix to modify.  On output: The modified values.
+    /// \param inds [in] Global column indices of that row to modify.
+    /// \param newVals [in] For each k, replace the value in rowVals
+    ///   corresponding to global column index inds[k] with newVals[k].
+    ///
+    /// \return The number of valid input column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+    template<class OutputScalarViewType,
+             class GlobalIndicesViewType,
+             class InputScalarViewType>
+    LocalOrdinal
+    replaceGlobalValues (const RowInfo& rowInfo,
+			 const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
+			 const typename UnmanagedView<GlobalIndicesViewType>::type& inds,
+			 const typename UnmanagedView<InputScalarViewType>::type& newVals) const
+    {
+      // We use static_assert here to check the template parameters,
+      // rather than std::enable_if (e.g., on the return value, to
+      // enable compilation only if the template parameters match the
+      // desired attributes).  This turns obscure link errors into
+      // clear compilation errors.  It also makes the return value a
+      // lot easier to see.
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
+		     "Template parameter OutputScalarViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value, 
+		     "Template parameter GlobalIndicesViewType must be "
+		     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
+		     "Template parameter InputScalarViewType must be a "
+		     "Kokkos::View.");
+      static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
+		     "Template parameter OutputScalarViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (GlobalIndicesViewType::rank) == 1,
+		     "Template parameter GlobalIndicesViewType must "
+		     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
+		     "Template parameter InputScalarViewType must have "
+		     "rank 1.");
+      static_assert (std::is_same<
+		       typename OutputScalarViewType::non_const_value_type,
+		       typename InputScalarViewType::non_const_value_type>::value,
+		     "Template parameters OutputScalarViewType and "
+		     "InputScalarViewType must contain values of the same "
+		     "type.");
+      static_assert (std::is_same<
+		       typename GlobalIndicesViewType::non_const_value_type,
+		       global_ordinal_type>::value,
+		     "Template parameter GlobalIndicesViewType must "
+		     "contain values of type global_ordinal_type.");
+
+      typedef LocalOrdinal LO;
+
+      if (newVals.dimension_0 () != inds.dimension_0 ()) {
+        // The dimensions of the input arrays must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      size_t hint = 0; // guess at the index's relative offset in the row
+      LO numValid = 0; // number of valid input column indices
+
+      // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
+      // accurately, it assumes that the host execution space can
+      // access data in all the Views.
+
+      if (isLocallyIndexed ()) {
+        // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
+        // pointer does NOT change its reference count.  Thus, this
+        // code is still thread safe.
+        if (colMap_.is_null ()) {
+          // NO input column indices are valid in this case, since if
+          // the column Map is null on the calling process, then the
+          // calling process owns no graph entries.
+          return numValid;
+        }
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getLocalKokkosRowView (rowInfo);
+        const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const LO lclColInd = this->colMap_->getLocalElement (inds(j));
+          if (lclColInd != LINV) {
+            const size_t k =
+              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
+            if (k != STINV) {
+	      rowVals(k) = newVals(j);
+              hint = k+1;
+              numValid++;
+            }
+          }
+        }
+      }
+      else if (isGloballyIndexed ()) {
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const size_t k =
+            this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
+          if (k != STINV) {
+	    rowVals(k) = newVals(j);
             hint = k+1;
             numValid++;
           }

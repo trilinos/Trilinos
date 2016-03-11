@@ -510,6 +510,7 @@ struct integral_nonzero
   KOKKOS_INLINE_FUNCTION integral_nonzero( const T & ) {}
   KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & ) {}
   KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero &) {return *this;}
+  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const T &) {return *this;}
 };
 
 template< typename T , T zero >
@@ -522,6 +523,7 @@ struct integral_nonzero<T,zero,false>
   KOKKOS_INLINE_FUNCTION integral_nonzero( const T & v ) : value(v) {}
   KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & v) : value(v.value) {}
   KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero & v) { value = v.value; return *this; }
+  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const T & v) { value = v; return *this; }
 };
 
 } // namespace Sacado

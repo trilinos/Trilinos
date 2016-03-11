@@ -33,7 +33,7 @@
 #ifndef TOLERANCE_H
 #define TOLERANCE_H
 
-#include <math.h>
+#include <cmath>
 
 // See http://realtimecollisiondetection.net/blog/?p=89 for a
 // description of the COMBINED tolerance.  Basically:
@@ -82,15 +82,15 @@ inline double Tolerance::Delta(double v1, double v2) const
   if (type == IGNORE)
     return 0.0;
 
-  double fabv1 = fabs(v1);
-  double fabv2 = fabs(v2);
+  double fabv1 = std::fabs(v1);
+  double fabv2 = std::fabs(v2);
   bool diff = false;
   if (!use_old_floor) {
     if (fabv1 >= floor || fabv2 >= floor) {
       diff = true;
     }
   } else {
-    if (fabs(v1 - v2) >= floor) {
+    if (std::fabs(v1 - v2) >= floor) {
       diff = true;
     }
   }
@@ -99,17 +99,17 @@ inline double Tolerance::Delta(double v1, double v2) const
     if (type == RELATIVE) {
       if (v1 == 0.0 && v2 == 0.0) return 0.0;
       double max = fabv1 < fabv2 ? fabv2: fabv1;
-      return fabs(v1 - v2)/max;
+      return std::fabs(v1 - v2)/max;
     }
     else if (type == ABSOLUTE) {
-      return fabs(v1 - v2);
+      return std::fabs(v1 - v2);
     }
     else if (type == COMBINED) {
       double max = fabv1 < fabv2 ? fabv2: fabv1;
       if (max > 1.0)
-	return fabs(v1 - v2)/max;
+	return std::fabs(v1 - v2)/max;
       else
-	return fabs(v1 - v2);
+	return std::fabs(v1 - v2);
     }
     else if (type == ULPS_FLOAT) {
       return UlpsDiffFloat(v1, v2);
@@ -120,17 +120,17 @@ inline double Tolerance::Delta(double v1, double v2) const
     else if (type == EIGEN_REL) {
       if (v1 == 0.0 && v2 == 0.0) return 0.0;
       double max = fabv1 < fabv2 ? fabv2: fabv1;
-      return fabs(fabv1 - fabv2)/max;
+      return std::fabs(fabv1 - fabv2)/max;
     }
     else if (type == EIGEN_ABS) {
-      return fabs(fabv1 - fabv2);
+      return std::fabs(fabv1 - fabv2);
     }
     else if (type == EIGEN_COM) {
       double max = fabv1 < fabv2 ? fabv2: fabv1;
       if (max > 1.0)
-	return fabs(fabv1 - fabv2)/max;
+	return std::fabs(fabv1 - fabv2)/max;
       else
-	return fabs(fabv1 - fabv2);
+	return std::fabs(fabv1 - fabv2);
     }
   }
   return 0.0;

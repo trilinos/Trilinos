@@ -51,7 +51,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_HelperFunctions.hpp"
 
-namespace ROL { 
+namespace ROL {
 
 template<class Real>
 class TrustRegion {
@@ -66,7 +66,7 @@ private:
   Real eta2_;
   Real gamma0_;
   Real gamma1_;
-  Real gamma2_; 
+  Real gamma2_;
 
   Real pRed_;
 
@@ -131,17 +131,17 @@ public:
 
   virtual void update( Vector<Real>      &x,
                        Real              &fnew,
-                       Real              &del, 
+                       Real              &del,
                        int               &nfval,
                        int               &ngrad,
                        ETrustRegionFlag  &flagTR,
                  const Vector<Real>      &s,
-                 const Real              snorm, 
+                 const Real              snorm,
                  const Real              fold,
-                 const Vector<Real>      &g, 
+                 const Vector<Real>      &g,
                        int               iter,
-                       ProjectedObjective<Real> &pObj ) { 
-    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1.0);
+                       ProjectedObjective<Real> &pObj ) {
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1), oe4(1.e4), half(0.5), zero(0), p1(0.1);
 
     // Compute updated iterate vector
     xupdate_->set(x);
@@ -150,12 +150,12 @@ public:
     // BEGIN OBJECTIVE FUNCTION COMPUTATION
     /***************************************************************************************************/
     // Update inexact objective function
-    Real fold1 = fold, ftol = tol, TOL = 1.e-2;
+    Real fold1 = fold, ftol = tol, TOL(1.e-2);
     if ( useInexact_[0] ) {
       if ( !(cnt_%updateIter_) && (cnt_ != 0) ) {
         force_ *= forceFactor_;
       }
-      Real c = scale_*std::max(TOL,std::min(one,1.e4*std::max(pRed_,std::sqrt(ROL_EPSILON<Real>()))));
+      Real c = scale_*std::max(TOL,std::min(one,oe4*std::max(pRed_,std::sqrt(ROL_EPSILON<Real>()))));
       ftol   = c*std::pow(std::min(eta1_,one-eta2_)
                 *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON<Real>())),force_),one/omega_);
       if ( ftol_old_ > ftol || cnt_ == 0 ) {
@@ -185,7 +185,7 @@ public:
       xupdate_->scale(-one);
  
       pObj.reducedHessVec(*Hs_,s,x,xupdate_->dual(),x,tol);
-      pRed_  = -0.5*s.dot(Hs_->dual());
+      pRed_  = -half*s.dot(Hs_->dual());
 
       Hs_->set(g);
       pObj.pruneActive(*Hs_,xupdate_->dual(),x);
@@ -204,9 +204,9 @@ public:
     // Compute Ratio of Actual and Predicted Reduction
     aRed  -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
     pRed_ -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
-    Real rho  = 0.0; 
+    Real rho(0);
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
-      rho = one; 
+      rho = one;
       flagTR = TRUSTREGION_FLAG_SUCCESS;
     }
     else if ( std::isnan(aRed) || std::isnan(pRed_) ) {
@@ -215,13 +215,13 @@ public:
     }
     else {
       rho = aRed/pRed_;
-      if (pRed_ < 0 && aRed > 0) { 
+      if (pRed_ < zero && aRed > zero) {
         flagTR = TRUSTREGION_FLAG_POSPREDNEG;
       }
-      else if (aRed <= 0 && pRed_ > 0) {
+      else if (aRed <= zero && pRed_ > zero) {
         flagTR = TRUSTREGION_FLAG_NPOSPREDPOS;
       }
-      else if (aRed <= 0 && pRed_ < 0) { 
+      else if (aRed <= zero && pRed_ < zero) {
         flagTR = TRUSTREGION_FLAG_NPOSPREDNEG;
       }
       else {
@@ -238,7 +238,7 @@ public:
 
     // Check Sufficient Decrease in the Reduced Quadratic Model
     bool decr = true;
-    if ( pObj.isConActivated() && (std::abs(aRed) > eps_) ) { 
+    if ( pObj.isConActivated() && (std::abs(aRed) > eps_) ) {
       // Compute Criticality Measure || x - P( x - g ) ||
       xupdate_->set(x);
       xupdate_->axpy(-one,g.dual());
@@ -254,10 +254,10 @@ public:
       xupdate_->plus(x);
       pObj.project(*xupdate_);
       xupdate_->scale(-one);
-      xupdate_->plus(x);      
+      xupdate_->plus(x);
       pgnorm *= xupdate_->norm();
       // Sufficient decrease?
-      decr = ( aRed >= 0.1*eta0_*pgnorm );
+      decr = ( aRed >= p1*eta0_*pgnorm );
       flagTR = (!decr ? TRUSTREGION_FLAG_QMINSUFDEC : flagTR);
 
       if ( verbosity_ > 0 ) {
@@ -270,27 +270,27 @@ public:
     if ( verbosity_ > 0 ) {
       std::cout << std::endl;
     }
-    
+
     // Accept or Reject Step and Update Trust Region
-    if ((rho < eta0_ && flagTR == TRUSTREGION_FLAG_SUCCESS) || 
-         flagTR >= 2 || !decr ) { // Step Rejected 
+    if ((rho < eta0_ && flagTR == TRUSTREGION_FLAG_SUCCESS) ||
+         flagTR >= 2 || !decr ) { // Step Rejected
       //updateObj(x,iter,pObj);
       //pObj.update(x,true,iter);
       fnew = fold1;
-      if (rho < 0.0) { // Negative reduction, interpolate to find new trust-region radius
+      if (rho < zero) { // Negative reduction, interpolate to find new trust-region radius
         Real gs = s.dot(g.dual());
         pObj.hessVec(*Hs_,s,x,tol);
         Real modelVal = s.dot(Hs_->dual());
-        modelVal *= 0.5;
+        modelVal *= half;
         modelVal += gs + fold1;
         Real theta = (one-eta2_)*gs/((one-eta2_)*(fold1+gs)+eta2_*modelVal-fnew);
         del = std::min(gamma1_*snorm,std::max(gamma0_,theta)*del);
       }
       else { // Shrink trust-region radius
-        del = gamma1_*snorm; 
+        del = gamma1_*snorm;
       }
     }
-    else if ((rho >= eta0_ && flagTR != TRUSTREGION_FLAG_NPOSPREDNEG) || 
+    else if ((rho >= eta0_ && flagTR != TRUSTREGION_FLAG_NPOSPREDNEG) ||
       flagTR == TRUSTREGION_FLAG_POSPREDNEG) { // Step Accepted
       x.axpy(one,s);
       pObj.update(x,true,iter);

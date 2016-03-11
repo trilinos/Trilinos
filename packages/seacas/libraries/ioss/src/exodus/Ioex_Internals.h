@@ -140,7 +140,7 @@ namespace Ioex {
 
     ~EdgeBlock() {}
 
-    bool operator==(const EdgeBlock&) const;
+    bool operator==(const EdgeBlock& /*other*/) const;
     bool operator!=(const EdgeBlock& other) const {return !(*this == other);}
 
     char elType[MAX_STR_LENGTH+1];
@@ -173,7 +173,7 @@ namespace Ioex {
 
     ~FaceBlock() {}
 
-    bool operator==(const FaceBlock&) const;
+    bool operator==(const FaceBlock& /*other*/) const;
     bool operator!=(const FaceBlock& other) const {return !(*this == other);}
 
     char elType[MAX_STR_LENGTH+1];
@@ -213,7 +213,7 @@ namespace Ioex {
 
     ~ElemBlock() {}
 
-    bool operator==(const ElemBlock&) const;
+    bool operator==(const ElemBlock& /*other*/) const;
     bool operator!=(const ElemBlock& other) const {return !(*this == other);}
 
     char elType[MAX_STR_LENGTH+1];
@@ -236,7 +236,7 @@ namespace Ioex {
 				    attributeCount(other.attributeCount), dfCount(other.dfCount),
 				    procOffset(other.procOffset) {}
     NodeSet(const Ioss::NodeSet &other);
-    bool operator==(const NodeSet&) const;
+    bool operator==(const NodeSet& /*other*/) const;
     bool operator!=(const NodeSet& other) const {return !(*this == other);}
 
     std::string name;
@@ -255,7 +255,7 @@ namespace Ioex {
 				    attributeCount(other.attributeCount), dfCount(other.dfCount),
 				    procOffset(other.procOffset) {}
     EdgeSet(const Ioss::EdgeSet &other);
-    bool operator==(const EdgeSet&) const;
+    bool operator==(const EdgeSet& /*other*/) const;
     bool operator!=(const EdgeSet& other) const {return !(*this == other);}
 
     std::string name;
@@ -273,7 +273,7 @@ namespace Ioex {
 				    attributeCount(other.attributeCount), dfCount(other.dfCount),
 				    procOffset(other.procOffset) {}
     FaceSet(const Ioss::FaceSet &other);
-    bool operator==(const FaceSet&) const;
+    bool operator==(const FaceSet& /*other*/) const;
     bool operator!=(const FaceSet& other) const {return !(*this == other);}
 
     std::string name;
@@ -291,7 +291,7 @@ namespace Ioex {
 				    attributeCount(other.attributeCount), dfCount(other.dfCount),
 				    procOffset(other.procOffset) {}
     ElemSet(const Ioss::ElementSet &other);
-    bool operator==(const ElemSet&) const;
+    bool operator==(const ElemSet& /*other*/) const;
     bool operator!=(const ElemSet& other) const {return !(*this == other);}
 
     std::string name;
@@ -307,7 +307,7 @@ namespace Ioex {
     SideSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0), dfProcOffset(0) { }
     SideSet(const Ioss::SideBlock &other);
     SideSet(const Ioss::SideSet   &other);
-    bool operator==(const SideSet&) const;
+    bool operator==(const SideSet& /*other*/) const;
     bool operator!=(const SideSet& other) const {return !(*this == other);}
 
     std::string name;
@@ -323,7 +323,7 @@ namespace Ioex {
     CommunicationMap() : id(0), entityCount(0), type('U') {}
     CommunicationMap(entity_id the_id, int64_t count, char the_type) :
       id(the_id), entityCount(count), type(the_type) {}
-    bool operator==(const CommunicationMap&) const;
+    bool operator==(const CommunicationMap& /*other*/) const;
     bool operator!=(const CommunicationMap& other) const {return !(*this == other);}
     entity_id id;
     int64_t entityCount;
@@ -361,11 +361,11 @@ namespace Ioex {
   {
   public:
     explicit Redefine(int exoid);
+    Redefine(const Redefine& from) =delete;
+    Redefine& operator=(const Redefine& from) =delete;
     ~Redefine();
 
   private:
-    Redefine(const Redefine& from); // do not implement
-    Redefine& operator=(const Redefine& from); // do not implement
     int exodusFilePtr;
   };
 
@@ -402,6 +402,8 @@ namespace Ioex {
   {
   public:
     Internals(int exoid, int maximum_name_length, const Ioss::ParallelUtils &util);
+    Internals(const Internals& from) =delete;
+    Internals& operator=(const Internals& from) =delete;
 
     int write_meta_data(Mesh &mesh);
 
@@ -417,17 +419,14 @@ namespace Ioex {
      */
 
   private:
-    Internals(const Internals& from); // do not implement
-    Internals& operator=(const Internals& from); // do not implement
-
     void get_global_counts(Mesh &mesh);
 
     int put_metadata(const Mesh &mesh,
 		     const CommunicationMetaData &comm);
     int put_metadata(const std::vector<NodeBlock> &nodeblocks);
-    int put_metadata(const std::vector<EdgeBlock> &edgeblocks);
-    int put_metadata(const std::vector<FaceBlock> &faceblocks);
-    int put_metadata(const std::vector<ElemBlock> &elemblocks);
+    int put_metadata(const std::vector<EdgeBlock> &blocks);
+    int put_metadata(const std::vector<FaceBlock> &blocks);
+    int put_metadata(const std::vector<ElemBlock> &blocks);
 
     int put_metadata(const std::vector<NodeSet> &nodesets);
     int put_metadata(const std::vector<EdgeSet> &edgesets);
@@ -438,9 +437,9 @@ namespace Ioex {
 
     int put_non_define_data(const CommunicationMetaData &comm);
     int put_non_define_data(const std::vector<NodeBlock> &nodeblocks);
-    int put_non_define_data(const std::vector<EdgeBlock> &edgeblocks);
-    int put_non_define_data(const std::vector<FaceBlock> &faceblocks);
-    int put_non_define_data(const std::vector<ElemBlock> &elemblocks);
+    int put_non_define_data(const std::vector<EdgeBlock> &blocks);
+    int put_non_define_data(const std::vector<FaceBlock> &blocks);
+    int put_non_define_data(const std::vector<ElemBlock> &blocks);
 
     int put_non_define_data(const std::vector<NodeSet> &nodesets);
     int put_non_define_data(const std::vector<EdgeSet> &edgesets);

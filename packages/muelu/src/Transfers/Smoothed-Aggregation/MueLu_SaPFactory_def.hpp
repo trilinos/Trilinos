@@ -98,8 +98,10 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
-    std::ostringstream levelstr;
-    levelstr << coarseLevel.GetLevelID();
+
+    std::string levelIDs = toString(coarseLevel.GetLevelID());
+
+    const std::string prefix = "MueLu::SaPFactory(" + levelIDs + "): ";
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
@@ -113,19 +115,26 @@ namespace MueLu {
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
     RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", initialPFact.get());
 
-    if(restrictionMode_) {
+    if (restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
       A = Utilities::Transpose(*A, true); // build transpose of A explicitely
     }
 
-    //Build final prolongator
-    RCP<Matrix> finalP; // output
+    // Build final prolongator
+    RCP<Matrix> finalP;
 
-    const ParameterList & pL = GetParameterList();
-    Scalar dampingFactor = as<Scalar>(pL.get<double>("sa: damping factor"));
-    LO maxEigenIterations = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
-    bool estimateMaxEigen = pL.get<bool>("sa: calculate eigenvalue estimate");
-    if (dampingFactor != Teuchos::ScalarTraits<Scalar>::zero()) {
+    // Reuse pattern if available
+    if (coarseLevel.IsAvailable("AP graph", this)) {
+      GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP graph" << std::endl;
+
+      finalP = coarseLevel.Get< RCP<Matrix> >("AP graph", this);
+    }
+
+    const ParameterList& pL = GetParameterList();
+    SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
+    LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
+    bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
+    if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
 
       Scalar lambdaMax;
       {
@@ -149,7 +158,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
+        finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs);
       }
 
     } else {
@@ -158,15 +167,16 @@ namespace MueLu {
 
     // Level Set
     if (!restrictionMode_) {
-      // prolongation factory is in prolongation mode
-      Set(coarseLevel, "P", finalP);
+      // The factory is in prolongation mode
+      Set(coarseLevel, "P",        finalP);
+      Set(coarseLevel, "AP graph", finalP);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
         finalP->CreateView("stridedMaps", Ptent);
 
     } else {
-      // prolongation factory is in restriction mode
+      // The factory is in restriction mode
       RCP<Matrix> R = Utilities::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
 

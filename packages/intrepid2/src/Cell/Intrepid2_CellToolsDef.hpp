@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -2609,24 +2608,47 @@ int CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             poin
   
   // create temp output array depending on the rank of the input array 
   FieldContainer<int> inRefCell;
+  index_type dim0, dim1;
   switch(rank) {
-    case 1: inRefCell.resize(1); break;
-    case 2: inRefCell.resize( static_cast<index_type>(points.dimension(0)) ); break;
-    case 3: inRefCell.resize( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) ); break;
+    case 1: 
+      inRefCell.resize(1); 
+    break;
+    case 2: 
+      dim0 = static_cast<index_type>(points.dimension(0)); 
+      inRefCell.resize(dim0); 
+    break;
+    case 3: 
+      dim0 = static_cast<index_type>(points.dimension(0)); 
+      dim1 = static_cast<index_type>(points.dimension(1)); 
+      inRefCell.resize(dim0, dim1); 
+    break;
   }
 
   // Call the inclusion method which returns inclusion results for all points
   checkPointwiseInclusion(inRefCell, points, cellTopo, threshold);
   
-  // Check if any points were outside, break when finding the first one
-  int allInside = 1;
-  for(int i = 0; i < inRefCell.size(); i++ ){
-    if (inRefCell[i] == 0) {
-      allInside = 0;
-      break;
-    }
+  // Check if any points were outside, return 0 after finding one
+  
+  switch(rank) {
+    case 1:  
+    if (inRefCell(0) == 0) 
+      return 0;
+    break;
+    case 2:
+      for(int i = 0; i < dim0; i++ )
+        if (inRefCell(i) == 0) 
+          return 0;
+    break;
+    
+    case 3: 
+    for(int i = 0; i < dim0; i++ )
+      for(int j = 0; j < dim1; j++ )
+        if (inRefCell(i,j) == 0)
+          return 0;
+    break;
   }
-   return allInside;
+  
+  return 1; //all points are inside
 }
 
 

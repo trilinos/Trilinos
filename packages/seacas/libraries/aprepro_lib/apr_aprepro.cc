@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.26 (2016/01/28)";
+  const char* version_string = "4.27 (2016/02/29)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -239,12 +239,12 @@ namespace SEAMS {
     (*infoStream) << ss.str();
   }
 
-  void Aprepro::set_error_streams(std::ostream *error,
-                                  std::ostream *warning, std::ostream *info)
+  void Aprepro::set_error_streams(std::ostream *c_error,
+                                  std::ostream *c_warning, std::ostream *c_info)
   {
-    errorStream = error;
-    warningStream = warning;
-    infoStream = info;
+    errorStream = c_error;
+    warningStream = c_warning;
+    infoStream = c_info;
   }
 
   /* Two methods for opening files. In OPEN_FILE, the file must exist

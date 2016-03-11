@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -388,7 +387,7 @@ int main(int argc, char *argv[]) {
           // solve linear system
           int info = 0;
           Teuchos::LAPACK<int, double> solver;
-          solver.GESV(numTotalFields, 1, &fe_matrix[0], numTotalFields, &ipiv(0), &rhs_and_soln_vec[0], 
+          solver.GESV(numTotalFields, 1, &fe_matrix(0,0,0), numTotalFields, &ipiv(0), &rhs_and_soln_vec(0,0), 
                       numTotalFields, &info);
 
           // compute interpolant; the scalar entries are last
@@ -411,7 +410,7 @@ int main(int argc, char *argv[]) {
 
           RealSpaceTools<double>::add(interpolant,exact_solution);
 
-          double nrm= RealSpaceTools<double>::vectorNorm(&interpolant[0],interpolant.dimension(1), NORM_TWO);
+          double nrm= RealSpaceTools<double>::vectorNorm(&interpolant(0,0),interpolant.dimension(1), NORM_TWO);
 
           *outStream << "\nNorm-2 error between scalar components of exact solution polynomial of order ("
                      << x_order << ", " << y_order << ") and finite element interpolant of order " << basis_order << ": "

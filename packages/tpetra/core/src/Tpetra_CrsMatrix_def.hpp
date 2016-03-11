@@ -1599,6 +1599,19 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertLocalValues (const LocalOrdinal localRow,
+		     const LocalOrdinal numEnt,
+		     const Scalar vals[],
+		     const LocalOrdinal cols[])
+  {
+    Teuchos::ArrayView<const LocalOrdinal> colsT (cols, numEnt);
+    Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
+    this->insertLocalValues (localRow, colsT, valsT);
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   insertLocalValuesFiltered (const LocalOrdinal localRow,
                              const Teuchos::ArrayView<const LocalOrdinal>& indices,
                              const Teuchos::ArrayView<const Scalar>& values)
@@ -1868,6 +1881,20 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  insertGlobalValues (const GlobalOrdinal globalRow,
+		      const LocalOrdinal numEnt,
+		      const Scalar vals[],
+		      const GlobalOrdinal inds[])
+  {
+    Teuchos::ArrayView<const GlobalOrdinal> indsT (inds, numEnt);
+    Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
+    this->insertGlobalValues (globalRow, indsT, valsT);
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   insertGlobalValuesFiltered (const GlobalOrdinal globalRow,
                               const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                               const Teuchos::ArrayView<const Scalar>& values)
@@ -1987,65 +2014,51 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceLocalValues (const LocalOrdinal localRow,
-                      const Teuchos::ArrayView<const LocalOrdinal> &indices,
-                      const Teuchos::ArrayView<const Scalar>& values) const
+                      const Teuchos::ArrayView<const LocalOrdinal>& lclCols,
+                      const Teuchos::ArrayView<const Scalar>& vals) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
-    typedef impl_scalar_type ST;
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef device_type DD;
     typedef typename View<LO*, DD>::HostMirror::device_type HD;
-    typedef View<const ST*, HD, MemoryUnmanaged> ISVT;
-    typedef View<const LO*, HD, MemoryUnmanaged> LIVT;
+    // inputInds and inputVals come from the user, so they are host data.
+    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+    typedef View<const LO*, HD, MemoryUnmanaged> LIVT; // lcl ind view type
 
-    if (! isFillActive () || staticGraph_.is_null ()) {
-      // Fill must be active and the graph must exist.
-      return Teuchos::OrdinalTraits<LO>::invalid ();
-    }
-
-    const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
-    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-      // The input local row is invalid on the calling process,
-      // which means that the calling process summed 0 entries.
-      return static_cast<LO> (0);
-    }
-
-    auto curVals = this->getRowViewNonConst (rowInfo);
-    typedef typename std::remove_const<typename std::remove_reference<decltype (curVals)>::type>::type OSVT;
-    const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
-    ISVT valsIn (valsRaw, values.size ());
-    LIVT indsIn (indices.getRawPtr (), indices.size ());
-    return staticGraph_->template replaceLocalValues<OSVT, LIVT, ISVT> (rowInfo,
-                                                                        curVals,
-                                                                        indsIn,
-                                                                        valsIn);
+    LIVT lclColsIn (lclCols.getRawPtr (), lclCols.size ());
+    const IST* valsRaw = reinterpret_cast<const IST*> (vals.getRawPtr ());
+    ISVT valsIn (valsRaw, vals.size ());
+    return this->template replaceLocalValues<LIVT, ISVT> (localRow, 
+							  lclColsIn, 
+							  valsIn);
   }
-
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceGlobalValues (const GlobalOrdinal globalRow,
-                       const Kokkos::View<const GlobalOrdinal*, device_type,
-                         Kokkos::MemoryUnmanaged>& inputInds,
-                       const Kokkos::View<const impl_scalar_type*, device_type,
-                         Kokkos::MemoryUnmanaged>& inputVals) const
+  replaceLocalValues (const LocalOrdinal localRow,
+		      const LocalOrdinal numEnt,
+		      const Scalar inputVals[],
+		      const LocalOrdinal inputCols[]) const
   {
-    typedef impl_scalar_type ST;
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
     typedef device_type DD;
-    // project2nd is a binary function that returns its second
-    // argument.  This replaces entries in the given row with their
-    // corresponding entry of values.
-    typedef Tpetra::project2nd<ST, ST> BF;
+    typedef typename View<LO*, DD>::HostMirror::device_type HD;
+    // inputInds and inputVals come from the user, so they are host data.
+    typedef View<const LO*, HD, MemoryUnmanaged> LIVT; // lcl ind view type
+    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
 
-    // It doesn't make sense for replace to use atomic updates, since
-    // the result of multiple threads replacing the same value
-    // concurrently is undefined.
-    return this->template transformGlobalValues<BF, DD> (globalRow, inputInds,
-                                                         inputVals, BF (), false);
+    LIVT indsK (inputCols, numEnt);
+    ISVT valsK (reinterpret_cast<const IST*> (inputVals), numEnt);
+    return this->template replaceLocalValues<LIVT, ISVT> (localRow,
+							  indsK, 
+							  valsK);
   }
-
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
@@ -2056,27 +2069,47 @@ namespace Tpetra {
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
-    typedef impl_scalar_type ST;
+    typedef impl_scalar_type IST;
     typedef GlobalOrdinal GO;
     typedef device_type DD;
     typedef typename View<GO*, DD>::HostMirror::device_type HD;
-    // project2nd is a binary function that returns its second
-    // argument.  This replaces entries in the given row with their
-    // corresponding entry of values.
-    typedef Tpetra::project2nd<ST, ST> BF;
+    // inputInds and inputVals come from the user, so they are host data.
+    typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
+    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
 
-    const ST* const rawInputVals =
-      reinterpret_cast<const ST*> (inputVals.getRawPtr ());
-    // 'indices' and 'values' come from the user, so they are host data.
-    View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals,
-                                                     inputVals.size ());
-    View<const GO*, HD, MemoryUnmanaged> inputIndsK (inputInds.getRawPtr (),
-                                                     inputInds.size ());
-    // It doesn't make sense for replace to use atomic updates, since
-    // the result of multiple threads replacing the same value
-    // concurrently is undefined.
-    return this->template transformGlobalValues<BF, HD> (globalRow, inputIndsK,
-                                                         inputValsK, BF (), false);
+    const IST* inputValsRaw = 
+      reinterpret_cast<const IST*> (inputVals.getRawPtr ());
+    GIVT indsK (inputInds.getRawPtr (), inputInds.size ());
+    ISVT valsK (inputValsRaw, inputVals.size ());
+    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow, 
+							   indsK,
+							   valsK);
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  replaceGlobalValues (const GlobalOrdinal globalRow,
+		       const LocalOrdinal numEnt,
+		       const Scalar inputVals[],
+		       const GlobalOrdinal inputCols[]) const
+  {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef GlobalOrdinal GO;
+    typedef device_type DD;
+    typedef typename View<GO*, DD>::HostMirror::device_type HD;
+    // inputInds and inputVals come from the user, so they are host data.
+    typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
+    typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
+
+    GIVT indsK (inputCols, numEnt);
+    ISVT valsK (reinterpret_cast<const IST*> (inputVals), numEnt);
+    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow, 
+							   indsK,
+							   valsK);
   }
 
 
@@ -2143,6 +2176,21 @@ namespace Tpetra {
   }
 
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  sumIntoGlobalValues (const GlobalOrdinal globalRow,
+		       const LocalOrdinal numEnt,
+		       const Scalar vals[],
+		       const GlobalOrdinal cols[],
+		       const bool atomic)
+  {
+    Teuchos::ArrayView<const GlobalOrdinal> colsIn (cols, numEnt);
+    Teuchos::ArrayView<const Scalar> valsIn (vals, numEnt);
+    return this->sumIntoGlobalValues (globalRow, colsIn, valsIn, atomic);
+  }
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -2153,20 +2201,45 @@ namespace Tpetra {
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
-    typedef impl_scalar_type ST;
+    typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef device_type DD;
     typedef typename View<LO*, DD>::HostMirror::device_type HD;
-
-    typedef View<const ST*, HD, MemoryUnmanaged> IVT;
+    typedef View<const IST*, HD, MemoryUnmanaged> IVT;
     typedef View<const LO*, HD, MemoryUnmanaged> IIT;
 
-    const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
+    const IST* valsRaw = reinterpret_cast<const IST*> (values.getRawPtr ());
     IVT valsIn (valsRaw, values.size ());
     IIT indsIn (indices.getRawPtr (), indices.size ());
     return this->template sumIntoLocalValues<IIT, IVT> (localRow, indsIn,
                                                         valsIn, atomic);
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  sumIntoLocalValues (const LocalOrdinal localRow,
+		      const LocalOrdinal numEnt,
+		      const Scalar vals[],
+		      const LocalOrdinal cols[],
+		      const bool atomic) const
+  {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type IST;
+    typedef LocalOrdinal LO;
+    typedef device_type DD;
+    typedef typename View<LO*, DD>::HostMirror::device_type HD;
+    typedef View<const IST*, HD, MemoryUnmanaged> IVT;
+    typedef View<const LO*, HD, MemoryUnmanaged> IIT;
+
+    const IST* valsRaw = reinterpret_cast<const IST*> (vals);
+    IVT valsIn (valsRaw, numEnt);
+    IIT indsIn (cols, numEnt);
+    return this->template sumIntoLocalValues<IIT, IVT> (localRow, indsIn,
+                                                        valsIn, atomic);
+  }
+
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::impl_scalar_type>

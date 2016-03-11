@@ -773,7 +773,7 @@ namespace SEAMS {
 
       gl_histadd(line);
   
-      if (strlen(line) > max_size - 2) {
+      if (strlen(line) > (size_t)max_size - 2) {
 	yyerror("input line is too long");
 	return 0;
       }

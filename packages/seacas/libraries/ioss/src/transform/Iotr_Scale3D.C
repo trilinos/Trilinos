@@ -54,7 +54,7 @@ namespace Iotr {
     Factory::alias("scale3D", "multiply3D");
   }
 
-  Ioss::Transform* Scale3D_Factory::make(const std::string&) const
+  Ioss::Transform* Scale3D_Factory::make(const std::string& /*unused*/) const
   { return new Scale3D(); }
 
   Scale3D::Scale3D()
@@ -63,7 +63,7 @@ namespace Iotr {
     realScale[0] = realScale[1] = realScale[2] = 1.0;
   }
 
-  void Scale3D::set_properties(const std::string&, const std::vector<int> &values)
+  void Scale3D::set_properties(const std::string& /*name*/, const std::vector<int> &values)
   {
     assert(values.size() == 3);
     intScale[0] = values[0];
@@ -71,7 +71,7 @@ namespace Iotr {
     intScale[2] = values[2];
   }
 
-  void Scale3D::set_properties(const std::string&, const std::vector<double> &values)
+  void Scale3D::set_properties(const std::string& /*name*/, const std::vector<double> &values)
   {
     assert(values.size() == 3);
     realScale[0] = values[0];

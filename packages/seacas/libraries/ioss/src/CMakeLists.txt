@@ -28,7 +28,7 @@ IF (${PACKAGE_NAME}_ENABLE_SEACASExodus)
   
   ADD_SUBDIRECTORY(exo_fpp)
 
-  IF (SEACASExodus_ENABLE_MPI)
+  IF (TPL_Netcdf_PARALLEL)
     ADD_SUBDIRECTORY(exo_par)
   ENDIF()
 

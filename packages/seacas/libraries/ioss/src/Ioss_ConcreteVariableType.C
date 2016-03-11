@@ -109,12 +109,12 @@ Ioss::StorageInitializer::StorageInitializer()
 Ioss::Invalid_Storage::Invalid_Storage()
   : Ioss::VariableType(invalid(), 0) {}
 
-std::string Ioss::Invalid_Storage::label(int, const char) const
+std::string Ioss::Invalid_Storage::label(int /*which*/, const char /*suffix_sep*/) const
 {
   return "";
 }
 
-std::string Ioss::Invalid_Storage::label_name(const std::string& base, int, const char) const
+std::string Ioss::Invalid_Storage::label_name(const std::string& base, int /*which*/, const char /*suffix_sep*/) const
 {
   return base;
 }
@@ -132,7 +132,7 @@ Ioss::Scalar::Scalar()
 
 }
 
-std::string Ioss::Scalar::label(int which, const char) const
+std::string Ioss::Scalar::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -143,7 +143,7 @@ std::string Ioss::Scalar::label(int which, const char) const
   }
 }
 
-std::string Ioss::Scalar::label_name(const std::string& base, int, const char) const
+std::string Ioss::Scalar::label_name(const std::string& base, int /*which*/, const char /*suffix_sep*/) const
 {
   return base;
 }
@@ -156,7 +156,7 @@ Ioss::Vector_2D::Vector_2D()
   Ioss::VariableType::alias("vector_2d", "pair");
 }
 
-std::string Ioss::Vector_2D::label(int which, const char) const
+std::string Ioss::Vector_2D::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -171,7 +171,7 @@ std::string Ioss::Vector_2D::label(int which, const char) const
 Ioss::Vector_3D::Vector_3D()
   : Ioss::VariableType(vector_3d(), 3) {}
 
-std::string Ioss::Vector_3D::label(int which, const char) const
+std::string Ioss::Vector_3D::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -187,7 +187,7 @@ std::string Ioss::Vector_3D::label(int which, const char) const
 Ioss::Quaternion_2D::Quaternion_2D()
   : Ioss::VariableType(quaternion_2d(), 2) {}
 
-std::string Ioss::Quaternion_2D::label(int which, const char) const
+std::string Ioss::Quaternion_2D::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -202,7 +202,7 @@ std::string Ioss::Quaternion_2D::label(int which, const char) const
 Ioss::Quaternion_3D::Quaternion_3D()
   : Ioss::VariableType(quaternion_3d(), 4) {}
 
-std::string Ioss::Quaternion_3D::label(int which, const char) const
+std::string Ioss::Quaternion_3D::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -219,7 +219,7 @@ std::string Ioss::Quaternion_3D::label(int which, const char) const
 Ioss::Full_Tensor_36::Full_Tensor_36()
   : Ioss::VariableType(full_tensor_36(), 9) {}
 
-std::string Ioss::Full_Tensor_36::label(int which, const char) const
+std::string Ioss::Full_Tensor_36::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -241,7 +241,7 @@ std::string Ioss::Full_Tensor_36::label(int which, const char) const
 Ioss::Full_Tensor_32::Full_Tensor_32()
   : Ioss::VariableType(full_tensor_32(), 5) {}
 
-std::string Ioss::Full_Tensor_32::label(int which, const char) const
+std::string Ioss::Full_Tensor_32::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -259,7 +259,7 @@ std::string Ioss::Full_Tensor_32::label(int which, const char) const
 Ioss::Full_Tensor_22::Full_Tensor_22()
   : Ioss::VariableType(full_tensor_22(), 4) {}
 
-std::string Ioss::Full_Tensor_22::label(int which, const char) const
+std::string Ioss::Full_Tensor_22::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -276,7 +276,7 @@ std::string Ioss::Full_Tensor_22::label(int which, const char) const
 Ioss::Full_Tensor_16::Full_Tensor_16()
   : Ioss::VariableType(full_tensor_16(), 7) {}
 
-std::string Ioss::Full_Tensor_16::label(int which, const char) const
+std::string Ioss::Full_Tensor_16::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -296,7 +296,7 @@ std::string Ioss::Full_Tensor_16::label(int which, const char) const
 Ioss::Full_Tensor_12::Full_Tensor_12()
   : Ioss::VariableType(full_tensor_12(), 3) {}
 
-std::string Ioss::Full_Tensor_12::label(int which, const char) const
+std::string Ioss::Full_Tensor_12::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -312,7 +312,7 @@ std::string Ioss::Full_Tensor_12::label(int which, const char) const
 Ioss::Sym_Tensor_33::Sym_Tensor_33()
   : Ioss::VariableType(sym_tensor_33(), 6) {}
 
-std::string Ioss::Sym_Tensor_33::label(int which, const char) const
+std::string Ioss::Sym_Tensor_33::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -331,7 +331,7 @@ std::string Ioss::Sym_Tensor_33::label(int which, const char) const
 Ioss::Sym_Tensor_31::Sym_Tensor_31()
   : Ioss::VariableType(sym_tensor_31(), 4) {}
 
-std::string Ioss::Sym_Tensor_31::label(int which, const char) const
+std::string Ioss::Sym_Tensor_31::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -348,7 +348,7 @@ std::string Ioss::Sym_Tensor_31::label(int which, const char) const
 Ioss::Sym_Tensor_21::Sym_Tensor_21()
   : Ioss::VariableType(sym_tensor_21(), 3) {}
 
-std::string Ioss::Sym_Tensor_21::label(int which, const char) const
+std::string Ioss::Sym_Tensor_21::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -364,7 +364,7 @@ std::string Ioss::Sym_Tensor_21::label(int which, const char) const
 Ioss::Sym_Tensor_13::Sym_Tensor_13()
   : Ioss::VariableType(sym_tensor_13(), 4) {}
 
-std::string Ioss::Sym_Tensor_13::label(int which, const char) const
+std::string Ioss::Sym_Tensor_13::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -381,7 +381,7 @@ std::string Ioss::Sym_Tensor_13::label(int which, const char) const
 Ioss::Sym_Tensor_11::Sym_Tensor_11()
   : Ioss::VariableType(sym_tensor_11(), 2) {}
 
-std::string Ioss::Sym_Tensor_11::label(int which, const char) const
+std::string Ioss::Sym_Tensor_11::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -396,7 +396,7 @@ std::string Ioss::Sym_Tensor_11::label(int which, const char) const
 Ioss::Sym_Tensor_10::Sym_Tensor_10()
   : Ioss::VariableType(sym_tensor_10(), 1) {}
 
-std::string Ioss::Sym_Tensor_10::label(int which, const char) const
+std::string Ioss::Sym_Tensor_10::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -410,7 +410,7 @@ std::string Ioss::Sym_Tensor_10::label(int which, const char) const
 Ioss::Asym_Tensor_03::Asym_Tensor_03()
   : Ioss::VariableType(asym_tensor_03(), 3) {}
 
-std::string Ioss::Asym_Tensor_03::label(int which, const char) const
+std::string Ioss::Asym_Tensor_03::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -426,7 +426,7 @@ std::string Ioss::Asym_Tensor_03::label(int which, const char) const
 Ioss::Asym_Tensor_02::Asym_Tensor_02()
   : Ioss::VariableType(asym_tensor_02(), 2) {}
 
-std::string Ioss::Asym_Tensor_02::label(int which, const char) const
+std::string Ioss::Asym_Tensor_02::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -441,7 +441,7 @@ std::string Ioss::Asym_Tensor_02::label(int which, const char) const
 Ioss::Asym_Tensor_01::Asym_Tensor_01()
   : Ioss::VariableType(asym_tensor_01(), 1) {}
 
-std::string Ioss::Asym_Tensor_01::label(int which, const char) const
+std::string Ioss::Asym_Tensor_01::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -455,7 +455,7 @@ std::string Ioss::Asym_Tensor_01::label(int which, const char) const
 Ioss::Matrix_22::Matrix_22()
   : Ioss::VariableType(matrix_22(), 4) {}
 
-std::string Ioss::Matrix_22::label(int which, const char) const
+std::string Ioss::Matrix_22::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {
@@ -472,7 +472,7 @@ std::string Ioss::Matrix_22::label(int which, const char) const
 Ioss::Matrix_33::Matrix_33()
   : Ioss::VariableType(matrix_33(), 9) {}
 
-std::string Ioss::Matrix_33::label(int which, const char) const
+std::string Ioss::Matrix_33::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch(which) {

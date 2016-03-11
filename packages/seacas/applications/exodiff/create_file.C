@@ -272,7 +272,7 @@ namespace {
       std::vector<char*> vars(names.size());
       for (unsigned i = 0; i < names.size(); ++i) {
 	vars[i] = (char*)(names[i].c_str());
-	SMART_ASSERT(vars[i] != 0);
+	SMART_ASSERT(vars[i] != nullptr);
       }
       ex_put_variable_names(file_id, type, names.size(), TOPTR(vars));
     }

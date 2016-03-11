@@ -85,11 +85,16 @@ int ex_get_block( int exoid,
     int64_t* n_faces_per_entry  = num_faces_per_entry;
     int64_t* n_attr_per_entry   = num_attr_per_entry;
       
-    if (n_entries_this_blk) *n_entries_this_blk = block.num_entry;
-    if (n_nodes_per_entry)  *n_nodes_per_entry  = block.num_nodes_per_entry;
-    if (n_edges_per_entry)  *n_edges_per_entry  = block.num_edges_per_entry;
-    if (n_faces_per_entry)  *n_faces_per_entry  = block.num_faces_per_entry;
-    if (n_attr_per_entry)   *n_attr_per_entry   = block.num_attribute;
+    if (n_entries_this_blk) { *n_entries_this_blk = block.num_entry;
+}
+    if (n_nodes_per_entry) {  *n_nodes_per_entry  = block.num_nodes_per_entry;
+}
+    if (n_edges_per_entry) {  *n_edges_per_entry  = block.num_edges_per_entry;
+}
+    if (n_faces_per_entry) {  *n_faces_per_entry  = block.num_faces_per_entry;
+}
+    if (n_attr_per_entry) {   *n_attr_per_entry   = block.num_attribute;
+}
   } else {
     int* n_entries_this_blk = num_entries_this_blk;
     int* n_nodes_per_entry  = num_nodes_per_entry;
@@ -97,15 +102,21 @@ int ex_get_block( int exoid,
     int* n_faces_per_entry  = num_faces_per_entry;
     int* n_attr_per_entry   = num_attr_per_entry;
       
-    if (n_entries_this_blk) *n_entries_this_blk = block.num_entry;
-    if (n_nodes_per_entry)  *n_nodes_per_entry  = block.num_nodes_per_entry;
-    if (n_edges_per_entry)  *n_edges_per_entry  = block.num_edges_per_entry;
-    if (n_faces_per_entry)  *n_faces_per_entry  = block.num_faces_per_entry;
-    if (n_attr_per_entry)   *n_attr_per_entry   = block.num_attribute;
+    if (n_entries_this_blk) { *n_entries_this_blk = block.num_entry;
+}
+    if (n_nodes_per_entry) {  *n_nodes_per_entry  = block.num_nodes_per_entry;
+}
+    if (n_edges_per_entry) {  *n_edges_per_entry  = block.num_edges_per_entry;
+}
+    if (n_faces_per_entry) {  *n_faces_per_entry  = block.num_faces_per_entry;
+}
+    if (n_attr_per_entry) {   *n_attr_per_entry   = block.num_attribute;
+}
   }
 
-  if (elem_type)
+  if (elem_type) {
     strcpy(elem_type, block.topology);
+}
   
   return err;
 }

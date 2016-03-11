@@ -107,14 +107,14 @@ inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& 
 inline void skin_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Part &partToSkin, const stk::mesh::PartVector& putSkinInTheseParts)
 {
     stk::mesh::Selector sel = partToSkin;
-    stk::mesh::create_exposed_boundary_sides(bulkData, sel, putSkinInTheseParts);
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, putSkinInTheseParts);
 }
 
 inline void skin_part(stk::mesh::BulkData& bulkData, const stk::mesh::Part &partToSkin, const stk::mesh::PartVector& putSkinInTheseParts)
 {
     stk::mesh::Selector sel = partToSkin;
     stk::mesh::Selector air = !partToSkin;
-    stk::mesh::create_exposed_boundary_sides(bulkData, sel, putSkinInTheseParts, &air);
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, putSkinInTheseParts, &air);
 }
 
 inline void test_num_faces_on_this_element(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId id, size_t gold_num_faces_this_elem)

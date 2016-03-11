@@ -1167,7 +1167,7 @@ protected:
 
 
       inpFile << std::endl;
-      ArrayView<part_t> a = this->getAssignedTaksForProc(i);
+      ArrayView<part_t> a = this->getAssignedTasksForProc(i);
       for(int k = 0; k <  a.size(); ++k){
         int j = a[k];
         //cout << "i:" << i << " j:"
@@ -1213,7 +1213,7 @@ protected:
     for(part_t i = 0; i < this->nprocs; ++i){
 
       //inpFile << std::endl;
-      ArrayView<part_t> a = this->getAssignedTaksForProc(i);
+      ArrayView<part_t> a = this->getAssignedTasksForProc(i);
       if (a.size() == 0){
         continue;
       }
@@ -1388,7 +1388,7 @@ public:
    */
   CoordinateTaskMapper(
       const Teuchos::Comm<int> *comm_,
-      const MachineRepresentation<pcoord_t> *machine_,
+      const MachineRepresentation<pcoord_t,part_t> *machine_,
       const Zoltan2::Model<typename Adapter::base_adapter_t> *model_,
       const Zoltan2::PartitioningSolution<Adapter> *soln_,
       const Environment *envConst):
@@ -1401,12 +1401,24 @@ public:
         task_communication_xadj(0),
         task_communication_adj(0){
 
+    if (!machine_->hasMachineCoordinates()) {
+      throw std::runtime_error("Existing machine does not provide coordinates "
+                               "for coordinate task mapping");
+    }
     pcoord_t *task_communication_edge_weight_ = NULL;
     //if mapping type is 0 then it is coordinate mapping
-    int procDim = machine_->getProcDim();
-    this->nprocs = machine_->getNumProcs();
+    int procDim = machine_->getMachineDim();
+    this->nprocs = machine_->getNumRanks();
     //get processor coordinates.
-    pcoord_t **procCoordinates = machine_->getProcCoords();
+    pcoord_t **procCoordinates = NULL;
+    if (!machine_->getAllMachineCoordinatesView(procCoordinates)) {
+      throw std::runtime_error("Existing machine does not implement "
+                               "getAllMachineCoordinatesView");
+    }
+
+// KDDKDD ASK MEHMET:  SHOULD WE GET AND USE machine_dimension HERE IF IT
+// KDDKDD ASK MEHMET:  IS PROVIDED BY THE MACHINE REPRESENTATION?
+// KDDKDD ASK MEHMET:  IF NOT HERE, THEN WHERE?
 
     int coordDim = ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_)->getCoordinateDim();
     this->ntasks = soln_->getActualGlobalNumberOfParts();
@@ -1789,7 +1801,7 @@ public:
     numParts = taskend - task_begin;
   }
 
-  ArrayView<part_t> getAssignedTaksForProc(part_t procId){
+  ArrayView<part_t> getAssignedTasksForProc(part_t procId){
     part_t task_begin = this->proc_to_task_xadj[procId];
     part_t taskend = this->proc_to_task_xadj[procId+1];
 

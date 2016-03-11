@@ -867,7 +867,7 @@ namespace Belos {
     computeCurrResVec( &*R0_, &*X_, &*B_ );
 
     if (LP_!=Teuchos::null) {
-      if (PR0_==Teuchos::null || MVT::GetNumberVecs( *PR0_ )!=MVT::GetNumberVecs( *B_ )) {
+      if (PR0_==Teuchos::null || (PR0_==R0_) || (MVT::GetNumberVecs(*PR0_)!=MVT::GetNumberVecs(*B_))) {
         PR0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
       }
       {

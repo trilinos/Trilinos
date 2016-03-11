@@ -72,7 +72,9 @@
 #include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_DirectSolver.hpp>
 
+#ifdef HAVE_MUELU_KOKKOSCORE
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#endif
 
 namespace MueLuTests {
 
@@ -785,9 +787,11 @@ namespace MueLuTests {
     std::string tname = typeid(Scalar).name();
     tname = tname + typeid(LocalOrdinal).name();
     tname = tname + typeid(GlobalOrdinal).name();
+#ifdef HAVE_MUELU_KOKKOSCORE
     std::string nn = Kokkos::Compat::KokkosDeviceWrapperNode<typename Node::execution_space>::name();
     nn.erase(std::remove(nn.begin(), nn.end(), '/'), nn.end());
     tname = tname + nn;
+#endif
     tname = "_" + tname;
     LocalOrdinal zero = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
     //Only write out the fine level matrix, since that is the only data file we test against.

@@ -183,6 +183,8 @@ void handle_invalid_arg(const char* expr,
 /// @}
 ///
 
+void ThrowRequireWithSierraHelpMsg(bool condition);
+
 } // namespace stk
 
 ///
@@ -314,6 +316,7 @@ void handle_invalid_arg(const char* expr,
 
 #define ThrowInvalidArgMsgIf(expr, message) ThrowGenericCond( !(expr), message, handle_invalid_arg)
 #define ThrowInvalidArgIf(expr)             ThrowInvalidArgMsgIf(expr, "")
+
 
 ///
 /// @}

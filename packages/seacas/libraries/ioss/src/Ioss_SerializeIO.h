@@ -62,6 +62,8 @@ public:
    * @param database_io	a <code>DatabaseIO</code> variable ...
    */
   explicit SerializeIO(const DatabaseIO *database_io, int manual_owner_processor = -1);
+  SerializeIO(const SerializeIO& from) =delete;
+  SerializeIO& operator=(const SerializeIO& from) =delete;
   ~SerializeIO();
 
   inline static int getOwner() {
@@ -99,9 +101,6 @@ public:
   }
 
 private:
-  SerializeIO(const SerializeIO& from); // do not implement
-  SerializeIO& operator=(const SerializeIO& from); // do not implement
-
   const DatabaseIO *	m_databaseIO;		///< Database I/O pointer
   const bool		m_activeFallThru;	///< No barries since my group is running
   int			m_manualOwner;		///< Manually specified owner

@@ -63,3 +63,8 @@
 
 /* Enable workarounds for Purify builds */
 #cmakedefine HAVE_ZOLTAN2_PURIFY
+
+/* define if we have TopoManager installed*/
+#cmakedefine HAVE_ZOLTAN2_TOPOMANAGER
+
+

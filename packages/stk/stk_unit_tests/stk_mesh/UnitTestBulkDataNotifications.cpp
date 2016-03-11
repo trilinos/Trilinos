@@ -6,7 +6,7 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_max
 #include <string>                       // for string
-#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <vector>                       // for vector
 #include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -60,7 +60,7 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
     if (numProcs==2)
     {
         stk::mesh::MetaData meta(3);
-        stk::mesh::unit_test::BulkDataTester mesh(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::unit_test_util::BulkDataTester mesh(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
 
         const std::string generatedMeshSpec = "generated:1x1x2";
         stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, comm);

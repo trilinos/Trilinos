@@ -33,17 +33,16 @@
  * 
  */
 
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
-#include <math.h>
 #include <string>
 #include <cstring>
 #include <exception>
 #include <stdexcept>
-#include <time.h>
+#include <ctime>
 
 #include "EML_CodeTypes.h"
 #include "EML_SystemInterface.h"

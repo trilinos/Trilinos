@@ -29,6 +29,16 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
 
+  const int num_grouping_types = 3;
+  const GroupingType grouping_values[] = {
+    GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z };
+  const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z" };
+
+  const int num_sampling_types = 3;
+  const SamplingType sampling_values[] = {
+    SAMPLING_STOKHOS, SAMPLING_TASMANIAN, SAMPLING_FILE };
+  const char *sampling_names[] = { "stokhos", "tasmanian", "file" };
+
   clp.setOption("serial", "no-serial",     &cmdline.USE_SERIAL, "use the serial device");
   clp.setOption("threads",                 &cmdline.USE_THREADS, "number of pthreads threads");
   clp.setOption("openmp",                  &cmdline.USE_OPENMP,  "number of openmp threads");
@@ -53,9 +63,13 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   if(cmdline.USE_MUELU || cmdline.USE_MEANBASED)
     cmdline.USE_BELOS = true;
 
+  clp.setOption("sampling", &cmdline.USE_UQ_SAMPLING, num_sampling_types, sampling_values, sampling_names, "UQ sampling method");
   clp.setOption("uq-fake",                  &cmdline.USE_UQ_FAKE,  "setup a fake UQ problem of this size");
   clp.setOption("uq-dim",                   &cmdline.USE_UQ_DIM,  "UQ dimension");
   clp.setOption("uq-order",                 &cmdline.USE_UQ_ORDER,  "UQ order");
+  clp.setOption("uq-init-level",            &cmdline.USE_UQ_INIT_LEVEL,  "Initial adaptive sparse grid level");
+  clp.setOption("uq-max-level",             &cmdline.USE_UQ_MAX_LEVEL,  "Max adaptive sparse grid level");
+  clp.setOption("uq-tol",                   &cmdline.USE_UQ_TOL,  "Adaptive sparse grid tolerance");
   clp.setOption("diff-coeff-linear",        &cmdline.USE_DIFF_COEFF_LINEAR,  "Linear term in diffusion coefficient");
   clp.setOption("diff-coeff-constant",      &cmdline.USE_DIFF_COEFF_CONSTANT,  "Constant term in diffusion coefficient");
   clp.setOption("mean",                     &cmdline.USE_MEAN,  "KL diffusion mean");
@@ -67,6 +81,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("coeff-adv",                &cmdline.USE_COEFF_ADV,  "Coefficient for advection term");
   clp.setOption("sparse", "tensor",         &cmdline.USE_SPARSE ,  "use sparse or tensor grid");
   clp.setOption("ensemble",                 &cmdline.USE_UQ_ENSEMBLE,  "UQ ensemble size.  This needs to be a valid choice based on available instantiations.");
+  clp.setOption("grouping", &cmdline.USE_GROUPING, num_grouping_types, grouping_values, grouping_names, "Sample grouping method for ensemble propagation");
 
   clp.setOption("vtune", "no-vtune",       &cmdline.VTUNE ,  "connect to vtune");
   clp.setOption("verbose", "no-verbose",   &cmdline.VERBOSE, "print verbose intialization info");

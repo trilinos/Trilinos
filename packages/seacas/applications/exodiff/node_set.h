@@ -47,7 +47,7 @@ public:
   Node_Set();
   Node_Set(int file_id, size_t exo_set_id);
   Node_Set(int file_id, size_t exo_set_id, size_t num_nodes, size_t num_dist_factors_x = 0);
- ~Node_Set();
+  ~Node_Set() override;
   
   void apply_map(const INT *node_map);
   const INT*    Nodes() const;

@@ -36,8 +36,8 @@
 #include <vector>                       // for vector, vector<>::size_type
 
 namespace Iohb {
-  Layout::Layout(bool show_labels, int precision, const std::string &separator, int field_width)
-    : layout_(), separator_(separator), precision_(precision), count_(0), fieldWidth_(field_width),
+  Layout::Layout(bool show_labels, int precision, std::string separator, int field_width)
+    : layout_(), separator_(std::move(separator)), precision_(precision), count_(0), fieldWidth_(field_width),
       showLabels(show_labels), legendStarted(false)
   {}
 
@@ -64,7 +64,7 @@ namespace Iohb {
       legendStarted = true;
     }
     
-    if (fieldWidth_) {
+    if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_) << label;
     }
     else {
@@ -81,7 +81,7 @@ namespace Iohb {
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
-    } else if (fieldWidth_) {
+    } else if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_);
     }
     layout_.setf(std::ios::scientific);
@@ -98,7 +98,7 @@ namespace Iohb {
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
-    } else if (fieldWidth_) {
+    } else if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_);
     }
     layout_ << value;
@@ -113,7 +113,7 @@ namespace Iohb {
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
-    } else if (fieldWidth_) {
+    } else if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_);
     }
     layout_ << value;
@@ -128,7 +128,7 @@ namespace Iohb {
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
-    } else if (fieldWidth_) {
+    } else if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_);
     }
     layout_ << value;
@@ -150,7 +150,7 @@ namespace Iohb {
       layout_.setf(std::ios::scientific);
       layout_.setf(std::ios::showpoint);
       for (std::vector<double>::size_type i=0; i < value.size(); i++) {
-	if (!showLabels && fieldWidth_) {
+	if (!showLabels && (fieldWidth_ != 0)) {
 	  layout_ << std::setw(fieldWidth_);
 	}
         layout_ << std::setprecision(precision_) << value[i];
@@ -175,7 +175,7 @@ namespace Iohb {
 	layout_ << "=";
       }
       for (std::vector<int>::size_type i=0; i < value.size(); i++) {
-	if (!showLabels && fieldWidth_) {
+	if (!showLabels && (fieldWidth_ != 0)) {
 	  layout_ << std::setw(fieldWidth_);
 	}
 	layout_ << value[i];
@@ -200,7 +200,7 @@ namespace Iohb {
 	layout_ << "=";
       }
       for (std::vector<long>::size_type i=0; i < value.size(); i++) {
-	if (!showLabels && fieldWidth_) {
+	if (!showLabels && (fieldWidth_ != 0)) {
 	  layout_ << std::setw(fieldWidth_);
 	}
 	layout_ << value[i];
@@ -213,7 +213,8 @@ namespace Iohb {
 
   void Layout::add(const std::string& name, std::vector<std::string> &value)
   {
-    if (value.size() == 1)
+    if (value.size() == 1) {
       add(name, value[0]);
+}
   }
 }

@@ -265,18 +265,13 @@ C     --Read information from the database and close file
 
       CALL DBIELB (NDBIN, '*', 1, NELBLK,
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
-     &     A(1), IA(1), KLINK, KATRIB, C(KBKTYP), *60)
+     &     A(1), IA(1), KLINK, KATRIB, C(KBKTYP),
+     *     numatt, *60)
       
       call CHKTOP(NELBLK, C(KBKTYP), COMTOP)
       call getnam(NDBIN, 1, nelblk, C(KNAMEB))
 
 C ... Attribute names...
-C ... get total attribute count...
-      numatt = 0
-      do i=1, nelblk
-        numatt = numatt + ia(knatr+i-1)
-      end do
-      
       call mcrsrv('NAMATT', KNAMATT, maxnam*NUMATT)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40

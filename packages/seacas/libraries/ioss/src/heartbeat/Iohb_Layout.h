@@ -42,10 +42,13 @@ namespace Iohb {
   class Layout
     {
     public:
-      Layout(bool show_labels, int precision, const std::string &field_separator, int field_width);
+      Layout(bool show_labels, int precision, std::string separator, int field_width);
+      Layout(const Layout&) =delete;
+      Layout& operator=(const Layout&) =delete;
+
       ~Layout();
 
-      friend std::ostream& operator<<(std::ostream&, Layout&);
+      friend std::ostream& operator<<(std::ostream& /*o*/, Layout& /*lo*/);
 
       void add_literal(const std::string& label);
       void add_legend(const std::string& label);
@@ -60,9 +63,6 @@ namespace Iohb {
       void add(const std::string& name, std::vector<std::string> &value);
 
     private:
-      Layout(const Layout&); // do not implement
-      Layout& operator=(const Layout&); // do not implement
-
       std::ostringstream layout_;
       std::string separator_;
 

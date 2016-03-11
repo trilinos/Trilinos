@@ -131,7 +131,7 @@ string Exo_Block<INT>::Load_Connectivity()
   
   if (numEntity && num_nodes_per_elmt)
   {
-    conn = new INT[ (size_t)numEntity * num_nodes_per_elmt ];  SMART_ASSERT(conn != 0);
+    conn = new INT[ (size_t)numEntity * num_nodes_per_elmt ];  SMART_ASSERT(conn != nullptr);
     
     int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, conn, nullptr, nullptr);
     if (err < 0) {

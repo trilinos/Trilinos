@@ -130,6 +130,7 @@ int ex_open_int (const char  *path,
   int file_wordsize;
   int dim_str_name;
   int int64_status = 0;
+  int nc_mode = 0;
   
   char errmsg[MAX_ERR_LENGTH];
 
@@ -158,7 +159,15 @@ int ex_open_int (const char  *path,
 
   /* The EX_READ mode is the default if EX_WRITE is not specified... */
   if (!(mode & EX_WRITE)) { /* READ ONLY */
-      if ((status = nc_open (path, NC_NOWRITE|NC_SHARE, &exoid)) != NC_NOERR) {
+      nc_mode = NC_NOWRITE|NC_SHARE;
+
+#if NC_HAS_DISKLESS
+      if (mode & EX_DISKLESS) {
+	nc_mode |= NC_DISKLESS;
+      }
+#endif
+      
+      if ((status = nc_open (path, nc_mode, &exoid)) != NC_NOERR) {
 	/* NOTE: netCDF returns an id of -1 on an error - but no error code! */
 	/* It is possible that the user is trying to open a netcdf4
 	   file, but the netcdf4 capabilities aren't available in the
@@ -181,7 +190,11 @@ int ex_open_int (const char  *path,
 	ex_check_file_type(path, &type);
 	  
 	if (type == 5) {
-#if !defined(NC_HAS_HDF5)	  
+#if NC_HAS_HDF5
+	  fprintf(stderr,
+		  "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\t failed. The netcdf library supports netcdf-4 so there must be a filesystem or some other issue \n",
+		  path);
+#else
 	  /* This is an hdf5 (netcdf4) file. If NC_HAS_HDF5 is not defined,
 	     then we either don't have hdf5 support in this netcdf version, 
 	     OR this is an older netcdf version that doesn't provide that define.
@@ -193,10 +206,7 @@ int ex_open_int (const char  *path,
 	  fprintf(stderr,
 		  "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\t. Either the netcdf library does not support netcdf-4 or there is a filesystem or some other issue \n",
 		  path);
-#else
-	  fprintf(stderr,
-		  "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\t failed. The netcdf library supports netcdf-4 so there must be a filesystem or some other issue \n",
-		  path);
+
 #endif
 	  exerrval = status;
 	}
@@ -206,6 +216,12 @@ int ex_open_int (const char  *path,
       } 
   }
   else {/* (mode & EX_WRITE) READ/WRITE */
+    nc_mode = NC_WRITE|NC_SHARE;
+#if NC_HAS_DISKLESS
+    if (mode & EX_DISKLESS) {
+      nc_mode |= NC_DISKLESS;
+    }
+#endif
     if ((status = nc_open (path, NC_WRITE|NC_SHARE, &exoid)) != NC_NOERR) {
       /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
       exerrval = status;

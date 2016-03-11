@@ -90,7 +90,7 @@ string extract_token(string & s, const char* delimeters)
 {
   if (!s.empty())
   {
-    SMART_ASSERT( delimeters != 0 && !string(delimeters).empty());
+    SMART_ASSERT( delimeters != nullptr && !string(delimeters).empty());
     
     // Move through initial delimeters.
     unsigned p = s.find_first_not_of(delimeters);

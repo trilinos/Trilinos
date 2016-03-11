@@ -66,20 +66,20 @@
     static vector3d plane_normal(const vector3d &v1, const vector3d &v2, const vector3d &v3);
   };
 
-  vector3d operator* (double scalar, const vector3d& vec);
-  vector3d operator* (const vector3d& vec, double scalar);
-  vector3d operator/ (const vector3d& vec, double scalar);
+vector3d operator* (double scalar, const vector3d& from);
+vector3d operator* (const vector3d& lhs, double scalar);
+vector3d operator/ (const vector3d& lhs, double scalar);
 
-  vector3d operator+ (const vector3d& vec1, const vector3d& vec2);
-  vector3d operator- (const vector3d& vec1, const vector3d& vec2);
+vector3d operator+ (const vector3d& lhs, const vector3d& rhs);
+vector3d operator- (const vector3d& lhs, const vector3d& rhs);
 
   //----------------------------------------------------------------------------
-  inline vector3d vector3d::cross (const vector3d& from) const
-  {
-    return vector3d(y * from.z - z * from.y,
-		    z * from.x - x * from.z,
-		    x * from.y - y * from.x);
-  }
+inline vector3d vector3d::cross (const vector3d& from) const
+{
+  return vector3d(y * from.z - z * from.y,
+		  z * from.x - x * from.z,
+		  x * from.y - y * from.x);
+}
   //----------------------------------------------------------------------------
   inline vector3d& vector3d::operator+= (const vector3d& from)
   {

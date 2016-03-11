@@ -52,7 +52,7 @@ public:
             const char* type,
             size_t num_elmts,
             size_t num_nodes_per_elmt_x);
- ~Exo_Block();
+  ~Exo_Block() override;
   
   std::string Load_Connectivity();
   std::string Free_Connectivity();

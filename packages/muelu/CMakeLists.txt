@@ -74,6 +74,16 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   MESSAGE(STATUS "Enabling MueLu experimental code")
 ENDIF()
 
+# Split ETI cpp files
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES
+  HAVE_${PACKAGE_NAME_UC}_SPLIT_ETI_CPP_FILES
+  "Split ETI cpp files into extra files for each enabled configuration (not recommended)."
+  NO)
+IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
+  MESSAGE(STATUS "Split MueLu ETI files: this may slow down the compilation process.")
+ENDIF()
+
 # Enable broken tests
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BROKEN_TESTS

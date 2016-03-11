@@ -1450,7 +1450,7 @@ namespace stk {
           bulk_data().deactivate_field_updating();
         }
 
-        bool i_started_modification_cycle = bulk_data().modification_begin();
+        bool i_started_modification_cycle = bulk_data().modification_begin("Mesh Read");
 
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
         bool ints64bit = db_api_int_size(region) == 8;
@@ -1478,10 +1478,6 @@ namespace stk {
 
         if (i_started_modification_cycle) {
           bulk_data().modification_end();
-        }
-
-        if (region->get_property("state_count").get_int() == 0) {
-          region->get_database()->release_memory();
         }
       }
 
@@ -1511,6 +1507,10 @@ namespace stk {
           process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
           process_nodesets_df(*region,      bulk_data(), zero);
           process_sidesets_df(*region,      bulk_data());
+        }
+
+        if (region->get_property("state_count").get_int() == 0) {
+          region->get_database()->release_memory();
         }
       }
 
@@ -1553,7 +1553,7 @@ namespace stk {
         bool delay_field_data_allocation = false;
 
         //- This modifcation begin/end should not be needed, but a percept test fails without it...
-        bool i_started = bulk_data().modification_begin();
+        bool i_started = bulk_data().modification_begin("Mesh Read");
         populate_mesh(delay_field_data_allocation);
         populate_field_data();
         if (i_started) {

@@ -484,7 +484,7 @@ string ExoII_Read<INT>::Load_Node_Map()
   
   if (num_nodes == 0) return "WARNING:  There are no nodes!";
   
-  node_map = new INT[ num_nodes ];  SMART_ASSERT(node_map != 0);
+  node_map = new INT[ num_nodes ];  SMART_ASSERT(node_map != nullptr);
   
   ex_opts(0);  // Temporarily turn off error reporting in case map isn't stored.
   int err = ex_get_node_num_map(file_id, node_map);
@@ -524,7 +524,7 @@ string ExoII_Read<INT>::Load_Elmt_Map()
   
   if (num_elmts == 0) return "WARNING:  There are no elements!";
   
-  elmt_map = new INT[ num_elmts ];  SMART_ASSERT(elmt_map != 0);
+  elmt_map = new INT[ num_elmts ];  SMART_ASSERT(elmt_map != nullptr);
   
   ex_opts(0);  // Temporarily turn off error reporting in case map isn't stored.
   int err = ex_get_elem_num_map(file_id, elmt_map);
@@ -562,7 +562,7 @@ string ExoII_Read<INT>::Load_Nodal_Coordinates()
   
   if (num_nodes) {
     size_t count = num_nodes * dimension;
-    nodes = new double[count];  SMART_ASSERT(nodes != 0);
+    nodes = new double[count];  SMART_ASSERT(nodes != nullptr);
     double *x = nodes, *y = nodes, *z = nodes;
     if (dimension > 1) y = nodes + num_nodes;
     if (dimension > 2) z = nodes + (2 * num_nodes);
@@ -720,7 +720,7 @@ string ExoII_Read<INT>::Load_Global_Results(int time_step_num)
   
   if (!global_vals) {
     global_vals = new double[global_vars.size()];
-    SMART_ASSERT(global_vals != 0);
+    SMART_ASSERT(global_vals != nullptr);
   }
     
   if (global_vals)
@@ -759,12 +759,12 @@ string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
   
   if (!global_vals) {
     global_vals = new double[global_vars.size()];
-    SMART_ASSERT(global_vals != 0);
+    SMART_ASSERT(global_vals != nullptr);
   }
     
   if (t2 != t1 && !global_vals2) {
     global_vals2 = new double[global_vars.size()];
-    SMART_ASSERT(global_vals2 != 0);
+    SMART_ASSERT(global_vals2 != nullptr);
   }
     
   if (global_vals)
@@ -1175,7 +1175,7 @@ void ExoII_Read<INT>::Get_Init_Data()
   
   if (eblocks) delete [] eblocks;  eblocks = nullptr;
   if (num_elmt_blocks > 0) {
-    eblocks = new Exo_Block<INT>[num_elmt_blocks];    SMART_ASSERT(eblocks != 0);
+    eblocks = new Exo_Block<INT>[num_elmt_blocks];    SMART_ASSERT(eblocks != nullptr);
     std::vector<INT> ids(num_elmt_blocks);
     
     err = ex_get_ids(file_id, EX_ELEM_BLOCK, TOPTR(ids));
@@ -1220,7 +1220,7 @@ void ExoII_Read<INT>::Get_Init_Data()
   
   if (nsets) delete [] nsets;  nsets = nullptr;
   if (num_node_sets > 0) {
-    nsets = new Node_Set<INT>[num_node_sets];         SMART_ASSERT(nsets != 0);
+    nsets = new Node_Set<INT>[num_node_sets];         SMART_ASSERT(nsets != nullptr);
     std::vector<INT> ids(num_node_sets);
     
     err = ex_get_ids(file_id, EX_NODE_SET, TOPTR(ids));
@@ -1245,7 +1245,7 @@ void ExoII_Read<INT>::Get_Init_Data()
   
   if (ssets) delete [] ssets;  ssets = nullptr;
   if (num_side_sets) {
-    ssets = new Side_Set<INT>[num_side_sets];         SMART_ASSERT(ssets != 0);
+    ssets = new Side_Set<INT>[num_side_sets];         SMART_ASSERT(ssets != nullptr);
     std::vector<INT> ids(num_side_sets);
     
     err = ex_get_ids(file_id, EX_SIDE_SET, TOPTR(ids));
@@ -1340,7 +1340,7 @@ void ExoII_Read<INT>::Get_Init_Data()
 
 
   if (num_times) {
-    times = new double[num_times];  SMART_ASSERT(times != 0);
+    times = new double[num_times];  SMART_ASSERT(times != nullptr);
     err = ex_get_all_times(file_id, times);
   }
   
@@ -1376,7 +1376,7 @@ namespace {
 	std::cout << "EXODIFF WARNING: Exodus issued warning "
 		  << "\"" << err << "\" on call to ex_get_var_names()!" << std::endl;
       for (int vg = 0; vg < num_vars; ++vg) {
-	SMART_ASSERT(varnames[vg] != 0);
+	SMART_ASSERT(varnames[vg] != nullptr);
 	if (std::strlen(varnames[vg]) == 0 ||
 	    (int)std::strlen(varnames[vg]) > name_size) {
 	  std::cout << "EXODIFF ERROR: " << type

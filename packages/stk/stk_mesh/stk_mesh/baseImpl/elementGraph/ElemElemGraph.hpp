@@ -59,7 +59,6 @@ struct RemoteEdge;
 class ElemElemGraph
 {
 public:
-
     ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr);
 
     virtual ~ElemElemGraph();
@@ -80,8 +79,8 @@ public:
 
     bool is_connected_to_other_element_via_side_ordinal(stk::mesh::Entity element, int sideOrdinal) const;
 
-    impl::parallel_info& get_parallel_edge_info(stk::mesh::Entity element, int side1, stk::mesh::EntityId remote_id, int side2);
-    const impl::parallel_info& get_const_parallel_edge_info(stk::mesh::Entity element, int side1, stk::mesh::EntityId remote_id, int side2) const;
+    impl::ParallelInfo& get_parallel_edge_info(stk::mesh::Entity element, int side1, stk::mesh::EntityId remote_id, int side2);
+    const impl::ParallelInfo& get_const_parallel_edge_info(stk::mesh::Entity element, int side1, stk::mesh::EntityId remote_id, int side2) const;
 
     size_t num_edges() const;
 
@@ -109,15 +108,9 @@ public:
         return m_graph.get_edges_for_element(elem);
     }
 
-    const std::vector<GraphEdge> get_coincident_edges_for_element(impl::LocalId elem) const
+    const std::vector<GraphEdge> & get_coincident_edges_for_element(impl::LocalId elem) const
     {
-        std::vector<GraphEdge> emptyVector;
-
-        impl::SparseGraph::const_iterator iter = m_coincidentGraph.find(elem);
-        if(iter != m_coincidentGraph.end())
-            return iter->second;
-
-        return emptyVector;
+        return m_coincidentGraph.get_edges_for_element(elem);
     }
 
     stk::mesh::Entity get_entity_from_local_id(impl::LocalId elem) const
@@ -125,7 +118,7 @@ public:
         return m_local_id_to_element_entity[elem];
     }
 
-    const impl::parallel_info&get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
+    const impl::ParallelInfo & get_parallel_info_for_graph_edge(const stk::mesh::GraphEdge& edge) const
     {
         return m_parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(edge);
     }
@@ -140,12 +133,17 @@ public:
         return m_graph;
     }
 
+    const stk::mesh::ParallelInfoForGraphEdges& get_parallel_graph() const { return m_parallelInfoForGraphEdges; }
+
     void create_side_entities(const std::vector<int> &exposedSides,
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,
                               std::vector<stk::mesh::sharing_info> &shared_modified);
     void write_graph(std::ostream& out) const;
 
+    stk::mesh::Entity get_entity(stk::mesh::impl::LocalId local_id) const { return m_local_id_to_element_entity[local_id]; }
+
+    std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_coincident_elements();
 protected:
     void fill_graph();
     void update_number_of_parallel_edges();
@@ -169,9 +167,6 @@ protected:
     void add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges) const;
 
     impl::SerialElementDataVector get_only_valid_element_connections(stk::mesh::Entity element, unsigned side_index, const stk::mesh::EntityVector& side_nodes) const;
-
-    stk::mesh::ConnectivityOrdinal get_neighboring_side_ordinal(const stk::mesh::BulkData &mesh, stk::mesh::Entity currentElem,
-                                                                stk::mesh::ConnectivityOrdinal currentOrdinal, stk::mesh::Entity neighborElem);
 
     impl::LocalId create_new_local_id(stk::mesh::Entity new_elem);
 
@@ -236,8 +231,8 @@ protected:
     size_t m_num_parallel_edges;
     stk::mesh::SideIdPool m_sideIdPool;
     impl::SparseGraph m_coincidentGraph;
+    std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > m_splitCoincidents;
 private:
-
     void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
@@ -266,12 +261,14 @@ private:
                               const std::vector<unsigned>& side_counts,
                               std::vector<stk::mesh::sharing_info>& shared_modified);
 
-private:
+    void extract_split_coincident_connections(stk::mesh::Entity localElem, const impl::ParallelElementData &localElementData, const impl::ParallelElementDataVector &elementsConnectedToThisElementSide);
+    void add_split_coincident_connection(stk::mesh::Entity localElem, const impl::ParallelElementData & connectedElemParallelData);
+
     void update_all_local_neighbors(const stk::mesh::Entity elemToSend,
                                     const int destination_proc,
                                     impl::ParallelGraphInfo &newParallelGraphEntries);
 
-    impl::parallel_info create_parallel_info(stk::mesh::Entity connected_element,
+    impl::ParallelInfo create_parallel_info(stk::mesh::Entity connected_element,
                                                             const stk::mesh::Entity elemToSend,
                                                             int side_id,
                                                             const int destination_proc);
@@ -285,6 +282,12 @@ private:
     std::vector<impl::LocalId> get_local_ids_for_element_entities(const stk::mesh::EntityVector &elems);
 
     void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge) const;
+    unsigned get_max_num_sides_per_element() const;
+    bool did_already_delete_a_shell_between_these_elements(std::vector<impl::ShellConnectivityData>& shellConnectivityList,
+                                                           const impl::ShellConnectivityData& shellConnectivityData);
+    bool are_connectivities_for_same_graph_edge(const impl::ShellConnectivityData& shellConn,
+                                                      const impl::ShellConnectivityData& shellConnectivityData);
+    bool is_connected_to_shell_on_side(stk::mesh::impl::LocalId localElemLocalId, int side);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

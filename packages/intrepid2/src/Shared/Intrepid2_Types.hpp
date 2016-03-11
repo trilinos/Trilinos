@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -570,8 +569,8 @@ namespace Intrepid2 {
       \return 1 if the argument is valid computational engine; 0 otherwise
    */
   inline int isValidCompEngine(const ECompEngine compEngType){
-    return ( (compEngType == COMP_CPP) ||
-             (compEngType == COMP_BLAS) );
+    //at the moment COMP_BLAS is not a valid CompEngine.
+    return (compEngType == COMP_CPP);
   }
 
 } //namespace Intrepid2

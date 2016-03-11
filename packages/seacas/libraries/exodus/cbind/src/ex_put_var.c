@@ -90,13 +90,13 @@ ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id o
       ex_err("ex_put_var",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     }
-    else {
+    
       sprintf(errmsg,
 	      "Error: failed to locate %s id %"PRId64" in %s array in file id %d",
 	      ex_name_of_object(var_type), obj_id, VOBJID, exoid);
       ex_err("ex_put_var",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   if ((status = nc_inq_varid (exoid, ex_name_var_of_object(var_type, var_index, obj_id_ndx), varid)) != NC_NOERR) {
@@ -105,10 +105,12 @@ ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id o
       if (nc_inq_varid(exoid, VOBJTAB, varid) == NC_NOERR) {
 	/* find out number of TNAMEs and TNAME variables */
 	status = ex_get_dimension(exoid, DNUMOBJ, ex_name_of_object(var_type), &num_obj, &dimid, "ex_put_var");
-	if (status != NC_NOERR) return status;
+	if (status != NC_NOERR) { return status;
+}
 
 	status = ex_get_dimension(exoid, DNUMOBJVAR, ex_name_of_object(var_type), &num_obj_var, &dimid, "ex_put_var");
-	if (status != NC_NOERR) return status;
+	if (status != NC_NOERR) { return status;
+}
 
 	if (!(obj_var_truth_tab = malloc(num_obj*num_obj_var*sizeof(int)))) {
 	  exerrval = EX_MEMFAIL;

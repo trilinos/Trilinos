@@ -34,6 +34,7 @@
 #define IOSS_Ioss_PropertyManager_h
 
 #include <Ioss_Property.h>              // for Property
+#include <Ioss_CodeTypes.h> 
 #include <stddef.h>                     // for size_t
 #include <map>                          // for map, map<>::value_compare
 #include <string>                       // for string, operator<
@@ -41,13 +42,13 @@
 
 
 namespace Ioss {
-  typedef std::vector<std::string> NameList;
   typedef std::map<std::string, Property, std::less<std::string> > PropMapType;
   typedef PropMapType::value_type ValuePair;
 
   class PropertyManager {
   public:
     PropertyManager();
+    PropertyManager& operator=(const PropertyManager& from) =delete;
     ~PropertyManager();
 
     // Add the specified property to the list.
@@ -67,8 +68,6 @@ namespace Ioss {
     size_t count() const;
 
   private:
-    PropertyManager& operator=(const PropertyManager& from); // do not implement
-
     PropMapType properties;
   };
 }

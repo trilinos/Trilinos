@@ -100,7 +100,7 @@ namespace Xpetra {
       const Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
             Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
       const RCP<Tpetra::Vector<SC,LO,GO,NO> > & tpD = toTpetra(Dinv);
-      Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
+      Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
@@ -156,16 +156,21 @@ namespace Xpetra {
   public:
 
     static RCP<Matrix>
-    Jacobi(Scalar omega, const Vector& Dinv, const Matrix& A, const Matrix& B, RCP<Matrix> C_in, Teuchos::FancyOStream &fos, const std::string & label) {
+    Jacobi(SC omega, const Vector& Dinv, const Matrix& A, const Matrix& B, RCP<Matrix> C_in, Teuchos::FancyOStream &fos, const std::string& label) {
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
       TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
 
       RCP<Matrix> C = C_in;
-      if (C == Teuchos::null)
-        C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
+      if (C == Teuchos::null) {
+        C = MatrixFactory::Build(B.getRowMap(), Teuchos::OrdinalTraits<LO>::zero());
+      } else {
+        C->resumeFill(); // why this is not done inside of Tpetra Jacobi?
+        fos << "Reuse C pattern" << std::endl;
+      }
+
 
       Xpetra::Jacobi<Scalar,LocalOrdinal,GlobalOrdinal,Node>(omega, Dinv, A, B, *C, true, true,label);
-      C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
+      C->CreateView("stridedMaps", rcpFromRef(A), false, rcpFromRef(B), false);
 
       return C;
     }

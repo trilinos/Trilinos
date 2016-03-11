@@ -122,7 +122,8 @@ int ex_put_prop_array (int   exoid,
   /* inquire id of previously defined dimension (number of objects) */
   status = ex_get_dimension(exoid, ex_dim_num_objects(obj_type), ex_name_of_object(obj_type),
 			    &num_obj, &dimid, "ex_put_prop_array");
-  if (status != NC_NOERR) return status;
+  if (status != NC_NOERR) { return status;
+}
 
   for (i=1; i<=num_props; i++) {
     switch (obj_type){

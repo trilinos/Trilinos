@@ -87,11 +87,11 @@ int ex_put_init_info(int   exoid,
   }
 
   /* Set the file type */
-  if (ftype[0] == 'p' || ftype[0] == 'P')
+  if (ftype[0] == 'p' || ftype[0] == 'P') {
     lftype = 0;
-  else if (ftype[0] == 's' || ftype[0] == 'S')
+  } else if (ftype[0] == 's' || ftype[0] == 'S') {
     lftype = 1;
-  else {
+  } else {
     exerrval = EX_MSG;
     sprintf(errmsg,
             "Error: unknown file type requested for file ID %d",
@@ -158,8 +158,9 @@ int ex_put_init_info(int   exoid,
       return (EX_FATAL);
     }
 
-    if (ex_leavedef(exoid, func_name) != EX_NOERR)
+    if (ex_leavedef(exoid, func_name) != EX_NOERR) {
       return (EX_FATAL);
+}
 
     if ((status = nc_put_var1_int(exoid, varid, NULL, &lftype)) != NC_NOERR) {
       exerrval = status;
@@ -172,8 +173,9 @@ int ex_put_init_info(int   exoid,
     }
   }
   else {
-    if (ex_leavedef(exoid, func_name) != EX_NOERR)
+    if (ex_leavedef(exoid, func_name) != EX_NOERR) {
       return (EX_FATAL);
+}
   }
 
   return (EX_NOERR);

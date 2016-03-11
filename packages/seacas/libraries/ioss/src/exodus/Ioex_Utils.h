@@ -18,12 +18,10 @@ namespace Ioss {
   typedef std::vector<CoordinateFrame> CoordinateFrameContainer;
 }
 
-typedef std::vector<std::string> NameList;
-
 namespace Ioex {
-  typedef std::set<std::pair<int64_t, int64_t> > EntityIdSet;
-  typedef std::set<std::string> SideSetSet;
-  typedef std::map<std::string, const std::string, std::less<const std::string> > SideSetMap;
+  using EntityIdSet = std::set<std::pair<int64_t, int64_t>>;
+  using SideSetSet =  std::set<std::string>;
+  using SideSetMap =  std::map<std::string, const std::string, std::less<const std::string>>;
 
   struct TopologyMapCompare {
       bool operator() (const std::pair<std::string, const Ioss::ElementTopology*> &lhs,
@@ -35,8 +33,7 @@ namespace Ioex {
       }
   };
 
-  typedef std::map<std::pair<std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare > TopologyMap;
-  typedef TopologyMap::value_type TopoMapPair;
+  using TopologyMap = std::map<std::pair<std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare >;
 
   const char *Version();
   bool check_processor_info(int exodusFilePtr, int processor_count, int processor_id);
@@ -57,8 +54,8 @@ namespace Ioex {
 
   void check_non_null(void *ptr, const char *type, const std::string &name);
 
-  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
-                      size_t name_length);
+  int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
+		     size_t name_length);
 
   void add_coordinate_frames(int exoid, Ioss::Region *region);
   void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
@@ -73,8 +70,11 @@ namespace Ioex {
     int64_t eb_offset = -1;
     for (I=blocks.begin(); I != blocks.end(); ++I) {
       int64_t this_off = (*I)->get_offset();
-      if (this_off < eb_offset)
+      if (this_off < eb_offset) { { {
 	return false;
+}
+}
+}
       eb_offset = this_off;
     }
 #endif

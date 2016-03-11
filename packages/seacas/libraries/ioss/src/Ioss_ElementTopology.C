@@ -33,24 +33,16 @@
 #include <Ioss_ElementTopology.h>
 #include <Ioss_Super.h>                 // for Super
 #include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR, etc
+#include <Ioss_CodeTypes.h>             // for IntVector
+
 #include <assert.h>                     // for assert
 #include <stddef.h>                     // for size_t
-#include <algorithm>                    // for for_each
-#include <cstring>                      // for nullptr
-#include <map>                          // for _Rb_tree_iterator, etc
+
 #include <ostream>                      // for operator<<, basic_ostream, etc
 #include <string>                       // for string, char_traits, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#include "Ioss_CodeTypes.h"             // for IntVector
 
-
-namespace {
-  class Deleter {
-  public:
-    void operator()(Ioss::ElementTopology* t) {delete t;}
-  };
-}
 
 void Ioss::ETRegistry::insert(const Ioss::ETM_VP &value, bool delete_me)
 {
@@ -62,14 +54,15 @@ void Ioss::ETRegistry::insert(const Ioss::ETM_VP &value, bool delete_me)
 
 Ioss::ETRegistry::~ETRegistry()
 {
-  if (!m_deleteThese.empty()) 
-    std::for_each(m_deleteThese.begin(), m_deleteThese.end(), Deleter());
+  for (auto &entry : m_deleteThese) {
+    delete entry;
+  }
 }
 
 // ========================================================================
-Ioss::ElementTopology::ElementTopology(const std::string &type, const std::string &master_elem_name,
+Ioss::ElementTopology::ElementTopology(std::string type, std::string master_elem_name,
 				       bool delete_me)
-  : name_(type), masterElementName_(master_elem_name)
+  : name_(std::move(type)), masterElementName_(std::move(master_elem_name))
 {
   registry().insert(Ioss::ETM_VP(name_, this), delete_me);
   std::string lname = Ioss::Utils::lowercase(name_);
@@ -95,7 +88,7 @@ Ioss::ETRegistry& Ioss::ElementTopology::registry()
 }
 
 Ioss::ElementTopology::~ElementTopology()
-{}
+= default;
 
 bool Ioss::ElementTopology::edges_similar() const {return true;}
 bool Ioss::ElementTopology::faces_similar() const {return true;}
@@ -105,7 +98,7 @@ Ioss::ElementTopology* Ioss::ElementTopology::factory(const std::string& type, b
   std::string ltype = Ioss::Utils::lowercase(type);
   
   Ioss::ElementTopology* inst = nullptr;
-  Ioss::ElementTopologyMap::iterator iter = registry().find(ltype);
+  auto iter = registry().find(ltype);
 
   if (iter == registry().end()) {
     std::string base1 = "super";
@@ -146,10 +139,10 @@ Ioss::ElementTopology* Ioss::ElementTopology::factory(unsigned int unique_id)
 {
   // Given a unique id obtained from 'get_unique_id', return the
   // topology type that it refers to...
-  Ioss::ElementTopologyMap::const_iterator I;
-  for (I = registry().begin(); I != registry().end(); ++I) {
-    if (Ioss::Utils::hash((*I).second->name()) == unique_id)
-      return (*I).second;
+  for (auto &entry : registry()) {
+    if (Ioss::Utils::hash(entry.second->name()) == unique_id) {
+      return entry.second;
+}
   }
   return nullptr;
 }
@@ -159,11 +152,12 @@ unsigned int Ioss::ElementTopology::get_unique_id(const std::string& type)
   // Return a unique integer id corresponding to this topology type.
   // Basically used to simplify some parallel calculations so they can
   // deal with int instead of strings...
-  if (type == "unknown")
+  if (type == "unknown") {
     return 0;
+}
   unsigned int hash_val = 0;
   std::string ltype = Ioss::Utils::lowercase(type);
-  Ioss::ElementTopologyMap::iterator iter = registry().find(ltype);
+  auto iter = registry().find(ltype);
   if (iter == registry().end()) {
     IOSS_WARNING << "WARNING: The topology type '" << type
 		 << "' is not supported.\n";
@@ -177,9 +171,8 @@ unsigned int Ioss::ElementTopology::get_unique_id(const std::string& type)
 int Ioss::ElementTopology::describe(NameList *names)
 {
   int count = 0;
-  Ioss::ElementTopologyMap::const_iterator I;
-  for (I = registry().begin(); I != registry().end(); ++I) {
-    names->push_back((*I).first);
+  for (auto &entry : registry()) {
+    names->push_back(entry.first);
     count++;
   }
   return count;
@@ -193,8 +186,9 @@ Ioss::IntVector Ioss::ElementTopology::face_edge_connectivity(int face_number) c
   Ioss::IntVector fcon(nface_edge);
 
   // This works for 2D elements, 3D elements override
-  for (int i=0; i < nface_edge; i++)
+  for (int i=0; i < nface_edge; i++) {
     fcon[i] = i;
+}
 
   return fcon;
 }
@@ -203,8 +197,9 @@ Ioss::IntVector Ioss::ElementTopology::element_edge_connectivity() const
 {
   int nedge = number_edges();
   Ioss::IntVector econ(nedge);
-  for (int i=0; i < nedge; i++)
+  for (int i=0; i < nedge; i++) {
     econ[i] = i;
+}
 
   return econ;
 }
@@ -212,41 +207,41 @@ Ioss::IntVector Ioss::ElementTopology::element_edge_connectivity() const
 bool Ioss::ElementTopology::is_alias(const std::string &my_alias) const
 {
   std::string low_my_alias = Ioss::Utils::lowercase(my_alias);
-  Ioss::ElementTopologyMap::iterator iter = registry().find(low_my_alias);
+  auto iter = registry().find(low_my_alias);
   if (iter == registry().end()) {
     return false;
-  } else {
+  } 
     return this == (*iter).second;
-  }
+  
 }
 
 bool Ioss::ElementTopology::is_element() const
 {
   // NOTE: This is overridden in some derived classes.
   // The definition here is the default if not overridden.
-  if (spatial_dimension() == parametric_dimension())
-    return true;
-  else
-    return false;
+  return spatial_dimension() == parametric_dimension();
 }
 
 int Ioss::ElementTopology::number_boundaries() const
 {
-  if (parametric_dimension() == 3 && spatial_dimension() == 3)
+  if (parametric_dimension() == 3 && spatial_dimension() == 3) {
     return number_faces();
+}
 
-  if (parametric_dimension() == 2 && spatial_dimension() == 2)
+  if (parametric_dimension() == 2 && spatial_dimension() == 2) {
     return number_edges();
+}
 
-  if (parametric_dimension() == 1 && !is_element())
+  if (parametric_dimension() == 1 && !is_element()) {
     return number_corner_nodes();
+}
   
   if (is_element()) {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
       // A shell has faces and edges in its boundary...
       return number_faces() + number_edges();
-    } else if (parametric_dimension() == 1) {
+    } if (parametric_dimension() == 1) {
       return number_edges();
     }
   } else {
@@ -260,11 +255,13 @@ int Ioss::ElementTopology::number_boundaries() const
 
 Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int edge_number) const
 {
-  if (parametric_dimension() == 3 && spatial_dimension() == 3)
+  if (parametric_dimension() == 3 && spatial_dimension() == 3) {
     return face_connectivity(edge_number);
+}
 
-  if (parametric_dimension() == 2 && spatial_dimension() == 2)
+  if (parametric_dimension() == 2 && spatial_dimension() == 2) {
     return edge_connectivity(edge_number);
+}
 
   if (is_element()) {
     if (parametric_dimension() == 2) {
@@ -272,9 +269,9 @@ Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int edge_number) co
       // A shell has faces and edges in its boundary...
       if (edge_number > number_faces()) {
 	return edge_connectivity(edge_number - number_faces());
-      } else {
+      } 
 	return face_connectivity(edge_number);
-      }
+      
     } else if (parametric_dimension() == 1) {
       return edge_connectivity(edge_number);
     }
@@ -289,23 +286,26 @@ Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int edge_number) co
 
 Ioss::ElementTopology* Ioss::ElementTopology::boundary_type(int face_number) const
 {
-  if (parametric_dimension() == 3 && spatial_dimension() == 3)
+  if (parametric_dimension() == 3 && spatial_dimension() == 3) {
     return face_type(face_number);
+}
 
-  if (parametric_dimension() == 2 && spatial_dimension() == 2)
+  if (parametric_dimension() == 2 && spatial_dimension() == 2) {
     return edge_type(face_number);
+}
 
   if (is_element()) {
     if (parametric_dimension() == 2) {
       // A shell has faces and edges in its boundary...
-      if (face_number == 0) return nullptr;
+      if (face_number == 0) { return nullptr;
+}
       
       assert(spatial_dimension() == 3);
       if (face_number > number_faces()) {
 	return edge_type(face_number - number_faces());
-      } else {
+      } 
 	return face_type(face_number);
-      }
+      
     } else if (parametric_dimension() == 1) {
       return edge_type(face_number);
     }

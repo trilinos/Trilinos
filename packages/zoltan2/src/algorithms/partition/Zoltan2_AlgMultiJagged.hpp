@@ -543,7 +543,7 @@ private:
     typedef std::vector<mj_partBox_t> mj_partBoxVector_t;
 
     RCP<const Environment> mj_env; //the environment object
-    RCP<Comm<int> > mj_problemComm; //initial comm object
+    RCP<const Comm<int> > mj_problemComm; //initial comm object
 
     double imbalance_tolerance; //input imbalance tolerance.
     mj_part_t *part_no_array; //input part array specifying num part to divide along each dim.
@@ -1255,7 +1255,7 @@ public:
      */
     void multi_jagged_part(
                 const RCP<const Environment> &env,
-                RCP<Comm<int> > &problemComm,
+                RCP<const Comm<int> > &problemComm,
 
                 double imbalance_tolerance,
                 size_t num_global_parts,
@@ -1383,8 +1383,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
 
         this->mj_env = env;
         const RCP<Comm<int> > commN;
-        this->comm = this->mj_problemComm =  Teuchos::rcp_const_cast<Comm<int> >
-        (Teuchos::DefaultComm<int>::getDefaultSerialComm(commN));
+        this->mj_problemComm = 
+              Teuchos::DefaultComm<int>::getDefaultSerialComm(commN);
+        this->comm = 
+              Teuchos::rcp_const_cast<Comm<int> >(this->mj_problemComm);
         this->myActualRank = this->myRank = 1;
 
 #ifdef HAVE_ZOLTAN2_OMP
@@ -5685,7 +5687,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
 
         const RCP<const Environment> &env,
-        RCP<Comm<int> > &problemComm,
+        RCP<const Comm<int> > &problemComm,
 
         double imbalance_tolerance_,
         size_t num_global_parts_,
@@ -6220,7 +6222,7 @@ private:
     AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t> mj_partitioner;
 
     RCP<const Environment> mj_env; //the environment object
-    RCP<Comm<int> > mj_problemComm; //initial comm object
+    RCP<const Comm<int> > mj_problemComm; //initial comm object
     RCP<const coordinateModel_t> mj_coords; //coordinate adapter
 
     //PARAMETERS
@@ -6272,7 +6274,7 @@ private:
 public:
 
     Zoltan2_AlgMJ(const RCP<const Environment> &env,
-                  RCP<Comm<int> > &problemComm,
+                  RCP<const Comm<int> > &problemComm,
                   const RCP<const coordinateModel_t> &coords) :
                         mj_partitioner(), mj_env(env),
                         mj_problemComm(problemComm),

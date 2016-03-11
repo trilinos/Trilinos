@@ -262,7 +262,7 @@ void AlgPuLP<Adapter>::partition(
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   int num_parts = (int)numGlobalParts;
-  //TPL_Traits<int, size_t>::ASSIGN_TPL_T(num_parts, numGlobalParts, env);
+  //TPL_Traits<int, size_t>::ASSIGN(num_parts, numGlobalParts, env);
 
   //#ifdef HAVE_ZOLTAN2_MPI
   // TODO: XtraPuLP
@@ -275,8 +275,8 @@ void AlgPuLP<Adapter>::partition(
   const size_t modelEdges = model->getLocalNumEdges();
   int num_verts = (int)modelVerts;
   long num_edges = (long)modelEdges;
-  //TPL_Traits<int, size_t>::ASSIGN_TPL_T(num_verts, modelVerts, env);
-  //TPL_Traits<long, size_t>::ASSIGN_TPL_T(num_edges, modelEdges, env);
+  //TPL_Traits<int, size_t>::ASSIGN(num_verts, modelVerts, env);
+  //TPL_Traits<long, size_t>::ASSIGN(num_edges, modelEdges, env);
 
   // Get adjacency list and offset pointers 
   ArrayView<const gno_t> adjs;
@@ -287,8 +287,8 @@ void AlgPuLP<Adapter>::partition(
   // Create PuLP's graph structure
   int *out_edges;
   long *out_offsets;
-  TPL_Traits<int, const gno_t>::ASSIGN_TPL_T_ARRAY(&out_edges, adjs);
-  TPL_Traits<long, const lno_t>::ASSIGN_TPL_T_ARRAY(&out_offsets, offsets);
+  TPL_Traits<int, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
+  TPL_Traits<long, const lno_t>::ASSIGN_ARRAY(&out_offsets, offsets);
 
   pulp_graph_t g = {num_verts, num_edges, out_edges, out_offsets};
 
@@ -391,8 +391,8 @@ void AlgPuLP<Adapter>::partition(
   env->memory("Zoltan2-PuLP: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<int, const lno_t>::DELETE_TPL_T_ARRAY(&out_edges);
-  TPL_Traits<long, const gno_t>::DELETE_TPL_T_ARRAY(&out_offsets);
+  TPL_Traits<int, const lno_t>::DELETE_ARRAY(&out_edges);
+  TPL_Traits<long, const gno_t>::DELETE_ARRAY(&out_offsets);
 
 //#endif // DO NOT HAVE_MPI
 }

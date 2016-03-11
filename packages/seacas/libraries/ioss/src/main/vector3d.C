@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <math.h>
+#include <cmath>
 
 #include "vector3d.h"
 
@@ -132,9 +132,8 @@ vector3d operator/ (const vector3d& lhs, double scalar)
   if ( scalar != 0.0 ) {
     vector3d tmp(lhs);
     return tmp /= scalar;
-  } else {
-    return vector3d(HUGE_VAL, HUGE_VAL, HUGE_VAL);
   }
+  return vector3d(HUGE_VAL, HUGE_VAL, HUGE_VAL);
 }
 
 vector3d& vector3d::operator/= (double scalar)
@@ -154,7 +153,7 @@ vector3d& vector3d::operator/= (double scalar)
 
 double vector3d::length () const
 {
-  return sqrt(x*x + y*y + z*z);
+  return std::sqrt(x*x + y*y + z*z);
 }
 
 double vector3d::normalize (double tolerance)

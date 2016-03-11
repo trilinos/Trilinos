@@ -161,8 +161,8 @@ private:
 
   Real GradDotStep(const Vector<Real> &g, const Vector<Real> &s,
                    const Vector<Real> &x,
-                   BoundConstraint<Real> &bnd, Real eps = 0.0) {
-    Real gs = 0.0;
+                   BoundConstraint<Real> &bnd, Real eps = 0) {
+    Real gs(0), one(1);
     if (!bnd.isActivated()) {
       gs = s.dot(g.dual());
     }
@@ -171,9 +171,9 @@ private:
       bnd.pruneActive(*d_,g,x,eps);
       gs = d_->dot(g.dual());
       d_->set(x);
-      d_->axpy(-1.0,g.dual());
+      d_->axpy(-one,g.dual());
       bnd.project(*d_);
-      d_->scale(-1.0);
+      d_->scale(-one);
       d_->plus(x);
       bnd.pruneInactive(*d_,g,x,eps);
       gs -= d_->dot(g.dual());
@@ -385,6 +385,7 @@ public:
   void compute( Vector<Real> &s, const Vector<Real> &x,
                 Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
+    Real zero(0), one(1);
     // Compute unglobalized step
     desc_->compute(s,x,obj,bnd,algo_state);
 
@@ -392,9 +393,9 @@ public:
     // ---> If not, then default to steepest descent
     Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
     Real gs = GradDotStep(*(desc_state->gradientVec),s,x,bnd,algo_state.gnorm);
-    if (gs >= 0.0) {
+    if (gs >= zero) {
       s.set((desc_state->gradientVec)->dual());
-      s.scale(-1.0);
+      s.scale(-one);
       gs = GradDotStep(*(desc_state->gradientVec),s,x,bnd,algo_state.gnorm);
     }
 

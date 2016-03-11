@@ -286,8 +286,9 @@ int ex_put_concat_sets (int   exoid,
     }
 
     /*  define dimension for number of entries per set */
-    if (set_stat[i] == 0) /* Is this a NULL set? */
+    if (set_stat[i] == 0) { /* Is this a NULL set? */
       continue; /* Do not create anything for NULL sets! */
+}
 
     if (int_size == sizeof(int)) {
       status = nc_def_dim(exoid, ex_dim_num_entries_in_object(set_type, set_id_ndx),
@@ -480,8 +481,9 @@ int ex_put_concat_sets (int   exoid,
     int64_t set_id;
     size_t df_ndx;
     
-    if (set_stat[i] == 0) /* Is this a NULL set? */
+    if (set_stat[i] == 0) { /* Is this a NULL set? */
       continue; /* Do not create anything for NULL sets! */
+}
 
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
       set_id = ((int64_t*)set_specs->sets_ids)[i];
@@ -492,8 +494,9 @@ int ex_put_concat_sets (int   exoid,
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       int64_t* extra_list = NULL;
       /* set extra list */
-      if (set_type == EX_EDGE_SET || set_type == EX_FACE_SET || set_type == EX_SIDE_SET)
+      if (set_type == EX_EDGE_SET || set_type == EX_FACE_SET || set_type == EX_SIDE_SET) {
 	extra_list = &(((int64_t*)set_specs->sets_extra_list)[((int64_t*)sets_entry_index)[i]]);
+}
       
       status = ex_put_set(exoid, set_type, set_id, 
 			  &(((int64_t*)set_specs->sets_entry_list)[((int64_t*)sets_entry_index)[i]]),
@@ -501,8 +504,9 @@ int ex_put_concat_sets (int   exoid,
     } else {
       int* extra_list = NULL;
       /* set extra list */
-      if (set_type == EX_EDGE_SET || set_type == EX_FACE_SET || set_type == EX_SIDE_SET)
+      if (set_type == EX_EDGE_SET || set_type == EX_FACE_SET || set_type == EX_SIDE_SET) {
 	extra_list = &(((int*)set_specs->sets_extra_list)[((int*)sets_entry_index)[i]]);
+}
       
       status = ex_put_set(exoid, set_type, set_id, 
 			  &(((int*)set_specs->sets_entry_list)[((int*)sets_entry_index)[i]]),

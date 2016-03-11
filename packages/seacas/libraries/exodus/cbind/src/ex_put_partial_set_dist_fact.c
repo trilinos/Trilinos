@@ -105,13 +105,13 @@ int ex_put_partial_set_dist_fact (int   exoid,
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_put_set_fact",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_put_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* setup more pointers based on set_type */
@@ -145,20 +145,21 @@ int ex_put_partial_set_dist_fact (int   exoid,
 	      ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_put_set_dist_fact",errmsg,exerrval);
       return (EX_WARN);
-    } else  {
+    }  
       exerrval = status;
       sprintf(errmsg,
 	      "Error: failed to locate dist factors list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_put_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   start[0] = offset-1;
   count[0] = num_to_put;
-  if (num_to_put == 0)
+  if (num_to_put == 0) {
     start[0] = 0;
+}
   
   /* write out the distribution factors array */
   if (ex_comp_ws(exoid) == 4) {

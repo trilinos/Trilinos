@@ -226,8 +226,9 @@ int ex_put_variable_param (int exoid,
   /* define dimensions and variables */
   if (obj_type == EX_GLOBAL) {
     if ((status = ex_prepare_result_var(exoid, num_vars, "global",
-					DIM_NUM_GLO_VAR,VAR_NAME_GLO_VAR)) == 1)
+					DIM_NUM_GLO_VAR,VAR_NAME_GLO_VAR)) == 1) {
       goto error_ret;
+}
 
     if ((status = nc_inq_dimid (exoid, DIM_NUM_GLO_VAR, &dimid)) != NC_NOERR) {
       exerrval = status;
@@ -342,43 +343,51 @@ int ex_put_variable_param (int exoid,
    */
   else if (obj_type == EX_ELEM_BLOCK)  {
     if ((status = ex_prepare_result_var(exoid, num_vars, "element",
-					DIM_NUM_ELE_VAR, VAR_NAME_ELE_VAR)) == 1)
+					DIM_NUM_ELE_VAR, VAR_NAME_ELE_VAR)) == 1) {
       goto error_ret;
+}
   }
   else if (obj_type == EX_NODE_SET) {
     if ((status = ex_prepare_result_var(exoid, num_vars, "nodeset",
-					DIM_NUM_NSET_VAR,VAR_NAME_NSET_VAR)) == 1)
+					DIM_NUM_NSET_VAR,VAR_NAME_NSET_VAR)) == 1) {
       goto error_ret;
+}
   }
   else if (obj_type == EX_SIDE_SET) {
     if ((status = ex_prepare_result_var(exoid, num_vars, "sideset",
-					DIM_NUM_SSET_VAR,VAR_NAME_SSET_VAR)) == 1)
+					DIM_NUM_SSET_VAR,VAR_NAME_SSET_VAR)) == 1) {
       goto error_ret;
+}
   }
   else if (obj_type == EX_EDGE_BLOCK) {
     if ((status = ex_prepare_result_var(exoid, num_vars, "edge",
-					DIM_NUM_EDG_VAR,VAR_NAME_EDG_VAR)) == 1)
+					DIM_NUM_EDG_VAR,VAR_NAME_EDG_VAR)) == 1) {
       goto error_ret;
+}
   }
   else if (obj_type == EX_FACE_BLOCK) {
     if ((status = ex_prepare_result_var(exoid, num_vars, "face",
-					DIM_NUM_FAC_VAR,VAR_NAME_FAC_VAR)) == 1)
+					DIM_NUM_FAC_VAR,VAR_NAME_FAC_VAR)) == 1) {
       goto error_ret;
+}
   }
   else if (obj_type == EX_EDGE_SET) {
     if ((status = ex_prepare_result_var(exoid, num_vars, "edgeset",
-					DIM_NUM_ESET_VAR,VAR_NAME_ESET_VAR)) == 1)
+					DIM_NUM_ESET_VAR,VAR_NAME_ESET_VAR)) == 1) {
       goto error_ret;
+}
   }
   else if (obj_type == EX_FACE_SET) {
     if ((status = ex_prepare_result_var(exoid, num_vars, "faceset",
-					DIM_NUM_FSET_VAR,VAR_NAME_FSET_VAR)) == 1)
+					DIM_NUM_FSET_VAR,VAR_NAME_FSET_VAR)) == 1) {
       goto error_ret;
+}
   }
   else if (obj_type == EX_ELEM_SET) {
     if ((status = ex_prepare_result_var(exoid, num_vars, "elementset",
-					DIM_NUM_ELSET_VAR,VAR_NAME_ELSET_VAR))==1)
+					DIM_NUM_ELSET_VAR,VAR_NAME_ELSET_VAR))==1) {
       goto error_ret;
+}
   }
 
   /* leave define mode  */

@@ -154,7 +154,8 @@ int ex_get_object_truth_vector (int  exoid,
   /* If this is a null entity, then 'ent_ndx' will be negative.
    * We don't care in this routine, so make it positive and continue...
    */
-  if (ent_ndx < 0) ent_ndx = -ent_ndx;
+  if (ent_ndx < 0) { ent_ndx = -ent_ndx;
+}
   
   if ((int)num_var_db != num_var) {
     exerrval = EX_FATAL;

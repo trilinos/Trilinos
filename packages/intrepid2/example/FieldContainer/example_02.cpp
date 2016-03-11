@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -191,7 +190,7 @@ Kokkos::initialize();
     cout << err.what() << "\n";
   }
   
-  
+ /*   operator [] no longer available
   // Trying to use [] with enumeration that is out of range (size of myContainer is 210)
   cout \
     << "===============================================================================\n"\
@@ -202,7 +201,8 @@ Kokkos::initialize();
   catch(std::logic_error err){
     cout << err.what() << "\n\n"; 
   }
-  
+  */
+
   // Trying to create FieldContainer using incompatible data array and dimensions. In this example
   // dataTeuchosArray corresponds to dimensions = {5,3,3,7} but we change the dimensions to one
   // that does not match the data. Note that if we permute the values in dimensions it will be

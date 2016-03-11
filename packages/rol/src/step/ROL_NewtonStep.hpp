@@ -84,11 +84,11 @@ public:
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
 
     // Compute unconstrained step
     obj.invHessVec(s,*(step_state->gradientVec),x,tol);
-    s.scale(-1.0);
+    s.scale(-one);
   }
 
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
@@ -98,7 +98,7 @@ public:
 
     // Update iterate
     algo_state.iter++;
-    x.axpy(1.0, s);
+    x.plus(s);
     (step_state->descentVec)->set(s);
     algo_state.snorm = s.norm();
 

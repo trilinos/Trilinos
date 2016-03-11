@@ -100,10 +100,11 @@ int ex_put_processor_node_maps(int  exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 'p')
+  if (ftype[0] == 'p') {
     start[0] = 0;
-  else
+  } else {
     start[0] = proc_id;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
@@ -187,10 +188,11 @@ int ex_put_processor_node_maps(int  exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 'p')
+  if (ftype[0] == 'p') {
     start[0] = 0;
-  else
+  } else {
     start[0] = proc_id;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
@@ -275,10 +277,11 @@ int ex_put_processor_node_maps(int  exoid,
     return (EX_FATAL);
   }
 
-  if (ftype[0] == 'p')
+  if (ftype[0] == 'p') {
     start[0] = 0;
-  else
+  } else {
     start[0] = proc_id;
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;

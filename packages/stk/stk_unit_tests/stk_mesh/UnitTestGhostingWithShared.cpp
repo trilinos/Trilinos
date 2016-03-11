@@ -40,7 +40,7 @@
 #include <string>                       // for string
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
-#include "BulkDataTester.hpp"           // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
@@ -71,7 +71,7 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::unit_test::BulkDataTester bulk(meta, communicator);
+    stk::unit_test_util::BulkDataTester bulk(meta, communicator);
     const std::string generatedMeshSpecification = "generated:1x1x3";
     stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpecification, bulk, communicator);
     bulk.modification_begin();

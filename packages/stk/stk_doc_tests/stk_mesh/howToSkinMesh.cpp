@@ -69,11 +69,11 @@ TEST(StkMeshHowTo, SkinExposedHex)
     stk::mesh::Part &skinPart = metaData.declare_part("skin", metaData.side_rank());
     stk::io::put_io_part_attribute(skinPart);
 
-    stk::mesh::create_exposed_boundary_sides(bulkData, allEntities, {&skinPart});
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, allEntities, {&skinPart});
 
     // ==================================================
     // VERIFICATION
-    EXPECT_TRUE(stk::mesh::check_exposed_boundary_sides(bulkData, allEntities, skinPart));
+    EXPECT_TRUE(stk::mesh::check_exposed_block_boundary_sides(bulkData, allEntities, skinPart));
     stk::mesh::Selector skin(skinPart & metaData.locally_owned_part());
     unsigned numSkinnedSides = stk::mesh::count_selected_entities(skin, bulkData.buckets(metaData.side_rank()));
     EXPECT_EQ(6u, numSkinnedSides) << "in part " << skinPart.name();

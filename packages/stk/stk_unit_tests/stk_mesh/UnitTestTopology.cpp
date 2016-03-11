@@ -51,7 +51,7 @@
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 
-#include "BulkDataTester.hpp"
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { struct EntitySideComponent; } }
@@ -811,7 +811,7 @@ TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
         unsigned gold_side_ids[4] = {5,6,8,7};
 
         stk::mesh::MetaData meta(3);
-        stk::mesh::unit_test::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
+        stk::unit_test_util::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
 
         const std::string generatedMeshSpec = "generated:1x1x2";
         stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);

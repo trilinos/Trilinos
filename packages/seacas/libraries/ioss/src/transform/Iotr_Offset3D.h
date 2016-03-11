@@ -50,7 +50,7 @@ namespace Iotr {
       static const Offset3D_Factory* factory();
     private:
       Offset3D_Factory();
-      Ioss::Transform* make(const std::string&) const;
+      Ioss::Transform* make(const std::string& /*unused*/ /*unused*/) const;
     };
 
   class Offset3D: public Ioss::Transform

@@ -78,12 +78,6 @@
 #include "xdmf/Ioxf_Internals.h"        // for SideSet, NodeSet, Block, etc
 namespace Ioss { class PropertyManager; }
 
-
-
-
-
-// The following eliminates the use of the "__ FILE __" variable which
-// was causing code bloat on janus.
 static const char *Version = "2009/08/18";
 
 // ========================================================================
@@ -127,26 +121,17 @@ namespace {
 
 namespace Ioxf {
   // ========================================================================
-  // Internal typedefs/structs/classes used in some algorithms.
-  // ========================================================================
-  typedef std::map<std::pair<const Ioss::ElementTopology*,
-			     const Ioss::ElementTopology*>, int,
-		   std::less<std::pair<const Ioss::ElementTopology*,
-				       const Ioss::ElementTopology*> > > TopologyMap;
-  typedef TopologyMap::value_type TopoMapPair;
-
-  // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
 			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 			 const Ioss::PropertyManager &properties_x) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, properties_x),
-    databaseTitle(""), spatialDimension(0),
-    nodeCount(0), elementCount(0),
+    databaseTitle(""), spatialDimension(0), nodeCount(0), elementCount(0),
     nodeBlockCount(0), elementBlockCount(0), nodesetCount(0), sidesetCount(0),
     nodeCmapIds(nullptr), nodeCmapNodeCnts(nullptr), elemCmapIds(nullptr),
     elemCmapElemCnts(nullptr), commsetNodeCount(0), commsetElemCount(0),
     elementTruthTable(nullptr), nodesetTruthTable(nullptr), sidesetTruthTable(nullptr),
-    nodeMap("node"), elemMap("elem"), fileExists(false)
+    nodeMap("node", filename, myProcessor), elemMap("elem", filename, myProcessor),
+    fileExists(false)
   {
     // A history file is only written on processor 0...
     if (db_usage == Ioss::WRITE_HISTORY)
@@ -778,7 +763,7 @@ namespace Ioxf {
 	nodeMap.set_map(ids, num_to_get, 0);
       }
 
-      nodeMap.build_reverse_map(myProcessor);
+      nodeMap.build_reverse_map();
 
       // Only a single nodeblock and all set
       if (num_to_get == nodeCount) {
@@ -874,7 +859,7 @@ namespace Ioxf {
 
     // Now, if the state is Ioss::STATE_MODEL, update the reverseElementMap
     if (dbState == Ioss::STATE_MODEL) {
-      elemMap.build_reverse_map(num_to_get, eb_offset, myProcessor);
+      elemMap.build_reverse_map(num_to_get, eb_offset);
 
       // Output this portion of the element number map
       std::ostringstream *XML=nullptr;

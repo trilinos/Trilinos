@@ -430,7 +430,7 @@ public:
     local_scalar_type val = m_rf.evaluate(point, local_rv);
 
     if (m_use_exp)
-      val = std::exp(val);
+      val = 1.0 + std::exp(val);
 
     return val;
   }

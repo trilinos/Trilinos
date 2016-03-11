@@ -56,7 +56,7 @@
 
 
 namespace {
-  void print_usage(void);
+  void print_usage();
 
   const std::string remove_extension(const std::string &filename)
   {
@@ -1933,7 +1933,7 @@ int check_inp_specs(std::string &exoII_inp_file,
 } /*-------------------End check_inp_specs()-----------------*/
 
 namespace {
-  void print_usage(void)
+  void print_usage()
   {
     printf("\n");
     printf("usage:\t%s [-h] [<-n|-e> -o <output file>", UTIL_NAME);

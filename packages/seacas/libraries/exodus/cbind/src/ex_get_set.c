@@ -96,14 +96,14 @@ int ex_get_set (int   exoid,
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
 
       sprintf(errmsg,
 	      "Error: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* setup more pointers based on set_type */

@@ -42,7 +42,7 @@
 /*****************************************************************************/
 /* This function returns the time
  *****************************************************************************/
-double get_time(void)
+double get_time()
 {
 #ifdef  HAS_GETRUSAGE
   struct rusage timeval;

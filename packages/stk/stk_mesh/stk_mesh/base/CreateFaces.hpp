@@ -40,6 +40,13 @@ namespace stk {
     class BulkData;
     class Selector;
     
+    namespace experimental {
+    void create_faces( BulkData & mesh );
+    void create_faces( BulkData & mesh, const Selector & element_selector);
+    void create_faces( BulkData & mesh, bool connect_faces_to_edges);
+    void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges);
+    }
+
     /** Create faces for all elements in "element_selector" and attach them to
          * existing elements.
          *

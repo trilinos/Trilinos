@@ -22,6 +22,7 @@ void SideIdPool::generate_initial_ids(unsigned numIdsNeeded)
 
 stk::mesh::EntityId SideIdPool::get_available_id()
 {
+    ThrowRequireWithSierraHelpMsg(mNumIdsUsed < mSuggestedIds.size());
     stk::mesh::EntityId availId = *(mSuggestedIds.begin() + mNumIdsUsed);
     mNumIdsUsed++;
     return availId;

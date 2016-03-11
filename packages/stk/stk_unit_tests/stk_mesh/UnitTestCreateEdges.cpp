@@ -54,7 +54,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "unit_tests/Setup2Block2HexMesh.hpp"  // for setup2Block2HexMesh
 
 using stk::mesh::MetaData;

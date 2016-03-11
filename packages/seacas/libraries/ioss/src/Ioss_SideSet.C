@@ -74,10 +74,12 @@ const Ioss::SideBlockContainer& Ioss::SideSet::get_side_blocks() const
 
 Ioss::SideBlock* Ioss::SideSet::get_block(size_t which) const
 {
-  if (which < sideBlocks.size())
+  if (which < sideBlocks.size()) {
     return sideBlocks[which];
-  else
+  }
+  else {
     return nullptr;
+  }
 }
 
 Ioss::SideBlock* Ioss::SideSet::get_side_block(const std::string& my_name) const
@@ -114,12 +116,14 @@ int64_t Ioss::SideSet::internal_put_field_data(const Ioss::Field& field,
 Ioss::Property
 Ioss::SideSet::get_implicit_property(const std::string& my_name) const
 {
-  if (my_name == "side_block_count")
+  if (my_name == "side_block_count") {
     return Ioss::Property(my_name, (int)sideBlocks.size());
-  else if (my_name == "block_count")
+  }
+  else if (my_name == "block_count") {
     return Ioss::Property(my_name, (int)sideBlocks.size());
-  else
+  } else {
     return Ioss::GroupingEntity::get_implicit_property(my_name);
+  }
 }
 
 int Ioss::SideSet::max_parametric_dimension() const
@@ -127,8 +131,9 @@ int Ioss::SideSet::max_parametric_dimension() const
   int max_par_dim = 0;
   for (auto sideblock : sideBlocks) {
     int parametric_dim = sideblock->topology()->parametric_dimension();
-    if (parametric_dim > max_par_dim)
+    if (parametric_dim > max_par_dim) {
       max_par_dim = parametric_dim;
+    }
   }
   if (max_par_dim == 0) {
     // If the sideset is empty, return the maximum that the parametric dimension could be...

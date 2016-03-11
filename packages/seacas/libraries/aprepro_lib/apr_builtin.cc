@@ -1017,7 +1017,7 @@ const char *do_extract(char *string, char *begin, char *end)
   if (std::strlen(begin) > 0) {
     start = std::strstr(string, begin);
     if (start == nullptr)
-      return nullptr;
+      return "";
   }
   
   len = std::strlen(start);

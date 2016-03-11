@@ -96,7 +96,7 @@ private:
                const Teuchos::RCP<BoundConstraint<Real> > &bnd,
                const Teuchos::RCP<Vector<Real> > &x,
                const Teuchos::RCP<Vector<Real> > &g,
-               Real eps = 0.0 )
+               Real eps = 0 )
       : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps) {
       v_ = x_->clone();
     }
@@ -126,7 +126,7 @@ private:
                const Teuchos::RCP<BoundConstraint<Real> > &bnd,
                const Teuchos::RCP<Vector<Real> > &x,
                const Teuchos::RCP<Vector<Real> > &g,
-               Real eps = 0.0 )
+               Real eps = 0 )
       : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps), useSecant_(false) {
       v_ = x_->clone();
     }
@@ -134,7 +134,7 @@ private:
                const Teuchos::RCP<BoundConstraint<Real> > &bnd,
                const Teuchos::RCP<Vector<Real> > &x,
                const Teuchos::RCP<Vector<Real> > &g,
-               Real eps = 0.0 )
+               Real eps = 0 )
       : secant_(secant), bnd_(bnd), x_(x), g_(g), eps_(eps), useSecant_(true) {
       v_ = x_->clone();
     }
@@ -234,6 +234,7 @@ public:
   void compute( Vector<Real> &s, const Vector<Real> &x,
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
+    Real one(1);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     // Build Hessian and Preconditioner object
@@ -260,22 +261,22 @@ public:
     if ( flagKrylov_ == 2 && iterKrylov_ <= 1 ) {
       s.set((step_state->gradientVec)->dual());
     }
-    s.scale(-1.0);
+    s.scale(-one);
   }
 
   void update( Vector<Real> &x, const Vector<Real> &s,
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate and store previous step
     algo_state.iter++;
     d_->set(x);
-    x.axpy(1.0, s);
+    x.plus(s);
     bnd.project(x);
     (step_state->descentVec)->set(x);
-    (step_state->descentVec)->axpy(-1.0,*d_);
+    (step_state->descentVec)->axpy(-one,*d_);
     algo_state.snorm = s.norm();
 
     // Compute new gradient
@@ -301,9 +302,9 @@ public:
     }
     else {
       d_->set(x);
-      d_->axpy(-1.0,(step_state->gradientVec)->dual());
+      d_->axpy(-one,(step_state->gradientVec)->dual());
       bnd.project(*d_);
-      d_->axpy(-1.0,x);
+      d_->axpy(-one,x);
       algo_state.gnorm = d_->norm();
     }
   }

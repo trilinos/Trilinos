@@ -77,21 +77,19 @@
 
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_TEUCHOS_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
+#  include "Teuchos_DefaultMpiComm.hpp"
 #endif // HAVE_TEUCHOS_MPI
 
 #ifdef HAVE_TPETRACORE_EPETRA
-#include "Epetra_Comm.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Map.h"
+#  include "Epetra_Comm.h"
+#  include "Epetra_CrsGraph.h"
+#  include "Epetra_CrsMatrix.h"
+#  include "Epetra_Map.h"
+#  include "Epetra_SerialComm.h"
+#  ifdef HAVE_TEUCHOS_MPI
+#    include "Epetra_MpiComm.h"
+#  endif // HAVE_TEUCHOS_MPI
 #endif // HAVE_TPETRACORE_EPETRA
-
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_TEUCHOS_MPI
-#include "Epetra_MpiComm.h"
-#endif // HAVE_TEUCHOS_MPI
-
 
 namespace { // (anonymous)
 
@@ -324,6 +322,7 @@ namespace { // (anonymous)
     return A; // return is a shallow copy (RCP is like std::shared_ptr)
   }
 
+#ifdef HAVE_TPETRACORE_EPETRA
   // Convert from a Teuchos::Comm MPI communicator wrapper (used by
   // Tpetra classes) to an Epetra communicator wrapper (used by Epetra
   // classes).
@@ -449,6 +448,7 @@ namespace { // (anonymous)
     A->FillComplete ();
     return A;
   }
+#endif // HAVE_TPETRACORE_EPETRA
 
 } // namespace (anonymous)
 

@@ -57,6 +57,15 @@ namespace Teuchos
    * \brief XMLParser consumes characters from an XMLInputStream object,
    * parsing the XML and using a TreeBuildingXMLHandler to construct an
    * XMLObject.
+
+    Note: per the XML standard, certain characters must be represented with escape codes within fields: 
+
+    @verbatim
+         character            description             code
+             <                 less-than              &lt;
+             &                 ampersand              &amp;
+    @endverbatim
+
    */
   class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLParser
     {

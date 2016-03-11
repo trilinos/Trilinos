@@ -144,7 +144,8 @@ int ex_get_var_time( int   exoid,
   /* first, find out how many objects there are */
   status = ex_get_dimension(exoid, ex_dim_num_objects(var_type), ex_name_of_object(var_type),
 			    &num_obj, &dimid, "ex_get_var_time");
-  if (status != NC_NOERR) return status;
+  if (status != NC_NOERR) { return status;
+  }
 
   /* get the array of object ids */
   /* don't think we need this anymore since the netcdf variable names 
@@ -185,8 +186,9 @@ int ex_get_var_time( int   exoid,
     }
   }
   else { /* default: status is true */
-    for(i=0;i<num_obj;i++)
+    for(i=0;i<num_obj;i++) {
       stat_vals[i]=1;
+    }
   }
 
   /* loop through each object until id is found;  since entry

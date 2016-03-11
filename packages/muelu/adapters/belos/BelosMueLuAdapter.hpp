@@ -46,10 +46,16 @@
 #ifndef BELOS_MUELU_ADAPTER_HPP
 #define BELOS_MUELU_ADAPTER_HPP
 
-#ifdef HAVE_MUELU_EPETRA
+// TAW: 3/4/2016: we use the Xpetra macros
+//                These are available and Xpetra is prerequisite for MueLu
+#ifdef HAVE_XPETRA_EPETRA
 #include <Epetra_config.h>
 #include <BelosOperator.hpp>
 #endif
+
+//#ifdef HAVE_XPETRA_TPETRA
+//#include "TpetraCore_config.h"
+//#endif
 
 #ifdef HAVE_MUELU_AMGX
 #include "MueLu_AMGXOperator.hpp"
@@ -92,8 +98,8 @@ namespace Belos {
             class GlobalOrdinal = LocalOrdinal,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuOp :
-    public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-#ifdef HAVE_MUELU_TPETRA
+      public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+#ifdef HAVE_XPETRA_TPETRA
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #endif
   {
@@ -141,7 +147,7 @@ namespace Belos {
     }
     //@}
 
-#ifdef HAVE_MUELU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
@@ -178,7 +184,7 @@ namespace Belos {
 #endif
   };
 
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   /*! @class MueLuOp
    *
@@ -194,14 +200,14 @@ namespace Belos {
   template <>
   class MueLuOp<double, int, int, Xpetra::EpetraNode> :
     public OperatorT<Xpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
-#ifdef HAVE_MUELU_TPETRA
-    // FIXME: guard
-#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+#ifdef HAVE_XPETRA_TPETRA
+    // check whether Tpetra is instantiated on double,int,int,EpetraNode
+#if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
     , public OperatorT<Tpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
 #endif
 #endif
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
     , public OperatorT<Epetra_MultiVector>
     , public Belos::Operator<double>
 #endif
@@ -239,9 +245,9 @@ namespace Belos {
         Hierarchy_->Iterate(x, y, 1, true);
     }
 
-#ifdef HAVE_MUELU_TPETRA
-#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+#ifdef HAVE_XPETRA_TPETRA
+#if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans != NOTRANS, MueLuOpFailure,
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners.");
@@ -268,7 +274,7 @@ namespace Belos {
 #endif
 #endif
 
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
@@ -313,10 +319,10 @@ namespace Belos {
 #endif
   };
 #endif // !EPETRA_NO_32BIT_GLOBAL_INDICES
-#endif // HAVE_MUELU_EPETRA
+#endif // HAVE_XPETRA_EPETRA
 
 
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
 #ifndef  EPETRA_NO_64BIT_GLOBAL_INDICES
   /*! @class MueLuOp
    *
@@ -332,14 +338,14 @@ namespace Belos {
   template <>
   class MueLuOp<double, int, long long, Xpetra::EpetraNode> :
     public OperatorT<Xpetra::MultiVector<double, int, long long, Xpetra::EpetraNode> >
-#ifdef HAVE_MUELU_TPETRA
-    // FIXME: guard
-#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+#ifdef HAVE_XPETRA_TPETRA
+    // check whether Tpetra is instantiated on double,int,int,EpetraNode
+#if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
     , public OperatorT<Tpetra::MultiVector<double, int, long long, Xpetra::EpetraNode> >
 #endif
 #endif
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
     , public OperatorT<Epetra_MultiVector>
     , public Belos::Operator<double>
 #endif
@@ -377,9 +383,9 @@ namespace Belos {
         Hierarchy_->Iterate(x, y, 1, true);
     }
 
-#ifdef HAVE_MUELU_TPETRA
-#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+#ifdef HAVE_XPETRA_TPETRA
+#if ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+    (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans != NOTRANS, MueLuOpFailure,
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners.");
@@ -406,7 +412,7 @@ namespace Belos {
 #endif
 #endif
 
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
     /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
       to it resulting in the Tpetra::MultiVector \c y, which is returned.
@@ -451,7 +457,7 @@ namespace Belos {
 #endif
   };
 #endif // !EPETRA_NO_64BIT_GLOBAL_INDICES
-#endif // HAVE_MUELU_EPETRA
+#endif // HAVE_XPETRA_EPETRA
 } // namespace Belos
 
 #endif // BELOS_MUELU_ADAPTER_HPP

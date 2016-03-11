@@ -112,7 +112,7 @@ Ioss::Pyramid5::Pyramid5()
   Ioss::ElementTopology::alias("pyramid5", "pyra5");
 }
 
-Ioss::Pyramid5::~Pyramid5() {}
+Ioss::Pyramid5::~Pyramid5() = default;
 
 int Ioss::Pyramid5::parametric_dimension()           const {return  3;}
 int Ioss::Pyramid5::spatial_dimension()           const {return  3;}
@@ -145,8 +145,9 @@ Ioss::IntVector Ioss::Pyramid5::edge_connectivity(int edge_number) const
 {
   Ioss::IntVector connectivity(Constants::nodes_per_edge[edge_number]);
 
-  for (int i=0; i < Constants::nodes_per_edge[edge_number]; i++)
+  for (int i=0; i < Constants::nodes_per_edge[edge_number]; i++) {
     connectivity[i] = Constants::edge_node_order[edge_number-1][i];
+}
 
   return connectivity;
 }
@@ -156,8 +157,9 @@ Ioss::IntVector Ioss::Pyramid5::face_connectivity(int face_number) const
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(Constants::nodes_per_face[face_number]);
 
-  for (int i=0; i < Constants::nodes_per_face[face_number]; i++)
+  for (int i=0; i < Constants::nodes_per_face[face_number]; i++) {
     connectivity[i] = Constants::face_node_order[face_number-1][i];
+}
 
   return connectivity;
 }
@@ -165,22 +167,25 @@ Ioss::IntVector Ioss::Pyramid5::face_connectivity(int face_number) const
 Ioss::IntVector Ioss::Pyramid5::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 
 Ioss::ElementTopology* Ioss::Pyramid5::face_type(int face_number) const
 {
   assert(face_number >= 0 && face_number <= number_faces());
-  if (face_number == 0)
+  if (face_number == 0) {
     return (Ioss::ElementTopology*)nullptr;
-  else if (face_number <= 4)
+  }
+  else if (face_number <= 4) {
 //    return Ioss::ElementTopology::factory("triface3");
     return Ioss::ElementTopology::factory("tri3");
-  else
+  } else {
 //    return Ioss::ElementTopology::factory("quadface4");
     return Ioss::ElementTopology::factory("quad4");
+  }
 }
 
 Ioss::ElementTopology* Ioss::Pyramid5::edge_type(int edge_number) const
@@ -196,8 +201,9 @@ Ioss::IntVector Ioss::Pyramid5::face_edge_connectivity(int face_number) const
   int nface_edge = number_edges_face(face_number);
   Ioss::IntVector fcon(nface_edge);
 
-  for (int i=0; i < nface_edge; i++)
+  for (int i=0; i < nface_edge; i++) {
     fcon[i] = Constants::face_edge_order[face_number-1][i];
+}
 
   return fcon;
 }

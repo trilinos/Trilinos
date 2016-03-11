@@ -104,8 +104,9 @@ int main(int argc, char *argv[])
 
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
-  if (ind != std::string::npos)
+  if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
+}
 
   Ioss::Init::Initializer io;
 

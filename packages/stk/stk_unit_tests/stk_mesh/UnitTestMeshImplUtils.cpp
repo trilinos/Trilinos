@@ -46,7 +46,7 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_unit_test_utils/getOption.h>
-#include "BulkDataTester.hpp"
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
@@ -889,7 +889,7 @@ TEST(MeshImplUtils, comm_mesh_very_parallel_consistency_nominal)
     unsigned spatialDim = 2;
     stk::mesh::MetaData meta(spatialDim);
     stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
-    stk::mesh::unit_test::BulkDataTester mesh(meta, communicator);
+    stk::unit_test_util::BulkDataTester mesh(meta, communicator);
     if (mesh.parallel_size() >= 1) {
         mesh.modification_begin();
         Entity node1, node2, node3, node4;

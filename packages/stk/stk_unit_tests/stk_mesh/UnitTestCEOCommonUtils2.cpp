@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_TRUE
-#include "BulkDataTester.hpp"           // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "Setup8Quad4ProcMesh.hpp"      // for setup8Quad4ProcMesh2D
 #include "UnitTestCEOCommonUtils.hpp"   // for check_state, NODE_RANK, etc
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -10,7 +10,7 @@ namespace stk { namespace mesh { class Part; } }
 namespace CEOUtils
 {
 
-void check_state_proc_0(stk::mesh::unit_test::BulkDataTester& mesh,
+void check_state_proc_0(stk::unit_test_util::BulkDataTester& mesh,
                         Part* universal_part,
                         Part* owned_part,
                         stk::mesh::Part* topo_part,
@@ -173,7 +173,7 @@ void check_state_proc_0(stk::mesh::unit_test::BulkDataTester& mesh,
     EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_GHOSTED_TO));
 }
 
-void check_state_proc_1(stk::mesh::unit_test::BulkDataTester& mesh,
+void check_state_proc_1(stk::unit_test_util::BulkDataTester& mesh,
                         Part* universal_part,
                         Part* aura_part,
                         stk::mesh::Part* topo_part,
@@ -351,7 +351,7 @@ void check_state_proc_1(stk::mesh::unit_test::BulkDataTester& mesh,
     EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_GHOSTED_TO));
 }
 
-void check_state_proc_2(stk::mesh::unit_test::BulkDataTester& mesh,
+void check_state_proc_2(stk::unit_test_util::BulkDataTester& mesh,
                         Part* universal_part,
                         Part* aura_part,
                         stk::mesh::Part* topo_part,
@@ -529,7 +529,7 @@ void check_state_proc_2(stk::mesh::unit_test::BulkDataTester& mesh,
     EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 15), ELEM_RANK, 8));
 }
 
-void check_state_proc_3(stk::mesh::unit_test::BulkDataTester& mesh,
+void check_state_proc_3(stk::unit_test_util::BulkDataTester& mesh,
                         Part* universal_part,
                         Part* aura_part,
                         stk::mesh::Part* topo_part,
@@ -692,7 +692,7 @@ void check_state_proc_3(stk::mesh::unit_test::BulkDataTester& mesh,
     EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 15), ELEM_RANK, 8));
 }
 
-void fillMeshfor8Elem4ProcMoveTopAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta)
+void fillMeshfor8Elem4ProcMoveTopAndTest(stk::unit_test_util::BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
     //
     //     id/proc                           id/proc

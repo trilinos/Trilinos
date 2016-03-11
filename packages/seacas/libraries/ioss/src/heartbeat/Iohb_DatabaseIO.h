@@ -80,7 +80,7 @@ namespace Iohb {
     Ioss::DatabaseIO* make_IO(const std::string& filename,
 			      Ioss::DatabaseUsage db_usage,
 			      MPI_Comm communicator,
-			      const Ioss::PropertyManager &properties) const;
+			      const Ioss::PropertyManager &props) const;
   };
 
   class DatabaseIO : public Ioss::DatabaseIO
@@ -88,7 +88,10 @@ namespace Iohb {
   public:
     DatabaseIO(Ioss::Region *region, const std::string& filename,
 	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-	       const Ioss::PropertyManager &properties);
+	       const Ioss::PropertyManager &props);
+    DatabaseIO(const DatabaseIO& from) =delete;
+    DatabaseIO& operator=(const DatabaseIO& from) =delete;
+
     ~DatabaseIO();
 
     int64_t node_global_to_local(int64_t /* global */, bool /* must_exist */) const {return 0;}
@@ -136,7 +139,7 @@ namespace Iohb {
     int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
 
-    int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+    int64_t put_field_internal(const Ioss::Region* region, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
@@ -160,10 +163,6 @@ namespace Iohb {
 			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
-
-    // Private member functions
-    DatabaseIO(const DatabaseIO& from); // do not implement
-    DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
     std::ostream *logStream;
     Layout *layout_;

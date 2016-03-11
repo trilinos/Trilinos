@@ -51,7 +51,7 @@
 #include "rf_format.h"
 
 namespace {
-  int get_free_descriptor_count(void);
+  int get_free_descriptor_count();
 
   template <typename INT>
   size_t find_gnode_inter(INT *intersect, size_t num_g_nodes, INT *glob_vec,
@@ -1151,7 +1151,7 @@ namespace {
 #endif
 #include <limits.h>
 
-  int get_free_descriptor_count(void)
+  int get_free_descriptor_count()
   {
     /* Returns maximum number of files that one process can have open
      * at one time. (POSIX)

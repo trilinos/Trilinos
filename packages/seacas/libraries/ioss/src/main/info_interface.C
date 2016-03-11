@@ -127,50 +127,51 @@ bool Info::Interface::parse_options(int argc, char **argv)
   }
 
   int option_index = options_.parse(argc, argv);
-  if ( option_index < 1 )
+  if ( option_index < 1 ) {
     return false;
+}
 
-  if (options_.retrieve("help")) {
+  if (options_.retrieve("help") != nullptr) {
     options_.usage();
     std::cerr << "\n\tCan also set options via IO_INFO_OPTIONS environment variable.\n\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
 
-  if (options_.retrieve("version")) {
+  if (options_.retrieve("version") != nullptr) {
     // Version is printed up front, just exit...
     exit(0);
   }
   
-  if (options_.retrieve("check_node_status")) {
+  if (options_.retrieve("check_node_status") != nullptr) {
     checkNodeStatus_ = true;
   }
 
-  if (options_.retrieve("adjacencies")) {
+  if (options_.retrieve("adjacencies") != nullptr) {
     adjacencies_ = true;
   }
 
-  if (options_.retrieve("64-bit")) {
+  if (options_.retrieve("64-bit") != nullptr) {
     ints64Bit_ = true;
   }
 
-  if (options_.retrieve("compute_volume")) {
+  if (options_.retrieve("compute_volume") != nullptr) {
     computeVolume_ = true;
   }
 
-  if (options_.retrieve("compute_bbox")) {
+  if (options_.retrieve("compute_bbox") != nullptr) {
     computeBBox_ = true;
   }
 
-  if (options_.retrieve("list_groups")) {
+  if (options_.retrieve("list_groups") != nullptr) {
     listGroups_ = true;
   }
 
-  if (options_.retrieve("use_generic_names")) {
+  if (options_.retrieve("use_generic_names") != nullptr) {
     useGenericNames_ = true;
   }
 
-  if (options_.retrieve("summary")) {
+  if (options_.retrieve("summary") != nullptr) {
     summary_ = 1;
   }
 
@@ -195,7 +196,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("copyright")) {
+  if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
 	      << "Copyright(C) 2012 Sandia Corporation.  Under the terms of Contract\n"
 	      << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"

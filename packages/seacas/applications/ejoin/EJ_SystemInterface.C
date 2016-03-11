@@ -52,7 +52,7 @@ SystemInterface::SystemInterface()
   enroll_options();
 }
 
-SystemInterface::~SystemInterface() {}
+SystemInterface::~SystemInterface() = default;
 
 void SystemInterface::enroll_options()
 {
@@ -505,7 +505,7 @@ namespace {
       // "sigxx" should be written only for blocks with id 1, 10, and
       // 100.  "sigxx" would indicate that the variable should be
       // written for all blocks.
-      std::vector<std::string>::iterator I = var_list.begin();
+      auto I = var_list.begin();
       while (I != var_list.end()) {
 	StringVector name_id = SLIB::tokenize(*I, ":");
 	std::string var_name = LowerCase(name_id[0]);
@@ -565,7 +565,7 @@ namespace {
       std::string token_string(tokens);
       StringVector part_list = SLIB::tokenize(token_string, ",");
     
-      std::vector<std::string>::iterator I = part_list.begin();
+      auto I = part_list.begin();
       while (I != part_list.end()) {
 	int id = strtol((*I).c_str(), nullptr, 0);
 	(*list).push_back(id);
@@ -587,7 +587,7 @@ namespace {
       std::string token_string(tokens);
       StringVector part_list = SLIB::tokenize(token_string, ",");
     
-      std::vector<std::string>::iterator I = part_list.begin();
+      auto I = part_list.begin();
       while (I != part_list.end()) {
 	std::string part = *I;
 	if (part[0] == 'p' || part[0] == 'P') {
@@ -633,7 +633,7 @@ namespace {
     //
     // Parts are 1-based.  Store the results in the 'omissions' set as
     // the pair (part#, block_id).
-    std::vector<std::string>::iterator I = part_block_list.begin();
+    auto I = part_block_list.begin();
     while (I != part_block_list.end()) {
       StringVector part_block = SLIB::tokenize(*I, ":");
       if (part_block.empty() || (part_block[0][0] != 'p' && part_block[0][0] != 'P')) {
@@ -658,7 +658,7 @@ namespace {
 	(*omissions)[part_num].push_back("ALL");
       } else {
 	// Get the list of blocks to omit for this part...
-	std::vector<std::string>::iterator J = part_block.begin(); ++J; // Skip p#
+	auto J = part_block.begin(); ++J; // Skip p#
 	while (J != part_block.end()) {
 	  std::string block = *J;
 	  std::string name = basename + '_'+ block;

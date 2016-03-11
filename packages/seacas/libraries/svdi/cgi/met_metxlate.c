@@ -1508,7 +1508,7 @@ xcpl (anything **params, int num_surfaces, anything **surf_list)
   float cur_x, cur_y;           /* line end points */
   float save_x, save_y;         /* used for clipping */
   int prev_code, cur_code;      /* encoded endpoints - for clipping */
-  int mode, done;               /* stuff used for clipping */
+  int mode=0, done;               /* stuff used for clipping */
   static unsigned mask = ~(~0 << 1);  /* for masking off bits */
 
    for (i = 0; i < num_surfaces; ++i) {
@@ -1759,7 +1759,7 @@ xcdjpl (anything **params, int num_surfaces, anything **surf_list)
   int   np;                     /* number of points in polyline */
   float x1,y1,x2,y2;            /* line endpoints in NDC */
   int code1, code2;             /* encoded endpoints for clipping */
-  int mode, done;               /* variables used for clipping */ 
+  int mode=0, done;               /* variables used for clipping */ 
   static unsigned mask = ~(~0 << 1);  /* for masking off bits */
 
   for (i = 0; i < num_surfaces; ++i) {

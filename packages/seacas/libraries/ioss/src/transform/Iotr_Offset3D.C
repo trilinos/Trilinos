@@ -54,7 +54,7 @@ namespace Iotr {
     Factory::alias("offset3D", "add3D");
   }
 
-  Ioss::Transform* Offset3D_Factory::make(const std::string&) const
+  Ioss::Transform* Offset3D_Factory::make(const std::string& /*unused*/) const
   { return new Offset3D(); }
 
   Offset3D::Offset3D()
@@ -63,7 +63,7 @@ namespace Iotr {
     realOffset[0] = realOffset[1] = realOffset[2] = 0.0;
   }
 
-  void Offset3D::set_properties(const std::string&, const std::vector<int> &values)
+  void Offset3D::set_properties(const std::string& /*name*/, const std::vector<int> &values)
   {
     assert(values.size() == 3);
     intOffset[0] = values[0];
@@ -71,7 +71,7 @@ namespace Iotr {
     intOffset[2] = values[2];
   }
 
-  void Offset3D::set_properties(const std::string&, const std::vector<double> &values)
+  void Offset3D::set_properties(const std::string& /*name*/, const std::vector<double> &values)
   {
     assert(values.size() == 3);
     realOffset[0] = values[0];

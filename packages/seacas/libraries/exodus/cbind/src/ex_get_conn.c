@@ -110,14 +110,14 @@ int ex_get_conn( int   exoid,
 	  ex_err("ex_get_conn",errmsg,EX_NULLENTITY);
 	  return (EX_WARN); /* no connectivity array for this element block */
 	}
-      else
-	{
+      
+	
 	  sprintf(errmsg,
 		  "Error: failed to locate %s id %"PRId64" in id array in file id %d",
 		  ex_name_of_object(blk_type),blk_id,exoid);
 	  ex_err("ex_get_conn",errmsg,exerrval);
 	  return (EX_FATAL);
-	}
+	
     }
 
   switch (blk_type) {
@@ -156,20 +156,22 @@ int ex_get_conn( int   exoid,
   /* inquire id's of previously defined dimensions  */
 
   num_nodes_per_entry = 0;
-  if ((status = nc_inq_dimid (exoid, dnumnodent, &numnodperentdim)) != NC_NOERR) {
-    numnodperentdim = -1;
-  } else {
-    if ((status = nc_inq_dimlen(exoid, numnodperentdim, &num_nodes_per_entry)) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "Error: failed to get number of nodes/entity for %s %"PRId64" in file id %d",
-	      ex_name_of_object(blk_type),blk_id,exoid);
-      ex_err("ex_get_conn",errmsg, exerrval);
-      return(EX_FATAL);
+  if ( nodeconn && dnumnodent ) {
+    if ((status = nc_inq_dimid (exoid, dnumnodent, &numnodperentdim)) != NC_NOERR) {
+      numnodperentdim = -1;
+    } else {
+      if ((status = nc_inq_dimlen(exoid, numnodperentdim, &num_nodes_per_entry)) != NC_NOERR) {
+	exerrval = status;
+	sprintf(errmsg,
+		 "Error: failed to get number of nodes/entity for %s %"PRId64" in file id %d",
+		 ex_name_of_object(blk_type),blk_id,exoid);
+	ex_err("ex_get_conn",errmsg, exerrval);
+	return(EX_FATAL);
+      }
     }
   }
 
-  if ( dnumedgent ) {
+  if ( edgeconn && dnumedgent ) {
     num_edges_per_entry = 0;
     if ((status = nc_inq_dimid(exoid, dnumedgent, &numedgperentdim)) != NC_NOERR) {
       numedgperentdim = -1;
@@ -185,7 +187,7 @@ int ex_get_conn( int   exoid,
     }
   }
 
-  if ( dnumfacent ) {
+  if ( faceconn && dnumfacent ) {
     num_faces_per_entry = 0;
     if ((status = nc_inq_dimid(exoid, dnumfacent, &numfacperentdim)) != NC_NOERR) {
       numfacperentdim = -1;

@@ -296,7 +296,8 @@ int ex_put_init_ext (int   exoid,
   /* create name string length dimension */
   if (nc_inq_dimid (rootid, DIM_STR_NAME, &dim_str_name) != NC_NOERR) {
     int max_name = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
-    if (max_name < ex_default_max_name_length) max_name = ex_default_max_name_length;
+    if (max_name < ex_default_max_name_length) { max_name = ex_default_max_name_length;
+}
 
     if ((status=nc_def_dim (rootid, DIM_STR_NAME, max_name+1, &dim_str_name)) != NC_NOERR) {
       exerrval = status;
@@ -411,20 +412,32 @@ int ex_put_init_ext (int   exoid,
       }
   }
 
-  if (ex_write_object_params(exoid, "element block", DIM_NUM_EL_BLK, VAR_STAT_EL_BLK, VAR_ID_EL_BLK, model->num_elem_blk, &elblkdim)) goto error_ret;
-  if (ex_write_object_params(exoid, "edge block",    DIM_NUM_ED_BLK, VAR_STAT_ED_BLK, VAR_ID_ED_BLK, model->num_edge_blk, &edblkdim)) goto error_ret;
-  if (ex_write_object_params(exoid, "face block",    DIM_NUM_FA_BLK, VAR_STAT_FA_BLK, VAR_ID_FA_BLK, model->num_face_blk, &fablkdim)) goto error_ret;
+  if (ex_write_object_params(exoid, "element block", DIM_NUM_EL_BLK, VAR_STAT_EL_BLK, VAR_ID_EL_BLK, model->num_elem_blk, &elblkdim)) { goto error_ret;
+}
+  if (ex_write_object_params(exoid, "edge block",    DIM_NUM_ED_BLK, VAR_STAT_ED_BLK, VAR_ID_ED_BLK, model->num_edge_blk, &edblkdim)) { goto error_ret;
+}
+  if (ex_write_object_params(exoid, "face block",    DIM_NUM_FA_BLK, VAR_STAT_FA_BLK, VAR_ID_FA_BLK, model->num_face_blk, &fablkdim)) { goto error_ret;
+}
   
-  if (ex_write_object_params(exoid, "node set", DIM_NUM_NS,  VAR_NS_STAT,  VAR_NS_IDS, model->num_node_sets,  &nsetdim)) goto error_ret;
-  if (ex_write_object_params(exoid, "edge set", DIM_NUM_ES,  VAR_ES_STAT,  VAR_ES_IDS, model->num_edge_sets,  &esetdim)) goto error_ret;
-  if (ex_write_object_params(exoid, "face set", DIM_NUM_FS,  VAR_FS_STAT,  VAR_FS_IDS, model->num_face_sets,  &fsetdim)) goto error_ret;
-  if (ex_write_object_params(exoid, "side set", DIM_NUM_SS,  VAR_SS_STAT,  VAR_SS_IDS, model->num_side_sets,  &ssetdim)) goto error_ret;
-  if (ex_write_object_params(exoid, "elem set", DIM_NUM_ELS, VAR_ELS_STAT, VAR_ELS_IDS, model->num_elem_sets, &elsetdim)) goto error_ret;
+  if (ex_write_object_params(exoid, "node set", DIM_NUM_NS,  VAR_NS_STAT,  VAR_NS_IDS, model->num_node_sets,  &nsetdim)) { goto error_ret;
+}
+  if (ex_write_object_params(exoid, "edge set", DIM_NUM_ES,  VAR_ES_STAT,  VAR_ES_IDS, model->num_edge_sets,  &esetdim)) { goto error_ret;
+}
+  if (ex_write_object_params(exoid, "face set", DIM_NUM_FS,  VAR_FS_STAT,  VAR_FS_IDS, model->num_face_sets,  &fsetdim)) { goto error_ret;
+}
+  if (ex_write_object_params(exoid, "side set", DIM_NUM_SS,  VAR_SS_STAT,  VAR_SS_IDS, model->num_side_sets,  &ssetdim)) { goto error_ret;
+}
+  if (ex_write_object_params(exoid, "elem set", DIM_NUM_ELS, VAR_ELS_STAT, VAR_ELS_IDS, model->num_elem_sets, &elsetdim)) { goto error_ret;
+}
 
-  if (ex_write_map_params(exoid,   "node map",  DIM_NUM_NM,  VAR_NM_PROP(1),  model->num_node_maps, &nmapdim)  != NC_NOERR) goto error_ret;
-  if (ex_write_map_params(exoid,   "edge map",  DIM_NUM_EDM, VAR_EDM_PROP(1), model->num_edge_maps, &edmapdim) != NC_NOERR) goto error_ret;
-  if (ex_write_map_params(exoid,   "face map",  DIM_NUM_FAM, VAR_FAM_PROP(1), model->num_face_maps, &famapdim) != NC_NOERR) goto error_ret;
-  if (ex_write_map_params(exoid, "element map", DIM_NUM_EM,  VAR_EM_PROP(1),  model->num_elem_maps, &emapdim)  != NC_NOERR) goto error_ret;
+  if (ex_write_map_params(exoid,   "node map",  DIM_NUM_NM,  VAR_NM_PROP(1),  model->num_node_maps, &nmapdim)  != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_map_params(exoid,   "edge map",  DIM_NUM_EDM, VAR_EDM_PROP(1), model->num_edge_maps, &edmapdim) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_map_params(exoid,   "face map",  DIM_NUM_FAM, VAR_FAM_PROP(1), model->num_face_maps, &famapdim) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_map_params(exoid, "element map", DIM_NUM_EM,  VAR_EM_PROP(1),  model->num_elem_maps, &emapdim)  != NC_NOERR) { goto error_ret;
+}
 
   /*
    * To reduce the maximum dataset sizes, the storage of the nodal
@@ -497,19 +510,32 @@ int ex_put_init_ext (int   exoid,
     }
   }
   
-  if (ex_write_object_names(exoid, "element block",VAR_NAME_EL_BLK,elblkdim, dim_str_name, model->num_elem_blk) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "edge block",   VAR_NAME_ED_BLK,edblkdim, dim_str_name, model->num_edge_blk) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "face block",   VAR_NAME_FA_BLK,fablkdim, dim_str_name, model->num_face_blk) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "node set",     VAR_NAME_NS,    nsetdim,  dim_str_name, model->num_node_sets) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "edge set",     VAR_NAME_ES,    esetdim,  dim_str_name, model->num_edge_sets) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "face set",     VAR_NAME_FS,    fsetdim,  dim_str_name, model->num_face_sets) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "side set",     VAR_NAME_SS,    ssetdim,  dim_str_name, model->num_side_sets) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "element set",  VAR_NAME_ELS,   elsetdim, dim_str_name, model->num_elem_sets) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "node map",     VAR_NAME_NM,    nmapdim,  dim_str_name, model->num_node_maps) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "edge map",     VAR_NAME_EDM,   edmapdim, dim_str_name, model->num_edge_maps) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "face map",     VAR_NAME_FAM,   famapdim, dim_str_name, model->num_face_maps) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "element map",  VAR_NAME_EM,    emapdim,  dim_str_name, model->num_elem_maps) != NC_NOERR) goto error_ret;
-  if (ex_write_object_names(exoid, "coordinate",   VAR_NAME_COOR,  numdimdim,dim_str_name, model->num_dim) != NC_NOERR) goto error_ret;
+  if (ex_write_object_names(exoid, "element block",VAR_NAME_EL_BLK,elblkdim, dim_str_name, model->num_elem_blk) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "edge block",   VAR_NAME_ED_BLK,edblkdim, dim_str_name, model->num_edge_blk) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "face block",   VAR_NAME_FA_BLK,fablkdim, dim_str_name, model->num_face_blk) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "node set",     VAR_NAME_NS,    nsetdim,  dim_str_name, model->num_node_sets) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "edge set",     VAR_NAME_ES,    esetdim,  dim_str_name, model->num_edge_sets) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "face set",     VAR_NAME_FS,    fsetdim,  dim_str_name, model->num_face_sets) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "side set",     VAR_NAME_SS,    ssetdim,  dim_str_name, model->num_side_sets) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "element set",  VAR_NAME_ELS,   elsetdim, dim_str_name, model->num_elem_sets) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "node map",     VAR_NAME_NM,    nmapdim,  dim_str_name, model->num_node_maps) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "edge map",     VAR_NAME_EDM,   edmapdim, dim_str_name, model->num_edge_maps) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "face map",     VAR_NAME_FAM,   famapdim, dim_str_name, model->num_face_maps) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "element map",  VAR_NAME_EM,    emapdim,  dim_str_name, model->num_elem_maps) != NC_NOERR) { goto error_ret;
+}
+  if (ex_write_object_names(exoid, "coordinate",   VAR_NAME_COOR,  numdimdim,dim_str_name, model->num_dim) != NC_NOERR) { goto error_ret;
+}
 
   /* leave define mode */
   if ((status = nc_enddef (exoid)) != NC_NOERR) {
@@ -524,17 +550,28 @@ int ex_put_init_ext (int   exoid,
   {
     int *invalid_ids = NULL;
     int maxset = model->num_elem_blk;
-    if (maxset < model->num_edge_blk)  maxset = model->num_edge_blk;
-    if (maxset < model->num_face_blk)  maxset = model->num_face_blk;
-    if (maxset < model->num_node_sets) maxset = model->num_node_sets;
-    if (maxset < model->num_edge_sets) maxset = model->num_edge_sets;
-    if (maxset < model->num_face_sets) maxset = model->num_face_sets;
-    if (maxset < model->num_side_sets) maxset = model->num_side_sets;
-    if (maxset < model->num_elem_sets) maxset = model->num_elem_sets;
-    if (maxset < model->num_node_maps) maxset = model->num_node_maps;
-    if (maxset < model->num_edge_maps) maxset = model->num_edge_maps;
-    if (maxset < model->num_face_maps) maxset = model->num_face_maps;
-    if (maxset < model->num_elem_maps) maxset = model->num_elem_maps;
+    if (maxset < model->num_edge_blk) {  maxset = model->num_edge_blk;
+}
+    if (maxset < model->num_face_blk) {  maxset = model->num_face_blk;
+}
+    if (maxset < model->num_node_sets) { maxset = model->num_node_sets;
+}
+    if (maxset < model->num_edge_sets) { maxset = model->num_edge_sets;
+}
+    if (maxset < model->num_face_sets) { maxset = model->num_face_sets;
+}
+    if (maxset < model->num_side_sets) { maxset = model->num_side_sets;
+}
+    if (maxset < model->num_elem_sets) { maxset = model->num_elem_sets;
+}
+    if (maxset < model->num_node_maps) { maxset = model->num_node_maps;
+}
+    if (maxset < model->num_edge_maps) { maxset = model->num_edge_maps;
+}
+    if (maxset < model->num_face_maps) { maxset = model->num_face_maps;
+}
+    if (maxset < model->num_elem_maps) { maxset = model->num_elem_maps;
+}
 
     /* allocate space for id/status array */
     if (!(invalid_ids = malloc(maxset*sizeof(int)))) {
@@ -574,18 +611,30 @@ int ex_put_init_ext (int   exoid,
   }
 
   /* Write dummy values to the names arrays to avoid corruption issues on some platforms */
-  if (model->num_elem_blk > 0) write_dummy_names(exoid, EX_ELEM_BLOCK);
-  if (model->num_edge_blk > 0) write_dummy_names(exoid, EX_EDGE_BLOCK);
-  if (model->num_face_blk > 0) write_dummy_names(exoid, EX_FACE_BLOCK);
-  if (model->num_node_sets> 0) write_dummy_names(exoid, EX_NODE_SET);
-  if (model->num_edge_sets> 0) write_dummy_names(exoid, EX_EDGE_SET);
-  if (model->num_face_sets> 0) write_dummy_names(exoid, EX_FACE_SET);
-  if (model->num_side_sets> 0) write_dummy_names(exoid, EX_SIDE_SET);
-  if (model->num_elem_sets> 0) write_dummy_names(exoid, EX_ELEM_SET);
-  if (model->num_node_maps> 0) write_dummy_names(exoid, EX_NODE_MAP);
-  if (model->num_edge_maps> 0) write_dummy_names(exoid, EX_EDGE_MAP);
-  if (model->num_face_maps> 0) write_dummy_names(exoid, EX_FACE_MAP);
-  if (model->num_elem_maps> 0) write_dummy_names(exoid, EX_ELEM_MAP);
+  if (model->num_elem_blk > 0) { write_dummy_names(exoid, EX_ELEM_BLOCK);
+}
+  if (model->num_edge_blk > 0) { write_dummy_names(exoid, EX_EDGE_BLOCK);
+}
+  if (model->num_face_blk > 0) { write_dummy_names(exoid, EX_FACE_BLOCK);
+}
+  if (model->num_node_sets> 0) { write_dummy_names(exoid, EX_NODE_SET);
+}
+  if (model->num_edge_sets> 0) { write_dummy_names(exoid, EX_EDGE_SET);
+}
+  if (model->num_face_sets> 0) { write_dummy_names(exoid, EX_FACE_SET);
+}
+  if (model->num_side_sets> 0) { write_dummy_names(exoid, EX_SIDE_SET);
+}
+  if (model->num_elem_sets> 0) { write_dummy_names(exoid, EX_ELEM_SET);
+}
+  if (model->num_node_maps> 0) { write_dummy_names(exoid, EX_NODE_MAP);
+}
+  if (model->num_edge_maps> 0) { write_dummy_names(exoid, EX_EDGE_MAP);
+}
+  if (model->num_face_maps> 0) { write_dummy_names(exoid, EX_FACE_MAP);
+}
+  if (model->num_elem_maps> 0) { write_dummy_names(exoid, EX_ELEM_MAP);
+}
 
   return (EX_NOERR);
   

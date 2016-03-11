@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -102,7 +101,7 @@ double computeIntegral(shards::CellTopology & cellTopology, int cubDegree, int x
 
   Teuchos::BLAS<int, double> myblas;
   int inc = 1;
-  val = myblas.DOT(numCubPoints, &functValues[0], inc, &cubWeights[0], inc);
+  val = myblas.DOT(numCubPoints, &functValues(0), inc, &cubWeights(0), inc);
 
   return val;
 }

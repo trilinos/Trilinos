@@ -43,9 +43,15 @@ namespace Ioss {
 
   inline SurfaceSplitType int_to_surface_split(int split_int) {
     SurfaceSplitType split_type = Ioss::SPLIT_INVALID;
-    if (split_int == 1) split_type = Ioss::SPLIT_BY_TOPOLOGIES;
-    if (split_int == 2) split_type = Ioss::SPLIT_BY_ELEMENT_BLOCK;
-    if (split_int == 3) split_type = Ioss::SPLIT_BY_DONT_SPLIT;
+    if (split_int == 1) {
+      split_type = Ioss::SPLIT_BY_TOPOLOGIES;
+    }
+    else if (split_int == 2) {
+      split_type = Ioss::SPLIT_BY_ELEMENT_BLOCK;
+    }
+    else if (split_int == 3) {
+      split_type = Ioss::SPLIT_BY_DONT_SPLIT;
+    }
     return split_type;
   }
 }

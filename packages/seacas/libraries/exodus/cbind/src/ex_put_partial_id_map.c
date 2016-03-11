@@ -82,8 +82,9 @@ int ex_put_partial_id_map (int  exoid,
   const char* vmap;
 
   exerrval = 0; /* clear error code */
-  if (num_entities == 0 && !ex_is_parallel(exoid))
+  if (num_entities == 0 && !ex_is_parallel(exoid)) {
     return EX_NOERR;
+}
 
   switch ( map_type ) {
   case EX_NODE_MAP:
@@ -185,8 +186,9 @@ int ex_put_partial_id_map (int  exoid,
   /* write out the entity numbering map  */
   start[0] = start_entity_num-1;
   count[0] = num_entities;
-  if (num_entities == 0)
+  if (num_entities == 0) {
     start[0] = 0;
+}
 
   /* write out the entity numbering map  */
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {

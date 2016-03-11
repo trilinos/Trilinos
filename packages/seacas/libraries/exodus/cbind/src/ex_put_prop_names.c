@@ -247,8 +247,9 @@ int ex_put_prop_names (int   exoid,
       prop_name_len = name_length;
     }
 
-    if (prop_name_len > max_name_len)
+    if (prop_name_len > max_name_len) {
       max_name_len = prop_name_len;
+}
 
     /*   store property name as attribute of property array variable */
     if ((status = nc_put_att_text(exoid, propid, ATT_PROP_NAME,

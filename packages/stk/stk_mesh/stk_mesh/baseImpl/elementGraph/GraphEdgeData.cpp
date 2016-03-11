@@ -80,7 +80,7 @@ void Graph::delete_edge(const GraphEdge &graphEdge)
             delete_edge_from_graph(graphEdge.elem1, i);
 }
 
-void Graph::delete_all_connections(impl::LocalId elem)
+void Graph::delete_all_edges(impl::LocalId elem)
 {
     m_numEdges -= m_graphEdges[elem].size();
     m_graphEdges[elem].clear();
@@ -92,12 +92,12 @@ void Graph::clear()
     m_graphEdges.clear();
 }
 
-impl::parallel_info& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge)
+impl::ParallelInfo& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge)
 {
-    return const_cast<impl::parallel_info&>(get_parallel_info_iterator_for_graph_edge(graphEdge)->second);
+    return const_cast<impl::ParallelInfo&>(get_parallel_info_iterator_for_graph_edge(graphEdge)->second);
 }
 
-const impl::parallel_info& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const
+const impl::ParallelInfo& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const
 {
     return get_parallel_info_iterator_for_graph_edge(graphEdge)->second;
 }
@@ -115,26 +115,26 @@ impl::ParallelGraphInfo::const_iterator ParallelInfoForGraphEdges::get_parallel_
     return iter;
 }
 
-std::string get_par_info_description(const impl::parallel_info &parInfo)
+std::string get_par_info_description(const impl::ParallelInfo &parInfo)
 {
     std::ostringstream s;
-    s << "    other proc: " << parInfo.m_other_proc << std::endl;
+    s << "    other proc: " << parInfo.get_proc_rank_of_neighbor() << std::endl;
     s << "    chosen id: " << parInfo.m_chosen_side_id << std::endl;
     s << "    permutation: " << parInfo.m_permutation << std::endl;
     s << "    remote topology: " << parInfo.m_remote_element_toplogy << std::endl;
-    s << "    in body to be skinned: " << parInfo.m_in_body_to_be_skinned << std::endl;
-    s << "    is air: " << parInfo.m_is_air << std::endl;
+    s << "    in body to be skinned: " << parInfo.is_in_body_to_be_skinned() << std::endl;
+    s << "    is air: " << parInfo.is_considered_air() << std::endl;
     return s.str();
 }
 
-void ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::parallel_info &parInfo)
+void ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo &parInfo)
 {
     std::pair<impl::ParallelGraphInfo::iterator, bool> inserted = m_parallel_graph_info.insert(std::make_pair(graphEdge, parInfo));
     if (!inserted.second)
     {
         ThrowErrorMsg("Program error. local elem/remote elem pair"
                         << " (" << graphEdge.elem1 << "," << graphEdge.side1 << "/" << convert_negative_local_id_to_remote_global_id(graphEdge.elem2) << "," << graphEdge.side2 << ")"
-                        << " on procs (" << m_procRank << "," << parInfo.m_other_proc << ")"
+                        << " on procs (" << m_procRank << "," << parInfo.get_proc_rank_of_neighbor() << ")"
                         << " already exists in map. Please contact sierra-help@sandia.gov for support." << std::endl
                         << "existing par info " << std::endl
                         << get_par_info_description(inserted.first->second)

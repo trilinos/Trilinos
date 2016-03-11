@@ -83,15 +83,19 @@ int ex_get_set_param (int  exoid,
 
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    if (num_entry_in_set)
+    if (num_entry_in_set) {
       *(int64_t*)num_entry_in_set = 0;
-    if (num_dist_fact_in_set)
+    }
+    if (num_dist_fact_in_set) {
       *(int64_t*)num_dist_fact_in_set = 0;
+    }
   } else {
-    if (num_entry_in_set)
+    if (num_entry_in_set) {
       *(int*)num_entry_in_set = 0;
-    if (num_dist_fact_in_set)
+    }
+    if (num_dist_fact_in_set) {
       *(int*)num_dist_fact_in_set = 0;
+    }
   }
   /* first check if any sets are specified */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
@@ -109,13 +113,13 @@ int ex_get_set_param (int  exoid,
     if (exerrval == EX_NULLENTITY)     /* NULL set? */
       {
 	return (EX_NOERR);
-      } else {
-      sprintf(errmsg,
-	      "Error: failed to locate %s id %"PRId64" in id array in file id %d",
-	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_get_set_param",errmsg,exerrval);
-      return (EX_FATAL);
-    }
+      } 
+    sprintf(errmsg,
+	    "Error: failed to locate %s id %"PRId64" in id array in file id %d",
+	    ex_name_of_object(set_type), set_id,exoid);
+    ex_err("ex_get_set_param",errmsg,exerrval);
+    return (EX_FATAL);
+    
   }
 
   /* setup more pointers based on set_type */
@@ -143,15 +147,18 @@ int ex_get_set_param (int  exoid,
 
   /* inquire values of dimension for number of entities in set */
   if (ex_get_dimension(exoid, numentryptr,"entries", &lnum_entry_in_set,
-		       &dimid, "ex_get_set_param") != NC_NOERR)
+		       &dimid, "ex_get_set_param") != NC_NOERR) {
     return EX_FATAL;
+  }
   
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    if (num_entry_in_set)
+    if (num_entry_in_set) {
       *(int64_t*)num_entry_in_set = lnum_entry_in_set;
+    }
   } else {
-    if (num_entry_in_set)
+    if (num_entry_in_set) {
       *(int*)num_entry_in_set = lnum_entry_in_set;
+    }
   }
 
   /* Inquire value of dimension of number of dist factors for this set. 
@@ -162,8 +169,9 @@ int ex_get_set_param (int  exoid,
 
   if (set_type == EX_NODE_SET) {
     if ((status = nc_inq_varid(exoid, VAR_FACT_NS(set_id_ndx), &varid)) != NC_NOERR) {
-      if (status == NC_ENOTVAR)
+      if (status == NC_ENOTVAR) {
 	return (EX_NOERR);
+      }
       else {
 	exerrval = status;
 	sprintf(errmsg,
@@ -171,20 +179,24 @@ int ex_get_set_param (int  exoid,
 		ex_name_of_object(set_type), set_id,exoid);
 	ex_err("ex_get_set_param",errmsg,exerrval);
 	return (EX_FATAL);
+      
       }
     }
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    if (num_dist_fact_in_set)
-      *(int64_t*)num_dist_fact_in_set = lnum_entry_in_set;
+      if (num_dist_fact_in_set) {
+	*(int64_t*)num_dist_fact_in_set = lnum_entry_in_set;
+      }
     } else {
-    if (num_dist_fact_in_set)
-      *(int*)num_dist_fact_in_set = lnum_entry_in_set;
+      if (num_dist_fact_in_set) {
+	*(int*)num_dist_fact_in_set = lnum_entry_in_set;
+      }
     }
   }
   else {/* all other set types */
     if ((status = nc_inq_dimid(exoid, numdfptr, &dimid)) != NC_NOERR) {
-      if (status == NC_EBADDIM)
+      if (status == NC_EBADDIM) {
 	return (EX_NOERR);
+      }
       else {
 	exerrval = status;
 	sprintf(errmsg,
@@ -204,11 +216,13 @@ int ex_get_set_param (int  exoid,
       return (EX_FATAL);
     }
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      if (num_dist_fact_in_set)
+      if (num_dist_fact_in_set) {
 	*(int64_t*)num_dist_fact_in_set = lnum_dist_fact_in_set;
+      }
     } else {
-      if (num_dist_fact_in_set)
+      if (num_dist_fact_in_set) {
 	*(int*)num_dist_fact_in_set = lnum_dist_fact_in_set;
+      }
     }
   }
 

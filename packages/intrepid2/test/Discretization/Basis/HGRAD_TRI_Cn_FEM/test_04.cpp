@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -85,7 +84,7 @@ static bool apply_orientation = true;
 //
 //
 #undef MatVal
-#define MatVal(Mat, row, col) Mat[(row) + (col)*(Mat.dimension(1))]
+#define MatVal(Mat, row, col) Mat.getData().get()[(row) + (col)*(Mat.dimension(1))]
 
 void eval_exact(FieldContainer<value_type> &       val,
                 const FieldContainer<value_type> & points,
@@ -375,7 +374,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
   FunctionSpaceTools::integrate<value_type>(A,
                                             transformed_value_of_basis_at_cub_points_cell,
                                             weighted_transformed_value_of_basis_at_cub_points_cell,
-                                            COMP_BLAS);
+                                            COMP_CPP);
 
   // Step 2: stiffness matrix: tabulate grad values of basis functions at cubature points
   cell_basis.getValues(grad_of_basis_at_cub_points_cell, cub_points_cell, OPERATOR_GRAD);
@@ -403,7 +402,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
   FunctionSpaceTools::integrate<value_type>(A,
                                             transformed_grad_of_basis_at_cub_points_cell,
                                             weighted_transformed_grad_of_basis_at_cub_points_cell,
-                                            COMP_BLAS,
+                                            COMP_CPP,
                                             true);
 
   // Step 3: compute rhs function
@@ -418,7 +417,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
   FunctionSpaceTools::integrate<value_type>(b,
                                             rhs_at_cub_points_cell_physical,
                                             weighted_transformed_value_of_basis_at_cub_points_cell,
-                                            COMP_BLAS);
+                                            COMP_CPP);
 
   // Step 4: compute boundary condition
   side_cub->getCubature(cub_points_side, cub_weights_side);
@@ -474,7 +473,7 @@ void build_element_matrix_and_rhs(FieldContainer<value_type> & A,
       FunctionSpaceTools::integrate<value_type>(neumann_fields_per_side,
                                                 neumann_data_at_cub_points_side_physical,
                                                 weighted_transformed_value_of_basis_at_cub_points_side_refcell,
-                                                COMP_BLAS);
+                                                COMP_CPP);
 
       // adjust rhs
       RealSpaceTools<value_type>::add(b, neumann_fields_per_side);;
@@ -600,11 +599,11 @@ void compute_element_error(magnitude_type & interpolation_error,
   // compute error and magnitude of solution
   RealSpaceTools<value_type>::subtract(interpolant, exact_solution_val);
 
-  interpolation_error += RealSpaceTools<value_type>::vectorNorm(&interpolant[0],
+  interpolation_error += RealSpaceTools<value_type>::vectorNorm(interpolant.getData().get(),
                                                                 interpolant.dimension(1),
                                                                 NORM_TWO);
 
-  solution_norm += RealSpaceTools<value_type>::vectorNorm(&exact_solution_val[0],
+  solution_norm += RealSpaceTools<value_type>::vectorNorm(exact_solution_val.getData().get(),
                                                           exact_solution_val.dimension(1),
                                                           NORM_TWO);
 

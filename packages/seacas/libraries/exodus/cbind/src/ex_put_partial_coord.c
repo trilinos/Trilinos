@@ -157,8 +157,9 @@ int ex_put_partial_coord (int   exoid,
       count[0] = 1;
       count[1] = num_nodes;
 
-      if (count[1] == 0)
+      if (count[1] == 0) {
 	start[1] = 0;
+}
 
       if (i == 0 && x_coor != NULL) {
 	which = "X";
@@ -232,8 +233,9 @@ int ex_put_partial_coord (int   exoid,
        
       start[0] = start_node_num;
       count[0] = num_nodes;
-      if (count[0] == 0)
+      if (count[0] == 0) {
 	start[0] = 0;
+}
 
       if (i == 0) {
 	coor = x_coor;
