@@ -1948,15 +1948,21 @@ namespace BaskerNS
     AT.ncol  = m_;
     AT.nnz   = nnz_;
 
-    BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol");
-    MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
+    if(matrix_flag == BASKER_FALSE)
+      {
+	BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol");
+	MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
+	//init_value(AT.col_ptr, AT.ncol+1, (Int)0);
+	MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
+	BASKER_ASSERT((AT.nnz)>0, "util trans nnz");
+	//init_value(AT.row_idx, AT.nnz, (Int)0);
+	MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
+	//init_value(AT.val,     AT.nnz, (Entry)1.0);
+      }    
     init_value(AT.col_ptr, AT.ncol+1, (Int)0);
-    MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
-    BASKER_ASSERT((AT.nnz)>0, "util trans nnz");
     init_value(AT.row_idx, AT.nnz, (Int)0);
-    MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
     init_value(AT.val,     AT.nnz, (Entry)1.0);
-    
+
     //Setup a litte workspace
     const Int ws_size = m_;
     INT_1DARRAY ws;

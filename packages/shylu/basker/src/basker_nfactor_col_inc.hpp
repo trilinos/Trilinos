@@ -51,17 +51,8 @@ namespace BaskerNS
       #else
       Int team_leader = 0; //Note: come back and fix
       #endif
-
-      //if(kid==12 || kid==13 || kid==14 || kid==15)
-      //if(kid == 24 || kid ==25 )
-      //if(kid ==0 || kid==1)
-	//if((kid > 15) && (kid < 20))
-      //if((kid > 19) && (kid < 24))
-      //if((kid > 23) && (kid < 28))
-      //if((kid > -1) && (kid < 4))
-      //if(kid ==0)
-      //if(kid < 4)
-      //if(kid == 0 || kid == 1)
+      
+      // if(kid == 0 || kid == 1)
 	{
       #ifdef BASKER_KOKKOS
        basker->t_nfactor_sep2_inc_lvl(kid, lvl, team_leader, thread);
@@ -128,7 +119,7 @@ namespace BaskerNS
 
      #ifdef BASKER_DEBUG_NFACTOR_COL2
      printf("\n\n\n done with UPPER, kid: %d \n\n\n", kid);
-    #endif
+     #endif
 
      
     //------Need because extend does not 
@@ -157,7 +148,15 @@ namespace BaskerNS
       }
     //printf("2 kid: %d \n", kid);
     
-    
+    //DEBUG
+    /*
+    if(lvl == 2)
+      {
+	return;
+      }
+    */
+    //return;
+
     //----------------Sep level upper tri-------------
     for(Int l = 1; l < (lvl); ++l)
       {
@@ -167,8 +166,8 @@ namespace BaskerNS
 	  {
 	    
 	    #ifdef BASKER_DEBUG_NFACTOR_COL2
-	    printf("\n\nSep, upper update, kid: %d k=%d \n\n",
-		   kid, k+LU(U_col)(U_row).scol);
+	    printf("\n\nSep, upper update, kid: %d k=%d %d\n\n",
+		   kid, k,k+LU(U_col)(U_row).scol);
 	    #endif
 	    
 	    t_add_extend_inc_lvl(thread, kid,lvl,l-1, k, 
@@ -186,6 +185,9 @@ namespace BaskerNS
 		       kid);
 		#endif
 		
+		//if((lvl != 2) || 
+		//  ((kid == 0) && (k < 4)))
+		  {
 		Int upper_error =
 		t_upper_col_factor_inc_lvl(kid, team_leader, 
 				   lvl, l, 
@@ -195,13 +197,23 @@ namespace BaskerNS
 		if(upper_error == BASKER_ERROR)
 		  {
 		    //Again need a nice way to exit here
+		    printf("BREAK CALLED\n");
 		    break;
+		  }
 		  }
 	      }//if correct kid to do this sublevels upperfactor
 	    
 	  }//over all columns
       }//for - over all sublevel 1...lvl-2
 
+
+    //DEBUG
+    /*
+    if(lvl == 2)
+      {
+	return;
+      }
+    */
 
    
     //---------Lower Factor (old sublevel lvl-1)-------
@@ -222,7 +234,7 @@ namespace BaskerNS
      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
-        #ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_COL2
 	printf("\n*******lower_update, kid: %d k: %d \n",
 	       kid, k+LU(U_col)(U_row).scol);
 	#endif
@@ -261,9 +273,15 @@ namespace BaskerNS
 	printf("lower diag factor, kid: %d k: %d \n",
 	       kid, k);
 	#endif
-        
+	
+
+	//printf("\n\n===========AFTER LOWER COL FACTOR =======\n\n");
+
         //if((kid == 0)||(kid==1))
 	t_lower_col_factor_offdiag2_inc_lvl(kid, lvl, lvl-1, k, pivot);
+
+	//printf("\n\n===========AFTER LOWER UPDATE FACTOR =======\n\n");
+
 	//thread.team_barrier();
 	my_leader = find_leader_inc_lvl(kid, lvl-1);
 	b_size    = pow(2,lvl);
@@ -274,7 +292,10 @@ namespace BaskerNS
 
 
 	//Need to clean INC_LVL_HERE
+	if(Options.same_pattern == BASKER_FALSE)
+	  {
 	t_lower_col_factor_offdiag2_cleanup_inc_lvl(kid, lvl, lvl-1, k);
+	  }
 
       }
       }
@@ -303,6 +324,8 @@ namespace BaskerNS
     //===============Symbolic SPMV=================//
     //loop over all sublevels to perform
     //off-diag smultiple, reduce, etc
+    if(Options.same_pattern == BASKER_FALSE)
+      {
     for(Int sl = 0; sl <=l; ++sl)
       {
 		
@@ -382,7 +405,7 @@ namespace BaskerNS
                                  b_size, 3, k+k_offset, sl);
 	//Barrier--Ent
       }
-    
+      }//if same_pattern == false
 
 
     //================Numeric SPMV=================//
@@ -412,7 +435,17 @@ namespace BaskerNS
 
 		
 	//This will do the correct spmv
+	if(Options.same_pattern == BASKER_FALSE)
+	  {
 	t_upper_col_factor_offdiag2_inc_lvl(kid, lvl, sl,l, k, lower);
+	  }
+	else
+	  {
+	    
+	    //printf("t_upper_col_factor, kid: %d \n", kid);
+	 t_upper_col_factor_offdiag2_same_pattern_inc_lvl(kid, lvl, sl,l, k, lower);
+	  }
+
 	
 	//Barrier--Start
 	my_leader = find_leader_inc_lvl(kid,sl);
@@ -422,13 +455,24 @@ namespace BaskerNS
 
 	t_basker_barrier_inc_lvl(thread, kid, my_leader,
 			 b_size, 5, k+k_offset, sl);
+
+	//printf("DONE SPMV KID: %d \n", kid);
 	//Barrier--End
 
 	if(kid%((Int)pow(2,sl))==0)
 	  {
 	    //printf("======COPY ATOMIC kid: %d ========\n", kid);
+	    if(Options.same_pattern == BASKER_FALSE)
+	      {
 	    t_dense_blk_col_copy_atomic2_inc_lvl(kid, my_leader,
 					 lvl, sl, l, k, lower);
+	      }
+	    else
+	      {
+		//printf("t_col_copy, kid: %d \n", kid);
+		t_same_pattern_col_copy_inc_lvl(kid, lvl, 
+						sl,l,k, lower);
+	      }
 	  }
 
 	//Barrier--Start
@@ -445,7 +489,16 @@ namespace BaskerNS
     //JDB TESTED
     if(kid == my_leader)
       {
+	if(Options.same_pattern == BASKER_FALSE)
+	  {
     t_dense_copy_update_matrix2_inc_lvl(kid, my_leader, lvl, l, k);
+	  }
+	else
+	  {
+	    //printf("t_copy matrix, kid: %d \n", kid);
+	    t_same_pattern_update_matrix_inc_lvl(kid,my_leader,lvl,l,k);
+	    
+	  }
       }
 
 
@@ -595,7 +648,8 @@ namespace BaskerNS
     // {
       //	printf("11====KID ===11\n");
       //B.print();
-      //}
+    // }
+    //B.print();
 
     INT_1DARRAY ws     = LL(X_col)(X_row).iws;
     const Int ws_size  = LL(X_col)(X_row).iws_size;
@@ -604,9 +658,19 @@ namespace BaskerNS
     const Int brow = U.srow;
     //const Int bcol = U.scol;
 
+
+    
     Int *color     = &(ws(0));
     Int *pattern   = &(color[ws_size]);
     Int *stack     = &(pattern[ws_size]);
+    
+
+    /*
+    auto color = Kokkos::subview(ws, std::make_pair((Int)0,ws_size));
+    auto pattern = Kokkos::subview(ws, std::make_pair(ws_size,2*ws_size));
+    auto stack = Kokkos::subview(ws, std::make_pair(2*ws_size, 3*ws_size));
+    */
+
 
     Int j, t, xnnz;
     Int top = ws_size;
@@ -650,7 +714,11 @@ namespace BaskerNS
 	k_offset = k;
       }
 
+   
+
     //Might be better to go through backwards
+    if(Options.same_pattern == BASKER_FALSE)
+      {
     for(Int i = B.col_ptr(k-k_offset); 
 	i < B.col_ptr(k-k_offset+1); ++i)
       {
@@ -703,8 +771,75 @@ namespace BaskerNS
 
 
       }//end over each nnz in column
+      }//end same_pattern?
+    else
+      {
+	
+	//Since A may be over filled, 
+	//WAnt to look at pattern first
+	
+	/*
+	//if(kid == 0)
+	  {
+	    printf("Kid: %d add pattern \n",
+		   kid);
+	    printf("Ucol : %d %d kid: %d \n",
+		   U.col_ptr(k+1), 
+		   U.col_ptr(k),
+		   kid);
+	  }
+	*/
+
+	//Get U pattern
+	for(Int i = U.col_ptr(k+1)-1; i >=  U.col_ptr(k);
+	    i--)
+	  {
+	    j = U.row_idx(i);
+	    // printf("Add U pattern k: %d row: %d kid: %d \n",
+	    //	   k, j, kid);
+	    color[j] = 2;
+	    
+	    if(Options.no_pivot == BASKER_TRUE)
+	      {
+		pattern[--top] = j;
+	      }
+	    else
+	      {
+		BASKER_ASSERT(0==1,
+			      "Currently not supported");
+		pattern[--top] = j;
+	      }
+
+	  }//end -- over all elements of U
+
+
+	
+	//Now populate X with new values of A
+	 for(Int i = B.col_ptr(k-k_offset); 
+	     i < B.col_ptr(k-k_offset+1); ++i)
+	   {
+
+	     j = B.row_idx(i);
+	     //printf("Add X pattern k: %d row: %d val: %f kid: %d \n",
+	     //	    k, j, B.val(i), kid);
+	     
+	     //printf("color size: %d \n",
+	     //	    color.dimension_0());
+     
+	     if(color[j] != 2)
+	       {
+		 continue;
+	       }
+	      
+	     X(j) = B.val(i);
+	     
+	   }//end populate from B
+	
+      }//end if same pattern
     xnnz = ws_size - top;
-    
+   
+    //return 0;
+ 
     #ifdef BASKER_DEBUG_NFACTOR_COL
     if(kid>=0)
     printf("xnnz: %d ws_size: %d top: %d , kid: %d\n",
@@ -715,10 +850,12 @@ namespace BaskerNS
     //WE SHOUD DO A UNNZ COUNT
     //count number of nnz
     ucnt = 0;
-     for(Int i=top; i < ws_size; ++i)
-       {
+    for(Int i=top; i < ws_size; ++i)
+      {
 	 j = pattern[i];
 	 t = gperm(j+brow);
+	 //printf("Checking pattern(%d)=%d gperm(%d) %d kid:%d \n",
+	 //	i, j, j+brow, t, kid);
 	 if(INC_LVL_TEMP(j+brow) <= Options.inc_lvl)
 	   {
 	     if(t == BASKER_MAX_IDX)
@@ -795,7 +932,8 @@ namespace BaskerNS
 	  #endif
 
 	 //old zero checek
-	 if(INC_LVL_TEMP(j+brow) <= Options.inc_lvl)
+	   if((Options.same_pattern == BASKER_TRUE) ||
+	      (INC_LVL_TEMP(j+brow) <= Options.inc_lvl))
 	  {	    
 	    //Note, if we remove this test, 
 	    //we might get this to unroll!!!
@@ -810,16 +948,19 @@ namespace BaskerNS
 
  		U.row_idx(unnz) = t-brow;
 		U.val(unnz) = X(j);
-		U.inc_lvl(unnz) = INC_LVL_TEMP(j+brow);
-		INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
+		if(Options.same_pattern == BASKER_FALSE)
+		  {
+		    U.inc_lvl(unnz) = INC_LVL_TEMP(j+brow);
+		    INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
+		  }
                 unnz++;
 		X(j) = 0;
 
               }//if in U
             else
               {
-		printf("----ERROR--- KID: %d EXTRA L[%d]=%f \n",
-		       kid, j, X[j-brow]);
+		//printf("----ERROR--- KID: %d EXTRA L[%d]=%f \n",
+		//     kid, j, X[j-brow]);
 		BASKER_ASSERT(0==1, " "); 
               }//LOWER
 	  }//END NOT 0
@@ -827,7 +968,10 @@ namespace BaskerNS
 	   {
 	     //Relax stuff here 
 	     X(j) = 0;
-	     INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
+	     if(Options.same_pattern == BASKER_FALSE)
+	       {
+		 INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
+	       }
 	   }
        }//OVER ALL X
 
@@ -858,12 +1002,15 @@ namespace BaskerNS
      
 
      //Bad fix later
+     if(Options.same_pattern == BASKER_FALSE)
+       {
      if(l>0)
        {
 	 for(Int si = 0; si < U.nrow; si++)
 	   {
 	     stack[si] = BASKER_MAX_IDX;
 	   }
+       }
        }
 
      return 0;
@@ -984,7 +1131,7 @@ namespace BaskerNS
       // BASKER_INCOMPLETE_LVL)
       if(false)
 	{
-    t_lower_col_offdiag_find_fill(kid,
+	  t_lower_col_offdiag_find_fill(kid,
 				  L_col, L_row,
 				  X_col, X_row,
 				  k,
@@ -1052,6 +1199,160 @@ namespace BaskerNS
 	  }//for --over remainder blks
       }//if --lower  
   }//end t_upper_col_ffactor_offdiag2_inc_lvl()
+
+  
+  template <class Int, class Entry, class Exe_Space>
+  void
+  Basker<Int,Entry,Exe_Space>::t_upper_col_factor_offdiag2_same_pattern_inc_lvl
+  (
+   const Int kid,
+   const Int lvl,
+   const Int sl,
+   const Int l,
+   const Int k, 
+   const BASKER_BOOL lower
+   )
+  {
+
+    const Int my_leader = 
+      (sl==0)?(kid):find_leader_inc_lvl(kid,sl-1);
+    
+    if(kid != my_leader)
+      {
+	return;
+      }
+    
+    const Int L_col     = S(sl)(my_leader);
+    Int L_row           = l-sl+1; //Might have to think about th
+    const Int U_col     = S(lvl)(kid);
+
+    Int my_row_leader = find_leader(kid,lvl-1);
+    Int my_new_row = 
+      L_col - S(0)(my_row_leader);
+    Int U_row  = 0;
+    U_row = my_new_row;
+
+
+    const Int X_col     = S(0)(my_leader);
+    Int X_row     = l+1; //this will change for us 
+  
+    Int col_idx_offset  = 0;
+    
+    BASKER_MATRIX     &U   = LU(U_col)(U_row);
+  
+
+    //Need to give them the output pattern
+    Int U_pattern_col = S(lvl)(kid);
+    Int my_pattern_leader = 
+      find_leader_inc_lvl(kid,l);
+    Int U_pattern_row = S(l+1)(my_pattern_leader) - 
+      S(0)(my_row_leader);
+
+    /*
+    printf("Test mypleader: %d myrowleader: %d kid: %d\n", 
+	   my_pattern_leader, my_row_leader, kid);
+    printf("Test one: %d two: %d kid: %d \n",
+	   S(l+1)(my_pattern_leader),
+	   S(0)(my_row_leader),
+	   kid);
+    */
+   
+    
+    Int L_pattern_col = S(lvl)(kid);
+    Int L_pattern_row = BASKER_MAX_IDX;
+    if(lower == BASKER_TRUE)
+      {
+	L_pattern_row = 0;
+      }
+         
+    /*
+    printf("DEBUG U Pattern: %d %d kid: %d \n", 
+	   U_pattern_col, U_pattern_row, kid);
+    printf("DEBUG L Pattern: %d %d kid: %d \n",
+	   L_pattern_col, L_pattern_row, kid);
+    printf("DEBUG L: %d %d kid: %d \n",
+	   L_col, L_row, kid);
+    */
+
+    t_same_pattern_back_solve_offdiag_inc_lvl(kid,
+				      L_col, L_row,
+				      X_col, X_row,
+				U_pattern_col, U_pattern_row,
+				L_pattern_col, L_pattern_row,
+				       k, col_idx_offset,
+				       U.val,
+				       U.row_idx,
+				       U.inc_lvl,
+				 U.col_ptr(k+1)-U.col_ptr(k),
+				       U.col_ptr(k),
+
+				        BASKER_FALSE);
+					      
+
+
+      /*
+    t_dense_back_solve_offdiag_inc_lvl(kid,
+			       L_col, L_row,
+			       X_col, X_row,
+			       k, col_idx_offset,
+			       U.val,
+			       U.row_idx,
+			       U.inc_lvl,       
+			       U.col_ptr(k+1)-U.col_ptr(k),
+			       U.col_ptr(k),
+			       BASKER_FALSE);
+      */
+    
+    //if lower, finish off the updates
+    if(lower == BASKER_TRUE)
+      {
+	X_row++;
+	L_row++;
+	
+	U_pattern_row = BASKER_MAX_IDX;
+	L_pattern_row = 1;
+
+	for(; X_row < LL_size(X_col);
+	    ++X_row, ++L_row, ++L_pattern_row)
+	  {
+	   
+	    
+	    
+    t_same_pattern_back_solve_offdiag_inc_lvl(kid,
+				      L_col, L_row,
+				      X_col, X_row,
+				U_pattern_col, U_pattern_row,
+				L_pattern_col, L_pattern_row,
+				       k, col_idx_offset,
+				       U.val,
+				       U.row_idx,
+				       U.inc_lvl,
+				 U.col_ptr(k+1)-U.col_ptr(k),
+				       U.col_ptr(k),
+				        BASKER_FALSE);
+ 
+
+
+
+	    
+	    /*
+	    t_dense_back_solve_offdiag_inc_lvl(kid,
+				       L_col, L_row,
+				       X_col, X_row,
+				       k, col_idx_offset,
+				       U.val,
+				       U.row_idx,
+				       U.inc_lvl,
+				  U.col_ptr(k+1)-U.col_ptr(k),
+				       U.col_ptr(k),
+				       BASKER_FALSE
+				       );
+	    */
+
+	  }//for --over remainder blks
+      }//if --lower
+  
+  }//end t_upper_col_factor_offdiag2_same_pattern_inc_lvl()
 
 
   //uses local idx for local blks X
@@ -1189,6 +1490,121 @@ namespace BaskerNS
       }//if --lower
   
   }//end t_upper_col_factor_offdiag2_inc_lvl()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void
+  Basker<Int,Entry,Exe_Space>::t_same_pattern_update_matrix_inc_lvl
+  (
+   const Int kid,
+   const Int team_leader,
+   const Int lvl,
+   const Int l, 
+   const Int k
+   )
+  {
+    
+    const Int leader_idx = S(0)(kid);
+    BASKER_MATRIX     &C = thread_array(kid).C;  
+    Int nnz = 0;
+    Int gbrow = 0;
+
+    //Over each blk    
+    Int last_blk = l+2;   
+     
+    
+    {
+      //Copy B -> C
+      Int bl = l+1;
+      Int A_col = S(lvl)(kid);
+      
+      Int my_row_leader = find_leader(kid,lvl-1);
+      Int my_new_row = 
+	S(bl)(kid) - S(0)(my_row_leader);
+      Int A_row = 0;
+      A_row = my_new_row;
+
+      
+      BASKER_MATRIX  *Bp;
+      if(A_row != (LU_size(A_col)-1))
+	{
+	  //printf("upper picked, kid: %d \n", kid);
+	  //printf("up: %d %d kid: %d \n",
+	  //	   A_col, A_row, kid);
+	  Bp = &(AVM(A_col)(A_row));
+	}
+      else
+	{
+	  //printf("lower picked, kid: %d\n", kid);
+	  Bp = &(ALM(A_col)(0));
+	}  
+      BASKER_MATRIX   &B  = *Bp;
+      //printf("ADDING UPDATES TO B\n");
+      //B.info();
+      //B.print();
+      gbrow = B.srow;
+      
+      //return;
+      
+      //Int team_leader   = find_leader(kid, l);  //Not used
+      ENTRY_1DARRAY   X = LL(leader_idx)(bl).ews;
+      INT_1DARRAY    ws = LL(leader_idx)(bl).iws;
+      Int *color = &(ws(0));
+      LL(leader_idx)(bl).p_size = 0;
+
+      //Get the columns pattern
+      Int U_pattern_col = A_col;
+      Int U_pattern_row = A_row;
+      Int L_pattern_col = A_col;
+      Int L_pattern_row = BASKER_MAX_IDX;
+      if(A_row == (LU_size(A_col)-1))
+	{
+	  L_pattern_row = 0;
+	}
+
+        
+      //Copy in X
+      for(Int i = B.col_ptr(k);
+	  i < B.col_ptr(k+1); ++i)
+	{
+	  Int B_row = B.row_idx(i);	
+	  X(B_row) += B.val(i);
+	}
+
+     
+      //Copy into C
+      BASKER_MATRIX &Up = LU(U_pattern_col)(U_pattern_row);
+      for(Int i = Up.col_ptr(k); i < Up.col_ptr(k+1); i++)
+	{
+	  const Int j = Up.row_idx(i);
+	  C.row_idx(nnz) = j;
+	  C.val(nnz)     = X(j);
+	  nnz++;
+	  X(j)            = 0;
+	  color[j] = 0;
+	}
+
+      //if there is a L
+      if(L_pattern_row != BASKER_MAX_IDX)
+	{
+	  BASKER_MATRIX &Lp = LL(L_pattern_col)(L_pattern_row);
+	  for(Int i = Lp.col_ptr(k)+1; i < Lp.col_ptr(k+1);i++)
+	    {
+	      const Int j = Lp.row_idx(i);
+	      C.row_idx(nnz) = j;
+	      C.val(nnz)     = X(j);
+	      nnz++;
+	      X(j)            = 0;
+	      color[j] = 0;
+	    }//loop over L pattern
+	}
+	    
+    }//DUMMY (Do we need this?)
+
+    C.col_ptr(0) = 0;
+    C.col_ptr(1) = nnz; 
+
+  }//end t_update_matrix_inc_lvl
 
   
   //local idx local blk
@@ -1466,7 +1882,7 @@ namespace BaskerNS
 	printf("After matrix print \n");
       }
     #endif
-    //B.print();
+    //  B.print();
 
 
     INT_1DARRAY  ws       = LL(X_col)(l+1).iws;
@@ -1538,24 +1954,21 @@ namespace BaskerNS
 	  B.col_ptr[0], B.col_ptr[1]);
    #endif
 
+   if(Options.same_pattern == BASKER_FALSE)
+     {
    for(i = B.col_ptr(0); i < B.col_ptr(1); ++i)
      {
              
        j = B.row_idx(i);
-     
-       
        #ifdef BASKER_DEBUG_NFACTOR_COL
        if(kid>=0)
        printf("j: %d i: %d \n", j, i);
        #endif
-
               
        if(INC_LVL_TEMP(j+brow) == BASKER_MAX_IDX)
 	 {
 	   continue;
 	 }
-
-
 
        X(j) = B.val(i);
         
@@ -1572,8 +1985,6 @@ namespace BaskerNS
 	      INC_LVL_TEMP(j+brow));
        #endif
        
-
-
        if(Options.incomplete_type == 
 	  BASKER_INCOMPLETE_LVL)
 	 {
@@ -1594,6 +2005,38 @@ namespace BaskerNS
 	 }
        
      }//over each nnz in the column
+     }//if--same pattern
+   else
+     {
+       //Get L
+       for(i = L.col_ptr(k+1)-1; i >= L.col_ptr(k);
+	   i--)
+	 {
+	   j = L.row_idx(i);
+	   color[j] = 2;
+	   pattern[--top] = j;
+	 }//end get L
+
+       //Get U pattern
+       for(i = U.col_ptr(k+1)-2; i >= U.col_ptr(k);
+	   i--)
+	 {
+	   j = U.row_idx(i);
+	   color[j] = 2;	   
+	   //Pivot options here
+	   pattern[--top] = j;
+	 }// end get U
+     
+       //Fill in the needed X
+        for(i = B.col_ptr(0); i < B.col_ptr(1); ++i)
+	  {
+	    j = B.row_idx(i);
+	    if(color[j] == 2)
+	      {
+		X(j) = B.val(i);
+	      }
+	  }//for-B
+     }//if same pattern
    xnnz = ws_size - top;
    
    #ifdef BASKER_DEBUG_NFACTOR_COL
@@ -1604,8 +2047,8 @@ namespace BaskerNS
 	      xnnz, ws_size, top);
        for(Int z = top; z < ws_size; z++)
 	 {
-	   printf("pattern[%d]: %d \n",
-		  z, pattern[z]);
+	   printf("pattern[%d]: %d %f\n",
+		  z, pattern[z], X(pattern[z]));
 	 }
 	   
      }
@@ -1696,9 +2139,7 @@ namespace BaskerNS
        return 2;
      }          
   
-   //gperm[maxindex] = k;
    gperm(maxindex+brow) = k+brow; 
-   //gpermi[k] = maxindex;
    gpermi(k+brow) = maxindex+brow;
    
    //printf("set pivot: %d %d \n",
@@ -1777,7 +2218,8 @@ namespace BaskerNS
        #endif
        
        
-	 if(INC_LVL_TEMP(j+brow) <= Options.inc_lvl)
+       if((Options.same_pattern == BASKER_TRUE) ||
+	  (INC_LVL_TEMP(j+brow) <= Options.inc_lvl))
 	 {
            #ifdef BASKER_DEBUG_NFACTOR_COL
 	   #ifdef BASKER_2DL
@@ -1842,8 +2284,11 @@ namespace BaskerNS
 		      L.val(lnnz), INC_LVL_TEMP(j+brow));
 	       #endif
 
-	       L.inc_lvl(lnnz) = INC_LVL_TEMP(j+brow);
-	       INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
+	       if(Options.same_pattern == BASKER_FALSE)
+		 {
+		   L.inc_lvl(lnnz) = INC_LVL_TEMP(j+brow);
+		   INC_LVL_TEMP(j+brow) = BASKER_MAX_IDX;
+		 }
 	       lnnz++;
 	     }
 	 }//end if() lvl <
@@ -1927,9 +2372,12 @@ namespace BaskerNS
 
    //FIX LATER (these will now be reset by lower)
    
+   if(Options.same_pattern == BASKER_FALSE)
+     {
    for(Int si = 0; si < L.nrow; si++)
      {
        stack[si] = BASKER_MAX_IDX;
+     }
      }
    
 
@@ -1982,6 +2430,12 @@ namespace BaskerNS
 
     pivot = U.tpivot;
         
+    Int U_pattern_row = BASKER_MAX_IDX;
+    Int U_pattern_col = L_col;
+    Int L_pattern_row = L_row;
+    Int L_pattern_col = L_col;
+
+
     //printf("OFF_DIAG_LOWER, kid: %d leaderid: %d t_size: %d \n"
     //   kid, leader_id, lteam_size);
     
@@ -1992,8 +2446,38 @@ namespace BaskerNS
 	 X_row+=(lteam_size), L_row+=(lteam_size))
     
      { 
-
+       
        //Using leader_id is a bad hack!!!!
+
+       if(Options.same_pattern == BASKER_TRUE)
+	 {
+
+	       t_same_pattern_back_solve_offdiag_inc_lvl(leader_id,
+				      L_col, L_row,
+				      X_col, X_row,
+				U_pattern_col, U_pattern_row,
+				L_col, L_row,
+				       k, col_idx_offset,
+				       U.val,
+				       U.row_idx,
+				       U.inc_lvl,
+				 U.col_ptr(k+1)-U.col_ptr(k),
+				       U.col_ptr(k),
+				        BASKER_TRUE);
+ 
+	       //printf("Calling t_move_offdiag_L");
+	       t_move_offdiag_L_inc_lvl(leader_id, 
+			      L_col, L_row,
+			      X_col, X_row,
+			      k, pivot);
+
+
+	  
+
+	 }
+       else
+	 {
+
        t_dense_back_solve_offdiag_inc_lvl(leader_id,
 				  L_col, L_row,
 				  X_col, X_row,
@@ -2005,10 +2489,13 @@ namespace BaskerNS
 				  BASKER_TRUE);
 
 
+       
        t_dense_move_offdiag_L_inc_lvl(leader_id, 
 			      L_col, L_row,
 			      X_col, X_row,
 			      k, pivot);
+
+	 }
        
      }//end for over all offdiag blks
     
@@ -2070,9 +2557,145 @@ namespace BaskerNS
 
   }//end t_lower_col_factor_offdiag2_cleanup_inc_lvl()
 
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::t_same_pattern_col_copy_inc_lvl
+   (
+   const Int kid,
+   const Int lvl,
+   const Int sl,
+   const Int l,
+   const Int k,
+   const BASKER_BOOL lower
+   )
+  {
+    const Int my_idx     = S(0)(kid);
+
+    //should remove either as a paramter or here
+    Int team_leader      = find_leader(kid, sl);
+    const Int leader_idx = S(0)(team_leader);
+      
+    //If I an not a leader, then need to copy over
+    if(kid != team_leader)
+      {
+
+	Int endblk = (lower)?(LL_size(my_idx)):(l+2);
+	for(Int blk = l+1; blk < endblk; ++blk)
+	  {
+
+	    //const Int blk = l+1;  
+	    ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews;
+	    INT_1DARRAY  &wsL = LL(leader_idx)(blk).iws;
+	    Int      p_sizeL  = LL(leader_idx)(blk).p_size;
+	    Int      ws_sizeL = LL(leader_idx)(blk).iws_size;
+	    ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews;
+	    INT_1DARRAY   &ws = LL(my_idx)(blk).iws;
+	    const Int ws_size = LL(my_idx)(blk).iws_size;
+	    //Int       p_size  = LL(my_idx)(blk).p_size;
+	    LL(my_idx)(blk).p_size = 0;
+	    Int       *color  = &(ws[0]);
+	    Int     *pattern  = &(color[ws_size]); 
+	    Int     *stack    = &(pattern[ws_size]); 
+	    //used for fill
+	    Int      brow     = LL(my_idx)(blk).srow; //NU
+	    //Int      browL    = LL(leader_idx)(blk).srow; //NU
+	    
+	    Int *colorL   = &(wsL(0));
+	    //This may be in error in the bigger code
+	    Int *patternL = &(colorL[ws_sizeL]);
+	    Int *stackL   = &(patternL[ws_sizeL]);
+	    
 
 
+	    //What to get pattern from U/L
+	    Int my_pattern_leader = find_leader(kid,l);
+	    /*
+	    printf("Copy, my pattern leader: %d kid: %d %d \n",
+		   my_pattern_leader, find_leader(kid,l), 
+		   kid);
+
+	    printf("Options: %d %d kid: %d \n",
+		   S(0)(0), S(l+1)(my_pattern_leader),kid);
+
+	    */
+
+	    /*
+	    printf("NUMBER: kid: %d lvl: %d sl: %d l: %d col_leader: %d %d my_blk: %d %d U_col: %d \n",
+		   kid, lvl, sl, l, 
+		   find_leader(kid,lvl-1),S(0)(find_leader(kid,lvl-1)),
+		   kid, S(l+1)(kid), 
+		   S(l+1)(kid) - S(0)(find_leader(kid,lvl-1)));
+	    */
+
+
+
+	    
+	    Int U_pattern_col = S(lvl)(kid);
+	    Int U_pattern_row = BASKER_MAX_IDX;
+	    
+	    if(blk == l+1)
+	      {
+		//U_pattern_row = S(0)(my_pattern_leader) -
+		//S(0)(find_leader(kid,lvl));
+		//U_pattern_row = S(l+1)(kid) - 
+		//S(0)(my_pattern_leader);
+		U_pattern_row = S(l+1)(kid) - 
+		  S(0)(find_leader(kid,lvl-1));
+	      }
+
+	    Int L_pattern_col = S(lvl)(kid);
+	    Int L_pattern_row = BASKER_MAX_IDX;
+	    if(lower == BASKER_TRUE)
+	      {
+		L_pattern_row = blk-(l+1);
+	      }
+
+	    /*
+	    printf("Debug copy, Up: %d %d kid: %d\n",
+		   U_pattern_col, U_pattern_row, 
+		   kid);
+
+	    printf("Debug copy, Lp: %d %d kid: %d \n",
+		   L_pattern_col, L_pattern_row, 
+		   kid);
+	    */
+	   
+	    //copy over
+	    if(U_pattern_row != BASKER_MAX_IDX)
+	      {
+
+		BASKER_MATRIX &UP = LU(U_pattern_col)(U_pattern_row);
+	    
+		for(Int jj = UP.col_ptr(k);
+		    jj < UP.col_ptr(k+1);
+		    jj++)
+		  {
+		    const Int jjj = UP.row_idx(jj);
+		    color[jjj] = 0; 
+		    XL(jjj) += X(jjj);
+		    X(jjj)   = 0;
+		  }
+	      }//if UPattern
+	    if(L_pattern_row != BASKER_MAX_IDX)
+	      {
+		BASKER_MATRIX &LP = LL(L_pattern_col)(L_pattern_row);
+		for(Int jj = LP.col_ptr(k);
+		    jj < LP.col_ptr(k+1);
+		    jj++)
+		  {
+		    const Int jjj = LP.row_idx(jj);
+		    color[jjj] = 0;
+		    XL(jjj) += X(jjj);
+		    X(jjj) = 0;
+		  }
+	      }//if LPattern
+	  }//over blks
+      }//not leader
+  }//end t_same_pattern_col_copy_inc_lvl()
+
+ 
  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
   void Basker<Int,Entry, Exe_Space>::t_dense_blk_col_copy_atomic2_inc_lvl
   (
    const Int kid,

@@ -680,8 +680,7 @@ namespace BaskerNS
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
 
-
-     BASKER_INLINE
+    BASKER_INLINE
     int t_dense_back_solve_offdiag_inc_lvl(Int kid,
 			     Int blkcol, Int blkrow,
 			     Int X_col, Int X_row,
@@ -692,8 +691,22 @@ namespace BaskerNS
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
 
+    
+    BASKER_INLINE
+    void t_same_pattern_back_solve_offdiag_inc_lvl(Int kid,
+				      Int blkcol, Int blkrow,
+				      Int X_col, Int X_row,
+				      Int UP_col, Int UP_row,
+				      Int LP_col, Int LP_row,
+				      Int k, Int &view_offset,
+				      ENTRY_1DARRAY x,
+			     INT_1DARRAY x_indx,
+			     INT_1DARRAY x_fill,
+			     Int x_size, Int x_offset,
+			     BASKER_BOOL A_option);
 
-     BASKER_INLINE
+
+    BASKER_INLINE
     int t_dense_back_solve_offdiag_inc_lvl_old(Int kid,
 			     Int blkcol, Int blkrow,
 			     Int X_col, Int X_row,
@@ -777,6 +790,17 @@ namespace BaskerNS
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
      BASKER_INLINE
+     void t_back_solve_offdiag_same_pattern_inc_lvl(Int kid,
+						  Int pbrow,
+			     Int blkcol, Int blkrow,
+			     Int X_col, Int X_row,
+			     Int k, Int &view_offset,
+			     ENTRY_1DARRAY x,
+			     INT_1DARRAY x_indx,
+			     Int x_size, Int x_offset,
+			     BASKER_BOOL A_option);
+   
+     BASKER_INLINE
     int t_back_solve_offdiag_inc_lvl_old(Int kid, Int pbrow,
 			     Int blkcol, Int blkrow,
 			     Int X_col, Int X_row,
@@ -841,6 +865,14 @@ namespace BaskerNS
 
 
 
+     void t_upper_col_factor_offdiag2_same_pattern_inc_lvl(const Int kid,
+				     const Int lvl, 
+				     const Int sl,
+				     const Int l,
+				     const Int k, 
+				     const BASKER_BOOL lower);
+
+
      void t_upper_col_factor_offdiag2_inc_lvl(const Int kid,
 				     const Int lvl, 
 				     const Int sl,
@@ -875,6 +907,13 @@ namespace BaskerNS
 				      const Int k, 
 				      const BASKER_BOOL lower);
 
+    void t_same_pattern_col_copy_inc_lvl(const Int kid,
+				     const Int lvl,
+				     const Int sl,
+				     const Int l,
+				     const Int k, 
+				     const BASKER_BOOL lower);
+
 
     void t_dense_copy_update_matrix2(const Int kid,
 				    const Int team_leader,
@@ -886,6 +925,12 @@ namespace BaskerNS
 				    const Int team_leader,
 				    const Int lvl, const Int l,
 				    const Int k);
+
+    void t_same_pattern_update_matrix_inc_lvl(const Int kid,
+					      const Int team_leader,
+					      const Int lvl,
+					      const Int l, 
+					      const Int k);
 
 
     void t_lower_col_factor_offdiag2(const Int kid,
@@ -1160,6 +1205,7 @@ namespace BaskerNS
     //Made 2d Inorder to beable to use ref in Kokkos
     INT_1DARRAY gperm; 
     INT_1DARRAY gpermi;
+    INT_1DARRAY gperm_same;
 
     //RHS and solutions (These are not used anymore)
     ENTRY_2DARRAY rhs;
@@ -1186,6 +1232,7 @@ namespace BaskerNS
     BASKER_BOOL btf_flag;
     BASKER_BOOL nd_flag;
     BASKER_BOOL amd_flag;
+    BASKER_BOOL same_pattern_flag;
 
    
     Int num_threads;

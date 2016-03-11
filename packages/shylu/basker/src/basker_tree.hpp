@@ -1499,6 +1499,33 @@ namespace BaskerNS
       }
     */
 
+    //If same pattern, permute using pivot, and reset
+    if((Options.same_pattern == BASKER_TRUE))
+      {
+	if(same_pattern_flag == BASKER_FALSE)
+	  {
+	    MALLOC_INT_1DARRAY(gperm_same, gn);
+	    for(Int i = 0; i < gn; i++)
+	      {
+		gperm_same(i) = gperm(i);
+		gperm(i) = BASKER_MAX_IDX;
+	      }
+	    same_pattern_flag = BASKER_TRUE;
+	  }
+	else
+	  {
+	    for(Int i = 0; i < gn; i++)
+	      {
+		gperm(i) = BASKER_MAX_IDX;
+	      }
+	  }
+	//Everyone permutes
+	//JDB: come back
+      }
+
+
+
+
 
     //test
     //printMTX("A_BTF.mtx", BTF_A);

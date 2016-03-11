@@ -684,6 +684,9 @@ namespace BaskerNS
     {
 
       //Operation Options
+
+      same_pattern = BASKER_FALSE;
+
       //Note verbose will not give debug
       //Debug is a compile time option
       verbose    = BASKER_FALSE;
@@ -731,6 +734,9 @@ namespace BaskerNS
       user_fill  = (Entry)BASKER_FILL_USER;
  
     }
+
+    //Reuse Pattern (Save time if same pattern can be used)
+    BASKER_BOOL same_pattern;
 
     //Operation Options
     BASKER_BOOL verbose; //Not Used

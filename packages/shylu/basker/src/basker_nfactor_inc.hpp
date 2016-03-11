@@ -130,8 +130,8 @@ namespace BaskerNS
     if((btf_tabs_offset != 0) && (fatal_error == BASKER_FALSE))
       {
 	
-	//for(Int l=1; l<=2; l++)
-	for(Int l=1; l <= tree.nlvls; l++)
+	//for(Int l=1; l<=1; l++)
+	  for(Int l=1; l <= tree.nlvls; l++)
       {
 
         //Come back for syncs

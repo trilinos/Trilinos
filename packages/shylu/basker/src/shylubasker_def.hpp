@@ -38,16 +38,17 @@ namespace BaskerNS
   Basker<Int, Entry, Exe_Space>::Basker()
   {   
     //Presetup flags
-    matrix_flag    = BASKER_FALSE;
-    order_flag     = BASKER_FALSE;
-    tree_flag      = BASKER_FALSE;
-    symb_flag      = BASKER_FALSE;
-    factor_flag    = BASKER_FALSE;
-    workspace_flag = BASKER_FALSE;
-    rhs_flag       = BASKER_FALSE;
-    solve_flag     = BASKER_FALSE;
-    nd_flag        = BASKER_FALSE;
-    amd_flag       = BASKER_FALSE;
+    matrix_flag       = BASKER_FALSE;
+    order_flag        = BASKER_FALSE;
+    tree_flag         = BASKER_FALSE;
+    symb_flag         = BASKER_FALSE;
+    factor_flag       = BASKER_FALSE;
+    workspace_flag    = BASKER_FALSE;
+    rhs_flag          = BASKER_FALSE;
+    solve_flag        = BASKER_FALSE;
+    nd_flag           = BASKER_FALSE;
+    amd_flag          = BASKER_FALSE;
+    same_pattern_flag = BASKER_FALSE;
 
     //Default number of threads
     num_threads = 1;
@@ -414,9 +415,48 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::Factor(Int nrow, Int ncol,
 	        Int nnz, Int *col_ptr, Int *row_idx, Entry *val) 
   {
+
+    int err = 0;
     
+    /*
     int err = A.copy_values(nrow, ncol, nnz, col_ptr, 
 			    row_idx, val);
+    */
+
+    if((Options.same_pattern == BASKER_TRUE) &&
+       (Options.no_pivot == BASKER_FALSE))
+      {
+	printf("Warning: Same Pattern will not allow pivoting\n");
+	Options.no_pivot = BASKER_TRUE;
+      }
+
+ 			    
+    if(Options.transpose == BASKER_FALSE)
+      {
+	//printf("=======NO TRANS=====\n");
+	//A.init_matrix("Original Matrix",
+	//	      nrow, ncol, nnz, col_ptr, row_idx, val);
+	//A.scol = 0;
+	//A.srow = 0;
+	A.copy_values(nrow, ncol, nnz, col_ptr,
+		      row_idx, val);
+	//printMTX("A_LOAD.mtx", A);
+      }
+    else
+      {
+	//printf("======TRANS=====\n");
+	//Will transpose and put in A using little extra
+	matrix_transpose(0, nrow,
+			 0, ncol,
+			 nnz,
+			 col_ptr,
+			 row_idx,
+			 val,
+			 A);
+      }
+    sort_matrix(A);
+    matrix_flag = BASKER_TRUE;
+	
 
     if(err == BASKER_ERROR)
       {
@@ -431,6 +471,9 @@ namespace BaskerNS
       }
     //printf("before notoken\n");
 
+    //Kokkos::Impl::Timer timer;
+   
+
     if(Options.incomplete == BASKER_FALSE)    
       {
 	err = factor_notoken(0);
@@ -444,6 +487,11 @@ namespace BaskerNS
 	return BASKER_ERROR;
       }
 
+    /*
+    std::cout << "Raw Factor Time: "
+	      << timer.seconds()
+	      << std::endl;
+    */
     
     //DEBUG_PRINT();
 

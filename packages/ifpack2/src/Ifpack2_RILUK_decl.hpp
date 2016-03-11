@@ -595,6 +595,7 @@ protected:
   myBasker;
   local_ordinal_type basker_threads;
   scalar_type        basker_user_fill;
+  bool               basker_reuse;
 #endif
 
 
