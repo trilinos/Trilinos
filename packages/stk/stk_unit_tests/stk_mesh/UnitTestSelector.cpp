@@ -532,7 +532,6 @@ TEST(Verify, selectorAlgorithmicComplexity)
 
     if (fix.get_BulkData().parallel_size() > 1) return;
 
-
     stk::mesh::Part & partA = fix.m_partA;
     stk::mesh::Part & partB = fix.m_partB;
     stk::mesh::Part & partC = fix.m_partC;
@@ -578,7 +577,10 @@ TEST(Verify, selectorAlgorithmicComplexity)
     //  Due to cache effects and random runtime variability though keep a pretty loose tolerane around this expectation
     double expectedFactor = ((double)trialLen.back())/trialLen[0];
     double factor         = elapsedTime.back()/elapsedTime[0];
-    EXPECT_TRUE(std::abs(expectedFactor-factor)/expectedFactor < 0.35);
+    double relative_factor = std::abs(expectedFactor-factor)/expectedFactor;
+
+    std::cout << "relative_factor= " << relative_factor << std::endl;
+    EXPECT_TRUE( relative_factor < 0.40);
 
     std::cout<<"  Speedup factors: "<<expectedFactor<<" vs. "<<factor<<std::endl;
 
@@ -586,7 +588,6 @@ TEST(Verify, selectorAlgorithmicComplexity)
     //  Test complexity of traversal of the large selector.  Some buckets will be found immediately and some will require traversal of
     //  the entire selector to exclude thus this operation should be O(N) in selector size.
     const stk::mesh::BucketVector& buckets = fix.get_BulkData().get_buckets(stk::topology::NODE_RANK, fix.get_MetaData().locally_owned_part());
-    
 
     for(unsigned j=0; j<trialLen.size(); ++j) {
       unsigned count=0;
@@ -619,7 +620,7 @@ TEST(Verify, selectorAlgorithmicComplexity)
 
     std::cout<<"  Speedup factors: "<<expectedFactor<<" vs. "<<factor<<std::endl;
 
-    double relative_factor = std::abs(expectedFactor-factor)/expectedFactor;
+    relative_factor = std::abs(expectedFactor-factor)/expectedFactor;
     std::cout <<" relative_factor= " << relative_factor << "\n";
     EXPECT_TRUE( relative_factor < 0.40);
 }
