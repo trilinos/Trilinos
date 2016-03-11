@@ -92,20 +92,6 @@ public:
     haveSeparatorTree_ = false;
   }
 
-  /*! \brief set the ordering solution for separators
-  */
-  void setOrder(  lno_t nblks,
-                  const ArrayRCP<lno_t> &perm,
-                  const ArrayRCP<lno_t> &permi,
-                  const ArrayRCP<lno_t> &range,
-                  const ArrayRCP<lno_t> &tree) {
-
-    this->separatorColBlocks_ = nblks;
-    this->perm_ = perm;
-    this->invperm_ = permi;
-    this->separatorRange_ = range;
-    this->separatorTree_ = tree;
-  }
   /*! \brief Do we have the direct permutation?
    */
   bool havePerm() const
@@ -210,6 +196,9 @@ public:
     }
   }
 
+  /*! \brief Set number of separator column blocks.
+   */
+  inline void setNumSeparatorBlocks(lno_t nblks) {separatorColBlocks_ = nblks;}
 
   //////////////////////////////////////////////
   // Accessor functions, allowing algorithms to get ptrs to solution memory.
@@ -259,14 +248,14 @@ public:
 
   /*! \brief Get (local) seperator range by RCP.
    */
-  inline ArrayRCP<lno_t> &getSeparatorRangeRCP() const
+  inline const ArrayRCP<lno_t> &getSeparatorRangeRCP() const
   {
     return separatorRange_;
   }
   
   /*! \brief Get (local) seperator tree by RCP.
    */
-  inline ArrayRCP<lno_t> &getSeparatorTreeRCP() const
+  inline const ArrayRCP<lno_t> &getSeparatorTreeRCP() const
   {
     return separatorTree_;
   }
