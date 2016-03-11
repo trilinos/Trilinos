@@ -193,14 +193,14 @@ public:
    *     number of weights per object.
    *   Imbalance was only computed if user requested
    *   metrics with a parameter.
-   */
+   *
   const scalar_t getWeightImbalance(int idx=0) const {
     scalar_t imb = 0;
     if (!metrics_.is_null())
       metrics_->getWeightImbalance(imb, idx);
 
     return imb;
-  }
+    }*/
 
   /*! \brief Get the array of metrics
    *   Metrics were only computed if user requested
