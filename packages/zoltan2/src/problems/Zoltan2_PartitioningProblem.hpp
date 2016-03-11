@@ -218,7 +218,7 @@ public:
   /*! \brief Get the array of graphMetrics
    *   Graph metrics were only computed if user requested
    *   graph metrics with a parameter.
-   */
+   *
   ArrayRCP<const GraphMetricValues<scalar_t> > getGraphMetrics() const {
     if (metrics_.is_null()){
       ArrayRCP<const GraphMetricValues<scalar_t> > emptyMetrics;
@@ -226,7 +226,7 @@ public:
     }
     else
       return metrics_->getGraphMetrics();
-  }
+      }*/
 
   /*! \brief Print the array of metrics
    *   \param os the output stream for the report.
