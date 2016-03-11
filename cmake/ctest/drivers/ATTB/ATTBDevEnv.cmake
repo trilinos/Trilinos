@@ -42,7 +42,7 @@ SET(MPI_BASE_DIR "$ENV{MPI_ROOT}" CACHE PATH
   "Set in gcc-4.8.4-base-options.cmake")
 
 # Turn on explicit template instantaition by default
-SET(Trilinos_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
+SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
   "Set by default in gcc-4.8.3-base-options.cmake")
 
 # Turn of 'int' as a global ordinal
@@ -87,7 +87,7 @@ SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL
 # Always find and use static libs on this system
 SET(TPL_FIND_SHARED_LIBS OFF CACHE BOOL
   "Set in ATTBDevEnv.cmake")
-SET(Trilinos_LINK_SEARCH_START_STATIC ON  CACHE BOOL
+SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC ON  CACHE BOOL
   "Set in ATTBDevEnv.cmake")
 
 # Disable a bunch of TPLs that are not on this system
