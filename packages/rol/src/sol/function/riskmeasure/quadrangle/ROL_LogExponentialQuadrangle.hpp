@@ -77,7 +77,7 @@ public:
       err = std::exp(cx) - one;
     }
     else {
-      err = std::exp(cx);
+      err = coeff_*std::exp(cx);
     }
     return err;
   }
