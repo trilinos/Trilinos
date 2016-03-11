@@ -187,7 +187,7 @@ private:
               const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
               const bool useSecant = false )
       : obj_(obj), bnd_(bnd), x_(x), xlam_(xlam),
-        secant_(secant), useSecant_(useSecant), eps_(eps) {
+        secant_(secant), eps_(eps), useSecant_(useSecant) {
       v_ = x_->clone();
       if ( !useSecant || secant == Teuchos::null ) {
         useSecant_ = false;
@@ -225,7 +225,7 @@ private:
               const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
               const bool useSecant = false )
       : obj_(obj), bnd_(bnd), x_(x), xlam_(xlam),
-        secant_(secant), useSecant_(useSecant), eps_(eps) {
+        eps_(eps), secant_(secant), useSecant_(useSecant) {
       v_ = x_->clone();
       if ( !useSecant || secant == Teuchos::null ) {
         useSecant_ = false;
