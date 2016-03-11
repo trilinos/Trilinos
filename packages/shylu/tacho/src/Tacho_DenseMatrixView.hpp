@@ -46,8 +46,11 @@ namespace Tacho {
     void setView(const DenseMatBaseType &base,
                  const ordinal_type offm, const ordinal_type m,
                  const ordinal_type offn, const ordinal_type n) {
+      TACHO_TEST_FOR_ABORT( !( (offm + m) <= base.NumRows() &&
+                               (offn + n) <= base.NumCols() ),
+                            ">> Input ranges are out of the base matrix" );
       _base = base;
-      
+
       _offm = offm; _m = m;
       _offn = offn; _n = n;
     }
@@ -76,7 +79,7 @@ namespace Tacho {
                      const ordinal_type j) const { return _base.Value(_offm+i, _offn+j); }
     
     KOKKOS_INLINE_FUNCTION
-    value_type* ValuePtr() const { return &_base.Value(_offm, _offn); }
+    value_type* ValuePtr() { return &_base.Value(_offm, _offn); }
 
     /// ------------------------------------------------------------------
 
@@ -84,9 +87,7 @@ namespace Tacho {
     /// ------------------------------------------------------------------
     /// Properties:
     /// - Compile with Device (o),
-    /// - Callable in KokkosFunctors
-    ///   - Default and copy constructors are allowed in KokkosFunctors.
-    ///   - Creating internal workspace is not allowed in KokkosFunctors.
+    /// - Callable in KokkosFunctors (o)
 
     /// \brief Default constructor.
     KOKKOS_INLINE_FUNCTION
@@ -109,6 +110,7 @@ namespace Tacho {
     { } 
 
     /// \brief Wrapping the base object 
+    KOKKOS_INLINE_FUNCTION
     DenseMatrixView(const DenseMatBaseType &b)
       : _base(b),
         _offm(0),
@@ -118,6 +120,7 @@ namespace Tacho {
     { } 
 
     /// \brief Wrapping the base object with view 
+    KOKKOS_INLINE_FUNCTION
     DenseMatrixView(const DenseMatBaseType &b,
                     const ordinal_type offm, const ordinal_type m,
                     const ordinal_type offn, const ordinal_type n) 
@@ -127,6 +130,14 @@ namespace Tacho {
         _m(m),
         _n(n) 
     { } 
+
+    /// Destructor
+    /// ------------------------------------------------------------------
+    /// Properties:
+    /// - Compile with Device (o),
+    /// - Callable in KokkosFunctors (o)
+    KOKKOS_INLINE_FUNCTION
+    ~DenseMatrixView() = default;
 
     /// Print out
     /// ------------------------------------------------------------------
@@ -171,11 +182,11 @@ namespace Tacho {
       return os;
     }
 
-    /// \brief stream operator over-riding.
-    template<typename T>
-    friend std::ostream& std::operator<<(std::ostream &os, const DenseMatrixView<T> &self) {
-      return self.showMe(os);
-    }
+    // /// \brief stream operator over-riding.
+    // template<typename T>
+    // friend std::ostream& std::operator<<(std::ostream &os, const DenseMatrixView<T> &self) {
+    //   return self.showMe(os);
+    // }
 
   };
 }

@@ -11,21 +11,17 @@
 #include "Tacho_DenseMatrixTools.hpp"
 
 namespace Tacho {
-
-  template<typename ValueType,
-           typename OrdinalType,
-           typename SizeType,
-           typename DeviceSpaceType>
-  KOKKOS_INLINE_FUNCTION
-  int exampleDenseMatrixBase(const OrdinalType mmin,
-                             const OrdinalType mmax,
-                             const OrdinalType minc,
+  
+  template<typename DeviceSpaceType>
+  int exampleDenseMatrixBase(const ordinal_type mmin,
+                             const ordinal_type mmax,
+                             const ordinal_type minc,
                              const bool verbose) {
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
     
-    typedef DenseMatrixBase<ValueType,OrdinalType,SizeType,HostSpaceType>   DenseMatrixBaseHostType;
-    typedef DenseMatrixBase<ValueType,OrdinalType,SizeType,DeviceSpaceType> DenseMatrixBaseDeviceType;
+    typedef DenseMatrixBase<value_type,ordinal_type,size_type,HostSpaceType>   DenseMatrixBaseHostType;
+    typedef DenseMatrixBase<value_type,ordinal_type,size_type,DeviceSpaceType> DenseMatrixBaseDeviceType;
 
     int r_val = 0;
 
@@ -43,10 +39,9 @@ namespace Tacho {
         TT.Value(j,j) = std::fabs(TT.Value(j,j));
       }
       if (verbose)
-        std::cout << TT << std::endl;
+        TT.showMe(std::cout) << std::endl;
 
       DenseMatrixBaseDeviceType AA("AA"); 
-      AA.createConfTo(TT);
 
       timer.reset();
       AA.mirror(TT);
@@ -64,7 +59,7 @@ namespace Tacho {
       RR.createConfTo(BB);
       RR.mirror(BB);
       if (verbose)
-        std::cout << RR << std::endl;
+        RR.showMe(std::cout) << std::endl;
 
       double err = 0.0;
       for (ordinal_type j=0;j<TT.NumCols();++j) 
