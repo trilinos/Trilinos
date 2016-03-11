@@ -57,6 +57,7 @@
 #include <Zoltan2_MetricAnalyzer.hpp>
 
 #include <Zoltan2_ProblemFactory.hpp>
+#include <Zoltan2_EvaluatePartitionFactory.hpp>
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
