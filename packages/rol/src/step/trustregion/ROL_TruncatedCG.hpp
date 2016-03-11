@@ -76,9 +76,10 @@ public:
   // Constructor
   TruncatedCG( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
     // Unravel Parameter List
+    Real em4(1e-4), em2(1e-2);
     maxit_ = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);
-    tol1_  = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance",1.e-4);
-    tol2_  = parlist.sublist("General").sublist("Krylov").get("Relative Tolerance",1.e-2);
+    tol1_  = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance",em4);
+    tol2_  = parlist.sublist("General").sublist("Krylov").get("Relative Tolerance",em2);
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
