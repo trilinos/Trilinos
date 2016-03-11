@@ -60,10 +60,6 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Basker_decl.hpp"
 
-//#ifdef SHYLUBASKER
-//#include "Kokkos_Core.hpp"
-//#endif
-
 namespace Amesos2 {
 
 
@@ -87,9 +83,19 @@ Basker<Matrix,Vector>::Basker(
   
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
+#ifdef KOKKOS_HAVE_OPENMP
+  /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   	"Kokkos node type not supported by experimental Basker Amesos2");
+  */
   typedef Kokkos::OpenMP Exe_Space;
+#elif defined(KOKKOS_HAVE_SERIAL)
+  typedef Kokkos::Serial Exe_Space;
+#else
+ TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
+		     std::runtime_error,
+	   "Do not have supported Kokkos node type for Basker");
+#endif
   basker = new ::BaskerNS::Basker<local_ordinal_type, slu_type, Exe_Space>(); 
   basker->Options.no_pivot      = BASKER_TRUE;
   basker->Options.symmetric     = BASKER_FALSE;
