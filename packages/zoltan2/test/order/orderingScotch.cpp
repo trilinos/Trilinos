@@ -271,10 +271,15 @@ int main(int narg, char** arg)
   checkInvPerm = soln->getPermutation(true); // get the permutatino inverse
 
   // Separators. 
+  // The following methods needs to be supported:
+  // haveSeparators: true if Scotch Nested Dissection was called.
+  // getCBlkPtr: *CBlkPtr from Scotch_graphOrder
+  // getRangeTab: RangeTab from Scotch_graphOrder
+  // getTreeTab: TreeTab from Scotch_graphOrder
   z2TestGO    NumBlocks = 0;
   z2TestGO    *RangeTab;
   z2TestGO    *TreeTab;
-  if (soln->haveSeparators()){ // NYI
+  if (soln->haveSeparators()) {
     NumBlocks = soln->getNumSeparatorBlocks(); // BDD
     RangeTab = soln->getSeparatorRange(); // BDD
     TreeTab = soln->getSeparatorTree(); // BDD
