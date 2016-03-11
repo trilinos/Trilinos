@@ -62,6 +62,7 @@ private:
   Teuchos::RCP<Vector<Real> > gp_; ///< Additional vector storage
   Teuchos::RCP<Vector<Real> > d_;  ///< Additional vector storage
   int verbosity_;                  ///< Verbosity level
+  const bool computeObj_;
   bool useProjectedGrad_;          ///< Whether or not to use to the projected gradient criticality measure
 
 public:
@@ -77,9 +78,9 @@ public:
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  ProjectedNewtonStep( Teuchos::ParameterList &parlist )
+  ProjectedNewtonStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), gp_(Teuchos::null), d_(Teuchos::null),
-      verbosity_(0), useProjectedGrad_(false) {
+      verbosity_(0), computeObj_(computeObj), useProjectedGrad_(false) {
     // Parse ParameterList
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
@@ -130,7 +131,10 @@ public:
 
     // Compute new gradient
     obj.update(x,true,algo_state.iter);
-    algo_state.value = obj.value(x,tol);
+    if ( computeObj_ ) {
+      algo_state.value = obj.value(x,tol);
+      algo_state.nfval++;
+    }
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

@@ -98,7 +98,7 @@ public:
       firstReset_ = false;
     }
     dualVector_->zero();
-    valLam_ = 0.0; valLam2_ = 0.0; valMu_ = 0.0; valMu2_ = 0.0;
+    valLam_ = 0; valLam2_ = 0; valMu_ = 0; valMu2_ = 0;
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x, 
@@ -117,7 +117,7 @@ public:
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
-    Real val = RiskMeasure<Real>::val_, gval = 0.0;
+    Real val = RiskMeasure<Real>::val_, gval = 0;
     sampler.sumAll(&val,&gval,1);
     return xlam_*(thresh_ + gval) + xmu_;
   }
@@ -137,13 +137,13 @@ public:
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(g);
 
-    std::vector<Real> mygval(3,0.0), gval(3,0.0);
+    std::vector<Real> mygval(3), gval(3);
     mygval[0] = RiskMeasure<Real>::val_;
     mygval[1] = valLam_;
     mygval[2] = valMu_;
     sampler.sumAll(&mygval[0],&gval[0],3);
 
-    std::vector<Real> stat(2,0.0);
+    std::vector<Real> stat(2);
     stat[0] = thresh_ + gval[0] + gval[1];
     stat[1] = (Real)1 + gval[2];
     gs.setStatistic(stat);
@@ -168,7 +168,7 @@ public:
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(hv);
 
-    std::vector<Real> myhval(5,0.0), hval(5,0.0);
+    std::vector<Real> myhval(5), hval(5);
     myhval[0] = RiskMeasure<Real>::val_;
     myhval[1] = valLam_;
     myhval[2] = valLam2_;
@@ -176,7 +176,7 @@ public:
     myhval[4] = valMu2_;
     sampler.sumAll(&myhval[0],&hval[0],5);
 
-    std::vector<Real> stat(2,0.0);
+    std::vector<Real> stat(2);
     stat[0] = (vlam_ * hval[1] + vmu_ * hval[0] + hval[2])/xlam_;
     stat[1] = (vlam_ * hval[0] + vmu_ * hval[3] + hval[4])/xlam_;
     hs.setStatistic(stat);

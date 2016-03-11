@@ -41,55 +41,91 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_LOGEXPONENTIALQUAD_HPP
-#define ROL_LOGEXPONENTIALQUAD_HPP
+/*! \file  test_01.cpp
+    \brief Test line search.
+*/
 
-#include "ROL_ExpectationQuad.hpp"
+#define USE_HESSVEC 0
 
-namespace ROL {
+#include "ROL_Step.hpp"
+#include "ROL_TestObjectives.hpp"
 
-template<class Real>
-class LogExponentialQuadrangle : public ExpectationQuad<Real> {
-private:
-  Real coeff_;
+#include <iostream>
 
-public:
+typedef double RealT;
 
-  LogExponentialQuadrangle(const Real coeff = 1) : ExpectationQuad<Real>() {
-    Real zero(0), one(1);
-    coeff_ = ((coeff > zero) ? coeff : one);
-  }
+int main(int argc, char *argv[]) {
 
-  LogExponentialQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
-    Real zero(0), one(1);
-    Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Log-Exponential Quadrangle");
-    Real coeff = list.get("Rate",one);
-    coeff_ = ((coeff > zero) ? coeff : one);
-  }
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  Real error(Real x, int deriv = 0) {
-    Real err(0), one(1), cx = coeff_*x;
-    if (deriv==0) {
-      err = (std::exp(cx) - cx - one)/coeff_;
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs, false);
+
+  int errorFlag  = 0;
+  Teuchos::RCP<ROL::Vector<RealT> > x0, x;
+  Teuchos::RCP<ROL::Objective<RealT> > obj;
+  Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd;
+  ROL::getTestObjectives<RealT>(obj,bnd,x0,x,ROL::TESTOPTPROBLEM_HS1);
+  ROL::AlgorithmState<RealT> algo_state;
+
+  // *** Test body.
+  ROL::Step<RealT> step;
+  int thrown = 0;
+  try {
+    try {
+      step.compute(*x0,*x,*obj,*bnd,algo_state);
     }
-    else if (deriv==1) {
-      err = std::exp(cx) - one;
+    catch (ROL::Exception::NotImplemented exc) {
+      *outStream << exc.what() << std::endl;
+      thrown++;
+    };
+    try {
+      step.update(*x0,*x,*obj,*bnd,algo_state);
     }
-    else {
-      err = std::exp(cx);
+    catch (ROL::Exception::NotImplemented exc) {
+      *outStream << exc.what() << std::endl;
+      thrown++;
+    };
+    try {
+      step.printName();
     }
-    return err;
+    catch (ROL::Exception::NotImplemented exc) {
+      *outStream << exc.what() << std::endl;
+      thrown++;
+    };
+    try {
+      step.printHeader();
+    }
+    catch (ROL::Exception::NotImplemented exc) {
+      *outStream << exc.what() << std::endl;
+      thrown++;
+    };
+    try {
+      step.print(algo_state,true);
+    }
+    catch (ROL::Exception::NotImplemented exc) {
+      *outStream << exc.what() << std::endl;
+      thrown++;
+    };
+    errorFlag = (thrown==5) ? 0 : 1;
   }
+  catch (std::logic_error err) {
+    *outStream << err.what() << std::endl;
+    errorFlag = -1000;
+  }; // end try
 
-  Real regret(Real x, int deriv = 0) {
-    Real zero(0), one(1);
-    Real X = ((deriv==0) ? x : ((deriv==1) ? one : zero));
-    Real reg = error(x,deriv) + X;
-    return reg;
-  }
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED" << std::endl;
+  else
+    std::cout << "End Result: TEST PASSED" << std::endl;
 
-};
+  return 0;
 
 }
-#endif
+
