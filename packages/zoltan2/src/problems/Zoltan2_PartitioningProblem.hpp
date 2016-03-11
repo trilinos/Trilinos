@@ -186,22 +186,6 @@ public:
     return *(solution_.getRawPtr());
   };
 
-  /*! \brief Returns the imbalance of the solution.
-   *   \param idx If there are multiple weights per object,
-   *      specify the index for which the imbalance
-   *      is desired, ranging from zero to one less then
-   *     number of weights per object.
-   *   Imbalance was only computed if user requested
-   *   metrics with a parameter.
-   *
-  const scalar_t getWeightImbalance(int idx=0) const {
-    scalar_t imb = 0;
-    if (!metrics_.is_null())
-      metrics_->getWeightImbalance(imb, idx);
-
-    return imb;
-    }*/
-
   /*! \brief Get the array of metrics
    *   Metrics were only computed if user requested
    *   metrics with a parameter.
@@ -215,19 +199,6 @@ public:
       return metrics_->getMetrics();
   }
 
-  /*! \brief Get the array of graphMetrics
-   *   Graph metrics were only computed if user requested
-   *   graph metrics with a parameter.
-   *
-  ArrayRCP<const GraphMetricValues<scalar_t> > getGraphMetrics() const {
-    if (metrics_.is_null()){
-      ArrayRCP<const GraphMetricValues<scalar_t> > emptyMetrics;
-      return emptyMetrics;
-    }
-    else
-      return metrics_->getGraphMetrics();
-      }*/
-
   /*! \brief Print the array of metrics
    *   \param os the output stream for the report.
    *   Metrics were only computed if user requested
@@ -239,18 +210,6 @@ public:
     else
       metrics_->printMetrics(os);
   };
-
-  /*! \brief Print the array of metrics
-   *   \param os the output stream for the report.
-   *   Metrics were only computed if user requested
-   *   metrics with a parameter.
-   *
-  void printGraphMetrics(std::ostream &os) const {
-    if (metrics_.is_null())
-      os << "No metrics available." << std::endl;
-    else
-      metrics_->printGraphMetrics(os);
-      };*/
 
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
    *
