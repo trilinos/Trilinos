@@ -69,18 +69,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-IF (NOT TPL_ENABLE_MPI)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   OrderingScotch
   SOURCES orderingScotch.cpp
-  NUM_MPI_PROCS 1
   COMM serial mpi
   ARGS
    "--inputFile=simple"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-ENDIF()
 
 ##########################################
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
