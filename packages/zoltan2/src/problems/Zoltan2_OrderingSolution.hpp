@@ -238,8 +238,8 @@ public:
 
     if (this->haveSeparators()) {
       numBlocks = this->getNumSeparatorBlocks();
-      range = this->getSeparatorRange();
-      tree = this->getSeparatorTree();
+      range = this->getSeparatorRangeView();
+      tree = this->getSeparatorTreeView();
       return true;
     }
 
@@ -294,38 +294,42 @@ public:
     return const_cast<ArrayRCP<lno_t> & > (separatorTree_);
   }
 
-  /*! \brief Get pointer to (local) GIDs.
-   */
- // inline lno_t  *getGids()
- // {
- //   return gids_.getRawPtr();
- // }
-
   /*! \brief Get pointer to (local) permutation.
    *  If inverse = true, return inverse permutation.
    *  By default, perm[i] is where new index i can be found in the old ordering.
-   *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
+   *  When inverse==true, perm[i] is where old index i can be found 
+   *  in the new ordering.
    */
-  inline lno_t *getPermutation(bool inverse = false) const
+  inline lno_t *getPermutationView(bool inverse = false) const
   {
-    if (inverse)
-      return invperm_.getRawPtr();
+    if (perm_size_) {
+      if (inverse)
+        return invperm_.getRawPtr();
+      else
+        return perm_.getRawPtr();
+    }
     else
-      return perm_.getRawPtr();
+      return NULL;
   }
   
   /*! \brief Get pointer to (local) serparator range.
    */
-  inline lno_t *getSeparatorRange() const
+  inline lno_t *getSeparatorRangeView() const
   {
+    // Here, don't need to check perm_size_ before calling getRawPtr.
+    // separatorRange_ always has some length, since it is allocated larger
+    // than other arrays.
     return separatorRange_.getRawPtr();
   }
 
   /*! \brief Get pointer to (local) serparator tree.
    */
-  inline lno_t *getSeparatorTree() const
+  inline lno_t *getSeparatorTreeView() const
   {
-    return separatorTree_.getRawPtr();
+    if (perm_size_)
+      return separatorTree_.getRawPtr();
+    else
+      return NULL;
   }
   
   /*! \brief Get reference to (local) separator column block.
@@ -339,7 +343,6 @@ protected:
   // Ordering solution consists of permutation vector(s).
   // Either perm or invperm should be computed by the algorithm.
   size_t perm_size_;
-  // BDD ArrayRCP<lno_t>  gids_; // TODO: Remove?
   // For now, assume permutations are local. Revisit later (e.g., for Scotch)
   bool havePerm_;           // has perm_ been computed yet?
   bool haveInverse_;        // has invperm_ been computed yet?

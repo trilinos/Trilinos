@@ -90,7 +90,7 @@ class AlgNatural : public Algorithm<Adapter>
 
     // Set identity permutation.
     const size_t n = model->getLocalNumIdentifiers();
-    lno_t *perm = solution->getPermutation();
+    lno_t *perm = solution->getPermutationView();
     if (perm){
       for (size_t i=0; i<n; i++){
         perm[i] = i;

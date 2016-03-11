@@ -773,10 +773,10 @@ int AlgPTScotch<Adapter>::order(
   SCOTCH_Num *treetab;  // separator tree
 
   if (TPL_Traits<lno_t, SCOTCH_Num>::OK_TO_CAST()) {
-    permtab = reinterpret_cast<SCOTCH_Num*>(solution->getPermutation(false));
-    peritab = reinterpret_cast<SCOTCH_Num*>(solution->getPermutation(true));
-    rangetab = reinterpret_cast<SCOTCH_Num*>(solution->getSeparatorRange());
-    treetab = reinterpret_cast<SCOTCH_Num*>(solution->getSeparatorTree());
+    permtab = reinterpret_cast<SCOTCH_Num*>(solution->getPermutationView(false));
+    peritab = reinterpret_cast<SCOTCH_Num*>(solution->getPermutationView(true));
+    rangetab = reinterpret_cast<SCOTCH_Num*>(solution->getSeparatorRangeView());
+    treetab = reinterpret_cast<SCOTCH_Num*>(solution->getSeparatorTreeView());
   }
   else {
     permtab = new SCOTCH_Num[nVtx];

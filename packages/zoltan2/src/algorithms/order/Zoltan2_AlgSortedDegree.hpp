@@ -88,7 +88,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
   
     HELLO;
   
-    lno_t *perm = solution->getPermutation();
+    lno_t *perm = solution->getPermutationView();
     if (perm==0){
       // Throw exception
       std::cerr << "perm is NULL" << std::endl;
