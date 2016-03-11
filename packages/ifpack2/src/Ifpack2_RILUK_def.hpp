@@ -563,15 +563,17 @@ void RILUK<MatrixType>::initialize ()
 
 
 	myBasker = rcp( new BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP>);
-	myBasker->Options.no_pivot   = true;
-	myBasker->Options.transpose  = true; //CRS not CCS
-	myBasker->Options.symmetric  = false;
-	myBasker->Options.realloc    = true;
-	myBasker->Options.btf        = false;
-	myBasker->Options.incomplete = true;
-	myBasker->Options.inc_lvl    = LevelOfFill_;
-	myBasker->Options.user_fill  = basker_user_fill;
+	myBasker->Options.no_pivot     = true;
+	myBasker->Options.transpose    = true; //CRS not CCS
+	myBasker->Options.symmetric    = false;
+	myBasker->Options.realloc      = true;
+	myBasker->Options.btf          = false;
+	myBasker->Options.incomplete   = true;
+	myBasker->Options.inc_lvl      = LevelOfFill_;
+	myBasker->Options.user_fill    = basker_user_fill;
+	myBasker->Options.same_pattern = false;
 	myBasker->SetThreads(basker_threads);
+	basker_reuse = false;
 	
 	Teuchos::ArrayRCP<const size_t> r_ptr;
 	Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
@@ -591,6 +593,13 @@ void RILUK<MatrixType>::initialize ()
 	  (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
 	  (const_cast<scalar_type *>(val.getRawPtr()))
 			   );
+
+
+	/*
+	std::cout << "TEST SYM NNZ: " 
+		  << A_local_crs_->getNodeNumEntries()
+		  << std::endl;
+	*/
 
 	TEUCHOS_TEST_FOR_EXCEPTION(
         basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
@@ -939,10 +948,56 @@ void RILUK<MatrixType>::compute ()
   } 
   else{
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
-    //Teuchos::Time timerbasker ("RILUK::basercompute");
+    Teuchos::Time timerbasker ("RILUK::basercompute");
     {
-      //Teuchos::TimeMonitor timeMon(timerbasker);
-    myBasker->Factor_Inc(0);
+      //
+      if(basker_reuse == false)
+	{
+	  //We don't have to reimport Matrix because same
+	  {
+	    //Teuchos::TimeMonitor timeMon(timerbasker);
+	    myBasker->Factor_Inc(0);
+	    basker_reuse = true;
+	  }
+	}
+      else
+	{
+	  //Do we need to import Matrix with file again?
+	  myBasker->Options.same_pattern = true;
+	  Teuchos::ArrayRCP<const size_t> r_ptr;
+	  Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
+	  Teuchos::ArrayRCP<const scalar_type>         val;
+	  A_local_crs_->getAllValues(r_ptr, c_idx, val);
+	  Teuchos::ArrayRCP<local_ordinal_type> 
+	    rl_ptr(r_ptr.size()+1);
+        
+	  for(int btemp = 0; btemp < r_ptr.size(); btemp++)
+	    rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
+
+	  {
+	    //Teuchos::TimeMonitor timeMon(timerbasker);
+	  int basker_error = 
+	    myBasker->Factor(
+	 ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
+	 ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
+	 ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
+	 (rl_ptr.getRawPtr()),
+	 (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
+	 (const_cast<scalar_type *>(val.getRawPtr()))
+			   );
+
+	  /*
+	  std::cout << "numeric nnz: "
+		    << A_local_crs_->getNodeNumEntries()
+	  	    << std::endl;
+	  */
+
+	TEUCHOS_TEST_FOR_EXCEPTION(
+        basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
+	 "Error in basker compute");
+	  }
+
+	}
     }
     //std::cout << "Basker compute time " 
     //	      << timerbasker.totalElapsedTime ()

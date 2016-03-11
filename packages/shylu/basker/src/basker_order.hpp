@@ -357,9 +357,11 @@ namespace BaskerNS
 	//Comeback
         #endif
 	
+	/*
 	printf("===PRINT==\n");
 	printMTX("BTF_A.mtx", BTF_A); 
-	
+	*/
+
       }//if btf_tab_offset == 0
 
     

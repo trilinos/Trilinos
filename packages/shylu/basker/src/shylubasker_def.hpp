@@ -471,6 +471,7 @@ namespace BaskerNS
       }
     //printf("before notoken\n");
 
+    //Kokkos::Impl::Timer timer;
    
 
     if(Options.incomplete == BASKER_FALSE)    
@@ -486,6 +487,11 @@ namespace BaskerNS
 	return BASKER_ERROR;
       }
 
+    /*
+    std::cout << "Raw Factor Time: "
+	      << timer.seconds()
+	      << std::endl;
+    */
     
     //DEBUG_PRINT();
 

@@ -2731,15 +2731,17 @@ namespace BaskerNS
 
    
 
-    /*
+   
     Int *color =   &(ws(0));
     Int *pattern = &(color[ws_size]);
     Int *stack   = &(pattern[ws_size]); //Temp store the fill-in
-    */
+    
     //For Debug
+    /*
     auto color = Kokkos::subview(ws, std::make_pair((Int)0,ws_size));
     auto pattern = Kokkos::subview(ws, std::make_pair(ws_size,2*ws_size));
     auto stack = Kokkos::subview(ws, std::make_pair(2*ws_size, 3*ws_size));
+    */
 
     #ifdef BASKER_DEBUG_NFACTOR_BlK_INC
     printf("\n\n===============DEBUG FILL AT SPMV========\n\n");
