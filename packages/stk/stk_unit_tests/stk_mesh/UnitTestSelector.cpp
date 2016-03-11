@@ -628,7 +628,7 @@ TEST(Verify, selectorAlgorithmicComplexity)
 
     relative_factor = std::abs(expectedFactor-factor)/expectedFactor;
     std::cout <<" relative_factor= " << relative_factor << "\n";
-    EXPECT_TRUE( relative_factor < 0.40);
+    EXPECT_TRUE( relative_factor < 0.60);
 }
 
 TEST(Verify, usingSelectField)
