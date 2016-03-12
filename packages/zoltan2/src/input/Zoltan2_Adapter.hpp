@@ -122,17 +122,24 @@ public:
   /*! \brief Returns the number of weights per object.
    *   Number of weights per object should be zero or greater.  If
    *   zero, then it is assumed that all objects are equally weighted.
+   *   Default is zero weights per ID.
    */ 
-  virtual int getNumWeightsPerID() const = 0;
+  virtual int getNumWeightsPerID() const { return 0;};
 
   /*! \brief Provide pointer to a weight array with stride.
    *    \param wgt on return a pointer to the weights for this idx
    *    \param stride on return, the value such that
    *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
    *    \param idx  the weight index, zero or greater
+   *   This function must be implemented in derived adapter if
+   *   getNumWeightsPerID > 0.
+   *   This function should not be called if getNumWeightsPerID is zero.
    */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
-                              int idx = 0) const = 0;
+                              int idx = 0) const 
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+  }
 
   /*! \brief Provide pointer to an array containing the input part 
    *         assignment for each ID.
