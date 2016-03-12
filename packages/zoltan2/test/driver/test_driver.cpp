@@ -249,9 +249,10 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   
   comparison_source->timers["solve time"]->start();
+  RCP<EvaluatePartition<basic_id_t> >metricObject;
   if (problem_kind == "partitioning") {
     reinterpret_cast<partitioning_problem_t *>(problem)->solve();
-    RCP<EvaluatePartition<basic_id_t> >metricObject =
+    metricObject =
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
 	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>(problem),
 			       adapter_name, ia));
