@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   try {
 
     Objective_Rosenbrock_AF<RealT, ElementT> obj;
-    int dim = 100; // Set problem dimension. Must be even.
+    int dim = 10000; // Set problem dimension. Must be even.
 
     // Set parameters.
     std::string filename;
@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
 
     // Run Algorithm
     algo.run(x, obj, true, *outStream);
+    //af_print(*x_rcp);
 
   }
   catch (std::logic_error err) {

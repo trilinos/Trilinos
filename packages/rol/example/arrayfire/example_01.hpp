@@ -91,14 +91,23 @@ public:
     ROL::ArrayFireVector<Real, Element> &eg = dynamic_cast<ROL::ArrayFireVector<Real, Element>&>(g);
     Teuchos::RCP<const af::array> afx = ex.getVector();
     Teuchos::RCP<af::array> afg = eg.getVector();
-    dim_t n = afx->dims(0);
 
     Element one(1), two(2), four(4);
 
+    // Vectorized implementation.
+    (*afg)(af::seq(0, af::end, 2), 2) =  four * alpha_ * (*afx)(af::seq(0, af::end, 2)) *
+                                                         ( af::pow((*afx)(af::seq(0, af::end, 2)), 2) - (*afx)(af::seq(1, af::end, 2)) ) +
+                                         two * ( (*afx)(af::seq(0, af::end, 2)) - one );
+    (*afg)(af::seq(1, af::end, 2), 2) = -two * alpha_ *  ( af::pow((*afx)(af::seq(0, af::end, 2)), 2) - (*afx)(af::seq(1, af::end, 2)) );
+
+    /*
+    // Componentwise implementation.
+    dim_t n = afx->dims(0);
     for (dim_t i = 0; i<n/2; i++) {
       (*afg)(2 * i) = four*alpha_*(af::pow((*afx)(2 * i), 2) - (*afx)(2 * i + 1))*(*afx)(2 * i) + two*((*afx)(2 * i) - one);
       (*afg)(2 * i + 1) = -two*alpha_*(af::pow((*afx)(2 * i), 2) - (*afx)(2 * i + 1));
     }
+    */
   }
 
 #if USE_HESSVEC
