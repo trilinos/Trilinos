@@ -251,6 +251,10 @@ void run(const UserInputForTests &uinput,
   comparison_source->timers["solve time"]->start();
   if (problem_kind == "partitioning") {
     reinterpret_cast<partitioning_problem_t *>(problem)->solve();
+    RCP<EvaluatePartition<basic_id_t> >metricObject =
+      rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
+	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>(problem),
+			       adapter_name, ia));
   } else if (problem_kind == "ordering") {
     reinterpret_cast<ordering_problem_t *>(problem)->solve();
   } else if (problem_kind == "coloring") {

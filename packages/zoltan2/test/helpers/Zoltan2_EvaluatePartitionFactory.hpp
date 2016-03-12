@@ -49,4 +49,24 @@
 */
 #ifndef ZOLTAN2_EVALUATE_PARTITION_FACTORY_HPP
 #define ZOLTAN2_EVALUATE_PARTITION_FACTORY_HPP
+namespace Zoltan2_TestingFramework {
+///brief EvaluatePartitionFActory class contains 1 static factory method
+  class EvaluatePartitionFactory {
+  public:
+
+    /// \brief Zoltan2::EvaluatePartition factory method
+    ///
+    /// @param problem partitioning problem
+    /// @param adapter_name a string equal to the type of the adapter
+    /// @param input Input adapter used to construct the partitioning problem
+    ///
+    /// @return returns a pointer to new Zoltan2::EvaluatePartition or a nullptr if adapter type was not known.
+    static EvaluatePartition<basic_id_t>*newEvaluatePartition(partitioning_problem_t*problem,
+							      const std::string&adapter_name,
+							      base_adapter_t* input)
+    {
+      return nullptr; // adapter type not known
+    }
+  };
+}
 #endif // ZOLTAN2_EVALUATE_PARTITION_FACTORY_HPP
