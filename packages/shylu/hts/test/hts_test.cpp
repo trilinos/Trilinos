@@ -9,15 +9,22 @@
 #include <algorithm>
 #include <limits>
 
+#include <complex>
+
 #include <omp.h>
 
 #include "hts_test_util.hpp"
 
 namespace Experimental {
 namespace htsimpl {
-template<typename Int, typename Size, typename Real> class Tester {
-  typedef HTS<Int, Size, Real> ihts;
-  typedef util<Int, Size, Real> ut;
+template <typename T> bool is_complex () { return false; }
+template <> bool is_complex<std::complex<double> >() { return true; }
+template <> bool is_complex<std::complex<float> >() { return true; }
+
+template<typename Int, typename Size, typename Sclr> class Tester {
+  typedef HTS<Int, Size, Sclr> ihts;
+  typedef typename ihts::Real Real;
+  typedef util<Int, Size, Sclr> ut;
   typedef typename ut::TestOptions TestOptions;
   typedef typename ut::Data Data;
 
@@ -61,41 +68,47 @@ template<typename Int, typename Size, typename Real> class Tester {
     int nerr = 0;
 
     const Int max_nrhs = 3;
+    const Real tol = std::numeric_limits<Real>::epsilon()*1e6;
 
     // Generate matrix data.
     Data d;
+    Size nnz;
     {
       ut::gen_tri_matrix(to, d);     // triangle
+      nnz = d.ir.back();
       ut::gen_rand_perm(d.m, d.p);   // row permutation vector
       ut::gen_rand_perm(d.m, d.q);   // col permutation vector
       ut::gen_rand_vector(d.m, d.r); // row scaling
     }
 
     const Int ldb = d.m + 3, ldx = d.m + 4;
-    std::vector<Real> b(ldb*max_nrhs), xt(d.m*max_nrhs), x(ldx*max_nrhs);
+    std::vector<Sclr> b(ldb*max_nrhs), xt(d.m*max_nrhs), x(ldx*max_nrhs);
     {
       // True x.
       ut::gen_rand_vector(xt.size(), xt);
       // Generate the rhs b.
       for (Int irhs = 0; irhs < max_nrhs; ++irhs) {
-        const Real* const xtp = xt.data() + irhs*d.m;
-        Real* const bp = b.data() + irhs*ldb;
-        std::vector<Real> y(d.m);
+        const Sclr* const xtp = xt.data() + irhs*d.m;
+        Sclr* const bp = b.data() + irhs*ldb;
+        std::vector<Sclr> y(d.m);
         for (Int i = 0; i < d.m; ++i)
           x[i] = xtp[d.q[i]];
-        ut::mvp(d, to.transpose, x.data(), y.data());
+        ut::mvp(d, to.transpose, to.conjugate, x.data(), y.data());
         for (Int i = 0; i < d.m; ++i)
           bp[d.p[i]] = y[i];
         for (Int i = 0; i < d.m; ++i)
           bp[i] *= d.r[i];
       }
     }
+    std::vector<Sclr> bo(b);
 
     typename ihts::CrsMatrix* T;
     typename ihts::Options opts;
     {
       T = ihts::make_CrsMatrix(d.m, d.ir.data(), d.jc.data(), d.v.data(),
-                               to.transpose);
+                               to.transpose, to.conjugate);
+      if ( ! to.reprocess && to.nthreads > 1)
+        ihts::register_Deallocator(T, &d);
       if (to.solve_type == TestOptions::ls_only)
         ihts::set_level_schedule_only(opts);
       else if (to.solve_type == TestOptions::rb_only)
@@ -130,8 +143,9 @@ template<typename Int, typename Size, typename Real> class Tester {
       if (print_options)
         ihts::print_options(impl, std::cout);
       if (to.reprocess) {
-        // This isn't necessary since we aren't changing the numbers, but pretend
-        // we are to test the numerical phase. Do it 3 times to test idempotency.
+        // This isn't necessary since we aren't changing the numbers, but
+        // pretend we are to test the numerical phase. Do it 3 times to test
+        // idempotency.
         for (int rep = 0; rep < 3; ++rep)
           ihts::reprocess_numeric(impl, T, d.r.data());
       }
@@ -139,19 +153,56 @@ template<typename Int, typename Size, typename Real> class Tester {
       ihts::reset_max_nrhs(impl, max_nrhs);
       if (ihts::is_lower_tri(impl) &&
           ((to.upper && ! to.transpose) || ( ! to.upper && to.transpose)) &&
-          d.m > 1 && d.ir.back() > static_cast<Size>(d.m) /* not diag */)
+          d.m > 1 && nnz > static_cast<Size>(d.m) /* not diag */)
         ++nerr;
-      for (int rep = 0; rep < 3; ++rep)
-        ihts::solve_omp(impl, b.data(), to.nrhs, x.data(), ldb, ldx);
+      for (int slv = 0; slv < 2; ++slv) {
+        // Check each solve interface.
+        switch (slv) {
+        case 0:
+          ihts::solve_omp(impl, b.data(), to.nrhs, x.data(), ldb, ldx);
+          break;
+        case 1:
+          ihts::solve_omp(impl, b.data(), to.nrhs, x.data(), 0.0,  1.0,
+                          ldb, ldx);
+          ihts::solve_omp(impl, b.data(), to.nrhs, x.data(), 2.0, -1.0,
+                          ldb, ldx);
+          break;
+        case 2:
+          ihts::solve_omp(impl, b.data(), to.nrhs, ldb);
+          break;
+        }
+        double rd = 0;
+        for (Int i = 0; i < to.nrhs; ++i)
+          rd = std::max(
+            rd, ut::reldif(xt.data() + i*d.m,
+                           (slv == 2 ? b.data() + i*ldb : x.data() + i*ldx),
+                           d.m));
+        if (slv == 2) b = bo;
+        if (rd >= tol) {
+          ++nerr;
+          if (to.verbose) std::cout << "rd " << slv << ": " << rd << "\n";
+        }
+      }
       ihts::delete_Impl(impl);
-      double rd = 0;
-      for (Int i = 0; i < to.nrhs; ++i)
-        rd = std::max(rd, ut::reldif(xt.data() + i*d.m, x.data() + i*ldx, d.m));
-      if (rd >= std::numeric_limits<Real>::epsilon()*1e6) {
+    }
+
+    if (to.nthreads == 1) {
+      std::vector<Sclr> xb(d.m*to.nrhs), w(d.m);
+      for (Int irhs = 0; irhs < to.nrhs; ++irhs) {
+        const Sclr* const bp = b.data() + irhs*ldb;
+        Sclr* const xbp = xb.data() + irhs*d.m;
+        for (Int i = 0; i < d.m; ++i)
+          xbp[i] = bp[i];
+      }
+      ihts::solve_serial(T, ! to.upper, xb.data(), to.nrhs, d.p.data(),
+                         d.q.data(), d.r.data(), w.data());
+      const double rd = ut::reldif(xt.data(), xb.data(), d.m*to.nrhs);
+      if (rd >= tol) {
         ++nerr;
-        if (to.verbose) std::cout << "rd: " << rd << "\n";
+        if (to.verbose) std::cout << "serial rd: " << rd << "\n";
       }
     }
+
     ihts::delete_CrsMatrix(T);
 
     if (to.verbose) {
@@ -188,14 +239,6 @@ template<typename Int, typename Size, typename Real> class Tester {
 public:
   // Run all the tests.
   static int test (const int verbose) {
-    const bool on_mic =
-#ifdef __MIC__
-      true
-#else
-      false
-#endif
-      ;
-
     int nerr = 0;
 
     // Test that we throw on an unsigned Int.
@@ -213,8 +256,8 @@ public:
     nerr += test_transpose(verbose, 277);
 
     const int ns[] = {1, 2, 11, 300};
-    const int max_nthreads = std::min(on_mic ? 240 : 32, omp_get_max_threads());
-    const int nthreads_step = on_mic ? 11 : 3;
+    const int max_nthreads = omp_get_max_threads();
+    const int nthreads_step = max_nthreads > 40 ? 11 : 3;
 
     TestOptions to;
     to.block_size = 3; // only for block_sparse
@@ -226,8 +269,10 @@ public:
         std::cout << " " << nthreads;
         std::cout.flush();
       }
-      for (int ti = 0; ti < 2; ++ti) {
-        to.transpose = ti;
+      for (int ti = 0; ti < 4; ++ti) {
+        to.transpose = ti % 2;
+        if ( ! is_complex<Sclr>() && ti >= 2) break;
+        if (ti >= 2) to.conjugate = true;
         for (size_t ni = 0; ni < sizeof(ns)/sizeof(*ns); ++ni) {
           to.n = ns[ni];
           for (size_t si = 0; si < TestOptions::n_solve_types; ++si) {
@@ -272,6 +317,10 @@ int main (int argc, char** argv) {
   }
   if (verbose >= 1) std::cout << "<int, int, double>\n";
   int nerr = Experimental::htsimpl::Tester<int, int, double>::test(verbose);
+#ifdef HAVE_SHYLUHTS_COMPLEX
+  if (verbose >= 1) std::cout << "\n<int, size_t, std::complex<double> >\n";
+  nerr += Experimental::htsimpl::Tester<int, size_t, std::complex<double> >::test(verbose);
+#endif
   if (verbose >= 1) std::cout << "\n<short, size_t, float>\n";
   nerr += Experimental::htsimpl::Tester<short, size_t, float>::test(verbose);
   if (verbose >= 1) std::cout << "\n";

@@ -5,13 +5,37 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <complex>
 #include <sys/time.h>
 
 #include "shylu_hts.hpp"
 
 namespace Experimental {
 namespace htsimpl {
-template<typename Int, typename Size, typename Real> struct util {
+static double urand () {
+#if 0 // Not all compilers have this, it seems.
+  static std::default_random_engine generator;
+  static std::uniform_real_distribution<double> distribution(0, 1);
+  return distribution(generator);
+#else
+  return rand() / ((double) RAND_MAX + 1.0);
+#endif
+}
+
+template <typename T> inline T rand_scalar () { return urand() - 0.5; }
+template<> inline std::complex<double> rand_scalar<std::complex<double> > ()
+{ return std::complex<double>(rand_scalar<double>(), rand_scalar<double>()); }
+template<> inline std::complex<float> rand_scalar<std::complex<float> > ()
+{ return std::complex<float>(rand_scalar<float>(), rand_scalar<float>()); }
+
+template <typename T> inline T real_part (const T& v) { return v; }
+template <typename T> inline T real_part (const std::complex<T>& v)
+{ return v.real(); }
+
+template<typename Int, typename Size, typename Sclr> struct util {
+  typedef typename hts::ScalarTraits<Sclr>::Real Real;
+
   // Simple RAII timer.
   class Timer {
     std::string name_;
@@ -34,7 +58,7 @@ template<typename Int, typename Size, typename Real> struct util {
     enum SolveType { hybrid = 0, ls_only, rb_only, n_solve_types };
 
     int n, nthreads, block_size, nrhs;
-    bool reprocess, upper, transpose;
+    bool reprocess, upper, transpose, conjugate;
     int verbose;
     MatrixType matrix_type;
     SolveType solve_type;
@@ -42,44 +66,38 @@ template<typename Int, typename Size, typename Real> struct util {
 
     TestOptions ()
       : n(0), nthreads(1), block_size(1), nrhs(1), reprocess(false),
-        upper(false), transpose(false), verbose(0), matrix_type(sparse),
-        solve_type(hybrid), density(-1)
+        upper(false), transpose(false), conjugate(false), verbose(0),
+        matrix_type(sparse), solve_type(hybrid), density(-1)
     {}
 
     void print (std::ostream& os) const {
       os << "[n " << n << " reprocess " << reprocess << " upper " << upper
          << " matrix_type " << matrix_type << " transpose " << transpose
-         << " solve_type " << solve_type << " nrhs " << nrhs
-         << " nthreads " << nthreads << "]";
+         << " conjugate " << conjugate << " solve_type " << solve_type
+         << " nrhs " << nrhs << " nthreads " << nthreads << "]";
     }
   };
 
-  struct Data {
+  struct Data : public HTS<Int, Size, Sclr>::Deallocator {
     Int m;
     std::vector<Size> ir;
     std::vector<Int> jc, p, q;
-    std::vector<Real> v, r;
+    std::vector<Sclr> v;
+    std::vector<Real> r;
     void clear () {
       m = 0;
       ir.clear(); jc.clear(); v.clear();
       p.clear(); q.clear(); r.clear();
     }
+    virtual void free_CrsMatrix_data () {
+      ir.clear(); jc.clear(); v.clear();
+    }
   };
 
-  static double urand () {
-#if 0 // Not all compilers have this, it seems.
-    static std::default_random_engine generator;
-    static std::uniform_real_distribution<double> distribution(0, 1);
-    return distribution(generator);
-#else
-    return rand() / ((double) RAND_MAX + 1.0);
-#endif
-  }
-
   // Return a random diagonal entry.
-  static double gen_diag () {
-    double diag = urand() - 0.5;
-    diag += (diag > 0 ? 1 : -1);
+  static Sclr gen_diag () {
+    Sclr diag = rand_scalar<Sclr>();
+    diag += (real_part(diag) > 0 ? 1.0 : -1.0);
     return diag;
   }
 
@@ -88,6 +106,13 @@ template<typename Int, typename Size, typename Real> struct util {
     x.resize(n);
     for (size_t i = 0; i < n; ++i)
       x[i] = urand() - 0.5;
+  }
+
+  template <typename T> static void
+  gen_rand_vector (const size_t n, std::vector<std::complex<T> >& x) {
+    x.resize(n);
+    for (size_t i = 0; i < n; ++i)
+      x[i] = rand_scalar<std::complex<T> >();
   }
 
   // Make a random permutation vector.
@@ -111,36 +136,44 @@ template<typename Int, typename Size, typename Real> struct util {
   }
 
   // y = a*x.
-  static void mvp (const Data& a, const bool transp, const Real* const x,
-                   Real* const y) {
+  static void mvp (const Data& a, const bool transp, const bool conj,
+                   const Sclr* const x, Sclr* const y) {
     const Size* const ir = &a.ir[0];
     const Int* const jc = &a.jc[0];
-    const Real* const d = &a.v[0];
+    const Sclr* const d = &a.v[0];
     if (transp) {
       for (Int i = 0; i < a.m; ++i)
         y[i] = 0;
       for (Int i = 0; i < a.m; ++i) {
-        const Real xi = x[i];
+        const Sclr xi = x[i];
         const Size iri = ir[i], irip1 = ir[i+1];
-        for (Size j = iri; j < irip1; ++j)
-          y[jc[j]] += d[j]*xi;
+        for (Size j = iri; j < irip1; ++j) {
+          Sclr dj = d[j];
+          if (conj) conjugate(dj);
+          y[jc[j]] += dj*xi;
+        }
       }
     } else {
       for (Int i = 0; i < a.m; ++i) {
-        Real acc = 0;
+        Sclr acc = 0;
         const Size iri = ir[i], irip1 = ir[i+1];
-        for (Size j = iri; j < irip1; ++j)
-          acc += d[j]*x[jc[j]];
+        for (Size j = iri; j < irip1; ++j) {
+          Sclr dj = d[j];
+          if (conj) conjugate(dj);
+          acc += dj*x[jc[j]];
+        }
         y[i] = acc;
       }
     }
   }
 
   template<typename T> static inline double square (const T& x) { return x*x; }
+  template<typename T> static inline double square (const std::complex<T>& x)
+  { return std::norm(x); }
 
   // norm(a - b, 2)/norm(a, 2).
   static double
-  reldif (const Real* const a, const Real* const b, const Size n) {
+  reldif (const Sclr* const a, const Sclr* const b, const Size n) {
     double num = 0, den = 0;
     for (Size i = 0; i < n; ++i) {
       num += square(a[i] - b[i]);
@@ -170,10 +203,10 @@ template<typename Int, typename Size, typename Real> struct util {
   // p. If p is not specified or is negative, set it to min(1, 20/n).
   static void gen_tri_sparse_matrix (const TestOptions& to, Data& d, double p) {
     if (p < 0) p = std::min(0.4, 20.0/to.n);
-    std::vector<double> row_val;
+    std::vector<Sclr> row_val;
     std::vector<Int> row_col;
     for (int r = 0; r < to.n; ++r) {
-      double diag;
+      Sclr diag;
       {
         // Generate the off-diag row and a diag. Scale the off-diag row to keep
         // the condition number reasonable.
@@ -183,7 +216,7 @@ template<typename Int, typename Size, typename Real> struct util {
         const int base = to.upper ? r + 1 : 0;
         for (int i = 0; i < ntrial; ++i)
           if (urand() < p) {
-            row_val.push_back(urand() - 0.5);
+            row_val.push_back(rand_scalar<Sclr>());
             row_col.push_back(static_cast<Int>(base + i));
           }
         double sum = 0;
@@ -245,7 +278,7 @@ template<typename Int, typename Size, typename Real> struct util {
           const bool on_diag = ((   upper && j == src.ir[sr]) ||
                                 ( ! upper && j == src.ir[sr+1] - 1));
           const Int sc = src.jc[j];
-          const Real val = src.v[j];
+          const Sclr& val = src.v[j];
           const Int
             bcs = on_diag && upper ? br : 0,
             bce = on_diag ? (upper ? blksz : br+1) : blksz;
@@ -257,7 +290,7 @@ template<typename Int, typename Size, typename Real> struct util {
 
             ++dst.ir[dr+1];
             dst.jc[dk] = blksz*sc + bc;
-            dst.v[dk] = val*2*(urand() - 0.5);
+            dst.v[dk] = val*2.0*(urand() - 0.5);
             // Scale the off-diag elements of the on-diag block.
             if (on_diag && bc != br)
               dst.v[dk] *= scale_odb;
@@ -296,21 +329,19 @@ template<typename Int, typename Size, typename Real> struct util {
   }
 
   static void write_matrixmarket (const Data& T, const std::string& filename) {
-    FILE* fid = fopen(filename.c_str(), "w");
-    if ( ! fid) return;
-    fprintf(fid, "%%%%MatrixMarket matrix coordinate real general\n"
-            "%11d %11d %11d\n", (int) T.m, (int) T.m, (int) T.ir[T.m]);
+    std::ofstream f(filename.c_str());
+    if ( ! f.is_open()) return;
+    f << "%%MatrixMarket matrix coordinate real general\n"
+      << T.m << " " << T.m << " " << T.ir[T.m] << "\n";
     for (Int r = 0; r < T.m; ++r)
       for (Size j = T.ir[r]; j < T.ir[r+1]; ++j)
-        fprintf(fid, "%d %d %1.15e\n", static_cast<int>(r+1),
-                static_cast<int>(T.jc[j] + 1), T.v[j]);
-    fclose(fid);
+        f << r+1 << " " << T.jc[j] + 1 << " " << T.v[j] << "\n";
   }
 
   static void transpose (
     const std::vector<Size>& ir, const std::vector<Int>& jc,
-    const std::vector<Real>& d, std::vector<Size>& irt,
-    std::vector<Int>& jct, std::vector<Real>& dt)
+    const std::vector<Sclr>& d, std::vector<Size>& irt,
+    std::vector<Int>& jct, std::vector<Sclr>& dt)
   {
     const Int m = static_cast<Int>(ir.size()) - 1;
     // 1. Count the number of entries in each col.
