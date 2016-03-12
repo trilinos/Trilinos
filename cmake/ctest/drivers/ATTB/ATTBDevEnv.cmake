@@ -7,9 +7,9 @@ IF ("$ENV{ATTB_ENV}" STREQUAL "")
     " in order to make sure that the ATTB env is set up correctly.")
 ENDIF()
 
-MESSAGE("-- Setting compilers and TPL paths for ATTB system ...")
+MESSAGE("-- ATTB: Setting compilers and TPL paths for ATTB system ...")
 
-MESSAGE("-- Zeroing out env var LIBRARY_PATH to avoid problems with CMake not adding lib paths ...")
+MESSAGE("-- ATTB: Zeroing out env var LIBRARY_PATH to avoid problems with CMake not adding lib paths ...")
 SET(ENV{LIBRARY_PATH} "")
 #MESSAGE("-- ENV{LIBRARY_PATH} = $ENV{LIBRARY_PATH}")
 
@@ -42,7 +42,7 @@ SET(MPI_BASE_DIR "$ENV{MPI_ROOT}" CACHE PATH
   "Set in gcc-4.8.4-base-options.cmake")
 
 # Turn on explicit template instantaition by default
-SET(Trilinos_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
+SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
   "Set by default in gcc-4.8.3-base-options.cmake")
 
 # Turn of 'int' as a global ordinal
@@ -87,7 +87,7 @@ SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL
 # Always find and use static libs on this system
 SET(TPL_FIND_SHARED_LIBS OFF CACHE BOOL
   "Set in ATTBDevEnv.cmake")
-SET(Trilinos_LINK_SEARCH_START_STATIC ON  CACHE BOOL
+SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC ON  CACHE BOOL
   "Set in ATTBDevEnv.cmake")
 
 # Disable a bunch of TPLs that are not on this system
@@ -151,5 +151,11 @@ SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
 # Test disables
 #
 
+# See Trilinos #202
 SET(STKUnit_tests_util_parallel_UnitTest_MPI_4_DISABLE ON
+  CACHE BOOL  "Set in ATTBDevEnv.cmake")
+# See Trilinos #211
+SET(TeuchosNumerics_BLAS_ROTG_test_DISABLE ON
+  CACHE BOOL  "Set in ATTBDevEnv.cmake")
+SET(TeuchosNumerics_BLAS_ROTG_test_MPI_1_DISABLE ON
   CACHE BOOL  "Set in ATTBDevEnv.cmake")

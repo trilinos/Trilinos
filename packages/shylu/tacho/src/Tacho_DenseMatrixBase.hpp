@@ -30,7 +30,9 @@ namespace Tacho {
 
     template<typename, typename, typename, typename>
     friend class DenseMatrixBase;
-    
+
+    friend class DenseMatrixTools;
+
   private:                          
     char               _label[Util::LabelSize]; //!< object label
     
@@ -84,7 +86,7 @@ namespace Tacho {
         _a = value_type_array(label, size);
       } else {
         // otherwise initialize it
-        Kokkos::Impl::ViewFill<value_type_array>(_a, value_type());
+        Kokkos::Experimental::Impl::ViewFill<value_type_array>(_a, value_type());
       }
     }
 
@@ -106,7 +108,7 @@ namespace Tacho {
 
     KOKKOS_INLINE_FUNCTION    
     bool isValueArrayNull() const {
-      return _a.is_null();
+      return !_a.dimension_0();
     }
 
     KOKKOS_INLINE_FUNCTION    
@@ -115,7 +117,7 @@ namespace Tacho {
     }
     
     KOKKOS_INLINE_FUNCTION
-    char* Label() const { return _label; }
+    const char* Label() const { return _label; }
     
     KOKKOS_INLINE_FUNCTION
     ordinal_type NumRows() const { return _m; }
@@ -241,12 +243,27 @@ namespace Tacho {
 
     /// ------------------------------------------------------------------
 
+    /// Destructor
+    /// ------------------------------------------------------------------
+    /// Properties:
+    /// - Compile with Device (o),
+    /// - Callable in KokkosFunctors (x)
+    KOKKOS_INLINE_FUNCTION
+    ~DenseMatrixBase() = default;
+
     /// Creationg and mirroring
     /// ------------------------------------------------------------------
     /// Properties: 
     /// - Compile with Device (o), 
     /// - Callable in KokkosFunctors (x) 
-      
+
+    KOKKOS_INLINE_FUNCTION
+    void 
+    create(const ordinal_type m, 
+           const ordinal_type n) {
+      createInternalArrays(m, n);
+    }
+    
     template<typename SpT>
     KOKKOS_INLINE_FUNCTION
     void 
@@ -321,11 +338,11 @@ namespace Tacho {
       return os;
     }
 
-    /// \brief stream operator over-riding.
-    template<typename T0, typename T1, typename T2, typename T3>
-    friend std::ostream& std::operator<<(std::ostream &os, const DenseMatrixBase<T0,T1,T2,T3> &self) {
-      return self.showMe(os);
-    }
+    // /// \brief stream operator over-riding.
+    // template<typename T0, typename T1, typename T2, typename T3>
+    // friend std::ostream& std::operator<<(std::ostream &os, const DenseMatrixBase<T0,T1,T2,T3> &self) {
+    //   return self.showMe(os);
+    // }
 
     /// ------------------------------------------------------------------
   };

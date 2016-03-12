@@ -53,7 +53,7 @@ int main (int argc, char *argv[]) {
     host_space::initialize(nthreads, numa, core_per_numa);
     host_space::print_configuration(std::cout, true);
 
-    r_val = Tacho::exampleDenseMatrixBase<value_type,ordinal_type,size_type,exec_space>
+    r_val = Tacho::exampleDenseMatrixBase<exec_space>
       (mmin, mmax, minc, 
        verbose);
     
