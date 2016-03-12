@@ -62,30 +62,34 @@ public:
 
   QuantileQuadrangle(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
     : ExpectationQuad<Real>(), pf_(pf) {
-    prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
-    eps_  = ((eps > 0.0) ? eps : 1.0);
+    Real zero(0), half(0.5), one(1);
+    prob_ = ((prob >= zero) ? ((prob <= one) ? prob : half) : half);
+    eps_  = ((eps > zero) ? eps : one);
   }
 
   QuantileQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
+    Real zero(0), half(0.5), one(1);
     Teuchos::ParameterList& list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle");
     // Check CVaR inputs
     Real prob = list.get("Confidence Level",0.5);
-    prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
+    prob_ = ((prob >= zero) ? ((prob <= one) ? prob : half) : half);
     // Build plus function
     pf_ = Teuchos::rcp( new PlusFunction<Real>(list) );
-    Real eps = list.get("Smoothing Parameter",1.);
-    eps_ = ((eps > 0.) ? eps : 1.);
+    Real eps = list.get("Smoothing Parameter",one);
+    eps_ = ((eps > zero) ? eps : one);
   }
 
   Real error(Real x, int deriv = 0) {
-    Real err = (prob_/(1.0-prob_))*pf_->evaluate(x,deriv) 
-              + ((deriv%2) ? -1.0 : 1.0)*pf_->evaluate(-x,deriv);
+    Real one(1);
+    Real err = (prob_/(one-prob_))*pf_->evaluate(x,deriv) 
+              + ((deriv%2) ? -one : one)*pf_->evaluate(-x,deriv);
     return err;
   }
 
   Real regret(Real x, int deriv = 0) {
-    Real X = ((deriv==0) ? x : ((deriv==1) ? 1.0 : 0.0));
+    Real zero(0), one(1);
+    Real X = ((deriv==0) ? x : ((deriv==1) ? one : zero));
     Real reg = error(x,deriv) + X;
     return reg;
   }
@@ -93,12 +97,10 @@ public:
   void checkRegret(void) {
     ExpectationQuad<Real>::checkRegret();
     // Check v'(eps)
-    Real x = eps_;
-    Real vx = 0.0, vy = 0.0;
+    Real x = eps_, two(2), p1(0.1), one(1), zero(0);
+    Real vx(0), vy(0);
     Real dv = regret(x,1);
-    Real t = 1.0;
-    Real diff = 0.0;
-    Real err = 0.0;
+    Real t(1), diff(0), err(0);
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(eps) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v'(x)"
@@ -108,7 +110,7 @@ public:
     for (int i = 0; i < 13; i++) {
       vy = regret(x+t,0);
       vx = regret(x-t,0);
-      diff = (vy-vx)/(2.0*t);
+      diff = (vy-vx)/(two*t);
       err = std::abs(diff-dv);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
@@ -116,16 +118,16 @@ public:
                 << std::setw(20) << diff
                 << std::setw(20) << err
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n";
     // check v''(eps) 
-    vx = 0.0;
-    vy = 0.0;
+    vx = zero;
+    vy = zero;
     dv = regret(x,2);
-    t = 1.0;
-    diff = 0.0;
-    err = 0.0;
+    t = one;
+    diff = zero;
+    err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v''(eps) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v''(x)"
@@ -135,7 +137,7 @@ public:
     for (int i = 0; i < 13; i++) {
       vy = regret(x+t,1);
       vx = regret(x-t,1);
-      diff = (vy-vx)/(2.0*t);
+      diff = (vy-vx)/(two*t);
       err = std::abs(diff-dv);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
@@ -143,17 +145,17 @@ public:
                 << std::setw(20) << diff
                 << std::setw(20) << err
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n"; 
     // Check v'(0)
-    x = 0.0;
-    vx = 0.0;
-    vy = 0.0;
+    x = zero;
+    vx = zero;
+    vy = zero;
     dv = regret(x,1);
-    t = 1.0;
-    diff = 0.0;
-    err = 0.0;
+    t = one;
+    diff = zero;
+    err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(0) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v'(x)"
@@ -163,7 +165,7 @@ public:
     for (int i = 0; i < 13; i++) {
       vy = regret(x+t,0);
       vx = regret(x-t,0);
-      diff = (vy-vx)/(2.0*t);
+      diff = (vy-vx)/(two*t);
       err = std::abs(diff-dv);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
@@ -171,16 +173,16 @@ public:
                 << std::setw(20) << diff
                 << std::setw(20) << err
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n";
     // check v''(eps) 
-    vx = 0.0;
-    vy = 0.0;
+    vx = zero;
+    vy = zero;
     dv = regret(x,2);
-    t = 1.0;
-    diff = 0.0;
-    err = 0.0;
+    t = one;
+    diff = zero;
+    err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v''(0) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v''(x)"
@@ -190,7 +192,7 @@ public:
     for (int i = 0; i < 13; i++) {
       vy = regret(x+t,1);
       vx = regret(x-t,1);
-      diff = (vy-vx)/(2.0*t);
+      diff = (vy-vx)/(two*t);
       err = std::abs(diff-dv);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
@@ -198,17 +200,17 @@ public:
                 << std::setw(20) << diff
                 << std::setw(20) << err
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n"; 
     // Check v'(0)
     x = -eps_;
-    vx = 0.0;
-    vy = 0.0;
+    vx = zero;
+    vy = zero;
     dv = regret(x,1);
-    t = 1.0;
-    diff = 0.0;
-    err = 0.0;
+    t = one;
+    diff = zero;
+    err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(-eps) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v'(x)"
@@ -218,7 +220,7 @@ public:
     for (int i = 0; i < 13; i++) {
       vy = regret(x+t,0);
       vx = regret(x-t,0);
-      diff = (vy-vx)/(2.0*t);
+      diff = (vy-vx)/(two*t);
       err = std::abs(diff-dv);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
@@ -226,16 +228,16 @@ public:
                 << std::setw(20) << diff
                 << std::setw(20) << err
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n";
     // check v''(eps) 
-    vx = 0.0;
-    vy = 0.0;
+    vx = zero;
+    vy = zero;
     dv = regret(x,2);
-    t = 1.0;
-    diff = 0.0;
-    err = 0.0;
+    t = one;
+    diff = zero;
+    err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v''(-eps) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v''(x)"
@@ -245,7 +247,7 @@ public:
     for (int i = 0; i < 13; i++) {
       vy = regret(x+t,1);
       vx = regret(x-t,1);
-      diff = (vy-vx)/(2.0*t);
+      diff = (vy-vx)/(two*t);
       err = std::abs(diff-dv);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
@@ -253,7 +255,7 @@ public:
                 << std::setw(20) << diff
                 << std::setw(20) << err
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n"; 
   }

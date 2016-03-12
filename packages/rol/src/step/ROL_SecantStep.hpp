@@ -64,6 +64,7 @@ private:
   ESecant esec_;
   Teuchos::RCP<Vector<Real> > gp_;     ///< Additional vector storage
   int verbosity_;                      ///< Verbosity setting
+  bool computeObj_;
 
 public:
 
@@ -81,9 +82,10 @@ public:
       @param[in]     secant     is a user-defined secant object
   */
   SecantStep( Teuchos::ParameterList &parlist,
-              const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null )
+              const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
+              const bool computeObj = true )
     : Step<Real>(), secant_(secant), esec_(SECANT_USERDEFINED),
-      gp_(Teuchos::null), verbosity_(0) {
+      gp_(Teuchos::null), verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
     // Initialize secant object
@@ -125,7 +127,10 @@ public:
     // Compute new gradient
     gp_->set(*(step_state->gradientVec));
     obj.update(x,true,algo_state.iter);
-    algo_state.value = obj.value(x,tol);
+    if ( computeObj_ ) {
+      algo_state.value = obj.value(x,tol);
+      algo_state.nfval++;
+    }
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

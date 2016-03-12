@@ -85,8 +85,8 @@ private:
     pg_.resize(NumMoments_);
     pg0_.resize(NumMoments_);
     phv_.resize(NumMoments_);
-    pval_.resize(NumMoments_,0.0);
-    pgv_.resize(NumMoments_,0.0);
+    pval_.resize(NumMoments_);
+    pgv_.resize(NumMoments_);
   }
 
 public:
@@ -94,11 +94,12 @@ public:
   MeanDeviationFromTarget( Real target, Real order, Real coeff,
                            Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     // Initialize storage for problem data
     target_.clear(); order_.clear(); coeff_.clear();
     target_.push_back(target);
-    order_.push_back((order < 2.0) ? 2.0 : order);
-    coeff_.push_back((coeff < 0.0) ? 1.0 : coeff);
+    order_.push_back((order < two) ? two : order);
+    coeff_.push_back((coeff < zero) ? one : coeff);
     NumMoments_ = order_.size();
     initialize();
   }
@@ -106,25 +107,27 @@ public:
   MeanDeviationFromTarget( std::vector<Real> &target, std::vector<Real> &order, std::vector<Real> &coeff, 
                            Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     // Initialize storage for problem data
     NumMoments_ = order.size();
     target_.clear(); order_.clear(); coeff_.clear();
     if ( NumMoments_ != target.size() ) {
-      target.resize(NumMoments_,0.0);
+      target.resize(NumMoments_,zero);
     }
     if ( NumMoments_ != coeff.size() ) {
-      coeff.resize(NumMoments_,1.0);
+      coeff.resize(NumMoments_,one);
     }
     for ( uint i = 0; i < NumMoments_; i++ ) {
       target_.push_back(target[i]);
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+      order_.push_back((order[i] < two) ? two : order[i]);
+      coeff_.push_back((coeff[i] < one) ? one : coeff[i]);
     }
     initialize();
   }
 
   MeanDeviationFromTarget( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation From Target");
     // Get data from parameter list
@@ -138,15 +141,15 @@ public:
     NumMoments_ = order.size();
     target_.clear(); order_.clear(); coeff_.clear();
     if ( NumMoments_ != static_cast<uint>(target.size()) ) {
-      target.resize(NumMoments_,0.0);
+      target.resize(NumMoments_,zero);
     }
     if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
-      coeff.resize(NumMoments_,1.0);
+      coeff.resize(NumMoments_,one);
     }
     for ( uint i = 0; i < NumMoments_; i++ ) {
       target_.push_back(target[i]);
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+      order_.push_back((order[i] < two) ? two : order[i]);
+      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
     }
     initialize();
     // Build (approximate) positive function
@@ -159,6 +162,7 @@ public:
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
+    Real zero(0);
     RiskMeasure<Real>::reset(x0,x);
     if (firstReset_) {
       for ( uint p = 0; p < NumMoments_; p++ ) {
@@ -174,7 +178,7 @@ public:
     }
     for ( uint p = 0; p < NumMoments_; p++ ) {
       pg0_[p]->zero(); pg_[p]->zero(); phv_[p]->zero();
-      pval_[p] = 0.0; pgv_[p] = 0.0;
+      pval_[p] = zero; pgv_[p] = zero;
     }
     dualVector1_->zero(); dualVector2_->zero();
     dualVector3_->zero(); dualVector4_->zero();
@@ -188,7 +192,7 @@ public:
   }
   
   void update(const Real val, const Real weight) {
-    Real diff = 0.0, pf0 = 0.0;
+    Real diff(0), pf0(0);
     RiskMeasure<Real>::val_ += weight * val;
     for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val-target_[p];
@@ -198,12 +202,12 @@ public:
   }
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, c = 0.0;
+    Real diff(0), pf0(0), pf1(0), c(0), one(1);
     for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val-target_[p];
       pf0 = positiveFunction_->evaluate(diff,0);
       pf1 = positiveFunction_->evaluate(diff,1);
-      c    = std::pow(pf0,order_[p]-1.0) * pf1;
+      c    = std::pow(pf0,order_[p]-one) * pf1;
       (pg_[p])->axpy(weight * c,g);
       pval_[p] += weight * std::pow(pf0,order_[p]);
     }
@@ -212,18 +216,18 @@ public:
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
               const Real weight) {
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0, p0 = 0.0, p1 = 0.0, p2 = 0.0, c = 0.0;
+    Real diff(0), pf0(0), pf1(0), pf2(0), p0(0), p1(0), p2(0), c(0), one(1), two(2);
     for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val - target_[p];
       pf0 = positiveFunction_->evaluate(diff,0);
       pf1 = positiveFunction_->evaluate(diff,1);
       pf2 = positiveFunction_->evaluate(diff,2);
       p0   = std::pow(pf0,order_[p]);
-      p1   = std::pow(pf0,order_[p]-1.0);
-      p2   = std::pow(pf0,order_[p]-2.0);
-      c    = -(order_[p]-1.0)*p1*pf1;
+      p1   = std::pow(pf0,order_[p]-one);
+      p2   = std::pow(pf0,order_[p]-two);
+      c    = -(order_[p]-one)*p1*pf1;
       pg0_[p]->axpy(weight*c,g);
-      c    = gv*((order_[p]-1.0)*p2*pf1*pf1 + p1*pf2);
+      c    = gv*((order_[p]-one)*p2*pf1*pf1 + p1*pf2);
       pg_[p]->axpy(weight*c,g);
       c    = p1*pf1;
       phv_[p]->axpy(weight*c,hv);
@@ -234,27 +238,27 @@ public:
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
-    Real val = RiskMeasure<Real>::val_;
-    Real dev = 0.0;
+    Real val = RiskMeasure<Real>::val_, dev(0), one(1);
     sampler.sumAll(&val,&dev,1);
     std::vector<Real> pval_sum(NumMoments_);
     sampler.sumAll(&(pval_)[0],&pval_sum[0],NumMoments_);
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      dev += coeff_[p] * std::pow(pval_sum[p],1.0/order_[p]);
+      dev += coeff_[p] * std::pow(pval_sum[p],one/order_[p]);
     }
     return dev;
   }
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
+    Real zero(0), one(1);
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector1_);
     std::vector<Real> pval_sum(NumMoments_);
     sampler.sumAll(&(pval_)[0],&pval_sum[0],NumMoments_);
     Teuchos::RCP<Vector<Real> > pg;
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      if ( pval_sum[p] > 0.0 ) {
+      if ( pval_sum[p] > zero ) {
         pg = (pg_[p])->clone();
         sampler.sumAll(*(pg_[p]),*pg);
-        dualVector1_->axpy(coeff_[p]/std::pow(pval_sum[p],1.0-1.0/order_[p]),*pg);
+        dualVector1_->axpy(coeff_[p]/std::pow(pval_sum[p],one-one/order_[p]),*pg);
       }
     }
     // Set RiskVector
@@ -262,20 +266,21 @@ public:
   }
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
+    Real zero(0), one(1), two(2);
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector1_);
     std::vector<Real> pval_sum(NumMoments_);
     sampler.sumAll(&(pval_)[0],&pval_sum[0],NumMoments_);
     std::vector<Real> pgv_sum(NumMoments_);
     sampler.sumAll(&(pgv_)[0],&pgv_sum[0],NumMoments_);
-    Real c = 0.0;
+    Real c(0);
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      if ( pval_sum[p] > 0.0 ) {
+      if ( pval_sum[p] > zero ) {
         sampler.sumAll(*(pg_[p]),*dualVector2_);
         sampler.sumAll(*(pg0_[p]),*dualVector3_);
         sampler.sumAll(*(phv_[p]),*dualVector4_);
-        c = coeff_[p]*(pgv_sum[p]/std::pow(pval_sum[p],2.0-1.0/order_[p]));
+        c = coeff_[p]*(pgv_sum[p]/std::pow(pval_sum[p],two-one/order_[p]));
         dualVector1_->axpy(c,*dualVector3_);
-        c = coeff_[p]/std::pow(pval_sum[p],1.0-1.0/order_[p]);
+        c = coeff_[p]/std::pow(pval_sum[p],one-one/order_[p]);
         dualVector1_->axpy(c,*dualVector2_);
         dualVector1_->axpy(c,*dualVector4_);
       }

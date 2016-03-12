@@ -156,6 +156,8 @@ private:
   bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
 
   int verbosity_;
+  bool computeObj_;
+  Real fval_;
 
   Teuchos::ParameterList parlist_;
 
@@ -208,13 +210,15 @@ public:
     : Step<Real>(), desc_(Teuchos::null), secant_(secant),
       krylov_(krylov), nlcg_(nlcg), lineSearch_(lineSearch),
       els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
-      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
+      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), computeObj_(true),
+      fval_(0), parlist_(parlist) {
     // Parse parameter list
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
     acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     verbosity_ = Glist.get("Print Verbosity",0);
+    computeObj_ = Glist.get("Recompute Objective Function",true);
     // Initialize Line Search
     if (lineSearch_ == Teuchos::null) {
       els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
@@ -222,123 +226,37 @@ public:
     }
   }
 
-//  /** \brief Constructor.
-//
-//      Standard constructor to build a LineSearchStep object.  Algorithmic 
-//      specifications are passed in through a Teuchos::ParameterList.
-//
-//      @param[in]     lineSearch is a user-defined line search object
-//      @param[in]     parlist    is a parameter list containing algorithmic specifications
-//  */
-//  LineSearchStep( Teuchos::ParameterList &parlist,
-//                  const Teuchos::RCP<LineSearch<Real> > &lineSearch )
-//    : Step<Real>(), desc_(Teuchos::null), secant_(Teuchos::null),
-//      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(lineSearch),
-//      els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
-//      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
-//    // Parse parameter list
-//    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-//    Teuchos::ParameterList& Glist = parlist.sublist("General");
-//    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-//    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-//    verbosity_ = Glist.get("Print Verbosity",0);
-//  }
-//
-//  /** \brief Constructor.
-//
-//      Constructor to build a LineSearchStep object with a user-defined 
-//      secant object.  Algorithmic specifications are passed in through 
-//      a Teuchos::ParameterList.
-//
-//      @param[in]     secant     is a user-defined secant object
-//      @param[in]     parlist    is a parameter list containing algorithmic specifications
-//  */
-//  LineSearchStep( Teuchos::ParameterList &parlist,
-//                  const Teuchos::RCP<Secant<Real> > &secant )
-//    : Step<Real>(), desc_(Teuchos::null), secant_(secant),
-//      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
-//      els_(LINESEARCH_BACKTRACKING), econd_(CURVATURECONDITION_WOLFE),
-//      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
-//    // Parse parameter list
-//    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-//    Teuchos::ParameterList& Glist = parlist.sublist("General");
-//    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
-//    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-//    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-//    verbosity_ = Glist.get("Print Verbosity",0);
-//    // Initialize Line Search
-//    lineSearch_ = LineSearchFactory<Real>(parlist);
-//  }
-//
-//  /** \brief Constructor.
-//
-//      Standard constructor to build a LineSearchStep object.  Algorithmic 
-//      specifications are passed in through a Teuchos::ParameterList.
-//
-//      @param[in]     krylov     is a user-defined Krylov object
-//      @param[in]     parlist    is a parameter list containing algorithmic specifications
-//  */
-//  LineSearchStep( Teuchos::ParameterList &parlist,
-//                  const Teuchos::RCP<Krylov<Real> > &krylov )
-//    : Step<Real>(), desc_(Teuchos::null), secant_(Teuchos::null),
-//      krylov_(krylov), nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
-//      els_(LINESEARCH_BACKTRACKING), econd_(CURVATURECONDITION_WOLFE),
-//      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
-//    // Parse parameter list
-//    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-//    Teuchos::ParameterList& Glist = parlist.sublist("General");
-//    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
-//    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-//    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false);
-//    verbosity_ = Glist.get("Print Verbosity",0);
-//    // Initialize Line Search
-//    lineSearch_ = LineSearchFactory<Real>(parlist);
-//  }
-//
-//  /** \brief Constructor.
-//
-//      Constructor to build a LineSearchStep object with a user-defined 
-//      secant object.  Algorithmic specifications are passed in through 
-//      a Teuchos::ParameterList.
-//
-//      @param[in]     lineSearch is a user-defined line search object
-//      @param[in]     secant     is a user-defined secant object
-//      @param[in]     parlist    is a parameter list containing algorithmic specifications
-//  */
-//  LineSearchStep( Teuchos::ParameterList &parlist,
-//                  const Teuchos::RCP<LineSearch<Real> > &lineSearch,
-//                  const Teuchos::RCP<Secant<Real> > &secant )
-//    : Step<Real>(), desc_(Teuchos::null), secant_(secant),
-//      krylov_(Teuchos::null), nlcg_(Teuchos::null), lineSearch_(lineSearch),
-//      els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
-//      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), parlist_(parlist) {
-//    // Parse parameter list
-//    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-//    Teuchos::ParameterList& Glist = parlist.sublist("General");
-//    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-//    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false);
-//    verbosity_ = Glist.get("Print Verbosity",0);
-//  }
-
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
                    Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                    AlgorithmState<Real> &algo_state ) {
     d_ = x.clone();
 
     // Initialize unglobalized step
-    EDescent edesc = StringToEDescent(parlist_.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Quasi-Newton Method") );
+    Teuchos::ParameterList& list
+      = parlist_.sublist("Step").sublist("Line Search").sublist("Descent Method");
+    EDescent edesc = StringToEDescent(list.get("Type","Quasi-Newton Method") );
     if (bnd.isActivated()) {
       switch(edesc) {
-        case DESCENT_STEEPEST:
-          desc_ = Teuchos::rcp(new GradientStep<Real>(parlist_));                              break;
-        case DESCENT_NONLINEARCG:
-          desc_ = Teuchos::rcp(new NonlinearCGStep<Real>(parlist_,nlcg_));                     break;
-        case DESCENT_SECANT:
-          desc_ = Teuchos::rcp(new ProjectedSecantStep<Real>(parlist_,secant_));               break;
-        case DESCENT_NEWTON:
-          desc_ = Teuchos::rcp(new ProjectedNewtonStep<Real>(parlist_));                       break;
-        case DESCENT_NEWTONKRYLOV:
-          desc_ = Teuchos::rcp(new ProjectedNewtonKrylovStep<Real>(parlist_,krylov_,secant_)); break;
+        case DESCENT_STEEPEST: {
+          desc_ = Teuchos::rcp(new GradientStep<Real>(parlist_,computeObj_));
+          break;
+        }
+        case DESCENT_NONLINEARCG: {
+          desc_ = Teuchos::rcp(new NonlinearCGStep<Real>(parlist_,nlcg_,computeObj_));
+          break;
+        }
+        case DESCENT_SECANT: {
+          desc_ = Teuchos::rcp(new ProjectedSecantStep<Real>(parlist_,secant_,computeObj_));
+          break;
+        }
+        case DESCENT_NEWTON: {
+          desc_ = Teuchos::rcp(new ProjectedNewtonStep<Real>(parlist_,computeObj_));
+          break;
+        }
+        case DESCENT_NEWTONKRYLOV: {
+          desc_ = Teuchos::rcp(new ProjectedNewtonKrylovStep<Real>(parlist_,krylov_,secant_,computeObj_));
+          break;
+        }
         default:
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
@@ -346,16 +264,26 @@ public:
     }
     else {
       switch(edesc) {
-        case DESCENT_STEEPEST:
-          desc_ = Teuchos::rcp(new GradientStep<Real>(parlist_));                     break;
-        case DESCENT_NONLINEARCG:
-          desc_ = Teuchos::rcp(new NonlinearCGStep<Real>(parlist_,nlcg_));            break;
-        case DESCENT_SECANT:
-          desc_ = Teuchos::rcp(new SecantStep<Real>(parlist_,secant_));               break;
-        case DESCENT_NEWTON:
-          desc_ = Teuchos::rcp(new NewtonStep<Real>(parlist_));                       break;
-        case DESCENT_NEWTONKRYLOV:
-          desc_ = Teuchos::rcp(new NewtonKrylovStep<Real>(parlist_,krylov_,secant_)); break;
+        case DESCENT_STEEPEST: {
+          desc_ = Teuchos::rcp(new GradientStep<Real>(parlist_,computeObj_));
+          break;
+        }
+        case DESCENT_NONLINEARCG: {
+          desc_ = Teuchos::rcp(new NonlinearCGStep<Real>(parlist_,nlcg_,computeObj_));
+          break;
+        }
+        case DESCENT_SECANT: {
+          desc_ = Teuchos::rcp(new SecantStep<Real>(parlist_,secant_,computeObj_));
+          break;
+        }
+        case DESCENT_NEWTON: {
+          desc_ = Teuchos::rcp(new NewtonStep<Real>(parlist_,computeObj_));
+          break;
+        }
+        case DESCENT_NEWTONKRYLOV: {
+          desc_ = Teuchos::rcp(new NewtonKrylovStep<Real>(parlist_,krylov_,secant_,computeObj_));
+          break;
+        }
         default:
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
@@ -401,18 +329,15 @@ public:
 
     // Perform line search
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    Real fnew = algo_state.value;
+    fval_ = algo_state.value;
     ls_nfval_ = 0; ls_ngrad_ = 0;
     lineSearch_->setData(algo_state.gnorm,*(desc_state->gradientVec));
-    lineSearch_->run(step_state->searchSize,fnew,ls_nfval_,ls_ngrad_,gs,s,x,obj,bnd);
-    algo_state.nfval += ls_nfval_;
-    algo_state.ngrad += ls_ngrad_;
+    lineSearch_->run(step_state->searchSize,fval_,ls_nfval_,ls_ngrad_,gs,s,x,obj,bnd);
 
     // Make correction if maximum function evaluations reached
     if(!acceptLastAlpha_) {  
-      lineSearch_->setMaxitUpdate(step_state->searchSize,fnew,algo_state.value);
+      lineSearch_->setMaxitUpdate(step_state->searchSize,fval_,algo_state.value);
     }
-    algo_state.value = fnew;
 
     // Compute scaled descent direction
     s.scale(step_state->searchSize);
@@ -432,7 +357,12 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s,
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
+    algo_state.nfval += ls_nfval_;
+    algo_state.ngrad += ls_ngrad_;
     desc_->update(x,s,obj,bnd,algo_state);
+    if ( !computeObj_ ) {
+      algo_state.value = fval_;
+    }
   }
 
   /** \brief Print iterate header.

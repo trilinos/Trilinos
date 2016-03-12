@@ -60,7 +60,8 @@ template <class Real>
 class GradientStep : public Step<Real> {
 private:
 
-  int verbosity_; ///< Verbosity setting
+  int verbosity_;         ///< Verbosity setting
+  const bool computeObj_; ///< Allows line search to compute objective
 
 public:
 
@@ -75,8 +76,8 @@ public:
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  GradientStep( Teuchos::ParameterList &parlist )
-    : Step<Real>(), verbosity_(0) {
+  GradientStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+    : Step<Real>(), verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
@@ -105,7 +106,10 @@ public:
 
     // Compute new gradient
     obj.update(x,true,algo_state.iter);
-    algo_state.value = obj.value(x,tol);
+    if ( computeObj_ ) {
+      algo_state.value = obj.value(x,tol);
+      algo_state.nfval++;
+    }
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

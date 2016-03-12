@@ -67,20 +67,22 @@ private:
 public:
 
   CVaR( Real prob, Real coeff, Teuchos::RCP<PlusFunction<Real> > &pf )
-    : RiskMeasure<Real>(), plusFunction_(pf), xvar_(0.0), vvar_(0.0), firstReset_(true) {
-    prob_  = ((prob  >= 0.0) ? ((prob  <= 1.0) ? prob  : 0.5) : 0.5);
-    coeff_ = ((coeff >= 0.0) ? ((coeff <= 1.0) ? coeff : 1.0) : 1.0);
+    : RiskMeasure<Real>(), plusFunction_(pf), xvar_(0), vvar_(0), firstReset_(true) {
+    Real zero(0), half(0.5), one(1);
+    prob_  = ((prob  >= zero) ? ((prob  <= one) ? prob  : half) : half);
+    coeff_ = ((coeff >= zero) ? ((coeff <= one) ? coeff : one) : one);
   }
 
   CVaR( Teuchos::ParameterList &parlist )
-    : RiskMeasure<Real>(), xvar_(0.0), vvar_(0.0), firstReset_(true) {
+    : RiskMeasure<Real>(), xvar_(0), vvar_(0), firstReset_(true) {
+    Real zero(0), half(0.5), one(1);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("CVaR");
     // Check CVaR inputs
-    Real prob  = list.get("Confidence Level",0.5);
-    prob_      = ((prob  >= 0.0) ? ((prob  <= 1.0) ? prob  : 0.5) : 0.5);
-    Real coeff = list.get("Convex Combination Parameter", 1.0);
-    coeff_     = ((coeff >= 0.0) ? ((coeff <= 1.0) ? coeff : 1.0) : 1.0);
+    Real prob  = list.get("Confidence Level",half);
+    prob_      = ((prob  >= zero) ? ((prob  <= one) ? prob  : half) : half);
+    Real coeff = list.get("Convex Combination Parameter", one);
+    coeff_     = ((coeff >= zero) ? ((coeff <= one) ? coeff : one) : one);
     // Build (approximate) plus function
     plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
   }
@@ -106,31 +108,33 @@ public:
   }
 
   void update(const Real val, const Real weight) {
+    Real one(1);
     Real pf = plusFunction_->evaluate(val-xvar_,0);
-    RiskMeasure<Real>::val_ += weight*((1.0-coeff_)*val + coeff_/(1.0-prob_)*pf);
+    RiskMeasure<Real>::val_ += weight*((one-coeff_)*val + coeff_/(one-prob_)*pf);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
+    Real one(1);
     Real pf = plusFunction_->evaluate(val-xvar_,1);
     RiskMeasure<Real>::val_ += weight*pf;
-    Real c  = (1.0-coeff_) + coeff_/(1.0-prob_)*pf;
+    Real c  = (one-coeff_) + coeff_/(one-prob_)*pf;
     RiskMeasure<Real>::g_->axpy(weight*c,g);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
               const Real weight) {
+    Real one(1);
     Real pf1 = plusFunction_->evaluate(val-xvar_,1);
     Real pf2 = plusFunction_->evaluate(val-xvar_,2);
     RiskMeasure<Real>::val_ += weight*pf2*(vvar_-gv);
-    Real c  = pf2*coeff_/(1.0-prob_)*(gv-vvar_);
+    Real c  = pf2*coeff_/(one-prob_)*(gv-vvar_);
     RiskMeasure<Real>::hv_->axpy(weight*c,g);
-    c = (1.0-coeff_) + coeff_/(1.0-prob_)*pf1;
+    c = (one-coeff_) + coeff_/(one-prob_)*pf1;
     RiskMeasure<Real>::hv_->axpy(weight*c,hv);
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
-    Real val  = RiskMeasure<Real>::val_;
-    Real cvar = 0.0;
+    Real val  = RiskMeasure<Real>::val_, cvar(0);
     sampler.sumAll(&val,&cvar,1);
     cvar += coeff_*xvar_;
     return cvar;
@@ -138,12 +142,11 @@ public:
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(g));
-    Real val = RiskMeasure<Real>::val_;
-    Real var = 0.0;
+    Real val = RiskMeasure<Real>::val_, var(0), one(1);
     sampler.sumAll(&val,&var,1);
     
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
-    var *= -coeff_/(1.0-prob_);
+    var *= -coeff_/(one-prob_);
     var += coeff_;
     gs.setStatistic(var);
     gs.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(dualVector_))); 
@@ -151,12 +154,11 @@ public:
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(hv));
-    Real val = RiskMeasure<Real>::val_;
-    Real var = 0.0;
+    Real val = RiskMeasure<Real>::val_, var(0), one(1);
     sampler.sumAll(&val,&var,1);
 
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector_);
-    var *= coeff_/(1.0-prob_);
+    var *= coeff_/(one-prob_);
     hs.setStatistic(var);
     hs.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(dualVector_)));
   }

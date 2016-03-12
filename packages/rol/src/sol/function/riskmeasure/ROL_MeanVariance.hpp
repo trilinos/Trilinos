@@ -83,26 +83,29 @@ public:
   MeanVariance( Real order, Real coeff,
                 Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     order_.clear(); coeff_.clear();
-    order_.push_back((order < 2.0) ? 2.0 : order);
-    coeff_.push_back((coeff < 0.0) ? 1.0 : coeff);
+    order_.push_back((order < two) ? two : order);
+    coeff_.push_back((coeff < zero) ? one : coeff);
     NumMoments_ = order_.size();
   }
   MeanVariance( std::vector<Real> &order, std::vector<Real> &coeff, 
                 Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     order_.clear(); coeff_.clear();
     NumMoments_ = order.size();
     if ( NumMoments_ != coeff.size() ) {
-      coeff.resize(NumMoments_,1.0);
+      coeff.resize(NumMoments_,one);
     }
     for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+      order_.push_back((order[i] < two) ? two : order[i]);
+      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
     }
   }
   MeanVariance( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance");
     // Get data from parameter list
@@ -114,11 +117,11 @@ public:
     order_.clear(); coeff_.clear();
     NumMoments_ = order.size();
     if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
-      coeff.resize(NumMoments_,1.0);
+      coeff.resize(NumMoments_,one);
     }
     for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+      order_.push_back((order[i] < two) ? two : order[i]);
+      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
     }
     // Build (approximate) positive function
     if ( list.get("Deviation Type","Upper") == "Upper" ) {
@@ -192,12 +195,11 @@ public:
 
   Real getValue(SampleGenerator<Real> &sampler) {
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_;
-    Real ev  = 0.0;
+    Real val = RiskMeasure<Real>::val_, ev(0), zero(0);
     sampler.sumAll(&val,&ev,1);
     // Compute deviation
-    val = 0.0;
-    Real diff = 0.0, pf0 = 0.0, var = 0.0;
+    val = zero;
+    Real diff(0), pf0(0), var(0);
     for ( uint i = 0; i < weights_.size(); i++ ) {
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
@@ -212,24 +214,24 @@ public:
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_, ev = 0.0;
+    Real val = RiskMeasure<Real>::val_, ev(0), zero(0), one(1);
     sampler.sumAll(&val,&ev,1);
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector3_);
     // Compute deviation
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, c = 0.0, ec = 0.0, ecs = 0.0;
+    Real diff(0), pf0(0), pf1(0), c(0), ec(0), ecs(0);
     for ( uint i = 0; i < weights_.size(); i++ ) {
-      c    = 0.0;
+      c    = zero;
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
       for ( uint p = 0; p < NumMoments_; p++ ) {
-        c += coeff_[p]*order_[p]*std::pow(pf0,order_[p]-1.0)*pf1;
+        c += coeff_[p]*order_[p]*std::pow(pf0,order_[p]-one)*pf1;
       }
       ec += weights_[i]*c;
       dualVector1_->axpy(weights_[i]*c,*(gradient_storage_[i]));
     }
     sampler.sumAll(&ec,&ecs,1);
-    dualVector3_->scale(1.0-ecs);
+    dualVector3_->scale(one-ecs);
     sampler.sumAll(*dualVector1_,*dualVector2_);
     dualVector3_->plus(*dualVector2_);
     // Set RiskVector
@@ -239,27 +241,28 @@ public:
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     hv.zero();
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_, ev = 0.0;
-    sampler.sumAll(&val,&ev,1);
-    Real gv  = RiskMeasure<Real>::gv_, egv = 0.0;
-    sampler.sumAll(&gv,&egv,1);
+    std::vector<Real> myval(2), val(2);
+    myval[0] = RiskMeasure<Real>::val_;
+    myval[1] = RiskMeasure<Real>::gv_;
+    sampler.sumAll(&myval[0],&val[0],2);
+    Real ev = myval[0], egv = myval[1];
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector3_);
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector4_);
     // Compute deviation
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0;  
-    Real cg = 0.0, ecg = 0.0, ecgs = 0.0, ch = 0.0, ech = 0.0, echs = 0.0;
+    Real diff(0), pf0(0), pf1(0), pf2(0), zero(0), one(1), two(2);
+    Real cg(0), ecg(0), ecgs(0), ch(0), ech(0), echs(0);
     for ( uint i = 0; i < weights_.size(); i++ ) {
-      cg   = 0.0;
-      ch   = 0.0;
+      cg   = zero;
+      ch   = zero;
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
       pf2  = positiveFunction_->evaluate(diff,2);
       for ( uint p = 0; p < NumMoments_; p++ ) {
         cg += coeff_[p]*order_[p]*(gradvec_storage_[i]-egv)*
-                ((order_[p]-1.0)*std::pow(pf0,order_[p]-2.0)*pf1*pf1+
-                std::pow(pf0,order_[p]-1.0)*pf2);
-        ch += coeff_[p]*order_[p]*std::pow(pf0,order_[p]-1.0)*pf1;
+                ((order_[p]-one)*std::pow(pf0,order_[p]-two)*pf1*pf1+
+                std::pow(pf0,order_[p]-one)*pf2);
+        ch += coeff_[p]*order_[p]*std::pow(pf0,order_[p]-one)*pf1;
       }
       ecg += weights_[i]*cg;
       ech += weights_[i]*ch;
@@ -267,7 +270,7 @@ public:
       dualVector1_->axpy(weights_[i]*ch,*(hessvec_storage_[i]));
     }
     sampler.sumAll(&ech,&echs,1);
-    dualVector4_->scale(1.0-echs);
+    dualVector4_->scale(two-echs);
     sampler.sumAll(&ecg,&ecgs,1);
     dualVector4_->axpy(-ecgs,*dualVector3_);
     sampler.sumAll(*dualVector1_,*dualVector2_);

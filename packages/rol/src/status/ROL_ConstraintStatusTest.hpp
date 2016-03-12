@@ -68,9 +68,10 @@ public:
   virtual ~ConstraintStatusTest() {}
 
   ConstraintStatusTest( Teuchos::ParameterList &parlist ) {
-    gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", 1.e-6);
-    ctol_     = parlist.sublist("Status Test").get("Constraint Tolerance", 1.e-6);
-    stol_     = parlist.sublist("Status Test").get("Step Tolerance", 1.e-6*gtol_);
+    Real em6(1e-6);
+    gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", em6);
+    ctol_     = parlist.sublist("Status Test").get("Constraint Tolerance", em6);
+    stol_     = parlist.sublist("Status Test").get("Step Tolerance", em6*gtol_);
     max_iter_ = parlist.sublist("Status Test").get("Iteration Limit", 100);
   }
 

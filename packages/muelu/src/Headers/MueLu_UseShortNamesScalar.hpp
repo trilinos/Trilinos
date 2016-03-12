@@ -77,6 +77,9 @@ typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> DemoFactory;
 #ifdef MUELU_DIRECTSOLVER_SHORT
 typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> DirectSolver;
 #endif
+#ifdef MUELU_DROPNEGATIVEENTRIESFACTORY_SHORT
+typedef MueLu::DropNegativeEntriesFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> DropNegativeEntriesFactory;
+#endif
 #ifdef MUELU_EMINPFACTORY_SHORT
 typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> EminPFactory;
 #endif

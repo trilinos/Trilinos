@@ -58,35 +58,37 @@ public:
 
   TruncatedMeanQuadrangle(Real beta)
     : ExpectationQuad<Real>() {
-    beta_ = ((beta > 0.) ? beta : 1.);
+
   }
 
   TruncatedMeanQuadrangle(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
+    Real zero(0), one(1);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Truncated Mean Quadrangle");
     // Check inputs
-    Real beta = list.get("Threshold",1.);
-    beta_ = ((beta > 0.) ? beta : 1.);
+    Real beta = list.get("Threshold",one);
+    beta_ = ((beta > zero) ? beta : one);
   }
 
   Real error(Real x, int deriv = 0) {
     bool inside = ( std::abs(x) ? true : false );
-    Real err    = 0.0;
+    Real err(0), zero(0), half(0.5), one(1), two(2);
     if (deriv==0) {
-      err = (inside ? 0.5*std::pow(x,2.0)/beta_ : std::abs(x)-0.5*beta_);
+      err = (inside ? half*std::pow(x,two)/beta_ : std::abs(x)-half*beta_);
     }
     else if (deriv==1) {
-      err = (inside ? x/beta_ : ((0.0 < x) - (x < 0.0)));
+      err = (inside ? x/beta_ : ((zero < x) - (x < zero)));
     }
     else {
-      err = (inside ? 1.0/beta_ : 0.0);
+      err = (inside ? one/beta_ : zero);
     }
     return err;
   }
 
   Real regret(Real x, int deriv = 0) {
-    Real X = ((deriv==0) ? x : ((deriv==1) ? 1.0 : 0.0));
+    Real zero(0), one(1);
+    Real X = ((deriv==0) ? x : ((deriv==1) ? one : zero));
     Real reg = error(x,deriv) + X;
     return reg;
   }
@@ -94,12 +96,12 @@ public:
   void checkRegret(void) {
     ExpectationQuad<Real>::checkRegret();
     // Check v'(beta)
-    Real x = beta_;
-    Real vx = 0.0, vy = 0.0;
+    Real x = beta_, zero(0), one(1), two(2), p1(0.1);
+    Real vx = zero, vy = zero;
     Real dv = regret(x,1);
-    Real t = 1.0;
-    Real diff = 0.0;
-    Real err = 0.0;
+    Real t = one;
+    Real diff = zero;
+    Real err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(beta) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v'(x)"
@@ -109,7 +111,7 @@ public:
     for (int i = 0; i < 13; i++) {
       vy = regret(x+t,0);
       vx = regret(x-t,0);
-      diff = (vy-vx)/(2.0*t);
+      diff = (vy-vx)/(two*t);
       err = std::abs(diff-dv);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
@@ -117,17 +119,17 @@ public:
                 << std::setw(20) << diff
                 << std::setw(20) << err
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n";
     // Check v'(-beta)
     x = -beta_;
-    vx = 0.0;
-    vy = 0.0;
+    vx = zero;
+    vy = zero;
     dv = regret(x,1);
-    t = 1.0;
-    diff = 0.0;
-    err = 0.0;
+    t = one;
+    diff = zero;
+    err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(-beta) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v'(x)"
@@ -137,7 +139,7 @@ public:
     for (int i = 0; i < 13; i++) {
       vy = regret(x+t,0);
       vx = regret(x-t,0);
-      diff = (vy-vx)/(2.0*t);
+      diff = (vy-vx)/(two*t);
       err = std::abs(diff-dv);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
@@ -145,7 +147,7 @@ public:
                 << std::setw(20) << diff
                 << std::setw(20) << err
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n";
   }

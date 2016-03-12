@@ -51,8 +51,6 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Secant.hpp"
-#include "ROL_PrimalDualHessian.hpp"
-#include "ROL_PrimalDualPreconditioner.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 /** @ingroup step_group
@@ -169,6 +167,85 @@ private:
   Teuchos::RCP<Secant<Real> > secant_; ///< Secant object
   bool useSecantPrecond_; 
   bool useSecantHessVec_;
+
+  class HessianPD : public LinearOperator<Real> {
+  private:
+    const Teuchos::RCP<Objective<Real> > obj_;
+    const Teuchos::RCP<BoundConstraint<Real> > bnd_;
+    const Teuchos::RCP<Vector<Real> > x_;
+    const Teuchos::RCP<Vector<Real> > xlam_;
+    Teuchos::RCP<Vector<Real> > v_;
+    Real eps_;
+    const Teuchos::RCP<Secant<Real> > secant_;
+    bool useSecant_;
+  public:
+    HessianPD(const Teuchos::RCP<Objective<Real> > &obj,
+              const Teuchos::RCP<BoundConstraint<Real> > &bnd,
+              const Teuchos::RCP<Vector<Real> > &x,
+              const Teuchos::RCP<Vector<Real> > &xlam,
+              const Real eps = 0,
+              const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
+              const bool useSecant = false )
+      : obj_(obj), bnd_(bnd), x_(x), xlam_(xlam),
+        eps_(eps), secant_(secant), useSecant_(useSecant) {
+      v_ = x_->clone();
+      if ( !useSecant || secant == Teuchos::null ) {
+        useSecant_ = false;
+      }
+    }
+    void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+      v_->set(v);
+      bnd_->pruneActive(*v_,*xlam_,eps_);
+      if ( useSecant_ ) {
+        secant_->applyB(Hv,*v_);
+      }
+      else {
+        obj_->hessVec(Hv,*v_,*x_,tol);
+      }
+      bnd_->pruneActive(Hv,*xlam_,eps_);
+    }
+  };
+
+  class PrecondPD : public LinearOperator<Real> {
+  private:
+    const Teuchos::RCP<Objective<Real> > obj_;
+    const Teuchos::RCP<BoundConstraint<Real> > bnd_;
+    const Teuchos::RCP<Vector<Real> > x_;
+    const Teuchos::RCP<Vector<Real> > xlam_;
+    Teuchos::RCP<Vector<Real> > v_;
+    Real eps_;
+    const Teuchos::RCP<Secant<Real> > secant_;
+    bool useSecant_;
+  public:
+    PrecondPD(const Teuchos::RCP<Objective<Real> > &obj,
+              const Teuchos::RCP<BoundConstraint<Real> > &bnd,
+              const Teuchos::RCP<Vector<Real> > &x,
+              const Teuchos::RCP<Vector<Real> > &xlam,
+              const Real eps = 0,
+              const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
+              const bool useSecant = false )
+      : obj_(obj), bnd_(bnd), x_(x), xlam_(xlam),
+        eps_(eps), secant_(secant), useSecant_(useSecant) {
+      v_ = x_->clone();
+      if ( !useSecant || secant == Teuchos::null ) {
+        useSecant_ = false;
+      }
+    }
+    void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+      Hv.set(v.dual());
+    }
+    void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+      v_->set(v);
+      bnd_->pruneActive(*v_,*xlam_,eps_);
+      if ( useSecant_ ) {
+        secant_->applyH(Hv,*v_);
+      }
+      else {
+        obj_->precond(Hv,*v_,*x_,tol);
+      }
+      bnd_->pruneActive(Hv,*xlam_,eps_);
+    }
+  };
 
   /** \brief Compute the gradient-based criticality measure.
 
@@ -360,11 +437,11 @@ public:
         Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcpFromRef(obj);
         Teuchos::RCP<BoundConstraint<Real> > con_ptr = Teuchos::rcpFromRef(con);
         Teuchos::RCP<LinearOperator<Real> > hessian
-          = Teuchos::rcp(new PrimalDualHessian<Real>(secant_,obj_ptr,con_ptr,
-              algo_state.iterateVec,xlam_,useSecantHessVec_));
+          = Teuchos::rcp(new HessianPD(obj_ptr,con_ptr,
+              algo_state.iterateVec,xlam_,neps_,secant_,useSecantHessVec_));
         Teuchos::RCP<LinearOperator<Real> > precond
-          = Teuchos::rcp(new PrimalDualPreconditioner<Real>(secant_,obj_ptr,
-              con_ptr,algo_state.iterateVec,xlam_,useSecantPrecond_));
+          = Teuchos::rcp(new PrecondPD(obj_ptr,con_ptr,
+              algo_state.iterateVec,xlam_,neps_,secant_,useSecantPrecond_));
         //solve(s,*rtmp_,*xlam_,x,obj,con);   // Call conjugate residuals
         krylov_->run(s,*hessian,*rtmp_,*precond,iterCR_,flagCR_);
         con.pruneActive(s,*xlam_,neps_);        // s <- Is

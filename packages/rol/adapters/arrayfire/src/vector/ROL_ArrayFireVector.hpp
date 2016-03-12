@@ -67,14 +67,13 @@ public:
     ArrayFireVector(const Teuchos::RCP<af::array> &initVector) : afVector(initVector) {}
 
     void set (const ROL::Vector<Real> &newValue)  {
-        const ArrayFireVector<Real, Element> &newVector = Teuchos::dyn_cast<const ArrayFireVector>(newValue);
-        const af::array &newArray = *(newVector.getVector());        
+        const ArrayFireVector<Real, Element> &newVector = Teuchos::dyn_cast<const ArrayFireVector<Real, Element> >(newValue);
+        const af::array &newArray = *(newVector.getVector());
         *afVector = newArray;
     }
-    
-    
+
     void plus (const ROL::Vector<Real> &operand)  {
-        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector>(operand);
+        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector<Real, Element> >(operand);
         const af::array &operandArray = *(operandVector.getVector());
         
         dim_t currentDim = afVector->dims(0);
@@ -86,23 +85,23 @@ public:
     }
 
     void axpy (const Real alpha, const ROL::Vector<Real> &operand)   {
-        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector>(operand);
-		const af::array &operandArray = *(operandVector.getVector());
-        
+        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector<Real, Element> >(operand);
+        const af::array &operandArray = *(operandVector.getVector());
+
         dim_t currentDim = afVector->dims(0);
         dim_t operandDim = operandArray.dims(0);
-        
+
         if (currentDim == operandDim) {
-            *afVector += operandArray * alpha;
+            *afVector += operandArray * static_cast<Element>(alpha);
         }
     }
 
     void scale (const Real alpha)   {
-        *afVector *= alpha;
+        *afVector *= static_cast<Element>(alpha);
     }
 
     Real dot (const ROL::Vector<Real> &operand) const   {
-        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector>(operand);
+        const ArrayFireVector<Real, Element> &operandVector = Teuchos::dyn_cast<const ArrayFireVector<Real, Element> >(operand);
         const af::array &operandArray = *(operandVector.getVector());
         
         dim_t currentDim = afVector->dims(0);
@@ -112,7 +111,7 @@ public:
 
         if (currentDim == operandDim) {
             af::array dotProduct = af::dot(*afVector, operandArray);
-            value = dotProduct.scalar<Real>();
+            value = static_cast<Real>(dotProduct.scalar<Element>());
         }
 
         return value;
@@ -133,8 +132,8 @@ public:
     Teuchos::RCP< af::array> getVector()  {
         return afVector;
     }
-     
-/*
+
+/*  to be implemented later
     Teuchos::RCP<ROL::Vector<Real> > basis (const int index) const   {
 		Teuchos::RCP<af::array> basisArrary = af::constant(0, afVector.dims(0), afVector.type());
         basisArrary(index) = 1;

@@ -85,6 +85,7 @@
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_DropNegativeEntriesFactory.hpp"
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
@@ -198,6 +199,7 @@ namespace MueLu {
       if (factoryName == "CoupledAggregationFactory")       return BuildCoupledAggregationFactory        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoordinatesTransferFactory")      return Build2<CoordinatesTransferFactory>    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "DirectSolver")                    return BuildDirectSolver                     (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "DropNegativeEntriesFactory")      return Build2<DropNegativeEntriesFactory>    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "EminPFactory")                    return Build2<EminPFactory>                  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "FilteredAFactory")                return Build2<FilteredAFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                 return Build2<GenericRFactory>               (paramList, factoryMapIn, factoryManagersIn);

@@ -752,20 +752,8 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
   // return an error message on failure
   bool pass = true;
   string test_name = metricPlist.name() + " test";
-  double local_ref_value = ref_metric.getMaxImbalance()/ref_metric.getAvgImbalance();
-  double local_value = metric.getMaxImbalance()/metric.getAvgImbalance();
-  
-  // reduce problem metric
-  double value;
-  Teuchos::Ptr<double> global(&value);
-  comm->barrier();
-  reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,local_value,global);
-  
-  // reduce reference metric
-  double ref_value;
-  Teuchos::Ptr<double> globalRef(&ref_value);
-  comm->barrier();
-  reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,local_ref_value,globalRef);
+  double ref_value = ref_metric.getMaxImbalance();
+  double value = metric.getMaxImbalance();
   
   // want to reduce value to max value for all procs
   
@@ -775,11 +763,11 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
     
     if(value < min)
     {
-      msg << test_name << " FAILED: Minimum imbalance per part, "
+      msg << test_name << " FAILED: imbalance per part, "
       << value << ", less than specified allowable minimum, " << min << ".\n";
       pass = false;
     }else{
-      msg << test_name << " PASSED: Minimum imbalance per part, "
+      msg << test_name << " PASSED: imbalance per part, "
       << value << ", greater than specified allowable minimum, " << min << ".\n";
     }
   }
@@ -789,11 +777,11 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
     double max = metricPlist.get<double>("upper") * ref_value;
     if (value > max)
     {
-      msg << test_name << " FAILED: Maximum imbalance per part, "
+      msg << test_name << " FAILED: imbalance per part, "
       << value << ", greater than specified allowable maximum, " << max << ".\n";
       pass = false;
     }else{
-      msg << test_name << " PASSED: Maximum imbalance per part, "
+      msg << test_name << " PASSED: imbalance per part, "
       << value << ", less than specified allowable maximum, " << max << ".\n";
     }
     

@@ -767,42 +767,57 @@ int AlgPTScotch<Adapter>::order(
 
   // Allocate results
   SCOTCH_Num cblk = 0;
-  SCOTCH_Num *permtab = new SCOTCH_Num[nVtx];  // permutation array
-  SCOTCH_Num *peritab = new SCOTCH_Num[nVtx];  // inverse permutation array
-  SCOTCH_Num *rangetab = new SCOTCH_Num[nVtx+1];  // separator range array
-  SCOTCH_Num *treetab = new SCOTCH_Num[nVtx];  // separator tree
+  SCOTCH_Num *permtab;  // permutation array
+  SCOTCH_Num *peritab;  // inverse permutation array
+  SCOTCH_Num *rangetab; // separator range array
+  SCOTCH_Num *treetab;  // separator tree
+
+  if (TPL_Traits<lno_t, SCOTCH_Num>::OK_TO_CAST()) {
+    permtab = reinterpret_cast<SCOTCH_Num*>(solution->getPermutationView(false));
+    peritab = reinterpret_cast<SCOTCH_Num*>(solution->getPermutationView(true));
+    rangetab = reinterpret_cast<SCOTCH_Num*>(solution->getSeparatorRangeView());
+    treetab = reinterpret_cast<SCOTCH_Num*>(solution->getSeparatorTreeView());
+  }
+  else {
+    permtab = new SCOTCH_Num[nVtx];
+    peritab = new SCOTCH_Num[nVtx];
+    rangetab = new SCOTCH_Num[nVtx+1];
+    treetab = new SCOTCH_Num[nVtx];
+  }
 
   ierr = SCOTCH_graphOrder(&c_graph_ptr, &c_strat_ptr, permtab, peritab, 
                            &cblk, rangetab, treetab);
-  
-  //ierr = SCOTCH_graphOrder( &c_graph_ptr, &c_strat_ptr,
-  //                          solution->getPermutation(false),
-  //                          solution->getPermutation(true),
-  //                          &solution->NumSeparatorBlocks(),
-  //                          solution->getSeparatorRange(),
-  //                          solution->getSeparatorTree());
-
-  ArrayRCP<lno_t> arv_perm;
-  TPL_Traits<lno_t, SCOTCH_Num>::SAVE_ARRAYRCP(&arv_perm, permtab, nVtx);
-  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&permtab);
-  ArrayRCP<lno_t> arv_peri;
-  TPL_Traits<lno_t, SCOTCH_Num>::SAVE_ARRAYRCP(&arv_peri, peritab, nVtx);
-  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&peritab);
-  ArrayRCP<lno_t> arv_range;
-  TPL_Traits<lno_t, SCOTCH_Num>::SAVE_ARRAYRCP(&arv_range, rangetab, cblk+1);
-  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&rangetab);
-  ArrayRCP<lno_t> arv_tree;
-  TPL_Traits<lno_t, SCOTCH_Num>::SAVE_ARRAYRCP(&arv_tree, treetab, cblk);
-  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&treetab);
-  lno_t nblks;
-  TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(nblks, cblk);
-
-  solution->setOrder(nblks, arv_perm, arv_peri, arv_range, arv_tree);
-
   if (ierr != 0) {
     throw std::runtime_error("Could not compute ordering!!");
   } else if(isVerbose && me == 0) {
     std::cout << "Ordering computed." << std::endl;
+  }
+  
+  lno_t nSepBlocks;
+  TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(nSepBlocks, cblk);
+  solution->setNumSeparatorBlocks(nSepBlocks);
+
+  if (!TPL_Traits<lno_t, SCOTCH_Num>::OK_TO_CAST()) {
+
+    const ArrayRCP<lno_t> arv_perm = solution->getPermutationRCP(false);
+    for (size_t i = 0; i < nVtx; i++)
+      TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_perm[i], permtab[i]);
+    delete [] permtab;
+
+    const ArrayRCP<lno_t> arv_peri = solution->getPermutationRCP(true);
+    for (size_t i = 0; i < nVtx; i++)
+      TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_peri[i], peritab[i]);
+    delete [] peritab;
+
+    const ArrayRCP<lno_t> arv_range = solution->getSeparatorRangeRCP();
+    for (size_t i = 0; i <= nVtx; i++)
+      TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_range[i], rangetab[i]);
+    delete [] rangetab;
+
+    const ArrayRCP<lno_t> arv_tree = solution->getSeparatorTreeRCP();
+    for (size_t i = 0; i < nVtx; i++)
+      TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_tree[i], treetab[i]);
+    delete [] treetab;
   }
 
   solution->setHaveSeparator(true); 

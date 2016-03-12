@@ -61,10 +61,11 @@ namespace ROL {
 
   template<class Real>
   inline Teuchos::RCP<Krylov<Real> > KrylovFactory( Teuchos::ParameterList &parlist ) {
+    Real em4(1e-4), em2(1e-2);
     EKrylov ekv = StringToEKrylov(
                    parlist.sublist("General").sublist("Krylov").get("Type","Conjugate Gradients"));
-    Real absTol  = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance", 1.e-4);
-    Real relTol  = parlist.sublist("General").sublist("Krylov").get("Relative Tolerance", 1.e-2);
+    Real absTol  = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance", em4);
+    Real relTol  = parlist.sublist("General").sublist("Krylov").get("Relative Tolerance", em2);
     int maxit    = parlist.sublist("General").sublist("Krylov").get("Iteration Limit", 20);
     bool inexact = parlist.sublist("General").get("Inexact Hessian-Times-A-Vector",false);
     switch(ekv) {

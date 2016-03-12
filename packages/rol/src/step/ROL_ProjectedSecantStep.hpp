@@ -65,6 +65,7 @@ private:
   Teuchos::RCP<Vector<Real> > d_;      ///< Additional vector storage
   Teuchos::RCP<Vector<Real> > gp_;     ///< Additional vector storage
   int verbosity_;                      ///< Verbosity level
+  const bool computeObj_;
   bool useProjectedGrad_;              ///< Whether or not to use to the projected gradient criticality measure
 
 public:
@@ -82,9 +83,10 @@ public:
       @param[in]     secant     is a user-defined secant object
   */
   ProjectedSecantStep( Teuchos::ParameterList &parlist,
-                       const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null )
+                       const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null, 
+                       const bool computeObj = true )
     : Step<Real>(), secant_(secant), d_(Teuchos::null), gp_(Teuchos::null),
-      verbosity_(0), useProjectedGrad_(false) {
+      verbosity_(0), computeObj_(computeObj), useProjectedGrad_(false) {
     // Parse ParameterList
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
@@ -141,7 +143,10 @@ public:
     // Compute new gradient
     gp_->set(*(step_state->gradientVec));
     obj.update(x,true,algo_state.iter);
-    algo_state.value = obj.value(x,tol);
+    if ( computeObj_ ) {
+      algo_state.value = obj.value(x,tol);
+      algo_state.nfval++;
+    }
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

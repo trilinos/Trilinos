@@ -31,13 +31,14 @@ namespace Tacho {
   //
 #define MSG_NOT_YET_IMPLEMENTED ">> Not yet implemented"
 #define MSG_INVALID_INPUT(what) ">> Invaid input argument: " #what
+#define MSG_NOT_HAVE_PACKAGE(what) ">> Tacho does not have a package or library: " what
 #define MSG_INVALID_TEMPLATE_ARGS ">> Invaid template arguments"
 
-#undef CHKERR
-#define CHKERR(ierr, msg)                                               \
+#define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
   if (ierr != 0) {                                                      \
     fprintf(stderr, ">> Error in file %s, line %d, error %d \n",__FILE__,__LINE__,ierr); \
     fprintf(stderr, "   %s\n", msg);                                    \
+    Kokkos::abort(">> Tacho abort\n");                                    \
   }
   
   /// \brief Control parameter decomposition.
