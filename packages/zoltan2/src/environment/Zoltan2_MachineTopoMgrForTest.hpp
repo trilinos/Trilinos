@@ -209,7 +209,10 @@ public:
   }
 
 
-
+  inline bool getMachineCoordinate(const part_t rank,
+                                   pcoord_t *xyz) const {
+    return false;
+  }
   bool getMachineCoordinate(const char *nodename, pcoord_t *xyz) {
     return false;  // cannot yet return from nodename
   }
