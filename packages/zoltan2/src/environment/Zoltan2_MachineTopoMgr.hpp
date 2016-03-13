@@ -82,6 +82,25 @@ public:
     return true;
   }
 
+  //MD TODO: Not always it has wrap-around links.
+  bool getMachineExtentWrapArounds(bool *wrap_around) const {
+#if defined (CMK_BLUEGENEQ)
+    wrap_around[0] = true;
+    wrap_around[1] = true;
+    wrap_around[2] = true;
+    wrap_around[3] = true;
+    wrap_around[4] = true;
+    wrap_around[5] = true;
+#elif defined (CMK_BLUEGENEP)
+    wrap_around[0] = true;
+    wrap_around[1] = true;
+    wrap_around[2] = true;
+    wrap_around[3] = true;
+#else
+#endif
+    return true;
+  }
+
   bool getMyMachineCoordinate(pcoord_t *xyz) {
 #if defined (CMK_BLUEGENEQ)
     int a,b,c,d,e,t;
