@@ -41,6 +41,7 @@
 #include <string>                       // for string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
+#include <numeric>                      // for iota
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;

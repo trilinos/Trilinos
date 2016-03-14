@@ -50,6 +50,7 @@
 #include <algorithm>
 #include <sstream>
 #include <time.h>
+#include <numeric>
 
 namespace Ioss {
   class GroupingEntity;
