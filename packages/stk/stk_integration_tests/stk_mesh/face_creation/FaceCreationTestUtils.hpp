@@ -60,7 +60,7 @@ inline bool can_find_face_for_elem_side(const stk::mesh::BulkData& bulkData, stk
 inline void expect_side_exists_for_elem_side(const stk::mesh::BulkData& bulkData, const std::string &filename, const Side& side)
 {
     stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, side.elementId);
-    if(bulkData.is_valid(element))
+    if(bulkData.is_valid(element) && bulkData.bucket(element).owned())
         EXPECT_TRUE(can_find_face_for_elem_side(bulkData, element, side.sideOrdinal))
                 << filename << " couldn't find face for side: " << side.elementId << ", " << side.sideOrdinal << ".";
 }
@@ -148,7 +148,9 @@ public:
     {
         for(const SideTestUtil::TestCase& testCase : testCases)
             if(stk::parallel_machine_size(communicator) <= testCase.maxNumProcs)
+            {
                 test_one_case(testCase, auraOption);
+            }
     }
 protected:
     virtual void test_one_case(const SideTestUtil::TestCase &testCase,
