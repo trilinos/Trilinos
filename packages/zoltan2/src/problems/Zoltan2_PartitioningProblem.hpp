@@ -58,7 +58,9 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
 #include <Zoltan2_MachineRepresentation.hpp>
+#ifdef ZOLTAN2_TASKMAPPING_MOVE
 #include <Zoltan2_TaskMapping.hpp>
+#endif
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -316,8 +318,9 @@ private:
   void createPartitioningProblem(bool newData);
 
   RCP<PartitioningSolution<Adapter> > solution_;
-
+#ifdef ZOLTAN2_TASKMAPPING_MOVE
   RCP<MachineRepresentation<scalar_t,part_t> > machine_;
+#endif
 
   BaseAdapterType inputType_;
 
@@ -387,8 +390,10 @@ template <typename Adapter>
 
   // Create a copy of the user's communicator.
 
+#ifdef ZOLTAN2_TASKMAPPING_MOVE
   machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
                  new MachineRepresentation<scalar_t,part_t>(*(this->comm_)));
+#endif
 
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
@@ -564,6 +569,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   }
   //if mapping is 0 -- coordinate mapping
 
+#if ZOLTAN2_TASKMAPPING_MOVE
   if (mapping_type == 0){
 
     //part_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
@@ -599,6 +605,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     //for now just delete the object.
     delete ctm;
   }
+#endif
+
   else if (mapping_type == 1){
     //if mapping is 1 -- graph mapping
   }

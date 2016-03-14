@@ -154,18 +154,6 @@ public:
 };
 
 
-template<class Real> 
-class Plus : public UnaryFunction<Real> {
-private:
-  Real value_;
-public:
-  Plus( const Real value ) : value_(value) {} 
-  Real apply( const Real &x ) const {
-    return value_+x;  
-  }
-};
-
-
 
 
 template<class Real>

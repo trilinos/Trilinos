@@ -45,6 +45,13 @@ public:
       return false;  // Extent not available in this machine
     }
 
+    /*! \brief if the machine has a wrap-around tourus link in each dimension.
+     *  return true if the information is available
+     */
+    bool getMachineExtentWrapArounds(bool *wrap_around) const {
+      return false;  // Extent not available in this machine
+    }
+
     /*! \brief getMyCoordinate function
      *  set the machine coordinate xyz of the current process
      *  return true if current process' coordinates are available

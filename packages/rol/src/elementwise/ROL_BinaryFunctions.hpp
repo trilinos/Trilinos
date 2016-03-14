@@ -60,6 +60,15 @@ public:
   }  
 }; // class Multiply
 
+template<class Real>
+class Plus : public BinaryFunction<Real> {
+public:
+  Real apply( const Real &x, const Real &y ) const {
+    return x+y;
+  }
+};
+
+
 // Used to set every element in a vector to a specific value
 template<class Real>
 class Divide : public BinaryFunction<Real> {
@@ -72,7 +81,6 @@ public:
 }; // class Divide
 
 
-
 template<class Real> 
 class Axpy : public BinaryFunction<Real> {
 private:
@@ -80,10 +88,30 @@ private:
 public:
   Axpy(Real a) : a_(a) {}
   Real apply( const Real &x, const Real &y ) const {
+    return x+a_*y;
+  }
+};
+
+
+template<class Real> 
+class Aypx : public BinaryFunction<Real> {
+private:
+  Real a_;
+public:
+  Aypx(Real a) : a_(a) {}
+  Real apply( const Real &x, const Real &y ) const {
     return a_*x+y;
   }
 };
 
+
+template<class Real> 
+class Set : public BinaryFunction<Real> {
+public:
+  Real apply( const Real &x, const Real &y ) const {
+    return y;
+  }
+};
 
 template<class Real> 
 class Lesser : public BinaryFunction<Real> {
