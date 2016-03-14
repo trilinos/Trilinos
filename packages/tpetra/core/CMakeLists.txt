@@ -193,6 +193,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
 )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_MMM_Statistics
+  HAVE_TPETRA_MMM_STATISTICS
+  "Enable statistics for the MMM kernels.  Warning: This involves extra communication and should only be enabled for diagnostic purposes."
+  OFF
+)
+
 # The "Kokkos refactor" version of Tpetra currently requires that
 # several Kokkos subpackages be enabled.  These subpackages should be
 # enabled by default (as of 08 Jan 2015).  The following test checks

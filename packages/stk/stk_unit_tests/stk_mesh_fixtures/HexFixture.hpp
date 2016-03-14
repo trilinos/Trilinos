@@ -79,6 +79,14 @@ class HexFixture
               , ConnectivityMap const* connectivity_map = NULL
             );
 
+  HexFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , bool auraOn
+              , ConnectivityMap const* connectivity_map = NULL
+            );
+
   const int                     m_spatial_dimension;
   const size_t                m_nx;
   const size_t                m_ny;

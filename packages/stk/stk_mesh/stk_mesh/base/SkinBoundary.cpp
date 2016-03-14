@@ -38,7 +38,7 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SkinBoundaryErrorReporter.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>

@@ -489,7 +489,8 @@ BulkData::BulkData( MetaData & mesh_meta_data
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         bucket_capacity),
     m_use_identifiers_for_resolving_sharing(false),
-    m_modSummary(*this)
+    m_modSummary(*this),
+    m_meshDiagnosticObserver(*this)
 {
   mesh_meta_data.set_mesh_bulk_data(this);
   m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
@@ -505,6 +506,14 @@ BulkData::BulkData( MetaData & mesh_meta_data
   internal_create_ghosting( "shared" );
   //shared part should reside in m_ghost_parts[0]
   internal_create_ghosting( "shared_aura" );
+
+  register_observer(&m_meshDiagnosticObserver);
+
+  //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+
+#ifndef NDEBUG
+  //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+#endif
 
   m_meshModification.set_sync_state_synchronized();
 }
@@ -4038,11 +4047,31 @@ void BulkData::add_comm_list_entries_for_entities(const std::vector<stk::mesh::E
 //  * All shared entities have parallel-consistent owner
 //  * Part membership of shared entities is up-to-date
 //  * m_entity_comm is up-to-date
+void BulkData::internal_resolve_parallel_create_nodes()
+{
+    std::vector<stk::mesh::EntityRank> ranks={stk::topology::NODE_RANK};
+    this->internal_resolve_parallel_create(ranks);
+}
+
+void BulkData::internal_resolve_parallel_create_edges_and_faces()
+{
+    std::vector<stk::mesh::EntityRank> ranks;
+    for(EntityRank rank=stk::topology::EDGE_RANK; rank<=mesh_meta_data().side_rank(); rank++)
+        ranks.push_back(rank);
+    this->internal_resolve_parallel_create(ranks);
+}
+
 void BulkData::internal_resolve_parallel_create()
+{
+    this->internal_resolve_parallel_create_nodes();
+    this->internal_resolve_parallel_create_edges_and_faces();
+}
+
+void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::EntityRank>& ranks)
 {
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
-  for(EntityRank rank=stk::topology::NODE_RANK; rank<=mesh_meta_data().side_rank(); ++rank)
+  for(EntityRank rank : ranks)
   {
       std::vector<Entity> shared_modified;
 
@@ -7174,6 +7203,11 @@ void BulkData::sort_entities(const stk::mesh::EntitySorterBase& sorter)
 
     if(parallel_size() > 1)
         check_mesh_consistency();
+}
+
+void BulkData::enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag)
+{
+    m_meshDiagnosticObserver.enable_rule(flag);
 }
 
 #ifdef SIERRA_MIGRATION

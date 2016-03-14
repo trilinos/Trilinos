@@ -748,6 +748,13 @@ int Epetra_MpiDistributor::Do( char * export_objs,
 {
   EPETRA_CHK_ERR( DoPosts(export_objs, obj_size, len_import_objs, import_objs) );
   EPETRA_CHK_ERR( DoWaits() );
+
+
+  lastRoundBytesSend_ = 0;
+  for(int i=0; i<NumSends(); i++)
+    lastRoundBytesSend_ += lengths_to_[i]*obj_size;
+  lastRoundBytesRecv_ =len_import_objs;
+
   return(0);
 }
 
@@ -760,6 +767,14 @@ int Epetra_MpiDistributor::DoReverse( char * export_objs,
   EPETRA_CHK_ERR( DoReversePosts(export_objs, obj_size,
 				 len_import_objs, import_objs) );
   EPETRA_CHK_ERR( DoReverseWaits() );
+
+  // This is slightly weird, since DoReversePosts() actually calls DoPosts() on
+  // a reversed distributor
+  lastRoundBytesSend_ = 0;
+  for(int i=0; i<NumReceives(); i++)
+    lastRoundBytesRecv_ += lengths_from_[i]*obj_size;
+  lastRoundBytesSend_ =len_import_objs;
+
   return(0);
 }
 

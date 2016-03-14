@@ -76,6 +76,8 @@ public:
     }
 
     bool modification_end();
+    bool resolve_node_sharing();
+    bool modification_end_after_node_sharing_resolution();
 
     void change_entity_owner( const EntityProcVec & arg_change);
 
@@ -104,6 +106,8 @@ private:
     void ensure_meta_data_is_committed();
 
     bool internal_modification_end(modification_optimization opt);
+    bool internal_resolve_node_sharing(modification_optimization opt);
+    bool internal_modification_end_after_node_sharing_resolution(modification_optimization opt);
 
     stk::mesh::BulkData &m_bulkData;
     std::vector<uint16_t> m_entity_states;

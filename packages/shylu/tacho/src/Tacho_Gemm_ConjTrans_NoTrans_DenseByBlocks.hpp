@@ -1,7 +1,7 @@
-#ifndef __TACHO_GEMM_NOTRANS_NOTRANS_DENSE_BY_BLOCKS_HPP__
-#define __TACHO_GEMM_NOTRANS_NOTRANS_DENSE_BY_BLOCKS_HPP__
+#ifndef __TACHO_GEMM_CONJTRANS_NOTRANS_DENSE_BY_BLOCKS_HPP__
+#define __TACHO_GEMM_CONJTRANS_NOTRANS_DENSE_BY_BLOCKS_HPP__
 
-/// \file Tacho_Gemm_NoTrans_NoTrans_DenseByBlocks.hpp
+/// \file Tacho_Gemm_ConjTrans_NoTrans_DenseByBlocks.hpp
 /// \brief Dense Gemm By Blocks
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -10,7 +10,7 @@ namespace Tacho {
   // Gemm-By-Blocks
   // ==============
   template<int ArgVariant, template<int,int> class ControlType>
-  class Gemm<Trans::NoTranspose,Trans::NoTranspose,
+  class Gemm<Trans::ConjTranspose,Trans::NoTranspose,
              AlgoGemm::DenseByBlocks,ArgVariant,ControlType> {
   public:
     template<typename PolicyType,
@@ -46,17 +46,17 @@ namespace Tacho {
 
       const int max_task_dependence = 3;
       if (member.team_rank() == 0) {
-        for (ordinal_type p=0;p<A.NumCols();++p) {
+        for (ordinal_type p=0;p<A.NumRows();++p) {
           const ScalarType beta_select = (p > 0 ? ScalarType(1.0) : beta);
           for (ordinal_type k2=0;k2<C.NumCols();++k2) {
             value_type &bb = B.Value(p, k2);
             for (ordinal_type k1=0;k1<C.NumRows();++k1) {
-              value_type &aa = A.Value(k1, p );
+              value_type &aa = A.Value(p,  k1);
               value_type &cc = C.Value(k1, k2);
 
               future_type f = factory.create<future_type>
                 (policy,
-                 Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                 Gemm<Trans::ConjTranspose,Trans::NoTranspose,
                  CtrlDetail(ControlType,AlgoGemm::DenseByBlocks,ArgVariant,Gemm)>
                  ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc), 
                  max_task_dependence);

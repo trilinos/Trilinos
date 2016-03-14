@@ -312,6 +312,7 @@ namespace Iohb {
       if (fileFormat == SPYHIS) {
 	time_t calendar_time = time(nullptr);
 	*logStream << "% Sierra SPYHIS Output " << ctime(&calendar_time);
+	*logStream << *legend_ << std::endl; // Legend output twice for SPYHIS 
       }
 
       *logStream << *legend_ << std::endl;

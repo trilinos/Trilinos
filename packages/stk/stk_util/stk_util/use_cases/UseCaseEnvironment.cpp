@@ -42,6 +42,7 @@
 #include <stk_util/util/IndentStreambuf.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/environment/EnvData.hpp>
 
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
@@ -175,53 +176,11 @@ stk_bootstrap()
 
 namespace use_case {
 
-// Output streams
-std::ostream &
-out() {
-  static std::ostream s_out(std::cout.rdbuf());
-
-  return s_out;
-}
-
-
-std::ostream &
-pout() {
-  static std::ostream s_pout(std::cout.rdbuf());
-
-  return s_pout;
-}
-
-
-std::ostream &
-dout() {
-  static std::ostream s_dout(std::cout.rdbuf());
-
-  return s_dout;
-}
-
-
-std::ostream &
-tout() {
-  static std::ostream s_tout(std::cout.rdbuf());
-
-  return s_tout;
-}
-
-
-std::ostream &
-dwout() {
-  static stk::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
-  static std::ostream s_dwout(&s_dwoutStreambuf);
-
-  return s_dwout;
-}
-
-
 // Diagnostic writer
 stk::diag::Writer &
 dw()
 {
-  static stk::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
+  static stk::diag::Writer s_diagWriter(sierra::dwout().rdbuf(), 0);
 
   return s_diagWriter;
 }
@@ -260,10 +219,10 @@ report_handler(
   int                   type)
 {
   if (type & stk::MSG_DEFERRED)
-    pout() << "Deferred " << static_cast<message_type>(type) << ": " << message << std::endl;
+    sierra::pout() << "Deferred " << static_cast<message_type>(type) << ": " << message << std::endl;
 
   else
-    out() << static_cast<message_type>(type) << ": " << message << std::endl;
+    sierra::out() << static_cast<message_type>(type) << ": " << message << std::endl;
 }
 
 
@@ -305,15 +264,8 @@ UseCaseEnvironment::UseCaseEnvironment(
 
 void UseCaseEnvironment::initialize(int* argc, char*** argv)
 {
-  stk::register_log_ostream(std::cout, "cout");
-  stk::register_log_ostream(std::cerr, "cerr");
-
-  stk::register_ostream(out(), "out");
-  stk::register_ostream(pout(), "pout");
-  stk::register_ostream(dout(), "dout");
-  stk::register_ostream(tout(), "tout");
-
-  static_cast<stk::indent_streambuf *>(dwout().rdbuf())->redirect(dout().rdbuf());
+  // Trigger initialization of all the output streams needed below
+  stk::EnvData::instance();
 
   stk::set_report_handler(report_handler);
 
@@ -356,7 +308,7 @@ void UseCaseEnvironment::initialize(int* argc, char*** argv)
 
   stk::bind_output_streams(output_description);
 
-  dout() << "Output log binding: " << output_description << std::endl;
+  sierra::dout() << "Output log binding: " << output_description << std::endl;
 
   // Start use case root timer
   timer().start();
@@ -369,19 +321,9 @@ UseCaseEnvironment::~UseCaseEnvironment()
 // Stop use case root timer
   timer().stop();
 
-  stk::diag::printTimersTable(out(), timer(), stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, m_comm);
+  stk::diag::printTimersTable(sierra::out(), timer(), stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, m_comm);
 
   stk::diag::deleteRootTimer(timer());
-
-  static_cast<stk::indent_streambuf *>(dwout().rdbuf())->redirect(std::cout.rdbuf());
-
-  stk::unregister_ostream(tout());
-  stk::unregister_ostream(dout());
-  stk::unregister_ostream(pout());
-  stk::unregister_ostream(out());
-
-  stk::unregister_log_ostream(std::cerr);
-  stk::unregister_log_ostream(std::cout);
 
   if (m_need_to_finalize) {
     stk::parallel_machine_finalize();

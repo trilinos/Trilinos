@@ -142,7 +142,7 @@ namespace Ioss {
       Region::end_mode(STATE_DEFINE_MODEL);
       if (iodatabase->open_create_behavior() != Ioss::DB_APPEND) {
 	Region::begin_mode(STATE_READONLY);
-}
+      }
     }
 
     properties.add(Property(this,
@@ -347,20 +347,20 @@ namespace Ioss {
 
         // For the invalid transitions; provide a more meaningful
         // message in certain cases...
-        case STATE_READONLY:
+      case STATE_READONLY:
         {
           std::ostringstream errmsg;
           errmsg << "Cannot change state of an input (readonly) database in "
-              << get_database()->get_filename();
+		 << get_database()->get_filename();
           IOSS_ERROR(errmsg);
         }
 
         break;
-        default:
+      default:
         {
           std::ostringstream errmsg;
           errmsg << "Invalid nesting of begin/end pairs in "
-              << get_database()->get_filename();
+		 << get_database()->get_filename();
           IOSS_ERROR(errmsg);
         }
       }
@@ -454,10 +454,10 @@ namespace Ioss {
       if (!warning_output) {
         std::ostringstream errmsg;
         errmsg << "IOSS WARNING: Current time, " << time
-            << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
-                                                                     << " in\n"
-                                                                     << get_database()->get_filename()
-                                                                     << ". This may cause problems in applications that assume monotonically increasing time values.\n";
+	       << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
+	       << " in\n"
+	       << get_database()->get_filename()
+	       << ". This may cause problems in applications that assume monotonically increasing time values.\n";
         IOSS_WARNING << errmsg.str();
         warning_output = true;
       }
@@ -535,23 +535,23 @@ namespace Ioss {
 	get_database()->usage() != WRITE_RESTART ) {
       return std::make_pair(currentState, stateTimes[0]);
     } 
-      // Cleanout the stateTimes vector and reload with current data in
-      // case the database is being read and written at the same time.
-      // This is rare, but is a supported use case.
-      stateCount = 0;
-      std::vector<double>().swap(stateTimes);
-      DatabaseIO *db = (DatabaseIO*)get_database();
-      db->get_step_times();
+    // Cleanout the stateTimes vector and reload with current data in
+    // case the database is being read and written at the same time.
+    // This is rare, but is a supported use case.
+    stateCount = 0;
+    std::vector<double>().swap(stateTimes);
+    DatabaseIO *db = (DatabaseIO*)get_database();
+    db->get_step_times();
 
-      int step = -1;
-      double max_time = -1.0;
-      for (int i=0; i < (int)stateTimes.size(); i++) {
-	if (stateTimes[i] > max_time) {
-	  step = i;
-	  max_time = stateTimes[i];
-	}
+    int step = -1;
+    double max_time = -1.0;
+    for (int i=0; i < (int)stateTimes.size(); i++) {
+      if (stateTimes[i] > max_time) {
+	step = i;
+	max_time = stateTimes[i];
       }
-      return std::make_pair(step+1, max_time);
+    }
+    return std::make_pair(step+1, max_time);
     
   }
 
@@ -562,23 +562,23 @@ namespace Ioss {
 	get_database()->usage() != WRITE_RESTART ) {
       return std::make_pair(currentState, stateTimes[0]);
     } 
-      // Cleanout the stateTimes vector and reload with current data in
-      // case the database is being read and written at the same time.
-      // This is rare, but is a supported use case.
-      stateCount = 0;
-      std::vector<double>().swap(stateTimes);
-      DatabaseIO *db = (DatabaseIO*)get_database();
-      db->get_step_times();
+    // Cleanout the stateTimes vector and reload with current data in
+    // case the database is being read and written at the same time.
+    // This is rare, but is a supported use case.
+    stateCount = 0;
+    std::vector<double>().swap(stateTimes);
+    DatabaseIO *db = (DatabaseIO*)get_database();
+    db->get_step_times();
 
-      int step = 0;
-      double min_time = stateTimes[0];
-      for (int i=1; i < (int)stateTimes.size(); i++) {
-	if (stateTimes[i] < min_time) {
-	  step = i;
-	  min_time = stateTimes[i];
-	}
+    int step = 0;
+    double min_time = stateTimes[0];
+    for (int i=1; i < (int)stateTimes.size(); i++) {
+      if (stateTimes[i] < min_time) {
+	step = i;
+	min_time = stateTimes[i];
       }
-      return std::make_pair(step+1, min_time);
+    }
+    return std::make_pair(step+1, min_time);
     
   }
 
@@ -658,7 +658,7 @@ namespace Ioss {
 
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -669,7 +669,7 @@ namespace Ioss {
       coordinateFrames.push_back(frame);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -716,7 +716,7 @@ namespace Ioss {
       elementBlocks.push_back(element_block);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -762,7 +762,7 @@ namespace Ioss {
       faceBlocks.push_back(face_block);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -808,7 +808,7 @@ namespace Ioss {
       edgeBlocks.push_back(edge_block);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -822,7 +822,7 @@ namespace Ioss {
       sideSets.push_back(sideset);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -836,7 +836,7 @@ namespace Ioss {
       nodeSets.push_back(nodeset);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -850,7 +850,7 @@ namespace Ioss {
       edgeSets.push_back(edgeset);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -864,7 +864,7 @@ namespace Ioss {
       faceSets.push_back(faceset);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -878,7 +878,7 @@ namespace Ioss {
       elementSets.push_back(elementset);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -892,7 +892,7 @@ namespace Ioss {
       commSets.push_back(commset);
       return true;
     } 
-      return false;
+    return false;
     
   }
 
@@ -933,28 +933,31 @@ namespace Ioss {
   {
     // See if an entity with this name already exists...
     std::string db_name = ge->name();
-    const GroupingEntity *old_ge = get_entity(db_name);
-    if (old_ge != nullptr && ge != old_ge) {
-      if (!((old_ge->type() == SIDEBLOCK &&     ge->type() == SIDESET) ||
-      (    ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
-	ssize_t old_id = -1;
-	ssize_t new_id = -1;
-	if (old_ge->property_exists(id_str())) {
-	  old_id = old_ge->get_property(id_str()).get_int();
-	}
-	if (ge->property_exists(id_str())) {
-	  new_id = ge->get_property(id_str()).get_int();
-	}
+    std::string alias = get_alias(db_name);
+
+    if (!alias.empty()) {
+      const GroupingEntity *old_ge = get_entity(db_name);
+      if (old_ge != nullptr && ge != old_ge) {
+	if (!((old_ge->type() == SIDEBLOCK &&     ge->type() == SIDESET) ||
+	      (    ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
+	  ssize_t old_id = -1;
+	  ssize_t new_id = -1;
+	  if (old_ge->property_exists(id_str())) {
+	    old_id = old_ge->get_property(id_str()).get_int();
+	  }
+	  if (ge->property_exists(id_str())) {
+	    new_id = ge->get_property(id_str()).get_int();
+	  }
       
-	std::ostringstream errmsg;
-	errmsg << "\n\nERROR: Duplicate names detected.\n       The name '" << db_name << "' was found for both "
-	       << old_ge->type_string() << " " << old_id << " and "
-	       << ge->type_string() << " " << new_id
-	       << ".\n       Names must be unique over all types in a finite element model.\n\n";
-	IOSS_ERROR(errmsg);
+	  std::ostringstream errmsg;
+	  errmsg << "\n\nERROR: Duplicate names detected.\n       The name '" << db_name << "' was found for both "
+		 << old_ge->type_string() << " " << old_id << " and "
+		 << ge->type_string() << " " << new_id
+		 << ".\n       Names must be unique over all types in a finite element model.\n\n";
+	  IOSS_ERROR(errmsg);
+	}
       }
     }
-
     bool success = add_alias(db_name, db_name);
 
     // "db_name" property is used with the canonical name setting.
@@ -977,22 +980,22 @@ namespace Ioss {
     std::string canon = db_name;
     if (db_name != alias) {
       canon = get_alias(db_name);
-}
+    }
       
     if (!canon.empty()) {
       std::string uname = uppercase(alias);
       if (uname != alias) {
 	aliases_.insert(std::make_pair(uname, canon));
-}
+      }
 
       std::pair<AliasMap::iterator, bool> result = aliases_.insert(std::make_pair(alias, canon));
       return result.second;
     } 
-	std::ostringstream errmsg;
-	errmsg << "\n\nERROR: The entity named '" << db_name << "' which is being aliased to '" << alias
-	       << "' does not exist in region '" << name() << "'.\n";
-	IOSS_ERROR(errmsg);
-	return false;
+    std::ostringstream errmsg;
+    errmsg << "\n\nERROR: The entity named '" << db_name << "' which is being aliased to '" << alias
+	   << "' does not exist in region '" << name() << "'.\n";
+    IOSS_ERROR(errmsg);
+    return false;
     
   }
 
@@ -1003,7 +1006,7 @@ namespace Ioss {
     if (I == aliases_.end()) {
       return "";
     } 
-      return (*I).second;
+    return (*I).second;
     
   }
 
@@ -1264,49 +1267,60 @@ namespace Ioss {
     // (the 'type' values are from client code that was developed prior
     // to this function, so they are somewhat exodusII specific...).
     if (((io_type & NODEBLOCK) != 0u) && get_node_block(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "NODE_BLOCK";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "NODE_BLOCK";
+      }
+      return true;
     } if (((io_type & EDGEBLOCK) != 0u) && get_edge_block(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "EDGE_BLOCK";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "EDGE_BLOCK";
+      }
+      return true;
     } else if (((io_type & FACEBLOCK) != 0u) && get_face_block(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "FACE_BLOCK";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "FACE_BLOCK";
+      }
+      return true;
     } else if (((io_type & ELEMENTBLOCK) != 0u) && get_element_block(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "ELEMENT_BLOCK";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "ELEMENT_BLOCK";
+      }
+      return true;
     } else if (((io_type & SIDESET) != 0u) && get_sideset(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "SURFACE";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "SURFACE";
+      }
+      return true;
     } else if (((io_type & NODESET) != 0u) && get_nodeset(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "NODESET";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "NODESET";
+      }
+      return true;
     } else if (((io_type & EDGESET) != 0u) && get_edgeset(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "EDGESET";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "EDGESET";
+      }
+      return true;
     } else if (((io_type & FACESET) != 0u) && get_faceset(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "FACESET";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "FACESET";
+      }
+      return true;
     } else if (((io_type & ELEMENTSET) != 0u) && get_elementset(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "ELEMENTSET";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "ELEMENTSET";
+      }
+      return true;
     } else if (((io_type & COMMSET) != 0u) && get_commset(my_name) != nullptr) {
-      if (my_type != nullptr) { *my_type = "COMMSET";
-      
-}return true;
+      if (my_type != nullptr) {
+	*my_type = "COMMSET";
+      }
+      return true;
     }
-    if (my_type != nullptr) { *my_type = "INVALID";
-    
-}return false;
+    if (my_type != nullptr) {
+      *my_type = "INVALID";
+    }
+    return false;
   }
 
   // Retrieve the element block that contains the specified element
@@ -1318,7 +1332,7 @@ namespace Ioss {
     for (auto eb : elementBlocks) {
       if (eb->contains(local_id)) {
 	return eb;
-}
+      }
     }
     // Should not reach this point...
     std::ostringstream errmsg;
@@ -1340,47 +1354,47 @@ namespace Ioss {
 
     if (my_name == "node_block_count") {
       return Property(my_name, (int)nodeBlocks.size());
-}
+    }
 
     if (my_name == "edge_block_count") {
       return Property(my_name, (int)edgeBlocks.size());
-}
+    }
 
     if (my_name == "face_block_count") {
       return Property(my_name, (int)faceBlocks.size());
-}
+    }
 
     if (my_name == "element_block_count") {
       return Property(my_name, (int)elementBlocks.size());
-}
+    }
 
     if (my_name == "side_set_count") {
       return Property(my_name, (int)sideSets.size());
-}
+    }
 
     if (my_name == "node_set_count") {
       return Property(my_name, (int)nodeSets.size());
-}
+    }
 
     if (my_name == "edge_set_count") {
       return Property(my_name, (int)edgeSets.size());
-}
+    }
 
     if (my_name == "face_set_count") {
       return Property(my_name, (int)faceSets.size());
-}
+    }
 
     if (my_name == "element_set_count") {
       return Property(my_name, (int)elementSets.size());
-}
+    }
 
     if (my_name == "comm_set_count") {
       return Property(my_name, (int)commSets.size());
-}
+    }
 
     if (my_name == "coordinate_frame_count") {
       return Property(my_name, (int)coordinateFrames.size());
-}
+    }
 
     if (my_name == "state_count") {
       return Property(my_name, stateCount);
@@ -1427,19 +1441,19 @@ namespace Ioss {
       return Property(my_name, filename);
     }
 
-     {
+    {
       return GroupingEntity::get_implicit_property(my_name);
-}
+    }
   }
 
   int64_t Region::internal_get_field_data(const Field& field,
-				      void *data, size_t data_size) const
+					  void *data, size_t data_size) const
   {
     return get_database()->get_field(this, field, data, data_size);
   }
 
   int64_t Region::internal_put_field_data(const Field& field,
-				      void *data, size_t data_size) const
+					  void *data, size_t data_size) const
   {
     return get_database()->put_field(this, field, data, data_size);
   }
