@@ -772,7 +772,7 @@ int Epetra_MpiDistributor::DoReverse( char * export_objs,
   // a reversed distributor
   lastRoundBytesSend_ = 0;
   for(int i=0; i<NumReceives(); i++)
-    lastRoundBytesRecv_ += lengths_to_[i]*obj_size;
+    lastRoundBytesRecv_ += lengths_from_[i]*obj_size;
   lastRoundBytesSend_ =len_import_objs;
 
   return(0);
