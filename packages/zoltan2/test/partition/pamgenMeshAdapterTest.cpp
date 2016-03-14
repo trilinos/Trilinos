@@ -294,13 +294,14 @@ int main(int narg, char *arg[]) {
 
     RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
-    RCP<const base_adapter_t> bia = 
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+
+    RCP<const base_adapter_t> rcpbia =  rcp(bia);
 
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
+      rcp(new quality_t(env, CommT, rcpbia, &problem.getSolution(), false));
 
     if (!me) {
       metricObject->printMetrics(cout);
