@@ -47,7 +47,7 @@
 #include <algorithm>
 #include <cstdlib>
 
-#include "ROL_ElementwiseVector.hpp"
+#include "ROL_Vector.hpp"
 
 /** \class ROL::StdVector
     \brief Provides the std::vector implementation of the ROL::Vector interface.
@@ -57,7 +57,7 @@
 namespace ROL {
 
 template <class Real, class Element=Real>
-class StdVector : public ElementwiseVector<Real> {
+class StdVector : public Vector<Real> {
 
   typedef typename std::vector<Real>::size_type uint;
 
@@ -68,6 +68,74 @@ private:
 public:
 
   StdVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
+
+  void set( const Vector<Real> &x ) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
+    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
+    std::copy(xval.begin(),xval.end(),std_vec_->begin());   
+  }
+
+  void plus( const Vector<Real> &x ) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
+    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
+    uint dim  = std_vec_->size();
+    for (uint i=0; i<dim; i++) {
+      (*std_vec_)[i] += xval[i];
+    }
+  }
+
+  void axpy( const Real alpha, const Vector<Real> &x ) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
+    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
+    uint dim  = std_vec_->size();
+    for (uint i=0; i<dim; i++) {
+      (*std_vec_)[i] += alpha*xval[i];
+    }
+  }
+
+  void scale( const Real alpha ) {
+    uint dim = std_vec_->size();
+    for (uint i=0; i<dim; i++) {
+      (*std_vec_)[i] *= alpha;
+    }
+  }
+
+  virtual Real dot( const Vector<Real> &x ) const {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
+    const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
+    uint dim  = std_vec_->size();
+    Real val = 0;
+    for (uint i=0; i<dim; i++) {
+      val += (*std_vec_)[i]*xval[i];
+    }
+    return val;
+  }
+
+  Real norm() const {
+    Real val = 0;
+    val = std::sqrt( dot(*this) );
+    return val;
+  }
 
   virtual Teuchos::RCP<Vector<Real> > clone() const {
     return Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size())) ));
