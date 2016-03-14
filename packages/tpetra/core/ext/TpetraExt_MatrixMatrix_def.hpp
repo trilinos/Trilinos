@@ -57,9 +57,6 @@
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
 
-//#define COMPUTE_MMM_STATISTICS
-
-
 /*! \file TpetraExt_MatrixMatrix_def.hpp
 
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
@@ -994,7 +991,7 @@ void mult_AT_B_newmatrix(
     Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
                                  B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
   }
-#ifdef COMPUTE_MMM_STATISTICS
+#ifdef HAVE_TPETRA_MMM_STATISTICS
   printMultiplicationStatistics(Ctemp->getGraph()->getExporter(), label+std::string(" AT_B MMM"));
 #endif
 }
@@ -2211,7 +2208,7 @@ void import_and_extract_views(
     Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcp(&M,false),
                                     *importer, M.getDomainMap(), MremoteRowMap, rcp(&labelList,false));
 
-#ifdef COMPUTE_MMM_STATISTICS
+#ifdef HAVE_TPETRA_MMM_STATISTICS
     printMultiplicationStatistics(importer, label + std::string(" I&X MMM"));
 #endif
 
