@@ -59,7 +59,7 @@ namespace Zoltan2 {
 */
 
 template <typename Adapter>
-  class MappingSolution : public Solution<Adapter>
+class MappingSolution : public Solution
 {
 public:
 
@@ -87,7 +87,15 @@ public:
   // TODO:  KDDKDD Could require O(nprocs) storage
   void getPartsForRankView(int rank, part_t &numParts, part_t *&parts)
   {
+    if ((partsForRankIdx == Teuchos::null) && (rankForPart == Teuchos::null)) {
+      numParts = 0;
+      parts = NULL;
+      throw std::runtime_error("No mapping solution available.");
+    }
+
     if (rank < 0 || rank >= nRanks) {
+      numParts = 0;
+      parts = NULL;
       throw std::runtime_error("Invalid rank input to getPartsForRankView");
     }
 
@@ -96,15 +104,16 @@ public:
       partsForRankIdx = arcp(new part_t[nRanks+1], 0, nRanks+1, true);
       for (int i = 0; i <= nRanks; i++) partsForRankIdx[i] = 0;
 
+      size_t nParts = rankForPart->size();
       partsForRank = arcp(new part_t[nParts], 0, nParts, true);
 
-      for (rankmap_t::iterator it = rankForPart->begin();
+      for (typename rankmap_t::iterator it = rankForPart->begin();
            it != rankForPart->end(); it++) {
         partsForRankIdx[it->second+1]++;       
       }
       for (int i = 1; i <= nRanks; i++)
         partsForRankIdx[i] += partsForRankIdx[i-1];
-      for (rankmap_t::iterator it = rankForPart->begin();
+      for (typename rankmap_t::iterator it = rankForPart->begin();
            it != rankForPart->end(); it++) {
         partsForRank[partsForRankIdx[it->second]] = it->first;
         partsForRankIdx[it->second]++;
@@ -129,6 +138,10 @@ public:
 
   int getRankForPart(part_t part) {
 
+    if ((partsForRankIdx == Teuchos::null) && (rankForPart == Teuchos::null)) {
+      throw std::runtime_error("No mapping solution available.");
+    }
+
     if (part < 0 || part > maxPart) {
       throw std::runtime_error("Invalid part number input to getRankForPart");
     }
@@ -140,10 +153,8 @@ public:
           (*rankForPart)[partsForRank[j]] = i;
     }
 
-    // TODO Error check:  what if part is not in rankForPart?
-
-    if ((rankmap_t::const_iterator it = rankForPart->find(part)) != 
-         rankForPart->end())
+    typename rankmap_t::iterator it;
+    if ((it = rankForPart->find(part)) != rankForPart->end())
       return it->second;
     else 
       throw std::runtime_error("Invalid part number input to getRankForPart");
@@ -174,7 +185,7 @@ public:
   void setMap_RankForPart(RCP<rankmap_t> &rankmap) {
     rankForPart = rankmap;
     int maxRank = 0;
-    for (rankmap_t::iterator it = rankForPart->begin();
+    for (typename rankmap_t::iterator it = rankForPart->begin();
          it != rankForPart->end(); it++) {
       if (it->first > maxPart) maxPart = it->first;
       if (it->second > maxRank) maxRank = it->second;
