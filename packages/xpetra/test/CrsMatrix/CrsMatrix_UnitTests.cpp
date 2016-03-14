@@ -1071,6 +1071,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     std::cout << "Run ConstructMatrixKokkos test" << std::endl;
+    Kokkos::initialize();
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node> CrsMatrixClass;
@@ -1248,6 +1249,7 @@ namespace {
         }
       }
     }
+    Kokkos::finalize();
 #endif
   }
 
