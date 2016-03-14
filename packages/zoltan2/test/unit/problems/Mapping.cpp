@@ -202,7 +202,7 @@ private:
 
 template <typename Adapter>
 bool validMappingSolution(
-  Zoltan2::MappingSolution<Adapter> &msolution,
+  Zoltan2::MappingSolution<Adapter> &msoln,
   Adapter &ia,
   const Teuchos::Comm<int> &comm
 )
@@ -222,7 +222,7 @@ bool validMappingSolution(
     const part_t *inputParts; 
     ia.getPartsView(inputParts);
     for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
-      int r = msolution.getRankForPart(inputParts[i]);
+      int r = msoln.getRankForPart(inputParts[i]);
       if (r < 0 || r >= np) {
         aok = false;
         std::cout << "Invalid rank " << r << " of " << np << " returned" 
@@ -232,7 +232,7 @@ bool validMappingSolution(
   }
   else {
     // Default input part numbers:  part == rank
-    int r = msolution.getRankForPart(part_t(me));
+    int r = msoln.getRankForPart(part_t(me));
     if (r < 0 || r >= np) {
       aok = false;
       std::cout << "Invalid rank " << r << " of " << np << " returned" 
@@ -244,7 +244,7 @@ bool validMappingSolution(
 
   part_t *parts;
   part_t nParts;
-  msolution.getPartsForRankView(me, nParts, parts);
+  msoln.getPartsForRankView(me, nParts, parts);
 
   for (part_t i = 0; i < nParts; i++) {
     part_t p = parts[i];
@@ -262,7 +262,7 @@ bool validMappingSolution(
   part_t sillyPart = ia.adapterLowestPartNum() + 
                      (np+1) * ia.adapterNPartsPerRow();
   try {
-    msolution.getRankForPart(sillyPart);
+    msoln.getRankForPart(sillyPart);
   }
   catch (std::exception &e) {
     errorThrownCorrectly = true;
@@ -276,7 +276,7 @@ bool validMappingSolution(
   errorThrownCorrectly = false;
   sillyPart = ia.adapterLowestPartNum() - 1;
   try {
-    msolution.getRankForPart(sillyPart);
+    msoln.getRankForPart(sillyPart);
   }
   catch (std::exception &e) {
     errorThrownCorrectly = true;
@@ -289,7 +289,7 @@ bool validMappingSolution(
 
   errorThrownCorrectly = false;
   try {
-    msolution.getPartsForRankView(np+1, nParts, parts);
+    msoln.getPartsForRankView(np+1, nParts, parts);
   }
   catch (std::exception &e) {
     errorThrownCorrectly = true;
@@ -312,6 +312,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<const Zoltan2::Environment> env;
   int me = comm->getRank();
+  bool allgood = true;
 
   typedef VerySimpleVectorAdapter<zzuser_t> vecAdapter_t;
   
@@ -329,12 +330,16 @@ int main(int argc, char *argv[])
     params.set("mapping_algorithm", "geometric");
 
     // Test mapping using default machine
-    Zoltan2::MappingProblem<vecAdapter_t> mproblem1(&ia, &params, comm);
-    mproblem1.solve();
+    if (me == 0)
+      std::cout << "Testing Mapping using default machine" << std::endl;
 
-    Zoltan2::MappingSolution<vecAdapter_t> *msolution1 = mproblem1.getSolution();
+    Zoltan2::MappingProblem<vecAdapter_t> mprob1(&ia, &params, comm);
+    mprob1.solve();
 
-    if (!validMappingSolution<vecAdapter_t>(*msolution1, ia, *comm)) {
+    Zoltan2::MappingSolution<vecAdapter_t> *msoln1 = mprob1.getSolution();
+
+    if (!validMappingSolution<vecAdapter_t>(*msoln1, ia, *comm)) {
+      allgood = false;
       if (me == 0) 
         std::cout << "test 1 FAILED: invalid mapping solution" << std::endl;
     }
@@ -343,13 +348,14 @@ int main(int argc, char *argv[])
     // Test mapping explicitly using default machine
     Zoltan2::MachineRepresentation<scalar_t, part_t> defMachine(*comm);
 
-    Zoltan2::MappingProblem<vecAdapter_t> mproblem2(&ia, &params, comm,
+    Zoltan2::MappingProblem<vecAdapter_t> mprob2(&ia, &params, comm,
                                                     NULL, &defMachine);
-    mproblem2.solve();
+    mprob2.solve();
 
-    Zoltan2::MappingSolution<vecAdapter_t> *msolution2 = mproblem2.getSolution();
+    Zoltan2::MappingSolution<vecAdapter_t> *msoln2 = mprob2.getSolution();
    
-    if (!sameMappingSolution(*msolution1, *msolution2, *comm)) {
+    if (!sameMappingSolution(*msoln1, *msoln2, *comm)) {
+      allgood = false;
       if (me == 0) 
         std::cout << "test 1 FAILED: solution with explicit machine "
                      "differs from default" << std::endl;
@@ -362,13 +368,14 @@ int main(int argc, char *argv[])
       partList[i] = me + 1;
     psolution->setParts(partList);
 
-    Zoltan2::MappingProblem<vecAdapter_t> mproblem3(&ia, &params, comm,
+    Zoltan2::MappingProblem<vecAdapter_t> mprob3(&ia, &params, comm,
                                                     NULL, &defMachine);
-    mproblem3.solve();
+    mprob3.solve();
 
-    Zoltan2::MappingSolution<vecAdapter_t> *msolution3 = mproblem3.getSolution();
+    Zoltan2::MappingSolution<vecAdapter_t> *msoln3 = mprob3.getSolution();
    
-    if (!validMappingSolution(*msolution3, ia, psolution, *comm))
+    if (!validMappingSolution(*msoln3, ia, psolution, *comm))
+      allgood = false;
       if (me == 0) 
         std::cout << "test 1 FAILED: invalid mapping solution "
                      "from partitioning solution" << std::endl;
@@ -411,5 +418,8 @@ int main(int argc, char *argv[])
     ia.printMethods("test4");
   }
 #endif
+
+  if (allgood && (me == 0))
+    std::cout << "PASS" << std::endl;
 
 }

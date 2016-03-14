@@ -148,6 +148,7 @@ public:
 
     if (rankForPart == Teuchos::null) {
       // Need data stored in unordered_map; create it
+      rankForPart = rcp(new rankmap_t(partsForRankIdx[nRanks]));
       for (int i = 0; i < nRanks; i++)
         for (part_t j = partsForRankIdx[i]; j < partsForRankIdx[i+1]; j++)
           (*rankForPart)[partsForRank[j]] = i;
