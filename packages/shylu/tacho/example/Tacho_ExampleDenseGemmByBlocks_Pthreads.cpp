@@ -13,6 +13,8 @@ typedef Kokkos::Threads exec_space;
 
 #include "Tacho_ExampleDenseGemmByBlocks.hpp"
 
+using namespace Tacho;
+
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
@@ -73,22 +75,37 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(std::cout, true);
     
-    std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << std::endl;
-    r_val = Tacho::exampleDenseGemmByBlocks
-      <Tacho::Trans::NoTranspose,Tacho::Trans::NoTranspose,Tacho::Variant::One,exec_space>
+    std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose, Variant::One (external)" << std::endl;
+    r_val = exampleDenseGemmByBlocks
+      <Trans::NoTranspose,Trans::NoTranspose,Variant::One,exec_space>
       (mmin, mmax, minc, k, mb,
        max_concurrency, max_task_dependence, team_size, mkl_nthreads,
        check,
        verbose);
 
-    // cout << "DenseGemmByBlocks:: ConjTranspose, NoTranspose" << endl;
-    // r_val = Tacho::exampleDenseGemmByBlocks
-    //   <Trans::ConjTranspose,Trans::NoTranspose, 
-    //   value_type,ordinal_type,size_type,exec_space,void>
-    //   (mmin, mmax, minc, k, mb,
-    //    max_concurrency, max_task_dependence, team_size, mkl_nthreads,
-    //    check,
-    //    verbose);
+    std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose, Variant::Two (internal)" << std::endl;
+    r_val = exampleDenseGemmByBlocks
+      <Trans::NoTranspose,Trans::NoTranspose,Variant::Two,exec_space>
+      (mmin, mmax, minc, k, mb,
+       max_concurrency, max_task_dependence, team_size, mkl_nthreads,
+       check,
+       verbose);
+
+    std::cout << "DenseGemmByBlocks:: ConjTranspose, NoTranspose, Variant::One (external)" << std::endl;
+    r_val = exampleDenseGemmByBlocks
+      <Trans::ConjTranspose,Trans::NoTranspose,Variant::One,exec_space>
+      (mmin, mmax, minc, k, mb,
+       max_concurrency, max_task_dependence, team_size, mkl_nthreads,
+       check,
+       verbose);
+
+    std::cout << "DenseGemmByBlocks:: ConjTranspose, NoTranspose, Variant::One (internal)" << std::endl;
+    r_val = exampleDenseGemmByBlocks
+      <Trans::ConjTranspose,Trans::NoTranspose,Variant::Two,exec_space>
+      (mmin, mmax, minc, k, mb,
+       max_concurrency, max_task_dependence, team_size, mkl_nthreads,
+       check,
+       verbose);
     
     exec_space::finalize();
   }

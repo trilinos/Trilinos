@@ -165,7 +165,7 @@ namespace Tacho {
             err  += diff*diff;
             norm += val*val;
           }
-        os << ":: Check result ::err = " << sqrt(err) << ", norm = " << sqrt(norm);
+        os << ":: Check result ::norm = " << sqrt(norm) << ", error = " << sqrt(err);
       }
       std::cout << os.str() << std::endl;
     }

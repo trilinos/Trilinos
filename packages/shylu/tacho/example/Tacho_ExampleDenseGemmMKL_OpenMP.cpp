@@ -13,6 +13,8 @@ typedef Kokkos::OpenMP exec_space;
 
 #include "Tacho_ExampleDenseGemmMKL.hpp"
 
+using namespace Tacho;
+
 int main (int argc, char *argv[]) {
   
   Teuchos::CommandLineProcessor clp;
@@ -58,7 +60,7 @@ int main (int argc, char *argv[]) {
 #ifdef HAVE_SHYLUTACHO_MKL
     std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << std::endl;
     mkl_set_num_threads(nthreads);
-    r_val = Tacho::exampleDenseGemmMKL<exec_space>
+    r_val = exampleDenseGemmMKL<exec_space>
       (mmin, mmax, minc, k,
        verbose);
 #else
