@@ -53,7 +53,7 @@
 *
 *****************************************************************************/
 
-#include <string.h>                     // for strcpy
+#include <string.h>                     // for strncpy
 #include <sys/types.h>                  // for int64_t
 #include "exodusII.h"                   // for ex_block, etc
 

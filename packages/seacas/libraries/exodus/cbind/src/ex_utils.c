@@ -47,7 +47,7 @@
 #include <stddef.h>                     /* for size_t */
 #include <stdio.h>                      /* for sprintf, NULL, fprintf, etc */
 #include <stdlib.h>                     /* for free, calloc, malloc, etc */
-#include <string.h>                     /* for strcpy, strlen */
+#include <string.h>                     /* for strlen */
 #include <sys/types.h>                  /* for int64_t */
 
 #include "exodusII.h"                   /* for exerrval, ex_err, etc */
@@ -578,9 +578,9 @@ int ex_id_lkup( int exoid,
                 ex_entity_id   num)
 {
 
-  char id_table[MAX_VAR_NAME_LENGTH+1];
-  char id_dim[MAX_VAR_NAME_LENGTH+1];
-  char stat_table[MAX_VAR_NAME_LENGTH+1];
+  char *id_table;
+  char *id_dim;
+  char* stat_table;
   int varid, dimid;
   size_t dim_len, i;
   int64_t *id_vals=NULL;
@@ -599,76 +599,76 @@ int ex_id_lkup( int exoid,
   case EX_GLOBAL:
     return 0;
   case EX_ELEM_BLOCK:
-    strcpy(id_table, VAR_ID_EL_BLK);            /* id array name */
-    strcpy(id_dim, DIM_NUM_EL_BLK);             /* id array dimension name*/
-    strcpy(stat_table, VAR_STAT_EL_BLK);        /* id status array name */
+    id_table = VAR_ID_EL_BLK;            /* id array name */
+    id_dim   = DIM_NUM_EL_BLK;             /* id array dimension name*/
+    stat_table = VAR_STAT_EL_BLK;        /* id status array name */
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_eb);
     break;
   case EX_NODE_SET:
-    strcpy(id_table, VAR_NS_IDS);
-    strcpy(id_dim, DIM_NUM_NS);
-    strcpy(stat_table, VAR_NS_STAT);
+    id_table = VAR_NS_IDS;
+    id_dim = DIM_NUM_NS;
+    stat_table = VAR_NS_STAT;
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_ns);
     break;
   case EX_SIDE_SET:
-    strcpy(id_table, VAR_SS_IDS);
-    strcpy(id_dim, DIM_NUM_SS);
-    strcpy(stat_table, VAR_SS_STAT);
+    id_table = VAR_SS_IDS;
+    id_dim = DIM_NUM_SS;
+    stat_table = VAR_SS_STAT;
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_ss);
     break;
-  case EX_ELEM_MAP:
-    strcpy(id_table, VAR_EM_PROP(1));
-    strcpy(id_dim, DIM_NUM_EM);
-    strcpy(stat_table, "");
-    tmp_stats = ex_get_stat_ptr (exoid, &exoII_em);
-    break;
-  case EX_NODE_MAP:
-    strcpy(id_table, VAR_NM_PROP(1));
-    strcpy(id_dim, DIM_NUM_NM);
-    strcpy(stat_table, "");
-    tmp_stats = ex_get_stat_ptr (exoid, &exoII_nm);
-    break;
   case EX_EDGE_BLOCK:
-    strcpy(id_table, VAR_ID_ED_BLK);
-    strcpy(id_dim, DIM_NUM_ED_BLK);
-    strcpy(stat_table, VAR_STAT_ED_BLK);
+    id_table = VAR_ID_ED_BLK;
+    id_dim = DIM_NUM_ED_BLK;
+    stat_table = VAR_STAT_ED_BLK;
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_ed);
     break;
   case EX_FACE_BLOCK:
-    strcpy(id_table, VAR_ID_FA_BLK);
-    strcpy(id_dim, DIM_NUM_FA_BLK);
-    strcpy(stat_table, VAR_STAT_FA_BLK);
+    id_table = VAR_ID_FA_BLK;
+    id_dim = DIM_NUM_FA_BLK;
+    stat_table = VAR_STAT_FA_BLK;
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_fa);
     break;
   case EX_EDGE_SET:
-    strcpy(id_table, VAR_ES_IDS);
-    strcpy(id_dim, DIM_NUM_ES);
-    strcpy(stat_table, VAR_ES_STAT);
+    id_table = VAR_ES_IDS;
+    id_dim = DIM_NUM_ES;
+    stat_table = VAR_ES_STAT;
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_es);
     break;
   case EX_FACE_SET:
-    strcpy(id_table, VAR_FS_IDS);
-    strcpy(id_dim, DIM_NUM_FS);
-    strcpy(stat_table, VAR_FS_STAT);
+    id_table = VAR_FS_IDS;
+    id_dim = DIM_NUM_FS;
+    stat_table = VAR_FS_STAT;
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_fs);
     break;
   case EX_ELEM_SET:
-    strcpy(id_table, VAR_ELS_IDS);
-    strcpy(id_dim, DIM_NUM_ELS);
-    strcpy(stat_table, VAR_ELS_STAT);
+    id_table = VAR_ELS_IDS;
+    id_dim = DIM_NUM_ELS;
+    stat_table = VAR_ELS_STAT;
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_els);
     break;
+  case EX_NODE_MAP:
+    id_table = VAR_NM_PROP(1);
+    id_dim = DIM_NUM_NM;
+    stat_table = "";
+    tmp_stats = ex_get_stat_ptr (exoid, &exoII_nm);
+    break;
   case EX_EDGE_MAP:
-    strcpy(id_table, VAR_EDM_PROP(1));
-    strcpy(id_dim, DIM_NUM_EDM);
-    strcpy(stat_table, "");
+    id_table = VAR_EDM_PROP(1);
+    id_dim = DIM_NUM_EDM;
+    stat_table = "";
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_edm);
     break;
   case EX_FACE_MAP:
-    strcpy(id_table, VAR_FAM_PROP(1));
-    strcpy(id_dim, DIM_NUM_FAM);
-    strcpy(stat_table, "");
+    id_table = VAR_FAM_PROP(1);
+    id_dim = DIM_NUM_FAM;
+    stat_table = "";
     tmp_stats = ex_get_stat_ptr (exoid, &exoII_fam);
+    break;
+  case EX_ELEM_MAP:
+    id_table = VAR_EM_PROP(1);
+    id_dim = DIM_NUM_EM;
+    stat_table = "";
+    tmp_stats = ex_get_stat_ptr (exoid, &exoII_em);
     break;
   default:
     exerrval = EX_BADPARAM;
@@ -1148,53 +1148,52 @@ void ex_rm_file_item( int exoid,                /* file id */
 int ex_get_num_props (int exoid, ex_entity_type obj_type)
 {
   int cntr, varid;
-  char var_name[MAX_VAR_NAME_LENGTH+1];
+  char *var_name;
   char  errmsg[MAX_ERR_LENGTH];
 
   cntr = 0;
 
   /* loop until there is not a property variable defined; the name of */
   /* the variables begin with an increment of 1 ("xx_prop1") so use cntr+1 */
-
   while (EX_TRUE)
     {
       switch (obj_type)
 	{
 	case EX_ELEM_BLOCK:
-	  strcpy (var_name, VAR_EB_PROP(cntr+1));
+	  var_name =  VAR_EB_PROP(cntr+1);
 	  break;
 	case EX_EDGE_BLOCK:
-	  strcpy (var_name, VAR_ED_PROP(cntr+1));
+	  var_name =  VAR_ED_PROP(cntr+1);
 	  break;
 	case EX_FACE_BLOCK:
-	  strcpy (var_name, VAR_FA_PROP(cntr+1));
+	  var_name =  VAR_FA_PROP(cntr+1);
 	  break;
 	case EX_NODE_SET:
-	  strcpy (var_name, VAR_NS_PROP(cntr+1));
+	  var_name =  VAR_NS_PROP(cntr+1);
 	  break;
 	case EX_EDGE_SET:
-	  strcpy (var_name, VAR_ES_PROP(cntr+1));
+	  var_name =  VAR_ES_PROP(cntr+1);
 	  break;
 	case EX_FACE_SET:
-	  strcpy (var_name, VAR_FS_PROP(cntr+1));
+	  var_name =  VAR_FS_PROP(cntr+1);
 	  break;
 	case EX_SIDE_SET:
-	  strcpy (var_name, VAR_SS_PROP(cntr+1));
+	  var_name =  VAR_SS_PROP(cntr+1);
 	  break;
 	case EX_ELEM_SET:
-	  strcpy (var_name, VAR_ELS_PROP(cntr+1));
+	  var_name =  VAR_ELS_PROP(cntr+1);
 	  break;
 	case EX_ELEM_MAP:
-	  strcpy (var_name, VAR_EM_PROP(cntr+1));
+	  var_name =  VAR_EM_PROP(cntr+1);
 	  break;
 	case EX_FACE_MAP:
-	  strcpy (var_name, VAR_FAM_PROP(cntr+1));
+	  var_name =  VAR_FAM_PROP(cntr+1);
 	  break;
 	case EX_EDGE_MAP:
-	  strcpy (var_name, VAR_EDM_PROP(cntr+1));
+	  var_name =  VAR_EDM_PROP(cntr+1);
 	  break;
 	case EX_NODE_MAP:
-	  strcpy (var_name, VAR_NM_PROP(cntr+1));
+	  var_name =  VAR_NM_PROP(cntr+1);
 	  break;
 	default:
 	  exerrval = EX_BADPARAM;

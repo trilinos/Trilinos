@@ -37,7 +37,7 @@
 #include <stddef.h>                     // for size_t
 #include <stdio.h>                      // for sprintf
 #include <stdlib.h>                     // for free, malloc
-#include <string.h>                     // for NULL, strcpy, strlen
+#include <string.h>                     // for NULL, strlen
 #include "exodusII.h"                   // for ex_block, ex_err, exerrval, etc
 #include "exodusII_int.h"               // for EX_FATAL, etc
 #include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
@@ -68,8 +68,8 @@ int ex_put_block_params( int         exoid,
   int connid;
   int npeid;
   char errmsg[MAX_ERR_LENGTH];
-  char entity_type1[5];
-  char entity_type2[5];
+  char *entity_type1;
+  char *entity_type2;
   int* blocks_to_define = NULL;
   const char* dnumblk = NULL;
   const char* vblkids = NULL;
@@ -195,7 +195,7 @@ int ex_put_block_params( int         exoid,
       blk_stat = 0; /* change element block status to NULL */
     } else {
       blk_stat = 1; /* change element block status to EX_EX_TRUE */
-}
+    }
 
     if ((status = nc_inq_varid (exoid, vblksta, &varid)) != NC_NOERR) {
       exerrval = status;
@@ -390,11 +390,11 @@ int ex_put_block_params( int         exoid,
 	  (blocks[i].topology[2] == 'i' || blocks[i].topology[2] == 'I')) {
 	arbitrary_polyhedra = 1;
       } else if ((blocks[i].topology[0] == 'n' || blocks[i].topology[0] == 'N') &&
-	       (blocks[i].topology[1] == 'f' || blocks[i].topology[1] == 'F') &&
-	       (blocks[i].topology[2] == 'a' || blocks[i].topology[2] == 'A')) {
+		 (blocks[i].topology[1] == 'f' || blocks[i].topology[1] == 'F') &&
+		 (blocks[i].topology[2] == 'a' || blocks[i].topology[2] == 'A')) {
 	/* If a FACE_BLOCK, then we are dealing with the faces of the nfaced blocks[i]. */
 	arbitrary_polyhedra = blocks[i].type == EX_FACE_BLOCK ? 1 : 2;
-}
+      }
     }
 
     /* element connectivity array */
@@ -412,19 +412,19 @@ int ex_put_block_params( int         exoid,
 	vconn = vnodcon;
 
 	/* store entity types as attribute of npeid variable -- node/elem, node/face, face/elem*/
-	strcpy(entity_type1, "NODE");
+	entity_type1 = "NODE";
 	if (blocks[i].type == EX_ELEM_BLOCK) {
-	  strcpy(entity_type2, "ELEM");
+	  entity_type2 = "ELEM";
 	} else {
-	  strcpy(entity_type2, "FACE");
-}
+	  entity_type2 = "FACE";
+	}
       } else if (arbitrary_polyhedra == 2) {
 	dims[0] = nfacperentdim;
 	vconn = vfaccon;
 
 	/* store entity types as attribute of npeid variable -- node/elem, node/face, face/elem*/
-	strcpy(entity_type1, "FACE");
-	strcpy(entity_type2, "ELEM");
+	entity_type1 = "FACE";
+	entity_type2 = "ELEM";
       }
 
       if ((status = nc_def_var(exoid, vconn, conn_int_type, 1, dims, &connid)) != NC_NOERR) {

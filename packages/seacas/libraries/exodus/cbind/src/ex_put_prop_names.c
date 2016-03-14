@@ -35,7 +35,7 @@
 
 #include <stddef.h>                     // for size_t
 #include <stdio.h>                      // for sprintf, fprintf, stderr
-#include <string.h>                     // for strcpy, strlen
+#include <string.h>                     // for strlen
 #include "exodusII.h"                   // for ex_err, exerrval, etc
 #include "exodusII_int.h"               // for EX_FATAL, etc
 #include "netcdf.h"                     // for NC_NOERR, nc_enddef, etc
@@ -131,7 +131,7 @@ int ex_put_prop_names (int   exoid,
   int oldfill, temp;
   int i, propid, dimid, dims[1];
   size_t name_length, prop_name_len;
-  char name[MAX_VAR_NAME_LENGTH+1];
+  char *name;
   long long vals[1];
   int max_name_len = 0;
   int int_type = NC_INT;
@@ -174,40 +174,40 @@ int ex_put_prop_names (int   exoid,
   for (i=0; i<num_props; i++) {
     switch (obj_type) {
     case EX_ELEM_BLOCK:
-      strcpy (name, VAR_EB_PROP(i+2));
+      name =  VAR_EB_PROP(i+2);
       break;
     case EX_FACE_BLOCK:
-      strcpy (name, VAR_FA_PROP(i+2));
+      name =  VAR_FA_PROP(i+2);
       break;
     case EX_EDGE_BLOCK:
-      strcpy (name, VAR_ED_PROP(i+2));
+      name =  VAR_ED_PROP(i+2);
       break;
     case EX_NODE_SET:
-      strcpy (name, VAR_NS_PROP(i+2));
+      name =  VAR_NS_PROP(i+2);
       break;
     case EX_SIDE_SET:
-      strcpy (name, VAR_SS_PROP(i+2));
+      name =  VAR_SS_PROP(i+2);
       break;
     case EX_EDGE_SET:
-      strcpy (name, VAR_ES_PROP(i+2));
+      name =  VAR_ES_PROP(i+2);
       break;
     case EX_FACE_SET:
-      strcpy (name, VAR_FS_PROP(i+2));
+      name =  VAR_FS_PROP(i+2);
       break;
     case EX_ELEM_SET:
-      strcpy (name, VAR_ELS_PROP(i+2));
+      name =  VAR_ELS_PROP(i+2);
       break;
     case EX_ELEM_MAP:
-      strcpy (name, VAR_EM_PROP(i+2));
+      name =  VAR_EM_PROP(i+2);
       break;
     case EX_FACE_MAP:
-      strcpy (name, VAR_FAM_PROP(i+2));
+      name =  VAR_FAM_PROP(i+2);
       break;
     case EX_EDGE_MAP:
-      strcpy (name, VAR_EDM_PROP(i+2));
+      name =  VAR_EDM_PROP(i+2);
       break;
     case EX_NODE_MAP:
-      strcpy (name, VAR_NM_PROP(i+2));
+      name =  VAR_NM_PROP(i+2);
       break;
     default:
       exerrval = EX_BADPARAM;
