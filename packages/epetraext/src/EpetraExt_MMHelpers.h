@@ -64,6 +64,9 @@ class LightweightCrsMatrix;
 
 //#define HAVE_EPETRAEXT_DEBUG // for extra sanity checks
 
+
+
+
 // ==============================================================
 //struct that holds views of the contents of a CrsMatrix. These
 //contents may be a mixture of local and remote rows of the
@@ -510,12 +513,23 @@ int import_only(const Epetra_CrsMatrix& M,
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: MMM Ionly Import-4"))));
 #endif
 
+#ifdef ENABLE_MMM_STATISTICS
+    printMultiplicationStatistics(Rimporter, label + std::string(" I&X MMM"));
+#endif
+
   // Cleanup
   delete Rimporter;
   delete [] MremoteRows;
 
   return(0);
 }
+
+
+
+// Statistics printing routines for when ENABLE_MMM_STATISTICS is enabled
+void PrintMultiplicationStatistics(Epetra_Import * Transfer, const std::string &label);
+void PrintMultiplicationStatistics(Epetra_Export * Transfer, const std::string &label);
+
 
 }//namespace EpetraExt
 
