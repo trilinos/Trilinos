@@ -81,6 +81,13 @@ int ex_get_block_param( int exoid,
   const char* vblkcon;
 
   struct ex_file_item* file = ex_find_file_item(exoid);
+  if (!file ) {
+    char errmsg[MAX_ERR_LENGTH];
+    exerrval = EX_BADFILEID;
+    sprintf(errmsg,"Error: unknown file id %d in ex_get_block_param().",exoid);
+    ex_err("ex_get_block_param",errmsg,exerrval);
+    return (EX_FATAL);
+  }
   
   exerrval = 0;
 
@@ -101,7 +108,6 @@ int ex_get_block_param( int exoid,
 	      ex_name_of_object(block->type), block->id,exoid);
       ex_err("ex_get_block_param",errmsg,exerrval);
       return (EX_FATAL);
-    
   }
 
   switch (block->type) {
