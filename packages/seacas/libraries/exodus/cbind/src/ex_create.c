@@ -385,10 +385,25 @@ int ex_create_int (const char *path,
     return (EX_FATAL);
   }
 
+  /* Verify that there is not an existing file_item struct for this
+     exoid This could happen (and has) when application calls
+     ex_open(), but then closes file using nc_close() and then reopens
+     file.  NetCDF will possibly reuse the exoid which results in
+     internal corruption in exodus data structures since exodus does
+     not know that file was closed and possibly new file opened for
+     this exoid
+  */
+  if (ex_find_file_item(exoid) != NULL) {
+    char errmsg[MAX_ERR_LENGTH];
+    exerrval = EX_BADFILEID;
+    sprintf(errmsg,"Error: There is an existing file already using the file id %d which was also assigned to file %s. Was nc_close() called instead of ex_close() on an open Exodus file?\n", exoid, path);
+    ex_err("ex_create",errmsg,exerrval);
+    return (EX_FATAL);
+  }
+
   /* initialize floating point size conversion.  since creating new file, 
    * i/o wordsize attribute from file is zero.
    */
-
   if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status, 0, 0, 0) != EX_NOERR) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
