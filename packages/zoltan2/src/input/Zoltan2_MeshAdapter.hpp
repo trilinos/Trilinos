@@ -126,13 +126,14 @@ class MeshAdapter : public BaseAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t              scalar_t;
-  typedef typename InputTraits<User>::lno_t                 lno_t;
-  typedef typename InputTraits<User>::gno_t                 gno_t;
-  typedef typename InputTraits<User>::part_t                part_t;
-  typedef typename InputTraits<User>::node_t                node_t;
-  typedef User                                              user_t;
-  typedef User                                              userCoord_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::lno_t lno_t;
+  typedef typename InputTraits<User>::gno_t gno_t;
+  typedef typename InputTraits<User>::part_t part_t;
+  typedef typename InputTraits<User>::node_t node_t;
+  typedef User user_t;
+  typedef User userCoord_t;
+  typedef MeshAdapter<User> base_adapter_t;
 #endif
 
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
