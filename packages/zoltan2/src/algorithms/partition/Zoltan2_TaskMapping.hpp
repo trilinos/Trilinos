@@ -1635,7 +1635,9 @@ public:
     //if the adapter has also graph model, we will use graph model
     //to calculate the cost mapping.
     BaseAdapterType inputType_ = input_adapter_->adapterType();
-    if (inputType_ == MatrixAdapterType || GraphAdapterType || inputType_ == MeshAdapterType)
+    if (inputType_ == MatrixAdapterType || 
+        inputType_ == GraphAdapterType || 
+        inputType_ == MeshAdapterType)
     {
       graph_model_ = rcp(new GraphModel<ctm_base_adapter_t>(
           baseInputAdapter_, envConst_, rcp_comm,
