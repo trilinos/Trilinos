@@ -58,6 +58,7 @@
 using namespace std;
 using std::vector;
 using Teuchos::RCP;
+using Zoltan2::Environment;
 
 /*! \example rcb_C.cpp
     An example of the use of the RCB algorithm to partition coordinate data.
@@ -160,7 +161,7 @@ int main(int argc, char *argv[])
   // Note:  These RCPs will go away in Spring 2016 when we finish simplication
   // of the EvaluatePartition interface.
 
-  RCP<const Zoltan2::Environment> env1 = problem1->getEnvironment();
+  RCP<const Environment> env1 = problem1->getEnvironment();
 
   const base_adapter_t *bia1 = dynamic_cast<const base_adapter_t *>(ia1);
 
@@ -228,7 +229,7 @@ int main(int argc, char *argv[])
   // Note:  These RCPs will go away in Spring 2016 when we finish simplication
   // of the EvaluatePartition interface.
 
-  RCP<const Zoltan2::Environment> env2 = problem2->getEnvironment();
+  RCP<const Environment> env2 = problem2->getEnvironment();
 
   const base_adapter_t *bia2 = dynamic_cast<const base_adapter_t *>(ia2);
 
@@ -307,7 +308,7 @@ int main(int argc, char *argv[])
   // Note:  These RCPs will go away in Spring 2016 when we finish simplication
   // of the EvaluatePartition interface.
 
-  RCP<const Zoltan2::Environment> env3 = problem3->getEnvironment();
+  RCP<const Environment> env3 = problem3->getEnvironment();
 
   const base_adapter_t *bia3 = dynamic_cast<const base_adapter_t *>(ia3);
 
