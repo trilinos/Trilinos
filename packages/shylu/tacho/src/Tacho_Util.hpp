@@ -29,10 +29,10 @@ namespace Tacho {
 
   /// \brief Error handling.
   //
-#define MSG_NOT_YET_IMPLEMENTED ">> Not yet implemented"
-#define MSG_INVALID_INPUT(what) ">> Invaid input argument: " #what
-#define MSG_NOT_HAVE_PACKAGE(what) ">> Tacho does not have a package or library: " what
-#define MSG_INVALID_TEMPLATE_ARGS ">> Invaid template arguments"
+#define MSG_NOT_YET_IMPLEMENTED "Not yet implemented"
+#define MSG_INVALID_INPUT(what) "Invaid input argument: " #what
+#define MSG_NOT_HAVE_PACKAGE(what) "Tacho does not have a package or library: " what
+#define MSG_INVALID_TEMPLATE_ARGS "Invaid template arguments"
 
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
   if (ierr != 0) {                                                      \
@@ -86,6 +86,15 @@ namespace Tacho {
                             const T2 k, const T3 stride) {
       idx.first  = k%stride;
       idx.second = k/stride;
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static void unrollIndex(T1 &i, T2 &j,
+                            const T3 k, 
+                            const T4 stride) {
+      i = k%stride;
+      j = k/stride;
     }
     
   };
@@ -180,7 +189,7 @@ namespace Tacho {
     static const int ForFactorBlocked   = 2001;
     static const int ForTriSolveBlocked = 2011;
     static const int ExternalBlas       = 2021;
-    static const int InternalBlas       = 2021;
+    static const int InternalBlas       = 2022;
   };
   class AlgoGemm : public AlgoBlas {
   public:

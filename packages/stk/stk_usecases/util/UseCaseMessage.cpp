@@ -86,8 +86,8 @@ use_case_message(
   }
     
   if (proc_rank == 0) {
-    out() << "There were " << stk::get_warning_count() << " warnings" << std::endl;
-    out() << "There were " << stk::get_doomed_count() << " fatal errors" << std::endl << std::endl;
+    sierra::out() << "There were " << stk::get_warning_count() << " warnings" << std::endl;
+    sierra::out() << "There were " << stk::get_doomed_count() << " fatal errors" << std::endl << std::endl;
   }
         
 // Doomed exception thrown when max exceeded (disabled.  Is this the behavior we want?)
@@ -99,7 +99,7 @@ use_case_message(
     }
   }
   catch (std::exception &x) {
-    out() << "Caught exception: " << x.what() << std::endl;
+    sierra::out() << "Caught exception: " << x.what() << std::endl;
   }
 
 // Message aggregation with limited display
@@ -126,8 +126,8 @@ use_case_message(
 
 // Print summary    
   if (proc_rank == 0) {
-    out() << "There were " << stk::get_warning_count() << " warnings" << std::endl;
-    out() << "There were " << stk::get_doomed_count() << " fatal errors" << std::endl << std::endl;
+    sierra::out() << "There were " << stk::get_warning_count() << " warnings" << std::endl;
+    sierra::out() << "There were " << stk::get_doomed_count() << " fatal errors" << std::endl << std::endl;
   }
         
 // Deferred message
@@ -152,8 +152,8 @@ use_case_message(
   stk::report_deferred_messages(use_case_environment.m_comm);
 
   if (proc_rank == 0) {
-    out() << "There were " << stk::get_warning_count() << " warnings" << std::endl;
-    out() << "There were " << stk::get_doomed_count() << " fatal errors" << std::endl << std::endl;
+    sierra::out() << "There were " << stk::get_warning_count() << " warnings" << std::endl;
+    sierra::out() << "There were " << stk::get_doomed_count() << " fatal errors" << std::endl << std::endl;
   }
         
 // Deferred warning message with varying key
@@ -187,9 +187,9 @@ use_case_message(
     stk::report_deferred_messages(use_case_environment.m_comm);
   }
   
-  out() << "There were " << stk::get_warning_count() << " warnings" << std::endl;
-  out() << "There were " << stk::get_doomed_count() << " fatal errors" << std::endl;
-  out() << "Done" << std::endl;
+  sierra::out() << "There were " << stk::get_warning_count() << " warnings" << std::endl;
+  sierra::out() << "There were " << stk::get_doomed_count() << " fatal errors" << std::endl;
+  sierra::out() << "Done" << std::endl;
   
   return 0;
 }

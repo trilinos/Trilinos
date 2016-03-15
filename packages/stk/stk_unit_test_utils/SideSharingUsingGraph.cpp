@@ -15,7 +15,19 @@ stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::B
     stk::mesh::EntityVector sidesThatNeedFixing;
     for(stk::mesh::Entity side : sides)
         if(bulkData.state(side) == stk::mesh::Created || bulkData.state(side) == stk::mesh::Modified)
-            sidesThatNeedFixing.push_back(side);
+        {
+            unsigned num_nodes = bulkData.num_nodes(side);
+            const stk::mesh::Entity* nodes = bulkData.begin_nodes(side);
+
+            std::vector<stk::mesh::EntityKey> nodeKeys(num_nodes);
+            for(unsigned int i=0;i<num_nodes;++i)
+                nodeKeys[i] = bulkData.entity_key(nodes[i]);
+
+            std::vector<int> shared_procs;
+            bulkData.shared_procs_intersection(nodeKeys, shared_procs);
+            if(!shared_procs.empty())
+                sidesThatNeedFixing.push_back(side);
+        }
     return sidesThatNeedFixing;
 }
 
@@ -115,6 +127,7 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVec
     // Are these faces the same? Yes: delete face 23, then connect face 15 to element 2 with negative permutation
 
     stk::mesh::ElemElemGraph graph(bulkData, bulkData.mesh_meta_data().locally_owned_part());
+
     for(size_t i=0;i<sidesThatNeedFixing.size();++i)
     {
         stk::mesh::impl::ElementViaSidePair elementAndSide = get_element_and_side_ordinal(bulkData, sidesThatNeedFixing[i]);

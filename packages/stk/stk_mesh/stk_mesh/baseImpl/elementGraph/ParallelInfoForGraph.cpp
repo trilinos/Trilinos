@@ -93,7 +93,7 @@ stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkDat
     comm.recv_buffer(proc_id).unpack<unsigned>(side2);
 
     stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, id2);
-    stk::ThrowRequireWithSierraHelpMsg(bulkData.is_valid(element));
+    ThrowRequireWithSierraHelpMsg(bulkData.is_valid(element));
 
     stk::mesh::impl::LocalId localId2 = graph.get_local_element_id(element);
     stk::mesh::GraphEdge edge(localId2, side2, -id1, side1);

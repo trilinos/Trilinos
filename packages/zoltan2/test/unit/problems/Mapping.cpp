@@ -46,11 +46,13 @@
 // Test the MappingProblem and MappingSolution classes.
 //
 
+#include <Teuchos_ParameterList.hpp>
+
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_VectorAdapter.hpp>
 
-//#include <Zoltan2_MappingProblem.hpp>
-//#include <Zoltan2_MappingSolution.hpp>
+#include <Zoltan2_MappingProblem.hpp>
+#include <Zoltan2_MappingSolution.hpp>
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> zzuser_t;
 
@@ -161,6 +163,11 @@ public:
     std::cout << std::endl;
   }
 
+  // Return values given to the constructor
+  bool adapterUsesInputParts() { return useInputParts; }
+  int adapterNPartsPerRow() { return nPartsPerRow; }
+  int adapterLowestPartNum() { return lowestPartNum; }
+
   // Methods for the VectorAdapter interface
   size_t getLocalNumIDs() const { return nCoordPerRank; }
   void getIDsView(const gno_t *&Ids) const { Ids = ids; }
@@ -191,24 +198,200 @@ private:
   scalar_t coords[nCoordDim][nCoordPerRank]; // Coordinate for each local point
 };
 
+//////////////////////////////////////////////////////////////////////////////
+
+template <typename Adapter>
+bool validMappingSolution(
+  Zoltan2::MappingSolution<Adapter> &msoln,
+  Adapter &ia,
+  const Teuchos::Comm<int> &comm
+)
+{
+  // Correctness of a particular mapping algorithm is beyond the scope of
+  // this test.
+  typedef typename Adapter::part_t part_t;
+
+  bool aok = true;
+  int np = comm.getSize();
+  int me = comm.getRank();
+
+  // All returned processors must be in range [0,np-1].
+
+  if (ia.adapterUsesInputParts()) {
+    // Adapter provided input parts
+    const part_t *inputParts; 
+    ia.getPartsView(inputParts);
+    for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
+      int r = msoln.getRankForPart(inputParts[i]);
+      if (r < 0 || r >= np) {
+        aok = false;
+        std::cout << "Invalid rank " << r << " of " << np << " returned" 
+                  << std::endl;
+      }
+    }
+  }
+  else {
+    // Default input part numbers:  part == rank
+    int r = msoln.getRankForPart(part_t(me));
+    if (r < 0 || r >= np) {
+      aok = false;
+      std::cout << "Invalid rank " << r << " of " << np << " returned" 
+                << std::endl;
+    }
+  }
+
+  // All returned parts must be in range valid part numbers from input.
+
+  part_t *parts;
+  part_t nParts;
+  msoln.getPartsForRankView(me, nParts, parts);
+
+  for (part_t i = 0; i < nParts; i++) {
+    part_t p = parts[i];
+    if ((p < ia.adapterLowestPartNum()) || 
+       (p >= ia.adapterLowestPartNum() + np * ia.adapterNPartsPerRow())) {
+      aok = false;
+      std::cout << "Invalid part " << p << " of " << np << " returned" 
+                << std::endl;
+    }
+  }
+
+  // Test the error checking in mapping solution
+
+  bool errorThrownCorrectly = false;
+  part_t sillyPart = ia.adapterLowestPartNum() + 
+                     (np+1) * ia.adapterNPartsPerRow();
+  try {
+    msoln.getRankForPart(sillyPart);
+  }
+  catch (std::exception &e) {
+    errorThrownCorrectly = true;
+  }
+  if (errorThrownCorrectly == false) {
+    aok = false;
+    std::cout << "Mapping Solution accepted a too-high part number "
+              << sillyPart << std::endl;
+  }
+
+  errorThrownCorrectly = false;
+  sillyPart = ia.adapterLowestPartNum() - 1;
+  try {
+    msoln.getRankForPart(sillyPart);
+  }
+  catch (std::exception &e) {
+    errorThrownCorrectly = true;
+  }
+  if (errorThrownCorrectly == false) {
+    aok = false;
+    std::cout << "Mapping Solution accepted a too-low part number "
+              << sillyPart << std::endl;
+  }
+
+  errorThrownCorrectly = false;
+  try {
+    msoln.getPartsForRankView(np+1, nParts, parts);
+  }
+  catch (std::exception &e) {
+    errorThrownCorrectly = true;
+  }
+  if (errorThrownCorrectly == false) {
+    aok = false;
+    std::cout << "Mapping Solution accepted a silly rank" << np+1
+              << std::endl;
+  }
+  
+  return aok;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Zoltan2::Environment> env;
+  int me = comm->getRank();
+  bool allgood = true;
+
+  typedef VerySimpleVectorAdapter<zzuser_t> vecAdapter_t;
   
   // TEST 1
   {
     // Create a very simple input adapter.
-    VerySimpleVectorAdapter<zzuser_t> ia(*comm, 1, 0, true);
+    int nPartsPerRow = 1;
+    int firstPart = 0;
+    bool useInputParts = true;
+    vecAdapter_t ia(*comm, nPartsPerRow, firstPart, useInputParts);
     ia.printPrivate("test1");
     ia.printMethods("test1");
+
+    Teuchos::ParameterList params;
+    params.set("mapping_algorithm", "geometric");
+
+    // Test mapping using default machine
+    if (me == 0)
+      std::cout << "Testing Mapping using default machine" << std::endl;
+
+    Zoltan2::MappingProblem<vecAdapter_t> mprob1(&ia, &params, comm);
+    mprob1.solve();
+
+    Zoltan2::MappingSolution<vecAdapter_t> *msoln1 = mprob1.getSolution();
+
+    if (!validMappingSolution<vecAdapter_t>(*msoln1, ia, *comm)) {
+      allgood = false;
+      if (me == 0) 
+        std::cout << "test 1 FAILED: invalid mapping solution" << std::endl;
+    }
+
+#ifdef KDD
+    // Test mapping explicitly using default machine
+    Zoltan2::MachineRepresentation<scalar_t, part_t> defMachine(*comm);
+
+    Zoltan2::MappingProblem<vecAdapter_t> mprob2(&ia, &params, comm,
+                                                    NULL, &defMachine);
+    mprob2.solve();
+
+    Zoltan2::MappingSolution<vecAdapter_t> *msoln2 = mprob2.getSolution();
+   
+    if (!sameMappingSolution(*msoln1, *msoln2, *comm)) {
+      allgood = false;
+      if (me == 0) 
+        std::cout << "test 1 FAILED: solution with explicit machine "
+                     "differs from default" << std::endl;
+    }
+    
+    // Test mapping with a partitioning solution
+    Zoltan2::PartitioningSolution<vecAdapter_t> psolution(env, comm, 0);
+    ArrayRCP<part_t> partList(ia.getLocalNumIDs());
+    for (size_t i = 0; i < ia.getLocalNumIDs(); i++)
+      partList[i] = me + 1;
+    psolution->setParts(partList);
+
+    Zoltan2::MappingProblem<vecAdapter_t> mprob3(&ia, &params, comm,
+                                                    NULL, &defMachine);
+    mprob3.solve();
+
+    Zoltan2::MappingSolution<vecAdapter_t> *msoln3 = mprob3.getSolution();
+   
+    if (!validMappingSolution(*msoln3, ia, psolution, *comm))
+      allgood = false;
+      if (me == 0) 
+        std::cout << "test 1 FAILED: invalid mapping solution "
+                     "from partitioning solution" << std::endl;
+    }
+#endif
   }
 
+#ifdef KDD
   // TEST 2
   {
     // Create a very simple input adapter.
-    VerySimpleVectorAdapter<zzuser_t> ia(*comm, 1, 0, false);
+    int nPartsPerRow = 1;
+    int firstPart = 0;
+    bool useInputParts = false;
+    vecAdapter_t ia(*comm, nPartsPerRow, firstPart, useInputParts);
+
     ia.printPrivate("test2");
     ia.printMethods("test2");
   }
@@ -216,7 +399,10 @@ int main(int argc, char *argv[])
   // TEST 3
   {
     // Create a very simple input adapter.
-    VerySimpleVectorAdapter<zzuser_t> ia(*comm, 2, 4, true);
+    int nPartsPerRow = 2;
+    int firstPart = 4;
+    bool useInputParts = true;
+    vecAdapter_t ia(*comm, nPartsPerRow, firstPart, useInputParts);
     ia.printPrivate("test3");
     ia.printMethods("test3");
   }
@@ -224,17 +410,16 @@ int main(int argc, char *argv[])
   // TEST 4
   {
     // Create a very simple input adapter.
-    VerySimpleVectorAdapter<zzuser_t> ia(*comm, 3, 10, true);
+    int nPartsPerRow = 3;
+    int firstPart = 10;
+    bool useInputParts = true;
+    vecAdapter_t ia(*comm, nPartsPerRow, firstPart, useInputParts);
     ia.printPrivate("test4");
     ia.printMethods("test4");
   }
+#endif
 
-  // How do we test a mapping problem and solution?
-  // All returned processors must be in range [0,np-1].
-  // All returned parts must be in range valid part numbers from input.
-  // Exercise thrown error conditions.
-  // Correctness of a particular mapping algorithm is beyond the scope of
-  // this test.
+  if (allgood && (me == 0))
+    std::cout << "PASS" << std::endl;
 
-  std::cout << "PASS" << std::endl;
 }

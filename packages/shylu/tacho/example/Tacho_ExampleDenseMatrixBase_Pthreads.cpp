@@ -10,6 +10,8 @@ typedef Kokkos::Threads exec_space;
 
 #include "Tacho_ExampleDenseMatrixBase.hpp"
 
+using namespace Tacho;
+
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
@@ -49,7 +51,7 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(std::cout, true);
 
-    r_val = Tacho::exampleDenseMatrixBase<exec_space>
+    r_val = exampleDenseMatrixBase<exec_space>
       (mmin, mmax, minc, 
        verbose);
     

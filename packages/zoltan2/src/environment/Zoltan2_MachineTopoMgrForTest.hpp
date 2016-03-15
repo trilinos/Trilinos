@@ -209,7 +209,7 @@ public:
   }
 
 
-  inline bool getMachineCoordinate(const part_t rank,
+  inline bool getMachineCoordinate(const int rank,
                                    pcoord_t *xyz) const {
     return false;
   }

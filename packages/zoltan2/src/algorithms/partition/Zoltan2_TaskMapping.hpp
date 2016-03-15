@@ -11,6 +11,8 @@
 #include "Zoltan2_MachineRepresentation.hpp"
 #include "Teuchos_ReductionOp.hpp"
 
+#include "Zoltan2_MappingSolution.hpp"
+
 #include "Zoltan2_GraphModel.hpp"
 #include <zoltan_dd.h>
 #include <Zoltan2_TPLTraits.hpp>
@@ -318,10 +320,10 @@ void getCoarsenedPartGraph(
   }
 
   RCP<const Teuchos::Comm<int> > tcomm = rcpFromRef(*comm);
-  typedef Tpetra::Map<>::node_type znode_t;
-  typedef Tpetra::Map<part_t, part_t, znode_t> map_t;
+  typedef Tpetra::Map<>::node_type t_node_t;
+  typedef Tpetra::Map<part_t, part_t, t_node_t> map_t;
   Teuchos::RCP<const map_t> map = Teuchos::rcp (new map_t (np, 0, tcomm));
-  typedef Tpetra::CrsMatrix<t_scalar_t, part_t, part_t, znode_t> tcrsMatrix_t;
+  typedef Tpetra::CrsMatrix<t_scalar_t, part_t, part_t, t_node_t> tcrsMatrix_t;
   Teuchos::RCP<tcrsMatrix_t> tMatrix(new tcrsMatrix_t (map, 0));
 
   {
@@ -400,7 +402,7 @@ void getCoarsenedPartGraph(
   //create the importer for gatherAll
   Teuchos::RCP<tcrsMatrix_t> A_gather =
       Teuchos::rcp (new tcrsMatrix_t (gatherRowMap, 0));
-  typedef Tpetra::Import<t_lno_t, t_gno_t, znode_t> import_type;
+  typedef Tpetra::Import<t_lno_t, t_gno_t, t_node_t> import_type;
   import_type import (map, gatherRowMap);
   A_gather->doImport (*tMatrix, import, Tpetra::INSERT);
   A_gather->fillComplete ();
@@ -1559,6 +1561,21 @@ public:
     proc_to_task_adj_ = this->proc_to_task_adj.getRawPtr();
   }
 
+  void map(RCP<MappingSolution<Adapter> > &mappingsoln) {
+
+    // Mapping was already computed in the constructor; we need to store it
+    // in the solution.
+
+    mappingsoln->setMap_PartsForRank(this->proc_to_task_xadj,
+                                     this->proc_to_task_adj);
+
+    // KDDKDD TODO:  Algorithm is also creating task_to_proc, which maybe 
+    // KDDKDD is not needed once we use MappingSolution to answer queries 
+    // KDDKDD instead of this algorithm.  
+    // KDDKDD Ask Mehmet:  what is the most efficient way to get the answer
+    // KDDKDD out of CoordinateTaskMapper and into the MappingSolution?
+  }
+
 
   virtual ~CoordinateTaskMapper(){
     //freeArray<part_t> (proc_to_task_xadj);
@@ -1618,7 +1635,9 @@ public:
     //if the adapter has also graph model, we will use graph model
     //to calculate the cost mapping.
     BaseAdapterType inputType_ = input_adapter_->adapterType();
-    if (inputType_ == MatrixAdapterType || GraphAdapterType || inputType_ == MeshAdapterType)
+    if (inputType_ == MatrixAdapterType || 
+        inputType_ == GraphAdapterType || 
+        inputType_ == MeshAdapterType)
     {
       graph_model_ = rcp(new GraphModel<ctm_base_adapter_t>(
           baseInputAdapter_, envConst_, rcp_comm,

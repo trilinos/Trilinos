@@ -32,6 +32,8 @@ namespace Tacho {
                       ExecViewTypeB &B,
                       const ScalarType beta,
                       ExecViewTypeC &C) { 
+      fprintf(stderr, ">> Template Args - TransA %d, TransB %d, ArgAlgo %d, ArgVariant %d\n", 
+              ArgTransA, ArgTransB, ArgAlgo, ArgVariant);  
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return 0;
     }
@@ -79,6 +81,7 @@ namespace Tacho {
       void apply(value_type &r_val) {
         r_val = Gemm::invoke(_policy, _policy.member_single(),
                              _alpha, _A, _B, _beta, _C);
+        _C.setFuture(typename ExecViewTypeC::future_type());
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -87,7 +90,10 @@ namespace Tacho {
                                       _alpha, _A, _B, _beta, _C);
         
         // return for only team leader
-        if (!member.team_rank()) { r_val = ierr; }
+        if (!member.team_rank()) { 
+          _C.setFuture(typename ExecViewTypeC::future_type());
+          r_val = ierr; 
+        }
       }
 
     };
@@ -115,6 +121,6 @@ namespace Tacho {
 }
 
 #include "Tacho_Gemm_NoTrans_NoTrans.hpp"
-//#include "Tacho_Gemm_ConjTrans_NoTrans.hpp"
+#include "Tacho_Gemm_ConjTrans_NoTrans.hpp"
 
 #endif

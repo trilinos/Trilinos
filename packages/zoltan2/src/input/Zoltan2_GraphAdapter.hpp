@@ -121,6 +121,7 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
+  typedef GraphAdapter<User, UserCoord> base_adapter_t;
 #endif
 
   enum BaseAdapterType adapterType() const {return GraphAdapterType;}

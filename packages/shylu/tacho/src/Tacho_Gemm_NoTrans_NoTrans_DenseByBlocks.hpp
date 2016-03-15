@@ -49,9 +49,9 @@ namespace Tacho {
         for (ordinal_type p=0;p<A.NumCols();++p) {
           const ScalarType beta_select = (p > 0 ? ScalarType(1.0) : beta);
           for (ordinal_type k2=0;k2<C.NumCols();++k2) {
-            value_type &bb = B.Value( p, k2);
+            value_type &bb = B.Value(p, k2);
             for (ordinal_type k1=0;k1<C.NumRows();++k1) {
-              value_type &aa = A.Value(k1,  p);
+              value_type &aa = A.Value(k1, p );
               value_type &cc = C.Value(k1, k2);
 
               future_type f = factory.create<future_type>
@@ -124,6 +124,7 @@ namespace Tacho {
       void apply(value_type &r_val) {
         r_val = Gemm::invoke(_policy, _policy.member_single(),
                              _alpha, _A, _B, _beta, _C);
+        _C.setFuture(typename ExecViewTypeC::future_type());
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -132,7 +133,10 @@ namespace Tacho {
                                       _alpha, _A, _B, _beta, _C);
 
         // return for only team leader
-        if (!member.team_rank()) { r_val = ierr; }
+        if (member.team_rank() == 0) { 
+          _C.setFuture(typename ExecViewTypeC::future_type());
+          r_val = ierr; 
+        }
       }
 
     };

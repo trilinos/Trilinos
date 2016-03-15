@@ -195,6 +195,16 @@ void unpack_communications(COMM & comm, const UNPACK_ALGORITHM & algorithm)
     }
 }
 
+template <typename T>
+void unpack_into_vector_of_data(stk::CommSparse& comm, T& data, int fromProc)
+{
+    unsigned num_items = 0;
+    comm.recv_buffer(fromProc).unpack<unsigned>(num_items);
+    data.resize(num_items);
+    for(unsigned i=0;i<num_items;++i)
+        comm.recv_buffer(fromProc).unpack<typename T::value_type>(data[i]);
+}
+
 }
 
 //----------------------------------------------------------------------

@@ -398,6 +398,12 @@ C     .. Set up status arrays for element to nodal variable conversion
 
  25   CONTINUE
 
+        goff = 0
+        noff = goff + (nvargl * maxnam)
+        eoff = noff + (nvarnp * maxnam)
+        moff = eoff + (nvarel * maxnam)
+        soff = moff + (nvarns * maxnam)
+
       CALL COMAND (NDBIN, EXECUT, 
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &     IA(KIDNS),  IA(KNNNS), IA(KNDNPS),IA(KIXNNS),IA(KIXDNS),
@@ -410,7 +416,9 @@ C     .. Set up status arrays for element to nodal variable conversion
      &     IA(KIELBS), IA(KINPSS), IA(KIESSS),
      &     NQAREC, C(KQAREC), NINFO, c(kinfo), c(kbktyp),
      *     c(knameb), c(knamnp), c(knamss), c(knamatt),
-     &     c(knames+nvargl*maxnam), nvarnp, IA(KINOD2EL),
+     &     c(knames+goff), nvargl, c(knames+noff), nvarnp,
+     &     c(knames+eoff), nvarel, c(knames+moff), nvarns,
+     *     c(knames+soff), nvarss, IA(KINOD2EL),
      &     SWPSS, SMOOTH, USRSUB, CENTRD,
      &     NSTEPS, A(KTIMES), IA(KITIMS), A, IA, *60)
 
