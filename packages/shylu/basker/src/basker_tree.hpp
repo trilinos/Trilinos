@@ -1366,8 +1366,8 @@ namespace BaskerNS
     if(match_flag == BASKER_TRUE)
       {
 	//printf("Test order_mactch_array(0): %d %d \n",
-	//       order_match_array(0),
-	//      order_match_array(1));
+	//     order_match_array(0),
+	//    order_match_array(1));
 
         
         //printf("match_flag\n");
@@ -1378,8 +1378,8 @@ namespace BaskerNS
     if(btf_flag == BASKER_TRUE)
       {
 	//printf("Test order_btf_array(0): %d %d: \n",
-	//       order_btf_array(0),
-	//       order_btf_array(1));
+	//     order_btf_array(0),
+	//    order_btf_array(1));
 
         //printf("btf_flag\n");
 	permute_col(A,order_btf_array);
@@ -1401,9 +1401,9 @@ namespace BaskerNS
 
 	if(btf_tabs_offset != 0)
 	  {
-	//printf("Test order_nd_array(0): %d %d: \n",
-	//       part_tree.permtab(0),
-	//       part_tree.permtab(1));
+	    //printf("Test order_nd_array(0): %d %d: \n",
+	    // part_tree.permtab(0),
+	    // part_tree.permtab(1));
 	
 
 	//BTF_A.print();
@@ -1434,9 +1434,10 @@ namespace BaskerNS
 	if(btf_tabs_offset != 0)
 	  {
 
-	//printf("Test order_amd_array(0): %d %d: \n",
-	//       order_csym_array(0),
-	//       order_csym_array(1));
+	    
+	    //printf("Test order_amd_array(0): %d %d: \n",
+	    // order_csym_array(0),
+	    // order_csym_array(1));
 
 	//Permute A
 	permute_col(BTF_A, order_csym_array);
@@ -1522,11 +1523,6 @@ namespace BaskerNS
 	//Everyone permutes
 	//JDB: come back
       }
-
-
-
-
-
     //test
     //printMTX("A_BTF.mtx", BTF_A);
 

@@ -2588,7 +2588,7 @@ namespace BaskerNS
     if(btf_tabs_offset == 0)
       {
 
-	printf("malloc thread array: %d \n", num_threads);
+	//printf("malloc thread array: %d \n", num_threads);
 	BASKER_ASSERT(num_threads > 0, "sfactor num_threads");
 	MALLOC_THREAD_1DARRAY(thread_array, num_threads);
 	//printf("thread array alloc\n");

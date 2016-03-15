@@ -1,10 +1,11 @@
 <ParameterList name="test_params">
   <!-- Any of the test driver's command-line parameters may also be specified here -->
-  <!-- Put to the dir of matrices "......" -->
-  <Parameter name="filedir" type="string" value="/home/jdbooth/workspace/matrices/mm">
+  <!-- Put to the dir of matrices: wathen120, G2_circuit, hvdc2, amesos2_test_mat0, amesos2_test_mat4, power0 -->
+  <Parameter name="filedir" type="string" value="/home/jdbooth/workspace/matrices/mtx/" />
+  <Parameter name="verbosity" type="int" value="3" />
 
   <!-- Wathen120 is a bad performance matrix that is symm with nice supernodes -->
-  <ParameterList name="wathen120.mm">
+  <ParameterList name="wathen120.mtx">
     <ParameterList name="Basker">
       
       <!-- Test Epetra objects first -->
@@ -41,7 +42,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
-	<ParameterList name="run-p4-default"
+	<ParameterList name="run-p4-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -56,7 +57,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
         </ParameterList>
-	<ParameterList name="run-p8-default"
+	<ParameterList name="run-p8-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -225,7 +226,7 @@
 
 
   <!-- Asic_680ks is a key matrix with medium performance first btf blk small -->
-  <ParameterList name="asic_680ks.mm">
+  <ParameterList name="asic_680ks.mtx">
     <ParameterList name="Basker">
       
       <!-- Test Epetra objects first -->
@@ -262,7 +263,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
-	<ParameterList name="run-p4-default"
+	<ParameterList name="run-p4-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -277,7 +278,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
         </ParameterList>
-	<ParameterList name="run-p8-default"
+	<ParameterList name="run-p8-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -444,8 +445,8 @@
     </ParameterList> <!-- end Basker -->
   </ParameterList> <!-- end asic680ks -->
 
-  <!-- G2--Very bad matrix sym large supernodes -->
-  <ParameterList name="G2_circuit.mm">
+  <!-- G2 Very bad matrix sym large supernodes -->
+  <ParameterList name="G2_circuit.mtx">
     <ParameterList name="Basker">
       
       <!-- Test Epetra objects first -->
@@ -482,7 +483,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
-	<ParameterList name="run-p4-default"
+	<ParameterList name="run-p4-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -497,7 +498,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
         </ParameterList>
-	<ParameterList name="run-p8-default"
+	<ParameterList name="run-p8-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -665,7 +666,7 @@
   </ParameterList> <!-- end G2_circuit -->
 
   <!-- Private Large Power Simulation Matrix, good very btf matrix -->
-  <ParameterList name="power0.mm">
+  <ParameterList name="power0.mtx">
     <ParameterList name="Basker">
       
       <!-- Test Epetra objects first -->
@@ -702,7 +703,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
-	<ParameterList name="run-p4-default"
+	<ParameterList name="run-p4-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -717,7 +718,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
         </ParameterList>
-	<ParameterList name="run-p8-default"
+	<ParameterList name="run-p8-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -884,8 +885,8 @@
     </ParameterList> <!-- end Basker -->
   </ParameterList> <!-- end power0 -->
 
-  <!-- hvdc -- interesting matrix with need for pivoting -->
-  <ParameterList name="hvdc2.mm">
+  <!-- hvdc2, interesting matrix with need for pivoting -->
+  <ParameterList name="hvdc2.mtx">
     <ParameterList name="Basker">
       
       <!-- Test Epetra objects first -->
@@ -922,7 +923,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
-	<ParameterList name="run-p4-default"
+	<ParameterList name="run-p4-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -937,7 +938,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
         </ParameterList>
-	<ParameterList name="run-p8-default"
+	<ParameterList name="run-p8-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -1105,7 +1106,7 @@
   </ParameterList> <!-- end hvdc2 -->
 
   <!-- amesos_test_mat1 has good tests (limit to 4 threads) -->
-  <ParameterList name="amesos2_test_mat1.mm">
+  <ParameterList name="amesos2_test_mat1.mtx">
     <ParameterList name="Basker">
       
       <!-- Test Epetra objects first -->
@@ -1142,7 +1143,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
-	<ParameterList name="run-p4-default"
+	<ParameterList name="run-p4-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
 	    <Parameter name="matching" type="bool" value="true" />
@@ -1275,7 +1276,7 @@
   </ParameterList> <!-- end amesos2_test_mat1 -->
 
   <!-- amesos2_test_mat4 has good tests (limit to 4 threads) -->
-  <ParameterList name="amesos2_test_mat4.mm">
+  <ParameterList name="amesos2_test_mat4.mtx">
     <ParameterList name="Basker">
       
       <!-- Test Epetra objects first -->
@@ -1312,7 +1313,7 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
-	<ParameterList name="run-p4-default"
+	<ParameterList name="run-p4-default">
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
 	    <Parameter name="matching" type="bool" value="true" />

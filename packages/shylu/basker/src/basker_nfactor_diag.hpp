@@ -219,7 +219,11 @@ namespace BaskerNS
     //	   kid, c, k, bcol, j);
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
     //	   kid, M.val[j], M.row_idx[j], M.srow);
-    
+
+    if(M.val(j) == 0)
+      {
+	printf("Error, zero diag in single factor\n");
+      }
     
     U.val(0)     = M.val(j);
     //M already has local idxing
@@ -454,6 +458,8 @@ namespace BaskerNS
 	    }
 	  #endif
   
+	   
+
           ucnt = ws_size - top - lcnt +1;
          
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
@@ -642,6 +648,10 @@ namespace BaskerNS
           //Fill in last element of U
 	  U.row_idx(unnz) = k - L.scol;
 	  U.val(unnz)       = lastU;
+	  if(lastU == 0)
+	    {
+	      printf("diag btf zero, error \n");
+	    }
           ++unnz;
 
           xnnz = 0;

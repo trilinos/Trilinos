@@ -118,6 +118,8 @@ namespace BaskerNS
     //printf("END Debug \n");
 
     Int lvls = round(log(num_threads)/log(2));
+    //printf("scotch.  num_threads: %d lvls: %d \n", 
+    //	   num_threads, lvls);
     part_scotch(M, BT, lvls);
 
 
