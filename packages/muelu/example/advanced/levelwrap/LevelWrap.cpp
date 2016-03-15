@@ -58,36 +58,22 @@
 #include <Kokkos_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
 
 #include "Xpetra_ConfigDefs.hpp"
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
-#ifdef HAVE_MUELU_TPETRA
-#include <Tpetra_Operator.hpp>
-#include <Tpetra_CrsMatrixMultiplyOp.hpp>
-#include <MueLu_TpetraOperator.hpp>
-#include <Xpetra_TpetraVector.hpp>
-#include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_EpetraOperator.hpp>
-#include <Xpetra_EpetraVector.hpp>
-#include <MueLu_CreateEpetraPreconditioner.hpp>
-#endif
+#include <MueLu_CreateXpetraPreconditioner.hpp>
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverFactory.hpp"
-#ifdef HAVE_MUELU_TPETRA
-#include <BelosTpetraAdapter.hpp>
-#endif
-
-#ifdef HAVE_MUELU_EPETRA
-#include "BelosEpetraAdapter.hpp"
-#endif
+#include "BelosXpetraAdapter.hpp"
+#include "BelosMueLuAdapter.hpp"
 #endif
 
 using Teuchos::RCP;
@@ -118,73 +104,24 @@ namespace MueLuExamples {
 #include "MueLu_UseShortNames.hpp"
     using Teuchos::rcp;
 
-#ifdef HAVE_MUELU_BELOS
-# ifdef HAVE_MUELU_TPETRA
-    typedef Tpetra::Operator    <SC,LO,GO,NO> Tpetra_Operator;
-    typedef Tpetra::CrsMatrix   <SC,LO,GO,NO> Tpetra_CrsMatrix;
-    typedef Tpetra::Vector      <SC,LO,GO,NO> Tpetra_Vector;
-    typedef Tpetra::MultiVector <SC,LO,GO,NO> Tpetra_MultiVector;
+    typedef Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    typedef Belos::OperatorT<MV>                                         OP;
 
-    if (lib == Xpetra::UseTpetra) {
-      RCP<Tpetra_CrsMatrix>   At = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A);
-      RCP<Tpetra_Operator>    Mt = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
-      RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
-      RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
-      typedef Tpetra_MultiVector MV;
-      typedef Tpetra_Operator OP;
-      RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
-      belosProblem->setRightPrec(Mt);
-      belosProblem->setProblem(Xt,Bt);
+    // Construct a Belos LinearProblem object
+    RCP<OP> belosOp   = rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A));
+    RCP<OP> belosPrec = rcp(new Belos::MueLuOp <Scalar,LocalOrdinal,GlobalOrdinal,Node>(H));
 
-      Belos::SolverFactory<SC, MV, OP> BelosFactory;
-      Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-      BelosSolver->setProblem(belosProblem);
-      Belos::ReturnType result = BelosSolver->solve();
-      TEUCHOS_TEST_FOR_EXCEPTION(result == Belos::Unconverged, std::runtime_error, "Belos failed to converge");
-    }
-#endif
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
-    if (lib == Xpetra::UseEpetra) {
-      RCP<Epetra_CrsMatrix> Ae;
-      // Get the underlying Epetra Mtx
-      try {
-        RCP<const Xpetra::CrsMatrixWrap<SC, LO, GO, Node> > crsOp = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC, LO, GO, Node> >(A);
-        RCP<const Xpetra::CrsMatrix<SC, LO, GO, Node> > tmp_CrsMtx = crsOp->getCrsMatrix();
-        const RCP<const Xpetra::EpetraCrsMatrixT<GO,Node> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,Node> >(tmp_CrsMtx);
-        if (tmp_ECrsMtx == Teuchos::null)
-          throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
-        const RCP<const Xpetra::EpetraCrsMatrixT<GO,Kokkos::Compat::KokkosSerialWrapperNode> > &tmp_ECrsMtxSer = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,Kokkos::Compat::KokkosSerialWrapperNode> >(tmp_ECrsMtx);
-        if (tmp_ECrsMtxSer == Teuchos::null)
-          throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::EpetraCrsMatrix<...,Node> to Xpetra::EpetraCrsMatrix<...,Kokkos::Compat::KokkosSerialWrapperNode> failed"));
-        //RCP<const Epetra_CrsMatrix> constEpMat = tmp_ECrsMtxSer->getEpetra_CrsMatrix();
-        //Ae = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(constEpMat);
-        Ae = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(tmp_ECrsMtxSer->getEpetra_CrsMatrix());
-      } catch(...) {
-        throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
-      }
-      RCP<MueLu::Hierarchy<SC,LO,GO,Kokkos::Compat::KokkosSerialWrapperNode> > epH = Teuchos::rcp_dynamic_cast<MueLu::Hierarchy<SC,LO,GO,Kokkos::Compat::KokkosSerialWrapperNode> >(H);
-      if (epH == Teuchos::null)
-        throw(Xpetra::Exceptions::BadCast("Cast from MueLu::Hierarchy<...,Node> to MueLu::Hierarchy<...,Kokkos::Compat::KokkosSerialWrapperNode> failed"));
-      RCP<MueLu::EpetraOperator> Me = rcp(new MueLu::EpetraOperator(epH));
-      RCP<Epetra_MultiVector>    Xe = rcp(&Xpetra::toEpetra<GO,Node>(*X),false);
-      RCP<Epetra_MultiVector>    Be = rcp(&Xpetra::toEpetra<GO,Node>(*B),false);
-      typedef Epetra_MultiVector MV;
-      typedef Epetra_Operator OP;
-      RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));
-      Teuchos::RCP<Belos::EpetraPrecOp> PrecWrap = Teuchos::rcp(new Belos::EpetraPrecOp(Me));
-      belosProblem->setRightPrec(PrecWrap);
-      belosProblem->setProblem(Xe,Be);
-
-      Belos::SolverFactory<SC, MV, OP> BelosFactory;
-      Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-      BelosSolver->setProblem(belosProblem);
-      Belos::ReturnType result = BelosSolver->solve();
-      TEUCHOS_TEST_FOR_EXCEPTION(result == Belos::Unconverged, std::runtime_error, "Belos failed to converge");
-    }
-#endif
-#endif // #ifdef HAVE_MUELU_BELOS
+    RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem =
+        rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, B));
+    belosProblem->setRightPrec(belosPrec);
+    belosProblem->setProblem(X,B);
+    Belos::SolverFactory<Scalar, MV, OP> BelosFactory;
+    RCP<Belos::SolverManager<Scalar, MV, OP> > BelosSolver =
+        BelosFactory.create(std::string("CG"), SList);
+    BelosSolver->setProblem(belosProblem);
+    Belos::ReturnType result = BelosSolver->solve();
+    TEUCHOS_TEST_FOR_EXCEPTION(result == Belos::Unconverged, std::runtime_error, "Belos failed to converge");
   }
-
 
   // --------------------------------------------------------------------------------------
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -197,54 +134,27 @@ namespace MueLuExamples {
 #include "MueLu_UseShortNames.hpp"
     using Teuchos::rcp;
 
-#ifdef HAVE_MUELU_BELOS
-#ifdef HAVE_MUELU_TPETRA
-    typedef Tpetra::Operator<SC,LO,GO,NO> Tpetra_Operator;
-    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Tpetra_CrsMatrix;
-    typedef Tpetra::Vector<SC,LO,GO,NO> Tpetra_Vector;
-    typedef Tpetra::MultiVector<SC,LO,GO,NO> Tpetra_MultiVector;
-    if(lib==Xpetra::UseTpetra) {
-      RCP<Tpetra_CrsMatrix>   At = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A);
-      RCP<Tpetra_Operator>    Mt = MueLu::CreateTpetraPreconditioner(At,MueLuList);
-      RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
-      RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
-      typedef Tpetra_MultiVector MV;
-      typedef Tpetra_Operator OP;
-      RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
-      belosProblem->setRightPrec(Mt);
-      belosProblem->setProblem(Xt,Bt);
+    Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H =
+        MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
+            A, MueLuList, Teuchos::null, Teuchos::null);
 
-      Belos::SolverFactory<SC, MV, OP> BelosFactory;
-      Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-      BelosSolver->setProblem(belosProblem);
-      Belos::ReturnType result = BelosSolver->solve();
-      if(result==Belos::Unconverged)
-        throw std::runtime_error("Belos failed to converge");
-    }
-#endif
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
-    if(lib==Xpetra::UseEpetra) {
-      RCP<Epetra_CrsMatrix>   Ae = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(A);
-      RCP<Epetra_Operator>    Me = MueLu::CreateEpetraPreconditioner(Ae,MueLuList);
-      RCP<Epetra_MultiVector> Xe = rcp(&Xpetra::toEpetra(*X),false);
-      RCP<Epetra_MultiVector> Be = rcp(&Xpetra::toEpetra(*B),false);
-      typedef Epetra_MultiVector MV;
-      typedef Epetra_Operator OP;
-      RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));
-      Teuchos::RCP<Belos::EpetraPrecOp> PrecWrap = Teuchos::rcp(new Belos::EpetraPrecOp(Me));
-      belosProblem->setRightPrec(PrecWrap);
-      belosProblem->setProblem(Xe,Be);
+    typedef Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    typedef Belos::OperatorT<MV>                                         OP;
 
-      Belos::SolverFactory<SC, MV, OP> BelosFactory;
-      Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-      BelosSolver->setProblem(belosProblem);
-      Belos::ReturnType result = BelosSolver->solve();
-      if(result==Belos::Unconverged)
-        throw std::runtime_error("Belos failed to converge");
-    }
-#endif
-#endif // #ifdef HAVE_MUELU_BELOS
+    // Construct a Belos LinearProblem object
+    RCP<OP> belosOp   = rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A));
+    RCP<OP> belosPrec = rcp(new Belos::MueLuOp <Scalar,LocalOrdinal,GlobalOrdinal,Node>(H));
 
+    RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem =
+        rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, B));
+    belosProblem->setRightPrec(belosPrec);
+    belosProblem->setProblem(X,B);
+
+    Belos::SolverFactory<SC, MV, OP> BelosFactory;
+    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
+    BelosSolver->setProblem(belosProblem);
+    Belos::ReturnType result = BelosSolver->solve();
+    TEUCHOS_TEST_FOR_EXCEPTION(result == Belos::Unconverged, std::runtime_error, "Belos failed to converge");
   }
 
 
@@ -296,23 +206,15 @@ namespace MueLuExamples {
       nullspace = Pr->BuildNullspace();
       A->SetFixedBlockSize((matrixType == "Elasticity2D") ? 2 : 3);
     }
-
   }
-
 }
 
 
 // --------------------------------------------------------------------------------------
-int main(int argc, char *argv[]) {
-  typedef double                                    Scalar;
-  typedef int                                       LocalOrdinal;
-  typedef int                                       GlobalOrdinal;
-  typedef Kokkos::Compat::KokkosSerialWrapperNode   Node;
-
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::TimeMonitor;
-
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   bool success = false;
   bool verbose = true;
@@ -328,8 +230,6 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     // Parameters initialization
     // =========================================================================
-    Teuchos::CommandLineProcessor clp(false);
-
     GO nx = 100, ny = 100, nz = 100;
     Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
     Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
@@ -341,7 +241,6 @@ int main(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
     ParameterList galeriList = galeriParameters.GetParameterList();
     out << thickSeparator << std::endl << xpetraParameters << galeriParameters;
 
@@ -350,7 +249,7 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     RCP<const Map>   map;
     RCP<Matrix> A,P,R, Ac;
-    RCP<MultiVector> nullspace;
+    RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,Node> > nullspace;
     std::string matrixType = galeriParameters.GetMatrixType();
     MueLuExamples::generate_user_matrix_and_nullspace(matrixType,lib,galeriList,comm,A,nullspace);
     map=A->getRowMap();
@@ -399,7 +298,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef HAVE_MUELU_BELOS
       // Solve
-      MueLuExamples::solve_system_hierarchy(lib,A,X,B,H,SList);
+      MueLuExamples::solve_system_hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lib,A,X,B,H,SList);
 #endif
 
       // Extract R,P & Ac for LevelWrap Usage
@@ -407,7 +306,8 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Get("P",P);
       H->GetLevel(1)->Get("A",Ac);
 
-      nullspace = H->GetLevel(1)->Get<RCP<MultiVector> >("Nullspace",LevelFactory->GetFactory("Nullspace").get());
+      // extract coarse level null space from level 1 that we have to inject for the next runs...
+      nullspace = H->GetLevel(1)->template Get<RCP<MultiVector> >("Nullspace",LevelFactory->GetFactory("Nullspace").get());
     }
     out << thickSeparator << std::endl;
 
@@ -568,3 +468,127 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
+
+int main(int argc, char* argv[]) {
+  bool success = false;
+  bool verbose = true;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+  try {
+    const bool throwExceptions     = false;
+    const bool recogniseAllOptions = false;
+
+    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Xpetra::Parameters xpetraParameters(clp);
+
+    std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
+
+    switch (clp.parse(argc, argv, NULL)) {
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    }
+
+    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
+    if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
+#else
+      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
+#endif
+    }
+
+    if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      if (node == "") {
+        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+
+#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#else
+#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+        return main_<double,int,int,Node> (clp, lib, argc, argv);
+#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#  else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#  endif
+#endif
+      } else if (node == "serial") {
+#ifdef KOKKOS_HAVE_SERIAL
+        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#  else
+#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT)
+        return main_<double,int,int,Node> (clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
+#else
+        throw MueLu::Exceptions::RuntimeError("Serial node type is disabled");
+#endif
+      } else if (node == "openmp") {
+#ifdef KOKKOS_HAVE_OPENMP
+        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return main_<double,int,long,Node>(clp, argc, argv);
+#  else
+#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)
+        return main_<double,int,int,Node> (clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
+#else
+        throw MueLu::Exceptions::RuntimeError("OpenMP node type is disabled");
+#endif
+      } else if (node == "cuda") {
+#ifdef KOKKOS_HAVE_CUDA
+        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return main_<double,int,long,Node>(clp, argc, argv);
+#  else
+#    if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_INT)
+        return main_<double,int,int,Node> (clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
+#else
+        throw MueLu::Exceptions::RuntimeError("CUDA node type is disabled");
+#endif
+      } else {
+        throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
+      }
+#else
+      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
+#endif
+    }
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+}
+
