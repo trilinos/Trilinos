@@ -50,7 +50,7 @@ int ex_create_group (int parent_id, const char *group_name)
   if ((status = nc_redef (parent_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to put file id %d into define mode", parent_id);
+            "ERROR: failed to put file id %d into define mode", parent_id);
     ex_err("ex_create_group",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -58,7 +58,7 @@ int ex_create_group (int parent_id, const char *group_name)
   if ((status = nc_def_grp (parent_id, group_name, &exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-    "Error: group create failed for %s in file id %d",
+    "ERROR: group create failed for %s in file id %d",
       group_name, parent_id);
     ex_err("ex_create_group",errmsg,exerrval);
     return (EX_FATAL);
@@ -67,7 +67,7 @@ int ex_create_group (int parent_id, const char *group_name)
   if ((status = nc_enddef (parent_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to complete definition for file id %d", exoid);
+	    "ERROR: failed to complete definition for file id %d", exoid);
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -75,7 +75,7 @@ int ex_create_group (int parent_id, const char *group_name)
 #else
   exerrval = NC_ENOTNC4;
   sprintf(errmsg,
-	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
+	  "ERROR: Group capabilities are not available in this netcdf version--not netcdf4");
   ex_err("ex_create_group",errmsg,exerrval);
   return (EX_FATAL);
 #endif

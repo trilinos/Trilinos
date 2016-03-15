@@ -129,7 +129,7 @@ int ex_get_partial_conn( int   exoid,
       
 	
 	  sprintf(errmsg,
-		  "Error: failed to locate %s id %"PRId64" in id array in file id %d",
+		  "ERROR: failed to locate %s id %"PRId64" in id array in file id %d",
 		  ex_name_of_object(blk_type),blk_id,exoid);
 	  ex_err("ex_get_partial_conn",errmsg,exerrval);
 	  return (EX_FATAL);
@@ -164,7 +164,7 @@ int ex_get_partial_conn( int   exoid,
   default:
     exerrval = 1005;
     sprintf(errmsg,
-	    "Internal Error: unrecognized block type in switch: %d in file id %d",
+	    "Internal ERROR: unrecognized block type in switch: %d in file id %d",
 	    blk_type,exoid);
     ex_err("ex_get_partial_conn",errmsg,EX_MSG);
     return (EX_FATAL);              /* number of attributes not defined */
@@ -175,7 +175,7 @@ int ex_get_partial_conn( int   exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate number of nodes/entity for %s %"PRId64" in file id %d",
+	      "ERROR: failed to locate number of nodes/entity for %s %"PRId64" in file id %d",
 	      ex_name_of_object(blk_type),blk_id,exoid);
       ex_err("ex_get_partial_conn",errmsg,exerrval);
       return(EX_FATAL);
@@ -185,7 +185,7 @@ int ex_get_partial_conn( int   exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get number of nodes/entity for %s %"PRId64" in file id %d",
+	      "ERROR: failed to get number of nodes/entity for %s %"PRId64" in file id %d",
 	      ex_name_of_object(blk_type),blk_id,exoid);
       ex_err("ex_get_partial_conn",errmsg, exerrval);
       return(EX_FATAL);
@@ -199,7 +199,7 @@ int ex_get_partial_conn( int   exoid,
       if ((status = nc_inq_dimlen(exoid, numedgperentdim, &num_edges_per_entry)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get number of edges/entry for %s %"PRId64" in file id %d",
+		"ERROR: failed to get number of edges/entry for %s %"PRId64" in file id %d",
 		ex_name_of_object(blk_type),blk_id,exoid);
 	ex_err("ex_get_partial_conn",errmsg, exerrval);
 	return(EX_FATAL);
@@ -215,7 +215,7 @@ int ex_get_partial_conn( int   exoid,
       if ((status = nc_inq_dimlen(exoid, numfacperentdim, &num_faces_per_entry)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get number of faces/entry for %s %"PRId64" in file id %d",
+		"ERROR: failed to get number of faces/entry for %s %"PRId64" in file id %d",
 		ex_name_of_object(blk_type),blk_id,exoid);
 	ex_err("ex_get_partial_conn",errmsg, exerrval);
 	return(EX_FATAL);
@@ -228,7 +228,7 @@ int ex_get_partial_conn( int   exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate connectivity array for %s %"PRId64" in file id %d",
+	      "ERROR: failed to locate connectivity array for %s %"PRId64" in file id %d",
 	      ex_name_of_object(blk_type),blk_id,exoid);
       ex_err("ex_get_partial_conn",errmsg, exerrval);
       return(EX_FATAL);
@@ -240,7 +240,7 @@ int ex_get_partial_conn( int   exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate edge connectivity array for %s %"PRId64" in file id %d",
+	      "ERROR: failed to locate edge connectivity array for %s %"PRId64" in file id %d",
 	      ex_name_of_object(blk_type),blk_id,exoid);
       ex_err("ex_get_partial_conn",errmsg, exerrval);
       return(EX_FATAL);
@@ -251,7 +251,7 @@ int ex_get_partial_conn( int   exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate face connectivity array for %s %"PRId64" in file id %d",
+	      "ERROR: failed to locate face connectivity array for %s %"PRId64" in file id %d",
 	      ex_name_of_object(blk_type),blk_id,exoid);
       ex_err("ex_get_partial_conn",errmsg, exerrval);
       return(EX_FATAL);
@@ -277,7 +277,7 @@ int ex_get_partial_conn( int   exoid,
       {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get edge connectivity array for %s %"PRId64" in file id %d",
+		"ERROR: failed to get edge connectivity array for %s %"PRId64" in file id %d",
 		ex_name_of_object(blk_type),blk_id,exoid);
 	ex_err("ex_get_partial_conn",errmsg, exerrval);
 	return(EX_FATAL);
@@ -302,7 +302,7 @@ int ex_get_partial_conn( int   exoid,
       {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get face connectivity array for %s %"PRId64" in file id %d",
+		"ERROR: failed to get face connectivity array for %s %"PRId64" in file id %d",
 		ex_name_of_object(blk_type),blk_id,exoid);
 	ex_err("ex_get_partial_conn",errmsg, exerrval);
 	return(EX_FATAL);
@@ -327,7 +327,7 @@ int ex_get_partial_conn( int   exoid,
       {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get connectivity array for %s %"PRId64" in file id %d",
+		"ERROR: failed to get connectivity array for %s %"PRId64" in file id %d",
 		ex_name_of_object(blk_type),blk_id,exoid);
 	ex_err("ex_get_partial_conn",errmsg, exerrval);
 	return(EX_FATAL);

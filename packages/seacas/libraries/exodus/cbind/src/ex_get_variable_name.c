@@ -106,7 +106,7 @@ int ex_get_variable_name (int   exoid,
     break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf( errmsg, "Error: Invalid variable type (%d) given for file id %d", obj_type, exoid );
+    sprintf( errmsg, "ERROR: Invalid variable type (%d) given for file id %d", obj_type, exoid );
     ex_err( "ex_get_variable_name", errmsg, exerrval );
     return (EX_FATAL);
   }

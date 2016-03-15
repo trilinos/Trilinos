@@ -98,7 +98,7 @@ int ex_get_cmap_params(int  exoid,
   /* get the cmap information variables index */
   if (ex_get_idx(exoid, VAR_N_COMM_INFO_IDX, cmap_info_idx, processor) == -1) {
     sprintf(errmsg,
-            "Error: failed to find index variable, \"%s\", in file ID %d",
+            "ERROR: failed to find index variable, \"%s\", in file ID %d",
             VAR_N_COMM_INFO_IDX, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -112,7 +112,7 @@ int ex_get_cmap_params(int  exoid,
       if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
-		"Error: failed to find length of dimension \"%s\" in file ID %d",
+		"ERROR: failed to find length of dimension \"%s\" in file ID %d",
                 DIM_NUM_N_CMAPS, exoid);
         ex_err(func_name, errmsg, exerrval);
         return (EX_FATAL);
@@ -131,7 +131,7 @@ int ex_get_cmap_params(int  exoid,
       if ((status = nc_inq_varid(exoid, VAR_N_COMM_IDS, &varid)) != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
-                "Error: failed to get variable ID for \"%s\" in file ID %d",
+                "ERROR: failed to get variable ID for \"%s\" in file ID %d",
                 VAR_N_COMM_IDS, exoid);
         ex_err(func_name, errmsg, exerrval);
         return (EX_FATAL);
@@ -149,7 +149,7 @@ int ex_get_cmap_params(int  exoid,
         if (status != NC_NOERR) {
           exerrval = status;
           sprintf(errmsg,
-                  "Error: failed to get variable \"%s\" from file ID %d",
+                  "ERROR: failed to get variable \"%s\" from file ID %d",
                   VAR_N_COMM_IDS, exoid);
           ex_err(func_name, errmsg, exerrval);
           return (EX_FATAL);
@@ -158,7 +158,7 @@ int ex_get_cmap_params(int  exoid,
         if ((status = nc_inq_varid(exoid, VAR_N_COMM_STAT, &varid)) != NC_NOERR) {
           exerrval = status;
           sprintf(errmsg,
-		  "Error: failed to find variable ID for \"%s\" from file ID %d",
+		  "ERROR: failed to find variable ID for \"%s\" from file ID %d",
                   VAR_N_COMM_STAT, exoid);
           ex_err(func_name, errmsg, exerrval);
           return (EX_FATAL);
@@ -178,7 +178,7 @@ int ex_get_cmap_params(int  exoid,
             if ((map_idx=ne_id_lkup(exoid, VAR_N_COMM_IDS, cmap_info_idx, cmap_id)) < 0) {
               exerrval = EX_MSG;
               sprintf(errmsg,
-		      "Error: failed to find nodal comm map with ID %"PRId64" in file ID %d",
+		      "ERROR: failed to find nodal comm map with ID %"PRId64" in file ID %d",
                       cmap_id, exoid);
               ex_err(func_name, errmsg, exerrval);
               return (EX_FATAL);
@@ -189,7 +189,7 @@ int ex_get_cmap_params(int  exoid,
             if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
               exerrval = status;
               sprintf(errmsg,
-		      "Error: failed to get status for \"%s\" from file ID %d",
+		      "ERROR: failed to get status for \"%s\" from file ID %d",
                       VAR_N_COMM_STAT, exoid);
               ex_err(func_name, errmsg, exerrval);
               return (EX_FATAL);
@@ -202,7 +202,7 @@ int ex_get_cmap_params(int  exoid,
                              map_idx) == -1) {
                 exerrval = status;
                 sprintf(errmsg,
-			"Error: failed to find index variable, \"%s\", in file ID %d",
+			"ERROR: failed to find index variable, \"%s\", in file ID %d",
                         VAR_N_COMM_DATA_IDX, exoid);
                 ex_err(func_name, errmsg, exerrval);
 
@@ -217,7 +217,7 @@ int ex_get_cmap_params(int  exoid,
                 if ((status = nc_inq_dimid(exoid, DIM_NCNT_CMAP, &dimid)) != NC_NOERR) {
                   exerrval = status;
                   sprintf(errmsg,
-			  "Error: failed to find dimension ID for \"%s\" in file ID %d",
+			  "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
                           DIM_NCNT_CMAP, exoid);
                   ex_err(func_name, errmsg, exerrval);
                   return (EX_FATAL);
@@ -227,7 +227,7 @@ int ex_get_cmap_params(int  exoid,
                 if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
                   exerrval = status;
                   sprintf(errmsg,
-			  "Error: failed to find length of dimension \"%s\" in file ID %d",
+			  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                           DIM_NCNT_CMAP, exoid);
                   ex_err(func_name, errmsg, exerrval);
                   return (EX_FATAL);
@@ -264,7 +264,7 @@ int ex_get_cmap_params(int  exoid,
   if (ex_get_idx(exoid, VAR_E_COMM_INFO_IDX, cmap_info_idx, processor) == -1) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find index variable, \"%s\", in file ID %d",
+            "ERROR: failed to find index variable, \"%s\", in file ID %d",
             VAR_E_COMM_INFO_IDX, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -278,7 +278,7 @@ int ex_get_cmap_params(int  exoid,
       if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
-		"Error: failed to find length of dimension \"%s\" in file ID %d",
+		"ERROR: failed to find length of dimension \"%s\" in file ID %d",
                 DIM_NUM_E_CMAPS, exoid);
         ex_err(func_name, errmsg, exerrval);
         return (EX_FATAL);
@@ -297,7 +297,7 @@ int ex_get_cmap_params(int  exoid,
       if ((status = nc_inq_varid(exoid, VAR_E_COMM_IDS, &varid)) != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
-                "Error: failed to get variable ID for \"%s\" in file ID %d",
+                "ERROR: failed to get variable ID for \"%s\" in file ID %d",
                 VAR_E_COMM_IDS, exoid);
         ex_err(func_name, errmsg, exerrval);
         return (EX_FATAL);
@@ -314,7 +314,7 @@ int ex_get_cmap_params(int  exoid,
         if (status != NC_NOERR) {
           exerrval = status;
           sprintf(errmsg,
-                  "Error: failed to get variable \"%s\" from file ID %d",
+                  "ERROR: failed to get variable \"%s\" from file ID %d",
                   VAR_E_COMM_IDS, exoid);
           ex_err(func_name, errmsg, exerrval);
           return (EX_FATAL);
@@ -323,7 +323,7 @@ int ex_get_cmap_params(int  exoid,
         if ((status = nc_inq_varid(exoid, VAR_E_COMM_STAT, &varid)) != NC_NOERR) {
           exerrval = status;
           sprintf(errmsg,
-		  "Error: failed to find variable ID for \"%s\" from file ID %d",
+		  "ERROR: failed to find variable ID for \"%s\" from file ID %d",
                   VAR_E_COMM_STAT, exoid);
           ex_err(func_name, errmsg, exerrval);
           return (EX_FATAL);
@@ -346,7 +346,7 @@ int ex_get_cmap_params(int  exoid,
 				    cmap_id)) < 0) {
               exerrval = EX_MSG;
               sprintf(errmsg,
-		      "Error: failed to find elemental comm map with ID %"PRId64" in file ID %d",
+		      "ERROR: failed to find elemental comm map with ID %"PRId64" in file ID %d",
                       cmap_id, exoid);
               ex_err(func_name, errmsg, exerrval);
               return (EX_FATAL);
@@ -357,7 +357,7 @@ int ex_get_cmap_params(int  exoid,
             if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
               exerrval = status;
               sprintf(errmsg,
-                      "Error: failed to get status for \"%s\" from file ID %d",
+                      "ERROR: failed to get status for \"%s\" from file ID %d",
                       VAR_E_COMM_STAT, exoid);
               ex_err(func_name, errmsg, exerrval);
               return (EX_FATAL);
@@ -370,7 +370,7 @@ int ex_get_cmap_params(int  exoid,
                              map_idx) == -1) {
                 exerrval = status;
                 sprintf(errmsg,
-			"Error: failed to find index variable, \"%s\", in file ID %d",
+			"ERROR: failed to find index variable, \"%s\", in file ID %d",
 			VAR_E_COMM_DATA_IDX, exoid);
                 ex_err(func_name, errmsg, exerrval);
 
@@ -385,7 +385,7 @@ int ex_get_cmap_params(int  exoid,
                 if ((status = nc_inq_dimid(exoid, DIM_ECNT_CMAP, &dimid)) != NC_NOERR) {
                   exerrval = status;
                   sprintf(errmsg,
-			  "Error: failed to find dimension ID for \"%s\" in file ID %d",
+			  "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
                           DIM_ECNT_CMAP, exoid);
                   ex_err(func_name, errmsg, exerrval);
                   return (EX_FATAL);
@@ -398,7 +398,7 @@ int ex_get_cmap_params(int  exoid,
                 if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
                   exerrval = status;
                   sprintf(errmsg,
-			  "Error: failed to find length of dimension \"%s\" in file ID %d",
+			  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                           DIM_ECNT_CMAP, exoid);
                   ex_err(func_name, errmsg, exerrval);
                   return (EX_FATAL);

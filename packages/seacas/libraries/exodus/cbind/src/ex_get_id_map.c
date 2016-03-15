@@ -93,7 +93,7 @@ int ex_get_id_map ( int   exoid,
   default:
     exerrval = EX_BADPARAM;
     sprintf( errmsg,
-	     "Error: Bad map type (%d) specified for file id %d",
+	     "ERROR: Bad map type (%d) specified for file id %d",
 	     map_type, exoid );
     ex_err( "ex_get_id_map", errmsg, exerrval );
     return (EX_FATAL);
@@ -109,7 +109,7 @@ int ex_get_id_map ( int   exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get number of %ss in file id %d", tname, exoid);
+	      "ERROR: failed to get number of %ss in file id %d", tname, exoid);
       ex_err("ex_get_id_map",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -140,7 +140,7 @@ int ex_get_id_map ( int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get %s id map in file id %d",
+	    "ERROR: failed to get %s id map in file id %d",
 	    tname, exoid);
     ex_err("ex_get_id_map",errmsg,exerrval);
     return (EX_FATAL);

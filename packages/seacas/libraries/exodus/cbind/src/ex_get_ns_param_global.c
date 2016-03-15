@@ -76,7 +76,7 @@ int ex_get_ns_param_global(int exoid,
   if ((status = nc_inq_varid(exoid, VAR_NS_IDS_GLOBAL, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find variable ID for \"%s\" in file ID %d",
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
             VAR_NS_IDS_GLOBAL, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -92,7 +92,7 @@ int ex_get_ns_param_global(int exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get variable \"%s\" from file ID %d",
+            "ERROR: failed to get variable \"%s\" from file ID %d",
             VAR_NS_IDS_GLOBAL, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -104,7 +104,7 @@ int ex_get_ns_param_global(int exoid,
     if ((status = nc_inq_varid(exoid, VAR_NS_NODE_CNT_GLOBAL, &varid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to find variable ID for \"%s\" in file ID %d",
+              "ERROR: failed to find variable ID for \"%s\" in file ID %d",
               VAR_NS_NODE_CNT_GLOBAL, exoid);
       ex_err(func_name, errmsg, exerrval);
 
@@ -120,7 +120,7 @@ int ex_get_ns_param_global(int exoid,
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to get variable \"%s\" from file ID %d",
+              "ERROR: failed to get variable \"%s\" from file ID %d",
               VAR_NS_NODE_CNT_GLOBAL, exoid);
       ex_err(func_name, errmsg, exerrval);
 
@@ -134,7 +134,7 @@ int ex_get_ns_param_global(int exoid,
     if ((status = nc_inq_varid(exoid, VAR_NS_DF_CNT_GLOBAL, &varid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to find variable ID for \"%s\" in file ID %d",
+              "ERROR: failed to find variable ID for \"%s\" in file ID %d",
               VAR_NS_DF_CNT_GLOBAL, exoid);
       ex_err(func_name, errmsg, exerrval);
 
@@ -150,7 +150,7 @@ int ex_get_ns_param_global(int exoid,
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to get variable \"%s\" from file ID %d",
+              "ERROR: failed to get variable \"%s\" from file ID %d",
               VAR_NS_DF_CNT_GLOBAL, exoid);
       ex_err(func_name, errmsg, exerrval);
 

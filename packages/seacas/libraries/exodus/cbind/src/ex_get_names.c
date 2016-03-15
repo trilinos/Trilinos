@@ -131,7 +131,7 @@ int ex_get_names (int exoid,
     /* invalid variable type */
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid type specified in file id %d",
+    sprintf(errmsg, "ERROR: Invalid type specified in file id %d",
 	    exoid);
     ex_err(routine,errmsg,exerrval);
     return(EX_FATAL);

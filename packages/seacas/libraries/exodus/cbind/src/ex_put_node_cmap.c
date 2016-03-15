@@ -85,7 +85,7 @@ int ex_put_node_cmap(int  exoid,
   /* get the index for the comm map information variables */
   if (ex_get_idx(exoid, VAR_N_COMM_INFO_IDX, varidx, processor) == -1) {
     sprintf(errmsg,
-            "Error: failed to find index variable, \"%s\", in file ID %d",
+            "ERROR: failed to find index variable, \"%s\", in file ID %d",
             VAR_N_COMM_INFO_IDX, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -95,7 +95,7 @@ int ex_put_node_cmap(int  exoid,
   /* Get the index for this map_id */
   if ((map_idx=ne_id_lkup(exoid, VAR_N_COMM_IDS, varidx, map_id)) == -1) {
     sprintf(errmsg,
-            "Error: failed to find index for variable \"%s\" in file ID %d",
+            "ERROR: failed to find index for variable \"%s\" in file ID %d",
             VAR_N_COMM_IDS, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -108,7 +108,7 @@ int ex_put_node_cmap(int  exoid,
   if ((status = nc_inq_varid(exoid, VAR_N_COMM_STAT, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find variable ID for \"%s\" in file ID %d",
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
             VAR_N_COMM_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -118,7 +118,7 @@ int ex_put_node_cmap(int  exoid,
   if ((status = nc_get_var1_int(exoid, varid, start, &value)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: unable to get variable \"%s\" from file ID %d",
+            "ERROR: unable to get variable \"%s\" from file ID %d",
             VAR_N_COMM_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -131,7 +131,7 @@ int ex_put_node_cmap(int  exoid,
   if (ex_get_idx(exoid, VAR_N_COMM_DATA_IDX, varidx, map_idx) == -1) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find index variable, \"%s\", in file ID %d",
+            "ERROR: failed to find index variable, \"%s\", in file ID %d",
             VAR_N_COMM_DATA_IDX, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -144,7 +144,7 @@ int ex_put_node_cmap(int  exoid,
     if ((status = nc_inq_dimid(exoid, DIM_NCNT_CMAP, &dimid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to get dimension ID for \"%s\" in file ID %d",
+              "ERROR: failed to get dimension ID for \"%s\" in file ID %d",
               DIM_NCNT_CMAP, exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
@@ -153,7 +153,7 @@ int ex_put_node_cmap(int  exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &ret_val)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to find length of dimension \"%s\" in file ID %d",
+              "ERROR: failed to find length of dimension \"%s\" in file ID %d",
               DIM_NCNT_CMAP, exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
@@ -169,7 +169,7 @@ int ex_put_node_cmap(int  exoid,
   if ((status = nc_inq_varid(exoid, VAR_N_COMM_NIDS, &varid )) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find variable ID for \"%s\" in file ID %d",
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
             VAR_N_COMM_NIDS, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -184,7 +184,7 @@ int ex_put_node_cmap(int  exoid,
     fprintf(stderr, "Start, Count = %"ST_ZU"\t%"ST_ZU"\n", start[0], count[0]);
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to output vector \"%s\" in file ID %d",
+            "ERROR: failed to output vector \"%s\" in file ID %d",
             VAR_N_COMM_NIDS, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -194,7 +194,7 @@ int ex_put_node_cmap(int  exoid,
   if ((status = nc_inq_varid(exoid, VAR_N_COMM_PROC, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find variable ID for \"%s\" in file ID %d",
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
             VAR_N_COMM_PROC, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -208,7 +208,7 @@ int ex_put_node_cmap(int  exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to output variable \"%s\" in file ID %d",
+            "ERROR: failed to output variable \"%s\" in file ID %d",
             VAR_N_COMM_PROC, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);

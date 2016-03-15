@@ -85,7 +85,7 @@ int ex_put_set (int   exoid,
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: no %ss defined in file id %d",
+            "ERROR: no %ss defined in file id %d",
 	    ex_name_of_object(set_type), exoid);
     ex_err("ex_put_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -102,7 +102,7 @@ int ex_put_set (int   exoid,
       return (EX_WARN);
     } 
       sprintf(errmsg,
-	      "Error: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
+	      "ERROR: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_put_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -135,7 +135,7 @@ int ex_put_set (int   exoid,
   if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate entry list for %s %"PRId64" in file id %d",
+	    "ERROR: failed to locate entry list for %s %"PRId64" in file id %d",
 	    ex_name_of_object(set_type), set_id,exoid);
     ex_err("ex_put_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -146,7 +146,7 @@ int ex_put_set (int   exoid,
     if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate extra list for %s %"PRId64" in file id %d",
+	      "ERROR: failed to locate extra list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_put_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -165,7 +165,7 @@ int ex_put_set (int   exoid,
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to store entry list for %s %"PRId64" in file id %d",
+	      "ERROR: failed to store entry list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_put_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -185,7 +185,7 @@ int ex_put_set (int   exoid,
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to store extra list for %s %"PRId64" in file id %d",
+	      "ERROR: failed to store extra list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_put_set",errmsg,exerrval);
       return (EX_FATAL);

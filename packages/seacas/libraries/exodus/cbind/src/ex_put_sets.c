@@ -87,12 +87,12 @@ int ex_put_sets (int   exoid,
       if (status == NC_EBADDIM) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: no %ss defined for file id %d", ex_name_of_object(sets[i].type), exoid);
+		"ERROR: no %ss defined for file id %d", ex_name_of_object(sets[i].type), exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
       } else {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to locate %ss defined in file id %d",
+		"ERROR: failed to locate %ss defined in file id %d",
 		ex_name_of_object(sets[i].type), exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
       }
@@ -123,7 +123,7 @@ int ex_put_sets (int   exoid,
     if ((status = nc_redef (exoid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to put file id %d into define mode",
+	      "ERROR: failed to put file id %d into define mode",
 	      exoid);
       ex_err("ex_put_sets",errmsg,exerrval);
       free(sets_to_define);
@@ -196,13 +196,13 @@ int ex_put_sets (int   exoid,
 	exerrval = status;
 	if (status == NC_ENAMEINUSE) {
 	  sprintf(errmsg,
-		  "Error: %s %"PRId64" -- size already defined in file id %d",
+		  "ERROR: %s %"PRId64" -- size already defined in file id %d",
 		  ex_name_of_object(sets[i].type), sets[i].id,exoid);
 	  ex_err("ex_put_sets",errmsg,exerrval);
 	}
 	else {
 	  sprintf(errmsg,
-		  "Error: failed to define number of entries in %s %"PRId64" in file id %d",
+		  "ERROR: failed to define number of entries in %s %"PRId64" in file id %d",
 		  ex_name_of_object(sets[i].type), sets[i].id,exoid);
 	  ex_err("ex_put_sets",errmsg,exerrval);
 	}
@@ -220,12 +220,12 @@ int ex_put_sets (int   exoid,
 	exerrval = status;
 	if (status == NC_ENAMEINUSE) {
 	  sprintf(errmsg,
-		  "Error: entry list already exists for %s %"PRId64" in file id %d",
+		  "ERROR: entry list already exists for %s %"PRId64" in file id %d",
 		  ex_name_of_object(sets[i].type), sets[i].id,exoid);
 	  ex_err("ex_put_sets",errmsg,exerrval);
 	} else {
 	  sprintf(errmsg,
-		  "Error: failed to create entry list for %s %"PRId64" in file id %d",
+		  "ERROR: failed to create entry list for %s %"PRId64" in file id %d",
 		  ex_name_of_object(sets[i].type), sets[i].id,exoid);
 	  ex_err("ex_put_sets",errmsg,exerrval);
 	}
@@ -238,12 +238,12 @@ int ex_put_sets (int   exoid,
 	  exerrval = status;
 	  if (status == NC_ENAMEINUSE) {
 	    sprintf(errmsg,
-		    "Error: extra list already exists for %s %"PRId64" in file id %d",
+		    "ERROR: extra list already exists for %s %"PRId64" in file id %d",
 		    ex_name_of_object(sets[i].type), sets[i].id, exoid);
 	    ex_err("ex_put_sets",errmsg,exerrval);
 	  } else {
 	    sprintf(errmsg,
-		    "Error: failed to create extra list for %s %"PRId64" in file id %d",
+		    "ERROR: failed to create extra list for %s %"PRId64" in file id %d",
 		    ex_name_of_object(sets[i].type), sets[i].id,exoid);
 	    ex_err("ex_put_sets",errmsg,exerrval);
 	  }
@@ -259,7 +259,7 @@ int ex_put_sets (int   exoid,
 	  if (sets[i].num_distribution_factor != sets[i].num_entry) {
 	    exerrval = EX_FATAL;
 	    sprintf(errmsg,
-		    "Error: # dist fact (%"PRId64") not equal to # nodes (%"PRId64") in node  set %"PRId64" file id %d",
+		    "ERROR: # dist fact (%"PRId64") not equal to # nodes (%"PRId64") in node  set %"PRId64" file id %d",
 		    sets[i].num_distribution_factor, sets[i].num_entry, sets[i].id, exoid);
 	    ex_err("ex_put_sets",errmsg,exerrval);
 	    goto error_ret;    /* exit define mode and return */
@@ -270,7 +270,7 @@ int ex_put_sets (int   exoid,
 				   sets[i].num_distribution_factor, &dimid)) != NC_NOERR) {
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to define number of dist factors in %s %"PRId64" in file id %d",
+		    "ERROR: failed to define number of dist factors in %s %"PRId64" in file id %d",
 		    ex_name_of_object(sets[i].type), sets[i].id,exoid);
 	    ex_err("ex_put_sets",errmsg,exerrval);
 	    goto error_ret;          /* exit define mode and return */
@@ -284,12 +284,12 @@ int ex_put_sets (int   exoid,
 	  exerrval = status;
 	  if (status == NC_ENAMEINUSE) {
 	    sprintf(errmsg,
-		    "Error: dist factors list already exists for %s %"PRId64" in file id %d",
+		    "ERROR: dist factors list already exists for %s %"PRId64" in file id %d",
 		    ex_name_of_object(sets[i].type), sets[i].id,exoid);
 	    ex_err("ex_put_sets",errmsg,exerrval);
 	  } else {
 	    sprintf(errmsg,
-		    "Error: failed to create dist factors list for %s %"PRId64" in file id %d",
+		    "ERROR: failed to create dist factors list for %s %"PRId64" in file id %d",
 		    ex_name_of_object(sets[i].type), sets[i].id,exoid);
 	    ex_err("ex_put_sets",errmsg,exerrval);
 	  }
@@ -303,7 +303,7 @@ int ex_put_sets (int   exoid,
     if ((status = nc_enddef (exoid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to complete definition in file id %d", exoid);
+	      "ERROR: failed to complete definition in file id %d", exoid);
       ex_err("ex_put_sets",errmsg,exerrval);
       free(sets_to_define);
       return (EX_FATAL);
@@ -337,7 +337,7 @@ int ex_put_sets (int   exoid,
       if ((status = nc_inq_varid(exoid, idsptr, &varid)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to locate %s %"PRId64" in file id %d", ex_name_of_object(sets[i].type),
+		"ERROR: failed to locate %s %"PRId64" in file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
 	free(sets_to_define);
@@ -354,7 +354,7 @@ int ex_put_sets (int   exoid,
       if (status != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to store %s id %"PRId64" in file id %d", ex_name_of_object(sets[i].type),
+		"ERROR: failed to store %s id %"PRId64" in file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
 	free(sets_to_define);
@@ -366,7 +366,7 @@ int ex_put_sets (int   exoid,
       if ((status = nc_inq_varid(exoid, statptr, &varid)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to locate %s status in file id %d", ex_name_of_object(sets[i].type),
+		"ERROR: failed to locate %s status in file id %d", ex_name_of_object(sets[i].type),
 		exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
 	free(sets_to_define);
@@ -376,7 +376,7 @@ int ex_put_sets (int   exoid,
       if ((status = nc_put_var1_int(exoid, varid, start, &set_stat)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to store %s %"PRId64" status to file id %d", ex_name_of_object(sets[i].type),
+		"ERROR: failed to store %s %"PRId64" status to file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
 	free(sets_to_define);
@@ -415,7 +415,7 @@ int ex_put_sets (int   exoid,
   
   if (nc_enddef (exoid) != NC_NOERR) {    /* exit define mode */
     sprintf(errmsg,
-	    "Error: failed to complete definition for file id %d",
+	    "ERROR: failed to complete definition for file id %d",
 	    exoid);
     ex_err("ex_put_sets",errmsg,exerrval);
   }

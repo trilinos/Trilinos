@@ -95,7 +95,7 @@ int ex_put_coordinate_frames( int exoid,
   /* go into define mode. define num_frames, num_frames9 */
   if ((status = nc_redef (exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,"Error: failed to place file id %d into define mode",
+    sprintf(errmsg,"ERROR: failed to place file id %d into define mode",
             exoid);
     ex_err(PROCNAME,errmsg,exerrval);
     return (EX_FATAL);
@@ -105,7 +105,7 @@ int ex_put_coordinate_frames( int exoid,
       (nc_def_dim(exoid, DIM_NUM_CFRAME9, nframes*9, &dim9) != NC_NOERR)) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to define number of coordinate frames in file id %d",
+	    "ERROR: failed to define number of coordinate frames in file id %d",
 	    exoid);
     ex_err(PROCNAME,errmsg,exerrval);
     goto error_ret;
@@ -123,7 +123,7 @@ int ex_put_coordinate_frames( int exoid,
       (nc_def_var(exoid, VAR_FRAME_TAGS,NC_CHAR,1,&dim, &vartags) != NC_NOERR) ) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-	    "Error:  failed to define coordinate frames in file id %d",
+	    "ERROR:  failed to define coordinate frames in file id %d",
 	    exoid);
     ex_err(PROCNAME,errmsg,exerrval);
     goto error_ret;         /* exit define mode and return */
@@ -133,7 +133,7 @@ int ex_put_coordinate_frames( int exoid,
   if ((status = nc_enddef (exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to complete coordinate frame definition in file id %d", 
+	    "ERROR: failed to complete coordinate frame definition in file id %d", 
 	    exoid);
     ex_err(PROCNAME,errmsg,exerrval);
     return (EX_FATAL);
@@ -155,7 +155,7 @@ int ex_put_coordinate_frames( int exoid,
   if (nc_put_var_text(exoid, vartags, tags) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed writing frame data in file id %d",exoid);
+	    "ERROR: failed writing frame data in file id %d",exoid);
     ex_err(PROCNAME,errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -169,7 +169,7 @@ int ex_put_coordinate_frames( int exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed writing frame data in file id %d",exoid);
+	    "ERROR: failed writing frame data in file id %d",exoid);
     ex_err(PROCNAME,errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -183,7 +183,7 @@ int ex_put_coordinate_frames( int exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed writing frame data in file id %d",exoid);
+	    "ERROR: failed writing frame data in file id %d",exoid);
     ex_err(PROCNAME,errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -192,7 +192,7 @@ int ex_put_coordinate_frames( int exoid,
  error_ret:
   if (nc_enddef (exoid) != NC_NOERR) {    /* exit define mode */
     sprintf(errmsg,
-	    "Error: failed to complete frame definition for file id %d",
+	    "ERROR: failed to complete frame definition for file id %d",
 	    exoid);
     ex_err(PROCNAME,errmsg,exerrval);
   }

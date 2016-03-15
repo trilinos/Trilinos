@@ -95,7 +95,7 @@ int ex_get_partial_side_set_df (int   exoid,
       return (EX_WARN);
     } 
       sprintf(errmsg,
-	      "Error: failed to locate side set %"PRId64" in %s array in file id %d",
+	      "ERROR: failed to locate side set %"PRId64" in %s array in file id %d",
               side_set_id, VAR_SS_IDS, exoid);
       ex_err("ex_get_partial_side_set_df",errmsg,exerrval);
       return (EX_FATAL);
@@ -115,7 +115,7 @@ int ex_get_partial_side_set_df (int   exoid,
   if ((status = nc_inq_dimlen (exoid, dimid, &num_df_in_set)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get number of dist factors in side set %"PRId64" in file id %d",
+	    "ERROR: failed to get number of dist factors in side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set_df",errmsg,exerrval);
     return (EX_FATAL);
@@ -124,14 +124,14 @@ int ex_get_partial_side_set_df (int   exoid,
   /* Check input parameters for a valid range of numbers */
   if (start_num < 0 || start_num > num_df_in_set) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid input");
+    sprintf(errmsg, "ERROR: Invalid input");
     ex_err("ex_get_partial_side_set_df",errmsg,exerrval);
     return (EX_FATAL);
   }
 
   if (num_df_to_get < 0) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid number of df's to get!");
+    sprintf(errmsg, "ERROR: Invalid number of df's to get!");
     ex_err("ex_get_partial_side_set_df",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -139,7 +139,7 @@ int ex_get_partial_side_set_df (int   exoid,
   /* start_num now starts at 1, not 0 */
   if ((start_num + num_df_to_get - 1) > num_df_in_set) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: request larger than number of df's in set!");
+    sprintf(errmsg, "ERROR: request larger than number of df's in set!");
     ex_err("ex_get_partial_side_set_df",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -147,7 +147,7 @@ int ex_get_partial_side_set_df (int   exoid,
   if ((status = nc_inq_varid (exoid, VAR_FACT_SS(side_set_id_ndx), &dist_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate dist factors list for side set %"PRId64" in file id %d",
+	    "ERROR: failed to locate dist factors list for side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set_df",errmsg,exerrval);
     return (EX_FATAL);
@@ -167,7 +167,7 @@ int ex_get_partial_side_set_df (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get dist factors list for side set %"PRId64" in file id %d",
+	    "ERROR: failed to get dist factors list for side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set_df",errmsg,exerrval);
     return (EX_FATAL);

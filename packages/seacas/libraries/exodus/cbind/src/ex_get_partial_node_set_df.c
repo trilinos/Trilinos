@@ -100,7 +100,7 @@ int ex_get_partial_node_set_df  (int   exoid,
     } 
 
       sprintf(errmsg,
-              "Error: failed to locate node set %"PRId64" in %s in file id %d",
+              "ERROR: failed to locate node set %"PRId64" in %s in file id %d",
               node_set_id,VAR_NS_IDS,exoid);
       ex_err("ex_get_partial_node_set_df",errmsg,exerrval);
       return (EX_FATAL);
@@ -111,7 +111,7 @@ int ex_get_partial_node_set_df  (int   exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_NOD_NS(node_set_id_ndx), &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-         "Error: failed to locate number of nodes in node set %"PRId64" in file id %d",
+         "ERROR: failed to locate number of nodes in node set %"PRId64" in file id %d",
             node_set_id,exoid);
     ex_err("ex_get_partial_node_set_df",errmsg,exerrval);
     return (EX_FATAL);
@@ -120,7 +120,7 @@ int ex_get_partial_node_set_df  (int   exoid,
   if ((status = nc_inq_dimlen(exoid, dimid, &num_nodes_in_set)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get number of nodes in node set %"PRId64" in file id %d",
+            "ERROR: failed to get number of nodes in node set %"PRId64" in file id %d",
             node_set_id, exoid);
     ex_err("ex_get_partial_node_set_df",errmsg,exerrval);
     return (EX_FATAL);
@@ -129,14 +129,14 @@ int ex_get_partial_node_set_df  (int   exoid,
   /* Check input parameters for a valid range of numbers */
   if (start_num < 0 || start_num > num_nodes_in_set) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid input");
+    sprintf(errmsg, "ERROR: Invalid input");
     ex_err("ex_get_partial_node_set_df",errmsg,exerrval);
     return (EX_FATAL);
   }
 
   if (num_df_to_get < 0) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid number of nodes in nodes set!");
+    sprintf(errmsg, "ERROR: Invalid number of nodes in nodes set!");
     ex_err("ex_get_partial_node_set_df",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -144,7 +144,7 @@ int ex_get_partial_node_set_df  (int   exoid,
   /* start_num now starts at 1, not 0 */
   if ((start_num + num_df_to_get - 1) > num_nodes_in_set) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: request larger than number of nodes in set!");
+    sprintf(errmsg, "ERROR: request larger than number of nodes in set!");
     ex_err("ex_get_partial_node_set_df",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -172,7 +172,7 @@ int ex_get_partial_node_set_df  (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get distribution factors in file id %d",
+            "ERROR: failed to get distribution factors in file id %d",
             exoid);
     ex_err("ex_get_partial_node_set_df",errmsg,exerrval);
     return (EX_FATAL);

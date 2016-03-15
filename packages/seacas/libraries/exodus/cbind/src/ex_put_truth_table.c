@@ -179,7 +179,7 @@ int ex_put_truth_table (int  exoid,
   else {       /* invalid variable type */
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: Invalid variable type %d specified in file id %d",
+	    "ERROR: Invalid variable type %d specified in file id %d",
 	    obj_type, exoid);
     ex_err("ex_get_varid",errmsg,exerrval);
     return (EX_WARN);
@@ -188,7 +188,7 @@ int ex_put_truth_table (int  exoid,
   if ((int)num_entity != num_blk) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-	    "Error: # of %s doesn't match those defined in file id %d",
+	    "ERROR: # of %s doesn't match those defined in file id %d",
 	    ex_name_of_object(obj_type), exoid);
     ex_err("ex_get_var_tab",errmsg,exerrval);
     return (EX_FATAL);
@@ -197,7 +197,7 @@ int ex_put_truth_table (int  exoid,
   if ((int)num_var_db != num_var) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-	    "Error: # of %s variables doesn't match those defined in file id %d",
+	    "ERROR: # of %s variables doesn't match those defined in file id %d",
 	    ex_name_of_object(obj_type), exoid);
     ex_err("ex_get_var_tab",errmsg,exerrval);
     return (EX_FATAL);
@@ -207,7 +207,7 @@ int ex_put_truth_table (int  exoid,
   if (!(stat_vals = malloc(num_blk*sizeof(int)))) {
     exerrval = EX_MEMFAIL;
     sprintf(errmsg,
-	    "Error: failed to allocate memory for %s status array for file id %d",
+	    "ERROR: failed to allocate memory for %s status array for file id %d",
             ex_name_of_object(obj_type), exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
@@ -224,7 +224,7 @@ int ex_put_truth_table (int  exoid,
       exerrval = status;
       free(stat_vals);
       sprintf(errmsg,
-	      "Error: failed to get %s status array from file id %d",
+	      "ERROR: failed to get %s status array from file id %d",
               ex_name_of_object(obj_type), exoid);
       ex_err("put_var_tab",errmsg,exerrval);
       return (EX_FATAL);
@@ -241,7 +241,7 @@ int ex_put_truth_table (int  exoid,
     free(stat_vals);
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to put file id %d into define mode",
+            "ERROR: failed to put file id %d into define mode",
 	    exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
@@ -252,7 +252,7 @@ int ex_put_truth_table (int  exoid,
     exerrval = status;
     free(stat_vals);
     sprintf(errmsg,
-	    "Error: failed to locate time variable in file id %d",
+	    "ERROR: failed to locate time variable in file id %d",
 	    exoid);
     ex_err(routine,errmsg,exerrval);
     goto error_ret;          /* exit define mode and return */
@@ -282,7 +282,7 @@ int ex_put_truth_table (int  exoid,
 	    exerrval = status;
 	    free(stat_vals);
 	    sprintf(errmsg,
-		    "Error: failed to locate number of entities in %d'th %s in file id %d",
+		    "ERROR: failed to locate number of entities in %d'th %s in file id %d",
 		    i+1, ex_name_of_object(obj_type), exoid);
 	    ex_err(routine,errmsg,exerrval);
 	    goto error_ret;          /* exit define mode and return */
@@ -302,7 +302,7 @@ int ex_put_truth_table (int  exoid,
 	      exerrval = status;
 	      free(stat_vals);
 	      sprintf(errmsg,
-		      "Error: failed to define variable for %d'th %s in file id %d",
+		      "ERROR: failed to define variable for %d'th %s in file id %d",
 		      i+1, ex_name_of_object(obj_type), exoid);
 	      ex_err(routine,errmsg,exerrval);
 	      goto error_ret;  /* exit define mode and return */
@@ -327,7 +327,7 @@ int ex_put_truth_table (int  exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to define %s variable truth table in file id %d",
+	    "ERROR: failed to define %s variable truth table in file id %d",
 	    ex_name_of_object(obj_type), exoid);
     ex_err(routine,errmsg,exerrval);
     goto error_ret;          /* exit define mode and return */
@@ -337,7 +337,7 @@ int ex_put_truth_table (int  exoid,
   if ((status = nc_enddef (exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to complete definitions in file id %d",
+	    "ERROR: failed to complete definitions in file id %d",
 	    exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
@@ -349,7 +349,7 @@ int ex_put_truth_table (int  exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to store variable truth table in file id %d",
+	    "ERROR: failed to store variable truth table in file id %d",
 	    exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
@@ -363,7 +363,7 @@ int ex_put_truth_table (int  exoid,
   if (nc_enddef (exoid) != NC_NOERR)     /* exit define mode */
     {
       sprintf(errmsg,
-	      "Error: failed to complete definition for file id %d",
+	      "ERROR: failed to complete definition for file id %d",
 	      exoid);
       ex_err(routine,errmsg,exerrval);
     }

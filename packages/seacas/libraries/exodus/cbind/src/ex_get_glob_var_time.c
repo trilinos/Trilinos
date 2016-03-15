@@ -146,7 +146,7 @@ int ex_get_glob_var_time (int   exoid,
    if ((status = nc_inq_varid (exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
      exerrval = status;
      sprintf(errmsg,
-            "Error: failed to locate global variables in file id %d",
+            "ERROR: failed to locate global variables in file id %d",
              exoid);
      ex_err("ex_get_glob_var_time",errmsg,exerrval);
      return (EX_WARN);
@@ -161,7 +161,7 @@ int ex_get_glob_var_time (int   exoid,
    if (status != NC_NOERR) {
      exerrval = status;
      sprintf(errmsg,
-            "Error: failed to get global variable %d values from file id %d",
+            "ERROR: failed to get global variable %d values from file id %d",
             glob_var_index, exoid);
      ex_err("ex_get_glob_var_time",errmsg,exerrval);
      return (EX_FATAL);

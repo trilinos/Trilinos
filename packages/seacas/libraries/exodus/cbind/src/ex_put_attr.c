@@ -87,7 +87,7 @@ int ex_put_attr (int   exoid,
         return (EX_WARN);              /* no attributes for this block */
       } 
         sprintf(errmsg,
-		"Error: no %s id %"PRId64" in in file id %d",
+		"ERROR: no %s id %"PRId64" in in file id %d",
                 ex_name_of_object(blk_type), blk_id, exoid);
         ex_err("ex_put_attr",errmsg,exerrval);
         return (EX_FATAL);
@@ -126,7 +126,7 @@ int ex_put_attr (int   exoid,
   default:
     exerrval = 1005;
     sprintf(errmsg,
-	    "Internal Error: unrecognized object type in switch: %d in file id %d",
+	    "Internal ERROR: unrecognized object type in switch: %d in file id %d",
 	    blk_type,exoid);
     ex_err("ex_put_attr",errmsg,EX_MSG);
     return (EX_FATAL);              /* number of attributes not defined */
@@ -135,7 +135,7 @@ int ex_put_attr (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate attribute variable for %s %"PRId64" in file id %d",
+	    "ERROR: failed to locate attribute variable for %s %"PRId64" in file id %d",
             ex_name_of_object(blk_type),blk_id,exoid);
     ex_err("ex_put_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -151,7 +151,7 @@ int ex_put_attr (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to put attributes for %s %"PRId64" in file id %d",
+            "ERROR: failed to put attributes for %s %"PRId64" in file id %d",
             ex_name_of_object(blk_type),blk_id,exoid);
     ex_err("ex_put_attr",errmsg,exerrval);
     return (EX_FATAL);

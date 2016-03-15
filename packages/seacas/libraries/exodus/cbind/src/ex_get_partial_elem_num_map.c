@@ -79,7 +79,7 @@ int ex_get_partial_elem_num_map (int  exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_ELEM, &numelemdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to locate number of elements in file id %d",
+            "ERROR: failed to locate number of elements in file id %d",
 	    exoid);
     ex_err("ex_get_partial_elem_num_map",errmsg,exerrval);
     return (EX_FATAL);
@@ -88,7 +88,7 @@ int ex_get_partial_elem_num_map (int  exoid,
   if ((status = nc_inq_dimlen (exoid, numelemdim, &num_elem)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get number of elements in file id %d",
+            "ERROR: failed to get number of elements in file id %d",
 	    exoid);
     ex_err("ex_get_partial_elem_num_map",errmsg,exerrval);
     return (EX_FATAL);
@@ -98,14 +98,14 @@ int ex_get_partial_elem_num_map (int  exoid,
   if (start_ent < 0 || start_ent > num_elem) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: Invalid input to function ex_get_partial_elem_num_map!\n");
+            "ERROR: Invalid input to function ex_get_partial_elem_num_map!\n");
     ex_err("ex_get_partial_elem_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
 
   if (num_ents < 0) {
     exerrval = status;
-    sprintf(errmsg, "Error: Invalid number of entries in map!\n");
+    sprintf(errmsg, "ERROR: Invalid number of entries in map!\n");
     ex_err("ex_get_partial_elem_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -113,7 +113,7 @@ int ex_get_partial_elem_num_map (int  exoid,
   /* start_ent now starts at 1, not 0 */
   if ((start_ent + num_ents - 1) > num_elem) {
     exerrval = status;
-    sprintf(errmsg, "Error: request range invalid!\n");
+    sprintf(errmsg, "ERROR: request range invalid!\n");
     ex_err("ex_get_partial_elem_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -154,7 +154,7 @@ int ex_get_partial_elem_num_map (int  exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get element number map in file id %d",
+	    "ERROR: failed to get element number map in file id %d",
 	    exoid);
     ex_err("ex_get_partial_elem_num_map",errmsg,exerrval);
     return (EX_FATAL);

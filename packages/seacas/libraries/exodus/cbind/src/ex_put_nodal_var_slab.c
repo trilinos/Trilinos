@@ -134,7 +134,7 @@ int ex_put_nodal_var_slab (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to store nodal variables in file id %d",
+	    "ERROR: failed to store nodal variables in file id %d",
 	    exoid);
     ex_err("ex_put_nodal_var_slab",errmsg,exerrval);
     return (EX_FATAL);

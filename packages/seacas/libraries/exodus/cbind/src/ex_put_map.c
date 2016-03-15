@@ -108,7 +108,7 @@ int ex_put_map (int  exoid,
   if ((status = nc_redef (exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to put file id %d into define mode",
+	    "ERROR: failed to put file id %d into define mode",
 	    exoid);
     ex_err("ex_put_map",errmsg,exerrval);
     return (EX_FATAL);
@@ -126,14 +126,14 @@ int ex_put_map (int  exoid,
     if (status == NC_ENAMEINUSE) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: element map already exists in file id %d",
+	      "ERROR: element map already exists in file id %d",
 	      exoid);
       ex_err("ex_put_map",errmsg,exerrval);
     }
     else {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to create element map array in file id %d",
+	      "ERROR: failed to create element map array in file id %d",
 	      exoid);
       ex_err("ex_put_map",errmsg,exerrval);
     }
@@ -146,7 +146,7 @@ int ex_put_map (int  exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to complete definition in file id %d",
+	      "ERROR: failed to complete definition in file id %d",
 	      exoid);
       ex_err("ex_put_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -164,7 +164,7 @@ int ex_put_map (int  exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to store element map in file id %d",
+	      "ERROR: failed to store element map in file id %d",
 	      exoid);
       ex_err("ex_put_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -177,7 +177,7 @@ int ex_put_map (int  exoid,
   if (nc_enddef (exoid) != NC_NOERR)     /* exit define mode */
     {
       sprintf(errmsg,
-	      "Error: failed to complete definition for file id %d",
+	      "ERROR: failed to complete definition for file id %d",
 	      exoid);
       ex_err("ex_put_map",errmsg,exerrval);
     }

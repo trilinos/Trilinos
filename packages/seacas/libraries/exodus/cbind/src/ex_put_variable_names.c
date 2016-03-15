@@ -60,12 +60,12 @@
     exerrval = status;							\
     if (status == NC_EBADDIM) {						\
       sprintf(errmsg,							\
-	      "Error: no " TNAME " variables defined in file id %d",	\
+	      "ERROR: no " TNAME " variables defined in file id %d",	\
 	      exoid);							\
       ex_err("ex_put_var_names",errmsg,exerrval);			\
     } else  {								\
       sprintf(errmsg,							\
-	      "Error: failed to locate number of " TNAME " variables in file id %d", \
+	      "ERROR: failed to locate number of " TNAME " variables in file id %d", \
 	      exoid);							\
       ex_err("ex_put_var_names",errmsg,exerrval);			\
     }									\
@@ -77,12 +77,12 @@
     if (status == NC_ENOTVAR)						\
       {									\
 	sprintf(errmsg,							\
-		"Error: no " TNAME " variable names defined in file id %d", \
+		"ERROR: no " TNAME " variable names defined in file id %d", \
 		exoid);							\
 	ex_err("ex_put_var_names",errmsg,exerrval);			\
       }	 else {								\
       sprintf(errmsg,							\
-	      "Error: " TNAME " name variable names not found in file id %d", \
+	      "ERROR: " TNAME " name variable names not found in file id %d", \
 	      exoid);							\
       ex_err("ex_put_var_names",errmsg,exerrval);			\
     }									\
@@ -189,7 +189,7 @@ int ex_put_variable_names (int   exoid,
   default:
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-            "Error: Invalid variable type %d specified in file id %d",
+            "ERROR: Invalid variable type %d specified in file id %d",
 	    obj_type, exoid);
     ex_err("ex_put_var_names",errmsg,exerrval);
     return(EX_FATAL);

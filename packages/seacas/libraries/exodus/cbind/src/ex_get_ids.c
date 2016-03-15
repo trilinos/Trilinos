@@ -95,7 +95,7 @@ int ex_get_ids (int  exoid,
     break;
   default:/* invalid variable type */
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid type specified in file id %d", exoid);
+    sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
     ex_err("ex_get_ids",errmsg,exerrval);
     return(EX_FATAL);
   }
@@ -115,7 +115,7 @@ int ex_get_ids (int  exoid,
   if ((status = nc_inq_varid(exoid, varidobj, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate %s ids variable in file id %d",
+	    "ERROR: failed to locate %s ids variable in file id %d",
 	    ex_name_of_object(obj_type),exoid);
     ex_err("ex_get_ids",errmsg,exerrval);
     return (EX_FATAL);
@@ -131,7 +131,7 @@ int ex_get_ids (int  exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to return %s ids in file id %d",
+	    "ERROR: failed to return %s ids in file id %d",
 	    ex_name_of_object(obj_type),exoid);
     ex_err("ex_get_ids",errmsg,exerrval);
     return (EX_FATAL);

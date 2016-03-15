@@ -87,7 +87,7 @@ int ex_get_coord_names (int    exoid,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate number of dimensions in file id %d",
+	    "ERROR: failed to locate number of dimensions in file id %d",
 	    exoid);
     ex_err("ex_get_coord_names",errmsg,exerrval);
     return (EX_FATAL);
@@ -96,7 +96,7 @@ int ex_get_coord_names (int    exoid,
   if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get number of dimensions in file id %d",
+            "ERROR: failed to get number of dimensions in file id %d",
 	    exoid);
     ex_err("ex_get_coord_names",errmsg,exerrval);
     return (EX_FATAL);

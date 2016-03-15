@@ -128,7 +128,7 @@ int ex_get_object_truth_vector (int  exoid,
   default:
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: Invalid variable type %d specified in file id %d",
+	    "ERROR: Invalid variable type %d specified in file id %d",
 	    obj_type, exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_WARN);
@@ -144,7 +144,7 @@ int ex_get_object_truth_vector (int  exoid,
   if (exerrval != 0) {
     if (exerrval != EX_NULLENTITY) {
       sprintf(errmsg,
-	      "Error: failed to locate %s id %"PRId64" in id variable in file id %d",
+	      "ERROR: failed to locate %s id %"PRId64" in id variable in file id %d",
 	      ex_name_of_object(obj_type), entity_id, exoid);
       ex_err(routine,errmsg,exerrval);
       return (EX_FATAL);
@@ -160,7 +160,7 @@ int ex_get_object_truth_vector (int  exoid,
   if ((int)num_var_db != num_var) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-	    "Error: # of variables doesn't match those defined in file id %d", exoid);
+	    "ERROR: # of variables doesn't match those defined in file id %d", exoid);
     ex_err("ex_get_object_truth_vector",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -192,7 +192,7 @@ int ex_get_object_truth_vector (int  exoid,
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get truth vector from file id %d", exoid);
+	      "ERROR: failed to get truth vector from file id %d", exoid);
       ex_err("ex_get_object_truth_vector",errmsg,exerrval);
       return (EX_FATAL);
     }

@@ -77,7 +77,7 @@ int ex_get_map_param (int   exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_node_maps)) != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
-		  "Error: failed to get number of node maps in file id %d",
+		  "ERROR: failed to get number of node maps in file id %d",
 		  exoid);
 	  ex_err("ex_get_map_param",errmsg,exerrval);
 	  return (EX_FATAL);
@@ -92,7 +92,7 @@ int ex_get_map_param (int   exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_elem_maps)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to get number of element maps in file id %d",
+              "ERROR: failed to get number of element maps in file id %d",
 	      exoid);
       ex_err("ex_get_map_param",errmsg,exerrval);
       return (EX_FATAL);

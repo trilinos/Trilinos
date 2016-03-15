@@ -149,7 +149,7 @@
     if ((status = nc_inq_varid(exoid,VAR_FRAME_IDS, &varids))!= NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to read number coordinate ids from file id %d",
+              "ERROR: failed to read number coordinate ids from file id %d",
               exoid);
       ex_err(PROCNAME,errmsg,exerrval);
       return (EX_FATAL);
@@ -164,7 +164,7 @@
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to read coordinate frame ids from file id %d",
+              "ERROR: failed to read coordinate frame ids from file id %d",
               exoid);
       ex_err(PROCNAME,errmsg,exerrval);
       return (EX_FATAL);
@@ -176,7 +176,7 @@
          (nc_get_vara_text(exoid,varids,&start,&count,tags) != NC_NOERR)) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to read number coordinate tags from file id %d",
+              "ERROR: failed to read number coordinate tags from file id %d",
               exoid);
       ex_err(PROCNAME,errmsg,exerrval);
       return (EX_FATAL);
@@ -187,7 +187,7 @@
     if ( (status = nc_inq_varid(exoid,VAR_FRAME_COORDS,&varids))!= NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to read number coordinate tags from file id %d",
+              "ERROR: failed to read number coordinate tags from file id %d",
               exoid);
       ex_err(PROCNAME,errmsg,exerrval);
       return (EX_FATAL);
@@ -202,7 +202,7 @@
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to read number coordinate tags from file id %d",
+              "ERROR: failed to read number coordinate tags from file id %d",
               exoid);
       ex_err(PROCNAME,errmsg,exerrval);
       return (EX_FATAL);

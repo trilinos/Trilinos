@@ -78,7 +78,7 @@ int ex_get_partial_node_num_map (int  exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_NODES, &numnodedim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to locate number of nodes in file id %d",
+            "ERROR: failed to locate number of nodes in file id %d",
             exoid);
     ex_err("ex_get_partial_node_num_map",errmsg,exerrval);
     return (EX_FATAL);
@@ -87,7 +87,7 @@ int ex_get_partial_node_num_map (int  exoid,
   if ((status = nc_inq_dimlen(exoid, numnodedim, &num_nodes)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get number of nodes in file id %d",
+            "ERROR: failed to get number of nodes in file id %d",
             exoid);
     ex_err("ex_get_partial_node_num_map",errmsg,exerrval);
     return (EX_FATAL);
@@ -146,7 +146,7 @@ int ex_get_partial_node_num_map (int  exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get node numbering map in file id %d",
+            "ERROR: failed to get node numbering map in file id %d",
             exoid);
     ex_err("ex_get_partial_node_num_map",errmsg,exerrval);
     return (EX_FATAL);

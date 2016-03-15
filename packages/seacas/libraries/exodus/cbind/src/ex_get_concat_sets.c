@@ -101,7 +101,7 @@ int ex_get_concat_sets (int   exoid,
   else {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-	    "Error: invalid set type (%d)", set_type);
+	    "ERROR: invalid set type (%d)", set_type);
     ex_err("ex_put_set_param",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -118,7 +118,7 @@ int ex_get_concat_sets (int   exoid,
       return (EX_WARN);
     } 
       sprintf(errmsg,
-	      "Error: failed to locate %ss defined in file id %d", 
+	      "ERROR: failed to locate %ss defined in file id %d", 
 	      ex_name_of_object(set_type), exoid);
       ex_err("ex_get_concat_sets",errmsg,exerrval);
       return (EX_FATAL);
@@ -130,7 +130,7 @@ int ex_get_concat_sets (int   exoid,
   num_sets = ex_inquire_int(exoid, ex_inq_val);
   if (num_sets < 0) {
     sprintf(errmsg,
-            "Error: failed to get number of %ss defined for file id %d",
+            "ERROR: failed to get number of %ss defined for file id %d",
 	    ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
     ex_err("ex_get_concat_sets",errmsg,exerrval);
@@ -139,7 +139,7 @@ int ex_get_concat_sets (int   exoid,
 
   if (ex_get_ids (exoid, set_type, set_specs->sets_ids) != NC_NOERR) {
     sprintf(errmsg,
-            "Error: failed to get %s ids for file id %d",
+            "ERROR: failed to get %s ids for file id %d",
 	    ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
     ex_err("ex_get_concat_sets",errmsg,exerrval);

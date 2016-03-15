@@ -65,7 +65,7 @@ int ex_update (int exoid)
   if ((status = nc_sync(exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to update file id %d",
+            "ERROR: failed to update file id %d",
 	    exoid);
     ex_err("ex_update",errmsg,exerrval);
     return (EX_FATAL);

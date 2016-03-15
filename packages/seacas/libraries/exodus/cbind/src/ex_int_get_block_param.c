@@ -48,7 +48,7 @@ static int el_node_count_error(struct elem_blk_parm elem_blk_parms)
 {
   char errmsg[MAX_ERR_LENGTH];
   sprintf(errmsg,
-          "Error: An element of type '%s' with %d nodes is not valid.",
+          "ERROR: An element of type '%s' with %d nodes is not valid.",
           elem_blk_parms.elem_type,
           elem_blk_parms.num_nodes_per_elem);
   ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);
@@ -71,7 +71,7 @@ int ex_int_get_block_param(int exoid,
   /* read in an element block parameter */
   if ((ex_get_block_param (exoid, &block)) != EX_NOERR) {
     sprintf(errmsg,
-            "Error: failed to get element block %"PRId64" parameters in file id %d",
+            "ERROR: failed to get element block %"PRId64" parameters in file id %d",
             block.id, exoid);
     ex_err("ex_int_get_block_param",errmsg,EX_MSG);
     return EX_FATAL;

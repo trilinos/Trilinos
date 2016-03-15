@@ -165,7 +165,7 @@ int ex_put_prop_array (int   exoid,
       break;
     default:
       exerrval = EX_BADPARAM;
-      sprintf(errmsg, "Error: object type %d not supported; file id %d",
+      sprintf(errmsg, "ERROR: object type %d not supported; file id %d",
 	      obj_type, exoid);
       ex_err("ex_put_prop_array",errmsg,exerrval);
       return(EX_FATAL);
@@ -174,7 +174,7 @@ int ex_put_prop_array (int   exoid,
     if ((status = nc_inq_varid(exoid, name, &propid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get property array id in file id %d",
+	      "ERROR: failed to get property array id in file id %d",
 	      exoid);
       ex_err("ex_put_prop_array",errmsg,exerrval);
       return (EX_FATAL);
@@ -185,7 +185,7 @@ int ex_put_prop_array (int   exoid,
     if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to get property name in file id %d", exoid);
+              "ERROR: failed to get property name in file id %d", exoid);
       ex_err("ex_put_prop_array",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -202,7 +202,7 @@ int ex_put_prop_array (int   exoid,
     /* put netcdf file into define mode  */
     if ((status = nc_redef (exoid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
+      sprintf(errmsg,"ERROR: failed to place file id %d into define mode",exoid);
       ex_err("ex_put_prop_array",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -248,7 +248,7 @@ int ex_put_prop_array (int   exoid,
       break;
     default:
       exerrval = EX_BADPARAM;
-      sprintf(errmsg, "Error: object type %d not supported; file id %d",
+      sprintf(errmsg, "ERROR: object type %d not supported; file id %d",
 	      obj_type, exoid);
       ex_err("ex_put_prop_array",errmsg,exerrval);
       goto error_ret;        /* Exit define mode and return */
@@ -265,7 +265,7 @@ int ex_put_prop_array (int   exoid,
     if ((status = nc_def_var(exoid, name, int_type, 1, dims, &propid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to create property array variable in file id %d",
+	      "ERROR: failed to create property array variable in file id %d",
 	      exoid);
       ex_err("ex_put_prop_array",errmsg,exerrval);
       goto error_ret;  /* Exit define mode and return */
@@ -278,7 +278,7 @@ int ex_put_prop_array (int   exoid,
 				  strlen(prop_name)+1, prop_name)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to store property name %s in file id %d",
+              "ERROR: failed to store property name %s in file id %d",
 	      prop_name,exoid);
       ex_err("ex_put_prop_array",errmsg,exerrval);
       goto error_ret;  /* Exit define mode and return */
@@ -289,7 +289,7 @@ int ex_put_prop_array (int   exoid,
     if ((status = nc_enddef (exoid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to leave define mode in file id %d",
+	      "ERROR: failed to leave define mode in file id %d",
 	      exoid);
       ex_err("ex_put_prop_array",errmsg,exerrval);
       return (EX_FATAL);
@@ -306,7 +306,7 @@ int ex_put_prop_array (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to store property values in file id %d",
+	    "ERROR: failed to store property values in file id %d",
 	    exoid);
     ex_err("ex_put_prop_array",errmsg,exerrval);
     return (EX_FATAL);
@@ -319,7 +319,7 @@ int ex_put_prop_array (int   exoid,
   nc_set_fill(exoid, oldfill, &temp); /* default: nofill */
   if (nc_enddef (exoid) != NC_NOERR) {    /* exit define mode */
     sprintf(errmsg,
-	    "Error: failed to complete definition for file id %d",
+	    "ERROR: failed to complete definition for file id %d",
 	    exoid);
     ex_err("ex_put_prop_array",errmsg,exerrval);
   }

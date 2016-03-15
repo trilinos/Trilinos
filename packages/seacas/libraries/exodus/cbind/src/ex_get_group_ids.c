@@ -55,7 +55,7 @@ int ex_get_group_ids (int parent_id, int *num_groups, int *group_ids)
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: Failed to get child group ids in file id %d",
+	    "ERROR: Failed to get child group ids in file id %d",
 	    parent_id);
     ex_err("ex_get_group_ids",errmsg,exerrval);
     return (EX_FATAL);
@@ -64,7 +64,7 @@ int ex_get_group_ids (int parent_id, int *num_groups, int *group_ids)
 #else
   exerrval = NC_ENOTNC4;
   sprintf(errmsg,
-	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
+	  "ERROR: Group capabilities are not available in this netcdf version--not netcdf4");
   ex_err("ex_get_group_ids",errmsg,exerrval);
   return (EX_FATAL);
 #endif

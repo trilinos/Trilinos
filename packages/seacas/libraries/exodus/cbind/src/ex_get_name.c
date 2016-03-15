@@ -112,7 +112,7 @@ int ex_get_name (int   exoid,
   default:
     /* invalid variable type */
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid type specified in file id %d", exoid);
+    sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
     ex_err(routine,errmsg,exerrval);
     return(EX_FATAL);
   }

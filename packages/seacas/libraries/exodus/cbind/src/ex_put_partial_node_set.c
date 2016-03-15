@@ -82,7 +82,7 @@ int ex_put_partial_node_set (int   exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_NS, &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: no node sets specified in file id %d",
+            "ERROR: no node sets specified in file id %d",
             exoid);
     ex_err("ex_put_partial_node_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -99,7 +99,7 @@ int ex_put_partial_node_set (int   exoid,
       return (EX_WARN);
     } 
       sprintf(errmsg,
-     "Error: failed to locate node set id %"PRId64" in VAR_NS_IDS array in file id %d",
+     "ERROR: failed to locate node set id %"PRId64" in VAR_NS_IDS array in file id %d",
               node_set_id, exoid);
       ex_err("ex_put_partial_node_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -111,7 +111,7 @@ int ex_put_partial_node_set (int   exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_NOD_NS(node_set_id_ndx), &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to locate number of nodes in set %"PRId64" in file id %d",
+            "ERROR: failed to locate number of nodes in set %"PRId64" in file id %d",
             node_set_id, exoid);
     ex_err("ex_put_partial_node_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -120,7 +120,7 @@ int ex_put_partial_node_set (int   exoid,
   if ((status = nc_inq_dimlen(exoid, dimid, &num_nodes_in_set)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get number of nodes in set %"PRId64" in file id %d",
+            "ERROR: failed to get number of nodes in set %"PRId64" in file id %d",
             node_set_id, exoid);
     ex_err("ex_put_partial_node_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -148,7 +148,7 @@ int ex_put_partial_node_set (int   exoid,
   /* variable doesn't exist */
     exerrval = status;
     sprintf(errmsg,
-           "Error: failed to locate node set %"PRId64" node list in file id %d",
+           "ERROR: failed to locate node set %"PRId64" node list in file id %d",
             node_set_id, exoid);
     ex_err("ex_put_partial_node_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -170,7 +170,7 @@ int ex_put_partial_node_set (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-           "Error: failed to store node set %"PRId64" node list in file id %d",
+           "ERROR: failed to store node set %"PRId64" node list in file id %d",
             node_set_id, exoid);
     ex_err("ex_put_partial_node_set",errmsg,exerrval);
     return (EX_FATAL);

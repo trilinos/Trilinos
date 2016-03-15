@@ -115,7 +115,7 @@ int ex_get_set_param (int  exoid,
 	return (EX_NOERR);
       } 
     sprintf(errmsg,
-	    "Error: failed to locate %s id %"PRId64" in id array in file id %d",
+	    "ERROR: failed to locate %s id %"PRId64" in id array in file id %d",
 	    ex_name_of_object(set_type), set_id,exoid);
     ex_err("ex_get_set_param",errmsg,exerrval);
     return (EX_FATAL);
@@ -175,7 +175,7 @@ int ex_get_set_param (int  exoid,
       else {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to locate the dist factors for %s %"PRId64" in file id %d",
+		"ERROR: failed to locate the dist factors for %s %"PRId64" in file id %d",
 		ex_name_of_object(set_type), set_id,exoid);
 	ex_err("ex_get_set_param",errmsg,exerrval);
 	return (EX_FATAL);
@@ -200,7 +200,7 @@ int ex_get_set_param (int  exoid,
       else {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to locate number of dist factors in %s %"PRId64" in file id %d",
+		"ERROR: failed to locate number of dist factors in %s %"PRId64" in file id %d",
 		ex_name_of_object(set_type), set_id, exoid);
 	ex_err("ex_get_set_param",errmsg,exerrval);
 	return (EX_FATAL);
@@ -210,7 +210,7 @@ int ex_get_set_param (int  exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_dist_fact_in_set)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get number of dist factors in %s %"PRId64" in file id %d",
+	      "ERROR: failed to get number of dist factors in %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_get_set_param",errmsg,exerrval);
       return (EX_FATAL);

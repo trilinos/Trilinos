@@ -89,7 +89,7 @@ int ex_put_time (int   exoid,
   if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to locate time variable in file id %d", exoid);
+            "ERROR: failed to locate time variable in file id %d", exoid);
     ex_err("ex_put_time",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -106,7 +106,7 @@ int ex_put_time (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to store time value in file id %d", exoid);
+            "ERROR: failed to store time value in file id %d", exoid);
     ex_err("ex_put_time",errmsg,exerrval);
     return (EX_FATAL);
   }

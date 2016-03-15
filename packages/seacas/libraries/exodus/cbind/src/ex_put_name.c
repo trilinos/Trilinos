@@ -121,7 +121,7 @@ int ex_put_name (int   exoid,
   default:
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: Invalid type specified in file id %d", exoid);
+	    "ERROR: Invalid type specified in file id %d", exoid);
     ex_err(routine,errmsg,exerrval);
     return(EX_FATAL);
   }
@@ -129,7 +129,7 @@ int ex_put_name (int   exoid,
   if ((status = nc_inq_varid(exoid, vobj, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate %s names in file id %d",
+	    "ERROR: failed to locate %s names in file id %d",
 	    ex_name_of_object(obj_type), exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
@@ -139,7 +139,7 @@ int ex_put_name (int   exoid,
 
   if (exerrval == EX_LOOKUPFAIL) {   /* could not find the element block id */
     sprintf(errmsg,
-            "Error: %s id %"PRId64" not found in file id %d",
+            "ERROR: %s id %"PRId64" not found in file id %d",
 	    ex_name_of_object(obj_type), entity_id, exoid);
     ex_err("ex_put_name",errmsg,exerrval);
     return (EX_FATAL);

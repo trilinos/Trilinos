@@ -160,7 +160,7 @@ int ex_put_attr_param (int   exoid,
     break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Bad block type (%d) specified for file id %d",
+    sprintf(errmsg, "ERROR: Bad block type (%d) specified for file id %d",
 	    obj_type, exoid );
     ex_err("ex_put_attr_param",errmsg,exerrval);
     return (EX_FATAL);
@@ -171,7 +171,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_inq_dimid(exoid, dnumobjent, &numobjentdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate number of entries for %s %"PRId64" in file id %d",
+	    "ERROR: failed to locate number of entries for %s %"PRId64" in file id %d",
 	    ex_name_of_object(obj_type), obj_id, exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     return (EX_FATAL);
@@ -180,7 +180,7 @@ int ex_put_attr_param (int   exoid,
   /* put netcdf file into define mode  */
   if ((status = nc_redef (exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
+    sprintf(errmsg,"ERROR: failed to place file id %d into define mode",exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -188,7 +188,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_def_dim(exoid, dnumobjatt, num_attrs, &numattrdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to define number of attributes in %s %"PRId64" in file id %d",
+	    "ERROR: failed to define number of attributes in %s %"PRId64" in file id %d",
 	    ex_name_of_object(obj_type), obj_id,exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     goto error_ret;         /* exit define mode and return */
@@ -200,7 +200,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_def_var(exoid, vobjatt, nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error:  failed to define attributes for %s %"PRId64" in file id %d",
+	    "ERROR:  failed to define attributes for %s %"PRId64" in file id %d",
 	    ex_name_of_object(obj_type), obj_id,exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     goto error_ret;         /* exit define mode and return */
@@ -211,7 +211,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get string length in file id %d",exoid);
+	    "ERROR: failed to get string length in file id %d",exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -223,7 +223,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_def_var(exoid, vattnam, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to define %s attribute name array in file id %d",
+	    "ERROR: failed to define %s attribute name array in file id %d",
 	    ex_name_of_object(obj_type), exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     goto error_ret;         /* exit define mode and return */
@@ -233,7 +233,7 @@ int ex_put_attr_param (int   exoid,
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to complete %s attribute parameter definition in file id %d",
+	    "ERROR: failed to complete %s attribute parameter definition in file id %d",
 	    ex_name_of_object(obj_type), exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
     return (EX_FATAL);
@@ -245,7 +245,7 @@ int ex_put_attr_param (int   exoid,
  error_ret:
   if (nc_enddef (exoid) != NC_NOERR) {     /* exit define mode */       
     sprintf(errmsg,
-	    "Error: failed to complete definition for file id %d",
+	    "ERROR: failed to complete definition for file id %d",
 	    exoid);
     ex_err("ex_put_attr_param",errmsg,exerrval);
   }

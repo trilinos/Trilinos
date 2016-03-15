@@ -94,7 +94,7 @@ int ex_get_set_dist_fact (int   exoid,
       return (EX_WARN);
     } 
       sprintf(errmsg,
-	      "Error: failed to locate %s set %"PRId64" in VAR_*S_IDS array in file id %d",
+	      "ERROR: failed to locate %s set %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
@@ -132,7 +132,7 @@ int ex_get_set_dist_fact (int   exoid,
     /* is an error for other sets */
      
       sprintf(errmsg,
-	      "Error: failed to locate dist factors list for %s set %"PRId64" in file id %d",
+	      "ERROR: failed to locate dist factors list for %s set %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
@@ -149,7 +149,7 @@ int ex_get_set_dist_fact (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get dist factors list for %s set %"PRId64" in file id %d",
+	    "ERROR: failed to get dist factors list for %s set %"PRId64" in file id %d",
 	    ex_name_of_object(set_type), set_id,exoid);
     ex_err("ex_get_set_dist_fact",errmsg,exerrval);
     return (EX_FATAL);

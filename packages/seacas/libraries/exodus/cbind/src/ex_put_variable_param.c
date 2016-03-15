@@ -55,12 +55,12 @@ int ex_prepare_result_var(int exoid, int num_vars,
     if (status == NC_ENAMEINUSE) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: %s variable name parameters are already defined in file id %d", type_name, exoid);
+	      "ERROR: %s variable name parameters are already defined in file id %d", type_name, exoid);
       ex_err("ex_put_var_param",errmsg,exerrval);
     } else {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define number of %s variables in file id %d",
+	      "ERROR: failed to define number of %s variables in file id %d",
 	      type_name, exoid);
       ex_err("ex_put_var_param",errmsg,exerrval);
     }
@@ -71,7 +71,7 @@ int ex_prepare_result_var(int exoid, int num_vars,
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get string length in file id %d",exoid);
+            "ERROR: failed to get string length in file id %d",exoid);
     ex_err("ex_put_variable_param",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -83,13 +83,13 @@ int ex_prepare_result_var(int exoid, int num_vars,
     if (status == NC_ENAMEINUSE) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: %s variable names are already defined in file id %d",
+	      "ERROR: %s variable names are already defined in file id %d",
 	      type_name, exoid);
       ex_err("ex_put_variable_param",errmsg,exerrval);
     } else {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define %s variable names in file id %d",
+	      "ERROR: failed to define %s variable names in file id %d",
 	      type_name, exoid);
       ex_err("ex_put_variable_param",errmsg,exerrval);
     }
@@ -184,7 +184,7 @@ int ex_put_variable_param (int exoid,
        obj_type != EX_GLOBAL) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: Invalid variable type %d specified in file id %d",
+	    "ERROR: Invalid variable type %d specified in file id %d",
 	    obj_type, exoid);
     ex_err("ex_put_variable_param",errmsg,exerrval);
     return (EX_WARN);
@@ -194,7 +194,7 @@ int ex_put_variable_param (int exoid,
   if ((status = nc_inq_dimid (exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate time dimension in file id %d", exoid);
+	    "ERROR: failed to locate time dimension in file id %d", exoid);
     ex_err("ex_put_variable_param",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -208,7 +208,7 @@ int ex_put_variable_param (int exoid,
   if ((status = nc_inq_dimid (exoid, DIM_STR_NAME, &dim_str_name)) < 0) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get name string length in file id %d",exoid);
+	    "ERROR: failed to get name string length in file id %d",exoid);
     ex_err("ex_put_variable_param",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -217,7 +217,7 @@ int ex_put_variable_param (int exoid,
   if ((status = nc_redef (exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to put file id %d into define mode", exoid);
+	    "ERROR: failed to put file id %d into define mode", exoid);
     ex_err("ex_get_var_param",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -233,7 +233,7 @@ int ex_put_variable_param (int exoid,
     if ((status = nc_inq_dimid (exoid, DIM_NUM_GLO_VAR, &dimid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get global variable count in file id %d",exoid);
+	      "ERROR: failed to get global variable count in file id %d",exoid);
       ex_err("ex_put_variable_param",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -244,7 +244,7 @@ int ex_put_variable_param (int exoid,
       {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to define global variables in file id %d",
+		"ERROR: failed to define global variables in file id %d",
 		exoid);
 	ex_err("ex_put_variable_param",errmsg,exerrval);
 	goto error_ret;          /* exit define mode and return */
@@ -270,13 +270,13 @@ int ex_put_variable_param (int exoid,
       if (status == NC_ENAMEINUSE) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: nodal variable name parameters are already defined in file id %d",
+		"ERROR: nodal variable name parameters are already defined in file id %d",
 		exoid);
 	ex_err("ex_put_variable_param",errmsg,exerrval);
       } else {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to define number of nodal variables in file id %d",
+		"ERROR: failed to define number of nodal variables in file id %d",
 		exoid);
 	ex_err("ex_put_variable_param",errmsg,exerrval);
       }
@@ -291,7 +291,7 @@ int ex_put_variable_param (int exoid,
 			       nc_flt_code(exoid), 3, dims, &varid)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to define nodal variables in file id %d",
+		"ERROR: failed to define nodal variables in file id %d",
 		exoid);
 	ex_err("ex_put_variable_param",errmsg,exerrval);
 	goto error_ret;          /* exit define mode and return */
@@ -306,7 +306,7 @@ int ex_put_variable_param (int exoid,
 				  nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
-		  "Error: failed to define nodal variable %d in file id %d",
+		  "ERROR: failed to define nodal variable %d in file id %d",
 		  i, exoid);
 	  ex_err("ex_put_variable_param",errmsg,exerrval);
 	  goto error_ret;          /* exit define mode and return */
@@ -322,13 +322,13 @@ int ex_put_variable_param (int exoid,
       if (status == NC_ENAMEINUSE) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: nodal variable names are already defined in file id %d",
+		"ERROR: nodal variable names are already defined in file id %d",
 		exoid);
 	ex_err("ex_put_variable_param",errmsg,exerrval);
       } else {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to define nodal variable names in file id %d",
+		"ERROR: failed to define nodal variable names in file id %d",
 		exoid);
 	ex_err("ex_put_variable_param",errmsg,exerrval);
       }
@@ -394,7 +394,7 @@ int ex_put_variable_param (int exoid,
   if ((status = nc_enddef (exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to complete definition in file id %d",
+	    "ERROR: failed to complete definition in file id %d",
 	    exoid);
     ex_err("ex_put_variable_param",errmsg,exerrval);
     return (EX_FATAL);
@@ -406,7 +406,7 @@ int ex_put_variable_param (int exoid,
  error_ret:
   if ((status = nc_enddef(exoid)) != NC_NOERR) {    /* exit define mode */
     sprintf(errmsg,
-	    "Error: failed to complete definition for file id %d",
+	    "ERROR: failed to complete definition for file id %d",
 	    exoid);
     ex_err("ex_put_variable_param",errmsg,exerrval);
   }

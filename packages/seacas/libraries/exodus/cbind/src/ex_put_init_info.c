@@ -79,7 +79,7 @@ int ex_put_init_info(int   exoid,
   if (!ftype) {
     exerrval = EX_MSG;
     sprintf(errmsg,
-            "Error: NULL file type input for file ID %d",
+            "ERROR: NULL file type input for file ID %d",
             exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -94,7 +94,7 @@ int ex_put_init_info(int   exoid,
   } else {
     exerrval = EX_MSG;
     sprintf(errmsg,
-            "Error: unknown file type requested for file ID %d",
+            "ERROR: unknown file type requested for file ID %d",
             exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -105,7 +105,7 @@ int ex_put_init_info(int   exoid,
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to put file ID %d into define mode", exoid);
+            "ERROR: failed to put file ID %d into define mode", exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -116,7 +116,7 @@ int ex_put_init_info(int   exoid,
     if ((status = nc_def_dim(exoid, DIM_NUM_PROCS, ltempsv, &dimid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to dimension \"%s\" in file ID %d",
+              "ERROR: failed to dimension \"%s\" in file ID %d",
               DIM_NUM_PROCS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
@@ -132,7 +132,7 @@ int ex_put_init_info(int   exoid,
     if ((status = nc_def_dim(exoid, DIM_NUM_PROCS_F, ltempsv, &dimid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to dimension \"%s\" in file ID %d",
+              "ERROR: failed to dimension \"%s\" in file ID %d",
               DIM_NUM_PROCS_F, exoid);
       ex_err(func_name, errmsg, exerrval);
 
@@ -148,7 +148,7 @@ int ex_put_init_info(int   exoid,
     if ((status = nc_def_var(exoid, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to define file type in file ID %d",
+              "ERROR: failed to define file type in file ID %d",
               exoid);
       ex_err(func_name, errmsg, exerrval);
 
@@ -165,7 +165,7 @@ int ex_put_init_info(int   exoid,
     if ((status = nc_put_var1_int(exoid, varid, NULL, &lftype)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: unable to output file type variable in file ID %d",
+              "ERROR: unable to output file type variable in file ID %d",
               exoid);
       ex_err(func_name, errmsg, exerrval);
 

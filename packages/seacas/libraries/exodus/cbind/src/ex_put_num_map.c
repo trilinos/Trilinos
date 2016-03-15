@@ -111,7 +111,7 @@ int ex_put_num_map ( int exoid,
   default:
     exerrval = EX_BADPARAM;
     sprintf( errmsg,
-	     "Error: Bad map type (%d) specified for file id %d",
+	     "ERROR: Bad map type (%d) specified for file id %d",
 	     map_type, exoid );
     ex_err( "ex_put_num_map", errmsg, exerrval );
     return (EX_FATAL);
@@ -128,7 +128,7 @@ int ex_put_num_map ( int exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: no %ss specified in file id %d",
+	      "ERROR: no %ss specified in file id %d",
 	      ex_name_of_object(map_type),exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -139,7 +139,7 @@ int ex_put_num_map ( int exoid,
   if (exerrval != EX_LOOKUPFAIL)   /* found the map id */
     {
       sprintf(errmsg,
-	      "Error: %s %"PRId64" already defined in file id %d",
+	      "ERROR: %s %"PRId64" already defined in file id %d",
 	      ex_name_of_object(map_type),map_id,exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return(EX_FATAL);
@@ -150,7 +150,7 @@ int ex_put_num_map ( int exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get number of %ss in file id %d",
+	      "ERROR: failed to get number of %ss in file id %d",
 	      ex_name_of_object(map_type),exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -166,7 +166,7 @@ int ex_put_num_map ( int exoid,
   if (cur_num_maps >= num_maps) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-	    "Error: exceeded number of %ss (%d) specified in file id %d",
+	    "ERROR: exceeded number of %ss (%d) specified in file id %d",
 	    ex_name_of_object(map_type),num_maps,exoid);
     ex_err("ex_put_num_map",errmsg,exerrval);
     return (EX_FATAL);
@@ -183,7 +183,7 @@ int ex_put_num_map ( int exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate %s ids in file id %d",
+	      "ERROR: failed to locate %s ids in file id %d",
 	      ex_name_of_object(map_type),exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -197,7 +197,7 @@ int ex_put_num_map ( int exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to store %s id %"PRId64" in file id %d",
+	      "ERROR: failed to store %s id %"PRId64" in file id %d",
 	      ex_name_of_object(map_type),map_id,exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -219,7 +219,7 @@ int ex_put_num_map ( int exoid,
   default:
     exerrval = 1005;
     sprintf(errmsg,
-	    "Internal Error: unrecognized map type in switch: %d in file id %d",
+	    "Internal ERROR: unrecognized map type in switch: %d in file id %d",
 	    map_type,exoid);
     ex_err("ex_putt_n_one_attr",errmsg,EX_MSG);
     return (EX_FATAL);
@@ -233,7 +233,7 @@ int ex_put_num_map ( int exoid,
     if ((status = nc_inq_dimid (exoid, dnumentries, &dimid)) == -1 ) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: couldn't determine number of %s entries in file id %d",
+	      "ERROR: couldn't determine number of %s entries in file id %d",
 	      ex_name_of_object(map_type),exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -241,7 +241,7 @@ int ex_put_num_map ( int exoid,
        
     if ((status = nc_redef( exoid )) != NC_NOERR ) {
       exerrval = status;
-      sprintf(errmsg, "Error: failed to place file id %d into define mode", exoid);
+      sprintf(errmsg, "ERROR: failed to place file id %d into define mode", exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -255,13 +255,13 @@ int ex_put_num_map ( int exoid,
     dims[0] = dimid;
     if ((status = nc_def_var( exoid, vmap, map_int_type, 1, dims, &varid )) == -1 ) {
       exerrval = status;
-      sprintf(errmsg, "Error: failed to define map %s in file id %d", vmap, exoid);
+      sprintf(errmsg, "ERROR: failed to define map %s in file id %d", vmap, exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
     }
     ex_compress_variable(exoid, varid, 1);
 
     if ((status = nc_enddef(exoid)) != NC_NOERR ) { /* exit define mode */
-      sprintf( errmsg, "Error: failed to complete definition for file id %d", exoid );
+      sprintf( errmsg, "ERROR: failed to complete definition for file id %d", exoid );
       ex_err( "ex_put_num_map", errmsg, exerrval );
       varid = -1; /* force early exit */
     }
@@ -281,7 +281,7 @@ int ex_put_num_map ( int exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to store %s in file id %d",
+            "ERROR: failed to store %s in file id %d",
 	    ex_name_of_object(map_type),exoid);
     ex_err("ex_put_num_map",errmsg,exerrval);
     return (EX_FATAL);

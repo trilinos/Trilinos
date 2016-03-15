@@ -102,7 +102,7 @@ int ex_get_partial_elem_attr (int   exoid,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx), &numelbdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-        "Error: failed to locate number of elements for block %"PRId64" in file id %d",
+        "ERROR: failed to locate number of elements for block %"PRId64" in file id %d",
             elem_blk_id, exoid);
     ex_err("ex_get_partial_elem_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -111,7 +111,7 @@ int ex_get_partial_elem_attr (int   exoid,
   if ((status = nc_inq_dimlen(exoid, numelbdim, &num_elem_this_blk)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-           "Error: failed to get number of elements for block %"PRId64" in file id %d",
+           "ERROR: failed to get number of elements for block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_partial_elem_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -129,7 +129,7 @@ int ex_get_partial_elem_attr (int   exoid,
   if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-         "Error: failed to get number of attributes for block %"PRId64" in file id %d",
+         "ERROR: failed to get number of attributes for block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_partial_elem_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -138,7 +138,7 @@ int ex_get_partial_elem_attr (int   exoid,
   if ((status = nc_inq_varid(exoid, VAR_ATTRIB(elem_blk_id_ndx), &attrid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to locate attributes for block %"PRId64" in file id %d",
+            "ERROR: failed to locate attributes for block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_partial_elem_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -148,7 +148,7 @@ int ex_get_partial_elem_attr (int   exoid,
   if (num_elem_this_blk < (start_elem_num + num_elems - 1)) {
     exerrval = status;
     sprintf(errmsg,
-      "Error: requested attributes from too many elements in this block, %"PRId64"",
+      "ERROR: requested attributes from too many elements in this block, %"PRId64"",
             elem_blk_id);
     ex_err("ex_get_partial_elem_attr",errmsg, exerrval);
     return(EX_FATAL);
@@ -171,7 +171,7 @@ int ex_get_partial_elem_attr (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get attributes for block %"PRId64" in file id %d",
+            "ERROR: failed to get attributes for block %"PRId64" in file id %d",
             elem_blk_id,exoid);
     ex_err("ex_get_partial_elem_attr",errmsg,exerrval);
     return (EX_FATAL);

@@ -92,7 +92,7 @@ int ex_put_partial_var (int   exoid,
 	else								\
 	  {								\
 	    sprintf(errmsg,						\
-		    "Error: failed to locate %s id %"PRId64" in %s array in file id %d", \
+		    "ERROR: failed to locate %s id %"PRId64" in %s array in file id %d", \
 		    ex_name_of_object(var_type), obj_id, VOBJID, exoid); \
 	    ex_err("ex_put_partial_var",errmsg,exerrval);		\
 	    return (EX_FATAL);						\
@@ -116,7 +116,7 @@ int ex_put_partial_var (int   exoid,
 		{							\
 		  exerrval = EX_MEMFAIL;				\
 		  sprintf(errmsg,					\
-			  "Error: failed to allocate memory for %s variable truth table in file id %d", \
+			  "ERROR: failed to allocate memory for %s variable truth table in file id %d", \
 			  ex_name_of_object(var_type), exoid);		\
 		  ex_err("ex_put_partial_var",errmsg,exerrval);		\
 		  return (EX_FATAL);					\
@@ -127,7 +127,7 @@ int ex_put_partial_var (int   exoid,
 		{							\
 		  exerrval = status;					\
 		  sprintf(errmsg,					\
-			  "Error: failed to get truth table from file id %d", exoid); \
+			  "ERROR: failed to get truth table from file id %d", exoid); \
 		  ex_err("ex_put_partial_var",errmsg,exerrval);		\
 		  return (EX_FATAL);					\
 		}							\
@@ -138,7 +138,7 @@ int ex_put_partial_var (int   exoid,
 		  free(obj_var_truth_tab);				\
 		  exerrval = EX_BADPARAM;				\
 		  sprintf(errmsg,					\
-			  "Error: Invalid %s variable %d, %s %"PRId64" in file id %d", \
+			  "ERROR: Invalid %s variable %d, %s %"PRId64" in file id %d", \
 			  ex_name_of_object(var_type), var_index, ex_name_of_object(var_type), obj_id, exoid); \
 		  ex_err("ex_put_partial_var",errmsg,exerrval);		\
 		  return (EX_FATAL);					\
@@ -149,7 +149,7 @@ int ex_put_partial_var (int   exoid,
 	    if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) { \
 	      exerrval = status;					\
 	      sprintf(errmsg,						\
-		      "Error: failed to locate time dimension in file id %d", exoid); \
+		      "ERROR: failed to locate time dimension in file id %d", exoid); \
 	      ex_err("ex_put_partial_var",errmsg,exerrval);		\
 	      goto error_ret;         /* exit define mode and return */ \
 	    }								\
@@ -161,7 +161,7 @@ int ex_put_partial_var (int   exoid,
 	    if ((status = nc_redef (exoid)) != NC_NOERR) {		\
 	      exerrval = status;					\
 	      sprintf(errmsg,						\
-		      "Error: failed to put file id %d into define mode", exoid); \
+		      "ERROR: failed to put file id %d into define mode", exoid); \
 	      ex_err("ex_put_partial_var",errmsg,exerrval);		\
 	      return (EX_FATAL);					\
 	    }								\
@@ -174,7 +174,7 @@ int ex_put_partial_var (int   exoid,
 	      {								\
 		exerrval = status;					\
 		sprintf(errmsg,						\
-			"Error: failed to define %s variable %d in file id %d", \
+			"ERROR: failed to define %s variable %d in file id %d", \
 			ex_name_of_object(var_type), var_index,exoid);	\
 		ex_err("ex_put_partial_var",errmsg,exerrval);		\
 		goto error_ret;						\
@@ -187,7 +187,7 @@ int ex_put_partial_var (int   exoid,
 	      {								\
 		exerrval = status;					\
 		sprintf(errmsg,						\
-			"Error: failed to complete %s variable %s definition to file id %d", \
+			"ERROR: failed to complete %s variable %s definition to file id %d", \
 			ex_name_of_object(var_type), VVAR(var_index,obj_id_ndx), exoid); \
 		ex_err("ex_put_partial_var",errmsg,exerrval);		\
 		return (EX_FATAL);					\
@@ -197,7 +197,7 @@ int ex_put_partial_var (int   exoid,
 	  {								\
 	    exerrval = status;						\
 	    sprintf(errmsg,						\
-		    "Error: failed to locate %s variable %s in file id %d", \
+		    "ERROR: failed to locate %s variable %s in file id %d", \
 		    ex_name_of_object(var_type), VVAR(var_index,obj_id_ndx),exoid); \
 	    ex_err("ex_put_partial_var",errmsg,exerrval);		\
 	    return (EX_FATAL);						\
@@ -221,13 +221,13 @@ int ex_put_partial_var (int   exoid,
       if (status == NC_ENOTVAR) {
         exerrval = status;
         sprintf(errmsg,
-		"Error: no global variables defined in file id %d",
+		"ERROR: no global variables defined in file id %d",
 		exoid);
         ex_err("ex_put_glob_vars",errmsg,exerrval);
       } else {
         exerrval = status;
         sprintf(errmsg,
-		"Error: failed to get global variables parameters in file id %d",
+		"ERROR: failed to get global variables parameters in file id %d",
 		exoid);
         ex_err("ex_put_glob_vars",errmsg,exerrval);
       }
@@ -263,7 +263,7 @@ int ex_put_partial_var (int   exoid,
     break;
   default:
     exerrval = EX_MSG;
-    sprintf( errmsg, "Error: invalid variable type (%d) specified for file id %d",
+    sprintf( errmsg, "ERROR: invalid variable type (%d) specified for file id %d",
 	     var_type, exoid );
     ex_err( "ex_put_partial_var", errmsg, exerrval );
     return (EX_FATAL);
@@ -295,7 +295,7 @@ int ex_put_partial_var (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to store %s %"PRId64" variable %d in file id %d", 
+	    "ERROR: failed to store %s %"PRId64" variable %d in file id %d", 
 	    ex_name_of_object(var_type), obj_id, var_index,exoid);
     ex_err("ex_put_partial_var",errmsg,exerrval);
     return (EX_FATAL);
@@ -308,7 +308,7 @@ int ex_put_partial_var (int   exoid,
   if (nc_enddef (exoid) != NC_NOERR)     /* exit define mode */
     {
       sprintf(errmsg,
-	      "Error: failed to complete definition for file id %d",
+	      "ERROR: failed to complete definition for file id %d",
 	      exoid);
       ex_err("ex_put_partial_var",errmsg,exerrval);
     }

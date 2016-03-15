@@ -77,7 +77,7 @@ int ex_put_entity_count_per_polyhedra (int            exoid,
       
 	
 	  sprintf(errmsg,
-		  "Error: failed to locate %s block id %"PRId64" in id array in file id %d",
+		  "ERROR: failed to locate %s block id %"PRId64" in id array in file id %d",
 		  ex_name_of_object(blk_type),blk_id, exoid);
 	  ex_err("ex_put_entity_count_per_polyhedra",errmsg,exerrval);
 	  return (EX_FATAL);
@@ -95,7 +95,7 @@ int ex_put_entity_count_per_polyhedra (int            exoid,
   default:
     exerrval = 1005;
     sprintf(errmsg,
-	    "Internal Error: unrecognized block type in switch: %d in file id %d",
+	    "Internal ERROR: unrecognized block type in switch: %d in file id %d",
 	    blk_type,exoid);
     ex_err("ex_put_entity_count_per_polyhedra",errmsg,EX_MSG);
     return (EX_FATAL);
@@ -104,7 +104,7 @@ int ex_put_entity_count_per_polyhedra (int            exoid,
     {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate entity_counts array for %s block %"PRId64" in file id %d",
+	      "ERROR: failed to locate entity_counts array for %s block %"PRId64" in file id %d",
 	      ex_name_of_object(blk_type),blk_id,exoid);
       ex_err("ex_put_entity_count_per_polyhedra",errmsg, exerrval);
       return(EX_FATAL);
@@ -114,7 +114,7 @@ int ex_put_entity_count_per_polyhedra (int            exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to write node counts array for %s block %"PRId64" in file id %d",
+	    "ERROR: failed to write node counts array for %s block %"PRId64" in file id %d",
 	    ex_name_of_object(blk_type),blk_id,exoid);
     ex_err("ex_put_entity_count_per_polyhedra",errmsg, exerrval);
     return(EX_FATAL);

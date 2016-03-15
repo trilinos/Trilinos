@@ -100,7 +100,7 @@ int ex_get_partial_var( int   exoid,
       return (EX_WARN);
     } 
       sprintf(errmsg,
-	      "Error: failed to locate %s id %"PRId64" in id variable in file id %d",
+	      "ERROR: failed to locate %s id %"PRId64" in id variable in file id %d",
 	      ex_name_of_object(var_type), obj_id, exoid);
       ex_err("ex_get_partial_var",errmsg,exerrval);
       return (EX_FATAL);
@@ -113,7 +113,7 @@ int ex_get_partial_var( int   exoid,
 							 obj_id_ndx), &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate %s %"PRId64" var %d in file id %d",
+	    "ERROR: failed to locate %s %"PRId64" var %d in file id %d",
 	    ex_name_of_object(var_type),obj_id,var_index,exoid); 
     ex_err("ex_get_partial_var",errmsg,exerrval);
     return (EX_FATAL);
@@ -147,7 +147,7 @@ int ex_get_partial_var( int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get %s %"PRId64" variable %d in file id %d", 
+	    "ERROR: failed to get %s %"PRId64" variable %d in file id %d", 
 	    ex_name_of_object(var_type), obj_id, var_index,exoid);
     ex_err("ex_get_partial_var",errmsg,exerrval);
     return (EX_FATAL);

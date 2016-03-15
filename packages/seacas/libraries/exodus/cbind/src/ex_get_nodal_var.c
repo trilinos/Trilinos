@@ -171,7 +171,7 @@ int ex_get_nodal_var (int   exoid,
   if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to get nodal variables in file id %d",
+              "ERROR: failed to get nodal variables in file id %d",
               exoid);
       ex_err("ex_get_nodal_var",errmsg,exerrval);
       return (EX_FATAL);

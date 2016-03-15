@@ -100,7 +100,7 @@ int ex_put_partial_one_attr( int   exoid,
 	return (EX_WARN);              /* no attributes for this element block */
       } 
 	sprintf(errmsg,
-		"Error: no %s id %"PRId64" in id array in file id %d",
+		"ERROR: no %s id %"PRId64" in id array in file id %d",
 		ex_name_of_object(obj_type), obj_id, exoid);
 	ex_err("ex_put_partial_one_attr",errmsg,exerrval);
 	return (EX_FATAL);
@@ -157,7 +157,7 @@ int ex_put_partial_one_attr( int   exoid,
   default:
     exerrval = 1005;
     sprintf(errmsg,
-	    "Internal Error: unrecognized object type in switch: %d in file id %d",
+	    "Internal ERROR: unrecognized object type in switch: %d in file id %d",
 	    obj_type,exoid);
     ex_err("ex_putt_partial_one_attr",errmsg,EX_MSG);
     return (EX_FATAL);
@@ -171,7 +171,7 @@ int ex_put_partial_one_attr( int   exoid,
   if (start_num + num_ent -1 > num_entries_this_obj) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: start index (%"PRId64") + count (%"PRId64") is larger than total number of entities (%"ST_ZU") in file id %d",
+	    "ERROR: start index (%"PRId64") + count (%"PRId64") is larger than total number of entities (%"ST_ZU") in file id %d",
 	    start_num, num_ent, num_entries_this_obj, exoid);
     ex_err("ex_put_partial_one_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -184,7 +184,7 @@ int ex_put_partial_one_attr( int   exoid,
   if (attrib_index < 1 || attrib_index > (int)num_attr) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-            "Error: Invalid attribute index specified: %d.  Valid range is 1 to %"ST_ZU" for %s %"PRId64" in file id %d",
+            "ERROR: Invalid attribute index specified: %d.  Valid range is 1 to %"ST_ZU" for %s %"PRId64" in file id %d",
             attrib_index, num_attr, ex_name_of_object(obj_type), obj_id, exoid);
     ex_err("ex_put_partial_one_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -193,7 +193,7 @@ int ex_put_partial_one_attr( int   exoid,
   if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate attribute variable for %s %"PRId64" in file id %d",
+	    "ERROR: failed to locate attribute variable for %s %"PRId64" in file id %d",
 	    ex_name_of_object(obj_type),obj_id,exoid);
     ex_err("ex_put_partial_one_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -223,7 +223,7 @@ int ex_put_partial_one_attr( int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to put attribute %d for %s %"PRId64" in file id %d",
+            "ERROR: failed to put attribute %d for %s %"PRId64" in file id %d",
             attrib_index, ex_name_of_object(obj_type), obj_id, exoid);
     ex_err("ex_put_partial_one_attr",errmsg,exerrval);
     return (EX_FATAL);

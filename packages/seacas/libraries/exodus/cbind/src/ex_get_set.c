@@ -99,7 +99,7 @@ int ex_get_set (int   exoid,
     } 
 
       sprintf(errmsg,
-	      "Error: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
+	      "ERROR: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -132,7 +132,7 @@ int ex_get_set (int   exoid,
   if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate entry list for %s %"PRId64" in file id %d",
+	    "ERROR: failed to locate entry list for %s %"PRId64" in file id %d",
 	    ex_name_of_object(set_type), set_id,exoid);
     ex_err("ex_get_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -146,7 +146,7 @@ int ex_get_set (int   exoid,
     if ((status = nc_inq_varid (exoid, extraptr, &extra_list_id)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate extra list for %s %"PRId64" in file id %d",
+	      "ERROR: failed to locate extra list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -165,7 +165,7 @@ int ex_get_set (int   exoid,
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get entry list for %s %"PRId64" in file id %d",
+	      "ERROR: failed to get entry list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_get_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -183,7 +183,7 @@ int ex_get_set (int   exoid,
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get extra list for %s %"PRId64" in file id %d",
+	      "ERROR: failed to get extra list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_get_set", errmsg, exerrval);
       return (EX_FATAL);

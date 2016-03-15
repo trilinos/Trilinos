@@ -99,7 +99,7 @@ int ex_get_info (int    exoid,
   if ((status = nc_inq_dimlen(rootid, dimid, &num_info)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get number of info records in file id %d",
+            "ERROR: failed to get number of info records in file id %d",
 	    rootid);
     ex_err("ex_get_info",errmsg,exerrval);
     return (EX_FATAL);
@@ -111,7 +111,7 @@ int ex_get_info (int    exoid,
     if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to locate info record data in file id %d", rootid);
+              "ERROR: failed to locate info record data in file id %d", rootid);
       ex_err("ex_get_info",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -124,7 +124,7 @@ int ex_get_info (int    exoid,
       if ((status = nc_get_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get info record data in file id %d", rootid);
+		"ERROR: failed to get info record data in file id %d", rootid);
 	ex_err("ex_get_info",errmsg,exerrval);
 	return (EX_FATAL);
       }

@@ -78,7 +78,7 @@ int ex_get_init_info(int   exoid,
   if (ex_get_file_type(exoid, ftype) != EX_NOERR) {
     exerrval = EX_MSG;
     sprintf(errmsg,
-            "Error: failed to get file type for file ID %d",
+            "ERROR: failed to get file type for file ID %d",
             exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -88,7 +88,7 @@ int ex_get_init_info(int   exoid,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS, &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find dimension ID for \"%s\" in file ID %d",
+            "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
             DIM_NUM_PROCS, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -99,7 +99,7 @@ int ex_get_init_info(int   exoid,
   if ((status = nc_inq_dimlen(exoid, dimid, &ltempsv)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find length of dimension \"%s\" in file ID %d",
+            "ERROR: failed to find length of dimension \"%s\" in file ID %d",
             DIM_NUM_PROCS, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -111,7 +111,7 @@ int ex_get_init_info(int   exoid,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find dimension ID for \"%s\" in file ID %d",
+            "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
             DIM_NUM_PROCS_F, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -122,7 +122,7 @@ int ex_get_init_info(int   exoid,
   if ((status = nc_inq_dimlen(exoid, dimid, &ltempsv)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find length of dimension \"%s\" in file ID %d",
+            "ERROR: failed to find length of dimension \"%s\" in file ID %d",
             DIM_NUM_PROCS_F, exoid);
     ex_err(func_name, errmsg, exerrval);
 

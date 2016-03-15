@@ -274,7 +274,7 @@ int ex_cvt_nodes_to_sides(int exoid,
   num_side_sets = ex_inquire_int(exoid, EX_INQ_SIDE_SETS);
   if (num_side_sets < 0) {
     sprintf(errmsg,
-	    "Error: failed to get number of side sets in file id %d",exoid);
+	    "ERROR: failed to get number of side sets in file id %d",exoid);
     ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
     return(EX_FATAL);
   }
@@ -290,7 +290,7 @@ int ex_cvt_nodes_to_sides(int exoid,
   num_elem_blks = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
   if (num_elem_blks < 0) {
     sprintf(errmsg,
-	    "Error: failed to get number of element blocks in file id %d",exoid);
+	    "ERROR: failed to get number of element blocks in file id %d",exoid);
     ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
     return(EX_FATAL);
   }
@@ -298,7 +298,7 @@ int ex_cvt_nodes_to_sides(int exoid,
   tot_num_elem = ex_inquire_int(exoid, EX_INQ_ELEM);
   if (tot_num_elem < 0) {
     sprintf(errmsg,
-	    "Error: failed to get total number of elements in file id %d",exoid);
+	    "ERROR: failed to get total number of elements in file id %d",exoid);
     ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
     return(EX_FATAL);
   }
@@ -328,7 +328,7 @@ int ex_cvt_nodes_to_sides(int exoid,
     {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
-	      "Error: failed to allocate space for side set elem sort array for file id %d",
+	      "ERROR: failed to allocate space for side set elem sort array for file id %d",
 	      exoid);
       ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
       err_stat = EX_FATAL;
@@ -361,7 +361,7 @@ int ex_cvt_nodes_to_sides(int exoid,
     {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
-	      "Error: failed to allocate space for element block ids for file id %d",
+	      "ERROR: failed to allocate space for element block ids for file id %d",
 	      exoid);
       ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
       err_stat = EX_FATAL;
@@ -371,7 +371,7 @@ int ex_cvt_nodes_to_sides(int exoid,
   if (ex_get_elem_blk_ids(exoid, elem_blk_ids))
     {
       sprintf(errmsg,
-	      "Error: failed to get element block ids in file id %d",
+	      "ERROR: failed to get element block ids in file id %d",
 	      exoid);
       ex_err("ex_cvt_nodes_to_sides",errmsg,EX_MSG);
       err_stat = EX_FATAL;
@@ -383,7 +383,7 @@ int ex_cvt_nodes_to_sides(int exoid,
     {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
-	      "Error: failed to allocate space for element block params for file id %d",
+	      "ERROR: failed to allocate space for element block params for file id %d",
 	      exoid);
       ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
       err_stat = EX_FATAL;
@@ -414,7 +414,7 @@ int ex_cvt_nodes_to_sides(int exoid,
     {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
-	      "Error: failed to allocate space for side set elem parms index for file id %d",
+	      "ERROR: failed to allocate space for side set elem parms index for file id %d",
 	      exoid);
       ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
       err_stat = EX_FATAL;
@@ -427,7 +427,7 @@ int ex_cvt_nodes_to_sides(int exoid,
     {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
-	      "Error: failed to allocate space for side set elem to node index for file id %d",
+	      "ERROR: failed to allocate space for side set elem to node index for file id %d",
 	      exoid);
       ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
       err_stat = EX_FATAL;
@@ -443,7 +443,7 @@ int ex_cvt_nodes_to_sides(int exoid,
     {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
-	      "Error: failed to allocate space for element type flag array for file id %d",
+	      "ERROR: failed to allocate space for element type flag array for file id %d",
 	      exoid);
       ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
       err_stat = EX_FATAL;
@@ -464,7 +464,7 @@ int ex_cvt_nodes_to_sides(int exoid,
       if (j >= num_elem_blks) {
 	exerrval = EX_INTERNAL;
 	sprintf(errmsg,
-		"Error: internal logic error for file id %d",
+		"ERROR: internal logic error for file id %d",
 		exoid);
 	ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
 	err_stat = EX_FATAL;
@@ -503,7 +503,7 @@ int ex_cvt_nodes_to_sides(int exoid,
       if (j >= num_elem_blks) {
 	exerrval = EX_INTERNAL;
 	sprintf(errmsg,
-		"Error: internal logic error for file id %d",
+		"ERROR: internal logic error for file id %d",
 		exoid);
 	ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
 	err_stat = EX_FATAL;
@@ -543,7 +543,7 @@ int ex_cvt_nodes_to_sides(int exoid,
       if (j >= num_elem_blks) {
 	exerrval = EX_INTERNAL;
 	sprintf(errmsg,
-		"Error: internal logic error for file id %d",
+		"ERROR: internal logic error for file id %d",
 		exoid);
 	ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
 	err_stat = EX_FATAL;
@@ -582,7 +582,7 @@ int ex_cvt_nodes_to_sides(int exoid,
       if (j >= num_elem_blks) {
 	exerrval = EX_INTERNAL;
 	sprintf(errmsg,
-		"Error: internal logic error for file id %d",
+		"ERROR: internal logic error for file id %d",
 		exoid);
 	ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
 	err_stat = EX_FATAL;
@@ -650,7 +650,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 	    {
 	      exerrval = EX_MEMFAIL;
 	      sprintf(errmsg,
-		      "Error: failed to allocate space for connectivity array for file id %d",
+		      "ERROR: failed to allocate space for connectivity array for file id %d",
 		      exoid);
 	      ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -664,7 +664,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 			       connect) == -1)
 	    {
 	      sprintf(errmsg,
-		      "Error: failed to get connectivity array for elem blk %"PRId64" for file id %d",
+		      "ERROR: failed to get connectivity array for elem blk %"PRId64" for file id %d",
 		      elem_blk_parms[p_ndx].elem_blk_id,
 		      exoid);
 	      ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
@@ -681,7 +681,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 
       if (connect == NULL) {
 	sprintf(errmsg,
-		"Error: logic error. Connect pointer is null for elem blk %"PRId64" for file id %d",
+		"ERROR: logic error. Connect pointer is null for elem blk %"PRId64" for file id %d",
 		elem_blk_parms[p_ndx].elem_blk_id,
 		exoid);
 	ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
@@ -748,7 +748,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
-			    "Error: failed to find TRIANGULAR SHELL element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
+			    "ERROR: failed to find TRIANGULAR SHELL element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
 			    elem_num+1,
 			    ss_node1,
 			    elem_blk_parms[p_ndx].elem_blk_id,
@@ -808,7 +808,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
-			    "Error: failed to find SHELL element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
+			    "ERROR: failed to find SHELL element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
 			    elem_num+1,
 			    ss_node1,
 			    elem_blk_parms[p_ndx].elem_blk_id,
@@ -837,7 +837,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
-			    "Error: failed to find HEX element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
+			    "ERROR: failed to find HEX element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
 			    elem_num+1,
 			    ss_node1,
 			    elem_blk_parms[p_ndx].elem_blk_id,
@@ -865,7 +865,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 		  {
 		    exerrval = EX_BADPARAM;
 		    sprintf(errmsg,
-			    "Error: failed to find TETRA element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
+			    "ERROR: failed to find TETRA element %"PRId64", node %"PRId64" in connectivity array %"PRId64" for file id %d",
 			    elem_num+1,
 			    ss_node1,
 			    elem_blk_parms[p_ndx].elem_blk_id,
@@ -902,7 +902,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 	      {
 		exerrval = EX_BADPARAM;
 		sprintf(errmsg,
-			"Error: %s is an unsupported element type",
+			"ERROR: %s is an unsupported element type",
 			elem_blk_parms[p_ndx].elem_type);
 		ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
 		err_stat = EX_FATAL;
@@ -916,7 +916,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 	{
 	  exerrval = EX_BADPARAM;
 	  sprintf(errmsg,
-		  "Error: failed to find element %"PRId64", node %"PRId64" in element block %"PRId64" for file id %d",
+		  "ERROR: failed to find element %"PRId64", node %"PRId64" in element block %"PRId64" for file id %d",
 		  elem_num+1, ss_node0,
 		  elem_blk_parms[p_ndx].elem_blk_id,
 		  exoid);

@@ -78,7 +78,7 @@ int ex_get_elem_type (int exoid,
   /* inquire id's of previously defined dimensions */
   if ((el_blk_id_ndx=ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) == -1) {
     sprintf(errmsg,
-            "Error: failed to find element block ID %"PRId64" in file %d",
+            "ERROR: failed to find element block ID %"PRId64" in file %d",
             elem_blk_id, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -87,7 +87,7 @@ int ex_get_elem_type (int exoid,
   if ((status = nc_inq_varid(exoid, VAR_CONN(el_blk_id_ndx), &connid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find connectivity variable in file ID %d",
+            "ERROR: failed to find connectivity variable in file ID %d",
             exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -97,7 +97,7 @@ int ex_get_elem_type (int exoid,
   if ((status = nc_inq_attlen(exoid, connid, ATT_NAME_ELB, &len)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to find attribute in file ID %d", exoid);
+            "ERROR: failed to find attribute in file ID %d", exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -106,7 +106,7 @@ int ex_get_elem_type (int exoid,
   if (len > (MAX_STR_LENGTH+1)) {
     exerrval = EX_MSG;
     sprintf(errmsg,
-            "Error: Element type must be of length %d in file ID %d",
+            "ERROR: Element type must be of length %d in file ID %d",
             (int)len, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -119,7 +119,7 @@ int ex_get_elem_type (int exoid,
   if ((status = nc_get_att_text(exoid, connid, ATT_NAME_ELB, elem_type)) != NC_NOERR ) {
     exerrval = status;
     sprintf(errmsg, 
-            "Error: failed to get attribute \"%s\" in file ID %d",
+            "ERROR: failed to get attribute \"%s\" in file ID %d",
             ATT_NAME_ELB, exoid);
     ex_err(func_name, errmsg, exerrval);
 

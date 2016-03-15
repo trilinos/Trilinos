@@ -123,7 +123,7 @@ int ex_get_attr_param (int   exoid,
     break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Bad block type (%d) specified for file id %d",
+    sprintf(errmsg, "ERROR: Bad block type (%d) specified for file id %d",
 	    obj_type, exoid );
     ex_err("ex_get_attr_param",errmsg,exerrval);
     return (EX_FATAL);
@@ -138,7 +138,7 @@ int ex_get_attr_param (int   exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_attr_per_entry)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get number of attributes in %s %"PRId64" in file id %d",
+	      "ERROR: failed to get number of attributes in %s %"PRId64" in file id %d",
 	      ex_name_of_object(obj_type),obj_id, exoid);
       ex_err("ex_get_attr_param",errmsg, exerrval);
       return(EX_FATAL);

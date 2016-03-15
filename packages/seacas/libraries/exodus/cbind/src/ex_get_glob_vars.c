@@ -151,7 +151,7 @@ int ex_get_glob_vars (int   exoid,
    if (status != NC_NOERR) {
      exerrval = status;
      sprintf(errmsg,
-            "Error: failed to get global variable values from file id %d",
+            "ERROR: failed to get global variable values from file id %d",
             exoid);
      ex_err("ex_get_glob_vars",errmsg,exerrval);
      return (EX_FATAL);

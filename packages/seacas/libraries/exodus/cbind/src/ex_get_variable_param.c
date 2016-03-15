@@ -158,7 +158,7 @@ int ex_get_variable_param (int   exoid,
     else {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate %s variable names in file id %d",
+	      "ERROR: failed to locate %s variable names in file id %d",
 	      ex_name_of_object(obj_type),exoid);
       ex_err("ex_get_var_param",errmsg,exerrval);
       return (EX_FATAL);
@@ -168,7 +168,7 @@ int ex_get_variable_param (int   exoid,
   if ((status = nc_inq_dimlen(exoid, dimid, &dimlen)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get number of %s variables in file id %d",
+	    "ERROR: failed to get number of %s variables in file id %d",
 	    ex_name_of_object(obj_type),exoid);
     ex_err("ex_get_var_param",errmsg,exerrval);
     return (EX_FATAL);

@@ -127,7 +127,7 @@ int ex_get_attr( int   exoid,
   default:
     exerrval = 1005;
     sprintf(errmsg,
-	    "Internal Error: unrecognized object type in switch: %d in file id %d",
+	    "Internal ERROR: unrecognized object type in switch: %d in file id %d",
 	    obj_type,exoid);
     ex_err("ex_get_attr",errmsg,EX_MSG);
     return (EX_FATAL);              /* number of attributes not defined */
@@ -137,7 +137,7 @@ int ex_get_attr( int   exoid,
   if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to locate attributes for %s %"PRId64" in file id %d",
+            "ERROR: failed to locate attributes for %s %"PRId64" in file id %d",
             ex_name_of_object(obj_type), obj_id,exoid);
     ex_err("ex_get_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -154,7 +154,7 @@ int ex_get_attr( int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-            "Error: failed to get attributes for %s %"PRId64" in file id %d",
+            "ERROR: failed to get attributes for %s %"PRId64" in file id %d",
             ex_name_of_object(obj_type),obj_id,exoid);
     ex_err("ex_get_attr",errmsg,exerrval);
     return (EX_FATAL);

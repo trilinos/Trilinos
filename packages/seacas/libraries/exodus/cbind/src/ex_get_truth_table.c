@@ -134,7 +134,7 @@ int ex_get_truth_table (int  exoid,
   default:
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-      "Error: Invalid variable type %d specified in file id %d",
+      "ERROR: Invalid variable type %d specified in file id %d",
       obj_type, exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_WARN);
@@ -155,7 +155,7 @@ int ex_get_truth_table (int  exoid,
   if (num_entity != (size_t)num_blk) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-      "Error: # of %s doesn't match those defined in file id %d",
+      "ERROR: # of %s doesn't match those defined in file id %d",
 	    ex_name_of_object(obj_type), exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
@@ -164,7 +164,7 @@ int ex_get_truth_table (int  exoid,
   if (num_var_db != (size_t)num_var) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-      "Error: # of %s variables doesn't match those defined in file id %d",
+      "ERROR: # of %s variables doesn't match those defined in file id %d",
 	    ex_name_of_object(obj_type), exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
@@ -192,7 +192,7 @@ int ex_get_truth_table (int  exoid,
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-        "Error: failed to get %s truth table from file id %d",
+        "ERROR: failed to get %s truth table from file id %d",
 	      ex_name_of_object(obj_type), exoid);
       ex_err(routine,errmsg,exerrval);
       return (EX_FATAL);

@@ -115,7 +115,7 @@ int ex_get_num_map ( int   exoid,
    id_ndx = ex_id_lkup(exoid,map_type,map_id);
    if (exerrval != 0) {
       sprintf(errmsg,
-              "Error: failed to locate %s id %"PRId64" in id variable in file id %d",
+              "ERROR: failed to locate %s id %"PRId64" in id variable in file id %d",
                ex_name_of_object(map_type),map_id,exoid);
       ex_err("ex_get_map",errmsg,exerrval);
       return (EX_FATAL);
@@ -125,7 +125,7 @@ int ex_get_num_map ( int   exoid,
    if ((status = nc_inq_varid(exoid, ex_name_of_map(map_type,id_ndx), &var_id)) != NC_NOERR) {
      exerrval = status;
      sprintf(errmsg,
-            "Error: failed to locate %s %"PRId64" in file id %d",
+            "ERROR: failed to locate %s %"PRId64" in file id %d",
              ex_name_of_object(map_type),map_id,exoid);
      ex_err("ex_get_map",errmsg,exerrval);
      return (EX_FATAL);
@@ -141,7 +141,7 @@ int ex_get_num_map ( int   exoid,
    if (status != NC_NOERR) {
      exerrval = status;
      sprintf(errmsg,
-            "Error: failed to get %s in file id %d",
+            "ERROR: failed to get %s in file id %d",
              ex_name_of_object(map_type),exoid);
      ex_err("ex_get_map",errmsg,exerrval);
      return (EX_FATAL);

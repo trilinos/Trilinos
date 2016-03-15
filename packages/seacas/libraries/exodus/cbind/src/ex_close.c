@@ -92,7 +92,7 @@ int ex_close (int exoid)
     */
    if ((status = nc_inq_grp_parent(exoid, &parent_id)) != NC_ENOGRP) {
      exerrval = EX_NOTROOTID;
-     sprintf(errmsg,"Error: file id %d does not refer to root group.",exoid);
+     sprintf(errmsg,"ERROR: file id %d does not refer to root group.",exoid);
      ex_err("ex_close",errmsg,exerrval);
      return(EX_FATAL);
    }
@@ -100,7 +100,7 @@ int ex_close (int exoid)
    
    if ((status = nc_sync(exoid)) != NC_NOERR) {
      exerrval = status;
-     sprintf(errmsg,"Error: failed to update file id %d",exoid);
+     sprintf(errmsg,"ERROR: failed to update file id %d",exoid);
      ex_err("ex_close",errmsg,exerrval);
      return(EX_FATAL);
    }
@@ -135,7 +135,7 @@ int ex_close (int exoid)
    }
    else {
      exerrval = status;
-     sprintf(errmsg, "Error: failed to close file id %d",exoid);
+     sprintf(errmsg, "ERROR: failed to close file id %d",exoid);
      ex_err("ex_close",errmsg, status);
      return(EX_FATAL);
    }

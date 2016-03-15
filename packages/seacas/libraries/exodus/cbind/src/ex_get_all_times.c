@@ -89,7 +89,7 @@ int ex_get_all_times (int   exoid,
 
   if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,"Error: failed to locate time variable %s in file id %d",
+    sprintf(errmsg,"ERROR: failed to locate time variable %s in file id %d",
             VAR_WHOLE_TIME, exoid);
     ex_err("ex_get_all_times",errmsg,exerrval);
     return(EX_FATAL);
@@ -105,7 +105,7 @@ int ex_get_all_times (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-           "Error: failed to get time values from file id %d",
+           "ERROR: failed to get time values from file id %d",
             exoid);
     ex_err("ex_get_all_times",errmsg,exerrval);
     return(EX_FATAL);

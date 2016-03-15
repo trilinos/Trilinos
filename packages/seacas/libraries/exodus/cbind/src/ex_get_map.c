@@ -93,7 +93,7 @@ int ex_get_map (int  exoid,
    if ((status = nc_inq_dimlen(exoid, numelemdim, &num_elem)) != NC_NOERR) {
      exerrval = status;
      sprintf(errmsg,
-            "Error: failed to get number of elements in file id %d",
+            "ERROR: failed to get number of elements in file id %d",
              exoid);
      ex_err("ex_get_map",errmsg,exerrval);
      return (EX_FATAL);
@@ -127,7 +127,7 @@ int ex_get_map (int  exoid,
    if (status != NC_NOERR) {
      exerrval = status;
      sprintf(errmsg,
-            "Error: failed to get element order map in file id %d",
+            "ERROR: failed to get element order map in file id %d",
              exoid);
      ex_err("ex_get_map",errmsg,exerrval);
      return (EX_FATAL);

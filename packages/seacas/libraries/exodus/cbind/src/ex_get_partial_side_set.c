@@ -102,7 +102,7 @@ int ex_get_partial_side_set (int   exoid,
     } 
 
       sprintf(errmsg,
-	      "Error: failed to locate side set id %"PRId64" in %s array in file id %d",
+	      "ERROR: failed to locate side set id %"PRId64" in %s array in file id %d",
               side_set_id, VAR_SS_IDS, exoid);
       ex_err("ex_get_partial_side_set",errmsg,exerrval);
       return (EX_FATAL);
@@ -113,7 +113,7 @@ int ex_get_partial_side_set (int   exoid,
   if ((status = nc_inq_dimid (exoid, DIM_NUM_SIDE_SS(side_set_id_ndx), &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate number of sides in side set %"PRId64" in file id %d",
+	    "ERROR: failed to locate number of sides in side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -122,7 +122,7 @@ int ex_get_partial_side_set (int   exoid,
   if ((status = nc_inq_dimlen(exoid, dimid, &num_side_in_set)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get number of sides in side set %"PRId64" in file id %d",
+	    "ERROR: failed to get number of sides in side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -131,7 +131,7 @@ int ex_get_partial_side_set (int   exoid,
   if ((status = nc_inq_varid(exoid, VAR_ELEM_SS(side_set_id_ndx), &elem_list_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate element list for side set %"PRId64" in file id %d",
+	    "ERROR: failed to locate element list for side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -140,7 +140,7 @@ int ex_get_partial_side_set (int   exoid,
   if ((status = nc_inq_varid (exoid, VAR_SIDE_SS(side_set_id_ndx), &side_list_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate side list for side set %"PRId64" in file id %d",
+	    "ERROR: failed to locate side list for side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -149,14 +149,14 @@ int ex_get_partial_side_set (int   exoid,
   /* Check input parameters for a valid range of side numbers */
   if (start_side_num < 0 || start_side_num > num_side_in_set) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid input");
+    sprintf(errmsg, "ERROR: Invalid input");
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);
   }
 
   if (num_sides < 0) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: Invalid number of elements in side set!");
+    sprintf(errmsg, "ERROR: Invalid number of elements in side set!");
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -164,7 +164,7 @@ int ex_get_partial_side_set (int   exoid,
   /* start_side_num now starts at 1, not 0 */
   if ((start_side_num + num_sides - 1) > num_side_in_set) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "Error: request larger than number of elements in set!");
+    sprintf(errmsg, "ERROR: request larger than number of elements in set!");
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -182,7 +182,7 @@ int ex_get_partial_side_set (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get element list for side set %"PRId64" in file id %d",
+	    "ERROR: failed to get element list for side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);
@@ -197,7 +197,7 @@ int ex_get_partial_side_set (int   exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get side list for side set %"PRId64" in file id %d",
+	    "ERROR: failed to get side list for side set %"PRId64" in file id %d",
             side_set_id,exoid);
     ex_err("ex_get_partial_side_set",errmsg,exerrval);
     return (EX_FATAL);

@@ -98,7 +98,7 @@ int ex_put_concat_elem_block (int    exoid,
   if ((status = nc_inq_dimlen(exoid,dimid,&length)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get number of element blocks in file id %d",
+	    "ERROR: failed to get number of element blocks in file id %d",
 	    exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     return (EX_FATAL);
@@ -109,7 +109,7 @@ int ex_put_concat_elem_block (int    exoid,
   if (!(eb_array = malloc(num_elem_blk*sizeof(int)))) {
     exerrval = EX_MEMFAIL;
     sprintf(errmsg,
-	    "Error: failed to allocate space for element block status array in file id %d",
+	    "ERROR: failed to allocate space for element block status array in file id %d",
 	    exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     return (EX_FATAL);
@@ -129,7 +129,7 @@ int ex_put_concat_elem_block (int    exoid,
   if ((status = nc_inq_varid(exoid, VAR_STAT_EL_BLK, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate element block status in file id %d",
+	    "ERROR: failed to locate element block status in file id %d",
 	    exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     free(eb_array);
@@ -141,7 +141,7 @@ int ex_put_concat_elem_block (int    exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to store element block status array to file id %d",
+	    "ERROR: failed to store element block status array to file id %d",
             exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     free(eb_array);
@@ -153,7 +153,7 @@ int ex_put_concat_elem_block (int    exoid,
   if ((status = nc_inq_varid(exoid, VAR_ID_EL_BLK, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate element block ids array in file id %d",
+	    "ERROR: failed to locate element block ids array in file id %d",
             exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     free(eb_array);
@@ -170,7 +170,7 @@ int ex_put_concat_elem_block (int    exoid,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to store element block id array in file id %d",
+	    "ERROR: failed to store element block id array in file id %d",
             exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     free(eb_array);
@@ -181,7 +181,7 @@ int ex_put_concat_elem_block (int    exoid,
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get string length in file id %d",exoid);
+	    "ERROR: failed to get string length in file id %d",exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     free(eb_array);
     return (EX_FATAL);
@@ -190,7 +190,7 @@ int ex_put_concat_elem_block (int    exoid,
   /* put netcdf file into define mode  */
   if ((status = nc_redef (exoid)) != NC_NOERR)  {
     exerrval = status;
-    sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
+    sprintf(errmsg,"ERROR: failed to place file id %d into define mode",exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     free(eb_array);
     return (EX_FATAL);
@@ -228,7 +228,7 @@ int ex_put_concat_elem_block (int    exoid,
     if (cur_num_elem_blk >= num_elem_blk) {
       exerrval = EX_FATAL;
       sprintf(errmsg,
-	      "Error: exceeded number of element blocks (%d) defined in file id %d",
+	      "ERROR: exceeded number of element blocks (%d) defined in file id %d",
               num_elem_blk,exoid);
       ex_err("ex_put_concat_elem_block",errmsg,exerrval);
       goto error_ret;
@@ -249,11 +249,11 @@ int ex_put_concat_elem_block (int    exoid,
       exerrval = status;
       if (status == NC_ENAMEINUSE) {     /* duplicate entry */
 	sprintf(errmsg,
-		"Error: element block %"PRId64" already defined in file id %d",
+		"ERROR: element block %"PRId64" already defined in file id %d",
 		eb_id,exoid);
       } else {
 	sprintf(errmsg,
-		"Error: failed to define number of elements/block for block %"PRId64" file id %d",
+		"ERROR: failed to define number of elements/block for block %"PRId64" file id %d",
 		eb_id,exoid);
       }
       ex_err("ex_put_concat_elem_block",errmsg,exerrval);
@@ -265,7 +265,7 @@ int ex_put_concat_elem_block (int    exoid,
 			     num_npe, &nelnoddim)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define number of nodes/element for block %"PRId64" in file id %d",
+	      "ERROR: failed to define number of nodes/element for block %"PRId64" in file id %d",
 	      eb_id,exoid);
       ex_err("ex_put_concat_elem_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -279,7 +279,7 @@ int ex_put_concat_elem_block (int    exoid,
 			      conn_int_type, 2, dims, &connid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to create connectivity array for block %"PRId64" in file id %d",
+	      "ERROR: failed to create connectivity array for block %"PRId64" in file id %d",
 	      eb_id,exoid);
       ex_err("ex_put_concat_elem_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -291,7 +291,7 @@ int ex_put_concat_elem_block (int    exoid,
 				  (void*)elem_type[iblk])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to store element type name %s in file id %d",
+	      "ERROR: failed to store element type name %s in file id %d",
 	      elem_type[iblk],exoid);
       ex_err("ex_put_concat_elem_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
@@ -304,7 +304,7 @@ int ex_put_concat_elem_block (int    exoid,
 				num_attr, &numattrdim)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to define number of attributes in block %"PRId64" in file id %d",
+		"ERROR: failed to define number of attributes in block %"PRId64" in file id %d",
 		eb_id,exoid);
 	ex_err("ex_put_concat_elem_block",errmsg,exerrval);
 	goto error_ret;         /* exit define mode and return */
@@ -318,7 +318,7 @@ int ex_put_concat_elem_block (int    exoid,
 			       NC_CHAR, 2, dims, &temp)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to define element attribute name array in file id %d",exoid);
+		"ERROR: failed to define element attribute name array in file id %d",exoid);
 	ex_err("ex_put_concat_elem_block",errmsg,exerrval);
 	goto error_ret;         /* exit define mode and return */
       }
@@ -331,7 +331,7 @@ int ex_put_concat_elem_block (int    exoid,
 			       nc_flt_code(exoid), 2, dims, &temp)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error:  failed to define attributes for element block %"PRId64" in file id %d",
+		"ERROR:  failed to define attributes for element block %"PRId64" in file id %d",
 		eb_id,exoid);
 	ex_err("ex_put_concat_elem_block",errmsg,exerrval);
 	goto error_ret;         /* exit define mode and return */
@@ -355,11 +355,11 @@ int ex_put_concat_elem_block (int    exoid,
 	  exerrval = status;
 	  if (status == NC_ENAMEINUSE) {
 	    sprintf(errmsg,
-		    "Error: element numbering map already exists in file id %d",
+		    "ERROR: element numbering map already exists in file id %d",
 		    exoid);
 	  } else {
 	    sprintf(errmsg,
-		    "Error: failed to create element numbering map in file id %d",
+		    "ERROR: failed to create element numbering map in file id %d",
 		    exoid);
 	  }
 	  ex_err("ex_put_concat_elem_block",errmsg,exerrval);
@@ -378,11 +378,11 @@ int ex_put_concat_elem_block (int    exoid,
 	  exerrval = status;
 	  if (status == NC_ENAMEINUSE) {
 	    sprintf(errmsg,
-		    "Error: node numbering map already exists in file id %d",
+		    "ERROR: node numbering map already exists in file id %d",
 		    exoid);
 	  } else {
 	    sprintf(errmsg,
-		    "Error: failed to create node numbering map array in file id %d",
+		    "ERROR: failed to create node numbering map array in file id %d",
 		    exoid);
 	  }
 	  ex_err("ex_put_concat_elem_block",errmsg,exerrval);
@@ -397,7 +397,7 @@ int ex_put_concat_elem_block (int    exoid,
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to complete element block definition in file id %d", 
+	    "ERROR: failed to complete element block definition in file id %d", 
 	    exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
     free(eb_array);
@@ -439,7 +439,7 @@ int ex_put_concat_elem_block (int    exoid,
   free(eb_array);
   if (nc_enddef (exoid) != NC_NOERR) {     /* exit define mode */
     sprintf(errmsg,
-	    "Error: failed to complete definition for file id %d",
+	    "ERROR: failed to complete definition for file id %d",
 	    exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
   }
