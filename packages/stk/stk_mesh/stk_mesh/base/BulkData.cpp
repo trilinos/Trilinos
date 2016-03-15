@@ -7210,6 +7210,16 @@ void BulkData::enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag)
     m_meshDiagnosticObserver.enable_rule(flag);
 }
 
+unsigned BulkData::get_mesh_diagnostic_error_count() const
+{
+    return m_meshDiagnosticObserver.get_number_of_errors();
+}
+
+void BulkData::throw_on_mesh_diagnostic_error()
+{
+    m_meshDiagnosticObserver.throw_if_errors_exist();
+}
+
 #ifdef SIERRA_MIGRATION
 EntityLess::EntityLess(const BulkData& mesh)
   : m_mesh(&mesh),

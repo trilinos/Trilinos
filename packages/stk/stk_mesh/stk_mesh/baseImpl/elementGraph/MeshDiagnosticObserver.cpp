@@ -13,6 +13,10 @@ void MeshDiagnosticObserver::gather_new_errors(std::ofstream & out, const std::v
         std::pair<std::unordered_set<std::string>::iterator, bool> result = m_errorDatabase.insert(error);
         if (result.second) {
             out << error;
+
+            if(m_throwOnError)
+                ThrowRequireMsg( false,
+                                 "Mesh diagnostic rule failure: " + error );
         }
     }
 }

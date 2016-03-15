@@ -749,6 +749,8 @@ public:
   virtual stk::mesh::ElemElemGraph& get_graph() { ThrowRequireWithSierraHelpMsg(false); stk::mesh::ElemElemGraph *graph = nullptr; return *graph;}
 
   void enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag);
+  unsigned get_mesh_diagnostic_error_count() const ;
+  void throw_on_mesh_diagnostic_error();
 
 protected: //functions
 
