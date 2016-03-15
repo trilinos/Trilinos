@@ -134,6 +134,10 @@ public:
      */
    LocalOrdinal computeLocalElementIndex(const Triplet<GlobalOrdinal> & element) const;
 
+   /** Compute the global index from a global triplet. 
+     */
+   GlobalOrdinal computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element) const;
+
    /** Utility function for computing the processor i,j,k ranking. Publically exposed for testing.
      */
    static Triplet<int> computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs); 
@@ -144,7 +148,7 @@ public:
    static Triplet<GlobalOrdinal> computeLocalElementGlobalTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
                                                                        const Triplet<GlobalOrdinal> & myOffset);
 
-   /** Compute the global index for a triplet. 
+   /** Compute the global index from a global triplet. 
      */
    static GlobalOrdinal computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element,
                                                   const Triplet<GlobalOrdinal> & shape);
@@ -235,6 +239,7 @@ private:
    Triplet<int> myRankIndex_;
 
    int dim_; 
+   Triplet<GlobalOrdinal> totalElements_; // over all blocks and processors how many elements
    Triplet<GlobalOrdinal> elements_; // per block element counts
    Triplet<int> processors_;         // full mesh
    Triplet<int> blocks_;             // number of element blocks
