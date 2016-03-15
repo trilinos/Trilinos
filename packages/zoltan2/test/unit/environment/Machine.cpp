@@ -85,8 +85,16 @@ int checkAllCoords(const Teuchos::Comm<int> &comm,
         }
         if (me == 0) std::cout << std::endl;
       }
-      else
+      else {
+        std::cout << "Rank " << me 
+                  << " getMachineCoordinate failed " << std::endl;
         fail = failval;  // getMachineCoordinate failed
+      }
+    }
+    if (fail == failval) {
+      std::cout << "Rank " << me 
+                << " Invalid coordinates from getAllMachineCoordinatesView or "
+                << "getMachineCoordinate" << std::endl;
     }
 
     // Check my rank
@@ -94,11 +102,18 @@ int checkAllCoords(const Teuchos::Comm<int> &comm,
       for (int d = 0; d < dim; d++) 
         if (xyz[d] != allCoords[d][me]) fail = failval;
     }
-    else
+    else {
       fail = failval;  // getMyMachineCoordinate failed
+      std::cout << "Rank " << me 
+                << "getMyMachineCoordinates failed" << std::endl;
+    }
   }
-  else 
+  else {
     fail = failval;  // couldn't retrieve coordinates
+    std::cout << "Rank " << me 
+              << "couldn't retrieve coordinates with "
+              << "getAllMachineCoordinatesView" << std::endl;
+  }
 
   delete [] xyz;
   delete [] nxyz;
@@ -158,6 +173,11 @@ int main(int argc, char *argv[])
   }
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
   { // Add tests specific to TopoMgr
+    if (checkErrorCode(*comm, fail))
+      return 1;
+  }
+#elif defined(HAVE_ZOLTAN2_BGQTEST)
+  { // Add tests specific to BGQ
     if (checkErrorCode(*comm, fail))
       return 1;
   }

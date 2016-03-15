@@ -6,7 +6,7 @@
 #include <Zoltan2_MachineTopoMgr.hpp>
 #include <Zoltan2_MachineTopoMgrForTest.hpp>
 
-#define HAVE_ZOLTAN2_BGQTEST
+//#define HAVE_ZOLTAN2_BGQTEST
 
 namespace Zoltan2{
 
@@ -79,7 +79,7 @@ public:
      *  set the machine coordinate xyz of any rank process
      *  return true if coordinates are available by rank
      */
-    inline bool getMachineCoordinate(const part_t rank,
+    inline bool getMachineCoordinate(const int rank,
                                      pcoord_t *xyz) const {
       return machine->getMachineCoordinate(rank, xyz);
     }

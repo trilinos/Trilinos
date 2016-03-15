@@ -64,7 +64,7 @@ public:
      *  set the machine coordinate xyz of any rank process
      *  return true if coordinates are available by rank
      */
-    bool getMachineCoordinate(const part_t rank, pcoord_t *xyz) const {
+    bool getMachineCoordinate(const int rank, pcoord_t *xyz) const {
       return false;  // Coordinates not available by rank
     }
 
