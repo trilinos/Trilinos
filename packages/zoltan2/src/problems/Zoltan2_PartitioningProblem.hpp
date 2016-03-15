@@ -144,7 +144,7 @@ public:
 
   //! \brief Constructor where Teuchos communicator is specified
   PartitioningProblem(Adapter *A, ParameterList *p,
-                      RCP<const Teuchos::Comm<int> > &comm):
+                      const RCP<const Teuchos::Comm<int> > &comm):
       Problem<Adapter>(A,p,comm), solution_(),
       inputType_(InvalidAdapterType),
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
