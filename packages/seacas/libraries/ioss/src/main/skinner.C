@@ -42,6 +42,7 @@
 #include <functional>
 #include <unordered_set>
 #include <chrono>
+#include <numeric>
 
 #include "Ioss_CodeTypes.h"
 #include "Ioss_Utils.h"

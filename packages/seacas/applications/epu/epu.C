@@ -50,6 +50,7 @@
 #include <cstdlib>
 #include <cfloat>
 #include <climits>
+#include <cmath>
 
 #include <cstring>
 #include <ctime>
@@ -2996,7 +2997,7 @@ namespace {
     // largest value.
     int width = 1;
     if (max_value >= 10)
-      width = int(log10((double)max_value));
+      width = int(std::log10((double)max_value));
     return width + 1;
   }
 

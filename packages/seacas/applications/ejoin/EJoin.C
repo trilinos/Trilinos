@@ -685,10 +685,9 @@ namespace {
 
 	Ioss::NameList fields;
 	nb->field_describe(Ioss::Field::TRANSIENT, &fields);
-	Ioss::NameList::const_iterator IF;
-	for (IF = fields.begin(); IF != fields.end(); ++IF) {
-	  if (valid_variable(*IF, 0, variable_list)) {
-	    Ioss::Field field = nb->get_field(*IF);
+	for (auto field_name : fields) {
+	  if (valid_variable(field_name, 0, variable_list)) {
+	    Ioss::Field field = nb->get_field(field_name);
 	    ons->field_add(field);
 	  }
 	}
@@ -958,11 +957,10 @@ namespace {
     for (size_t p=0; p<part_count; p++) {
       Ioss::NameList fields;
       part_mesh[p]->field_describe(Ioss::Field::TRANSIENT, &fields);
-      Ioss::NameList::const_iterator IF;
-      for (IF = fields.begin(); IF != fields.end(); ++IF) {
+      for (auto field : fields) {
 	std::vector<double> data;
-	part_mesh[p]->get_field_data(*IF, data);
-	output_region.put_field_data(*IF, data);
+	part_mesh[p]->get_field_data(field, data);
+	output_region.put_field_data(field, data);
       }
     }
   }

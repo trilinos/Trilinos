@@ -43,6 +43,7 @@
 #include <string>                       // for string, operator==, etc
 #include <vector>                       // for vector
 #include <algorithm>
+#include <numeric>
 
 
 namespace Iogn {

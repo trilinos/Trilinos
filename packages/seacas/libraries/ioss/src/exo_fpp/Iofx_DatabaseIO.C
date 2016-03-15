@@ -63,6 +63,7 @@
 #include <utility>
 #include <vector>
 #include <limits>
+#include <numeric>
 
 #include "Ioss_CoordinateFrame.h"
 #include "Ioss_CommSet.h"
