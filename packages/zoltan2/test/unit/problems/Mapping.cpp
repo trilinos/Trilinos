@@ -47,6 +47,7 @@
 //
 
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_VectorAdapter.hpp>
@@ -225,7 +226,8 @@ bool validMappingSolution(
       int r = msoln.getRankForPart(inputParts[i]);
       if (r < 0 || r >= np) {
         aok = false;
-        std::cout << "Invalid rank " << r << " of " << np << " returned" 
+        std::cout << __FILE__ << ":" << __LINE__ << " "
+                  << "Invalid rank " << r << " of " << np << " returned" 
                   << std::endl;
       }
     }
@@ -235,7 +237,8 @@ bool validMappingSolution(
     int r = msoln.getRankForPart(part_t(me));
     if (r < 0 || r >= np) {
       aok = false;
-      std::cout << "Invalid rank " << r << " of " << np << " returned" 
+      std::cout << __FILE__ << ":" << __LINE__ << " "
+                << "Invalid rank " << r << " of " << np << " returned" 
                 << std::endl;
     }
   }
@@ -251,40 +254,44 @@ bool validMappingSolution(
     if ((p < ia.adapterLowestPartNum()) || 
        (p >= ia.adapterLowestPartNum() + np * ia.adapterNPartsPerRow())) {
       aok = false;
-      std::cout << "Invalid part " << p << " of " << np << " returned" 
+      std::cout << __FILE__ << ":" << __LINE__ << " "
+                << "Invalid part " << p << " of " << np << " returned" 
                 << std::endl;
     }
   }
 
   // Test the error checking in mapping solution
 
+  part_t ret;
   bool errorThrownCorrectly = false;
   part_t sillyPart = ia.adapterLowestPartNum() + 
                      (np+1) * ia.adapterNPartsPerRow();
   try {
-    msoln.getRankForPart(sillyPart);
+    ret = msoln.getRankForPart(sillyPart);
   }
   catch (std::exception &e) {
     errorThrownCorrectly = true;
   }
   if (errorThrownCorrectly == false) {
     aok = false;
-    std::cout << "Mapping Solution accepted a too-high part number "
-              << sillyPart << std::endl;
+    std::cout << __FILE__ << ":" << __LINE__ << " "
+              << "Mapping Solution accepted a too-high part number "
+              << sillyPart << " returned " << ret << std::endl;
   }
 
   errorThrownCorrectly = false;
   sillyPart = ia.adapterLowestPartNum() - 1;
   try {
-    msoln.getRankForPart(sillyPart);
+    ret = msoln.getRankForPart(sillyPart);
   }
   catch (std::exception &e) {
     errorThrownCorrectly = true;
   }
   if (errorThrownCorrectly == false) {
     aok = false;
-    std::cout << "Mapping Solution accepted a too-low part number "
-              << sillyPart << std::endl;
+    std::cout << __FILE__ << ":" << __LINE__ << " "
+              << "Mapping Solution accepted a too-low part number "
+              << sillyPart << " returned " << ret << std::endl;
   }
 
   errorThrownCorrectly = false;
@@ -296,7 +303,8 @@ bool validMappingSolution(
   }
   if (errorThrownCorrectly == false) {
     aok = false;
-    std::cout << "Mapping Solution accepted a silly rank" << np+1
+    std::cout << __FILE__ << ":" << __LINE__ << " "
+              << "Mapping Solution accepted a silly rank" << np+1
               << std::endl;
   }
   
@@ -304,17 +312,141 @@ bool validMappingSolution(
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// Validate a mapping solution obtained with a partitioning solution
+template <typename Adapter>
+bool validMappingSolution(
+  Zoltan2::MappingSolution<Adapter> &msoln,
+  Adapter &ia,
+  Zoltan2::PartitioningSolution<Adapter> &psoln,
+  const Teuchos::Comm<int> &comm
+)
+{
+  // Correctness of a particular mapping algorithm is beyond the scope of
+  // this test.
+  typedef typename Adapter::part_t part_t;
+
+  bool aok = true;
+  int np = comm.getSize();
+  int me = comm.getRank();
+
+  // All returned processors must be in range [0,np-1].
+
+  if (ia.adapterUsesInputParts()) {
+    // Adapter provided input parts
+    const part_t *inputParts; 
+    ia.getPartsView(inputParts);
+    for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
+      int r = msoln.getRankForPart(inputParts[i]);
+      if (r < 0 || r >= np) {
+        aok = false;
+        std::cout << __FILE__ << ":" << __LINE__ << " "
+                  << "Invalid rank " << r << " of " << np << " returned" 
+                  << std::endl;
+      }
+    }
+  }
+  else {
+    // Default input part numbers:  part == rank
+    int r = msoln.getRankForPart(part_t(me));
+    if (r < 0 || r >= np) {
+      aok = false;
+      std::cout << __FILE__ << ":" << __LINE__ << " "
+                << "Invalid rank " << r << " of " << np << " returned" 
+                << std::endl;
+    }
+  }
+
+  // All returned parts must be in range of valid part numbers from the
+  // partitioning solution
+  part_t globalmin, localmin = std::numeric_limits<part_t>::max();
+  part_t globalmax, localmax = 0;
+  for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
+    part_t p = psoln.getPartListView()[i];
+    if (p > localmax) localmax = p;
+    if (p < localmin) localmin = p;
+  }
+  Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_MAX, 1, 
+                                  &localmax, &globalmax);
+  Teuchos::reduceAll<int, part_t>(comm, Teuchos::REDUCE_MIN, 1, 
+                                  &localmin, &globalmin);
+
+  part_t *parts;
+  part_t nParts;
+  msoln.getPartsForRankView(me, nParts, parts);
+
+  for (part_t i = 0; i < nParts; i++) {
+    part_t p = parts[i];
+    if ((p < globalmin) || (p > globalmax)) {
+      aok = false;
+      std::cout << __FILE__ << ":" << __LINE__ << " "
+                << "Invalid part " << p << " of " << np << " returned" 
+                << std::endl;
+    }
+  }
+
+  // Test the error checking in mapping solution
+
+  part_t ret;
+  bool errorThrownCorrectly = false;
+  part_t sillyPart = globalmax+10;
+  try {
+    ret = msoln.getRankForPart(sillyPart);
+  }
+  catch (std::exception &e) {
+    errorThrownCorrectly = true;
+  }
+  if (errorThrownCorrectly == false) {
+    aok = false;
+    std::cout << __FILE__ << ":" << __LINE__ << " "
+              << "Mapping Solution accepted a too-high part number "
+              << sillyPart << " returned " << ret << std::endl;
+  }
+
+  errorThrownCorrectly = false;
+  sillyPart = globalmin - 1;
+  try {
+    ret = msoln.getRankForPart(sillyPart);
+  }
+  catch (std::exception &e) {
+    errorThrownCorrectly = true;
+  }
+  if (errorThrownCorrectly == false) {
+    aok = false;
+    std::cout << __FILE__ << ":" << __LINE__ << " "
+              << "Mapping Solution accepted a too-low part number "
+              << sillyPart << " returned " << ret << std::endl;
+  }
+
+  errorThrownCorrectly = false;
+  try {
+    msoln.getPartsForRankView(np+1, nParts, parts);
+  }
+  catch (std::exception &e) {
+    errorThrownCorrectly = true;
+  }
+  if (errorThrownCorrectly == false) {
+    aok = false;
+    std::cout << __FILE__ << ":" << __LINE__ << " "
+              << "Mapping Solution accepted a silly rank" << np+1
+              << std::endl;
+  }
+  
+  return aok;
+}
+//////////////////////////////////////////////////////////////////////////////
 
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  RCP<const Zoltan2::Environment> env;
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
   int me = comm->getRank();
   bool allgood = true;
 
   typedef VerySimpleVectorAdapter<zzuser_t> vecAdapter_t;
+  typedef vecAdapter_t::part_t part_t;
+  typedef vecAdapter_t::scalar_t scalar_t;
   
   // TEST 1
   {
@@ -344,9 +476,12 @@ int main(int argc, char *argv[])
         std::cout << "test 1 FAILED: invalid mapping solution" << std::endl;
     }
 
-#ifdef KDD
     // Test mapping explicitly using default machine
     Zoltan2::MachineRepresentation<scalar_t, part_t> defMachine(*comm);
+
+#ifdef KDD
+    if (me == 0)
+      std::cout << "Testing Mapping using explicit machine" << std::endl;
 
     Zoltan2::MappingProblem<vecAdapter_t> mprob2(&ia, &params, comm,
                                                     NULL, &defMachine);
@@ -362,19 +497,22 @@ int main(int argc, char *argv[])
     }
     
     // Test mapping with a partitioning solution
+    if (me == 0)
+      std::cout << "Testing Mapping using a partitioning solution" << std::endl;
+
     Zoltan2::PartitioningSolution<vecAdapter_t> psolution(env, comm, 0);
     ArrayRCP<part_t> partList(ia.getLocalNumIDs());
     for (size_t i = 0; i < ia.getLocalNumIDs(); i++)
       partList[i] = me + 1;
-    psolution->setParts(partList);
+    psolution.setParts(partList);
 
     Zoltan2::MappingProblem<vecAdapter_t> mprob3(&ia, &params, comm,
-                                                    NULL, &defMachine);
+                                                 NULL, &defMachine);
     mprob3.solve();
 
     Zoltan2::MappingSolution<vecAdapter_t> *msoln3 = mprob3.getSolution();
    
-    if (!validMappingSolution(*msoln3, ia, psolution, *comm))
+    if (!validMappingSolution(*msoln3, ia, psolution, *comm)) {
       allgood = false;
       if (me == 0) 
         std::cout << "test 1 FAILED: invalid mapping solution "
