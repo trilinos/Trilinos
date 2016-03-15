@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
   int px = np, py = 1;
   int bx =  1, by = 2;
 
-  // do nodal discretization
+  // test 2D nodal discretization
   {
     // field pattern for basis required
     RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
@@ -334,7 +334,68 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
     connManager->buildConnectivity(*fp);
 
     // test all the elements and functions
-    const std::vector<int> & elmts0 = connManager->getElementBlock("eblock-0_0");
+    std::string blocks[] = {"eblock-0_0","eblock-0_1"};
+    for(int b=0;b<2;b++) {
+      const std::vector<int> & elmts0 = connManager->getElementBlock(blocks[b]);
+  
+      for(std::size_t i=0;i<elmts0.size();i++) {
+        TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),4);
+  
+        auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
+                                                                      connManager->getMyOffsetTriplet());
+        auto * conn = connManager->getConnectivity(elmts0[i]);
+        TEST_ASSERT(conn!=0);
+  
+        TEST_EQUALITY(conn[0], global.x + (nx*bx+1)*global.y + 0 + (   0   ));
+        TEST_EQUALITY(conn[1], global.x + (nx*bx+1)*global.y + 1 + (   0   ));
+        TEST_EQUALITY(conn[2], global.x + (nx*bx+1)*global.y + 1 + (nx*bx+1));
+        TEST_EQUALITY(conn[3], global.x + (nx*bx+1)*global.y + 0 + (nx*bx+1));
+      }
+    }
+  }
+
+  // test 2D Q2 discretization
+  {
+    panzer::Ordinal64 totalNodes = (bx*nx+1)*(by*ny+1);
+    panzer::Ordinal64 totalEdges = (bx*nx+1)*(by*ny)+(bx*nx)*(by*ny+1);
+
+    // field pattern for basis required
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+
+    // build the topology
+    RCP<CartesianConnManager<int,Ordinal64> > connManager = rcp(new CartesianConnManager<int,Ordinal64>);
+    connManager->initialize(comm,nx,ny,px,py,bx,by);
+    connManager->buildConnectivity(*fp);
+
+    // test all the elements and functions
+    std::string blocks[] = {"eblock-0_0","eblock-0_1"};
+    for(int b=0;b<2;b++) {
+      const std::vector<int> & elmts0 = connManager->getElementBlock(blocks[b]);
+  
+      for(std::size_t i=0;i<elmts0.size();i++) {
+        TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),9);
+  
+        auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
+                                                                      connManager->getMyOffsetTriplet());
+        auto * conn = connManager->getConnectivity(elmts0[i]);
+        TEST_ASSERT(conn!=0);
+  
+        // nodes
+        TEST_EQUALITY(conn[0], global.x + (nx*bx+1)*global.y + 0 + (   0   ));
+        TEST_EQUALITY(conn[1], global.x + (nx*bx+1)*global.y + 1 + (   0   ));
+        TEST_EQUALITY(conn[2], global.x + (nx*bx+1)*global.y + 1 + (nx*bx+1));
+        TEST_EQUALITY(conn[3], global.x + (nx*bx+1)*global.y + 0 + (nx*bx+1));
+
+        // edges
+        TEST_EQUALITY(conn[4], totalNodes + global.x + (2*nx*bx+1)*global.y + 0);
+        TEST_EQUALITY(conn[5], totalNodes + global.x + (2*nx*bx+1)*global.y + 1 + nx*bx);
+        TEST_EQUALITY(conn[6], totalNodes + global.x + (2*nx*bx+1)*global.y + (2*nx*bx+1));
+        TEST_EQUALITY(conn[7], totalNodes + global.x + (2*nx*bx+1)*global.y + 0 + nx*bx);
+
+        // cells
+        TEST_EQUALITY(conn[8], totalNodes + totalEdges + global.x + nx*bx*global.y);
+      }
+    }
   }
 }
 

@@ -158,14 +158,12 @@ buildConnectivity(const panzer::FieldPattern & fp)
       LocalOrdinal element = elmts[e];
       std::vector<GlobalOrdinal> & conn = connectivity_[element];
       
-      // allocate some space, intialize with -1 for error checking
-      conn.resize(numIds,-1);
-
-/*
       // loop over each dimension, add in coefficients
-      for(int d=0;d<dim;d++)
+      // ASSUME: Field pattern has logical ordering nodes, edges, faces, cells
+      for(int d=0;d<=dim;d++)
         updateConnectivity(fp,d,element,conn);
-*/
+
+      TEUCHOS_ASSERT(numIds==Teuchos::as<int>(conn.size()));
     }
   }
 }
@@ -376,19 +374,30 @@ updateConnectivity(const panzer::FieldPattern & fp,
 {
   Triplet<GlobalOrdinal> index = computeLocalElementGlobalTriplet(localElementId,myElements_,myOffset_);
  
-  TEUCHOS_ASSERT(fp.numberIds()==Teuchos::as<int>(conn.size()));
-
   for(int c=0;c<fp.getSubcellCount(subcellDim);c++) {
     std::size_t num = fp.getSubcellIndices(subcellDim,c).size();
     TEUCHOS_ASSERT(num==1 || num==0);
  
     if(num==0) continue;
  
-/*
     // there is an index to add here
-    else if(subcellDim==dim_) 
-      conn.push_back(computeGlobalElementIndex(index);
-*/
+    if(subcellDim==0) {
+      // node number     =  Number for the lower left          
+      GlobalOrdinal node =  (totalElements_.x+1)*index.y + index.x
+                           + (c==1 || c==2) * 1                    // shift for i+1
+                           + (c==3 || c==2) * (totalElements_.x+1); // shift for j+1
+      conn.push_back(node);
+    }
+    else if(subcellDim==1) {
+      // node number     =  Number for the lower left          
+      GlobalOrdinal edge =  totalNodes_ + (2*totalElements_.x+1)*index.y + index.x
+                                        + (        c==1) * 1                     
+                                        + (        c==2) * (2*totalElements_.x+1)
+                                        + (c==1 || c==3) * totalElements_.x;
+      conn.push_back(edge);
+    } 
+    else if(subcellDim==2)
+      conn.push_back(totalNodes_+totalEdges_+computeGlobalElementIndex(index));
   }
 }
 

@@ -176,7 +176,7 @@ public:
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const { return 0; }
+   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const { return &connectivity_[localElmtId][0]; }
 
    /** How many mesh IDs are associated with this element?
      *
