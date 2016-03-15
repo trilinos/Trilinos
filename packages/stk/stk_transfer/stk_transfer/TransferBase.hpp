@@ -53,10 +53,10 @@ public :
   virtual void apply()         = 0;
 };
 
-class NewTransferBase {
+class ReducedDependecyTransferBase {
 public :
-  NewTransferBase(){};
-  virtual ~NewTransferBase(){};
+  ReducedDependecyTransferBase(){};
+  virtual ~ReducedDependecyTransferBase(){};
   void initialize() {
     coarse_search();
     communication();

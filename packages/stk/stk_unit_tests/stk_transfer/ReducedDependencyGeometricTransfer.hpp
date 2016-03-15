@@ -31,8 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef  NEW_STK_GEOMETRICTRANSFER_HPP
-#define  NEW_STK_GEOMETRICTRANSFER_HPP
+#ifndef  ReducedDependecy_STK_GEOMETRICTRANSFER_HPP
+#define  ReducedDependecy_STK_GEOMETRICTRANSFER_HPP
 
 #include <set>
 #include <vector>
@@ -77,7 +77,7 @@ bool local_is_sorted(ForwardIterator first, ForwardIterator last, Compare compar
   return true;
 }
 
-template <class INTERPOLATE> class NewGeometricTransfer : public NewTransferBase {
+template <class INTERPOLATE> class ReducedDependecyGeometricTransfer : public ReducedDependecyTransferBase {
 
 public :
 
@@ -102,12 +102,12 @@ public :
 
   enum {Dimension = 3};
 
-  NewGeometricTransfer(boost::shared_ptr<MeshA> &mesha,
+  ReducedDependecyGeometricTransfer(boost::shared_ptr<MeshA> &mesha,
                     boost::shared_ptr<MeshB> &meshb,
                     const std::string &name,
                     const double expansion_factor = 1.5,
                     const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE);
-  virtual ~NewGeometricTransfer(){};
+  virtual ~ReducedDependecyGeometricTransfer(){};
   virtual void coarse_search();
   virtual void communication();
   virtual void communicate_destination_points();
@@ -226,18 +226,20 @@ private :
 
 
 
-template <class INTERPOLATE> NewGeometricTransfer<INTERPOLATE>::NewGeometricTransfer (boost::shared_ptr<MeshA> &mesha,
-                                                                                boost::shared_ptr<MeshB> &meshb,
-                                                                                const std::string        &name,
-                                                                                const double              expansion_factor,
-                                                                                const stk::search::SearchMethod search_method) :
-  m_mesha(mesha),
+template <class INTERPOLATE> ReducedDependecyGeometricTransfer<INTERPOLATE>::ReducedDependecyGeometricTransfer
+(boost::shared_ptr<MeshA> &mesha,
+ boost::shared_ptr<MeshB> &meshb,
+ const std::string        &name,
+ const double              expansion_factor,
+ const stk::search::SearchMethod search_method) :
+
+ m_mesha(mesha),
   m_meshb(meshb),
   m_name (name) ,
   m_expansion_factor(expansion_factor),
   m_search_method(search_method) {}
 
-template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::coarse_search() {
+template <class INTERPOLATE> void ReducedDependecyGeometricTransfer<INTERPOLATE>::coarse_search() {
 
   m_global_range_to_domain.clear();
   coarse_search(m_global_range_to_domain,
@@ -245,7 +247,7 @@ template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::coarse_sear
                 *m_meshb,
                 m_expansion_factor);
 }
-template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::communication() {
+template <class INTERPOLATE> void ReducedDependecyGeometricTransfer<INTERPOLATE>::communication() {
 
   ParallelMachine comm = m_meshb->comm();
   const unsigned p_size = parallel_machine_size(comm);
@@ -256,7 +258,7 @@ template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::communicati
   }
 }
 
-template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::communicate_destination_points() {
+template <class INTERPOLATE> void ReducedDependecyGeometricTransfer<INTERPOLATE>::communicate_destination_points() {
 
   typename MeshB::EntityProcVec to_entity_keys;
   typename MeshA::EntityProcVec from_entity_keys;
@@ -271,14 +273,14 @@ template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::communicate
   m_interpolate.INTERPOLATE::filter_to_nearest(to_entity_keys, from_entity_keys);
 }
 
-template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::local_search() {
+template <class INTERPOLATE> void ReducedDependecyGeometricTransfer<INTERPOLATE>::local_search() {
 
 //  m_interpolate.INTERPOLATE::filter_to_nearest(m_local_range_to_domain, to_entity_keys, from_entity_keys, *m_mesha, *m_meshb);
 
 }
 
 
-template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::apply(){
+template <class INTERPOLATE> void ReducedDependecyGeometricTransfer<INTERPOLATE>::apply(){
   ParallelMachine comm = m_mesha->comm();
   const unsigned my_rank = parallel_machine_rank(comm);
   const unsigned num_procs = parallel_machine_size(comm);
@@ -303,7 +305,7 @@ template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::apply(){
   }
 }
 
-template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::determine_entities_to_copy(
+template <class INTERPOLATE> void ReducedDependecyGeometricTransfer<INTERPOLATE>::determine_entities_to_copy(
                          typename MeshB::EntityProcVec   &entities_to_copy_to,
                          typename MeshA::EntityProcVec   &entities_to_copy_from ) const {
 
@@ -335,7 +337,7 @@ template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::determine_e
 
 
 template <class INTERPOLATE> void
-NewGeometricTransfer<INTERPOLATE>::localize_entity_key_map()  {
+ReducedDependecyGeometricTransfer<INTERPOLATE>::localize_entity_key_map()  {
 
   ParallelMachine comm = m_meshb->comm();
   const unsigned my_rank = parallel_machine_rank(comm);
@@ -348,7 +350,7 @@ NewGeometricTransfer<INTERPOLATE>::localize_entity_key_map()  {
 }
 
 template <class INTERPOLATE> void
-NewGeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors()  {
+ReducedDependecyGeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors()  {
 
   typename MeshB::EntityProcVec entities_to_copy_to ;
   typename MeshA::EntityProcVec entities_to_copy_from ;
@@ -357,7 +359,7 @@ NewGeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors()  {
   copy_entities(*m_meshb, entities_to_copy_to, m_name);
 }
 
-template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::delete_range_points_found(
+template <class INTERPOLATE> void ReducedDependecyGeometricTransfer<INTERPOLATE>::delete_range_points_found(
                                std::vector<BoundingBoxB>            &range_vector,
                                const EntityProcRelationVec          &del) const {
 
@@ -384,7 +386,7 @@ template <class INTERPOLATE> void NewGeometricTransfer<INTERPOLATE>::delete_rang
   swap(difference, range_vector);
 }
 
-template <class INTERPOLATE>  void NewGeometricTransfer<INTERPOLATE>::coarse_search
+template <class INTERPOLATE>  void ReducedDependecyGeometricTransfer<INTERPOLATE>::coarse_search
 (EntityProcRelationVec   &range_to_domain,
  const MeshA             &mesha,
  const MeshB             &meshb,
