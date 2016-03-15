@@ -108,6 +108,11 @@ public:
     inline int getNumRanks() const { return machine->getNumRanks(); }
 
 
+    inline bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
+      return machine->getHopCount(rank1, rank2, hops);
+    }
+
+
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
 
 private:

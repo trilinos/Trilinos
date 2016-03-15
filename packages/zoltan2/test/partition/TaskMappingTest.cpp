@@ -272,6 +272,7 @@ int main(int argc, char *argv[]){
       zscalar_t **proc_coords;
       mach.getAllMachineCoordinatesView(proc_coords);
       part_t hops=0;
+      part_t hops2 = 0;
       int *machine_extent = new int [mach_coord_dim];
       bool *machine_extent_wrap_around = new bool[mach_coord_dim];
 
@@ -288,7 +289,10 @@ int main(int argc, char *argv[]){
           zlno_t n = task_communication_adj_tmp[j];
           part_t procId2 = ctm.getAssignedProcForTask(all_parts[n]);
 
-          for (int k = 0 ; k < mach_coord_dim; ++k){
+          double distance2 = 0;
+          mach.getHopCount(procId1, procId2, distance2);
+          hops2 += distance2;
+          for (int k = 0 ; k < mach_coord_dim - 1; ++k){
             part_t distance = ZOLTAN2_ABS(proc_coords[k][procId1] - proc_coords[k][procId2]);
             if (machine_extent_wrap_around[k]){
               if (machine_extent[k] - distance < distance){
@@ -303,7 +307,7 @@ int main(int argc, char *argv[]){
       delete [] machine_extent;
 
       if (tcomm->getRank() == 0)
-        std::cout << "HOPS:" << hops << std::endl;
+        std::cout << "HOPS:" << hops << " HOPS2:" << hops2 << std::endl;
 
       delete [] task_communication_xadj_tmp;
       delete [] task_communication_adj_tmp;
