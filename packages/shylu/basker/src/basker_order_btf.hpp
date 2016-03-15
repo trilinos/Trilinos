@@ -579,7 +579,7 @@ namespace BaskerNS
     //Short circuit for incomplete
     if(Options.incomplete == BASKER_TRUE)
       {
-	printf("Short Ciruit incomplete\n");
+	//printf("Short Ciruit incomplete\n");
 	BTF_A = A;
 	btf_nblks = 1;
 	btf_tabs_offset = 1;
@@ -662,7 +662,7 @@ namespace BaskerNS
 	//break due to end
 	else if(blk_idx == 1)
 	  {
-	    printf("break last blk\n");
+	    //printf("break last blk\n");
 	    blk_idx = 0;
 	    t_size = t_size + blk_size;
 	    scol = btf_tabs[blk_idx];	
@@ -793,10 +793,10 @@ namespace BaskerNS
 	  }//over all nnz in k
       }//over all k
 
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("BTF_B nnz: %d \n", bnnz);
     printf("BTF_C nnz: %d \n", cnnz);
-    // #endif
+    #endif
     
     BTF_B.nnz = bnnz;
     BTF_C.nnz = cnnz;

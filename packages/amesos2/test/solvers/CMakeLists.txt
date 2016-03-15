@@ -142,24 +142,15 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
-
-IF (Tpetra_INST_INT_INT)
-
-   TRIBITS_COPY_FILES_TO_BINARY_DIR(Amesos2BaskerCopyFiles
-     DEST_FILES
-     test_basker_wathen120_mm.xml
-     
-     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-     DEST_DIR   ${CMAKE_CURRENT_BINARY_DIR}
+    
+    ##Copy shylubasker_test.xml, but do not test
+    ##depends on not included matrices
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyShyLUBaskerFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES shylubasker_test.xml
+    EXEDEPS Solver_Test
     )
-   
-   TRIBITS_ADD_EXECUTABLE(
-    Solver_Test_Basker
-    SOURCES Solver_Test_Basker
-   )
 
-
-ENDIF()
 ENDIF()
 
 ##### MUMPS Tests ####

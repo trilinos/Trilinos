@@ -233,9 +233,9 @@ namespace BaskerNS
     //1. Matching ordering on whole matrix
     //currently finds matching and permutes
     //found bottle-neck to work best with circuit problems
-    //sort_matrix(A); //May want to remove ?
+    sort_matrix(A); //May want to remove ? (need)
     match_ordering(0);
-    //sort_matrix(A); //May want to remove?
+    sort_matrix(A); //May want to remove? (need)
 
    
     //2. BTF ordering on whole matrix

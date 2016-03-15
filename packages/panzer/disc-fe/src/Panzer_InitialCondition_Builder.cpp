@@ -299,7 +299,7 @@ setupControlInitialCondition(const std::map<std::string,Teuchos::RCP<const shard
                                                ic_closure_models,
                                                lof,
                                                user_data,
-                                               true,
+                                               false,
                                                "initial_condition_control_test",
                                                phx_ic_field_managers);
 

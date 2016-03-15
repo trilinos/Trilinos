@@ -185,7 +185,7 @@ bool test_epetra(const string& mm_file,
  * Instantiates the matrix as an Tpetra::CrsMatrix with the given template types.
  *
  * \return Whether all tests for this matrix with tpetra objects passed
- */
+*/
 bool test_tpetra(const string& mm_file,
                  const string& solver_name,
                  const ParameterList& tpetra_runs,
@@ -259,6 +259,7 @@ int main(int argc, char*argv[])
   if( test_params.isParameter("verbosity") ){
     verbosity = test_params.get<int>("verbosity");
   }
+
 
   // Go through the input parameters and execute tests accordingly.
   bool success = true;
@@ -574,6 +575,8 @@ do_solve_routine(const string& solver_name,
   while (phase != Amesos2::SOLVE) {
     // and X and B will never be needed, so we create the solver without them
     solver = Amesos2::create<Matrix,Vector> (solver_name, A1);
+    //JDB: We should really use the parameters the user gives
+    solver->setParameters( rcpFromRef(solve_params) );
     switch (phase) {
     case Amesos2::CLEAN:
       break;
@@ -665,6 +668,8 @@ do_solve_routine(const string& solver_name,
     }
 
     if( refactor ){
+
+
       // Keep the symbolic factorization from A1
       solver->setA(A2, Amesos2::SYMBFACT);
 
@@ -1172,13 +1177,12 @@ bool test_tpetra(const string& mm_file,
 #if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_DOUBLE))
       if( scalar == "double" ){
         if( lo == "int" ){
-
           if( go == "default" ){
-#ifdef HAVE_TPETRA_INST_INT_INST
+#ifdef HAVE_TPETRA_INST_INT_INT
             AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
 #endif
           }
-#ifdef HAVE_TPETRA_INST_INT_INST
+#ifdef HAVE_TPETRA_INST_INT_INT
           else if( go == "int" ){
             AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
           }

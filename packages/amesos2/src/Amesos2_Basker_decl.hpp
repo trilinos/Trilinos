@@ -199,19 +199,21 @@ private:
  
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
-  //Note, that we need to get to the tpetra node_type!!!!
-  //We currently do not have a method for this, but need to add
-  //#pragma message("HAVE SHYLUBASKER AND KOKKOS")
-
+#ifdef KOKKOS_HAVE_OPENMP
+  /*
   typedef typename node_type::device_type  kokkos_device;
   typedef typename kokkos_device::execution_space kokkos_exe;
-
-
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
-  		"Kokkos node type not support by experimental Basker Amesos2");
-
+  "Kokkos node type not support by experimental Basker Amesos2");
+  */
   typedef Kokkos::OpenMP Exe_Space;
-   ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space>  *basker;
+#elif defined(KOKKOS_HAVE_SERIAL)
+  typedef Kokkos::Serial Exe_Space;
+#else
+#pragma message("Kokkos Node type not supported by Basker") 
+#endif // OpenMP vs Serial
+   ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space>  
+       *basker;
 #else
   #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
 #endif

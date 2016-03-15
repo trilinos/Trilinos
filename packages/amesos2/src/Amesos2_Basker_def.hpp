@@ -60,10 +60,6 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Basker_decl.hpp"
 
-//#ifdef SHYLUBASKER
-//#include "Kokkos_Core.hpp"
-//#endif
-
 namespace Amesos2 {
 
 
@@ -87,9 +83,20 @@ Basker<Matrix,Vector>::Basker(
   
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
+#ifdef KOKKOS_HAVE_OPENMP
+  /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   	"Kokkos node type not supported by experimental Basker Amesos2");
+  */
   typedef Kokkos::OpenMP Exe_Space;
+#elif defined(KOKKOS_HAVE_SERIAL)
+  typedef Kokkos::Serial Exe_Space;
+#else
+ TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
+		     std::runtime_error,
+	   "Do not have supported Kokkos node type for Basker");
+#endif
+  //std::cout << "MAKE BASKER" << std::endl;
   basker = new ::BaskerNS::Basker<local_ordinal_type, slu_type, Exe_Space>(); 
   basker->Options.no_pivot      = BASKER_TRUE;
   basker->Options.symmetric     = BASKER_FALSE;
@@ -113,6 +120,7 @@ Basker<Matrix,Vector>::~Basker( )
 {  
 #ifdef SHYLUBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
+  //std::cout << "DELETE BASKER" << std::endl;
   delete basker;
 #endif
 #endif
@@ -140,10 +148,10 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
   
 #ifdef SHYLUBASKER
- 
-  //std::cout << "shylubasker sfactor" << std::endl;
   if(this->root_)
     {     
+      //std::cout << "setting number of threads " 
+      //	<< num_threads << std::endl;
       basker->SetThreads(num_threads); 
       //std::cout << "Set Threads Done" << std::endl;
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
@@ -185,22 +193,24 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
 
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+ #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "Basker:: Before numeric factorization" << std::endl;
       std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-      std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-#endif
+     std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+    #endif
 
      
 #ifdef SHYLUBASKER
-      //std::cout << "SHYLUBASKER FACTOR " << std::endl;
       info = basker->Factor(this->globalNumRows_,
                            this->globalNumCols_, 
                            this->globalNumNonZeros_, 
                            colptr_.getRawPtr(), 
                            rowind_.getRawPtr(), 
                            nzvals_.getRawPtr());
+      //We need to handle the realloc options
+
+      //basker->DEBUG_PRINT();
 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
 				 std::runtime_error,
@@ -272,7 +282,8 @@ Basker<Matrix,Vector>::solve_impl(
 #endif
 
 #ifdef SHYLUBASKER
-      ierr = basker->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
+      ierr = basker->Solve(nrhs, bvals_.getRawPtr(), 
+			   xvals_.getRawPtr());
 #else
     ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
 #endif
@@ -329,9 +340,13 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
     {
       num_threads = parameterList->get<int>("num_threads");
     }
-  if(parameterList->isParameter("no_pivot"))
+  if(parameterList->isParameter("pivot"))
     {
-      basker->Options.no_pivot = parameterList->get<bool>("no_pivot");
+      basker->Options.no_pivot = (!parameterList->get<bool>("pivot"));
+    }
+  if(parameterList->isParameter("pivot_tol"))
+    {
+      basker->Options.pivot_tol = parameterList->get<double>("pivot_tol");
     }
   if(parameterList->isParameter("symmetric"))
     {
@@ -389,8 +404,10 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
       pl->set("num_threads", 1, 
 	      "Number of threads");
-      pl->set("no_pivot", true,
+      pl->set("pivot", false,
 	      "Should  not pivot");
+      pl->set("pivot_tol", .0001,
+	      "Tolerance before pivot, currently not used");
       pl->set("symmetric", false,
 	      "Should Symbolic assume symmetric nonzero pattern");
       pl->set("realloc" , false, 

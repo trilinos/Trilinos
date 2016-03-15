@@ -440,6 +440,7 @@ namespace BaskerNS
 	//A.srow = 0;
 	A.copy_values(nrow, ncol, nnz, col_ptr,
 		      row_idx, val);
+	//printf("Copy done\n");
 	//printMTX("A_LOAD.mtx", A);
       }
     else
@@ -477,6 +478,7 @@ namespace BaskerNS
     if(Options.incomplete == BASKER_FALSE)    
       {
 	err = factor_notoken(0);
+	//printf("Notoken called\n");
       }
     else
       {
@@ -725,6 +727,31 @@ namespace BaskerNS
     std::cout << "SOL printed" << std::endl;
     //printTree();
     std::cout << "Tree printed" << std::endl;
+
+    //Print out vectors
+    if(match_flag == BASKER_TRUE)
+      {
+    printVec("match.csc", order_match_array,
+	     order_match_array.dimension_0());
+      }
+    if(btf_flag == BASKER_TRUE)
+      {
+    printVec("btf.csc", order_btf_array,
+	     order_btf_array.dimension_0());
+    printVec("amdblk.csc", order_blk_amd_array,
+	     order_blk_amd_array.dimension_0());
+      }
+    if(btf_tabs_offset != 0)
+      {
+	printVec("ND.csc", part_tree.permtab, 
+		 part_tree.permtab.dimension_0());
+      }
+    if(amd_flag == BASKER_TRUE)
+      {
+	printVec("camd.csc", order_csym_array,
+		 order_csym_array.dimension_0());
+      }
+
     
   }//end DEBUG_PRINT()
 

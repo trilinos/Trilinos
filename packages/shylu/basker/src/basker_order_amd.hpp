@@ -58,7 +58,7 @@ namespace BaskerNS
 		     &(calloc), &(free), 
 		     cmember, 0);
 
-    amesos_csymamd_report(stats);
+    //amesos_csymamd_report(stats);
     
     return 0;
   }
@@ -89,7 +89,7 @@ namespace BaskerNS
 		     &(calloc), &(free), 
 		     cmember, 0);
 
-    amesos_csymamd_l_report(stats);
+    //amesos_csymamd_l_report(stats);
     
     return 0;
   }
