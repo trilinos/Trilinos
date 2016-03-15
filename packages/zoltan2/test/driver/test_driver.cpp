@@ -213,6 +213,7 @@ void run(const UserInputForTests &uinput,
       cout << "Get adapter for input failed" << endl;
     return;
   }
+  RCP<basic_id_t> rcpia = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
   
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
@@ -254,8 +255,8 @@ void run(const UserInputForTests &uinput,
     reinterpret_cast<partitioning_problem_t *>(problem)->solve();
     metricObject =
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
-	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>(problem),
-			       adapter_name, ia));
+	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
+			       (problem), adapter_name, ia));
   } else if (problem_kind == "ordering") {
     reinterpret_cast<ordering_problem_t *>(problem)->solve();
   } else if (problem_kind == "coloring") {
@@ -294,6 +295,7 @@ void run(const UserInputForTests &uinput,
     if(rank == 0 && problem_kind == "partitioning") {
       std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
       reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
+      //metricObject->printMetrics(cout);
     }
 
     std::ostringstream msg;
@@ -327,6 +329,7 @@ void run(const UserInputForTests &uinput,
     // BDD for debugging
     cout << "No test metrics requested. Problem Metrics are: " << endl;
     reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
+    //metricObject->printMetrics(cout);
     cout << "PASSED." << endl;
   }
 
@@ -372,11 +375,11 @@ void run(const UserInputForTests &uinput,
   // 4b. timers
 //  if(zoltan2_parameters.isParameter("timer_output_stream"))
 //    reinterpret_cast<partitioning_problem_t *>(problem)->printTimers();
-  
+
   ////////////////////////////////////////////////////////////
   // 5. Add solution to map for possible comparison testing
   ////////////////////////////////////////////////////////////
-  comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
+  comparison_source->adapter = rcpia;
   comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
@@ -388,7 +391,6 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 6. Clean up
   ////////////////////////////////////////////////////////////
-
 }
 
 int main(int argc, char *argv[])
