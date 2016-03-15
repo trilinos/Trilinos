@@ -17,16 +17,15 @@
 
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
-typedef int part_t;
 
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> my_adapter_t;
 
 
-
 int main(int argc, char *argv[]){
 
+  typedef my_adapter_t::part_t part_t;
 
   Teuchos::GlobalMPISession session(&argc, &argv);
   Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
