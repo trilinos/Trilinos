@@ -47,9 +47,11 @@
 #define NPOS std::string::npos
 
 IOShell::Interface::Interface()
-  :   compose_output("none"), maximum_time(0.0), minimum_time(0.0), surface_split_type(1), compression_level(0),
-      shuffle(false), debug(false), statistics(false), do_transform_fields(false), ints_64_bit(false),
-      reals_32_bit(false), netcdf4(false), fieldSuffixSeparator('_')
+  :   compose_output("none"), maximum_time(0.0), minimum_time(0.0), surface_split_type(1),
+      compression_level(0), shuffle(false), debug(false), statistics(false),
+      do_transform_fields(false), ints_64_bit(false), reals_32_bit(false),
+      netcdf4(false), in_memory_read(false), in_memory_write(false),
+      fieldSuffixSeparator('_')
 {
   enroll_options();
 }
@@ -170,6 +172,14 @@ void IOShell::Interface::enroll_options()
 		  "\t\tOptions are: TOPOLOGY, BLOCK, NOSPLIT",
 		  "TOPOLOGY");
 
+  options_.enroll("memory_read", Ioss::GetLongOption::NoValue,
+		  "EXPERIMENTAL: file read into memory by netcdf library; ioss accesses memory version",
+		  nullptr);
+  
+  options_.enroll("memory_write", Ioss::GetLongOption::NoValue,
+		  "EXPERIMENTAL: file written to memory, netcdf library streams to disk at file close",
+		  nullptr);
+  
   options_.enroll("copyright", Ioss::GetLongOption::NoValue,
 		  "Show copyright and license data.",
 		  nullptr);
@@ -275,6 +285,14 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("statistics") != nullptr) {
     statistics = true;
+  }
+
+  if (options_.retrieve("memory_read") != nullptr) {
+    in_memory_read = true;
+  }
+
+  if (options_.retrieve("memory_write") != nullptr) {
+    in_memory_write = true;
   }
 
   {

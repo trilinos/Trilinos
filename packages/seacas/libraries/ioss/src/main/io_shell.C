@@ -244,6 +244,14 @@ namespace {
       properties.add(Ioss::Property("REAL_SIZE_DB",  4));
     }
 
+    if (interface.in_memory_read) {
+      properties.add(Ioss::Property("MEMORY_READ", 1));
+    }
+
+    if (interface.in_memory_write) {
+      properties.add(Ioss::Property("MEMORY_WRITE", 1));
+    }
+
     if (interface.compression_level > 0 || interface.shuffle) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
       properties.add(Ioss::Property("COMPRESSION_LEVEL", interface.compression_level));

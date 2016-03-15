@@ -75,6 +75,8 @@ namespace IOShell {
     bool ints_64_bit;
     bool reals_32_bit;
     bool netcdf4;
+    bool in_memory_read;
+    bool in_memory_write;
     char fieldSuffixSeparator;
   };
 }
