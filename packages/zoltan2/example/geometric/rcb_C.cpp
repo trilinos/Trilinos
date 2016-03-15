@@ -162,14 +162,15 @@ int main(int argc, char *argv[])
 
   RCP<const Zoltan2::Environment> env1 = problem1->getEnvironment();
 
-  RCP<const base_adapter_t> bia1 =
-    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia1));
+  const base_adapter_t *bia1 = dynamic_cast<const base_adapter_t *>(ia1);
+
+  RCP<const base_adapter_t> rcpbia1 = rcp(bia1);
 
   // create metric object (also usually created by a problem)
 
-  quality_t *metricObject1 = new quality_t(env1,problem1->getComm(),bia1,
-                                           &problem1->getSolution(),
-                                           false);
+  quality_t*metricObject1 = new quality_t(env1,problem1->getComm(),rcpbia1,
+					 &problem1->getSolution(),
+					 false);
   // Check the solution.
 
   if (rank == 0) {
@@ -229,14 +230,15 @@ int main(int argc, char *argv[])
 
   RCP<const Zoltan2::Environment> env2 = problem2->getEnvironment();
 
-  RCP<const base_adapter_t> bia2 =
-    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia2));
+  const base_adapter_t *bia2 = dynamic_cast<const base_adapter_t *>(ia2);
+
+  RCP<const base_adapter_t> rcpbia2 = rcp(bia2);
 
   // create metric object (also usually created by a problem)
 
-  quality_t *metricObject2 = new quality_t(env2,problem2->getComm(),bia2,
-                                           &problem2->getSolution(),
-                                           false);
+  quality_t*metricObject2 = new quality_t(env2,problem2->getComm(),rcpbia2,
+					  &problem2->getSolution(),
+					  false);
   // Check the solution.
 
   if (rank == 0) {
@@ -307,14 +309,15 @@ int main(int argc, char *argv[])
 
   RCP<const Zoltan2::Environment> env3 = problem3->getEnvironment();
 
-  RCP<const base_adapter_t> bia3 =
-    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia3));
+  const base_adapter_t *bia3 = dynamic_cast<const base_adapter_t *>(ia3);
+
+  RCP<const base_adapter_t> rcpbia3 = rcp(bia3);
 
   // create metric object (also usually created by a problem)
 
-  quality_t *metricObject3 = new quality_t(env3,problem3->getComm(),bia3,
-                                           &problem3->getSolution(),
-                                           false);
+  quality_t*metricObject3 = new quality_t(env3,problem3->getComm(),rcpbia3,
+					  &problem3->getSolution(),
+					  false);
   // Check the solution.
 
   if (rank == 0) {
@@ -347,7 +350,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), bia3,
+  metricObject3 = new quality_t(env3, problem3->getComm(), rcpbia3,
                                 &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
@@ -371,7 +374,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), bia3,
+  metricObject3 = new quality_t(env3, problem3->getComm(), rcpbia3,
                                 &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
@@ -442,7 +445,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject1 = new quality_t(env1, problem1->getComm(), bia1,
+  metricObject1 = new quality_t(env1, problem1->getComm(), rcpbia1,
                                 &problem1->getSolution(), false);
   // Check the solution.
 

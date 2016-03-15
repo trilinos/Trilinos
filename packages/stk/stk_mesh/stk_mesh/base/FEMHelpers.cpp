@@ -41,6 +41,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 namespace stk
 {
@@ -220,6 +221,24 @@ Entity declare_element_side(
     stk::topology elem_top = mesh.bucket(elem).topology();
     stk::topology side_top = elem_top.side_topology(local_side_id);
     return declare_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
+}
+
+Entity declare_element_side_using_graph(BulkData& bulkData, const stk::mesh::EntityId global_side_id, Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
+{
+    stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(bulkData, elem, side_ordinal);
+    if(bulkData.is_valid(sideEntity))
+    {
+        bulkData.change_entity_parts(sideEntity, add_parts, {});
+    }
+    else
+    {
+        stk::mesh::ElemElemGraph &graph = bulkData.get_graph();
+        graph.write_graph(std::cerr);
+        stk::mesh::SideConnector sideConnector = graph.get_side_connector();
+        sideEntity = stk::mesh::declare_element_side(bulkData, global_side_id, elem, side_ordinal, add_parts);
+        sideConnector.connect_side_to_all_elements(sideEntity, elem, side_ordinal);
+    }
+    return sideEntity;
 }
 
 Entity declare_element_side( BulkData & mesh ,

@@ -153,12 +153,13 @@ int main(int narg, char **arg)
 
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
-  RCP<const base_adapter_t> rcpbia =
-    Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(adapter));
+  const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(adapter);
+
+  RCP<const base_adapter_t> rcpbia = rcp(bia);
 
   // create metric object (also usually created by a problem)
 
-  quality_t*metricObject=new quality_t(env,comm,rcpbia,&problem.getSolution());
+  quality_t*metricObject=new quality_t(env,comm,rcpbia,&solution);
 
   // Some output 
   zscalar_t *totalWeight = new zscalar_t [nprocs];

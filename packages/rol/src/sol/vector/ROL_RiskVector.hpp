@@ -66,7 +66,7 @@ private:
 public:
   RiskVector( Teuchos::ParameterList &parlist,
         const Teuchos::RCP<Vector<Real> > &vec,
-        const Real stat = 1. )
+        const Real stat = 1 )
     : vec_(vec), augmented_(false), nStat_(0) {
     stat_.clear();
     dual_vec1_ = vec->dual().clone();
@@ -107,7 +107,7 @@ public:
     stat_.clear();
     dual_vec1_ = vec->dual().clone();
     if (augmented) {
-      stat_.resize(nStat_,0.);
+      stat_.resize(nStat_,0);
     }
   }
  
@@ -180,7 +180,7 @@ public:
   }
 
   Teuchos::RCP<Vector<Real> > clone() const {
-    std::vector<Real> stat(nStat_,0.);
+    std::vector<Real> stat(nStat_,0);
     Teuchos::RCP<Vector<Real> > vec = Teuchos::rcp_dynamic_cast<Vector<Real> >(
       Teuchos::rcp_const_cast<Vector<Real> >(vec_->clone()));
     return Teuchos::rcp( new RiskVector( vec, stat, augmented_ ) );

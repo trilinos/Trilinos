@@ -23,6 +23,7 @@ CoordinatesTransferFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoupledRBMFactory
 DemoFactory
 DirectSolver
+DropNegativeEntriesFactory
 EminPFactory
 FactoryManager
 FakeSmootherPrototype

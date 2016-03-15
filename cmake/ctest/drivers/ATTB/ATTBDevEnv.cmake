@@ -7,9 +7,9 @@ IF ("$ENV{ATTB_ENV}" STREQUAL "")
     " in order to make sure that the ATTB env is set up correctly.")
 ENDIF()
 
-MESSAGE("-- Setting compilers and TPL paths for ATTB system ...")
+MESSAGE("-- ATTB: Setting compilers and TPL paths for ATTB system ...")
 
-MESSAGE("-- Zeroing out env var LIBRARY_PATH to avoid problems with CMake not adding lib paths ...")
+MESSAGE("-- ATTB: Zeroing out env var LIBRARY_PATH to avoid problems with CMake not adding lib paths ...")
 SET(ENV{LIBRARY_PATH} "")
 #MESSAGE("-- ENV{LIBRARY_PATH} = $ENV{LIBRARY_PATH}")
 
@@ -18,11 +18,11 @@ ASSERT_DEFINED(ENV{MPICC})
 ASSERT_DEFINED(ENV{MPICXX})
 ASSERT_DEFINED(ENV{MPIF90})
 SET(CMAKE_C_COMPILER "$ENV{MPICC}" CACHE FILEPATH
-  "Set in gcc-4.8.4-base-options.cmake")
+ "Set in ATTBDevEnv.cmake")
 SET(CMAKE_CXX_COMPILER "$ENV{MPICXX}" CACHE FILEPATH
-  "Set in gcc-4.8.4-base-options.cmake")
+ "Set in ATTBDevEnv.cmake")
 SET(CMAKE_Fortran_COMPILER "$ENV{MPIf90}" CACHE FILEPATH
-  "Set in gcc-4.8.4-base-options.cmake")
+ "Set in ATTBDevEnv.cmake")
 
 # Add rpath for compiler libraries and gomp for parts built with OpenMP
 IF (TPL_FIND_SHARED_LIBS)
@@ -33,43 +33,37 @@ ENDIF()
 ASSERT_DEFINED(ENV{GCC_PATH})
 SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS
   "-lgomp -lgfortran${LDL_LINK_ARG} -ldl"
-  CACHE STRING "")
+  CACHE STRING "Set in ATTBDevEnv.cmake")
+
 #  -Wl,-rpath,$ENV{GCC_PATH}/lib64
 
 # Point to the right MPI
 ASSERT_DEFINED(ENV{MPI_ROOT})
 SET(MPI_BASE_DIR "$ENV{MPI_ROOT}" CACHE PATH
-  "Set in gcc-4.8.4-base-options.cmake")
+ "Set in ATTBDevEnv.cmake")
 
 # Turn on explicit template instantaition by default
-SET(Trilinos_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
+SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
+  "Set in ATTBDevEnv.cmake")
 
 # Turn of 'int' as a global ordinal
 #SET(Tpetra_INST_INT_INT OFF CACHE BOOL
-#  "Set by default in gcc-4.8.3-base-options.cmake")
+#  "Set in ATTBDevEnv.cmake")
 # NOT: We have to keep int as a global ordinal in order to support Epetra
 # adapters.
 
 # Turn off float and complex
-SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
-SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
-SET(Sacado_ENABLE_COMPLEX OFF CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
-SET(Thyra_ENABLE_COMPLEX OFF CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
-SET(Tpetra_INST_COMPLEX_DOUBLE OFF CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
-SET(Tpetra_INST_COMPLEX_FLOAT OFF CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
-SET(Anasazi_ENABLE_COMPLEX OFF CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
+SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(Sacado_ENABLE_COMPLEX OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(Thyra_ENABLE_COMPLEX OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(Tpetra_INST_COMPLEX_DOUBLE OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(Tpetra_INST_COMPLEX_FLOAT OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
+SET(Anasazi_ENABLE_COMPLEX OFF CACHE BOOL "Set in ATTBDevEnv.cmake")
 
 # Enable configure timing
 SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL
-  "Set by default in gcc-4.8.3-base-options.cmake")
+  "Set in ATTBDevEnv.cmake")
 
 #
 # Set up TPL stuff
@@ -87,7 +81,7 @@ SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL
 # Always find and use static libs on this system
 SET(TPL_FIND_SHARED_LIBS OFF CACHE BOOL
   "Set in ATTBDevEnv.cmake")
-SET(Trilinos_LINK_SEARCH_START_STATIC ON  CACHE BOOL
+SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC ON  CACHE BOOL
   "Set in ATTBDevEnv.cmake")
 
 # Disable a bunch of TPLs that are not on this system
@@ -151,5 +145,11 @@ SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
 # Test disables
 #
 
+# See Trilinos #202
 SET(STKUnit_tests_util_parallel_UnitTest_MPI_4_DISABLE ON
+  CACHE BOOL  "Set in ATTBDevEnv.cmake")
+# See Trilinos #211
+SET(TeuchosNumerics_BLAS_ROTG_test_DISABLE ON
+  CACHE BOOL  "Set in ATTBDevEnv.cmake")
+SET(TeuchosNumerics_BLAS_ROTG_test_MPI_1_DISABLE ON
   CACHE BOOL  "Set in ATTBDevEnv.cmake")

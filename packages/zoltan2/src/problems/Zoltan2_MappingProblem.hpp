@@ -53,10 +53,12 @@
 #include <Zoltan2_Standards.hpp>
 
 #include <Zoltan2_Problem.hpp>
-#include <Zoltan2_MappingAlgorithm.hpp>
 #include <Zoltan2_MappingSolution.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_MachineRepresentation.hpp>
+
+#include <Zoltan2_TaskMapping.hpp>
 #include <string>
-#include <bitset>
 
 namespace Zoltan2{
 
@@ -86,46 +88,36 @@ public:
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  typedef typename PartitioningSolution<Adapter> partsoln_t;
-  typedef typename MachineRepresentation<scalar_t, part_t> machine_t;
+  typedef PartitioningSolution<Adapter> partsoln_t;
+  typedef MachineRepresentation<scalar_t, part_t> machine_t;
 
   /*! \brief Destructor
    */
   virtual ~MappingProblem() {};
 
+  /*! \brief Constructor that takes an Teuchos communicator
+   */
+  MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
+                 Teuchos::RCP<const Teuchos::Comm<int> > &ucomm_,
+                 partsoln_t *partition_ = NULL, machine_t *machine_ = NULL) : 
+    Problem<Adapter>(A_, p_, ucomm_) 
+  {
+    HELLO;
+    createMappingProblem(partition_, machine_);
+  };
+
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor that takes an MPI communicator
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_, 
-                 MPI_Comm comm_,
-                 partsoln_t *partSoln_ = NULL, machine_t *machine_ = NULL)
-    Problem<Adapter>(A_, p_, comm_) 
+                 MPI_Comm ucomm_,
+                 partsoln_t *partition_ = NULL, machine_t *machine_ = NULL) :
+    Problem<Adapter>(A_, p_, ucomm_) 
   {
     HELLO;
-    createMappingProblem(partSoln_, machine_);
+    createMappingProblem(partition_, machine_);
   };
 #endif
-
-  /*! \brief Constructor that takes an MPI communicator
-   */
-  MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
-                 Teuchos::Comm<int> comm_,
-                 partsoln_t *partSoln_ = NULL, machine_t *machine_ = NULL)
-    Problem<Adapter>(A_, p_, comm_) 
-  {
-    HELLO;
-    createMappingProblem(partSoln_, machine_);
-  };
-
-  /*! \brief Constructor that uses a default communicator
-   */
-  MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
-                 partsoln_t *partSoln_ = NULL, machine_t *machine_ = NULL)
-    Problem<Adapter>(A_, p_) 
-  {
-    HELLO;
-    createMappingProblem(partSoln_, machine_);
-  };
 
   //!  \brief Direct the problem to create a solution.
   //
@@ -147,22 +139,73 @@ public:
 
   //!  \brief Get the solution to the problem.
   //
-  //   \return  a reference to the solution to the most recent solve().
+  //   \return  the solution to the most recent solve().
 
-  MappingSolution<Adapter> *getSolution() {
-    // Get the raw ptr from the rcp
-    return soln.getRawPtr();
-  };
+  MappingSolution<Adapter> *getSolution() { return soln.getRawPtr(); };
 
 private:
-  void createMappingProblem(partsoln_t *partSoln_, machine_t *machine_);
+  void createMappingProblem(partsoln_t *partition_, machine_t *machine_);
 
   Teuchos::RCP<MappingSolution<Adapter> > soln;
 
-  Teuchos::RCP<partsoln_t> partSoln;
+  Teuchos::RCP<partsoln_t> partition;
   Teuchos::RCP<machine_t> machine;
 };
 
+////////////////////////////////////////////////////////////////////////
+//  createMappingProblem 
+//  Method with common functionality for creating a MappingProblem.
+//  Individual constructors do appropriate conversions of input, etc.
+//  This method does everything that all constructors must do.
+
+template <typename Adapter>
+void MappingProblem<Adapter>::createMappingProblem(
+  partsoln_t *partition_,
+  machine_t *machine_)
+{
+  HELLO;
+
+  // Save pointer to user's partitioning solution.  If not provided, create one.
+
+  if (partition_) {
+    // User provided a partitioning solution; use it.
+    partition = Teuchos::rcp(partition_, false);
+  }
+  else {
+    // User did not provide a partitioning solution;
+    // Use input adapter to create a "fake" solution with the input partition.
+
+    partition = rcp(new partsoln_t(this->env_, this->comm_,
+                                   this->inputAdapter_->getNumWeightsPerID()));
+    size_t nLocal = this->inputAdapter_->getLocalNumIDs();
+
+    const part_t *inputPartsView = NULL;
+    this->inputAdapter_->getPartsView(inputPartsView);
+    if (nLocal && inputPartsView == NULL) {
+      // User has not provided input parts in input adapter
+      int me = this->comm_->getRank();
+      ArrayRCP<part_t> inputParts = arcp(new part_t[nLocal], 0, nLocal, true);
+      for (size_t i = 0; i < nLocal; i++) inputParts[i] = me;
+      partition->setParts(inputParts);
+    }
+    else {
+      // User has provided input parts; use those.
+      ArrayRCP<part_t> inputParts = arcp(const_cast<part_t *>(inputPartsView),
+                                         0, nLocal, false);
+      partition->setParts(inputParts);
+    }
+  }
+
+  // Save pointer to user's machine.  If not provided, create one.
+  if (machine_) 
+    machine = Teuchos::rcp(machine_, false);
+  else {
+    try {
+      machine = Teuchos::rcp(new machine_t(*(this->comm_)));
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
@@ -178,42 +221,29 @@ void MappingProblem<Adapter>::solve(bool newData)
   Z2_FORWARD_EXCEPTIONS;
 
   // Determine which algorithm to use based on defaults and parameters.
-  std::string algName(defString);
-  pe = pl.getEntryPtr("mapping_algorithm");
+  std::string algName("geometric");  // TODO:  create a default mapping method
+
+  Teuchos::ParameterList pl = this->env_->getParametersNonConst();
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("mapping_algorithm");
   if (pe) algName = pe->getValue<std::string>(&algName);
 
   try {
     if (algName == "geometric") {
-      CoordinateTaskMapper<> alg(this->comm_, );
+      CoordinateTaskMapper<Adapter, part_t> alg(this->comm_,
+                                                machine, 
+                                                this->inputAdapter_,
+                                                partition,
+                                                this->envConst_);
       alg.map(this->soln);
+    }
+    else {
+      // Add other mapping methods here
+      throw std::logic_error("specified mapping_algorithm not supported");
     }
   }
   Z2_FORWARD_EXCEPTIONS;
 }
 
-////////////////////////////////////////////////////////////////////////
-//! createMappingProblem 
-//  Method with common functionality for creating a MappingProblem.
-//  Individual constructors do appropriate conversions of input, etc.
-//  This method does everything that all constructors must do.
-
-template <typename Adapter>
-void MappingProblem<Adapter>::createMappingProblem(
-  partsoln_t *partSoln_,
-  machine_t *machine_)
-{
-  HELLO;
-  if (partSoln_) partSoln = Teuchos::rcp(partSoln_, false);
-
-  // Save pointer to user's machine.  If no machine provided, create one.
-  if (machine_) 
-    machine = Teuchos::rcp(machine_, false);
-  else 
-    try {
-      machine = Teuchos::rcp(new machine_t(this->comm_));
-    }
-    Z2_FORWARD_EXCEPTIONS;
-}
 } //namespace Zoltan2
 
 #endif
@@ -283,7 +313,7 @@ MappingProblem(
 }
 
 
-In general, the input Adapters' applyPartitioningSolution method should take an 
+In general, the applyPartitioningSolution method should take an 
 optional MappingSolution.
 
 Should MappingSolution provide a re-numbered communicator reflecting the new mapping?

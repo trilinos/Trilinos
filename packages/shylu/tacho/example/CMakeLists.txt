@@ -8,6 +8,9 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluchol)
 
+# Dense Matrix Objects
+# ====================
+
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDenseMatrixBase_Pthreads
@@ -31,6 +34,30 @@ IF(Kokkos_ENABLE_Cuda)
     COMM serial mpi
   )
 ENDIF()
+
+# Dense Linear Algebra
+# ====================
+
+IF(Kokkos_ENABLE_OpenMP)
+IF(TPL_ENABLE_MKL)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseGemmMKL_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseGemmMKL_OpenMP.cpp
+    COMM serial mpi
+  )
+ENDIF()
+ENDIF()
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseGemmByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseGemmByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 
 # # Do not compile if Scotch is not enabled
 # IF(TPL_ENABLE_Scotch)

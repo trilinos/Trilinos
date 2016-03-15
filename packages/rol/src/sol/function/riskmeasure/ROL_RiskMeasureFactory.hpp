@@ -197,7 +197,7 @@ namespace ROL {
       case RISKMEASURE_CVAR:
              return Teuchos::rcp(new CVaR<Real>(parlist));
       case RISKMEASURE_EXPUTILITY:
-             return Teuchos::rcp(new ExpUtility<Real>);
+             return Teuchos::rcp(new ExpUtility<Real>(parlist));
       case RISKMEASURE_HMCR:
              return Teuchos::rcp(new HMCR<Real>(parlist));
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
@@ -211,7 +211,7 @@ namespace ROL {
       case RISKMEASURE_MOREAUYOSIDACVAR:
              return Teuchos::rcp(new MoreauYosidaCVaR<Real>(parlist));
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
-             return Teuchos::rcp(new LogExponentialQuadrangle<Real>);
+             return Teuchos::rcp(new LogExponentialQuadrangle<Real>(parlist));
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
              return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:

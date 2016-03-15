@@ -1402,7 +1402,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       @param doOptimizeStorage if true, the resulting matrix should be fillComplete'd
       */
     static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
-                                                        BlockedCrsMatrix B, bool transposeB,
+                                                        BlockedCrsMatrix& B, bool transposeB,
                                                         Teuchos::FancyOStream& fos,
                                                         bool doFillComplete    = true,
                                                         bool doOptimizeStorage = true) {

@@ -44,6 +44,7 @@
 #include <Epetra_Comm.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Import.h>
+#include <Epetra_Export.h>
 #include <Epetra_Distributor.h>
 #include <Epetra_HashTable.h>
 #include <Epetra_Util.h>
@@ -52,6 +53,7 @@
 
 #include <Teuchos_TimeMonitor.hpp>
 #include <limits>
+
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -1912,6 +1914,69 @@ LightweightCrsMatrix::~LightweightCrsMatrix(){
   delete RowMapLW_;
   delete RowMapEP_;
 }
+
+
+
+//=========================================================================
+// Prints MMM-style statistics on communication done with an Import or Export object
+template <class TransferType>
+void TPrintMultiplicationStatistics(TransferType* Transfer, const std::string &label) {
+  if(!Transfer) return;  
+#ifdef HAVE_MPI
+  const Epetra_MpiDistributor & Distor = dynamic_cast<Epetra_MpiDistributor&>(Transfer->Distributor());
+  const Epetra_Comm & Comm             = Transfer->SourceMap().Comm();
+
+  int rows_send   = Transfer->NumExportIDs();
+  int rows_recv   = Transfer->NumRemoteIDs();
+
+  int round1_send = Transfer->NumExportIDs() * sizeof(int);
+  int round1_recv = Transfer->NumRemoteIDs() * sizeof(int);
+  int num_send_neighbors = Distor.NumSends();
+  int num_recv_neighbors = Distor.NumReceives();
+  int round2_send, round2_recv;
+  Distor.GetLastDoStatistics(round2_send,round2_recv);
+
+  int myPID    = Comm.MyPID();
+  int NumProcs = Comm.NumProc();
+
+  // Processor by processor statistics
+  //    printf("[%d] %s Statistics: neigh[s/r]=%d/%d rows[s/r]=%d/%d r1bytes[s/r]=%d/%d r2bytes[s/r]=%d/%d\n",
+  //    myPID, label.c_str(),num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv);
+
+  // Global statistics
+  int lstats[8] = {num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv};
+  int gstats_min[8], gstats_max[8];
+
+  double lstats_avg[8], gstats_avg[8];
+  for(int i=0; i<8; i++)
+    lstats_avg[i] = ((double)lstats[i])/NumProcs;
+
+  Comm.MinAll(lstats,gstats_min,8);
+  Comm.MaxAll(lstats,gstats_max,8);
+  Comm.SumAll(lstats_avg,gstats_avg,8);
+
+  if(!myPID) {
+    printf("%s Send Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
+           (int)gstats_min[0],gstats_avg[0],(int)gstats_max[0], (int)gstats_min[2],gstats_avg[2],(int)gstats_max[2],
+           (int)gstats_min[4],gstats_avg[4],(int)gstats_max[4], (int)gstats_min[6],gstats_avg[6],(int)gstats_max[6]);
+    printf("%s Recv Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
+           (int)gstats_min[1],gstats_avg[1],(int)gstats_max[1], (int)gstats_min[3],gstats_avg[3],(int)gstats_max[3],
+           (int)gstats_min[5],gstats_avg[5],(int)gstats_max[5], (int)gstats_min[7],gstats_avg[7],(int)gstats_max[7]);
+  }
+
+#endif
+}
+
+
+void printMultiplicationStatistics(Epetra_Import* Transfer, const std::string &label) {
+  TPrintMultiplicationStatistics(Transfer,label);
+}
+
+void printMultiplicationStatistics(Epetra_Export* Transfer, const std::string &label) {
+  TPrintMultiplicationStatistics(Transfer,label);
+}
+
+
 
 
 }//namespace EpetraExt

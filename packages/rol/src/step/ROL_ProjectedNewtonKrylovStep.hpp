@@ -79,6 +79,7 @@ private:
   int iterKrylov_; ///< Number of Krylov iterations (used for inexact Newton)
   int flagKrylov_; ///< Termination flag for Krylov method (used for inexact Newton)
   int verbosity_;  ///< Verbosity level
+  const bool computeObj_;
  
   bool useSecantPrecond_; ///< Whether or not a secant approximation is used for preconditioning inexact Newton
   bool useProjectedGrad_; ///< Whether or not to use to the projected gradient criticality measure
@@ -170,10 +171,11 @@ public:
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  ProjectedNewtonKrylovStep( Teuchos::ParameterList &parlist )
+  ProjectedNewtonKrylovStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), secant_(Teuchos::null), krylov_(Teuchos::null),
       gp_(Teuchos::null), d_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
+      iterKrylov_(0), flagKrylov_(0), verbosity_(0),
+      computeObj_(computeObj), useSecantPrecond_(false) {
     // Parse ParameterList
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
@@ -201,11 +203,13 @@ public:
   */
   ProjectedNewtonKrylovStep(Teuchos::ParameterList &parlist,
              const Teuchos::RCP<Krylov<Real> > &krylov,
-             const Teuchos::RCP<Secant<Real> > &secant)
+             const Teuchos::RCP<Secant<Real> > &secant,
+             const bool computeObj = true)
     : Step<Real>(), secant_(secant), krylov_(krylov),
       ekv_(KRYLOV_USERDEFINED), esec_(SECANT_USERDEFINED),
       gp_(Teuchos::null), d_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0), verbosity_(0), useSecantPrecond_(false) {
+      iterKrylov_(0), flagKrylov_(0), verbosity_(0),
+      computeObj_(computeObj), useSecantPrecond_(false) {
     // Parse ParameterList
     Teuchos::ParameterList& Glist = parlist.sublist("General");
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
@@ -284,7 +288,10 @@ public:
       gp_->set(*(step_state->gradientVec));
     }
     obj.update(x,true,algo_state.iter);
-    algo_state.value = obj.value(x,tol);
+    if ( computeObj_ ) {
+      algo_state.value = obj.value(x,tol);
+      algo_state.nfval++;
+    }
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

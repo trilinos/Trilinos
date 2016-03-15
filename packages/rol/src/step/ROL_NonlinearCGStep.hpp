@@ -63,6 +63,7 @@ private:
   Teuchos::RCP<NonlinearCG<Real> > nlcg_; ///< NonlinearCG object (used for quasi-Newton)
   ENonlinearCG enlcg_;
   int verbosity_;                         ///< Verbosity setting
+  const bool computeObj_;
 
 public:
 
@@ -80,8 +81,10 @@ public:
       @param[in]     nlcg       is a user-defined NonlinearCG object
   */
   NonlinearCGStep( Teuchos::ParameterList &parlist,
-             const Teuchos::RCP<NonlinearCG<Real> > &nlcg = Teuchos::null )
-    : Step<Real>(), nlcg_(nlcg), enlcg_(NONLINEARCG_USERDEFINED), verbosity_(0) {
+             const Teuchos::RCP<NonlinearCG<Real> > &nlcg = Teuchos::null,
+             const bool computeObj = true )
+    : Step<Real>(), nlcg_(nlcg), enlcg_(NONLINEARCG_USERDEFINED),
+      verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
     // Initialize secant object
@@ -117,7 +120,10 @@ public:
 
     // Compute new gradient
     obj.update(x,true,algo_state.iter);
-    algo_state.value = obj.value(x,tol);
+    if ( computeObj_ ) {
+      algo_state.value = obj.value(x,tol);
+      algo_state.nfval++;
+    }
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 

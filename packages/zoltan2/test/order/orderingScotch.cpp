@@ -267,8 +267,8 @@ int main(int narg, char** arg)
   cout << "Going to get results" << endl;
   // Permutation
   checkLength = soln->getPermutationSize();
-  checkPerm = soln->getPermutation();
-  checkInvPerm = soln->getPermutation(true); // get the permutatino inverse
+  checkPerm = soln->getPermutationView();
+  checkInvPerm = soln->getPermutationView(true); // get the permutation inverse
 
   // Separators. 
   // The following methods needs to be supported:
@@ -281,8 +281,8 @@ int main(int narg, char** arg)
   z2TestGO    *TreeTab;
   if (soln->haveSeparators()) {
     NumBlocks = soln->getNumSeparatorBlocks(); // BDD
-    RangeTab = soln->getSeparatorRange(); // BDD
-    TreeTab = soln->getSeparatorTree(); // BDD
+    RangeTab = soln->getSeparatorRangeView(); // BDD
+    TreeTab = soln->getSeparatorTreeView(); // BDD
   }
   else {
     // TODO FAIL with error

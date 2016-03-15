@@ -176,6 +176,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
       Thyra::MueLuPreconditionerFactory
+      Thyra::XpetraLinearOp
     )
   ENDIF()
 

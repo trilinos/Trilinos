@@ -4,6 +4,10 @@
 #include <Teuchos_Comm.hpp>
 #include <Zoltan2_MachineForTesting.hpp>
 #include <Zoltan2_MachineTopoMgr.hpp>
+#include <Zoltan2_MachineTopoMgrForTest.hpp>
+
+//#define HAVE_ZOLTAN2_BGQTEST
+
 namespace Zoltan2{
 
 /*! \brief MachineRepresentation Class
@@ -20,6 +24,8 @@ public:
     typedef MachineRCA<pcoord_t,part_t> machine_t;
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
     typedef MachineTopoMgr<pcoord_t,part_t> machine_t;
+#elif defined(HAVE_ZOLTAN2_BGQTEST)
+    typedef MachineBGQTest<pcoord_t,part_t> machine_t;
 #else
     typedef MachineForTesting<pcoord_t,part_t> machine_t;
 #endif
@@ -53,6 +59,14 @@ public:
       return machine->getMachineExtent(nxyz);
     }
 
+    /*! \brief if the machine has a wrap-around tourus link in each dimension.
+     *  return true if the information is available
+     */
+    bool getMachineExtentWrapArounds(bool *wrap_around) const {
+      return machine->getMachineExtentWrapArounds(wrap_around);
+    }
+
+
     /*! \brief getMyCoordinate function
      *  set the machine coordinate xyz of the current process
      *  return true if current process' coordinates are available
@@ -65,7 +79,7 @@ public:
      *  set the machine coordinate xyz of any rank process
      *  return true if coordinates are available by rank
      */
-    inline bool getMachineCoordinate(const part_t rank,
+    inline bool getMachineCoordinate(const int rank,
                                      pcoord_t *xyz) const {
       return machine->getMachineCoordinate(rank, xyz);
     }
@@ -92,6 +106,7 @@ public:
     /*! \brief return the number of ranks.
      */
     inline int getNumRanks() const { return machine->getNumRanks(); }
+
 
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
 

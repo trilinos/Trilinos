@@ -93,7 +93,6 @@ public:
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
-  typedef MatrixAdapter<User,UserCoord> base_adapter_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
 #endif

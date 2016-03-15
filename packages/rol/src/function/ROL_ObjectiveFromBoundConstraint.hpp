@@ -54,6 +54,7 @@ class ObjectiveFromBoundConstraint : public Objective<Real> {
   typedef Vector<Real> V;
 
   typedef Elementwise::Axpy<Real>              Axpy;
+  typedef Elementwise::Aypx<Real>              Aypx;
   typedef Elementwise::Scale<Real>             Scale;
   typedef Elementwise::Reciprocal<Real>        Reciprocal;
   typedef Elementwise::Power<Real>             Power;
@@ -149,12 +150,12 @@ public:
       case BARRIER_LOGARITHM:
 
         a_->set(*lo_);                         // a = l
-        a_->applyBinary(Axpy(-1.0),x);         // a = x-l
+        a_->applyBinary(Aypx(-1.0),x);         // a = x-l
         a_->applyUnary(Logarithm());           // a = log(x-l)
         a_->applyUnary(Scale(-1.0));           // a = -log(x-l)  
                
         b_->set(x);                            // b = x
-        b_->applyBinary(Axpy(-1.0),*up_);      // b = u-x
+        b_->applyBinary(Aypx(-1.0),*up_);      // b = u-x
         b_->applyUnary(Logarithm());           // b = log(u-x)
         b_->applyUnary(Scale(-1.0));           // b = -log(u-x)
 
@@ -165,12 +166,12 @@ public:
       case BARRIER_QUADRATIC:
         
         a_->set(*lo_);                         // a = l
-        a_->applyBinary(Axpy(-1.0),x);         // a = x-l
+        a_->applyBinary(Aypx(-1.0),x);         // a = x-l
         a_->applyUnary(ThresholdLower(0.0));   // a = min(x-l,0)
         a_->applyUnary(Power(2.0));            // a = min(x-l,0)^2
 
         b_->set(*up_);                         // b = u
-        b_->applyBinary(Axpy(-1.0),x);         // b = x-u
+        b_->applyBinary(Aypx(-1.0),x);         // b = x-u
         b_->applyUnary(ThresholdUpper(0.0));   // b = max(x-u,0)
         b_->applyUnary(Power(2.0));            // b = max(x-u,0)^2
 
@@ -181,11 +182,11 @@ public:
       case BARRIER_DOUBLEWELL:
 
         a_->set(*lo_);                        // a = l
-        a_->applyBinary(Axpy(-1.0),x);        // a = x-l
+        a_->applyBinary(Aypx(-1.0),x);        // a = x-l
         a_->applyUnary(Power(2.0));           // a = (x-l)^2
 
         b_->set(x);                           // b = x
-        b_->applyBinary(Axpy(-1.0),*up_);     // b = u-x
+        b_->applyBinary(Aypx(-1.0),*up_);     // b = u-x
         b_->applyUnary(Power(2.0));           // b = (u-x)^2
        
         b_->applyBinary(Multiply(),*a_);      // b = (x-l)^2*(u-x)^2 
@@ -210,12 +211,12 @@ public:
       case BARRIER_LOGARITHM:
 
         a_->set(*lo_);                     // a = l
-        a_->applyBinary(Axpy(-1.0),x);     // a = x-l
+        a_->applyBinary(Aypx(-1.0),x);     // a = x-l
         a_->applyUnary(Reciprocal());      // a = 1/(x-l)
         a_->applyUnary(Scale(-1.0));       // a = -1/(x-l)  
                
         b_->set(x);                        // b = x
-        b_->applyBinary(Axpy(-1.0),*up_);  // b = u-x
+        b_->applyBinary(Aypx(-1.0),*up_);  // b = u-x
         b_->applyUnary(Reciprocal());      // b = 1/(u-x)
 
         b_->plus(*a_);                     // b = -1/(x-l)+1/(u-x)
@@ -225,11 +226,11 @@ public:
       case BARRIER_QUADRATIC:
 
         a_->set(*lo_);                         // a = l
-        a_->applyBinary(Axpy(-1.0),x);         // a = x-l
+        a_->applyBinary(Aypx(-1.0),x);         // a = x-l
         a_->applyUnary(ThresholdLower(0.0));   // a = min(x-l,0)
 
         b_->set(*up_);                         // b = u
-        b_->applyBinary(Axpy(-1.0),x);         // b = x-u
+        b_->applyBinary(Aypx(-1.0),x);         // b = x-u
         b_->applyUnary(ThresholdUpper(0.0));   // b = max(x-u,0)
 
         b_->plus(*a_);                         // b = max(x-u,0) + min(x-l,0)
@@ -239,22 +240,22 @@ public:
       case BARRIER_DOUBLEWELL:
 
         a_->set(*lo_);                     // a = l
-        a_->applyBinary(Axpy(-1.0),x);     // a = x-l
+        a_->applyBinary(Aypx(-1.0),x);     // a = x-l
 
         b_->set(x);                        // b = x
-        b_->applyBinary(Axpy(-1.0),*up_);  // b = u-x
+        b_->applyBinary(Aypx(-1.0),*up_);  // b = u-x
        
-        a_->applyBinary(Axpy(-1.0),*b_);   // a = (u-x)-(x-l)
+        a_->applyBinary(Aypx(-1.0),*b_);   // a = (u-x)-(x-l)
         a_->applyUnary(Scale(2.0));        // a = 2*[(u-x)-(x-l)]          
  
         b_->set(x);                        // b = x
-        b_->applyBinary(Axpy(-1.0),*up_);  // b = u-x
+        b_->applyBinary(Aypx(-1.0),*up_);  // b = u-x
 
         a_->applyBinary(Multiply(),*b_);   // a = [(u-x)-(x-l)]*(u-x);
          
         
         b_->set(*lo_);                     // b = l
-        b_->applyBinary(Axpy(-1.0),x);     // b = x-l
+        b_->applyBinary(Aypx(-1.0),x);     // b = x-l
         b_->applyBinary(Multiply(),*a_);   // b = [(u-x)-(x-l)]*(u-x)*(x-l) 
 
         break;

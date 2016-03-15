@@ -2256,7 +2256,9 @@ through the call to `TRIBITS_PROJECT()`_.
 |     and `${PROJECT_NAME}_BINARY_DIR`_)
 | 3.  Execute `TRIBITS_PROJECT()`_:
 |   1)  Set `PROJECT_SOURCE_DIR`_ and `PROJECT_BINARY_DIR`_
-|   2)  For each ``<optFile>`` in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_}:
+|   2)  For each ``<optFile>`` in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_}
+|         ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_}
+        :
 |       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
 |       (both of these can be overridden in the cache by the user)
@@ -7427,6 +7429,7 @@ be documented in `TribitsBuildReference`_.
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
 * `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
 * `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
 * `${PROJECT_NAME}_ELEVATE_ST_TO_PT`_
@@ -7453,6 +7456,27 @@ a given TriBITS project are:
 
 
 These options are described below.
+
+.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND:
+
+**${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND**
+
+  The variable ``${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`` is used to
+  define the absolute path to a file (or a list of files) that should be
+  included after the files listed in
+  ``${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE``.  This variable can be used by
+  the TriBITS project to define, for example, a standard set of development
+  environments in the base `<projectDir>/CMakeLists.txt`_ file with::
+
+    SET(${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND_DEFAULT
+      "${CMAKE_CURRENT_LIST_DIR}/cmake/StdDevEnvs.cmake")
+
+  **before** the `TRIBITS_PROJECT()`_ command.  By including this file(s)
+  after the file(s) listed in ``${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE``, the
+  user can override the variables set in this appended file(s).  But it is
+  important that these variables best set after the users options have been
+  set but before the Package and TPL dependency analysis is done (because this
+  might enable or disable some TPLs).
 
 .. _${PROJECT_NAME}_CPACK_SOURCE_GENERATOR:
 

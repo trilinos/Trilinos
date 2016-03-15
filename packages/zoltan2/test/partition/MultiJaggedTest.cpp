@@ -684,13 +684,14 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     RCP<const Zoltan2::Environment> env = problem->getEnvironment();
 
-    RCP<const base_adapter_t> bia =
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+
+    RCP<const base_adapter_t> rcpbia = rcp(bia);
 
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -883,13 +884,14 @@ int testFromDataFile(
 
     RCP<const Zoltan2::Environment> env = problem->getEnvironment();
 
-    RCP<const base_adapter_t> bia =
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+
+    RCP<const base_adapter_t> rcpbia = rcp(bia);
 
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -1072,13 +1074,15 @@ int testFromSeparateDataFiles(
 
     RCP<const Zoltan2::Environment> env = problem->getEnvironment();
 
-    RCP<const base_adapter_t> bia =
+    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+
+    RCP<const base_adapter_t> rcpbia =
       Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
 
     //create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);

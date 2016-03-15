@@ -1,6 +1,6 @@
 #include <stddef.h>                     // for size_t, nullptr
 #include <string>                       // for string
-#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <map>
 #include <string>
 #include "../../base/BulkData.hpp"
@@ -129,11 +129,11 @@ std::vector<std::string> get_non_unique_key_messages(const stk::mesh::BulkData& 
 }
 
 
-std::vector<stk::mesh::EntityKey> get_orphaned_owned_sides(const stk::mesh::BulkData& bulkData)
+std::vector<stk::mesh::Entity> get_orphaned_owned_sides(const stk::mesh::BulkData& bulkData)
 {
     stk::mesh::EntityVector sides;
     stk::mesh::get_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(bulkData.mesh_meta_data().side_rank()), sides);
-    std::vector<stk::mesh::EntityKey> badSides;
+    std::vector<stk::mesh::Entity> badSides;
     for(stk::mesh::Entity side : sides)
     {
         unsigned num_elements = bulkData.num_elements(side);
@@ -145,22 +145,161 @@ std::vector<stk::mesh::EntityKey> get_orphaned_owned_sides(const stk::mesh::Bulk
                 num_owned_elements++;
         }
         if(num_owned_elements == 0)
-            badSides.push_back(bulkData.entity_key(side));
+            badSides.push_back(side);
     }
     return badSides;
 }
 
+void pack_side_node_keys(const std::vector<stk::mesh::Entity>& orphanedSides,
+                         const stk::mesh::BulkData& bulkData,
+                         stk::CommSparse &comm)
+{
+    for(stk::mesh::Entity side : orphanedSides)
+    {
+        const stk::mesh::Entity* nodes = bulkData.begin_nodes(side);
+        unsigned numNodes = bulkData.num_nodes(side);
+        std::vector<stk::mesh::EntityKey> nodeKeys(numNodes);
+        for(unsigned i = 0; i < numNodes; ++i)
+            nodeKeys[i] = bulkData.entity_key(nodes[i]);
+        std::vector<int> sharingProcs;
+        bulkData.shared_procs_intersection(nodeKeys, sharingProcs);
+        stk::mesh::EntityKey sideKey = bulkData.entity_key(side);
+        for(int proc : sharingProcs)
+        {
+            comm.send_buffer(proc).pack<stk::mesh::EntityKey>(sideKey);
+            impl::pack_vector_to_proc(comm, nodeKeys, proc);
+        }
+    }
+}
 
+void unpack_side_nodes_and_check_for_attached_elements(const stk::mesh::BulkData& bulkData,
+                                                       stk::CommSparse &comm,
+                                                       std::map< std::pair<stk::mesh::EntityKey, int>, bool > &sideKeyProcMap)
+{
+    for(int proc_id=0; proc_id<bulkData.parallel_size(); ++proc_id)
+    {
+        if (proc_id != bulkData.parallel_rank())
+        {
+            while(comm.recv_buffer(proc_id).remaining())
+            {
+                stk::mesh::EntityKey sideKey;
 
-std::vector<std::string> get_messages_for_orphaned_owned_sides(const stk::mesh::BulkData& bulkData, std::vector<stk::mesh::EntityKey>& keys)
+                comm.recv_buffer(proc_id).unpack<stk::mesh::EntityKey>(sideKey);
+
+                std::vector<stk::mesh::EntityKey> nodeKeys;
+                stk::unpack_into_vector_of_data(comm, nodeKeys, proc_id);
+
+                std::vector<stk::mesh::Entity> nodes(nodeKeys.size());
+                for(unsigned i =0; i<nodeKeys.size(); ++i)
+                    nodes[i] = bulkData.get_entity(nodeKeys[i]);
+
+                stk::mesh::EntityVector connectedElements;
+                stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, nodes.size(), &nodes[0], connectedElements);
+
+                sideKeyProcMap[std::make_pair(sideKey, proc_id)] = !connectedElements.empty();
+            }
+        }
+    }
+}
+
+void pack_side_key_and_response(const std::map<std::pair<stk::mesh::EntityKey, int>, bool>& sideKeyProcMap, stk::CommSparse& comm_to)
+{
+    for(const std::map<std::pair<stk::mesh::EntityKey, int>, bool>::value_type& data : sideKeyProcMap)
+    {
+        const std::pair<stk::mesh::EntityKey, int>& keyProcPair = data.first;
+        int proc = keyProcPair.second;
+        comm_to.send_buffer(proc).pack<stk::mesh::EntityKey>(keyProcPair.first);
+        comm_to.send_buffer(proc).pack<unsigned>(data.second);
+    }
+}
+
+void unpack_side_key_and_response(const stk::mesh::BulkData& bulkData,
+                     stk::CommSparse& comm_to,
+                     std::map<stk::mesh::EntityKey, bool>& sideKeyMap)
+{
+    for(int proc_id = 0; proc_id < bulkData.parallel_size(); ++proc_id)
+    {
+        if(proc_id != bulkData.parallel_rank())
+        {
+            while(comm_to.recv_buffer(proc_id).remaining())
+            {
+                stk::mesh::EntityKey sideKey;
+                unsigned sideHasRemoteElement;
+                comm_to.recv_buffer(proc_id).unpack<stk::mesh::EntityKey>(sideKey);
+                comm_to.recv_buffer(proc_id).unpack<unsigned>(sideHasRemoteElement);
+                if(0 != sideHasRemoteElement)
+                    sideKeyMap[sideKey] = true;
+            }
+        }
+    }
+}
+
+void exchange_side_connection_info(const stk::mesh::BulkData& bulkData,
+                                   const std::vector<stk::mesh::Entity> &orphanedSides,
+                                   std::map< std::pair<stk::mesh::EntityKey, int>, bool > &sideKeyProcMap)
+{
+    stk::CommSparse comm(bulkData.parallel());
+    pack_side_node_keys(orphanedSides, bulkData, comm);
+    comm.allocate_buffers();
+
+    pack_side_node_keys(orphanedSides, bulkData, comm);
+    comm.communicate();
+
+    unpack_side_nodes_and_check_for_attached_elements(bulkData, comm, sideKeyProcMap);
+}
+
+void populate_side_key_map(const stk::mesh::BulkData& bulkData,
+                           const std::map< std::pair<stk::mesh::EntityKey, int>, bool > &sideKeyProcMap,
+                           std::map<stk::mesh::EntityKey, bool> &sideKeyMap)
+{
+    stk::CommSparse comm(bulkData.parallel());
+    pack_side_key_and_response(sideKeyProcMap, comm);
+    comm.allocate_buffers();
+
+    pack_side_key_and_response(sideKeyProcMap, comm);
+    comm.communicate();
+
+    unpack_side_key_and_response(bulkData, comm, sideKeyMap);
+}
+
+void communicate_side_nodes_and_check_for_attached_elements(const stk::mesh::BulkData& bulkData,
+                                                            const std::vector<stk::mesh::Entity> &orphanedSides,
+                                                            std::map<stk::mesh::EntityKey, bool> &sideKeyMap)
+{
+    std::map< std::pair<stk::mesh::EntityKey, int>, bool > sideKeyProcMap;
+    exchange_side_connection_info(bulkData, orphanedSides, sideKeyProcMap);
+    populate_side_key_map(bulkData, sideKeyProcMap, sideKeyMap);
+}
+
+std::vector<stk::mesh::Entity> get_orphaned_sides_with_attached_element_on_different_proc(const stk::mesh::BulkData& bulkData)
+{
+    std::vector<stk::mesh::Entity> orphanedSides = get_orphaned_owned_sides(bulkData);
+    std::map<stk::mesh::EntityKey, bool> sideKeyMap;
+
+    for(stk::mesh::Entity entity: orphanedSides)
+    {
+        sideKeyMap[bulkData.entity_key(entity)] = false;
+    }
+
+    communicate_side_nodes_and_check_for_attached_elements(bulkData, orphanedSides, sideKeyMap);
+
+    std::vector<stk::mesh::Entity> badSides;
+    for(std::map<stk::mesh::EntityKey, bool>::value_type data : sideKeyMap)
+    {
+        if(true == data.second)
+            badSides.push_back(bulkData.get_entity(data.first));
+    }
+    return badSides;
+}
+
+std::vector<std::string> get_messages_for_orphaned_owned_sides(const stk::mesh::BulkData& bulkData, std::vector<stk::mesh::Entity>& entities)
 {
     std::vector<std::string> errorList;
     std::ostringstream os;
-    for(const stk::mesh::EntityKey& key : keys)
+    for(const stk::mesh::Entity& entity : entities)
     {
         os.str(std::string());
-        stk::mesh::Entity entity = bulkData.get_entity(key);
-        os << "ERROR: [" << bulkData.parallel_rank() << "] Side " << key << " (" << bulkData.bucket(entity).topology()
+        os << "ERROR: [" << bulkData.parallel_rank() << "] Side " << bulkData.entity_key(entity) << " (" << bulkData.bucket(entity).topology()
                 << ") does not have upwards relations to a locally owned element. Nodes of side are {";
         unsigned num_nodes = bulkData.num_nodes(entity);
         const stk::mesh::Entity* nodes = bulkData.begin_nodes(entity);

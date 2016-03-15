@@ -94,13 +94,6 @@ enum TimerSetMask {
   TIMER_FORCE		= 0x00000000		///< Force timer to be active
 };
 
-std::ostream &out();                ///< Normal output stream
-std::ostream &dout();               ///< Diagnostic output stream
-std::ostream &pout();               ///< Per-processor output stream (See RuntimeDeferredx)
-std::ostream &tout();               ///< Regression test textual output stream
-
-std::ostream &dwout();              ///< Diagnostic writer stream
-
 stk::diag::Writer &dw();
 
 stk::diag::TimerSet &timerSet();

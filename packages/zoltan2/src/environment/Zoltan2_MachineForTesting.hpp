@@ -66,7 +66,7 @@ public:
     return getMachineCoordinate(this->myRank, xyz);
   }
 
-  bool getMachineCoordinate(const part_t rank, pcoord_t *xyz) {
+  bool getMachineCoordinate(const int rank, pcoord_t *xyz) {
     // Ficticious machine coordinates
     // part_t slice = part_t(pow(double(this->numRanks), double(1.0/networkDim))
     //                           + 0.5);

@@ -63,8 +63,6 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
                     ${DIR}/bundle/*.hpp
-                    ${DIR}/augmentedlagrangian/*.hpp
-                    ${DIR}/moreauyosidapenalty/*.hpp
                     ${DIR}/interiorpoint/*.hpp
                     ${DIR}/nonlinearcg/*.hpp
                    )

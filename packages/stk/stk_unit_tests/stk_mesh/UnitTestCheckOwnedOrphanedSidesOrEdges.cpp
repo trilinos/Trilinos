@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include "../../stk_mesh/stk_mesh/base/GetEntities.hpp"
-#include "../../stk_util/stk_util/parallel/ParallelReduce.hpp"
+#include "../../stk_util/stk_util/parallel/ParallelReduceBool.hpp"
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
 
 namespace
@@ -36,7 +36,7 @@ TEST_F(MeshCheckerOwnedOrphans, check_mesh_without_orphaned_owned_sides)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
-        std::vector<stk::mesh::EntityKey> orphanedOwnedSides = stk::mesh::get_orphaned_owned_sides(get_bulk());
+        std::vector<stk::mesh::Entity> orphanedOwnedSides = stk::mesh::get_orphaned_owned_sides(get_bulk());
         EXPECT_TRUE(orphanedOwnedSides.empty());
     }
 }
@@ -51,9 +51,13 @@ TEST_F(MeshCheckerOwnedOrphans, check_mesh_with_orphaned_owned_sides)
         };
 
         fill_mesh_with_orphaned_owned_sides(get_bulk());
-        std::vector<stk::mesh::EntityKey> orphanedOwnedSides = stk::mesh::get_orphaned_owned_sides(get_bulk());
+        std::vector<stk::mesh::Entity> orphanedOwnedSides = stk::mesh::get_orphaned_owned_sides(get_bulk());
+        std::vector<stk::mesh::EntityKey> orphanedOwnedSidesKeys;
+        for(stk::mesh::Entity entity : orphanedOwnedSides)
+            orphanedOwnedSidesKeys.push_back(get_bulk().entity_key(entity));
+
         EXPECT_EQ(badSidesPerProc[get_bulk().parallel_rank()].size(), orphanedOwnedSides.size());
-        EXPECT_EQ(badSidesPerProc[get_bulk().parallel_rank()], orphanedOwnedSides);
+        EXPECT_EQ(badSidesPerProc[get_bulk().parallel_rank()], orphanedOwnedSidesKeys);
         EXPECT_FALSE(stk::is_true_on_all_procs(get_bulk().parallel(), orphanedOwnedSides.empty()));
         const std::vector<std::string> & orphanedOwnedMessages = get_messages_for_orphaned_owned_sides(get_bulk(), orphanedOwnedSides);
         for (const std::string & errorMessage : orphanedOwnedMessages) {
@@ -100,8 +104,11 @@ protected:
                 {},
         };
 
-        std::vector<stk::mesh::EntityKey> orphanedOwnedSides = get_orphaned_owned_sides(get_bulk());
-        EXPECT_EQ(badSidesPerProc[get_bulk().parallel_rank()], orphanedOwnedSides);
+        std::vector<stk::mesh::Entity> orphanedOwnedSides = get_orphaned_owned_sides(get_bulk());
+        std::vector<stk::mesh::EntityKey> orphanedOwnedSidesKeys;
+        for(stk::mesh::Entity entity : orphanedOwnedSides)
+            orphanedOwnedSidesKeys.push_back(get_bulk().entity_key(entity));
+        EXPECT_EQ(badSidesPerProc[get_bulk().parallel_rank()], orphanedOwnedSidesKeys);
     }
 };
 

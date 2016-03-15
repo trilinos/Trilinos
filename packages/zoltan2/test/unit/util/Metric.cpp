@@ -198,19 +198,27 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   for (int i=0; i < nWeights; i++, wgts+=numLocalObj)
     weights.push_back(wgts);
 
-  RCP<const idInput_t> ia;
-  RCP<const base_adapter_t> bia;
+  const idInput_t *ia;
 
   try{
-    ia = rcp(new idInput_t(numLocalObj, myGids, weights, strides));
+    ia = new idInput_t(numLocalObj, myGids, weights, strides);
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+
+  const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+  RCP<const base_adapter_t> rcpbia;
+
+  try{
+  rcpbia = rcp(bia);
+
   }
   catch (std::exception &e){
     fail=1;
   }
 
   TEST_FAIL_AND_EXIT(*comm, fail==0, "create adapter", 1);
-
-  bia = Teuchos::rcp_implicit_cast<const base_adapter_t>(ia);
 
   // A solution (usually created by a problem)
 
@@ -245,7 +253,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   RCP<quality_t> metricObject;
 
   try{
-    metricObject = rcp(new quality_t(env, comm, bia, solution.getRawPtr(), 
+    metricObject = rcp(new quality_t(env, comm, rcpbia, solution.getRawPtr(), 
 				     false));
   }
   catch (std::exception &e){

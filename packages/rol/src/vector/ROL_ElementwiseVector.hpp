@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -41,74 +42,72 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PROJECTEDHESSIAN_H
-#define ROL_PROJECTEDHESSIAN_H
+#ifndef ROL_ELEMENTWISE_VECTOR_H
+#define ROL_ELEMENTWISE_VECTOR_H
 
-#include "ROL_LinearOperator.hpp"
-#include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_Types.hpp"
+#include "ROL_Vector.hpp"
+
+/** @ingroup la_group
+    \class ROL::ElementwiseVector
+    \brief Intermediate abstract class which does not require users 
+           implements plus, set, scale, axpy, norm, dot, or zero if 
+           they implement the three elementwise functions: applyUnary,
+           applyBinary, and reduce
+
+           dot and norm are unweighted dot products and Euclidean norm 
+           by default
+*/
 
 namespace ROL {
 
-template <class Real>
-class ProjectedHessian : public LinearOperator<Real> {
-private:
+template< class Real>
+class ElementwiseVector : public Vector<Real> {
 
-  const Teuchos::RCP<Objective<Real> > obj_;
-  const Teuchos::RCP<BoundConstraint<Real> > bnd_;
-  const Teuchos::RCP<Vector<Real> > x_;
-  const Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<Vector<Real> > v_;
-  Real eps_;
+public: 
 
-public:
+  virtual ~ElementwiseVector() {}
 
-  ProjectedHessian(const Teuchos::RCP<Objective<Real> > &obj,
-                   const Teuchos::RCP<BoundConstraint<Real> > &bnd, 
-                   const Teuchos::RCP<Vector<Real> > &x,
-                   const Teuchos::RCP<Vector<Real> > &g,
-                   Real eps = 0.0 ) 
-    : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps) {
-    v_ = x_->clone();
+  void plus( const Vector<Real> &x ) {
+    this->applyBinary(Elementwise::Plus<Real>(),x);
   }
 
-  /** \brief Apply Hessian.
-
-      This function applies the Hessian to a vector.
-      @param[out]         Hv  is the output vector.
-      @param[in]          v   is the input vector.
-      @param[in]          tol is a tolerance for inexact Hessian application.
-  */
-  void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-    v_->set(v);
-    bnd_->pruneActive(*v_,*g_,*x_,eps_);
-    obj_->hessVec(Hv,*v_,*x_,tol);
-    bnd_->pruneActive(Hv,*g_,*x_,eps_);
-    v_->set(v);
-    bnd_->pruneInactive(*v_,*g_,*x_,eps_);
-    Hv.plus(v_->dual());
+  void scale( const Real alpha ) {
+    this->applyUnary(Elementwise::Scale<Real>(alpha));
   }
 
-  /** \brief Apply inverse Hessian.
-
-      This function applies the inverse of the Hessian to a vector.
-      @param[out]         Hv  is the output vector.
-      @param[in]          v   is the input vector.
-      @param[in]          tol is a tolerance for inexact Hessian application.
-  */
-  void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-    v_->set(v);
-    bnd_->pruneActive(*v_,*g_,*x_,eps_);
-    obj_->invHessVec(Hv,*v_,*x_,tol);
-    bnd_->pruneActive(Hv,*g_,*x_,eps_);
-    v_->set(v);
-    bnd_->pruneInactive(*v_,*g_,*x_,eps_);
-    Hv.plus(v_->dual());
+  virtual Real dot( const Vector<Real> &x ) const {
+    Teuchos::RCP<Vector<Real> > y = this->clone();
+    y->set(*this);
+    y->applyBinary(Elementwise::Multiply<Real>(),x);
+    return y->reduce(Elementwise::ReductionSum<Real>());    
   }
 
-}; // class Hessian
+  virtual Real norm() const {
+    Teuchos::RCP<Vector<Real> > y = this->clone();
+    y->set(*this);
+    y->applyBinary(Elementwise::Multiply<Real>(), *y);
+    return std::sqrt( y->reduce(Elementwise::ReductionSum<Real>()) );       
+  }
+
+  void axpy( const Real alpha, const Vector<Real> &x ) {
+    this->applyBinary(Elementwise::Axpy<Real>(alpha),x);
+  }
+
+  void zero() {
+    this->applyUnary(Elementwise::Fill<Real>(Real(0)));
+  }
+
+  void set( const Vector<Real> &x ) {
+    this->applyBinary(Elementwise::Set<Real>(),x);
+  }
+
+}; // class ElementwiseVector
+
 
 } // namespace ROL
 
-#endif
+
+
+
+#endif // ROL_ELEMENTWISE_VECTOR_H
+
