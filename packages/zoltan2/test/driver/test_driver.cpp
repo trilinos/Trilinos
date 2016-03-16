@@ -293,7 +293,7 @@ void run(const UserInputForTests &uinput,
     if(rank == 0) cout << "Analyzing metrics..." << endl;
     if(rank == 0 && problem_kind == "partitioning") {
       std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
-      reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
+      //reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
       metricObject->printMetrics(cout);
     }
 
@@ -327,7 +327,7 @@ void run(const UserInputForTests &uinput,
   }else if(rank == 0 && problem_kind == "partitioning") {
     // BDD for debugging
     cout << "No test metrics requested. Problem Metrics are: " << endl;
-    reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
+    //reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
     metricObject->printMetrics(cout);
     cout << "PASSED." << endl;
   }
