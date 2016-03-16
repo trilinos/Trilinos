@@ -83,10 +83,6 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
-// These files must be included last
-#include <MueLu_UseDefaultTypes.hpp>
-
-
 #ifdef HAVE_MUELU_BELOS
 namespace Belos {
 
@@ -127,16 +123,12 @@ namespace Belos {
 }
 #endif
 
-int main(int argc, char *argv[]) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-
-  // =========================================================================
-  // MPI initialization using Teuchos
-  // =========================================================================
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   // =========================================================================
   // Convenient definitions
@@ -158,7 +150,6 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     // Parameters initialization
     // =========================================================================
-    Teuchos::CommandLineProcessor clp(false);
     Xpetra::Parameters xpetraParameters(clp);
 
     switch (clp.parse(argc,argv)) {
@@ -168,8 +159,6 @@ int main(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
     const int numLists = 1;
     std::vector<std::string> dirList;
     dirList.push_back("Convergence/Laplace2D/");
@@ -177,12 +166,12 @@ int main(int argc, char *argv[]) {
     bool failed = false;
     for (int k = 0; k < numLists; k++) {
       const std::string& dirName = dirList[k];
-      std::string problemFile = dirName + "problem.xml";
+      std::string problemFile = dirName + "problem_" + typeid(GlobalOrdinal).name() + ".xml";
 
       ParameterList galeriParameters;
       Teuchos::updateParametersFromXmlFileAndBroadcast(problemFile, Teuchos::Ptr<Teuchos::ParameterList>(&galeriParameters), *comm);
       if (!galeriParameters.isParameter("mz"))
-        galeriParameters.set<int>("mz", -1);
+        galeriParameters.set<GlobalOrdinal>("mz", -1);
 
       // =========================================================================
       // Problem construction (copy-paste from Driver.cpp)
@@ -259,7 +248,9 @@ int main(int argc, char *argv[]) {
       RCP<MultiVector> B = MultiVectorFactory::Build(map, 1);
 
       for (int i = 0; i < fileList.size(); i++) {
-        if (fileList[i] == "problem.xml")
+        if (fileList[i] == "problem_i.xml" ||
+            fileList[i] == "problem_l.xml" ||
+            fileList[i] == "problem_x.xml")
           continue;
 
         // Set seed
@@ -329,7 +320,7 @@ int main(int argc, char *argv[]) {
           X->randomize();
           A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-          Teuchos::Array<STS::magnitudeType> norms(1);
+          Teuchos::Array<typename STS::magnitudeType> norms(1);
           B->norm2(norms);
           B->scale(one/norms[0]);
           X->putScalar(zero);
@@ -435,6 +426,129 @@ int main(int argc, char *argv[]) {
     success = !failed;
 
     out << std::endl << "End Result: TEST " << (failed ? "FAILED" : "PASSED") << std::endl;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+}
+
+int main(int argc, char* argv[]) {
+  bool success = false;
+  bool verbose = true;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+  try {
+    const bool throwExceptions     = false;
+    const bool recogniseAllOptions = false;
+
+    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Xpetra::Parameters xpetraParameters(clp);
+
+    std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
+
+    switch (clp.parse(argc, argv, NULL)) {
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    }
+
+    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
+    if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
+#else
+      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
+#endif
+    }
+
+    if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      if (node == "") {
+        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+
+#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#else
+#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+        return main_<double,int,int,Node> (clp, lib, argc, argv);
+#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#  else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#  endif
+#endif
+      } else if (node == "serial") {
+#ifdef KOKKOS_HAVE_SERIAL
+        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#  else
+#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT)
+        return main_<double,int,int,Node> (clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
+#else
+        throw MueLu::Exceptions::RuntimeError("Serial node type is disabled");
+#endif
+      } else if (node == "openmp") {
+#ifdef KOKKOS_HAVE_OPENMP
+        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return main_<double,int,long,Node>(clp, argc, argv);
+#  else
+#    if   defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)
+        return main_<double,int,int,Node> (clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
+#else
+        throw MueLu::Exceptions::RuntimeError("OpenMP node type is disabled");
+#endif
+      } else if (node == "cuda") {
+#ifdef KOKKOS_HAVE_CUDA
+        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return main_<double,int,long,Node>(clp, argc, argv);
+#  else
+#    if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_INT)
+        return main_<double,int,int,Node> (clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_LONG)
+        return main_<double,int,long,Node>(clp, lib, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+        return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
+#else
+        throw MueLu::Exceptions::RuntimeError("CUDA node type is disabled");
+#endif
+      } else {
+        throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
+      }
+#else
+      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
+#endif
+    }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
