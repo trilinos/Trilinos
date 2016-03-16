@@ -1157,9 +1157,9 @@ FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<A
     
     
 if(getrank(jacobian)==4){
-Kokkos::parallel_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+Kokkos::serial_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
 }else if(getrank(jacobian)==3){
-Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+Kokkos::serial_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
 }else{
         TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument,
                             ">>> ERROR (Intrepid2::CellTools::setJacobian): Rank of Jacobian is Not Supported.");
@@ -1173,7 +1173,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
           FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
+Kokkos::serial_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
           HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
           
@@ -1183,11 +1183,11 @@ Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Sc
           
           if(whichCell == -1) {
             
-Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
+Kokkos::serial_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
             
           }
           else {
- Kokkos::parallel_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
+ Kokkos::serial_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
          } // if whichcell
         }// case 2
         break;
@@ -1195,7 +1195,7 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
         // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
       case 3:
         {
- Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> , ArrayPoint> (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
+ Kokkos::serial_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> , ArrayPoint> (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
 //	    }
         }// case 3
 	
@@ -1329,9 +1329,9 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
     
     
 if(getrank(jacobian)==4){
-Kokkos::parallel_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+Kokkos::serial_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
 }else if(getrank(jacobian)==3){
-Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+Kokkos::serial_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
 }else{
         TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument,
                             ">>> ERROR (Intrepid2::CellTools::setJacobian): Rank of Jacobian is Not Supported.");
@@ -1345,7 +1345,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
           FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
+Kokkos::serial_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
           HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
           
@@ -1355,11 +1355,11 @@ Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Sc
           
           if(whichCell == -1) {
             
-Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
+Kokkos::serial_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
             
           }
           else {
- Kokkos::parallel_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
+ Kokkos::serial_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
          } // if whichcell
         }// case 2
         break;
@@ -1367,7 +1367,7 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
         // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
       case 3:
         {
- Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true> ,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
+ Kokkos::serial_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true> ,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
 //	    }
         }// case 3
 	
