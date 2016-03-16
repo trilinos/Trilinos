@@ -163,6 +163,8 @@ int main(int argc, char *argv[]){
 
     //create partitioning problem
     typedef Zoltan2::PartitioningProblem<my_adapter_t> xcrsGraph_problem_t; // xpetra_graph problem type
+    typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
+    typedef my_adapter_t::base_adapter_t base_adapter_t;
     ParameterList zoltan2_parameters;
     zoltan2_parameters.set("compute_metrics", "true");
     zoltan2_parameters.set("imbalance_tolerance", "1.0");
@@ -178,7 +180,14 @@ int main(int argc, char *argv[]){
     tcomm->barrier();
     RCP<const Zoltan2::Environment> env = partition_problem->getEnvironment();
 
+    RCP<const base_adapter_t> rcpbia =
+      Teuchos::rcp_implicit_cast<const base_adapter_t>(ia);
+
+    RCP<quality_t>metricObject = 
+      rcp(new quality_t(env,tcomm,rcpbia,&partition_problem->getSolution()));
+
     if (tcomm->getRank() == 0){
+      metricObject->printMetrics(std::cout);
       partition_problem->printMetrics(std::cout);
     }
     partition_problem->printTimers();
