@@ -63,7 +63,7 @@ namespace Zoltan2_TestingFramework {
     /// @return returns a pointer to new Zoltan2::EvaluatePartition or a nullptr if adapter type was not known.
     static EvaluatePartition<basic_id_t>*newEvaluatePartition
     (partitioning_problem_t *problem, const std::string &adapter_name,
-     RCP<basic_id_t> input)
+     base_adapter_t *input)
     {
       // An environment.  This is usually created by the problem.
       RCP<const Zoltan2::Environment> env = problem->getEnvironment();
@@ -80,11 +80,11 @@ namespace Zoltan2_TestingFramework {
       } else if (adapter_name == "XpetraMultiVector") {
 	/*return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<xpetra_mv_adapter>
-	   (env, CommT, rcp
+	  (env, CommT, */rcp
 	    (reinterpret_cast<const xpetra_mv_adapter::base_adapter_t *>
-	     (input)), reinterpret_cast
+	     (input), false)/*, reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<xpetra_mv_adapter> *>
-	    (&problem->getSolution())));*/
+	    (&problem->getSolution())))*/;
       } else if (adapter_name == "XpetraCrsGraph") {
 	/*return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<xcrsGraph_adapter>
