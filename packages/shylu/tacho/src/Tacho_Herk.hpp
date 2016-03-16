@@ -1,8 +1,8 @@
-#ifndef __TACHO_GEMM_HPP__
-#define __TACHO_GEMM_HPP__
+#ifndef __TACHO_HERK_HPP__
+#define __TACHO_HERK_HPP__
 
-/// \file Tacho_Gemm.hpp
-/// \brief Front interface for Gemm operators
+/// \file Tacho_Herk.hpp
+/// \brief Front interface for Herk operators
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho_Util.hpp"
@@ -11,10 +11,10 @@
 
 namespace Tacho {
   
-  template<int ArgTransA, int ArgTransB, 
+  template<int ArgUplo, int ArgTrans,
            int ArgAlgo, int ArgVariant,
            template<int,int> class ControlType = Control>
-  struct Gemm {
+  struct Herk {
 
     // data-parallel interface with nested task generation
     // ===================================================
@@ -22,18 +22,16 @@ namespace Tacho {
              typename MemberType,
              typename ScalarType,
              typename ExecViewTypeA,
-             typename ExecViewTypeB,
              typename ExecViewTypeC>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
                       const MemberType &member,
                       const ScalarType alpha,
                       ExecViewTypeA &A,
-                      ExecViewTypeB &B,
                       const ScalarType beta,
                       ExecViewTypeC &C) { 
-      fprintf(stderr, ">> Template Args - TransA %d, TransB %d, Algo %d, Variant %d\n", 
-              ArgTransA, ArgTransB, ArgAlgo, ArgVariant);  
+      fprintf(stderr, ">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n", 
+              ArgUplo, ArgTrans, ArgAlgo, ArgVariant);  
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return 0;
     }
@@ -43,7 +41,6 @@ namespace Tacho {
     template<typename PolicyType,
              typename ScalarType,
              typename ExecViewTypeA,
-             typename ExecViewTypeB,
              typename ExecViewTypeC>
     class TaskFunctor {
     public:
@@ -53,7 +50,6 @@ namespace Tacho {
     private:
       ScalarType _alpha, _beta;
       ExecViewTypeA _A;
-      ExecViewTypeB _B;
       ExecViewTypeC _C;
 
       PolicyType _policy;
@@ -63,31 +59,29 @@ namespace Tacho {
       TaskFunctor(const PolicyType &policy,
                   const ScalarType alpha,
                   const ExecViewTypeA &A,
-                  const ExecViewTypeB &B,
                   const ScalarType beta,
                   const ExecViewTypeC &C)
         : _alpha(alpha),
           _beta(beta),
           _A(A),
-          _B(B),
           _C(C),
           _policy(policy)
       { }
 
       KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return "Gemm"; }
+      const char* Label() const { return "Herk"; }
 
       KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke(_policy, _policy.member_single(),
-                             _alpha, _A, _B, _beta, _C);
+        r_val = Herk::invoke(_policy, _policy.member_single(),
+                             _alpha, _A, _beta, _C);
         _C.setFuture(typename ExecViewTypeC::future_type());
       }
 
       KOKKOS_INLINE_FUNCTION
       void apply(const member_type &member, value_type &r_val) {
-        const int ierr = Gemm::invoke(_policy, member,
-                                      _alpha, _A, _B, _beta, _C);
+        const int ierr = Herk::invoke(_policy, member,
+                                      _alpha, _A, _beta, _C);
         
         // return for only team leader
         if (!member.team_rank()) { 
@@ -101,26 +95,23 @@ namespace Tacho {
     template<typename PolicyType,
              typename ScalarType,
              typename ExecViewTypeA,
-             typename ExecViewTypeB,
              typename ExecViewTypeC>
     KOKKOS_INLINE_FUNCTION
     static 
-    TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB,ExecViewTypeC>
+    TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeC>
     createTaskFunctor(const PolicyType &policy,
                       const ScalarType alpha,
                       const ExecViewTypeA &A,
-                      const ExecViewTypeB &B,
                       const ScalarType beta,
                       const ExecViewTypeC &C) {
-      return TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB,ExecViewTypeC>
-        (policy, alpha, A, B, beta, C);
+      return TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeC>
+        (policy, alpha, A, beta, C);
     }
     
   };
   
 }
 
-#include "Tacho_Gemm_NoTrans_NoTrans.hpp"
-#include "Tacho_Gemm_ConjTrans_NoTrans.hpp"
+#include "Tacho_Herk_Upper_ConjTrans.hpp"
 
 #endif

@@ -1,8 +1,8 @@
-#ifndef __TACHO_GEMM_HPP__
-#define __TACHO_GEMM_HPP__
+#ifndef __TACHO_TRSM_HPP__
+#define __TACHO_TRSM_HPP__
 
-/// \file Tacho_Gemm.hpp
-/// \brief Front interface for Gemm operators
+/// \file Tacho_Trsm.hpp
+/// \brief Front interface for Trsm operators
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho_Util.hpp"
@@ -11,10 +11,10 @@
 
 namespace Tacho {
   
-  template<int ArgTransA, int ArgTransB, 
+  template<int ArgSide,int ArgUplo, int ArgTrans,
            int ArgAlgo, int ArgVariant,
            template<int,int> class ControlType = Control>
-  struct Gemm {
+  struct Trsm {
 
     // data-parallel interface with nested task generation
     // ===================================================
@@ -22,18 +22,16 @@ namespace Tacho {
              typename MemberType,
              typename ScalarType,
              typename ExecViewTypeA,
-             typename ExecViewTypeB,
-             typename ExecViewTypeC>
+             typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
                       const MemberType &member,
+                      const int diagA,
                       const ScalarType alpha,
                       ExecViewTypeA &A,
-                      ExecViewTypeB &B,
-                      const ScalarType beta,
-                      ExecViewTypeC &C) { 
-      fprintf(stderr, ">> Template Args - TransA %d, TransB %d, Algo %d, Variant %d\n", 
-              ArgTransA, ArgTransB, ArgAlgo, ArgVariant);  
+                      ExecViewTypeB &B) {
+      fprintf(stderr, ">> Template Args - Side %d, Uplo %d, Trans %d, Algo %d, Variant %d\n", 
+              ArgSide, ArgUplo, ArgTrans, ArgAlgo, ArgVariant);           
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return 0;
     }
@@ -43,55 +41,53 @@ namespace Tacho {
     template<typename PolicyType,
              typename ScalarType,
              typename ExecViewTypeA,
-             typename ExecViewTypeB,
-             typename ExecViewTypeC>
+             typename ExecViewTypeB>
     class TaskFunctor {
     public:
       typedef typename PolicyType::member_type member_type;
       typedef int value_type;
 
     private:
-      ScalarType _alpha, _beta;
+      int _diagA;
+      ScalarType _alpha;
+
       ExecViewTypeA _A;
       ExecViewTypeB _B;
-      ExecViewTypeC _C;
 
       PolicyType _policy;
 
     public:
       KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
+                  const int diagA,
                   const ScalarType alpha,
                   const ExecViewTypeA &A,
-                  const ExecViewTypeB &B,
-                  const ScalarType beta,
-                  const ExecViewTypeC &C)
-        : _alpha(alpha),
-          _beta(beta),
+                  const ExecViewTypeB &B)
+        : _diagA(diagA),
+          _alpha(alpha),
           _A(A),
           _B(B),
-          _C(C),
           _policy(policy)
       { }
 
       KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return "Gemm"; }
+      const char* Label() const { return "Trsm"; }
 
       KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke(_policy, _policy.member_single(),
-                             _alpha, _A, _B, _beta, _C);
-        _C.setFuture(typename ExecViewTypeC::future_type());
+        r_val = Trsm::invoke(_policy, _policy.member_single(),
+                             _diagA, _alpha, _A, _B);
+        _B.setFuture(typename ExecViewTypeB::future_type());
       }
 
       KOKKOS_INLINE_FUNCTION
       void apply(const member_type &member, value_type &r_val) {
-        const int ierr = Gemm::invoke(_policy, member,
-                                      _alpha, _A, _B, _beta, _C);
+        const int ierr = Trsm::invoke(_policy, member,
+                                      _diagA, _alpha, _A, _B);
         
         // return for only team leader
         if (!member.team_rank()) { 
-          _C.setFuture(typename ExecViewTypeC::future_type());
+          _B.setFuture(typename ExecViewTypeB::future_type());
           r_val = ierr; 
         }
       }
@@ -101,26 +97,23 @@ namespace Tacho {
     template<typename PolicyType,
              typename ScalarType,
              typename ExecViewTypeA,
-             typename ExecViewTypeB,
-             typename ExecViewTypeC>
+             typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static 
-    TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB,ExecViewTypeC>
+    TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB>
     createTaskFunctor(const PolicyType &policy,
+                      const int diagA,
                       const ScalarType alpha,
                       const ExecViewTypeA &A,
-                      const ExecViewTypeB &B,
-                      const ScalarType beta,
-                      const ExecViewTypeC &C) {
-      return TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB,ExecViewTypeC>
-        (policy, alpha, A, B, beta, C);
+                      const ExecViewTypeB &B) {
+      return TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB>
+        (policy, diagA, alpha, A, B);
     }
     
   };
   
 }
 
-#include "Tacho_Gemm_NoTrans_NoTrans.hpp"
-#include "Tacho_Gemm_ConjTrans_NoTrans.hpp"
+#include "Tacho_Trsm_Left_Upper_ConjTrans.hpp"
 
 #endif

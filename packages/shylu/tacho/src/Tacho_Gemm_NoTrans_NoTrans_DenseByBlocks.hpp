@@ -44,7 +44,6 @@ namespace Tacho {
 
       TaskFactory factory;
 
-      const int max_task_dependence = 3;
       if (member.team_rank() == 0) {
         for (ordinal_type p=0;p<A.NumCols();++p) {
           const ScalarType beta_select = (p > 0 ? ScalarType(1.0) : beta);
@@ -58,8 +57,7 @@ namespace Tacho {
                 (policy,
                  Gemm<Trans::NoTranspose,Trans::NoTranspose,
                  CtrlDetail(ControlType,AlgoGemm::DenseByBlocks,ArgVariant,Gemm)>
-                 ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc), 
-                 max_task_dependence);
+                 ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc), 3);
 
               // dependence
               factory.depend(policy, f, aa.Future());
