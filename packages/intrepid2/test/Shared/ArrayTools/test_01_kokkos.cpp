@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
     errorFlag++;
 #endif
 
-
+/*
   *outStream \
   << "\n"
   << "===============================================================================\n"\
@@ -771,7 +771,6 @@ int main(int argc, char *argv[]) {
       }
       } // end scope
 
-      /******************************************/
       *outStream << "\n";
   }
   catch (std::logic_error err) {
@@ -780,8 +779,7 @@ int main(int argc, char *argv[]) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
-
-
+*/
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
