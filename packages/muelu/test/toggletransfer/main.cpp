@@ -169,7 +169,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // set minimal information about number of layers for semicoarsening...
     // This information can also be provided as a user parameter in the xml file using the
     // parameter: "semicoarsen: num layers"
-    H->GetLevel(0)->Set("NumZLayers",matrixParameters.GetParameterList().template get<GO>("nz"));
+    // TAW: 3/16/2016: NumZLayers has to be provided as LO
+    GO zLayers = matrixParameters.GetParameterList().template get<GO>("nz");
+    H->GetLevel(0)->Set("NumZLayers",Teuchos::as<LO>(zLayers));
 
 
     mueluFactory->SetupHierarchy(*H);
