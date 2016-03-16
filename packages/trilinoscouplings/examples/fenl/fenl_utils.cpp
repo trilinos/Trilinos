@@ -76,6 +76,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("var",                      &cmdline.USE_VAR,  "KL diffusion variance");
   clp.setOption("cor",                      &cmdline.USE_COR,  "KL diffusion correlation");
   clp.setOption("exponential", "no-exponential", &cmdline.USE_EXPONENTIAL,  "take exponential of KL diffusion coefficient");
+  clp.setOption("exp-shift",                &cmdline.USE_EXP_SHIFT,  "Linear shift of exponential of KL diffusion coefficient");
+  clp.setOption("exp-scale",                &cmdline.USE_EXP_SCALE,  "Multiplicative scale of exponential of KL diffusion coefficient");
   clp.setOption("isotropic", "anisotropic", &cmdline.USE_ISOTROPIC,  "use isotropic or anisotropic diffusion coefficient");
   clp.setOption("coeff-src",                &cmdline.USE_COEFF_SRC,  "Coefficient for source term");
   clp.setOption("coeff-adv",                &cmdline.USE_COEFF_ADV,  "Coefficient for advection term");
@@ -197,6 +199,12 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
   if ( cmd.USE_EXPONENTIAL ) {
     s << " KL exponential(" << cmd.USE_EXPONENTIAL << ")" ;
   }
+  if ( cmd.USE_EXP_SHIFT ) {
+    s << " KL exponential shift(" << cmd.USE_EXP_SHIFT << ")" ;
+  }
+  if ( cmd.USE_EXP_SCALE ) {
+    s << " KL exponential scale(" << cmd.USE_EXP_SCALE << ")" ;
+  }
   if ( cmd.USE_ISOTROPIC ) {
     s << " isotropic" ;
   }
@@ -295,6 +303,8 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
      s << " , KL VAR , " << cmd.USE_VAR ;
      s << " , KL COR , " << cmd.USE_COR ;
      s << " , KL EXP , " << cmd.USE_EXPONENTIAL ;
+     s << " , KL EXP SHIFT, " << cmd.USE_EXP_SHIFT ;
+     s << " , KL EXP SCALE, " << cmd.USE_EXP_SCALE ;
      if ( cmd.USE_ISOTROPIC )
        s << " ISOTROPIC" ;
      else

@@ -62,6 +62,8 @@ struct CMD {
   double USE_VAR;
   double USE_COR;
   bool USE_EXPONENTIAL;
+  double USE_EXP_SHIFT;
+  double USE_EXP_SCALE;
   bool USE_ISOTROPIC;
   double USE_COEFF_SRC;
   double USE_COEFF_ADV;
@@ -109,6 +111,8 @@ struct CMD {
           USE_VAR(0.1),
           USE_COR(0.25),
           USE_EXPONENTIAL(false),
+          USE_EXP_SHIFT(1.0),
+          USE_EXP_SCALE(1.0),
           USE_ISOTROPIC(true),
           USE_COEFF_SRC(1.0),
           USE_COEFF_ADV(0.0),
