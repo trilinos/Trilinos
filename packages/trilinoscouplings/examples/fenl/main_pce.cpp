@@ -136,9 +136,12 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const double kl_variance = cmd.USE_VAR;
   const double kl_correlation = cmd.USE_COR;
   const bool kl_exp = cmd.USE_EXPONENTIAL;
+  const double kl_exp_shift = cmd.USE_EXP_SHIFT;
+  const double kl_exp_scale = cmd.USE_EXP_SCALE;
   //typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
   typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
-  KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim, kl_exp );
+  KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim,
+                            kl_exp, kl_exp_shift, kl_exp_scale );
   typedef typename KL::RandomVariableView RV;
   typedef typename RV::HostMirror HRV;
   RV rv = diffusion_coefficient.getRandomVariables();

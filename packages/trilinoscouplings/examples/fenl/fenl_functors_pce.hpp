@@ -751,7 +751,9 @@ public:
                                     arg_coeff_function.m_variance,
                                     arg_coeff_function.m_corr_len,
                                     arg_coeff_function.m_num_rv,
-                                    arg_coeff_function.m_use_exp )
+                                    arg_coeff_function.m_use_exp,
+                                    arg_coeff_function.m_exp_shift,
+                                    arg_coeff_function.m_exp_scale)
     , scalar_element_computation( arg_mesh,
                                   scalar_diffusion_coefficient,
                                   arg_isotropic,

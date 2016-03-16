@@ -449,6 +449,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const double kl_correlation = cmd.USE_COR;
   const int kl_dim = cmd.USE_UQ_DIM ;
   const bool kl_exp = cmd.USE_EXPONENTIAL;
+  const double kl_exp_shift = cmd.USE_EXP_SHIFT;
+  const double kl_exp_scale = cmd.USE_EXP_SCALE;
 
   int nelem[3] = { cmd.USE_FIXTURE_X,
                    cmd.USE_FIXTURE_Y,
@@ -471,7 +473,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     Kokkos::global_sacado_mp_vector_size = VectorSize;
 
     typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
-    KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, kl_dim, kl_exp );
+    KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, kl_dim,
+                              kl_exp, kl_exp_shift, kl_exp_scale );
 
     // Problem setup
     typedef Problem< Scalar, Device , BoxElemPart::ElemLinear > ProblemType;
@@ -483,7 +486,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       grouper = rcp(new Kokkos::Example::FENL::NaturalGrouping<double>);
     else if (cmd.USE_GROUPING == GROUPING_MAX_ANISOTROPY) {
       typedef ExponentialKLCoefficient< double, double, Device > DKL;
-      DKL diff_coeff( kl_mean, kl_variance, kl_correlation, kl_dim, kl_exp );
+      DKL diff_coeff( kl_mean, kl_variance, kl_correlation, kl_dim,
+                      kl_exp, kl_exp_shift, kl_exp_scale);
       typedef typename ProblemType::FixtureType Mesh;
       grouper =
         rcp(new Kokkos::Example::FENL::MaxAnisotropyGrouping<double,Mesh,DKL>(
@@ -507,7 +511,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     typedef double Scalar;
     typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
-    KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, kl_dim, kl_exp );
+    KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, kl_dim,
+                              kl_exp, kl_exp_shift, kl_exp_scale );
 
     // Problem setup
     Problem< Scalar, Device , BoxElemPart::ElemLinear > problem(
