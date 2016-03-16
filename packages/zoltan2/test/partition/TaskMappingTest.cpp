@@ -188,7 +188,7 @@ int main(int argc, char *argv[]){
 
     if (tcomm->getRank() == 0){
       metricObject->printMetrics(std::cout);
-      partition_problem->printMetrics(std::cout);
+      //partition_problem->printMetrics(std::cout);
     }
     partition_problem->printTimers();
 
