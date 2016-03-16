@@ -9,8 +9,14 @@ ENDIF()
 
 MESSAGE("-- ATTB: Setting compilers and TPL paths for ATTB system ...")
 
-MESSAGE("-- ATTB: Zeroing out env var LIBRARY_PATH to avoid problems with CMake not adding lib paths ...")
-SET(ENV{LIBRARY_PATH} "")
+IF (NOT ATTB_SKIP_ZERO_OUT_LIBRARY_PATH)
+  MESSAGE("-- ATTB: Zeroing out env var LIBRARY_PATH to avoid problems with"
+    " CMake not adding lib paths ...")
+  SET(ENV{LIBRARY_PATH} "")
+ELSE()
+  MESSAGE("-- ATTB: Leaving env var LIBRARY_PATH intact since"
+    " ATTB_SKIP_ZERO_OUT_LIBRARY_PATH=${ATTB_SKIP_ZERO_OUT_LIBRARY_PATH} is set!")
+ENDIF()
 #MESSAGE("-- ENV{LIBRARY_PATH} = $ENV{LIBRARY_PATH}")
 
 # Define cmpilers

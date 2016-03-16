@@ -900,7 +900,7 @@ public:
     CommunicationModel<part_t, pcoord_t>(no_procs_, no_tasks_),
     proc_coord_dim(pcoord_dim_), proc_coords(pcoords_),
     task_coord_dim(tcoord_dim_), task_coords(tcoords_),
-    partArraySize(std::min(tcoord_dim_, pcoord_dim_)),
+    partArraySize(-1),
     partNoArray(NULL),
     machine_extent(machine_extent_),
     machine_extent_wrap_around(machine_extent_wrap_around_){
@@ -1059,6 +1059,9 @@ public:
 
     int recursion_depth = partArraySize;
     if(partArraySize < minCoordDim) recursion_depth = minCoordDim;
+    if (partArraySize == -1)
+      recursion_depth = log(float(this->no_procs)) / log(2.0) + 1;
+
 
     int taskPerm = z2Fact<int>(this->task_coord_dim); //get the number of different permutations for task dimension ordering
     int procPerm = z2Fact<int>(this->proc_coord_dim); //get the number of different permutations for proc dimension ordering
@@ -1099,6 +1102,8 @@ public:
     }
 
 
+    //if (partNoArray == NULL) std::cout << "partNoArray is null" << std::endl;
+    //std::cout << "recursion_depth:" << recursion_depth << " partArraySize:" << partArraySize << std::endl;
     //do the partitioning and renumber the parts.
     env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
 

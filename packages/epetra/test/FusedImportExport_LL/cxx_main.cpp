@@ -166,7 +166,7 @@ int build_matrix_unfused(const Epetra_CrsMatrix & SourceMatrix, Epetra_Export & 
 
 
 
-int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *&A){
+void build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *&A){
   int NumProc = Comm.NumProc();
   int MyPID   = Comm.MyPID();
 
@@ -239,7 +239,6 @@ int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *
     delete [] Indices;
 
   }
-  return 0;
 }
 
 
@@ -247,7 +246,7 @@ int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, total_err=0;
+  int total_err=0;
 
   // Initialize MPI
 
@@ -299,7 +298,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_1
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A);
+    build_test_matrix(Comm,1,A);
     long long num_global = A->RowMap().NumGlobalElements64();
 
     // New map with all on Proc1
@@ -338,7 +337,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_2
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A);
+    build_test_matrix(Comm,1,A);
     int num_local = A->RowMap().NumMyElements();
 
     std::vector<long long> MyGIDS(num_local);
@@ -379,7 +378,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_3
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A);
+    build_test_matrix(Comm,1,A);
     int num_local  = A->RowMap().NumMyElements();
     long long num_global = A->RowMap().NumGlobalElements64();
     int num_scansum = 0;
@@ -424,7 +423,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_4
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A);
+    build_test_matrix(Comm,1,A);
 
     // Assume we always own the diagonal
     int num_local = A->NumMyCols()-A->NumMyRows();
@@ -476,7 +475,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_5
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A);
+    build_test_matrix(Comm,1,A);
     long long num_global = A->RowMap().NumGlobalElements64();
 
     // New map with all on Proc1
@@ -515,7 +514,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_6
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A);
+    build_test_matrix(Comm,1,A);
     long long num_global = A->RowMap().NumGlobalElements64();
 
     // New map with all on Proc1

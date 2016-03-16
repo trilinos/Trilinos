@@ -66,6 +66,7 @@
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Zoltan2::Environment;
 
 
 //#define hopper_separate_test
@@ -682,7 +683,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+    RCP<const Environment> env = problem->getEnvironment();
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
@@ -882,7 +883,7 @@ int testFromDataFile(
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+    RCP<const Environment> env = problem->getEnvironment();
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
@@ -1072,7 +1073,7 @@ int testFromSeparateDataFiles(
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+    RCP<const Environment> env = problem->getEnvironment();
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 

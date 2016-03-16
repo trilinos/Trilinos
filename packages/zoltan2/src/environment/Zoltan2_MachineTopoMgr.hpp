@@ -32,8 +32,9 @@ public:
 #else
     networkDim(3),
 #endif
-    procCoords(NULL)
+    procCoords(NULL), machine_extent(NULL)
   {
+    this->getMachineExtent(this->machine_extent);
     //allocate memory for processor coordinates.
     procCoords = new pcoord_t *[networkDim];
     for (int i = 0; i < networkDim; ++i){
@@ -57,6 +58,7 @@ public:
       delete [] procCoords[i];
     }
     delete [] procCoords;
+    delete [] machine_extent;
   }
 
   bool hasMachineCoordinates() const { return true; }
@@ -134,6 +136,18 @@ public:
     return true;
   }
 
+  virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops){
+    hops = 0;
+    for (int i = 0; i < networkDim - 1; ++i){
+      pcoord_t distance = procCoords[i][rank1] - procCoords[i][rank2];
+      if (distance < 0 ) distance = -distance;
+      if (machine_extent[i] - distance < distance) distance = machine_extent[i] - distance;
+      hops += distance;
+    }
+    return true;
+  }
+
+
 private:
 
   int networkDim;
@@ -143,6 +157,7 @@ private:
 #endif
   pcoord_t **procCoords;   // KDD Maybe should be RCP?
 
+  part_t *machine_extent;
 
   void gatherMachineCoordinates(const Teuchos::Comm<int> &comm) {
     // reduces and stores all machine coordinates.

@@ -90,6 +90,10 @@ public:
      */
     int getNumRanks() const { return numRanks; }
 
+    virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops){
+      return false;
+    }
+
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
 
 };
