@@ -27,8 +27,8 @@ namespace Tacho {
 
     switch (quadrant) {
     case Partition::TopLeft:
-      bmm = min(bm, A.NumRows());
-      bnn = min(bn, A.NumCols());                
+      bmm = Util::min(bm, A.NumRows());
+      bnn = Util::min(bn, A.NumCols());                
       
       ATL.setView(A.BaseObject(),
                   A.OffsetRows(), bmm,
@@ -39,8 +39,8 @@ namespace Tacho {
       TACHO_TEST_FOR_ABORT(true, MSG_NOT_YET_IMPLEMENTED);
       break;
     case Partition::BottomRight:
-      bmm = A.NumRows() - min(bm, A.NumRows());
-      bnn = A.NumCols() - min(bn, A.NumCols());                
+      bmm = A.NumRows() - Util::min(bm, A.NumRows());
+      bnn = A.NumCols() - Util::min(bn, A.NumCols());                
       
       ATL.setView(A.BaseObject(),
                   A.OffsetRows(), bmm,
@@ -75,7 +75,7 @@ namespace Tacho {
     switch (side) {
     case Partition::Left:
       bmm = A.NumRows();
-      bnn = min(bn, A.NumCols());
+      bnn = Util::min(bn, A.NumCols());
       
       AL.setView(A.BaseObject(),
                  A.OffsetRows(), bmm,
@@ -83,7 +83,7 @@ namespace Tacho {
       break;
     case Partition::Right:
       bmm = A.NumRows();
-      bnn = A.NumCols() - min(bn, A.NumCols());
+      bnn = A.NumCols() - Util::min(bn, A.NumCols());
 
       AL.setView(A.BaseObject(),
                  A.OffsetRows(), bmm,
@@ -110,7 +110,7 @@ namespace Tacho {
     
     switch (side) {
     case Partition::Top:
-      bmm = min(bm, A.NumRows());
+      bmm = Util::min(bm, A.NumRows());
       bnn = A.NumCols();
       
       AT.setView(A.BaseObject(),
@@ -118,7 +118,7 @@ namespace Tacho {
                  A.OffsetCols(), bnn);
       break;
     case Partition::Bottom:
-      bmm = A.NumRows() - min(bm, A.NumRows());
+      bmm = A.NumRows() - Util::min(bm, A.NumRows());
       bnn = A.NumCols();
 
       AT.setView(A.BaseObject(),

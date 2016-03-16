@@ -56,6 +56,12 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleDenseGemmByBlocks_Pthreads.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseCholByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseCholByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 

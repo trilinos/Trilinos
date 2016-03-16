@@ -1,10 +1,10 @@
-#ifndef __TACHO_EXAMPLE_DENSE_GEMM_BY_BLOCKS_HPP__
-#define __TACHO_EXAMPLE_DENSE_GEMM_BY_BLOCKS_HPP__
+#ifndef __TACHO_EXAMPLE_DENSE_CHOL_BY_BLOCKS_HPP__
+#define __TACHO_EXAMPLE_DENSE_CHOL_BY_BLOCKS_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "ShyLUTacho_config.h"  
+#include "ShyLUTacho_config.h"
 
 #include "Tacho_Util.hpp"
 #include "Tacho_Control.hpp"
@@ -13,27 +13,29 @@
 #include "Tacho_DenseMatrixView.hpp"
 #include "Tacho_DenseFlopCount.hpp"
 
+
 #include "Tacho_DenseMatrixTools.hpp"
 
 #include "Tacho_TaskView.hpp"
 #include "Tacho_TaskFactory.hpp"
 
 #include "Tacho_Gemm.hpp"
+#include "Tacho_Herk.hpp"
+#include "Tacho_Trsm.hpp"
+#include "Tacho_Chol.hpp"
 
 #ifdef HAVE_SHYLUTACHO_MKL
 #include "mkl_service.h"
-#endif   
+#endif
 
 namespace Tacho {
 
-  template<int ArgTransA,
-           int ArgTransB,
+  template<int ArgUplo,
            int ArgVariant,
            typename DeviceSpaceType>
-  int exampleDenseGemmByBlocks(const ordinal_type mmin,
+  int exampleDenseCholByBlocks(const ordinal_type mmin,
                                const ordinal_type mmax,
                                const ordinal_type minc,
-                               const ordinal_type k,
                                const ordinal_type mb,
                                const int max_concurrency,
                                const int max_task_dependence,
@@ -63,9 +65,9 @@ namespace Tacho {
     Kokkos::Impl::Timer timer;
     double t = 0.0;
 
-    std::cout << "DenseGemmByBlocks:: test matrices "
+    std::cout << "DenseCholByBlocks:: test matrices "
               <<":: mmin = " << mmin << " , mmax = " << mmax << " , minc = " << minc 
-              << " , k = "<< k << " , mb = " << mb << std::endl;
+              << " , mb = " << mb << std::endl;
 
     const size_t max_task_size = (3*sizeof(DenseTaskViewDeviceType)+sizeof(PolicyType)+128); 
     PolicyType policy(max_concurrency,
@@ -81,86 +83,85 @@ namespace Tacho {
       os.str("");
       
       // host matrices
-      DenseMatrixBaseHostType AA_host, BB_host, CC_host("CC_host", m, m), CB_host("CB_host", m, m);
+      DenseMatrixBaseHostType AA_host("AA_host", m, m), AB_host("AB_host"), TT_host("TT_host");
+
+      // random T matrix
       {
-        if (ArgTransA == Trans::NoTranspose) 
-          AA_host = DenseMatrixBaseHostType("AA_host", m, k); 
-        else 
-          AA_host = DenseMatrixBaseHostType("AA_host", k, m);
-        
-        if (ArgTransB == Trans::NoTranspose) 
-          BB_host = DenseMatrixBaseHostType("BB_host", k, m);
-        else 
-          BB_host = DenseMatrixBaseHostType("BB_host", m, k);
-        
-        for (ordinal_type j=0;j<AA_host.NumCols();++j)
-          for (ordinal_type i=0;i<AA_host.NumRows();++i)
-            AA_host.Value(i,j) = 2.0*((value_type)rand()/(RAND_MAX)) - 1.0;
-        
-        for (ordinal_type j=0;j<BB_host.NumCols();++j)
-          for (ordinal_type i=0;i<BB_host.NumRows();++i)
-            BB_host.Value(i,j) = 2.0*((value_type)rand()/(RAND_MAX)) - 1.0;
-        
-        for (ordinal_type j=0;j<CC_host.NumCols();++j)
-          for (ordinal_type i=0;i<CC_host.NumRows();++i)
-            CC_host.Value(i,j) = 2.0*((value_type)rand()/(RAND_MAX)) - 1.0;
-        
-        DenseMatrixTools::copy(CB_host, CC_host);
+        TT_host.createConfTo(AA_host);
+        for (ordinal_type j=0;j<TT_host.NumCols();++j) {
+          for (ordinal_type i=0;i<TT_host.NumRows();++i)
+            TT_host.Value(i,j) = 2.0*((value_type)rand()/(RAND_MAX)) - 1.0;
+          TT_host.Value(j,j) = std::fabs(TT_host.Value(j,j));
+        }
+      }
+      // create SPD matrix
+      {
+        Teuchos::BLAS<ordinal_type,value_type> blas;
+
+        blas.HERK(ArgUplo == Uplo::Upper ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI, 
+                  Teuchos::CONJ_TRANS,
+                  m, m,
+                  1.0,
+                  TT_host.ValuePtr(), TT_host.ColStride(),
+                  0.0,
+                  AA_host.ValuePtr(), AA_host.ColStride());
+
+        // preserve a copy of A
+        AB_host.createConfTo(AA_host);        
+        DenseMatrixTools::copy(AB_host, AA_host);
       }
 
-      const double flop = DenseFlopCount<value_type>::Gemm(m, m, k);
+      const double flop = DenseFlopCount<value_type>::Chol(m);
 
 #ifdef HAVE_SHYLUTACHO_MKL
       mkl_set_num_threads(mkl_nthreads);
 #endif
-
-      os << "DenseGemmByBlocks:: m = " << m << " n = " << m << " k = " << k << "  ";
+      os << "DenseCholByBlocks:: m = " << m << "  ";
+      int ierr = 0;
       if (check) {
         timer.reset();
-        DenseMatrixViewHostType A_host(AA_host), B_host(BB_host), C_host(CB_host);
-        Gemm<ArgTransA,ArgTransB,AlgoGemm::ExternalBlas,Variant::One>::invoke
+        DenseMatrixViewHostType A_host(AB_host); 
+        ierr = Chol<ArgUplo,AlgoChol::ExternalLapack,Variant::One>::invoke
           (policy, policy.member_single(),
-           1.0, A_host, B_host, 1.0, C_host);
+           A_host);
         t = timer.seconds();
+        TACHO_TEST_FOR_ABORT( ierr, "Fail to perform Cholesky (serial)");
         os << ":: Serial Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
       }
 
-      DenseMatrixBaseDeviceType AA_device("AA_device"), BB_device("BB_device"), CC_device("CC_device");
+      DenseMatrixBaseDeviceType AA_device("AA_device");
       {
         timer.reset();
         AA_device.mirror(AA_host);
-        BB_device.mirror(BB_host);
-        CC_device.mirror(CC_host);
         t = timer.seconds();
         os << ":: Mirror = " << t << " [sec]  ";
       }
 
       {
-        DenseHierMatrixBaseDeviceType HA_device("HA_device"), HB_device("HB_device"), HC_device("HC_device");
+        DenseHierMatrixBaseDeviceType HA_device("HA_device");
+        
+        DenseMatrixTools::createHierMatrix(HA_device, AA_device, mb, mb);
 
-        DenseMatrixTools::createHierMatrix(HA_device, AA_device, mb, mb);        
-        DenseMatrixTools::createHierMatrix(HB_device, BB_device, mb, mb);        
-        DenseMatrixTools::createHierMatrix(HC_device, CC_device, mb, mb);        
+        DenseHierTaskViewDeviceType TA_device(HA_device);
 
-        DenseHierTaskViewDeviceType TA_device(HA_device), TB_device(HB_device), TC_device(HC_device);
         timer.reset();
         auto future = policy.proc_create_team
-          (Gemm<ArgTransA,ArgTransB,AlgoGemm::DenseByBlocks,ArgVariant>
-           ::createTaskFunctor(policy, 1.0, TA_device, TB_device, 1.0, TC_device),
+          (Chol<ArgUplo,AlgoChol::DenseByBlocks,ArgVariant>
+           ::createTaskFunctor(policy, TA_device), 
            0);
         policy.spawn(future);
         Kokkos::Experimental::wait(policy);
-        t = timer.seconds();       
+        t = timer.seconds();
         os << ":: Parallel Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
-      } 
+      }
 
-      CC_host.mirror(CC_device);
-      if (check) {
+      AA_host.mirror(AA_device);
+      if (!ierr && check) {
         double err = 0.0, norm = 0.0;
-        for (ordinal_type j=0;j<CC_host.NumCols();++j)
-          for (ordinal_type i=0;i<CC_host.NumRows();++i) {
-            const double diff = abs(CC_host.Value(i,j) - CB_host.Value(i,j));
-            const double val  = CB_host.Value(i,j);
+        for (ordinal_type j=0;j<AA_host.NumCols();++j)
+          for (ordinal_type i=0;i<=j;++i) {
+            const double diff = abs(AA_host.Value(i,j) - AB_host.Value(i,j));
+            const double val  = AB_host.Value(i,j);
             err  += diff*diff;
             norm += val*val;
           }
@@ -168,7 +169,7 @@ namespace Tacho {
       }
       std::cout << os.str() << std::endl;
     }
-
+    
     return r_val;
   }
 }
