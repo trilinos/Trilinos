@@ -355,8 +355,14 @@ namespace Ioss {
               << hash_ids.size()/std::chrono::duration<double> (diffh).count() << " nodes/second\n";
     std::cout << "Face generation time:\t" << std::chrono::duration<double, std::milli> (difff).count() << " ms\t"
               << faces_.size()/std::chrono::duration<double> (difff).count() << " faces/second.\n";
-    std::cout << "Parallel time:       \t" << std::chrono::duration<double, std::milli> (diffp).count() << " ms\t"
-              << faces_.size()/std::chrono::duration<double> (diffp).count() << " faces/second.\n";
+#ifdef HAVE_MPI
+    size_t proc_count = region_.get_database()->util().parallel_size();
+
+    if (proc_count > 1) {
+      std::cout << "Parallel time:       \t" << std::chrono::duration<double, std::milli> (diffp).count() << " ms\t"
+		<< faces_.size()/std::chrono::duration<double> (diffp).count() << " faces/second.\n";
+    }
+#endif
     std::cout << "Total time:          \t" << std::chrono::duration<double, std::milli> (endp-starth).count() << " ms\n\n";
   }
 }

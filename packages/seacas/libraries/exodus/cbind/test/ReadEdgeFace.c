@@ -292,9 +292,9 @@ int cReadEdgeFace( int argc, char* argv[] )
           }
           fprintf( stdout, "\n   " );
         }
-        if ( nconn ) free( nconn );
-        if ( econn ) free( econn );
-        if ( fconn ) free( fconn );
+        free( nconn );
+        free( econn );
+        free( fconn );
 
         if ( num_attrs ) {
           char** attr_names;
@@ -345,8 +345,7 @@ int cReadEdgeFace( int argc, char* argv[] )
             fprintf( stdout, "      %2d\n", set_entry[j] );
         }
         free( set_entry );
-        if ( set_extra )
-          free( set_extra );
+	free( set_extra );
 
         set_df = num_df ? (double*) malloc( num_df * sizeof(double) ) : 0;
         if ( set_df ) {
@@ -439,8 +438,7 @@ int cReadEdgeFace( int argc, char* argv[] )
         free( var_names[j] );
       free( var_names );
     }
-    if ( truth_tab )
-      free( truth_tab );
+    free( truth_tab );
     free( ids );
 
     for ( obj = 0; obj < nids; ++obj )

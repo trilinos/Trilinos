@@ -602,8 +602,8 @@ int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
   }
 
   /* Free the space holding the dimension IDs */
-  (void)free(dim_in_id);
-  (void)free(dim_out_id);
+  free(dim_in_id);
+  free(dim_out_id);
 
   return var_out_id;
 } /* end cpy_var_def() */
@@ -751,14 +751,14 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
   } /* end if variable is an array */
 
   /* Free the space that held the dimension IDs */
-  (void)free(dim_cnt);
-  (void)free(dim_id_in);
-  (void)free(dim_id_out);
-  (void)free(dim_sz);
-  (void)free(dim_srt);
+  free(dim_cnt);
+  free(dim_id_in);
+  free(dim_id_out);
+  free(dim_sz);
+  free(dim_srt);
 
   /* Free the space that held the variable */
-  (void)free(void_ptr);
+  free(void_ptr);
 
   return(EX_NOERR);
 
@@ -862,7 +862,7 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
   }
 
   /* Free the space that held the variable */
-  (void)free(void_ptr);
+  free(void_ptr);
   return(EX_NOERR);
 } /* end cpy_coord_val() */
 

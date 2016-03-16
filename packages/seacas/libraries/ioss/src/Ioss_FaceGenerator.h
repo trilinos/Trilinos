@@ -46,11 +46,12 @@ namespace Ioss {
   class Face
   {
   public:
-    Face() : id_(0), elementCount_(0) {}
+    Face() : id_(0), elementCount_(0), sharedWithProc_(-1)
+      {}
     Face(size_t id, std::array<size_t,4> conn)
       : id_(id), elementCount_(0),
         sharedWithProc_(-1), connectivity_(std::move(conn))
-    {}
+      {}
     
     void add_element(size_t element_id) const
     {
@@ -77,8 +78,9 @@ namespace Ioss {
   {
     bool operator()(const Face &left, const Face &right) const
     {
-      if (left.id_ != right.id_) { return false;
-}
+      if (left.id_ != right.id_) {
+	return false;
+      }
       // Hash (id_) is equal
       // Check whether same vertices (can be in different order)
       for (auto lvert : left.connectivity_) {

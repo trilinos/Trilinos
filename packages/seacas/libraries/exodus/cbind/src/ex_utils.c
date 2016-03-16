@@ -791,8 +791,7 @@ int ex_id_lkup( int exoid,
   if (i >= dim_len) /* failed to find id number */
     {
       if ( !(tmp_stats->valid_ids) ) {
-	if (id_vals) { free (id_vals); 
-	}
+	free (id_vals); 
       }
       exerrval = EX_LOOKUPFAIL;
       return(EX_LOOKUPFAIL); /*if we got here, the id array value doesn't exist */
@@ -812,8 +811,7 @@ int ex_id_lkup( int exoid,
 
       if (!(stat_vals = malloc(dim_len*sizeof(int)))) {
         exerrval = EX_MEMFAIL;
-        if (id_vals) { free (id_vals); 
-	}
+        free (id_vals); 
         sprintf(errmsg,
 		"ERROR: failed to allocate memory for %s array for file id %d",
 		id_table,exoid);
@@ -823,8 +821,7 @@ int ex_id_lkup( int exoid,
 
       if ((status = nc_get_var_int (exoid, varid, stat_vals)) != NC_NOERR) {
         exerrval = status;
-        if (id_vals) { free (id_vals); 
-	}
+        free (id_vals); 
         free(stat_vals);
         sprintf(errmsg,
 		"ERROR: failed to get %s array from file id %d",
@@ -849,17 +846,14 @@ int ex_id_lkup( int exoid,
         free (stat_vals);
       }
       if ( !(tmp_stats->valid_ids) ) {
-        if (id_vals) { free (id_vals); 
-	}
+        free (id_vals); 
       }
       return(-((int)i+1)); /* return index into id array (1-based) */
     }
   }
   if ( !(tmp_stats->valid_ids) ) {
-    if (id_vals) { free (id_vals);
-    }
-    if (stat_vals) { free (stat_vals);
-    }
+    free (id_vals);
+    free (stat_vals);
   }
   return(i+1); /* return index into id array (1-based) */
 }
@@ -932,13 +926,9 @@ void ex_rm_stat_ptr (int exoid, struct obj_stats **obj_ptr)
         *obj_ptr = (*obj_ptr)->next;    /*   yes, reset ptr to head of list */
       } else {                              /*   no, remove this record from chain*/
         last_head_list_ptr->next=tmp_ptr->next;
-}
-      if (tmp_ptr->id_vals != NULL) {
-        free(tmp_ptr->id_vals);           /* free up memory */
-}
-      if (tmp_ptr->stat_vals != NULL) {
-        free(tmp_ptr->stat_vals);
-}
+      }
+      free(tmp_ptr->id_vals);           /* free up memory */
+      free(tmp_ptr->stat_vals);
       free(tmp_ptr);
       break;                            /* Quit if found */
     }
