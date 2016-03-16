@@ -4634,59 +4634,37 @@ void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(Ent
 bool BulkData::internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, impl::MeshModification::modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
-  if ( this->in_synchronized_state() ) { return false ; }
+  if (in_synchronized_state()) { return false; }
 
   ThrowAssertMsg(impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-  for (size_t rank_idx=0 ; rank_idx < entity_rank_vector.size() ; ++rank_idx) {
-      EntityRank entity_rank = entity_rank_vector[rank_idx];
-      if (parallel_size() > 1)
-      {
-          std::vector<Entity> shared_modified ;
+  if (parallel_size() > 1) {
+      internal_resolve_parallel_create(entity_rank_vector);
+      internal_resolve_shared_membership();
 
-          // Update the parallel index and
-          // output shared and modified entities.
-          internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
-
-          // ------------------------------------------------------------
-          // Claim ownership on all shared_modified entities that I own
-          // and which were not created in this modification cycle. All
-          // sharing procs will need to be informed of this claim.
-
-          resolve_ownership_of_modified_entities( shared_modified );
-
-          // ------------------------------------------------------------
-          // Update shared created entities.
-          // - Revise ownership to selected processor
-          // - Update sharing.
-          // - Work backward so the 'in_owned_closure' function
-          //   can evaluate related higher ranking entities.
-
-          move_entities_to_proper_part_ownership( shared_modified );
-
-          add_comm_list_entries_for_entities( shared_modified );
-
-          internal_resolve_shared_membership();
-
-          if(is_automatic_aura_on())
-          {
-              bool connectFacesToPreexistingGhosts = true;
+      if (is_automatic_aura_on()) {
+          bool connectFacesToPreexistingGhosts = true;
+          for (size_t rank_idx=0; rank_idx < entity_rank_vector.size(); ++rank_idx) {
+              EntityRank entity_rank = entity_rank_vector[rank_idx];
               resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, mesh_meta_data().universal_part(), connectFacesToPreexistingGhosts);
           }
+      }
 
-          m_modSummary.write_summary(m_meshModification.synchronized_count());
-          check_mesh_consistency();
-      }
-      else {
-          std::vector<Entity> shared_modified ;
+      m_modSummary.write_summary(m_meshModification.synchronized_count());
+      check_mesh_consistency();
+  }
+  else {
+      std::vector<Entity> shared_modified;
+      for (size_t rank_idx=0; rank_idx < entity_rank_vector.size(); ++rank_idx) {
+          EntityRank entity_rank = entity_rank_vector[rank_idx];
           internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
-          m_modSummary.write_summary(m_meshModification.synchronized_count());
       }
+      m_modSummary.write_summary(m_meshModification.synchronized_count());
   }
 
-  this->internal_finish_modification_end(opt);
+  internal_finish_modification_end(opt);
 
-  return true ;
+  return true;
 }
 
 
