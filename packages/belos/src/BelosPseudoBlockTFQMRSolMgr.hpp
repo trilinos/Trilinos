@@ -501,7 +501,6 @@ void PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     // Only update the scaling if it's different.
     if (impResScale_ != tempImpResScale) {
-      Belos::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
       impResScale_ = tempImpResScale;
 
       // Update parameter in our list.
@@ -515,7 +514,6 @@ void PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     // Only update the scaling if it's different.
     if (expResScale_ != tempExpResScale) {
-      Belos::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
       expResScale_ = tempExpResScale;
 
       // Update parameter in our list.
