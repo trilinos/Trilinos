@@ -1225,6 +1225,7 @@ namespace Iopx {
       if (ebs[b].num_entry == 0 && (std::strcmp(ebs[b].topology, "nullptr") == 0))
         el_blocks[b].topologyType = "sphere";
         
+      el_blocks[b].globalCount    = ebs[b].num_entry;
       el_blocks[b].nodesPerEntity = ebs[b].num_nodes_per_entry;
       el_blocks[b].attributeCount = ebs[b].num_attribute;
     }

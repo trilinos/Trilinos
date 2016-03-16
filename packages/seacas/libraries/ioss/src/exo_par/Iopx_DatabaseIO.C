@@ -818,6 +818,10 @@ namespace Iopx {
       int nvar = std::numeric_limits<int>::max(); // Number of 'block' vars on database. Used to skip querying if none.
       int nmap = std::numeric_limits<int>::max(); // Number of 'block' maps on database. Used to skip querying if none.
       for (int iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
+	if (decomp->el_blocks[iblk].global_count() == 0) {
+	  continue;
+	}
+
         int64_t id = decomp->el_blocks[iblk].id();
 
         std::string alias = Ioss::Utils::encode_entity_name(basename, id);

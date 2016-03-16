@@ -58,16 +58,18 @@ namespace Iopx {
   {
     public:
       BlockDecompositionData() :
-        id_(0), fileCount(0), iossCount(0), nodesPerEntity(0), attributeCount(0), localIossOffset(0)
+        id_(0), fileCount(0), iossCount(0), globalCount(0), nodesPerEntity(0), attributeCount(0), localIossOffset(0)
     {}
 
       int64_t id() const {return id_;}
       size_t file_count() const {return fileCount;}
       size_t ioss_count() const {return iossCount;}
+      size_t global_count() const {return globalCount;}
 
       int64_t id_;
       size_t fileCount;
       size_t iossCount;
+      size_t globalCount;
 
       std::string topologyType;
       int nodesPerEntity;
