@@ -4,6 +4,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
@@ -228,16 +229,16 @@ TEST_F(HexShellShell, Hex0Shell1Shell2Parallel_testChosenIds )
         if(stk::parallel_machine_rank(get_comm()) == 0)
         {
             const stk::mesh::Entity hex1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
-            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(hex1, 5, 2, 1);
-            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(hex1, 5, 3, 1);
+            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(hex1, 5, 2, 1);
+            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(hex1, 5, 3, 1);
             EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
             chosen_id = info1.m_chosen_side_id;
         }
         else if(stk::parallel_machine_rank(get_comm()) == 1)
         {
             const stk::mesh::Entity shell2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
-            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(shell2, 1, 1, 5);
-            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(shell2, 1, 3, 1);
+            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(shell2, 1, 1, 5);
+            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(shell2, 1, 3, 1);
             //stk::mesh::impl::parallel_info& info3   = elemElemGraph.get_parallel_edge_info(shell2, 0, 3, 0);
             EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
             chosen_id = info1.m_chosen_side_id;
@@ -245,8 +246,8 @@ TEST_F(HexShellShell, Hex0Shell1Shell2Parallel_testChosenIds )
         else
         {
             const stk::mesh::Entity shell3 = get_bulk().get_entity(stk::topology::ELEM_RANK, 3);
-            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(shell3, 1, 1, 5);
-            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(shell3, 1, 2, 1);
+            stk::mesh::impl::ParallelInfo& info1 = elemElemGraph.get_parallel_edge_info(shell3, 1, 1, 5);
+            stk::mesh::impl::ParallelInfo& info2 = elemElemGraph.get_parallel_edge_info(shell3, 1, 2, 1);
             //stk::mesh::impl::parallel_info& info3   = elemElemGraph.get_parallel_edge_info(shell3, 0, 2, 0);
             EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
             chosen_id = info1.m_chosen_side_id;
@@ -267,7 +268,7 @@ TEST_F(HexShellShell, Skin)
     {
         setup_hex_shell_shell_on_procs({0, 1, 0});
 
-        stk::mesh::create_exposed_boundary_sides(get_bulk(), get_meta().universal_part(), {});
+        stk::mesh::create_exposed_block_boundary_sides(get_bulk(), get_meta().universal_part(), {});
 
         stk::mesh::Selector ownedOrShared = get_meta().locally_owned_part() | get_meta().globally_shared_part();
 
@@ -511,6 +512,264 @@ TEST( ElementGraph, HexAddShellAddShellHexSerial )
 
     EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
+
+namespace {
+class ElemElemGraphTester : public stk::mesh::ElemElemGraph
+{
+public:
+    ElemElemGraphTester(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr)
+      :ElemElemGraph(bulkData,selector,air) {}
+    const stk::mesh::impl::SparseGraph& my_get_coincident_graph() {return m_coincidentGraph; }
+};
+
+class ShellMeshModification : public stk::unit_test_util::MeshFixture
+{
+protected:
+    ShellMeshModification()
+    {
+    }
+
+    ~ShellMeshModification()
+    {
+        delete elemElemGraph;
+        delete updater;
+    }
+
+    void initialize(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        setup_empty_mesh(auraOption);
+        shellPart = &get_meta().declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    }
+
+    void create_shell2_on_lowest_rank_proc_and_setup_node_sharing()
+    {
+        get_bulk().modification_begin();
+        declare_shell2_on_lowest_rank_proc();
+        if (get_bulk().parallel_size()>1)
+            share_nodes();
+        get_bulk().modification_end();
+    }
+
+    void create_shell3_on_highest_rank_proc()
+    {
+        get_bulk().modification_begin();
+        declare_shell3_on_highest_rank_proc();
+        get_bulk().modification_end();
+    }
+
+    void create_stacked_shells()
+    {
+        get_bulk().modification_begin();
+        declare_shell2_on_lowest_rank_proc();
+        declare_shell3_on_highest_rank_proc();
+        if (get_bulk().parallel_size()>1)
+            share_nodes();
+        get_bulk().modification_end();
+    }
+
+    void delete_shell2()
+    {
+        get_bulk().modification_begin();
+        destroy_shell2();
+        get_bulk().modification_end();
+    }
+
+    void create_elem_elem_graph()
+    {
+        elemElemGraph = new ElemElemGraphTester(get_bulk(), get_meta().universal_part());
+        updater = new stk::mesh::ElemElemGraphUpdater(get_bulk(), *elemElemGraph);
+        get_bulk().register_observer(updater);
+        coincident_graph = &elemElemGraph->my_get_coincident_graph();
+    }
+
+    void verify_graph_for_stacked_shells()
+    {
+        size_t expectedNumElementsThisProcessor = 2u;
+        size_t expectedNumCoincidentElementsThisProcessor = 2u;
+        size_t expectedNumParallelEdges = 0u;
+        if (get_bulk().parallel_size()>1) {
+            expectedNumElementsThisProcessor = 1u;
+            expectedNumCoincidentElementsThisProcessor = 1u;
+            expectedNumParallelEdges = 2u;
+        }
+        verify_graph_has_num_elements_and_num_edges(expectedNumElementsThisProcessor, 0u);
+        verify_num_parallel_edges(expectedNumParallelEdges);
+        verify_num_elements_and_num_edges_in_coincident_graph(expectedNumCoincidentElementsThisProcessor,2u);
+    }
+
+    void verify_graph_for_single_shell3_on_highest_rank_proc()
+    {
+        size_t numElementsThisProcessor = 1u;
+        if (get_bulk().parallel_size()>1 && get_bulk().parallel_rank()==0)
+            numElementsThisProcessor = 0u;
+        const size_t numCoincidentElementsThisProcessor = 0u;
+        verify_graph_has_num_elements_and_num_edges(numElementsThisProcessor, 0u);
+        verify_num_parallel_edges(0u);
+        verify_num_elements_and_num_edges_in_coincident_graph(numCoincidentElementsThisProcessor,2u);
+    }
+
+    void write_graph(std::string introduction)
+    {
+        std::ostringstream oss;
+        oss << "shells." << get_bulk().parallel_rank();
+        std::ofstream out(oss.str(),std::ios_base::app);
+        out << introduction;
+        elemElemGraph->write_graph(out);
+    }
+
+    void test_create_stacked_shells_then_delete_one(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        initialize(auraOption);
+        create_stacked_shells();
+        create_elem_elem_graph();
+//        write_graph("-------------- Graph after creating stacked shells --------------\n");
+        verify_graph_for_stacked_shells();
+        delete_shell2();
+//        write_graph("-------------- Graph after deleting one shell --------------\n");
+        verify_graph_for_single_shell3_on_highest_rank_proc();
+    }
+
+    void test_create_shell_then_create_another_one(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        initialize(auraOption);
+        create_shell3_on_highest_rank_proc();
+        create_elem_elem_graph();
+//        write_graph("-------------- Graph after creating one shell --------------\n");
+        verify_graph_for_single_shell3_on_highest_rank_proc();
+        create_shell2_on_lowest_rank_proc_and_setup_node_sharing();
+//        write_graph("-------------- Graph after creating second (stacked) shell --------------\n");
+        verify_graph_for_stacked_shells();
+    }
+
+    void create_and_delete_shell_in_same_mod_cycle()
+    {
+        get_bulk().modification_begin();
+        declare_shell2_on_lowest_rank_proc();
+        destroy_shell2();
+        get_bulk().modification_end();
+    }
+
+    void verify_empty_graph()
+    {
+        verify_graph_has_num_elements_and_num_edges(0u,0u);
+        verify_num_elements_and_num_edges_in_coincident_graph(0u,0u);
+    }
+
+private:
+    void verify_local_and_parallel_edges_from_entity_to_remote_entity(stk::mesh::Entity entity, stk::mesh::EntityId remoteEntityId, size_t numParallelEdges)
+    {
+        if(get_bulk().is_valid(entity) && get_bulk().bucket(entity).owned())
+        {
+            EXPECT_EQ(0u, elemElemGraph->get_num_connected_elems(entity));
+            if(2 == numParallelEdges)
+            {
+                EXPECT_TRUE(elemElemGraph->get_parallel_edge_info(entity, 0, remoteEntityId, 0).m_chosen_side_id > 0);
+                EXPECT_TRUE(elemElemGraph->get_parallel_edge_info(entity, 1, remoteEntityId, 1).m_chosen_side_id > 0);
+            }
+        }
+    }
+
+    void verify_num_parallel_edges(size_t numParallelEdges)
+    {
+        verify_local_and_parallel_edges_from_entity_to_remote_entity(shell2, 3u, numParallelEdges);
+        verify_local_and_parallel_edges_from_entity_to_remote_entity(shell3, 2u, numParallelEdges);
+    }
+
+    void verify_num_elements_and_num_edges_in_coincident_graph(size_t numCoincidentElements, size_t numEdgesToCoincidentElements)
+    {
+        EXPECT_EQ(numCoincidentElements, coincident_graph->get_num_elements_in_graph());
+        for(const stk::mesh::impl::SparseGraph::value_type& map_iter : *coincident_graph)
+        {
+            const std::vector<stk::mesh::GraphEdge>& coincident_edges = map_iter.second;
+            EXPECT_EQ(numEdgesToCoincidentElements, coincident_edges.size());
+        }
+    }
+
+    void verify_graph_has_num_elements_and_num_edges(size_t numElementsInGraph, size_t numEdgesInGraph)
+    {
+        EXPECT_EQ(numElementsInGraph, elemElemGraph->size());
+        EXPECT_EQ(numEdgesInGraph, elemElemGraph->num_edges());
+    }
+
+    void share_nodes()
+    {
+        int other_proc = get_bulk().parallel_rank() == 0 ? 1 : 0;
+        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK,shellNodeIDs[0][0]),other_proc);
+        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK,shellNodeIDs[0][1]),other_proc);
+        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK,shellNodeIDs[0][2]),other_proc);
+        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK,shellNodeIDs[0][3]),other_proc);
+    }
+
+    void declare_shell2_on_lowest_rank_proc()
+    {
+        if (get_bulk().parallel_size()==1 || get_bulk().parallel_rank()==0 )
+            shell2 = stk::mesh::declare_element(get_bulk(), *shellPart, shellElemIDs[0], shellNodeIDs[0]);
+    }
+
+    void declare_shell3_on_highest_rank_proc()
+    {
+        if (get_bulk().parallel_size()==1 || get_bulk().parallel_rank()==1 )
+            shell3 = stk::mesh::declare_element(get_bulk(), *shellPart, shellElemIDs[1], shellNodeIDs[1]);
+    }
+
+    void destroy_shell2()
+    {
+        if (get_bulk().parallel_size()==1 || get_bulk().parallel_rank()==0 )
+            get_bulk().destroy_entity(shell2);
+    }
+
+
+private:
+    stk::mesh::Part* shellPart = nullptr;
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 },
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[2] = { 2, 3 };
+    stk::mesh::Entity shell2;
+    stk::mesh::Entity shell3;
+    ElemElemGraphTester* elemElemGraph = nullptr;
+    stk::mesh::ElemElemGraphUpdater* updater = nullptr;
+    const stk::mesh::impl::SparseGraph* coincident_graph = nullptr;
+};
+} // namespace
+
+
+TEST_F(ShellMeshModification, CreateStackedShellsThenTestDeleteOne)
+{
+    if (stk::parallel_machine_size(get_comm()) == 1)
+    {
+        test_create_stacked_shells_then_delete_one(stk::mesh::BulkData::AUTO_AURA);
+    }
+}
+
+TEST_F( ShellMeshModification, CreateShellThenTestCreateAnotherShellAutoAura)
+{
+    if (stk::parallel_machine_size(get_comm()) <= 2)
+    {
+        test_create_shell_then_create_another_one(stk::mesh::BulkData::AUTO_AURA);
+    }
+}
+
+TEST_F( ShellMeshModification, CreateShellThenTestCreateAnotherShellNoAura)
+{
+    if (stk::parallel_machine_size(get_comm()) == 2)
+    {
+        test_create_shell_then_create_another_one(stk::mesh::BulkData::NO_AUTO_AURA);
+    }
+}
+
+TEST_F( ShellMeshModification, CreateAndDeleteShellInSameModCycle)
+{
+    if (stk::parallel_machine_size(get_comm()) == 1)
+    {
+        initialize(stk::mesh::BulkData::NO_AUTO_AURA);
+        create_elem_elem_graph();
+        EXPECT_NO_THROW(create_and_delete_shell_in_same_mod_cycle());
+        verify_empty_graph();
+    }
+}
+
 
 TEST( ElementGraph, HexShellShellSerial )
 {
@@ -1038,8 +1297,8 @@ TEST( ElementGraph, Hex0Shell0Shell1Hex1Parallel )
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
 
-        stk::mesh::impl::parallel_info& p_info_shell4_shell3 = elemElemGraph.get_parallel_edge_info(shell4, 1, 3, 1);
-        stk::mesh::impl::parallel_info& p_info_shell4_hex2   = elemElemGraph.get_parallel_edge_info(shell4, 1, 1, 5);
+        stk::mesh::impl::ParallelInfo& p_info_shell4_shell3 = elemElemGraph.get_parallel_edge_info(shell4, 1, 3, 1);
+        stk::mesh::impl::ParallelInfo& p_info_shell4_hex2   = elemElemGraph.get_parallel_edge_info(shell4, 1, 1, 5);
         EXPECT_EQ(p_info_shell4_shell3.m_chosen_side_id, p_info_shell4_hex2.m_chosen_side_id);
 
     }

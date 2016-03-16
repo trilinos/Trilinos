@@ -446,7 +446,7 @@ namespace BaskerNS
 	{return;}
       if(col_counts_flg == 0)
 	{
-	  printf("first call init_col_counts\n");
+	  //printf("first call init_col_counts\n");
 	  BASKER_ASSERT(size > 0, "struct col count size");
 	  MALLOC_INT_1DARRAY(col_counts, size);
 	  col_counts_flg =size;
@@ -460,7 +460,7 @@ namespace BaskerNS
 	  REALLOC_1DARRAY(col_counts, col_counts_flg, size);
 	  col_counts_flg = size;
 	}
-      printf("zero out col_counts\n");
+      //printf("zero out col_counts\n");
       BV::init_value(col_counts, col_counts_flg, 0);
     }//end init_col_counts
 	
@@ -684,7 +684,13 @@ namespace BaskerNS
     {
 
       //Operation Options
+
+      same_pattern = BASKER_FALSE;
+
+      //Note verbose will not give debug
+      //Debug is a compile time option
       verbose    = BASKER_FALSE;
+      verbose_matrix_out = BASKER_FALSE;
      
       //Memory Options
       realloc    = BASKER_FALSE;
@@ -693,35 +699,48 @@ namespace BaskerNS
       symmetric  = BASKER_TRUE;
 
       //Nonsymmetric Options
-      AtA        = BASKER_FALSE;
+      AtA        = BASKER_TRUE;
+      A_plus_At  = BASKER_FALSE;  //Experimental status
       
       //Transpose Option
       transpose  = BASKER_FALSE;
-      
-      //Ordering Options
-      order_on        = BASKER_FALSE; //Default on future
-      btf             = BASKER_FALSE;
+
+      //Matching Ordering Options
+      //Default is on using bottle-neck
+      matching      = BASKER_TRUE;
+      matching_type = BASKER_MATCHING_BN;
+
+
+      //BTF Ordering Options
+      btf             = BASKER_TRUE;
       btf_max_percent = BASKER_BTF_MAX_PERCENT;
       btf_large       = BASKER_BTF_LARGE;
 
       //Pivot
       no_pivot   = BASKER_FALSE;
-      pivot_tol  = .0001; 
-      pivot_bias = 1.001;
+      pivot_tol  = (Entry)BASKER_PIVOT_TOL; 
+      pivot_bias = (Entry)BASKER_PIVOT_BIAS;
 
       //BTF Options
-      btf_prune_size = (BASKER_INT)BASKER_BTF_PRUNE_SIZE;
+      btf_prune_size = (Int)BASKER_BTF_PRUNE_SIZE;
 
       //Incomplete Factorization Options
+      //incomplete = (Int) BASKER_INCOMPLETE_LVL;
       incomplete = BASKER_FALSE;
-      inc_lvl    = 0;
-      inc_tol    = 0.0001;
-      user_fill  = 0.001;
+      incomplete_type = BASKER_INCOMPLETE_LVL;
+      //incomplete_type = BASKER_INCOMPLETE_RLVL_LIMITED;
+      inc_lvl    = BASKER_INC_LVL_VALUE;
+      inc_tol    = BASKER_INC_TOL_VALUE;
+      user_fill  = (Entry)BASKER_FILL_USER;
  
     }
 
+    //Reuse Pattern (Save time if same pattern can be used)
+    BASKER_BOOL same_pattern;
+
     //Operation Options
     BASKER_BOOL verbose; //Not Used
+    BASKER_BOOL verbose_matrix_out;
 
     //Memory Options
     BASKER_BOOL  realloc;
@@ -733,14 +752,21 @@ namespace BaskerNS
     
     //NonSymmetri Option
     BASKER_BOOL AtA;
+    BASKER_BOOL A_plus_At;
     
+    //Matching Ordering
+    BASKER_BOOL matching;
+    Int         matching_type;
 
-    //Ordering Options
-    BASKER_BOOL  order_on;
+    //BTF Ordering Options
     BASKER_BOOL  btf;
     BASKER_ENTRY btf_max_percent;
     BASKER_ENTRY btf_large;
-
+    
+    //AMD Ordering Options
+    BASKER_BOOL  amd_dom;
+    BASKER_BOOL  amd_btf;
+    
     //Pivot Options
     BASKER_BOOL  no_pivot;
     BASKER_ENTRY pivot_tol;  //Not Used
@@ -751,6 +777,7 @@ namespace BaskerNS
   
     //Incomplete Factorization Options
     BASKER_BOOL  incomplete;
+    BASKER_INT   incomplete_type;
     BASKER_INT   inc_lvl;
     BASKER_ENTRY inc_tol;    //Not Used
     BASKER_ENTRY user_fill;

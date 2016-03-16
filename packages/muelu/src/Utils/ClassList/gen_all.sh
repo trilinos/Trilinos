@@ -12,7 +12,10 @@ cd ../..
 
 # Generate explicit instantiation
 cd ./Utils/ExplicitInstantiation/
-./gen_cppFiles.sh
+# generate the ETI_LO_GO_NO_classes.cmake and
+# ETI_SC_LO_GO_NO_classes.cmake files for auto
+# generating the ETI *.cpp files in MueLu
+./genClassLists.sh
 cd ../..
 
 # Touch CMakeLists.txt for a new class

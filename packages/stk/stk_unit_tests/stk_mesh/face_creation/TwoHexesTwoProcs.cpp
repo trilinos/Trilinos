@@ -2,7 +2,7 @@
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <unit_tests/BulkDataTester.hpp>
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 #include "FaceCreatorFixture.hpp"
@@ -10,13 +10,13 @@
 namespace
 {
 
-class FaceCreatorUsingBDFaceSharingTester : public FaceCreatorFixture
+class FaceCreatorUsingBulkDataFaceSharingTester : public FaceCreatorFixture
 {
 protected:
 
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        set_bulk(new stk::mesh::unit_test::BulkDataFaceSharingTester(get_meta(), get_comm(), auraOption));
+        set_bulk(new stk::unit_test_util::BulkDataFaceSharingTester(get_meta(), get_comm(), auraOption));
     }
 
     void test_elem_elem_graph_for_face_connection_info()
@@ -66,16 +66,16 @@ private:
         {
             stk::mesh::impl::IdViaSidePair sidePair = egraph.get_connected_remote_id_and_via_side(element, element_index);
             int remoteSideOrdinal = egraph.get_connected_elements_side(element, element_index);
-            const stk::mesh::impl::parallel_info &p_info = egraph.get_const_parallel_edge_info(element, sidePair.side, sidePair.id, remoteSideOrdinal);
+            const stk::mesh::impl::ParallelInfo &p_info = egraph.get_const_parallel_edge_info(element, sidePair.side, sidePair.id, remoteSideOrdinal);
             test_parallel_info_for_side(p_info, element, side, sidePair.side);
         }
     }
 
-    void test_parallel_info_for_side(const stk::mesh::impl::parallel_info &p_info, stk::mesh::Entity element, stk::mesh::Entity side, int side_ordinal)
+    void test_parallel_info_for_side(const stk::mesh::impl::ParallelInfo &p_info, stk::mesh::Entity element, stk::mesh::Entity side, int side_ordinal)
     {
         test_parallel_info(p_info);
         stk::mesh::EntityVector side_nodes(get_bulk().begin_nodes(side),get_bulk().end_nodes(side));
-        stk::mesh::EntityVector permuted_element_side_nodes = get_permuted_element_side_nodes(element, side_ordinal, p_info.m_other_proc, p_info.m_permutation);
+        stk::mesh::EntityVector permuted_element_side_nodes = get_permuted_element_side_nodes(element, side_ordinal, p_info.get_proc_rank_of_neighbor(), p_info.m_permutation);
         EXPECT_TRUE(side_nodes == permuted_element_side_nodes);
     }
 
@@ -109,16 +109,16 @@ private:
         return permuted_element_side_nodes;
     }
 
-    void test_parallel_info(const stk::mesh::impl::parallel_info &p_info)
+    void test_parallel_info(const stk::mesh::impl::ParallelInfo &p_info)
     {
-        EXPECT_EQ(1-get_bulk().parallel_rank(), p_info.m_other_proc);
+        EXPECT_EQ(1-get_bulk().parallel_rank(), p_info.get_proc_rank_of_neighbor());
         EXPECT_EQ(4, p_info.m_permutation);
         EXPECT_EQ(stk::topology::HEXAHEDRON_8, p_info.m_remote_element_toplogy);
         EXPECT_EQ(2u, p_info.m_chosen_side_id);
     }
 };
 
-TEST_F(FaceCreatorUsingBDFaceSharingTester, twoHexesTwoProcsCreateTwoFacesWithAura)
+TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, twoHexesTwoProcsCreateTwoFacesWithAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
@@ -127,7 +127,11 @@ TEST_F(FaceCreatorUsingBDFaceSharingTester, twoHexesTwoProcsCreateTwoFacesWithAu
     }
 }
 
-TEST_F(FaceCreatorUsingBDFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithAura)
+//  These two tests demonstrate that if faces are created with a permutation other than 0 then
+//  the graph parallel info is incorrect because it assumes all faces are created with permutation
+//  0 on the originating element/side.  If we can guarantee all faces are created through
+//  declare_element_side, then this issue goes away.
+TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
@@ -137,7 +141,7 @@ TEST_F(FaceCreatorUsingBDFaceSharingTester, DISABLED_testFaceDataUsingElemElemGr
     }
 }
 
-TEST_F(FaceCreatorUsingBDFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithoutAura)
+TEST_F(FaceCreatorUsingBulkDataFaceSharingTester, DISABLED_testFaceDataUsingElemElemGraphWithoutAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {

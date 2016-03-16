@@ -50,6 +50,7 @@
 #include <algorithm>
 #include <sstream>
 #include <time.h>
+#include <numeric>
 
 namespace Ioss {
   class GroupingEntity;
@@ -80,7 +81,9 @@ namespace Iofx {
     public:
       DatabaseIO(Ioss::Region *region, const std::string& filename,
                  Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-                 const Ioss::PropertyManager &properties);
+                 const Ioss::PropertyManager &props);
+      DatabaseIO(const DatabaseIO& from) =delete;
+      DatabaseIO& operator=(const DatabaseIO& from) =delete;
       ~DatabaseIO() {};
 
       // Check to see if database state is ok...
@@ -88,18 +91,25 @@ namespace Iofx {
       // If 'error_message' non-null, then put the warning message into the string and return it.
       // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
       //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-      bool ok(bool write_message = false, std::string *error_message=nullptr, int *bad_count=nullptr) const;
+      bool ok(bool write_message = false, std::string *error_msg=nullptr, int *bad_count=nullptr) const;
 
       void get_step_times();
 
-      void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const;
-
     private:
+      bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
+			   bool abort_if_error) const;
+      bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
+			      bool overwrite, bool abort_if_error) const;
+      bool check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
+				bool abort_if_error) const;
+
+      int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+				 void *data, size_t data_size) const;
       int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
-      int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
+      int64_t get_field_internal(const Ioss::EdgeBlock* eb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
-      int64_t get_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
+      int64_t get_field_internal(const Ioss::FaceBlock* eb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
       int64_t get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
@@ -118,11 +128,13 @@ namespace Iofx {
       int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
 
+      int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+				 void *data, size_t data_size) const;
       int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
-      int64_t put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
+      int64_t put_field_internal(const Ioss::EdgeBlock* eb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
-      int64_t put_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
+      int64_t put_field_internal(const Ioss::FaceBlock* eb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
       int64_t put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
                                  void *data, size_t data_size) const;
@@ -145,10 +157,6 @@ namespace Iofx {
                                       const Ioss::Field& field, void *data, size_t data_size) const;
       int64_t get_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet* ns,
                                       const Ioss::Field& field, void *data, size_t data_size) const;
-
-      // Private member functions
-      DatabaseIO(const DatabaseIO& from); // do not implement
-      DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
   public:
       // Temporarily made public for use during Salinas transition
@@ -173,11 +181,11 @@ namespace Iofx {
 
       int64_t read_attribute_field(ex_entity_type type, const Ioss::Field& field,
                                    const Ioss::GroupingEntity *ge,
-                                   void *variables) const;
+                                   void *data) const;
 
       int64_t write_attribute_field(ex_entity_type type, const Ioss::Field& field,
                                     const Ioss::GroupingEntity *ge,
-                                    void *variables) const;
+                                    void *data) const;
 
       // Handles subsetting of side blocks.
       int64_t read_ss_transient_field(const Ioss::Field& field,
@@ -200,11 +208,11 @@ namespace Iofx {
       void get_edgeblocks();
       void get_faceblocks();
       void get_elemblocks();
-      void get_blocks(ex_entity_type type, int rank_offset, const std::string &basename);
+      void get_blocks(ex_entity_type entity_type, int rank_offset, const std::string &basename);
 
       void get_sidesets();
 
-      template <typename T> void get_sets(ex_entity_type type, int64_t count, const std::string &base, const T*);
+      template <typename T> void get_sets(ex_entity_type type, int64_t count, const std::string &base, const T* /*unused*/);
       void get_nodesets();
       void get_edgesets();
       void get_facesets();
@@ -232,13 +240,13 @@ namespace Iofx {
       int64_t handle_face_ids(const Ioss::FaceBlock *eb, void* ids, size_t num_to_get) const;
       int64_t handle_edge_ids(const Ioss::EdgeBlock *eb, void* ids, size_t num_to_get) const;
 
-      int64_t get_side_connectivity(const Ioss::SideBlock* fb, int64_t id, int64_t side_count,
+      int64_t get_side_connectivity(const Ioss::SideBlock* fb, int64_t id, int64_t my_side_count,
                                     void *fconnect, bool map_ids) const;
       template <typename INT>
       int64_t get_side_connectivity_internal(const Ioss::SideBlock* fb, int64_t id, int64_t side_count,
                                              INT *fconnect, bool map_ids) const;
       int64_t get_side_distributions(const Ioss::SideBlock* fb, int64_t id,
-                                     int64_t side_count, double *dist_fact, size_t data_size) const;
+                                     int64_t my_side_count, double *dist_fact, size_t data_size) const;
 
       int64_t get_side_field(const Ioss::SideBlock* ef_blk,
                              const Ioss::Field& field,

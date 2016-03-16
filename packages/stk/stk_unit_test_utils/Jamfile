@@ -40,6 +40,7 @@ project votd
   : requirements
     $(sierra-warnings)
      <define>SIERRA_PARALLEL_MPI
+     <include>$(stk_unit_test_utils-root)/..
   : usage-requirements
      <define>SIERRA_PARALLEL_MPI
      <include>$(stk_unit_test_utils-root)/..
@@ -101,7 +102,6 @@ lib stk_unit_test_utils
       [ glob $(stk_unit_test_utils-root)/*.cpp ]
       /sierra/stk_util//stk_util_util
       /sierra/stk_io//stk_io
-      /sierra/stk_mesh//stk_mesh_fixtures
       /tpl/gtest//gtest
       /mpi//mpi
     ]

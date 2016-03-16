@@ -59,22 +59,30 @@ NOX::Thyra::MultiVector::
 MultiVector(
        const Teuchos::RCP< ::Thyra::MultiVectorBase<double> >& source)
   : thyraMultiVec(source),
-    noxThyraVectors(thyraMultiVec->domain()->dim())
+    noxThyraVectors(thyraMultiVec->domain()->dim()),
+    do_implicit_weighting_(false)
 {
 }
 
 NOX::Thyra::MultiVector::
 MultiVector(const ::Thyra::MultiVectorBase<double>& source)
   : thyraMultiVec(source.clone_mv()),
-    noxThyraVectors(thyraMultiVec->domain()->dim())
+    noxThyraVectors(thyraMultiVec->domain()->dim()),
+    do_implicit_weighting_(false)
 {
 }
 
 NOX::Thyra::MultiVector::
 MultiVector(const NOX::Thyra::MultiVector& source, NOX::CopyType type)
   : thyraMultiVec(source.thyraMultiVec->clone_mv()),
-    noxThyraVectors(thyraMultiVec->domain()->dim())
+    noxThyraVectors(thyraMultiVec->domain()->dim()),
+    do_implicit_weighting_(false)
 {
+  if (nonnull(source.weightVec_)) {
+    weightVec_ = source.weightVec_;
+    tmpMultiVec_ = source.tmpMultiVec_->clone_mv();
+    do_implicit_weighting_ = source.do_implicit_weighting_;
+  }
 }
 
 NOX::Thyra::MultiVector::
@@ -86,6 +94,8 @@ NOX::Abstract::MultiVector&
 NOX::Thyra::MultiVector::
 operator=(const NOX::Abstract::MultiVector& src)
 {
+  // NOTE that we only copy over values, we never copy over weighting.
+  // Weighting property only transfers via clone or copy ctor!
   const NOX::Thyra::MultiVector& source =
     dynamic_cast<const NOX::Thyra::MultiVector&>(src);
   ::Thyra::assign(thyraMultiVec.ptr(), *source.thyraMultiVec);
@@ -331,12 +341,27 @@ NOX::Thyra::MultiVector::
 norm(std::vector<double>& result, NOX::Abstract::Vector::NormType type) const
 {
   using Teuchos::arrayViewFromVector;
-  if (type == NOX::Abstract::Vector::TwoNorm)
-    ::Thyra::norms_2<double>(*thyraMultiVec, arrayViewFromVector(result));
-  else if (type == NOX::Abstract::Vector::OneNorm)
-    ::Thyra::norms_1<double>(*thyraMultiVec, arrayViewFromVector(result));
-  else
-    ::Thyra::norms_inf<double>(*thyraMultiVec, arrayViewFromVector(result));
+  // FIXME: what do we need to do for scaling?
+  if (nonnull(weightVec_) && do_implicit_weighting_) {
+    // FIXME: need to add routines to Thyra
+    // ::Thyra::copy(*thyraMultiVec, outArg(*tmpMultiVec_));
+    // ::Thyra::ele_wise_scale(*weightVec_, outArg(*tmpMultiVec_));
+
+    if (type == NOX::Abstract::Vector::TwoNorm)
+      ::Thyra::norms_2<double>(*tmpMultiVec_, arrayViewFromVector(result));
+    else if (type == NOX::Abstract::Vector::OneNorm)
+      ::Thyra::norms_1<double>(*tmpMultiVec_, arrayViewFromVector(result));
+    else
+      ::Thyra::norms_inf<double>(*tmpMultiVec_, arrayViewFromVector(result));
+  }
+  else {
+    if (type == NOX::Abstract::Vector::TwoNorm)
+      ::Thyra::norms_2<double>(*thyraMultiVec, arrayViewFromVector(result));
+    else if (type == NOX::Abstract::Vector::OneNorm)
+      ::Thyra::norms_1<double>(*thyraMultiVec, arrayViewFromVector(result));
+    else
+      ::Thyra::norms_inf<double>(*thyraMultiVec, arrayViewFromVector(result));
+  }
 }
 
 void
@@ -347,6 +372,8 @@ multiply(double alpha,
 {
   const NOX::Thyra::MultiVector& yy =
     dynamic_cast<const NOX::Thyra::MultiVector&>(y);
+
+  // FIXME: what do we need to do for scaling?
 
   int m = b.numRows();
   int n = b.numCols();
@@ -399,4 +426,45 @@ isContiguous(const std::vector<int>& index) const
     if (index[i] != static_cast<int>(i0+i))
       return false;
   return true;
+}
+
+void
+NOX::Thyra::MultiVector::
+setWeightVector(const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVec)
+{
+  weightVec_ = weightVec;
+  tmpMultiVec_ = thyraMultiVec->clone_mv();
+  do_implicit_weighting_ = true;
+}
+
+
+bool
+NOX::Thyra::MultiVector::
+hasWeightVector() const
+{
+  return Teuchos::nonnull(weightVec_);
+}
+
+
+Teuchos::RCP<const ::Thyra::VectorBase<double> >
+NOX::Thyra::MultiVector::
+getWeightVector() const
+{
+  return weightVec_;
+}
+
+
+bool
+NOX::Thyra::MultiVector::
+getImplicitWeighting() const
+{
+  return do_implicit_weighting_;
+}
+
+
+void
+NOX::Thyra::MultiVector::
+setImplicitWeighting(bool do_implicit_weighting)
+{
+  do_implicit_weighting_ = do_implicit_weighting;
 }

@@ -37,6 +37,13 @@ public:
     */
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildDerivativeFactory() const = 0;
 
+  /** Using a panzer::Jacobian evaluation type build the REFB for this
+    * response.
+    */
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildTangentFactory() const {
+    return Teuchos::null;
+  }
+
   /** Satisfy the required interface for the builder used in the "addResponse" function
     * in the ResponseLibrary.
     */
@@ -52,6 +59,10 @@ inline Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> ResponseMESupportBuild
 template < >
 inline Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> ResponseMESupportBuilderBase::build<panzer::Traits::Jacobian>() const
 { return buildDerivativeFactory(); }
+
+template < >
+inline Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> ResponseMESupportBuilderBase::build<panzer::Traits::Tangent>() const
+{ return buildTangentFactory(); }
 
 }
 

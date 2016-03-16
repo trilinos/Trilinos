@@ -217,7 +217,7 @@ int main(int narg, char** arg)
 
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
-  checkPerm = soln->getPermutation();
+  checkPerm = soln->getPermutationView();
 
   for (size_t ii = 0; ii < checkLength; ii++)
       cout << checkPerm[ii] << " ";

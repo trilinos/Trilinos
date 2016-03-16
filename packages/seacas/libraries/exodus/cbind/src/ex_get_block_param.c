@@ -80,6 +80,8 @@ int ex_get_block_param( int exoid,
   const char* ablknam;
   const char* vblkcon;
 
+  struct ex_file_item* file = ex_find_file_item(exoid);
+  
   exerrval = 0;
 
   /* First, locate index of element block id in VAR_ID_EL_BLK array */
@@ -93,13 +95,13 @@ int ex_get_block_param( int exoid,
     block->num_attribute = 0;    /* no attributes          */
     if (exerrval == EX_NULLENTITY) {    /* NULL element block?    */
       return (EX_NOERR);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to locate %s id  %"PRId64" in id array in file id %d",
 	      ex_name_of_object(block->type), block->id,exoid);
       ex_err("ex_get_block_param",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   switch (block->type) {
@@ -172,7 +174,7 @@ int ex_get_block_param( int exoid,
   }
   block->num_nodes_per_entry = len;
 
-  if ( block->type != EX_ELEM_BLOCK ) {
+  if (!file->has_edges || block->type != EX_ELEM_BLOCK) {
     block->num_edges_per_entry = 0;
   } else {
     if ((status = nc_inq_dimid (exoid, dnumedg, &dimid)) != NC_NOERR) {
@@ -191,7 +193,7 @@ int ex_get_block_param( int exoid,
     block->num_edges_per_entry = len;
   }
 
-  if ( block->type != EX_ELEM_BLOCK ) {
+  if (!file->has_faces || block->type != EX_ELEM_BLOCK ) {
     block->num_faces_per_entry = 0;
   } else {
     if ((status = nc_inq_dimid (exoid, dnumfac, &dimid)) != NC_NOERR) {
@@ -261,11 +263,12 @@ int ex_get_block_param( int exoid,
       ex_err("ex_get_block_param",errmsg,EX_MSG);
     }
     
-    for (i=0; i < MAX_STR_LENGTH+1; i++)
+    for (i=0; i < MAX_STR_LENGTH+1; i++) {
       block->topology[i] = '\0';
 
     /* get the element type name */
-    if ((status = nc_get_att_text (exoid, connid, ablknam, block->topology)) != NC_NOERR) {
+    
+}if ((status = nc_get_att_text (exoid, connid, ablknam, block->topology)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,"Error: failed to get %s  %"PRId64" type in file id %d",
 	      ex_name_of_object(block->type), block->id, exoid);

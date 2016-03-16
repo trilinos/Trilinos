@@ -1,4 +1,3 @@
-AdaptiveSaMLParameterListInterpreter
 AggregationExportFactory
 AmalgamationFactory
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
@@ -24,8 +23,8 @@ CoordinatesTransferFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoupledRBMFactory
 DemoFactory
 DirectSolver
+DropNegativeEntriesFactory
 EminPFactory
-FactoryFactory
 FactoryManager
 FakeSmootherPrototype
 FilteredAFactory
@@ -34,6 +33,7 @@ GenericRFactory
 Hierarchy
 HierarchyManager
 HierarchyFactory
+HierarchyUtils
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 IndefBlockedDiagonalSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 LineDetectionFactory
@@ -42,12 +42,10 @@ MapTransferFactory
 MatrixAnalysisFactory
 MergedBlockedMatrixFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 MergedSmoother
-MLParameterListInterpreter
 MultiVectorTransferFactory
 NullspaceFactory
 NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 NullspacePresmoothFactory
-ParameterListInterpreter
 PatternFactory
 PerfUtils
 PermutationFactory
@@ -85,6 +83,8 @@ TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory
+TopRAPFactory
+TopSmootherFactory
 TpetraOperator
 TransPFactory
 TrilinosSmoother

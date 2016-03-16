@@ -67,7 +67,8 @@ namespace BaskerNS
       //	      thread.team_rank());
       Int kid = basker->t_get_kid(thread);
       #endif
-
+      
+      
       basker->t_init_workspace(kid);
 
     }//end operator()
@@ -185,7 +186,7 @@ namespace BaskerNS
      #endif
        }
      
-     
+       //printf("MALLOC GPERM size: %d \n", A.nrow);
      BASKER_ASSERT(A.nrow > 0, "Sfactor A.nrow");
      MALLOC_INT_1DARRAY(gperm, A.nrow);
      //init_value(gperm, A.nrow, A.max_idx);
@@ -317,39 +318,18 @@ namespace BaskerNS
 	    //Note: Need to think more about this flow
 	    //Should be subtracted by how many times in the 
 	    //future
-	    Int U_row = (l==0)?(p%2):S(0)(p)%LU_size(U_col);
-	   
 
-
-	    if((blk > 14) &&
-	       (blk > LU_size(U_col)) && 
-	       (l!=0)) 
-	    {
-	      
-	      #ifdef BASKER_DEBUG_SFACTOR
-	      printf("Sblk: %d size: %d \n",
-		     blk, LU_size(U_col));
-	      #endif
-	      
-	      Int tm = (blk+1)/16;
-	      U_row = ((blk+1) - tm*16)%LU_size(U_col); 
-	      
-	      //U_row = (p - (LU_size(U_col)+1))%LU_size(U_col);
-
-	      }
-
-
-
+	    Int my_row_leader = S(0)(find_leader(p,l));
+	    //Int my_new_row = 
+	    // blk - my_row_leader;
+	    Int U_row = blk-my_row_leader;
+	    
 	    #ifdef BASKER_DEBUG_SFACTOR
 	    printf("Proc off-diag block: %d p: %d loc: %d %d \n", 
 	    	   l, p, U_col, U_row);
 	    #endif
-	    //Determine upper blk nnz
-	    //-----OLD
-	    //U_blk_sfactor(AV[U_col][U_row], stree, 
-		//	  gScol, gSrow,0);
-	   
-
+	  
+	  
 	    Int glvl = p/2;
 
 	    #ifdef BASKER_DEBUG_SFACTOR
@@ -446,16 +426,11 @@ namespace BaskerNS
 		U_col = S(l+1)(ppp);
 		U_row = S(lvl+1)(ppp)%LU_size(U_col);
 		
-
-		if((S(lvl+1)(ppp) > 14) &&
-		   (S(lvl+1)(ppp) > LU_size(U_col)) 
-		   )
-		  {
-		    Int tm = (S(lvl+1)(ppp)+1)/16;
-		    U_row = ((S(lvl+1)(ppp)+1) - (tm*16))%LU_size(U_col);
-
-		  }
-
+		
+		Int my_row_leader = S(0)(find_leader(ppp,l));
+		//Int my_new_row = 
+		// S(lvl+1)(ppp) - my_row_leader;
+		U_row =  S(lvl+1)(ppp) - my_row_leader;
 
 		#ifdef BASKER_DEBUG_SFACTOR
 		printf("offida sep, lvl: %d l: %d U_col: %d U_row: %d \n", lvl, l, U_col, U_row);
@@ -566,8 +541,8 @@ namespace BaskerNS
     //printf("**init parent: %d \n", MV->ncol);
     ST.init_parent(MV->ncol+1);
     //printf("after \n");
-    Int brow = MV->srow;
-    Int bcol = MV->scol;
+    //Int brow = MV->srow; //Not used
+    //Int bcol = MV->scol; //Not used
     INT_1DARRAY ws;
     Int ws_size = 2*MV->nrow;
 
@@ -1565,7 +1540,7 @@ namespace BaskerNS
 
     //???Fix??
     // MV.init_offset(MV.scol,0);
-    Int brow = MV.srow;
+    //Int brow = MV.srow; //Not used
     Int bcol = MV.scol;
  
     #ifdef BASKER_DEBUG_SFACTOR
@@ -2264,8 +2239,8 @@ namespace BaskerNS
     //If a*b == (size-size)^2 .... adjust padding
 
 
-    Int brow = MV.srow;
-    Int bcol = MV.scol;
+    //Int brow = MV.srow; //Not used
+    //Int bcol = MV.scol; //Not used
     
     //Find nnz L(:,1)
     Int nnz_c = 0;
@@ -2282,7 +2257,7 @@ namespace BaskerNS
     #endif
 
 
-    Int nnz_r = nnz_c;
+    //Int nnz_r = nnz_c; //Not used
 
     /*
       //Come back to, we know in symtric case samce
@@ -2438,9 +2413,9 @@ namespace BaskerNS
 	printf("leaf nnz: %ld \n", t_nnz);
 	#endif
 	M.nnz = (1.05)*t_nnz;
-	//#ifdef BASKER_DEBUG_SFACTOR
+	#ifdef BASKER_DEBUG_SFACTOR
 	printf("leaf with elbowroom nnz: %ld \n", M.nnz);
-	//#endif
+	#endif
 	global_nnz += t_nnz;
       }
   }//end assign_leaf_nnz
@@ -2467,9 +2442,9 @@ namespace BaskerNS
 	#endif
 	//t_nnz += (1.05)*t_nnz;
 	M.nnz = (1.05)*t_nnz;
-	//#ifdef BASKER_DEBUG_SFACTOR
+	#ifdef BASKER_DEBUG_SFACTOR
 	printf("U_assing with elbow nnz: %ld \n", M.nnz);
-	//#endif
+	#endif
 	global_nnz += t_nnz;
       }
 
@@ -2495,11 +2470,15 @@ namespace BaskerNS
 	    t_nnz += ST.L_row_counts[i];
 	  }
        
+	#ifdef BASKER_DEBUG_SFACTOR
 	printf("L_assign_nnz: %ld \n", t_nnz);
+	#endif
 	//t_nnz += (1.05)*t_nnz;
 	M.nnz = (2.05)*t_nnz;
 	//M.nnz = 1.05*t_nnz;
+	#ifdef BASKER_DEBUG_SFACTOR
 	printf("L_assign elbow nnz: %ld \n", M.nnz);
+	#endif
 	global_nnz += t_nnz;
       }
   }//end assign_lower_nnz
@@ -2546,7 +2525,16 @@ namespace BaskerNS
 
 
     //Malloc L and U
+    #ifdef BASKER_DEBUG_SFACTOR
+    printf("btf_nblks %d btf_tabs_offset %d \n",
+	   btf_nblks, btf_tabs_offset);
+    #endif
+    
     Int nblks_left = btf_nblks - btf_tabs_offset;
+    if(nblks_left == 0)
+      {
+	return;
+      }
     BASKER_ASSERT(nblks_left > 0, "sfactor btf_last_dense nblks");
     MALLOC_MATRIX_1DARRAY(LBTF, nblks_left);
     MALLOC_MATRIX_1DARRAY(UBTF, nblks_left);
@@ -2569,19 +2557,19 @@ namespace BaskerNS
 	  }
 
 	
-	LBTF[i-btf_tabs_offset].init_matrix("LBFT",
-			    btf_tabs[i],
+	LBTF(i-btf_tabs_offset).init_matrix("LBFT",
+					    btf_tabs(i),
 			    lblk_size,
-			    btf_tabs[i],
+					    btf_tabs(i),
 			    lblk_size,
 	  (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);    
 	//For pruning
 	LBTF(i-btf_tabs_offset).init_pend();
 	
-	UBTF[i-btf_tabs_offset].init_matrix("UBFT",
-			    btf_tabs[i],
+	UBTF(i-btf_tabs_offset).init_matrix("UBFT",
+					    btf_tabs(i),
 			    lblk_size,
-			    btf_tabs[i],
+					    btf_tabs(i),
 			    lblk_size,
 	  (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);
 					    //(.5*lblk_size*lblk_size)+lblk_size);
@@ -2599,6 +2587,8 @@ namespace BaskerNS
     
     if(btf_tabs_offset == 0)
       {
+
+	//printf("malloc thread array: %d \n", num_threads);
 	BASKER_ASSERT(num_threads > 0, "sfactor num_threads");
 	MALLOC_THREAD_1DARRAY(thread_array, num_threads);
 	//printf("thread array alloc\n");

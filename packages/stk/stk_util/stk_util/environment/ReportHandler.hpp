@@ -297,6 +297,7 @@ void handle_invalid_arg(const char* expr,
 // 2) Check method argument foo is not NULL
 //   ThrowInvalidArgMsgIf(foo != NULL, "Arg foo is NULL");
 
+#define ThrowRequireWithSierraHelpMsg(expr) ThrowGenericCond(expr, "Program error. Contact sierra-help@sandia.gov for support.", handle_assert)
 #define ThrowRequireMsg(expr,message) ThrowGenericCond(expr, message, handle_assert)
 #define ThrowRequire(expr)            ThrowRequireMsg(expr, "")
 
@@ -314,6 +315,7 @@ void handle_invalid_arg(const char* expr,
 
 #define ThrowInvalidArgMsgIf(expr, message) ThrowGenericCond( !(expr), message, handle_invalid_arg)
 #define ThrowInvalidArgIf(expr)             ThrowInvalidArgMsgIf(expr, "")
+
 
 ///
 /// @}

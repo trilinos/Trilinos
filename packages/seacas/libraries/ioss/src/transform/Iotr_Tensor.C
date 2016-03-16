@@ -67,22 +67,23 @@ namespace Iotr {
   {
     type_ = INVALID;
     
-    if (type == "trace")
+    if (type == "trace") {
       type_ = TRACE;
-    else if (type == "deviator")
+    } else if (type == "deviator") {
       type_ = DEVIATOR;
-    else if (type == "spherical")
+    } else if (type == "spherical") {
       type_ = SPHERICAL;
-    else if (type == "invariants")
+    } else if (type == "invariants") {
       type_ = INVARIANTS;
-    else if (type == "invariant1")
+    } else if (type == "invariant1") {
       type_ = INVARIANT1;
-    else if (type == "invariant2")
+    } else if (type == "invariant2") {
       type_ = INVARIANT2;
-    else if (type == "invariant3")
+    } else if (type == "invariant3") {
       type_ = INVARIANT3;
-    else if (type == "magnitude")
+    } else if (type == "magnitude") {
       type_ = MAGNITUDE;
+}
   }
 
   const Ioss::VariableType*
@@ -90,8 +91,9 @@ namespace Iotr {
   {
     static const Ioss::VariableType *st33 =
       Ioss::VariableType::factory("sym_tensor_33");
-    if (in != st33)
+    if (in != st33) {
       return nullptr;
+}
 
     switch (type_) {
     case INVARIANT1:

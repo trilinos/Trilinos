@@ -115,7 +115,7 @@ TEST_F(EntitySortingFixture, skin)
     get_bulk().sort_entities(EntityCoordSorter());
     verify_node_ordering();
     stk::mesh::Part& surface1 = get_meta().declare_part("Surface 1");
-    stk::mesh::create_exposed_boundary_sides(get_bulk(),get_meta().universal_part(),{&surface1});
+    stk::mesh::create_exposed_block_boundary_sides(get_bulk(),get_meta().universal_part(),{&surface1});
     get_bulk().sort_entities(EntityCoordSorter());
     verify_node_ordering();
 }

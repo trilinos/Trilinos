@@ -51,6 +51,7 @@
 
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_IO.hpp>
 #include <Xpetra_MatrixUtils.hpp>
 
@@ -68,6 +69,7 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
+#include <MueLu_VisualizationHelpers.hpp>
 
 #include <MueLu_Utilities.hpp>
 
@@ -82,6 +84,78 @@
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class ExportVTK : public MueLu::VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  public:
+    ExportVTK() {};
+
+  public:
+
+    void writeFile(std::ofstream& fout, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& coordinates, Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& sol)
+    {
+      using namespace std;
+      typedef MueLu::VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> VH;
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > nodeMap = coordinates->getMap();
+      std::vector<LocalOrdinal> vertices;
+      std::vector<LocalOrdinal> geomSize;
+      LocalOrdinal numFineNodes = Teuchos::as<LocalOrdinal>(coordinates->getLocalLength());
+
+      vertices.reserve(numFineNodes);
+      geomSize.reserve(numFineNodes);
+      for(LocalOrdinal i = 0; i < numFineNodes; i++)
+      {
+        vertices.push_back(i);
+        geomSize.push_back(1);
+      }
+
+      Teuchos::ArrayRCP<const double> xCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(0));
+      Teuchos::ArrayRCP<const double> yCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(1));
+      Teuchos::ArrayRCP<const double> zCoords = Teuchos::null;
+      if(coordinates->getNumVectors() == 3) {
+        zCoords = Teuchos::arcp_reinterpret_cast<const double>(coordinates->getData(2));
+      }
+      Teuchos::ArrayRCP<const double> solData = Teuchos::arcp_reinterpret_cast<const double>(sol->getData(0));
+
+      std::vector<int> uniqueFine = this->makeUnique(vertices);
+      this->writeFileVTKOpening(fout, uniqueFine, geomSize);
+      this->writeFileVTKNodes(fout, uniqueFine, nodeMap);
+
+      std::string indent = "      ";
+      fout << "        <DataArray type=\"Int32\" Name=\"Processor\" format=\"ascii\">" << std::endl;
+      fout << indent;
+      int myRank = coordinates->getMap()->getComm()->getRank();
+      for(int i = 0; i < int(uniqueFine.size()); i++)
+      {
+        fout << myRank << " ";
+        if(i % 20 == 19)
+          fout << std::endl << indent;
+      }
+      fout << std::endl;
+      fout << "        </DataArray>" << std::endl;
+      // solution vector
+      fout << "        <DataArray type=\"Float64\" Name=\"Solution\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
+      fout << indent;
+      for(int i = 0; i < int(uniqueFine.size()); i++)
+      {
+        size_t numVec = coordinates->getNumVectors();
+        for(int d=0; d<numVec; d++)
+          fout << solData[i*numVec+d] << " ";
+        if(i % 3 == 0)
+          fout << std::endl << indent;
+      }
+      fout << std::endl;
+      fout << "        </DataArray>" << std::endl;
+      fout << "      </PointData>" << std::endl; // that is annoying
+
+      this->writeFileVTKCoordinates(fout, uniqueFine, xCoords, yCoords, zCoords, coordinates->getNumVectors());
+      this->writeFileVTKCells(fout, uniqueFine, vertices, geomSize);
+      this->writeFileVTKClosing(fout);
+      fout.close();
+
+    };
+
+  };
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -125,6 +199,7 @@ int main(int argc, char *argv[]) {
     int    amgAsSolver      = 0;                 clp.setOption("fixPoint",              &amgAsSolver,      "apply multigrid as solver");
     bool   printTimings     = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
     int    blockedSystem    = 0;                 clp.setOption("split",                 &blockedSystem,    "split system matrix into 2x2 system (default=0)");
+    int    useThyraGIDs     = 0;                 clp.setOption("thyra",                 &useThyraGIDs,     "use Thyra style numbering of GIDs.");
     int    writeMatricesOPT = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
     double tol              = 1e-6;             clp.setOption("tol",                   &tol,              "solver convergence tolerance");
     std::string krylovMethod = "gmres"; clp.setOption("krylov",                   &krylovMethod,     "outer Krylov method");
@@ -137,7 +212,8 @@ int main(int argc, char *argv[]) {
     std::string spcFileName = "crada1/crada_special.mm"; clp.setOption("specialfile",        &spcFileName,      "matrix market file containing fine level special dofs");
     int nPDE = 3; clp.setOption("numpdes",           &nPDE,   "number of PDE equations");
     int nNspVectors = 3; clp.setOption("numnsp", &nNspVectors, "number of nullspace vectors. Only used if null space is read from file. Must be smaller or equal than the number of null space vectors read in from file.");
-    std::string convType = "r0"; clp.setOption("convtype",                   &convType,     "convergence type (r0 or none)");
+    std::string convType = "r0"; clp.setOption("convtype",       &convType,         "convergence type (r0 or none)");
+    std::string strOutputFilename = ""; clp.setOption("output",  &strOutputFilename,"filename prefix for output file name. If empty, no output is written.");
 
     switch (clp.parse(argc,argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -157,7 +233,30 @@ int main(int argc, char *argv[]) {
     RCP<Matrix> A = Teuchos::null;
     if (matrixFileName != "") {
       fancyout << "Read matrix from file " << matrixFileName << std::endl;
-      A = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm);
+      RCP<Matrix> Atest = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm);
+      RCP<const Map>   maptest = Atest->getRowMap();
+
+      // re-read matrix and make sure it is properly distributed over all processors
+      // make sure that all DOF rows per node are located on same processor.
+      GO numGlobalNodes = maptest->getGlobalNumElements() / nPDE;
+      GO numMyNodes     = numGlobalNodes / comm->getSize();
+      if (comm->getRank() == comm->getSize()-1)
+        numMyNodes = numGlobalNodes - (comm->getSize()-1) * numMyNodes;
+      LO numMyDofs = Teuchos::as<LocalOrdinal>(numMyNodes) * nPDE;
+
+      // construct new row map for equally distributing the matrix rows without
+      // splitting dofs that belong to the same node
+      Teuchos::Array<GO> myDofGIDs(numMyDofs);
+      for(LO i = 0; i < numMyDofs; i++) {
+        if (comm->getRank() == comm->getSize()-1)
+          myDofGIDs[i] = Teuchos::as<GO>(maptest->getGlobalNumElements()) - Teuchos::as<GO>(numMyDofs - i);
+        else
+          myDofGIDs[i] = Teuchos::as<GO>(comm->getRank() * numMyDofs) + Teuchos::as<GO>(i);
+      }
+      RCP<const Map> Arowmap = MapFactory::Build (xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),myDofGIDs(),0,comm);
+
+      A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFileName,Arowmap);
+      A->SetFixedBlockSize(Teuchos::as<LocalOrdinal>(nPDE));
     }
     RCP<const Map>   map = A->getRowMap();
     RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(),nPDE);
@@ -221,7 +320,7 @@ int main(int argc, char *argv[]) {
 
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
       coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(cooFileName), myCoordMap);
-      fancyout << "Found " << nullspace->getNumVectors() << " null space vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
+      fancyout << "Found " << nullspace->getNumVectors() << " coordinate vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
     }
 
     // shouldn't these be const?
@@ -269,80 +368,8 @@ int main(int argc, char *argv[]) {
     comm->barrier();
     tm = Teuchos::null;
 
-    // =========================================================================
-    // Preconditioner construction
-    // =========================================================================
     comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1.5 - MueLu read XML")));
-    ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
-
-    comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-
-    RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-
-    // By default, we use Extreme. However, typically the xml file contains verbosity parameter
-    // which is used instead
-    H->SetDefaultVerbLevel(MueLu::Extreme);
-
-    if(blockedSystem == 1) {
-      // split matrix and vectors
-
-      // create map extractor
-      Teuchos::Array<GlobalOrdinal> nonSpecialGids;
-      for (size_t i = 0; i < map->getNodeNumElements(); i++) {
-        GlobalOrdinal gid = map->getGlobalElement(i);
-        if (mySpecialMap->isNodeGlobalElement(gid) == false) {
-          nonSpecialGids.push_back(gid);
-        }
-      }
-      //RCP<const Map> myNonSpecialMap = MapFactory::Build (xpetraParameters.GetLib(),Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),nonSpecialGids(),0,comm);
-      RCP<const Map> myNonSpecialMap = MapFactory::Build (xpetraParameters.GetLib(),nonSpecialGids.size(),nonSpecialGids(),0,comm);
-
-      //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(myNonSpecialMap)->getEpetra_Map() << std::endl;
-      //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(mySpecialMap)->getEpetra_Map() << std::endl;
-
-      std::vector<Teuchos::RCP<const Map> > xmaps;
-      xmaps.push_back(myNonSpecialMap);
-      xmaps.push_back(mySpecialMap);
-
-      Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map,xmaps);
-
-      Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bOp =
-          Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SplitMatrix(*A,map_extractor,map_extractor);
-
-      // TODO plausibility checks
-      // TODO set number of dofs per node
-
-      // split null space vectors
-      RCP<MultiVector> nullspace1 = map_extractor->ExtractVector(nullspace,0);
-      RCP<MultiVector> nullspace2 = map_extractor->ExtractVector(nullspace,1);
-
-      H->GetLevel(0)->Set("A",            Teuchos::rcp_dynamic_cast<Matrix>(bOp));
-      H->GetLevel(0)->Set("Nullspace1",   nullspace1);
-      H->GetLevel(0)->Set("Nullspace2",   nullspace2);
-      H->GetLevel(0)->Set("Coordinates", coordinates);
-      if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("map SpecialMap", mySpecialMap);
-    } else {
-      H->GetLevel(0)->Set("A",           A);
-      H->GetLevel(0)->Set("Nullspace",   nullspace);
-      H->GetLevel(0)->Set("Coordinates", coordinates);
-      if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("map SpecialMap", mySpecialMap);
-    }
-    mueLuFactory.SetupHierarchy(*H);
-
-    comm->barrier();
-    tm = Teuchos::null;
-
-    // Print out the hierarchy stats. We should not need this line, but for some reason the
-    // print out in the hierarchy construction does not work.
-    H->print(fancyout);
-
-    // =========================================================================
-    // System solution (Ax = b)
-    // =========================================================================
-    comm->barrier();
-    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
+    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1.2 - LHS and RHS initialization")));
 
     RCP<Vector> X = VectorFactory::Build(map,1);
     RCP<MultiVector> B = VectorFactory::Build(map,1);
@@ -361,7 +388,140 @@ int main(int argc, char *argv[]) {
       B->norm2(norms);
       //B->scale(1.0/norms[0]);
     }
+
     X->putScalar(zero);
+
+    comm->barrier();
+    tm = Teuchos::null;
+
+    // =========================================================================
+    // Preconditioner construction
+    // =========================================================================
+    comm->barrier();
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1.5 - MueLu read XML and feed MueLu")));
+    ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
+
+
+    RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+
+    // By default, we use Extreme. However, typically the xml file contains verbosity parameter
+    // which is used instead
+    H->SetDefaultVerbLevel(MueLu::Extreme);
+
+    // =========================================================================
+    // Prepare linear system
+    // =========================================================================
+    // We have the following different formulations:
+    // - split the linear system in a 2x2 multiphysics problem using Xpetra style gids
+    // - split the linear system in a 2x2 multiphysics problem using Thyra style gids
+    // - solve the problem as a monolithik linear system
+    if(blockedSystem == 1) {
+      // split matrix and vectors
+
+      // create map extractor
+      Teuchos::Array<GlobalOrdinal> nonSpecialGids;
+      for (size_t i = 0; i < map->getNodeNumElements(); i++) {
+        GlobalOrdinal gid = map->getGlobalElement(i);
+        if (mySpecialMap->isNodeGlobalElement(gid) == false) {
+          nonSpecialGids.push_back(gid);
+        }
+      }
+      //MapFactory::Build (xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialGids(),0,comm);
+      std::vector<size_t> strInfo(1,nPDE);
+      RCP<const Map> myStridedNonSpecialMap = StridedMapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialGids(),0,strInfo,comm);
+      RCP<const Map> myStridedSpecialMap    = StridedMapFactory::Build(mySpecialMap, strInfo);
+      //std::cout << "map " << map->getMaxAllGlobalIndex() << "nonspecial " << myNonSpecialMap->getMaxAllGlobalIndex() << " " << mySpecialMap->getMaxAllGlobalIndex() << std::endl;
+      //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(myNonSpecialMap)->getEpetra_Map() << std::endl;
+      //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(mySpecialMap)->getEpetra_Map() << std::endl;
+
+      std::vector<Teuchos::RCP<const Map> > xmaps;
+      xmaps.push_back(myStridedNonSpecialMap);
+      xmaps.push_back(myStridedSpecialMap);
+
+      Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map,xmaps);
+
+      // split null space vectors
+      RCP<MultiVector> nullspace1 = map_extractor->ExtractVector(nullspace,0);
+      RCP<MultiVector> nullspace2 = map_extractor->ExtractVector(nullspace,1);
+
+      bool bThyraMode = (useThyraGIDs==1) ? true : false;
+      Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bOp =
+          Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SplitMatrix(*A,map_extractor,map_extractor,Teuchos::null,bThyraMode);
+
+      // TODO plausibility checks
+      // TODO set number of dofs per node
+
+      if(bThyraMode == false) {
+        // use Xpetra style GIDs
+        H->GetLevel(0)->Set("A",            Teuchos::rcp_dynamic_cast<Matrix>(bOp));
+        H->GetLevel(0)->Set("Nullspace1",   nullspace1);
+        H->GetLevel(0)->Set("Nullspace2",   nullspace2);
+        H->GetLevel(0)->Set("Coordinates", coordinates); // TODO split coordinates for rebalancing! (or provide the full vector in the right map and split it in the factories!)
+        if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("map SpecialMap", mySpecialMap);
+      } else {
+        // use Thyra style GIDs
+        RCP<MultiVector> nsp1shrinked   = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*nullspace1);
+        RCP<MultiVector> nsp2shrinked   = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*nullspace2);
+        RCP<MultiVector> coordsshrinked = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*coordinates);
+        H->GetLevel(0)->Set("A",           Teuchos::rcp_dynamic_cast<Matrix>(bOp));
+        H->GetLevel(0)->Set("Nullspace1",  nsp1shrinked);
+        H->GetLevel(0)->Set("Nullspace2",  nsp2shrinked);
+        H->GetLevel(0)->Set("Coordinates", coordsshrinked);  // TODO split coordinates for rebalancing! (or provide the full vector in the right map and split it in the factories!)
+        if(mySpecialMap!=Teuchos::null) {
+          RCP<const Map> specialmapshrinked = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::shrinkMapGIDs(*mySpecialMap,*mySpecialMap);
+          H->GetLevel(0)->Set("map SpecialMap", Teuchos::rcp_const_cast<Map>(specialmapshrinked));
+        }
+
+        // rearrange contents of rhs vector B
+        RCP<const MapExtractor> thy_map_extractor = bOp->getRangeMapExtractor();
+        RCP<MultiVector> Bshrinked = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(thy_map_extractor->getFullMap(),B->getNumVectors(),true);
+
+        size_t numMaps = map_extractor->NumMaps();
+        for(size_t k = 0; k < numMaps; k++) {
+          RCP<MultiVector> partVec         = map_extractor->ExtractVector(B, k);
+          RCP<MultiVector> newPartVec      = thy_map_extractor->getVector(k, B->getNumVectors(), false); // we need real GIDs (not zero based Thyra GIDs)
+          // copy data
+          for (size_t c = 0; c < partVec->getNumVectors(); c++) {
+            Teuchos::ArrayRCP< const Scalar > data = partVec->getData(c);
+            for (size_t r = 0; r < partVec->getLocalLength(); r++) {
+              newPartVec->replaceLocalValue(Teuchos::as<LocalOrdinal>(r), c, data[r]);
+            }
+          }
+          thy_map_extractor->InsertVector(*newPartVec, k, *Bshrinked, false);
+        }
+
+        B = Bshrinked;
+        X = VectorFactory::Build(thy_map_extractor->getFullMap(),1);
+        X->putScalar(zero);
+
+        // also the GID ordering of bOp is not consistent with A any more. Use bOp as A.
+        A = Teuchos::rcp_dynamic_cast<Matrix>(bOp);
+
+        // TODO the ordering of the solution vector X is different!
+      }
+    } else {
+      H->GetLevel(0)->Set("A",           A);
+      H->GetLevel(0)->Set("Nullspace",   nullspace);
+      H->GetLevel(0)->Set("Coordinates", coordinates);
+      if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("map SpecialMap", mySpecialMap);
+    }
+
+    comm->barrier();
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
+
+    mueLuFactory.SetupHierarchy(*H);
+
+    comm->barrier();
+    tm = Teuchos::null;
+
+    // Print out the hierarchy stats. We should not need this line, but for some reason the
+    // print out in the hierarchy construction does not work.
+    H->print(fancyout);
+
+    // =========================================================================
+    // System solution (Ax = b)
+    // =========================================================================
+
     tm = Teuchos::null;
 
     if (writeMatricesOPT > -2)
@@ -369,7 +529,7 @@ int main(int argc, char *argv[]) {
 
     comm->barrier();
     if (amgAsSolver) {
-      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
+      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - Fixed Point Solve")));
 
       H->IsPreconditioner(false);
       Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
@@ -383,7 +543,7 @@ int main(int argc, char *argv[]) {
 
     } else if (amgAsPrecond) {
 #ifdef HAVE_MUELU_BELOS
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Belos Solve")));
       // Operator and Multivector type that will be used with Belos
       typedef MultiVector          MV;
       typedef Belos::OperatorT<MV> OP;
@@ -392,11 +552,9 @@ int main(int argc, char *argv[]) {
       // Define Operator and Preconditioner
       Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
       Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
-
       // Construct a Belos LinearProblem object
       RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
       belosProblem->setRightPrec(belosPrec);
-
       bool set = belosProblem->setProblem();
       if (set == false) {
         fancyout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
@@ -437,7 +595,6 @@ int main(int argc, char *argv[]) {
       } catch(...) {
         fancyout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
       }
-
       // Check convergence
       if (ret != Belos::Converged)
         fancyout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
@@ -445,6 +602,26 @@ int main(int argc, char *argv[]) {
         fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 #endif //ifdef HAVE_MUELU_BELOS
     }
+    comm->barrier();
+    tm = Teuchos::null;
+
+    if (strOutputFilename.empty() == false) {
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Export solution in VTK")));
+      if(comm->getSize() > 1) {
+        std::stringstream ss;
+        ss << "-proc" << comm->getRank();
+        strOutputFilename.append(ss.str());
+      }
+      strOutputFilename.append(".vtu");
+
+      std::ofstream fout(strOutputFilename);
+      ExportVTK<Scalar,LocalOrdinal,GlobalOrdinal,Node> expVTK;
+      expVTK.writeFile(fout,coordinates,X);
+      fout.close();
+    }
+
+    // print timings
+
     comm->barrier();
     tm = Teuchos::null;
     globalTimeMonitor = Teuchos::null;

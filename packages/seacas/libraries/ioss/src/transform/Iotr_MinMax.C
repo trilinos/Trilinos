@@ -33,9 +33,9 @@
 #include <transform/Iotr_MinMax.h>
 #include <Ioss_Field.h>                 // for Field, etc
 #include <Ioss_VariableType.h>          // for VariableType
-#include <math.h>                       // for fabs
-#include <stddef.h>                     // for size_t, nullptr
-#include <stdlib.h>                     // for abs
+#include <cmath>                        // for fabs
+#include <cstddef>                     // for size_t
+#include <cstdlib>                     // for abs
 #include <algorithm>                    // for max_element, min_element
 #include <string>                       // for operator==, string
 #include "Ioss_Transform.h"             // for Factory, Transform
@@ -43,9 +43,9 @@
 
 namespace {
   bool IntAbsLess(int elem1, int elem2)
-  {return abs(elem1) < abs(elem2);}
+  {return std::abs(elem1) < std::abs(elem2);}
   bool doubleAbsLess(double elem1, double elem2)
-  {return fabs(elem1) < fabs(elem2);}
+  {return std::fabs(elem1) < std::fabs(elem2);}
 }
 
 namespace Iotr {
@@ -95,9 +95,9 @@ namespace Iotr {
     static const Ioss::VariableType *sca = Ioss::VariableType::factory("scalar");
     if (in == sca) {
       return sca;
-    } else {
+    } 
       return nullptr;
-    }
+    
   }
 
   int MinMax::output_count(int /* in */) const

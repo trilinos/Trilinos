@@ -64,14 +64,6 @@ TEST(Iofx, test_constructor)
 
     EXPECT_TRUE(db_io->ok());
 
-    int64_t id = 1;
-    std::vector<std::string> block_membership;
-    db_io->compute_block_membership(id, block_membership);
-
-    ASSERT_EQ(2u, block_membership.size());
-    EXPECT_EQ("block_1", block_membership[0]);
-    EXPECT_EQ("block_2", block_membership[1]);
-
     int spatial_dim = db_io->spatial_dimension();
     EXPECT_EQ(3, spatial_dim);
 

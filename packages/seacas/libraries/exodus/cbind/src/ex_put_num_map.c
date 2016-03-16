@@ -266,8 +266,9 @@ int ex_put_num_map ( int exoid,
       varid = -1; /* force early exit */
     }
 
-    if ( varid == -1 ) /* we couldn't define variable and have prepared error message. */
+    if ( varid == -1 ) { /* we couldn't define variable and have prepared error message. */
       return (EX_FATAL);
+}
   }
 
   /* write out the map  */

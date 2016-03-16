@@ -267,7 +267,7 @@ int main(int narg, char** arg)
   cout << "Going to get results" << endl;
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
-  checkPerm = soln->getPermutation();
+  checkPerm = soln->getPermutationView();
 
   if (outputFile != "") {
     ofstream permFile;

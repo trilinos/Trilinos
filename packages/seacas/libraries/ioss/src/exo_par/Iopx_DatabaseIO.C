@@ -5,7 +5,7 @@
 //    strange cases
 //
 //
-// Copyright(C) 2012
+// Copyright(C) 2012, 2013, 2014, 2015, 2016
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -206,8 +206,8 @@ namespace {
                         size_t offset=0, size_t stride=1)
   {
     // Pull out the locally owned nodeset data 
-    for (size_t i=0; i < owned_nodes.size(); i++) {
-      file_data.push_back(data[stride*owned_nodes[i]+offset]);
+    for (auto owned_node : owned_nodes) {
+      file_data.push_back(data[stride*owned_node+offset]);
     }
   }
 
@@ -218,10 +218,9 @@ namespace {
   void map_data(const Ioss::IntVector &owning_processor, int this_processor, 
                 const T *data, std::vector<U> &file_data, size_t offset=0, size_t stride=1)
   {
-    size_t count = owning_processor.size();
     size_t index = offset;
-    for (size_t i=0; i < count; i++) {
-      if (owning_processor[i] == this_processor) {
+    for (auto op : owning_processor) {
+      if (op == this_processor) {
         file_data.push_back(data[index]);
       }
       index += stride;
@@ -262,6 +261,21 @@ namespace Iopx {
     }
   }
 
+  void DatabaseIO::release_memory()
+  {
+    nodeMap.release_memory();
+    edgeMap.release_memory();
+    faceMap.release_memory();
+    elemMap.release_memory();
+    try {
+      delete decomp;
+      decomp=nullptr;
+      decomp32=nullptr;
+      decomp64=nullptr;
+    } catch (...) {
+    }
+  }
+
   bool DatabaseIO::ok(bool write_message, std::string *error_msg, int *bad_count) const
   {
     if (fileExists) {
@@ -279,17 +293,23 @@ namespace Iopx {
     int par_mode = get_parallel_io_mode(properties);
 
     MPI_Info info = MPI_INFO_NULL;
+    int app_opt_val = ex_opts(EX_VERBOSE); 
     int exodus_file_ptr = ex_open_par(get_filename().c_str(), EX_READ|par_mode,
-                                      &cpu_word_size, &io_word_size, &version, util().communicator(), info);
+                                      &cpu_word_size, &io_word_size, &version,
+				      util().communicator(), info);
+    ex_opts(app_opt_val); // Reset back to what it was.
 
     if (!is_input() && exodus_file_ptr < 0) {
-      // File didn't exist above, but this OK if is an output file. See if we can create it...
+      // File didn't exist above, but this OK if is an output
+      // file. See if we can create it...
       int mode = 0;
       if (int_byte_size_api() == 8)
         mode |= EX_ALL_INT64_DB;
 
+      app_opt_val = ex_opts(EX_VERBOSE); 
       exodus_file_ptr = ex_create_par(get_filename().c_str(), exodusMode|mode|par_mode,
                                       &cpu_word_size, &dbRealWordSize, util().communicator(), info);
+      ex_opts(app_opt_val); // Reset back to what it was.
     }
 
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
@@ -323,8 +343,8 @@ namespace Iopx {
         }
       }
       if (bad_count != nullptr) {
-        for (int i=0; i < util().parallel_size(); i++) {
-          if (status[i] < 0) {
+        for (auto stat : status) {
+          if (stat < 0) {
             (*bad_count)++;
           }
         }
@@ -365,19 +385,29 @@ namespace Iopx {
 
       MPI_Info info = MPI_INFO_NULL;
       if (is_input()) {
+	int app_opt_val = ex_opts(EX_VERBOSE); 
         exodusFilePtr = ex_open_par(get_filename().c_str(), EX_READ|mode|par_mode,
-                                    &cpu_word_size, &io_word_size, &version, util().communicator(), info);
+                                    &cpu_word_size, &io_word_size, &version,
+				    util().communicator(), info);
+	ex_opts(app_opt_val); // Reset back to what it was.
 
       } else {
         if (fileExists) {
+	  int app_opt_val = ex_opts(EX_VERBOSE); 
           exodusFilePtr = ex_open_par(get_filename().c_str(), EX_WRITE|mode|par_mode,
-                                      &cpu_word_size, &io_word_size, &version, util().communicator(), info);
+                                      &cpu_word_size, &io_word_size, &version,
+				      util().communicator(), info);
+	  ex_opts(app_opt_val); // Reset back to what it was.
         } else {
           // If the first write for this file, create it...
           if (int_byte_size_api() == 8)
             mode |= EX_ALL_INT64_DB;
+	  int app_opt_val = ex_opts(EX_VERBOSE); 
           exodusFilePtr = ex_create_par(get_filename().c_str(), mode|par_mode,
-                                        &cpu_word_size, &dbRealWordSize, util().communicator(), info);
+                                        &cpu_word_size, &dbRealWordSize,
+					util().communicator(), info);
+	  ex_opts(app_opt_val); // Reset back to what it was.
+
           if (exodusFilePtr < 0) {
             dbState = Ioss::STATE_INVALID;
             // NOTE: Code will not continue past this call...
@@ -410,16 +440,16 @@ namespace Iopx {
       // Check properties handled post-create/open...
       // NOTE: Compression is not supported in parallel output at this time...
       if (!is_input()) {
-	if (properties.exists("COMPRESSION_LEVEL")) {
-	  if (myProcessor == 0) {
-	    IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
-	  }
-	}
-	if (properties.exists("COMPRESSION_SHUFFLE")) {
-	  if (myProcessor == 0) {
-	    IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
-	  }
-	}
+        if (properties.exists("COMPRESSION_LEVEL")) {
+          if (myProcessor == 0) {
+            IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
+          }
+        }
+        if (properties.exists("COMPRESSION_SHUFFLE")) {
+          if (myProcessor == 0) {
+            IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
+          }
+        }
       }
     }
     assert(exodusFilePtr >= 0);
@@ -537,8 +567,6 @@ namespace Iopx {
     this_region->property_add(Ioss::Property("global_element_count", (int64_t)decomp->globalElementCount));
 
     this_region->property_add(Ioss::Property(std::string("title"), info.title));
-    this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
-                                             spatialDimension));
 
     // Get information records from database and add to informationRecords...
     int num_info = ex_inquire_int(get_file_pointer(), EX_INQ_INFO);    
@@ -719,7 +747,7 @@ namespace Iopx {
           }
         }
 
-        entity_map.build_reverse_map(myProcessor);
+        entity_map.build_reverse_map();
 
       } else {
         // Output database; entity_map.map not set yet... Build a default map.
@@ -787,6 +815,8 @@ namespace Iopx {
         Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
 
+      int nvar = std::numeric_limits<int>::max(); // Number of 'block' vars on database. Used to skip querying if none.
+      int nmap = std::numeric_limits<int>::max(); // Number of 'block' maps on database. Used to skip querying if none.
       for (int iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
         int64_t id = decomp->el_blocks[iblk].id();
 
@@ -904,11 +934,15 @@ namespace Iopx {
 
         // Check for additional variables.
         add_attribute_fields(entity_type, io_block, decomp->el_blocks[iblk].attributeCount, type);
-        add_results_fields(entity_type, io_block, iblk);
+	if (nvar > 0) {
+	  nvar = add_results_fields(entity_type, io_block, iblk);
+	}
 
         if (entity_type == EX_ELEM_BLOCK) {
-          Ioex::add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block,
-                               decomp->el_blocks[iblk].ioss_count(), maximumNameLength);
+	  if (nmap > 0) {
+	    nmap = Ioex::add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block,
+					decomp->el_blocks[iblk].ioss_count(), maximumNameLength);
+	  }
         }
       }
     }
@@ -937,35 +971,32 @@ namespace Iopx {
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     assert(Ioex::check_block_order(element_blocks));
 
-    {
-      for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
-        Ioss::ElementBlock *eb = element_blocks[iblk];
-        int blk_position =  eb->get_property("original_block_order").get_int();
-        int64_t id =        eb->get_property("id").get_int();
-        int element_nodes = eb->get_property("topology_node_count").get_int();
-        int64_t my_element_count = eb->get_property("entity_count").get_int();
-        int order = eb->get_property("original_block_order").get_int();
-        if (my_element_count > 0) {
-          if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-            std::vector<int64_t> conn(my_element_count * element_nodes);
-            decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+    for (Ioss::ElementBlock *eb : element_blocks) {
+      int blk_position =  eb->get_property("original_block_order").get_int();
+      int64_t id =        eb->get_property("id").get_int();
+      int element_nodes = eb->get_property("topology_node_count").get_int();
+      int64_t my_element_count = eb->get_property("entity_count").get_int();
+      int order = eb->get_property("original_block_order").get_int();
+      if (my_element_count > 0) {
+        if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+          std::vector<int64_t> conn(my_element_count * element_nodes);
+          decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 
-            for (int64_t i=0; i < my_element_count * element_nodes; i++) {
-              node_used[conn[i]-1] = blk_position+1;
-            }
-          } else {
-            std::vector<int> conn(my_element_count * element_nodes);
-            decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
-
-            for (int64_t i=0; i < my_element_count * element_nodes; i++) {
-              node_used[conn[i]-1] = blk_position+1;
-            }
+          for (auto node : conn) {
+            node_used[node-1] = blk_position+1;
           }
+        } else {
+          std::vector<int> conn(my_element_count * element_nodes);
+          decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 
-          for (int64_t i=0; i < nodeCount; i++) {
-            if (node_used[i] == blk_position+1) {
-              inv_con[i].push_back(blk_position);
-            }
+          for (auto node : conn) {
+            node_used[node-1] = blk_position+1;
+          }
+        }
+
+        for (int64_t i=0; i < nodeCount; i++) {
+          if (node_used[i] == blk_position+1) {
+            inv_con[i].push_back(blk_position);
           }
         }
       }
@@ -1116,8 +1147,8 @@ namespace Iopx {
 
     // Convert from inv_con arrays to block adjacency...
     blockAdjacency.resize(m_groupCount[EX_ELEM_BLOCK]);
-    for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
-      blockAdjacency[iblk].resize(m_groupCount[EX_ELEM_BLOCK]);
+    for (auto &block : blockAdjacency) {
+      block.resize(m_groupCount[EX_ELEM_BLOCK]);
     }
 
     for (int64_t i = 0; i < nodeCount; i++) {
@@ -1195,8 +1226,7 @@ namespace Iopx {
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     assert(Ioex::check_block_order(element_blocks));
 
-    for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
-      Ioss::ElementBlock *block = element_blocks[i];
+    for (Ioss::ElementBlock *block : element_blocks) {
       unsigned char status = 2;
       if (Ioss::Utils::block_is_omitted(block)) {
         status = 1;
@@ -1210,14 +1240,14 @@ namespace Iopx {
         if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
           std::vector<int64_t> conn(my_element_count * element_nodes);
           decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
-          for (int64_t j=0; j < my_element_count * element_nodes; j++) {
-            nodeConnectivityStatus[conn[j]-1] |= status;
+          for (auto node : conn) {
+            nodeConnectivityStatus[node-1] |= status;
           }
         } else {
           std::vector<int> conn(my_element_count * element_nodes);
           decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
-          for (int64_t j=0; j < my_element_count * element_nodes; j++) {
-            nodeConnectivityStatus[conn[j]-1] |= status;
+          for (auto node : conn) {
+            nodeConnectivityStatus[node-1] |= status;
           }
         }
       }
@@ -1256,8 +1286,8 @@ namespace Iopx {
       {
         int error;
 
-        for (int i = 0; i < m_groupCount[EX_SIDE_SET]; i++) {
-          int64_t id = decomp->side_sets[i].id();
+        for (auto ss : decomp->side_sets) {
+          int64_t id = ss.id();
           std::vector<char> ss_name(maximumNameLength+1);
           error = ex_get_name(get_file_pointer(), EX_SIDE_SET, id, TOPTR(ss_name));
           if (error < 0) {
@@ -1274,7 +1304,7 @@ namespace Iopx {
       // sidesets which were probably written by a previous run of the
       // IO system and are already split into homogenous pieces...
       {
-	for (auto &fs_name : fs_set) {
+        for (auto &fs_name : fs_set) {
           Ioss::SideSet *side_set = new Ioss::SideSet(this, fs_name);
           get_region()->add(side_set);
           int64_t id = Ioex::extract_id(fs_name);
@@ -1409,9 +1439,9 @@ namespace Iopx {
             // topology and the side number, determine the side
             // type.
 
-            for (Ioss::TopoContainer::size_type i=0; i < sideTopology.size(); i++) {
-              topo_map[std::make_pair(sideTopology[i].first->name(), sideTopology[i].second)] = 0;
-              side_map[std::make_pair(sideTopology[i].first->name(), sideTopology[i].second)] = 0;
+            for (auto side_topo : sideTopology) {
+              topo_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
+              side_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
             }
 
             Ioex::separate_surface_element_sides(element, sides, get_region(), topo_map, side_map, split_type);
@@ -1428,8 +1458,7 @@ namespace Iopx {
             Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
             assert(Ioex::check_block_order(element_blocks));
 
-            for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
-              Ioss::ElementBlock *block = element_blocks[i];
+            for (Ioss::ElementBlock *block : element_blocks) {
               if (!Ioss::Utils::block_is_omitted(block)) {
                 std::string name = block->name();
                 const Ioss::ElementTopology *common_ftopo = block->topology()->boundary_type(0);
@@ -1462,9 +1491,9 @@ namespace Iopx {
         Ioss::Int64Vector global_side_counts(topo_map.size());
         {
           int64_t i = 0;
-	  for (auto &topo : topo_map) {
-	    global_side_counts[i++] = topo.second;
-	  }
+          for (auto &topo : topo_map) {
+            global_side_counts[i++] = topo.second;
+          }
 
           // If splitting by element block, also sync the side_map
           // information which specifies whether the sideset has
@@ -1474,9 +1503,9 @@ namespace Iopx {
           if (side_map.size() == topo_map.size()) {
             global_side_counts.resize(topo_map.size() + side_map.size());
 
-	    for (auto &side : side_map) {
-	      global_side_counts[i++] = side.second;
-	    }
+            for (auto &side : side_map) {
+              global_side_counts[i++] = side.second;
+            }
           }
 
           // See if any processor has non-zero count for the topo_map counts
@@ -1613,85 +1642,6 @@ namespace Iopx {
       }
     }
 
-    void DatabaseIO::compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const
-    {
-      Ioss::Int64Vector block_ids(m_groupCount[EX_ELEM_BLOCK]);
-      if (m_groupCount[EX_ELEM_BLOCK] == 1) {
-        block_ids[0] = 1;
-      } else {
-        {
-          ex_set set_param[1];
-          set_param[0].id = id;
-          set_param[0].type = EX_SIDE_SET;
-          set_param[0].entry_list = nullptr;
-          set_param[0].extra_list = nullptr;
-          set_param[0].distribution_factor_list = nullptr;
-          int ierr = ex_get_sets(get_file_pointer(), 1, set_param);
-          if (ierr < 0) {
-            Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
-
-          int64_t number_sides = set_param[0].num_entry;
-
-          // Get the element and element side lists.
-          if (int_byte_size_api() == 4) {
-            Ioss::IntVector element(number_sides);
-            Ioss::IntVector sides(number_sides);
-
-            Ioss::Field side_field("sides",   Ioss::Field::INTEGER, SCALAR(), Ioss::Field::MESH, number_sides);
-            Ioss::Field elem_field("ids_raw", Ioss::Field::INTEGER, SCALAR(), Ioss::Field::MESH, number_sides);
-            decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
-            decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
-
-            Ioss::ElementBlock *block = nullptr;
-            for (int64_t iel = 0; iel < number_sides; iel++) {
-              int64_t elem_id = element[iel];
-              if (block == nullptr || !block->contains(elem_id)) {
-                block = get_region()->get_element_block(elem_id);
-                assert(block != nullptr);
-                int block_order = block->get_property("original_block_order").get_int();
-                block_ids[block_order] = 1;
-              }
-            }
-          } else {
-            Ioss::Int64Vector element(number_sides);
-            Ioss::Int64Vector sides(number_sides);
-            Ioss::Field side_field("sides",   Ioss::Field::INT64, SCALAR(), Ioss::Field::MESH, number_sides);
-            Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, SCALAR(), Ioss::Field::MESH, number_sides);
-            decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
-            decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
-
-            Ioss::ElementBlock *block = nullptr;
-            for (int64_t iel = 0; iel < number_sides; iel++) {
-              int64_t elem_id = element[iel];
-              if (block == nullptr || !block->contains(elem_id)) {
-                block = get_region()->get_element_block(elem_id);
-                assert(block != nullptr);
-                int block_order = block->get_property("original_block_order").get_int();
-                block_ids[block_order] = 1;
-              }
-            }
-          }
-        }
-
-        // Synchronize among all processors....
-        if (isParallel) {
-          util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
-        }
-      }
-      Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-      assert(Ioex::check_block_order(element_blocks));
-
-      for (int64_t i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
-        if (block_ids[i] == 1) {
-          Ioss::ElementBlock *block = element_blocks[i];
-          if (!Ioss::Utils::block_is_omitted(block)) {
-            block_membership.push_back(block->name());
-          }
-        }
-      }
-    }
-
     template <typename T>
       void DatabaseIO::get_sets(ex_entity_type type, int64_t count, const std::string &base,
                                 const T* /* set_type */)
@@ -1788,6 +1738,12 @@ namespace Iopx {
       }
     }
 
+    int64_t DatabaseIO::get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+                                           void *data, size_t data_size) const
+    {
+      return Ioex::DatabaseIO::get_field_internal(reg, field, data, data_size);
+    }
+
     int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
                                            const Ioss::Field& field,
                                            void *data, size_t data_size) const
@@ -1822,16 +1778,12 @@ namespace Iopx {
           size_t offset = decomp->nodeOffset;
           size_t count = decomp->nodeCount;
           if (int_byte_size_api() == 4) {
-            std::vector<int> file_ids; file_ids.reserve(count);
-            for (size_t i=0; i<count; i++) {
-              file_ids.push_back(offset+i+1);
-            }
+            std::vector<int> file_ids(count);
+            std::iota(file_ids.begin(), file_ids.end(), offset+1);
             decomp->communicate_node_data(TOPTR(file_ids), (int*)data, 1);
           } else {
-            std::vector<int64_t> file_ids; file_ids.reserve(count);
-            for (size_t i=0; i<count; i++) {
-              file_ids.push_back(offset+i+1);
-            }
+            std::vector<int64_t> file_ids(count);
+            std::iota(file_ids.begin(), file_ids.end(), offset+1);
             decomp->communicate_node_data(TOPTR(file_ids), (int64_t*)data, 1);
           }
         }
@@ -2358,20 +2310,20 @@ namespace Iopx {
             Ioss::Field df_field("distribution_factor", Ioss::Field::REAL, "scalar", Ioss::Field::MESH, num_to_get);
             decomp->get_set_mesh_double(get_file_pointer(), EX_SIDE_SET, id, df_field, TOPTR(real_ids));
 
-	    if (field.get_type() == Ioss::Field::INTEGER) {
-	      // Need to convert 'double' to 'int' for Sierra use...
-	      int* ids = static_cast<int*>(data);
-	      for (ssize_t i = 0; i < num_to_get; i++) {
-		ids[i] = static_cast<int>(real_ids[i]);
-	      }
-	    }
-	    else {
-	      // Need to convert 'double' to 'int' for Sierra use...
-	      int64_t* ids = static_cast<int64_t*>(data);
-	      for (ssize_t i = 0; i < num_to_get; i++) {
-		ids[i] = static_cast<int64_t>(real_ids[i]);
-	      }
-	    }
+            if (field.get_type() == Ioss::Field::INTEGER) {
+              // Need to convert 'double' to 'int' for Sierra use...
+              int* ids = static_cast<int*>(data);
+              for (ssize_t i = 0; i < num_to_get; i++) {
+                ids[i] = static_cast<int>(real_ids[i]);
+              }
+            }
+            else {
+              // Need to convert 'double' to 'int' for Sierra use...
+              int64_t* ids = static_cast<int64_t*>(data);
+              for (ssize_t i = 0; i < num_to_get; i++) {
+                ids[i] = static_cast<int64_t>(real_ids[i]);
+              }
+            }
           }
         }
 
@@ -2404,14 +2356,13 @@ namespace Iopx {
               for (ssize_t iel = 0; iel < 2*entity_count; iel+=2) {
                 int64_t new_id = (int64_t)10*els[iel] + els[iel+1];
                 if (new_id > int_max) {
-                  std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
-                      std::ostringstream errmsg;
-                      errmsg << "ERROR: accessing the sideset field 'ids'\n"
-                             << "\t\thas exceeded the integer bounds for entity " << els[iel]
-                             << ", local side id " << els[iel+1] << ".\n\t\tTry using 64-bit mode to read the file '"
-                             << decoded_filename << "'.\n";
-                      IOSS_ERROR(errmsg);
-                    }
+                  std::ostringstream errmsg;
+                  errmsg << "ERROR: accessing the sideset field 'ids'\n"
+                         << "\t\thas exceeded the integer bounds for entity " << els[iel]
+                         << ", local side id " << els[iel+1] << ".\n\t\tTry using 64-bit mode to read the file '"
+                         << get_filename() << "'.\n";
+                  IOSS_ERROR(errmsg);
+                }
                 
                 ids[idx++] = (int)new_id;
               }
@@ -3018,8 +2969,8 @@ namespace Iopx {
       {
         double value = number_distribution_factors > 0 ? dist[0] : 0.0;
         bool constant = true;
-        for (int64_t i=1; i < number_distribution_factors; i++) {
-          if (dist[i] != value) {
+        for (auto df : dist) {
+          if (df != value) {
             constant = false;
             break;
           }
@@ -3132,6 +3083,12 @@ namespace Iopx {
       // better error message.
       assert(idb == number_distribution_factors);
       return 0;
+    }
+
+    int64_t DatabaseIO::put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+                               void *data, size_t data_size) const
+    {
+      return Ioex::DatabaseIO::put_field_internal(reg, field, data, data_size);
     }
 
     int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock* nb,
@@ -3590,7 +3547,7 @@ namespace Iopx {
             }
           }
 
-          nodeMap.build_reverse_map(myProcessor);
+          nodeMap.build_reverse_map();
           nodeMap.build_reorder_map(0, num_to_get);
 
           // Only a single nodeblock and all set
@@ -3678,7 +3635,7 @@ namespace Iopx {
 
         // Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
         if (db_state == Ioss::STATE_MODEL) {
-          entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
+          entity_map.build_reverse_map(num_to_get, eb_offset);
 
           // Output this portion of the entity number map
           int ierr = ex_put_partial_id_map(file_pointer, map_type, offset+1, count, ids);
@@ -4120,27 +4077,27 @@ namespace Iopx {
           // Need to convert 'ints' to 'double' for storage on mesh...
           // FIX 64
           if (field.get_type() == Ioss::Field::INTEGER) {
-	    int* ids = static_cast<int*>(data);
-	    std::vector<double> real_ids(num_to_get);
-	    for (size_t i = 0; i < num_to_get; i++) {
-	      real_ids[i] = static_cast<double>(ids[i]);
-	    }
-	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
-						  offset+1, entity_count, TOPTR(real_ids));
-	    if (ierr < 0)
-	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
-	  else {
-	    int64_t* ids = static_cast<int64_t*>(data);
-	    std::vector<double> real_ids(num_to_get);
-	    for (size_t i = 0; i < num_to_get; i++) {
-	      real_ids[i] = static_cast<double>(ids[i]);
-	    }
-	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
-						  offset+1, entity_count, TOPTR(real_ids));
-	    if (ierr < 0)
-	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	  }
+            int* ids = static_cast<int*>(data);
+            std::vector<double> real_ids(num_to_get);
+            for (size_t i = 0; i < num_to_get; i++) {
+              real_ids[i] = static_cast<double>(ids[i]);
+            }
+            int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+                                                  offset+1, entity_count, TOPTR(real_ids));
+            if (ierr < 0)
+              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+          }
+          else {
+            int64_t* ids = static_cast<int64_t*>(data);
+            std::vector<double> real_ids(num_to_get);
+            for (size_t i = 0; i < num_to_get; i++) {
+              real_ids[i] = static_cast<double>(ids[i]);
+            }
+            int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+                                                  offset+1, entity_count, TOPTR(real_ids));
+            if (ierr < 0)
+              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+          }
         }
 
         else if (field.get_name() == "side_ids") {
@@ -4319,19 +4276,17 @@ namespace Iopx {
       {
         Ioss::EdgeBlockContainer edge_blocks = region->get_edge_blocks();
         assert(Ioex::check_block_order(edge_blocks));
-	for (auto &edge_block : edge_blocks) {
+        for (auto &edge_block : edge_blocks) {
           Ioex::set_id(edge_block, EX_EDGE_BLOCK, &ids_);
         }
 
         edgeCount = 0;
-	for (auto &edge_block : edge_blocks) {
+        for (auto &edge_block : edge_blocks) {
           edgeCount += edge_block->get_property("entity_count").get_int();
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(edge_block, EX_EDGE_BLOCK, &ids_);
           Ioex::EdgeBlock T(*(edge_block));
-          if (std::find(mesh.edgeblocks.begin(), mesh.edgeblocks.end(), T) == mesh.edgeblocks.end()) {
-            mesh.edgeblocks.push_back(T);
-          }
+	  mesh.edgeblocks.push_back(T);
         }
         m_groupCount[EX_EDGE_BLOCK] = mesh.edgeblocks.size();
       }
@@ -4351,9 +4306,7 @@ namespace Iopx {
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(face_block, EX_FACE_BLOCK, &ids_);
           Ioex::FaceBlock T(*(face_block));
-          if (std::find(mesh.faceblocks.begin(), mesh.faceblocks.end(), T) == mesh.faceblocks.end()) {
-            mesh.faceblocks.push_back(T);
-          }
+	  mesh.faceblocks.push_back(T);
         }
         m_groupCount[EX_FACE_BLOCK] = mesh.faceblocks.size();
       }
@@ -4373,9 +4326,7 @@ namespace Iopx {
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(element_block, EX_ELEM_BLOCK, &ids_);
           Ioex::ElemBlock T(*(element_block));
-          if (std::find(mesh.elemblocks.begin(), mesh.elemblocks.end(), T) == mesh.elemblocks.end()) {
-            mesh.elemblocks.push_back(T);
-          }
+	  mesh.elemblocks.push_back(T);
         }
         m_groupCount[EX_ELEM_BLOCK] = mesh.elemblocks.size();
       }
@@ -4390,9 +4341,7 @@ namespace Iopx {
         for (auto &set : nodesets) {
           Ioex::get_id(set, EX_NODE_SET, &ids_);
           const Ioex::NodeSet T(*(set));
-          if (std::find(mesh.nodesets.begin(), mesh.nodesets.end(), T) == mesh.nodesets.end()) {
-            mesh.nodesets.push_back(T);
-          }
+	  mesh.nodesets.push_back(T);
         }
         m_groupCount[EX_NODE_SET] = mesh.nodesets.size();
       }
@@ -4407,9 +4356,7 @@ namespace Iopx {
         for (auto &set : edgesets) {
           Ioex::get_id(set, EX_EDGE_SET, &ids_);
           const Ioex::EdgeSet T(*(set));
-          if (std::find(mesh.edgesets.begin(), mesh.edgesets.end(), T) == mesh.edgesets.end()) {
-            mesh.edgesets.push_back(T);
-          }
+	  mesh.edgesets.push_back(T);
         }
         m_groupCount[EX_EDGE_SET] = mesh.edgesets.size();
       }
@@ -4424,9 +4371,7 @@ namespace Iopx {
         for (auto &set : facesets) {
           Ioex::get_id(set, EX_FACE_SET, &ids_);
           const Ioex::FaceSet T(*(set));
-          if (std::find(mesh.facesets.begin(), mesh.facesets.end(), T) == mesh.facesets.end()) {
-            mesh.facesets.push_back(T);
-          }
+	  mesh.facesets.push_back(T);
         }
         m_groupCount[EX_FACE_SET] = mesh.facesets.size();
       }
@@ -4441,9 +4386,7 @@ namespace Iopx {
         for (auto &set : elementsets) {
           Ioex::get_id(set, EX_ELEM_SET, &ids_);
           const Ioex::ElemSet T(*(set));
-          if (std::find(mesh.elemsets.begin(), mesh.elemsets.end(), T) == mesh.elemsets.end()) {
-            mesh.elemsets.push_back(T);
-          }
+	  mesh.elemsets.push_back(T);
         }
         m_groupCount[EX_ELEM_SET] = mesh.elemsets.size();
       }
@@ -4464,7 +4407,7 @@ namespace Iopx {
           int64_t df_count = 0;
 
           Ioss::SideBlockContainer side_blocks = set->get_side_blocks();
-	  for (auto &block : side_blocks) {
+          for (auto &block : side_blocks) {
             // Add  "*_offset" properties to specify at what offset
             // the data for this block appears in the containing set.
             Ioss::SideBlock *new_block = const_cast<Ioss::SideBlock*>(block);
@@ -4490,9 +4433,7 @@ namespace Iopx {
         for (auto &set : ssets) {
           // Add a SideSet corresponding to this SideSet/SideBlock
           Ioex::SideSet T(*set);
-          if (std::find(mesh.sidesets.begin(), mesh.sidesets.end(), T) == mesh.sidesets.end()) {
-            mesh.sidesets.push_back(T);
-          }
+	  mesh.sidesets.push_back(T);
         }
         m_groupCount[EX_SIDE_SET] = mesh.sidesets.size();
       }

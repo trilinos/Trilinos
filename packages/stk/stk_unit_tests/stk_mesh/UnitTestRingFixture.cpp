@@ -47,7 +47,7 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 
 
 
@@ -181,7 +181,7 @@ namespace unit_test {
 void test_shift_ring( RingFixture& ring )
 {
   MetaData& meta = ring.m_meta_data;
-  stk::mesh::unit_test::BulkDataTester& bulk = ring.m_bulk_data;
+  stk::unit_test_util::BulkDataTester& bulk = ring.m_bulk_data;
 
   const int p_rank     = bulk.parallel_rank();
   const int p_size     = bulk.parallel_size();

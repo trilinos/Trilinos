@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     RealT relerr = abserr/sol.norm();
     *outStream << std::scientific << "\n   Absolute Error: " << abserr;
     *outStream << std::scientific << "\n   Relative Error: " << relerr << "\n";
-    if ( relerr > sqrt(ROL::ROL_EPSILON) ) {
+    if ( relerr > sqrt(ROL::ROL_EPSILON<RealT>()) ) {
       errorFlag += 1;
     }
   }

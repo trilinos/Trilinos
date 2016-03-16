@@ -68,16 +68,18 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::scalar_t pcoord_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
 #endif
 
-  const Teuchos::Comm<int> *comm;
-  const Zoltan2::MachineRepresentation <scalar_t> *machine;
-  const Zoltan2::Model<typename Adapter::base_adapter_t> *model;
-  const Zoltan2::PartitioningSolution<Adapter> *soln;
-  const Environment *env;
+  const Teuchos::RCP <const Teuchos::Comm<int> >comm;
+  const Teuchos::RCP <const Zoltan2::MachineRepresentation <pcoord_t,part_t> > machine;
+  const Teuchos::RCP <const Adapter > input_adapter;
+  const Teuchos::RCP <const Zoltan2::PartitioningSolution<Adapter> >soln;
+  const Teuchos::RCP <const Environment >env;
+
 
 /*! \brief Constructor 
  *  Constructor builds the map from parts to ranks.
@@ -86,44 +88,56 @@ public:
  *  KDDKDD SO WHEN SHOULD THE MAP BE CREATED?
  */
   PartitionMapping(
-    const Teuchos::Comm<int> *comm_,
-    const Zoltan2::MachineRepresentation<scalar_t> *machine_, // If NULL, assume homogeneous
-                                                  // Make optional
-    const Zoltan2::Model<typename Adapter::base_adapter_t> *model_, // Needed to get information about
-                                         // the application data (coords, graph)
-    const Zoltan2::PartitioningSolution<Adapter> *soln_, // Needed for mapping a partition
-    const Environment *envConst_  // Perhaps envConst should be optional
-                                         // so applications can create a mapping
-                                         // directly
-  ):comm(comm_),
+      const Teuchos::RCP <const Teuchos::Comm<int> >comm_,
+      const Teuchos::RCP <const Zoltan2::MachineRepresentation<pcoord_t,part_t> >machine_, // If NULL, assume homogeneous
+                                                    // Make optional
+      const Teuchos::RCP <const Adapter> input_adapter_, // Needed to get information about
+                                           // the application data (coords, graph)
+      const Teuchos::RCP <const Zoltan2::PartitioningSolution<Adapter> >soln_, // Needed for mapping a partition
+      const Teuchos::RCP <const Environment > envConst_  // Perhaps envConst should be optional
+                                           // so applications can create a mapping
+                                           // directly
+    ):comm(comm_),
       machine(machine_),
-      model(model_),
+      input_adapter(input_adapter_),
       soln(soln_),
+      env(envConst_)
+          {} ;
+
+  PartitionMapping(
+      const Teuchos::RCP <const Teuchos::Comm<int> >comm_,
+      const Teuchos::RCP <const Environment > envConst_  // Perhaps envConst should be optional
+                                           // so applications can create a mapping
+                                           // directly
+    ):comm(comm_),
+      machine(),
+      input_adapter(),
+      soln(),
       env(envConst_)
           {} ;
 
   PartitionMapping():
           comm(0),
           machine(0),
-          model(0),
+          input_adapter(0),
           soln(0),
           env(0){};
 
-  PartitionMapping(const Environment *envConst_):
+  PartitionMapping(const Teuchos::RCP <const Environment >envConst_):
           comm(0),
           machine(0),
-          model(0),
+          input_adapter(0),
           soln(0),
           env(envConst_){};
 
   PartitionMapping(
-          const Environment *envConst_,
-          const Teuchos::Comm<int> *comm_,
-          const MachineRepresentation<scalar_t> *machine_
-          ):
+      const Teuchos::RCP <const Environment > envConst_,
+      const Teuchos::RCP <const Teuchos::Comm<int> >comm_,
+      const Teuchos::RCP <const MachineRepresentation<pcoord_t,part_t> >machine_
+      ):
           comm(comm_),
           machine(machine_),
-          model(0),
+          input_adapter(0),
           soln(0),
           env(envConst_){};
 
@@ -145,7 +159,7 @@ public:
   // TODO:  KDDKDD (requiring more storage or a directory) or only for the 
   // TODO:  KDDKDD local process.
   // TODO:  KDDKDD Could require O(nprocs) storage
-  virtual void getPartsForProc(int procId, part_t &numParts, part_t *parts)
+  virtual void getPartsForProc(int procId, part_t &numParts, part_t *&parts)
     const = 0;
 
   /*! \brief Get the processes containing a part.
@@ -156,7 +170,7 @@ public:
    */
   // TODO:  KDDKDD Arguments should be count and array, not min and max.
   // TODO:  KDDKDD Could require O(nGlobalParts) storage
-  virtual void getProcsForPart(part_t partId, part_t &numProcs, part_t *procs) const = 0;
+  virtual void getProcsForPart(part_t partId, part_t &numProcs, part_t *&procs) const = 0;
 
 private:
 };

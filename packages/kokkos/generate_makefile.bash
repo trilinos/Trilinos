@@ -18,6 +18,10 @@ case $key in
     CUDA_PATH_NVCC=`which nvcc`
     CUDA_PATH=${CUDA_PATH_NVCC%/bin/nvcc}
     ;;
+    # Catch this before '--with-cuda*'
+    --with-cuda-options*)
+    KOKKOS_CUDA_OPT="${key#*=}"
+    ;;
     --with-cuda*)
     KOKKOS_DEVICES="${KOKKOS_DEVICES},Cuda"
     CUDA_PATH="${key#*=}"
@@ -98,6 +102,8 @@ case $key in
     echo "--with-hwloc=/Path/To/Hwloc: set path to hwloc"
     echo "--with-options=[OPTIONS]:    additional options to Kokkos:"
     echo "                               aggressive_vectorization = add ivdep on loops"
+    echo "--with-cuda-options=[OPTIONS]: additional options to CUDA:"
+    echo "                               force_uvm, use_ldg, enable_lambda, rdc"
     exit 0
     ;;
     *)
@@ -114,6 +120,11 @@ if [ -z "$KOKKOS_PATH" ]; then
 else
     # Ensure KOKKOS_PATH is abs path
     KOKKOS_PATH=$( cd $KOKKOS_PATH && pwd )
+fi
+
+if [ "${KOKKOS_PATH}"  = "${PWD}" ] || [ "${KOKKOS_PATH}"  = "${PWD}/" ]; then
+echo "Running generate_makefile.sh in the Kokkos root directory is not allowed"
+exit 
 fi
 
 KOKKOS_OPTIONS="KOKKOS_PATH=${KOKKOS_PATH}"
@@ -157,6 +168,9 @@ fi
 if [ ${#KOKKOS_OPT} -gt 0 ]; then
 KOKKOS_OPTIONS="${KOKKOS_OPTIONS} KOKKOS_OPTIONS=${KOKKOS_OPT}"
 fi
+if [ ${#KOKKOS_CUDA_OPT} -gt 0 ]; then
+KOKKOS_OPTIONS="${KOKKOS_OPTIONS} KOKKOS_CUDA_OPTIONS=${KOKKOS_CUDA_OPT}"
+fi
 mkdir core
 mkdir core/unit_test
 mkdir core/perf_test
@@ -170,6 +184,10 @@ mkdir example
 mkdir example/fixture
 mkdir example/feint
 mkdir example/fenl
+
+if [ ${#KOKKOS_ENABLE_EXAMPLE_ICHOL} -gt 0 ]; then
+mkdir example/ichol
+fi
 
 # Generate subdirectory makefiles.
 echo "KOKKOS_OPTIONS=${KOKKOS_OPTIONS}" > core/unit_test/Makefile
@@ -259,6 +277,19 @@ echo -e "\tmake -f ${KOKKOS_PATH}/example/fenl/Makefile ${KOKKOS_OPTIONS} test" 
 echo "" >> example/fenl/Makefile
 echo "clean:" >> example/fenl/Makefile
 echo -e "\tmake -f ${KOKKOS_PATH}/example/fenl/Makefile ${KOKKOS_OPTIONS} clean" >> example/fenl/Makefile
+
+if [ ${#KOKKOS_ENABLE_EXAMPLE_ICHOL} -gt 0 ]; then
+echo "KOKKOS_OPTIONS=${KOKKOS_OPTIONS}" > example/ichol/Makefile
+echo "" >> example/ichol/Makefile
+echo "all:" >> example/ichol/Makefile
+echo -e "\tmake -f ${KOKKOS_PATH}/example/ichol/Makefile ${KOKKOS_OPTIONS}" >> example/ichol/Makefile
+echo "" >> example/ichol/Makefile
+echo "test: all" >> example/ichol/Makefile
+echo -e "\tmake -f ${KOKKOS_PATH}/example/ichol/Makefile ${KOKKOS_OPTIONS} test" >> example/ichol/Makefile
+echo "" >> example/ichol/Makefile
+echo "clean:" >> example/ichol/Makefile
+echo -e "\tmake -f ${KOKKOS_PATH}/example/ichol/Makefile ${KOKKOS_OPTIONS} clean" >> example/ichol/Makefile
+fi
 
 # Generate top level directory makefile.
 echo "Generating Makefiles with options " ${KOKKOS_OPTIONS}

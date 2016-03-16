@@ -62,13 +62,14 @@ private:
   bool firstReset_;
 
 public:
-  ExpectationQuad(void) : RiskMeasure<Real>(), xstat_(0.0), vstat_(0.0), firstReset_(true) {}
+  ExpectationQuad(void) : RiskMeasure<Real>(), xstat_(0), vstat_(0), firstReset_(true) {}
 
   virtual Real regret(Real x, int deriv = 0) = 0;
 
   virtual void checkRegret(void) {
+    Real zero(0), half(0.5), two(2), one(1), oem3(1.e-3), fem4(5.e-4), p1(0.1);
     // Check v(0) = 0
-    Real x = 0.0;
+    Real x = zero;
     Real vx = regret(x,0);
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v(0) = 0? \n";
     std::cout << std::right << std::setw(20) << "v(0)" << "\n";
@@ -77,54 +78,54 @@ public:
               << "\n";
     std::cout << "\n";
     // Check v(x) > x
-    Real scale = 2.0;
+    Real scale = two;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: x < v(x) for |x| > 0? \n";
     std::cout << std::right << std::setw(20) << "x"
               << std::right << std::setw(20) << "v(x)"
               << "\n";
     for (int i = 0; i < 10; i++) {
-      x = scale*(Real)rand()/(Real)RAND_MAX - scale*0.5;
+      x = scale*(Real)rand()/(Real)RAND_MAX - scale*half;
       vx = regret(x,0);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << x 
                 << std::setw(20) << vx 
                 << "\n";
-      scale *= 2.0;
+      scale *= two;
     }
     std::cout << "\n";
     // Check v(x) is convex
-    Real y = 0.0;
-    Real vy = 0.0;
-    Real z = 0.0;
-    Real vz = 0.0;
-    Real l = 0.0; 
-    scale = 2.0;
+    Real y = zero;
+    Real vy = zero;
+    Real z = zero;
+    Real vz = zero;
+    Real l = zero; 
+    scale = two;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v(x) is convex? \n";
     std::cout << std::right << std::setw(20) << "v(l*x+(1-l)*y)" 
                             << std::setw(20) << "l*v(x)+(1-l)*v(y)" 
                             << "\n";
     for (int i = 0; i < 10; i++) {
-      x = scale*(Real)rand()/(Real)RAND_MAX - scale*0.5;
+      x = scale*(Real)rand()/(Real)RAND_MAX - scale*half;
       vx = regret(x,0);
-      y = scale*(Real)rand()/(Real)RAND_MAX - scale*0.5;
+      y = scale*(Real)rand()/(Real)RAND_MAX - scale*half;
       vy = regret(y,0);
       l = (Real)rand()/(Real)RAND_MAX;
-      z = l*x + (1.0-l)*y;
+      z = l*x + (one-l)*y;
       vz = regret(z,0);
       std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << vz 
-                << std::setw(20) << l*vx + (1.0-l)*vy 
+                << std::setw(20) << l*vx + (one-l)*vy 
                 << "\n";
-      scale *= 2.0;
+      scale *= two;
     }
     std::cout << "\n";
     // Check v'(x)
-    x = 0.001*(Real)rand()/(Real)RAND_MAX - 0.0005;
+    x = oem3*(Real)rand()/(Real)RAND_MAX - fem4;
     vx = regret(x,0);
     Real dv = regret(x,1);
-    Real t = 1.0;
-    Real diff = 0.0;
-    Real err = 0.0;
+    Real t = one;
+    Real diff = zero;
+    Real err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v'(x) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v'(x)"
@@ -142,16 +143,16 @@ public:
                 << std::setw(20) << diff 
                 << std::setw(20) << err 
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n";
     // Check v''(x)
-    x = 0.001*(Real)rand()/(Real)RAND_MAX - 0.0005;
+    x = oem3*(Real)rand()/(Real)RAND_MAX - fem4;
     vx = regret(x,1);
     dv = regret(x,2);
-    t = 1.0;
-    diff = 0.0;
-    err = 0.0;
+    t = one;
+    diff = zero;
+    err = zero;
     std::cout << std::right << std::setw(20) << "CHECK REGRET: v''(x) is correct? \n";
     std::cout << std::right << std::setw(20) << "t"
                             << std::setw(20) << "v''(x)"
@@ -169,7 +170,7 @@ public:
                 << std::setw(20) << diff 
                 << std::setw(20) << err 
                 << "\n";
-      t *= 0.1;
+      t *= p1;
     }
     std::cout << "\n";
   }
@@ -215,8 +216,7 @@ public:
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
-    Real val  = RiskMeasure<Real>::val_;
-    Real gval = 0.0;
+    Real val  = RiskMeasure<Real>::val_, gval(0);
     sampler.sumAll(&val,&gval,1);
     gval += xstat_;
     return gval;
@@ -224,10 +224,9 @@ public:
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(g));
-    Real stat  = RiskMeasure<Real>::val_;
-    Real gstat = 0.0;
+    Real stat  = RiskMeasure<Real>::val_, gstat(0), one(1);
     sampler.sumAll(&stat,&gstat,1);
-    gstat += 1.0;
+    gstat += one;
     gs.setStatistic(gstat);
 
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
@@ -236,8 +235,7 @@ public:
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(hv));
-    Real stat  = RiskMeasure<Real>::val_;
-    Real gstat = 0.0;
+    Real stat  = RiskMeasure<Real>::val_, gstat(0);
     sampler.sumAll(&stat,&gstat,1);
     hs.setStatistic(gstat);
 

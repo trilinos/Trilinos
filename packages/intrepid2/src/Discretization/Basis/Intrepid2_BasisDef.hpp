@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -46,15 +45,10 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-
 template<class Scalar, class ArrayScalar>
 int Basis<Scalar, ArrayScalar>::getDofOrdinal(const int subcDim,
                                               const int subcOrd,
-                                              const int subcDofOrd) {
-  if (!basisTagsAreSet_) {
-    initializeTags();
-    basisTagsAreSet_ = true;
-  }
+                                              const int subcDofOrd) const {
   // Use .at() for bounds checking
   int dofOrdinal = tagToOrdinal_.at(subcDim).at(subcOrd).at(subcDofOrd);
   TEUCHOS_TEST_FOR_EXCEPTION( (dofOrdinal == -1), std::invalid_argument, 
@@ -62,35 +56,21 @@ int Basis<Scalar, ArrayScalar>::getDofOrdinal(const int subcDim,
   return dofOrdinal;
 }
 
-
 template<class Scalar,class ArrayScalar>
-const std::vector<std::vector<std::vector<int> > > & Basis<Scalar, ArrayScalar>::getDofOrdinalData( ) 
-{
-  if (!basisTagsAreSet_) {
-    initializeTags();
-    basisTagsAreSet_ = true;
-  }
+const std::vector<std::vector<std::vector<int> > > & Basis<Scalar, ArrayScalar>::getDofOrdinalData( ) const {
   return tagToOrdinal_;
 }
 
 
 template<class Scalar, class ArrayScalar>
-const std::vector<int>&  Basis<Scalar, ArrayScalar>::getDofTag(int dofOrd) {
-  if (!basisTagsAreSet_) {
-    initializeTags();
-    basisTagsAreSet_ = true;
-  }
+const std::vector<int>&  Basis<Scalar, ArrayScalar>::getDofTag(int dofOrd) const {
   // Use .at() for bounds checking
   return ordinalToTag_.at(dofOrd);
 }
 
 
 template<class Scalar, class ArrayScalar>
-const std::vector<std::vector<int> > & Basis<Scalar, ArrayScalar>::getAllDofTags() {
-  if (!basisTagsAreSet_) {
-    initializeTags();
-    basisTagsAreSet_ = true;
-  }
+const std::vector<std::vector<int> > & Basis<Scalar, ArrayScalar>::getAllDofTags() const {
   return ordinalToTag_;
 }
 

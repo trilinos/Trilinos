@@ -120,7 +120,6 @@ namespace ROL {
 template <class Real>
 class MoreauYosidaPenaltyStep : public Step<Real> {
 private:
-  Teuchos::RCP<MoreauYosidaPenalty<Real> > myPen_;
   Teuchos::RCP<Algorithm<Real> > algo_;
   Teuchos::RCP<Vector<Real> > x_; 
   Teuchos::RCP<Vector<Real> > g_; 
@@ -136,24 +135,25 @@ private:
                    Objective<Real> &obj,
                    EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state) {
-    Real zerotol = std::sqrt(ROL_EPSILON);
+    MoreauYosidaPenalty<Real> &myPen
+      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>()), one(1);
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     // Update objective and constraint.
-    obj.update(x,true,algo_state.iter);
+    myPen.update(x,true,algo_state.iter);
     con.update(x,true,algo_state.iter);
-    myPen_->update(x,true,algo_state.iter);
     // Compute objective value, constraint value, & gradient of Lagrangian
-    algo_state.value = myPen_->value(x, zerotol);
+    algo_state.value = myPen.value(x, zerotol);
     con.value(*(state->constraintVec),x, zerotol);
-    myPen_->gradient(*(state->gradientVec), x, zerotol);
+    myPen.gradient(*(state->gradientVec), x, zerotol);
     con.applyAdjointJacobian(*g_,l,x,zerotol);
     state->gradientVec->plus(*g_);
     // Compute criticality measure
     if (bnd.isActivated()) {
       x_->set(x);
-      x_->axpy(-1.0,(state->gradientVec)->dual());
+      x_->axpy(-one,(state->gradientVec)->dual());
       bnd.project(*x_);
-      x_->axpy(-1.0,x);
+      x_->axpy(-one,x);
       algo_state.gnorm = x_->norm();
     }
     else {
@@ -167,21 +167,27 @@ private:
   }
 
 public:
+
+  using Step<Real>::initialize;
+  using Step<Real>::compute;
+  using Step<Real>::update;
+
   ~MoreauYosidaPenaltyStep() {}
 
   MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)
-    : Step<Real>(), myPen_(Teuchos::null), algo_(Teuchos::null),
+    : Step<Real>(), algo_(Teuchos::null),
       x_(Teuchos::null), g_(Teuchos::null), l_(Teuchos::null),
-      tau_(10.), print_(false), parlist_(parlist), subproblemIter_(0) {
+      tau_(10), print_(false), parlist_(parlist), subproblemIter_(0) {
     // Parse parameters
+    Real ten(10), oem6(1.e-6), oem8(1.e-8);
     Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
-    Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",10.0);
-    tau_   = steplist.get("Penalty Parameter Growth Factor",10.0);
+    Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",ten);
+    tau_   = steplist.get("Penalty Parameter Growth Factor",ten);
     print_ = steplist.sublist("Subproblem").get("Print History",false);
     // Set parameters for step subproblem
-    Real gtol = steplist.sublist("Subproblem").get("Optimality Tolerance",1.e-8);
-    Real ctol = steplist.sublist("Subproblem").get("Feasibility Tolerance",1.e-8);
-    Real stol = 1.e-6*std::min(gtol,ctol);
+    Real gtol = steplist.sublist("Subproblem").get("Optimality Tolerance",oem8);
+    Real ctol = steplist.sublist("Subproblem").get("Feasibility Tolerance",oem8);
+    Real stol = oem6*std::min(gtol,ctol);
     int maxit = steplist.sublist("Subproblem").get("Iteration Limit",1000);
     parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol);
     parlist_.sublist("Status Test").set("Constraint Tolerance", ctol);
@@ -194,6 +200,8 @@ public:
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                    Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
+    MoreauYosidaPenalty<Real> &myPen
+      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
     // Initialize step state
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
@@ -208,8 +216,7 @@ public:
       bnd.project(x);
     }
     // Update the Lagrangian
-    myPen_ = Teuchos::rcp(new MoreauYosidaPenalty<Real>(obj,bnd,x,state->searchSize));
-    myPen_->updateMultipliers(state->searchSize,x);
+    myPen.updateMultipliers(state->searchSize,x);
     // Initialize the algorithm state
     algo_state.nfval = 0;
     algo_state.ncval = 0;
@@ -223,10 +230,13 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
+    Real one(1);
+    MoreauYosidaPenalty<Real> &myPen
+      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
     algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step",parlist_,false));
     x_->set(x); l_->set(l);
-    algo_->run(*x_,*l_,*myPen_,con,print_);
-    s.set(*x_); s.axpy(-1.0,x);
+    algo_->run(*x_,*l_,myPen,con,print_);
+    s.set(*x_); s.axpy(-one,x);
     subproblemIter_ = (algo_->getState())->iter;
   }
 
@@ -236,6 +246,8 @@ public:
                Objective<Real> &obj, EqualityConstraint<Real> &con,
                BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
+    MoreauYosidaPenalty<Real> &myPen
+      = Teuchos::dyn_cast<MoreauYosidaPenalty<Real> >(obj);
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec->set(s);
     // Update iterate and Lagrange multiplier
@@ -244,14 +256,14 @@ public:
     // Update objective and constraint
     algo_state.iter++;
     con.update(x,true,algo_state.iter);
-    myPen_->update(x,true,algo_state.iter);
+    myPen.update(x,true,algo_state.iter);
     // Update multipliers
     state->searchSize *= tau_;
-    myPen_->updateMultipliers(state->searchSize,x);
+    myPen.updateMultipliers(state->searchSize,x);
     // Update state
     updateState(x,l,obj,con,bnd,algo_state);
-    algo_state.nfval += myPen_->getNumberFunctionEvaluations() + ((algo_->getState())->nfval);
-    algo_state.ngrad += myPen_->getNumberGradientEvaluations() + ((algo_->getState())->ngrad);
+    algo_state.nfval += myPen.getNumberFunctionEvaluations() + ((algo_->getState())->nfval);
+    algo_state.ngrad += myPen.getNumberGradientEvaluations() + ((algo_->getState())->ngrad);
     algo_state.ncval += (algo_->getState())->ncval;
     algo_state.snorm = s.norm();
     algo_state.iterateVec->set(x);

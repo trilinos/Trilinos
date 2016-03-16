@@ -83,7 +83,7 @@ Ioss::Sphere::Sphere()
   Ioss::ElementTopology::alias("sphere", "point1");
 }
 
-Ioss::Sphere::~Sphere() {}
+Ioss::Sphere::~Sphere() = default;
 
 int Ioss::Sphere::parametric_dimension()           const {return  0;}
 int Ioss::Sphere::spatial_dimension()           const {return  3;}
@@ -126,8 +126,9 @@ Ioss::IntVector Ioss::Sphere::face_connectivity(int face_number) const
 Ioss::IntVector Ioss::Sphere::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 

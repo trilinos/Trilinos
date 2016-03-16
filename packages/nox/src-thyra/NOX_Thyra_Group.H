@@ -160,6 +160,12 @@ namespace NOX {
       Teuchos::RCP<const ::Thyra::LinearOpWithSolveBase<double> >
       getJacobian() const;
 
+      Teuchos::RCP< ::Thyra::PreconditionerBase<double> >
+      getNonconstPreconditioner();
+
+      Teuchos::RCP<const ::Thyra::PreconditionerBase<double> >
+      getPreconditioner() const;
+
       /** @name "Compute" functions. */
       //@{
 

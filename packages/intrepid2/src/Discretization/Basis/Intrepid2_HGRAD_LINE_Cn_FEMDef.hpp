@@ -36,9 +36,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -116,6 +115,8 @@ namespace Intrepid2 {
       }
     }
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
 
   template<class Scalar, class ArrayScalar>
@@ -139,6 +140,7 @@ namespace Intrepid2 {
       PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_EQUISPACED );
       break;
     case POINTTYPE_SPECTRAL: 
+    case POINTTYPE_WARPBLEND:
       PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_WARPBLEND );
       break;
     case POINTTYPE_SPECTRAL_OPEN: 
@@ -173,6 +175,9 @@ namespace Intrepid2 {
         Vinv_(i,j) = Vsdm(j,i);
       }
     }
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
   
   

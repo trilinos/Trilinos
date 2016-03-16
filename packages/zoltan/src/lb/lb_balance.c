@@ -733,11 +733,24 @@ struct OVIS_parameters ovisParameters;
         }
   
         *num_export_objs = all_num_obj;
+
+        {
+        ZOLTAN_ID_PTR egid = *export_global_ids;
+        ZOLTAN_ID_PTR agid = all_global_ids;
+        ZOLTAN_ID_PTR elid = *export_local_ids;
+        ZOLTAN_ID_PTR alid = all_local_ids;
         for (i = 0; i < all_num_obj; i++) {
-          (*export_global_ids)[i] = all_global_ids[i];
-          if (zz->Num_LID) (*export_local_ids)[i] = all_local_ids[i];
+          ZOLTAN_SET_GID(zz, egid, agid);
+          egid += zz->Num_GID;
+          agid += zz->Num_GID;
+          if (zz->Num_LID) {
+            ZOLTAN_SET_LID(zz, elid, alid);
+            elid += zz->Num_LID;
+            alid += zz->Num_LID;
+          }
           (*export_procs)[i] = all_export_procs[i];
           (*export_to_part)[i] = all_export_to_part[i];
+        }
         }
 
         ZOLTAN_FREE(&all_global_ids);

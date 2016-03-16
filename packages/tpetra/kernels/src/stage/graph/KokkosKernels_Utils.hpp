@@ -431,7 +431,6 @@ void print_1Dview(idx_array_type view, bool print_all = false){
   }
 }
 
-
 template <typename forward_map_type, typename reverse_map_type>
 struct Reverse_Map_Init{
   typedef typename forward_map_type::value_type forward_type;
@@ -459,6 +458,9 @@ struct Reverse_Map_Init{
   }
   */
 };
+
+
+
 
 
 
@@ -559,11 +561,139 @@ struct PropogataMaxValstoZeros{
 
 };
 
+
+template <typename array_type>
+struct LinearInitialization{
+  typedef typename array_type::value_type idx;
+  array_type array_sum;
+  LinearInitialization(array_type arr_): array_sum(arr_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii) const {
+    array_sum(ii) = ii;
+  }
+};
+template <typename array_type, typename MyExecSpace>
+void linear_init(typename array_type::value_type num_elements, array_type arr){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_for( my_exec_space(0, num_elements), LinearInitialization<array_type>(arr));
+}
+
+
 template <typename forward_array_type, typename MyExecSpace>
 void remove_zeros_in_xadj_vector(typename forward_array_type::value_type num_elements, forward_array_type arr){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_scan( my_exec_space(0, num_elements), PropogataMaxValstoZeros<forward_array_type>(arr));
 }
+
+
+template <typename forward_array_type, typename reverse_array_type>
+struct FillReverseBegins{
+
+  const forward_array_type &forward_map; //vertex to colors
+  reverse_array_type &reverse_map_xadj; // colors to vertex xadj
+
+
+  FillReverseBegins(
+      const forward_array_type &forward_map_, //vertex to colors
+      reverse_array_type &reverse_map_xadj_ // colors to vertex xadj
+      ):
+        forward_map(forward_map_), reverse_map_xadj(reverse_map_xadj_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii) const {
+    typename forward_array_type::value_type prev_col = forward_map(ii - 1);
+    typename forward_array_type::value_type cur_col = forward_map(ii);
+    while (prev_col < cur_col){
+      prev_col += 1;
+      forward_map(prev_col) = ii + 1;
+    }
+  }
+
+};
+
+
+template <typename forward_map_type, typename reverse_map_type>
+struct Reverse_Map_Scale_Init{
+  typedef typename forward_map_type::value_type forward_type;
+  typedef typename reverse_map_type::value_type reverse_type;
+  forward_map_type forward_map;
+  reverse_map_type reverse_map_xadj;
+
+
+  const reverse_type multiply_shift_for_scale;
+  const reverse_type division_shift_for_bucket;
+
+  Reverse_Map_Scale_Init(
+      forward_map_type forward_map_,
+      reverse_map_type reverse_xadj_,
+      reverse_type multiply_shift_for_scale_,
+      reverse_type division_shift_for_bucket_):
+        forward_map(forward_map_), reverse_map_xadj(reverse_xadj_),
+        multiply_shift_for_scale(multiply_shift_for_scale_),
+        division_shift_for_bucket(division_shift_for_bucket_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &ii) const {
+    forward_type fm = forward_map[ii];
+    fm = fm << multiply_shift_for_scale;
+    fm += ii >> division_shift_for_bucket;
+    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), 1);
+  }
+};
+
+
+
+template <typename forward_map_type, typename reverse_map_type>
+struct Fill_Reverse_Scale_Map{
+  typedef typename forward_map_type::value_type forward_type;
+  typedef typename reverse_map_type::value_type reverse_type;
+  forward_map_type forward_map;
+  reverse_map_type reverse_map_xadj;
+  reverse_map_type reverse_map_adj;
+
+  const reverse_type multiply_shift_for_scale;
+  const reverse_type division_shift_for_bucket;
+
+
+  Fill_Reverse_Scale_Map(
+      forward_map_type forward_map_,
+      reverse_map_type reverse_map_xadj_,
+      reverse_map_type reverse_map_adj_,
+      reverse_type multiply_shift_for_scale_,
+      reverse_type division_shift_for_bucket_):
+        forward_map(forward_map_), reverse_map_xadj(reverse_map_xadj_), reverse_map_adj(reverse_map_adj_),
+        multiply_shift_for_scale(multiply_shift_for_scale_),
+        division_shift_for_bucket(division_shift_for_bucket_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &ii) const {
+    forward_type fm = forward_map[ii];
+
+    fm = fm << multiply_shift_for_scale;
+    fm += ii >> division_shift_for_bucket;
+    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm - 1)), 1);
+    reverse_map_adj(future_index) = ii;
+  }
+};
+
+template <typename from_view_t, typename to_view_t>
+struct StridedCopy{
+  const from_view_t from;
+  to_view_t to;
+  const size_t stride;
+  StridedCopy(
+      const from_view_t from_,
+      to_view_t to_,
+      size_t stride_):from(from_), to (to_), stride(stride_){}
+
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &ii) const {
+    //std::cout << "ii:" << ii << " ii * stride:" << ii * stride << std::endl;
+    to[ii] = from[(ii + 1) * stride - 1];
+  }
+};
 
 /**
  * \brief Utility function to obtain a reverse map given a map.
@@ -590,22 +720,108 @@ void create_reverse_map(
     reverse_array_type &reverse_map_xadj, // colors to vertex xadj
     reverse_array_type &reverse_map_adj){ //colros to vertex adj
 
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  typedef typename reverse_array_type::value_type lno_t;
+  typedef typename forward_array_type::value_type reverse_lno_t;
 
+  const lno_t  MINIMUM_TO_ATOMIC = 64;
+
+
+
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   reverse_map_xadj = reverse_array_type("Reverse Map Xadj", num_reverse_elements + 1);
   reverse_map_adj = reverse_array_type(Kokkos::ViewAllocateWithoutInitializing("REVERSE_ADJ"), num_forward_elements);
-  reverse_array_type tmp_color_xadj (Kokkos::ViewAllocateWithoutInitializing("TMP_REVERSE_XADJ"), num_reverse_elements + 1);
 
-  Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
 
-  Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
-  inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(num_reverse_elements + 1, reverse_map_xadj);
-  //Kokkos::parallel_scan (my_exec_space (0, num_reverse_elements + 1) , rmi);
-  MyExecSpace::fence();
-  Kokkos::deep_copy (tmp_color_xadj, reverse_map_xadj);
-  MyExecSpace::fence();
-  Fill_Reverse_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj);
-  Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
+
+  if (num_reverse_elements < MINIMUM_TO_ATOMIC){
+    const lno_t  scale_size = 1024;
+    const lno_t  multiply_shift_for_scale = 10;
+    const lno_t division_shift_for_bucket = lno_t (ceil(log(num_forward_elements / scale_size)/log(2)));
+    const lno_t bucket_range_size = pow(2, division_shift_for_bucket);
+
+    //coloring indices are base-1. we end up using not using element 1.
+    const reverse_lno_t tmp_reverse_size = (num_reverse_elements + 1) << multiply_shift_for_scale;
+
+    reverse_array_type tmp_color_xadj ("TMP_REVERSE_XADJ",
+        tmp_reverse_size + 1);
+
+    Reverse_Map_Scale_Init<forward_array_type, reverse_array_type> rmi(
+        forward_map,
+        tmp_color_xadj,
+        multiply_shift_for_scale,
+        division_shift_for_bucket);
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    Kokkos::Impl::Timer timer;
+#endif
+    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
+    MyExecSpace::fence();
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    std::cout << "-CREATE_INIT_REVERSE_MAP:" << timer.seconds() << std::endl;
+    timer.reset();
+#endif
+    //print_1Dview(tmp_color_xadj, true);
+
+
+    inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(tmp_reverse_size + 1, tmp_color_xadj);
+    MyExecSpace::fence();
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    std::cout << "-CREATE_SCAN_REVERSE_MAP:" << timer.seconds() << std::endl;
+    //print_1Dview(tmp_color_xadj, true);
+#endif
+
+    Kokkos::parallel_for (my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
+    MyExecSpace::fence();
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    //print_1Dview(tmp_color_xadj, true);
+    //print_1Dview(reverse_map_xadj,true);
+    timer.reset();
+#endif
+    Fill_Reverse_Scale_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj,
+        multiply_shift_for_scale, division_shift_for_bucket);
+    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
+    MyExecSpace::fence();
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    std::cout << "-CREATE_FILL_REVERSE_MAP:" << timer.seconds() << std::endl;
+    //print_1Dview(reverse_map_adj);
+#endif
+  }
+  else
+  //atomic implementation.
+  {
+    reverse_array_type tmp_color_xadj (Kokkos::ViewAllocateWithoutInitializing("TMP_REVERSE_XADJ"), num_reverse_elements + 1);
+
+    Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    Kokkos::Impl::Timer timer;
+#endif
+
+    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
+    MyExecSpace::fence();
+    //print_1Dview(reverse_map_xadj);
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    std::cout << "CREATE_INIT_REVERSE_MAP:" << timer.seconds() << std::endl;
+    timer.reset();
+#endif
+
+
+    inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(num_reverse_elements + 1, reverse_map_xadj);
+    MyExecSpace::fence();
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    //print_1Dview(reverse_map_xadj);
+    std::cout << "CREATE_SCAN_REVERSE_MAP:" << timer.seconds() << std::endl;
+#endif
+    Kokkos::deep_copy (tmp_color_xadj, reverse_map_xadj);
+    MyExecSpace::fence();
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    timer.reset();
+#endif
+    Fill_Reverse_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj);
+    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
+    MyExecSpace::fence();
+#ifdef KOKKOSKERNELS_TIME_REVERSE
+    std::cout << "CREATE_FILL_REVERSE_MAP:" << timer.seconds() << std::endl;
+#endif
+  }
 }
 
 
@@ -734,6 +950,8 @@ struct FillSymmetricCSR{
 
 };
 
+
+
 template <typename in_lno_row_view_t,
           typename in_lno_nnz_view_t,
           typename out_lno_nnz_view_t,
@@ -803,13 +1021,16 @@ void symmetrize_and_get_lower_diagonal_edge_list(
       pre_pps_);
   MyExecSpace::fence();
 
-
-  //out_lno_row_view_t d_sym_edge_size = Kokkos::subview(pre_pps_, num_rows_to_symmetrize, num_rows_to_symmetrize );
+  auto d_sym_edge_size = Kokkos::subview(pre_pps_, num_rows_to_symmetrize);
+  auto h_sym_edge_size = Kokkos::create_mirror_view (d_sym_edge_size);
+  Kokkos::deep_copy (h_sym_edge_size, d_sym_edge_size);
+  num_symmetric_edges = h_sym_edge_size();
+  /*
   typename out_lno_nnz_view_t::HostMirror h_sym_edge_size = Kokkos::create_mirror_view (pre_pps_);
 
   Kokkos::deep_copy (h_sym_edge_size , pre_pps_);
   num_symmetric_edges = h_sym_edge_size(h_sym_edge_size.dimension_0() - 1);
-
+  */
 
 
   sym_srcs = out_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_srcs"), num_symmetric_edges);
@@ -1072,6 +1293,25 @@ void copy_vector(
 
 }
 
+
+template<typename view_type>
+struct ReduceSumFunctor{
+
+  view_type view_to_reduce;
+
+  ReduceSumFunctor(
+      view_type view_to_reduce_): view_to_reduce(view_to_reduce_){}
+
+  void operator()(const size_t &i, typename view_type::non_const_value_type &sum_reduction) const {
+    sum_reduction += view_to_reduce(i);
+  }
+};
+
+template <typename view_type , typename MyExecSpace>
+void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename view_type::non_const_value_type &sum_reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
+}
 }
 }
 }

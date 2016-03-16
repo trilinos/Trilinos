@@ -84,12 +84,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
-#TRIBITS_ADD_OPTION_AND_DEFINE(
-#  Kokkos_ENABLE_Profiling_Collect_Kernel_Data
-#  KOKKOS_ENABLE_PROFILING_COLLECT_KERNEL_DATA
-#  "Enable profiling support for kernel data collections in Kokkos."
-#  "${${PROJECT_NAME}_ENABLE_KokkosProfiler}"
-#  )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_Profiling
+  KOKKOS_ENABLE_PROFILING_INTERNAL
+  "Enable KokkosP profiling support for kernel data collections."
+  "${TPL_ENABLE_DLlib}"
+  )
 
 # placeholder for future device...
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -97,6 +97,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   KOKKOS_HAVE_WINTHREAD
   "Enable Winthread support in Kokkos."
   "${TPL_ENABLE_Winthread}"
+  )
+
+# use new/old View
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_USING_DEPRECATED_VIEW
+  KOKKOS_USING_DEPRECATED_VIEW
+  "Choose whether to use the old, deprecated Kokkos::View"
+  OFF
   )
 
 #------------------------------------------------------------------------------

@@ -41,7 +41,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND Trilinos
        Stokhos_ENABLE_PCE_Scalar_Type)
       TRIBITS_ADD_EXECUTABLE(
         fenl_ensemble
-        SOURCES  fenl_ensemble.hpp main_ensemble.cpp
+        SOURCES  fenl_ensemble.hpp SampleGrouping.hpp main_ensemble.cpp
         COMM serial mpi
         TESTONLYLIBS fenl
         )

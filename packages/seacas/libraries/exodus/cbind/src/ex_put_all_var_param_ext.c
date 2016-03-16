@@ -57,10 +57,10 @@
 static int define_dimension(int exoid, const char *DIMENSION, int count, const char *label, int *dimid);
 static int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension,
                                          const char *label);
-static int *get_status_array(int exoid, int count, const char *VARIABLE, const char *label);
+static int *get_status_array(int exoid, int var_count, const char *VARIABLE, const char *label);
 static int put_truth_table(int exoid, int varid, int *table, const char *label);
 static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, int num_var,
-                              int *var_tab, int *status, void_int *ids, const char *label);
+                              int *var_tab, int *status_tab, void_int *ids, const char *label);
 
 #define EX_GET_IDS_STATUS(TNAME,NUMVAR,DNAME,DID,DVAL,VIDS,EIDS,VSTAT,VSTATVAL) \
   if (NUMVAR > 0) {							\
@@ -179,8 +179,9 @@ int ex_put_all_var_param_ext ( int   exoid,
 
   /* define dimensions and variables */
   if (vp->num_glob > 0) {
-    if (define_dimension(exoid, DIM_NUM_GLO_VAR, vp->num_glob, "global", &dimid) != NC_NOERR)
+    if (define_dimension(exoid, DIM_NUM_GLO_VAR, vp->num_glob, "global", &dimid) != NC_NOERR) {
       goto error_ret;
+}
     
     dims[0] = time_dim;
     dims[1] = dimid;
@@ -195,8 +196,9 @@ int ex_put_all_var_param_ext ( int   exoid,
     ex_compress_variable(exoid, varid, 2);
 
     /* Now define global variable name variable */
-    if (define_variable_name_variable(exoid, VAR_NAME_GLO_VAR, dimid, "global") != NC_NOERR)
+    if (define_variable_name_variable(exoid, VAR_NAME_GLO_VAR, dimid, "global") != NC_NOERR) {
       goto error_ret;
+}
   }
 
   if (vp->num_node > 0) {
@@ -213,8 +215,9 @@ int ex_put_all_var_param_ext ( int   exoid,
      * variables. If the variable 'coord' is defined, then store old
      * way; otherwise store new.
      */
-    if (define_dimension(exoid, DIM_NUM_NOD_VAR, vp->num_node, "nodal", &dimid) != NC_NOERR)
+    if (define_dimension(exoid, DIM_NUM_NOD_VAR, vp->num_node, "nodal", &dimid) != NC_NOERR) {
       goto error_ret;
+}
 
     if (num_nod_dim > 0) {
       if (ex_large_model(exoid) == 0) { /* Old way */
@@ -249,8 +252,9 @@ int ex_put_all_var_param_ext ( int   exoid,
     }
 
     /* Now define nodal variable name variable */
-    if (define_variable_name_variable(exoid, VAR_NAME_NOD_VAR, dimid, "nodal") != NC_NOERR)
+    if (define_variable_name_variable(exoid, VAR_NAME_NOD_VAR, dimid, "nodal") != NC_NOERR) {
       goto error_ret;
+}
   }
 
 #define EX_DEFINE_VARS(TID,STNAME,TNAME,NUMVAR,DNAME,DID1,DID2,DVAL,VIDS,VNOV,VTV,VSTATVAL,VTABVAL,VTABVAR) \
@@ -308,43 +312,51 @@ int ex_put_all_var_param_ext ( int   exoid,
 
   /* write out the variable truth tables */
   if (vp->num_edge > 0) {
-    if (put_truth_table(exoid, edblk_varid, vp->edge_var_tab, "edge") != NC_NOERR)
+    if (put_truth_table(exoid, edblk_varid, vp->edge_var_tab, "edge") != NC_NOERR) {
       goto error_ret;
+}
   }
 
   if (vp->num_face > 0) {
-    if (put_truth_table(exoid, fablk_varid, vp->face_var_tab, "face") != NC_NOERR)
+    if (put_truth_table(exoid, fablk_varid, vp->face_var_tab, "face") != NC_NOERR) {
       goto error_ret;
+}
   }
 
   if (vp->num_elem > 0) {
-    if (put_truth_table(exoid, eblk_varid, vp->elem_var_tab, "element") !=  NC_NOERR)
+    if (put_truth_table(exoid, eblk_varid, vp->elem_var_tab, "element") !=  NC_NOERR) {
       goto error_ret;
+}
   }
 
   if (vp->num_nset > 0) {
-    if (put_truth_table(exoid, nset_varid, vp->nset_var_tab, "nodeset") != NC_NOERR)
+    if (put_truth_table(exoid, nset_varid, vp->nset_var_tab, "nodeset") != NC_NOERR) {
       goto error_ret;
+}
   }
 
   if (vp->num_eset > 0) {
-    if (put_truth_table(exoid, eset_varid, vp->eset_var_tab, "edgeset") != NC_NOERR)
+    if (put_truth_table(exoid, eset_varid, vp->eset_var_tab, "edgeset") != NC_NOERR) {
       goto error_ret;
+}
   }
 
   if (vp->num_fset > 0) {
-    if (put_truth_table(exoid, fset_varid, vp->fset_var_tab, "faceset") != NC_NOERR)
+    if (put_truth_table(exoid, fset_varid, vp->fset_var_tab, "faceset") != NC_NOERR) {
       goto error_ret;
+}
   }
 
   if (vp->num_sset > 0) {
-    if (put_truth_table(exoid, sset_varid, vp->sset_var_tab, "sideset") != NC_NOERR)
+    if (put_truth_table(exoid, sset_varid, vp->sset_var_tab, "sideset") != NC_NOERR) {
       goto error_ret;
+}
   }
 
   if (vp->num_elset > 0) {
-    if (put_truth_table(exoid, elset_varid, vp->elset_var_tab, "elemset") != NC_NOERR)
+    if (put_truth_table(exoid, elset_varid, vp->elset_var_tab, "elemset") != NC_NOERR) {
       goto error_ret;
+}
   }
 
   return(EX_NOERR);
@@ -463,8 +475,9 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
   } else {
     /* status array doesn't exist (V2.00), dummy one up for later checking */
     int i;
-    for(i=0; i<var_count; i++)
+    for(i=0; i<var_count; i++) {
       stat_vals[i] = 1;
+}
   }
  return stat_vals;
 }
@@ -515,10 +528,11 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
   
   for (i=0; i<num_ent; i++) {
     int64_t id;
-    if (ex_int64_status(exoid) & EX_IDS_INT64_API)
+    if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
       id = ((int64_t*)ids)[i];
-    else
+    } else {
       id = ((int*)ids)[i];
+}
       
     for (j=1; j<=num_var; j++) {
       

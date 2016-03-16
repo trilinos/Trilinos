@@ -57,23 +57,31 @@ template<class Real>
 class lSR1 : public Secant<Real> {
 private:
 
-  bool updateIterate_;
+  mutable bool updateIterate_;
+  bool isInitialized_;
 
 public:
-  lSR1(int M) : Secant<Real>(M) {
+  lSR1(int M) : Secant<Real>(M), isInitialized_(false) {
     updateIterate_ = true;
   }
 
   // Update Secant Approximation
-  void update( const Vector<Real> &grad, const Vector<Real> &gp, const Vector<Real> &s,
-               const Real snorm, const int iter ) {
+  void updateStorage( const Vector<Real> &x,  const Vector<Real> &grad,
+                      const Vector<Real> &gp, const Vector<Real> &s,
+                      const Real snorm,       const int iter ) {
+    Real one(1);
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    if ( !isInitialized_ ) {
+      state->iterate = x.clone();
+      isInitialized_ = true;
+    }
 
+    state->iterate->set(x);
     state->iter = iter;
     Teuchos::RCP<Vector<Real> > gradDiff = grad.clone();
     gradDiff->set(grad);
-    gradDiff->axpy(-1.0,gp);
+    gradDiff->axpy(-one,gp);
 
     Real sy = s.dot(gradDiff->dual());
     if (updateIterate_ || state->current == -1) {
@@ -95,26 +103,25 @@ public:
   }
 
   // Apply Initial Secant Approximate Inverse Hessian
-  virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v ) const {
     Hv.set(v.dual());
   }
 
-
   // Apply lSR1 Approximate Inverse Hessian
-  void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) { 
+  void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
-    // Apply initial Hessian approximation to v   
-    applyH0(Hv,v,x);
+    // Apply initial Hessian approximation to v
+    applyH0(Hv,v);
 
     std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
     std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
-    Real byi = 0.0, byj = 0.0, bv = 0.0, normbi = 0.0, normyi = 0.0;
+    Real byi(0), byj(0), bv(0), normbi(0), normyi(0), one(1);
     for (int i = 0; i <= state->current; i++) {
       // Compute Hy
       a[i] = Hv.clone();
-      applyH0(*(a[i]),*(state->gradDiff[i]),x);
+      applyH0(*(a[i]),*(state->gradDiff[i]));
       for (int j = 0; j < i; j++) {
         byj = b[j]->dot((state->gradDiff[j])->dual());
         byi = b[j]->dot((state->gradDiff[i])->dual());
@@ -123,13 +130,13 @@ public:
       // Compute s - Hy
       b[i] = Hv.clone();
       b[i]->set(*(state->iterDiff[i]));
-      b[i]->axpy(-1.0,*(a[i]));
+      b[i]->axpy(-one,*(a[i]));
 
       // Compute Hv
       byi    = b[i]->dot((state->gradDiff[i])->dual());
       normbi = b[i]->norm();
       normyi = (state->gradDiff[i])->norm();
-      if ( i == state->current && std::abs(byi) < sqrt(ROL_EPSILON)*normbi*normyi ) {
+      if ( i == state->current && std::abs(byi) < sqrt(ROL_EPSILON<Real>())*normbi*normyi ) {
         updateIterate_ = false;
       }
       else {
@@ -140,27 +147,26 @@ public:
     }
   }
 
-  // Apply Initial Secant Approximate Hessian  
-  virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) { 
+  // Apply Initial Secant Approximate Hessian
+  virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v ) const {
     Bv.set(v.dual());
   }
 
-
   // Apply lSR1 Approximate Hessian
-  void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) { 
+  void applyB( Vector<Real> &Bv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
-    // Apply initial Hessian approximation to v   
-    applyB0(Bv,v,x);
+    // Apply initial Hessian approximation to v
+    applyB0(Bv,v);
 
     std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
     std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
-    Real bsi = 0.0, bsj = 0.0, bv = 0.0, normbi = 0.0, normsi = 0.0;
+    Real bsi(0), bsj(0), bv(0), normbi(0), normsi(0), one(1);
     for (int i = 0; i <= state->current; i++) {
       // Compute Hy
       a[i] = Bv.clone();
-      applyB0(*(a[i]),*(state->iterDiff[i]),x);
+      applyB0(*(a[i]),*(state->iterDiff[i]));
       for (int j = 0; j < i; j++) {
         bsj = (state->iterDiff[j])->dot(b[j]->dual());
         bsi = (state->iterDiff[i])->dot(b[j]->dual());
@@ -169,13 +175,13 @@ public:
       // Compute s - Hy
       b[i] = Bv.clone();
       b[i]->set(*(state->gradDiff[i]));
-      b[i]->axpy(-1.0,*(a[i]));
+      b[i]->axpy(-one,*(a[i]));
 
       // Compute Hv
       bsi    = (state->iterDiff[i])->dot(b[i]->dual());
       normbi = b[i]->norm();
       normsi = (state->iterDiff[i])->norm();
-      if ( i == state->current && std::abs(bsi) < sqrt(ROL_EPSILON)*normbi*normsi ) {
+      if ( i == state->current && std::abs(bsi) < sqrt(ROL_EPSILON<Real>())*normbi*normsi ) {
         updateIterate_ = false;
       }
       else {
@@ -185,7 +191,6 @@ public:
       }
     }
   }
-
 };
 
 }

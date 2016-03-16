@@ -148,7 +148,8 @@ int ex_put_name (int   exoid,
   /* If this is a null entity, then 'ent_ndx' will be negative.
    * We don't care in this routine, so make it positive and continue...
    */
-  if (ent_ndx < 0) ent_ndx = -ent_ndx;
+  if (ent_ndx < 0) { ent_ndx = -ent_ndx;
+}
    
   /* write EXODUS entityname */
   status = ex_put_name_internal(exoid, varid, ent_ndx-1, name, obj_type, "", routine);

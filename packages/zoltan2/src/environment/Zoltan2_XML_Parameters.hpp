@@ -286,6 +286,30 @@
     id=\"55\" name=\"pulp_verbose\" type=\"string\" validatorId=\"51\" value=\"false\" \
     docString='  verbose output (default false)' \
     /> \
+   <Parameter  \
+    id=\"56\" name=\"scotch_verbose\" type=\"string\" validatorId=\"51\" value=\"false\" \
+    docString='  verbose output (default false)' \
+    /> \
+   <Parameter  \
+    id=\"57\" name=\"scotch_level\" type=\"int\" validatorId=\"50\" value=\"0\" \
+    docString='  scotch ordering - Level of the subgraph in the separators tree for the initial graph at the root of the tree  (default 0)' \
+    /> \
+   <Parameter  \
+    id=\"58\" name=\"scotch_imbalance_ratio\" type=\"string\" validatorId=\"19\" value=\"0.2\" \
+    docString='  scotch ordering - Dissection imbalance ratio  (default 0.2)' \
+    /> \
+   <Parameter  \
+    id=\"59\" name=\"scotch_ordering_default\" type=\"string\" validatorId=\"51\" value=\"true\" \
+    docString='  use default scotch ordering strategy (default true)' \
+    /> \
+   <Parameter  \
+    id=\"60\" name=\"scotch_ordering_strategy\" type=\"string\" value=\"\" \
+    docString='  scotch ordering - Dissection imbalance ratio (default  )' \
+    /> \
+   <Parameter  \
+    id=\"61\" name=\"mapping_algorithm\" type=\"string\" validatorId=\"52\" value=\"geometric\" \
+    docString='  mapping algorithm' \
+    /> \
    <ParameterList  name=\"zoltan_parameters\"> \
    </ParameterList> \
    <ParameterList   name=\"parma_parameters\"> \
@@ -361,6 +385,7 @@
         <String value=\"natural\"/> \
         <String value=\"random\"/> \
         <String value=\"sorted_degree\"/> \
+        <String value=\"scotch\"/> \
         <String value=\"nd\"/> \
       </Validator> \
       <Validator defaultParameterName=\"compute_metrics\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"15\"> \
@@ -520,6 +545,9 @@
         <String integralValue=\"0\" stringValue=\"no\"/> \
         <String integralValue=\"0\" stringValue=\"0\"/> \
         <String integralValue=\"0\" stringValue=\"off\"/> \
+      </Validator> \
+      <Validator type=\"StringValidator\" validatorId=\"52\"> \
+        <String value=\"geometric\"/> \
       </Validator> \
     </Validators> \
   </ParameterList>"

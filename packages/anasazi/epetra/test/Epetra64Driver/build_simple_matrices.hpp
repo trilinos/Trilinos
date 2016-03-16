@@ -95,7 +95,7 @@ void build_simple_matrix(
   }
 
   // Create an Epetra_Matrix
-  A = new Epetra_CrsMatrix(Copy, *rowMap, &nnzPerRow[0], true);
+  A = new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *rowMap, &nnzPerRow[0], true);
 
   int info;
 

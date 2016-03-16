@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define BASKER_DEBUG_TREE 
+//#define BASKER_DEBUG_TREE 
 
 namespace BaskerNS
 {
@@ -275,8 +275,8 @@ namespace BaskerNS
         Int nparents = pow(tree.nparts, l-1);
         Int pp = new_pos;
         //ttemp = lvl_task[l];
-	Int task_pos = 0;
-	Int task_offset = pow(tree.nparts, tree.nlvls-l);
+	//Int task_pos = 0; //Not used
+	//Int task_offset = pow(tree.nparts, tree.nlvls-l); //NU
         for(Int p = 0 ; p < nparents; p++)
           {
             Int parentptr = pp+nparents-p;
@@ -781,8 +781,10 @@ namespace BaskerNS
 
     //Should also do LL and LU while it
 
+    #ifdef BASKER_DEBUG_TREE
     flat.info();
     printf("nblks: %d \n", nblks);
+    #endif
 
     for(Int i=0; i < nblks; i++)
       {
@@ -795,9 +797,9 @@ namespace BaskerNS
           }
       }
    
-    //#ifdef BASKER_DEBUG_TREE
+    #ifdef BASKER_DEBUG_TREE
     printf("Make Hier View of size: %d %d \n", nblks, nnzblks);
-    //#endif    
+    #endif    
 
     //Malloc  AU and AL views, and needed space
     BASKER_ASSERT(nblks > 0, "tree nblks 99");
@@ -1007,7 +1009,7 @@ namespace BaskerNS
 
     //printf("\n\n\n----------------------------");
     //printf("CALLED FIND 2D CONVERT");
-    //printf("-----------------------------\n\n\n");
+    // printf("-----------------------------\n\n\n");
 
     //This will scan the whle matrix and find the nnz and cuts
     //In parallel the values will be copied over
@@ -1072,7 +1074,7 @@ namespace BaskerNS
 		  
 
 		    if((L_row+1 < LL_size(L_col)) &&
-		       (tree.row_tabs[r_idx+1] == ALM[L_col][L_row+1].srow))
+		       (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
 		      {
 			L_row++;
 			if(k==118800)
@@ -1080,7 +1082,7 @@ namespace BaskerNS
 			    //printf("k: %d j: %d L: %d %d s: %d \n", 
 			    //k, j, L_col, L_row, LL_size[L_col]);
 			  }
-			BASKER_ASSERT(L_row < LL_size[L_col], " Wrong L in A to 2d");
+			BASKER_ASSERT(L_row < LL_size(L_col), " Wrong L in A to 2d");
 			//printf("new start_col\n");
 			start_col = BASKER_TRUE;
 		      }
@@ -1088,8 +1090,8 @@ namespace BaskerNS
 		  }
 		else if(j <= k)
 		  {
-		    if((U_row+1 < LU_size[U_col]) &&
-		       (tree.row_tabs[r_idx+1] == AVM[U_col][U_row+1].srow))
+		    if((U_row+1 < LU_size(U_col)) &&
+		       (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
 		      {
 			U_row++;
 			//if(k==118800)
@@ -1097,7 +1099,7 @@ namespace BaskerNS
 			    //printf("k: %d j: %d U: %d %d \n",
 			    //		     k, j , U_col, U_row);
 			  }
-			BASKER_ASSERT(U_row < LU_size[U_col], " Wrong U in A to 2d");
+			  BASKER_ASSERT(U_row < LU_size(U_col), " Wrong U in A to 2d");
 			start_col = BASKER_TRUE;
 		      }
 		  }
@@ -1105,12 +1107,12 @@ namespace BaskerNS
 	      }
 
 	    //Get Matrix Ref
-	    BASKER_MATRIX &Ltemp = ALM[L_col][L_row];
-	    BASKER_MATRIX &Utemp = AVM[U_col][U_row];
+	    BASKER_MATRIX &Ltemp = ALM(L_col)(L_row);
+	    BASKER_MATRIX &Utemp = AVM(U_col)(U_row);
 	    Int bcol  = Ltemp.scol;
 	    
 	    //Debug
-	    //if(k==118800)
+	    //if(U_col>61)
 	      {
 		//printf("A2D.  L: %d %d U %d %d \n", 
 		// L_col, L_row, 
@@ -1118,13 +1120,16 @@ namespace BaskerNS
 	      }
 
 	    //diag blk
-	    if((L_row==0)&&(U_row==LU_size[U_col]-1))
+	      if((L_row==0)&&(U_row==LU_size(U_col)-1))
 	      {
 		if(start_col == BASKER_TRUE)
 		  {
-		    //printf("setting diag blk start: %d %d \n",
-		    //	   k-bcol, i);
-		    Ltemp.col_ptr[k-bcol] = i;
+		    //if(U_col>61)
+		      {
+			//printf("setting diag blk start: %d %d \n",
+			// k, i);
+		      }
+		    Ltemp.col_ptr(k-bcol) = i;
 		  }
 		Ltemp.nnz = Ltemp.nnz+1;
 	      }
@@ -1136,9 +1141,12 @@ namespace BaskerNS
 		  {
 		    if(start_col == BASKER_TRUE)
 		      {
-			//printf("setting L : %d %d \n",
-			//     k-bcol, i);
-			Ltemp.col_ptr[k-bcol] = i;
+			//if(U_col>61)
+			  {
+			    //	printf("setting L : %d %d \n",
+			    // k, i);
+			  }
+			Ltemp.col_ptr(k-bcol) = i;
 		      }
 		    Ltemp.nnz = Ltemp.nnz+1;
 		  }
@@ -1147,9 +1155,12 @@ namespace BaskerNS
 		  {
 		    if(start_col == BASKER_TRUE)
 		      {
-			//printf("setting U: %d %d \n",
-			//     k-bcol, i);
-			Utemp.col_ptr[k-bcol] = i;
+			//if(U_col>61)
+			  {
+			    //printf("setting U: %d %d \n",
+			    // k, i);
+			  }
+			Utemp.col_ptr(k-bcol) = i;
 		      }
 		    Utemp.nnz = Utemp.nnz+1;
 		  }
@@ -1345,9 +1356,8 @@ namespace BaskerNS
   {
     
 
-
-
-    printf("\n====== sfactor_copy2=======\n");
+    //This is the good one
+    //printf("\n====== sfactor_copy2=======\n");
     //ALM(0)(0).info();
 
     //A.print();
@@ -1356,8 +1366,8 @@ namespace BaskerNS
     if(match_flag == BASKER_TRUE)
       {
 	//printf("Test order_mactch_array(0): %d %d \n",
-	//       order_match_array(0),
-	//      order_match_array(1));
+	//     order_match_array(0),
+	//    order_match_array(1));
 
         
         //printf("match_flag\n");
@@ -1368,8 +1378,8 @@ namespace BaskerNS
     if(btf_flag == BASKER_TRUE)
       {
 	//printf("Test order_btf_array(0): %d %d: \n",
-	//       order_btf_array(0),
-	//       order_btf_array(1));
+	//     order_btf_array(0),
+	//    order_btf_array(1));
 
         //printf("btf_flag\n");
 	permute_col(A,order_btf_array);
@@ -1391,9 +1401,9 @@ namespace BaskerNS
 
 	if(btf_tabs_offset != 0)
 	  {
-	//printf("Test order_nd_array(0): %d %d: \n",
-	//       part_tree.permtab(0),
-	//       part_tree.permtab(1));
+	    //printf("Test order_nd_array(0): %d %d: \n",
+	    // part_tree.permtab(0),
+	    // part_tree.permtab(1));
 	
 
 	//BTF_A.print();
@@ -1424,9 +1434,10 @@ namespace BaskerNS
 	if(btf_tabs_offset != 0)
 	  {
 
-	//printf("Test order_amd_array(0): %d %d: \n",
-	//       order_csym_array(0),
-	//       order_csym_array(1));
+	    
+	    //printf("Test order_amd_array(0): %d %d: \n",
+	    // order_csym_array(0),
+	    // order_csym_array(1));
 
 	//Permute A
 	permute_col(BTF_A, order_csym_array);
@@ -1489,7 +1500,29 @@ namespace BaskerNS
       }
     */
 
-
+    //If same pattern, permute using pivot, and reset
+    if((Options.same_pattern == BASKER_TRUE))
+      {
+	if(same_pattern_flag == BASKER_FALSE)
+	  {
+	    MALLOC_INT_1DARRAY(gperm_same, gn);
+	    for(Int i = 0; i < gn; i++)
+	      {
+		gperm_same(i) = gperm(i);
+		gperm(i) = BASKER_MAX_IDX;
+	      }
+	    same_pattern_flag = BASKER_TRUE;
+	  }
+	else
+	  {
+	    for(Int i = 0; i < gn; i++)
+	      {
+		gperm(i) = BASKER_MAX_IDX;
+	      }
+	  }
+	//Everyone permutes
+	//JDB: come back
+      }
     //test
     //printMTX("A_BTF.mtx", BTF_A);
 

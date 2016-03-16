@@ -404,30 +404,41 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
 
     if (calcMassMatrix) {
       modelOutArgs.set_W_op(massMatrix);
+      //The following 2 lines were added to prevent Jacobian and residual 
+      //from being set at the same time...  see below.
+      modelOutArgs.set_f(Teuchos::null); 
+      model->evalModel(modelInArgs, modelOutArgs); 
     }
 
-    //Evaluate the underlying model
-    model->evalModel(modelInArgs, modelOutArgs);
-
-    // Invert the mass matrix:   f_exp = M^{-1} f_imp
-
-    if (!lumpMassMatrix) {
-      // Create a linear solver based on the forward operator massMatrix
-      if (calcMassMatrix) {
+    //Create mass matrix 
+    if (calcMassMatrix) {
+      if (!lumpMassMatrix) {
+        // Create a linear solver based on the forward operator massMatrix
         A = massMatrix; //Teuchos::rcp(new Thyra::LinearOpWithSolveBase<double>(*massMatrix ));
         lows = Thyra::linearOpWithSolve(*lowsFactory, A);
       }
-
-      // Solve the linear system for x, given b
-      ::Thyra::solve<double>(*lows, ::Thyra::NOTRANS, *modelOutArgs.get_f(), outArgs.get_f().ptr());
-    }
-    else { // Lump matrix into inverse of diagonal
-
-      if (calcMassMatrix) {
+      else { // Lump matrix into inverse of diagonal
         Thyra::put_scalar<Scalar>(1.0, invDiag.ptr());
         Thyra::apply<Scalar>(*massMatrix, Thyra::NOTRANS, *invDiag, invDiag.ptr(), 1.0, 0.0);
         Thyra::reciprocal<Scalar>(*invDiag, invDiag.ptr());
       }
+    }
+
+    //set f and unset W_op in modelOutArgs
+    //This is to avoid calling getting Jacobian and residual at the same time, 
+    //which we need to do for Aeras problems calling this function from Albany. 
+    modelOutArgs.set_f(outArgs.get_f()); 
+    modelOutArgs.set_W_op(Teuchos::null); 
+    
+    //Evaluate the underlying model
+    model->evalModel(modelInArgs, modelOutArgs);
+    
+    // Invert the mass matrix:   f_exp = M^{-1} f_imp
+    if (!lumpMassMatrix) { //standard solve
+      // Solve the linear system for x, given b
+      ::Thyra::solve<double>(*lows, ::Thyra::NOTRANS, *modelOutArgs.get_f(), outArgs.get_f().ptr());
+    }
+    else { //diagonal lumped solve
       Teuchos::RCP<Thyra::VectorBase<Scalar> > f = outArgs.get_f();
       Thyra::ele_wise_prod_update<Scalar>(1.0, *invDiag, f.ptr());
     }

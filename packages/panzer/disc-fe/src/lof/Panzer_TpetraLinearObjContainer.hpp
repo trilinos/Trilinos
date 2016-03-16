@@ -125,12 +125,24 @@ public:
    }
 
    virtual void set_x_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in) 
-   { x = (in==Teuchos::null) ? Teuchos::null : TOE::getTpetraVector(in); } 
+   { 
+     if(in==Teuchos::null) { x = Teuchos::null; return; }
+
+     Teuchos::RCP<const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > x_const 
+         = TOE::getConstTpetraVector(in);
+     x = Teuchos::rcp_const_cast<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(x_const); 
+   } 
    virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_x_th() const 
    { return (x==Teuchos::null) ? Teuchos::null : Thyra::createVector(x,domainSpace); }
 
    virtual void set_dxdt_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in)
-   { dxdt = (in==Teuchos::null) ? Teuchos::null : TOE::getTpetraVector(in); } 
+   { 
+     if(in==Teuchos::null) { dxdt = Teuchos::null; return; }
+
+     Teuchos::RCP<const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > dxdt_const 
+         = TOE::getConstTpetraVector(in);
+     dxdt = Teuchos::rcp_const_cast<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(dxdt_const); 
+   } 
    virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_dxdt_th() const 
    { return (dxdt==Teuchos::null) ? Teuchos::null : Thyra::createVector(dxdt,domainSpace); }
 

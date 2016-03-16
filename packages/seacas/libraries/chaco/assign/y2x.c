@@ -32,9 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/* This software was developed by Bruce Hendrickson and Robert Leland   *
- * at Sandia National Laboratories under US Department of Energy        *
- * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 #include <stdio.h>                      // for NULL
 

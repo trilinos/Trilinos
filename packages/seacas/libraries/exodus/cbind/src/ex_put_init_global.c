@@ -101,7 +101,8 @@ int ex_put_init_global(int   exoid,
   }
 
   /* Output the file version */
-  if ((status=ex_put_nemesis_version(exoid)) < 0) return (status);
+  if ((status=ex_put_nemesis_version(exoid)) < 0) { return (status);
+}
 
   /* Define dimension for number of global nodes */
   if ((status = nc_def_dim(exoid, DIM_NUM_NODES_GLOBAL, num_nodes_g, &dimid)) != NC_NOERR) {
@@ -304,8 +305,9 @@ int ex_put_init_global(int   exoid,
   } /* End "if (num_side_sets_g > 0)" */
 
   /* End define mode */
-  if (ex_leavedef(exoid, func_name) != EX_NOERR)
+  if (ex_leavedef(exoid, func_name) != EX_NOERR) {
     return (EX_FATAL);
+}
 
   return (EX_NOERR);
 }

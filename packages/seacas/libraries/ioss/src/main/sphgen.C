@@ -104,8 +104,9 @@ int main(int argc, char *argv[])
 
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
-  if (ind != std::string::npos)
+  if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
+}
 
   Ioss::Init::Initializer io;
 
@@ -258,14 +259,8 @@ namespace {
     //        that are in the element block.
     // ...
 
-    // Get nodal coordinates since they are needed to calculate
-    // element volume...
-    int spatial_dimension = region.get_property("spatial_dimension").get_int();
-    
     // Create the output mesh...
     output_region.begin_mode(Ioss::STATE_DEFINE_MODEL);
-
-    output_region.property_add(Ioss::Property(std::string("spatial_dimension"), spatial_dimension));
 
     // Iterate through all element blocks...
     // The first time, just count the number of hex elements since
@@ -302,6 +297,7 @@ namespace {
 
     // Define a node block...  
     std::string block_name = "nodeblock_1";
+    int spatial_dimension = region.get_property("spatial_dimension").get_int();
     Ioss::NodeBlock *block = new Ioss::NodeBlock(output_region.get_database(), block_name,
 						 sph_node_count, spatial_dimension);
     block->property_add(Ioss::Property("id", 1));

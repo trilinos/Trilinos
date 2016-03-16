@@ -68,17 +68,22 @@ private:
 
 public:
   KLDivergence(const Real eps = 1.e-2)
-    : RiskMeasure<Real>(), eps_(eps > 0 ? eps : 1.e-2), firstReset_(true) {}
+    : RiskMeasure<Real>(), firstReset_(true) {
+    Real zero(0), oem2(1.e-2);
+    eps_ = eps > zero ? eps : oem2;
+  }
 
   KLDivergence(Teuchos::ParameterList &parlist)
     : RiskMeasure<Real>(), firstReset_(true) {
+    Real zero(0), oem2(1.e-2);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("KL Divergence");
-    Real eps = list.get("Threshold",1.e-2);
-    eps_ = eps > 0 ? eps : 1.e-2; 
+    Real eps = list.get("Threshold",oem2);
+    eps_ = eps > zero ? eps : oem2;
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
+    Real zero(0);
     RiskMeasure<Real>::reset(x0,x);
     xstat_ = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
     if ( firstReset_ ) {
@@ -88,7 +93,7 @@ public:
       dualVector2_ = (x0->dual()).clone();
       firstReset_ = false;
     }
-    gval_ = 0.0; gvval_ = 0.0; hval_ = 0.0;
+    gval_ = zero; gvval_ = zero; hval_ = zero;
     scaledGradient_->zero(); scaledHessVec_->zero();
     dualVector1_->zero(); dualVector2_->zero();
   }
@@ -126,14 +131,14 @@ public:
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
-    Real val = RiskMeasure<Real>::val_;
-    Real ev  = 0.0;
+    Real val = RiskMeasure<Real>::val_, ev(0);
     sampler.sumAll(&val,&ev,1);
     return xstat_*(eps_ + std::log(ev));
   }
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
-    std::vector<Real> local(2,0.0), global(2,0.0);
+    Real one(1);
+    std::vector<Real> local(2), global(2);
     local[0] = RiskMeasure<Real>::val_;
     local[1] = gval_;
     sampler.sumAll(&local[0],&global[0],2);
@@ -141,7 +146,7 @@ public:
     Real egval = global[1];
 
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector1_);
-    dualVector1_->scale(1.0/ev);
+    dualVector1_->scale(one/ev);
 
     Real gstat = eps_ + std::log(ev) - egval/(ev*xstat_);
 
@@ -150,7 +155,8 @@ public:
   }
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
-    std::vector<Real> local(5,0.0), global(5,0.0);
+    Real one(1);
+    std::vector<Real> local(5), global(5);
     local[0] = RiskMeasure<Real>::val_;
     local[1] = RiskMeasure<Real>::gv_;
     local[2] = gval_;
@@ -166,8 +172,8 @@ public:
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector1_);
 
     sampler.sumAll(*scaledGradient_,*dualVector2_);
-    dualVector1_->axpy(1.0/xstat_,*dualVector2_);
-    dualVector1_->scale(1.0/ev);
+    dualVector1_->axpy(one/xstat_,*dualVector2_);
+    dualVector1_->scale(one/ev);
 
     dualVector2_->zero();
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector2_);

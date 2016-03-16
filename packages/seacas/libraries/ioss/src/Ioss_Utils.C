@@ -34,7 +34,6 @@
 #include <assert.h>
 #include <stddef.h>
 #include <sys/select.h>
-#include <sys/stat.h>
 #include <time.h>
 #include <algorithm>
 #include <cctype>
@@ -57,7 +56,7 @@ namespace {
   inline int to_lower(int c) { return std::tolower(c); }
   inline int to_upper(int c) { return std::toupper(c); }
 }
-Ioss::Utils::Utils() {}
+Ioss::Utils::Utils() = default;
   
 void Ioss::Utils::time_and_date(char* time_string, char* date_string,
                                 size_t length)
@@ -118,8 +117,9 @@ int Ioss::Utils::decode_entity_name(const std::string &entity_name)
   // This function reverses the process and returns the original id.
 
   const char *name = entity_name.c_str();
-  while (*name != '_')
+  while (*name != '_') {
     name++;
+}
   // Increment one more time to get past '_'
   assert(*name == '_');
   name++;
@@ -155,7 +155,7 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
   // nodes.  To fix this, check the block type name and see if it
   // ends with a number.  If it does, assume it is OK; if not, append
   // the 'nodes_per_element'.
-  if (!isdigit(*(type.rbegin()))) {
+  if (isdigit(*(type.rbegin())) == 0) {
     if (nodes_per_element > 1) {
       type += Ioss::Utils::to_string(nodes_per_element);
     }
@@ -166,24 +166,26 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
   // to unambiguous names for the IO Subsystem.  The 2D name
   // stays the same, the 3D name becomes 'trishell#'
   if (spatial == 3) {
-    if      (type == "triangle3") type = "trishell3";
-    else if (type == "triangle4") type = "trishell4";
-    else if (type == "triangle6") type = "trishell6";
-    else if (type == "tri3")      type = "trishell3";
-    else if (type == "tri4")      type = "trishell4";
-    else if (type == "tri6")      type = "trishell6";
-  }
+    if      (type == "triangle3") { type = "trishell3";
+    } else if (type == "triangle4") { type = "trishell4";
+    } else if (type == "triangle6") { type = "trishell6";
+    } else if (type == "tri3") {      type = "trishell3";
+    } else if (type == "tri4") {      type = "trishell4";
+    } else if (type == "tri6") {      type = "trishell6";
+  
+}}
 
   if (spatial == 2) {
-    if (type == "shell2")
+    if (type == "shell2") {
       type = "shellline2d2";
-    else if (type == "rod2" || type == "bar2" || type == "truss2")
+    } else if (type == "rod2" || type == "bar2" || type == "truss2") {
       type = "rod2d2";
-    else if (type == "shell3")
+    } else if (type == "shell3") {
       type = "shellline2d3";
-    else if (type == "bar3"  || type == "rod3"  || type == "truss3")
+    } else if (type == "bar3"  || type == "rod3"  || type == "truss3") {
       type = "rod2d3";
-  }
+  
+}}
 
   if (std::strncmp(type.c_str(), "super", 5) == 0) {
     // A super element can have a varying number of nodes.  Create
@@ -209,11 +211,11 @@ std::string Ioss::Utils::local_filename(const std::string& relative_filename,
 {
   if (relative_filename[0] == '/' || type == "generated" || working_directory.empty()) {
     return relative_filename;
-  } else {
+  } 
     std::string filename = working_directory;
     filename += relative_filename;
     return filename;
-  }
+  
 }
 
 int Ioss::Utils::field_warning(const Ioss::GroupingEntity *ge,
@@ -253,8 +255,9 @@ std::string Ioss::Utils::platform_information()
 bool Ioss::Utils::block_is_omitted(Ioss::GroupingEntity *block)
 {
   bool omitted = false;
-  if (block->property_exists("omitted"))
+  if (block->property_exists("omitted")) {
     omitted = (block->get_property("omitted").get_int() == 1);
+}
   return omitted;
 }
 
@@ -317,8 +320,9 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
       block_topo = block->topology();
       // nullptr if hetero face/edge on element
       common_ftopo = block->topology()->boundary_type(0);
-      if (common_ftopo != nullptr)
+      if (common_ftopo != nullptr) {
         topo = common_ftopo;
+}
       current_side = -1;
     }
 
@@ -359,7 +363,7 @@ int64_t Ioss::Utils::get_side_offset(const Ioss::SideBlock *sb)
   const Ioss::ElementTopology *side_topo   = sb->topology();
   const Ioss::ElementTopology *parent_topo = sb->parent_element_topology();
   int64_t side_offset = 0;
-  if (side_topo && parent_topo) {
+  if ((side_topo != nullptr) && (parent_topo != nullptr)) {
     int side_topo_dim = side_topo->parametric_dimension();
     int elem_topo_dim = parent_topo->parametric_dimension();
     int elem_spat_dim = parent_topo->spatial_dimension();
@@ -429,10 +433,12 @@ int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)
   const char *c1 = s1.c_str();
   const char *c2 = s2.c_str();
   for ( ; ; c1++, c2++) {
-    if (std::tolower(*c1) != std::tolower(*c2))
+    if (std::tolower(*c1) != std::tolower(*c2)) {
       return (std::tolower(*c1) - std::tolower(*c2));
-    if (*c1 == '\0')
+}
+    if (*c1 == '\0') {
       return 0;
+}
   }
 }
 
@@ -458,9 +464,10 @@ void Ioss::Utils::fixup_name(char *name)
   size_t len = std::strlen(name);
   for (size_t i=0; i < len; i++) {
     name[i] = static_cast<char>(tolower(name[i]));  // guaranteed(?) to be ascii...
-    if (name[i] == ' ')
+    if (name[i] == ' ') {
       name[i] = '_';
-  }
+  
+}}
 }
 
 void Ioss::Utils::fixup_name(std::string &name)
@@ -470,9 +477,10 @@ void Ioss::Utils::fixup_name(std::string &name)
   
   size_t len = name.length();
   for (size_t i=0; i < len; i++) {
-    if (name[i] == ' ')
+    if (name[i] == ' ') {
       name[i] = '_';
-  }
+  
+}}
 }
 
 namespace {
@@ -538,17 +546,17 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name,
     component_count /= copies;
   }
 
-  if (component_count     <=      1)
+  if (component_count     <=      1) {
     comp_len = 0;
-  else if (component_count <    100)
+  } else if (component_count <    100) {
     comp_len = 3;
-  else if (component_count <   1000)
+  } else if (component_count <   1000) {
     comp_len = 4; //   _000
-  else if (component_count <  10000)
+  } else if (component_count <  10000) {
     comp_len = 5; //  _0000
-  else if (component_count < 100000)
+  } else if (component_count < 100000) {
     comp_len = 6; // _00000
-  else {
+  } else {
     std::ostringstream errmsg;
     errmsg << "Variable '" << name << "' has " << component_count
            << " components which is larger than the current maximum"
@@ -556,19 +564,19 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name,
     IOSS_ERROR(errmsg);
   }
 
-  if (copies     <=      1)
+  if (copies     <=      1) {
     copy_len = 0;
-  else if (copies <     10)
+  } else if (copies <     10) {
     copy_len = 2;
-  else if (copies <    100)
+  } else if (copies <    100) {
     copy_len = 3; 
-  else if (copies <   1000)
+  } else if (copies <   1000) {
     copy_len = 4; //   _000
-  else if (copies <  10000)
+  } else if (copies <  10000) {
     copy_len = 5; //  _0000
-  else if (copies < 100000)
+  } else if (copies < 100000) {
     copy_len = 6; // _00000
-  else {
+  } else {
     std::ostringstream errmsg;
     errmsg << "Variable '" << name << "' has " << copies
            << " copies which is larger than the current maximum"
@@ -584,7 +592,7 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name,
     // without adding on the hash...
     std::transform(new_str.begin(), new_str.end(), new_str.begin(), to_lower);
     return new_str;
-  } else {
+  } 
     // Know that the name is too long, try to shorten. Need room for
     // hash now.
     maxlen -= hash_len;
@@ -604,7 +612,7 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name,
     std::string s = std::string(name.c_str()).substr(len-maxlen,len);
     assert(s.length() <= maxlen);
     new_str = s;
-  }
+  
 
   // NOTE: The hash is not added if the name is not shortened. 
   std::string hash_string = two_letter_hash(name.c_str());
@@ -649,36 +657,3 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
   }
 }
 
-void Ioss::Utils::create_path(const std::string& path)
-{
-  const int mode = 0777;  // Users umask will be applied to this.
-
-  std::string::const_iterator iter = path.begin();
-  while (iter != path.end()) {
-    iter = std::find(iter, path.end(), '/');
-    std::string path_root = std::string(path.begin(), iter);
-
-    if (iter != path.end())
-      ++iter; // Skip past the '/'
-
-    if (path_root.empty()) { // Path started with '/'
-      continue;
-    }
-
-    struct stat st;
-    if (stat(path_root.c_str(), &st) != 0) {
-      if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-        std::ostringstream errmsg;
-        errmsg << "Cannot create directory '" << path_root
-               << "' : " << strerror(errno) << std::endl;
-        IOSS_ERROR(errmsg);
-      }
-    }
-    else if (!S_ISDIR(st.st_mode)) {
-      errno = ENOTDIR;
-      std::ostringstream errmsg;
-      errmsg << "Path '" << path_root << "' is not a directory.\n";
-      IOSS_ERROR(errmsg);
-    }
-  }
-}

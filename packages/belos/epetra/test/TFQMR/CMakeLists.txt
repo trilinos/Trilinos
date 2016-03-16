@@ -18,6 +18,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
     ARGS
       "--verbose --filename=orsirr1_scaled.hb"
+      "--verbose --explicit --filename=orsirr1_scaled.hb"
+      "--verbose --recursive --filename=orsirr1_scaled.hb"
     STANDARD_PASS_OUTPUT 
   )
 

@@ -2,9 +2,10 @@
 
 exodus.py v 1.03 (beta) is a python wrapper of some of the exodus II library
 
-Copyright (c) 2013, 2014 Sandia Corporation. Under the terms of
-Contract DE-AC04-94AL85000 with Sandia Corporation, the
-U.S. Government retains certain rights in this software.
+Copyright (c) 2013, 2014, 2015, 2016 Sandia Corporation. 
+
+Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+the U.S. Government retains certain rights in this software.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions 
@@ -39,11 +40,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.03 (beta)"
+EXODUS_PY_VERSION = "1.03 (beta-cmake)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.03 (beta), a python wrapper of some of the exodus II library.
-Copyright (c) 2013,2014 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000
+You are using exodus.py v 1.03 (beta-cmake), a python wrapper of some of the exodus II library.
+Copyright (c) 2013,2014,2015,2016 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000
 with Sandia Corporation, the U.S. Government retains certain rights in this software.
 """
 
@@ -78,7 +79,7 @@ def getExodusVersion():
   found.
   """
   err_msg = "When searching for the path that contains exodusII.h:\n\n"
-  for line in open(getAccessPath(err_msg) + '/include/exodusII.h'):
+  for line in open("@ACCESSDIR@/include/exodusII.h"):
     fields = line.split()
     if (len(fields) == 3 and
         fields[0] == '#define' and
@@ -86,74 +87,11 @@ def getExodusVersion():
       return int(fields[2])
   return 0
 
-def getAccessPath(err_msg=""):
-  """
-  Return the base path of the exodus installation.
-  """
-  accessPth = "@ACCESSDIR@"
-  if not isinstance(accessPth,str) or not os.path.isdir(accessPth):
-    accessPth = os.environ.get('ACCESS')
-
-  if not isinstance(accessPth,str) or not os.path.isdir(accessPth):
-    system = os.environ.get('SIERRA_SYSTEM')
-    if not isinstance(system,str):
-      err_msg += "Neither the SIERRA_SYSTEM nor the ACCESS environment variables \n"
-      err_msg += "were set, and at least one of these variables are required for \n"
-      err_msg += "exodus.py to find the ExodusII and NetCDF installations.\n\n"
-      err_msg += "Try finding the exodusII.h header file on your system and then \n"
-      err_msg += "set the ACCESS environment variable such that exodusII.h is \n"
-      err_msg += "located at '$ACCESS/include/exodusII.h'.\n\n"
-      err_msg += "Also make sure you have loaded the sierra module file \n"
-      err_msg += "For example 'module load sierra' \n\n"
-      raise Exception, err_msg
-    if   system == 'desktop_rh6': accessPth = '/projects/seacas/linux_rhel6/current'
-    elif system == 'desktop'    : accessPth = '/projects/seacas/linux_rhel5/current'
-    elif system == 'redsky'     : accessPth = '/projects/seacas/redsky/current'
-    elif system == 'tlcc'       : accessPth = '/projects/seacas/tlcc/current'
-    elif system == 'tlcc2'      : accessPth = '/projects/seacas/tlcc2/current'
-    elif system == 'amech'      : accessPth = '/projects/seacas/linux_rhel5/current'
-    elif system == 'cielo-xe6'  : accessPth = '/usr/projects/seacas/current'
-    else: 
-      err_msg += "Unrecognized SIERRA_SYSTEM: %s \n\n" % system
-      err_msg += "Also, the ACCESS environment variable is not set. At least \n"
-      err_msg += "one of the SIERRA_SYSTEM and ACCESS environment variables \n"
-      err_msg += "are required for exodus.py to find the ExodusII and NetCDF \n" 
-      err_msg += "installations.\n\n"
-      err_msg += "Try finding the exodusII.h header file on your system and \n"
-      err_msg += "then set the ACCESS environment variable such that exodusII.h \n"
-      err_msg += "is located at '$ACCESS/include/exodusII.h'.\n"
-      raise Exception, err_msg
-    if not os.path.isdir(accessPth):
-      err_msg += "The path where exodus.py is trying to find the ExodusII and \n"
-      err_msg += "NetCDF installations is: %s. \n\n" % accessPth
-      err_msg += "This appears to be a nonexistant path.\n\n"
-      err_msg += "Try finding the exodusII.h header file on your system and \n"
-      err_msg += "then set the ACCESS environment variable such that exodusII.h \n"
-      err_msg += "is located at '$ACCESS/include/exodusII.h'.\n"
-      raise Exception, err_msg
-
-  return accessPth
-
-def findLibExoPath():
-  # FIXME: this is a hack to try to find the ExodusII and NetCDF shared
-  #        libraries in an external ExodusII distribution; this could be made
-  #        portable if the shared libraries were built in the Sierra distribution
-  err_msg  = "When searching for the path that contains the exodus \n"
-  err_msg += "and netcdf shared libraries:\n\n"
-  accessPth = getAccessPath(err_msg)
-  trialShLibDirs = [ '/shlib/', '/lib/shared/', '/lib/' ]
-  for shLibDir in trialShLibDirs:
-    libExoPth = accessPth + shLibDir
-    if os.path.isdir(libExoPth): return libExoPth
-  raise Exception, "Shared library sub-directory not found in $ACCESS path: %s" % accessPth
-
-EXODUS_PATH = findLibExoPath()
+NETCDF_SO = "@NetCDF_C_LIBRARY@"
 if os.uname()[0] == 'Darwin':
-  NETCDF_SO = EXODUS_PATH + "libnetcdf.dylib"
-  EXODUS_SO = EXODUS_PATH + "libexodus.dylib"
+  EXODUS_SO = "@ACCESSDIR@/lib/libexodus.dylib"
 else:
-  NETCDF_SO = EXODUS_PATH + "libnetcdf.so"
-  EXODUS_SO = EXODUS_PATH + "libexodus.so"
+  EXODUS_SO = "@ACCESSDIR@/lib/libexodus.so"
 NETCDF_LIB = cdll.LoadLibrary(NETCDF_SO)
 EXODUS_LIB = cdll.LoadLibrary(EXODUS_SO)
   
@@ -4427,7 +4365,11 @@ def transfer_variables(exoFrom, exoTo, array_type = 'ctype',
     infoRecs = exoFrom.get_info_records()
     exoTo.put_info_records( infoRecs )
   if debugPrint: print "Transfer time values"
+
   nSteps = exoFrom.num_times()
+  if nSteps == 0:
+    return(exoTo)
+
   timeVals = exoFrom.get_times()
   for step in xrange(nSteps):
     exoTo.put_time( step+1, timeVals[step] )

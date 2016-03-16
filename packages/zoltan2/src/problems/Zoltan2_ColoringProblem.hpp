@@ -156,10 +156,6 @@ private:
   void createColoringProblem();
 
   RCP<ColoringSolution<Adapter> > solution_;
-
-  RCP<Comm<int> > problemComm_;
-  RCP<const Comm<int> > problemCommConst_;
-
 };
 
 
@@ -188,13 +184,13 @@ void ColoringProblem<Adapter>::solve(bool newData)
   if (method.compare("SerialGreedy") == 0)
   {
       AlgSerialGreedy<Adapter> alg(this->graphModel_, this->params_,
-                                   this->env_, problemComm_);
+                                   this->env_, this->comm_);
       alg.color(this->solution_);
   }
 #if 0 // TODO later
   else if (method.compare("speculative") == 0) // Gebremedhin-Manne
   {
-      AlgGM<base_adapter_t> alg(this->graphModel_, problemComm_);
+      AlgGM<base_adapter_t> alg(this->graphModel_, this->comm_);
       alg.color(this->solution_, this->params_);
   }
 #endif
@@ -227,9 +223,6 @@ void ColoringProblem<Adapter>::createColoringProblem()
 
   // Create a copy of the user's communicator.
 
-  problemComm_ = this->comm_->duplicate();
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
   // Only graph model supported.
   // TODO: Allow hypergraph later?
 
@@ -246,7 +239,7 @@ void ColoringProblem<Adapter>::createColoringProblem()
     graphFlags.set(REMOVE_SELF_EDGES);
     graphFlags.set(BUILD_LOCAL_GRAPH);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
+      this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags));
 
     this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);

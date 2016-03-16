@@ -238,8 +238,9 @@ int ex_put_concat_elem_block (int    exoid,
        for a specific file and returns that value incremented. */
     cur_num_elem_blk=ex_inc_file_item(exoid, ex_get_counter_list(EX_ELEM_BLOCK));
 
-    if (eb_array[iblk] == 0) /* Is this a NULL element block? */
+    if (eb_array[iblk] == 0) { /* Is this a NULL element block? */
       continue;
+}
 
     /* define some dimensions and variables*/
     if ((status = nc_def_dim(exoid,
@@ -415,8 +416,9 @@ int ex_put_concat_elem_block (int    exoid,
     
     for (iblk = 0; iblk < num_elem_blk; iblk++) {
       size_t num_attr;
-      if (eb_array[iblk] == 0) /* Is this a NULL element block? */
+      if (eb_array[iblk] == 0) { /* Is this a NULL element block? */
 	continue;
+}
       if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
 	num_attr = ((int64_t*)num_attr_this_blk)[iblk];
       } else {

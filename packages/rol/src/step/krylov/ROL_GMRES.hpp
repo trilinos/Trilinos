@@ -97,13 +97,15 @@ public:
     using Teuchos::rcp;
     using std::vector; 
 
+    Real zero(0), oem2(1.e-2), oem4(1.e-4);
+
     Teuchos::ParameterList &gList = parlist.sublist("General");
     Teuchos::ParameterList &kList = gList.sublist("Krylov");
     
     useInexact_      = gList.get("Inexact Hessian-Times-A-Vector",false);
     maxit_           = kList.get("Iteration Limit",50);
-    absTol_          = kList.get("Absolute Tolerance", 1.e-4);
-    relTol_          = kList.get("Relative Tolerance", 1.e-2);
+    absTol_          = kList.get("Absolute Tolerance", oem4);
+    relTol_          = kList.get("Relative Tolerance", oem2);
     useInitialGuess_ = kList.get("Use Initial Guess",false);
 
     H_     = rcp( new SDMatrix( maxit_+1, maxit_ ) );
@@ -112,7 +114,7 @@ public:
     s_     = rcp( new SDVector( maxit_+1 ) ); 
     y_     = rcp( new SDVector( maxit_+1 ) );
     cnorm_ = rcp( new SDVector( maxit_ ) );   
-    res_   = rcp( new std::vector<Real>(maxit_+1,0.0) );
+    res_   = rcp( new std::vector<Real>(maxit_+1,zero) );
        
   }
  
@@ -123,8 +125,7 @@ public:
  
     flag = 0; 
 
-    Real zero = 0.0;
-    Real one =  1.0;
+    Real zero(0), one(1);
 
     if ( !isInitialized_ ) {
       r_  = b.clone();
@@ -134,13 +135,13 @@ public:
       isInitialized_ = true;
     }
 
-    Real itol  = std::sqrt(ROL_EPSILON); 
+    Real itol  = std::sqrt(ROL_EPSILON<Real>()); 
 
     // Compute initial residual
     if(useInitialGuess_) {
     
       A.apply(*r_,x,itol);
-      r_->scale(-1.0);
+      r_->scale(-one);
       r_->plus(b);       // r = b-Ax
  
     }
@@ -175,7 +176,7 @@ public:
       Z.push_back(x.clone());
 
       // Apply right preconditioner
-      M.apply(*(Z[iter]),*(V[iter]),itol);
+      M.applyInverse(*(Z[iter]),*(V[iter]),itol);
 
       // Apply operator
       A.apply(*w_,*(Z[iter]),itol);

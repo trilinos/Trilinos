@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -57,7 +56,6 @@
 #include "Teuchos_ArrayView.hpp"
 #include "Shards_Array.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Intrepid2_KokkosRank.hpp"
@@ -741,18 +739,6 @@ namespace Intrepid2 {
                                const int i4);
     
         
-    /** \brief   Overloaded [] operator. Returns value based on its enumeration.
-      Data <strong>cannot</strong> be modified.
-    */
-    const Scalar & operator [] (const int address) const;
-
-    
-    /** \brief   Overloaded [] operator. Returns value based on its enumeration.
-      Data <strong>can</strong> be modified.
-      */
-    Scalar &       operator [] (const int address);
-    
-    
     /** \brief Assignment operator <var>*this = right</var>.
     */
     FieldContainer& operator  = (const FieldContainer& right);

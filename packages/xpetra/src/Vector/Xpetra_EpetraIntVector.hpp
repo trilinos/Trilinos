@@ -369,7 +369,7 @@ namespace Xpetra {
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
+        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
         vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
       }
 
@@ -634,8 +634,8 @@ namespace Xpetra {
                                       const Import<int, GlobalOrdinal, Node> &importer, CombineMode CM) {
          XPETRA_MONITOR("EpetraIntVectorT::doImport");
 
-         XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
-         XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+         XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal XPETRA_COMMA Node>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+         XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
          const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
          int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -646,8 +646,8 @@ namespace Xpetra {
                                      const Import<int, GlobalOrdinal, Node>& importer, CombineMode CM) {
         XPETRA_MONITOR("EpetraIntVectorT::doExport");
 
-        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
-        XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal XPETRA_COMMA Node>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
         const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
         int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -658,8 +658,8 @@ namespace Xpetra {
                                      const Export<int, GlobalOrdinal, Node>& exporter, CombineMode CM) {
         XPETRA_MONITOR("EpetraIntVectorT::doImport");
 
-        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
-        XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal XPETRA_COMMA Node>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
         const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
         int err = vec_->Import(v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -670,8 +670,8 @@ namespace Xpetra {
                                      const Export<int, GlobalOrdinal, Node>& exporter, CombineMode CM) {
         XPETRA_MONITOR("EpetraIntVectorT::doExport");
 
-        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
-        XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal XPETRA_COMMA Node>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
         const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
         int err = vec_->Export(v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -786,7 +786,7 @@ namespace Xpetra {
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
+        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
         vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
       }
 
@@ -1051,8 +1051,8 @@ namespace Xpetra {
                                       const Import<int, GlobalOrdinal, Node> &importer, CombineMode CM) {
          XPETRA_MONITOR("EpetraIntVectorT::doImport");
 
-         XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
-         XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+         XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal XPETRA_COMMA Node>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+         XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
          const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
          int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -1063,8 +1063,8 @@ namespace Xpetra {
                                      const Import<int, GlobalOrdinal, Node>& importer, CombineMode CM) {
         XPETRA_MONITOR("EpetraIntVectorT::doExport");
 
-        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
-        XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal XPETRA_COMMA Node>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
         const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
         int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -1075,8 +1075,8 @@ namespace Xpetra {
                                      const Export<int, GlobalOrdinal, Node>& exporter, CombineMode CM) {
         XPETRA_MONITOR("EpetraIntVectorT::doImport");
 
-        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
-        XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal XPETRA_COMMA Node>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
         const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
         int err = vec_->Import(v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -1087,8 +1087,8 @@ namespace Xpetra {
                                      const Export<int, GlobalOrdinal, Node>& exporter, CombineMode CM) {
         XPETRA_MONITOR("EpetraIntVectorT::doExport");
 
-        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
-        XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal XPETRA_COMMA Node>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+        XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
         const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
         int err = vec_->Export(v, *tExporter.getEpetra_Export(), toEpetra(CM));

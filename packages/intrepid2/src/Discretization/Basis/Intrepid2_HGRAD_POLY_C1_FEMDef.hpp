@@ -35,16 +35,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
 */
 
 #include "Intrepid2_FieldContainer.hpp"
-#include "Sacado_Fad_DFad.hpp"
+#include "Sacado.hpp"
 
 
 namespace Intrepid2{
@@ -57,6 +56,9 @@ namespace Intrepid2{
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
 
   
@@ -119,23 +121,23 @@ namespace Intrepid2{
       break;
     case OPERATOR_GRAD:
       {
-	FieldContainer<Sacado::Fad::DFad<Scalar> > dInput(inputPoints.dimension(0),inputPoints.dimension(1));
+	FieldContainer<Sacado::Fad::SFad<Scalar, 2> > dInput(inputPoints.dimension(0),inputPoints.dimension(1));
 	for (int i=0;i<inputPoints.dimension(0);i++){
 	  for (int j=0;j<2;j++){
-	    dInput(i,j) = Sacado::Fad::DFad<Scalar>( inputPoints(i,j));
+	    dInput(i,j) = Sacado::Fad::SFad<Scalar, 2>( inputPoints(i,j));
 	    dInput(i,j).diff(j,2);
 	  }
 	}
-	FieldContainer<Sacado::Fad::DFad<Scalar> > cellVerticesFad(cellVertices.dimension(0),cellVertices.dimension(1));
+	FieldContainer<Sacado::Fad::SFad<Scalar> > cellVerticesFad(cellVertices.dimension(0),cellVertices.dimension(1));
 	for (int i=0;i<cellVertices.dimension(0);i++){
 	  for (int j=0;j<cellVertices.dimension(1);j++){
-	    cellVerticesFad(i,j) = Sacado::Fad::DFad<Scalar>( cellVertices(i,j) );
+	    cellVerticesFad(i,j) = Sacado::Fad::SFad<Scalar,2>( cellVertices(i,j) );
 	  }
 	}
 	
-	FieldContainer<Sacado::Fad::DFad<Scalar> > dOutput(outputValues.dimension(0),outputValues.dimension(1));
+	FieldContainer<Sacado::Fad::SFad<Scalar,2> > dOutput(outputValues.dimension(0),outputValues.dimension(1));
 	
-	shapeFunctions<Sacado::Fad::DFad<Scalar>, FieldContainer<Sacado::Fad::DFad<Scalar> > >(dOutput,dInput,cellVerticesFad);
+	shapeFunctions<Sacado::Fad::SFad<Scalar,2>, FieldContainer<Sacado::Fad::SFad<Scalar,2> > >(dOutput,dInput,cellVerticesFad);
 	
 	for (int i=0;i<outputValues.dimension(0);i++){
 	  for (int j=0;j<outputValues.dimension(1);j++){

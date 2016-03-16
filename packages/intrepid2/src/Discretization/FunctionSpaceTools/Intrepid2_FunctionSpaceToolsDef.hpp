@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -172,25 +171,8 @@ switch (outRank) {
     }
     break;
 
-    case COMP_BLAS: {
-      int incr = 1;              // increment
-      if (sumInto) {
-        for (int cl=0; cl < numCells; cl++) {
-          Teuchos::BLAS<int, Scalar> myblas;
-          outputValues(cl) += myblas.DOT(numPoints, &leftValues[cl*numPoints], incr, &rightValues[cl*numPoints], incr);
-        }
-      }
-      else {
-        for (int cl=0; cl < numCells; cl++) {
-          Teuchos::BLAS<int, Scalar> myblas;
-          outputValues(cl) = myblas.DOT(numPoints, &leftValues[cl*numPoints], incr, &rightValues[cl*numPoints], incr);
-        }
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataScalar): Computational engine not defined!");
   } // switch(compEngine)  
     }
@@ -245,26 +227,8 @@ switch (outRank) {
     }
     break;
 
-    case COMP_BLAS: {
-      int skip = numPoints*dimVec;  // size of the left data chunk per cell
-      int incr = 1;                 // increment
-      if (sumInto) {
-        for (int cl=0; cl < numCells; cl++) {
-          Teuchos::BLAS<int, Scalar> myblas;
-          outputValues(cl) += myblas.DOT(skip, &leftValues[cl*skip], incr, &rightValues[cl*skip], incr);
-        }
-      }
-      else {
-        for (int cl=0; cl < numCells; cl++) {
-          Teuchos::BLAS<int, Scalar> myblas;
-          outputValues(cl) = myblas.DOT(skip, &leftValues[cl*skip], incr, &rightValues[cl*skip], incr);
-        }
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataVector): Computational engine not defined!");
   } // switch(compEngine)
 
@@ -329,26 +293,8 @@ switch (outRank) {
     }
     break;
 
-    case COMP_BLAS: {
-      int skip = numPoints*dim1Tensor*dim2Tensor;  // size of the left data chunk per cell
-      int incr = 1;                                // increment
-      if (sumInto) {
-        for (int cl=0; cl < numCells; cl++) {
-          Teuchos::BLAS<int, Scalar> myblas;
-          outputValues(cl) += myblas.DOT(skip, &leftValues[cl*skip], incr, &rightValues[cl*skip], incr);
-        }
-      }
-      else {
-        for (int cl=0; cl < numCells; cl++) {
-          Teuchos::BLAS<int, Scalar> myblas;
-          outputValues(cl) = myblas.DOT(skip, &leftValues[cl*skip], incr, &rightValues[cl*skip], incr);
-        }
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataTensor): Computational engine not defined!");
   } // switch(compEngine)
 
@@ -448,59 +394,8 @@ switch (outRank) {
     }
     break;
 
-    case COMP_BLAS: {
-      /*
-       GEMM parameters and their values.
-       (Note: It is assumed that the result needs to be transposed into row-major format.
-              Think of left and right input matrices as A(p x f) and B(p x 1), respectively,
-              even though the indexing is ((C),F,P) and ((C),P). Due to BLAS formatting
-              assumptions, we are computing (A^T*B)^T = B^T*A.)
-       TRANSA   TRANS
-       TRANSB   NO_TRANS
-       M        #rows(B^T)                            = 1
-       N        #cols(A)                              = number of input fields
-       K        #cols(B^T)                            = number of integration points * size of data
-       ALPHA    1.0
-       A        right data for cell cl                = &rightFields[cl*skipR]
-       LDA      #rows(B)                              = number of integration points * size of data
-       B        left data for cell cl                 = &leftFields[cl*skipL]
-       LDB      #rows(A)                              = number of integration points * size of data
-       BETA     0.0
-       C        result for cell cl                    = &outputFields[cl*skipOp]
-       LDC      #rows(C)                              = 1
-      */
-      int numData  = numPoints;
-      int skipL    = numFields*numPoints;       // size of the left data chunk per cell
-      int skipR    = numPoints;                 // size of the right data chunk per cell
-      int skipOp   = numFields;                 // size of the output data chunk per cell
-      Scalar alpha(1.0);                        // these are left unchanged by GEMM
-      Scalar beta(0.0);
-      if (sumInto) {
-        beta = 1.0;
-      }
-
-      for (int cl=0; cl < numCells; cl++) {
-        /* Use this if data is used in row-major format */
-        Teuchos::BLAS<int, Scalar> myblas;
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    1, numFields, numData,
-                    alpha, &leftValues[cl*skipR], numData,
-                    &rightValues[cl*skipL], numData,
-                    beta, &outputValues[cl*skipOp], 1);
-        /* Use this if data is used in column-major format */
-        /*
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numFields, 1, numData,
-                    alpha, &inputFields[cl*skipL], numData,
-                    &inputData[cl*skipR], numData,
-                    beta, &outputFields[cl*skipOp], numFields);
-        */
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldScalar): Computational engine not defined!");
   } // switch(compEngine)
     }
@@ -595,59 +490,8 @@ switch (outRank) {
     }
     break;
 
-    case COMP_BLAS: {
-      /*
-       GEMM parameters and their values.
-       (Note: It is assumed that the result needs to be transposed into row-major format.
-              Think of left and right input matrices as A(p x f) and B(p x 1), respectively,
-              even though the indexing is ((C),F,P) and ((C),P). Due to BLAS formatting
-              assumptions, we are computing (A^T*B)^T = B^T*A.)
-       TRANSA   TRANS
-       TRANSB   NO_TRANS
-       M        #rows(B^T)                            = 1
-       N        #cols(A)                              = number of input fields
-       K        #cols(B^T)                            = number of integration points * size of data
-       ALPHA    1.0
-       A        right data for cell cl                = &rightFields[cl*skipR]
-       LDA      #rows(B)                              = number of integration points * size of data
-       B        left data for cell cl                 = &leftFields[cl*skipL]
-       LDB      #rows(A)                              = number of integration points * size of data
-       BETA     0.0
-       C        result for cell cl                    = &outputFields[cl*skipOp]
-       LDC      #rows(C)                              = 1
-      */
-      int numData  = numPoints*dimVec;
-      int skipL    = numFields*numData;         // size of the left data chunk per cell
-      int skipR    = numData;                   // size of the right data chunk per cell
-      int skipOp   = numFields;                 // size of the output data chunk per cell
-      Scalar alpha(1.0);                        // these are left unchanged by GEMM
-      Scalar beta(0.0);
-      if (sumInto) {
-        beta = 1.0;
-      }
-
-      for (int cl=0; cl < numCells; cl++) {
-        /* Use this if data is used in row-major format */
-        Teuchos::BLAS<int, Scalar> myblas;
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    1, numFields, numData,
-                    alpha, &leftValues[cl*skipR], numData,
-                    &rightValues[cl*skipL], numData,
-                    beta, &outputValues[cl*skipOp], 1);
-        /* Use this if data is used in column-major format */
-        /*
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numFields, 1, numData,
-                    alpha, &inputFields[cl*skipL], numData,
-                    &inputData[cl*skipR], numData,
-                    beta, &outputFields[cl*skipOp], numFields);
-        */
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldVector): Computational engine not defined!");
   } // switch(compEngine)
     }
@@ -753,59 +597,8 @@ switch (outRank) {
     }
     break;
 
-    case COMP_BLAS: {
-      /*
-       GEMM parameters and their values.
-       (Note: It is assumed that the result needs to be transposed into row-major format.
-              Think of left and right input matrices as A(p x f) and B(p x 1), respectively,
-              even though the indexing is ((C),F,P) and ((C),P). Due to BLAS formatting
-              assumptions, we are computing (A^T*B)^T = B^T*A.)
-       TRANSA   TRANS
-       TRANSB   NO_TRANS
-       M        #rows(B^T)                            = 1
-       N        #cols(A)                              = number of input fields
-       K        #cols(B^T)                            = number of integration points * size of data
-       ALPHA    1.0
-       A        right data for cell cl                = &rightFields[cl*skipR]
-       LDA      #rows(B)                              = number of integration points * size of data
-       B        left data for cell cl                 = &leftFields[cl*skipL]
-       LDB      #rows(A)                              = number of integration points * size of data
-       BETA     0.0
-       C        result for cell cl                    = &outputFields[cl*skipOp]
-       LDC      #rows(C)                              = 1
-      */
-      int numData  = numPoints*dim1Tens*dim2Tens;
-      int skipL    = numFields*numData;         // size of the left data chunk per cell
-      int skipR    = numData;                   // size of the right data chunk per cell
-      int skipOp   = numFields;                 // size of the output data chunk per cell
-      Scalar alpha(1.0);                        // these are left unchanged by GEMM
-      Scalar beta(0.0);
-      if (sumInto) {
-        beta = 1.0;
-      }
-
-      for (int cl=0; cl < numCells; cl++) {
-        /* Use this if data is used in row-major format */
-        Teuchos::BLAS<int, Scalar> myblas;
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    1, numFields, numData,
-                    alpha, &leftValues[cl*skipR], numData,
-                    &rightValues[cl*skipL], numData,
-                    beta, &outputValues[cl*skipOp], 1);
-        /* Use this if data is used in column-major format */
-        /*
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numFields, 1, numData,
-                    alpha, &inputFields[cl*skipL], numData,
-                    &inputData[cl*skipR], numData,
-                    beta, &outputFields[cl*skipOp], numFields);
-        */
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldTensor): Computational engine not defined!");
   } // switch(compEngine)    
 }
@@ -881,58 +674,8 @@ TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std:
     }
     break;
 
-    case COMP_BLAS: {
-      /*
-       GEMM parameters and their values.
-       (Note: It is assumed that the result needs to be transposed into row-major format.
-              Think of left and right input matrices as A(p x l) and B(p x r), respectively,
-              even though the indexing is ((C),L,P) and ((C),R,P). Due to BLAS formatting
-              assumptions, we are computing (A^T*B)^T = B^T*A.)
-       TRANSA   TRANS
-       TRANSB   NO_TRANS
-       M        #rows(B^T)                            = number of right fields
-       N        #cols(A)                              = number of left fields
-       K        #cols(B^T)                            = number of integration points
-       ALPHA    1.0
-       A        right data for cell cl                = &rightFields[cl*skipR]
-       LDA      #rows(B)                              = number of integration points 
-       B        left data for cell cl                 = &leftFields[cl*skipL]
-       LDB      #rows(A)                              = number of integration points
-       BETA     0.0
-       C        result for cell cl                    = &outputFields[cl*skipOp]
-       LDC      #rows(C)                              = number of right fields
-      */
-      int skipL    = numLeftFields*numPoints;       // size of the left data chunk per cell
-      int skipR    = numRightFields*numPoints;      // size of the right data chunk per cell
-      int skipOp   = numLeftFields*numRightFields;  // size of the output data chunk per cell
-      Scalar alpha(1.0);                            // these are left unchanged by GEMM
-      Scalar beta(0.0);
-      if (sumInto) {
-        beta = 1.0;
-      }
-
-      for (int cl=0; cl < numCells; cl++) {
-        /* Use this if data is used in row-major format */
-        Teuchos::BLAS<int, Scalar> myblas;
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numRightFields, numLeftFields, numPoints,
-                    alpha, &rightValues[cl*skipR], numPoints,
-                    &leftValues[cl*skipL], numPoints,
-                    beta, &outputValues[cl*skipOp], numRightFields);
-        /* Use this if data is used in column-major format */
-        /*
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numLeftFields, numRightFields, numPoints,
-                    alpha, &leftFields[cl*skipL], numPoints,
-                    &rightFields[cl*skipR], numPoints,
-                    beta, &outputFields[cl*skipOp], numLeftFields);
-        */
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
   } // switch(compEngine)
 
@@ -1002,59 +745,8 @@ TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std:
     }
     break;
 
-    case COMP_BLAS: {
-      /*
-       GEMM parameters and their values.
-       (Note: It is assumed that the result needs to be transposed into row-major format.
-              Think of left and right input matrices as A(p x l) and B(p x r), respectively,
-              even though the indexing is ((C),L,P) and ((C),R,P). Due to BLAS formatting
-              assumptions, we are computing (A^T*B)^T = B^T*A.)
-       TRANSA   TRANS
-       TRANSB   NO_TRANS
-       M        #rows(B^T)                            = number of right fields
-       N        #cols(A)                              = number of left fields
-       K        #cols(B^T)                            = number of integration points * size of vector
-       ALPHA    1.0
-       A        right data for cell cl                = &rightFields[cl*skipR]
-       LDA      #rows(B)                              = number of integration points * size of vector
-       B        left data for cell cl                 = &leftFields[cl*skipL]
-       LDB      #rows(A)                              = number of integration points * size of vector
-       BETA     0.0
-       C        result for cell cl                    = &outputFields[cl*skipOp]
-       LDC      #rows(C)                              = number of right fields
-      */
-      int numData  = numPoints*dimVec;              
-      int skipL    = numLeftFields*numData;         // size of the left data chunk per cell
-      int skipR    = numRightFields*numData;        // size of the right data chunk per cell
-      int skipOp   = numLeftFields*numRightFields;  // size of the output data chunk per cell
-      Scalar alpha(1.0);                            // these are left unchanged by GEMM
-      Scalar beta(0.0);
-      if (sumInto) {
-        beta = 1.0;
-      }
-
-      for (int cl=0; cl < numCells; cl++) {
-        /* Use this if data is used in row-major format */
-        Teuchos::BLAS<int, Scalar> myblas;
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numRightFields, numLeftFields, numData,
-                    alpha, &rightValues[cl*skipR], numData,
-                    &leftValues[cl*skipL], numData,
-                    beta, &outputValues[cl*skipOp], numRightFields);
-        /* Use this if data is used in column-major format */
-        /*
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numLeftFields, numRightFields, numData,
-                    alpha, &leftFields[cl*skipL], numData,
-                    &rightFields[cl*skipR], numData,
-                    beta, &outputFields[cl*skipOp], numLeftFields);
-        */
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldVector): Computational engine not defined!");
   } // switch(compEngine)
 }
@@ -1130,59 +822,8 @@ TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std:
     }
     break;
 
-    case COMP_BLAS: {
-      /*
-       GEMM parameters and their values.
-       (Note: It is assumed that the result needs to be transposed into row-major format.
-              Think of left and right input matrices as A(p x l) and B(p x r), respectively,
-              even though the indexing is ((C),L,P) and ((C),R,P). Due to BLAS formatting
-              assumptions, we are computing (A^T*B)^T = B^T*A.)
-       TRANSA   TRANS
-       TRANSB   NO_TRANS
-       M        #rows(B^T)                            = number of right fields
-       N        #cols(A)                              = number of left fields
-       K        #cols(B^T)                            = number of integration points * size of tensor
-       ALPHA    1.0
-       A        right data for cell cl                = &rightFields[cl*skipR]
-       LDA      #rows(B)                              = number of integration points * size of tensor
-       B        left data for cell cl                 = &leftFields[cl*skipL]
-       LDB      #rows(A)                              = number of integration points * size of tensor
-       BETA     0.0
-       C        result for cell cl                    = &outputFields[cl*skipOp]
-       LDC      #rows(C)                              = number of right fields
-      */
-      int numData  = numPoints*dim1Tensor*dim2Tensor;              
-      int skipL    = numLeftFields*numData;         // size of the left data chunk per cell
-      int skipR    = numRightFields*numData;        // size of the right data chunk per cell
-      int skipOp   = numLeftFields*numRightFields;  // size of the output data chunk per cell
-      Scalar alpha(1.0);                            // these are left unchanged by GEMM
-      Scalar beta(0.0);
-      if (sumInto) {
-        beta = 1.0;
-      }
-
-      for (int cl=0; cl < numCells; cl++) {
-        /* Use this if data is used in row-major format */
-        Teuchos::BLAS<int, Scalar> myblas;
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numRightFields, numLeftFields, numData,
-                    alpha, &rightValues[cl*skipR], numData,
-                    &leftValues[cl*skipL], numData,
-                    beta, &outputValues[cl*skipOp], numRightFields);
-        /* Use this if data is used in column-major format */
-        /*
-        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-                    numLeftFields, numRightFields, numData,
-                    alpha, &leftFields[cl*skipL], numData,
-                    &rightFields[cl*skipR], numData,
-                    beta, &outputFields[cl*skipOp], numLeftFields);
-        */
-      }
-    }
-    break;
-
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldTensor): Computational engine not defined!");
   } // switch(compEngine)
 }

@@ -66,11 +66,11 @@ template<class Real>
 class ReductionSum : public ReductionOp<Real> {
 public: 
   void reduce( const Real &input, Real &output ) const {
-    output += input;
+    output = output + input;
   }
 
   void reduce( const volatile Real &input, volatile Real &output ) const {
-    output += input;
+    output = output + input;
   }
 
   Real initialValue() const {

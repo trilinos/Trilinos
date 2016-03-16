@@ -62,23 +62,20 @@ class PartitionedVector : public Vector<Real> {
   typedef PartitionedVector<Real>       PV;
 
 private:
-  Teuchos::RCP<std::vector<RCPV> >      vecs_;
+  const std::vector<RCPV>                    vecs_;
   mutable std::vector<RCPV>             dual_vecs_;
   mutable Teuchos::RCP<PV>              dual_pvec_;
 public:
 
   typedef typename std::vector<PV>::size_type    size_type;
 
-  PartitionedVector( const Teuchos::RCP<std::vector<RCPV> > &vecs ) :
-    vecs_(vecs) {
-     for( size_type i=0; i<vecs_->size(); ++i ) {
-      dual_vecs_.push_back(((*vecs_)[i]->dual()).clone());
+  PartitionedVector( const std::vector<RCPV> &vecs ) : vecs_(vecs) {
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      dual_vecs_.push_back((vecs_[i]->dual()).clone());
     }
   }
 
   void set( const V &x ) {
-
-
     using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
 
@@ -86,8 +83,8 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      (*vecs_)[i]->set(*xs.get(i));
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->set(*xs.get(i));
     }
   }
 
@@ -99,14 +96,14 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      (*vecs_)[i]->plus(*xs.get(i));
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->plus(*xs.get(i));
     }
   }
 
   void scale( const Real alpha ) {
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      (*vecs_)[i]->scale(alpha);
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->scale(alpha);
     }
   }
 
@@ -118,8 +115,8 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      (*vecs_)[i]->axpy(alpha,*xs.get(i));
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->axpy(alpha,*xs.get(i));
     }
   }
 
@@ -132,17 +129,17 @@ public:
                                 "Error: Vectors must have the same number of subvectors." );
 
     Real result = 0;
-      for( size_type i=0; i<vecs_->size(); ++i ) {
-        result += (*vecs_)[i]->dot(*xs.get(i));
-      }
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      result += vecs_[i]->dot(*xs.get(i));
+    }
     return result;
   }
 
   Real norm() const {
     Real result = 0;
-      for( size_type i=0; i<vecs_->size(); ++i ) {
-        result += std::pow((*vecs_)[i]->norm(),2);
-      }
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      result += std::pow(vecs_[i]->norm(),2);
+    }
     return std::sqrt(result);
   }
 
@@ -150,22 +147,20 @@ public:
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    RCP<std::vector<RCPV> > clonevec = rcp( new std::vector<RCPV> );
-
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      clonevec->push_back((*vecs_)[i]->clone());
+    std::vector<RCPV> clonevec;
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      clonevec.push_back(vecs_[i]->clone());
     }
     return rcp( new PV(clonevec) );
   }
 
   const V& dual(void) const {
-
     using Teuchos::rcp;
 
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      dual_vecs_[i]->set((*vecs_)[i]->dual());
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      dual_vecs_[i]->set(vecs_[i]->dual());
     }
-    dual_pvec_ = rcp( new PV( rcp( &dual_vecs_, false ) ) );
+    dual_pvec_ = rcp( new PV( dual_vecs_ ) );
     return *dual_pvec_;
   }
 
@@ -188,12 +183,12 @@ public:
     int end = 0;
 
     // Iterate over subvectors
-    for( size_type j=0; j<vecs_->size(); ++j ) {
+    for( size_type j=0; j<vecs_.size(); ++j ) {
 
-      end += (*vecs_)[j]->dimension();
+      end += vecs_[j]->dimension();
 
       if( begin<= i && i<end ) {
-        eb.set(j, *((*vecs_)[j]->basis(i-begin)) );
+        eb.set(j, *(vecs_[j]->basis(i-begin)) );
       }
       else {
         eb.zero(j);
@@ -207,22 +202,22 @@ public:
 
   int dimension() const {
     int total_dim = 0;
-    for( size_type j=0; j<vecs_->size(); ++j ) {
-      total_dim += (*vecs_)[j]->dimension();
+    for( size_type j=0; j<vecs_.size(); ++j ) {
+      total_dim += vecs_[j]->dimension();
     }
     return total_dim;
   }
 
   void zero() {
-    for( size_type j=0; j<vecs_->size(); ++j ) {
-      (*vecs_)[j]->zero();
+    for( size_type j=0; j<vecs_.size(); ++j ) {
+      vecs_[j]->zero();
     }
   }
 
   // Apply the same unary function to each subvector
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      (*vecs_)[i]->applyUnary(f);
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->applyUnary(f);
     }
   }
 
@@ -230,46 +225,40 @@ public:
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const V &x ) {
     const PV &xs = Teuchos::dyn_cast<const PV>(x);
 
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      (*vecs_)[i]->applyBinary(f,*xs.get(i));
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->applyBinary(f,*xs.get(i));
     }
   }
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
-
     Real result = r.initialValue();
 
-    for( size_type i=0; i<vecs_->size(); ++i ) {
-      r.reduce((*vecs_)[i]->reduce(r),result);
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      r.reduce(vecs_[i]->reduce(r),result);
     }
     return result;
-
   }
-
-
-
-
 
   // Methods that do not exist in the base class
 
   Teuchos::RCP<const Vector<Real> > get(size_type i) const {
-    return (*vecs_)[i];
+    return vecs_[i];
   }
 
   Teuchos::RCP<Vector<Real> > get(size_type i) {
-    return (*vecs_)[i];
+    return vecs_[i];
   }
 
   void set(size_type i, const V &x) {
-    (*vecs_)[i]->set(x);
+    vecs_[i]->set(x);
   }
 
   void zero(size_type i) {
-    (*vecs_)[i]->zero();
+    vecs_[i]->zero();
   }
 
   size_type numVectors() const {
-    return vecs_->size();
+    return vecs_.size();
   }
 
 };
@@ -283,7 +272,7 @@ Teuchos::RCP<Vector<Real> > CreatePartitionedVector( const Teuchos::RCP<Vector<R
   typedef PartitionedVector<Real>  PV;
 
   RCPV temp[] = {a};
-  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+1) ) ) );
+  return rcp( new PV( std::vector<RCPV>(temp, temp+1) ) );
 }
 
 template<class Real>
@@ -294,7 +283,7 @@ Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( const Teuchos::RCP<co
   typedef const PartitionedVector<Real> PV;
 
   RCPV temp[] = {a};
-  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+1) ) ) );
+  return rcp( new PV( std::vector<RCPV>(temp, temp+1) ) );
 }
 
 template<class Real>
@@ -306,7 +295,7 @@ Teuchos::RCP<Vector<Real> > CreatePartitionedVector( const Teuchos::RCP<Vector<R
   typedef PartitionedVector<Real> PV;
 
   RCPV temp[] = {a,b};
-  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+2) ) ) );
+  return rcp( new PV( std::vector<RCPV>(temp, temp+2) ) );
 }
 
 template<class Real>
@@ -318,7 +307,7 @@ Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( const Teuchos::RCP<co
   typedef const PartitionedVector<Real> PV;
 
   RCPV temp[] = {a,b};
-  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+2) ) ) );
+  return rcp( new PV( std::vector<RCPV>(temp, temp+2) ) );
 }
 
 template<class Real>
@@ -331,7 +320,7 @@ Teuchos::RCP<Vector<Real> > CreatePartitionedVector( const Teuchos::RCP<Vector<R
   typedef PartitionedVector<Real> PV;
 
   RCPV temp[] = {a,b,c};
-  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+3) ) ) );
+  return rcp( new PV( std::vector<RCPV>(temp, temp+3) ) );
 }
 
 template<class Real>
@@ -344,7 +333,7 @@ Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( const Teuchos::RCP<co
   typedef const PartitionedVector<Real> PV;
 
   RCPV temp[] = {a,b,c};
-  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+3) ) ) );
+  return rcp( new PV( std::vector<RCPV>(temp, temp+3) ) );
 }
 
 template<class Real>
@@ -358,7 +347,7 @@ Teuchos::RCP<Vector<Real> > CreatePartitionedVector( const Teuchos::RCP<Vector<R
   typedef PartitionedVector<Real> PV;
 
   RCPV temp[] = {a,b,c,d};
-  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+4) ) ) );
+  return rcp( new PV( std::vector<RCPV>(temp, temp+4) ) );
 }
 
 template<class Real>
@@ -372,11 +361,8 @@ Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( const Teuchos::RCP<co
   typedef const PartitionedVector<Real> PV;
 
   RCPV temp[] = {a,b,c,d};
-  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+4) ) ) );
+  return rcp( new PV( std::vector<RCPV>(temp, temp+4) ) );
 }
-
-
-
 
 } // namespace ROL
 

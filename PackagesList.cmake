@@ -115,7 +115,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Moertel               packages/moertel                  PS
   MueLu                 packages/muelu                    SS
   Rythmos               packages/rythmos                  PS
-  MOOCHO                packages/moocho                   PS
+  MOOCHO                packages/moocho                   ST
   Stokhos               packages/stokhos                  SS
   ROL                   packages/rol                      SS
   Piro                  packages/piro                     SS

@@ -127,6 +127,30 @@ public:
     }
   }
 
+  void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+
+    vec1_->applyUnary(f);
+    vec2_->applyUnary(f);
+
+  }
+
+  void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
+
+    vec1_->applyBinary(f,*xs.get_1());
+    vec2_->applyBinary(f,*xs.get_2());
+  
+  }
+
+  Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
+
+    Real result = r.initialValue();
+    r.reduce(vec1_->reduce(r),result);
+    r.reduce(vec2_->reduce(r),result);
+    return result;
+  }
+
+
   int dimension() const {
     return (vec1_)->dimension() + (vec2_)->dimension();
   }

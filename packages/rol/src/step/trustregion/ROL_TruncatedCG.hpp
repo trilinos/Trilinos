@@ -74,11 +74,12 @@ private:
 public:
 
   // Constructor
-  TruncatedCG( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0.0) {
+  TruncatedCG( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
     // Unravel Parameter List
+    Real em4(1e-4), em2(1e-2);
     maxit_ = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);
-    tol1_  = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance",1.e-4);
-    tol2_  = parlist.sublist("General").sublist("Krylov").get("Relative Tolerance",1.e-2);
+    tol1_  = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance",em4);
+    tol2_  = parlist.sublist("General").sublist("Krylov").get("Relative Tolerance",em2);
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
@@ -95,7 +96,7 @@ public:
 
   void run( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
             const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) { 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), zero(0), one(1), two(2), half(0.5);
     const Real gtol = std::min(tol1_,tol2_*gnorm);
 
     // Gradient Vector
@@ -110,8 +111,8 @@ public:
 
     // Old and New Step Vectors
     s.zero(); s_->zero();
-    snorm = 0.0;
-    Real snorm2  = 0.0, s1norm2 = 0.0;
+    snorm = zero;
+    Real snorm2(0), s1norm2(0);
 
     // Preconditioned Gradient Vector
     //pObj.precond(*v,*g,x,tol);
@@ -119,26 +120,20 @@ public:
 
     // Basis Vector
     p_->set(*v_);
-    p_->scale(-1.0);
+    p_->scale(-one);
     Real pnorm2 = v_->dot(g_->dual());
 
-    iter        = 0;
-    iflag       = 0;
-    Real kappa  = 0.0;
-    Real beta   = 0.0; 
-    Real sigma  = 0.0; 
-    Real alpha  = 0.0; 
-    Real tmp    = 0.0;
-    Real gv     = v_->dot(g_->dual());
-    Real sMp    = 0.0;
-    pRed_       = 0.0;
+    iter = 0; iflag = 0;
+    Real kappa(0), beta(0), sigma(0), alpha(0), tmp(0), sMp(0);
+    Real gv = v_->dot(g_->dual());
+    pRed_ = zero;
 
     for (iter = 0; iter < maxit_; iter++) {
       //pObj.hessVec(*Hp,*p,x,tol);
       pObj.reducedHessVec(*Hp_,*p_,x,grad.dual(),x,tol);
 
       kappa = p_->dot(Hp_->dual());
-      if (kappa <= 0.0) {
+      if (kappa <= zero) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p_);
         iflag = 2; 
@@ -148,7 +143,7 @@ public:
       alpha = gv/kappa;
       s_->set(s); 
       s_->axpy(alpha,*p_);
-      s1norm2 = snorm2 + 2.0*alpha*sMp + alpha*alpha*pnorm2;
+      s1norm2 = snorm2 + two*alpha*sMp + alpha*alpha*pnorm2;
 
       if (s1norm2 >= del*del) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
@@ -157,7 +152,7 @@ public:
         break;
       }
 
-      pRed_ += 0.5*alpha*gv;
+      pRed_ += half*alpha*gv;
 
       s.set(*s_);
       snorm2 = s1norm2;  
@@ -175,12 +170,12 @@ public:
       beta  = gv/tmp;    
 
       p_->scale(beta);
-      p_->axpy(-1.0,*v_);
+      p_->axpy(-one,*v_);
       sMp    = beta*(sMp+alpha*pnorm2);
       pnorm2 = gv + beta*beta*pnorm2; 
     }
     if (iflag > 0) {
-      pRed_ += sigma*(gv-0.5*sigma*kappa);
+      pRed_ += sigma*(gv-half*sigma*kappa);
     }
 
     if (iter == maxit_) {
@@ -197,7 +192,7 @@ public:
 #if 0
   void truncatedCG_proj( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                          const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     const Real gtol = std::min(tol1_,tol2_*gnorm);
 

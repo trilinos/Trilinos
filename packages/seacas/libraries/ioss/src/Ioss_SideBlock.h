@@ -52,22 +52,22 @@ namespace Ioss {
   public:
     friend class SideSet;
 
-    SideBlock(DatabaseIO *io_database, const std::string& name,
+    SideBlock(DatabaseIO *io_database, const std::string& my_name,
 	      const std::string& side_type, const std::string& element_type,
 	      size_t side_count);
 
-    std::string type_string() const {return "SideBlock";}
-    std::string short_type_string() const {return "sideblock";}
-    EntityType type() const {return SIDEBLOCK;}
+    std::string type_string() const override {return "SideBlock";}
+    std::string short_type_string() const override {return "sideblock";}
+    EntityType type() const override {return SIDEBLOCK;}
 
     const SideSet* owner() const {return owner_;}
 
-    void block_membership(std::vector<std::string> &block_members);
+    void block_membership(std::vector<std::string> &block_members) override;
 
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
+    Property get_implicit_property(const std::string& my_name) const override;
 
     // For faceblock, edgeblock, if they are split by element block, then this
     // will be non-nullptr and is a pointer to the parent element block for this
@@ -90,10 +90,10 @@ namespace Ioss {
 
   protected:
     int64_t internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
+				void *data, size_t data_size) const override;
 
     int64_t internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
+				void *data, size_t data_size) const override;
 
   private:
     const SideSet *owner_;

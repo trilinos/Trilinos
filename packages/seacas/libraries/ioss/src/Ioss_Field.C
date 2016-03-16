@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-#include "Ioss_CodeTypes.h"
+#include <Ioss_CodeTypes.h>
 
 namespace {
   size_t internal_get_size(Ioss::Field::BasicType type, size_t count,
@@ -85,68 +85,50 @@ Ioss::Field::Field() :
   type_(INVALID), role_(INTERNAL), rawStorage_(nullptr), transStorage_(nullptr)
 { rawStorage_ = transStorage_ = Ioss::VariableType::factory("invalid"); }
 
-Ioss::Field::Field(const std::string &name,
+Ioss::Field::Field(std::string name,
 		   const Ioss::Field::BasicType type,
 		   const std::string &storage,
 		   const Ioss::Field::RoleType role,
 		   size_t value_count, size_t index) :
-  name_(name), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
+  name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
   type_(type), role_(role), rawStorage_(nullptr), transStorage_(nullptr)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage);
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
 }
 
-Ioss::Field::Field(const std::string &name,
+Ioss::Field::Field(std::string name,
 		   const Ioss::Field::BasicType type,
 		   const std::string &storage,
 		   int copies, 
 		   const Ioss::Field::RoleType role,
 		   size_t value_count, size_t index) :
-  name_(name), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
+  name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
   type_(type), role_(role), rawStorage_(nullptr), transStorage_(nullptr)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage, copies);
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
 }
 
-Ioss::Field::Field(const std::string &name,
+Ioss::Field::Field(std::string name,
 		   const Ioss::Field::BasicType type,
 		   const Ioss::VariableType *storage,
 		   const Ioss::Field::RoleType role,
 		   size_t value_count, size_t index) :
-  name_(name), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
+  name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
   type_(type), role_(role), rawStorage_(storage), transStorage_(storage)
 {
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
 }
 
 Ioss::Field::Field(const Ioss::Field& from)
-  : name_(from.name_), rawCount_(from.rawCount_), transCount_(from.transCount_),
-    size_(from.size_), index_(from.index_),
-    type_(from.type_), role_(from.role_),
-    rawStorage_(from.rawStorage_), transStorage_(from.transStorage_), 
-    transforms_(from.transforms_)
-{}
+  = default;
 
 Ioss::Field& Ioss::Field::operator=(const Field& from)
-{
-  name_ = from.name_;
-  rawCount_ = from.rawCount_;
-  transCount_ = from.transCount_;
-  size_ = from.size_;
-  index_ = from.index_;
-  type_  = from.type_;
-  role_ = from.role_;
-  rawStorage_ = from.rawStorage_;
-  transStorage_ = from.transStorage_;
-  transforms_ = from.transforms_;
-  return *this;
-}
+= default;
 
 Ioss::Field::~Field()
-{
-}
+= default;
 
 // Verify that data_size is valid.
 // If return value >= 0, then it is the maximum number of
@@ -186,7 +168,8 @@ void Ioss::Field::check_type(BasicType the_type) const
 
 void Ioss::Field::reset_count(size_t new_count)
 {
-  if (transCount_ == rawCount_) transCount_ = new_count;
+  if (transCount_ == rawCount_) { transCount_ = new_count;
+}
   rawCount_ = new_count;
   size_ = 0;
 }
@@ -210,8 +193,9 @@ size_t Ioss::Field::get_size() const
       new_this->transCount_   = my_transform->output_count(transCount_);
       new_this->transStorage_ = my_transform->output_storage(transStorage_);
       size_t size = internal_get_size(type_, transCount_, transStorage_);
-      if (size > size_)
+      if (size > size_) {
 	new_this->size_ = size;
+}
     }
   }
   return size_;
@@ -229,12 +213,14 @@ bool Ioss::Field::add_transform(Transform* my_transform)
     return false;
   }
 
-  if (transCount_ < rawCount_)
+  if (transCount_ < rawCount_) {
     role_ = REDUCTION;
+}
 
   size_t size = internal_get_size(type_, transCount_, transStorage_);
-  if (size > size_)
+  if (size > size_) {
     size_ = size;
+}
 
   transforms_.push_back(my_transform);
   return true;

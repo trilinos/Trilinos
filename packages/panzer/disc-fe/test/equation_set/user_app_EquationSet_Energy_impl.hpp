@@ -84,7 +84,6 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",-1,"Order of the integration rule");
-    valid_parameters.set< Teuchos::Array<std::string> >("Tangent Parameter Names", Teuchos::Array<std::string>());
 
     Teuchos::setStringToIntegralParameter<int>(
       "CONVECTION",
@@ -103,9 +102,6 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
   int basis_order = params->get<int>("Basis Order");
   std::string model_id = params->get<std::string>("Model ID");
   int integration_order = params->get<int>("Integration Order");
-
-  if (params->isType<Teuchos::Array<std::string> >("Tangent Parameter Names"))
-    this->tangentParamNames = params->get< Teuchos::Array<std::string> >("Tangent Parameter Names").toVector();
 
   // ********************
   // Setup DOFs and closure models

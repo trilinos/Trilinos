@@ -79,9 +79,12 @@ namespace Ioss {
     // If 'error_message' non-null, then put the warning message into the string and return it.
     // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
       //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    virtual bool ok(bool write_message = false, std::string *error_message=nullptr, int *bad_count=nullptr) const
+    virtual bool ok(bool write_message = false, std::string *error_message=nullptr,
+		    int *bad_count=nullptr) const
     {
-      if (bad_count) *bad_count = 0;
+      if (bad_count != nullptr){
+	*bad_count = 0;
+      }
       return dbState != Ioss::STATE_INVALID;
     }
 
@@ -107,6 +110,11 @@ namespace Ioss {
     virtual bool needs_shared_node_information() const {return false;}
 
     Ioss::IfDatabaseExistsBehavior open_create_behavior() const;
+
+    //! This function is used to create the path to an output directory (or history, restart, etc.)
+    //  if it does not exist.  Called by all processors. Will throw exception if path does not
+    //  specify a valid directory or if the path cannot be created.
+    void create_path(const std::string& filename) const;
 
     void set_region(Region* region) {region_ = region;}
 
@@ -149,7 +157,10 @@ namespace Ioss {
     // QA Records:
     const std::vector<std::string> &get_qa_records() const { return qaRecords;}
     void add_qa_record(const std::string &code, const std::string &code_qa,
-		       const std::string &data, const std::string &time);
+		       const std::string &date, const std::string &time);
+
+    bool get_logging() const {return doLogging && !singleProcOnly;}
+    void set_logging(bool on_off) {doLogging = on_off;}
 
     // The get_field and put_field functions are just a wrapper around the
     // pure virtual get_field_internal and put_field_internal functions,
@@ -161,18 +172,19 @@ namespace Ioss {
     int64_t get_field(const T* reg,      const Field& field, void *data, size_t data_size) const
     {
       verify_and_log(reg, field, 1);
-      return get_field_internal(reg, field, data, data_size);
+      int64_t retval = get_field_internal(reg, field, data, data_size);
+      verify_and_log(nullptr, field, 1);
+      return retval;
     }
 
     template <typename T>
     int64_t put_field(const T* reg,      const Field& field, void *data, size_t data_size) const
     {
       verify_and_log(reg, field, 0);
-      return put_field_internal(reg, field, data, data_size);
+      int64_t retval = put_field_internal(reg, field, data, data_size);
+      verify_and_log(nullptr, field, 0);
+      return retval;
     }
-
-    bool get_logging() const {return doLogging && !singleProcOnly;}
-    void set_logging(bool on_off) {doLogging = on_off;}
 
     bool is_parallel_consistent() const {return isParallelConsistent;}
     void set_parallel_consistency(bool on_off) {isParallelConsistent = on_off;}
@@ -192,7 +204,6 @@ namespace Ioss {
     void set_block_omissions(const std::vector<std::string> &omissions);
 
     virtual void get_block_adjacencies(const Ioss::ElementBlock *eb, std::vector<std::string> &block_adjacency) const {}
-    virtual void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const {}
     virtual void compute_block_membership(Ioss::SideBlock *efblock, std::vector<std::string> &block_membership) const {}
 
     AxisAlignedBoundingBox get_bounding_box(const Ioss::ElementBlock *eb) const;
@@ -259,7 +270,7 @@ namespace Ioss {
 
     protected:
 
-    DatabaseIO(Region *region, const std::string& filename,
+    DatabaseIO(Region *region, std::string  filename,
                Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                const Ioss::PropertyManager &props);
 
@@ -370,7 +381,7 @@ namespace Ioss {
     std::vector<std::string> qaRecords;
 
     private:
-    void verify_and_log(const GroupingEntity *reg, const Field& field, int in_out) const;
+    void verify_and_log(const GroupingEntity *ge, const Field& field, int in_out) const;
 
     virtual int64_t get_field_internal(const Region* reg, const Field& field,
                                        void *data, size_t data_size) const = 0;

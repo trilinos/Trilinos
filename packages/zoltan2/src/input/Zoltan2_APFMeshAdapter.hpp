@@ -125,7 +125,6 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef MeshAdapter<User>       base_adapter_t;
   typedef User user_t;
 
   /*! \brief Constructor for mesh with an apf mesh

@@ -45,7 +45,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "cgidef.h"
+#define NO_GET_DEVID_CHAR
 #include "devid.h"
+#undef  NO_GET_DEVID_CHAR
 
 static float get_devid_num(char *string)
 {
@@ -615,7 +617,6 @@ void vdinit_ (float *aspect, int *justif)
   float xconc, yconc, x1, y1, x2, y2, x3, y3, x4, y4, temp_xcp, temp_ycp;
   float scaled_ndc_xmax, scaled_ndc_ymax;
   float rtemp = 0.0;
-  float itemp = 0;
   xconc = 0.0;
   yconc = 0.0;
   x1 = 0.0;
@@ -966,10 +967,6 @@ void vdiqco_ (int *num, int index_array[],
 
 void vdescp_ (int *escape_code, int *n, float args[])
 {
-  int temp;
-
-  temp = XESVDI;
-
   if (*n < 0) {
     vdicgi_errh(" SVDI Shell (VDESCP) Error Number 802, Severity Code 5 ");
     return;

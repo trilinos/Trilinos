@@ -63,7 +63,8 @@ void panzer::buildPhysicsBlocks(const std::map<std::string,std::string>& block_i
                             const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                             const Teuchos::RCP<panzer::GlobalData>& global_data,
                             const bool build_transient_support,
-                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks)
+                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                            const std::vector<std::string>& tangent_param_names)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -102,7 +103,9 @@ void panzer::buildPhysicsBlocks(const std::map<std::string,std::string>& block_i
                                                         volume_cell_data, 
                                                         eqset_factory, 
                                                         global_data,
-                                                        build_transient_support));
+                                                        build_transient_support,
+                                                        tangent_param_names
+                                         ));
     physicsBlocks.push_back(pb);
   }
 }
@@ -166,7 +169,8 @@ PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
             const panzer::CellData & cell_data,
             const Teuchos::RCP<const panzer::EquationSetFactory>& factory,
             const Teuchos::RCP<panzer::GlobalData>& global_data,
-            const bool build_transient_support) :
+            const bool build_transient_support,
+            const std::vector<std::string>& tangent_param_names) :
   m_element_block_id(element_block_id),
   m_default_integration_order(default_integration_order),
   m_cell_data(cell_data),
@@ -185,7 +189,8 @@ PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
             m_default_integration_order,
             m_element_block_id,
             m_cell_data,
-            build_transient_support);
+            build_transient_support,
+            tangent_param_names);
 }
 
 // *******************************************************************
@@ -273,7 +278,8 @@ void panzer::PhysicsBlock::initialize(const int default_integration_order,
                                       const bool build_transient_support,
                                       const panzer::CellData & cell_data,
                                       const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
-                                      const Teuchos::RCP<panzer::GlobalData>& global_data)
+                                      const Teuchos::RCP<panzer::GlobalData>& global_data,
+                                      const std::vector<std::string>& tangent_param_names)
 {
   m_default_integration_order = default_integration_order;
   m_build_transient_support = build_transient_support;
@@ -285,15 +291,17 @@ void panzer::PhysicsBlock::initialize(const int default_integration_order,
              m_default_integration_order,
              m_element_block_id,
              m_cell_data,
-             m_build_transient_support);
+             m_build_transient_support,
+             tangent_param_names);
 }
 
 // *******************************************************************
 void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>& input_parameters,
-                                  const int& default_integration_order,
+                                      const int& default_integration_order,
                                       const std::string & element_block_id,
-                                     const panzer::CellData & cell_data,
-                                  const bool build_transient_support)
+                                      const panzer::CellData & cell_data,
+                                      const bool build_transient_support,
+                                      const std::vector<std::string>& tangent_param_names)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -319,6 +327,11 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
     RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set
       = m_eqset_factory->buildEquationSet(eq_set_pl, default_integration_order, cell_data, m_global_data, build_transient_support);
 
+    // Set tangent parameter names for each equation set
+    for (auto eq_it = eq_set->begin(); eq_it != eq_set->end(); ++eq_it) {
+      eq_it->setTangentParamNames(tangent_param_names);
+    }
+
     // add this equation set in
     m_equation_sets.push_back(eq_set);
 
@@ -334,6 +347,11 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
 
       // Generate unique list of bases
       m_bases[sbNames[j].second->name()] = sbNames[j].second;
+
+      // Generate tangent field names
+      for (std::size_t k=0; k<tangent_param_names.size(); ++k)
+        m_tangent_fields.push_back( StrPureBasisPair( sbNames[j].first + " SENSITIVITY " + tangent_param_names[k],
+                                                      sbNames[j].second ) );
 
     }
 
@@ -632,6 +650,12 @@ const std::vector<panzer::StrPureBasisPair>& panzer::PhysicsBlock::getProvidedDO
 const std::vector<std::vector<std::string> >& panzer::PhysicsBlock::getCoordinateDOFs() const
 {
   return m_coordinate_dofs;
+}
+
+// *******************************************************************
+const std::vector<panzer::StrPureBasisPair>& panzer::PhysicsBlock::getTangentFields() const
+{
+  return m_tangent_fields;
 }
 
 // *******************************************************************

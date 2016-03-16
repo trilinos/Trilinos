@@ -57,7 +57,7 @@ using FAD = Sacado::Fad::SLFad<T, N>;
 /// Function base class that defines the interface to Mini Solvers.
 ///
 template<typename FunctionDerived, typename S>
-class Function_Base
+struct Function_Base
 {
 public:
   Function_Base()
@@ -86,6 +86,12 @@ public:
   Tensor<T, N>
   hessian(FunctionDerived & f, Vector<T, N> const & x);
 
+  ///
+  /// Signal that something has gone horribly wrong.
+  ///
+  bool
+  failed{false};
+
 };
 
 ///
@@ -113,6 +119,9 @@ public:
 private:
   void
   updateConvergenceCriterion(T const abs_error);
+
+  void
+  updateDivergenceCriterion(T const fn_value);
 
   bool
   continueSolve() const;
@@ -146,8 +155,32 @@ public:
   T
   abs_error{1.0};
 
+  T
+  growth_limit{1.0};
+
+  bool
+  failed{false};
+
   bool
   converged{false};
+
+  bool
+  monotonic{true};
+
+  bool
+  bounded{true};
+
+  bool
+  enforce_monotonicity{false};
+
+  bool
+  enforce_boundedness{false};
+
+  T
+  initial_value{0.0};
+
+  T
+  previous_value{0.0};
 
   T
   final_value{0.0};
@@ -408,9 +441,6 @@ struct LineSearchRegularizedStep final : public StepBase<FN, T, N>
 
   T
   hessian_cond_tol{1.0e+08};
-
-  T
-  hessian_singular_tol{1.0e-12};
 };
 
 } // namespace Intrepid

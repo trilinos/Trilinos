@@ -43,6 +43,7 @@
 
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/environment/Env.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
@@ -350,6 +351,9 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
   if( !local_is_sorted( range_vector.begin(), range_vector.end(), BoundingBoxCompare<BoundingBoxB>() ) )
     std::sort(range_vector.begin(),range_vector.end(),BoundingBoxCompare<BoundingBoxB>());
 
+  // check track of how many times the coarse search needs to exercise the expanstion_factor
+  int not_empty_count = 0; 
+
   unsigned range_vector_not_empty = !range_vector.empty();
   stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
   while (range_vector_not_empty) { // Keep going until all range points are processed.
@@ -359,6 +363,9 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
     // in coarse_search call, but really, this is what we want.
     EntityProcRelationVec rng_to_dom;
     search::coarse_search(range_vector, domain_vector, m_search_method, mesha.comm(), rng_to_dom);
+
+    // increment how many times we are within the while loop
+    not_empty_count++;
 
     if (optional_functions<InterpolateClass>::post_coarse_search_filter) {
       post_coarse_search_filter<InterpolateClass>(rng_to_dom, mesha, meshb);
@@ -372,13 +379,23 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
       search::scale_by(i->first, expansion_factor);
     }
     if (!range_vector.empty()) {
-      // If points were missed, increase search radius.
+      // If points were missed, increase search radius; extract the number of these points and tell the user
       for (typename std::vector<BoundingBoxA>::iterator i=domain_vector.begin(); i!=domain_vector.end(); ++i) {
         search::scale_by(i->first, expansion_factor);
       }
     }
     range_vector_not_empty = !range_vector.empty();
     stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
+
+    if (range_vector_not_empty) {
+        // sum and provide message to user
+        size_t range_vector_size = range_vector.size();
+        size_t g_range_vector_size = 0;
+        stk::all_reduce_max( mesha.comm(), &range_vector_size, &g_range_vector_size, 1);
+        sierra::Env::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: " << g_range_vector_size
+                                << " after expanding bounding boxes: " << not_empty_count << " time(s)" << std::endl;
+        sierra::Env::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search" << std::endl;
+    }
   }
   sort (range_to_domain.begin(), range_to_domain.end());
 }

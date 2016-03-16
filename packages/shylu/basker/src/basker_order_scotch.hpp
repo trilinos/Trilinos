@@ -4,7 +4,7 @@
 #include "basker_types.hpp"
 #include "scotch.h"
 
-#define BASKER_DEBUG_ORDER_SCOTCH
+//#define BASKER_DEBUG_ORDER_SCOTCH
 
 //NOTE need to change all the max_idx here still
 
@@ -118,6 +118,8 @@ namespace BaskerNS
     //printf("END Debug \n");
 
     Int lvls = round(log(num_threads)/log(2));
+    //printf("scotch.  num_threads: %d lvls: %d \n", 
+    //	   num_threads, lvls);
     part_scotch(M, BT, lvls);
 
 
@@ -150,24 +152,40 @@ namespace BaskerNS
     sg.Ap[0] = 0;
     Int sj;
     Int sptr = 0;
+    Int self_edge = 0; //If we do not have them, the matrix order will be bad
     for(Int i = 0; i < sg.m; i++)
       {
         sj=0;
 	//printf("scol: %d ecol: %d \n", M.col_ptr[i], M.col_ptr[i+1]);
 	//break;
-        for(Int k = M.col_ptr[i]; k <M.col_ptr[i+1]; k++)
+        for(Int k = M.col_ptr(i); k <M.col_ptr(i+1); k++)
           {
 	    //printf("col: %d k: %d \n", i, k);
-            if(M.row_idx[k] != i)
+            if(M.row_idx(k) != i)
               {
                 ASSERT(sptr < M.nnz);
-                sg.Ai[sptr++] = M.row_idx[k];
+                sg.Ai[sptr++] = M.row_idx(k);
                 sj++;
               }
+	    else
+	      {
+		self_edge++;
+	      }
           }
         sg.Ap[i+1] = sg.Ap[i]+sj;
       }
     sg.nz = sg.Ap[sg.m];
+
+    //printf("num self_edge: %d sg.m: %d \n",
+    //	   self_edge, sg.m);
+    if(self_edge != (sg.m))
+      {
+        BASKER_ASSERT(self_edge == (sg.m-1), 
+		      "ZERO ON DIAGONAL, SCOTCH FAIL\n");
+	exit(0);
+	//Need to clean up this 
+      }
+
 
     for(Int i =0; i < sg.m; i++)
       {
@@ -253,9 +271,9 @@ namespace BaskerNS
      if(((sg.cblk) != pow(2.0,((double)num_levels+1))-1) ||
 	(num_trees != 1))
       {
-	printf("\n\n\n");
-	printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
-	printf("\n\n\n");
+	//printf("\n\n\n");
+	//printf("ERROR:  SCOTCH DID NOT PROVIDE A SET BASED ON BISECTION \n");
+	//printf("\n\n\n");
 	
 	Int iblks = pow(2, num_levels+1)-1;
 	
@@ -276,19 +294,19 @@ namespace BaskerNS
 	for(Int i = 0; i < sg.cblk; i++)
 	  {
 	    ttree(i) = sg.treetab[i];
-	    printf("tcopy: %d \n", ttree(i));
+	    //printf("tcopy: %d \n", ttree(i));
 	  }
 	
 	for(Int i = 0; i < sg.cblk+1; i++)
 	  {
 	    ttabs(i) = sg.rangtab[i];
-	    printf("rcopy: %d \n", ttabs(i));
+	    //printf("rcopy: %d \n", ttabs(i));
 	  }
 
 	#ifdef BASKER_DEBUG_ORDER_SCOTCH
 	printf("\n\n Starting DEBUG COMPLETE OUT \n\n");
 	printf("Tree: ");
-	for(Int i = 0; i < iblks+1; i++)
+`	for(Int i = 0; i < iblks+1; i++)
 	  {
 	    printf("%d, ", ttree(i));
 	  }
@@ -307,7 +325,7 @@ namespace BaskerNS
 			 );
 
 	
-	#ifdef BASKER_DEBUG_ORDER_SCOTCH
+	//#ifdef BASKER_DEBUG_ORDER_SCOTCH
 	printf("\n\n DEBUG COMPLETE OUT \n\n");
 	printf("Tree: ");
 	for(Int i = 0; i < iblks+1; i++)
@@ -321,7 +339,7 @@ namespace BaskerNS
 	    printf("%d, ", ttabs(i));
 	  }
 	printf("\n");
-	#endif
+	///#endif
 
 	//copy back into scotch
 	sg.cblk = iblks;
@@ -341,7 +359,8 @@ namespace BaskerNS
 
 
     //Find the leaf nad non-leaf nodes
-    Int is_nonleaf[sg.cblk];
+    //Int is_nonleaf[sg.cblk];
+    Int *is_nonleaf = new Int[sg.cblk];
     
     for(Int i = 0; i < sg.cblk; i++)
       is_nonleaf[i] = 0;
@@ -447,6 +466,7 @@ namespace BaskerNS
     free(sg.peritab);
     free(sg.rangtab);
     free(sg.treetab);
+    free(is_nonleaf);
 
     SCOTCH_stratExit(&strdat);
     SCOTCH_graphFree(&cgrafptr);
@@ -500,6 +520,28 @@ namespace BaskerNS
     BASKER_ASSERT((iblks+1)>0, "scotch iblks 2");
     MALLOC_INT_1DARRAY(ws, iblks+1);
     init_value(ws, iblks+1, (Int) 0);
+
+
+    //DEBUG
+    printf("test - otree\n");
+    for(Int t_blk = 1; t_blk < iblks+1; t_blk++)
+      {
+
+	printf("%d,", otree(t_blk));
+	/*
+	if(otree(t_blk) == -1)
+	  {
+	    break;
+	  }
+	if(otree(t_blk-1) == otree(t_blk))
+	  {
+	    indomains++;
+	  }
+	 */
+      }
+    printf("\n");
+
+
 
 
     //test if enough domain
@@ -779,13 +821,13 @@ namespace BaskerNS
 	#endif
 
 
+	tree(leftc)  = mynum;
+	tree(rightc) = mynum;
+
 	#ifdef BASKER_DEBUG_ORDER_SCOTCH
 	printf("assign: %d %d \n", leftc, mynum);
-	tree(leftc)  = mynum;
 	printf("assign: %d %d \n", rightc,mynum);
-	tree(rightc) = mynum;
 	#endif
-
 
 	mynum = rightc;
 	rec_build_tree(lvl-1, 

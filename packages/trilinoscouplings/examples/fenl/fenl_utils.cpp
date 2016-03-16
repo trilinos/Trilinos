@@ -29,6 +29,16 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
 
+  const int num_grouping_types = 3;
+  const GroupingType grouping_values[] = {
+    GROUPING_NATURAL, GROUPING_MAX_ANISOTROPY, GROUPING_MORTAN_Z };
+  const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z" };
+
+  const int num_sampling_types = 3;
+  const SamplingType sampling_values[] = {
+    SAMPLING_STOKHOS, SAMPLING_TASMANIAN, SAMPLING_FILE };
+  const char *sampling_names[] = { "stokhos", "tasmanian", "file" };
+
   clp.setOption("serial", "no-serial",     &cmdline.USE_SERIAL, "use the serial device");
   clp.setOption("threads",                 &cmdline.USE_THREADS, "number of pthreads threads");
   clp.setOption("openmp",                  &cmdline.USE_OPENMP,  "number of openmp threads");
@@ -53,22 +63,32 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   if(cmdline.USE_MUELU || cmdline.USE_MEANBASED)
     cmdline.USE_BELOS = true;
 
+  clp.setOption("sampling", &cmdline.USE_UQ_SAMPLING, num_sampling_types, sampling_values, sampling_names, "UQ sampling method");
   clp.setOption("uq-fake",                  &cmdline.USE_UQ_FAKE,  "setup a fake UQ problem of this size");
   clp.setOption("uq-dim",                   &cmdline.USE_UQ_DIM,  "UQ dimension");
   clp.setOption("uq-order",                 &cmdline.USE_UQ_ORDER,  "UQ order");
+  clp.setOption("uq-init-level",            &cmdline.USE_UQ_INIT_LEVEL,  "Initial adaptive sparse grid level");
+  clp.setOption("uq-max-level",             &cmdline.USE_UQ_MAX_LEVEL,  "Max adaptive sparse grid level");
+  clp.setOption("uq-tol",                   &cmdline.USE_UQ_TOL,  "Adaptive sparse grid tolerance");
   clp.setOption("diff-coeff-linear",        &cmdline.USE_DIFF_COEFF_LINEAR,  "Linear term in diffusion coefficient");
   clp.setOption("diff-coeff-constant",      &cmdline.USE_DIFF_COEFF_CONSTANT,  "Constant term in diffusion coefficient");
   clp.setOption("mean",                     &cmdline.USE_MEAN,  "KL diffusion mean");
   clp.setOption("var",                      &cmdline.USE_VAR,  "KL diffusion variance");
   clp.setOption("cor",                      &cmdline.USE_COR,  "KL diffusion correlation");
+  clp.setOption("exponential", "no-exponential", &cmdline.USE_EXPONENTIAL,  "take exponential of KL diffusion coefficient");
+  clp.setOption("exp-shift",                &cmdline.USE_EXP_SHIFT,  "Linear shift of exponential of KL diffusion coefficient");
+  clp.setOption("exp-scale",                &cmdline.USE_EXP_SCALE,  "Multiplicative scale of exponential of KL diffusion coefficient");
+  clp.setOption("isotropic", "anisotropic", &cmdline.USE_ISOTROPIC,  "use isotropic or anisotropic diffusion coefficient");
   clp.setOption("coeff-src",                &cmdline.USE_COEFF_SRC,  "Coefficient for source term");
   clp.setOption("coeff-adv",                &cmdline.USE_COEFF_ADV,  "Coefficient for advection term");
   clp.setOption("sparse", "tensor",         &cmdline.USE_SPARSE ,  "use sparse or tensor grid");
   clp.setOption("ensemble",                 &cmdline.USE_UQ_ENSEMBLE,  "UQ ensemble size.  This needs to be a valid choice based on available instantiations.");
+  clp.setOption("grouping", &cmdline.USE_GROUPING, num_grouping_types, grouping_values, grouping_names, "Sample grouping method for ensemble propagation");
 
   clp.setOption("vtune", "no-vtune",       &cmdline.VTUNE ,  "connect to vtune");
   clp.setOption("verbose", "no-verbose",   &cmdline.VERBOSE, "print verbose intialization info");
   clp.setOption("print", "no-print",        &cmdline.PRINT,  "print detailed test output");
+  clp.setOption("print-its", "no-print-its",&cmdline.PRINT_ITS,  "print solver iterations after each sample");
   clp.setOption("summarize", "no-summarize",&cmdline.SUMMARIZE,  "summarize Teuchos timers at end of run");
 
   bool doDryRun = false;
@@ -168,13 +188,28 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
     s << " Diffusion Coefficient B(" << cmd.USE_DIFF_COEFF_CONSTANT << ")" ;
   }
   if ( cmd.USE_VAR  ) {
-    s << " KL variance(" << cmd.USE_VAR  << ")" ;
+    s << " KL variance(" << cmd.USE_VAR << ")" ;
   }
   if ( cmd.USE_MEAN  ) {
-    s << " KL mean(" << cmd.USE_MEAN  << ")" ;
+    s << " KL mean(" << cmd.USE_MEAN << ")" ;
   }
   if ( cmd.USE_COR  ) {
-    s << " KL correlation(" << cmd.USE_COR  << ")" << ")" ;
+    s << " KL correlation(" << cmd.USE_COR << ")" ;
+  }
+  if ( cmd.USE_EXPONENTIAL ) {
+    s << " KL exponential(" << cmd.USE_EXPONENTIAL << ")" ;
+  }
+  if ( cmd.USE_EXP_SHIFT ) {
+    s << " KL exponential shift(" << cmd.USE_EXP_SHIFT << ")" ;
+  }
+  if ( cmd.USE_EXP_SCALE ) {
+    s << " KL exponential scale(" << cmd.USE_EXP_SCALE << ")" ;
+  }
+  if ( cmd.USE_ISOTROPIC ) {
+    s << " isotropic" ;
+  }
+  if ( !cmd.USE_ISOTROPIC ) {
+    s << " anisotropic" ;
   }
   if ( cmd.USE_COEFF_SRC  ) {
     s << " Source coefficient(" << cmd.USE_COEFF_SRC  << ")" << ")" ;
@@ -215,6 +250,9 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
   if ( cmd.PRINT  ) {
     s << " PRINT" ;
   }
+  if ( cmd.PRINT_ITS  ) {
+    s << " PRINT_ITS" ;
+  }
   if ( cmd.SUMMARIZE  ) {
     s << " SUMMARIZE" ;
   }
@@ -250,6 +288,10 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
      s << " , DIFFUSION COEFFICIENT( "
        << cmd.USE_DIFF_COEFF_LINEAR << " , "
        << cmd.USE_DIFF_COEFF_CONSTANT << " )" ;
+     if ( cmd.USE_ISOTROPIC )
+       s << " ISOTROPIC" ;
+     else
+       s << " ANISOTROPIC" ;
    }
 
    if ( cmd.USE_ATOMIC ) { s << " , USING ATOMICS" ; }
@@ -260,6 +302,13 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
      s << " , KL MEAN , " << cmd.USE_MEAN ;
      s << " , KL VAR , " << cmd.USE_VAR ;
      s << " , KL COR , " << cmd.USE_COR ;
+     s << " , KL EXP , " << cmd.USE_EXPONENTIAL ;
+     s << " , KL EXP SHIFT, " << cmd.USE_EXP_SHIFT ;
+     s << " , KL EXP SCALE, " << cmd.USE_EXP_SCALE ;
+     if ( cmd.USE_ISOTROPIC )
+       s << " ISOTROPIC" ;
+     else
+       s << " ANISOTROPIC" ;
      if ( cmd.USE_UQ_FAKE ) {
        s << " , UQ FAKE , " << cmd.USE_UQ_FAKE ;
      }

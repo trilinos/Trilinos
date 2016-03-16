@@ -85,11 +85,11 @@ public:
     // Initialize
     Real rnorm = b.norm(); 
     Real rtol = std::min(Krylov<Real>::getAbsoluteTolerance(),Krylov<Real>::getRelativeTolerance()*rnorm);
-    Real itol = std::sqrt(ROL_EPSILON);
+    Real itol = std::sqrt(ROL_EPSILON<Real>());
     x.zero(); 
 
     // Apply preconditioner to residual
-    M.apply(*r_,b,itol);
+    M.applyInverse(*r_,b,itol);
 
     // Initialize direction p
     p_->set(*r_); 
@@ -109,15 +109,12 @@ public:
     // Initialize scalar quantities
     iter = 0; 
     flag = 0;
-    Real kappa = 0.0; 
-    Real beta  = 0.0; 
-    Real alpha = 0.0; 
-    Real tmp   = 0.0;
+    Real kappa(0), beta(0), alpha(0), tmp(0);
     Real gHg   = r_->dot(v_->dual()); 
 
     for (iter = 0; iter < (int)Krylov<Real>::getMaximumIteration(); iter++) {
-      itol = std::sqrt(ROL_EPSILON);
-      M.apply(*MAp_, *Ap_, itol);
+      itol = std::sqrt(ROL_EPSILON<Real>());
+      M.applyInverse(*MAp_, *Ap_, itol);
       kappa = MAp_->dot(Ap_->dual());
       //if ( gHg <= 0.0 || kappa <= 0.0 ) { 
         //flag = 2;
@@ -142,10 +139,10 @@ public:
       beta = gHg/tmp;
 
       p_->scale(beta);
-      p_->axpy(1.0,*r_);
+      p_->plus(*r_);
 
       Ap_->scale(beta);
-      Ap_->axpy(1.0,*v_); 
+      Ap_->plus(*v_); 
     }
     if ( iter == (int)Krylov<Real>::getMaximumIteration() ) {
       flag = 1;

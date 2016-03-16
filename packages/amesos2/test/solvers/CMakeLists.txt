@@ -133,6 +133,7 @@ ENDIF()
 
 ####   BASKER Tests ####
 IF (${PACKAGE_NAME}_ENABLE_Basker)
+
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Basker_UnitTests
     SOURCES
@@ -141,12 +142,21 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
+    
+    ##Copy shylubasker_test.xml, but do not test
+    ##depends on not included matrices
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyShyLUBaskerFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES shylubasker_test.xml
+    EXEDEPS Solver_Test
+    )
+
 ENDIF()
 
 ##### MUMPS Tests ####
 #MUMPS requires int/int type
 IF (Tpetra_INST_INT_INT)
-if (${PACKAGE_NAME}_ENABLE_MUMPS)
+IF (${PACKAGE_NAME}_ENABLE_MUMPS)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
    MUMPS_UnitTests
    SOURCES

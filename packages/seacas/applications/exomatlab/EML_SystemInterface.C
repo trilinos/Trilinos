@@ -63,7 +63,7 @@ SystemInterface::SystemInterface()
   enroll_options();
 }
 
-SystemInterface::~SystemInterface() {}
+SystemInterface::~SystemInterface() = default;
 
 void SystemInterface::enroll_options()
 {
@@ -300,7 +300,7 @@ namespace {
       // "sigxx" should be written only for elements with id 1, 10,
       // and 100.  "sigxx" would indicate that the variable should be
       // written for all elements.
-      std::vector<std::string>::iterator I = var_list.begin();
+      auto I = var_list.begin();
       while (I != var_list.end()) {
 	StringVector name_id = SLIB::tokenize(*I, ":");
 	std::string var_name = LowerCase(name_id[0]);

@@ -50,13 +50,7 @@ int ex_get_group_ids (int parent_id, int *num_groups, int *group_ids)
    
   exerrval = 0; /* clear error code */
 
-#if !defined(ENABLE_NETCDF4)
-  exerrval = NC_ENOTNC4;
-  sprintf(errmsg,
-	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
-  ex_err("ex_get_group_ids",errmsg,exerrval);
-  return (EX_FATAL);
-#else
+#if NC_HAS_HDF5
   status = nc_inq_grps(parent_id, num_groups, group_ids);
   if (status != NC_NOERR) {
     exerrval = status;
@@ -67,5 +61,11 @@ int ex_get_group_ids (int parent_id, int *num_groups, int *group_ids)
     return (EX_FATAL);
   }
   return (EX_NOERR);
+#else
+  exerrval = NC_ENOTNC4;
+  sprintf(errmsg,
+	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
+  ex_err("ex_get_group_ids",errmsg,exerrval);
+  return (EX_FATAL);
 #endif
 }

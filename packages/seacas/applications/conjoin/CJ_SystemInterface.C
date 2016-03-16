@@ -25,7 +25,7 @@ Excn::SystemInterface::SystemInterface()
   enroll_options();
 }
 
-Excn::SystemInterface::~SystemInterface() {}
+Excn::SystemInterface::~SystemInterface() = default;
 
 void Excn::SystemInterface::enroll_options()
 {

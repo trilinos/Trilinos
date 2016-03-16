@@ -118,7 +118,7 @@ public:
  */
 
   PartitioningSolution( const RCP<const Environment> &env,
-    RCP<const Comm<int> > &comm,
+    const RCP<const Comm<int> > &comm,
     int nUserWeights, 
     const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
 
@@ -152,7 +152,7 @@ public:
  */
 
   PartitioningSolution(const RCP<const Environment> &env,
-    RCP<const Comm<int> > &comm,
+    const RCP<const Comm<int> > &comm,
     int nUserWeights, ArrayView<ArrayRCP<part_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
     const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
@@ -519,7 +519,7 @@ private:
 
 
   RCP<const Environment> env_;             // has application communicator
-  RCP<const Comm<int> > comm_;             // the problem communicator
+  const RCP<const Comm<int> > comm_;       // the problem communicator
 
   //part box boundaries as a result of geometric partitioning algorithm.
   RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
@@ -630,7 +630,7 @@ private:
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
     const RCP<const Environment> &env,
-    RCP<const Comm<int> > &comm,
+    const RCP<const Comm<int> > &comm,
     int nUserWeights,
     const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm),
@@ -663,7 +663,7 @@ template <typename Adapter>
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
     const RCP<const Environment> &env,
-    RCP<const Comm<int> > &comm,
+    const RCP<const Comm<int> > &comm,
     int nUserWeights,
     ArrayView<ArrayRCP<part_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,

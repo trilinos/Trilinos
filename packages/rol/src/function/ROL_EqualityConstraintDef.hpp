@@ -55,10 +55,12 @@ void EqualityConstraint<Real>::applyJacobian(Vector<Real> &jv,
 
   // By default we compute the finite-difference approximation.
 
-  Real ctol = std::sqrt(ROL_EPSILON);
+  Real one(1.0);
+
+  Real ctol = std::sqrt(ROL_EPSILON<Real>());
 
   // Get step length.
-  Real h = std::max(1.0,x.norm()/v.norm())*tol;
+  Real h = std::max(one,x.norm()/v.norm())*tol;
   //Real h = 2.0/(v.norm()*v.norm())*tol;
 
   // Compute constraint at x.
@@ -76,8 +78,8 @@ void EqualityConstraint<Real>::applyJacobian(Vector<Real> &jv,
   this->value(jv,*xnew,ctol);
 
   // Compute Newton quotient.
-  jv.axpy(-1.0,*c);
-  jv.scale(1.0/h);
+  jv.axpy(-one,*c);
+  jv.scale(one/h);
 }
 
 
@@ -104,9 +106,11 @@ void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
   // This requires the implementation of a vector-space basis for the optimization variables.
   // The default implementation requires that the constraint space is equal to its dual.
 
-  Real ctol = std::sqrt(ROL_EPSILON);
+  Real h(0);
+  Real one(1);
 
-  Real h = 0.0;
+  Real ctol = std::sqrt(ROL_EPSILON<Real>());
+
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
   Teuchos::RCP<Vector<Real> > ex   = x.clone();
   Teuchos::RCP<Vector<Real> > eajv = ajv.clone();
@@ -118,13 +122,13 @@ void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
   for ( int i = 0; i < ajv.dimension(); i++ ) {
     ex = x.basis(i);
     eajv = ajv.basis(i);
-    h = std::max(1.0,x.norm()/ex->norm())*tol;
+    h = std::max(one,x.norm()/ex->norm())*tol;
     xnew->set(x);
     xnew->axpy(h,*ex);
     this->update(*xnew);
     this->value(*cnew,*xnew,ctol);
-    cnew->axpy(-1.0,*c0);
-    cnew->scale(1.0/h);
+    cnew->axpy(-one,*c0);
+    cnew->scale(one/h);
     ajv.axpy(cnew->dot(v.dual()),*eajv);
   }
 }
@@ -136,7 +140,7 @@ void EqualityConstraint<Real>::applyHessian(Vector<Real> &huv,
                                             const Vector<Real> &v,
                                             const Vector<Real> &x,
                                             Real &tol ) {
-  Real jtol = std::sqrt(ROL_EPSILON);
+  Real jtol = std::sqrt(ROL_EPSILON<Real>());
 
   // Get step length.
   Real h = std::max(1.0,x.norm()/v.norm())*tol;
@@ -371,10 +375,12 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
   TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
+  Real one(1.0);
+
   using Finite_Difference_Arrays::shifts;
   using Finite_Difference_Arrays::weights;
 
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
 
   int numSteps = steps.size();
   int numVals = 4;
@@ -421,13 +427,13 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
 
     }
 
-    cdif->scale(1.0/eta);    
+    cdif->scale(one/eta);    
 
     // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
     jvCheck[i][0] = eta;
     jvCheck[i][1] = normJv;
     jvCheck[i][2] = cdif->norm();
-    cdif->axpy(-1.0, *Jv);
+    cdif->axpy(-one, *Jv);
     jvCheck[i][3] = cdif->norm();
 
     if (printToStream) {
@@ -471,13 +477,15 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
                                                                                     const bool printToStream,
                                                                                     std::ostream & outStream,
                                                                                     const int numSteps) {
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
+
+  Real one(1.0);
 
   int numVals = 4;
   std::vector<Real> tmp(numVals);
   std::vector<std::vector<Real> > ajvCheck(numSteps, tmp);
   Real eta_factor = 1e-1;
-  Real eta = 1.0;
+  Real eta = one;
 
   // Temporary vectors.
   Teuchos::RCP<Vector<Real> > c0   = c.clone();
@@ -511,8 +519,8 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
       xnew->axpy(eta,*ex);
       this->update(*xnew);
       this->value(*cnew,*xnew,tol);
-      cnew->axpy(-1.0,*c0);
-      cnew->scale(1.0/eta);
+      cnew->axpy(-one,*c0);
+      cnew->scale(one/eta);
       ajv1->axpy(cnew->dot(v.dual()),*eajv);
     }
 
@@ -520,7 +528,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
     ajvCheck[i][0] = eta;
     ajvCheck[i][1] = normAJv;
     ajvCheck[i][2] = ajv1->norm();
-    ajv1->axpy(-1.0, *ajv0);
+    ajv1->axpy(-one, *ajv0);
     ajvCheck[i][3] = ajv1->norm();
 
     if (printToStream) {
@@ -565,7 +573,7 @@ Real EqualityConstraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real
                                                                const Vector<Real> &dualv,
                                                                const bool printToStream,
                                                                std::ostream & outStream) {
-  Real tol = ROL_EPSILON;
+  Real tol = ROL_EPSILON<Real>();
 
   Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
   Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
@@ -584,7 +592,7 @@ Real EqualityConstraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real
     hist << "\nTest Consistency of Jacobian and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
          << diff << "\n";
     hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
-    hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+    hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW<Real>()) << "\n";
     outStream << hist.str();
   }
   return diff;
@@ -621,7 +629,9 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
   using Finite_Difference_Arrays::shifts;
   using Finite_Difference_Arrays::weights;
 
-  Real tol = std::sqrt(ROL_EPSILON);
+  Real one(1.0);
+
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
 
   int numSteps = steps.size();
   int numVals = 4;
@@ -668,13 +678,13 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
         }
     }
 
-    AJdif->scale(1.0/eta);
+    AJdif->scale(one/eta);
 
     // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
     ahuvCheck[i][0] = eta;
     ahuvCheck[i][1] = normAHuv;
     ahuvCheck[i][2] = AJdif->norm();
-    AJdif->axpy(-1.0, *AHuv);
+    AJdif->axpy(-one, *AHuv);
     ahuvCheck[i][3] = AJdif->norm();
 
     if (printToStream) {

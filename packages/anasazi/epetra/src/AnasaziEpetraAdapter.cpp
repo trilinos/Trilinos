@@ -44,7 +44,7 @@ namespace Anasazi {
   
   EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map_in, double * array, 
                                  const int numvecs, const int stride)
-    : Epetra_MultiVector(Copy, Map_in, array, stride, numvecs) 
+    : Epetra_MultiVector(Epetra_DataAccess::Copy, Map_in, array, stride, numvecs) 
   {
   }
   
@@ -98,20 +98,20 @@ namespace Anasazi {
   
   MultiVec<double>* EpetraMultiVec::CloneCopy ( const std::vector<int>& index ) const
   {
-    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Copy, *this, index);
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Epetra_DataAccess::Copy, *this, index);
     return ptr_apv; // safe upcast.
   }
   
   
   MultiVec<double>* EpetraMultiVec::CloneViewNonConst ( const std::vector<int>& index ) 
   {
-    EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index);
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Epetra_DataAccess::View, *this, index);
     return ptr_apv; // safe upcast.
   }
   
   const MultiVec<double>* EpetraMultiVec::CloneView ( const std::vector<int>& index ) const
   {
-    EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index);
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Epetra_DataAccess::View, *this, index);
     return ptr_apv; // safe upcast.
   }
   
@@ -119,7 +119,7 @@ namespace Anasazi {
   void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>& index ) 
   {
     // this should be revisited to e
-    EpetraMultiVec temp_vec(View, *this, index);
+    EpetraMultiVec temp_vec(Epetra_DataAccess::View, *this, index);
 
     int numvecs = index.size();
     if ( A.GetNumberVecs() != numvecs ) {
@@ -128,7 +128,7 @@ namespace Anasazi {
         index2[i] = i;
       EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
       TEUCHOS_TEST_FOR_EXCEPTION( tmp_vec==NULL, std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");
-      EpetraMultiVec A_vec(View, *tmp_vec, index2);
+      EpetraMultiVec A_vec(Epetra_DataAccess::View, *tmp_vec, index2);
       temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
     }
     else {
@@ -146,7 +146,7 @@ namespace Anasazi {
       const Teuchos::SerialDenseMatrix<int,double>& B, double beta ) 
   {
     Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
-    Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
+    Epetra_MultiVector B_Pvec(Epetra_DataAccess::View, LocalMap, B.values(), B.stride(), B.numCols());
     
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
     TEUCHOS_TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");
@@ -192,7 +192,7 @@ namespace Anasazi {
     
     if (A_vec) {
       Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
-      Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(Epetra_DataAccess::View, LocalMap, B.values(), B.stride(), B.numCols());
       
     TEUCHOS_TEST_FOR_EXCEPTION( 
         B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 ) != 0,
@@ -236,7 +236,7 @@ namespace Anasazi {
     
     std::vector<int> tmp_index( 1, 0 );
     for (int i=0; i<numvecs; i++) {
-      Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
+      Epetra_MultiVector temp_vec(Epetra_DataAccess::View, *this, &tmp_index[0], 1);
       TEUCHOS_TEST_FOR_EXCEPTION( 
           temp_vec.Scale( alpha[i] ) != 0,
           EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvScale() call to Epetra_MultiVec::Scale() returned a nonzero value.");

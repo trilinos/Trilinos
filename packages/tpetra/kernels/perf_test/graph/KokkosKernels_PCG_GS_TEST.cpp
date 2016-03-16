@@ -1,209 +1,74 @@
 #include "KokkosKernels_PCG.hpp"
 #include "KokkosKernels_GraphHelpers.hpp"
+#include "Kokkos_Sparse_MV.hpp"
+#include "Kokkos_Sparse_CrsMatrix.hpp"
 #include <iostream>
 
-#define LOOPCOUNT 1//1000
-#define RESCALCLOOP 1//50
 #define MAXVAL 1
 
-//#define CUDACONFIG
-//#define CUDAVARIOUS
-#define OPENMP
-
-
-#ifdef CUDACONFIG
-#define REPEAT 5
-typedef Kokkos::Cuda MyExecSpace;
-typedef Kokkos::Cuda MyMemorySpace;
-typedef Kokkos::Cuda MyEdgeMemorySpace;
-
-typedef Kokkos::Cuda TemporaryWorkSpace;
-typedef Kokkos::Cuda PersistentWorkSpace;
-
-#ifdef CUDAPINNEDSPACE
-  typedef Kokkos::CudaHostPinnedSpace MyEdgeMemorySpace;
-#else
-
-#endif
-
-#endif
-
-#ifdef OPENMP
-#define REPEAT 10
-typedef Kokkos::OpenMP MyExecSpace;
-typedef Kokkos::OpenMP MyMemorySpace;
-typedef Kokkos::OpenMP MyEdgeMemorySpace;
-
-typedef Kokkos::OpenMP TemporaryWorkSpace;
-typedef Kokkos::OpenMP PersistentWorkSpace;
-#endif
-
-
-#ifdef CUDAVARIOUS
-
-#define REPEAT 1
 typedef int idx;
 typedef double wt;
-typedef unsigned int color_type;
-typedef unsigned long long int color_type_eb;
 
 
-typedef Kokkos::Cuda MyExecSpace;
-typedef Kokkos::CudaUVMSpace MyMemorySpace;
-typedef Kokkos::CudaUVMSpace MyEdgeMemorySpace;
 
-typedef Kokkos::CudaUVMSpace TemporaryWorkSpace;
-typedef Kokkos::CudaUVMSpace PersistentWorkSpace;
+template<typename scalar_view_t>
+scalar_view_t create_x_vector(idx nv, wt max_value = 1.0){
+  scalar_view_t kok_x ("X", nv);
 
-typedef Kokkos::View<idx *,  MyMemorySpace> idx_array_type;
-typedef Kokkos::View<idx *,MyEdgeMemorySpace> idx_edge_array_type;
-typedef Kokkos::View<wt *, MyEdgeMemorySpace> value_array_type;
-
-typedef Kokkos::View<color_type_eb *, MyMemorySpace> color_eb_array_type;
-typedef Kokkos::View<color_type * , MyMemorySpace> color_array_type;
-
-typedef Kokkos::View<idx *, Kokkos::Cuda::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
-typedef Kokkos::View<idx *, Kokkos::Cuda::array_layout, MyEdgeMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
+  typename scalar_view_t::HostMirror h_x =  Kokkos::create_mirror_view (kok_x);
 
 
-typedef Kokkos::View<wt *, Kokkos::Cuda::array_layout, MyEdgeMemorySpace, Kokkos::MemoryUnmanaged> wt_um_edge_array_type;
-
-
-typedef Kokkos::View<wt *, Kokkos::Cuda::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_value_array_type;
-
-#else
-typedef int idx;
-typedef double wt;
-typedef unsigned int color_type;
-typedef unsigned long long int color_type_eb;
-
-
-typedef Kokkos::View<idx *, MyMemorySpace> idx_array_type;
-typedef Kokkos::View<idx *, MyEdgeMemorySpace> idx_edge_array_type;
-typedef Kokkos::View<wt *, MyEdgeMemorySpace> value_array_type;
-
-typedef Kokkos::View<color_type_eb *, MyMemorySpace> color_eb_array_type;
-typedef Kokkos::View<color_type * , MyMemorySpace> color_array_type;
-
-typedef Kokkos::View<idx *, MyMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
-typedef Kokkos::View<idx *, MyMemorySpace::array_layout, MyEdgeMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
-
-
-typedef Kokkos::View<wt *, MyMemorySpace::array_layout, MyEdgeMemorySpace, Kokkos::MemoryUnmanaged> wt_um_edge_array_type;
-
-
-typedef Kokkos::View<wt *, MyMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_value_array_type;
-
-
-#endif
-
-
-#define numExperimentsWithCT1 3
-int colorings [] {4, 0, -1};
-std::string names[] { "CUSPARSE", "EB", "CG"};
-value_array_type create_x_vector(idx nv, wt max_value = 1.0){
-  wt *x_vector = new wt[nv];
   for (idx i = 0; i < nv; ++i){
     wt r = static_cast <wt> (rand()) / static_cast <wt> (RAND_MAX / max_value);
-    x_vector[i] = r;
+    h_x(i) = r;
   }
-  um_value_array_type um_x(x_vector, nv);
-  value_array_type kok_x("XVECTOR",nv);
-  Kokkos::deep_copy (kok_x, um_x);
-  delete [] x_vector;
+  Kokkos::deep_copy (kok_x, h_x);
   return kok_x;
 }
 
-struct SPMV{
-  idx_array_type _kok_xadj;
-  idx_edge_array_type _kok_adj;
-  value_array_type _kok_mtx_vals;
-  value_array_type _x_vector;
-  value_array_type _b_vector;
-  SPMV(idx_array_type kok_xadj,
-      idx_edge_array_type kok_adj,
-      value_array_type kok_mtx_vals,
-      value_array_type x_vector,
-      value_array_type b_vector):
-        _kok_xadj(kok_xadj), _kok_adj(kok_adj),
-        _kok_mtx_vals(kok_mtx_vals), _x_vector(x_vector), _b_vector(b_vector){}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const idx ii) const {
-    wt result = 0;
-
-    idx rb = _kok_xadj[ii];
-    idx re = _kok_xadj[ii + 1];
-
-    for (idx i = rb; i < re; ++i){
-      idx col = _kok_adj[i];
-      wt val = _kok_mtx_vals[i];
-      result += val * _x_vector[col];
-    }
-    _b_vector[ii] = result;
-  }
-};
-
-value_array_type create_b_vector(
-    idx nv,
-    idx_array_type kok_xadj,
-    idx_edge_array_type kok_adj,
-    value_array_type kok_mtx_vals,
-    value_array_type x_vector){
 
 
-  value_array_type b_vector ("B VECTOR", nv);
-  Kokkos::parallel_for (Kokkos::RangePolicy<MyExecSpace> (0, nv) ,
-      SPMV(
-          kok_xadj,
-          kok_adj,
-          kok_mtx_vals,
-          x_vector,
-          b_vector));
-  return b_vector;
+template <typename crsMat_t, typename vector_t>
+vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
+  vector_t y_vector ("Y VECTOR", crsMat.numRows());
+  KokkosSparse::spmv("N", 1, crsMat, x_vector, 1, y_vector);
+  return y_vector;
 }
 
+template <typename ExecSpace, typename crsMat_t>
 void run_experiment(
-    int repeatcount, idx nv, idx ne,
-    idx_array_type kok_xadj,
-    idx_edge_array_type kok_adj,
-    value_array_type kok_mtx_vals
-){
+    crsMat_t crsmat){
 
-  value_array_type kok_x_original = create_x_vector(nv, MAXVAL);
-  value_array_type kok_b_vector = create_b_vector(
-      nv,
-      kok_xadj,
-      kok_adj,
-      kok_mtx_vals,
-      kok_x_original);
+  typedef typename crsMat_t::values_type scalar_view_t;
 
-  KokkosKernels::Experimental::Example::CrsMatrix<wt, idx, MyExecSpace> A(nv ,ne, kok_xadj, kok_adj, kok_mtx_vals);
-
+  idx nv = crsmat.numRows();
+  scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
+  scalar_view_t kok_b_vector = create_y_vector(crsmat, kok_x_original);
 
   //create X vector
-  value_array_type kok_x_vector("kok_x_vector", nv);
+  scalar_view_t kok_x_vector("kok_x_vector", nv);
 
 
-  double gs_time = 0;
+  double solve_time = 0;
   const unsigned cg_iteration_limit = 100000;
   const double   cg_iteration_tolerance     = 1e-7 ;
 
   KokkosKernels::Experimental::Example::CGSolveResult cg_result ;
+
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
-        <idx_array_type,idx_edge_array_type, value_array_type,
-        MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > KernelHandle;
+        < typename crsMat_t::StaticCrsGraphType::row_map_type,
+          typename crsMat_t::StaticCrsGraphType::entries_type,
+          typename crsMat_t::values_type,
+          ExecSpace, ExecSpace, ExecSpace > KernelHandle;
 
   KernelHandle kh;
-  //kh.set_row_map(A.graph.row_map);
-  //kh.set_entries(A.graph.entries);
-  //kh.set_values(A.coeff);
 
 
+  kh.create_gs_handle();
   Kokkos::Impl::Timer timer1;
   KokkosKernels::Experimental::Example::pcgsolve(
         kh
-      , A
+      , crsmat
       , kok_b_vector
       , kok_x_vector
       , cg_iteration_limit
@@ -213,90 +78,30 @@ void run_experiment(
   );
   Kokkos::fence();
 
-  gs_time = timer1.seconds();
+  solve_time = timer1.seconds();
 
 
-  std::cout  << " cg_iteration[" << cg_result.iteration << "]"
-      << " matvec_time[" << cg_result.matvec_time << "]"
-      << " cg_residual[" << cg_result.norm_res << "]"
-      << " cg_iter_time[" << cg_result.iter_time << "]"
-      << " precond_time[" << cg_result.precond_time << "]"
-      << " precond_init_time[" << cg_result.precond_init_time << "]"
-      << " precond_time/iter[" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
-      << " GSTIME[" << gs_time<< "]"
+  std::cout  << "DEFAULT SOLVE:"
+      << "\n\t(P)CG_NUM_ITER              [" << cg_result.iteration << "]"
+      << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time << "]"
+      << "\n\tCG_RESIDUAL                 [" << cg_result.norm_res << "]"
+      << "\n\tCG_ITERATION_TIME           [" << cg_result.iter_time << "]"
+      << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time << "]"
+      << "\n\tPRECONDITIONER_INIT_TIME    [" << cg_result.precond_init_time << "]"
+      << "\n\tPRECOND_APPLY_TIME_PER_ITER [" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
+      << "\n\tSOLVE_TIME                  [" << solve_time<< "]"
       << std::endl ;
 
 
 
-  kh.create_graph_coloring_handle(KokkosKernels::Experimental::Graph::COLORING_VB);
-  KokkosKernels::Experimental::Graph::graph_color_symbolic (&kh, nv, nv, A.graph.row_map, A.graph.entries);
-
-  kok_x_vector = value_array_type("kok_x_vector", nv);
-  timer1.reset();
-  KokkosKernels::Experimental::Example::pcgsolve(
-        kh
-      , A
-      , kok_b_vector
-      , kok_x_vector
-      , cg_iteration_limit
-      , cg_iteration_tolerance
-      , & cg_result
-      , true
-  );
-  Kokkos::fence();
-
-  gs_time = timer1.seconds();
-  std::cout  << "\n\nCOLORING_VB PRECALL:\n cg_iteration[" << cg_result.iteration << "]"
-      << " matvec_time[" << cg_result.matvec_time << "]"
-      << " cg_residual[" << cg_result.norm_res << "]"
-      << " cg_iter_time[" << cg_result.iter_time << "]"
-      << " precond_time[" << cg_result.precond_time << "]"
-      << " precond_init_time[" << cg_result.precond_init_time << "]"
-      << " precond_time/iter[" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
-      << " GSTIME[" << gs_time<< "]"
-      << " numColor[" << kh.get_graph_coloring_handle()->get_num_colors()<<"]"
-      << std::endl ;
-
-  kh.destroy_graph_coloring_handle();
-  kh.create_graph_coloring_handle(KokkosKernels::Experimental::Graph::COLORING_EB);
-  KokkosKernels::Experimental::Graph::graph_color_symbolic (&kh, nv, nv, A.graph.row_map, A.graph.entries);
-
-  kok_x_vector = value_array_type("kok_x_vector", nv);
-  timer1.reset();
-  KokkosKernels::Experimental::Example::pcgsolve(
-        kh
-      , A
-      , kok_b_vector
-      , kok_x_vector
-      , cg_iteration_limit
-      , cg_iteration_tolerance
-      , & cg_result
-      , true
-  );
-  Kokkos::fence();
-
-  gs_time = timer1.seconds();
-  std::cout  << "\n\nCOLORING_EB PRECALL:\n cg_iteration[" << cg_result.iteration << "]"
-      << " matvec_time[" << cg_result.matvec_time << "]"
-      << " cg_residual[" << cg_result.norm_res << "]"
-      << " cg_iter_time[" << cg_result.iter_time << "]"
-      << " precond_time[" << cg_result.precond_time << "]"
-      << " precond_init_time[" << cg_result.precond_init_time << "]"
-      << " precond_time/iter[" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
-      << " GSTIME[" << gs_time<< "]"
-      << " numColor[" << kh.get_graph_coloring_handle()->get_num_colors()<<"]"
-      << std::endl ;
-
-  kh.destroy_graph_coloring_handle();
   kh.destroy_gs_handle();
   kh.create_gs_handle(KokkosKernels::Experimental::Graph::GS_PERMUTED);
 
-
-  kok_x_vector = value_array_type("kok_x_vector", nv);
+  kok_x_vector = scalar_view_t("kok_x_vector", nv);
   timer1.reset();
   KokkosKernels::Experimental::Example::pcgsolve(
         kh
-      , A
+      , crsmat
       , kok_b_vector
       , kok_x_vector
       , cg_iteration_limit
@@ -306,27 +111,27 @@ void run_experiment(
   );
 
   Kokkos::fence();
-  gs_time = timer1.seconds();
-  std::cout  << "\n\nPERMUTED:\n cg_iteration[" << cg_result.iteration << "]"
-      << " matvec_time[" << cg_result.matvec_time << "]"
-      << " cg_residual[" << cg_result.norm_res << "]"
-      << " cg_iter_time[" << cg_result.iter_time << "]"
-      << " precond_time[" << cg_result.precond_time << "]"
-      << " precond_init_time[" << cg_result.precond_init_time << "]"
-      << " precond_time/iter[" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
-      << " GSTIME[" << gs_time<< "]"
+  solve_time = timer1.seconds();
+  std::cout  << "\nPERMUTED SGS SOLVE:"
+      << "\n\t(P)CG_NUM_ITER              [" << cg_result.iteration << "]"
+      << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time << "]"
+      << "\n\tCG_RESIDUAL                 [" << cg_result.norm_res << "]"
+      << "\n\tCG_ITERATION_TIME           [" << cg_result.iter_time << "]"
+      << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time << "]"
+      << "\n\tPRECONDITIONER_INIT_TIME    [" << cg_result.precond_init_time << "]"
+      << "\n\tPRECOND_APPLY_TIME_PER_ITER [" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
+      << "\n\tSOLVE_TIME                  [" << solve_time<< "]"
       << std::endl ;
 
 
-  kh.destroy_graph_coloring_handle();
   kh.destroy_gs_handle();
   kh.create_gs_handle(KokkosKernels::Experimental::Graph::GS_TEAM);
 
-  kok_x_vector = value_array_type("kok_x_vector", nv);
+  kok_x_vector = scalar_view_t("kok_x_vector", nv);
   timer1.reset();
   KokkosKernels::Experimental::Example::pcgsolve(
         kh
-      , A
+      , crsmat
       , kok_b_vector
       , kok_x_vector
       , cg_iteration_limit
@@ -336,68 +141,193 @@ void run_experiment(
   );
   Kokkos::fence();
 
-  gs_time = timer1.seconds();
-  std::cout  << "\n\nGSTEAM:\n cg_iteration[" << cg_result.iteration << "]"
-      << " matvec_time[" << cg_result.matvec_time << "]"
-      << " cg_residual[" << cg_result.norm_res << "]"
-      << " cg_iter_time[" << cg_result.iter_time << "]"
-      << " precond_time[" << cg_result.precond_time << "]"
-      << " precond_init_time[" << cg_result.precond_init_time << "]"
-      << " precond_time/iter[" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
-      << " GSTIME[" << gs_time<< "]"
+  solve_time = timer1.seconds();
+  std::cout  << "\nTEAM SGS SOLVE:"
+      << "\n\t(P)CG_NUM_ITER              [" << cg_result.iteration << "]"
+      << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time << "]"
+      << "\n\tCG_RESIDUAL                 [" << cg_result.norm_res << "]"
+      << "\n\tCG_ITERATION_TIME           [" << cg_result.iter_time << "]"
+      << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time << "]"
+      << "\n\tPRECONDITIONER_INIT_TIME    [" << cg_result.precond_init_time << "]"
+      << "\n\tPRECOND_APPLY_TIME_PER_ITER [" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
+      << "\n\tSOLVE_TIME                  [" << solve_time<< "]"
       << std::endl ;
 
 
 
 
+  kok_x_vector = scalar_view_t("kok_x_vector", nv);
+  timer1.reset();
+  KokkosKernels::Experimental::Example::pcgsolve(
+        kh
+      , crsmat
+      , kok_b_vector
+      , kok_x_vector
+      , cg_iteration_limit
+      , cg_iteration_tolerance
+      , & cg_result
+      , false
+  );
+  Kokkos::fence();
+
+  solve_time = timer1.seconds();
+  std::cout  << "\nCG SOLVE (With no Preconditioner):"
+      << "\n\t(P)CG_NUM_ITER              [" << cg_result.iteration << "]"
+      << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time << "]"
+      << "\n\tCG_RESIDUAL                 [" << cg_result.norm_res << "]"
+      << "\n\tCG_ITERATION_TIME           [" << cg_result.iter_time << "]"
+      << "\n\tPRECONDITIONER_TIME         [" << cg_result.precond_time << "]"
+      << "\n\tPRECONDITIONER_INIT_TIME    [" << cg_result.precond_init_time << "]"
+      << "\n\tPRECOND_APPLY_TIME_PER_ITER [" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
+      << "\n\tSOLVE_TIME                  [" << solve_time<< "]"
+      << std::endl ;
 }
 
 
 
 
+enum { CMD_USE_THREADS = 0
+     , CMD_USE_NUMA
+     , CMD_USE_CORE_PER_NUMA
+     , CMD_USE_CUDA
+     , CMD_USE_OPENMP
+     , CMD_USE_CUDA_DEV
+     , CMD_BIN_MTX
+     , CMD_ERROR
+     , CMD_COUNT };
 
 int main (int argc, char ** argv){
-  if (argc < 2){
-    std::cerr << "Usage:" << argv[0] << " input_bin_file" << std::endl;
-    exit(1);
+
+  int cmdline[ CMD_COUNT ] ;
+  char *mtx_bin_file = NULL;
+  for ( int i = 0 ; i < CMD_COUNT ; ++i ) cmdline[i] = 0 ;
+
+
+  for ( int i = 1 ; i < argc ; ++i ) {
+    if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+      cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );
+    }
+    else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+      cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
+    }
+    else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
+      sscanf( argv[++i] , "%dx%d" ,
+              cmdline + CMD_USE_NUMA ,
+              cmdline + CMD_USE_CORE_PER_NUMA );
+    }
+    else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+      cmdline[ CMD_USE_CUDA ] = 1 ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
+      cmdline[ CMD_USE_CUDA ] = 1 ;
+      cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
+    }
+
+    else if ( 0 == strcasecmp( argv[i] , "mtx" ) ) {
+      mtx_bin_file = argv[++i];
+    }
+    else {
+      cmdline[ CMD_ERROR ] = 1 ;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]" << std::endl;
+
+      return 0;
+    }
   }
 
+  if (mtx_bin_file == NULL){
+    std::cerr << "Provide a mtx binary file" << std::endl ;
+    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]" << std::endl;
 
-  Kokkos::initialize(argc, argv);
-  MyExecSpace::print_configuration(std::cout);
+    return 0;
+  }
+
   idx nv = 0, ne = 0;
   idx *xadj, *adj;
   wt *ew;
 
-  KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, argv[1]);
 
-    std::cout << "nv:" << nv << " ne:" << ne << std::endl;
+#if defined( KOKKOS_HAVE_PTHREAD )
 
-  um_array_type _xadj (xadj, nv + 1);
-  um_edge_array_type _adj (adj, ne);
+    if ( cmdline[ CMD_USE_THREADS ] ) {
+
+      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
+        Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] ,
+                                     cmdline[ CMD_USE_NUMA ] ,
+                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
+      }
+      else {
+        Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
+      }
+
+      KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      Kokkos::Threads::print_configuration(std::cout);
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Threads> crsMat_t;
+      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
+      delete [] xadj;
+      delete [] adj;
+      delete [] ew;
 
 
+      run_experiment<Kokkos::Threads, crsMat_t>(crsmat);
+
+      Kokkos::Threads::finalize();
+    }
+
+#endif
+
+#if defined( KOKKOS_HAVE_OPENMP )
+
+    if ( cmdline[ CMD_USE_OPENMP ] ) {
+
+      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
+        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] ,
+                                     cmdline[ CMD_USE_NUMA ] ,
+                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
+      }
+      else {
+        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
+      }
+      Kokkos::OpenMP::print_configuration(std::cout);
+
+      KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::OpenMP> crsMat_t;
+      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
+      delete [] xadj;
+      delete [] adj;
+      delete [] ew;
+
+      run_experiment<Kokkos::OpenMP, crsMat_t>(crsmat);
+
+      Kokkos::OpenMP::finalize();
+    }
+
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+    if ( cmdline[ CMD_USE_CUDA ] ) {
+      // Use the last device:
+
+      Kokkos::HostSpace::execution_space::initialize();
+      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
+      Kokkos::Cuda::print_configuration(std::cout);
+
+      KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Cuda> crsMat_t;
+      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
+      delete [] xadj;
+      delete [] adj;
+      delete [] ew;
 
 
-  idx_array_type kok_xadj ("xadj", nv + 1);
-  idx_edge_array_type kok_adj("adj", ne);
+      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat);
 
-  Kokkos::deep_copy (kok_xadj, _xadj);
-  Kokkos::deep_copy (kok_adj, _adj);
+      Kokkos::Cuda::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
+    }
 
-  wt_um_edge_array_type _mtx_vals (ew, ne);
-  value_array_type kok_mtx_vals ("MTX_VALS", ne);
-  Kokkos::deep_copy (kok_mtx_vals, _mtx_vals);
+#endif
 
-  delete [] xadj;
-  delete [] adj;
-  delete [] ew;
-
-  //fill_experiments(nv, ne, kok_xadj, kok_adj, kok_half_srcs, kok_half_dsts);
-  run_experiment(REPEAT, nv, ne, kok_xadj, kok_adj, kok_mtx_vals);
-  //free_experiments();
-
-  Kokkos::finalize();
 
   return 0;
 }

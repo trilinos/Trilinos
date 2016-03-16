@@ -60,6 +60,7 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 #endif
 
+#include <limits>
 
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_MUMPS_decl.hpp"
@@ -417,8 +418,8 @@ namespace Amesos2
     mumps_par.n =  this->globalNumCols_;
     mumps_par.nz = this->globalNumNonZeros_;
     mumps_par.a = (magnitude_type*)malloc(mumps_par.nz * sizeof(magnitude_type));
-    mumps_par.irn = (local_ordinal_type*)malloc(mumps_par.nz *sizeof(local_ordinal_type));
-    mumps_par.jcn = (local_ordinal_type*)malloc(mumps_par.nz * sizeof(local_ordinal_type));
+    mumps_par.irn = (MUMPS_INT*)malloc(mumps_par.nz *sizeof(MUMPS_INT));
+    mumps_par.jcn = (MUMPS_INT*)malloc(mumps_par.nz * sizeof(MUMPS_INT));
 
     if((mumps_par.a == NULL) || (mumps_par.irn == NULL) 
        || (mumps_par.jcn == NULL))
@@ -429,17 +430,34 @@ namespace Amesos2
     /* Will have to add support for symmetric case*/
     local_ordinal_type tri_count = 0;
     local_ordinal_type i,j;
+    local_ordinal_type max_local_ordinal = 0;
     
     for(i = 0; i < (local_ordinal_type)this->globalNumCols_; i++)
       {
-        for( j = colptr_[i]; j < colptr_[i+1]; j++)
+        for( j = colptr_[i]; j < colptr_[i+1]-1; j++)
           {
-            mumps_par.jcn[tri_count] = (local_ordinal_type)i+1; //Fortran index
-            mumps_par.irn[tri_count] = (local_ordinal_type)rowind_[j]+1; //Fortran index
+            mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
+            mumps_par.irn[tri_count] = (MUMPS_INT)rowind_[j]+1; //Fortran index
             mumps_par.a[tri_count] = nzvals_[j];
+            
             tri_count++;
           }
+        
+        j = colptr_[i+1]-1;
+        mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
+        mumps_par.irn[tri_count] = (MUMPS_INT)rowind_[j]+1; //Fortran index
+        mumps_par.a[tri_count] = nzvals_[j];
+
+        tri_count++;
+        
+        if(rowind_[j] > max_local_ordinal)
+          {
+            max_local_ordinal = rowind_[j];
+          }
       }
+    TEUCHOS_TEST_FOR_EXCEPTION(std::numeric_limits<MUMPS_INT>::max() <= max_local_ordinal,
+                               std::runtime_error,
+                               "Matrix index larger than MUMPS_INT");
 
     return 0;
   }//end Convert to Trip()

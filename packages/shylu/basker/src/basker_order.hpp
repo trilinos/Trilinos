@@ -1,6 +1,8 @@
 #ifndef BASKER_ORDER_HPP
 #define BASKER_ORDER_HPP
 
+#include <impl/Kokkos_Timer.hpp>
+
 //Basker Includes
 #include "basker_types.hpp"
 #include "basker_util.hpp"
@@ -224,14 +226,16 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::btf_order2()
   {
     
+    //Kokkos::Impl::Timer timer_one;
+    
     //printf("-----------BTF2-------------\n");
 
     //1. Matching ordering on whole matrix
     //currently finds matching and permutes
     //found bottle-neck to work best with circuit problems
-    sort_matrix(A); //May want to remove ?
+    sort_matrix(A); //May want to remove ? (need)
     match_ordering(0);
-    sort_matrix(A); //May want to remove?
+    sort_matrix(A); //May want to remove? (need)
 
    
     //2. BTF ordering on whole matrix
@@ -243,15 +247,22 @@ namespace BaskerNS
   
 
     find_btf2(A); 
-    sort_matrix(BTF_C);
+
+    //TEst 
+    //sort_matrix(BTF_A);
+    //printMTX("A_TEST.mtx", BTF_A);
+    //sort_matrix(BTF_C);
 
     //btf_tabs_offset = 0;
     //btf_tabs
     
-   
+    //std::cout << "Order Timer 1: "
+    //	      << timer_one.seconds()
+    //	      << std::endl;
+
     if((btf_tabs_offset != 0) )
       {
-	printf("BTF_OFFSET CALLED\n");
+	//printf("BTF_OFFSET CALLED\n");
 
         //  printf("A/B block stuff called\n");
 	//3. ND on BTF_A
@@ -304,7 +315,7 @@ namespace BaskerNS
 	//MALLOC_INT_1DARRAY(csymamd_perm, BTF_A.ncol+1);
 	init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
 	//init_value(csymamd_perm, BTF_A.ncol+1,(Int) 0);
-	
+	//printf("============CALLING CSYMAMD============\n");
 	csymamd_order(BTF_A, order_csym_array, cmember);
 	//csymamd_order(BTF_A, csymamd_perm, cmember);
 	
@@ -327,6 +338,8 @@ namespace BaskerNS
 	    //printMTX("C_BTF_AMD.mtx", BTF_C);
 	  }
     
+
+	//printMTX("BTF_A.mtx", BTF_A);
     
 	//6. Move to 2D Structure
 	//finds the shapes for both view and submatrices,
@@ -335,6 +348,7 @@ namespace BaskerNS
 	//finds the starting point of A for submatrices
 	find_2D_convert(BTF_A);
 	//now we can fill submatrices
+	//printf("AFTER CONVERT\n");
         #ifdef BASKER_KOKKOS
 	kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
 	Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
@@ -342,16 +356,19 @@ namespace BaskerNS
         #else
 	//Comeback
         #endif
-
-	printMTX("BTF_A.mtx", BTF_A); 
 	
+	/*
+	printf("===PRINT==\n");
+	printMTX("BTF_A.mtx", BTF_A); 
+	*/
+
       }//if btf_tab_offset == 0
 
     
     if(btf_nblks > 1)
       {
 	sort_matrix(BTF_C);
-	printMTX("C_TEST.mtx", BTF_C);
+	//printMTX("C_TEST.mtx", BTF_C);
 	//Permute C
 
 
@@ -389,6 +406,107 @@ namespace BaskerNS
     
     return 0;
   }//end btf_order2
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::order_incomplete()
+  {
+     
+    Kokkos::Impl::Timer timer_one;
+    
+    if(Options.matching == BASKER_TRUE)
+      {
+	match_ordering(0);
+      }
+    else
+      {
+	match_flag = BASKER_FALSE;
+      }
+    
+    if(Options.btf == BASKER_TRUE)
+      {
+	//2. BTF ordering on whole matrix
+	//currently finds btf-hybrid and permutes
+	//A -> [BTF_A, BTF_C; 0 , BTF B]
+	//printf("outter num_threads:%d \n", num_threads);
+	MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
+	init_value(btf_schedule, num_threads+1, (Int)0);
+	find_btf2(A);
+      }
+    else
+      {
+	btf_flag = BASKER_FALSE;
+      }
+    
+    std::cout << "Order Timer 1: "
+	      << timer_one.seconds()
+	      << std::endl;
+
+    timer_one.reset();
+    
+    //ND Order (We should always do this for use)
+    if((Options.btf == BASKER_TRUE) &&
+       (btf_tabs_offset != 0))
+      {
+	scotch_partition(BTF_A);
+	if(btf_nblks > 1)
+	  {
+	    permute_row(BTF_B, part_tree.permtab);
+	  }
+	init_tree_thread();
+	if(Options.amd_domains == BASKER_TRUE)
+	  {
+	    INT_1DARRAY cmember;
+	    MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
+	    init_value(cmember,BTF_A.ncol+1,(Int) 0);
+	    for(Int i = 0; i < tree.nblks; ++i)
+	      {
+		for(Int j = tree.col_tabs(i); 
+		    j < tree.col_tabs(i+1); ++j)
+		  {
+		    cmember(j) = i;
+		  }
+	      }
+	    MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol+1);
+	    init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
+	    csymamd_order(BTF_A, order_csym_array, cmember);
+
+	    permute_col(BTF_A, order_csym_array);
+	    sort_matrix(BTF_A);
+	    permute_row(BTF_A, order_csym_array);
+	    sort_matrix(BTF_A);
+	
+	    if(btf_nblks > 1)
+	      {
+		permute_row(BTF_B, order_csym_array);
+		sort_matrix(BTF_B);
+	      }
+	  }//If amd order domains
+	matrix_to_views_2D(BTF_A);
+	find_2D_convert(BTF_A);
+	kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
+	Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+	Kokkos::fence();
+
+      }
+    else
+      {
+	scotch_partition(A);
+	init_tree_thread();
+	//Add domain order options
+	matrix_to_views_2D(A);
+	find_2D_convert(A);
+	kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
+	Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+	Kokkos::fence();
+      }
+    
+    std::cout << "Order Timer 2: "
+	      << timer_one.seconds()
+	      << std::endl;
+
+    return;
+  }
 
 
   template <class Int, class Entry, class Exe_Space>
@@ -431,11 +549,24 @@ namespace BaskerNS
 
     */
       
-    Int job = 2; //5 is the default for SuperLU_DIST
+    //You would think a match order would help!
+    //It does not!
+
+    //Int job = 2; //5 is the default for SuperLU_DIST
     //INT_1DARRAY mperm = order_match_array;
     MALLOC_INT_1DARRAY(order_match_array, A.nrow);
     //MALLOC_INT_1DARRAY(mperm, A.nrow);
-    mwm(A,order_match_array);
+    if(Options.incomplete == BASKER_FALSE)
+      {
+	mwm(A,order_match_array);
+      }
+    else
+      {
+	for(Int i = 0; i < A.nrow; i++)
+	  {
+	    order_match_array(i) = i;
+	  }
+      }
     //mc64(job,order_match_array);
     //mc64(job,mperm);
 
@@ -493,7 +624,7 @@ namespace BaskerNS
 	FREE(MMT);
       }
     
-    nd_flag == BASKER_TRUE;
+    nd_flag = BASKER_TRUE;
     //permute
     //permute_col(M, part_tree.permtab);
     ///permute_row(M, part_tree.permtab);

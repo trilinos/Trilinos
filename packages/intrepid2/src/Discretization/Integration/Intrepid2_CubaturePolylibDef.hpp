@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -131,16 +130,16 @@ void CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint & cu
   // run Polylib routines
   switch (poly_type_) {
     case PL_GAUSS:
-      IntrepidPolylib::zwgj(&z[0], &w[0], numCubPoints, alpha_, beta_);
+      IntrepidPolylib::zwgj(&z(0), &w(0), numCubPoints, alpha_, beta_);
       break;
     case PL_GAUSS_RADAU_LEFT:
-      IntrepidPolylib::zwgrjm(&z[0], &w[0], numCubPoints, alpha_, beta_);
+      IntrepidPolylib::zwgrjm(&z(0), &w(0), numCubPoints, alpha_, beta_);
       break;
     case PL_GAUSS_RADAU_RIGHT:
-      IntrepidPolylib::zwgrjp(&z[0], &w[0], numCubPoints, alpha_, beta_);
+      IntrepidPolylib::zwgrjp(&z(0), &w(0), numCubPoints, alpha_, beta_);
       break;
     case PL_GAUSS_LOBATTO:
-      IntrepidPolylib::zwglj(&z[0], &w[0], numCubPoints, alpha_, beta_);
+      IntrepidPolylib::zwglj(&z(0), &w(0), numCubPoints, alpha_, beta_);
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION((1),
@@ -151,9 +150,9 @@ void CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint & cu
   // fill input arrays
   for (int pointId = 0; pointId < numCubPoints; pointId++) {
     for (int dim = 0; dim < cellDim; dim++) {
-      cubPoints(pointId,dim) = z[pointId];
+      cubPoints(pointId,dim) = z(pointId);
     }
-    cubWeights(pointId) = w[pointId];
+    cubWeights(pointId) = w(pointId);
   }
 } // end getCubature
 

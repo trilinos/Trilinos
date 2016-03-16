@@ -98,8 +98,7 @@ using Teuchos::rcp;
 namespace panzer {
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-			 std::vector<panzer::BC>& bcs,
-                         const Teuchos::Array<std::string>& tangentParamNames = Teuchos::Array<std::string>());
+			 std::vector<panzer::BC>& bcs);
 
   struct AssemblyPieces {
     RCP<panzer::FieldManagerBuilder> fmb;  
@@ -132,7 +131,7 @@ namespace panzer {
 
   void buildAssemblyPieces(bool parameter_on,bool distr_parameter_on,
                            AssemblyPieces & ap,
-                           const Teuchos::Array<std::string>& tangentParamNames = Teuchos::Array<std::string>());
+                           const std::vector<std::string>& tangentParamNames = std::vector<std::string>());
 
   bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
                                   const Thyra::VectorBase<double> & b, 
@@ -526,7 +525,7 @@ namespace panzer {
 
     bool parameter_on = true;
     AssemblyPieces ap;
-    Teuchos::Array<std::string> tangentParamNames(1);
+    std::vector<std::string> tangentParamNames(1);
     tangentParamNames[0] = "SOURCE_TEMPERATURE";
   
     buildAssemblyPieces(parameter_on,false,ap,tangentParamNames);
@@ -1081,8 +1080,7 @@ namespace panzer {
   }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-			 std::vector<panzer::BC>& bcs,
-                         const Teuchos::Array<std::string>& tangentParamNames)
+			 std::vector<panzer::BC>& bcs)
   {
     // Physics block
     Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
@@ -1094,7 +1092,6 @@ namespace panzer {
       p.set("Basis Type","HGrad");
       p.set("Basis Order",1);
       p.set("Integration Order",1);
-      p.set("Tangent Parameter Names", tangentParamNames);
     }
     {
       Teuchos::ParameterList& p = physics_block.sublist("b");
@@ -1104,7 +1101,6 @@ namespace panzer {
       p.set("Basis Type","HGrad");
       p.set("Basis Order",1);
       p.set("Integration Order",1);
-      p.set("Tangent Parameter Names", tangentParamNames);
     }
 
 
@@ -1154,7 +1150,7 @@ namespace panzer {
   
   void buildAssemblyPieces(bool parameter_on,bool distr_parameter_on,
                            AssemblyPieces & ap,
-                           const Teuchos::Array<std::string>& tangentParamNames)
+                           const std::vector<std::string>& tangentParamNames)
   {
     using Teuchos::RCP;
   
@@ -1173,7 +1169,7 @@ namespace panzer {
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
-    testInitialzation(ipb, bcs, tangentParamNames);
+    testInitialzation(ipb, bcs);
 
     ap.fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
 
@@ -1203,7 +1199,8 @@ namespace panzer {
                                  ap.eqset_factory,
 				 ap.gd,
 			         build_transient_support,
-                                 ap.physicsBlocks);
+                                 ap.physicsBlocks,
+                                 tangentParamNames);
     }
 
     // build worksets

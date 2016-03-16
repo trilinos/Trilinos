@@ -79,6 +79,7 @@ private:
   bool isInitialized_;
 
   void remove(const std::vector<unsigned> &ind) {
+    Real zero(0);
     for (unsigned j = ind.back()+1; j < size_; j++) {
       (subgradients_[j-1])->set(*(subgradients_[j]));
       linearizationErrors_[j-1] = linearizationErrors_[j];
@@ -86,9 +87,9 @@ private:
       dualVariables_[j-1]       = dualVariables_[j];
     }
     (subgradients_[size_-1])->zero();
-    linearizationErrors_[size_-1] = ROL_OVERFLOW;
-    distanceMeasures_[size_-1]    = ROL_OVERFLOW;
-    dualVariables_[size_-1]       = 0.0;
+    linearizationErrors_[size_-1] = ROL_OVERFLOW<Real>();
+    distanceMeasures_[size_-1]    = ROL_OVERFLOW<Real>();
+    dualVariables_[size_-1]       = zero;
     for (unsigned i = ind.size()-1; i > 0; --i) {
       for (unsigned j = ind[i-1]+1; j < size_; j++) {
         (subgradients_[j-1])->set(*(subgradients_[j]));
@@ -101,10 +102,11 @@ private:
   }
 
   void add(const Vector<Real> &g, const Real le, const Real dm) {
+    Real zero(0);
     (subgradients_[size_])->set(g);
     linearizationErrors_[size_] = le;
     distanceMeasures_[size_]    = dm;
-    dualVariables_[size_]       = 0.0;
+    dualVariables_[size_]       = zero;
     size_++;
   }
 
@@ -120,26 +122,28 @@ public:
   virtual ~Bundle(void) {}
   Bundle(const unsigned maxSize = 10, const Real coeff = 0.0, const unsigned remSize = 2) 
     : size_(0), maxSize_(maxSize), remSize_(remSize), coeff_(coeff), isInitialized_(false) {
+    Real zero(0);
     remSize_ = ((remSize_ < 2) ? 2 : ((remSize_ > maxSize_-1) ? maxSize_-1 : remSize_));
     subgradients_.clear();
     subgradients_.assign(maxSize,Teuchos::null);
     linearizationErrors_.clear();
-    linearizationErrors_.assign(maxSize_,ROL_OVERFLOW);
+    linearizationErrors_.assign(maxSize_,ROL_OVERFLOW<Real>());
     distanceMeasures_.clear();
-    distanceMeasures_.assign(maxSize_,ROL_OVERFLOW);
+    distanceMeasures_.assign(maxSize_,ROL_OVERFLOW<Real>());
     dualVariables_.clear();
-    dualVariables_.assign(maxSize_,0.0);
+    dualVariables_.assign(maxSize_,zero);
   }
 
   void initialize(const Vector<Real> &g) {
     if ( !isInitialized_ ) {
+      Real zero(0), one(1);
       for (unsigned i = 0; i < maxSize_; i++) {
         subgradients_[i] = g.clone();
       }
       (subgradients_[0])->set(g);
-      linearizationErrors_[0] = 0.0;
-      distanceMeasures_[0]    = 0.0;
-      dualVariables_[0]       = 1.0;
+      linearizationErrors_[0] = zero;
+      distanceMeasures_[0]    = zero;
+      dualVariables_[0]       = one;
       size_++;
       isInitialized_ = true;
       gx_ = g.clone();
@@ -163,9 +167,9 @@ public:
   }
 
   const Real computeAlpha(const Real dm, const Real le) const {
-    Real alpha = le;
-    if ( coeff_ > ROL_EPSILON ) {
-      alpha = std::max(coeff_*std::pow(dm,2.0),le);
+    Real alpha = le, two(2);
+    if ( coeff_ > ROL_EPSILON<Real>() ) {
+      alpha = std::max(coeff_*std::pow(dm,two),le);
     }
     return alpha;
   }
@@ -179,14 +183,15 @@ public:
   }
 
   void aggregate(Vector<Real> &aggSubGrad, Real &aggLinErr, Real &aggDistMeas) const {
-    aggSubGrad.zero(); aggLinErr = 0.0; aggDistMeas = 0.0; eG_->zero();
-    Real eLE = 0.0, eDM = 0.0, yLE = 0.0, yDM = 0.0, tLE = 0.0, tDM = 0.0;
+    Real zero(0), one(1);
+    aggSubGrad.zero(); aggLinErr = zero; aggDistMeas = zero; eG_->zero();
+    Real eLE(0), eDM(0), yLE(0), yDM(0), tLE(0), tDM(0);
     for (unsigned i = 0; i < size_; i++) {
       // Compute aggregate subgradient using Kahan's compensated sum
       tG_->set(aggSubGrad);
       yG_->set(*subgradients_[i]); yG_->scale(dualVariables_[i]); yG_->plus(*eG_);
       aggSubGrad.set(*tG_); aggSubGrad.plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-1.0,aggSubGrad); eG_->plus(*yG_);
+      eG_->set(*tG_); eG_->axpy(-one,aggSubGrad); eG_->plus(*yG_);
       // Compute aggregate linearization error using Kahan's compensated sum
       tLE = aggLinErr;
       yLE = dualVariables_[i]*linearizationErrors_[i] + eLE;
@@ -206,7 +211,7 @@ public:
       unsigned loc = size_, cnt = 0;
       std::vector<unsigned> ind(remSize_,0);
       for (unsigned i = size_; i > 0; --i) {
-        if ( std::abs(linearizationErrors_[i-1]) < ROL_EPSILON ) {
+        if ( std::abs(linearizationErrors_[i-1]) < ROL_EPSILON<Real>() ) {
           loc = i-1;
           break;
         }
@@ -229,14 +234,15 @@ public:
 
   void update(const bool flag, const Real linErr, const Real distMeas,
               const Vector<Real> &g, const Vector<Real> &s) {
+    Real zero(0);
     if ( flag ) {
       // Serious step taken: Update linearlization errors and distance measures
       for (unsigned i = 0; i < size_; i++) {
         linearizationErrors_[i] += linErr - subgradients_[i]->dot(s.dual());
         distanceMeasures_[i]    += distMeas;
       }
-      linearizationErrors_[size_] = 0.0;
-      distanceMeasures_[size_]    = 0.0;
+      linearizationErrors_[size_] = zero;
+      distanceMeasures_[size_]    = zero;
     }
     else {
       // Null step taken: 
@@ -246,7 +252,7 @@ public:
     // Update (sub)gradient bundle
     (subgradients_[size_])->set(g);
     // Update dual variables
-    dualVariables_[size_] = 0.0;
+    dualVariables_[size_] = zero;
     // Update bundle size
     size_++;
   }
@@ -263,7 +269,8 @@ protected:
   }
 
   void resetDualVariables(void){
-    dualVariables_.assign(size_,0.0);
+    Real zero(0);
+    dualVariables_.assign(size_,zero);
   }
 
 /***********************************************************************************************/
@@ -290,7 +297,7 @@ private:
 //    for (unsigned i = 0; i < size_; i++) {
 //      nworkingSet_.insert(i);
 //    }
-    Real sum = 0.0, err = 0.0, tmp = 0.0, y = 0.0;
+    Real sum(0), err(0), tmp(0), y(0), zero(0);
     for (unsigned i = 0; i < size_; i++) {
       // Compute sum of dualVariables_ using Kahan's compensated sum
       tmp = sum;
@@ -304,7 +311,7 @@ private:
     nworkingSet_.clear();
     workingSet_.clear();
     for (unsigned i = 0; i < size_; i++) {
-      if ( dualVariables_[i] == 0.0 ) {
+      if ( dualVariables_[i] == zero ) {
         workingSet_.insert(i);
       }
       else {
@@ -314,21 +321,22 @@ private:
   }
 
   Real evaluateObjective(std::vector<Real> &g, const std::vector<Real> &x, const Real t) const {
+    Real one(1), half(0.5);
     gx_->zero(); eG_->zero();
     for (unsigned i = 0; i < size_; i++) {
       // Compute Gx using Kahan's compensated sum
       tG_->set(*gx_);
       yG_->set(*eG_); yG_->axpy(x[i],*(subgradients_[i]));
       gx_->set(*tG_); gx_->plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-1.0,*gx_); eG_->plus(*yG_);
+      eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->plus(*yG_);
     }
-    Real Hx = 0.0, val = 0.0, err = 0.0, tmp = 0.0, y = 0.0;
+    Real Hx(0), val(0), err(0), tmp(0), y(0);
     for (unsigned i = 0; i < size_; i++) {
       // Compute < g_i, Gx >
       Hx   = gx_->dot(*(subgradients_[i]));
       // Add to the objective function value using Kahan's compensated sum
       tmp  = val;
-      y    = x[i]*(0.5*Hx + alpha(i)/t) + err;
+      y    = x[i]*(half*Hx + alpha(i)/t) + err;
       val  = tmp + y;
       err  = (tmp - val) + y;
       // Add gradient component
@@ -338,13 +346,14 @@ private:
   }
 
   void applyFullMatrix(std::vector<Real> &Hx, const std::vector<Real> &x) const {
+    Real one(1);
     gx_->zero(); eG_->zero();
     for (unsigned i = 0; i < size_; i++) {
       // Compute Gx using Kahan's compensated sum
       tG_->set(*gx_);
       yG_->set(*eG_); yG_->axpy(x[i],*(subgradients_[i]));
       gx_->set(*tG_); gx_->plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-1.0,*gx_); eG_->plus(*yG_);
+      eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->plus(*yG_);
     }
     for (unsigned i = 0; i < size_; i++) {
       // Compute < g_i, Gx >
@@ -353,6 +362,7 @@ private:
   }
 
   void applyMatrix(std::vector<Real> &Hx, const std::vector<Real> &x) const {
+    Real one(1);
     gx_->zero(); eG_->zero();
     unsigned n = nworkingSet_.size();
     typename std::set<unsigned>::iterator it = nworkingSet_.begin(); 
@@ -361,7 +371,7 @@ private:
       tG_->set(*gx_);
       yG_->set(*eG_); yG_->axpy(x[i],*(subgradients_[*it]));
       gx_->set(*tG_); gx_->plus(*yG_);
-      eG_->set(*tG_); eG_->axpy(-1.0,*gx_); eG_->plus(*yG_);
+      eG_->set(*tG_); eG_->axpy(-one,*gx_); eG_->plus(*yG_);
       it++;
     }
     it = nworkingSet_.begin();
@@ -372,9 +382,10 @@ private:
   }
 
   void computeLagMult(std::vector<Real> &lam, const Real mu, const std::vector<Real> &g) const {
+    Real zero(0);
     unsigned n = workingSet_.size();
     if ( n > 0 ) {
-      lam.resize(n,0.0);
+      lam.resize(n,zero);
       typename std::set<unsigned>::iterator it = workingSet_.begin();
       for (unsigned i = 0; i < n; i++) {
         lam[i] = g[*it] - mu; it++;
@@ -389,7 +400,7 @@ private:
     bool flag = true;
     unsigned n = workingSet_.size(); ind = size_;
     if ( n > 0 ) {
-      Real min = ROL_OVERFLOW;
+      Real min = ROL_OVERFLOW<Real>();
       typename std::set<unsigned>::iterator it = workingSet_.begin();
       for (unsigned i = 0; i < n; i++) {
         if ( x[i] < min ) {
@@ -398,16 +409,16 @@ private:
         }
         it++;
       }
-      flag = ((min < -ROL_EPSILON) ? false : true);
+      flag = ((min < -ROL_EPSILON<Real>()) ? false : true);
     }
     return flag;
   }
 
   Real computeAlpha(unsigned &ind, const std::vector<Real> &x, const std::vector<Real> &p) const {
-    Real alpha = 1.0, tmp = 0.0; ind = size_;
+    Real alpha(1), tmp(0), zero(0); ind = size_;
     typename std::set<unsigned>::iterator it;
     for (it = nworkingSet_.begin(); it != nworkingSet_.end(); it++) {
-      if ( p[*it] < -ROL_EPSILON ) {
+      if ( p[*it] < -ROL_EPSILON<Real>() ) {
         tmp = -x[*it]/p[*it];
         if ( alpha >= tmp ) {
           alpha = tmp;
@@ -415,22 +426,23 @@ private:
         }
       }
     }
-    return std::max(0.0,alpha);
+    return std::max(zero,alpha);
   }
 
   unsigned solveEQPsubproblem(std::vector<Real> &s, Real &mu,
                         const std::vector<Real> &g, const Real tol) const {
     // Build reduced QP information
+    Real zero(0);
     unsigned n = nworkingSet_.size(), cnt = 0;
-    mu = 0.0;
-    s.assign(size_,0.0);
+    mu = zero;
+    s.assign(size_,zero);
     if ( n > 0 ) {
-      std::vector<Real> gk(n,0.0);
+      std::vector<Real> gk(n,zero);
       typename std::set<unsigned>::iterator it = nworkingSet_.begin();
       for (unsigned i = 0; i < n; i++) {
         gk[i] = g[*it]; it++;
       }
-      std::vector<Real> sk(n,0.0);
+      std::vector<Real> sk(n,zero);
       cnt = projectedCG(sk,mu,gk,tol);
       it  = nworkingSet_.begin();
       for (unsigned i = 0; i < n; i++) {
@@ -441,8 +453,9 @@ private:
   }
 
   void applyPreconditioner(std::vector<Real> &Px, const std::vector<Real> &x) const {
+    Real zero(0);
     int type = 0;
-    std::vector<Real> tmp(Px.size(),0.0);
+    std::vector<Real> tmp(Px.size(),zero);
     switch (type) {
       case 0: applyPreconditioner_Identity(tmp,x); break;
       case 1: applyPreconditioner_Jacobi(tmp,x);   break;
@@ -462,7 +475,7 @@ private:
 
   void applyPreconditioner_Identity(std::vector<Real> &Px, const std::vector<Real> &x) const {
     unsigned dim = nworkingSet_.size();
-    Real sum = 0.0, err = 0.0, tmp = 0.0, y = 0.0;
+    Real sum(0), err(0), tmp(0), y(0);
     for (unsigned i = 0; i < dim; i++) {
       // Compute sum of x using Kahan's compensated sum
       tmp = sum;
@@ -482,12 +495,12 @@ private:
 
   void applyPreconditioner_Jacobi(std::vector<Real> &Px, const std::vector<Real> &x) const {
     unsigned dim = nworkingSet_.size();
-    Real eHe = 0.0, sum = 0.0;
-    Real errX = 0.0, tmpX = 0.0, yX = 0.0, errE = 0.0, tmpE = 0.0, yE = 0.0;
-    std::vector<Real> gg(dim,0.0);
+    Real eHe(0), sum(0), one(1), zero(0);
+    Real errX(0), tmpX(0), yX(0), errE(0), tmpE(0), yE(0);
+    std::vector<Real> gg(dim,zero);
     typename std::set<unsigned>::iterator it = nworkingSet_.begin(); 
     for (unsigned i = 0; i < dim; i++) {
-      gg[i] = 1.0/std::abs(subgradients_[*it]->dot(*(subgradients_[*it]))); it++;
+      gg[i] = one/std::abs(subgradients_[*it]->dot(*(subgradients_[*it]))); it++;
       // Compute sum of inv(D)x using Kahan's aggregated sum
       tmpX = sum;
       yX   = x[i]*gg[i] + errX;
@@ -517,9 +530,9 @@ private:
     int dim = nworkingSet_.size();
     //unsigned cnt = 0;
     gx_->zero(); ge_->zero();
-    Real eHx = 0.0, eHe = 0.0;
+    Real eHx(0), eHe(0), one(1);
     // Forward substitution
-    std::vector<Real> x1(dim,0.0), e1(dim,0.0),gg(dim,0.0);
+    std::vector<Real> x1(dim,0), e1(dim,0),gg(dim,0);
     typename std::set<unsigned>::iterator it, jt;
     it = nworkingSet_.begin(); 
     for (int i = 0; i < dim; i++) {
@@ -531,7 +544,7 @@ private:
       }
       gg[i] = subgradients_[*it]->dot(*(subgradients_[*it]));
       x1[i] = (x[i] - gx_->dot(*(subgradients_[*it])))/gg[i];
-      e1[i] = (1.0  - ge_->dot(*(subgradients_[*it])))/gg[i];
+      e1[i] = (one  - ge_->dot(*(subgradients_[*it])))/gg[i];
       it++;
     }
     // Apply diagonal
@@ -540,7 +553,7 @@ private:
       e1[i] *= gg[i];
     }
     // Back substitution
-    std::vector<Real> Hx(dim,0.0), He(dim,0.0); it = nworkingSet_.end();
+    std::vector<Real> Hx(dim,0), He(dim,0); it = nworkingSet_.end();
     for (int i = dim-1; i >= 0; --i) {
       it--;
       gx_->zero(); ge_->zero(); jt = nworkingSet_.end();
@@ -571,8 +584,8 @@ private:
 
   void computeResidualUpdate(std::vector<Real> &r, std::vector<Real> &g) const {
     unsigned n = g.size();
-    std::vector<Real> Gg(n,0.0);
-    Real y = 0.0, ytmp = 0.0, yprt = 0.0, yerr = 0.0;
+    std::vector<Real> Gg(n,0);
+    Real y(0), ytmp(0), yprt(0), yerr(0);
     applyPreconditioner(g,r);
     applyG(Gg,g);
     // Compute multiplier using Kahan's compensated sum
@@ -590,19 +603,20 @@ private:
   }
 
   unsigned projectedCG(std::vector<Real> &x, Real &mu, const std::vector<Real> &b, const Real tol) const {
+    Real one(1), zero(0);
     unsigned n = nworkingSet_.size();
-    std::vector<Real> r(n,0.0), r0(n,0.0), g(n,0.0), d(n,0.0), Ad(n,0.0);
+    std::vector<Real> r(n,0), r0(n,0), g(n,0), d(n,0), Ad(n,0);
     // Compute residual Hx + g = g with x = 0
-    x.assign(n,0.0);
-    scale(r,1.0,b);
+    x.assign(n,0);
+    scale(r,one,b);
     r0.assign(r.begin(),r.end());
     // Precondition residual
     computeResidualUpdate(r,g);
-    Real rg = dot(r,g), rg0 = 0.0;
+    Real rg = dot(r,g), rg0(0);
     // Get search direction
-    scale(d,-1.0,g);
-    Real alpha = 0.0, kappa = 0.0, beta = 0.0;
-    Real CGtol = std::min(tol,1.e-2*rg);
+    scale(d,-one,g);
+    Real alpha(0), kappa(0), beta(0), TOL(1.e-2);
+    Real CGtol = std::min(tol,TOL*rg);
     unsigned cnt = 0;
     while (rg > CGtol && cnt < 2*n+1) {
       applyMatrix(Ad,d);
@@ -616,12 +630,12 @@ private:
       rg  = dot(r,g);
       beta = rg/rg0;
       scale(d,beta);
-      axpy(-1.0,g,d);
+      axpy(-one,g,d);
       cnt++;
     }
     // Compute multiplier for equality constraint using Kahan's compensated sum
-    mu = 0.0;
-    Real err = 0.0, tmp = 0.0, y = 0.0;
+    mu = zero;
+    Real err(0), tmp(0), y(0);
     for (unsigned i = 0; i < n; i++) {
       tmp = mu;
       y   = r0[i] + err;
@@ -635,7 +649,7 @@ private:
 
   Real dot(const std::vector<Real> &x, const std::vector<Real> &y) const {
     // Compute dot product of two vectors using Kahan's compensated sum
-    Real val = 0.0, err = 0.0, tmp = 0.0, y0 = 0.0;
+    Real val(0), err(0), tmp(0), y0(0);
     unsigned n = std::min(x.size(),y.size());
     for (unsigned i = 0; i < n; i++) {
       tmp = val;
@@ -671,31 +685,31 @@ private:
   }
 
   unsigned solveDual_dim1(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
-    dualVariables_[0] = 1.0;
+    dualVariables_[0] = (Real)1;
     //std::cout << "dim = " << size_ << "  iter = " << 0 << "  CONVERGED!\n";
     return 0;
   }
 
   unsigned solveDual_dim2(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
-    gx_->set(*subgradients_[0]); gx_->axpy(-1.0,*subgradients_[1]);
-    Real diffg  = gx_->dot(*gx_);
-    if ( std::abs(diffg) > ROL_EPSILON ) {
+    Real diffg  = gx_->dot(*gx_), zero(0), one(1), half(0.5);
+    gx_->set(*subgradients_[0]); gx_->axpy(-one,*subgradients_[1]);
+    if ( std::abs(diffg) > ROL_EPSILON<Real>() ) {
       Real diffa  = (alpha(0)-alpha(1))/t;
       Real gdiffg = subgradients_[1]->dot(*gx_);
-      dualVariables_[0] = std::min(1.0,std::max(0.0,-(gdiffg+diffa)/diffg));
-      dualVariables_[1] = 1.0-dualVariables_[0];
+      dualVariables_[0] = std::min(one,std::max(zero,-(gdiffg+diffa)/diffg));
+      dualVariables_[1] = one-dualVariables_[0];
     }
     else {
-      if ( std::abs(alpha(0)-alpha(1)) > ROL_EPSILON ) {
+      if ( std::abs(alpha(0)-alpha(1)) > ROL_EPSILON<Real>() ) {
         if ( alpha(0) < alpha(1) ) {
-          dualVariables_[0] = 1.0; dualVariables_[1] = 0.0;
+          dualVariables_[0] = one; dualVariables_[1] = zero;
         }
         else if ( alpha(0) > alpha(1) ) {
-          dualVariables_[0] = 0.0; dualVariables_[1] = 1.0;
+          dualVariables_[0] = zero; dualVariables_[1] = one;
         }
       }
       else {
-        dualVariables_[0] = 0.5; dualVariables_[1] = 0.5;
+        dualVariables_[0] = half; dualVariables_[1] = half;
       }
     }
     //std::cout << "dim = " << size_ << "  iter = " << 0 << "  CONVERGED!\n";
@@ -706,21 +720,21 @@ private:
     initializeDualSolver();
     bool nonneg = false;
     unsigned ind = 0, i = 0, CGiter = 0;
-    Real snorm = 0.0, alpha = 0.0, mu = 0.0;
-    std::vector<Real> s(size_,0.0), Hs(size_,0.0), g(size_,0.0), lam(size_+1,0.0);
+    Real snorm(0), alpha(0), mu(0), one(1), zero(0);
+    std::vector<Real> s(size_,0), Hs(size_,0), g(size_,0), lam(size_+1,0);
     //Real val = evaluateObjective(g,dualVariables_,t);
     evaluateObjective(g,dualVariables_,t);
     for (i = 0; i < maxit; i++) {
       CGiter += solveEQPsubproblem(s,mu,g,tol);
       snorm = norm(s);
-      if ( snorm < ROL_EPSILON ) {
+      if ( snorm < ROL_EPSILON<Real>() ) {
         computeLagMult(lam,mu,g);
         nonneg = isNonnegative(ind,lam);
         if ( nonneg ) {
           break;
         }
         else {
-          alpha = 1.0;
+          alpha = one;
           if ( ind < size_ ) {
             workingSet_.erase(ind);
             nworkingSet_.insert(ind);
@@ -729,7 +743,7 @@ private:
       }
       else {
         alpha = computeAlpha(ind,dualVariables_,s);
-        if ( alpha > 0.0 ) {
+        if ( alpha > zero ) {
           axpy(alpha,s,dualVariables_);
           applyFullMatrix(Hs,s);
           axpy(alpha,Hs,g);
@@ -767,10 +781,10 @@ private:
   /********************** PROJECTION ONTO FEASIBLE SET ********************/
   /************************************************************************/
   void project(std::vector<Real> &x, const std::vector<Real> &v) const {
-    std::vector<Real> vsort(size_,0.0);
+    std::vector<Real> vsort(size_,0);
     vsort.assign(v.begin(),v.end());
     std::sort(vsort.begin(),vsort.end());
-    Real sum = -1.0, lam = 0.0;
+    Real sum(-1), lam(0), zero(0), one(1);
     for (int i = size_-1; i > 0; i--) {
       sum += vsort[i];
       if ( sum >= ((Real)(size_-i))*vsort[i-1] ) {
@@ -778,22 +792,23 @@ private:
         break;
       }
     }
-    if (lam == 0.0) {
+    if (lam == zero) {
       lam = (sum+vsort[0])/(Real)size_;
     }
     for (int i = 0; i < size_; i++) {
-      x[i] = std::max(0.0,v[i] - lam);
+      x[i] = std::max(zero,v[i] - lam);
     }
   }
 
   Real computeCriticality(const std::vector<Real> &g) {
-    std::vector<Real> x(size_,0.0), Px(size_,0.0);
-    axpy(1.0,dualVariables_,x);
-    axpy(-1.0,g,x);
+    Real zero(0), one(1);
+    std::vector<Real> x(size_,0), Px(size_,0);
+    axpy(one,dualVariables_,x);
+    axpy(-one,g,x);
     project(Px,x);
-    scale(x,0.0);
-    axpy(1.0,dualVariables_,x);
-    axpy(-1.0,Px,x);
+    scale(x,zero);
+    axpy(one,dualVariables_,x);
+    axpy(-one,Px,x);
     return norm(x);
   }
 }; // class Bundle 
@@ -805,7 +820,7 @@ private:
 //  void aggregate(Vector<Real> &aggSubGrad, Real &aggLinErr, Real &aggDistMeas) const {
 //    aggSubGrad.zero(); aggLinErr = 0.0; aggDistMeas = 0.0;
 //    for (unsigned i = 0; i < size_; i++) {
-//      //if ( dualVariables_[i] > ROL_EPSILON ) {
+//      //if ( dualVariables_[i] > ROL_EPSILON<Real>() ) {
 //        aggSubGrad.axpy(dualVariables_[i],*(subgradients_[i]));
 //        aggLinErr   += dualVariables_[i]*linearizationErrors_[i];
 //        aggDistMeas += dualVariables_[i]*distanceMeasures_[i];

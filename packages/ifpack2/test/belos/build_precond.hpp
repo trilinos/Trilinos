@@ -61,6 +61,7 @@ build_precond (Teuchos::ParameterList& test_params,
   using std::cout;
   using std::endl;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
+  Teuchos::Time timer_init("init");
   Teuchos::Time timer("precond");
   const int myRank = A->getRowMap ()->getComm ()->getRank ();
 
@@ -78,6 +79,11 @@ build_precond (Teuchos::ParameterList& test_params,
   if (test_params.isSublist("Ifpack2")) {
     tif_params = test_params.sublist("Ifpack2");
   }
+  bool reuse_pattern = false;
+  if (test_params.isParameter("Reuse Pattern"))
+    {
+      reuse_pattern = test_params.get<bool>("Reuse Pattern");
+    }
 
   if (myRank == 0) {
     *out << "Configuring, initializing, and computing Ifpack2 preconditioner" << endl;
@@ -85,7 +91,13 @@ build_precond (Teuchos::ParameterList& test_params,
   {
     OSTab tab (*out);
     prec->setParameters (tif_params);
-    prec->initialize ();
+    {
+      Teuchos::TimeMonitor timeMon (timer_init);
+      prec->initialize ();
+    }
+     if (myRank == 0) {
+      *out << "Time Init: " << timer_init.totalElapsedTime() << endl;
+     }
     {
       Teuchos::TimeMonitor timeMon (timer);
       prec->compute ();
@@ -95,6 +107,20 @@ build_precond (Teuchos::ParameterList& test_params,
       OSTab tab2 (*out);
       *out << "Time (s): " << timer.totalElapsedTime () << endl;
     }
+    if (reuse_pattern == true)
+      {
+	{
+	  Teuchos::TimeMonitor timeMon (timer);
+	  prec->compute ();
+	}
+	if (myRank == 0) {
+	  *out << "Finished recomputing Ifpack2 preconditioner" 
+	       << endl;
+	  OSTab tab2 (*out);
+	  *out << "Time (s): " << timer.totalElapsedTime () 
+	       << endl;
+	}
+      }
   }
   if (myRank == 0) {
     *out << "Preconditioner attributes:" << endl;

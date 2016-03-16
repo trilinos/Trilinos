@@ -97,13 +97,13 @@ int ex_put_partial_node_set (int   exoid,
               node_set_id, exoid);
       ex_err("ex_put_partial_node_set",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
      "Error: failed to locate node set id %"PRId64" in VAR_NS_IDS array in file id %d",
               node_set_id, exoid);
       ex_err("ex_put_partial_node_set",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire id's of previously defined dimensions  */
@@ -157,8 +157,9 @@ int ex_put_partial_node_set (int   exoid,
   /* write out the node list array */
   start[0] = --start_node_num;
   count[0] = num_nodes;
-  if (count[0] == 0)
+  if (count[0] == 0) {
     start[0] = 0;
+}
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_vara_longlong(exoid, node_list_id, start, count, node_set_node_list);

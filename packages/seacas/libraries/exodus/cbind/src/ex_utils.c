@@ -104,23 +104,26 @@ int ex_check_file_type(const char *path, int *type)
       FILE *fp;
       int i;
 
-      if (!(fp = fopen(path, "r")))
+      if (!(fp = fopen(path, "r"))) {
 	 return errno;
+}
       i = fread(magic, MAGIC_NUMBER_LEN, 1, fp);
       fclose(fp);
-      if(i != 1)
+      if(i != 1) {
 	 return errno;
+}
    }
     
    /* Ignore the first byte for HDF */
-   if (magic[1] == 'H' && magic[2] == 'D' && magic[3] == 'F')
+   if (magic[1] == 'H' && magic[2] == 'D' && magic[3] == 'F') {
      *type = 5;
-   else if (magic[0] == 'C' && magic[1] == 'D' && magic[2] == 'F') 
+   } else if (magic[0] == 'C' && magic[1] == 'D' && magic[2] == 'F') 
    {
-      if (magic[3] == '\001') 
+      if (magic[3] == '\001') { 
 	*type = 1;
-      else if(magic[3] == '\002') 
+      } else if(magic[3] == '\002') { 
 	*type = 2;
+}
    }
    return EX_NOERR;
 }
@@ -134,7 +137,7 @@ int ex_set_max_name_length(int exoid, int length)
     ex_err("ex_set_max_name_length",errmsg,exerrval);
     return (EX_FATAL);
   }
-  else if (length > NC_MAX_NAME) {
+  if (length > NC_MAX_NAME) {
     exerrval = NC_EMAXNAME;
     sprintf(errmsg, "Error: Max name length (%d) exceeds netcdf max name size (%d).",
 	    length, NC_MAX_NAME);
@@ -200,8 +203,9 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
 	too_long = 1;
       }
 
-      if (count[1] > max_name_len)
+      if (count[1] > max_name_len) {
 	max_name_len = count[1];
+}
 
       if ((status = nc_put_vara_text(exoid, varid, start, count, names[i])) != NC_NOERR) {
 	exerrval = status;
@@ -290,8 +294,9 @@ int ex_get_names_internal(int exoid, int varid, size_t num_entity, char **names,
   
   for (i=0; i<num_entity; i++) {
     status = ex_get_name_internal(exoid, varid, i, names[i], name_size, obj_type, routine);
-    if (status != NC_NOERR)
+    if (status != NC_NOERR) {
       return status;
+}
   }
   return EX_NOERR;
 }
@@ -329,16 +334,19 @@ void ex_trim_internal(char *name)
   size_t size;
   char *end;
   
-  if (name == NULL)
+  if (name == NULL) {
     return;
+}
   
   size = strlen(name);
-  if (size==0)
+  if (size==0) {
     return;
+}
   
   end = name + size - 1;
-  while (end >= name && isspace(*end))
+  while (end >= name && isspace(*end)) {
     end--;
+}
 
   *(end+1) = '\0';
 }
@@ -349,8 +357,9 @@ char *ex_catstr (const char *string,
 {
   char* tmp_string = cur_string;
   cur_string += sprintf (cur_string, "%s%d", string, num) + 1;
-  if ( cur_string - ret_string > 9*(MAX_VAR_NAME_LENGTH+1) )
+  if ( cur_string - ret_string > 9*(MAX_VAR_NAME_LENGTH+1) ) {
     cur_string = ret_string;
+}
   return (tmp_string);
 }
 
@@ -363,8 +372,9 @@ char *ex_catstr2 (const char *string1,
 {
   char* tmp_string = cur_string;
   cur_string += sprintf (cur_string, "%s%d%s%d", string1, num1, string2, num2) + 1;
-  if ( cur_string - ret_string > 9*(MAX_VAR_NAME_LENGTH+1) )
+  if ( cur_string - ret_string > 9*(MAX_VAR_NAME_LENGTH+1) ) {
     cur_string = ret_string;
+}
   return (tmp_string);
 }
 
@@ -409,28 +419,29 @@ char* ex_name_of_object(ex_entity_type obj_type)
 ex_entity_type ex_var_type_to_ex_entity_type(char var_type)
 {
   char var_lower = tolower(var_type);
-  if (var_lower == 'n')
+  if (var_lower == 'n') {
     return EX_NODAL;
-  else if (var_lower == 'l')
+  } else if (var_lower == 'l') {
     return EX_EDGE_BLOCK;
-  else if (var_lower == 'f')
+  } else if (var_lower == 'f') {
     return EX_FACE_BLOCK;
-  else if (var_lower == 'e')
+  } else if (var_lower == 'e') {
     return EX_ELEM_BLOCK;
-  else if (var_lower == 'm')
+  } else if (var_lower == 'm') {
     return EX_NODE_SET;
-  else if (var_lower == 'd')
+  } else if (var_lower == 'd') {
     return EX_EDGE_SET;
-  else if (var_lower == 'a')
+  } else if (var_lower == 'a') {
     return EX_FACE_SET;
-  else if (var_lower == 's')
+  } else if (var_lower == 's') {
     return EX_SIDE_SET;
-  else if (var_lower == 't')
+  } else if (var_lower == 't') {
     return EX_ELEM_SET;
-  else if (var_lower == 'g')
+  } else if (var_lower == 'g') {
     return EX_GLOBAL;
-  else
+  } else {
     return EX_INVALID;
+  }
 }
 
 char* ex_dim_num_objects(ex_entity_type obj_type)
@@ -732,8 +743,9 @@ int ex_id_lkup( int exoid,
       }
       status = nc_get_var_int(exoid, varid, (int *)id_vals_int);
       if (status == NC_NOERR) {
-	for (i=0;i<dim_len;i++)
+	for (i=0;i<dim_len;i++) {
 	  id_vals[i] = (int64_t) id_vals_int[i];
+}
       }
       free(id_vals_int);
     }
@@ -772,13 +784,15 @@ int ex_id_lkup( int exoid,
      corresponding to the passed index number */
 
   for (i=0;i<dim_len;i++) {
-    if (id_vals[i] == num)
+    if (id_vals[i] == num) {
       break; /* found the id requested */
+}
   }
   if (i >= dim_len) /* failed to find id number */
   {
     if ( !(tmp_stats->valid_ids) ) {
-      if (id_vals) free (id_vals); 
+      if (id_vals) { free (id_vals); 
+}
     }
     exerrval = EX_LOOKUPFAIL;
     return(EX_LOOKUPFAIL); /*if we got here, the id array value doesn't exist */
@@ -798,7 +812,8 @@ int ex_id_lkup( int exoid,
 
       if (!(stat_vals = malloc(dim_len*sizeof(int)))) {
         exerrval = EX_MEMFAIL;
-        if (id_vals) free (id_vals); 
+        if (id_vals) { free (id_vals); 
+}
         sprintf(errmsg,
                  "Error: failed to allocate memory for %s array for file id %d",
                   id_table,exoid);
@@ -808,7 +823,8 @@ int ex_id_lkup( int exoid,
 
       if ((status = nc_get_var_int (exoid, varid, stat_vals)) != NC_NOERR) {
         exerrval = status;
-        if (id_vals) free (id_vals); 
+        if (id_vals) { free (id_vals); 
+}
         free(stat_vals);
         sprintf(errmsg,
                "Error: failed to get %s array from file id %d",
@@ -833,14 +849,17 @@ int ex_id_lkup( int exoid,
         free (stat_vals);
       }
       if ( !(tmp_stats->valid_ids) ) {
-        if (id_vals) free (id_vals); 
+        if (id_vals) { free (id_vals); 
+}
       }
       return(-((int)i+1)); /* return index into id array (1-based) */
     }
   }
   if ( !(tmp_stats->valid_ids) ) {
-    if (id_vals) free (id_vals);
-    if (stat_vals) free (stat_vals);
+    if (id_vals) { free (id_vals);
+}
+    if (stat_vals) { free (stat_vals);
+}
   }
   return(i+1); /* return index into id array (1-based) */
 }
@@ -909,14 +928,17 @@ void ex_rm_stat_ptr (int exoid, struct obj_stats **obj_ptr)
   {
     if (exoid == tmp_ptr->exoid )       /* linear search for exodus file id */
     {
-      if (tmp_ptr == *obj_ptr)          /* Are we at the head of the list? */
+      if (tmp_ptr == *obj_ptr) {          /* Are we at the head of the list? */
         *obj_ptr = (*obj_ptr)->next;    /*   yes, reset ptr to head of list */
-      else                              /*   no, remove this record from chain*/
+      } else {                              /*   no, remove this record from chain*/
         last_head_list_ptr->next=tmp_ptr->next;
-      if (tmp_ptr->id_vals != NULL)
+}
+      if (tmp_ptr->id_vals != NULL) {
         free(tmp_ptr->id_vals);           /* free up memory */
-      if (tmp_ptr->stat_vals != NULL)
+}
+      if (tmp_ptr->stat_vals != NULL) {
         free(tmp_ptr->stat_vals);
+}
       free(tmp_ptr);
       break;                            /* Quit if found */
     }
@@ -1013,8 +1035,9 @@ int ex_inc_file_item( int exoid,                /* file id */
 
   while (tlist_ptr )                    /* Walk linked list of file ids/vals */
   {
-    if (exoid == tlist_ptr->exo_id )    /* linear search for exodus file id */
+    if (exoid == tlist_ptr->exo_id ) {    /* linear search for exodus file id */
       break;                            /* Quit if found */
+}
     tlist_ptr = tlist_ptr->next;        /* Loop back if not */
   }
 
@@ -1075,8 +1098,9 @@ int ex_get_file_item( int exoid,                /* file id */
 
   while (tlist_ptr )                    /* Walk linked list of file ids/vals */
   {
-    if (exoid == tlist_ptr->exo_id )    /* linear search for exodus file id */
+    if (exoid == tlist_ptr->exo_id ) {    /* linear search for exodus file id */
       break;                            /* Quit if found */
+}
     tlist_ptr = tlist_ptr->next;        /* Loop back if not */
   }
 
@@ -1131,10 +1155,11 @@ void ex_rm_file_item( int exoid,                /* file id */
   {
     if (exoid == tlist_ptr->exo_id )    /* linear search for exodus file id */
     {
-      if (tlist_ptr == *list_ptr)       /* Are we at the head of the list? */
+      if (tlist_ptr == *list_ptr) {       /* Are we at the head of the list? */
         *list_ptr = (*list_ptr)->next;  /*   yes, reset ptr to head of list */
-      else                              /*   no, remove this record from chain*/
+      } else {                              /*   no, remove this record from chain*/
         last_head_list_ptr->next=tlist_ptr->next;
+}
       free(tlist_ptr);                  /* free up memory */
       break;                            /* Quit if found */
     }
@@ -1270,12 +1295,15 @@ static int ex_int_median3(int v[], int iv[], int64_t left, int64_t right)
   int64_t center;
   center = (left + right) / 2;
 
-  if (v[iv[left]] > v[iv[center]])
+  if (v[iv[left]] > v[iv[center]]) {
     ex_swap(iv, left, center);
-  if (v[iv[left]] > v[iv[right]])
+}
+  if (v[iv[left]] > v[iv[right]]) {
     ex_swap(iv, left, right);
-  if (v[iv[center]] > v[iv[right]])
+}
+  if (v[iv[center]] > v[iv[right]]) {
     ex_swap(iv, center, right);
+}
 
   ex_swap(iv, center, right-1);
   return iv[right-1];
@@ -1286,12 +1314,15 @@ static int64_t ex_int_median3_64(int64_t v[], int64_t iv[], int64_t left, int64_
   int64_t center;
   center = (left + right) / 2;
 
-  if (v[iv[left]] > v[iv[center]])
+  if (v[iv[left]] > v[iv[center]]) {
     ex_swap64(iv, left, center);
-  if (v[iv[left]] > v[iv[right]])
+}
+  if (v[iv[left]] > v[iv[right]]) {
     ex_swap64(iv, left, right);
-  if (v[iv[center]] > v[iv[right]])
+}
+  if (v[iv[center]] > v[iv[right]]) {
     ex_swap64(iv, center, right);
+}
 
   ex_swap64(iv, center, right-1);
   return iv[right-1];
@@ -1308,8 +1339,10 @@ static void ex_int_iqsort(int v[], int iv[], int left, int right)
     j = right - 1;
 
     for ( ; ; ) {
-      while (v[iv[++i]] < v[pivot]);
-      while (v[iv[--j]] > v[pivot]);
+      while (v[iv[++i]] < v[pivot]) {;
+}
+      while (v[iv[--j]] > v[pivot]) {;
+}
       if (i < j) {
         ex_swap(iv, i, j);
       } else {
@@ -1334,8 +1367,10 @@ static void ex_int_iqsort64(int64_t v[], int64_t iv[], int64_t left, int64_t rig
     j = right - 1;
 
     for ( ; ; ) {
-      while (v[iv[++i]] < v[pivot]);
-      while (v[iv[--j]] > v[pivot]);
+      while (v[iv[++i]] < v[pivot]) {;
+}
+      while (v[iv[--j]] > v[pivot]) {;
+}
       if (i < j) {
         ex_swap64(iv, i, j);
       } else {
@@ -1452,14 +1487,14 @@ int ex_large_model(int exoid)
 	  message_output = EX_TRUE;
 	}
         return 0;
-      } else {
+      } 
 	if (!message_output) {
 	  fprintf(stderr,
 		  "EXODUSII: Large model size selected via EXODUS_LARGE_MODEL environment variable\n");
 	  message_output = EX_TRUE;
 	}
         return 1;
-      }
+      
     } else {
       return EXODUS_DEFAULT_SIZE; /* Specified in exodusII_int.h */
     }
@@ -1525,7 +1560,7 @@ size_t ex_header_size(int exoid)
 /* type = 1 for integer, 2 for real, 3 for character */
 void ex_compress_variable(int exoid, int varid, int type)
 {
-#if defined(ENABLE_NETCDF4)
+#if NC_HAS_HDF5
 
   struct ex_file_item* file = ex_find_file_item(exoid);
 

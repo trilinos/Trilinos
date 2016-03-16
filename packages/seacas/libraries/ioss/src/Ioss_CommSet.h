@@ -46,24 +46,24 @@ namespace Ioss {
 
   class CommSet : public GroupingEntity {
   public:
-    CommSet(DatabaseIO *io_database, const std::string& name,
+    CommSet(DatabaseIO *io_database, const std::string& my_name,
 	    const std::string& entity_type, size_t entity_count);
 
-    std::string type_string() const {return "CommSet";}
-    std::string short_type_string() const {return "commlist";}
-    EntityType type() const {return COMMSET;}
+    std::string type_string() const override {return "CommSet";}
+    std::string short_type_string() const override {return "commlist";}
+    EntityType type() const override {return COMMSET;}
     
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
+    Property get_implicit_property(const std::string& my_name) const override;
 
   protected:
     int64_t internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
+				void *data, size_t data_size) const override;
 
     int64_t internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
+				void *data, size_t data_size) const override;
   };
 }
 #endif

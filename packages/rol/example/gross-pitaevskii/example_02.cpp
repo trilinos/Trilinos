@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
     Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&parlist));
        
     int    nx         = parlist.get("Interior Grid Points",100);
-    double gnl        = parlist.get("Nonlinearity Coefficient g",50.0);
+    RealT gnl        = parlist.get("Nonlinearity Coefficient g",50.0);
     bool   exactsolve = parlist.get("Solve Exact Augmented System",false);
 
     // Command line option to override parameters.xml for solving the exact augmented system
@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     OptStdVector<RealT> psi(psi_rcp,fd);
        
     // Set Initial Guess (normalized)
-    double sqrt30 = sqrt(30);
+    RealT sqrt30 = sqrt(30);
 
     for (int i=0; i<nx; i++) {
         (*psi_rcp)[i]   = sqrt30*(*xi_rcp)[i]*(1.0-(*xi_rcp)[i]);

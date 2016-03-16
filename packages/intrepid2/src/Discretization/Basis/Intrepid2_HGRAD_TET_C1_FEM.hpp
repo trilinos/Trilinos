@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -78,7 +77,7 @@ namespace Intrepid2 {
   \endverbatim
  */
 template<class Scalar, class ArrayScalar> 
-class Basis_HGRAD_TET_C1_FEM : public Basis<Scalar, ArrayScalar> {
+class Basis_HGRAD_TET_C1_FEM : public Basis<Scalar, ArrayScalar>, public DofCoordsInterface<ArrayScalar> {
 private:
 
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
@@ -115,6 +114,14 @@ public:
                  const ArrayScalar &    inputPoints,
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
+
+  /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+              <strong>reference Triangle</strong>.
+
+      \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+                                     dimensioned (F,D)
+  */
+  void getDofCoords(ArrayScalar & DofCoords) const;
 };
 }// namespace Intrepid2
 

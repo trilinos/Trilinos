@@ -56,12 +56,12 @@ namespace RBGen {
       // second block == G is already achieved from previous pass
       // we need to put V in the first block
       {
-        Epetra_MultiVector W1(::View,*workW_,0,curRank_);
-        Epetra_MultiVector lclV(::View,*V_,0,curRank_);
+        Epetra_MultiVector W1(Epetra_DataAccess::View,*workW_,0,curRank_);
+        Epetra_MultiVector lclV(Epetra_DataAccess::View,*V_,0,curRank_);
         W1 = lclV;
       }
       // get a pointer to [W1 W2]
-      Epetra_MultiVector W12(::View,*workW_,0,2*curRank_);
+      Epetra_MultiVector W12(Epetra_DataAccess::View,*workW_,0,2*curRank_);
 
       //
       // compute the Householder QR factorization of the current right basis
@@ -92,7 +92,7 @@ namespace RBGen {
           "RBGen::ISVDMultiSDB::makePass(): error calling ORGQR to construct next pass coefficients.");
       // compute A [W_1 W_2]
       {
-        Epetra_MultiVector lclAW(::View,*workAW_,0,2*curRank_);
+        Epetra_MultiVector lclAW(Epetra_DataAccess::View,*workAW_,0,2*curRank_);
         info = lclAW.Multiply('N','N',1.0,*A_,W12,0.0);
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,
             "RBGen::ISVDMultiSDB::makePass(): Error calling Epetra_MultiVector::Multiply() for A*W");
@@ -144,15 +144,15 @@ namespace RBGen {
 
       // put new vectors in U
       {
-        Epetra_MultiVector Unew(::View,*U_,curRank_,lup);
+        Epetra_MultiVector Unew(Epetra_DataAccess::View,*U_,curRank_,lup);
         if (firstPass) {
           // new vectors are just Aplus
-          const Epetra_MultiVector Aplus(::View,*A_,numProc_,lup);
+          const Epetra_MultiVector Aplus(Epetra_DataAccess::View,*A_,numProc_,lup);
           Unew = Aplus;
         }
         else {
           // new vectors are AW
-          const Epetra_MultiVector AWplus(::View,*workAW_,numProc_,lup);
+          const Epetra_MultiVector AWplus(Epetra_DataAccess::View,*workAW_,numProc_,lup);
           Unew = AWplus;
         }
       }
@@ -166,17 +166,17 @@ namespace RBGen {
     // T Z^T V is 2*oldRank x curRank
     // we need T Z^T V in a local Epetra_MultiVector
     if (!firstPass) {
-      Epetra_MultiVector lclWV(::View,*workWV_,0,curRank_);
+      Epetra_MultiVector lclWV(Epetra_DataAccess::View,*workWV_,0,curRank_);
       {
         // create (local) map for V(1:numProc,1:curRank)
         Epetra_LocalMap lclmap(numProc_,0,A_->Comm());
-        const Epetra_MultiVector lclV(::View,lclmap,(*V_)[0],numCols,curRank_);
-        const Epetra_MultiVector W12(::View,*workW_,0,2*oldRank);
+        const Epetra_MultiVector lclV(Epetra_DataAccess::View,lclmap,(*V_)[0],numCols,curRank_);
+        const Epetra_MultiVector W12(Epetra_DataAccess::View,*workW_,0,2*oldRank);
         int info = lclWV.Multiply('N','N',1.0,W12,lclV,0.0);
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
             "RBGen::ISVDMultiSDB::makePass(): error Multiply()ing Epetra_MultiVector for W*V.");
       }
-      Epetra_MultiVector lclV(::View,*V_,0,curRank_);
+      Epetra_MultiVector lclV(Epetra_DataAccess::View,*V_,0,curRank_);
       lclV = lclWV;
     }
 
@@ -190,10 +190,11 @@ namespace RBGen {
     // we will need it on the next pass 
     //
     {
-      Epetra_MultiVector W2(::View,*workW_,curRank_,curRank_);
-      Epetra_MultiVector Ulcl(::View,*U_,0,curRank_);
-      Epetra_MultiVector Vlcl(::View,*V_,0,curRank_);
-      // compute A^T U
+      Epetra_MultiVector W2(Epetra_DataAccess::View,*workW_,curRank_,curRank_);
+      Epetra_MultiVector Ulcl(Epetra_DataAccess::View,*U_,0,curRank_);
+      Epetra_MultiVector Vlcl(Epetra_DataAccess::View,*V_,0,curRank_);
+
+      //_DataAccess compute A^T U
       int info = W2.Multiply('T','N',1.0,*A_,Ulcl,0.0);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
           "RBGen::IncSVD::computeBasis(): Error calling Epetra_MultiVector::Multiply for A^T U.");
@@ -227,8 +228,8 @@ namespace RBGen {
       // Check that A V = U Sigma
       // get pointers to current U and V, create workspace for A V - U Sigma
       Epetra_MultiVector work(U_->Map(),curRank_,false), 
-                         curU(::View,*U_,0,curRank_),
-                         curV(::View,*V_,0,curRank_);
+                         curU(Epetra_DataAccess::View,*U_,0,curRank_),
+                         curV(Epetra_DataAccess::View,*V_,0,curRank_);
       // create local MV for sigmas
       Epetra_LocalMap lclmap(curRank_,0,A_->Comm());
       Epetra_MultiVector curS(lclmap,curRank_,true);

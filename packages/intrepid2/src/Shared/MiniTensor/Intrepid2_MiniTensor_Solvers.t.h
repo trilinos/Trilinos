@@ -143,6 +143,9 @@ solve(STEP & step_method, FN & fn, Vector<T, N> & soln)
   Vector<T, N>
   resi = fn.gradient(soln);
 
+  initial_value = fn.value(soln);
+  previous_value = initial_value;
+  failed = failed || fn.failed;
   initial_norm = norm(resi);
 
   updateConvergenceCriterion(initial_norm);
@@ -158,10 +161,20 @@ solve(STEP & step_method, FN & fn, Vector<T, N> & soln)
 
     resi = fn.gradient(soln);
 
+    failed = failed || fn.failed;
+
     T const
     norm_resi = norm(resi);
 
     updateConvergenceCriterion(norm_resi);
+
+    T const
+    value = fn.value(soln);
+
+    failed = failed || fn.failed;
+
+    updateDivergenceCriterion(value);
+
     ++num_iter;
   }
 
@@ -195,13 +208,41 @@ updateConvergenceCriterion(T const ae)
 //
 //
 template<typename T, Index N>
+void
+Minimizer<T, N>::
+updateDivergenceCriterion(T const fn_value)
+{
+  monotonic = fn_value <= previous_value;
+
+  if (enforce_monotonicity == true && monotonic == false) {
+    failed = true;
+  }
+
+  previous_value = fn_value;
+
+  bounded = fn_value <= growth_limit * initial_value;
+
+  if (enforce_boundedness == true && bounded == false) {
+    failed = true;
+  }
+
+  return;
+}
+
+//
+//
+//
+template<typename T, Index N>
 bool
 Minimizer<T, N>::
 continueSolve() const
 {
+  // If failure has occurred, stop immediately.
+  if (failed == true) return false;
+
   // Regardless of other criteria, if the residual is zero stop solving.
   bool const
-  zero_resi = (abs_error > 0.0 == false);
+  zero_resi = ((abs_error > 0.0) == false);
 
   if (zero_resi == true) return false;
 
@@ -242,24 +283,25 @@ printReport(std::ostream & os)
   //converged_string = converged == true ? "\U0001F60A" : "\U0001F623";
 
   os << "\n\n";
-  os << "Method     : " << step_method_name << '\n';
-  os << "Function   : " << function_name << '\n';
-  os << "Converged  : " << converged_string << '\n';
-  os << "Max Iters  : " << max_num_iter << '\n';
-  os << "Iters Taken: " << num_iter << '\n';
+  os << "Method       : " << step_method_name << '\n';
+  os << "Function     : " << function_name << '\n';
+  os << "Converged    : " << converged_string << '\n';
+  os << "Max Iters    : " << max_num_iter << '\n';
+  os << "Iters Taken  : " << num_iter << '\n';
 
   os << std::scientific << std::setprecision(16);
 
-  os << "Initial |R|: " << std::setw(24) << initial_norm << '\n';
-  os << "Abs Tol    : " << std::setw(24) << abs_tol << '\n';
-  os << "Abs Error  : " << std::setw(24) << abs_error << '\n';
-  os << "Rel Tol    : " << std::setw(24) << rel_tol << '\n';
-  os << "Rel Error  : " << std::setw(24) << rel_error << '\n';
-  os << "Initial X  : " << initial_guess << '\n';
-  os << "Final X    : " << final_soln << '\n';
-  os << "f(X)       : " << std::setw(24) << final_value << '\n';
-  os << "Df(X)      : " << final_gradient << '\n';
-  os << "DDf(X)     : " << final_hessian << '\n';
+  os << "Initial |R|  : " << std::setw(24) << initial_norm << '\n';
+  os << "Abs Tol      : " << std::setw(24) << abs_tol << '\n';
+  os << "Abs Error    : " << std::setw(24) << abs_error << '\n';
+  os << "Rel Tol      : " << std::setw(24) << rel_tol << '\n';
+  os << "Rel Error    : " << std::setw(24) << rel_error << '\n';
+  os << "Initial X    : " << initial_guess << '\n';
+  os << "Initial f(X) : " << std::setw(24) << initial_value << '\n';
+  os << "Final X      : " << final_soln << '\n';
+  os << "FInal f(X)   : " << std::setw(24) << final_value << '\n';
+  os << "Final Df(X)  : " << final_gradient << '\n';
+  os << "FInal DDf(X) : " << final_hessian << '\n';
   os << '\n';
 
   return;
@@ -598,13 +640,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
   step(dimension);
 
   bool const
-  singular_hessian = std::abs(det(Hessian)) < hessian_singular_tol;
-
-  bool const
-  ill_conditioned_hessian = inv_cond(Hessian) * hessian_cond_tol < 1.0;
-
-  bool const
-  bad_hessian = singular_hessian || ill_conditioned_hessian;
+  bad_hessian = inv_cond(Hessian) * hessian_cond_tol < 1.0;
 
   // Regularize Hessian if it is bad.
   if (bad_hessian == true) {

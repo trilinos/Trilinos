@@ -38,7 +38,6 @@
 //
 // ************************************************************************
 // @HEADER
-
 #ifndef TPETRA_MATRIXMATRIX_DEF_HPP
 #define TPETRA_MATRIXMATRIX_DEF_HPP
 
@@ -58,9 +57,6 @@
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
 
-//#define COMPUTE_MMM_STATISTICS
-
-
 /*! \file TpetraExt_MatrixMatrix_def.hpp
 
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
@@ -68,10 +64,14 @@
 
 namespace Tpetra {
 
-
 namespace MatrixMatrix{
 
-
+//
+// This method forms the matrix-matrix product C = op(A) * op(B), where
+// op(A) == A   if transposeA is false,
+// op(A) == A^T if transposeA is true,
+// and similarly for op(B).
+//
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -83,166 +83,160 @@ void Multiply(
   bool transposeB,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result,
-  const std::string & label)
+  const std::string& label)
 {
+  // Convience typedefs
+  typedef Scalar                            SC;
+  typedef LocalOrdinal                      LO;
+  typedef GlobalOrdinal                     GO;
+  typedef Node                              NO;
+  typedef CrsMatrix<SC,LO,GO,NO>            crs_matrix_type;
+  typedef Import<LO,GO,NO>                  import_type;
+  typedef CrsMatrixStruct<SC,LO,GO,NO>      crs_matrix_struct_type;
+  typedef Map<LO,GO,NO>                     map_type;
+  typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix = std::string("TpetraExt ")+ label + std::string(": ");
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("MMM All Setup"))));
+  RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Setup"))));
 #endif
 
-  //TEUCHOS_FUNC_TIME_MONITOR_DIFF("My Matrix Mult", mmm_multiply);
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix_t;
-  //
-  //This method forms the matrix-matrix product C = op(A) * op(B), where
-  //op(A) == A   if transposeA is false,
-  //op(A) == A^T if transposeA is true,
-  //and similarly for op(B).
-  //
+  const std::string prefix = "TpetraExt::MatrixMatrix::Multiply(): ";
 
-  //A and B should already be Filled.
-  //(Should we go ahead and call FillComplete() on them if necessary?
-  // or error out? For now, we choose to error out.)
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix A is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix B is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error, "MatrixMatrix::Multiply(): Result matrix C must not be locally indexed.");
+  // TEUCHOS_FUNC_TIME_MONITOR_DIFF("My Matrix Mult", mmm_multiply);
 
-  //Convience typedefs
-  typedef CrsMatrixStruct<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node> CrsMatrixStruct_t;
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
+  // A and B should already be Filled.
+  // Should we go ahead and call FillComplete() on them if necessary or error
+  // out? For now, we choose to error out.
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error, prefix << "Matrix A is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error, prefix << "Matrix B is not fill complete.");
 
-  RCP<const Matrix_t > Aprime = null;
-  RCP<const Matrix_t > Bprime = null;
+  RCP<const crs_matrix_type> Aprime = null;
+  RCP<const crs_matrix_type> Bprime = null;
 
-  // Is this a "clean" matrix
-  bool NewFlag=!C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
+  // Is this a "clean" matrix?
+  bool newFlag = !C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
 
-  bool use_optimized_ATB=false;
-  if(transposeA && !transposeB && call_FillComplete_on_result && NewFlag) {
-    use_optimized_ATB=true;
-  }
+  bool use_optimized_ATB = false;
+  if (transposeA && !transposeB && call_FillComplete_on_result && newFlag)
+    use_optimized_ATB = true;
+
 #ifdef USE_OLD_TRANSPOSE // NOTE: For Grey Ballard's use.  Remove this later.
-  use_optimized_ATB=false;
+  use_optimized_ATB = false;
 #endif
 
+  if (!use_optimized_ATB && transposeA) {
+    transposer_type transposer(rcpFromRef (A));
+    Aprime = transposer.createTranspose();
 
-  if(!use_optimized_ATB && transposeA) {
-    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> at (Teuchos::rcpFromRef (A));
-    Aprime = at.createTranspose();
-  }
-  else{
+  } else {
     Aprime = rcpFromRef(A);
   }
 
-  if(transposeB){
-    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> bt (Teuchos::rcpFromRef (B));
-    Bprime=bt.createTranspose();
-  }
-  else{
+  if (transposeB) {
+    transposer_type transposer(rcpFromRef (B));
+    Bprime = transposer.createTranspose();
+
+  } else {
     Bprime = rcpFromRef(B);
   }
 
-
-  //now check size compatibility
+  // Check size compatibility
   global_size_t numACols = A.getDomainMap()->getGlobalNumElements();
   global_size_t numBCols = B.getDomainMap()->getGlobalNumElements();
-  global_size_t Aouter = transposeA ? numACols : A.getGlobalNumRows();
-  global_size_t Bouter = transposeB ? B.getGlobalNumRows() : numBCols;
-  global_size_t Ainner = transposeA ? A.getGlobalNumRows() : numACols;
-  global_size_t Binner = transposeB ? numBCols : B.getGlobalNumRows();
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
+  global_size_t Aouter   = transposeA ? numACols             : A.getGlobalNumRows();
+  global_size_t Bouter   = transposeB ? B.getGlobalNumRows() : numBCols;
+  global_size_t Ainner   = transposeA ? A.getGlobalNumRows() : numACols;
+  global_size_t Binner   = transposeB ? numBCols             : B.getGlobalNumRows();
+  TEUCHOS_TEST_FOR_EXCEPTION(Ainner != Binner, std::runtime_error,
+    prefix << "ERROR, inner dimensions of op(A) and op(B) "
     "must match for matrix-matrix product. op(A) is "
-    <<Aouter<<"x"<<Ainner << ", op(B) is "<<Binner<<"x"<<Bouter<<std::endl);
+    << Aouter << "x" << Ainner << ", op(B) is "<< Binner << "x" << Bouter);
 
-  //The result matrix C must at least have a row-map that reflects the
-  //correct row-size. Don't check the number of columns because rectangular
-  //matrices which were constructed with only one map can still end up
-  //having the correct capacity and dimensions when filled.
+  // The result matrix C must at least have a row-map that reflects the correct
+  // row-size. Don't check the number of columns because rectangular matrices
+  // which were constructed with only one map can still end up having the
+  // correct capacity and dimensions when filled.
   TEUCHOS_TEST_FOR_EXCEPTION(Aouter > C.getGlobalNumRows(), std::runtime_error,
-    "MatrixMatrix::Multiply: ERROR, dimensions of result C must "
-    "match dimensions of op(A) * op(B). C has "<<C.getGlobalNumRows()
-     << " rows, should have at least "<<Aouter << std::endl);
+    prefix << "ERROR, dimensions of result C must "
+    "match dimensions of op(A) * op(B). C has " << C.getGlobalNumRows()
+     << " rows, should have at least " << Aouter << std::endl);
 
-  //It doesn't matter whether C is already Filled or not. If it is already
-  //Filled, it must have space allocated for the positions that will be
-  //referenced in forming C = op(A)*op(B). If it doesn't have enough space,
-  //we'll error out later when trying to store result values.
+  // It doesn't matter whether C is already Filled or not. If it is already
+  // Filled, it must have space allocated for the positions that will be
+  // referenced in forming C = op(A)*op(B). If it doesn't have enough space,
+  // we'll error out later when trying to store result values.
 
   // CGB: However, matrix must be in active-fill
   TEUCHOS_TEST_FOR_EXCEPT( C.isFillActive() == false );
 
-  //We're going to need to import remotely-owned sections of A and/or B
-  //if more than 1 processor is performing this run, depending on the scenario.
+  // We're going to need to import remotely-owned sections of A and/or B if
+  // more than one processor is performing this run, depending on the scenario.
   int numProcs = A.getComm()->getSize();
 
-  //Declare a couple of structs that will be used to hold views of the data
-  //of A and B, to be used for fast access during the matrix-multiplication.
-  CrsMatrixStruct_t Aview;
-  CrsMatrixStruct_t Bview;
+  // Declare a couple of structs that will be used to hold views of the data
+  // of A and B, to be used for fast access during the matrix-multiplication.
+  crs_matrix_struct_type Aview;
+  crs_matrix_struct_type Bview;
 
-  RCP<const Map_t > targetMap_A = Aprime->getRowMap();
-  RCP<const Map_t > targetMap_B = Bprime->getRowMap();
+  RCP<const map_type> targetMap_A = Aprime->getRowMap();
+  RCP<const map_type> targetMap_B = Bprime->getRowMap();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("MMM All I&X"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All I&X"))));
 #endif
 
-  //Now import any needed remote rows and populate the Aview struct.
-  // NOTE: We assert that an import isn't needed --- since we do the transpose above to handle that.
-  if(!use_optimized_ATB) {
-    RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > dummyImporter;
-    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview,dummyImporter,true,label);
+  // Now import any needed remote rows and populate the Aview struct
+  // NOTE: We assert that an import isn't needed --- since we do the transpose
+  // above to handle that.
+  if (!use_optimized_ATB) {
+    RCP<const import_type> dummyImporter;
+    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label);
   }
 
+  // We will also need local access to all rows of B that correspond to the
+  // column-map of op(A).
+  if (numProcs > 1)
+    targetMap_B = Aprime->getColMap();
 
-  //We will also need local access to all rows of B that correspond to the
-  //column-map of op(A).
-  if (numProcs > 1) {
-    targetMap_B = Aprime->getColMap(); //colmap_op_A;
-  }
-
-  //Now import any needed remote rows and populate the Bview struct.
-  if(!use_optimized_ATB)
-    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(),false,label);
+  // Import any needed remote rows and populate the Bview struct.
+  if (!use_optimized_ATB)
+    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("MMM All Multiply"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
 #endif
 
+  // Call the appropriate method to perform the actual multiplication.
+  if (use_optimized_ATB) {
+    MMdetails::mult_AT_B_newmatrix(A, B, C, label);
 
-  //Now call the appropriate method to perform the actual multiplication.
-  CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
+  } else if (call_FillComplete_on_result && newFlag) {
+    MMdetails::mult_A_B_newmatrix(Aview, Bview, C, label);
 
-  if(use_optimized_ATB) {
-    MMdetails::mult_AT_B_newmatrix(A, B, C,label);
-  }
-  else if(call_FillComplete_on_result && NewFlag ) {
-    MMdetails::mult_A_B_newmatrix(Aview, Bview, C,label);
-  }
-  else {
-    MMdetails::mult_A_B(Aview, Bview, crsmat,label);
+  } else if (call_FillComplete_on_result) {
+    MMdetails::mult_A_B_reuse(Aview, Bview, C, label);
+
+  } else {
+    CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
+
+    MMdetails::mult_A_B(Aview, Bview, crsmat, label);
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("MMM All FillComplete"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All FillComplete"))));
 #endif
     if (call_FillComplete_on_result) {
-      //We'll call FillComplete on the C matrix before we exit, and give
-      //it a domain-map and a range-map.
-      //The domain-map will be the domain-map of B, unless
-      //op(B)==transpose(B), in which case the range-map of B will be used.
-      //The range-map will be the range-map of A, unless
-      //op(A)==transpose(A), in which case the domain-map of A will be used.
-      if (!C.isFillComplete()) {
+      // We'll call FillComplete on the C matrix before we exit, and give it a
+      // domain-map and a range-map.
+      // The domain-map will be the domain-map of B, unless
+      // op(B)==transpose(B), in which case the range-map of B will be used.
+      // The range-map will be the range-map of A, unless op(A)==transpose(A),
+      // in which case the domain-map of A will be used.
+      if (!C.isFillComplete())
         C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
-      }
     }
   }
-
 }
 
 
@@ -258,111 +252,112 @@ void Jacobi(Scalar omega,
             bool call_FillComplete_on_result,
 	    const std::string & label)
 {
+  // Convience typedefs
+  typedef Scalar                            SC;
+  typedef LocalOrdinal                      LO;
+  typedef GlobalOrdinal                     GO;
+  typedef Node                              NO;
+  typedef Import<LO,GO,NO>                  import_type;
+  typedef CrsMatrixStruct<SC,LO,GO,NO>      crs_matrix_struct_type;
+  typedef Map<LO,GO,NO>                     map_type;
+  typedef CrsMatrix<SC,LO,GO,NO>            crs_matrix_type;
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix = std::string("TpetraExt ")+ label + std::string(": ");
+  std::string prefix_mmm = std::string("TpetraExt ")+ label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("Jacobi All Setup"))));
+  RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm+std::string("Jacobi All Setup"))));
 #endif
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix_t;
 
-  //A and B should already be Filled.
-  //(Should we go ahead and call FillComplete() on them if necessary?
-  // or error out? For now, we choose to error out.)
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix A is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix B is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error, "MatrixMatrix::Multiply(): Result matrix C must not be locally indexed.");
+  const std::string prefix = "TpetraExt::MatrixMatrix::Jacobi(): ";
 
-  //Convience typedefs
-  typedef CrsMatrixStruct<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node> CrsMatrixStruct_t;
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
+  // A and B should already be Filled.
+  // Should we go ahead and call FillComplete() on them if necessary or error
+  // out? For now, we choose to error out.
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(),  std::runtime_error, prefix << "Matrix A is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(),  std::runtime_error, prefix << "Matrix B is not fill complete.");
 
-  RCP<const Matrix_t > Aprime = rcpFromRef(A);
-  RCP<const Matrix_t > Bprime = rcpFromRef(B);
+  RCP<const crs_matrix_type> Aprime = rcpFromRef(A);
+  RCP<const crs_matrix_type> Bprime = rcpFromRef(B);
 
-  //now check size compatibility
+  // Now check size compatibility
   global_size_t numACols = A.getDomainMap()->getGlobalNumElements();
   global_size_t numBCols = B.getDomainMap()->getGlobalNumElements();
-  global_size_t Aouter = A.getGlobalNumRows();
-  global_size_t Bouter = numBCols;
-  global_size_t Ainner = numACols;
-  global_size_t Binner = B.getGlobalNumRows();
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "MatrixMatrix::Jacobi: ERROR, inner dimensions of op(A) and op(B) "
+  global_size_t Aouter   = A.getGlobalNumRows();
+  global_size_t Bouter   = numBCols;
+  global_size_t Ainner   = numACols;
+  global_size_t Binner   = B.getGlobalNumRows();
+  TEUCHOS_TEST_FOR_EXCEPTION(Ainner != Binner, std::runtime_error,
+    prefix << "ERROR, inner dimensions of op(A) and op(B) "
     "must match for matrix-matrix product. op(A) is "
-    <<Aouter<<"x"<<Ainner << ", op(B) is "<<Binner<<"x"<<Bouter<<std::endl);
+    << Aouter << "x" << Ainner << ", op(B) is "<< Binner << "x" << Bouter);
 
-  //The result matrix C must at least have a row-map that reflects the
-  //correct row-size. Don't check the number of columns because rectangular
-  //matrices which were constructed with only one map can still end up
-  //having the correct capacity and dimensions when filled.
+  // The result matrix C must at least have a row-map that reflects the correct
+  // row-size. Don't check the number of columns because rectangular matrices
+  // which were constructed with only one map can still end up having the
+  // correct capacity and dimensions when filled.
   TEUCHOS_TEST_FOR_EXCEPTION(Aouter > C.getGlobalNumRows(), std::runtime_error,
-    "MatrixMatrix::Multiply: ERROR, dimensions of result C must "
-    "match dimensions of op(A) * op(B). C has "<<C.getGlobalNumRows()
-     << " rows, should have at least "<<Aouter << std::endl);
+    prefix << "ERROR, dimensions of result C must "
+    "match dimensions of op(A) * op(B). C has "<< C.getGlobalNumRows()
+     << " rows, should have at least "<< Aouter << std::endl);
 
-  //It doesn't matter whether C is already Filled or not. If it is already
-  //Filled, it must have space allocated for the positions that will be
-  //referenced in forming C = op(A)*op(B). If it doesn't have enough space,
-  //we'll error out later when trying to store result values.
+  // It doesn't matter whether C is already Filled or not. If it is already
+  // Filled, it must have space allocated for the positions that will be
+  // referenced in forming C = op(A)*op(B). If it doesn't have enough space,
+  // we'll error out later when trying to store result values.
 
   // CGB: However, matrix must be in active-fill
   TEUCHOS_TEST_FOR_EXCEPT( C.isFillActive() == false );
 
-  //We're going to need to import remotely-owned sections of A and/or B
-  //if more than 1 processor is performing this run, depending on the scenario.
+  // We're going to need to import remotely-owned sections of A and/or B if
+  // more than one processor is performing this run, depending on the scenario.
   int numProcs = A.getComm()->getSize();
 
-  //Declare a couple of structs that will be used to hold views of the data
-  //of A and B, to be used for fast access during the matrix-multiplication.
-  CrsMatrixStruct_t Aview;
-  CrsMatrixStruct_t Bview;
+  // Declare a couple of structs that will be used to hold views of the data of
+  // A and B, to be used for fast access during the matrix-multiplication.
+  crs_matrix_struct_type Aview;
+  crs_matrix_struct_type Bview;
 
-  RCP<const Map_t > targetMap_A = Aprime->getRowMap();
-  RCP<const Map_t > targetMap_B = Bprime->getRowMap();
+  RCP<const map_type> targetMap_A = Aprime->getRowMap();
+  RCP<const map_type> targetMap_B = Bprime->getRowMap();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("Jacobi All I&X"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi All I&X"))));
 #endif
 
   //Now import any needed remote rows and populate the Aview struct.
-  RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > dummyImporter;
-  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview,dummyImporter,false,label);
+  RCP<const import_type> dummyImporter;
+  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, false, label);
 
-  //We will also need local access to all rows of B that correspond to the
-  //column-map of op(A).
-  if (numProcs > 1) {
-    targetMap_B = Aprime->getColMap(); //colmap_op_A;
-  }
+  // We will also need local access to all rows of B that correspond to the
+  // column-map of op(A).
+  if (numProcs > 1)
+    targetMap_B = Aprime->getColMap();
 
-  //Now import any needed remote rows and populate the Bview struct.
-  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(),false,label);
+  // Now import any needed remote rows and populate the Bview struct.
+  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("Jacobi All Multiply"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi All Multiply"))));
 #endif
 
-
-  //Now call the appropriate method to perform the actual multiplication.
+  // Now call the appropriate method to perform the actual multiplication.
   CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
 
   // Is this a "clean" matrix
-  bool NewFlag=!C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
+  bool newFlag = !C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
 
-  if(call_FillComplete_on_result && NewFlag ) {
-    MMdetails::jacobi_A_B_newmatrix(omega,Dinv,Aview, Bview, C,label);
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::runtime_error,
-      "jacobi_A_B_general not implemented");
+  if (call_FillComplete_on_result && newFlag) {
+    MMdetails::jacobi_A_B_newmatrix(omega, Dinv, Aview, Bview, C, label);
+
+  } else if (call_FillComplete_on_result) {
+    MMdetails::jacobi_A_B_reuse(omega, Dinv, Aview, Bview, C, label);
+
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "jacobi_A_B_general not implemented");
     // FIXME (mfh 03 Apr 2014) This statement is unreachable, so I'm
     // commenting it out.
 // #ifdef HAVE_TPETRA_MMM_TIMINGS
-//     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: Jacobi FillComplete")));
+//     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: Jacobi FillComplete")));
 // #endif
     // FIXME (mfh 03 Apr 2014) This statement is unreachable, so I'm
     // commenting it out.
@@ -381,7 +376,6 @@ void Jacobi(Scalar omega,
 }
 
 
-
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -393,57 +387,60 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Scalar scalarB )
 {
+  // Convience typedef
+  typedef Scalar                            SC;
+  typedef LocalOrdinal                      LO;
+  typedef GlobalOrdinal                     GO;
+  typedef Node                              NO;
+  typedef CrsMatrix<SC,LO,GO,NO>            crs_matrix_type;
+  typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
+
+  const std::string prefix = "TpetraExt::MatrixMatrix::Add(): ";
+
   TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix A.isFillComplete() is false; it is required to be true. (Result matrix B is not required to be isFillComplete()).");
+    prefix << "ERROR, input matrix A.isFillComplete() is false; it is required to be true. "
+    "(Result matrix B is not required to be isFillComplete()).");
   TEUCHOS_TEST_FOR_EXCEPTION(B.isFillComplete() , std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix B must not be fill complete!");
+    prefix << "ERROR, input matrix B must not be fill complete!");
   TEUCHOS_TEST_FOR_EXCEPTION(B.isStaticGraph() , std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix B must not have static graph!");
+    prefix << "ERROR, input matrix B must not have static graph!");
   TEUCHOS_TEST_FOR_EXCEPTION(B.isLocallyIndexed() , std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix B must not be locally indexed!");
+    prefix << "ERROR, input matrix B must not be locally indexed!");
   TEUCHOS_TEST_FOR_EXCEPTION(B.getProfileType()!=DynamicProfile, std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix B must have a dynamic profile!");
-  //Convience typedef
-  typedef CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node> CrsMatrix_t;
-  RCP<const CrsMatrix_t> Aprime = null;
-  if( transposeA ){
-          RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> theTransposer(Teuchos::rcpFromRef (A));
-    Aprime = theTransposer.createTranspose();
-  }
-  else{
+    prefix << "ERROR, input matrix B must have a dynamic profile!");
+
+
+  RCP<const crs_matrix_type> Aprime = null;
+  if (transposeA) {
+    transposer_type transposer(rcpFromRef (A));
+    Aprime = transposer.createTranspose();
+  } else {
     Aprime = rcpFromRef(A);
   }
-  size_t a_numEntries;
-  Array<GlobalOrdinal> a_inds(A.getNodeMaxNumRowEntries());
-  Array<Scalar> a_vals(A.getNodeMaxNumRowEntries());
-  GlobalOrdinal row;
 
-  if(scalarB != ScalarTraits<Scalar>::one()){
+  size_t a_numEntries;
+  Array<GO> a_inds(A.getNodeMaxNumRowEntries());
+  Array<SC> a_vals(A.getNodeMaxNumRowEntries());
+  GO row;
+
+  if (scalarB != ScalarTraits<SC>::one())
     B.scale(scalarB);
-  }
 
   bool bFilled = B.isFillComplete();
   size_t numMyRows = B.getNodeNumRows();
-  if(scalarA != ScalarTraits<Scalar>::zero()){
-    for(LocalOrdinal i = 0; (size_t)i < numMyRows; ++i){
+  if (scalarA != ScalarTraits<SC>::zero()) {
+    for (LO i = 0; (size_t)i < numMyRows; ++i) {
       row = B.getRowMap()->getGlobalElement(i);
       Aprime->getGlobalRowCopy(row, a_inds(), a_vals(), a_numEntries);
-      if(scalarA != ScalarTraits<Scalar>::one()){
-        for(size_t j =0; j<a_numEntries; ++j){
-          a_vals[j] *= scalarA;
-        }
-      }
-      if(bFilled){
-        B.sumIntoGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
-      }
-      else{
-        B.insertGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
-      }
 
+      if (scalarA != ScalarTraits<SC>::one())
+        for (size_t j = 0; j < a_numEntries; ++j)
+          a_vals[j] *= scalarA;
+
+      if (bFilled)
+        B.sumIntoGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+      else
+        B.insertGlobalValues(row,  a_inds(0,a_numEntries), a_vals(0,a_numEntries));
     }
   }
 }
@@ -464,83 +461,83 @@ add (const Scalar& alpha,
      const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
      const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
-  using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_implicit_cast;
-  typedef RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-  typedef RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer_type;
+  using Teuchos::rcp_dynamic_cast;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! A.isFillComplete () || ! B.isFillComplete (), std::invalid_argument,
-    "Tpetra::MatrixMatrix::add: A and B must both be fill complete.");
+  // Convenience typedefs
+  typedef Scalar                            SC;
+  typedef LocalOrdinal                      LO;
+  typedef GlobalOrdinal                     GO;
+  typedef Node                              NO;
+  typedef RowMatrix<SC,LO,GO,NO>            row_matrix_type;
+  typedef CrsMatrix<SC,LO,GO,NO>            crs_matrix_type;
+  typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
+
+  const std::string prefix = "TpetraExt::MatrixMatrix::add(): ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete () || !B.isFillComplete (), std::invalid_argument,
+    prefix << "A and B must both be fill complete.");
 
 #ifdef HAVE_TPETRA_DEBUG
   // The matrices don't have domain or range Maps unless they are fill complete.
   if (A.isFillComplete () && B.isFillComplete ()) {
     const bool domainMapsSame =
-      (! transposeA && ! transposeB && ! A.getDomainMap ()->isSameAs (* (B.getDomainMap ()))) ||
-      (! transposeA && transposeB && ! A.getDomainMap ()->isSameAs (* (B.getRangeMap ()))) ||
-      (transposeA && ! transposeB && ! A.getRangeMap ()->isSameAs (* (B.getDomainMap ())));
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      domainMapsSame, std::invalid_argument,
-      "Tpetra::MatrixMatrix::add: The domain Maps of Op(A) and Op(B) are not the same.");
+      (!transposeA && !transposeB && !A.getDomainMap()->isSameAs (*B.getDomainMap ())) ||
+      (!transposeA &&  transposeB && !A.getDomainMap()->isSameAs (*B.getRangeMap  ())) ||
+      ( transposeA && !transposeB && !A.getRangeMap ()->isSameAs (*B.getDomainMap ()));
+    TEUCHOS_TEST_FOR_EXCEPTION(domainMapsSame, std::invalid_argument,
+      prefix << "The domain Maps of Op(A) and Op(B) are not the same.");
 
     const bool rangeMapsSame =
-      (! transposeA && ! transposeB && ! A.getRangeMap ()->isSameAs (* (B.getRangeMap ()))) ||
-      (! transposeA && transposeB && ! A.getRangeMap ()->isSameAs (* (B.getDomainMap ()))) ||
-      (transposeA && ! transposeB && ! A.getDomainMap ()->isSameAs (* (B.getRangeMap ())));
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      rangeMapsSame, std::invalid_argument,
-      "Tpetra::MatrixMatrix::add: The range Maps of Op(A) and Op(B) are not the same.");
+      (!transposeA && !transposeB && !A.getRangeMap ()->isSameAs (*B.getRangeMap ())) ||
+      (!transposeA &&  transposeB && !A.getRangeMap ()->isSameAs (*B.getDomainMap())) ||
+      ( transposeA && !transposeB && !A.getDomainMap()->isSameAs (*B.getRangeMap ()));
+    TEUCHOS_TEST_FOR_EXCEPTION(rangeMapsSame, std::invalid_argument,
+      prefix << "The range Maps of Op(A) and Op(B) are not the same.");
   }
 #endif // HAVE_TPETRA_DEBUG
 
   // Form the explicit transpose of A if necessary.
   RCP<const crs_matrix_type> Aprime;
   if (transposeA) {
-    transposer_type theTransposer (rcpFromRef (A));
-    Aprime = theTransposer.createTranspose ();
+    transposer_type transposer (rcpFromRef (A));
+    Aprime = transposer.createTranspose ();
+
   } else {
     Aprime = rcpFromRef (A);
   }
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Aprime.is_null (), std::logic_error,
-    "Tpetra::MatrixMatrix::Add: Failed to compute Op(A).  "
-    "Please report this bug to the Tpetra developers.");
+    prefix << "Failed to compute Op(A). Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
   // Form the explicit transpose of B if necessary.
   RCP<const crs_matrix_type> Bprime;
   if (transposeB) {
-    transposer_type theTransposer (rcpFromRef (B));
-    Bprime = theTransposer.createTranspose ();
+    transposer_type transposer (rcpFromRef (B));
+    Bprime = transposer.createTranspose ();
+
   } else {
     Bprime = rcpFromRef (B);
   }
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
-    "Tpetra::MatrixMatrix::Add: Failed to compute Op(B).  "
-    "Please report this bug to the Tpetra developers.");
+    prefix << "Failed to compute Op(B). Please report this bug to the Tpetra developers.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! Aprime->isFillComplete () || ! Bprime->isFillComplete (), std::invalid_argument,
-    "Tpetra::MatrixMatrix::add: Aprime and Bprime must both be fill complete.  "
+    !Aprime->isFillComplete () || !Bprime->isFillComplete (), std::invalid_argument,
+    prefix << "Aprime and Bprime must both be fill complete.  "
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
-
 
   RCP<row_matrix_type> C =
     Bprime->add (alpha, *rcp_implicit_cast<const row_matrix_type> (Aprime),
                  beta, domainMap, rangeMap, params);
+
   return rcp_dynamic_cast<crs_matrix_type> (C);
 }
-
-
 
 
 template <class Scalar,
@@ -568,21 +565,21 @@ void Add(
   using std::endl;
   //  typedef typename ArrayView<const Scalar>::size_type size_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  //  typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-  //  typedef RowGraph<LocalOrdinal, GlobalOrdinal, Node> row_graph_type;
-  //  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> crs_graph_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-  typedef RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer_type;
+  typedef Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
+  //  typedef Import<LocalOrdinal, GlobalOrdinal, Node>                         import_type;
+  //  typedef RowGraph<LocalOrdinal, GlobalOrdinal, Node>                       row_graph_type;
+  //  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node>                       crs_graph_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>              crs_matrix_type;
+  typedef RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>    transposer_type;
+
+  std::string prefix = "TpetraExt::MatrixMatrix::Add(): ";
 
   TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
-    "Tpetra::MatrixMatrix::Add: The case C == null does not actually work.  "
-    "Fixing this will require an interface change.");
+    prefix << "The case C == null does not actually work. Fixing this will require an interface change.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! A.isFillComplete () || ! B.isFillComplete (), std::invalid_argument,
-    "Tpetra::MatrixMatrix::Add: Both input matrices must be fill complete "
-    "before calling this function.");
+    prefix << "Both input matrices must be fill complete before calling this function.");
 
 #ifdef HAVE_TPETRA_DEBUG
   {
@@ -590,17 +587,15 @@ void Add(
       (! transposeA && ! transposeB && ! A.getDomainMap ()->isSameAs (* (B.getDomainMap ()))) ||
       (! transposeA && transposeB && ! A.getDomainMap ()->isSameAs (* (B.getRangeMap ()))) ||
       (transposeA && ! transposeB && ! A.getRangeMap ()->isSameAs (* (B.getDomainMap ())));
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      domainMapsSame, std::invalid_argument,
-      "Tpetra::MatrixMatrix::Add: The domain Maps of Op(A) and Op(B) are not the same.");
+    TEUCHOS_TEST_FOR_EXCEPTION(domainMapsSame, std::invalid_argument,
+      prefix << "The domain Maps of Op(A) and Op(B) are not the same.");
 
     const bool rangeMapsSame =
       (! transposeA && ! transposeB && ! A.getRangeMap ()->isSameAs (* (B.getRangeMap ()))) ||
       (! transposeA && transposeB && ! A.getRangeMap ()->isSameAs (* (B.getDomainMap ()))) ||
       (transposeA && ! transposeB && ! A.getDomainMap ()->isSameAs (* (B.getRangeMap ())));
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      rangeMapsSame, std::invalid_argument,
-      "Tpetra::MatrixMatrix::Add: The range Maps of Op(A) and Op(B) are not the same.");
+    TEUCHOS_TEST_FOR_EXCEPTION(rangeMapsSame, std::invalid_argument,
+      prefix << "The range Maps of Op(A) and Op(B) are not the same.");
   }
 #endif // HAVE_TPETRA_DEBUG
 
@@ -615,8 +610,7 @@ void Add(
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Aprime.is_null (), std::logic_error,
-    "Tpetra::MatrixMatrix::Add: Failed to compute Op(A).  "
-    "Please report this bug to the Tpetra developers.");
+    prefix << "Failed to compute Op(A). Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
   // Form the explicit transpose of B if necessary.
@@ -630,8 +624,7 @@ void Add(
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
-    "Tpetra::MatrixMatrix::Add: Failed to compute Op(B).  "
-    "Please report this bug to the Tpetra developers.");
+    prefix << "Failed to compute Op(B). Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
   // Allocate or zero the entries of the result matrix.
@@ -643,7 +636,7 @@ void Add(
     // we can optimize construction and fillComplete of C.  For now,
     // we just check pointer equality, to avoid the all-reduce in
     // isSameAs.  It may be worth that all-reduce to check, however.
-    //if (Aprime->getRowMap ().getRawPtr () == Bprime->getRowMap ().getRawPtr ()) {
+    //if (Aprime->getRowMap ().getRawPtr () == Bprime->getRowMap ().getRawPtr ())
     if (Aprime->getRowMap ()->isSameAs (* (Bprime->getRowMap ())) {
       RCP<const map_type> rowMap = Aprime->getRowMap ();
 
@@ -810,14 +803,11 @@ void Add(
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Aprime.is_null (), std::logic_error,
-    "Tpetra::MatrixMatrix::Add: At this point, Aprime is null.  "
-    "Please report this bug to the Tpetra developers.");
+    prefix << "At this point, Aprime is null. Please report this bug to the Tpetra developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(Bprime.is_null (), std::logic_error,
-    "Tpetra::MatrixMatrix::Add: At this point, Bprime is null.  "
-    "Please report this bug to the Tpetra developers.");
+    prefix << "At this point, Bprime is null. Please report this bug to the Tpetra developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
-    "Tpetra::MatrixMatrix::Add: At this point, C is null.  "
-    "Please report this bug to the Tpetra developers.");
+    prefix << "At this point, C is null. Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
   Array<RCP<const crs_matrix_type> > Mat =
@@ -837,14 +827,12 @@ void Add(
     // rows of C.
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(Mat[k].is_null (), std::logic_error,
-      "Tpetra::MatrixMatrix::Add: At this point, curRowMap is null.  "
-      "Please report this bug to the Tpetra developers.");
+      prefix << "At this point, curRowMap is null. Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
     RCP<const map_type> curRowMap = Mat[k]->getRowMap ();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(curRowMap.is_null (), std::logic_error,
-      "Tpetra::MatrixMatrix::Add: At this point, curRowMap is null.  "
-      "Please report this bug to the Tpetra developers.");
+      prefix << "At this point, curRowMap is null. Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
     const size_t localNumRows = Mat[k]->getNodeNumRows ();
@@ -873,15 +861,15 @@ void Add(
 }
 
 
-
 } //End namespace MatrixMatrix
 
 namespace MMdetails{
 
 // Prints MMM-style statistics on communication done with an Import or Export object
 template <class TransferType>
-void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const std::string &label){
-  if(Transfer.is_null()) return;
+void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const std::string &label) {
+  if (Transfer.is_null())
+    return;
 
   const Distributor & Distor                   = Transfer->getDistributor();
   Teuchos::RCP<const Teuchos::Comm<int> > Comm = Transfer->getSourceMap()->getComm();
@@ -901,7 +889,7 @@ void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const s
 
   // Processor by processor statistics
   //    printf("[%d] %s Statistics: neigh[s/r]=%d/%d rows[s/r]=%d/%d r1bytes[s/r]=%d/%d r2bytes[s/r]=%d/%d\n",
-  //    myPID,label.c_str(),num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv);
+  //    myPID, label.c_str(),num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv);
 
   // Global statistics
   size_t lstats[8] = {num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv};
@@ -916,17 +904,17 @@ void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const s
   Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_SUM,8,lstats_avg,gstats_avg);
 
   if(!myPID) {
-    printf("%s Send Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n",label.c_str(),
+    printf("%s Send Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
            (int)gstats_min[0],gstats_avg[0],(int)gstats_max[0], (int)gstats_min[2],gstats_avg[2],(int)gstats_max[2],
            (int)gstats_min[4],gstats_avg[4],(int)gstats_max[4], (int)gstats_min[6],gstats_avg[6],(int)gstats_max[6]);
-    printf("%s Recv Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n",label.c_str(),
+    printf("%s Recv Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
            (int)gstats_min[1],gstats_avg[1],(int)gstats_max[1], (int)gstats_min[3],gstats_avg[3],(int)gstats_max[3],
            (int)gstats_min[5],gstats_avg[5],(int)gstats_max[5], (int)gstats_min[7],gstats_avg[7],(int)gstats_max[7]);
   }
 }
 
 
-//kernel method for computing the local portion of C = A*B
+// Kernel method for computing the local portion of C = A*B
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -940,75 +928,75 @@ void mult_AT_B_newmatrix(
   // Using &  Typedefs
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef CrsMatrixStruct<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node> CrsMatrixStruct_t;
+  typedef Scalar                            SC;
+  typedef LocalOrdinal                      LO;
+  typedef GlobalOrdinal                     GO;
+  typedef Node                              NO;
+  typedef CrsMatrixStruct<SC,LO,GO,NO>      crs_matrix_struct_type;
+  typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix = std::string("TpetraExt ")+ label + std::string(": ");
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM-T Transpose"))));
+  RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T Transpose"))));
 #endif
 
   /*************************************************************/
   /* 1) Local Transpose of A                                   */
   /*************************************************************/
-  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> at (Teuchos::rcpFromRef (A));
-  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atrans = at.createTransposeLocal();
+  transposer_type transposer (rcpFromRef (A));
+  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atrans = transposer.createTransposeLocal();
 
   /*************************************************************/
   /* 2/3) Call mult_A_B_newmatrix w/ fillComplete              */
   /*************************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM-T I&X"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T I&X"))));
 #endif
 
   // Get views, asserting that no import is required to speed up computation
-  CrsMatrixStruct_t Aview;
-  CrsMatrixStruct_t Bview;
+  crs_matrix_struct_type Aview;
+  crs_matrix_struct_type Bview;
   RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > dummyImporter;
-  MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true,label);
-  MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true,label);
+  MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true, label);
+  MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true, label);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM-T AB-core"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T AB-core"))));
 #endif
 
   RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >Ctemp;
 
   // If Atrans has no Exporter, we can use C instead of having to create a temp matrix
   bool needs_final_export = !Atrans->getGraph()->getExporter().is_null();
-  if(needs_final_export)
+  if (needs_final_export)
     Ctemp = rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atrans->getRowMap(),0));
   else
     Ctemp = rcp(&C,false);// don't allow deallocation
 
   // Multiply
-  mult_A_B_newmatrix(Aview,Bview,*Ctemp,label);
+  mult_A_B_newmatrix(Aview, Bview, *Ctemp, label);
 
   /*************************************************************/
   /* 4) exportAndFillComplete matrix                           */
   /*************************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM-T exportAndFillComplete"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T exportAndFillComplete"))));
 #endif
 
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Crcp(&C,false);
-  if(needs_final_export) {
+  if (needs_final_export) {
     Teuchos::ParameterList labelList;
-    labelList.set("Timer Label",label);
+    labelList.set("Timer Label", label);
     Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
                                  B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
   }
-#ifdef COMPUTE_MMM_STATISTICS
-  printMultiplicationStatistics(Ctemp->getGraph()->getExporter(),label+std::string(" AT_B MMM"));
+#ifdef HAVE_TPETRA_MMM_STATISTICS
+  printMultiplicationStatistics(Ctemp->getGraph()->getExporter(), label+std::string(" AT_B MMM"));
 #endif
 }
 
-
-//kernel method for computing the local portion of C = A*B
+// Kernel method for computing the local portion of C = A*B
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -1020,18 +1008,18 @@ void mult_A_B(
   const std::string & label)
 {
   typedef Teuchos::ScalarTraits<Scalar> STS;
-  //TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
+  // TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
-  LocalOrdinal C_lastCol = Bview.colMap->getMaxLocalIndex();
+  LocalOrdinal C_lastCol  = Bview.colMap->getMaxLocalIndex();
 
   LocalOrdinal C_firstCol_import = OrdinalTraits<LocalOrdinal>::zero();
-  LocalOrdinal C_lastCol_import = OrdinalTraits<LocalOrdinal>::invalid();
+  LocalOrdinal C_lastCol_import  = OrdinalTraits<LocalOrdinal>::invalid();
 
   ArrayView<const GlobalOrdinal> bcols = Bview.colMap->getNodeElementList();
   ArrayView<const GlobalOrdinal> bcols_import = null;
   if (Bview.importColMap != null) {
     C_firstCol_import = Bview.importColMap->getMinLocalIndex();
-    C_lastCol_import = Bview.importColMap->getMaxLocalIndex();
+    C_lastCol_import  = Bview.importColMap->getMaxLocalIndex();
 
     bcols_import = Bview.importColMap->getNodeElementList();
   }
@@ -1041,7 +1029,8 @@ void mult_A_B(
   size_t C_numCols_import = C_lastCol_import - C_firstCol_import +
                                 OrdinalTraits<LocalOrdinal>::one();
 
-  if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
+  if (C_numCols_import > C_numCols)
+    C_numCols = C_numCols_import;
 
   Array<Scalar> dwork = Array<Scalar>(C_numCols);
   Array<GlobalOrdinal> iwork = Array<GlobalOrdinal>(C_numCols);
@@ -1076,12 +1065,12 @@ void mult_A_B(
     }
   }
 
-  //To form C = A*B we're going to execute this expression:
+  // To form C = A*B we're going to execute this expression:
   //
-  // C(i,j) = sum_k( A(i,k)*B(k,j) )
+  //  C(i,j) = sum_k( A(i,k)*B(k,j) )
   //
-  //Our goal, of course, is to navigate the data in A and B once, without
-  //performing searches for column-indices, etc.
+  // Our goal, of course, is to navigate the data in A and B once, without
+  // performing searches for column-indices, etc.
   ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
   ArrayRCP<const LocalOrdinal> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
   ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
@@ -1102,34 +1091,33 @@ void mult_A_B(
   for (size_t i = 0; i < C_numCols; i++)
       c_index[i] = OrdinalTraits<size_t>::invalid();
 
-  //loop over the rows of A.
+  // Loop over the rows of A.
   size_t Arows = Aview.rowMap->getNodeNumElements();
   for(size_t i=0; i<Arows; ++i) {
 
-    //only navigate the local portion of Aview... which is, thankfully, all of A
-    //since this routine doesn't do transpose modes
+    // Only navigate the local portion of Aview... which is, thankfully, all of
+    // A since this routine doesn't do transpose modes
     GlobalOrdinal global_row = Aview.rowMap->getGlobalElement(i);
 
-    //loop across the i-th row of A and for each corresponding row
-    //in B, loop across colums and accumulate product
-    //A(i,k)*B(k,j) into our partial sum quantities C_row_i. In other words,
-    //as we stride across B(k,:) we're calculating updates for row i of the
-    //result matrix C.
-
-
+    // Loop across the i-th row of A and for each corresponding row in B, loop
+    // across colums and accumulate product A(i,k)*B(k,j) into our partial sum
+    // quantities C_row_i. In other words, as we stride across B(k,:) we're
+    // calculating updates for row i of the result matrix C.
     C_row_i_length = OrdinalTraits<size_t>::zero();
 
-    for(k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
+    for (k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Acolind[k]];
       Scalar Aval = Avals[k];
       if (Aval == STS::zero())
         continue;
 
-      if (Ak==LO_INVALID) continue;
+      if (Ak == LO_INVALID)
+        continue;
 
-      for(j=Browptr[Ak]; j< Browptr[Ak+1]; ++j) {
+      for (j = Browptr[Ak]; j < Browptr[Ak+1]; ++j) {
           LocalOrdinal col = Bcolind[j];
           //assert(col >= 0 && col < C_numCols);
+
           if (c_index[col] == OrdinalTraits<size_t>::invalid()){
           //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
             // This has to be a +=  so insertGlobalValue goes out
@@ -1137,8 +1125,8 @@ void mult_A_B(
             C_cols[C_row_i_length] = col;
             c_index[col] = C_row_i_length;
             C_row_i_length++;
-          }
-          else {
+
+          } else {
             C_row_i[c_index[col]] += Aval*Bvals[j];
           }
         }
@@ -1158,7 +1146,7 @@ void mult_A_B(
     // We might have to revamp this later.
     C_row_i_length = OrdinalTraits<size_t>::zero();
 
-    for(k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
+    for (k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Acolind[k]];
       Scalar Aval = Avals[k];
       if (Aval == STS::zero())
@@ -1167,18 +1155,19 @@ void mult_A_B(
       if (Ak!=LO_INVALID) continue;
 
       Ak = Acol2Irow[Acolind[k]];
-      for(j=Irowptr[Ak]; j< Irowptr[Ak+1]; ++j) {
+      for (j = Irowptr[Ak]; j < Irowptr[Ak+1]; ++j) {
           LocalOrdinal col = Icolind[j];
           //assert(col >= 0 && col < C_numCols);
-          if (c_index[col] == OrdinalTraits<size_t>::invalid()){
-          //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
+
+          if (c_index[col] == OrdinalTraits<size_t>::invalid()) {
+            //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
             // This has to be a +=  so insertGlobalValue goes out
             C_row_i[C_row_i_length] = Aval*Ivals[j];
             C_cols[C_row_i_length] = col;
             c_index[col] = C_row_i_length;
             C_row_i_length++;
-            }
-            else {
+
+            } else {
               // This has to be a +=  so insertGlobalValue goes out
               C_row_i[c_index[col]] += Aval*Ivals[j];
             }
@@ -1193,10 +1182,8 @@ void mult_A_B(
       last_index++;
     }
 
-      //
-      //Now put the C_row_i values into C.
-      //
-      // We might have to revamp this later.
+    // Now put the C_row_i values into C.
+    // We might have to revamp this later.
     C_filled ?
       C.sumIntoGlobalValues(
           global_row,
@@ -1209,25 +1196,22 @@ void mult_A_B(
           combined_values.view(OrdinalTraits<size_t>::zero(), last_index));
 
   }
-
 }
 
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
          class Node>
-void setMaxNumEntriesPerRow(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview)
-{
-  typedef typename Array<ArrayView<const LocalOrdinal> >::size_type  local_length_size;
+void setMaxNumEntriesPerRow(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview) {
+  typedef typename Array<ArrayView<const LocalOrdinal> >::size_type local_length_size;
   Mview.maxNumRowEntries = OrdinalTraits<local_length_size>::zero();
-  if(Mview.indices.size() > OrdinalTraits<local_length_size>::zero() ){
+
+  if (Mview.indices.size() > OrdinalTraits<local_length_size>::zero()) {
     Mview.maxNumRowEntries = Mview.indices[0].size();
-    for(local_length_size i = 1; i<Mview.indices.size(); ++i){
-      if(Mview.indices[i].size() > Mview.maxNumRowEntries){
+
+    for (local_length_size i = 1; i < Mview.indices.size(); ++i)
+      if (Mview.indices[i].size() > Mview.maxNumRowEntries)
         Mview.maxNumRowEntries = Mview.indices[i].size();
-      }
-    }
   }
 }
 
@@ -1236,20 +1220,19 @@ template<class CrsMatrixType>
 size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
-  if(A.getNodeNumEntries() > 0)
-    Aest = (A.getNodeNumRows()>0)? A.getNodeNumEntries()/A.getNodeNumEntries():100;
-  if(B.getNodeNumEntries() > 0)
-    Best=(B.getNodeNumRows()>0)? B.getNodeNumEntries()/B.getNodeNumEntries():100;
+  if (A.getNodeNumEntries() > 0)
+    Aest = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumEntries() : 100;
+  if (B.getNodeNumEntries() > 0)
+    Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumEntries() : 100;
 
-  size_t nnzperrow=(size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
-  nnzperrow*=nnzperrow;
+  size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
+  nnzperrow *= nnzperrow;
 
   return (size_t)(A.getNodeNumRows()*nnzperrow*0.75 + 100);
 }
 
 
-
-//kernel method for computing the local portion of C = A*B
+// Kernel method for computing the local portion of C = A*B
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -1258,230 +1241,390 @@ void mult_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label)
+  const std::string& label)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayView;
-  typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+
+  typedef Import<LO,GO,NO>  import_type;
+  typedef Map<LO,GO,NO>     map_type;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix = std::string("TpetraExt ")+ label + std::string(": ");
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix+std::string("MMM M5 Cmap")))));
+  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM M5 Cmap")))));
 #endif
-  size_t ST_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-  LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-
+  size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
   // Build the final importer / column map, hash table lookups for C
   RCP<const import_type> Cimport;
-  RCP<const map_type> Ccolmap;
+  RCP<const map_type>    Ccolmap;
   RCP<const import_type> Bimport = Bview.origMatrix->getGraph()->getImporter();
-  RCP<const import_type> Iimport = Bview.importMatrix.is_null() ? Teuchos::null :  Bview.importMatrix->getGraph()->getImporter();
-  Array<LocalOrdinal> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
+  RCP<const import_type> Iimport = Bview.importMatrix.is_null() ?
+      Teuchos::null : Bview.importMatrix->getGraph()->getImporter();
+  Array<LO> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
 
-  if(Bview.importMatrix.is_null()) {
+  if (Bview.importMatrix.is_null()) {
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
     // Bcol2Ccol is trivial
-    for(size_t i=0; i<Bview.colMap->getNodeNumElements(); i++) {
-      Bcol2Ccol[i] = Teuchos::as<LocalOrdinal>(i);
-    }
-  }
-  else {
+    for (size_t i = 0; i < Bview.colMap->getNodeNumElements(); i++)
+      Bcol2Ccol[i] = Teuchos::as<LO>(i);
+
+  } else {
     // Choose the right variant of setUnion
-    if(!Bimport.is_null() && !Iimport.is_null()){
+    if (!Bimport.is_null() && !Iimport.is_null())
       Cimport = Bimport->setUnion(*Iimport);
-      Ccolmap = Cimport->getTargetMap();
-    }
-    else if(!Bimport.is_null() && Iimport.is_null()) {
+
+    else if (!Bimport.is_null() && Iimport.is_null())
       Cimport = Bimport->setUnion();
-    }
-    else if(Bimport.is_null() && !Iimport.is_null()) {
+
+    else if (Bimport.is_null() && !Iimport.is_null())
       Cimport = Iimport->setUnion();
-    }
+
     else
       throw std::runtime_error("TpetraExt::MMM status of matrix importers is nonsensical");
 
     Ccolmap = Cimport->getTargetMap();
 
-    if(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()))
-      throw std::runtime_error("Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
+    TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
+      std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
 
     // NOTE: This is not efficient and should be folded into setUnion
     Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
-    ArrayView<const GlobalOrdinal> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
-    ArrayView<const GlobalOrdinal> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
+    ArrayView<const GO> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
+    ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
 
-    for(size_t i=0; i<Bview.origMatrix->getColMap()->getNodeNumElements(); i++)
+    for (size_t i = 0; i < Bview.origMatrix->getColMap()->getNodeNumElements(); i++)
       Bcol2Ccol[i] = Ccolmap->getLocalElement(Bgid[i]);
-    for(size_t i=0; i<Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
+    for (size_t i = 0; i < Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
       Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM Newmatrix SerialCore"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
 #endif
 
   // Sizes
-  size_t m=Aview.origMatrix->getNodeNumRows();
-  size_t n=Ccolmap->getNodeNumElements();
+  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t n = Ccolmap->getNodeNumElements();
 
   // Get Data Pointers
   ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
   ArrayRCP<size_t> Crowptr_RCP;
-  ArrayRCP<const LocalOrdinal> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
-  ArrayRCP<LocalOrdinal> Ccolind_RCP;
+  ArrayRCP<const LO> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
+  ArrayRCP<LO> Ccolind_RCP;
   ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
-  ArrayRCP<Scalar> Cvals_RCP;
+  ArrayRCP<SC> Cvals_RCP;
 
-  Aview.origMatrix->getAllValues(Arowptr_RCP,Acolind_RCP,Avals_RCP);
-  Bview.origMatrix->getAllValues(Browptr_RCP,Bcolind_RCP,Bvals_RCP);
-  if(!Bview.importMatrix.is_null()) Bview.importMatrix->getAllValues(Irowptr_RCP,Icolind_RCP,Ivals_RCP);
-
+  Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
+  Bview.origMatrix->getAllValues(Browptr_RCP, Bcolind_RCP, Bvals_RCP);
+  if (!Bview.importMatrix.is_null())
+    Bview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
 
   // For efficiency
-  ArrayView<const size_t> Arowptr, Browptr, Irowptr;
-  ArrayView<const LocalOrdinal> Acolind, Bcolind, Icolind;
-  ArrayView<const Scalar> Avals, Bvals, Ivals;
-  ArrayView<size_t> Crowptr;
-  ArrayView<LocalOrdinal> Ccolind;
-  ArrayView<Scalar> Cvals;
+  ArrayView<const size_t>   Arowptr, Browptr, Irowptr;
+  ArrayView<const LO>       Acolind, Bcolind, Icolind;
+  ArrayView<const SC>       Avals, Bvals, Ivals;
+  ArrayView<size_t>         Crowptr;
+  ArrayView<LO> Ccolind;
+  ArrayView<SC> Cvals;
   Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
   Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
-  if(!Bview.importMatrix.is_null()) {
-    Irowptr = Irowptr_RCP();  Icolind = Icolind_RCP();  Ivals = Ivals_RCP();
+  if (!Bview.importMatrix.is_null()) {
+    Irowptr = Irowptr_RCP(); Icolind = Icolind_RCP(); Ivals = Ivals_RCP();
   }
 
-  // The status array will contain the index into colind where this entry was last deposited.
-  // c_status[i] < CSR_ip - not in the row yet.
-  // c_status[i] >= CSR_ip, this is the entry where you can find the data
-  // We start with this filled with INVALID's indicating that there are no entries yet.
-  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
-  size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
-  Array<size_t> c_status(n, ST_INVALID);
-
   // Classic csr assembly (low memory edition)
-  size_t CSR_alloc=std::max(C_estimate_nnz(*Aview.origMatrix,*Bview.origMatrix),n);
-  size_t CSR_ip=0,OLD_ip=0;
+  size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
   Crowptr_RCP.resize(m+1);       Crowptr = Crowptr_RCP();
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
 
   // Run through all the hash table lookups once and for all
-  Array<LocalOrdinal> targetMapToOrigRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
-  Array<LocalOrdinal> targetMapToImportRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
+  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
+  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
 
-  if(Aview.colMap->isSameAs(*Bview.rowMap)){
-    // Maps are the same: Use local IDs as the hash
-    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-      LocalOrdinal B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-      if(B_LID != LO_INVALID) targetMapToOrigRow[i] = B_LID;
-      else {
-        LocalOrdinal I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-        targetMapToImportRow[i] = I_LID;
-      }
-    }
-  }
-  else {
-    // Maps are not the same:  Use the map's hash
-    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-      LocalOrdinal B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-      if(B_LID != LO_INVALID) targetMapToOrigRow[i] = B_LID;
-      else {
-        LocalOrdinal I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-        targetMapToImportRow[i] = I_LID;
-      }
+  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
+    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+    if (B_LID != LO_INVALID) {
+      targetMapToOrigRow[i] = B_LID;
+    } else {
+      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+      targetMapToImportRow[i] = I_LID;
     }
   }
 
-  const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // The status array will contain the index into colind where this entry was last deposited.
+  //   c_status[i] <  CSR_ip - not in the row yet
+  //   c_status[i] >= CSR_ip - this is the entry where you can find the data
+  // We start with this filled with INVALID's indicating that there are no entries yet.
+  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
+  size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
+  Array<size_t> c_status(n, ST_INVALID);
 
   // For each row of A/C
-  for(size_t i=0; i<m; i++){
-    Crowptr[i]=CSR_ip;
+  size_t CSR_ip = 0, OLD_ip = 0;
+  for (size_t i = 0; i < m; i++) {
+    Crowptr[i] = CSR_ip;
 
-    for(size_t k=Arowptr[i]; k<Arowptr[i+1]; k++){
-      LocalOrdinal Ak      = Acolind[k];
-      Scalar       Aval    = Avals[k];
-      if(Aval==SC_ZERO) continue;
+    for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
+      LO Aik  = Acolind[k];
+      SC Aval = Avals[k];
+      if (Aval == SC_ZERO)
+        continue;
 
-      if(targetMapToOrigRow[Ak] != LO_INVALID){
+      if (targetMapToOrigRow[Aik] != LO_INVALID) {
         // Local matrix
-        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Ak]);
+        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
 
-        for(size_t j=Browptr[Bk]; j<Browptr[Bk+1]; ++j) {
-          LocalOrdinal Cj=Bcol2Ccol[Bcolind[j]];
+        for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
+          LO Bkj = Bcolind[j];
+          LO Cij = Bcol2Ccol[Bkj];
 
-          if(c_status[Cj]==INVALID || c_status[Cj]<OLD_ip){
+          if (c_status[Cij] == INVALID || c_status[Cij] < OLD_ip) {
             // New entry
-            c_status[Cj]      = CSR_ip;
-            Ccolind[CSR_ip]= Cj;
-            Cvals[CSR_ip]  = Aval*Bvals[j];
+            c_status[Cij]   = CSR_ip;
+            Ccolind[CSR_ip] = Cij;
+            Cvals[CSR_ip]   = Aval*Bvals[j];
             CSR_ip++;
+
+          } else {
+            Cvals[c_status[Cij]] += Aval*Bvals[j];
           }
-          else
-            Cvals[c_status[Cj]]+=Aval*Bvals[j];
         }
-      }
-      else{
-        // Remote matrix
-        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Ak]);
-        for(size_t j=Irowptr[Ik]; j<Irowptr[Ik+1]; ++j) {
-          LocalOrdinal Cj=Icol2Ccol[Icolind[j]];
 
-          if(c_status[Cj]==INVALID || c_status[Cj]<OLD_ip){
+      } else {
+        // Remote matrix
+        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
+          LO Ikj = Icolind[j];
+          LO Cij = Icol2Ccol[Ikj];
+
+          if (c_status[Cij] == INVALID || c_status[Cij] < OLD_ip){
             // New entry
-            c_status[Cj]=CSR_ip;
-            Ccolind[CSR_ip]=Cj;
-            Cvals[CSR_ip]=Aval*Ivals[j];
+            c_status[Cij]   = CSR_ip;
+            Ccolind[CSR_ip] = Cij;
+            Cvals[CSR_ip]   = Aval*Ivals[j];
             CSR_ip++;
+
+          } else {
+            Cvals[c_status[Cij]] += Aval*Ivals[j];
           }
-          else
-            Cvals[c_status[Cj]]+=Aval*Ivals[j];
         }
       }
     }
 
     // Resize for next pass if needed
-    if(CSR_ip + n > CSR_alloc){
-      CSR_alloc*=2;
+    if (CSR_ip + n > CSR_alloc) {
+      CSR_alloc *= 2;
       Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
       Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
     }
-    OLD_ip=CSR_ip;
+    OLD_ip = CSR_ip;
   }
 
-  Crowptr[m]=CSR_ip;
+  Crowptr[m] = CSR_ip;
 
   // Downward resize
-  Cvals_RCP.resize(CSR_ip);
+  Cvals_RCP  .resize(CSR_ip);
   Ccolind_RCP.resize(CSR_ip);
 
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp (new TimeMonitor (* (TimeMonitor::getNewTimer(prefix+std::string("MMM Newmatrix Final Sort")))));
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix Final Sort"))));
 #endif
 
   // Replace the column map
   C.replaceColMap(Ccolmap);
 
   // Final sort & set of CRS arrays
-  Import_Util::sortCrsEntries(Crowptr_RCP(),Ccolind_RCP(),Cvals_RCP());
-  C.setAllValues(Crowptr_RCP,Ccolind_RCP,Cvals_RCP);
+  Import_Util::sortCrsEntries(Crowptr_RCP(), Ccolind_RCP(), Cvals_RCP());
+  C.setAllValues(Crowptr_RCP, Ccolind_RCP, Cvals_RCP);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp (new TimeMonitor (* (TimeMonitor::getNewTimer(prefix+std::string("MMM Newmatrix ESFC")))));
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ESFC"))));
 #endif
 
   // Final FillComplete
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(),Aview.origMatrix->getRangeMap(),Cimport);
+  C.expertStaticFillComplete(Bview. origMatrix->getDomainMap(), Aview. origMatrix->getRangeMap(), Cimport);
 }
 
 
-//kernel method for computing the local portion of C = (I-omega D^{-1} A)*B
+// Kernel method for computing the local portion of C = A*B
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
+void mult_A_B_reuse(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  const std::string& label)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+
+  typedef Import<LO,GO,NO>  import_type;
+  typedef Map<LO,GO,NO>     map_type;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse Cmap"))));
+#endif
+  size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+  // Build the final importer / column map, hash table lookups for C
+  RCP<const import_type> Cimport = C.getGraph()->getImporter();
+  RCP<const map_type>    Ccolmap = C.getColMap();
+
+  Array<LO> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
+  {
+    // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
+    // So, column map of C may be a strict subset of the column map of B
+    ArrayView<const GO> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
+    for (size_t i = 0; i < Bview.origMatrix->getColMap()->getNodeNumElements(); i++)
+      Bcol2Ccol[i] = Ccolmap->getLocalElement(Bgid[i]);
+
+    if (!Bview.importMatrix.is_null()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
+        std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
+
+      Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
+      ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
+      for (size_t i = 0; i < Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
+        Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
+    }
+  }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse SerialCore"))));
+#endif
+
+  // Sizes
+  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t n = Ccolmap->getNodeNumElements();
+
+  // Get Data Pointers
+  ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP, Crowptr_RCP;
+  ArrayRCP<const LO>     Acolind_RCP, Bcolind_RCP, Icolind_RCP, Ccolind_RCP;
+  ArrayRCP<const SC>     Avals_RCP,   Bvals_RCP,   Ivals_RCP,   Cvals_RCP;
+
+  Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
+  Bview.origMatrix->getAllValues(Browptr_RCP, Bcolind_RCP, Bvals_RCP);
+  if (!Bview.importMatrix.is_null())
+    Bview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
+  C.getAllValues(Crowptr_RCP, Ccolind_RCP, Cvals_RCP);
+
+  // For efficiency
+  ArrayView<const size_t>   Arowptr, Browptr, Irowptr, Crowptr;
+  ArrayView<const LO>       Acolind, Bcolind, Icolind, Ccolind;
+  ArrayView<const SC>       Avals, Bvals, Ivals;
+  ArrayView<SC>             Cvals;
+  Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
+  Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
+  if (!Bview.importMatrix.is_null()) {
+    Irowptr = Irowptr_RCP(); Icolind = Icolind_RCP(); Ivals = Ivals_RCP();
+  }
+  Crowptr = Crowptr_RCP();  Ccolind = Ccolind_RCP();  Cvals = (Teuchos::arcp_const_cast<SC>(Cvals_RCP))();
+
+  // Run through all the hash table lookups once and for all
+  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
+  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
+
+  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
+    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+    if (B_LID != LO_INVALID) {
+      targetMapToOrigRow[i] = B_LID;
+    } else {
+      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+      targetMapToImportRow[i] = I_LID;
+    }
+  }
+
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // The status array will contain the index into colind where this entry was last deposited.
+  //   c_status[i] <  CSR_ip - not in the row yet
+  //   c_status[i] >= CSR_ip - this is the entry where you can find the data
+  // We start with this filled with INVALID's indicating that there are no entries yet.
+  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
+  Array<size_t> c_status(n, ST_INVALID);
+
+  // For each row of A/C
+  size_t CSR_ip = 0, OLD_ip = 0;
+  for (size_t i = 0; i < m; i++) {
+
+    // First fill the c_status array w/ locations where we're allowed to
+    // generate nonzeros for this row
+    OLD_ip = Crowptr[i];
+    CSR_ip = Crowptr[i+1];
+    for (size_t k = OLD_ip; k < CSR_ip; k++) {
+      c_status[Ccolind[k]] = k;
+
+      // Reset values in the row of C
+      Cvals[k] = SC_ZERO;
+    }
+
+    for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
+      LO Aik  = Acolind[k];
+      SC Aval = Avals[k];
+      if (Aval == SC_ZERO)
+        continue;
+
+      if (targetMapToOrigRow[Aik] != LO_INVALID) {
+        // Local matrix
+        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+
+        for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
+          LO Bkj = Bcolind[j];
+          LO Cij = Bcol2Ccol[Bkj];
+
+          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+            std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
+            "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
+
+          Cvals[c_status[Cij]] += Aval * Bvals[j];
+        }
+
+      } else {
+        // Remote matrix
+        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
+          LO Ikj = Icolind[j];
+          LO Cij = Icol2Ccol[Ikj];
+
+          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+            std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
+            "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
+
+          Cvals[c_status[Cij]] += Aval * Ivals[j];
+        }
+      }
+    }
+  }
+
+  C.fillComplete(C.getDomainMap(), C.getRangeMap());
+}
+
+
+// Kernel method for computing the local portion of C = (I-omega D^{-1} A)*B
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -1492,101 +1635,108 @@ void jacobi_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label)
+  const std::string& label)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayView;
-  typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+
+  typedef Import<LO,GO,NO>  import_type;
+  typedef Map<LO,GO,NO>     map_type;
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix = std::string("TpetraExt ")+ label + std::string(": ");
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix+std::string("Jacobi M5 Cmap")))));
+  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi M5 Cmap"))));
 #endif
-  size_t ST_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-  LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+  size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
 
   // Build the final importer / column map, hash table lookups for C
   RCP<const import_type> Cimport;
-  RCP<const map_type> Ccolmap;
+  RCP<const map_type>    Ccolmap;
   RCP<const import_type> Bimport = Bview.origMatrix->getGraph()->getImporter();
   RCP<const import_type> Iimport = Bview.importMatrix.is_null() ? Teuchos::null :  Bview.importMatrix->getGraph()->getImporter();
-  Array<LocalOrdinal> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
+  Array<LO> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
 
-  if(Bview.importMatrix.is_null()) {
+  if (Bview.importMatrix.is_null()) {
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
     // Bcol2Ccol is trivial
-    for(size_t i=0; i<Bview.colMap->getNodeNumElements(); i++) {
-      Bcol2Ccol[i] = Teuchos::as<LocalOrdinal>(i);
-    }
-  }
-  else {
+    for (size_t i = 0; i < Bview.colMap->getNodeNumElements(); i++)
+      Bcol2Ccol[i] = Teuchos::as<LO>(i);
+
+  } else {
     // Choose the right variant of setUnion
-    if(!Bimport.is_null() && !Iimport.is_null()){
+    if (!Bimport.is_null() && !Iimport.is_null()){
       Cimport = Bimport->setUnion(*Iimport);
       Ccolmap = Cimport->getTargetMap();
-    }
-    else if(!Bimport.is_null() && Iimport.is_null()) {
+
+    } else if (!Bimport.is_null() && Iimport.is_null()) {
       Cimport = Bimport->setUnion();
-    }
-    else if(Bimport.is_null() && !Iimport.is_null()) {
+
+    } else if(Bimport.is_null() && !Iimport.is_null()) {
       Cimport = Iimport->setUnion();
-    }
-    else
+
+    } else
       throw std::runtime_error("TpetraExt::Jacobi status of matrix importers is nonsensical");
 
     Ccolmap = Cimport->getTargetMap();
 
-    if(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()))
-      throw std::runtime_error("Tpetra:Jacobi Import setUnion messed with the DomainMap in an unfortunate way");
+    TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
+      std::runtime_error, "Tpetra:Jacobi Import setUnion messed with the DomainMap in an unfortunate way");
 
     // NOTE: This is not efficient and should be folded into setUnion
     Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
-    ArrayView<const GlobalOrdinal> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
-    ArrayView<const GlobalOrdinal> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
+    ArrayView<const GO> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
+    ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
 
-    for(size_t i=0; i<Bview.origMatrix->getColMap()->getNodeNumElements(); i++)
+    for (size_t i = 0; i < Bview.origMatrix->getColMap()->getNodeNumElements(); i++)
       Bcol2Ccol[i] = Ccolmap->getLocalElement(Bgid[i]);
-    for(size_t i=0; i<Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
+    for (size_t i = 0; i < Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
       Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("Jacobi Newmatrix SerialCore"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix SerialCore"))));
 #endif
 
   // Sizes
-  size_t m=Aview.origMatrix->getNodeNumRows();
-  size_t n=Ccolmap->getNodeNumElements();
+  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t n = Ccolmap->getNodeNumElements();
 
   // Get Data Pointers
   ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
-  ArrayRCP<size_t> Crowptr_RCP;
-  ArrayRCP<const LocalOrdinal> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
-  ArrayRCP<LocalOrdinal> Ccolind_RCP;
-  ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
-  ArrayRCP<Scalar> Cvals_RCP;
-  ArrayRCP<const Scalar> Dvals_RCP;
+  ArrayRCP<size_t>       Crowptr_RCP;
+  ArrayRCP<const LO>     Acolind_RCP, Bcolind_RCP, Icolind_RCP;
+  ArrayRCP<LO>           Ccolind_RCP;
+  ArrayRCP<const SC>     Avals_RCP, Bvals_RCP, Ivals_RCP;
+  ArrayRCP<SC>           Cvals_RCP;
+  ArrayRCP<const SC>     Dvals_RCP;
 
-  Aview.origMatrix->getAllValues(Arowptr_RCP,Acolind_RCP,Avals_RCP);
-  Bview.origMatrix->getAllValues(Browptr_RCP,Bcolind_RCP,Bvals_RCP);
-  if(!Bview.importMatrix.is_null()) Bview.importMatrix->getAllValues(Irowptr_RCP,Icolind_RCP,Ivals_RCP);
+  Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
+  Bview.origMatrix->getAllValues(Browptr_RCP, Bcolind_RCP, Bvals_RCP);
+  if (!Bview.importMatrix.is_null())
+    Bview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
   Dvals_RCP = Dinv.getData();
 
   // For efficiency
-  ArrayView<const size_t> Arowptr, Browptr, Irowptr;
-  ArrayView<const LocalOrdinal> Acolind, Bcolind, Icolind;
-  ArrayView<const Scalar> Avals, Bvals, Ivals;
-  ArrayView<size_t> Crowptr;
-  ArrayView<LocalOrdinal> Ccolind;
-  ArrayView<Scalar> Cvals;
-  ArrayView<const Scalar> Dvals;
+  ArrayView<const size_t>   Arowptr, Browptr, Irowptr;
+  ArrayView<const LO>       Acolind, Bcolind, Icolind;
+  ArrayView<const SC>       Avals, Bvals, Ivals;
+  ArrayView<size_t>         Crowptr;
+  ArrayView<LO>             Ccolind;
+  ArrayView<SC> Cvals;
+  ArrayView<const SC> Dvals;
   Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
   Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
-  if(!Bview.importMatrix.is_null()) {
+  if (!Bview.importMatrix.is_null()) {
     Irowptr = Irowptr_RCP();  Icolind = Icolind_RCP();  Ivals = Ivals_RCP();
   }
   Dvals = Dvals_RCP();
@@ -1600,136 +1750,318 @@ void jacobi_A_B_newmatrix(
   Array<size_t> c_status(n, ST_INVALID);
 
   // Classic csr assembly (low memory edition)
-  size_t CSR_alloc=std::max(C_estimate_nnz(*Aview.origMatrix,*Bview.origMatrix),n);
-  size_t CSR_ip=0,OLD_ip=0;
+  size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
+  size_t CSR_ip = 0, OLD_ip = 0;
   Crowptr_RCP.resize(m+1);       Crowptr = Crowptr_RCP();
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
 
   // Run through all the hash table lookups once and for all
-  Array<LocalOrdinal> targetMapToOrigRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
-  Array<LocalOrdinal> targetMapToImportRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
+  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
+  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
 
-  if(Aview.colMap->isSameAs(*Bview.rowMap)){
-    // Maps are the same: Use local IDs as the hash
-    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-      LocalOrdinal B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-      if(B_LID != LO_INVALID) targetMapToOrigRow[i] = B_LID;
-      else {
-        LocalOrdinal I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-        targetMapToImportRow[i] = I_LID;
-      }
-    }
-  }
-  else {
-    // Maps are not the same:  Use the map's hash
-    for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-      LocalOrdinal B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-      if(B_LID != LO_INVALID) targetMapToOrigRow[i] = B_LID;
-      else {
-        LocalOrdinal I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-        targetMapToImportRow[i] = I_LID;
-      }
+  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
+    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+    if (B_LID != LO_INVALID) {
+      targetMapToOrigRow[i] = B_LID;
+    } else {
+      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+      targetMapToImportRow[i] = I_LID;
     }
   }
 
-  const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
   // For each row of A/C
-  for(size_t i=0; i<m; i++){
-    Crowptr[i]=CSR_ip;
-    Scalar Dval = Dvals[i];
+  for (size_t i = 0; i < m; i++) {
+    Crowptr[i] = CSR_ip;
+    SC Dval = Dvals[i];
 
     // Entries of B
-    for(size_t k=Browptr[i]; k<Browptr[i+1]; k++){
-      Scalar Bval = Bvals[k];
-      if(Bval==SC_ZERO) continue;
-      LocalOrdinal Ck=Bcol2Ccol[Bcolind[k]];
+    for (size_t j = Browptr[i]; j < Browptr[i+1]; j++) {
+      Scalar Bval = Bvals[j];
+      if (Bval == SC_ZERO)
+        continue;
+      LO Bij = Bcolind[j];
+      LO Cij = Bcol2Ccol[Bij];
 
       // Assume no repeated entries in B
-      c_status[Ck]    = CSR_ip;
-      Ccolind[CSR_ip] = Ck;
-      Cvals[CSR_ip]   = Bvals[k];
+      c_status[Cij]   = CSR_ip;
+      Ccolind[CSR_ip] = Cij;
+      Cvals[CSR_ip]   = Bvals[j];
       CSR_ip++;
     }
 
-
     // Entries of -omega * Dinv * A * B
-    for(size_t k=Arowptr[i]; k<Arowptr[i+1]; k++){
-      LocalOrdinal Ak      = Acolind[k];
-      Scalar       Aval    = Avals[k];
-      if(Aval==SC_ZERO) continue;
+    for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
+      LO Aik  = Acolind[k];
+      SC Aval = Avals[k];
+      if (Aval == SC_ZERO)
+        continue;
 
-      if(targetMapToOrigRow[Ak] != LO_INVALID){
+      if (targetMapToOrigRow[Aik] != LO_INVALID) {
         // Local matrix
-        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Ak]);
+        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
 
-        for(size_t j=Browptr[Bk]; j<Browptr[Bk+1]; ++j) {
-          LocalOrdinal Cj=Bcol2Ccol[Bcolind[j]];
+        for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
+          LO Bkj = Bcolind[j];
+          LO Cij = Bcol2Ccol[Bkj];
 
-          if(c_status[Cj]==INVALID || c_status[Cj]<OLD_ip){
+          if (c_status[Cij] == INVALID || c_status[Cij] < OLD_ip) {
             // New entry
-            c_status[Cj]    = CSR_ip;
-            Ccolind[CSR_ip] = Cj;
+            c_status[Cij]   = CSR_ip;
+            Ccolind[CSR_ip] = Cij;
             Cvals[CSR_ip]   = - omega * Dval* Aval * Bvals[j];
             CSR_ip++;
-          }
-          else
-            Cvals[c_status[Cj]] -= omega * Dval* Aval * Bvals[j];
-        }
-      }
-      else{
-        // Remote matrix
-        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Ak]);
-        for(size_t j=Irowptr[Ik]; j<Irowptr[Ik+1]; ++j) {
-          LocalOrdinal Cj=Icol2Ccol[Icolind[j]];
 
-          if(c_status[Cj]==INVALID || c_status[Cj]<OLD_ip){
+          } else {
+            Cvals[c_status[Cij]] -= omega * Dval* Aval * Bvals[j];
+          }
+        }
+
+      } else {
+        // Remote matrix
+        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
+          LO Ikj = Icolind[j];
+          LO Cij = Icol2Ccol[Ikj];
+
+          if (c_status[Cij] == INVALID || c_status[Cij] < OLD_ip) {
             // New entry
-            c_status[Cj]    = CSR_ip;
-            Ccolind[CSR_ip] = Cj;
+            c_status[Cij]   = CSR_ip;
+            Ccolind[CSR_ip] = Cij;
             Cvals[CSR_ip]   = - omega * Dval* Aval * Ivals[j];
             CSR_ip++;
+          } else {
+            Cvals[c_status[Cij]] -= omega * Dval* Aval * Ivals[j];
           }
-          else
-            Cvals[c_status[Cj]] -= omega * Dval* Aval * Ivals[j];
         }
       }
     }
 
     // Resize for next pass if needed
-    if(CSR_ip + n > CSR_alloc){
-      CSR_alloc*=2;
+    if (CSR_ip + n > CSR_alloc) {
+      CSR_alloc *= 2;
       Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
       Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
     }
-    OLD_ip=CSR_ip;
+    OLD_ip = CSR_ip;
   }
 
-  Crowptr[m]=CSR_ip;
+  Crowptr[m] = CSR_ip;
 
   // Downward resize
-  Cvals_RCP.resize(CSR_ip);
+  Cvals_RCP  .resize(CSR_ip);
   Ccolind_RCP.resize(CSR_ip);
 
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp (new TimeMonitor (* (TimeMonitor::getNewTimer(prefix+std::string("Jacobi Newmatrix Final Sort")))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix Final Sort"))));
 #endif
 
   // Replace the column map
   C.replaceColMap(Ccolmap);
 
   // Final sort & set of CRS arrays
-  Import_Util::sortCrsEntries(Crowptr_RCP(),Ccolind_RCP(),Cvals_RCP());
-  C.setAllValues(Crowptr_RCP,Ccolind_RCP,Cvals_RCP);
+  Import_Util::sortCrsEntries(Crowptr_RCP(), Ccolind_RCP(), Cvals_RCP());
+  C.setAllValues(Crowptr_RCP, Ccolind_RCP, Cvals_RCP);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp (new TimeMonitor (* (TimeMonitor::getNewTimer(prefix+std::string("Jacobi Newmatrix ESFC")))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix ESFC"))));
 #endif
 
   // Final FillComplete
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(),Aview.origMatrix->getRangeMap(),Cimport);
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport);
+}
+
+
+// Kernel method for computing the local portion of C = (I-omega D^{-1} A)*B
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
+void jacobi_A_B_reuse(
+  Scalar omega,
+  const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Dinv,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  const std::string& label)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
+
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+
+  typedef Import<LO,GO,NO>  import_type;
+  typedef Map<LO,GO,NO>     map_type;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse Cmap"))));
+#endif
+  size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+  // Build the final importer / column map, hash table lookups for C
+  RCP<const import_type> Cimport = C.getGraph()->getImporter();
+  RCP<const map_type>    Ccolmap = C.getColMap();
+
+  Array<LO> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
+
+  if (Bview.importMatrix.is_null()) {
+    // Bcol2Ccol is trivial
+    // This is possible. This situation is different from mult_A_B_reuse, as we
+    // always add B
+    for (size_t i = 0; i < Bview.colMap->getNodeNumElements(); i++)
+      Bcol2Ccol[i] = Teuchos::as<LO>(i);
+
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
+      std::runtime_error, "Tpetra:Jacobi Import setUnion messed with the DomainMap in an unfortunate way");
+
+    // NOTE: This is not efficient and should be folded into setUnion
+    Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
+    ArrayView<const GO> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
+    ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
+
+    for (size_t i = 0; i < Bview.origMatrix->getColMap()->getNodeNumElements(); i++)
+      Bcol2Ccol[i] = Ccolmap->getLocalElement(Bgid[i]);
+    for (size_t i = 0; i < Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
+      Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
+  }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse SerialCore"))));
+#endif
+
+  // Sizes
+  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t n = Ccolmap->getNodeNumElements();
+
+  // Get Data Pointers
+  ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP, Crowptr_RCP;
+  ArrayRCP<const LO>     Acolind_RCP, Bcolind_RCP, Icolind_RCP, Ccolind_RCP;
+  ArrayRCP<const SC>     Avals_RCP,   Bvals_RCP,   Ivals_RCP,   Cvals_RCP,   Dvals_RCP;
+
+  Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
+  Bview.origMatrix->getAllValues(Browptr_RCP, Bcolind_RCP, Bvals_RCP);
+  if (!Bview.importMatrix.is_null())
+    Bview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
+  C.getAllValues(Crowptr_RCP, Ccolind_RCP, Cvals_RCP);
+  Dvals_RCP = Dinv.getData();
+
+  // For efficiency
+  ArrayView<const size_t>   Arowptr, Browptr, Irowptr, Crowptr;
+  ArrayView<const LO>       Acolind, Bcolind, Icolind, Ccolind;
+  ArrayView<const SC>       Avals, Bvals, Ivals;
+  ArrayView<SC>             Cvals;
+  ArrayView<const SC>       Dvals;
+  Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
+  Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
+  if (!Bview.importMatrix.is_null()) {
+    Irowptr = Irowptr_RCP(); Icolind = Icolind_RCP(); Ivals = Ivals_RCP();
+  }
+  Crowptr = Crowptr_RCP();  Ccolind = Ccolind_RCP();  Cvals = (Teuchos::arcp_const_cast<SC>(Cvals_RCP))();
+  Dvals = Dvals_RCP();
+
+  // Run through all the hash table lookups once and for all
+  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
+  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
+
+  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
+    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+    if (B_LID != LO_INVALID) {
+      targetMapToOrigRow[i] = B_LID;
+    } else {
+      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+      targetMapToImportRow[i] = I_LID;
+    }
+  }
+
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // The status array will contain the index into colind where this entry was last deposited.
+  //   c_status[i] <  CSR_ip - not in the row yet
+  //   c_status[i] >= CSR_ip - this is the entry where you can find the data
+  // We start with this filled with INVALID's indicating that there are no entries yet.
+  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
+  Array<size_t> c_status(n, ST_INVALID);
+
+  // For each row of A/C
+  size_t CSR_ip = 0, OLD_ip = 0;
+  for (size_t i = 0; i < m; i++) {
+
+    // First fill the c_status array w/ locations where we're allowed to
+    // generate nonzeros for this row
+    OLD_ip = Crowptr[i];
+    CSR_ip = Crowptr[i+1];
+    for (size_t k = OLD_ip; k < CSR_ip; k++) {
+      c_status[Ccolind[k]] = k;
+
+      // Reset values in the row of C
+      Cvals[k] = SC_ZERO;
+    }
+
+    SC Dval = Dvals[i];
+
+    // Entries of B
+    for (size_t j = Browptr[i]; j < Browptr[i+1]; j++) {
+      Scalar Bval = Bvals[j];
+      if (Bval == SC_ZERO)
+        continue;
+      LO Bij = Bcolind[j];
+      LO Cij = Bcol2Ccol[Bij];
+
+      TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+        std::runtime_error, "Trying to insert a new entry into a static graph");
+
+      Cvals[c_status[Cij]] = Bvals[j];
+    }
+
+    // Entries of -omega * Dinv * A * B
+    for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
+      LO Aik  = Acolind[k];
+      SC Aval = Avals[k];
+      if (Aval == SC_ZERO)
+        continue;
+
+      if (targetMapToOrigRow[Aik] != LO_INVALID) {
+        // Local matrix
+        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+
+        for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
+          LO Bkj = Bcolind[j];
+          LO Cij = Bcol2Ccol[Bkj];
+
+          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+            std::runtime_error, "Trying to insert a new entry into a static graph");
+
+          Cvals[c_status[Cij]] -= omega * Dval* Aval * Bvals[j];
+        }
+
+      } else {
+        // Remote matrix
+        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
+          LO Ikj = Icolind[j];
+          LO Cij = Icol2Ccol[Ikj];
+
+          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+            std::runtime_error, "Trying to insert a new entry into a static graph");
+
+          Cvals[c_status[Cij]] -= omega * Dval* Aval * Ivals[j];
+        }
+      }
+    }
+  }
+
+  C.fillComplete(C.getDomainMap(), C.getRangeMap());
 }
 
 
@@ -1745,15 +2077,26 @@ void import_and_extract_views(
   bool userAssertsThereAreNoRemotes,
   const std::string & label)
 {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix = std::string("TpetraExt ")+ label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM I&X Alloc"))));
-#endif
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayView;
 
   //Convience typedef
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix_t;
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+
+  typedef Map<LO,GO,NO>             map_type;
+  typedef Import<LO,GO,NO>          import_type;
+  typedef CrsMatrix<SC,LO,GO,NO>    crs_matrix_type;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Alloc"))));
+#endif
+
   // The goal of this method is to populate the 'Mview' struct with views of the
   // rows of M, including all rows that correspond to elements in 'targetMap'.
   //
@@ -1762,15 +2105,15 @@ void import_and_extract_views(
   // 'Mview.importMatrix', and views of them will be included in 'Mview'.
   Mview.deleteContents();
 
-  RCP<const Map_t> Mrowmap = M.getRowMap();
-  RCP<const Map_t> MremoteRowMap;
+  RCP<const map_type> Mrowmap = M.getRowMap();
+  RCP<const map_type> MremoteRowMap;
   const int numProcs = Mrowmap->getComm()->getSize();
 
   ArrayView<const GlobalOrdinal> Mrows = targetMap->getNodeElementList();
 
   size_t numRemote = 0;
   size_t numRows   = targetMap->getNodeNumElements();
-  Mview.origMatrix = Teuchos::rcp(&M,false);
+  Mview.origMatrix = rcp(&M, false);
   Mview.origRowMap = M.getRowMap();
   Mview.rowMap = targetMap;
   Mview.colMap = M.getColMap();
@@ -1778,50 +2121,54 @@ void import_and_extract_views(
   Mview.importColMap = null;
 
   // Short circuit if the user swears there are no remotes
-  if(userAssertsThereAreNoRemotes) return;
+  if (userAssertsThereAreNoRemotes)
+    return;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM I&X RemoteMap"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap"))));
 #endif
 
-  // mark each row in targetMap as local or remote, and go ahead and get a view for the local rows
+  // Mark each row in targetMap as local or remote, and go ahead and get a view
+  // for the local rows
   int mode = 0;
-  if(!prototypeImporter.is_null() && prototypeImporter->getSourceMap()->isSameAs(*Mrowmap) && prototypeImporter->getTargetMap()->isSameAs(*targetMap)) {
+  if (!prototypeImporter.is_null() && prototypeImporter->getSourceMap()->isSameAs(*Mrowmap) &&
+      prototypeImporter->getTargetMap()->isSameAs(*targetMap)) {
     // We have a valid prototype importer --- ask it for the remotes
     numRemote = prototypeImporter->getNumRemoteIDs();
     Array<GlobalOrdinal> MremoteRows(numRemote);
     ArrayView<const LocalOrdinal> RemoteLIDs = prototypeImporter->getRemoteLIDs();
-    for(size_t i=0; i<numRemote; i++) {
+    for (size_t i = 0; i < numRemote; i++)
       MremoteRows[i] = targetMap->getGlobalElement(RemoteLIDs[i]);
-    }
 
-    MremoteRowMap=rcp(new Map_t(OrdinalTraits<global_size_t>::invalid(), MremoteRows(), Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
-    mode=1;
-  }
-  else if(prototypeImporter.is_null()) {
+    MremoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), MremoteRows(),
+                                     Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
+    mode = 1;
+
+  } else if (prototypeImporter.is_null()) {
     // No prototype importer --- count the remotes the hard way
-    Array<GlobalOrdinal> MremoteRows(numRows);
-    for(size_t i=0; i < numRows; ++i) {
-      const LocalOrdinal mlid = Mrowmap->getLocalElement(Mrows[i]);
+    Array<GO> MremoteRows(numRows);
+    for(size_t i = 0; i < numRows; ++i) {
+      const LO mlid = Mrowmap->getLocalElement(Mrows[i]);
 
-      if (mlid == OrdinalTraits<LocalOrdinal>::invalid()) {
-        MremoteRows[numRemote]=Mrows[i];
+      if (mlid == OrdinalTraits<LO>::invalid()) {
+        MremoteRows[numRemote] = Mrows[i];
         ++numRemote;
       }
     }
     MremoteRows.resize(numRemote);
-    MremoteRowMap=rcp(new Map_t(OrdinalTraits<global_size_t>::invalid(), MremoteRows(), Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
-    mode=2;
-  }
-  else {
-    // prototypeImporter is bad.  But if we're in serial that's OK.
-    mode=3;
+    MremoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), MremoteRows(),
+                                     Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
+    mode = 2;
+
+  } else {
+    // PrototypeImporter is bad.  But if we're in serial that's OK.
+    mode = 3;
   }
 
   if (numProcs < 2) {
     TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
       "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows." <<std::endl);
-    //If only one processor we don't need to import any remote rows, so return.
+    // If only one processor we don't need to import any remote rows, so return.
     return;
   }
 
@@ -1830,7 +2177,7 @@ void import_and_extract_views(
   // value of numRemote is greater than 0.
   //
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM I&X Collective-0"))));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Collective-0"))));
 #endif
 
   global_size_t globalMaxNumRemote = 0;
@@ -1839,34 +2186,35 @@ void import_and_extract_views(
 
   if (globalMaxNumRemote > 0) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM I&X Import-2"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-2"))));
 #endif
     // Create an importer with target-map MremoteRowMap and source-map Mrowmap.
-    RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > importer;
+    RCP<const import_type> importer;
 
-    if(mode==1)
+    if (mode == 1)
       importer = prototypeImporter->createRemoteOnlyImport(MremoteRowMap);
-    else if(mode==2)
-      importer=rcp(new Import<LocalOrdinal, GlobalOrdinal, Node>(Mrowmap, MremoteRowMap));
+    else if (mode == 2)
+      importer = rcp(new import_type(Mrowmap, MremoteRowMap));
     else
       throw std::runtime_error("prototypeImporter->SourceMap() does not match M.getRowMap()!");
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM I&X Import-3"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-3"))));
 #endif
 
     // Now create a new matrix into which we can import the remote rows of M that we need.
     Teuchos::ParameterList labelList;
-    labelList.set("Timer Label",label);
-    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),*importer,M.getDomainMap(),MremoteRowMap,Teuchos::rcp(&labelList,false));
+    labelList.set("Timer Label", label);
+    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcp(&M,false),
+                                    *importer, M.getDomainMap(), MremoteRowMap, rcp(&labelList,false));
 
-#ifdef COMPUTE_MMM_STATISTICS
-    printMultiplicationStatistics(importer,label+std::string(" I&X MMM"));
+#ifdef HAVE_TPETRA_MMM_STATISTICS
+    printMultiplicationStatistics(importer, label + std::string(" I&X MMM"));
 #endif
 
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix+std::string("MMM I&X Import-4"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-4"))));
 #endif
 
     // Save the column map of the imported matrix, so that we can convert indices back to global for arithmetic later

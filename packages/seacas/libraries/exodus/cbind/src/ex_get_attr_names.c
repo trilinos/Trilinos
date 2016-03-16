@@ -85,13 +85,13 @@ int ex_get_attr_names( int   exoid,
 		ex_name_of_object(obj_type), obj_id, exoid);
 	ex_err("ex_get_attr_names",errmsg,EX_NULLENTITY);
 	return (EX_WARN);              /* no attributes for this object */
-      } else {
+      } 
 	sprintf(errmsg,
 		"Warning: failed to locate %s id %"PRId64" in id array in file id %d",
 		ex_name_of_object(obj_type), obj_id, exoid);
 	ex_err("ex_get_attr_names",errmsg,exerrval);
 	return (EX_WARN);
-      }
+      
     }
   }
 

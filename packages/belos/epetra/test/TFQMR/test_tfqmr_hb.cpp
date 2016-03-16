@@ -72,6 +72,8 @@ int main(int argc, char *argv[]) {
     // Get test parameters from command-line processor
     //
     bool proc_verbose = false;
+    bool explicit_test = false;
+    bool comp_recursive = false;
     int frequency = -1;  // how often residuals are printed by solver
     int numrhs = 1;  // total number of right-hand sides to solve for
     int maxiters = -1;  // maximum number of iterations for solver to use
@@ -80,7 +82,10 @@ int main(int argc, char *argv[]) {
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+    cmdp.setOption("explicit","implicit-only",&explicit_test,"Compute explicit residuals.");
+    cmdp.setOption("recursive","native",&comp_recursive,"Compute recursive residuals.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by TFQMR solver.");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
@@ -130,6 +135,15 @@ int main(int argc, char *argv[]) {
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    if (explicit_test)
+    {
+      belosList.set( "Explicit Residual Test", true );       // Scale by norm of right-hand side vector."
+      belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Scale by norm of right-hand side vector."
+    }
+    if (comp_recursive)
+    {
+      belosList.set( "Compute Recursive Residuals", true );
+    }
     if (verbose) {
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
           Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );

@@ -74,14 +74,14 @@ int ex_get_entity_count_per_polyhedra (int            exoid,
        ex_err("ex_get_entity_count_per_polyhedra",errmsg,EX_NULLENTITY);
        return (EX_WARN);
        }
-     else
-       {
+     
+       
        sprintf(errmsg,
          "Error: failed to locate %s block id %"PRId64" in id array in file id %d",
          ex_name_of_object(blk_type),blk_id, exoid);
        ex_err("ex_get_entity_count_per_polyhedra",errmsg,exerrval);
        return (EX_FATAL);
-       }
+       
      }
 
 /* inquire id's of previously defined dimensions  */

@@ -54,7 +54,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
-#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
+#include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "unit_tests/Setup2Block2HexMesh.hpp"  // for setup2Block2HexMesh
 
 using stk::mesh::MetaData;
@@ -530,7 +530,37 @@ TEST ( UnitTestCreateEdges, Hex_2x1x1_select_out_a_face )
     }
 }
 
+TEST( UnitTestCreateEdges, particle )
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
 
+    if (p_size != 1) {
+        return;
+    }
 
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
 
+    stk::mesh::Part * particlePart = &meta.declare_part_with_topology("particle_part", stk::topology::PARTICLE);
+    meta.commit();
+
+    stk::mesh::EntityIdVector particleNodeIDs { 1 };
+    stk::mesh::EntityId particleElemID( 1 );
+
+    mesh.modification_begin();
+    stk::mesh::declare_element(mesh, *particlePart, particleElemID, particleNodeIDs);
+    mesh.modification_end();
+
+    stk::mesh::create_edges(mesh);
+
+    std::vector<size_t> counts;
+    stk::mesh::comm_mesh_counts(mesh, counts);
+
+    EXPECT_EQ( 1u, counts[stk::topology::NODE_RANK] );
+    EXPECT_EQ( 0u, counts[stk::topology::EDGE_RANK] );  // Shouldn't create any; particles don't have edges
+    EXPECT_EQ( 0u, counts[stk::topology::FACE_RANK] );
+    EXPECT_EQ( 1u, counts[stk::topology::ELEM_RANK] );
+}
 

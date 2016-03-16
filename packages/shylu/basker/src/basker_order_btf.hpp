@@ -47,7 +47,7 @@ namespace BaskerNS
     Int t_size            = 0;
     Int t_loc             = 0;
     btf_schedule(0) = btf_tabs_offset;
-    BASKER_BOOL  move_fwd = BASKER_TRUE;
+    //BASKER_BOOL  move_fwd = BASKER_TRUE; //NU
 
     for(Int b = btf_tabs_offset; b < btf_nblks;
 	b++)
@@ -127,10 +127,10 @@ namespace BaskerNS
 
     btf_nblks = nblks;
 
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("------------BTF CUT: %d --------------\n", 
 	   btf_tabs(btf_tabs_offset));
-    //#endif
+    #endif
 
     return 0;
   }//end find BTF
@@ -144,16 +144,17 @@ namespace BaskerNS
   {
     Int          nblks = 0;
 
+
     strong_component(M,nblks,order_btf_array,btf_tabs);
 
     btf_nblks = nblks;
 
     btf_flag = BASKER_TRUE;
 
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("BTF nblks returned: %d \n", nblks);
     //BASKER_ASSERT(nblks>1, "NOT ENOUGH BTF BLOCKS");
-    //#endif
+    #endif
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     if(nblks<2)
@@ -163,7 +164,7 @@ namespace BaskerNS
     #endif
 
 
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     /*
     printf("\nBTF perm: \n");
     for(Int i=0; i <M.nrow; i++)
@@ -179,7 +180,7 @@ namespace BaskerNS
 	printf("%d, ", btf_tabs(i));
       }
     printf("\n");
-    // #endif
+    #endif
 
     permute_col(M, order_btf_array);
     permute_row(M, order_btf_array);
@@ -566,9 +567,9 @@ namespace BaskerNS
     //If nblks  == 1, than only BTF_A exists
     if(nblks == 1)
       {
-        //#ifdef BASKER_DEBUG_ORDER_BTF
+        #ifdef BASKER_DEBUG_ORDER_BTF
 	printf("Short Circuit part_call \n");
-	//#endif
+	#endif
 	BTF_A = A;
 	//Options.btf = BASKER_FALSE;
 	btf_tabs_offset = 1;
@@ -578,7 +579,7 @@ namespace BaskerNS
     //Short circuit for incomplete
     if(Options.incomplete == BASKER_TRUE)
       {
-	printf("Short Ciruit incomplete\n");
+	//printf("Short Ciruit incomplete\n");
 	BTF_A = A;
 	btf_nblks = 1;
 	btf_tabs_offset = 1;
@@ -604,8 +605,10 @@ namespace BaskerNS
 		((double)1/num_threads) + 
 		((double)BASKER_BTF_IMBALANCE)));
 
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Break size: %d \n", break_size);
-
+    #endif
+    
     Int t_size            = 0;
     Int scol              = M.ncol;
     Int blk_idx           = nblks;
@@ -651,13 +654,15 @@ namespace BaskerNS
 	//break due to size
 	else if(blk_work >= break_size)
 	  {
+	    #ifdef BASKER_DEBUG_ORDER_BTF
 	    printf("break due to size\n");
+	    #endif
 	    move_fwd = BASKER_FALSE;
 	  }
 	//break due to end
 	else if(blk_idx == 1)
 	  {
-	    printf("break last blk\n");
+	    //printf("break last blk\n");
 	    blk_idx = 0;
 	    t_size = t_size + blk_size;
 	    scol = btf_tabs[blk_idx];	
@@ -672,15 +677,15 @@ namespace BaskerNS
 	  }
       }//end while(move_fwd)
 
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Done finding BTF2 cut.  Cut size: %d scol: %d \n",
 	   t_size, scol);
     printf("Done finding BTF2 cut. blk_idx: %d \n", 
 	   blk_idx);
     //BASKER_ASSERT(t_size > 0, "BTF CUT SIZE NOT BIG ENOUGH\n");
     
-    BASKER_ASSERT((scol >= 0) && (scol < M.ncol), "SCOL\n");
-    //#endif
+    BASKER_ASSERT((scol >= 0) && (scol <= M.ncol), "SCOL\n");
+    #endif
     
     //Comeback and change
     btf_tabs_offset = blk_idx;
@@ -750,6 +755,12 @@ namespace BaskerNS
 	   BTF_C.srow, BTF_C.nrow,
 	   BTF_C.scol, BTF_C.nrow);
     #endif
+
+    //Added check
+    if((BTF_C.nrow == 0)||(BTF_C.ncol == 0))
+      {
+	return 0;
+      }
     
     //Scan and find nnz
     //We can do this much better!!!!
@@ -804,6 +815,7 @@ namespace BaskerNS
       }
     if(BTF_C.v_fill == BASKER_FALSE)
       {
+	
 	BASKER_ASSERT(BTF_C.ncol >= 0, "BTF_C.ncol");
 	MALLOC_INT_1DARRAY(BTF_C.col_ptr, BTF_C.ncol+1);
 	BASKER_ASSERT(BTF_C.nnz > 0, "BTF_C.nnz");
@@ -888,6 +900,9 @@ namespace BaskerNS
    )
   {
 
+
+    //printf("===this strong comp called====");
+
     typedef long int   l_int;
     
     INT_1DARRAY perm_in;
@@ -899,6 +914,18 @@ namespace BaskerNS
       {
 	perm_in(i) = i;
       }
+    if(Options.incomplete == BASKER_TRUE)
+      {
+	for(Int i = 0; i < M.ncol; i++)
+	  {
+	    perm(i) = i;
+	  }
+	nblks = 1;
+	CC(0) = 0;
+	CC(1) = M.ncol;
+	return 0;
+      }
+
     //printf("SC one \n");
     //my_strong_component(M,nblks,perm,perm_in, CC);
     BaskerSSWrapper<Int>::my_strong_component(M.ncol,

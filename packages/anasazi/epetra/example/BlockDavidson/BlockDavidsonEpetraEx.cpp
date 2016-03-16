@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
     // Create an Epetra_Matrix
     //
-    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
+    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Epetra_DataAccess::Copy, Map, &NumNz[0]) );
 
     // Compute coefficients for discrete convection-diffution operator
     //
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
     // Create a identity matrix for the temporary mass matrix
-    Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, 1) );
+    Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( new Epetra_CrsMatrix(Epetra_DataAccess::Copy, Map, 1) );
     for (int i=0; i<NumMyElements; i++)
     {
       Values[0] = one;

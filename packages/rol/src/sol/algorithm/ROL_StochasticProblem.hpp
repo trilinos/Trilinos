@@ -94,7 +94,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(Teuchos::null), gsampler_(Teuchos::null), hsampler_(Teuchos::null),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -106,7 +106,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(sampler), gsampler_(sampler), hsampler_(sampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
@@ -122,7 +122,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(gsampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
@@ -139,7 +139,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
@@ -155,7 +155,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(sampler), gsampler_(sampler), hsampler_(sampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
@@ -172,7 +172,7 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(gsampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
@@ -190,14 +190,14 @@ public:
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
       setVector_(false) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
   }
 
   void setParameterList(Teuchos::ParameterList &parlist) {
-    parlist_ = Teuchos::rcp(&parlist,false);
+    parlist_ = Teuchos::rcpFromRef(parlist);
     if (ORIGINAL_obj_ != Teuchos::null) {
       setObjective(ORIGINAL_obj_);
     }
@@ -287,7 +287,7 @@ public:
         vec_ = Teuchos::rcp(new RiskVector<Real>(*parlist_,vec));
       }
       else if ( type == "BPOE" ) {
-        std::vector<Real> stat(1,1.);
+        std::vector<Real> stat(1,1);
         vec_ = Teuchos::rcp(new RiskVector<Real>(vec,stat,true));
       }
       else {
@@ -331,17 +331,8 @@ public:
       if ( type == "Risk Neutral" || type == "Mean Value" ) {
         bnd_ = bnd;
       }
-      else if ( type == "Risk Averse" ) {
-        std::string name = parlist_->sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
-        if ( name == "KL Divergence" ) {
-          bnd_ = Teuchos::rcp(new RiskBoundConstraint<Real>("BPOE",bnd));
-        }
-        else {
-          bnd_ = Teuchos::rcp(new RiskBoundConstraint<Real>(*parlist_,bnd));
-        }
-      }
-      else if ( type == "BPOE" ) {
-        bnd_ = Teuchos::rcp(new RiskBoundConstraint<Real>("BPOE",bnd));
+      else if ( type == "Risk Averse" || type == "BPOE" ) {
+        bnd_ = Teuchos::rcp(new RiskBoundConstraint<Real>(*parlist_,bnd));
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -372,7 +363,7 @@ public:
         const RiskVector<Real> x = Teuchos::dyn_cast<const RiskVector<Real> >(
           Teuchos::dyn_cast<const Vector<Real> >(*vec_));
         std::string type = parlist_->sublist("SOL").get("Stochastic Optimization Type","Risk Neutral");
-        Real val = 0.0;
+        Real val(0);
         if ( type == "Risk Averse" ) {
           Teuchos::ParameterList &list
             = parlist_->sublist("SOL").sublist("Risk Measure");
@@ -386,7 +377,8 @@ public:
             }
           }
           else if ( risk == "Quantile-Radius Quadrangle" ) {
-            val = 0.5*(x.getStatistic(0) + x.getStatistic(1));
+            Real half(0.5);
+            val = half*(x.getStatistic(0) + x.getStatistic(1));
           }
           else {
             val = x.getStatistic();
@@ -398,7 +390,7 @@ public:
         return val;
       }
       catch (std::exception &e) {
-        return 0.;
+        return 0;
       }
     }
   }
@@ -429,8 +421,8 @@ private:
   std::vector<Real> computeSampleMean(Teuchos::RCP<SampleGenerator<Real> > &sampler) {
     // Compute mean value of inputs and set parameter in objective
     int dim = sampler->getMyPoint(0).size(), nsamp = sampler->numMySamples();
-    std::vector<Real> loc(dim,0.0), mean(dim,0.0), pt(dim,0.0);
-    Real wt = 0.0;
+    std::vector<Real> loc(dim), mean(dim), pt(dim);
+    Real wt(0);
     for (int i = 0; i < nsamp; i++) {
       pt = sampler->getMyPoint(i);
       wt = sampler->getMyWeight(i);
@@ -457,7 +449,7 @@ private:
         return Teuchos::rcp(new RiskVector<Real>(*parlist_,vec));
       }
       else if ( type == "BPOE" ) {
-        std::vector<Real> stat(1,1.);
+        std::vector<Real> stat(1,1);
         return Teuchos::rcp(new RiskVector<Real>(vec,stat,true));
       }
       else {

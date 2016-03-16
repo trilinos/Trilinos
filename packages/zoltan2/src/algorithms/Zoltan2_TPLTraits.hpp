@@ -62,26 +62,26 @@
 
 namespace Zoltan2 {
 
-//////////////////
-// General case //
-//////////////////
+/////////////////////////////////////////////////
+// General case:  first_t and second_t differ  //
+/////////////////////////////////////////////////
 
-template <typename tpl_t, typename zno_t>
+template <typename first_t, typename second_t>
 struct TPL_Traits {
 
-  static inline bool OK_TO_CAST_TPL_T() 
+  static inline bool OK_TO_CAST() 
   {
-    // Return true if pointer to tpl_t can be safely used as pointer to zno_t
-    return ((sizeof(tpl_t) == sizeof(zno_t)) && 
-            (std::numeric_limits<tpl_t>::is_signed == 
-             std::numeric_limits<zno_t>::is_signed));
+    // Return true if pointer to first_t can be used as pointer to second_t
+    return ((sizeof(first_t) == sizeof(second_t)) && 
+            (std::numeric_limits<first_t>::is_signed == 
+             std::numeric_limits<second_t>::is_signed));
   }
 
-  static inline void ASSIGN_TPL_T(tpl_t &a, zno_t b)
+  static inline void ASSIGN(first_t &a, second_t b)
   {
-    // Assign a = b; make sure tpl_t is large enough to accept zno_t.
+    // Assign a = b; make sure first_t is large enough to accept second_t.
     try {
-      a = Teuchos::asSafe<tpl_t, zno_t>(b);
+      a = Teuchos::asSafe<first_t, second_t>(b);
     }
     catch (std::exception &e) {
       throw std::runtime_error(
@@ -90,13 +90,13 @@ struct TPL_Traits {
     }
   }
 
-  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<zno_t> &b)
+  static inline void ASSIGN_ARRAY(first_t **a, ArrayView<second_t> &b)
   {
     // Allocate array a; copy b values into a.
     size_t size = b.size();
     if (size > 0) {
-      *a = new tpl_t[size];
-      for (size_t i = 0; i < size; i++) ASSIGN_TPL_T((*a)[i], b[i]);
+      *a = new first_t[size];
+      for (size_t i = 0; i < size; i++) ASSIGN((*a)[i], b[i]);
     }
     else {
       *a = NULL;
@@ -110,30 +110,44 @@ struct TPL_Traits {
     }
   }
 
-  static inline void DELETE_TPL_T_ARRAY(tpl_t **a)
+  static inline void SAVE_ARRAYRCP(ArrayRCP<first_t> *a, second_t *b, 
+                                   size_t size)
   {
-    // Delete the copy made in ASSIGN_TPL_T_ARRAY.
+    // Allocate array tmp; copy size values of b into tmp; 
+    // save tmp as ArrayRCP a
+    if (size > 0) {
+      first_t *tmp = new first_t[size];
+      for (size_t i = 0; i < size; i++) ASSIGN(tmp[i], b[i]);
+      *a = arcp(tmp, 0, size, true);
+    }
+    else {
+      *a = Teuchos::null;
+    }
+  }
+
+  static inline void DELETE_ARRAY(first_t **a)
+  {
+    // Delete the copy made in ASSIGN_ARRAY.
     delete [] *a;
   }
 };
 
-///////////////////////////////////
-// Special case:  zno_t == tpl_t //
-// No error checking or copies   //
-///////////////////////////////////
+////////////////////////////////////////
+// Special case:  second_t == first_t //
+// No error checking or copies        //
+////////////////////////////////////////
 
-template <typename tpl_t>
-struct TPL_Traits<tpl_t, tpl_t> {
+template <typename first_t>
+struct TPL_Traits<first_t, first_t> {
 
-  static inline bool OK_TO_CAST_TPL_T() {return true;}
+  static inline bool OK_TO_CAST() {return true;}
 
-  static inline void ASSIGN_TPL_T(tpl_t &a, tpl_t b)
-  { a = b; }
+  static inline void ASSIGN(first_t &a, first_t b) { a = b; }
 
-  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<tpl_t> &b)
+  static inline void ASSIGN_ARRAY(first_t **a, ArrayView<first_t> &b)
   {
     if (b.size() > 0)
-      *a = const_cast<tpl_t *> (b.getRawPtr());
+      *a = const_cast<first_t *> (b.getRawPtr());
     else
       *a = NULL;
       // Note:  the Scotch manual says that if any rank has a non-NULL array,
@@ -142,35 +156,47 @@ struct TPL_Traits<tpl_t, tpl_t> {
       //        For now, we'll set these arrays to NULL.  We could allocate
       //        a dummy value here if needed.  KDD 1/23/14
   }
-  static inline void DELETE_TPL_T_ARRAY(tpl_t **a) { }
+
+  static inline void SAVE_ARRAYRCP(ArrayRCP<first_t> *a, first_t *b, 
+                                         size_t size)
+  {
+    // Return in a an ArrayRCP of b.
+    if (size > 0)
+      *a = arcp(b, 0, size, true);
+    else
+      *a = Teuchos::null;
+  }
+
+  static inline void DELETE_ARRAY(first_t **a) { }
 };
 
-////////////////////////////////////////////////////////////
-// Special case:  Zoltan ZOLTAN_ID_PTR 
-// Copy the data bitwise into the array of ZOLTAN_ID_TYPE   
-// We assume that any memory pointed to by ZOLTAN_ID_PTR is
-// big enough to hold the bits of zno_t -- that is, that  
-// the ZOLTAN_ID_PTR's memory correctly accomodates Zoltan's
-// num_gid_entries or num_lid_entries                     
-////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+// Special case:  first_t == Zoltan ZOLTAN_ID_PTR  //
+/////////////////////////////////////////////////////
 
-template <typename zno_t>
-struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
+template <typename second_t>
+struct TPL_Traits<ZOLTAN_ID_PTR, second_t> {
 
-  static const int NUM_ID = ((sizeof(zno_t) / sizeof(ZOLTAN_ID_TYPE) > 0)
-                           ? (sizeof(zno_t) / sizeof(ZOLTAN_ID_TYPE))
+  // Copy the data bitwise INTO the array of ZOLTAN_ID_TYPE   
+  // We assume that any memory pointed to by ZOLTAN_ID_PTR is
+  // big enough to hold the bits of second_t -- that is, that  
+  // the ZOLTAN_ID_PTR's memory correctly accomodates Zoltan's
+  // num_gid_entries or num_lid_entries                     
+
+  static const int NUM_ID = ((sizeof(second_t) / sizeof(ZOLTAN_ID_TYPE) > 0)
+                           ? (sizeof(second_t) / sizeof(ZOLTAN_ID_TYPE))
                            : 1);
 
-  static inline bool OK_TO_CAST_TPL_T() 
+  static inline bool OK_TO_CAST() 
   {
     // There may be cases where if it OK to cast a pointer to a
-    // zno_t to a ZOLTAN_ID_PTR, but the semantics of this 
-    // function ask whether a pointer to a zno_t can be cast
+    // second_t to a ZOLTAN_ID_PTR, but the semantics of this 
+    // function ask whether a pointer to a second_t can be cast
     // to a pointer to a ZOLTAN_ID_PTR.  Thus, the answer is "no."
     return false;
   }
 
-  static inline void ASSIGN_TPL_T(ZOLTAN_ID_PTR &a, zno_t b)
+  static inline void ASSIGN(ZOLTAN_ID_PTR &a, second_t b)
   {
     switch (NUM_ID) {
     case 1:
@@ -189,17 +215,18 @@ struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
     }
   }
 
-  static inline void ASSIGN_TPL_T_ARRAY(ZOLTAN_ID_PTR *a, ArrayView<zno_t> &b)
+  static inline void ASSIGN_ARRAY(ZOLTAN_ID_PTR *a, ArrayView<second_t> &b)
   {
     // Allocate array a; copy b values into a.
     size_t size = b.size();
     if (size > 0) {
       if (NUM_ID == 1) {
-        *a = b.getRawPtr();  // Don't have to make a new copy
+        // Don't have to make a new copy
+        *a = const_cast<ZOLTAN_ID_PTR> (b.getRawPtr());  
       }
       else {
         *a = new ZOLTAN_ID_TYPE[size*NUM_ID];
-        for (size_t i = 0; i < size; i++) ASSIGN_TPL_T((*a)[i], b[i]);
+        for (size_t i = 0; i < size; i++) ASSIGN((*a)[i], b[i]);
       }
     }
     else {
@@ -207,13 +234,89 @@ struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
     }
   }
 
-  static inline void DELETE_TPL_T_ARRAY(ZOLTAN_ID_PTR *a)
+  static inline void SAVE_ARRAYRCP(ArrayRCP<ZOLTAN_ID_PTR> *a, second_t *b, 
+                                         size_t size)
   {
-    // Delete the copy made in ASSIGN_TPL_T_ARRAY.
+    throw std::runtime_error(
+               "TPL_Traits::SAVE_ARRAYRCP<ZOLTAN_ID_PTR,second_t> "
+               "is not implemented.");
+  }
+
+  static inline void DELETE_ARRAY(ZOLTAN_ID_PTR *a)
+  {
+    // Delete the copy made in ASSIGN_ARRAY.
     if (NUM_ID != 1)
       delete [] *a;
   }
 };
+
+/////////////////////////////////////////////////////
+// Special case:  second_t == Zoltan ZOLTAN_ID_PTR  //
+/////////////////////////////////////////////////////
+
+template <typename first_t>
+struct TPL_Traits<first_t, ZOLTAN_ID_PTR> {
+
+  // Copy the data bitwise FROM the array of ZOLTAN_ID_TYPE   
+
+  static const int NUM_ID = TPL_Traits<ZOLTAN_ID_PTR, first_t>::NUM_ID;
+
+  static inline bool OK_TO_CAST()
+  {
+    // There may be cases where if it OK to cast a pointer to a
+    // first_t to a ZOLTAN_ID_PTR, but the semantics of this
+    // function ask whether a pointer to a first_t can be cast
+    // to a pointer to a ZOLTAN_ID_PTR.  Thus, the answer is "no."
+    return false;
+  }
+
+  static inline void ASSIGN(first_t &a, ZOLTAN_ID_PTR b)
+  {
+    switch (NUM_ID) {
+    case 1:
+      a = static_cast<first_t>(b[0]);
+      break;
+    default:
+      first_t *tmp = (first_t *) b;
+      a = *tmp;
+    }
+  }
+
+  static inline void ASSIGN_ARRAY(first_t *a, ArrayView<ZOLTAN_ID_PTR> &b)
+  {
+    throw std::runtime_error(
+               "TPL_Traits::ASSIGN_ARRAY<first_t,ZOLTAN_ID_PTR> "
+               "is not implemented.");
+  }
+
+  static inline void SAVE_ARRAYRCP(ArrayRCP<first_t> *a, ZOLTAN_ID_PTR b, 
+                                         size_t size)
+  {
+    // Here, size * NUM_ID == length of b; that is, size is the number of
+    // objects in b.
+    // Return in a an ArrayRCP of b.
+    if (size > 0) {
+      if (NUM_ID == 1)
+        *a = arcp(b, 0, size, true);  // Don't have to make a new copy
+      else {
+        first_t *tmp = new first_t[size];
+        for (size_t i = 0; i < size; i++) ASSIGN(tmp[i], &(b[i*NUM_ID]));
+        *a = arcp(tmp, 0, size, true);
+      }
+    }
+    else {
+      *a = Teuchos::null;
+    }
+  }
+
+  static inline void DELETE_ARRAY(first_t **a)
+  {
+    // Delete the copy made in ASSIGN_ARRAY.
+    if (NUM_ID != 1)
+      delete [] *a;
+  }
+};
+
 } // namespace Zoltan2
 
 #endif

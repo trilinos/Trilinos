@@ -36,9 +36,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -96,6 +95,9 @@ namespace Intrepid2 {
     this -> basisType_         = BASIS_FEM_FIAT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
 
   template<class Scalar, class ArrayScalar>
@@ -135,6 +137,8 @@ namespace Intrepid2 {
 	ptsz_(i,0) = ptsx_(i,0);
       }
 
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }
 
   template<class Scalar, class ArrayScalar>

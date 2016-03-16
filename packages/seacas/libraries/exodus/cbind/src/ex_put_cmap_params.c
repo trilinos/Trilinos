@@ -264,11 +264,13 @@ int ex_put_cmap_params(int  exoid,
     /* Add dimensions for each of the nodal communication maps */
     ecnt_cmap = 0;
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      for(icm=0; icm < num_e_comm_maps; icm++)
+      for(icm=0; icm < num_e_comm_maps; icm++) {
 	ecnt_cmap += ((int64_t*)elem_cmap_elem_cnts)[icm];
+}
     } else {
-      for(icm=0; icm < num_e_comm_maps; icm++)
+      for(icm=0; icm < num_e_comm_maps; icm++) {
 	ecnt_cmap += ((int*)elem_cmap_elem_cnts)[icm];
+}
     }
     if ((status = nc_def_dim(exoid, DIM_ECNT_CMAP, ecnt_cmap, &dimid[0])) != NC_NOERR) {
       exerrval = status;
@@ -350,10 +352,11 @@ int ex_put_cmap_params(int  exoid,
       }
 
       start[0] = icm;
-      if (ncnc > 0)
+      if (ncnc > 0) {
         nmstat = 1;
-      else
+      } else {
         nmstat = 0;
+}
 
       if ((status = nc_put_var1_int(exoid, n_varid, start, &nmstat)) != NC_NOERR) {
         exerrval = status;
@@ -425,10 +428,11 @@ int ex_put_cmap_params(int  exoid,
 	ecec = ((int*)elem_cmap_elem_cnts)[icm];
       }
       start[0] = icm;
-      if (ecec > 0)
+      if (ecec > 0) {
         nmstat = 1;
-      else
+      } else {
         nmstat = 0;
+}
 
       if ((status = nc_put_var1_int(exoid, e_varid, start, &nmstat)) != NC_NOERR) {
         exerrval = status;

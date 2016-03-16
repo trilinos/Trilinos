@@ -78,6 +78,7 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 
+
 namespace stk {
 namespace mesh {
 
@@ -332,9 +333,20 @@ void BulkData::set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_m
     change_entity_key_and_update_sharing_info(potentially_shared_sides_this_proc);
 }
 
+void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_node_rank(stk::mesh::EntityVector& shared_new)
+{
+    this->gather_shared_nodes(shared_new);
+}
+
 void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<Entity> &entities)
 {
-    fill_shared_entities_of_rank_while_updating_sharing_info(entityRank, entities);
+    entities.clear();
+    if (entityRank == stk::topology::NODE_RANK) {
+        internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_node_rank(entities);
+    }
+    else {
+        fill_shared_entities_of_rank_while_updating_sharing_info(entityRank, entities);
+    }
     std::sort(entities.begin(), entities.end(), EntityLess(*this));
 }
 
@@ -477,7 +489,8 @@ BulkData::BulkData( MetaData & mesh_meta_data
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         bucket_capacity),
     m_use_identifiers_for_resolving_sharing(false),
-    m_modSummary(*this)
+    m_modSummary(*this),
+    m_meshDiagnosticObserver(*this)
 {
   mesh_meta_data.set_mesh_bulk_data(this);
   m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
@@ -493,6 +506,14 @@ BulkData::BulkData( MetaData & mesh_meta_data
   internal_create_ghosting( "shared" );
   //shared part should reside in m_ghost_parts[0]
   internal_create_ghosting( "shared_aura" );
+
+  register_observer(&m_meshDiagnosticObserver);
+
+  //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+
+#ifndef NDEBUG
+  //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+#endif
 
   m_meshModification.set_sync_state_synchronized();
 }
@@ -4026,32 +4047,58 @@ void BulkData::add_comm_list_entries_for_entities(const std::vector<stk::mesh::E
 //  * All shared entities have parallel-consistent owner
 //  * Part membership of shared entities is up-to-date
 //  * m_entity_comm is up-to-date
+void BulkData::internal_resolve_parallel_create_nodes()
+{
+    std::vector<stk::mesh::EntityRank> ranks={stk::topology::NODE_RANK};
+    this->internal_resolve_parallel_create(ranks);
+}
+
+void BulkData::internal_resolve_parallel_create_edges_and_faces()
+{
+    std::vector<stk::mesh::EntityRank> ranks;
+    for(EntityRank rank=stk::topology::EDGE_RANK; rank<=mesh_meta_data().side_rank(); rank++)
+        ranks.push_back(rank);
+    this->internal_resolve_parallel_create(ranks);
+}
+
 void BulkData::internal_resolve_parallel_create()
 {
+    this->internal_resolve_parallel_create_nodes();
+    this->internal_resolve_parallel_create_edges_and_faces();
+}
+
+void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::EntityRank>& ranks)
+{
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
-  std::vector<Entity> shared_modified;
 
-  // Update the parallel index and
-  // output shared and modified entities.
-  internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(shared_modified );
+  for(EntityRank rank : ranks)
+  {
+      std::vector<Entity> shared_modified;
 
-  // ------------------------------------------------------------
-  // Claim ownership on all shared_modified entities that I own
-  // and which were not created in this modification cycle. All
-  // sharing procs will need to be informed of this claim.
+      // Update the parallel index and
+      // output shared and modified entities.
+      //internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(rank, shared_modified);
+      internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(rank, shared_modified);
 
-  resolve_ownership_of_modified_entities( shared_modified );
+      // ------------------------------------------------------------
+      // Claim ownership on all shared_modified entities that I own
+      // and which were not created in this modification cycle. All
+      // sharing procs will need to be informed of this claim.
 
-  // ------------------------------------------------------------
-  // Update shared created entities.
-  // - Revise ownership to selected processor
-  // - Update sharing.
-  // - Work backward so the 'in_owned_closure' function
-  //   can evaluate related higher ranking entities.
+      resolve_ownership_of_modified_entities( shared_modified );
 
-  move_entities_to_proper_part_ownership( shared_modified );
+      // ------------------------------------------------------------
+      // Update shared created entities.
+      // - Revise ownership to selected processor
+      // - Update sharing.
+      // - Work backward so the 'in_owned_closure' function
+      //   can evaluate related higher ranking entities.
 
-  add_comm_list_entries_for_entities( shared_modified );
+      move_entities_to_proper_part_ownership( shared_modified );
+
+      add_comm_list_entries_for_entities( shared_modified );
+  }
+  std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
 }
 
 
@@ -4684,13 +4731,16 @@ void BulkData::fill_entity_procs_for_owned_modified_or_created(std::vector<Entit
 namespace {
 
 bool shared_with_proc(const EntityCommListInfo& info, int proc) {
-    const EntityCommInfoVector& comm_vec = info.entity_comm->comm_map;
-    for(size_t i=0; i<comm_vec.size(); ++i) {
-        if (comm_vec[i].ghost_id!=BulkData::SHARED) {
-            return false;
-        }
-        if (comm_vec[i].proc == proc) {
-            return true;
+    if(info.entity_comm != nullptr)
+    {
+        const EntityCommInfoVector& comm_vec = info.entity_comm->comm_map;
+        for(size_t i=0; i<comm_vec.size(); ++i) {
+            if (comm_vec[i].ghost_id!=BulkData::SHARED) {
+                return false;
+            }
+            if (comm_vec[i].proc == proc) {
+                return true;
+            }
         }
     }
     return false;
@@ -4889,16 +4939,29 @@ void BulkData::internal_resolve_shared_membership()
 
     PartStorage part_storage;
 
-    for(EntityCommListInfoVector::iterator i = m_entity_comm_list.begin(); i != m_entity_comm_list.end(); ++i)
+    bool allOk = true;
+    try
     {
-        stk::mesh::Entity entity = i->entity;
-
-        bool i_own_this_entity_in_comm_list = i->owner == p_rank;
-        if( i_own_this_entity_in_comm_list )
+        for(EntityCommListInfoVector::iterator i = m_entity_comm_list.begin(); i != m_entity_comm_list.end(); ++i)
         {
-            remove_unneeded_induced_parts(entity, i->entity_comm->comm_map, part_storage,  comm);
+            stk::mesh::Entity entity = i->entity;
+
+            bool i_own_this_entity_in_comm_list = i->owner == p_rank;
+            if( i_own_this_entity_in_comm_list )
+            {
+                remove_unneeded_induced_parts(entity, i->entity_comm->comm_map, part_storage,  comm);
+            }
         }
     }
+    catch(...)
+    { allOk = false; }
+
+    int numericAllOk = allOk;
+    int minAllOk = 0;
+
+    stk::all_reduce_min(this->parallel(), &numericAllOk, &minAllOk, 1);
+    allOk = minAllOk == 1;
+    ThrowRequireWithSierraHelpMsg(allOk);
 
     std::vector<EntityProc> send_list;
     fill_entity_procs_for_owned_modified_or_created(send_list);
@@ -5761,17 +5824,28 @@ enum PackTags {
   PACK_TAG_ENTITY_GHOST
 };
 
-static void check_tag(const BulkData& mesh, CommBuffer& buf, PackTags expected_tag, PackTags expected_tag2 = PACK_TAG_INVALID)
+static bool check_tag(const BulkData& mesh, CommBuffer& buf, PackTags expected_tag, PackTags expected_tag2 = PACK_TAG_INVALID)
 {
+  bool badTag = false;
 #if USE_PACK_TAGS
-  int tag;
-  buf.unpack<int>(tag);
-  if (tag != expected_tag && tag != expected_tag2) {
+  int tag = -1;
+  try
+  {
+      buf.unpack<int>(tag);
+  }
+  catch(...)
+  {
+      badTag = true;
+  }
+  badTag = badTag || ( tag != expected_tag && tag != expected_tag2);
+  if(badTag)
+  {
     std::ostringstream msg;
-    msg << "P[" << mesh.parallel_rank() << "] bad tag = " << tag << " expecting " << expected_tag << " or " << expected_tag2;
-    ThrowRequireMsg(tag == expected_tag || tag == expected_tag2, msg.str());
+    msg << "P[" << mesh.parallel_rank() << "] bad tag = " << tag << " expecting " << expected_tag << " or " << expected_tag2 << std::endl;
+    std::cerr << msg.str();
   }
 #endif
+  return badTag;
 }
 
 static void put_tag(CommBuffer& buf, PackTags tag)
@@ -5854,7 +5928,7 @@ void BulkData::unpack_not_owned_verify_compare_comm_info( CommBuffer&           
       bad_comm = j != ec_idx_shared.size() ;
 
       // unpack count of additional ghosts
-      check_tag(*this, buf, PACK_TAG_GHOST_COUNT_AFTER_SHARED);
+      bad_comm = bad_comm || check_tag(*this, buf, PACK_TAG_GHOST_COUNT_AFTER_SHARED);
       buf.unpack<unsigned>( ghost_after_shared_count);
     }
   }
@@ -5862,12 +5936,12 @@ void BulkData::unpack_not_owned_verify_compare_comm_info( CommBuffer&           
   if ( ! bad_comm ) {
 
     if (ghost_after_shared_count) {
-      check_tag(*this, buf, PACK_TAG_ENTITY_GHOST);
+      bad_comm = bad_comm || check_tag(*this, buf, PACK_TAG_ENTITY_GHOST);
       unpack_entity_info( buf , *this ,
                           recv_entity_key , recv_owner_rank ,
                           recv_parts , recv_relations );
 
-      check_tag(*this, buf, PACK_TAG_GHOST_COUNT);
+      bad_comm = bad_comm || check_tag(*this, buf, PACK_TAG_GHOST_COUNT);
       buf.unpack<unsigned>(recv_comm_count);
       recv_comm.resize( recv_comm_count);
       buf.unpack<int>( & recv_comm[0] , recv_comm_count);
@@ -6132,23 +6206,31 @@ bool BulkData::unpack_not_owned_verify( CommAll & comm_all , std::ostream & erro
 
     if ( i->owner != p_rank ) {
 
+      bool broken_tag = false;
       CommBuffer & buf = comm_all.recv_buffer( i->owner );
 
-      check_tag(*this, buf, PACK_TAG_ENTITY_SHARED, PACK_TAG_ENTITY_GHOST);
-      unpack_entity_info( buf , *this,
-                          recv_entity_key , recv_owner_rank ,
-                          recv_parts , recv_relations );
+      broken_tag = broken_tag || check_tag(*this, buf, PACK_TAG_ENTITY_SHARED, PACK_TAG_ENTITY_GHOST);
+      if(!broken_tag)
+      {
+          unpack_entity_info( buf , *this,
+                              recv_entity_key , recv_owner_rank ,
+                              recv_parts , recv_relations );
 
-      if (in_shared(key)) {
-        check_tag(*this, buf, PACK_TAG_SHARED_COUNT);
+          if (in_shared(key)) {
+              broken_tag = broken_tag || check_tag(*this, buf, PACK_TAG_SHARED_COUNT);
+          }
+          else {
+              broken_tag = broken_tag || check_tag(*this, buf, PACK_TAG_GHOST_COUNT);
+          }
+
+          if(!broken_tag)
+          {
+              recv_comm_count = 0 ;
+              buf.unpack<unsigned>( recv_comm_count );
+              recv_comm.resize( recv_comm_count );
+              buf.unpack<int>( & recv_comm[0] , recv_comm_count );
+          }
       }
-      else {
-        check_tag(*this, buf, PACK_TAG_GHOST_COUNT);
-      }
-      recv_comm_count = 0 ;
-      buf.unpack<unsigned>( recv_comm_count );
-      recv_comm.resize( recv_comm_count );
-      buf.unpack<int>( & recv_comm[0] , recv_comm_count );
 
       // Match key and owner
 
@@ -6158,7 +6240,7 @@ bool BulkData::unpack_not_owned_verify( CommAll & comm_all , std::ostream & erro
       bool bad_rel  = false ;
       bool bad_comm = false ;
 
-      bool broken = bad_key || bad_own;
+      bool broken = broken_tag || bad_key || bad_own;
 
       // Compare communication information:
 
@@ -7121,6 +7203,11 @@ void BulkData::sort_entities(const stk::mesh::EntitySorterBase& sorter)
 
     if(parallel_size() > 1)
         check_mesh_consistency();
+}
+
+void BulkData::enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag)
+{
+    m_meshDiagnosticObserver.enable_rule(flag);
 }
 
 #ifdef SIERRA_MIGRATION

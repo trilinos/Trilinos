@@ -116,7 +116,7 @@ namespace
       std::string data_line;
 
       std::string expected_format_line = "% Sierra SPYHIS Output";
-      std::string expected_header_line = "        Time,       Ages_1,       Ages_2,       Ages_3,       Ages_4,       Answer,           PI, some_doubles_1, some_doubles_2, some_doubles_3";
+      std::string expected_header_line = "        TIME,       Ages_1,       Ages_2,       Ages_3,       Ages_4,       Answer,           PI, some_doubles_1, some_doubles_2, some_doubles_3";
       std::string expected_data_line = " 0.00000e+00,           55,           49,           21,           19,           42,  3.14159e+00,  2.78000e+00,  5.30000e+00,  6.21000e+00";
 
       EXPECT_TRUE(!std::getline(heartbeat, format_line).fail());
@@ -125,12 +125,14 @@ namespace
       EXPECT_STREQ(format_line.c_str(), expected_format_line.c_str());
       EXPECT_TRUE(!std::getline(heartbeat, header_line).fail());
       EXPECT_STREQ(header_line.c_str(), expected_header_line.c_str());
+      EXPECT_TRUE(!std::getline(heartbeat, header_line).fail());
+      EXPECT_STREQ(header_line.c_str(), expected_header_line.c_str());
       EXPECT_TRUE(!std::getline(heartbeat, data_line).fail());
       EXPECT_STREQ(data_line.c_str(), expected_data_line.c_str());
     }
 
     // ========================================================================
     // CLEANUP:
-    unlink(file_name.c_str());
+    //    unlink(file_name.c_str());
   }
 }

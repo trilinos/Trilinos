@@ -122,9 +122,12 @@ int main(int narg, char **arg)
 
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
+  typedef Zoltan2::EvaluatePartition<adapter_t> quality_t;
   typedef adapter_t::part_t part_t;
+  typedef adapter_t::base_adapter_t base_adapter_t;
 
-  adapter_t adapter(zlno_t(numMyIdentifiers),myIds,weightValues,weightStrides);
+  adapter_t *adapter = 
+    new adapter_t(zlno_t(numMyIdentifiers),myIds,weightValues,weightStrides);
 
   // Set up the parameters and problem
   bool useWeights = true;
@@ -134,17 +137,29 @@ int main(int narg, char **arg)
   cmdp.parse(narg, arg);
 
   Teuchos::ParameterList params("test parameters");
-  params.set("compute_metrics", "true");
+  //params.set("compute_metrics", "true");
   params.set("num_global_parts", nprocs);
   params.set("algorithm", "block");
   params.set("partitioning_approach", "partition");
   if (!useWeights) params.set("partitioning_objective", "balance_object_count");
   
-  Zoltan2::PartitioningProblem<adapter_t> problem(&adapter, &params);
+  Zoltan2::PartitioningProblem<adapter_t> problem(adapter, &params);
 
   problem.solve();
 
+  // An environment.  This is usually created by the problem.
+
+  RCP<const Zoltan2::Environment> env = problem.getEnvironment();
+
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
+
+  const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(adapter);
+
+  RCP<const base_adapter_t> rcpbia = rcp(bia);
+
+  // create metric object (also usually created by a problem)
+
+  quality_t*metricObject=new quality_t(env,comm,rcpbia,&solution);
 
   // Some output 
   zscalar_t *totalWeight = new zscalar_t [nprocs];
@@ -155,7 +170,9 @@ int main(int narg, char **arg)
   memset(totalCnt, 0, nprocs * sizeof(int));
 
   const part_t *partList = solution.getPartListView();
-  const zscalar_t libImbalance = problem.getWeightImbalance();
+  zscalar_t libImbalance;
+  metricObject->getWeightImbalance(libImbalance, 0);
+  delete metricObject;
 
   for (int i=0; i < numMyIdentifiers; i++){
     totalCnt[partList[i]]++;

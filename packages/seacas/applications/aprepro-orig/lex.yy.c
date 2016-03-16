@@ -20,6 +20,9 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#if !defined(_POSIX_SOURCE)
+extern int fileno(FILE *stream);
+#endif
 
 /* end standard C headers. */
 

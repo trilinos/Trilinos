@@ -593,12 +593,12 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Residual>,panzer::Asse
   // replace ghosted container with local one
   const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
     Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(ghostedContainer_);
-
   input_args.ghostedContainer_ = ghostedContainer_;
   
   // convert responses into thyra object
   const RCP<ThyraObjContainer<ScalarT> > thGlobalContainer =
     Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.container_);
+
   // set the ghosted and unique residual
   thGhostedContainer->set_f_th(resp->getGhostedResidual());
   thGlobalContainer->set_f_th(resp->getResidual());
@@ -646,6 +646,49 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Jacobian>,panzer::Asse
 
   // Zero values in ghosted container objects
   thGhostedContainer->initializeMatrix(0.0);
+}
+
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+addResidualResponsesToInArgs(Overloader<typename TraitsT::Tangent>,panzer::AssemblyEngineInArgs & input_args) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  typedef typename TraitsT::Tangent EvalT;
+  typedef typename TraitsT::RealType ScalarT;
+
+  // extract the residual response
+  RCP<Response_Residual<EvalT> > resp = rcp_dynamic_cast<Response_Residual<EvalT> >(getResponse<EvalT>("RESIDUAL"));
+  resp->initializeResponse();
+
+  // setup the local ghosted container
+  if(ghostedContainer_==Teuchos::null)
+    ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
+
+  // replace ghosted container with local one
+  const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
+    Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(ghostedContainer_);
+  input_args.ghostedContainer_ = ghostedContainer_;
+
+  // convert responses into thyra object
+  const RCP<ThyraObjContainer<ScalarT> > thGlobalContainer =
+    Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.container_);
+
+  // At this point it isn't clear what to do for Tangent.  We probably need to extend the linear object containers
+  // to support df/dp.
+
+  /*
+  // set the ghosted and unique residual
+  thGhostedContainer->set_A_th(resp->getGhostedJacobian());
+
+  RCP<Thyra::VectorBase<ScalarT> > dummy_f = Thyra::createMember(resp->getJacobian()->range());
+  thGlobalContainer->set_f_th(dummy_f);
+  thGlobalContainer->set_A_th(resp->getJacobian());
+
+  // Zero values in ghosted container objects
+  thGhostedContainer->initializeMatrix(0.0);
+  */
 }
 
 template <typename TraitsT>

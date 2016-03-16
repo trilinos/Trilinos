@@ -121,8 +121,8 @@ public:
   EqualityConstraint_SimOpt()
     : EqualityConstraint<Real>(),
       unew_(Teuchos::null), jv_(Teuchos::null),
-      DEFAULT_rtol_(1.e-4*std::sqrt(ROL_EPSILON)),
-      DEFAULT_stol_(std::sqrt(ROL_EPSILON)),
+      DEFAULT_rtol_(1.e-4*std::sqrt(ROL_EPSILON<Real>())),
+      DEFAULT_stol_(std::sqrt(ROL_EPSILON<Real>())),
       DEFAULT_factor_(0.5),
       DEFAULT_decr_(1.e-4),
       DEFAULT_maxit_(500),
@@ -272,10 +272,10 @@ public:
                                const Vector<Real> &u,
                                const Vector<Real> &z,
                                Real &tol) {
-    Real ctol = std::sqrt(ROL_EPSILON);
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step length
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Update state vector to u + hv
@@ -315,10 +315,10 @@ public:
                                const Vector<Real> &u,
                                const Vector<Real> &z,
                                Real &tol) { 
-    Real ctol = std::sqrt(ROL_EPSILON);
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step length
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Update state vector to u + hv
@@ -408,9 +408,9 @@ public:
                                       const Vector<Real> &z,
                                       const Vector<Real> &dualv,
                                       Real &tol) {
-    Real ctol = std::sqrt(ROL_EPSILON);
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     Teuchos::RCP<Vector<Real> > cold = dualv.clone();
@@ -479,9 +479,9 @@ public:
                                       const Vector<Real> &z,
                                       const Vector<Real> &dualv,
                                       Real &tol) {
-    Real ctol = std::sqrt(ROL_EPSILON);
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     Teuchos::RCP<Vector<Real> > cold = dualv.clone();
@@ -548,10 +548,10 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    Real jtol = std::sqrt(ROL_EPSILON);
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step size
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new state
@@ -592,10 +592,10 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    Real jtol = std::sqrt(ROL_EPSILON);
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step size
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new state
@@ -636,10 +636,10 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    Real jtol = std::sqrt(ROL_EPSILON);
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step size
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new control
@@ -679,10 +679,10 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    Real jtol = std::sqrt(ROL_EPSILON);
+    Real jtol = std::sqrt(ROL_EPSILON<Real>());
     // Compute step size
     Real h = tol;
-    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+    if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new control
@@ -890,7 +890,7 @@ public:
                           const bool printToStream = true,
                           std::ostream & outStream = std::cout) {
     // Solve equality constraint for u. 
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<ROL::Vector<Real> > r = c.clone();
     Teuchos::RCP<ROL::Vector<Real> > s = u.clone();
     solve(*r,*s,z,tol);
@@ -958,7 +958,7 @@ public:
                                                  const Vector<Real> &dualv,
                                                  const bool printToStream = true,
                                                  std::ostream & outStream = std::cout) {
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
@@ -974,7 +974,7 @@ public:
       hist << "\nTest SimOpt consistency of Jacobian_1 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
            << diff << "\n";
       hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
-      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return diff;
@@ -1025,7 +1025,7 @@ public:
                                                  const Vector<Real> &dualv,
                                                  const bool printToStream = true,
                                                  std::ostream & outStream = std::cout) {
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
     update(u,z);
     applyJacobian_2(*Jv,v,u,z,tol);
@@ -1041,7 +1041,7 @@ public:
       hist << "\nTest SimOpt consistency of Jacobian_2 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = "
            << diff << "\n";
       hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
-      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return diff;
@@ -1053,7 +1053,7 @@ public:
                                       const Vector<Real> &z, 
                                       const bool printToStream = true,
                                       std::ostream & outStream = std::cout) {
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
@@ -1071,7 +1071,7 @@ public:
       hist << "\nTest SimOpt consistency of inverse Jacobian_1: \n  ||v-inv(J)Jv|| = " 
            << dnorm << "\n";
       hist << "  ||v||          = " << vnorm << "\n";
-      hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW) << "\n";
+      hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return dnorm;
@@ -1083,7 +1083,7 @@ public:
                                              const Vector<Real> &z, 
                                              const bool printToStream = true,
                                              std::ostream & outStream = std::cout) {
-    Real tol = ROL_EPSILON;
+    Real tol = ROL_EPSILON<Real>();
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
     update(u,z);
     applyAdjointJacobian_1(*Jv,v,u,z,tol);
@@ -1101,7 +1101,7 @@ public:
       hist << "\nTest SimOpt consistency of inverse adjoint Jacobian_1: \n  ||v-inv(adj(J))adj(J)v|| = "
            << dnorm << "\n";
       hist << "  ||v||                   = " << vnorm << "\n";
-      hist << "  Relative Error          = " << dnorm / (vnorm+ROL_UNDERFLOW) << "\n";
+      hist << "  Relative Error          = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return dnorm;

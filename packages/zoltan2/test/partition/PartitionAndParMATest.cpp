@@ -275,7 +275,6 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
       pparams.set("ghost_layers",3);
       pparams.set("ghost_bridge",m->getDimension()-1);
     }
-    params.set("compute_metrics","yes");
     adjacency="vertex";
   }
   else if (action=="zoltan_hg") {
@@ -295,16 +294,19 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
   typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+  typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
   
   double time_1 = PCU_Time();
-  inputAdapter_t ia(*CommT, m,primary,adjacency,needSecondAdj);
+  inputAdapter_t *ia =
+    new inputAdapter_t(*CommT, m,primary,adjacency,needSecondAdj);
   double time_2 = PCU_Time();
   
 
   // create Partitioning problem
   if (me == 0) cout << "Creating partitioning problem ... \n\n";
   double time_3=PCU_Time();
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(ia, &params, CommT);
 
   // call the partitioner
   if (me == 0) cout << "Calling the partitioner ... \n\n";
@@ -315,14 +317,29 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   //apply the partitioning solution to the mesh
   if (me==0) cout << "Applying Solution to Mesh\n\n";
   apf::Mesh2** new_mesh = &m;
-  ia.applyPartitioningSolution(m,new_mesh,problem.getSolution());
+  ia->applyPartitioningSolution(m,new_mesh,problem.getSolution());
   new_mesh=NULL;
   double time_4=PCU_Time();
-  if (!me) problem.printMetrics(cout);
+
+  // An environment.  This is usually created by a problem.
+
+  RCP<const Zoltan2::Environment> env = problem.getEnvironment();
+
+  const baseMeshAdapter_t *bia = dynamic_cast<const baseMeshAdapter_t *>(ia);
+
+  RCP<const baseMeshAdapter_t> rcpbia = rcp(bia);
+
+  //create metric object (also usually created by a problem)
+  RCP<quality_t> metricObject =
+    rcp(new quality_t(env, CommT, rcpbia, &problem.getSolution(), false));
+
+  if (!me) {
+    metricObject->printMetrics(cout);
+  }
  
   //Print the stats after partitioning
   Parma_PrintPtnStats(m,output_title+"_after");
-  ia.destroy();
+  ia->destroy();
   
   time_4-=time_3;
   time_2-=time_1;

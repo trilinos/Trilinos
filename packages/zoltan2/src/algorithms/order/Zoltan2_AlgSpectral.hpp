@@ -88,8 +88,7 @@ int AlgSpectral(
   bool localOrder = true;
 
   const size_t nVtx = model->getLocalNumVertices();
-  lno_t *perm;
-  perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
+  lno_t *perm = solution->getPermutationView();
   for (lno_t i=0; i<nVtx; i++){
     perm[i] = -1;
   }

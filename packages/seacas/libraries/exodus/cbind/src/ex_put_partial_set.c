@@ -105,13 +105,13 @@ int ex_put_partial_set (int   exoid,
 	      ex_name_of_object(set_type),set_id,exoid);
       ex_err("ex_put_set",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
       ex_err("ex_put_set",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* setup more pointers based on set_type */
@@ -162,8 +162,9 @@ int ex_put_partial_set (int   exoid,
   if (set_entry_list != NULL || ex_is_parallel(exoid)) {
     start[0] = offset-1;
     count[0] = num_to_put;
-    if (count[0] == 0)
+    if (count[0] == 0) {
       start[0] = 0;
+}
 
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       status = nc_put_vara_longlong(exoid, entry_list_id, start, count, set_entry_list);

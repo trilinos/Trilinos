@@ -45,24 +45,24 @@ namespace Ioss {
     enum VariableType { UNKNOWN_VAR_TYPE = -1, SCALAR};
 
     Property();
-    Property(const std::string &name, const BasicType type,
+    Property(std::string name, const BasicType type,
 		  const VariableType storage, void *data,
-		  bool is_implicit = false);
-    Property(const std::string &name, int64_t  value,
-		  bool is_implicit = false);
-    Property(const std::string &name, int      value,
-		  bool is_implicit = false);
-    Property(const std::string &name, double   value,
-		  bool is_implicit = false);
-    Property(const std::string &name, const std::string &value,
-		  bool is_implicit = false);
-    Property(const std::string &name, void *value, bool is_implicit);
+		  bool is_it_implicit = false);
+    Property(std::string name, int64_t  value,
+		  bool is_it_implicit = false);
+    Property(std::string name, int      value,
+		  bool is_it_implicit = false);
+    Property(std::string name, double   value,
+		  bool is_it_implicit = false);
+    Property(std::string name, const std::string &value,
+		  bool is_it_implicit = false);
+    Property(std::string name, void *value, bool is_it_implicit);
 
     // To set implicit property
     Property(const GroupingEntity* ge,
-		  const std::string &name, const BasicType type);
+		  std::string name, const BasicType type);
 
-    Property(const Property&);
+    Property(const Property& /*from*/);
 
     bool operator<(const Property& other) const;
 

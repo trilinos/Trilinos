@@ -67,6 +67,35 @@ template<typename Adapter>
 class Problem {
 public:
   
+  /*! \brief Constructor where communicator is Teuchos default.
+   */
+  Problem(const Adapter *input, ParameterList *params):
+        inputAdapter_(rcp(input,false)), 
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
+  {
+    RCP<const Comm<int> > tmp = DefaultComm<int>::getComm();
+    comm_ = tmp->duplicate();
+    setupProblemEnvironment(params);
+  }
+
+
+  /*! \brief Constructor where Teuchos communicator is specified
+   */
+  Problem(const Adapter *input, ParameterList *params, 
+        const RCP<const Comm<int> > &comm):
+        inputAdapter_(rcp(input,false)),
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
+  {
+    comm_ = comm->duplicate();
+    setupProblemEnvironment(params);
+  }
+
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor for MPI builds
    */
@@ -79,38 +108,12 @@ public:
   {
     RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
                                            Teuchos::opaqueWrapper(comm);
-    comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+    RCP<const Comm<int> > tmp = 
+                  rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+    comm_ = tmp->duplicate();
     setupProblemEnvironment(params);
   }
 #endif
-
-
-  /*! \brief Constructor where communicator is Teuchos default.
-   */
-  Problem(const Adapter *input, ParameterList *params):
-        inputAdapter_(rcp(input,false)), 
-        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
-                              false)),
-        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
-  {
-    comm_ = DefaultComm<int>::getComm();
-    setupProblemEnvironment(params);
-  }
-
-
-  /*! \brief Constructor where Teuchos communicator is specified
-   */
-  Problem(const Adapter *input, ParameterList *params, 
-          RCP<const Comm<int> > &comm):
-        inputAdapter_(rcp(input,false)),
-        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
-                              false)),
-        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(comm), env_(), envConst_(), timer_()
-  {
-    setupProblemEnvironment(params);
-  }
 
   /*! \brief Destructor
    */

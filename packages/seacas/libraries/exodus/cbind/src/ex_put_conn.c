@@ -87,13 +87,13 @@ int ex_put_conn (int   exoid,
        ex_err("ex_put_conn",errmsg,EX_NULLENTITY);
        return (EX_WARN);
        }
-     else {
+     
        sprintf(errmsg,
          "Error: failed to locate %s id %"PRId64" in id array in file id %d",
          ex_name_of_object(blk_type),blk_id, exoid);
        ex_err("ex_put_conn",errmsg,exerrval);
        return (EX_FATAL);
-       }
+       
      }
 
 /* inquire id's of previously defined dimensions  */
@@ -136,29 +136,31 @@ int ex_put_conn (int   exoid,
      int nedpereldim, nfapereldim;
      size_t num_ed_per_elem, num_fa_per_elem;
 
-     status = nc_inq_dimid (exoid, DIM_NUM_EDG_PER_EL(blk_id_ndx), &nedpereldim);
-     if (status != NC_NOERR && elem_edge_conn != 0)
-       {
-       exerrval = status;
-       sprintf(errmsg,
-         "Error: edge connectivity specified but failed to "
-         "locate number of edges/element in block %"PRId64" in file id %d",
-         blk_id,exoid);
-       ex_err("ex_put_conn",errmsg,exerrval);
-       return(EX_FATAL);
+     if (elem_edge_conn != 0) {
+       status = nc_inq_dimid (exoid, DIM_NUM_EDG_PER_EL(blk_id_ndx), &nedpereldim);
+       if (status != NC_NOERR) {
+	 exerrval = status;
+	 sprintf(errmsg,
+		 "Error: edge connectivity specified but failed to "
+		 "locate number of edges/element in block %"PRId64" in file id %d",
+		 blk_id,exoid);
+	 ex_err("ex_put_conn",errmsg,exerrval);
+	 return(EX_FATAL);
        }
+     }
 
-     status = nc_inq_dimid (exoid, DIM_NUM_FAC_PER_EL(blk_id_ndx), &nfapereldim);
-     if (status != NC_NOERR && elem_face_conn != 0)
-       {
-       exerrval = status;
-       sprintf(errmsg,
-         "Error: face connectivity specified but failed to "
-         "locate number of faces/element in block %"PRId64" in file id %d",
-         blk_id,exoid);
-       ex_err("ex_put_conn",errmsg,exerrval);
-       return(EX_FATAL);
+     if (elem_face_conn != 0) {
+       status = nc_inq_dimid (exoid, DIM_NUM_FAC_PER_EL(blk_id_ndx), &nfapereldim);
+       if (status != NC_NOERR) {
+	 exerrval = status;
+	 sprintf(errmsg,
+		 "Error: face connectivity specified but failed to "
+		 "locate number of faces/element in block %"PRId64" in file id %d",
+		 blk_id,exoid);
+	 ex_err("ex_put_conn",errmsg,exerrval);
+	 return(EX_FATAL);
        }
+     }
 
      num_ed_per_elem = 0;
      if ((elem_edge_conn != 0) &&

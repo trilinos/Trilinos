@@ -8,6 +8,14 @@
 #
 #
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Machine
+  SOURCES environment/Machine.cpp
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TimerManager
   SOURCES environment/TimerManager.cpp
   NUM_MPI_PROCS 4
@@ -224,6 +232,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PartitioningSolution
   SOURCES problems/PartitioningSolution.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Mapping
+  SOURCES problems/Mapping.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"

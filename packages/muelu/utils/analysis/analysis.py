@@ -184,8 +184,8 @@ def nonlinear_history_solve(yaml_data, mode, ax = None):
     """Show solve time per nonlinear step across the whole simulation (setup time is ignored)"""
     ticks = []
 
-    if yaml_data['scheme'] != 'albany':
-      raise RuntimeError('This mode is for Albany only!')
+    if yaml_data['scheme'] != 'albany' and yaml_data['scheme'] != 'drekar':
+      raise RuntimeError('This mode is for Albany/Drekar only!')
 
     colors = tableau20()
 
@@ -234,8 +234,8 @@ if __name__ == '__main__':
     options, arguments = p.parse_args()
 
     # validate options
-    if options.input_file == None or options.output_file == None:
-        raise RuntimeError("Please specify both input and output files")
+    if options.input_file == None:
+        raise RuntimeError("Please specify the input file")
 
     with open(options.input_file) as data_file:
         yaml_data = yaml.safe_load(data_file)
@@ -255,4 +255,7 @@ if __name__ == '__main__':
     elif analysis == 'mode5':
         nonlinear_history_solve(yaml_data, mode=display, ax=ax)
 
-    plt.savefig(options.output_file, bbox_inches='tight')
+    if options.output_file != None:
+        plt.savefig(options.output_file, bbox_inches='tight')
+    else:
+        plt.show()

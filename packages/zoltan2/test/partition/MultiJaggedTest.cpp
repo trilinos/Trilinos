@@ -66,6 +66,7 @@
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Zoltan2::Environment;
 
 
 //#define hopper_separate_test
@@ -647,7 +648,6 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     params->set("timer_output_stream" , "std::cout");
 
     params->set("algorithm", "multijagged");
-    params->set("compute_metrics", "true");
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
     if (rectilinear)
@@ -683,19 +683,19 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+    RCP<const Environment> env = problem->getEnvironment();
 
-    RCP<const base_adapter_t> bia =
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+
+    RCP<const base_adapter_t> rcpbia = rcp(bia);
 
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-        problem->printMetrics(cout);
     }
     problem->printTimers();
 
@@ -761,7 +761,6 @@ int testFromDataFile(
     }
 
     //params->set("timer_output_stream" , "std::cout");
-    //params->set("compute_metrics", "true");
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
     if (rectilinear)
@@ -884,19 +883,19 @@ int testFromDataFile(
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+    RCP<const Environment> env = problem->getEnvironment();
 
-    RCP<const base_adapter_t> bia =
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+
+    RCP<const base_adapter_t> rcpbia = rcp(bia);
 
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-      //problem->printMetrics(cout);
         cout << "testFromDataFile is done " << endl;
     }
 
@@ -1013,7 +1012,6 @@ int testFromSeparateDataFiles(
     }
 
     //params->set("timer_output_stream" , "std::cout");
-    params->set("compute_metrics", "true");
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
@@ -1075,19 +1073,20 @@ int testFromSeparateDataFiles(
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
+    RCP<const Environment> env = problem->getEnvironment();
 
-    RCP<const base_adapter_t> bia =
+    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+
+    RCP<const base_adapter_t> rcpbia =
       Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
 
     //create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
-        problem->printMetrics(cout);
         cout << "testFromDataFile is done " << endl;
     }
 

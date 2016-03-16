@@ -88,7 +88,7 @@ int ex_get_var( int   exoid,
   if (var_type == EX_NODAL) {
     /* FIXME: Special case: ignore obj_id, possible large_file complications, etc. */
     return ex_get_nodal_var( exoid, time_step, var_index, num_entry_this_obj, var_vals );
-  } else if (var_type == EX_GLOBAL) {
+  } if (var_type == EX_GLOBAL) {
     /* FIXME: Special case: all vars stored in 2-D single array. */
     return ex_get_glob_vars( exoid, time_step, num_entry_this_obj, var_vals );
   }
@@ -104,13 +104,13 @@ int ex_get_var( int   exoid,
 	      ex_name_of_object(var_type), obj_id,exoid);
       ex_err("ex_get_var",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to locate %s id %"PRId64" in id variable in file id %d",
 	      ex_name_of_object(var_type), obj_id, exoid);
       ex_err("ex_get_var",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire previously defined variable */
@@ -123,6 +123,18 @@ int ex_get_var( int   exoid,
 	    ex_name_of_object(var_type),obj_id,var_index,exoid); 
     ex_err("ex_get_var",errmsg,exerrval);
     return (EX_FATAL);
+  }
+
+  /* Verify that time_step is within bounds */
+  {
+    int num_time_steps = ex_inquire_int (exoid, EX_INQ_TIME);
+    if (time_step <= 0 || time_step > num_time_steps) {
+      sprintf(errmsg,
+	      "ERROR: time_step is out-of-range. Value = %d, valid range is 1 to %d in file id %d",
+	      time_step, num_time_steps, exoid);
+      ex_err("ex_get_var",errmsg,EX_BADPARAM);
+      return (EX_FATAL);
+    }
   }
 
   /* read values of element variable */

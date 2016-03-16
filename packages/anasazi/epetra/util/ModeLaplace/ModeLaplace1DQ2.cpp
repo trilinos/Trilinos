@@ -243,7 +243,7 @@ void ModeLaplace1DQ2::makeStiffness(int *elemTopo, int numEle, int *connectivity
                                     int *numNz) {
 
   // Create Epetra_Matrix for stiffness
-  K = new Epetra_CrsMatrix(Copy, *Map, numNz);
+  K = new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, numNz);
 
   int i;
   int localSize = Map->NumMyElements();
@@ -316,7 +316,7 @@ void ModeLaplace1DQ2::makeMass(int *elemTopo, int numEle, int *connectivity,
                                int *numNz) {
 
   // Create Epetra_Matrix for mass
-  M = new Epetra_CrsMatrix(Copy, *Map, numNz);
+  M = new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, numNz);
 
   int i;
   int localSize = Map->NumMyElements();
@@ -508,7 +508,7 @@ int ModeLaplace1DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
     Qexdim = numX-nMax-1;
   }
 
-  Epetra_MultiVector Qex(View, *Map, vQ, localSize, Qexdim);
+  Epetra_MultiVector Qex(Epetra_DataAccess::View, *Map, vQ, localSize, Qexdim);
 
   if ((myPid == 0) && (Qexdim > 0)) {
     std::cout << std::endl;
@@ -538,14 +538,14 @@ int ModeLaplace1DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
           }
         }
         // Normalize Qex against the mass matrix
-        Epetra_MultiVector MQex(View, *Map, vQ + (nMax+1)*localSize, localSize, 1);
-        Epetra_MultiVector Qi(View, Qex, index[i-1], 1);
+        Epetra_MultiVector MQex(Epetra_DataAccess::View, *Map, vQ + (nMax+1)*localSize, localSize, 1);
+        Epetra_MultiVector Qi(Epetra_DataAccess::View, Qex, index[i-1], 1);
         M->Apply(Qi, MQex);
         double mnorm = 0.0;
         Qi.Dot(MQex, &mnorm); 
         Qi.Scale(1.0/sqrt(mnorm));
         // Compute the L2 norm
-        Epetra_MultiVector shapeInt(View, *Map, vQ + (nMax+1)*localSize, localSize, 1);
+        Epetra_MultiVector shapeInt(Epetra_DataAccess::View, *Map, vQ + (nMax+1)*localSize, localSize, 1);
         for (ii=0; ii<localSize; ++ii) {
           double iX;
           if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx)
@@ -603,14 +603,14 @@ int ModeLaplace1DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
           }
         }
         // Normalize Qex against the mass matrix
-        Epetra_MultiVector MQex(View, *Map, vQ + (numX-nMax-1)*localSize, localSize, 1);
-        Epetra_MultiVector Qi(View, Qex, index[i-1]-nMax, 1);
+        Epetra_MultiVector MQex(Epetra_DataAccess::View, *Map, vQ + (numX-nMax-1)*localSize, localSize, 1);
+        Epetra_MultiVector Qi(Epetra_DataAccess::View, Qex, index[i-1]-nMax, 1);
         M->Apply(Qi, MQex);
         double mnorm = 0.0;
         Qi.Dot(MQex, &mnorm); 
         Qi.Scale(1.0/sqrt(mnorm));
         // Compute the L2 norm
-        Epetra_MultiVector shapeInt(View, *Map, vQ + (numX-nMax-1)*localSize, localSize, 1);
+        Epetra_MultiVector shapeInt(Epetra_DataAccess::View, *Map, vQ + (numX-nMax-1)*localSize, localSize, 1);
         for (ii=0; ii<localSize; ++ii) {
           double iX;
           if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx)

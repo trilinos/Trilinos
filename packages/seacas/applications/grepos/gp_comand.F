@@ -44,7 +44,8 @@ C=======================================================================
      $  IELBST, INPSST, IESSST,
      *  NQAREC, QAREC, NINFO, INFREC, BLKTYP,
      *  ebname, nsname, ssname, atname,
-     *  namenv, nvarnp, INOD2EL, 
+     *  namegv, nvargl, namenv, nvarnp, nameev, nvarel,
+     *  namemv, nvarns, namesv, nvarss, INOD2EL, 
      *  SWPSS, SMOOTH, USRSUB, CENTRD, 
      &  NSTEPS, TIMES, ITIMST, A, IA, *)
 #if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 1300)
@@ -128,13 +129,13 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       CHARACTER*(mxstln) QAREC(4,*)
       CHARACTER*(mxstln) BLKTYP(*)
       character*(maxnam) ebname(*), nsname(*), ssname(*),
-     *  namenv(*), ATNAME(*)
+     *  namenv(*), nameev(*), namemv(*), namegv(*), namesv(*), ATNAME(*)
       
       INTEGER INOD2EL(*)
       CHARACTER*(256) CTEMP
       CHARACTER*8  STRA
       CHARACTER*1  ITYPE
-      CHARACTER*(128)  WORD, VERB, LISTYP, WORD2
+      CHARACTER*(128)  WORD, VERB, LISTYP, WORD2, NEWNM, OLDNM
       INTEGER      INTYP(MAXFLD+1)
       CHARACTER*(128)  CFIELD(MAXFLD)
       INTEGER      IFIELD(MAXFLD)
@@ -152,7 +153,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       SAVE FIRST
 
       CHARACTER*(mxstln) MYNAME
-      CHARACTER*(mxstln) CMDTBL(38), LISTBL(14)
+      CHARACTER*(mxstln) CMDTBL(39), LISTBL(14)
       SAVE CMDTBL, LISTBL
 C     --CMDTBL - the valid commands table
       
@@ -160,7 +161,7 @@ C     --Command table follows.  Remember to change the dimensioned size when
 C     --changing the table.
       DATA CMDTBL /
      1  'OFFSET  ',  'REVOLVE ', 'REVCEN  ', 'MIRROR  ', 'NAME    ',
-     2  'LIST    ',  'SHOW    ', 'HELP    ', 'ZERO    ',
+     2  'LIST    ',  'SHOW    ', 'HELP    ', 'ZERO    ', 'RENAME  ',
      3  'END     ',  'EXIT    ', 'QUIT    ', 'SCALE   ',
      4  'CHANGE  ',  'DELETE  ', 'EXPLODE ', 'SHIFT   ',
      5  'INCREMENT', 'LIMITS  ', 'ADJUST  ', 'RANDOMIZE',
@@ -1021,8 +1022,12 @@ C=======================================================================
  324        continue
           end if   
         ELSE IF (LISTYP .EQ. 'NAMES') THEN
-          WRITE (*, 10070) 'Nodal:  ', (NAMENV(I), I=1,NVARNP)
-10070     FORMAT (4X, A, :, 2 (2X, A), :, /, (12X, 2 (2X, A)))
+          WRITE (*, 10070) 'Global:   ', (NAMEGV(I), I=1,NVARGL)
+          WRITE (*, 10070) 'Nodal:    ', (NAMENV(I), I=1,NVARNP)
+          WRITE (*, 10070) 'Element:  ', (NAMEEV(I), I=1,NVAREL)
+          WRITE (*, 10070) 'Nodeset:  ', (NAMEMV(I), I=1,NVARNS)
+          WRITE (*, 10070) 'Sideset:  ', (NAMESV(I), I=1,NVARSS)
+10070     FORMAT (4X, A, :, 2 (2X, A), :, /, (14X, 2 (2X, A)))
         ELSE
           CALL PRTERR ('CMDERR', '"' // CFIELD(2)(:LENSTR(CFIELD(2)))
      &      // '" is an invalid or nonunique LIST option')
@@ -1060,6 +1065,38 @@ C=======================================================================
         else if (itype .eq. 'S') then
           CALL NEWNAM ('S', IDESS, SSNAME, NUMESS, IDOLD, WORD)
         end if
+        verb = ' '
+C=======================================================================
+      ELSE IF (VERB .EQ. 'RENAME') THEN
+        write (*,*) 'In rename'
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD2)
+        if (.NOT. MATSTR (WORD2, 'VARIABLE', 2)) THEN
+          call PRTERR('CMDERR',
+     *      'SYNTAX: RENAME [global|nodal|node|elemnet|nodeset|nset|',
+     *      'sideset|sset] VARIABLE [oldname] [newname]')
+          go to 399
+        end if
+        
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', OLDNM)
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', NEWNM)
+
+        IF (MATSTR(WORD, 'GLOBAL', 2)) THEN
+          CALL RENAM(WORD, NAMEGV, NVARGL, OLDNM, NEWNM)
+        ELSE IF (MATSTR(WORD,'NODESET',5) .OR.
+     $      MATSTR(WORD,'NSET',   3) ) THEN
+          CALL RENAM(WORD, NAMEMV, NVARNS, OLDNM, NEWNM)
+        ELSE IF (MATSTR(WORD, 'NODAL', 4) .OR.
+     *      MATSTR(WORD,'NODE', 4)) THEN
+          CALL RENAM(WORD, NAMENV, NVARNP, OLDNM, NEWNM)
+        ELSE IF (MATSTR(WORD, 'ELEMENT', 2)) THEN
+          CALL RENAM(WORD, NAMEEV, NVAREL, OLDNM, NEWNM)
+        ELSE IF (MATSTR(WORD,'SIDESET',3) .OR.
+     $      MATSTR(WORD,'SSET',   3) ) THEN
+          CALL RENAM(WORD, NAMESV, NVARSS, OLDNM, NEWNM)
+        END IF
+
+ 399    CONTINUE
         verb = ' '
 C=======================================================================
       ELSE IF (VERB .EQ. 'CHANGE') THEN

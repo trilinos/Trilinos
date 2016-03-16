@@ -74,11 +74,11 @@ namespace Ioex {
   struct CommunicationMetaData;
 
   // Used for variable name index mapping
-  typedef std::map<std::string, int, std::less<std::string> > VariableNameMap;
-  typedef VariableNameMap::value_type VNMValuePair;
+  using VariableNameMap = std::map<std::string, int, std::less<std::string>>;
+  using VNMValuePair = VariableNameMap::value_type;
 
   // Used to store reduction variables
-  typedef std::vector<double> ValueContainer;
+  using ValueContainer = std::vector<double>;
 
   // Used for persistent entity IDs
   // The set contains a pair of <ex_entity_type, int>.
@@ -88,14 +88,17 @@ namespace Ioex {
   //
   // The 'int' is the entity id.  The set is used for output databases
   // to ensure that there are no id collisions.
-  typedef std::set<std::pair<int64_t, int64_t> > EntityIdSet;
+  using EntityIdSet = std::set<std::pair<int64_t, int64_t>>;
 
   class DatabaseIO : public Ioss::DatabaseIO
   {
     public:
       DatabaseIO(Ioss::Region *region, const std::string& filename,
                  Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-                 const Ioss::PropertyManager &properties);
+                 const Ioss::PropertyManager &props);
+      DatabaseIO(const DatabaseIO& from) =delete;
+      DatabaseIO& operator=(const DatabaseIO& from) =delete;
+
       virtual ~DatabaseIO();
 
       // Check to see if database state is ok...
@@ -107,7 +110,7 @@ namespace Ioex {
 
       // Eliminate as much memory as possible, but still retain meta data information
       // Typically, eliminate the maps...
-      void release_memory();
+      virtual void release_memory();
 
       // Check capabilities of input/output database...  Returns an
       // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -147,13 +150,12 @@ namespace Ioex {
       void get_block_adjacencies(const Ioss::ElementBlock *eb,
                                  std::vector<std::string> &block_adjacency) const;
 
-      virtual void compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const = 0;
       void compute_block_membership(Ioss::SideBlock *efblock,
                                     std::vector<std::string> &block_membership) const;
 
   protected:
-      int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-                                 void *data, size_t data_size) const;
+      virtual int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+					 void *data, size_t data_size) const = 0;
       virtual int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 					 void *data, size_t data_size) const = 0;
       virtual int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
@@ -177,8 +179,8 @@ namespace Ioex {
       virtual int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 					 void *data, size_t data_size) const = 0;
 
-      int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-                                 void *data, size_t data_size) const;
+      virtual int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
+					 void *data, size_t data_size) const = 0;
       virtual int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 					 void *data, size_t data_size) const = 0;
       virtual int64_t put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
@@ -204,11 +206,6 @@ namespace Ioex {
 
       virtual void write_meta_data() = 0;
       void write_results_metadata();
-
-
-      // Private member functions
-      DatabaseIO(const DatabaseIO& from); // do not implement
-      DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
       virtual void openDatabase() const {
         get_file_pointer();
@@ -246,7 +243,7 @@ namespace Ioex {
 
       void get_nodeblocks();
 
-      void add_attribute_fields(ex_entity_type ent_type, Ioss::GroupingEntity *block,
+      void add_attribute_fields(ex_entity_type entity_type, Ioss::GroupingEntity *block,
                                 int attribute_count,  const std::string& type);
 
       void output_other_meta_data();

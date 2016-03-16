@@ -2256,7 +2256,9 @@ through the call to `TRIBITS_PROJECT()`_.
 |     and `${PROJECT_NAME}_BINARY_DIR`_)
 | 3.  Execute `TRIBITS_PROJECT()`_:
 |   1)  Set `PROJECT_SOURCE_DIR`_ and `PROJECT_BINARY_DIR`_
-|   2)  For each ``<optFile>`` in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_}:
+|   2)  For each ``<optFile>`` in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_}
+|         ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_}
+        :
 |       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
 |       (both of these can be overridden in the cache by the user)
@@ -6489,8 +6491,6 @@ The sync driver script for this example should be called something like
 like::
 
   #!/bin/bash -e
- 
-  EXTRA_ARGS=$@ 
   
   # Set up the environment (i.e. PATH; needed for cron jobs)
   ...
@@ -6503,13 +6503,15 @@ like::
   $CHECKIN_TEST_WRAPPER \
     --extra-pull-from=ExtraRepo1:public:master \
     --abort-gracefully-if-no-changes-to-push \
+    --enable-all-packages=on \
+    --send-build-case-email=only-on-failure \
     --send-email-to=base-proj-integrators@url4.gov \
     --send-email-to-on-push=base-proj-integrators@url4.gov \
     --no-append-test-results --no-rebase \
     --do-all --push \
     -j16 \
     --wipe-clean \
-    $EXTRA_ARGS
+    "$@"
 
 NOTE, in the above example ``sync_ExtraRepo1.sh`` script, the variable
 ``CHECKIN_TEST_WRAPPER`` is set to a wrapper script::
@@ -6551,7 +6553,52 @@ more details):
     However, for an automated ACI sync process, there is no easy way to know a
     priori if changes need to be synced so the script supports this option to
     deal with that case gracefully.
-  
+
+  ``--enable-all-packages=on``
+
+    This option should be set if one wants to ensure that all commits get
+    synced, even when these changes don't impact the build or the tests of the
+    project.  If not setting ``--enable-all-packages=on`` or
+    ``--enable-packages=<pkg0>,<pkg1>,...``, then the ``checkin-test.py``
+    script will decide on its own what packages to test just based on what
+    packages have changed files in the ``ExtraRepo1`` repo.  For example, if a
+    top-level README file in the base ``ExtraRepo1`` repo gets modified that
+    does not sit under a package directory, then the automatic logic in the
+    checkin-test.py script will not trigger a package enable. In that case, no
+    configure, build, testing, or push will take place and therefore the sync
+    will not occur.  Therefore, if one wants to ensure that every commit gets
+    safely synced over on every invocation, then the safest way to that is to
+    specify ``--enable-all-packages=on``.  But if one wants to save on the
+    build and test times and one does not mind not syncing all the time, then
+    ``--enable-all-packages=on`` can be left off.  **WARNING:** it is not
+    advisable to manually set ``--enable-packages=<package-list>``.  This is
+    because if there are changes to other packages, then these packages will
+    not get enabled and not get tested, which could break the global build and
+    tests.  Also, this is fragile if new packages are added to ``ExtraRepo``
+    later that are not listed in ``--enable-packages=<pkg0>,<pkg1>,...`` as
+    they will not be included in the testing.  Also, if someone makes local
+    commits in other local git repos before running the sync script again,
+    then these packages will not get enabled and tested.  Therefore, in
+    general, don't set ``--enable-packages=<pkg0>,<pkg1>,...`` in a sync
+    script, only set ``--enable-all-packages=on`` to be robust and safe.
+    **ToDo:** Add the checkin-test.py option
+    ``--enable-extra-packages=<pkg0>,<pkg1>,...`` to ensure some minimal
+    testing is always done but also allow changes to other packages to trigger
+    their testing (and testing of downstream packages) as well.  This would
+    ensure that minimal but complete testing was done (based on changed
+    packages and package dependencies) and would also result in every commit
+    being pushed on every invocation (where tests are passing).
+
+  ``--send-build-case-email=only-on-failure``
+
+    This makes the checkin-test.py script skip sending email about a build
+    case (e.g. ``MPI_DEBUG``) unless it fails.  That way, if everything
+    passes, then only a final ``DID PUSH`` email will go out.  But if a build
+    case does fail (i.e. configure, build, or tests fail), then an "early
+    warning" email will still go out.  However, if one wants to never get the
+    early build-case emails, one can turn this off by setting
+    ``--send-build-case-email=never``.
+ 
   ``--send-email-to=base-proj-integrators@url4.gov``
  
     The results of the builds will be sent this email address.  If you only
@@ -6599,21 +6646,13 @@ more details):
     more about using less computer resources and testing that rebuilds work
     smoothly, remove this option.
 
-Note that the option ``--enable-packages`` is not set in the above invocation
-of the ``checkin-test.py`` script, and therefore the ``checkin-test.py``
-script will decide on its own what packages to test just based on what
-packages have changed files in the ``ExtraRepo1`` git/TriBITS extra
-repository.  This is the preferred way to go since any affected packages will
-automatically be enabled as determined by the TriBITS package dependency
-structure and therefore this driver script will require no modifications if
-the dependency structure changes over time.  However, there are cases and
-various reasons where the exact list of packages to be tested (or not tested)
-should be specified using the ``--enable-packages`` option (or the
-``--disable-packages`` option, respectively).  However, these should not be
-needed with well structured portable TriBITS repos and packages.
-
 The sync script can be created and tested locally to ensure that it works
-correctly first, before setting it as a cron job as described next.
+correctly first, before setting it as a cron job as described next.  Also, the
+sync script should be version controlled in one of the project's git repos.
+This ensures that changes to script pushed to the repos will get invoked
+automatically when they are pulled (but only on the second invocation of the
+script).  If a change to script is critical in order to do the pull, then one
+must manually pull the updated commit to the local sync repo.
 
 Note, if using this in a continuous sync server that runs many times in a day
 in a loop, you also want to set the option
@@ -7390,6 +7429,7 @@ be documented in `TribitsBuildReference`_.
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
 * `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
 * `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
 * `${PROJECT_NAME}_ELEVATE_ST_TO_PT`_
@@ -7416,6 +7456,27 @@ a given TriBITS project are:
 
 
 These options are described below.
+
+.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND:
+
+**${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND**
+
+  The variable ``${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`` is used to
+  define the absolute path to a file (or a list of files) that should be
+  included after the files listed in
+  ``${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE``.  This variable can be used by
+  the TriBITS project to define, for example, a standard set of development
+  environments in the base `<projectDir>/CMakeLists.txt`_ file with::
+
+    SET(${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND_DEFAULT
+      "${CMAKE_CURRENT_LIST_DIR}/cmake/StdDevEnvs.cmake")
+
+  **before** the `TRIBITS_PROJECT()`_ command.  By including this file(s)
+  after the file(s) listed in ``${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE``, the
+  user can override the variables set in this appended file(s).  But it is
+  important that these variables best set after the users options have been
+  set but before the Package and TPL dependency analysis is done (because this
+  might enable or disable some TPLs).
 
 .. _${PROJECT_NAME}_CPACK_SOURCE_GENERATOR:
 

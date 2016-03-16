@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -1158,9 +1157,9 @@ FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<A
     
     
 if(getrank(jacobian)==4){
-Kokkos::parallel_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+Kokkos::serial_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
 }else if(getrank(jacobian)==3){
-Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+Kokkos::serial_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
 }else{
         TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument,
                             ">>> ERROR (Intrepid2::CellTools::setJacobian): Rank of Jacobian is Not Supported.");
@@ -1174,7 +1173,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
           FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
+Kokkos::serial_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
           HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
           
@@ -1184,11 +1183,11 @@ Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Sc
           
           if(whichCell == -1) {
             
-Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
+Kokkos::serial_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
             
           }
           else {
- Kokkos::parallel_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
+ Kokkos::serial_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
          } // if whichcell
         }// case 2
         break;
@@ -1196,7 +1195,7 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
         // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
       case 3:
         {
- Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> , ArrayPoint> (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
+ Kokkos::serial_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> , ArrayPoint> (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
 //	    }
         }// case 3
 	
@@ -1330,9 +1329,9 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
     
     
 if(getrank(jacobian)==4){
-Kokkos::parallel_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+Kokkos::serial_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
 }else if(getrank(jacobian)==3){
-Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+Kokkos::serial_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
 }else{
         TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument,
                             ">>> ERROR (Intrepid2::CellTools::setJacobian): Rank of Jacobian is Not Supported.");
@@ -1346,7 +1345,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
           FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
+Kokkos::serial_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
           HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
           
@@ -1356,11 +1355,11 @@ Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Sc
           
           if(whichCell == -1) {
             
-Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
+Kokkos::serial_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
             
           }
           else {
- Kokkos::parallel_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
+ Kokkos::serial_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
          } // if whichcell
         }// case 2
         break;
@@ -1368,7 +1367,7 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
         // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
       case 3:
         {
- Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true> ,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
+ Kokkos::serial_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true> ,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
 //	    }
         }// case 3
 	
@@ -2094,145 +2093,6 @@ if (refPointsRank==3){
   } // for(iter)
 }
 
-#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-
-template<class Scalar>
-void CellTools<Scalar>::setModifiedLinePoint(double &ot, 
-                                             const double pt,
-                                             const int ort) {
-#ifdef HAVE_INTREPID_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt && pt <= 1.0 ), std::invalid_argument,
-                              ">>> ERROR (Intrepid::CellTools::setModifiedLinePoint): pt is out of range [-1, 1].");  
-#endif
-  
-  switch (ort) {
-  case 0: ot =   pt; break;
-  case 1: ot = - pt; break;
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
-                               ">>> ERROR (Intrepid2::CellTools::setModifiedLinePoint): Invalid orientation number (0--1)." );
-  }
-}
-
-template<class Scalar>
-void CellTools<Scalar>::setModifiedTrianglePoint(double &ot0,     
-                                                 double &ot1, 
-                                                 const double pt0, 
-                                                 const double pt1,
-                                                 const int ort) {
-  const double lambda[3] = { 1.0 - pt0 - pt1, 
-                             pt0,
-                             pt1 };
-  
-#ifdef HAVE_INTREPID_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[0] && lambda[0] <= 1.0 ), std::invalid_argument,
-                              ">>> ERROR (Intrepid::CellTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[0]) is out of range [0, 1].");  
-  
-  TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[1] && lambda[1] <= 1.0 ), std::invalid_argument,
-                              ">>> ERROR (Intrepid::CellTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[1]) is out of range [0, 1].");  
-  
-  TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[2] && lambda[2] <= 1.0 ), std::invalid_argument,
-                              ">>> ERROR (Intrepid::CellTools::setModifiedTrianglePoint): Bicentric coordinate (lamba[2]) is out of range [0, 1].");  
-#endif
-
-  switch (ort) {
-  case 0: ot0 = lambda[1]; ot1 = lambda[2]; break;
-  case 1: ot0 = lambda[2]; ot1 = lambda[0]; break;
-  case 2: ot0 = lambda[0]; ot1 = lambda[1]; break;
-  case 3: ot0 = lambda[2]; ot1 = lambda[1]; break;
-  case 4: ot0 = lambda[0]; ot1 = lambda[2]; break;
-  case 5: ot0 = lambda[1]; ot1 = lambda[0]; break;
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
-                              ">>> ERROR (Intrepid2::CellTools::setModifiedTrianglePoint): Invalid orientation number (0--5)." );
-  }
-}
-
-template<class Scalar>
-void CellTools<Scalar>::setModifiedQuadrilateralPoint(double &ot0,     
-                                                      double &ot1, 
-                                                      const double pt0, 
-                                                      const double pt1,
-                                                      const int ort) {
-#ifdef HAVE_INTREPID_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt0 && pt0 <= 1.0 ), std::invalid_argument,
-                              ">>> ERROR (Intrepid::CellTools::setModifiedQuadrilateralPoint): pt0 is out of range [-1, 1].");  
-  
-  TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt1 && pt1 <= 1.0 ), std::invalid_argument,
-                              ">>> ERROR (Intrepid::CellTools::setModifiedQuadrilateralPoint): pt1 is out of range [-1, 1].");  
-#endif
-
-  const double lambda[2][2] = { { pt0, -pt0 }, 
-                                { pt1, -pt1 } };
-  
-  switch (ort) {
-  case 0: ot0 = lambda[0][0]; ot1 = lambda[1][0]; break;
-  case 1: ot0 = lambda[1][0]; ot1 = lambda[0][1]; break;
-  case 2: ot0 = lambda[0][1]; ot1 = lambda[0][1]; break;
-  case 3: ot0 = lambda[1][1]; ot1 = lambda[0][0]; break;
-  case 4: ot0 = lambda[1][0]; ot1 = lambda[0][0]; break;
-  case 5: ot0 = lambda[0][0]; ot1 = lambda[1][1]; break;
-  case 6: ot0 = lambda[1][1]; ot1 = lambda[1][1]; break;
-  case 7: ot0 = lambda[0][1]; ot1 = lambda[1][0]; break;
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
-                              ">>> ERROR (Intrepid2::CellTools::setModifiedQuadrilateralPoint): Invalid orientation number (0--7)." );
-  }
-}
-
-template<class Scalar>
-template<class ArrayPoint>
-void CellTools<Scalar>::mapToModifiedReference(ArrayPoint &                  ortPoints,
-                                               const ArrayPoint &            refPoints,
-                                               const shards::CellTopology &  cellTopo,
-                                               const int                     cellOrt){
-#ifdef HAVE_INTREPID_DEBUG
-  {
-    const int cellDim = cellTopo.getDimension();
-    TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument, 
-                                ">>> ERROR (Intrepid::CellTools::mapToModifiedReference): the specified cell topology does not have a reference cell.");
-    
-    TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= cellDim) && (cellDim <= 2 ) ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::CellTools::mapToModifiedReference): method defined only for 1 and 2-dimensional subcells.");  
-
-    TEUCHOS_TEST_FOR_EXCEPTION( !( numPts == refPoints.dimension(0) ), std::invalid_argument, 
-                                ">>> ERROR (Intrepid::CellTools::mapToModifiedReference): size of input and output point arrays does not match each other.");
-  }
-#endif
-    
-  // Apply the parametrization map to every point in parameter domain
-  const size_t numPts  = static_cast<size_t>(ortPoints.dimension(0));
-  const auto key = cellTopo.getBaseCellTopologyData()->key ;
-  switch (key) {
-  case shards::Line<>::key : {
-    for (size_t pt=0;pt<numPts;++pt) 
-      setModifiedLinePoint(ortPoints(pt, 0),
-                           refPoints(pt, 0), 
-                           cellOrt);
-    break;
-  }
-  case shards::Triangle<>::key : {
-    for (size_t pt=0;pt<numPts;++pt) 
-      setModifiedTrianglePoint(ortPoints(pt, 0), ortPoints(pt, 1),
-                               refPoints(pt, 0), refPoints(pt, 1), 
-                               cellOrt);
-    break;
-  }
-  case shards::Quadrilateral<>::key : {
-    for (size_t pt=0;pt<numPts;++pt) 
-      setModifiedQuadrilateralPoint(ortPoints(pt, 0), ortPoints(pt, 1),
-                                    refPoints(pt, 0), refPoints(pt, 1), 
-                                    cellOrt);
-    break;
-  }
-  default: 
-    TEUCHOS_TEST_FOR_EXCEPTION(false, std::invalid_argument,
-                              ">>> ERROR (Intrepid2::CellTools::mapToModifiedReference): Invalid cell topology." );
-  }
-}
-#endif
-
-
 template<class Scalar>
 template<class ArraySubcellPoint, class ArrayParamPoint>
 void CellTools<Scalar>::mapToReferenceSubcell(ArraySubcellPoint     &       refSubcellPoints,
@@ -2748,24 +2608,47 @@ int CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             poin
   
   // create temp output array depending on the rank of the input array 
   FieldContainer<int> inRefCell;
+  index_type dim0(0), dim1(0);
   switch(rank) {
-    case 1: inRefCell.resize(1); break;
-    case 2: inRefCell.resize( static_cast<index_type>(points.dimension(0)) ); break;
-    case 3: inRefCell.resize( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) ); break;
+    case 1: 
+      inRefCell.resize(1); 
+    break;
+    case 2: 
+      dim0 = static_cast<index_type>(points.dimension(0)); 
+      inRefCell.resize(dim0); 
+    break;
+    case 3: 
+      dim0 = static_cast<index_type>(points.dimension(0)); 
+      dim1 = static_cast<index_type>(points.dimension(1)); 
+      inRefCell.resize(dim0, dim1); 
+    break;
   }
 
   // Call the inclusion method which returns inclusion results for all points
   checkPointwiseInclusion(inRefCell, points, cellTopo, threshold);
   
-  // Check if any points were outside, break when finding the first one
-  int allInside = 1;
-  for(int i = 0; i < inRefCell.size(); i++ ){
-    if (inRefCell[i] == 0) {
-      allInside = 0;
-      break;
-    }
+  // Check if any points were outside, return 0 after finding one
+  
+  switch(rank) {
+    case 1:  
+    if (inRefCell(0) == 0) 
+      return 0;
+    break;
+    case 2:
+      for(index_type i = 0; i < dim0; i++ )
+        if (inRefCell(i) == 0) 
+          return 0;
+    break;
+    
+    case 3: 
+    for(index_type i = 0; i < dim0; i++ )
+      for(index_type j = 0; j < dim1; j++ )
+        if (inRefCell(i,j) == 0)
+          return 0;
+    break;
   }
-   return allInside;
+  
+  return 1; //all points are inside
 }
 
 
@@ -2812,9 +2695,9 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
 #endif
   
   // Initializations
-  int dim0     = 1;
-  int dim1     = 1;
-  int pointDim = 0;
+  index_type dim0     = 1;
+  index_type dim1     = 1;
+  index_type pointDim = 0;
   switch(apRank) {
     case 1:
       pointDim = static_cast<index_type>(points.dimension(0));
@@ -2839,32 +2722,34 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
   // (i,j,..,k) accessor is not known. Use of [] requires the following offsets:
   //    for input array  = i0*dim1*pointDim + i1*dim1  (computed in 2 pieces: inPtr0 and inPtr1, resp)
   //    for output array = i0*dim1                     (computed in one piece: outPtr0)
-  int inPtr0  = 0;
-  int inPtr1  = 0;
-  int outPtr0 = 0;
   Scalar point[3] = {0.0, 0.0, 0.0};
-  
-  for(int i0 = 0; i0 < dim0; i0++){
-    outPtr0 = i0*dim1;
-    inPtr0  = outPtr0*pointDim;
-    
-    for(int i1 = 0; i1 < dim1; i1++) {
-      inPtr1 = inPtr0 + i1*pointDim;      
-      point[0] = points[inPtr1];
-      if(pointDim > 1) {
-        point[1] = points[inPtr1 + 1];
-        if(pointDim > 2) {
-          point[2] = points[inPtr1 + 2];
-          if(pointDim > 3) {
-            TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= pointDim) && (pointDim <= 3)), std::invalid_argument, 
-                                ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): Input array specifies invalid point dimension ");      
-          }
-        }
-      } //if(pointDim > 1)
-      inRefCell[outPtr0 + i1] = checkPointInclusion(point, pointDim, cellTopo, threshold);
-    } // for (i1)
-  } // for(i2)
 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= pointDim) && (pointDim <= 3)), std::invalid_argument,
+        ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): Input array specifies invalid point dimension ");
+
+  switch(apRank) {
+    case 1:
+      for(index_type i2 = 0; i2 < pointDim; i2++)
+        point[i2] = points(i2);
+      inRefCell(0) = checkPointInclusion(point, pointDim, cellTopo, threshold);
+      break;
+    case 2:
+      for(index_type i1 = 0; i1 < dim1; i1++) {
+        for(index_type i2 = 0; i2 < pointDim; i2++)
+          point[i2] = points(i1,i2);
+        inRefCell(i1) = checkPointInclusion(point, pointDim, cellTopo, threshold);
+      }
+      break;
+    case 3:
+      for(index_type i0 = 0; i0 < dim0; i0++){
+        for(index_type i1 = 0; i1 < dim1; i1++) {
+          for(index_type i2 = 0; i2 < pointDim; i2++)
+            point[i2] = points(i0,i1,i2);
+          inRefCell(i0,i1) = checkPointInclusion(point, pointDim, cellTopo, threshold);
+        }
+      }
+      break;
+  }
 }  
 
 

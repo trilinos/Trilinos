@@ -510,6 +510,8 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
     howToShift_ = ADJUSTED_RITZ_SHIFT;
   else if(strtmp == "Ritz Values")
     howToShift_ = RITZ_VALUES_SHIFT;
+  else if(strtmp == "Experimental Shift")
+    howToShift_ = EXPERIMENTAL_SHIFT;
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
            "Anasazi::TraceMinBaseSolMgr: Invalid value for \"How To Choose Shift\"; valid options are \"Largest Converged\", \"Adjusted Ritz Values\", \"Ritz Values\".");

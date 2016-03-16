@@ -47,10 +47,11 @@
 
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
-#include "ROL_LogBarrierObjective.hpp"
 #include "ROL_ObjectiveFromBoundConstraint.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 
 typedef double RealT; 
@@ -63,6 +64,8 @@ int main(int argc, char *argv[]) {
   typedef std::vector<RealT>    vector;
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
+
+  typedef typename vector::size_type uint;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -79,102 +82,166 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  RealT errtol = std::sqrt(ROL::ROL_THRESHOLD);
+//  RealT errtol = std::sqrt(ROL::ROL_THRESHOLD<RealT>());
 
   int errorFlag  = 0;
-
-  // Specify interval on which to generate uniform random numbers.
-  RealT left = 0.1, right = 0.9;
 
   // *** Test body.
 
   try {
 
-    int dim = 1;
-    RCP<vector>  x_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  l_rcp = rcp( new vector(dim,0.0) );  // Lower bound
-    RCP<vector>  u_rcp = rcp( new vector(dim,1.0) );  // Upper bound
-    RCP<vector>  y_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  v_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  d_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector> gx_rcp = rcp( new vector(dim,0.0) );    
-    RCP<vector> gy_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector> hv_rcp = rcp( new vector(dim,0.0) );
+    uint dim = 30;
+    RealT xmin = 0.5;
+    RealT xmax = 2.5;
 
-    SV x( x_rcp);  
-    SV y( y_rcp);
-    SV v( v_rcp);
-    SV d( d_rcp);
-    SV gx(gx_rcp);
-    SV gy(gy_rcp); 
+    RCP<vector>  x_rcp  = rcp( new vector(dim,0.0) );
+    RCP<vector>  g_rcp  = rcp( new vector(dim,0.0) );
+    RCP<vector>  v_rcp  = rcp( new vector(dim,0.0) );
+    RCP<vector>  hv_rcp = rcp( new vector(dim,0.0) );
+
+    RCP<vector>  l_rcp = rcp( new vector(dim,1.0) );
+    RCP<vector>  u_rcp = rcp( new vector(dim,2.0) );
+
+    RCP<vector>  xlog0_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  xlog1_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  xlog2_rcp = rcp( new vector(dim,0.0) );
+
+    RCP<vector>  xquad0_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  xquad1_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  xquad2_rcp = rcp( new vector(dim,0.0) );
+
+    RCP<vector>  xdwell0_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  xdwell1_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  xdwell2_rcp = rcp( new vector(dim,0.0) );
+
+
+
+    SV x(x_rcp); 
+    SV g(g_rcp);
+    SV v(v_rcp);
     SV hv(hv_rcp);
 
-    RandomizeVector(x,left,right);
-    RandomizeVector(v,left,right);
-    RandomizeVector(d,left,right);
+    RCP<SV> xlog0 = rcp( new SV(xlog0_rcp) );
+    RCP<SV> xlog1 = rcp( new SV(xlog1_rcp) );
+    RCP<SV> xlog2 = rcp( new SV(xlog2_rcp) );
 
-    RCP<V> l = rcp( new SV(l_rcp) );
-    RCP<V> u = rcp( new SV(u_rcp) );
+    RCP<SV> xquad0 = rcp( new SV(xquad0_rcp) );
+    RCP<SV> xquad1 = rcp( new SV(xquad1_rcp) );
+    RCP<SV> xquad2 = rcp( new SV(xquad2_rcp) );
 
-    ROL::BoundConstraint<RealT> bc(l,u);
+    RCP<SV> xdwell0 = rcp( new SV(xdwell0_rcp) );
+    RCP<SV> xdwell1 = rcp( new SV(xdwell1_rcp) );
+    RCP<SV> xdwell2 = rcp( new SV(xdwell2_rcp) );
 
-    ROL::ObjectiveFromBoundConstraint<RealT> bc_obj(bc);
+    RCP<V> lo = rcp(new SV(l_rcp) );
+    RCP<V> up = rcp(new SV(u_rcp) );  
 
-    // Fixed difference step size
-    RealT delta = 1.e-8; 
+    for(uint i=0; i<dim; ++i) {
+      RealT t = static_cast<RealT>(i)/static_cast<RealT>(dim-1);
+      (*x_rcp)[i] = xmin*(1-t) + xmax*t;
+    }    
 
-    y.set(x);         // y = x
-    y.axpy(delta,d);  // y = x+delta*d
+    // Create bound constraint
+    ROL::BoundConstraint<RealT>  bc(lo,up);
 
-    ROL::LogBarrierObjective<RealT> log_obj;
- 
-    // Do step size sweep
-    *outStream << "Test of single logarithmic penalty objective" << std::endl;
-    log_obj.checkGradient(x, d, true, *outStream);          *outStream << "\n"; 
-    log_obj.checkHessVec(x, v, true, *outStream);           *outStream << "\n";
+    Teuchos::ParameterList logList;
+    Teuchos::ParameterList quadList;
+    Teuchos::ParameterList dwellList;
 
-    *outStream << "Test of bound constraint as logarithmic penalty objective" << std::endl;
-    bc_obj.checkGradient(x, d, true, *outStream);          *outStream << "\n"; 
-    bc_obj.checkHessVec(x, v, true, *outStream);           *outStream << "\n";
+    logList.sublist("Barrier Function").set("Type","Logarithmic");
+    quadList.sublist("Barrier Function").set("Type","Quadratic");
+    dwellList.sublist("Barrier Function").set("Type","Double Well");
 
-    
+    ROL::ObjectiveFromBoundConstraint<RealT> logObj(bc,logList);
+    ROL::ObjectiveFromBoundConstraint<RealT> quadObj(bc,quadList);
+    ROL::ObjectiveFromBoundConstraint<RealT> dwellObj(bc,dwellList);
+
+    RealT tol = 0.0;
 
 
-    RealT tol = 0;
+    logObj.value(x,tol);
+    xlog0->set(*Teuchos::rcp_static_cast<SV>(logObj.getBarrierVector()));
 
-    // Compute objective at x and y
-    RealT fx = log_obj.value(x,tol);
-    RealT fy = log_obj.value(y,tol);
-    
-    // Compute gradient at x and y
-    log_obj.gradient(gx,x,tol);
-    log_obj.gradient(gy,y,tol);
+    logObj.gradient(g,x,tol);
+    xlog1->set(*Teuchos::rcp_static_cast<SV>(logObj.getBarrierVector()));
 
-    // Compute action of Hessian on v at x
-    log_obj.hessVec(hv,v,x,tol);
+    logObj.hessVec(hv,v,x,tol);
+    xlog2->set(*Teuchos::rcp_static_cast<SV>(logObj.getBarrierVector()));
 
-    // FD gradient error 
-    RealT graderr = (fy - fx)/delta - gx.dot(d);
 
-    // FD Hessian error
-    RCP<V> dg = gx.clone();
-    dg->set(gy);
-    dg->axpy(-1.0,gx);
-    
-    RealT hesserr = ( dg->dot(v) )/delta - hv.dot(d);
+    quadObj.value(x,tol);
+    xquad0->set(*Teuchos::rcp_static_cast<SV>(quadObj.getBarrierVector()));
 
-    
+    quadObj.gradient(g,x,tol);
+    xquad1->set(*Teuchos::rcp_static_cast<SV>(quadObj.getBarrierVector()));
+
+    quadObj.hessVec(hv,v,x,tol);
+    xquad2->set(*Teuchos::rcp_static_cast<SV>(quadObj.getBarrierVector()));
+
+
+    dwellObj.value(x,tol);
+    xdwell0->set(*Teuchos::rcp_static_cast<SV>(dwellObj.getBarrierVector()));
+
+    dwellObj.gradient(g,x,tol);
+    xdwell1->set(*Teuchos::rcp_static_cast<SV>(dwellObj.getBarrierVector()));
+
+    dwellObj.hessVec(hv,v,x,tol);
+    xdwell2->set(*Teuchos::rcp_static_cast<SV>(dwellObj.getBarrierVector()));
+
+
+    *outStream   << std::setw(14) << "x" 
+                 << std::setw(14) << "log" 
+                 << std::setw(14) << "D(log)" 
+                 << std::setw(14) << "D2(log)" 
+                 << std::setw(14) << "quad" 
+                 << std::setw(14) << "D(quad)" 
+                 << std::setw(14) << "D2(quad)" 
+                 << std::setw(14) << "dwell" 
+                 << std::setw(14) << "D(dwell)" 
+                 << std::setw(14) << "D2(dwell)" 
+                 << std::endl;
+    *outStream   << std::string(140,'-') << std::endl;
+
+    for(uint i=0; i<dim; ++i) {
+      *outStream << std::setw(14) << (*x_rcp)[i] 
+                 << std::setw(14) << (*xlog0_rcp)[i] 
+                 << std::setw(14) << (*xlog1_rcp)[i]
+                 << std::setw(14) << (*xlog2_rcp)[i] 
+                 << std::setw(14) << (*xquad0_rcp)[i] 
+                 << std::setw(14) << (*xquad1_rcp)[i] 
+                 << std::setw(14) << (*xquad2_rcp)[i] 
+                 << std::setw(14) << (*xdwell0_rcp)[i] 
+                 << std::setw(14) << (*xdwell1_rcp)[i] 
+                 << std::setw(14) << (*xdwell2_rcp)[i] 
+                 << std::endl;
+    }    
 
   
+    ROL::RandomizeVector( x,  1.2, 1.8 );
+    ROL::RandomizeVector( v, -0.1, 0.1 );
+
+    *outStream << "\n\n";
+    *outStream << "Test of logarithmic penalty objective" << std::endl;
+    logObj.checkGradient(x,v,true,*outStream);    *outStream << std::endl;
+    logObj.checkHessVec(x,v,true,*outStream);     *outStream << std::endl;
+
+    ROL::RandomizeVector( x, -1.0, 1.0 );
+    ROL::RandomizeVector( v, -1.0, 1.0 );
+
+    *outStream << "\n\n";
+    *outStream << "Test of piecewise quadratic penalty objective" << std::endl;
+    quadObj.checkGradient(x,v,true,*outStream);    *outStream << std::endl;
+    quadObj.checkHessVec(x,v,true,*outStream);     *outStream << std::endl;
 
 
-    if( std::abs(graderr) > errtol ) {
-      ++errorFlag;
-    }
+    *outStream << "\n\n";
+    *outStream << "Test of double well penalty objective" << std::endl;
+    dwellObj.checkGradient(x,v,true,*outStream);    *outStream << std::endl;
+    dwellObj.checkHessVec(x,v,true,*outStream);     *outStream << std::endl;
+    
 
-    if( std::abs(hesserr) > errtol ) {
-      ++errorFlag;
-    }
+
+
 
   }   
   catch (std::logic_error err) {

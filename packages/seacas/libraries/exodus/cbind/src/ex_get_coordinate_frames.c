@@ -141,8 +141,9 @@
   (void)nc_inq_dimlen(exoid,dimid,&count);
   *nframes=(int)count;
 
-  if ( count==0 )
+  if ( count==0 ) {
     return (EX_NOERR);
+}
 
   if ( cf_ids ) {
     if ((status = nc_inq_varid(exoid,VAR_FRAME_IDS, &varids))!= NC_NOERR) {
@@ -170,7 +171,7 @@
     }
   }
 
-  if ( tags )
+  if ( tags ) {
     if ( (status = nc_inq_varid(exoid,VAR_FRAME_TAGS,&varids))!= NC_NOERR  ||
          (nc_get_vara_text(exoid,varids,&start,&count,tags) != NC_NOERR)) {
       exerrval = status;
@@ -180,6 +181,7 @@
       ex_err(PROCNAME,errmsg,exerrval);
       return (EX_FATAL);
     }
+}
 
   if (pt_coordinates ){
     if ( (status = nc_inq_varid(exoid,VAR_FRAME_COORDS,&varids))!= NC_NOERR) {

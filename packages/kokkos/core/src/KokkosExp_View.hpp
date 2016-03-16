@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_EXPERIMENTAL_VIEW_HPP
-#define KOKKOS_EXPERIMENTAL_VIEW_HPP
+#ifndef KOKKOS_EXP_VIEW_HPP
+#define KOKKOS_EXP_VIEW_HPP
 
 #include <string>
 #include <algorithm>
@@ -127,6 +127,7 @@ struct ViewTraits< void >
 {
   typedef void  execution_space ;
   typedef void  memory_space ;
+  typedef void  HostMirrorSpace ;
   typedef void  array_layout ;
   typedef void  memory_traits ;
 };
@@ -137,6 +138,7 @@ struct ViewTraits< void , void , Prop ... >
   // Ignore an extraneous 'void'
   typedef typename ViewTraits<void,Prop...>::execution_space  execution_space ;
   typedef typename ViewTraits<void,Prop...>::memory_space     memory_space ;
+  typedef typename ViewTraits<void,Prop...>::HostMirrorSpace  HostMirrorSpace ;
   typedef typename ViewTraits<void,Prop...>::array_layout     array_layout ;
   typedef typename ViewTraits<void,Prop...>::memory_traits    memory_traits ;
 };
@@ -148,6 +150,7 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_array_layout<ArrayL
 
   typedef typename ViewTraits<void,Prop...>::execution_space  execution_space ;
   typedef typename ViewTraits<void,Prop...>::memory_space     memory_space ;
+  typedef typename ViewTraits<void,Prop...>::HostMirrorSpace  HostMirrorSpace ;
   typedef          ArrayLayout                                array_layout ;
   typedef typename ViewTraits<void,Prop...>::memory_traits    memory_traits ;
 };
@@ -155,15 +158,18 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_array_layout<ArrayL
 template< class Space , class ... Prop >
 struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_space<Space>::value >::type , Space , Prop ... >
 {
-  // Specify Space, memory traits should be the only subsequent argument
+  // Specify Space, memory traits should be the only subsequent argument.
 
   static_assert( std::is_same< typename ViewTraits<void,Prop...>::execution_space , void >::value ||
                  std::is_same< typename ViewTraits<void,Prop...>::memory_space    , void >::value ||
+                 std::is_same< typename ViewTraits<void,Prop...>::HostMirrorSpace , void >::value ||
                  std::is_same< typename ViewTraits<void,Prop...>::array_layout    , void >::value
                , "Only one View Execution or Memory Space template argument" );
 
   typedef typename Space::execution_space                   execution_space ;
   typedef typename Space::memory_space                      memory_space ;
+  typedef typename Kokkos::Impl::is_space< Space >::host_mirror_space
+      HostMirrorSpace ;
   typedef typename execution_space::array_layout            array_layout ;
   typedef typename ViewTraits<void,Prop...>::memory_traits  memory_traits ;
 };
@@ -181,6 +187,7 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_memory_traits<Memor
 
   typedef void          execution_space ;
   typedef void          memory_space ;
+  typedef void          HostMirrorSpace ;
   typedef void          array_layout ;
   typedef MemoryTraits  memory_traits ;
 };
@@ -214,7 +221,12 @@ private:
                     >::type
       ArrayLayout ;
 
-  typedef typename Kokkos::Impl::is_space< ExecutionSpace >::host_mirror_space
+  typedef typename
+    std::conditional
+      < ! std::is_same< typename prop::HostMirrorSpace , void >::value
+      , typename prop::HostMirrorSpace
+      , typename Kokkos::Impl::is_space< ExecutionSpace >::host_mirror_space
+      >::type
       HostMirrorSpace ;
 
   typedef typename
@@ -1502,7 +1514,7 @@ bool operator == ( const View<LT,LP...> & lhs ,
                   typename rhs_traits::array_layout >::value &&
     std::is_same< typename lhs_traits::memory_space ,
                   typename rhs_traits::memory_space >::value &&
-    lhs_traits::rank == rhs_traits::rank &&
+    unsigned(lhs_traits::rank) == unsigned(rhs_traits::rank) &&
     lhs.data()        == rhs.data() &&
     lhs.span()        == rhs.span() &&
     lhs.dimension_0() == rhs.dimension_0() &&
@@ -1532,7 +1544,7 @@ bool operator != ( const View<LT,LP...> & lhs ,
 namespace Kokkos {
 namespace Impl {
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+#if KOKKOS_USING_EXP_VIEW
 
 inline
 void shared_allocation_tracking_claim_and_disable()
@@ -1695,7 +1707,7 @@ void deep_copy
 template< class ST , class ... SP >
 inline
 void deep_copy
-  ( ST & dst
+  ( typename ViewTraits<ST,SP...>::non_const_value_type & dst
   , const View<ST,SP...> & src
   , typename std::enable_if<
     std::is_same< typename ViewTraits<ST,SP...>::specialize , void >::value
@@ -1785,8 +1797,13 @@ void deep_copy
 
     if ( std::is_same< typename ViewTraits<DT,DP...>::value_type ,
                        typename ViewTraits<ST,SP...>::non_const_value_type >::value &&
-         std::is_same< typename ViewTraits<DT,DP...>::array_layout ,
-                       typename ViewTraits<ST,SP...>::array_layout >::value &&
+         (
+           std::is_same< typename ViewTraits<DT,DP...>::array_layout ,
+                         typename ViewTraits<ST,SP...>::array_layout >::value
+           ||
+           ( ViewTraits<DT,DP...>::rank == 1 &&
+             ViewTraits<ST,SP...>::rank == 1 )
+         ) &&
          dst.span_is_contiguous() &&
          src.span_is_contiguous() &&
          dst.span() == src.span() &&
@@ -1980,7 +1997,7 @@ void realloc( Kokkos::Experimental::View<T,P...> & v ,
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+#if KOKKOS_USING_EXP_VIEW
 
 namespace Kokkos {
 
@@ -2023,7 +2040,7 @@ struct ViewSubview /* { typedef ... type ; } */ ;
 
 #include <impl/Kokkos_Atomic_View.hpp>
 
-#endif /* #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
+#endif /* #if KOKKOS_USING_EXP_VIEW */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

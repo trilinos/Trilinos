@@ -240,9 +240,9 @@ use_case_timer(
       }
     }
 
-    out() << "One object run 100 times" << std::endl;
+    sierra::out() << "One object run 100 times" << std::endl;
 
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
 
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j)
@@ -253,9 +253,9 @@ use_case_timer(
     for (size_t j = 0; j < object_vector.size(); ++j)
       object_vector[j].run();
 
-    out() << "Object tree run once" << std::endl;
+    sierra::out() << "Object tree run once" << std::endl;
 
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
 
     lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j)
@@ -267,9 +267,9 @@ use_case_timer(
       for (size_t j = 0; j < object_vector.size(); ++j)
         object_vector[j].run();
 
-    out() << "Object tree 100 times (checkpointed)" << std::endl;
+    sierra::out() << "Object tree 100 times (checkpointed)" << std::endl;
 
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
 
     lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j)
@@ -281,12 +281,12 @@ use_case_timer(
       for (size_t j = 0; j < object_vector.size(); ++j)
         object_vector[j].run();
 
-    out() << "Object tree 100 more times (checkpointed)" << std::endl;
+    sierra::out() << "Object tree 100 more times (checkpointed)" << std::endl;
 
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
 
-    out() << "Object tree (not checkpointed)" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
+    sierra::out() << "Object tree (not checkpointed)" << std::endl;
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
 
     // Add a static function timer on odd processors
     if (parallel_rank%2 == 1) {
@@ -304,38 +304,38 @@ use_case_timer(
       }
     }
 
-    out() << "Add asymetric timers on odd processors, parallel collected output (checkpointed)" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
+    sierra::out() << "Add asymetric timers on odd processors, parallel collected output (checkpointed)" << std::endl;
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
 
     for (size_t i = 0; i < 100; ++i)
       for (size_t j = 0; j < object_vector.size(); ++j)
         object_vector[j].run();
 
-    out() << "Object tree 100 more times, parallel collected output (checkpointed)" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true, MPI_COMM_WORLD);
+    sierra::out() << "Object tree 100 more times, parallel collected output (checkpointed)" << std::endl;
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, true, MPI_COMM_WORLD);
 
-    out() << "Object tree, parallel collected output (not checkpointed)" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    sierra::out() << "Object tree, parallel collected output (not checkpointed)" << std::endl;
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 
     stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_SECONDS);
     
-    out() << "Object tree, parallel collected output (not checkpointed), seconds" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    sierra::out() << "Object tree, parallel collected output (not checkpointed), seconds" << std::endl;
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 
     stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS);
     
-    out() << "Object tree, parallel collected output (not checkpointed), seconds and milliseconds" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    sierra::out() << "Object tree, parallel collected output (not checkpointed), seconds and milliseconds" << std::endl;
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 
     stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_HMS);
     
-    out() << "Object tree, parallel collected output (not checkpointed), hh:mm:ss" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    sierra::out() << "Object tree, parallel collected output (not checkpointed), hh:mm:ss" << std::endl;
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 
     stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS);
     
-    out() << "Object tree, parallel collected output (not checkpointed), hh:mm:ss.mmm" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    sierra::out() << "Object tree, parallel collected output (not checkpointed), hh:mm:ss.mmm" << std::endl;
+    stk::diag::printTimersTable(sierra::out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
   }
 
   return 0;

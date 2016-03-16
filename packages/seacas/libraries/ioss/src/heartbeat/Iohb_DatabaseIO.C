@@ -75,7 +75,7 @@ namespace {
   {
     if (format == "") {
       return std::string("");
-    } else {
+    } 
       const int length=256;
       static char time_string[length];
 
@@ -86,10 +86,10 @@ namespace {
       if (error != 0) {
 	time_string[length-1] = '\0';
 	return std::string(time_string);
-      } else {
+      } 
 	return std::string("[ERROR]");
-      }
-    }
+      
+    
   }
 
   std::ostream *open_stream(const std::string &filename, bool *needs_delete, bool append_file) {
@@ -122,10 +122,11 @@ namespace {
       // different heartbeats or logging mechanisms.  Need perhaps a
       // 'logger' class which handles sharing and destruction...
       std::ofstream *tmp = nullptr;
-      if(append_file)
+      if(append_file) {
         tmp = new std::ofstream(filename.c_str(),std::ios::out | std::ios::app);
-      else
+      } else {
         tmp = new std::ofstream(filename.c_str());
+}
       if (tmp != nullptr && !tmp->is_open()) {
 	delete tmp;
       } else {
@@ -174,7 +175,7 @@ namespace Iohb {
   {
     delete layout_;
     delete legend_;
-    if (streamNeedsDelete && logStream) {
+    if (streamNeedsDelete && (logStream != nullptr)) {
       delete logStream;
     }
   }
@@ -193,28 +194,25 @@ namespace Iohb {
 
       if (properties.exists("FILE_FORMAT")) {
 	std::string format = properties.get("FILE_FORMAT").get_string();
-	if (Ioss::Utils::case_strcmp(format, "spyhis") == 0)
+	if (Ioss::Utils::case_strcmp(format, "spyhis") == 0) {
 	  new_this->fileFormat = SPYHIS;
+}
       }
 
       bool append = open_create_behavior() == Ioss::DB_APPEND;
 
+      // Try to open file...
+      new_this->logStream = nullptr;
       if (util().parallel_rank() == 0) {
-
         new_this->logStream = open_stream(get_filename(),
             &(new_this->streamNeedsDelete),
             append);
-
-        if (new_this->logStream == nullptr) {
-	  Ioss::FileInfo path = Ioss::FileInfo(get_filename());
-	  Ioss::Utils::create_path(path.pathname());
-	  new_this->logStream = open_stream(get_filename(),
-              &(new_this->streamNeedsDelete),
-              append);
-        }
-      } else {
-	// All processors except processor 0
-	new_this->logStream = nullptr;
+	
+	if (new_this->logStream == nullptr) {
+	  std::ostringstream errmsg;
+	  errmsg << "ERROR: Could not create heartbeat file '" << get_filename() << "'\n";
+	  IOSS_ERROR(errmsg);
+	}
       }
 
       // Pull variables from the regions property data...
@@ -268,7 +266,11 @@ namespace Iohb {
 	}
 
 	if (addTimeField) {
-	  new_this->legend_->add_legend("Time");
+          if (fileFormat == SPYHIS) {
+            new_this->legend_->add_legend("TIME");
+          } else {
+            new_this->legend_->add_legend("Time");
+          }
 	}
       }
       new_this->initialized_ = true;
@@ -310,6 +312,7 @@ namespace Iohb {
       if (fileFormat == SPYHIS) {
 	time_t calendar_time = time(nullptr);
 	*logStream << "% Sierra SPYHIS Output " << ctime(&calendar_time);
+	*logStream << *legend_ << std::endl; // Legend output twice for SPYHIS 
       }
 
       *logStream << *legend_ << std::endl;
@@ -419,8 +422,9 @@ namespace Iohb {
 	  layout.add_literal(time_stamp(tsFormat));
 	  layout.add_literal(" ");
 	  layout.add_literal(*(std::string*)data);
-	  if (logStream != nullptr)
+	  if (logStream != nullptr) {
 	    *logStream << layout << std::endl;
+}
 	} else {
 	  layout_->add(field.get_name(), *(std::string*)data);
 	}

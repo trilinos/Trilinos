@@ -208,7 +208,7 @@ namespace impl
 		      const stk::mesh::ConnectivityMap *connectivity_map = NULL);
       StkMeshIoBroker();
 
-      ~StkMeshIoBroker();
+      virtual ~StkMeshIoBroker();
 
       // Add the specified 'property' to the default property
       // manager for this StkMeshIoBroker object.  The property
@@ -279,10 +279,13 @@ namespace impl
 
       enum SideSetFaceCreationBehavior {
           STK_IO_SIDESET_FACE_CREATION_CLASSIC = 42,
-          STK_IO_SIDESET_FACE_CREATION_CURRENT = 73
+          STK_IO_SIDESET_FACE_CREATION_CURRENT = 73,
+          STK_IO_SIDE_CREATION_USING_GRAPH_TEST = 99
       };
+
       void set_sideset_face_creation_behavior(SideSetFaceCreationBehavior behavior)
       {
+          ThrowRequireWithSierraHelpMsg(behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
           m_sideset_face_creation_behavior = behavior;
       }
 
@@ -612,11 +615,17 @@ namespace impl
 					     bool true_false);
 
       //-END
+    protected:
+      void set_sideset_face_creation_behavior_for_testing(SideSetFaceCreationBehavior behavior)
+      {
+          m_sideset_face_creation_behavior = behavior;
+      }
+
     private:
-      void create_ioss_region();
       void create_bulk_data();
-      void validate_output_file_index(size_t output_file_index) const;
       void validate_input_file_index(size_t input_file_index) const;
+      void create_ioss_region();
+      void validate_output_file_index(size_t output_file_index) const;
 
       // Returns 4 or 8 based on several hueristics to determine
       // the integer size required for an output database.

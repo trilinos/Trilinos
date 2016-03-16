@@ -122,7 +122,8 @@ int ex_get_name (int   exoid,
      * We don't care in this routine, so make it positive and continue...
      */
     ent_ndx = ex_id_lkup(exoid, obj_type, entity_id);
-    if (ent_ndx < 0) ent_ndx = -ent_ndx;
+    if (ent_ndx < 0) { ent_ndx = -ent_ndx;
+}
     
     /* read the name */
     {

@@ -267,26 +267,22 @@ int main(int narg, char** arg)
   cout << "Going to get results" << endl;
   // Permutation
   checkLength = soln->getPermutationSize();
-  checkPerm = soln->getPermutation();
-  checkInvPerm = soln->getInversePermutation(); // MNYI
+  checkPerm = soln->getPermutationView();
+  checkInvPerm = soln->getPermutationView(true); // get the permutation inverse
 
   // Separators. 
   // The following methods needs to be supported:
   // haveSeparators: true if Scotch Nested Dissection was called.
   // getCBlkPtr: *CBlkPtr from Scotch_graphOrder
-  // getRangTab: RangTab from Scotch_graphOrder
+  // getRangeTab: RangeTab from Scotch_graphOrder
   // getTreeTab: TreeTab from Scotch_graphOrder
-  if (soln->haveSeparators()){ // NYI
-    z2TestLO NumBlocks = soln->getCBlkPtr(); // NYI
-    z2TestLO * RangTab = soln->getRangTab(); // NYI
-    z2TestLO * TreeTab = soln->getTreeTab(); // NYI
-    // TODO Use accessor names that make more sense to users
-    // getNumSeparatorBlocks()
-    // getVertexSeparator(NumBlocks, RangeTab, TreeTab)
-    // 
-    // RangTab is size NumBlocks+1; offsets into inverse permutation array giving vertices
-    // belonging to a block
-    // TreeTab is size NumBlocks; gives parent blocks of a block
+  z2TestGO    NumBlocks = 0;
+  z2TestGO    *RangeTab;
+  z2TestGO    *TreeTab;
+  if (soln->haveSeparators()) {
+    NumBlocks = soln->getNumSeparatorBlocks(); // BDD
+    RangeTab = soln->getSeparatorRangeView(); // BDD
+    TreeTab = soln->getSeparatorTreeView(); // BDD
   }
   else {
     // TODO FAIL with error
@@ -306,30 +302,33 @@ int main(int narg, char** arg)
       permFile << " " << checkPerm[i] << endl;
     }
     permFile.close();
-
   }
 
-  cout << "Going to validate the soln" << endl;
   // Validate that checkPerm is a permutation
+  cout << "Checking permutation" << endl;
   testReturn = validatePerm(checkLength, checkPerm);
   if (testReturn) goto End;
 
   // Validate the inverse permutation.
-  for (size_t i=0; i<checkLength; i++){
-    testReturn = (checkInversePerm[checkPerm[i]] != i);
+  cout << "Checking inverse permutation" << endl;
+  for (size_t i=0; i< checkLength; i++){
+    testReturn = (checkInvPerm[checkPerm[i]] != i);
     if (testReturn) goto End;
   }
     
   // Validate NumBlocks
-  testReturn = !((NumBlocks>0) && (NumBlocks<checkLength));
+  cout << "Checking num blocks" << endl;
+  testReturn = !((NumBlocks > 0) && (NumBlocks<checkLength));
   if (testReturn) goto End;
 
-  // Validate RangTab.
+  // Validate RangeTab.
   // Should be monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
-  testReturn = RangTab[0];
+  cout << "Checking range" << endl;
+  testReturn = RangeTab[0];
   if (testReturn) goto End;
-  for (size_t i=0; i<checkLength; i++){
-    testReturn = !(RangTab[i] < RangTab[i+1]);
+
+  for (size_t i = 0; i < NumBlocks; i++){
+    testReturn = !(RangeTab[i] < RangeTab[i+1]);
     if (testReturn) goto End;
   }
  

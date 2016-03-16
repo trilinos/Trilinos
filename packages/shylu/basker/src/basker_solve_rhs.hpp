@@ -338,10 +338,12 @@ namespace BaskerNS
 
 
     //printVec("perm.txt" , gperm, gn);
-    permute_inv(y,gperm, gn);
-
+    permute_inv(y, gperm, gn);
+    //printf("Before solve interface\n");
 
     solve_interface(x,y);
+
+    //printf("After solver interface\n");
 
     //Inverse perm
     //Note: don't need to inverse a row only perm
@@ -374,15 +376,19 @@ namespace BaskerNS
 	  {
 	    temp_array(i) = order_csym_array(i);
 	  }
+	//printf("Fill first \n");
 	for(Int i = BTF_A.ncol; i < gn; ++i)
 	  {
-	    temp_array(i) = order_csym_array(i);
+	    temp_array(i) = i;
 	  }
+	//printf("Fill second \n");
 	//permute(x,order_csym_array, gn);
+	//printVec(temp_array,gn);
 	permute(x,temp_array,gn);
       }
    
 
+    //printf("done back perm\n");
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("\n\n");
@@ -601,7 +607,6 @@ namespace BaskerNS
       }
 
 
-
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("Done, BTF-C Solve \n");
     printf("\n x \n");
@@ -631,9 +636,10 @@ namespace BaskerNS
     //now do the forward backwared solve
     //L\x ->y
     serial_forward_solve(x,y);
-
+    //printf("after forward nd solve\n");
     //U\y->x
     serial_backward_solve(y,x);
+    //printf("after backward nd solve \n");
 
     //copy lower part down
     #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -807,7 +813,7 @@ namespace BaskerNS
     #endif
 
     const Int bcol = M.scol;
-    const Int brow = M.srow;
+    //const Int brow = M.srow;
     //for(Int k=M.scol; k < (M.scol+M.ncol); k++)
     for(Int k=0; k < M.ncol; ++k)
       {
@@ -843,7 +849,7 @@ namespace BaskerNS
     #endif
 
     const Int bcol = M.scol;
-    const Int brow = M.srow;
+    //const Int brow = M.srow; //Not used
     //for(Int k=M.scol; k < (M.scol+M.ncol); k++)
     for(Int k=0; k < M.ncol; ++k)
       {

@@ -177,8 +177,9 @@ int main(int argc, char *argv[])
   
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
-  if (ind != std::string::npos)
+  if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
+  }
 
   Ioss::Init::Initializer io;
 #ifndef NO_XDMF_SUPPORT
@@ -224,14 +225,15 @@ int main(int argc, char *argv[])
     }
     else if (std::strcmp("--Final_Pressure", argv[i]) == 0) {
       i++;
-      if (std::strcmp("ZERO", argv[i]) == 0)
+      if (std::strcmp("ZERO", argv[i]) == 0) {
 	globals.final_pressure = Globals::ZERO;
-      else if (std::strcmp("INITIAL", argv[i]) == 0)
+      } else if (std::strcmp("INITIAL", argv[i]) == 0) {
 	globals.final_pressure = Globals::INITIAL;
-      else if (std::strcmp("FINAL", argv[i]) == 0)
+      } else if (std::strcmp("FINAL", argv[i]) == 0) {
 	globals.final_pressure = Globals::FINAL;
-      else if (std::strcmp("OFFSET", argv[i]) == 0)
+      } else if (std::strcmp("OFFSET", argv[i]) == 0) {
 	globals.final_pressure = Globals::OFFSET;
+      }
       i++;
     }
     else if (std::strcmp("--Final_Time_Delta", argv[i]) == 0) {
@@ -327,8 +329,9 @@ int main(int argc, char *argv[])
   std::cerr << "Output:   '" << out_file << "', Type: " << out_type << '\n';
   std::cerr << '\n';
 
-  if (globals.add_sset || globals.do_normals)
+  if (globals.add_sset || globals.do_normals) {
     globals.debug = false;
+  }
 
   if (!(globals.add_sset || globals.do_normals)) {
     std::cerr << "\n" << codename
@@ -348,12 +351,13 @@ int main(int argc, char *argv[])
 namespace {
   void show_usage(const std::string &prog, bool add_sset)
   {
-    if (add_sset)
+    if (add_sset) {
       std::cerr << "\nUSAGE: " << prog << " in_file sset_file out_file\n";
-    else
+    } else {
       std::cerr << "\nUSAGE: " << prog << " in_file out_file\n";
 
-    std::cerr << "...or: " << prog << " command_file\n";
+    
+    }std::cerr << "...or: " << prog << " command_file\n";
     std::cerr << "       version: " << version << "\n";
     Ioss::NameList db_types;
     Ioss::IOFactory::describe(&db_types);
@@ -376,7 +380,7 @@ namespace {
 						    (MPI_Comm)MPI_COMM_WORLD);
     if (dbi == nullptr || !dbi->ok()) {
       std::cerr << "ERROR: Could not open database '" << inpfile
-			      << "' of type '" << input_type << "'\n";
+		<< "' of type '" << input_type << "'\n";
       std::exit(EXIT_FAILURE);
     }
 
@@ -390,7 +394,7 @@ namespace {
 						    (MPI_Comm)MPI_COMM_WORLD);
     if (dbo == nullptr || !dbo->ok()) {
       std::cerr << "ERROR: Could not create output database '" << outfile
-			      << "' of type '" << output_type << "'\n";
+		<< "' of type '" << output_type << "'\n";
       std::exit(EXIT_FAILURE);
     }
 
@@ -409,7 +413,7 @@ namespace {
 				    (MPI_Comm)MPI_COMM_WORLD);
       if (dbs == nullptr || !dbs->ok()) {
 	std::cerr << "ERROR: Could not open database '" << ss_file
-				<< "' of type '" << input_type << "'\n";
+		  << "' of type '" << input_type << "'\n";
 	std::exit(EXIT_FAILURE);
       }
 
@@ -422,8 +426,9 @@ namespace {
     output_region.property_add(Ioss::Property(std::string("code_name"), codename));
     output_region.property_add(Ioss::Property(std::string("code_version"), version));
 
-    if (globals.debug) std::cerr << "DEFINING MODEL ... \n";
-    if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
+    if (globals.debug) { std::cerr << "DEFINING MODEL ... \n";
+    
+    }if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
       std::cerr << "ERROR: Could not put output region into define model state\n";
       std::exit(EXIT_FAILURE);
     }
@@ -443,12 +448,14 @@ namespace {
       add_sideset(*ss_region, region, output_region, globals);
     }
 
-    if (globals.debug) std::cerr << "END STATE_DEFINE_MODEL... " << '\n';
-    output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
+    if (globals.debug) { std::cerr << "END STATE_DEFINE_MODEL... " << '\n';
+    
+    }output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
-    if (globals.debug) std::cerr << "TRANSFERRING MESH FIELD DATA ... " << '\n';
-    // Model defined, now fill in the model data...
-    output_region.begin_mode(Ioss::STATE_MODEL);
+    if (globals.debug) { std::cerr << "TRANSFERRING MESH FIELD DATA ... " << '\n';
+      // Model defined, now fill in the model data...
+    
+    }output_region.begin_mode(Ioss::STATE_MODEL);
 
     // Transfer MESH field_data from input to output...
     {
@@ -457,16 +464,18 @@ namespace {
 
       if (nb != nullptr) {
 	std::string name = nb->name();
-	if (globals.debug) std::cerr << name << ", ";
+	if (globals.debug) { std::cerr << name << ", ";
 
-	// Find the corresponding output element_block...
-	Ioss::NodeBlock *onb = output_region.get_node_block(name);
+	  // Find the corresponding output element_block...
+	
+	}Ioss::NodeBlock *onb = output_region.get_node_block(name);
 	assert(onb != nullptr);
 	transfer_field_data(nb, onb, Ioss::Field::MESH);
 	transfer_field_data(nb, onb, Ioss::Field::ATTRIBUTE);
       }
-      if (globals.debug) std::cerr << '\n';
-    }
+      if (globals.debug) { std::cerr << '\n';
+    
+      }}
 
     // Now do the same for element blocks...
     {
@@ -475,10 +484,11 @@ namespace {
 
       while (I != ebs.end()) {
 	std::string name = (*I)->name();
-	if (globals.debug) std::cerr << name << ", ";
+	if (globals.debug) { std::cerr << name << ", ";
 
-	// Find the corresponding output element_block...
-	Ioss::ElementBlock *oeb = output_region.get_element_block(name);
+	  // Find the corresponding output element_block...
+	
+	}Ioss::ElementBlock *oeb = output_region.get_element_block(name);
 	assert(oeb != nullptr);
 
 	if (oeb != nullptr) {
@@ -487,8 +497,9 @@ namespace {
 	}
 	++I;
       }
-      if (globals.debug) std::cerr << '\n';
-    }
+      if (globals.debug) { std::cerr << '\n';
+    
+      }}
 
     // Node Sets
     {
@@ -496,18 +507,20 @@ namespace {
       Ioss::NodeSetContainer::const_iterator I = nss.begin();
       while (I != nss.end()) {
 	std::string name     = (*I)->name();
-	if (globals.debug) std::cerr << name << ", ";
+	if (globals.debug) { std::cerr << name << ", ";
 
-	// Find matching output nodeset
-	Ioss::NodeSet *ons = output_region.get_nodeset(name);
+	  // Find matching output nodeset
+	
+	}Ioss::NodeSet *ons = output_region.get_nodeset(name);
 	if (ons != nullptr) {
 	  transfer_field_data(*I, ons, Ioss::Field::MESH);
 	  transfer_field_data(*I, ons, Ioss::Field::ATTRIBUTE);
 	}
 	++I;
       }
-      if (globals.debug) std::cerr << '\n';
-    }
+      if (globals.debug) { std::cerr << '\n';
+    
+      }}
 
     // Comm Sets
     {
@@ -515,10 +528,11 @@ namespace {
       Ioss::CommSetContainer::const_iterator I = css.begin();
       while (I != css.end()) {
 	std::string name  = (*I)->name();
-	if (globals.debug) std::cerr << name << ", ";
+	if (globals.debug) { std::cerr << name << ", ";
 
-	// Find matching output commset
-	Ioss::CommSet *ocs = output_region.get_commset(name);
+	  // Find matching output commset
+	
+	}Ioss::CommSet *ocs = output_region.get_commset(name);
 	if (ocs != nullptr) {
 	  transfer_field_data(*I, ocs, Ioss::Field::MESH);
 	  transfer_field_data(*I, ocs, Ioss::Field::ATTRIBUTE);
@@ -526,8 +540,9 @@ namespace {
 	}
 	++I;
       }
-      if (globals.debug) std::cerr << '\n';
-    }
+      if (globals.debug) { std::cerr << '\n';
+    
+      }}
 
     // Side Sets
     if (!globals.do_normals) {
@@ -535,10 +550,11 @@ namespace {
       Ioss::SideSetContainer::const_iterator I = fss.begin();
       while (I != fss.end()) {
 	std::string name     = (*I)->name();
-	if (globals.debug) std::cerr << name << ", ";
+	if (globals.debug) { std::cerr << name << ", ";
 
-	// Find matching output sideset
-	Ioss::SideSet *ofs = output_region.get_sideset(name);
+	  // Find matching output sideset
+	
+	}Ioss::SideSet *ofs = output_region.get_sideset(name);
 
 	if (ofs != nullptr) {
 	  transfer_field_data(*I, ofs, Ioss::Field::MESH);
@@ -550,8 +566,9 @@ namespace {
 
 	    // Find matching output sideblock
 	    std::string fbname = (*J)->name();
-	    if (globals.debug) std::cerr << fbname << ", ";
-	    Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
+	    if (globals.debug) { std::cerr << fbname << ", ";
+	    
+	    }Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 
 	    if (ofb != nullptr) {
 	      transfer_field_data(*J, ofb, Ioss::Field::MESH, "", false);
@@ -562,15 +579,17 @@ namespace {
 	}
 	++I;
       }
-      if (globals.debug) std::cerr << '\n';
-    }
+      if (globals.debug) { std::cerr << '\n';
+    
+      }}
 
     if (globals.add_sset) {
       add_sideset_mesh_fields(*ss_region, region, output_region, globals);
     }
 
-    if (globals.debug) std::cerr << "END STATE_MODEL... " << '\n';
-    output_region.end_mode(Ioss::STATE_MODEL);
+    if (globals.debug) { std::cerr << "END STATE_MODEL... " << '\n';
+    
+    }output_region.end_mode(Ioss::STATE_MODEL);
 
     if (globals.do_normals) {
       output_normals(region, output_region, globals.reverse_normals);
@@ -586,8 +605,9 @@ namespace {
       std::abort();
     }
 
-    if (globals.debug) std::cerr << "TRANSFERRING TRANSIENT FIELDS ... " << '\n';
-    output_region.begin_mode(Ioss::STATE_TRANSIENT);
+    if (globals.debug) { std::cerr << "TRANSFERRING TRANSIENT FIELDS ... " << '\n';
+    
+    }output_region.begin_mode(Ioss::STATE_TRANSIENT);
     // Get the timesteps from the input database.  Step through them
     // and transfer fields to output database...
 
@@ -600,8 +620,9 @@ namespace {
       std::cerr << "Internal Error\n";      
       std::abort();
     }
-    if (globals.debug) std::cerr << "END STATE_TRANSIENT... " << '\n';
-    output_region.end_mode(Ioss::STATE_TRANSIENT);
+    if (globals.debug) { std::cerr << "END STATE_TRANSIENT... " << '\n';
+    
+    }output_region.end_mode(Ioss::STATE_TRANSIENT);
     delete ss_region;
   }
 
@@ -612,8 +633,9 @@ namespace {
     int id = 1;
     while (i != nbs.end()) {
       std::string name      = (*i)->name();
-      if (debug) std::cerr << name << ", ";
-      int    num_nodes = (*i)->get_property("entity_count").get_int();
+      if (debug) { std::cerr << name << ", ";
+      
+      }int    num_nodes = (*i)->get_property("entity_count").get_int();
       int    degree    = (*i)->get_property("component_degree").get_int();
       if (!debug) {
 	std::cerr << " Number of coordinates per node       =" << std::setw(9) << degree << "\n";
@@ -629,7 +651,9 @@ namespace {
       ++i;
       ++id;
     }
-    if (debug) std::cerr << '\n';
+    if (debug) {
+      std::cerr << '\n';
+    }
   }
 
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
@@ -639,8 +663,9 @@ namespace {
     int total_elements = 0;
     while (i != ebs.end()) {
       std::string name      = (*i)->name();
-      if (debug) std::cerr << name << ", ";
-      std::string type      = (*i)->get_property("topology_type").get_string();
+      if (debug) { std::cerr << name << ", ";
+      
+      }std::string type      = (*i)->get_property("topology_type").get_string();
       int    num_elem  = (*i)->get_property("entity_count").get_int();
       total_elements += num_elem;
 
@@ -667,15 +692,17 @@ namespace {
     int total_sides = 0;
     while (i != fss.end()) {
       std::string name      = (*i)->name();
-      if (debug) std::cerr << name << ", ";
-      Ioss::SideSet *surf = new Ioss::SideSet(output_region.get_database(), name);
+      if (debug) { std::cerr << name << ", ";
+      
+      }Ioss::SideSet *surf = new Ioss::SideSet(output_region.get_database(), name);
 
       Ioss::SideBlockContainer fbs = (*i)->get_side_blocks();
       Ioss::SideBlockContainer::const_iterator j = fbs.begin();
       while (j != fbs.end()) {
 	std::string fbname    = (*j)->name();
-	if (debug) std::cerr << fbname << ", ";
-	std::string fbtype    = (*j)->get_property("topology_type").get_string();
+	if (debug) { std::cerr << fbname << ", ";
+	
+	}std::string fbtype    = (*j)->get_property("topology_type").get_string();
 	std::string partype   = (*j)->get_property("parent_topology_type").get_string();
 	int    num_side  = (*j)->get_property("entity_count").get_int();
 	total_sides += num_side;
@@ -709,8 +736,9 @@ namespace {
     int total_nodes = 0;
     while (i != nss.end()) {
       std::string name      = (*i)->name();
-      if (debug) std::cerr << name << ", ";
-      int    count     = (*i)->get_property("entity_count").get_int();
+      if (debug) { std::cerr << name << ", ";
+      
+      }int    count     = (*i)->get_property("entity_count").get_int();
       total_nodes += count;
       Ioss::NodeSet *ns = new Ioss::NodeSet(output_region.get_database(), name, count);
       output_region.add(ns);
@@ -733,8 +761,9 @@ namespace {
     Ioss::CommSetContainer::const_iterator i = css.begin();
     while (i != css.end()) {
       std::string name      = (*i)->name();
-      if (debug) std::cerr << name << ", ";
-      std::string type      = (*i)->get_property("entity_type").get_string();
+      if (debug) { std::cerr << name << ", ";
+      
+      }std::string type      = (*i)->get_property("entity_type").get_string();
       int    count     = (*i)->get_property("entity_count").get_int();
       Ioss::CommSet *cs = new Ioss::CommSet(output_region.get_database(), name, type, count);
       output_region.add(cs);
@@ -744,8 +773,9 @@ namespace {
       transfer_fields(*i, cs, Ioss::Field::COMMUNICATION);
       ++i;
     }
-    if (debug) std::cerr << '\n';
-  }
+    if (debug) { std::cerr << '\n';
+  
+    }}
 
   void transfer_fields(Ioss::GroupingEntity *ige,
 		       Ioss::GroupingEntity *oge,
@@ -802,8 +832,9 @@ namespace {
       // 'connectivity' field, but it is only interesting on the
       // Ioss::ElementBlock class. On the other classes, it just
       // generates overhead...
-      if (!transfer_connectivity && field_name == "connectivity")
+      if (!transfer_connectivity && field_name == "connectivity") {
 	continue;
+      }
 
 
       if (field_name != "ids" &&
@@ -824,16 +855,26 @@ namespace {
 
     data.resize(isize);
 
-    if (field_name == "mesh_model_coordinates_x") return;
-    if (field_name == "mesh_model_coordinates_y") return;
-    if (field_name == "mesh_model_coordinates_z") return;
-    if (field_name == "connectivity_raw") return;
-    if (field_name == "element_side_raw") return;
-    if (field_name == "ids_raw") return;
-    if (field_name == "node_connectivity_status") return;
-    if (field_name == "entity_processor_raw") return;
-    if (field_name == "owning_processor") return;
-    if (ige->type() == Ioss::SIDEBLOCK && field_name == "ids") return;
+    if (field_name == "mesh_model_coordinates_x") { return;
+    }
+    if (field_name == "mesh_model_coordinates_y") { return;
+    }
+    if (field_name == "mesh_model_coordinates_z") { return;
+    }
+    if (field_name == "connectivity_raw") { return;
+    }
+    if (field_name == "element_side_raw") { return;
+    }
+    if (field_name == "ids_raw") { return;
+    }
+    if (field_name == "node_connectivity_status") { return;
+    }
+    if (field_name == "entity_processor_raw") { return;
+    }
+    if (field_name == "owning_processor") { return;
+    }
+    if (ige->type() == Ioss::SIDEBLOCK && field_name == "ids") { return;
+    }
     ige->get_field_data(field_name, &data[0], isize);
     oge->put_field_data(field_name, &data[0], isize);
   }
@@ -847,8 +888,9 @@ namespace {
     // Iterate through properties and transfer to output database...
     Ioss::NameList::const_iterator I;
     for (I = names.begin(); I != names.end(); ++I) {
-      if (!oge->property_exists(*I))
+      if (!oge->property_exists(*I)) {
 	oge->property_add(ige->get_property(*I));
+      }
     }
   }
 
@@ -863,8 +905,9 @@ namespace {
 	std::string name      = (*i)->name();
 	name = "ss" + name;
 
-	if (globals.debug) std::cerr << name << ", ";
-	int    num_elem  = (*i)->get_property("entity_count").get_int();
+	if (globals.debug) { std::cerr << name << ", ";
+	
+	}int    num_elem  = (*i)->get_property("entity_count").get_int();
 	std::string type      = (*i)->get_property("topology_type").get_string();
 
 	// Should be able to get this from the input mesh element blocks...
@@ -894,15 +937,16 @@ namespace {
 	  std::exit(EXIT_FAILURE);
 	}
 
-	if (globals.debug) std::cerr << name << ", ";
+	if (globals.debug) { std::cerr << name << ", ";
 
-	// The "skin" field should exist on each element block.  It
-	// contains the map back to the element/local face in the
-	// original (region/output_region) mesh.  It is in the exact
-	// same format as a sidesets "element_side" field...
-	//
-	// See if the field exists...
-	if ((*i)->field_exists("skin")) {
+	  // The "skin" field should exist on each element block.  It
+	  // contains the map back to the element/local face in the
+	  // original (region/output_region) mesh.  It is in the exact
+	  // same format as a sidesets "element_side" field...
+	  //
+	  // See if the field exists...
+	
+	}if ((*i)->field_exists("skin")) {
 	  Ioss::Field skin = (*i)->get_field("skin");
 
 	  int isize = skin.get_size();
@@ -916,7 +960,7 @@ namespace {
 	  ++i;
 	} else {
 	  std::cerr << "ERROR: Field 'skin' does not exist on element block '"
-				  << name << "'.\n";
+		    << name << "'.\n";
 	  std::exit(EXIT_FAILURE);
 	}
       }
@@ -1012,11 +1056,13 @@ namespace {
       
     for (istep = initial_state; istep <= step_count; istep++) {
       double time = ss_region.get_state_time(istep);
-      if (time < globals.minimum_time)
+      if (time < globals.minimum_time) {
 	continue;
+      }
 
-      if (globals.maximum_time > 0.0 && time > globals.maximum_time)
+      if (globals.maximum_time > 0.0 && time > globals.maximum_time) {
 	break;
+      }
 
       int ostep = output_region.add_state(time-globals.minimum_time+globals.offset_time);
       show_step(istep, time);
@@ -1094,10 +1140,11 @@ namespace {
 	globals.final_pressure == Globals::OFFSET) {
       double time = ss_region.get_state_time(step_count);
       double delta_time;
-      if (globals.delta_time > 0.0)
+      if (globals.delta_time > 0.0) {
 	delta_time = globals.delta_time;
-      else
+      } else {
 	delta_time = time - ss_region.get_state_time(step_count-1);
+      }
       time += delta_time;
       int ostep = output_region.add_state(time-globals.minimum_time+globals.offset_time);
 
@@ -1136,8 +1183,9 @@ namespace {
 	      // ZERO cases, we output a zero-filled field...
 
 	      double value = 0.0;
-	      if (globals.final_pressure == Globals::OFFSET)
+	      if (globals.final_pressure == Globals::OFFSET) {
 		value = globals.offset_pressure;
+	      }
 	      
 	      int isize = (*i)->get_field(field_name).get_size();
 	      int count = (*i)->get_field(field_name).raw_count();
@@ -1183,11 +1231,12 @@ namespace {
 	Ioss::SideBlock *fb = output_region.get_sideblock(name);
 	assert(fb != nullptr);
 
-	if (globals.debug) std::cerr << name << ", ";
+	if (globals.debug) { std::cerr << name << ", ";
 
-	// Each element variable in the sset file which begins with
-	// "cth_" will be a sideset variable in the outptut file...
-	transfer_fields((*i), fb, Ioss::Field::TRANSIENT, "cth_");
+	  // Each element variable in the sset file which begins with
+	  // "cth_" will be a sideset variable in the outptut file...
+	
+	}transfer_fields((*i), fb, Ioss::Field::TRANSIENT, "cth_");
 	++i;
       }
     }
@@ -1316,8 +1365,9 @@ namespace {
 
 	vector3d plnorm = vector3d::plane_normal(local[0], local[1], local[2]);
 	plnorm.normalize();
-	if (reverse_normals)
+	if (reverse_normals) {
 	  plnorm.reverse();
+	}
 
 	face_normal[iel*3+0] = plnorm.x;
 	face_normal[iel*3+1] = plnorm.y;
@@ -1349,8 +1399,9 @@ namespace {
 
 	  vector3d a = vector3d::plane_normal(local[nb], local[i], local[na]);
 	  a.normalize();
-	  if (reverse_normals)
+	  if (reverse_normals) {
 	    a.reverse();
+	  }
 
 	  face_normal[iel*3+0] += a.x;
 	  face_normal[iel*3+1] += a.y;
@@ -1375,7 +1426,7 @@ namespace {
     std::cerr.setf(std::ios::scientific);
     std::cerr.setf(std::ios::showpoint);
     std::cerr << "     Time step " << std::setw(5) << istep
-			    << " at time " << std::setprecision(5) << time << '\n';
+	      << " at time " << std::setprecision(5) << time << '\n';
   }
 }
 

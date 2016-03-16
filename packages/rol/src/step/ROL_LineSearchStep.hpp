@@ -46,14 +46,20 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_HelperFunctions.hpp"
-
 #include "ROL_Step.hpp"
-#include "ROL_Secant.hpp"
-#include "ROL_Krylov.hpp"
-#include "ROL_NonlinearCG.hpp"
 #include "ROL_LineSearch.hpp"
-#include "ROL_ProjectedHessian.hpp"
-#include "ROL_ProjectedPreconditioner.hpp"
+
+// Unconstrained Methods
+#include "ROL_GradientStep.hpp"
+#include "ROL_NonlinearCGStep.hpp"
+#include "ROL_SecantStep.hpp"
+#include "ROL_NewtonStep.hpp"
+#include "ROL_NewtonKrylovStep.hpp"
+
+// Bound Constrained Methods
+#include "ROL_ProjectedSecantStep.hpp"
+#include "ROL_ProjectedNewtonStep.hpp"
+#include "ROL_ProjectedNewtonKrylovStep.hpp"
 
 #include <sstream>
 #include <iomanip>
@@ -133,352 +139,163 @@ template <class Real>
 class LineSearchStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Secant<Real> >              secant_;      ///< Secant object (used for quasi-Newton)
-  Teuchos::RCP<Krylov<Real> >              krylov_;      ///< Krylov solver object (used for inexact Newton)
-  Teuchos::RCP<NonlinearCG<Real> >         nlcg_;        ///< Nonlinear CG object (used for nonlinear CG)
-  Teuchos::RCP<LineSearch<Real> >          lineSearch_;  ///< Line-search object
-
-  Teuchos::RCP<ProjectedHessian<Real> >             hessian_;
-  Teuchos::RCP<ProjectedPreconditioner<Real> >      precond_;
+  Teuchos::RCP<Step<Real> >        desc_;       ///< Unglobalized step object
+  Teuchos::RCP<Secant<Real> >      secant_;     ///< Secant object (used for quasi-Newton)
+  Teuchos::RCP<Krylov<Real> >      krylov_;     ///< Krylov solver object (used for inexact Newton)
+  Teuchos::RCP<NonlinearCG<Real> > nlcg_;       ///< Nonlinear CG object (used for nonlinear CG)
+  Teuchos::RCP<LineSearch<Real> >  lineSearch_; ///< Line-search object
 
   Teuchos::RCP<Vector<Real> > d_;
-  Teuchos::RCP<Vector<Real> > gp_; 
-
-  int iterKrylov_; ///< Number of Krylov iterations (used for inexact Newton)
-  int flagKrylov_; ///< Termination flag for Krylov method (used for inexact Newton)
 
   ELineSearch         els_;   ///< enum determines type of line search
-  ENonlinearCG        enlcg_; ///< enum determines type of nonlinear CG
   ECurvatureCondition econd_; ///< enum determines type of curvature condition
-  EDescent            edesc_; ///< enum determines type of descent step
-  ESecant             esec_;  ///< enum determines type of secant approximation
-  EKrylov             ekv_;   ///< enum determines type of Krylov solver
  
   int ls_nfval_; ///< Number of function evaluations during line search
   int ls_ngrad_; ///< Number of gradient evaluations during line search
- 
-  bool useSecantHessVec_; ///< Whether or not a secant approximation is used for Hessian-times-a-vector
-  bool useSecantPrecond_; ///< Whether or not a secant approximation is used for preconditioning inexact Newton
-
-  bool useProjectedGrad_; ///< Whether or not to use to the projected gradient criticality measure
-
-  std::vector<bool> useInexact_; ///< Flags for inexact objective function, gradient, and Hessian evaluation
 
   bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
 
   int verbosity_;
+  bool computeObj_;
+  Real fval_;
+
+  Teuchos::ParameterList parlist_;
+
+  Real GradDotStep(const Vector<Real> &g, const Vector<Real> &s,
+                   const Vector<Real> &x,
+                   BoundConstraint<Real> &bnd, Real eps = 0) {
+    Real gs(0), one(1);
+    if (!bnd.isActivated()) {
+      gs = s.dot(g.dual());
+    }
+    else {
+      d_->set(s);
+      bnd.pruneActive(*d_,g,x,eps);
+      gs = d_->dot(g.dual());
+      d_->set(x);
+      d_->axpy(-one,g.dual());
+      bnd.project(*d_);
+      d_->scale(-one);
+      d_->plus(x);
+      bnd.pruneInactive(*d_,g,x,eps);
+      gs -= d_->dot(g.dual());
+    }
+    return gs;
+  }
 
 public:
 
-  virtual ~LineSearchStep() {}
+  using Step<Real>::initialize;
+  using Step<Real>::compute;
+  using Step<Real>::update;
 
   /** \brief Constructor.
 
       Standard constructor to build a LineSearchStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a Teuchos::ParameterList.  The
+      line-search type, secant type, Krylov type, or nonlinear CG type can
+      be set using user-defined objects.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
-  */
-  LineSearchStep( Teuchos::ParameterList &parlist )
-    : Step<Real>(),
-      secant_(Teuchos::null), krylov_(Teuchos::null),
-      nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
-      hessian_(Teuchos::null), precond_(Teuchos::null),
-      d_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0),
-      els_(LINESEARCH_BACKTRACKING),
-      enlcg_(NONLINEARCG_OREN_LUENBERGER),
-      econd_(CURVATURECONDITION_WOLFE),
-      edesc_(DESCENT_STEEPEST),
-      esec_(SECANT_LBFGS),
-      ekv_(KRYLOV_CG),
-      ls_nfval_(0), ls_ngrad_(0),
-      useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), verbosity_(0) {
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    // Initialize Linesearch Object
-    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method") );
-    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-    lineSearch_ = LineSearchFactory<Real>(parlist);
-    // Inexactness Information
-    useInexact_.clear();
-    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
-    useInexact_.push_back(Glist.get("Inexact Gradient", false));
-    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Initialize Krylov Object
-    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
-    if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      krylov_ = KrylovFactory<Real>(parlist);
-    }
-    // Initialize Secant Object
-    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
-    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
-    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
-    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-    if ( edesc_ == DESCENT_SECANT || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      secant_ = SecantFactory<Real>(parlist);
-    }
-    // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
-    if ( edesc_ == DESCENT_NONLINEARCG ) {
-      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
-    }
-    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
-  }
-
-  /** \brief Constructor.
-
-      Standard constructor to build a LineSearchStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
-
       @param[in]     lineSearch is a user-defined line search object
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
-  */
-  LineSearchStep(Teuchos::RCP<LineSearch<Real> > &lineSearch, Teuchos::ParameterList &parlist)
-    : Step<Real>(),
-      secant_(Teuchos::null), krylov_(Teuchos::null),
-      nlcg_(Teuchos::null), lineSearch_(lineSearch),
-      hessian_(Teuchos::null), precond_(Teuchos::null),
-      d_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0),
-      els_(LINESEARCH_USERDEFINED),
-      enlcg_(NONLINEARCG_OREN_LUENBERGER),
-      econd_(CURVATURECONDITION_WOLFE),
-      edesc_(DESCENT_STEEPEST),
-      esec_(SECANT_LBFGS),
-      ekv_(KRYLOV_CG),
-      ls_nfval_(0), ls_ngrad_(0),
-      useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), verbosity_(0) {
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    // Initialize Linesearch Object
-    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method") );
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    els_   = LINESEARCH_USERDEFINED;
-    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-    // Inexactness Information
-    useInexact_.clear();
-    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
-    useInexact_.push_back(Glist.get("Inexact Gradient", false));
-    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Initialize Krylov Object
-    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
-    if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      krylov_ = KrylovFactory<Real>(parlist);
-    }
-    // Initialize Secant Object
-    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
-    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
-    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
-    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-    if ( edesc_ == DESCENT_SECANT || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      secant_ = SecantFactory<Real>(parlist);
-    }
-    // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
-    if ( edesc_ == DESCENT_NONLINEARCG ) {
-      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
-    }
-    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
-  }
-
-  /** \brief Constructor.
-
-      Constructor to build a LineSearchStep object with a user-defined 
-      secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
-
       @param[in]     secant     is a user-defined secant object
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
-  */
-  LineSearchStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist )
-    : Step<Real>(),
-      secant_(secant), krylov_(Teuchos::null),
-      nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
-      hessian_(Teuchos::null), precond_(Teuchos::null),
-      d_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0),
-      els_(LINESEARCH_BACKTRACKING),
-      enlcg_(NONLINEARCG_OREN_LUENBERGER),
-      econd_(CURVATURECONDITION_WOLFE),
-      edesc_(DESCENT_STEEPEST),
-      esec_(SECANT_USERDEFINED),
-      ekv_(KRYLOV_CG),
-      ls_nfval_(0), ls_ngrad_(0),
-      useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), verbosity_(0) {
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    // Initialize Linesearch Object
-    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method"));
-    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-    lineSearch_ = LineSearchFactory<Real>(parlist);
-    // Inexactness Information
-    useInexact_.clear();
-    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
-    useInexact_.push_back(Glist.get("Inexact Gradient", false));
-    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Initialize Krylov Object
-    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
-    if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      krylov_ = KrylovFactory<Real>(parlist);
-    }
-    // Initialize Secant Object
-    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
-    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
-    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-    // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
-    if ( edesc_ == DESCENT_NONLINEARCG ) {
-      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
-    }
-    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
-  }
-
-  /** \brief Constructor.
-
-      Standard constructor to build a LineSearchStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
-
       @param[in]     krylov     is a user-defined Krylov object
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
+      @param[in]     nlcg       is a user-defined Nonlinear CG object
   */
-  LineSearchStep( Teuchos::RCP<Krylov<Real> > &krylov, Teuchos::ParameterList &parlist )
-    : Step<Real>(),
-      secant_(Teuchos::null), krylov_(krylov),
-      nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
-      hessian_(Teuchos::null), precond_(Teuchos::null),
-      d_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0),
-      els_(LINESEARCH_BACKTRACKING),
-      enlcg_(NONLINEARCG_OREN_LUENBERGER),
-      econd_(CURVATURECONDITION_WOLFE),
-      edesc_(DESCENT_STEEPEST),
-      esec_(SECANT_LBFGS),
-      ekv_(KRYLOV_USERDEFINED),
-      ls_nfval_(0), ls_ngrad_(0),
-      useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), verbosity_(0) {
+  LineSearchStep( Teuchos::ParameterList &parlist,
+                  const Teuchos::RCP<LineSearch<Real> > &lineSearch = Teuchos::null,
+                  const Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,
+                  const Teuchos::RCP<Krylov<Real> > &krylov = Teuchos::null,
+                  const Teuchos::RCP<NonlinearCG<Real> > &nlcg = Teuchos::null )
+    : Step<Real>(), desc_(Teuchos::null), secant_(secant),
+      krylov_(krylov), nlcg_(nlcg), lineSearch_(lineSearch),
+      els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
+      ls_nfval_(0), ls_ngrad_(0), verbosity_(0), computeObj_(true),
+      fval_(0), parlist_(parlist) {
+    // Parse parameter list
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList& Glist = parlist.sublist("General");
-    // Initialize Linesearch Object
-    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method") );
-    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
     econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
     acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-    lineSearch_ = LineSearchFactory<Real>(parlist);
-    // Inexactness Information
-    useInexact_.clear();
-    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
-    useInexact_.push_back(Glist.get("Inexact Gradient", false));
-    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Initialize Secant Object
-    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
-    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
-    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
-    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-    if ( edesc_ == DESCENT_SECANT || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      secant_ = SecantFactory<Real>(parlist);
+    verbosity_ = Glist.get("Print Verbosity",0);
+    computeObj_ = Glist.get("Recompute Objective Function",true);
+    // Initialize Line Search
+    if (lineSearch_ == Teuchos::null) {
+      els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+      lineSearch_ = LineSearchFactory<Real>(parlist);
     }
-    // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
-    if ( edesc_ == DESCENT_NONLINEARCG ) {
-      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
-    }
-    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
-  }
-
-  /** \brief Constructor.
-
-      Constructor to build a LineSearchStep object with a user-defined 
-      secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
-
-      @param[in]     lineSearch is a user-defined line search object
-      @param[in]     secant     is a user-defined secant object
-      @param[in]     parlist    is a parameter list containing algorithmic specifications
-  */
-  LineSearchStep( Teuchos::RCP<LineSearch<Real> > &lineSearch, Teuchos::RCP<Secant<Real> > &secant,
-                  Teuchos::ParameterList &parlist )
-    : Step<Real>(),
-      secant_(secant), krylov_(Teuchos::null),
-      nlcg_(Teuchos::null), lineSearch_(lineSearch),
-      hessian_(Teuchos::null), precond_(Teuchos::null),
-      d_(Teuchos::null), gp_(Teuchos::null),
-      iterKrylov_(0), flagKrylov_(0),
-      els_(LINESEARCH_USERDEFINED),
-      enlcg_(NONLINEARCG_OREN_LUENBERGER),
-      econd_(CURVATURECONDITION_WOLFE),
-      edesc_(DESCENT_STEEPEST),
-      esec_(SECANT_USERDEFINED),
-      ekv_(KRYLOV_CG),
-      ls_nfval_(0), ls_ngrad_(0),
-      useSecantHessVec_(false), useSecantPrecond_(false),
-      useProjectedGrad_(false), verbosity_(0) {
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
-    // Initialize Linesearch Object
-    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method") );
-    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
-    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
-    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
-    // Inexactness Information
-    useInexact_.clear();
-    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
-    useInexact_.push_back(Glist.get("Inexact Gradient", false));
-    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
-    // Initialize Krylov Object
-    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
-    if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      krylov_ = KrylovFactory<Real>(parlist);
-    }
-    // Initialize Secant Object
-    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
-    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
-    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
-    // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
-    if ( edesc_ == DESCENT_NONLINEARCG ) {
-      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
-    }
-    verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }
 
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
-                   Objective<Real> &obj, BoundConstraint<Real> &con, 
+                   Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                    AlgorithmState<Real> &algo_state ) {
-    Step<Real>::initialize(x,s,g,obj,con,algo_state);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    lineSearch_->initialize(x, s, *(step_state->gradientVec),obj,con);
-    if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_NEWTON || edesc_ == DESCENT_SECANT ) {
-      Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcp(&obj, false);
-      Teuchos::RCP<BoundConstraint<Real> > con_ptr = Teuchos::rcp(&con, false);
-      hessian_ = Teuchos::rcp(
-        new ProjectedHessian<Real>(secant_,obj_ptr,con_ptr,algo_state.iterateVec,step_state->gradientVec,
-                                   useSecantHessVec_));
-      precond_ = Teuchos::rcp(
-        new ProjectedPreconditioner<Real>(secant_,obj_ptr,con_ptr,algo_state.iterateVec,
-                                          step_state->gradientVec,useSecantPrecond_));
-    }
-    if ( con.isActivated() ) {
-      d_ = s.clone();
-    }
-    if ( con.isActivated() || edesc_ == DESCENT_SECANT 
-                           || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      gp_ = g.clone();
-    }
-  }
+    d_ = x.clone();
 
+    // Initialize unglobalized step
+    Teuchos::ParameterList& list
+      = parlist_.sublist("Step").sublist("Line Search").sublist("Descent Method");
+    EDescent edesc = StringToEDescent(list.get("Type","Quasi-Newton Method") );
+    if (bnd.isActivated()) {
+      switch(edesc) {
+        case DESCENT_STEEPEST: {
+          desc_ = Teuchos::rcp(new GradientStep<Real>(parlist_,computeObj_));
+          break;
+        }
+        case DESCENT_NONLINEARCG: {
+          desc_ = Teuchos::rcp(new NonlinearCGStep<Real>(parlist_,nlcg_,computeObj_));
+          break;
+        }
+        case DESCENT_SECANT: {
+          desc_ = Teuchos::rcp(new ProjectedSecantStep<Real>(parlist_,secant_,computeObj_));
+          break;
+        }
+        case DESCENT_NEWTON: {
+          desc_ = Teuchos::rcp(new ProjectedNewtonStep<Real>(parlist_,computeObj_));
+          break;
+        }
+        case DESCENT_NEWTONKRYLOV: {
+          desc_ = Teuchos::rcp(new ProjectedNewtonKrylovStep<Real>(parlist_,krylov_,secant_,computeObj_));
+          break;
+        }
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+            ">>> (LineSearchStep::Initialize): Undefined descent type!");
+      }
+    }
+    else {
+      switch(edesc) {
+        case DESCENT_STEEPEST: {
+          desc_ = Teuchos::rcp(new GradientStep<Real>(parlist_,computeObj_));
+          break;
+        }
+        case DESCENT_NONLINEARCG: {
+          desc_ = Teuchos::rcp(new NonlinearCGStep<Real>(parlist_,nlcg_,computeObj_));
+          break;
+        }
+        case DESCENT_SECANT: {
+          desc_ = Teuchos::rcp(new SecantStep<Real>(parlist_,secant_,computeObj_));
+          break;
+        }
+        case DESCENT_NEWTON: {
+          desc_ = Teuchos::rcp(new NewtonStep<Real>(parlist_,computeObj_));
+          break;
+        }
+        case DESCENT_NEWTONKRYLOV: {
+          desc_ = Teuchos::rcp(new NewtonKrylovStep<Real>(parlist_,krylov_,secant_,computeObj_));
+          break;
+        }
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+            ">>> (LineSearchStep::Initialize): Undefined descent type!");
+      }
+    }
+    desc_->initialize(x,s,g,obj,bnd,algo_state);
+
+    // Initialize line search
+    lineSearch_->initialize(x,s,g,obj,bnd);
+    //Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
+    //lineSearch_->initialize(x,s,*(desc_state->gradientVec),obj,bnd);
+  }
 
   /** \brief Compute step.
 
@@ -490,121 +307,40 @@ public:
       @param[out]      s          is the computed trial step
       @param[in]       x          is the current iterate
       @param[in]       obj        is the objective function
-      @param[in]       con        are the bound constraints
+      @param[in]       bnd        are the bound constraints
       @param[in]       algo_state contains the current state of the algorithm
   */
-  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void compute( Vector<Real> &s, const Vector<Real> &x,
+                Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    Real zero(0), one(1);
+    // Compute unglobalized step
+    desc_->compute(s,x,obj,bnd,algo_state);
 
-    Real tol = std::sqrt(ROL_EPSILON);
-
-    // Set active set parameter
-    Real eps = 0.0;
-    if ( con.isActivated() ) {
-      eps = algo_state.gnorm;
+    // Ensure that s is a descent direction
+    // ---> If not, then default to steepest descent
+    Teuchos::RCP<const StepState<Real> > desc_state = desc_->getStepState();
+    Real gs = GradDotStep(*(desc_state->gradientVec),s,x,bnd,algo_state.gnorm);
+    if (gs >= zero) {
+      s.set((desc_state->gradientVec)->dual());
+      s.scale(-one);
+      gs = GradDotStep(*(desc_state->gradientVec),s,x,bnd,algo_state.gnorm);
     }
-    lineSearch_->setData(eps);
-    if ( hessian_ != Teuchos::null ) {
-      hessian_->setData(eps);
-    }
-    if ( precond_ != Teuchos::null ) {
-      precond_->setData(eps);
-    }
-
-    // Compute step s
-    switch(edesc_) {
-      case DESCENT_NEWTONKRYLOV:
-        flagKrylov_ = 0;
-        krylov_->run(s,*hessian_,*(step_state->gradientVec),*precond_,iterKrylov_,flagKrylov_);
-        break;
-      case DESCENT_NEWTON:
-      case DESCENT_SECANT:
-        hessian_->applyInverse(s,*(step_state->gradientVec),tol);
-        break;
-      case DESCENT_NONLINEARCG:
-        nlcg_->run(s,*(step_state->gradientVec),x,obj);
-        break;
-      case DESCENT_STEEPEST:
-        s.set(step_state->gradientVec->dual());
-        break;
-      default: break;
-    }
-
-    // Compute g.dot(s)
-    Real gs = 0.0;
-    if ( !con.isActivated() ) {
-      gs = -s.dot((step_state->gradientVec)->dual());
-    }
-    else {
-      if ( edesc_ == DESCENT_STEEPEST ) {
-        d_->set(x);
-        d_->axpy(-1.0,s);
-        con.project(*d_);
-        d_->scale(-1.0);
-        d_->plus(x);
-        //d->set(s);
-        //con.pruneActive(*d,s,x,eps);
-        //con.pruneActive(*d,*(step_state->gradientVec),x,eps);
-        gs = -d_->dot((step_state->gradientVec)->dual());
-      }
-      else {
-        d_->set(s);
-        con.pruneActive(*d_,*(step_state->gradientVec),x,eps);
-        gs = -d_->dot((step_state->gradientVec)->dual());
-        d_->set(x);
-        d_->axpy(-1.0,(step_state->gradientVec)->dual());
-        con.project(*d_);
-        d_->scale(-1.0);
-        d_->plus(x);
-        con.pruneInactive(*d_,*(step_state->gradientVec),x,eps);
-        gs -= d_->dot((step_state->gradientVec)->dual());
-      }
-    }
-
-    // Check if s is a descent direction i.e., g.dot(s) < 0
-    if ( gs >= 0.0 || (flagKrylov_ == 2 && iterKrylov_ <= 1) ) {
-      s.set((step_state->gradientVec)->dual());
-      if ( con.isActivated() ) {
-        d_->set(s);
-        con.pruneActive(*d_,s,x);
-        gs = -d_->dot((step_state->gradientVec)->dual());
-      }
-      else {
-        gs = -s.dot((step_state->gradientVec)->dual());
-      }
-    }
-    s.scale(-1.0);
 
     // Perform line search
-    Real fnew  = algo_state.value;
-    ls_nfval_ = 0;
-    ls_ngrad_ = 0;
-    lineSearch_->run(step_state->searchSize,fnew,ls_nfval_,ls_ngrad_,gs,s,x,obj,con);
+    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    fval_ = algo_state.value;
+    ls_nfval_ = 0; ls_ngrad_ = 0;
+    lineSearch_->setData(algo_state.gnorm,*(desc_state->gradientVec));
+    lineSearch_->run(step_state->searchSize,fval_,ls_nfval_,ls_ngrad_,gs,s,x,obj,bnd);
 
     // Make correction if maximum function evaluations reached
-    if(!acceptLastAlpha_)
-    {  
-      lineSearch_->setMaxitUpdate(step_state->searchSize,fnew,algo_state.value);
+    if(!acceptLastAlpha_) {  
+      lineSearch_->setMaxitUpdate(step_state->searchSize,fval_,algo_state.value);
     }
 
-    algo_state.nfval += ls_nfval_;
-    algo_state.ngrad += ls_ngrad_;
-
-    // Compute get scaled descent direction
+    // Compute scaled descent direction
     s.scale(step_state->searchSize);
-    if ( con.isActivated() ) {
-      s.plus(x);
-      con.project(s);
-      s.axpy(-1.0,x);
-    }
-
-    // Update step state information
-    (step_state->descentVec)->set(s);
-
-    // Update algorithm state information
-    algo_state.snorm = s.norm();
-    algo_state.value = fnew;
   }
 
   /** \brief Update step, if successful.
@@ -618,48 +354,14 @@ public:
       @param[in]       con        are the bound constraints
       @param[in]       algo_state contains the current state of the algorithm
   */
-  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
+  void update( Vector<Real> &x, const Vector<Real> &s,
+               Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
-    Real tol = std::sqrt(ROL_EPSILON);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-
-    
-
-    // Update iterate
-    algo_state.iter++;
-    x.axpy(1.0, s);
-    // Compute new gradient
-    if ( edesc_ == DESCENT_SECANT || 
-        (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      gp_->set(*(step_state->gradientVec));
-    }
-    obj.gradient(*(step_state->gradientVec),x,tol);
-    algo_state.ngrad++;
-
-    // Update Secant Information
-    if ( edesc_ == DESCENT_SECANT || 
-        (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      secant_->update(*(step_state->gradientVec),*gp_,s,algo_state.snorm,algo_state.iter+1);
-    }
-
-    // Update algorithm state
-    (algo_state.iterateVec)->set(x);
-    if ( con.isActivated() ) {
-      if ( useProjectedGrad_ ) {
-        gp_->set(*(step_state->gradientVec));
-        con.computeProjectedGradient( *gp_, x );
-        algo_state.gnorm = gp_->norm();
-      }
-      else {
-        d_->set(x);
-        d_->axpy(-1.0,(step_state->gradientVec)->dual());
-        con.project(*d_);
-        d_->axpy(-1.0,x);
-        algo_state.gnorm = d_->norm();
-      }
-    }
-    else {
-      algo_state.gnorm = (step_state->gradientVec)->norm();
+    algo_state.nfval += ls_nfval_;
+    algo_state.ngrad += ls_ngrad_;
+    desc_->update(x,s,obj,bnd,algo_state);
+    if ( !computeObj_ ) {
+      algo_state.value = fval_;
     }
   }
 
@@ -667,49 +369,13 @@ public:
 
       This function produces a string containing header information.
   */
-  std::string printHeader( void ) const  {
+  std::string printHeader( void ) const {
+    std::string head = desc_->printHeader();
+    head.erase(std::remove(head.end()-3,head.end(),'\n'), head.end());
     std::stringstream hist;
-
-    if( verbosity_>0 ) {
-       hist << std::string(109,'-') <<  "\n"; 
- 
-       hist << "Linesearch status output definitions\n\n";
-
-       hist << "  iter     - Number of iterates (steps taken) \n";        
-       hist << "  value    - Objective function value \n";        
-       hist << "  gnorm    - Norm of the gradient\n";
-       hist << "  snorm    - Norm of the step (update to optimization vector)\n";      
-       hist << "  #fval    - Cumulative number of times the objective function was evaluated\n";
-       hist << "  #grad    - Number of times the gradient was computed\n";
-       hist << "  ls_#fval - Number of objective function evaluations during this linesearch step\n";
-       hist << "  ls_#grad - Number of gradient evaluations during this linesearch step\n";
-
-       if( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      
-        hist << "\n";
-        hist << "  iterCG   - Number of Krylov iterations used to compute search direction\n";
-        hist << "  flagCG   - Krylov solver flag" << "\n";
-        for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_TRRADEX; ++flag ) {
-          hist << "    " << std::to_string(flag) << " - "
-          << ECGFlagToString(static_cast<ECGFlag>(flag)) << "\n";
-        }
-      }
-      hist << std::string(109,'-') << "\n";
-    }
-
-    hist << "  ";
-    hist << std::setw(6) << std::left << "iter";  
-    hist << std::setw(15) << std::left << "value";
-    hist << std::setw(15) << std::left << "gnorm"; 
-    hist << std::setw(15) << std::left << "snorm";
-    hist << std::setw(10) << std::left << "#fval";
-    hist << std::setw(10) << std::left << "#grad";
+    hist.write(head.c_str(),head.length());
     hist << std::setw(10) << std::left << "ls_#fval";
     hist << std::setw(10) << std::left << "ls_#grad";
-    if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      hist << std::setw(10) << std::left << "iterCG";
-      hist << std::setw(10) << std::left << "flagCG";
-    }
     hist << "\n";
     return hist.str();
   }
@@ -719,21 +385,11 @@ public:
       This function produces a string containing the algorithmic step information.
   */
   std::string printName( void ) const {
+    std::string name = desc_->printName();
     std::stringstream hist;
-    hist << "\n" << EDescentToString(edesc_) 
-         << " with " << ELineSearchToString(els_) 
-         << " Linesearch satisfying " 
-         << ECurvatureConditionToString(econd_) << "\n";
-    if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      hist << "Krylov Type: " << EKrylovToString(ekv_) << "\n";
-    }
-    if ( edesc_ == DESCENT_SECANT || 
-        (edesc_ == DESCENT_NEWTONKRYLOV && (useSecantPrecond_ || useSecantHessVec_)) ) {
-      hist << "Secant Type: " << ESecantToString(esec_) << "\n";
-    }
-    if ( edesc_ == DESCENT_NONLINEARCG ) {
-      hist << "Nonlinear CG Type: " << ENonlinearCGToString(enlcg_) << "\n";
-    }
+    hist << name;
+    hist << "Line Search: " << ELineSearchToString(els_);
+    hist << " satisfying " << ECurvatureConditionToString(econd_) << "\n";
     return hist.str();
   }
 
@@ -745,47 +401,33 @@ public:
       @param[in]     printHeader   if ste to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
+    std::string desc = desc_->print(algo_state,false);
+    desc.erase(std::remove(desc.end()-3,desc.end(),'\n'), desc.end());
+    std::string name = desc_->printName();
+    size_t pos = desc.find(name);
+    if ( pos != std::string::npos ) {
+      desc.erase(pos, name.length());
+    }
+
     std::stringstream hist;
-    hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 ) {
       hist << printName();
     }
     if ( print_header ) {
       hist << printHeader();
     }
+    hist << desc;
     if ( algo_state.iter == 0 ) {
-      hist << "  ";
-      hist << std::setw(6) << std::left << algo_state.iter;
-      hist << std::setw(15) << std::left << algo_state.value;
-      hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << "\n";
     }
     else {
-      hist << "  "; 
-      hist << std::setw(6) << std::left << algo_state.iter;  
-      hist << std::setw(15) << std::left << algo_state.value; 
-      hist << std::setw(15) << std::left << algo_state.gnorm; 
-      hist << std::setw(15) << std::left << algo_state.snorm; 
-      hist << std::setw(10) << std::left << algo_state.nfval;              
-      hist << std::setw(10) << std::left << algo_state.ngrad;              
       hist << std::setw(10) << std::left << ls_nfval_;              
       hist << std::setw(10) << std::left << ls_ngrad_;              
-      if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-        hist << std::setw(10) << std::left << iterKrylov_;
-        hist << std::setw(10) << std::left << flagKrylov_;
-      }
       hist << "\n";
     }
     return hist.str();
   }
-
-  // struct StepState (scalars, vectors) map?
-
-  // getState
-
-  // setState
-
-}; // class Step
+}; // class LineSearchStep
 
 } // namespace ROL
 

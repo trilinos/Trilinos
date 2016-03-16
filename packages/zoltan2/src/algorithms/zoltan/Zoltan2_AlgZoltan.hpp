@@ -139,21 +139,21 @@ private:
   void setCallbacksGraph(
     const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
   {
-    std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
-    std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MeshAdapter<user_t> > &adp)
   {
-    std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 
@@ -334,6 +334,25 @@ void AlgZoltan<Adapter>::partition(
       zz->Set_Param("LB_APPROACH", "REPARTITION");
   }
 
+  pe = pl.getEntryPtr("partitioning_objective");
+  if (pe){
+    std::string strChoice = pe->getValue<std::string>(&strChoice);
+    if (strChoice == std::string("multicriteria_minimize_total_weight"))
+      zz->Set_Param("RCB_MULTICRITERIA_NORM", "1");
+    else if (strChoice == std::string("multicriteria_balance_total_maximum"))
+      zz->Set_Param("RCB_MULTICRITERIA_NORM", "2");
+    else if (strChoice == std::string("multicriteria_minimize_maximum_weight"))
+      zz->Set_Param("RCB_MULTICRITERIA_NORM", "3");
+  }
+
+  pe = pl.getEntryPtr("rectilinear");
+  if (pe) {
+    int val;
+    val = pe->getValue<int>(&val);
+    if (val != 0)
+      zz->Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
+  }
+
   // Look for zoltan_parameters sublist; pass all zoltan parameters to Zoltan
   try {
     const Teuchos::ParameterList &zpl = pl.sublist("zoltan_parameters");
@@ -369,7 +388,9 @@ void AlgZoltan<Adapter>::partition(
 
   // Make the call to LB_Partition
   int changed = 0;
-  int nGidEnt = 1, nLidEnt = 1;
+  int nGidEnt = TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID;
+  int nLidEnt = TPL_Traits<ZOLTAN_ID_PTR,lno_t>::NUM_ID;
+
   int nDummy = -1;                         // Dummy vars to satisfy arglist
   ZOLTAN_ID_PTR dGids = NULL, dLids = NULL;
   int *dProcs = NULL, *dParts = NULL;
@@ -379,6 +400,7 @@ void AlgZoltan<Adapter>::partition(
 
   zz->Set_Param("RETURN_LISTS", "PARTS");  // required format for Zoltan2;
                                            // results in last five arguments
+
   int ierr = zz->LB_Partition(changed, nGidEnt, nLidEnt,
                               nDummy, dGids, dLids, dProcs, dParts,
                               nObj,   oGids, oLids, oProcs, oParts);
@@ -397,7 +419,11 @@ void AlgZoltan<Adapter>::partition(
 
   // Load answer into the solution.
   ArrayRCP<part_t> partList(new part_t[numObjects], 0, numObjects, true);
-  for (int i = 0; i < nObj; i++) partList[oLids[i]] = oParts[i];
+  for (int i = 0; i < nObj; i++) {
+    lno_t tmp;
+    TPL_Traits<lno_t, ZOLTAN_ID_PTR>::ASSIGN(tmp, &(oLids[i*nLidEnt]));
+    partList[tmp] = oParts[i];
+  }
   
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
@@ -430,7 +456,6 @@ void AlgZoltan<Adapter>::partition(
     lno_t nlocal = lno_t(mapWithCopies->getNodeNumElements());
     for (lno_t i = 0; i < nlocal; i++)
       partList[i] = vecWithCopies.getData()[i];
-
   }
   
   solution->setParts(partList);

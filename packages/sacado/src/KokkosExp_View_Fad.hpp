@@ -343,6 +343,7 @@ private:
     std::add_const< fad_value_type >::type  const_fad_value_type ;
 
   enum { FadStaticDimension = Sacado::StaticSize< fad_type >::value };
+  typedef Sacado::integral_nonzero< unsigned , FadStaticDimension > sacado_size_type;
 
   // Only LayoutRight has a static stride one
   enum { FadStaticStride =
@@ -363,7 +364,7 @@ private:
 
   handle_type  m_handle ;
   offset_type  m_offset ;
-  unsigned     m_fad_size ;
+  sacado_size_type m_fad_size ;
 
 public:
 
@@ -376,6 +377,20 @@ public:
   template< typename iType >
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
     { return unsigned(r) < unsigned(Rank) ? m_offset.m_dim.extent(r) : 1 ; }
+
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename Traits::array_layout layout() const
+    { return typename Traits::array_layout(
+        0 < unsigned(Rank) ? m_offset.dimension_0() : 0,
+        1 < unsigned(Rank) ? m_offset.dimension_1() : 0,
+        2 < unsigned(Rank) ? m_offset.dimension_2() : 0,
+        3 < unsigned(Rank) ? m_offset.dimension_3() : 0,
+        4 < unsigned(Rank) ? m_offset.dimension_4() : 0,
+        5 < unsigned(Rank) ? m_offset.dimension_5() : 0,
+        6 < unsigned(Rank) ? m_offset.dimension_6() : 0,
+        7 < unsigned(Rank) ? m_offset.dimension_7() : 0
+        );
+    }
 
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
     { return 0 < unsigned(Rank) ? m_offset.dimension_0() : 1 ; }
@@ -416,7 +431,7 @@ public:
 
   // Size of sacado scalar dimension
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
-    { return m_fad_size+1; }
+    { return m_fad_size.value+1; }
 
   //----------------------------------------
   // Range of mapping
@@ -445,7 +460,7 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference() const
     { return reference_type( m_handle
-                           , m_fad_size
+                           , m_fad_size.value
                            , 1 ); }
 
   template< typename I0 >
@@ -453,14 +468,14 @@ public:
   reference_type
   reference( const I0 & i0 ) const
     { return reference_type( m_handle + m_offset(i0,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_1() ); }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 ) const
     { return reference_type( m_handle + m_offset(i0,i1,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_2() ); }
 
 
@@ -468,14 +483,14 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_3() ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_4() ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
@@ -484,7 +499,7 @@ public:
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_5() ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
@@ -493,7 +508,7 @@ public:
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_6() ); }
 
 
@@ -503,7 +518,7 @@ public:
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
-                           , m_fad_size
+                           , m_fad_size.value
                            , m_offset.stride_7() ); }
 
   //----------------------------------------
@@ -528,12 +543,13 @@ public:
   KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
 
+  template< class ... P >
   KOKKOS_INLINE_FUNCTION
   ViewMapping
-    ( pointer_type ptr
+    ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & layout
     )
-    : m_handle( reinterpret_cast< handle_type >( ptr ) )
+    : m_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
     , m_offset( std::integral_constant< unsigned , 0 >()
               , layout )
     // Query m_offset, not input, in case of static dimension
@@ -555,12 +571,12 @@ public:
    */
   template< class ... P >
   SharedAllocationRecord<> *
-  allocate_shared( ViewAllocProp< P... > const & prop
+  allocate_shared( ViewCtorProp< P... > const & prop
                  , typename Traits::array_layout const & layout )
   {
-    typedef ViewAllocProp< P... > alloc_prop ;
+    typedef ViewCtorProp< P... > ctor_prop ;
 
-    typedef typename alloc_prop::execution_space  execution_space ;
+    typedef typename ctor_prop::execution_space  execution_space ;
     typedef typename Traits::memory_space         memory_space ;
     typedef ViewValueFunctor< execution_space , fad_value_type > functor_type ;
     typedef SharedAllocationRecord< memory_space , functor_type > record_type ;
@@ -582,8 +598,8 @@ public:
 
     // Create shared memory tracking record with allocate memory from the memory space
     record_type * const record =
-      record_type::allocate( ( (ViewAllocProp<void,memory_space> const &) prop ).value
-                           , ( (ViewAllocProp<void,std::string>  const &) prop ).value
+      record_type::allocate( ( (ViewCtorProp<void,memory_space> const &) prop ).value
+                           , ( (ViewCtorProp<void,std::string>  const &) prop ).value
                            , alloc_size );
 
     //  Only set the the pointer and initialize if the allocation is non-zero.
@@ -592,10 +608,10 @@ public:
 
       m_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
 
-      if ( alloc_prop::initialize ) {
+      if ( ctor_prop::initialize ) {
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
-        record->m_destroy = functor_type( ( (ViewAllocProp<void,execution_space> const &) prop).value
+        record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
                                         , (fad_value_type *) m_handle
                                         , m_offset.span()
                                         );
@@ -607,27 +623,6 @@ public:
 
     return record ;
   }
-
-  //----------------------------------------
-  // If the View is to construct or destroy the elements.
-
-  /*
-  template< class ExecSpace >
-  void construct( const ExecSpace & space ) const
-    {
-      typedef ViewValueFunctor< fad_value_type , ExecSpace > FunctorType ;
-
-      (void) FunctorType( space , m_handle , m_offset.span() , FunctorType::CONSTRUCT );
-    }
-
-  template< class ExecSpace >
-  void destroy( const ExecSpace & space ) const
-    {
-      typedef ViewValueFunctor< fad_value_type , ExecSpace > FunctorType ;
-
-      (void) FunctorType( space , m_handle , m_offset.span() , FunctorType::DESTROY );
-    }
-  */
 
 };
 
@@ -739,7 +734,7 @@ public:
       dst.m_offset  = dst_offset_type( src.m_offset );
       dst.m_handle  = src.m_handle ;
 
-      ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst , src.m_fad_size );
+      ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst , src.m_fad_size.value );
     }
 };
 
@@ -873,6 +868,7 @@ public:
                                                   , extents.domain_offset(6)
                                                   , extents.domain_offset(7)
                                                   ) );
+      dst.m_fad_size = src.m_fad_size;
     }
 
 };

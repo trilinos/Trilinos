@@ -48,7 +48,7 @@ namespace Ioex {
   class SuperElement : public Ioss::GroupingEntity
   {
   public:
-    SuperElement(const std::string &filename, const std::string& name);
+    SuperElement(std::string filename, const std::string& my_name);
     ~SuperElement();
 
     std::string type_string() const {return "SuperElement";}
@@ -58,7 +58,7 @@ namespace Ioex {
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
-    Ioss::Property get_implicit_property(const std::string& name) const;
+    Ioss::Property get_implicit_property(const std::string& the_name) const;
 
   protected:
     int64_t internal_get_field_data(const Ioss::Field& field,

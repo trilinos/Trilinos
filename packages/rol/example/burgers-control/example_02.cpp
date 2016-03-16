@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     // Initialize equality constraints
     EqualityConstraint_BurgersControl<RealT> con(nx,nu);
     Teuchos::ParameterList list;
-    list.sublist("SimOpt").sublist("Solve").set("Residual Tolerance",1.e2*ROL::ROL_EPSILON);
+    list.sublist("SimOpt").sublist("Solve").set("Residual Tolerance",1.e2*ROL::ROL_EPSILON<RealT>());
     con.setSolveParameters(list);
     // Initialize iteration vectors.
     Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 
     // Run optimization with Composite Step.
     algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
-    RealT zerotol = std::sqrt(ROL::ROL_EPSILON);
+    RealT zerotol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     z.zero();
     con.solve(c,u,z,zerotol);
     c.zero(); l.zero();

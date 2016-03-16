@@ -37,7 +37,7 @@
 #include <Ioss_Field.h>                 // for Field, etc
 #include <Ioss_Map.h>                   // for Map, MapContainer
 #include <Ioss_ParallelUtils.h>         // for ParallelUtils, etc
-#include <Ioss_Utils.h>                 // for TOPTR, Utils, ct_assert
+#include <Ioss_Utils.h>                 // for TOPTR, Utils
 #include <Ioss_PropertyManager.h>       // for PropertyManager
 
 #include <assert.h>                     // for assert
@@ -188,14 +188,10 @@ namespace {
     }
 
     if (ngid_ent == 1) {
-      for (size_t i = 0; i < element_count; i++) {
-        gids[i] = element_offset + i;
-      }
+        std::iota(gids, gids+element_count, element_offset);
     } else if (ngid_ent == 2){
       int64_t* global_ids = (int64_t*)gids;
-      for (size_t i = 0; i < element_count; i++) {
-        global_ids[i] = element_offset + i;
-      }
+      std::iota(global_ids, global_ids+element_count, element_offset);
     } else {
       *ierr = ZOLTAN_FATAL;
     }
@@ -363,9 +359,9 @@ namespace Iopx {
 
 #if DEBUG_OUTPUT
     std::cerr << "Processor " << myProcessor << " has "
-	      << elementCount << " elements; offset = " << elementOffset << "\n";
+              << elementCount << " elements; offset = " << elementOffset << "\n";
     std::cerr << "Processor " << myProcessor << " has "
-	      << nodeCount << " nodes; offset = " << nodeOffset << ".\n";
+              << nodeCount << " nodes; offset = " << nodeOffset << ".\n";
 #endif
     std::vector<INT> pointer; // Index into adjacency, processor list for each element...
     std::vector<INT> adjacency; // Size is sum of element connectivity sizes 
@@ -443,9 +439,9 @@ namespace Iopx {
 #endif
     if (method == "LINEAR") {
       if (globalElementCount > 0)
-	simple_decompose(method, element_dist);
+        simple_decompose(method, element_dist);
       else
-	simple_node_decompose(method, node_dist);
+        simple_node_decompose(method, node_dist);
     }
 
     std::sort(importElementMap.begin(), importElementMap.end());
@@ -496,10 +492,8 @@ namespace Iopx {
 
       size_t local = element_dist[myProcessor+1] - element_dist[myProcessor];
       assert(local == elementCount);
-      localElementMap.reserve(local);
-      for (size_t i=0; i < local; i++) {
-        localElementMap.push_back(i);
-      }
+      localElementMap.resize(local);
+      std::iota(localElementMap.begin(), localElementMap.end(), 0);
 
       // All values are 0
       exportElementCount.resize(processorCount+1);
@@ -511,7 +505,7 @@ namespace Iopx {
 
   template <typename INT>
   void DecompositionData<INT>::simple_node_decompose(const std::string &method,
-						     const std::vector<INT> &node_dist)
+                                                     const std::vector<INT> &node_dist)
   {
     // Used if there are no elements on the model...
     if (method == "LINEAR") {
@@ -530,12 +524,10 @@ namespace Iopx {
       size_t local = node_dist[myProcessor+1] - node_dist[myProcessor];
       assert(local == nodeCount);
       
-      localNodeMap.reserve(local);
-      nodeGTL.reserve(local);
-      for (size_t i=0; i < local; i++) {
-        localNodeMap.push_back(i+nodeOffset);
-	nodeGTL.push_back(i+nodeOffset+1);
-      }
+      localNodeMap.resize(local);
+      nodeGTL.resize(local);
+      std::iota(localNodeMap.begin(), localNodeMap.end(), nodeOffset);
+      std::iota(nodeGTL.begin(), nodeGTL.end(), nodeOffset+1);
 
       // All values are 0
       exportNodeCount.resize(processorCount+1);
@@ -642,7 +634,7 @@ namespace Iopx {
     generate_index(importElementIndex);
 
     Ioss::MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex, 
-		       importElementMap, importElementCount, importElementIndex, comm_);
+                       importElementMap, importElementCount, importElementIndex, comm_);
 
 #if DEBUG_OUTPUT
     std::cerr << "Processor " << myProcessor << ":\t"
@@ -707,7 +699,8 @@ namespace Iopx {
         exit(EXIT_FAILURE);
       }
 
-      ct_assert(sizeof(double) == sizeof(real_t)); // centroids_ is double, make sure it matches real_t
+      static_assert(sizeof(double) == sizeof(real_t),
+                    "Parmetis real_t size must match double size");
 
       rc = ParMETIS_V3_PartGeomKway(element_dist, dual_xadj, dual_adjacency,
                                     elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
@@ -727,7 +720,9 @@ namespace Iopx {
       }
     }
     else if (method == "METIS_SFC") {
-      ct_assert(sizeof(double) == sizeof(real_t)); // centroids_ is double, make sure it matches real_t
+      static_assert(sizeof(double) == sizeof(real_t),
+                    "Parmetis real_t size must match double size");
+
       int rc = ParMETIS_V3_PartGeom(element_dist, &ndims, (real_t*)TOPTR(centroids_), elem_partition, &comm_);
 
       if (rc != METIS_OK) {
@@ -944,7 +939,7 @@ namespace Iopx {
       std::vector<INT> import_conn(imp_size);
 
       Ioss::MY_Alltoallv(export_conn, export_conn_size, export_disp,
-			 import_conn, import_conn_size, import_disp, comm_);
+                         import_conn, import_conn_size, import_disp, comm_);
 
       // Done with export_conn...
       std::vector<INT>().swap(export_conn);
@@ -1026,7 +1021,7 @@ namespace Iopx {
     generate_index(importNodeIndex);
 
     Ioss::MY_Alltoallv(import_nodes,  importNodeCount, importNodeIndex, 
-		       exportNodeMap, exportNodeCount, exportNodeIndex, comm_);
+                       exportNodeMap, exportNodeCount, exportNodeIndex, comm_);
 
     // Map that converts nodes from the global index (1-based) to a local-per-processor index (1-based)
     nodeGTL.swap(nodes);
@@ -1141,7 +1136,7 @@ namespace Iopx {
     generate_index(recv_comm_map_disp);
     nodeCommMap.resize(recv_comm_map_disp[processorCount-1] + recv_comm_map_count[processorCount-1]);
     Ioss::MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, 
-		       nodeCommMap, recv_comm_map_count, recv_comm_map_disp, comm_);
+                       nodeCommMap, recv_comm_map_count, recv_comm_map_disp, comm_);
 
     // Map global 0-based index to local 1-based index.
     for (size_t i=0; i < nodeCommMap.size(); i+=2) {
@@ -1753,7 +1748,7 @@ namespace Iopx {
     }
 
     Ioss::MY_Alltoallv(node_comm_recv, recv_count, recv_disp, 
-		       node_comm_send, send_count, send_disp, comm_);
+                       node_comm_send, send_count, send_disp, comm_);
 
     // At this point, 'node_comm_send' contains the list of nodes that I need to provide
     // coordinate data for.
@@ -1780,7 +1775,6 @@ namespace Iopx {
     std::vector<double> coord_send;
     coord_send.reserve(node_comm_send.size() * spatialDimension);
     std::vector<double> coord_recv(node_comm_recv.size() * spatialDimension);
-    size_t j = 0;
     for (size_t i=0; i < node_comm_send.size(); i++) {
       size_t node = node_comm_send[i] - nodeOffset;
       coord_send.push_back(x[node]);
@@ -1800,7 +1794,7 @@ namespace Iopx {
     }
 
     Ioss::MY_Alltoallv(coord_send, send_count, send_disp, 
-		       coord_recv, recv_count, recv_disp, comm_);
+                       coord_recv, recv_count, recv_disp, comm_);
 
     // Don't need coord_send data anymore ... clean out the vector.
     std::vector<double>().swap(coord_send);
@@ -1973,7 +1967,7 @@ namespace Iopx {
 
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(export_data, exportNodeCount, exportNodeIndex,
-			 import_data, importNodeCount, importNodeIndex, comm_);
+                         import_data, importNodeCount, importNodeIndex, comm_);
 
       // Copy the imported data into ioss_data...
       for (size_t i=0; i < importNodeMap.size(); i++) {
@@ -2014,7 +2008,7 @@ namespace Iopx {
 
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(export_data, export_count, export_disp, 
-			 import_data, import_count, import_disp, comm_);
+                         import_data, import_count, import_disp, comm_);
 
       // Copy the imported data into ioss_data...
       for (size_t i=0; i < importNodeMap.size(); i++) {
@@ -2056,7 +2050,7 @@ namespace Iopx {
 
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(export_data, exportElementCount, exportElementIndex, 
-			 import_data, importElementCount, importElementIndex, comm_);
+                         import_data, importElementCount, importElementIndex, comm_);
 
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
@@ -2099,7 +2093,7 @@ namespace Iopx {
 
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(export_data, export_count, export_disp, 
-			 import_data, import_count, import_disp, comm_);
+                         import_data, import_count, import_disp, comm_);
 
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
@@ -2248,7 +2242,7 @@ namespace Iopx {
 
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(exports, blk.exportCount, blk.exportIndex, 
-			 imports, blk.importCount, blk.importIndex, comm_);
+                         imports, blk.importCount, blk.importIndex, comm_);
 
       // Map local and imported data to ioss_data.
       for (size_t i=0; i < blk.localMap.size(); i++) {
@@ -2279,7 +2273,7 @@ namespace Iopx {
 
       // Get my imported data and send my exported data...
       Ioss::MY_Alltoallv(exports, export_count, export_disp, 
-			 imports, import_count, import_disp, comm_);
+                         imports, import_count, import_disp, comm_);
 
       // Map local and imported data to ioss_data.
       for (size_t i=0; i < blk.localMap.size(); i++) {
@@ -3098,7 +3092,7 @@ namespace Iopx {
     std::vector<int64_t> rcv_list(*rcv_offset.rbegin() + *rcv_count.rbegin());
 
     Ioss::MY_Alltoallv(snd_list, snd_count, snd_offset,
-		       rcv_list, rcv_count, rcv_offset, comm_);
+                       rcv_list, rcv_count, rcv_offset, comm_);
 
     // Iterate rcv_list and convert global ids to the global-implicit position...
     for (size_t i=0; i < rcv_list.size(); i++) {
@@ -3109,7 +3103,7 @@ namespace Iopx {
 
     // Send the data back now...
     Ioss::MY_Alltoallv(rcv_list, rcv_count, rcv_offset,
-		       snd_list, snd_count, snd_offset, comm_);
+                       snd_list, snd_count, snd_offset, comm_);
 
     // Fill in the remaining portions of the global_implicit_map...
     std::vector<int64_t> tmp_disp(snd_offset);

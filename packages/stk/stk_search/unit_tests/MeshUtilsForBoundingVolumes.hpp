@@ -430,7 +430,7 @@ inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domai
 
     std::vector<int> ghost_indices;
     std::vector<int> ghost_procs;
-    ACME::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
+    gtk::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
 
     std::vector< std::vector<gtk::AxisAlignedBB> > send_list(num_procs);
     std::vector< std::vector<gtk::AxisAlignedBB> > recv_list(num_procs);

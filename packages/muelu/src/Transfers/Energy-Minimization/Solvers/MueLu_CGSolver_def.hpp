@@ -112,7 +112,7 @@ namespace MueLu {
     // R_0 = -A*X_0
     R = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(T);
 #ifdef HAVE_MUELU_TPETRA
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if 0 //def HAVE_MUELU_TPETRA_INST_INT_INT
     // TAW: Oct 16 2015: MueLu::Utilities returns the Tpetra::CrsMatrix object which would not be instantiated!
     //                   Catching this in Op2NonConstTpetraCrs is not possible as this does not affect the return type
     //                   Tpetra::CrsMatrix!
@@ -124,7 +124,7 @@ namespace MueLu {
 #endif
 #endif
     R->scale(-one);
-    if (useTpetra)
+    if (!R->isFillComplete())
       R->fillComplete(R->getDomainMap(), R->getRangeMap());
 
     // Z_0 = M^{-1}R_0

@@ -59,11 +59,9 @@ void SideConnector::connect_side_to_coincident_elements(stk::mesh::Entity sideEn
                                                         stk::mesh::impl::LocalId elemLocalId,
                                                         int elemSide)
 {
-    auto iter = m_coincidentGraph.find(elemLocalId);
-    if(iter != m_coincidentGraph.end())
-        for(const stk::mesh::GraphEdge &graphEdge : iter->second)
-            if(graphEdge.side1 == elemSide)
-                connect_side_entity_to_other_element(sideEntity, graphEdge);
+    for(const stk::mesh::GraphEdge &graphEdge : m_coincidentGraph.get_edges_for_element(elemLocalId))
+        if(graphEdge.side1 == elemSide)
+            connect_side_entity_to_other_element(sideEntity, graphEdge);
 }
 
 

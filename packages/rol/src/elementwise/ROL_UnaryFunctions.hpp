@@ -44,10 +44,12 @@
 #ifndef ROL_UNARYFUNCTIONS_H
 #define ROL_UNARYFUNCTIONS_H
 
+#include "ROL_Types.hpp"
+#include "ROL_Elementwise_Function.hpp"
+
 #include <cstdlib>
 #include <ctime>
 
-#include "ROL_Elementwise_Function.hpp"
 
 namespace ROL {
 namespace Elementwise {
@@ -86,8 +88,6 @@ public:
   Real apply( const Real &x ) const {
     return std::pow(x,exponent_);
   } 
-
-
 }; // class Power
 
 
@@ -109,6 +109,7 @@ public:
   }
 }; // class UniformlyRandom
 
+// Returns max(x,s) where s is the given scalar
 template<class Real>
 class ThresholdUpper : public UnaryFunction<Real> {
 
@@ -122,21 +123,90 @@ public:
   Real apply( const Real &x ) const {
     return std::max(threshold_,x);
   }
-
-
 }; 
+
+// Returns min(x,s) where s is the given scalar
+template<class Real>
+class ThresholdLower : public UnaryFunction<Real> {
+
+private:
+  const Real threshold_;
+
+public:
+  ThresholdLower( const Real threshold ) : 
+    threshold_(threshold) {}
+
+  Real apply( const Real &x ) const {
+    return std::min(threshold_,x);
+  }
+}; 
+
+
+template<class Real> 
+class Scale : public UnaryFunction<Real> {
+private:
+  Real value_;
+public:
+  Scale( const Real value ) : value_(value) {}
+  Real apply( const Real &x ) const {
+    return value_*x;
+  }
+};
+
+
 
 
 template<class Real>
 class Logarithm : public UnaryFunction<Real> {
 public:
 
-  Real apply( const Real &x) const {
-    return std::log(x);
+  Real apply( const Real &x ) const {
+    // To avoid circular dependency
+    Real NINF = -0.1*std::abs(Teuchos::ScalarTraits<Real>::rmax()); 
+    return (x>0) ? std::log(x) : NINF;
   }
 
 };
 
+
+// Heaviside step function
+template<class Real>
+class Heaviside : public UnaryFunction<Real> {
+public:
+ 
+  Real apply( const Real &x ) const {
+    Real value = 0;
+    if( x>0 ) {
+      value = 1.0;
+    } else if( x==0 ) {
+      value = 0.5;
+    } else {
+      value = 0.0;
+    }
+    return value;
+  }
+
+};
+
+
+
+// Evaluate g(f(x))
+template<class Real> 
+class UnaryComposition : public UnaryFunction<Real> {
+
+private:
+  
+  Teuchos::RCP<UnaryFunction<Real> > f_;
+  Teuchos::RCP<UnaryFunction<Real> > g_; 
+  
+public:
+  UnaryComposition( Teuchos::RCP<UnaryFunction<Real> > &f,
+                    Teuchos::RCP<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
+  Real apply( const Real &x ) const {
+    return g_->apply(f_->apply(x));
+  }
+
+};
 
 
 

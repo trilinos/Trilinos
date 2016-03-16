@@ -70,7 +70,6 @@ namespace Iopg {
   };
 
   typedef std::map<std::pair<std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare > TopologyMap;
-  typedef TopologyMap::value_type TopoMapPair;
 }
 
 namespace {
@@ -138,7 +137,7 @@ namespace Iopg {
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
     commsetNodeCount(0), commsetElemCount(0),
-    nodeMap("node"), elemMap("elem"),
+    nodeMap("node", filename, myProcessor), elemMap("edge", filename, myProcessor),
     blockAdjacenciesCalculated(false)
   {
     if (is_input()) {
@@ -343,8 +342,6 @@ namespace Iopg {
 
     Ioss::Region *this_region = get_region();
     this_region->property_add(Ioss::Property(std::string("title"), dbtitle));
-    this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
-					     spatialDimension));
   }
 
   void DatabaseIO::read_communication_metadata()
@@ -1497,7 +1494,7 @@ namespace Iopg {
 	  }
 	}
 
-	nodeMap.build_reverse_map(myProcessor);
+	nodeMap.build_reverse_map();
 
       } else {
 	unsupported("output nodal id map");
@@ -1533,7 +1530,7 @@ namespace Iopg {
 	  }
 	}
 
-	elemMap.build_reverse_map(myProcessor);
+	elemMap.build_reverse_map();
 
       } else {
 	unsupported("output element map");
@@ -1820,56 +1817,6 @@ namespace Iopg {
     }
   }
 
-  void DatabaseIO::compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const
-  {
-    Ioss::IntVector block_ids(elementBlockCount);
-    if (elementBlockCount == 1) {
-      block_ids[0] = 1;
-    } else {
-      int number_sides;
-      int number_distribution_factors;
-      int error = im_ex_get_side_set_param(get_file_pointer(), id,
-					   &number_sides, &number_distribution_factors);
-      if (error < 0) {
-	pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-      
-      if (number_sides > 0) {
-	// Get the element and element side lists.
-	Ioss::IntVector element(number_sides);
-	Ioss::IntVector sides(number_sides);
-	
-	int ierr = im_ex_get_side_set(get_file_pointer(), id, &element[0], &sides[0]);
-	if (ierr < 0)
-	  pamgen_error(get_file_pointer(), __LINE__, myProcessor);
-	
-	Ioss::ElementBlock *block = nullptr;
-	for (int iel = 0; iel < number_sides; iel++) {
-	  int elem_id = element[iel];
-	  if (block == nullptr || !block->contains(elem_id)) {
-	    block = get_region()->get_element_block(elem_id);
-	    assert(block != nullptr);
-	    int block_order = block->get_property("original_block_order").get_int();
-	    block_ids[block_order] = 1;
-	  }
-	}
-      }
-
-      // Synchronize among all processors....
-      if (isParallel) {
-	util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
-      }
-    }
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-
-    for (int i=0; i < elementBlockCount; i++) {
-      if (block_ids[i] == 1) {
-	Ioss::ElementBlock *block = element_blocks[i];
-	block_membership.push_back(block->name());
-      }
-    }
-  }
-  
   void DatabaseIO::compute_block_membership(Ioss::SideBlock *sideblock,
 					    std::vector<std::string> &block_membership) const
   {

@@ -219,7 +219,6 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
-    //params.set("compute_metrics","yes");
   }
   else if (action == "zoltan_rcb") {
     do_partitioning = true;
@@ -270,7 +269,6 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
     zparams.set("LB_METHOD","HYPERGRAPH");
-    //params.set("compute_metrics","yes");
 
   }
 
@@ -296,26 +294,20 @@ int main(int narg, char *arg[]) {
 
     RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
-    RCP<const base_adapter_t> bia = 
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+
+    RCP<const base_adapter_t> rcpbia =  rcp(bia);
 
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
-
-    RCP<quality_t> graphMetricObject;
-
-    if (action == "scotch") {
-      graphMetricObject = rcp(new quality_t(env, CommT, bia,
-					    &problem.getSolution()));
-    }
+      rcp(new quality_t(env, CommT, rcpbia, &problem.getSolution(), false));
 
     if (!me) {
       metricObject->printMetrics(cout);
 
       if (action == "scotch") {
-	graphMetricObject->printGraphMetrics(cout);
+	metricObject->printGraphMetrics(cout);
       }
     }
   }

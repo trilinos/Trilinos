@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -232,11 +231,13 @@ namespace Intrepid2 {
         coeffs(i,j) = Csdm(i,j);
       }
     }
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
   }  
     
   template<class Scalar, class ArrayScalar>
   void Basis_HDIV_TRI_In_FEM<Scalar, ArrayScalar>::initializeTags() {
-  
     // Basis-dependent initializations
     int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
     int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
@@ -244,7 +245,6 @@ namespace Intrepid2 {
     int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
   
     // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
-
     int *tags = new int[ tagSize * this->getCardinality() ];
     int *tag_cur = tags;
     const int degree = this->getDegree();
@@ -256,18 +256,16 @@ namespace Intrepid2 {
         tag_cur += tagSize;
       }
     }
-                          
     // end edge dofs
 
     // the rest of the dofs are internal
     const int numFaceDof = (degree-1)*degree;
     int faceDofCur = 0;
-    for (int i=3*degree;i<degree*(degree+1);i++) {
+    for (int i=3*degree;i<degree*(degree+2);i++) {
       tag_cur[0] = 2;  tag_cur[1] = 0;  tag_cur[2] = faceDofCur;  tag_cur[3] = numFaceDof;
       tag_cur += tagSize;
       faceDofCur++;
     }
-    
     
     Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
                                 this -> ordinalToTag_,
@@ -279,7 +277,7 @@ namespace Intrepid2 {
                                 posDfOrd);
 
     delete []tags;
-  
+
   }  
 
 

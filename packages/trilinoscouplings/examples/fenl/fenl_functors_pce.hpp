@@ -732,6 +732,7 @@ public:
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
                       const CoeffFunctionType  & arg_coeff_function ,
+                      const bool                 arg_isotropic ,
                       const double             & arg_coeff_source ,
                       const double             & arg_coeff_advection ,
                       const vector_type        & arg_solution ,
@@ -749,9 +750,13 @@ public:
     , scalar_diffusion_coefficient( arg_coeff_function.m_mean,
                                     arg_coeff_function.m_variance,
                                     arg_coeff_function.m_corr_len,
-                                    arg_coeff_function.m_num_rv )
+                                    arg_coeff_function.m_num_rv,
+                                    arg_coeff_function.m_use_exp,
+                                    arg_coeff_function.m_exp_shift,
+                                    arg_coeff_function.m_exp_scale)
     , scalar_element_computation( arg_mesh,
                                   scalar_diffusion_coefficient,
+                                  arg_isotropic,
                                   arg_coeff_source,
                                   arg_coeff_advection,
                                   scalar_solution,

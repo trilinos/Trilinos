@@ -52,17 +52,17 @@ namespace Iotr {
     Factory::alias("scale", "multiply");
   }
 
-  Ioss::Transform* Scale_Factory::make(const std::string&) const
+  Ioss::Transform* Scale_Factory::make(const std::string& /*unused*/) const
   { return new Scale(); }
 
   Scale::Scale()
     : intMultiplier(1), realMultiplier(1.0)
   {}
 
-  void Scale::set_property(const std::string&, int value)
+  void Scale::set_property(const std::string& /*name*/, int value)
   { intMultiplier = value; }
 
-  void Scale::set_property(const std::string&, double value)
+  void Scale::set_property(const std::string& /*name*/, double value)
   { realMultiplier = value; }
 
   const Ioss::VariableType

@@ -110,26 +110,31 @@ private:
 
 public:
 
+  using Step<Real>::initialize;
+  using Step<Real>::compute;
+  using Step<Real>::update;
+
   BundleStep(Teuchos::ParameterList &parlist)
     : bundle_(Teuchos::null), lineSearch_(Teuchos::null),
-      QPiter_(0), QPmaxit_(0), QPtol_(0.), step_flag_(0),
-      y_(Teuchos::null), linErrNew_(0.), valueNew_(0.),
-      aggSubGradNew_(Teuchos::null), aggSubGradOldNorm_(0.),
-      aggLinErrNew_(0.), aggLinErrOld_(0.), aggDistMeasNew_(0.),
-      T_(0.), tol_(0.), m1_(0.), m2_(0.), m3_(0.), nu_(0.),
+      QPiter_(0), QPmaxit_(0), QPtol_(0), step_flag_(0),
+      y_(Teuchos::null), linErrNew_(0), valueNew_(0),
+      aggSubGradNew_(Teuchos::null), aggSubGradOldNorm_(0),
+      aggLinErrNew_(0), aggLinErrOld_(0), aggDistMeasNew_(0),
+      T_(0), tol_(0), m1_(0), m2_(0), m3_(0), nu_(0),
       ls_maxit_(0), first_print_(true), isConvex_(false),
-      ftol_(ROL_EPSILON) {
+      ftol_(ROL_EPSILON<Real>()) {
+    Real zero(0), oem3(1.e-3), oem6(1.e-6), oem8(1.e-8), p1(0.1), p2(0.2), p9(0.9), oe3(1.e3), oe8(1.e8);
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
-    state->searchSize = parlist.sublist("Step").sublist("Bundle").get("Initial Trust-Region Parameter", 1.e3);
-    T_   = parlist.sublist("Step").sublist("Bundle").get("Maximum Trust-Region Parameter",       1.e8); 
-    tol_ = parlist.sublist("Step").sublist("Bundle").get("Epsilon Solution Tolerance",           1.e-6);
-    m1_  = parlist.sublist("Step").sublist("Bundle").get("Upper Threshold for Serious Step",     0.1);
-    m2_  = parlist.sublist("Step").sublist("Bundle").get("Lower Threshold for Serious Step",     0.2);
-    m3_  = parlist.sublist("Step").sublist("Bundle").get("Upper Threshold for Null Step",        0.9);
-    nu_  = parlist.sublist("Step").sublist("Bundle").get("Tolerance for Trust-Region Parameter", 1.e-3);
+    state->searchSize = parlist.sublist("Step").sublist("Bundle").get("Initial Trust-Region Parameter", oe3);
+    T_   = parlist.sublist("Step").sublist("Bundle").get("Maximum Trust-Region Parameter",       oe8); 
+    tol_ = parlist.sublist("Step").sublist("Bundle").get("Epsilon Solution Tolerance",           oem6);
+    m1_  = parlist.sublist("Step").sublist("Bundle").get("Upper Threshold for Serious Step",     p1);
+    m2_  = parlist.sublist("Step").sublist("Bundle").get("Lower Threshold for Serious Step",     p2);
+    m3_  = parlist.sublist("Step").sublist("Bundle").get("Upper Threshold for Null Step",        p9);
+    nu_  = parlist.sublist("Step").sublist("Bundle").get("Tolerance for Trust-Region Parameter", oem3);
 
     // Initialize bundle
-    Real coeff        = parlist.sublist("Step").sublist("Bundle").get("Distance Measure Coefficient",   0.0);
+    Real coeff        = parlist.sublist("Step").sublist("Bundle").get("Distance Measure Coefficient",   zero);
     unsigned maxSize  = parlist.sublist("Step").sublist("Bundle").get("Maximum Bundle Size",            200);
     unsigned remSize  = parlist.sublist("Step").sublist("Bundle").get("Removal Size for Bundle Update", 2);
     if ( parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Solver",0) == 1 ) {
@@ -139,10 +144,10 @@ public:
     else {
       bundle_ = Teuchos::rcp(new Bundle<Real>(maxSize,coeff,remSize));
     }
-    isConvex_ = ((coeff == 0.0) ? true : false);
+    isConvex_ = ((coeff == zero) ? true : false);
 
     // Initialize QP solver 
-    QPtol_   = parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Tolerance", 1.e-8);
+    QPtol_   = parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Tolerance", oem8);
     QPmaxit_ = parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Iteration Limit", 1000);
 
     // Initialize Line Search
@@ -179,7 +184,8 @@ public:
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     first_print_ = false;                     // Print header only on first serious step
     QPiter_ = (step_flag_ ? 0 : QPiter_);     // Reset QPiter only on serious steps
-    Real v = 0.0, l = 0.0, u = T_, gd = 0.0;  // Scalar storage
+    Real v(0), l(0), u = T_, gd(0);           // Scalar storage
+    Real zero(0), two(2), half(0.5);
     bool flag = true;
     while (flag) {
       /*************************************************************/
@@ -191,7 +197,7 @@ public:
       /*************************************************************/
       /******** Construct Cutting Plane Solution *******************/
       /*************************************************************/
-      v = -state->searchSize*std::pow(algo_state.aggregateGradientNorm,2.0)-aggLinErrNew_; // CP objective value
+      v = -state->searchSize*std::pow(algo_state.aggregateGradientNorm,two)-aggLinErrNew_; // CP objective value
       s.set(aggSubGradNew_->dual()); s.scale(-state->searchSize);            // CP solution
       algo_state.snorm = state->searchSize*algo_state.aggregateGradientNorm; // Step norm
       /*************************************************************/
@@ -199,7 +205,7 @@ public:
       /*************************************************************/
       if (std::max(algo_state.aggregateGradientNorm,aggLinErrNew_) <= tol_) {
         // Current iterate is already epsilon optimal!
-        s.zero(); algo_state.snorm = 0.0;
+        s.zero(); algo_state.snorm = zero;
         flag = false;
         step_flag_ = 1;
         algo_state.flag = true;
@@ -232,19 +238,19 @@ public:
             }
             else { // Increase trust-region radius
               l = state->searchSize;
-              state->searchSize = 0.5*(u+l);
+              state->searchSize = half*(u+l);
             }
           }
           else {
             if ( NS2a || NS2b ) { // Null step
-              s.zero(); algo_state.snorm = 0.0;
+              s.zero(); algo_state.snorm = zero;
               step_flag_ = 0;
               flag       = false;
               break;
             }
             else { // Decrease trust-region radius
               u = state->searchSize;
-              state->searchSize = 0.5*(u+l);
+              state->searchSize = half*(u+l);
             }
           }
         }
@@ -266,7 +272,7 @@ public:
               }
               else {
                 if ( NS2b ) { // Line search
-                  Real alpha = 0.0;
+                  Real alpha = zero;
                   int ls_nfval = 0, ls_ngrad = 0;
                   lineSearch_->run(alpha,valueNew_,ls_nfval,ls_ngrad,gd,s,x,obj,con);
                   if ( ls_nfval == ls_maxit_ ) { // Null step
@@ -284,13 +290,13 @@ public:
                 }
                 else { // Decrease trust-region radius
                   u = state->searchSize;
-                  state->searchSize = 0.5*(u+l);
+                  state->searchSize = half*(u+l);
                 }
               }
             }
             else { // Decrease trust-region radius
               u = state->searchSize;
-              state->searchSize = 0.5*(u+l);
+              state->searchSize = half*(u+l);
             }
           }
         }

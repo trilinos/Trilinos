@@ -57,7 +57,6 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Basker_FunctionMap.hpp"
 
-
 //Note:  We got an error while being a class variable and mutable.  Need to comeback and fix!!
 
 
@@ -93,6 +92,8 @@ public:
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
+  typedef typename super_type::node_type                          node_type;
+
 
   typedef TypeMap<Amesos2::Basker,scalar_type>                    type_map;
 
@@ -195,20 +196,30 @@ private:
 
 
     /*Handle for Basker object*/
+ 
 #ifdef SHYLUBASKER
-
 #ifdef HAVE_AMESOS2_KOKKOS
-  //#pragma message("HAVE SHYLUBASKER AND KOKKOS")
+#ifdef KOKKOS_HAVE_OPENMP
+  /*
+  typedef typename node_type::device_type  kokkos_device;
+  typedef typename kokkos_device::execution_space kokkos_exe;
+  static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
+  "Kokkos node type not support by experimental Basker Amesos2");
+  */
   typedef Kokkos::OpenMP Exe_Space;
-   ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space>  *basker;
+#elif defined(KOKKOS_HAVE_SERIAL)
+  typedef Kokkos::Serial Exe_Space;
 #else
-     #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
-#endif
-
+#pragma message("Kokkos Node type not supported by Basker") 
+#endif // OpenMP vs Serial
+   ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space>  
+       *basker;
 #else
-  mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
+  #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
 #endif
-
+#else
+   mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
+ #endif
 
 
 };                              // End class Basker

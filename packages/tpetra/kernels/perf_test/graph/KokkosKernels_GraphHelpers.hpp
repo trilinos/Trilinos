@@ -117,7 +117,6 @@ void read_graph_bin(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, char *filen
 
   myFile.read((char *) nv, sizeof(idx));
   myFile.read((char *) ne, sizeof(idx));
-  std::cout << "nv:" << *nv << std::endl;
   md_malloc<idx>(xadj, *nv+1);
   md_malloc<idx>(adj, *ne);
   md_malloc<wt> (ew, *ne);

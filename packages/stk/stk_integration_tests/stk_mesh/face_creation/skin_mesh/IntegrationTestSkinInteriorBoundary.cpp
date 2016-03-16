@@ -36,11 +36,20 @@ const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
     {"AeB.e",     3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
     {"AefB.e",    4,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 4}}},
     {"ef.e",      2,        0,    {}},
+    {"eff.e",     3,        0,    {}},
+
+    {"AP.e",      2,        0,    {}},
 
     {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
     {"Tg.e",      2,        0,    {}},
     {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}}
+};
+
+const SideTestUtil::TestCaseData failingInteriorBlockBoundaryTestCases =
+{
+    //np3 fails consistency checks due to face having different node ordering on different procs.  Maybe due to split coincidents
+    {"AefA.e",    4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
 };
 
 const SideTestUtil::TestCaseData createInteriorBoundaryForOneBlockTestCases =
@@ -52,6 +61,7 @@ const SideTestUtil::TestCaseData createInteriorBoundaryForOneBlockTestCases =
     {"AeB.e",     3,        1,    {{1, 5}}},
     {"AefB.e",    4,        1,    {{1, 5}}},
     {"ef.e",      2,        0,    {}},
+    {"eff.e",     3,        0,    {}},
 
     {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}}},
 
@@ -105,6 +115,11 @@ TEST(CreateInteriorBoundaryForSingleBlockTest, run_all_test_cases_aura)
 TEST(CreateExposedBoundaryForSingleBlockTest, run_all_test_cases_no_aura)
 {
     OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(InteriorBlockBoundaryTest, DISABLED_failing_run_all_test_cases_aura)
+{
+    InteriorBlockBoundaryTester().run_all_test_cases(failingInteriorBlockBoundaryTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
 
 }

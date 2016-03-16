@@ -83,7 +83,7 @@ public:
   typedef typename Adapter::user_t user_t;
 
   AlgParMA(const RCP<const Environment> &env,
-              const RCP<const Comm<int> > &problemComm,
+           const RCP<const Comm<int> > &problemComm,
            const RCP<const BaseAdapter<user_t> > &adapter)
   {
     throw std::runtime_error(
@@ -195,12 +195,14 @@ private:
   }
   
   //Helper function to set the weights of each dimension needed by the specific parma algorithm
-  apf::MeshTag* setWeights(bool vtx, bool edge, bool elm) {
+  apf::MeshTag* setWeights(bool vtx, bool edge, bool face, bool elm) {
     int num_ws=1;
     if (vtx)
       num_ws = std::max(num_ws,adapter->getNumWeightsPerOf(MESH_VERTEX));
     if (edge)
       num_ws = std::max(num_ws,adapter->getNumWeightsPerOf(MESH_EDGE));
+    if (face)
+      num_ws = std::max(num_ws,adapter->getNumWeightsPerOf(MESH_FACE));
     if (elm) 
       num_ws = std::max(num_ws,adapter->getNumWeightsPerOf(entityAPFtoZ2(m->getDimension())));
     apf::MeshTag* tag = m->createDoubleTag("parma_weight",num_ws);
@@ -208,6 +210,8 @@ private:
       setEntWeights(0,tag);
     if (edge)
       setEntWeights(1,tag);
+    if (face)
+      setEntWeights(2,tag);
     if (elm) {
       setEntWeights(m->getDimension(),tag);
     }
@@ -542,8 +546,8 @@ void AlgParMA<Adapter>::partition(
   }
 
   //booleans for which dimensions need weights
-  bool weightVertex,weightEdge,weightElement;
-  weightVertex=weightEdge=weightElement=false;
+  bool weightVertex,weightEdge,weightFace,weightElement;
+  weightVertex=weightEdge=weightFace=weightElement=false;
 
   //Build the selected balancer
   apf::Balancer* balancer;
@@ -566,7 +570,10 @@ void AlgParMA<Adapter>::partition(
   }
   else if (alg_name=="Ghost") {
     balancer = Parma_MakeGhostDiffuser(m, ghost_layers, ghost_bridge, step, verbose);
-    weightVertex = true;
+    weightVertex=weightEdge=weightFace=true;
+    if (3 == m->getDimension()) {
+      weightElement=true;
+    }
   }
   else if (alg_name=="Shape") {
     balancer = Parma_MakeShapeOptimizer(m,step,verbose);
@@ -581,7 +588,7 @@ void AlgParMA<Adapter>::partition(
   }
   
   //build the weights
-  apf::MeshTag* weights = setWeights(weightVertex,weightEdge,weightElement);
+  apf::MeshTag* weights = setWeights(weightVertex,weightEdge,weightFace,weightElement);
 
   //balance the apf mesh
   balancer->balance(weights, imbalance);

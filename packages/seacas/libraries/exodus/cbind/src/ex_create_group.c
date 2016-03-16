@@ -46,13 +46,7 @@ int ex_create_group (int parent_id, const char *group_name)
    
   exerrval = 0; /* clear error code */
 
-#if !defined(ENABLE_NETCDF4)
-  exerrval = NC_ENOTNC4;
-  sprintf(errmsg,
-	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
-  ex_err("ex_create_group",errmsg,exerrval);
-  return (EX_FATAL);
-#else
+#if NC_HAS_HDF5
   if ((status = nc_redef (parent_id)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
@@ -78,5 +72,11 @@ int ex_create_group (int parent_id, const char *group_name)
     return (EX_FATAL);
   }
   return (exoid);
+#else
+  exerrval = NC_ENOTNC4;
+  sprintf(errmsg,
+	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
+  ex_err("ex_create_group",errmsg,exerrval);
+  return (EX_FATAL);
 #endif
 }

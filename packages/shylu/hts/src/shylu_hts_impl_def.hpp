@@ -2,9 +2,6 @@
 #define INCLUDE_SHYLU_HTS_IMPL_DEF_HPP
 
 #include <omp.h>
-#ifdef HAVE_SHYLUHTS_MKL
-# include <mkl.h>
-#endif
 
 #include <cstdio>
 #include <cmath>
@@ -15,35 +12,26 @@
 #include <list>
 #include <algorithm>
 
-#include <Teuchos_BLAS_wrappers.hpp>
+#ifdef HAVE_SHYLUHTS_COMPLEX
+# include <complex>
+#endif
+#ifdef HAVE_SHYLUHTS_MKL
+# ifdef HAVE_SHYLUHTS_COMPLEX
+#  define MKL_Complex8 std::complex<float>
+#  define MKL_Complex16 std::complex<double>
+# endif
+# include <mkl.h>
+#endif
 
-#include "shylu_hts.hpp"
 #include "shylu_hts_impl.hpp"
-
-#ifdef __MIC__
-# include <xmmintrin.h>
-#endif
-
-//#define TIME
-#ifdef TIME
-# define TIMENUM
-# include <sys/time.h>
-#endif
-
-// For analysis and figures, output some data.
-#if ! defined __MIC__
-//# define OUTPUT_RECURSIVEBLOCK_PARTITION
-#endif
 
 namespace Experimental {
 namespace htsimpl {
 
 static const int parfor_static_size = 20;
 
-template<typename T>
-inline void compress (std::vector<T>& v) { std::vector<T>(v).swap(v); }
-
 #if defined(HAVE_SHYLUHTS_BLAS) || defined(HAVE_SHYLUHTS_MKL)
+//todo Make this configurable.
 typedef int blas_int;
 
 template<typename T> void gemm(
@@ -51,37 +39,70 @@ template<typename T> void gemm(
   const T* a, blas_int lda, const T* b, blas_int ldb, T beta,
   const T* c, blas_int ldc);
 
-// Calling Teuchos::BLAS<Int, Real>::GEMM is measurably slower, so use
-// Teuchos_BLAS_wrappers directly. I'm copying the following macro from
-// Teuchos_BLAS.cpp. Perhaps one should be exposed in Teuchos_BLAS.hpp or
-// Teuchos_BLAS_wrappers.hpp.
-#ifdef INTEL_CXML
-# define SHYLU_HTS_CHAR_MACRO(char_var) &char_var, 1
-#else
-# define SHYLU_HTS_CHAR_MACRO(char_var) &char_var
-#endif
+extern "C" {
+  void F77_BLAS_MANGLE(sgemm,SGEMM)(
+    char*, char*, blas_int*, blas_int*, blas_int*, float*, float*, blas_int*,
+    float*, blas_int*, float*, float*, blas_int*);
+  void F77_BLAS_MANGLE(dgemm,DGEMM)(
+    char*, char*, blas_int*, blas_int*, blas_int*, double*, double*, blas_int*,
+    double*, blas_int*, double*, double*, blas_int*);
+  void F77_BLAS_MANGLE(cgemm,CGEMM)(
+    char*, char*, blas_int*, blas_int*, blas_int*, std::complex<float>*,
+    std::complex<float>*, blas_int*, std::complex<float>*, blas_int*,
+    std::complex<float>*, std::complex<float>*, blas_int*);
+  void F77_BLAS_MANGLE(zgemm,ZGEMM)(
+    char*, char*, blas_int*, blas_int*, blas_int*, std::complex<double>*,
+    std::complex<double>*, blas_int*, std::complex<double>*, blas_int*,
+    std::complex<double>*, std::complex<double>*, blas_int*);
+}
 
-template<> inline void
-gemm<float> (
+template<> inline void gemm<float> (
   char transa, char transb, blas_int m, blas_int nrhs, blas_int n, float alpha,
   const float* a, blas_int lda, const float* b, blas_int ldb, float beta,
   const float* c, blas_int ldc)
 {
-  SGEMM_F77(SHYLU_HTS_CHAR_MACRO(transa), SHYLU_HTS_CHAR_MACRO(transb),
-            &m, &nrhs, &n, &alpha, const_cast<float*>(a), &lda,
-            const_cast<float*>(b), &ldb, &beta, const_cast<float*>(c), &ldc);
+  F77_BLAS_MANGLE(sgemm,SGEMM)(
+    &transa, &transb, &m, &nrhs, &n, &alpha, const_cast<float*>(a), &lda,
+    const_cast<float*>(b), &ldb, &beta, const_cast<float*>(c), &ldc);
 }
 
-template<> inline void
-gemm<double> (
+template<> inline void gemm<double> (
   char transa, char transb, blas_int m, blas_int nrhs, blas_int n, double alpha,
   const double* a, blas_int lda, const double* b, blas_int ldb, double beta,
   const double* c, blas_int ldc)
 {
-  DGEMM_F77(SHYLU_HTS_CHAR_MACRO(transa), SHYLU_HTS_CHAR_MACRO(transb),
-            &m, &nrhs, &n, &alpha, const_cast<double*>(a), &lda,
-            const_cast<double*>(b), &ldb, &beta, const_cast<double*>(c), &ldc);
+  F77_BLAS_MANGLE(dgemm,DGEMM)(
+    &transa, &transb, &m, &nrhs, &n, &alpha, const_cast<double*>(a), &lda,
+    const_cast<double*>(b), &ldb, &beta, const_cast<double*>(c), &ldc);
 }
+
+#ifdef HAVE_SHYLUHTS_COMPLEX
+template<> inline void gemm<std::complex<float> > (
+  char transa, char transb, blas_int m, blas_int nrhs, blas_int n,
+  std::complex<float> alpha, const std::complex<float>* a, blas_int lda,
+  const std::complex<float>* b, blas_int ldb, std::complex<float> beta,
+  const std::complex<float>* c, blas_int ldc)
+{
+  F77_BLAS_MANGLE(cgemm,CGEMM)(
+    &transa, &transb, &m, &nrhs, &n, &alpha,
+    const_cast<std::complex<float>*>(a), &lda,
+    const_cast<std::complex<float>*>(b), &ldb, &beta,
+    const_cast<std::complex<float>*>(c), &ldc);
+}
+
+template<> inline void gemm<std::complex<double> > (
+  char transa, char transb, blas_int m, blas_int nrhs, blas_int n,
+  std::complex<double> alpha, const std::complex<double>* a, blas_int lda,
+  const std::complex<double>* b, blas_int ldb, std::complex<double> beta,
+  const std::complex<double>* c, blas_int ldc)
+{
+  F77_BLAS_MANGLE(zgemm,ZGEMM)(
+    &transa, &transb, &m, &nrhs, &n, &alpha,
+    const_cast<std::complex<double>*>(a), &lda,
+    const_cast<std::complex<double>*>(b), &ldb, &beta,
+    const_cast<std::complex<double>*>(c), &ldc);
+}
+#endif
 #endif
 
 #ifdef HAVE_SHYLUHTS_MKL
@@ -124,108 +145,58 @@ template<> inline void hts_mkl_csrmm<double> (
       const_cast<MKL_INT*>(ir+1), const_cast<double*>(x + k*ldx), &beta,
       y + k*ldy);
 }
+
+#ifdef HAVE_SHYLUHTS_COMPLEX
+template<> inline void hts_mkl_csrmm<std::complex<float> > (
+  const bool transp, const MKL_INT m, const MKL_INT n,
+  const std::complex<float>* d, const MKL_INT* ir, const MKL_INT* jc,
+  const std::complex<float>* x, const int ldx, std::complex<float>* y,
+  const int ldy, const MKL_INT nrhs)
+{
+  char transa = transp ? 'T' : 'N';
+  static const char A_descr[6] = {'G', '*', '*', 'C', '*', '*'};
+  std::complex<float> alpha(-1, 0), beta(1, 0);
+  for (int k = 0; k < nrhs; ++k)
+    mkl_ccsrmv(
+      &transa, const_cast<MKL_INT*>(&m), const_cast<MKL_INT*>(&n),
+      &alpha, const_cast<char*>(A_descr), const_cast<std::complex<float>*>(d),
+      const_cast<MKL_INT*>(jc), const_cast<MKL_INT*>(ir),
+      const_cast<MKL_INT*>(ir+1), const_cast<std::complex<float>*>(x + k*ldx),
+      &beta, y + k*ldy);
+}
+
+template<> inline void hts_mkl_csrmm<std::complex<double> > (
+  const bool transp, const MKL_INT m, const MKL_INT n,
+  const std::complex<double>* d, const MKL_INT* ir, const MKL_INT* jc,
+  const std::complex<double>* x, const int ldx, std::complex<double>* y,
+  const int ldy, const MKL_INT nrhs)
+{
+  char transa = transp ? 'T' : 'N';
+  static const char A_descr[6] = {'G', '*', '*', 'C', '*', '*'};
+  std::complex<double> alpha(-1, 0), beta(1, 0);
+  for (int k = 0; k < nrhs; ++k)
+    mkl_zcsrmv(
+      &transa, const_cast<MKL_INT*>(&m), const_cast<MKL_INT*>(&n),
+      &alpha, const_cast<char*>(A_descr), const_cast<std::complex<double>*>(d),
+      const_cast<MKL_INT*>(jc), const_cast<MKL_INT*>(ir),
+      const_cast<MKL_INT*>(ir+1), const_cast<std::complex<double>*>(x + k*ldx),
+      &beta, y + k*ldy);
+}
+#endif
 #endif
 
-namespace {
-class Timer {
-public:
-  enum Op { total_pre = 0,
-            setup, transpose, tolower, perm,
-            lsetfind, lsetinit, lsetinitp2p,
-            lsp2p_1, lsp2p_3, lsp2p_6,
-            dpb, dpb_getmatrix, dpb_sort, dpb_tinit,
-            dpb_tinit_2, dpb_tinit_3,
-            for_reprocess,
-            NSETUPTIMERS,
-            total_re, numthr, numpart, numls, numrbt, numrbm, numperm,
-            NNUMTIMERS,
-            slvlls, slvlother, slvuls, slvuother,
-            NTIMERS };
-  static inline void init () {
-#ifdef TIME
-    for (int i = 0; i < NTIMERS; ++i) et_[i] = 0;
-#endif
-  }
-  static inline void start (const Op op) {
-#ifdef TIME
-    gettimeofday(&t_start_[op], 0);
-#endif
-  }
-  static inline void stop (const Op op) {
-#ifdef TIME
-    timeval t2;
-    gettimeofday(&t2, 0);
-    const timeval& t1 = t_start_[op];
-    static const double us = 1.0e6;
-    et_[op] += (t2.tv_sec*us + t2.tv_usec - t1.tv_sec*us - t1.tv_usec)/us;
-#endif
-  }
-# define tpr(op) do {                                                   \
-    printf("%20s %10.3e %10.1f\n", #op, et_[op], 100*et_[op]/tot);      \
-  } while (0)
-#ifdef TIME
-  static void print_setup () {
-    const double tot = et_[total_pre];
-    tpr(setup); tpr(transpose); tpr(tolower);
-    tpr(lsetfind);
-    tpr(perm);
-    tpr(lsetinit);
-    tpr(lsetinitp2p); tpr(lsp2p_1); tpr(lsp2p_3); tpr(lsp2p_6);
-    tpr(dpb); tpr(dpb_getmatrix); tpr(dpb_sort); tpr(dpb_tinit);
-    tpr(dpb_tinit_2); tpr(dpb_tinit_3);
-    printf("%20s %10.3e %10.1f\n", "total", et_[total_pre], 100.0);
-  }
-#endif
-#ifdef TIMENUM
-  static void print_numeric () {
-    const double tot = et_[total_re];
-    tpr(numthr); tpr(numpart); tpr(numls); tpr(numrbt); tpr(numrbm);
-    tpr(numperm);
-    printf("%20s %10.3e %10.1f\n", "total", et_[total_re], 100.0);
-  }
-#endif
-#undef tpr
-private:
-#ifdef TIME
-  static timeval t_start_[NTIMERS];
-  static double et_[NTIMERS];
-#endif
-};
-#ifdef TIME
-timeval Timer::t_start_[Timer::NTIMERS];
-double Timer::et_[Timer::NTIMERS];
-#endif
-} // namespace
-
-template<typename T> inline void touch (T* const p, const size_t n) {
+template<typename T> inline void touch (T* const p, const size_t n,
+                                        const T& init = T()) {
   // 1 KB should be a safe lower bound on page size. Touch enough to touch every
-  // page; I don't think there's any need to touch more memory than that. On
-  // the KNC, first-touch doesn't matter.
-#ifndef __MIC__
+  // page; I don't think there's any need to touch more memory than that.
+#if ! defined __MIC__
   for (size_t i = 0; i < n; i += 1024 / sizeof(T))
-    p[i] = 0;
+    p[i] = init;
   // Make sure the last part is touched.
-  if (n) p[n-1] = 0;
+  if (n) p[n-1] = init;
 #endif
 }
 
-#ifdef __MIC__
-template<typename T> inline T*
-allocn (const size_t n, const bool first_touch = false) {
-  if ( ! n) return 0;
-  T* p = (T*) _mm_malloc(n*sizeof(T), 64);
-  if ( ! p) throw std::bad_alloc();
-  if (first_touch) touch(p, n);
-  return p;
-}
-template<typename T> inline void deln (T*& p) {
-  if (p) _mm_free(p);
-  p = 0;
-}
-template<typename T> inline void deln_const (const T* p) {
-  if (p) _mm_free(const_cast<T*>(p));
-}
-#else
 template<typename T> inline T*
 allocn (const size_t n, const bool first_touch = false) {
   if ( ! n) return 0;
@@ -240,7 +211,6 @@ template<typename T> inline void deln (T*& p) {
 template<typename T> inline void deln_const (const T* p) {
   if (p) delete[] p;
 }
-#endif
 template<typename T> inline void del (T*& p) {
   if (p) delete p;
   p = 0;
@@ -251,25 +221,107 @@ template<typename T> class Allocnator {
   T* p_;
   bool dealloc_;
 public:
+  Allocnator () : p_(0), dealloc_(true) {}
   // Try to allocate memory.
-  Allocnator (const size_t n, const char* msg, const bool first_touch = false) {
+  Allocnator (const size_t n, const char* msg = "",
+              const bool first_touch = false)
+    : p_(0), dealloc_(true)
+  { resize(n, msg, first_touch); }
+  void resize (const size_t n, const char* msg = "",
+               const bool first_touch = false) {
+    if (p_ && dealloc_) deln<T>(p_);
     p_ = 0;
     dealloc_ = true;
+    if ( ! n) return;
     try { p_ = allocn<T>(n, first_touch); }
     catch (...) {
       throw hts::Exception(std::string(msg) + ": failed to allocate.");
     }
   }
+  T* get () { return p_; }
   // Release the pointer to the user and subsequently don't dealloc.
   T* release () { dealloc_ = false; return p_; }
   // Dealloc only if the user hasn't released the pointer yet.
-  ~Allocnator () { if (dealloc_) deln<T>(p_); }
+  ~Allocnator () { if (p_ && dealloc_) deln<T>(p_); }
 };
+
+template<typename T>
+inline void Array<T>::init () {
+  n_ = cap_ = 0;
+  p_ = 0;
+}
+
+template<typename T>
+inline Array<T>::Array (std::size_t n)
+  : p_(0), n_(0), cap_(0)
+{ optclear_and_resize(n); }
+
+template<typename T>
+inline Array<T>::Array (std::size_t n, const T& init)
+  : p_(0), n_(0), cap_(0)
+{ optclear_and_resize(n, init); }
+
+template<typename T>
+inline void Array<T>::clear () {
+  n_ = cap_ = 0;
+  deln(p_);
+}
+
+template<typename T>
+inline void Array<T>::optclear_and_reserve (std::size_t n) {
+  n_ = 0;
+  if (n <= cap_) return;
+  clear();
+  p_ = allocn<T>(n);
+  cap_ = n;
+}
+
+template<typename T>
+inline void Array<T>::optclear_and_reserve_ft (std::size_t n) {
+  n_ = 0;
+  if (n <= cap_) return;
+  clear();
+  p_ = allocn<T>(n, true);
+  cap_ = n;
+}
+
+template<typename T>
+inline void Array<T>::optclear_and_resize (std::size_t n) {
+  if (n <= cap_) {
+    n_ = n;
+    return;
+  }
+  optclear_and_reserve(n);
+  n_ = n;
+}
+
+template<typename T>
+inline void Array<T>::optclear_and_resize_ft (std::size_t n) {
+  if (n <= cap_) {
+    n_ = n;
+    return;
+  }
+  optclear_and_reserve_ft(n);
+  n_ = n;
+}
+
+template<typename T>
+inline void Array<T>::optclear_and_resize (std::size_t n, const T& init) {
+  optclear_and_resize(n);
+  for (std::size_t i = 0; i < n_; ++i)
+    memcpy(p_ + i, &init, sizeof(init));
+}
+
+template<typename T>
+inline void Array<T>::unsafe_push_back (const T& e) {
+  assert(n_ < cap_);
+  p_[n_++] = e;
+}
 
 template<typename T> inline T square (const T& x) { return x*x; }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 set_options (const typename ihts::Options& os, Options& od) {
   od.min_block_size = os.min_block_size;
   od.min_parallel_rows = os.min_parallel_rows;
@@ -283,13 +335,13 @@ set_options (const typename ihts::Options& os, Options& od) {
   od.printlvl = os.print_level;
 }
 
-template<typename Int, typename Size, typename Real> Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr> Impl<Int, Size, Sclr>::
 Options::Options () {
-  set_options(typename HTS<Int, Size, Real>::Options(), *this);
+  set_options(typename HTS<Int, Size, Sclr>::Options(), *this);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::Options::print (std::ostream& os) const {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::Options::print (std::ostream& os) const {
   os << " hts min_block_size " << min_block_size
      << " min_parallel_rows " << min_parallel_rows
      << " pp_min_block_size " << pp_min_block_size
@@ -311,59 +363,65 @@ static void print_compiletime_options(std::ostream& os) {
 #endif
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::print_options (const Options& o, std::ostream& os) {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::print_options (const Options& o, std::ostream& os) {
   print_compiletime_options(os);
   os << std::endl;
   o.print(os);
   os << std::endl;
 }
 
-template<typename Int, typename Size, typename Real> Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr> Impl<Int, Size, Sclr>::
 ConstCrsMatrix::~ConstCrsMatrix () {
   if ( ! deallocate_) return;
+  assert( ! deallocator);
   deln_const(ir); deln_const(jc); deln_const(d);
 }
 
-template<typename Int, typename Size, typename Real> Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::ConstCrsMatrix::deallocate () const {
+  if ( ! deallocator) return;
+  deallocator->counter--;
+  if (deallocator->counter > 0) return;
+  assert(deallocator->counter == 0);
+  deallocator->free_CrsMatrix_data();
+}
+
+template<typename Int, typename Size, typename Sclr> Impl<Int, Size, Sclr>::
 CrsMatrix::~CrsMatrix () {
   deln_const(ir); deln_const(jc); deln_const(d);
 }
 
-template<typename Int, typename Size, typename Real>
-inline typename Impl<Int, Size, Real>::ConstCrsMatrix::Direction
-opposite (const typename Impl<Int, Size, Real>::ConstCrsMatrix::Direction dir) {
-  return static_cast<typename Impl<Int, Size, Real>::ConstCrsMatrix::Direction>(
-    (dir + 1) % 2);
-}
-
-template<typename T> static T* vec2arr (const std::vector<T>& v) {
-  if (v.empty()) return 0;
-  T* a = Allocnator<T>(v.size(), "vec2arr").release();
-  memcpy(a, v.data(), sizeof(T)*v.size());
-  return a;
-}
-
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::Partition::alloc_d () {
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::Partition::alloc_d () {
   assert( ! cm->d);
-  cm->d = Allocnator<Real>(cm->ir[cm->m], "Partition::alloc_d").release();
+  cm->d = Allocnator<Sclr>(cm->ir[cm->m], "Partition::alloc_d").release();
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::Partition::clear () { del(cm); }
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::Partition::alloc_A_idxs (const Size nnz) {
+  assert( ! A_idxs);
+  this->nnz = nnz;
+  A_idxs = Allocnator<Size>(nnz, "Partition::alloc_A_idxs").release();
+}
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::Partition::clear_d () { deln(cm->d); }
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::Partition::clear () {
+  del(cm);
+  deln(A_idxs);
+}
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-partition_n_uniformly (const Int n, const Int nparts, std::vector<Int>& p) {
-  p.resize(nparts + 1);
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::Partition::clear_d () { deln(cm->d); }
+
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+partition_n_uniformly (const Int n, const Int nparts, Array<Int>& p) {
+  p.optclear_and_resize(nparts + 1);
   const Int base = n / nparts;
   Int rem = n - base*nparts;
   Int extra = rem > 0 ? 1 : 0;
-  p[nparts] = 0;
+  p[0] = 0;
   for (Int i = 1; i <= nparts; ++i) {
     p[i] = p[i-1] + base + extra;
     if (rem > 0) {
@@ -373,19 +431,17 @@ partition_n_uniformly (const Int n, const Int nparts, std::vector<Int>& p) {
   }
 }
 
-template<typename Int, typename Size, typename Real>
-Impl<Int, Size, Real>::
-SparseData::SparseData (const Int m, const Size nnz, const char* fail_msg,
-                        const bool touch) {
-  ir = 0;
-  jc = 0;
-  d = 0;
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+SparseData::init (const Int m, const Size nnz, const char* fail_msg,
+                  const bool touch) {
+  free();
   dealloc_ = true;
   try {
     ir = allocn<Size>(m+1, touch);
     if (nnz > 0) {
       jc = allocn<Int>(nnz, touch);
-      d = allocn<Real>(nnz, touch);
+      d = allocn<Sclr>(nnz, touch);
     }
     ir[0] = 0;
     ir[m] = nnz;
@@ -398,8 +454,8 @@ SparseData::SparseData (const Int m, const Size nnz, const char* fail_msg,
   }
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::SparseData::free () {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::SparseData::free () {
   deln(ir);
   deln(jc);
   deln(d);
@@ -428,6 +484,11 @@ inline void restore_num_threads (const NumThreads& save) {
 #ifdef HAVE_SHYLUHTS_MKL
   mkl_set_dynamic(save.mkl_dynamic);
 #endif
+
+  // This ruins performance on especially the KNC if the number of threads is
+  // actually switching. Need to think about this more. Right now, the interface
+  // does not promise OMP state will remain the same.
+  return;
   omp_set_num_threads(save.omp);
 #ifdef HAVE_SHYLUHTS_MKL
   mkl_set_num_threads(save.mkl);
@@ -446,8 +507,8 @@ inline bool check_nthreads (const int nt_requested, const int nt_rcvd,
   return true;
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 throw_if_nthreads_not_ok (const int nthreads) {
   int nr;
 # pragma omp parallel
@@ -466,8 +527,8 @@ inline Int find_first (const Int* jc, const Int n, const Int c) {
 
 // Return the number of nonzeros in row r that are in [c_first, c_last). The
 // corresponding indices, relative to the start of the row, are i_first:i_last.
-template<typename Int, typename Size, typename Real>
-inline Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline Int Impl<Int, Size, Sclr>::
 find_first_and_last (const Size* const ir, const Int r, const Int* const jc,
                      const Int c_first, const Int c_last,
                      Int& i_first, Int& i_last) {
@@ -487,15 +548,14 @@ find_first_and_last (const Size* const ir, const Int r, const Int* const jc,
 }
 
 // Crop the submatrix A(b) such that A(cb) has no 0 border.
-template<typename Int, typename Size, typename Real>
-Size Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+Size Impl<Int, Size, Sclr>::
 crop_matrix (const CrsMatrix& T, const Box& b, Box& cb) {
   cb.r0 = -1;
   Int r1 = -1;
   cb.c0 = b.c0 + b.nc;
   Int c1 = b.c0;
   Size nnz = 0;
-  //todo ||ize if not nested.
   for (Int r = b.r0, lrow = 0; r < b.r0 + b.nr; ++r, ++lrow) {
     Int i_first, i_last;
     const Int cnt = find_first_and_last(T.ir, r, T.jc, b.c0, b.c0 + b.nc,
@@ -521,9 +581,9 @@ crop_matrix (const CrsMatrix& T, const Box& b, Box& cb) {
 }
 
 // Decide how many level sets to keep.
-template<typename Int, typename Size, typename Real>
-Int Impl<Int, Size, Real>::
-decide_level_set_max_index (const std::vector<Int>& N, const Int size_thr,
+template<typename Int, typename Size, typename Sclr>
+Int Impl<Int, Size, Sclr>::
+decide_level_set_max_index (const Array<Int>& N, const Int size_thr,
                             const Options& o) {
   Int N_end = static_cast<Int>(N.size());
   while (N_end > 0 && N[N_end-1] < size_thr) --N_end;
@@ -545,34 +605,36 @@ decide_level_set_max_index (const std::vector<Int>& N, const Int size_thr,
 }
 
 // Allocate lsets.
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 alloc_lsets (
-  const Int lsmi, const Int sns, const std::vector<Int>& level,
-  const std::vector<Int>& n, typename LevelSetter::LevelSets& lsets)
+  const Int lsmi, const Int sns, const Array<Int>& level, const Array<Int>& n,
+  typename LevelSetter::LevelSets& lsets)
 {
   if (lsmi < 0) return;
   const Int Lm_sr = static_cast<Int>(level.size());
-  lsets.resize(lsmi+1);
-  for (Int i = 0; i <= lsmi; ++i)
-    lsets[i].reserve(sns * n[i]);
+  lsets.optclear_and_resize(lsmi+1);
+  for (Int i = 0; i <= lsmi; ++i) {
+    lsets[i].init();
+    lsets[i].optclear_and_reserve(sns * n[i]);
+  }
   // Load.
   for (Int i = 0; i < Lm_sr; ++i) {
     const Int ilev = level[i];
     if (ilev <= lsmi)
       for (Int j = 0; j < sns; ++j)
-        lsets[ilev].push_back(i * sns + j);
+        lsets[ilev].unsafe_push_back(i * sns + j);
   }
 }
 
-template<typename Int, typename Size, typename Real>
-Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+Int Impl<Int, Size, Sclr>::
 locrsrow_schedule_serial (const ConstCrsMatrix& L, const Int sns,
-                          std::vector<Int>& w) {
+                          Array<Int>& w) {
   // Eq. 18 in Y. Saad's 1989 SIAM J Sci Stat Comput paper.
   Int max_level = -1;
   if (sns == 1) {
-    w.resize(L.m, -1);
+    w.optclear_and_resize(L.m, -1);
     for (Int r = 0; r < L.m; ++r) {
       Int level = -1;
       for (Size j = L.ir[r]; j < L.ir[r+1]; ++j)
@@ -584,7 +646,7 @@ locrsrow_schedule_serial (const ConstCrsMatrix& L, const Int sns,
   } else {
     // Implement it for a blocked matrix, where the block size is sns >= 1.
     const Int Lm_sr = L.m / sns;
-    w.resize(Lm_sr, -1);
+    w.optclear_and_resize(Lm_sr, -1);
     for (Int sr = 0, r = 0; sr < Lm_sr; ++sr) {
       Int level = -1;
       for (Int i = 0; i < sns; ++i, ++r) {
@@ -602,9 +664,9 @@ locrsrow_schedule_serial (const ConstCrsMatrix& L, const Int sns,
   return max_level;
 }
 
-template<typename Int, typename Size, typename Real>
-Int Impl<Int, Size, Real>::
-locrsrow_schedule_sns1 (const ConstCrsMatrix& L, std::vector<Int>& w,
+template<typename Int, typename Size, typename Sclr>
+Int Impl<Int, Size, Sclr>::
+locrsrow_schedule_sns1 (const ConstCrsMatrix& L, Array<Int>& w,
                         const Options& o) {
   const Int
     nthreads = omp_get_max_threads(),
@@ -612,14 +674,14 @@ locrsrow_schedule_sns1 (const ConstCrsMatrix& L, std::vector<Int>& w,
     rows_per_thread = std::max(1, blksz / nthreads);
   if (blksz > L.m)
     return locrsrow_schedule_serial(L, 1, w);
-  std::vector<Size> frontier(blksz);
+  Array<Size> frontier(blksz);
   for (Int i = 0; i < blksz; ++i) frontier[i] = L.ir[i];
-  w.resize(L.m);
+  w.optclear_and_resize(L.m);
   Int max_level = -1;
   volatile Int done = -1;
 # pragma omp parallel
   {
-#   pragma omp for schedule(static, parfor_static_size)
+#   pragma omp for
     for (Int i = 0; i < L.m; ++i) w[i] = -1;
     const Size* const ir = L.ir;
     const Int* const jc = L.jc;
@@ -663,10 +725,10 @@ locrsrow_schedule_sns1 (const ConstCrsMatrix& L, std::vector<Int>& w,
   return max_level;
 }
 
-template<typename Int, typename Size, typename Real>
-Int Impl<Int, Size, Real>::
-locrsrow_schedule (const ConstCrsMatrix& L, const Int sns,
-                   std::vector<Int>& w, const Options& o) {
+template<typename Int, typename Size, typename Sclr>
+Int Impl<Int, Size, Sclr>::
+locrsrow_schedule (const ConstCrsMatrix& L, const Int sns, Array<Int>& w,
+                   const Options& o) {
   assert(L.m > 0);
   if (sns == 1) return locrsrow_schedule_sns1(L, w, o);
   const Int
@@ -677,13 +739,13 @@ locrsrow_schedule (const ConstCrsMatrix& L, const Int sns,
     rows_per_thread = std::max(1, (blksz + nthreads) / nthreads);
   if (blksz > Lm_sr)
     return locrsrow_schedule_serial(L, sns, w);
-  std::vector<Size> frontier(bnr);
+  Array<Size> frontier(bnr);
   for (Int i = 0; i < bnr; ++i) frontier[i] = L.ir[i];
-  w.resize(Lm_sr);
+  w.optclear_and_resize(Lm_sr);
   Int max_level = -1;
 # pragma omp parallel
   {
-#   pragma omp for schedule(static, parfor_static_size)
+#   pragma omp for
     for (Int i = 0; i < Lm_sr; ++i) w[i] = -1;
     const Size* const ir = L.ir;
     const Int* const jc = L.jc;
@@ -735,14 +797,14 @@ locrsrow_schedule (const ConstCrsMatrix& L, const Int sns,
   return max_level;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 find_row_level_sets_Lcrs (const ConstCrsMatrix& L, const Int sns,
                           Int size_thr, typename LevelSetter::LevelSets& lsets,
                           const Options& o) {
   assert(L.m % sns == 0);
 
-  std::vector<Int> w;
+  Array<Int> w;
 #ifdef __MIC__
   // || is working pretty well on MIC, but not on CPU.
   const Int max_level = locrsrow_schedule(L, sns, w, o);
@@ -751,7 +813,7 @@ find_row_level_sets_Lcrs (const ConstCrsMatrix& L, const Int sns,
 #endif
  
   // Count level set sizes.
-  std::vector<Int> n(max_level+1);
+  Array<Int> n(max_level+1, 0);
   for (size_t i = 0; i < w.size(); ++i)
     ++n[w[i]];
   // Cutoff.
@@ -762,16 +824,13 @@ find_row_level_sets_Lcrs (const ConstCrsMatrix& L, const Int sns,
 
 // Upper tri, CRS, col (not row) level sets. Equivalent to lower tri, CCS, row
 // level sets.
-//todo Need to ||ize, but this is equivalent to ||izing a CSC (unanalyzed) L
-// trisolve, which is harder than CSR L trisolve. Not sure yet how to do this
-// well.
-template<typename Int, typename Size, typename Real>
-Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+Int Impl<Int, Size, Sclr>::
 upcrscol_schedule_serial (const ConstCrsMatrix& U, const Int sns,
-                          std::vector<Int>& w) {
+                          Array<Int>& w) {
   Int max_level = -1;
   if (sns == 1) {
-    w.resize(U.m, -1);
+    w.optclear_and_resize(U.m, -1);
     for (Int r = 0; r < U.m; ++r) {
       ++w[r];
       const Int level = w[r];
@@ -783,7 +842,7 @@ upcrscol_schedule_serial (const ConstCrsMatrix& U, const Int sns,
     }
   } else {
     const Int Um_sr = U.m / sns;
-    w.resize(Um_sr, -1);
+    w.optclear_and_resize(Um_sr, -1);
     for (Int sr = 0, r = 0; sr < Um_sr; ++sr) {
       ++w[sr];
       const Int level = w[sr];
@@ -798,18 +857,18 @@ upcrscol_schedule_serial (const ConstCrsMatrix& U, const Int sns,
   return max_level;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 find_col_level_sets_Ucrs (const ConstCrsMatrix& U, const Int sns,
                           Int size_thr, typename LevelSetter::LevelSets& lsets,
                           const Options& o) {
   assert(U.m % sns == 0);
 
-  std::vector<Int> w;
+  Array<Int> w;
   const Int max_level = upcrscol_schedule_serial(U, sns, w);
  
   // Count level set sizes.
-  std::vector<Int> n(max_level+1);
+  Array<Int> n(max_level+1, 0);
   for (size_t i = 0; i < w.size(); ++i)
     ++n[w[i]];
   // Cutoff.
@@ -818,8 +877,8 @@ find_col_level_sets_Ucrs (const ConstCrsMatrix& U, const Int sns,
   alloc_lsets(lsmi, sns, w, n, lsets);
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 find_level_sets (
   const ConstCrsMatrix& T, const Int sns, const Int size_thr, const bool is_lo,
   typename LevelSetter::LevelSets& lsets, const Options& o)
@@ -830,8 +889,8 @@ find_level_sets (
     find_col_level_sets_Ucrs(T, sns, size_thr, lsets, o);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 LevelSetter::init (const ConstCrsMatrix& T, const Int size_thr,
                    const bool is_lo, const Options& o) {
   lsets_.clear();
@@ -841,41 +900,45 @@ LevelSetter::init (const ConstCrsMatrix& T, const Int size_thr,
   find_level_sets(T, ls_blk_sz_, size_thr, is_lo_, lsets_, o);
 }
 
-template<typename Int, typename Size, typename Real>
-const std::vector<Int>& Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+const Array<Int>& Impl<Int, Size, Sclr>::
 LevelSetter::lset (const size_t i) const {
   return is_lo_ ? lsets_[i] : lsets_[lsets_.size() - i - 1];
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 LevelSetter::reverse_variable_order (Int n) {
   --n;
   for (size_t i = 0; i < lsets_.size(); ++i) {
-    std::vector<Int>& ls = lsets_[i];
+    Array<Int>& ls = lsets_[i];
     for (size_t j = 0; j < ls.size(); ++j)
       ls[j] = n - ls[j];
     std::reverse(ls.begin(), ls.end());
   }
 }
 
-template<typename Int, typename Size, typename Real>
-typename Impl<Int, Size, Real>::CrsMatrix* Impl<Int, Size, Real>::
-get_matrix_p (const CrsMatrix& A, const std::vector<Int>& p) {
+template<typename Int, typename Size, typename Sclr>
+typename Impl<Int, Size, Sclr>::CrsMatrix* Impl<Int, Size, Sclr>::
+get_matrix_p (const CrsMatrix& A, const Array<Int>& p,
+              const bool set_diag_reciprocal) {
   const Int n = static_cast<Int>(p.size());
   Size nnz = 0;
-  for (size_t i = 0; i < p.size(); ++i) {
+  for (Int i = 0; i < n; ++i) {
     const Int r = p[i];
     nnz += A.ir[r+1] - A.ir[r];
   }
 
-  SparseData sd(n, nnz, "get_matrix_p", true);
-  for (size_t i = 0; i < p.size(); ++i) {
+  SparseData sd(n, nnz, "get_matrix_p");
+  for (Int i = 0; i < n; ++i) {
     const Int r = p[i];
     const Size nc = A.ir[r+1] - A.ir[r];
     sd.ir[i+1] = sd.ir[i] + nc;
     memcpy(sd.jc + sd.ir[i], A.jc + A.ir[r], nc*sizeof(*sd.jc));
-    memcpy(sd.d + sd.ir[i], A.d + A.ir[r], nc*sizeof(*sd.d));
+    Sclr* const d_start = sd.d + sd.ir[i];
+    memcpy(d_start, A.d + A.ir[r], nc*sizeof(*sd.d));
+    if (set_diag_reciprocal)
+      d_start[nc-1] = 1.0/d_start[nc-1];
   }
 
   CrsMatrix* cm;
@@ -885,8 +948,8 @@ get_matrix_p (const CrsMatrix& A, const std::vector<Int>& p) {
   return cm;
 }
 
-template<typename Int, typename Size, typename Real>
-typename Impl<Int, Size, Real>::ConstCrsMatrix* Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+typename Impl<Int, Size, Sclr>::ConstCrsMatrix* Impl<Int, Size, Sclr>::
 permute_to_other_tri (const ConstCrsMatrix& U) {
   const Int n = U.m;
   const Size nnz = U.ir[n];
@@ -904,34 +967,43 @@ permute_to_other_tri (const ConstCrsMatrix& U) {
     }
   }
   ConstCrsMatrix* ccm = 0;
-  try { ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d, U.dir, true); }
-  catch (...) { throw hts::Exception("permute_to_other_tri"); }
+  try {
+    ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d, U.dir, U.conj, true);
+  } catch (...) { throw hts::Exception("permute_to_other_tri"); }
   sd.release();
   return ccm;
 }
 
 // Partition 1:n into lsis, the set of level scheduled rows, and dpis, the set
 // of data-|| rows.
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-get_idxs (const Int n, const LevelSetter& lstr, std::vector<Int>& lsis,
-          std::vector<Int>& dpis) {
-  std::vector<char> dpisb(n, 1);
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+get_idxs (const Int n, const LevelSetter& lstr, Array<Int>& lsis,
+          Array<Int>& dpis) {
+  std::size_t lsis_sz = 0;
   for (Int i = 0; i < lstr.size(); ++i) {
-    const std::vector<Int>& lset = lstr.lset(i);
-    for (size_t j = 0; j < lset.size(); ++j) {
+    const Array<Int>& lset = lstr.lset(i);
+    lsis_sz += lset.size();
+  }
+  lsis.optclear_and_resize(lsis_sz);
+
+  Array<char> dpisb(n, 1);
+  for (Int i = 0, il = 0; i < lstr.size(); ++i) {
+    const Array<Int>& lset = lstr.lset(i);
+    for (std::size_t j = 0; j < lset.size(); ++j) {
       const Int lj = lset[j];
-      lsis.push_back(lj);
+      lsis[il++] = lj;
       dpisb[lj] = 0;
     }
   }
-  dpis.resize(n - lsis.size());
+
+  dpis.optclear_and_resize(n - lsis.size());
   for (size_t i = 0, dk = 0; i < dpisb.size(); ++i)
     if (dpisb[i]) dpis[dk++] = i;  
 }
 
-template<typename Int, typename Size, typename Real>
-typename Impl<Int, Size, Real>::Shape Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+typename Impl<Int, Size, Sclr>::Shape Impl<Int, Size, Sclr>::
 determine_shape (const ConstCrsMatrix& A) {
   int red_is_lower = 0, red_is_tri = 0, red_has_full_diag = 0, red_nthreads = 0;
 # pragma omp parallel \
@@ -976,6 +1048,40 @@ determine_shape (const ConstCrsMatrix& A) {
   return Shape(is_lower, is_tri, has_full_diag);
 }
 
+template<typename Int, typename Size>
+Int partition_ir (const Int n, const Size* const ir, const Int nparts,
+                  Array<Int>& start) {
+  const Int nseg = std::min<Int>(nparts, n);
+  Int i0 = 1, j0 = 1;
+  start.optclear_and_resize(nseg + 1);
+  start[0] = 0;
+  const Size nnz = ir[n];
+  for (Int i = i0; i < nseg; ++i) {
+    const double d = ((double) i / nseg)*nnz;
+    Int j = static_cast<Int>(std::upper_bound(ir + j0, ir + n, d) - ir);
+    if (d - ir[j-1] > ir[j] - d) ++j;
+    j = std::min<Int>(j, n - nseg + i);
+    if (j < j0) {
+      // If not all the threads will have work, let the earlier threads have
+      // the work.
+      j = std::min<Int>(j0, n);
+      assert(j == start[i-1] + 1);
+    }
+    start[i] = j;
+    j0 = j + 1;
+  }
+  start[nseg] = n;
+
+  return nseg;
+}
+
+template <typename T> inline T& conjugate (T& v) {
+  v = T(v.real(), -v.imag());
+  return v;
+}
+template <> inline double& conjugate (double& v) { return v; }
+template <> inline float& conjugate (float& v) { return v; }
+
 /* The following routines extract the three types of matrices (level set, big
  * MVP, data parallel) in the two cases of L and U.
  *   The extracted matrices' rows do not need to be sorted. In the level set
@@ -988,10 +1094,10 @@ determine_shape (const ConstCrsMatrix& A) {
  */
 
 // Extract A(p,p) given that A(p,~p) is empty.
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
-                               Partition& p) {
+                               Partition& p, const bool get_A_idxs) {
   // Count nnz.
   Size nnz = 0;
 # pragma omp parallel for reduction(+:nnz)
@@ -999,6 +1105,7 @@ get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
     const Int k = pv.get(i);
     nnz += A.ir[k+1] - A.ir[k];
   }
+
   SparseData sd(pv.size(), nnz, "get_matrix_pp_with_covers_all");
   for (size_t ipv = 0; ipv < pv.size(); ++ipv) {
     const Int i = pv.get(ipv);
@@ -1006,33 +1113,45 @@ get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
     sd.ir[ipv+1] = sd.ir[ipv] + nc;
   }
   assert(sd.ir[pv.size()] == nnz);
-  p.A_idxs.resize(nnz);
-  const Int ipv_lim = pv.size();
-# pragma omp parallel for schedule(static, parfor_static_size)
-  for (Int ipv = 0; ipv < ipv_lim; ++ipv) {
-    const Int i = pv.get(ipv);
-    const Size
-      nc = A.ir[i+1] - A.ir[i],
-      Aj0 = A.ir[i],
-      Bj0 = sd.ir[ipv];
-    for (Size j = 0; j < nc; ++j) {
-      const Size Aj = Aj0 + j, Bj = Bj0 + j;
-      sd.jc[Bj] = pv.to_block(A.jc[Aj]);
-      sd.d[Bj] = A.d[Aj];
-      p.A_idxs[Bj] = Aj;
+  if (get_A_idxs) p.alloc_A_idxs(nnz);
+
+  const int nthreads = omp_get_max_threads();
+  Array<Int> start;
+  const Int nseg = partition_ir<Int, Size>(pv.size(), sd.ir, nthreads, start);
+# pragma omp parallel
+  do {
+    const int tid = omp_get_thread_num();
+    if (tid >= nseg) break;
+    for (Int ipv = start[tid], ipvlim = start[tid+1]; ipv < ipvlim; ++ipv) {
+      const Int i = pv.get(ipv);
+      const Size
+        nc = A.ir[i+1] - A.ir[i],
+        Aj0 = A.ir[i],
+        Bj0 = sd.ir[ipv];
+      for (Size j = 0; j < nc; ++j) {
+        const Size Aj = Aj0 + j, Bj = Bj0 + j;
+        sd.jc[Bj] = pv.to_block(A.jc[Aj]);
+        sd.d[Bj] = A.d[Aj];
+        if (A.conj) conjugate(sd.d[Bj]);
+        if (get_A_idxs) p.A_idxs[Bj] = Aj;
+      }
     }
-  }
+  } while (0);
+
   try { p.cm = new CrsMatrix(pv.size(), pv.size(), sd.ir, sd.jc, sd.d); }
   catch (...)
   { throw hts::Exception("get_matrix_pp_with_covers_all failed to alloc."); }
   sd.release();
+
+  sort(p, start);
 }
 
 // Extract B = A(p,s), s = [q p], given that A(p,~s) is empty.
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 get_matrix_p_qp_with_covers_all (
-  const ConstCrsMatrix& A, const PermVec& pv, const PermVec& qv, Partition& p)
+  const ConstCrsMatrix& A, const PermVec& pv, const PermVec& qv, Partition& p,
+  const bool get_A_idxs)
 {
   Size nnz = 0;
 # pragma omp parallel for reduction(+:nnz)
@@ -1048,30 +1167,39 @@ get_matrix_p_qp_with_covers_all (
     sd.ir[ipv+1] = sd.ir[ipv] + nc;
   }
   assert(sd.ir[pv.size()] == nnz);
+  if (get_A_idxs) p.alloc_A_idxs(nnz);
 
-  p.A_idxs.resize(nnz);
-  const Int ipv_lim = static_cast<Int>(pv.size());
-# pragma omp parallel for schedule(static, parfor_static_size)
-  for (Int ipv = 0; ipv < ipv_lim; ++ipv) {
-    const Int i = pv.get(ipv);
-    const Size
-      nc = A.ir[i+1] - A.ir[i],
-      Aj0 = A.ir[i],
-      Bj0 = sd.ir[ipv];
-    for (Size j = 0; j < nc; ++j) {
+  const int nthreads = omp_get_max_threads();
+  Array<Int> start;
+  const Int nseg = partition_ir<Int, Size>(pv.size(), sd.ir, nthreads, start);
+# pragma omp parallel
+  do {
+    const int tid = omp_get_thread_num();
+    if (tid >= nseg) break;
+    for (Int ipv = start[tid], ipvlim = start[tid+1]; ipv < ipvlim; ++ipv) {
+      const Int i = pv.get(ipv);
       const Size
-        Aj = Aj0 + j, Bj = Bj0 + j,
-        Ac = A.jc[Aj];
-      sd.jc[Bj] = qv.has(Ac) ? qv.to_block(Ac) : qv.size() + pv.to_block(Ac);
-      sd.d[Bj] = A.d[Aj];
-      p.A_idxs[Bj] = Aj;
+        nc = A.ir[i+1] - A.ir[i],
+        Aj0 = A.ir[i],
+        Bj0 = sd.ir[ipv];
+      for (Size j = 0; j < nc; ++j) {
+        const Size
+          Aj = Aj0 + j, Bj = Bj0 + j,
+          Ac = A.jc[Aj];
+        sd.jc[Bj] = qv.has(Ac) ? qv.to_block(Ac) : qv.size() + pv.to_block(Ac);
+        sd.d[Bj] = A.d[Aj];
+        if (A.conj) conjugate(sd.d[Bj]);
+        if (get_A_idxs) p.A_idxs[Bj] = Aj;
+      }
     }
-  }
+  } while (0);
 
   try { p.cm = new CrsMatrix(pv.size(), A.n, sd.ir, sd.jc, sd.d); }
   catch (...)
   { throw hts::Exception("get_matrix_p_qp_with_covers_all failed to alloc."); }
   sd.release();
+
+  sort(p, start);
 }
 
 template<typename Int, typename Size, typename T> struct SortEntry {
@@ -1082,93 +1210,96 @@ template<typename Int, typename Size, typename T> struct SortEntry {
   bool operator< (const SortEntry& se) const { return i < se.i; }
 };
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::sort (Partition& p) {
-  const int nthreads = omp_get_max_threads();
-  CrsMatrix& A = *p.cm;
-
-  //todo ||ize
-  Size max_nc = 0;
-  for (Int r = 0; r < A.m; ++r)
-    max_nc = std::max(max_nc, A.ir[r+1] - A.ir[r]);
-  std::vector<SortEntry<Int, Size, Real> > sess(nthreads * max_nc);
-
-# pragma omp parallel for schedule(static, 1)
-  for (Int r = 0; r < A.m; ++r) {
-    const int tid = omp_get_thread_num();
-    const Size irr = A.ir[r], irrp1 = A.ir[r+1], nc = irrp1 - irr;
-    SortEntry<Int, Size, Real>* ses = &sess[tid*max_nc];
-    for (Size j = 0; j < nc; ++j) {
-      const Size Aj = irr + j;
-      ses[j].i = A.jc[Aj];
-      ses[j].d = A.d[Aj];
-      ses[j].A_idx = p.A_idxs[Aj];
-    }
-    std::sort(ses, ses + nc);
-    for (Size j = 0; j < nc; ++j) {
-      const Size Aj = irr + j;
-      A.jc[Aj] = ses[j].i;
-      A.d[Aj] = ses[j].d;
-      p.A_idxs[Aj] = ses[j].A_idx;
-    }
-  }
-}
-
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::partition_into_2_blocks (
-  const ConstCrsMatrix& A, const bool is_lo, const std::vector<Int>& lsis,
-  const std::vector<Int>& dpis, Partition* p)
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::sort (
+  Partition& p,
+  // Use the nonzero partitioning the caller already obtained to ||ize sort's
+  // loop. The O(nc log nc) complexity here relative to the O(nc) complexity in
+  // the caller probably doesn't invalidate the partitioning.
+  const Array<Int>& start)
 {
-  PermVec lsis_pv(A.m, lsis), dpis_pv(A.m, dpis);
-  if (is_lo) {
-    get_matrix_pp_with_covers_all(A, lsis_pv, p[0]);
-    get_matrix_p_qp_with_covers_all(A, dpis_pv, lsis_pv, p[1]);
-  } else {
-    get_matrix_pp_with_covers_all(A, dpis_pv, p[1]);
-    get_matrix_p_qp_with_covers_all(A, lsis_pv, dpis_pv, p[0]);
-  }
-  sort(p[0]);
-  sort(p[1]);
+  CrsMatrix& A = *p.cm;
+  assert(A.m == start.back());
+  bool ok = true;
+# pragma omp parallel
+  do {
+    const int tid = omp_get_thread_num();
+    if (tid + 1 >= static_cast<int>(start.size())) break;
+    Size max_nc = 0;
+    for (Int r = start[tid], rlim = start[tid+1]; r < rlim; ++r)
+      max_nc = std::max(max_nc, A.ir[r+1] - A.ir[r]);
+    Array<SortEntry<Int, Size, Sclr> > ses;
+    try { ses.optclear_and_resize(max_nc); }
+    catch (...) {
+      ok = false;
+      break;
+    }
+    for (Int r = start[tid], rlim = start[tid+1]; r < rlim; ++r) {
+      const Size irr = A.ir[r], irrp1 = A.ir[r+1], nc = irrp1 - irr;
+      for (Size j = 0; j < nc; ++j) {
+        const Size Aj = irr + j;
+        ses[j].i = A.jc[Aj];
+        ses[j].d = A.d[Aj];
+        if (p.A_idxs) ses[j].A_idx = p.A_idxs[Aj];
+      }
+      std::sort(ses.begin(), ses.begin() + nc);
+      for (Size j = 0; j < nc; ++j) {
+        const Size Aj = irr + j;
+        A.jc[Aj] = ses[j].i;
+        A.d[Aj] = ses[j].d;
+        if (p.A_idxs) p.A_idxs[Aj] = ses[j].A_idx;
+      }
+    }
+  } while (0);
+  if ( ! ok) throw hts::Exception("sort: Could not allocate ses.");
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 reverse_A_idxs (const Size nnz, Partition& p) {
 # pragma omp for schedule(static)
-  for (size_t i = 0; i < p.A_idxs.size(); ++i)
+  for (Size i = 0; i < p.nnz; ++i)
     p.A_idxs[i] = nnz - p.A_idxs[i] - 1;
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 copy_partition (const ConstCrsMatrix& A, Partition& p) {
-  const Size ilim = static_cast<Size>(p.A_idxs.size());
-# pragma omp parallel for schedule(static)
-  for (Size i = 0; i < ilim; ++i)
-    p.cm->d[i] = A.d[p.A_idxs[i]];
+  const Size ilim = p.nnz;
+  if (A.conj) {
+#   pragma omp parallel for
+    for (Size i = 0; i < ilim; ++i) {
+      p.cm->d[i] = A.d[p.A_idxs[i]];
+      conjugate(p.cm->d[i]);
+    }
+  } else {
+#   pragma omp parallel for
+    for (Size i = 0; i < ilim; ++i)
+      p.cm->d[i] = A.d[p.A_idxs[i]];
+  }
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 repartition_into_2_blocks (Partition* const p, const ConstCrsMatrix& A) {
   for (int i = 0; i < 2; ++i)
     if (p[i].cm)
       copy_partition(A, p[i]);
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-CrsSegmenter::count_nnz_by_row_loop (const Int i, std::vector<Int>& rcnt) {
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+CrsSegmenter::count_nnz_by_row_loop (const Int i, Array<Int>& rcnt) {
   Int i_first, i_last;
   rcnt[i] = find_first_and_last(A_.ir, r0_ + i, A_.jc, c0_, c0_ + nc_,
                                 i_first, i_last);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-CrsSegmenter::count_nnz_by_row (std::vector<Int>& rcnt) {
-  rcnt.resize(nr_);
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+CrsSegmenter::count_nnz_by_row (Array<Int>& rcnt) {
+  rcnt.optclear_and_resize(nr_);
   // Don't allow nested ||ism.
   if (omp_get_num_threads() == 1) {
 #   pragma omp parallel for schedule(guided)
@@ -1179,12 +1310,12 @@ CrsSegmenter::count_nnz_by_row (std::vector<Int>& rcnt) {
       count_nnz_by_row_loop(i, rcnt);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-CrsSegmenter::init_nnz (const std::vector<Int>& rcnt) {
-  const std::vector<Int>& p = this->p_;
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+CrsSegmenter::init_nnz (const Array<Int>& rcnt) {
+  const Array<Int>& p = this->p_;
   const Int nseg = p.size() - 1;
-  this->nnz_.resize(nthreads_, 0);
+  this->nnz_.optclear_and_resize(nthreads_, 0);
   for (Int i = 0; i < nseg; ++i)
     for (Int j = p[i] - p[0]; j < p[i+1] - p[0]; ++j)
       this->nnz_[i] += rcnt[j];
@@ -1195,8 +1326,8 @@ CrsSegmenter::init_nnz (const std::vector<Int>& rcnt) {
 // rows. Attempt to remove spikes in #rows.
 template<typename Int, typename Size>
 inline void
-smooth_spikes (const std::vector<Int>& rcnt, std::vector<Int>& p,
-               std::vector<Size>& nnz, const bool ignore_0) {
+smooth_spikes (const Array<Int>& rcnt, Array<Int>& p, Array<Size>& nnz,
+               const bool ignore_0) {
   const Int n = static_cast<Int>(p.size()) - 1;
   if (n <= 1) return;
   Int first = ignore_0 ? 1 : 0;
@@ -1253,23 +1384,23 @@ smooth_spikes (const std::vector<Int>& rcnt, std::vector<Int>& p,
   }
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::CrsSegmenter::segment () {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::CrsSegmenter::segment () {
   assert(nr_ % ls_blk_sz_ == 0);
-  std::vector<Int>& p = this->p_;
+  Array<Int>& p = this->p_;
 
   const Int nseg = std::min<Int>(nthreads_, nr_ / ls_blk_sz_);
   if (nseg == 0) {
     assert(nr_ == 0);
-    p.resize(1, r0_);
+    p.optclear_and_resize(1, r0_);
     return;
   }
 
-  std::vector<Int> rcnt;
+  Array<Int> rcnt;
   count_nnz_by_row(rcnt);
 
   // cumsum(rcnt).
-  std::vector<Int> cs_rcnt(rcnt.size() / ls_blk_sz_);
+  Array<Int> cs_rcnt(rcnt.size() / ls_blk_sz_);
   if (nseg > 0) {
     cs_rcnt[0] = 0;
     for (int j = 0; j < ls_blk_sz_; ++j) cs_rcnt[0] += rcnt[j];
@@ -1288,7 +1419,7 @@ void Impl<Int, Size, Real>::CrsSegmenter::segment () {
     rcnt[0] += block_0_nnz_os_;
   }
 
-  p.resize(nseg + 1, r0_);
+  p.optclear_and_resize(nseg + 1, r0_);
   if (nseg > 0) {
     if (cs_rcnt.back() == 0) {
       for (Int i = 1; i < nseg; ++i)
@@ -1326,16 +1457,16 @@ void Impl<Int, Size, Real>::CrsSegmenter::segment () {
   if (ls_blk_sz_ == 1) smooth_spikes(rcnt, p, this->nnz_, tid_empty);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TMatrix::clear () {
   bs_.clear();
   ros_.clear();
   is_empty_ = true;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TMatrix::init (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                const InitInfo& in, const Int block_0_nnz_os,
                const int tid_offset) {
@@ -1345,8 +1476,8 @@ TMatrix::init (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
   init_numeric(A, omp_get_thread_num());
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TMatrix::init (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                const InitInfo& in, const CrsSegmenter& seg) {
   init_metadata(A, r0, c0, nr, nc, in, seg);
@@ -1355,8 +1486,8 @@ TMatrix::init (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
   init_numeric(A, omp_get_thread_num());
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TMatrix::init_metadata (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                         const InitInfo& in, const Int block_0_nnz_os,
                         const int tid_offset) {
@@ -1382,8 +1513,8 @@ TMatrix::init_metadata (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
     is_parallel_ = false;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TMatrix::init_metadata (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                         const InitInfo& in, const CrsSegmenter& seg) {
   clear();
@@ -1391,8 +1522,8 @@ TMatrix::init_metadata (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
   init_metadata_with_seg(A, r0, c0, nr, nc, 0, in, seg);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::TMatrix::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::TMatrix::
 init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                         const Int roff, const InitInfo& in,
                         const CrsSegmenter& seg) {
@@ -1400,14 +1531,15 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
   const Int nseg = seg.p().size() - 1;
   is_parallel_ = nseg > 1 || tid_os_ > 0;
   if (nseg == 1) {
-    bs_.push_back(SerialBlock());
+    bs_.optclear_and_reserve(1);
+    bs_.unsafe_push_back(SerialBlock());
     bs_.back().init_metadata(A, r0, c0, nr, nc, in);
-    ros_.push_back(roff);
+    ros_.optclear_and_resize(1, roff);
   } else {
-    const std::vector<Int>& p = seg.p();
+    const Array<Int>& p = seg.p();
     const Int n = static_cast<Int>(p.size()) - 1;
-    ros_.resize(n, 0);
-    bs_.resize(n, SerialBlock());
+    ros_.optclear_and_resize(n, 0);
+    bs_.optclear_and_resize(n, SerialBlock());
     for (Int id = 0; id < n; ++id) {
       ros_[id] = p[id] - r0 + roff;
       const Int nri = p[id+1] - p[id];
@@ -1423,8 +1555,8 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
     }
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TMatrix::init_memory (const InitInfo& in) {
 # pragma omp parallel
   { const int tid = omp_get_thread_num(), id = tid - tid_os_;
@@ -1434,63 +1566,56 @@ TMatrix::init_memory (const InitInfo& in) {
 }
 
 // possibly inside || {}
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TMatrix::init_numeric (const CrsMatrix& A, const int tid) {
   const int id = tid - tid_os_;
   if (id >= 0 && id < (int) bs_.size())
     bs_[id].init_numeric(A);
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-TMatrix::reinit_numeric (const CrsMatrix& A) {
-  if ( ! is_parallel_) {
-    if (bs_.empty()) return;
-    bs_[0].reinit_numeric(A);
-  } else {
-#   pragma omp parallel
-    { const int tid = omp_get_thread_num(), id = tid - tid_os_;
-      if (id >= 0 && id < (int) bs_.size())
-        bs_[id].reinit_numeric(A);
-    }
-  }
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+TMatrix::reinit_numeric (const CrsMatrix& A, const int tid) {
+  const int id = tid - tid_os_;
+  if (id >= 0 && id < (int) bs_.size())
+    bs_[id].reinit_numeric(A);
 }
 
-template<typename Int, typename Size, typename Real>
-inline Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline Int Impl<Int, Size, Sclr>::
 TMatrix::block_r0 (const int tid) const {
   const int id = tid - tid_os_;
   if (id < 0) return 0;
   return bs_[id].r0();
 }
 
-template<typename Int, typename Size, typename Real>
-inline Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline Int Impl<Int, Size, Sclr>::
 TMatrix::block_nr (const int tid) const {
   const int id = tid - tid_os_;
   if (id < 0) return 0;
   return bs_[id].nr();
 }
 
-template<typename Int, typename Size, typename Real>
-inline const typename Impl<Int, Size, Real>::SerialBlock*
-Impl<Int, Size, Real>::TMatrix::block (const int tid) const {
+template<typename Int, typename Size, typename Sclr>
+inline const typename Impl<Int, Size, Sclr>::SerialBlock*
+Impl<Int, Size, Sclr>::TMatrix::block (const int tid) const {
   const int id = tid - tid_os_;
   if (id < 0) return 0;
   return &bs_[id];
 }
 
-template<typename Int, typename Size, typename Real>
-inline typename Impl<Int, Size, Real>::SerialBlock*
-Impl<Int, Size, Real>::TMatrix::block (const int tid) {
+template<typename Int, typename Size, typename Sclr>
+inline typename Impl<Int, Size, Sclr>::SerialBlock*
+Impl<Int, Size, Sclr>::TMatrix::block (const int tid) {
   const int id = tid - tid_os_;
   if (id < 0) return 0;
   return &bs_[id];
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 SerialBlock::clear () {
   if (deallocate_) {
     deln(ir_);
@@ -1503,8 +1628,8 @@ SerialBlock::clear () {
   d_ = 0;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 SerialBlock::init (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                    const InitInfo& in) {
   init_metadata(A, r0, c0, nr, nc, in);
@@ -1512,8 +1637,8 @@ SerialBlock::init (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
   init_numeric(A);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 SerialBlock::init_metadata (const CrsMatrix& A, Int r0, Int c0, Int nr,
                             Int nc, const InitInfo& in) {
   clear();
@@ -1532,13 +1657,13 @@ SerialBlock::init_metadata (const CrsMatrix& A, Int r0, Int c0, Int nr,
   is_dense_ = nnz_ >= (in.min_dense_density*nr_)*nc_;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 SerialBlock::init_memory (const InitInfo& in) {
   if (nr_ == 0 || nc_ == 0) return;
   if (is_dense_) {
     // First touch is measurably required.
-    d_ = Allocnator<Real>(nr_*nc_, "SerialBlock::init dense d", true).release();
+    d_ = Allocnator<Sclr>(nr_*nc_, "SerialBlock::init dense d", true).release();
   } else {
     Allocnator<Size> air(nr_+1, "SerialBlock::init sparse ir", true);
     if (nnz_ == 0) {
@@ -1547,29 +1672,29 @@ SerialBlock::init_memory (const InitInfo& in) {
       return;
     }
     Allocnator<Int> ajc(nnz_, "SerialBlock::init sparse jc", true);
-    Allocnator<Real> ad(nnz_, "SerialBlock::init sparse d", true);
+    Allocnator<Sclr> ad(nnz_, "SerialBlock::init sparse d", true);
     ir_ = air.release();
     jc_ = ajc.release();
     d_ = ad.release();
   }
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 SerialBlock::init_numeric (const CrsMatrix& A) {
   if (is_dense_) memset(d_, 0, nr_*nc_*sizeof(*d_));
   reinit_numeric(A);
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 SerialBlock::reinit_numeric (const CrsMatrix& A) {
   if (ir_) reinit_numeric_spars(A);
   else reinit_numeric_dense(A);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 SerialBlock::reinit_numeric_dense (const CrsMatrix& A) {
   const Int ilim = r0_ + nr_;
   for (Int i = r0_; i < ilim; ++i) {
@@ -1587,8 +1712,8 @@ SerialBlock::reinit_numeric_dense (const CrsMatrix& A) {
   }
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 SerialBlock::reinit_numeric_spars (const CrsMatrix& A) {
   Size k = 0;
   ir_[0] = 0;
@@ -1610,8 +1735,8 @@ SerialBlock::reinit_numeric_spars (const CrsMatrix& A) {
 
 template<typename Int> inline Int ntri (const int n) { return (n*(n + 1))/2; }
 
-template<typename Int, typename Size, typename Real>
-inline Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline Int Impl<Int, Size, Sclr>::
 count_nnz_lotri (const CrsMatrix& T, const Int r0, const Int c0,
                  const Int n) {
   Int nnz = 0;
@@ -1623,22 +1748,22 @@ count_nnz_lotri (const CrsMatrix& T, const Int r0, const Int c0,
   return nnz;
 }
 
-template<typename Int, typename Size, typename Real>
-Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+Impl<Int, Size, Sclr>::
 OnDiagTri::OnDiagTri ()
   : c0_(0), nnz_(0), d_(0), m_(0), dense_(true)
 {}
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 OnDiagTri::clear () {
   deln(d_);
   del(m_);
   t_.clear();
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 OnDiagTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
                  const InitInfo& in) {
   init_metadata(T, r0, c0, n, in);
@@ -1646,15 +1771,15 @@ OnDiagTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
   init_numeric(T);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 OnDiagTri::init (const Int r0, const Int c0, const Int n) {
   clear();
   this->n_ = n; this->r0_ = r0; c0_ = c0;
 }
 
-template<typename Int, typename Size, typename Real>
-inline bool Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline bool Impl<Int, Size, Sclr>::
 is_dense_tri (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
               const InitInfo& in, Size* innz) {
   const Size nnz = count_nnz_lotri(T, r0, c0, n);
@@ -1662,8 +1787,8 @@ is_dense_tri (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
   return nnz >= 0.5*in.min_dense_density*ntri<Int>(n);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 OnDiagTri::init_metadata (const CrsMatrix& T, const Int r0, const Int c0,
                           const Int n, const InitInfo& in) {
   clear();
@@ -1676,14 +1801,14 @@ OnDiagTri::init_metadata (const CrsMatrix& T, const Int r0, const Int c0,
   if (dense_) inv_init_metadata(in);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 OnDiagTri::init_memory (const InitInfo& in) {
   if ( ! nnz_) return;
   if (dense_) {
-    d_ = Allocnator<Real>(
-      ntri<Int>(this->n_), "OnDiagTri::init dense", true).release();
+    Allocnator<Sclr> ad(ntri<Int>(this->n_), "OnDiagTri::init dense", true);
     if ( ! t_.empty()) inv_init_memory();
+    d_ = ad.release();
   } else {
     SparseData sd(this->n_, nnz_, "OnDiagTri::init_memory");
     try { m_ = new CrsMatrix(this->n_, this->n_, sd.ir, sd.jc, sd.d); }
@@ -1693,15 +1818,15 @@ OnDiagTri::init_memory (const InitInfo& in) {
   }
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-OnDiagTri::init_numeric (const CrsMatrix& T) {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+OnDiagTri::init_numeric (const CrsMatrix& T, const bool invert) {
   if (dense_) {
-    reinit_numeric(T);
+    reinit_numeric(T, invert);
   } else {
     Size* const ir = m_->ir;
     Int* const jc = m_->jc;
-    Real* const d = m_->d;
+    Sclr* const d = m_->d;
     for (Int grow = this->r0_; grow < this->r0_ + this->n_; ++grow) {
       const Int lrow = grow - this->r0_;
       const Size
@@ -1714,7 +1839,7 @@ OnDiagTri::init_numeric (const CrsMatrix& T) {
         if (lcol >= this->n_) break;
         Size& i = ir[lrow+1];
         jc[i] = lcol;
-        d[i] = lrow == lcol ? 1/T.d[k] : T.d[k];
+        d[i] = lrow == lcol ? 1.0/T.d[k] : T.d[k];
         ++i;
       }
     }
@@ -1722,12 +1847,9 @@ OnDiagTri::init_numeric (const CrsMatrix& T) {
   }
 }
 
-//todo At the cost of doubling the jc-related memory, I could store indices into
-// T in init_numeric and then use them here in reinit_numeric so I wouldn't have
-// to run find_first. At least record the find_first results.
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-OnDiagTri::reinit_numeric (const CrsMatrix& T) {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+OnDiagTri::reinit_numeric (const CrsMatrix& T, const bool invert) {
   if (d_) {
     memset(d_, 0, ntri<Int>(this->n_)*sizeof(*d_));
     Size nnz = 0;
@@ -1741,16 +1863,16 @@ OnDiagTri::reinit_numeric (const CrsMatrix& T) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= this->n_) break;
         const Size di = (lrow*(lrow + 1))/2 + lcol;
-        const Real dv = lrow == lcol ? 1/T.d[k] : T.d[k];
+        const Sclr dv = lrow == lcol ? 1.0/T.d[k] : T.d[k];
         // Compressed dense triangle.
         d_[di] = dv;
         ++nnz;
       }
     }
-    if ( ! t_.empty())
-      inv_reinit_numeric(T);
+    if (invert && ! t_.empty())
+      inv_reinit_numeric();
   } else if (m_) {
-    Real* const d = m_->d;
+    Sclr* const d = m_->d;
     Int i = 0;
     for (Int grow = this->r0_; grow < this->r0_ + this->n_; ++grow) {
       const Int lrow = grow - this->r0_;
@@ -1761,48 +1883,49 @@ OnDiagTri::reinit_numeric (const CrsMatrix& T) {
            k < irgp1; ++k) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= this->n_) break;
-        d[i] = lrow == lcol ? 1/T.d[k] : T.d[k];
+        d[i] = lrow == lcol ? 1.0/T.d[k] : T.d[k];
         ++i;
       }
     }
   }
 }
 
-template<typename Int, typename Size, typename Real>
-inline Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline Int Impl<Int, Size, Sclr>::
 OnDiagTri::nthreads () const {
   return std::max<Int>(1, static_cast<Int>(t_.size()));
 }
 
-template<typename Int, typename Size, typename Real>
-inline Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline Int Impl<Int, Size, Sclr>::
 OnDiagTri::block_row_start (const int tid) const {
   return t_.empty() ? 0 : t_[tid].r0;
 }
 
-template<typename Int, typename Size, typename Real>
-inline Int Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline Int Impl<Int, Size, Sclr>::
 OnDiagTri::block_nr (const int tid) const {
   return t_.empty() ? this->n_ : t_[tid].nr;
 }
 
-template<typename Int, typename Size, typename Real>
-Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+Impl<Int, Size, Sclr>::
 OnDiagTri::Thread::~Thread () { deln(d); }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 OnDiagTri::inv_init_metadata (const InitInfo& in) {
   const Int
     nnz = ntri<Int>(this->n_),
     nt = std::min((int) in.nthreads, 1 + nnz / square(in.min_parallel_rows));
   if (nt <= 1) return;
 
-  t_.resize(nt);
-  const Real nnz_per_thread = (Real) nnz / nt;
+  t_.optclear_and_resize(nt);
+  const Real nnz_per_thread = static_cast<Real>(nnz) / nt;
   Int r0 = 0;
   for (Int tid = 0; tid < nt; ++tid) {
     t_[tid].r0 = r0;
+    t_[tid].d = 0;
     const Int n_max = this->n_ - r0;
     if (tid+1 == nt)
       t_[tid].nr = n_max;
@@ -1811,43 +1934,56 @@ OnDiagTri::inv_init_metadata (const InitInfo& in) {
       //   ((r0 + n) (r0 + n + 1))/2 - (r0 (r0 + 1))/2 = nnz_per_thread.
       const Int b = 1 + 2*r0;
       t_[tid].nr = std::min<Real>(
-        (Real) n_max, round(0.5*(std::sqrt(b*b + 8*nnz_per_thread) - b)));
+        static_cast<Real>(n_max),
+        round(0.5*(std::sqrt(b*b + 8*nnz_per_thread) - b)));
     }
     r0 += t_[tid].nr;
   }
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 OnDiagTri::inv_init_memory () {
+  bool ok = true;
 # pragma omp parallel
-  { const int tid = omp_get_thread_num();
+  {
+    const int tid = omp_get_thread_num();
     if (tid < nthreads()) {
       Thread& t = t_[tid];
       const Int nnz = ntri<Int>(t.r0 + t.nr) - ntri<Int>(t.r0);
-      t.d = Allocnator<Real>(nnz, "OnDiagTri::inv_init_memory", true).release();
-    } }
+      try {
+        t.d = Allocnator<Sclr>(nnz, "OnDiagTri::inv_init_memory", true).release();
+      } catch (...) {
+        ok = false;
+      }
+    }
+  }
+  if ( ! ok) {
+    for (std::size_t i = 0; i < t_.size(); ++i)
+      deln(t_[i].d);
+    throw hts::Exception("OnDiagTri::inv_init_memory failed to allocate.");
+  }
 }
 
 // T is in row-major compressed dense tri format. The diag of T is the
 // reciprocal.
-template<typename Int, typename Real>
-inline void invert (Real* T, const Int n, Real* w) {
+template<typename Int, typename Sclr>
+inline void invert (Sclr* T, const Int n, Sclr* w) {
   for (Int c = 0; c < n; ++c) {
     // Solve for column c. That involves only the (n-c)x(n-c) lower-right
     // subblock of T. Store column in w.
     w[0] = T[0];
-    Real* Tp = T + c + 1;
-    for (int r = 1; r < n - c; ++r) {
+    Sclr* Tp = T + c + 1;
+    for (Int r = 1; r < n - c; ++r) {
       w[r] = 0;
-      for (int k = 0; k < r; ++k)
+      for (Int k = 0; k < r; ++k)
         w[r] -= w[k]*Tp[k];
       w[r] *= Tp[r];
       Tp += r + c + 1;
     }
     // Copy w to column c.
     Tp = T;
-    for (int r = 0; r < n - c; ++r) {
+    for (Int r = 0; r < n - c; ++r) {
       *Tp = w[r];
       Tp += r + c + 1;
     }
@@ -1855,11 +1991,17 @@ inline void invert (Real* T, const Int n, Real* w) {
   }
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-OnDiagTri::inv_reinit_numeric (const CrsMatrix& T) {
-  { std::vector<Real> w(this->n_);
-    invert(d_, this->n_, w.data()); }
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::OnDiagTri::inv_reinit_numeric () {
+  {
+    Array<Sclr> w(this->n_);
+    invert(d_, this->n_, w.data());
+  }
+  inv_copy();
+}
+
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::OnDiagTri::inv_copy () {
   for (int tid = 0; tid < nthreads(); ++tid) {
     Thread& t = t_[tid];
     const Int nr0 = ntri<Int>(t.r0);
@@ -1889,12 +2031,13 @@ inline bool empty (const Int* const col, const Int ncol,
   return true;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 find_split_rows (const CrsMatrix& T, const Int r0, const Int c0,
                  const Int n, const InitInfo& in,
                  std::vector<Int>& split_rows) {
   const Int sz = in.min_blksz / 2;
+  bool ok = true;
 # pragma omp parallel for schedule(static, parfor_static_size)
   for (Int r = r0 + 1; r < r0 + n; ++r) {
     bool found = true;
@@ -1906,9 +2049,14 @@ find_split_rows (const CrsMatrix& T, const Int r0, const Int c0,
       }
     if (found) {
 #     pragma omp critical (find_split_rows)
-      split_rows.push_back(r);
+      {
+        try { split_rows.push_back(r); }
+        catch (...) { ok = false; }
+      }
     }
+    if ( ! ok) continue;
   }
+  if ( ! ok) throw hts::Exception("find_split_rows could not allocate.");
   std::sort(split_rows.begin(), split_rows.end());
 }
 
@@ -1940,8 +2088,8 @@ inline Int find_split_row_if_available (
   return pos;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::build_recursive_tri_r (
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::build_recursive_tri_r (
   const CrsMatrix& T, const Int r, const Int c, const Int n,
   const InitInfo& in, std::vector<Int>& split_rows,
   std::list<Box>& b)
@@ -2031,55 +2179,61 @@ void Impl<Int, Size, Real>::build_recursive_tri_r (
  * (r,c), and block 2 is nxn. Block 2 is recursively partitioned.
  *   b is returned in solution order.
  */
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 build_recursive_tri (const CrsMatrix& T, const Int r, const Int c, const Int n,
                      const Int mvp_block_nc, const InitInfo& in,
-                     std::vector<Box>& bv) {
-  std::list<Box> bl;
+                     Array<Box>& bv) {
+  // Find clear divisions in this triangle that we can exploit to pack the data
+  // efficiently.
+  std::vector<Int> split_rows;
+  find_split_rows(T, r, c + mvp_block_nc, n, in, split_rows);
 
+  std::list<Box> bl;
   // This is the large MVP block that scatters the LS part to the RB part. It is
   // present only in the T = L case; in the T = U case, it is in the LS data
   // structure.
   if (mvp_block_nc)
     bl.push_back(Box(r, c, n, mvp_block_nc));
 
-  // Find clear divisions in this triangle that we can exploit to pack the data
-  // efficiently.
-  std::vector<Int> split_rows;
-  find_split_rows(T, r, c + mvp_block_nc, n, in, split_rows);
-
   build_recursive_tri_r(T, r, c + mvp_block_nc, n, in, split_rows, bl);
 
   // list -> vector.
-  bv.resize(bl.size());
+  bv.optclear_and_resize(bl.size());
   Int i = 0;
   for (typename std::list<Box>::const_iterator it = bl.begin();
        it != bl.end(); ++it)
     bv[i++] = *it;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+RecursiveTri::init_invert_ondiag_tris_separately () {
+  Int nt = 0;
+  for (size_t i = 0; i < nd_.t.size(); ++i)
+    if (nd_.t[i].is_dense_inverted())
+      ++nt;
+  invert_separately_ = nthreads_ > nt;
+}
+
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
                     const InitInfo& in, const Int mvp_block_nc) {
   clear();
   this->n_ = n; this->r0_ = r0; nthreads_ = in.nthreads;
 
-  std::vector<Box> bs;
+  Array<Box> bs;
   build_recursive_tri(T, r0, c0, n, mvp_block_nc, in, bs);
 
   const Int
     nblock = bs.size(),
     ntri = ((mvp_block_nc ? 2 : 1) + nblock) / 2,
     nmvp = ntri - 1;
-  nd_.t.resize(ntri);
-  nd_.s.resize(nmvp);
-  nd_.os.resize(ntri);
+  nd_.t.optclear_and_resize(ntri, OnDiagTri());
+  nd_.s.optclear_and_resize(nmvp, TMatrix());
+  nd_.os.optclear_and_resize(ntri);
 
-#ifdef __MIC__
-  // || is working pretty well on MIC, but not on CPU.
-  // Initialize metadata, such as nnz and partitioning information.
   if (mvp_block_nc)
     nd_.t[0].init(0, 0, mvp_block_nc);
   const Int i0 = mvp_block_nc ? 1 : 0;
@@ -2097,7 +2251,6 @@ RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
       nd_.os[i] = b.c0;
     }
   }
-  Timer::start(Timer::dpb_tinit_2);
   // Initialize memory in order.
   nd_.os.back() = 0;
   for (Int i = 0; i < nmvp; ++i) {
@@ -2105,13 +2258,13 @@ RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
     nd_.s[i].init_memory(in);
   }
   nd_.t.back().init_memory(in);
-  Timer::stop(Timer::dpb_tinit_2); Timer::start(Timer::dpb_tinit_3);
   // Initialize numerical data.
+  init_invert_ondiag_tris_separately();
 # pragma omp parallel
   {
-#   pragma omp for schedule(static)
+#   pragma omp for
     for (Int i = i0; i < ntri; ++i)
-      nd_.t[i].init_numeric(T);
+      nd_.t[i].init_numeric(T, ! invert_separately_);
     const Size ilim = nmvp*nthreads_;
 #   pragma omp for schedule(static, parfor_static_size)
     for (Size i = 0; i < ilim; ++i) {
@@ -2119,31 +2272,7 @@ RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
       nd_.s[si].init_numeric(T, tid);
     }
   }
-  Timer::stop(Timer::dpb_tinit_3);
-#else
-  Int ti = 0, si = 0;
-  typename std::vector<Box>::iterator bit = bs.begin();
-  if (mvp_block_nc) {
-    nd_.t[ti++].init(0, 0, mvp_block_nc);
-    const Box& b = *bit; ++bit;
-    nd_.s[si].init(T, b.r0, b.c0, b.nr, b.nc, in);
-    nd_.os[si++] = b.c0;
-  }
-  while (si < nmvp) {
-    { const Box& b = *bit; ++bit;
-      nd_.t[ti++].init(T, b.r0, b.c0, b.nr, in); }
-    { const Box& b = *bit; ++bit;
-      nd_.s[si].init(T, b.r0, b.c0, b.nr, b.nc, in);
-      nd_.os[si++] = b.c0; }
-  }
-  { const Box& b = *bit; ++bit;
-    nd_.t[ti++].init(T, b.r0, b.c0, b.nr, in); }
-  nd_.os.back() = 0;
-
-  assert(bit == bs.end());
-  assert(ti == static_cast<Int>(nd_.t.size()));
-  assert(si == static_cast<Int>(nd_.s.size()));
-#endif
+  if (invert_separately_) invert_ondiag_tris();
 
   { // Initialize threading data for the inverse of the on-diag tri.
     max_diag_tri_ = 0;
@@ -2152,72 +2281,107 @@ RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
       max_diag_tri_ = std::max(max_diag_tri_, nd_.t[i].n());
       max_nthreads = std::max(max_nthreads, nd_.t[i].nthreads());
     }
-    wrk_.resize(max_diag_tri_ * in.max_nrhs);
-    nd_.inv_tri_done.resize(max_nthreads);
+    wrk_.optclear_and_resize(max_diag_tri_ * in.max_nrhs);
+    nd_.inv_tri_done.optclear_and_resize(max_nthreads);
   }
 
   p2p_init();
-
-#if defined OUTPUT_RECURSIVEBLOCK_PARTITION
-  do {
-    if (omp_get_max_threads() != 32) break;
-    const Int lc0 = mvp_block_nc + c0;
-    static int ctr = 0;
-    Size nnz = 0;
-    for (Int r = r0; r < r0 + n; ++r) {
-      const Size rn = T.ir[r+1] - T.ir[r];
-      nnz += rn - find_first<Int>(T.jc + T.ir[r], rn, lc0);
-    }
-    if (nnz > 17500000) break;
-    { // Write recursive block as a matrix-market file.
-      std::stringstream ss;
-      ss << "rtp" << ctr << ".mm";
-      FILE* fid = fopen(ss.str().c_str(), "w");
-      fprintf(fid, "%%%%MatrixMarket matrix coordinate real general\n"
-              "%11d %11d %11d\n", n, n, static_cast<Int>(nnz));
-      Size cnt = 0;
-      for (Int r = r0; r < r0 + n; ++r) {
-        const Int rn = T.ir[r+1] - T.ir[r];
-        for (Size j = T.ir[r] + find_first<Int>(T.jc + T.ir[r], rn, lc0);
-             j < T.ir[r+1]; ++j, ++cnt) {
-          fprintf(fid, "%d %d %1.15e\n", r - r0 + 1, T.jc[j] - lc0 + 1, T.d[j]);
-          assert(cnt <= nnz);
-        }
-      }
-      fclose(fid);
-    }
-    { // Write the recursive block decomposition.
-      std::stringstream ss;
-      ss << "rtp" << ctr << ".dat";
-      FILE* fid = fopen(ss.str().c_str(), "w");
-      for (size_t i = 1 + (mvp_block_nc ? 1 : 0); i < bs.size(); i += 2) {
-        const Box& b = bs[i];
-        fprintf(fid, "%d %d %d %d\n",
-                b.r0 - r0 + 1, b.c0 - lc0 + 1, b.nr, b.nc);
-      }
-      fclose(fid);
-    }
-    { // Write the cropped SerialBlocks.
-      std::stringstream ss;
-      ss << "rtp" << ctr << "-sb.dat";
-      FILE* fid = fopen(ss.str().c_str(), "w");
-      for (size_t i = mvp_block_nc ? 1 : 0; i < nd_.s.size(); ++i) {
-        const TMatrix& tm = nd_.s[i];
-        for (Int j = 0; j < tm.nblocks(); ++j) {
-          const SerialBlock& s = *tm.block(j);
-          fprintf(fid, "%d %d %d %d\n",
-                  s.r0() - r0 + 1, s.c0() - lc0 + 1, s.nr(), s.nc());
-        }
-      }
-      fclose(fid);
-    }
-    ++ctr;
-  } while (0);
-#endif
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline Impl<Int, Size, Sclr>::
+DenseTrisInverter::DenseTrisInverter (Array<Tri>& tris)
+  : tris_(tris)
+{
+  nthreads_ = omp_get_max_threads();
+  Int n = 0;
+  for (size_t i = 0; i < tris_.size(); ++i)
+    n = std::max(n, tris_[i].n);
+  w_.optclear_and_resize(ntri<Int>(n));
+}
+
+// inside || {}
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+DenseTrisInverter::invert (Sclr* const T, const Int n, Sclr* const w) {
+# pragma omp for schedule(static, 1)
+  for (Int c = 0; c < n; ++c) {
+    // Solve for column c. That involves only the (n-c)x(n-c) lower-right
+    // subblock of T. T is row major. w is col major.
+    const Int nt = ntri<Int>(c - 1); // 0 - 1 = -1 is ok.
+    Sclr* const Tc = T + 2*c + nt;
+    Sclr* const wc = w + n*c - nt;
+    wc[0] = Tc[0];
+    Sclr* Tp = Tc + c + 1;
+    for (Int r = 1; r < n - c; ++r) {
+      Sclr acc = 0;
+      for (Int k = 0; k < r; ++k)
+        acc -= wc[k]*Tp[k];
+      wc[r] = acc*Tp[r];
+      Tp += r + c + 1;
+    }
+  }
+}
+
+// inside || {}
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+DenseTrisInverter::copy (Sclr* const T, const Int n, Sclr* const w) {
+# pragma omp for schedule(static, 1)
+  for (Int c = 0; c < n; ++c) {
+    const Int nt = ntri<Int>(c - 1);
+    Sclr* Tc = T + 2*c + nt;
+    Sclr* const wc = w + n*c - nt;
+    for (Int r = 0; r < n - c; ++r) {
+      *Tc = wc[r];
+      Tc += r + c + 1;
+    }
+  }
+}
+
+// inside || {}
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+DenseTrisInverter::compute () {
+  for (size_t i = 0; i < tris_.size(); ++i) {
+    Tri& t = tris_[i];
+    invert(t.d, t.n, w_.data());
+    copy(t.d, t.n, w_.data());
+#   pragma omp barrier
+  }
+}
+
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+RecursiveTri::invert_ondiag_tris () {
+  typedef typename DenseTrisInverter::Tri DtiTri;
+  Int ntri = 0;
+  for (std::size_t i = 0; i < nd_.t.size(); ++i) {
+    OnDiagTri& t = nd_.t[i];
+    if (t.is_dense_inverted()) ++ntri;
+  }
+  Array<DtiTri> dtris(ntri);
+  for (std::size_t i = 0, k = 0; i < nd_.t.size(); ++i) {
+    OnDiagTri& t = nd_.t[i];
+    if (t.is_dense_inverted()) {
+      DtiTri& dti = dtris[k++];
+      dti.idx = i;
+      dti.d = t.dense_tri();
+      dti.n = t.n();
+    }
+  }
+  DenseTrisInverter dti(dtris);
+# pragma omp parallel
+  {
+    dti.compute();
+#   pragma omp for
+    for (size_t i = 0; i < dtris.size(); ++i)
+      nd_.t[dtris[i].idx].inv_copy();
+  }
+}
+
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 RecursiveTri::clear () {
   nd_.t.clear();
   nd_.s.clear();
@@ -2231,27 +2395,34 @@ RecursiveTri::clear () {
   nd_.inv_tri_done.clear();
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-RecursiveTri::init_numeric (const CrsMatrix& T) {
-  Int n = static_cast<Int>(nd_.t.size());
-  Timer::start(Timer::numrbt);
-# pragma omp parallel for schedule(dynamic)
-  for (Int i = 0; i < n; ++i)
-    nd_.t[i].reinit_numeric(T);
-  Timer::stop(Timer::numrbt); Timer::start(Timer::numrbm);
-  n = static_cast<Int>(nd_.s.size());
-  for (Int i = 0; i < n; ++i)
-    if ( ! nd_.s[i].empty()) nd_.s[i].reinit_numeric(T);
-  Timer::stop(Timer::numrbm);
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+RecursiveTri::reinit_numeric (const CrsMatrix& T) {
+# pragma omp parallel
+  {
+    const Int n = static_cast<Int>(nd_.t.size());
+#   pragma omp for
+    for (Int i = 0; i < n; ++i)
+      nd_.t[i].reinit_numeric(T, ! invert_separately_);
+    const Int nmvp = static_cast<Int>(nd_.s.size());
+    const Size ilim = nmvp*nthreads_;
+#   pragma omp for
+    for (Size i = 0; i < ilim; ++i) {
+      const Int si = i / nthreads_;
+      if ( ! nd_.s[si].empty()) continue;
+      const Int tid = i % nthreads_;
+      nd_.s[si].reinit_numeric(T, tid);
+    }
+  }
+  if (invert_separately_) invert_ondiag_tris();
 }
 
 // Form the lists of p2p dependencies. A dependency in this algorithm is of two
 // types. One is the usual dependency: a variable has to be solved for before
 // the next. The second imposes an ordering to assure there is no write race
 // condition when computing a row's dot product in pieces.
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 RecursiveTri::p2p_init () {
   // For L, in the case where the LS block has rows > 0 and so there is an MVP
   // block, we rely on the fact that n_ doesn't count the rows associated with
@@ -2263,26 +2434,30 @@ RecursiveTri::p2p_init () {
 
   // w[r] is the current MVP block that has precedence for row r.
   const Size marker = tn*nthreads_;
-  std::vector<Size> w(this->n_, marker);
+  Array<Size> w(this->n_, marker);
   // Fast way to get a set of unique elements.
-  std::vector<Int> w_cnted(sn * nthreads_, 0);
+  Array<Int> w_cnted(sn * nthreads_, 0);
   Int w_cnted_symbol = 1;
 
-  nd_.s_done.resize(nthreads_*sn, 0);
-  nd_.t_idx.resize(tn);
-  std::vector<std::vector<Size> > s_ids(sn * nthreads_);
+  nd_.s_done.optclear_and_resize(nthreads_*sn, 0);
+  nd_.t_idx.optclear_and_resize(tn);
+  if (tn) nd_.t_idx[0] = 0;
+  const Size nst = sn * nthreads_;
+  Array<std::vector<Size> > s_ids(nst, std::vector<Size>());
+  std::vector<Size> t_ids;
+  Array<Int> s_ids_cnt(nthreads_, 0);
   for (Int ti = 0; ti < tn; ++ti) {
     // Consider each tri or MVP block in solution order.
     if (ti > 0) { // Tri block. First tri has no dependencies.
       const Tri& t = nd_.t[ti];
       const Int r0 = t.r0(), nr = t.n();
-      Int k = ti == 1 ? 0 : nd_.t_idx[ti-1];
+      Int k = nd_.t_idx[ti-1];
       for (Int r = r0, rlim = r0 + nr; r < rlim; ++r) {
         assert(r < this->n_);
         const Size wr = w[r];
         if (wr != marker && w_cnted[wr] != w_cnted_symbol) {
           const Int sid = rb_p2p_ind2sid(wr), tid = rb_p2p_ind2tid(wr);
-          nd_.t_ids.push_back(rb_p2p_sub2ind(sid, tid));
+          t_ids.push_back(rb_p2p_sub2ind(sid, tid));
           ++k;
           w_cnted[wr] = w_cnted_symbol;
         }
@@ -2305,8 +2480,10 @@ RecursiveTri::p2p_init () {
           if (wr != marker && w_cnted[wr] != w_cnted_symbol) {
             // If tids are the same, program order takes care of the dep.
             const Int tid = rb_p2p_ind2tid(wr);
-            if (tid != bi)
+            if (tid != bi) {
               s_ids[ind].push_back(wr);
+              ++s_ids_cnt[bi];
+            }
             w_cnted[wr] = w_cnted_symbol;
           }
           // I now have precedence.
@@ -2317,88 +2494,135 @@ RecursiveTri::p2p_init () {
     }
   }
 
-  nd_.s_ids.resize(nthreads_);
-  nd_.s_idx.resize(nthreads_);
-  for (Int i = 0; i < nthreads_; ++i) nd_.s_idx[i].push_back(0);
-  for (Size i = 0, ilim = static_cast<Size>(s_ids.size()); i < ilim; ++i) {
-    const Int tid = rb_p2p_ind2tid(i);
-    nd_.s_idx[tid].push_back(nd_.s_idx[tid].back() +
-                             static_cast<Int>(s_ids[i].size()));
-    for (Size j = 0, jlim = static_cast<Size>(s_ids[i].size()); j < jlim; ++j)
-      nd_.s_ids[tid].push_back(s_ids[i][j]);
-  }
-
-  compress(nd_.t_ids);
+  nd_.s_ids.optclear_and_resize(nthreads_);
+  nd_.s_idx.optclear_and_resize(nthreads_);
+  bool ok = true;
 # pragma omp parallel
-  { const int tid = omp_get_thread_num();
-    compress(nd_.s_ids[tid]);
-    compress(nd_.s_idx[tid]); }
-  compress(nd_.s_ids);
+  do {
+    const int tid = omp_get_thread_num();
+    try {
+      nd_.s_ids[tid].init();
+      nd_.s_ids[tid].optclear_and_reserve_ft(s_ids_cnt[tid]);
+      nd_.s_idx[tid].init();
+      nd_.s_idx[tid].optclear_and_reserve_ft(sn + 1);
+      nd_.s_idx[tid].unsafe_push_back(0);
+    } catch (...) { ok = false; }
+  } while (0);
+  if ( ! ok) throw hts::Exception("RecursiveTri::p2p_init failed to allocate");
+  for (Size i = 0; i < nst; ++i) {
+    const Int tid = rb_p2p_ind2tid(i);
+    const Int ndep = static_cast<Int>(s_ids[i].size());
+    nd_.s_idx[tid].unsafe_push_back(nd_.s_idx[tid].back() + ndep);
+    for (Int j = 0; j < ndep; ++j)
+      nd_.s_ids[tid].unsafe_push_back(s_ids[i][j]);
+  }
+  s_ids.clear();
+  nd_.t_ids.optclear_and_resize(t_ids.size());
+  memcpy(nd_.t_ids.data(), t_ids.data(), t_ids.size()*sizeof(Size));
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::RecursiveTri::p2p_reset () const {
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::RecursiveTri::p2p_reset () const {
   nd_.t_barrier = -1;
   for (size_t i = 0; i < nd_.inv_tri_done.size(); ++i)
     nd_.inv_tri_done[i] = -1;
   ++nd_.done_symbol;
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 RecursiveTri::reset_max_nrhs (const Int max_nrhs) {
-  wrk_.resize(max_diag_tri_ * max_nrhs);
+  wrk_.optclear_and_resize(max_diag_tri_ * max_nrhs);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 LevelSetTri::init_lsets (const LevelSetter& lstr,
                          const bool save_for_reprocess) {
   ls_blk_sz_ = lstr.ls_blk_sz();
   save_for_reprocess_ = save_for_reprocess;
-  lsp_.resize(lstr.size() + 1);
+  lsp_.optclear_and_resize(lstr.size() + 1);
   lsp_[0] = 0;
   for (Int i = 0; i < lstr.size(); ++i)
     lsp_[i+1] = lsp_[i] + lstr.lset(i).size();
   nlvls_ = static_cast<Int>(lsp_.size()) - 1;
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 LevelSetTri::init (const CrsMatrix& T, const Int r0, const Int c0,
                    const Int n, const InitInfo& in) {
   n_ = n;
-  t_.resize(in.nthreads);
-  
+  t_.optclear_and_resize(in.nthreads, Thread());
+
+  ps_.optclear_and_resize(in.nthreads);
+  bool ok = true;
 # pragma omp parallel
-  { const int tid = omp_get_thread_num();
-    t_[tid].lsp.push_back(0); }
-  
-  ps_.resize(in.nthreads);
-  for (Int ils = 0; ils < static_cast<Int>(lsp_.size()) - 1; ++ils) {
-    const Int
-      r0 = lsp_[ils],
-      c0 = 0,
-      nr = lsp_[ils+1] - r0,
-      nc = lsp_[ils+1] + mvp_block_nc_;
+  do {
+    const int tid = omp_get_thread_num();
+    Thread& t = t_[tid];
+    
+    // Allocate and first touch.
+    try {
+      t.p.optclear_and_resize_ft(nlvls_);
+      t.lsp.optclear_and_resize_ft(nlvls_ + 1);
+    } catch (...) {
+      ok = false;
+      break;
+    }
 
-    const Int nseg = in.nthreads;
-    CrsSegmenter seg(T, r0, c0, nr, nc, nseg, ls_blk_sz_);
-    const std::vector<Int>& p = seg.p();
-    assert(p[1] >= p[0]);
+    // Get a thread's chunk of each level set.
+    t.lsp[0] = 0;
+#   pragma omp barrier
+#   pragma omp for
+    for (Int ils = 0; ils < nlvls_; ++ils) {
+      const Int
+        r0 = lsp_[ils],
+        c0 = 0,
+        nr = lsp_[ils+1] - r0,
+        nc = lsp_[ils+1] + mvp_block_nc_;
 
-#   pragma omp parallel
-    { int tid = omp_get_thread_num();
-      if (tid + 1 < (int) p.size()) {
-        t_[tid].p.push_back(p[tid]);
-        t_[tid].lsp.push_back(t_[tid].lsp.back() + p[tid+1] - p[tid]);
-        for (Int j = p[tid]; j < p[tid+1]; ++j)
-          ps_[tid].push_back(j);
-      } else {
-        t_[tid].p.push_back(-1);
-        t_[tid].lsp.push_back(t_[tid].lsp.back());
-      } }
-  }
+      CrsSegmenter seg(T, r0, c0, nr, nc, in.nthreads, ls_blk_sz_);
+      const Array<Int>& p = seg.p();
+      assert(p[1] >= p[0]);
+      const Int nseg = static_cast<Int>(p.size()) - 1;
+
+      for (int tid1 = 0; tid1 < in.nthreads; ++tid1) {
+        Thread& t1 = t_[tid1];
+        if (tid1 < nseg) {
+          t1.p[ils] = p[tid1];
+          t1.lsp[ils+1] = p[tid1+1] - p[tid1];
+        } else {
+          t1.p[ils] = -1;
+          t1.lsp[ils+1] = 0;
+        }
+      }
+    }
+
+    // Cumsum lsp.
+    for (Int ils = 1; ils <= nlvls_; ++ils)
+      t.lsp[ils] += t.lsp[ils-1];
+
+    // Fill ps_.
+    Array<Int>& p = ps_[tid];
+    try {
+      p.init();
+      p.optclear_and_resize(t.lsp[nlvls_]);
+    } catch (...) {
+      ok = false;
+      break;
+    }
+    Int k = 0;
+    for (Int ils = 0; ils < nlvls_; ++ils) {
+      const Int is = t.p[ils];
+      if (is == -1) continue;
+      const Int n = t.lsp[ils+1] - t.lsp[ils];
+      for (Int i = 0; i < n; ++i)
+        p[k++] = is + i;
+    }
+    assert(k == t.lsp[nlvls_]);
+  } while (0);
+  if ( ! ok) throw hts::Exception("LevelSetTri::init failed to allocate.");
 
   init_numeric(T);
   if ( ! save_for_reprocess_) ps_.clear();
@@ -2415,20 +2639,22 @@ LevelSetTri::init (const CrsMatrix& T, const Int r0, const Int c0,
 // already have fully analyzed it. Moreover, this reordering only requires two
 // data changes: lsis is permuted, and t.m->jc is renumbered accordingly. In
 // particular, t.m->d and t.m->ir are unchanged.
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-LevelSetTri::update_permutation (std::vector<Int>& lsis, const Partition& p) {
-  const std::vector<Int> old_lsis = lsis;
-  std::vector<Int> q(p.cm->n);
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+LevelSetTri::update_permutation (Array<Int>& lsis, const Partition& p) {
+  Array<Int> old_lsis(lsis.size());
+  Array<Int> q(p.cm->n);
 # pragma omp parallel
   {
+#   pragma omp for
+    for (std::size_t i = 0; i < lsis.size(); ++i)
+      old_lsis[i] = lsis[i];
     const int tid = omp_get_thread_num();
     Thread& t = t_[tid];
     int start = 0;
     for (int i = 0; i < tid; ++i)
       start += t_[i].m->m;
-    const Int nlev = static_cast<Int>(t.lsp.size()) - 1;
-    for (Int ils = 0, k = 0; ils < nlev; ++ils) {
+    for (Int ils = 0, k = 0; ils < nlvls_; ++ils) {
       const Int p_ils = t.p[ils];
       t.p[ils] = start + k;
       const Int n = t.lsp[ils+1] - t.lsp[ils];
@@ -2447,14 +2673,14 @@ LevelSetTri::update_permutation (std::vector<Int>& lsis, const Partition& p) {
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::LevelSetTri::
-find_task_responsible_for_variable (std::vector<p2p_Pair>& pairs) {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::LevelSetTri::
+find_task_responsible_for_variable (p2p_Pair* const pairs) {
   const int tid = omp_get_thread_num();
   // Find the level and tid responsible for variable i.
   Thread& t = t_[tid];
-  const std::vector<Int>& lsp = t.lsp;
-  const std::vector<Int>& p = t.p;
+  const Array<Int>& lsp = t.lsp;
+  const Array<Int>& p = t.p;
   for (Int ils = 0, ils_lim = static_cast<Int>(lsp.size()) - 1;
        ils < ils_lim; ++ils) {
     const Int r0 = p[ils];
@@ -2467,25 +2693,25 @@ find_task_responsible_for_variable (std::vector<p2p_Pair>& pairs) {
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-Int Impl<Int, Size, Real>::LevelSetTri::
-fill_graph (const std::vector<p2p_Pair>& pairs, std::vector<Size>& g,
-            std::vector<Size>& gp, std::vector<Size>& wrk) {
+template<typename Int, typename Size, typename Sclr>
+Int Impl<Int, Size, Sclr>::LevelSetTri::
+fill_graph (const p2p_Pair* const pairs, Size* const g, Size* const gp,
+            Size* const wrk) {
   // O(nnz/nthreads) time and O(nnz) space. Reduce the entry-wise graph to the
   // (lvl, tid)-wise dependency graph.
   const int tid = omp_get_thread_num();
-  const Size n = static_cast<Size>(gp.size()) - 1;
+  const Size n = nlvls_*t_.size();
   Thread& t = t_[tid];
-  const std::vector<Int>& lsp = t.lsp;
+  const Array<Int>& lsp = t.lsp;
   // Max value of e + 1, used as a marker.
-  const Size me = nlvls_*t_.size();
+  const Size& me = n;
   // Build the graph g. g[e] is the list of dependencies for (level, tid) e.
   const CrsMatrix* const cm = t.m;
   const Size* const ir = cm->ir;
   const Int* const jc = cm->jc;
 
   // Get an unused piece of the workspace.
-  Size* Te = wrk.data();
+  Size* Te = wrk;
   for (int i = 0; i < tid; ++i)
     if (t_[i].m) {
       const CrsMatrix* const m = t_[i].m;
@@ -2493,8 +2719,8 @@ fill_graph (const std::vector<p2p_Pair>& pairs, std::vector<Size>& g,
     }
 
   // Count entries in g.
-  for (Int ils = 1, ils_lim = static_cast<Int>(lsp.size()) - 1;
-       ils < ils_lim; ++ils) {
+  gp[ls_p2p_sub2ind(1, tid)] = 0;
+  for (Int ils = 1, ils_lim = nlvls_; ils < ils_lim; ++ils) {
     const Size e = ls_p2p_sub2ind(ils, tid);
     const Size Ten = ir[lsp[ils+1]] - ir[lsp[ils]];
     // Record all e = (lvl, tid) dependencies in a CRS matrix structurally
@@ -2572,46 +2798,80 @@ fill_graph (const std::vector<p2p_Pair>& pairs, std::vector<Size>& g,
 //pre a is sorted.
 //pre b is sorted.
 //pre len(mark) == an.
+//pre mark can == a.
 // O(max(an, bn)).
-template<typename Int, typename Size> inline void
-mark_intersection (const Size* a, const Int an, const Size* b, const Int bn,
+template<typename Int, typename Size> inline Int
+mark_intersection (const Size* a, const Int an, const Size* b, Int bn,
                    Size* mark /* len(mark) == an */, const Size marker) {
-  Int ai = 0, bi = 0;
-  while (ai < an && bi < bn) {
-    if (a[ai] < b[bi])
-      ++ai;
-    else if (a[ai] > b[bi])
-      ++bi;
-    else {
-      mark[ai] = marker;
-      ++ai;
-      ++bi;
+  Int nmarked = 0;
+  for (Int i = 0; i < an; ++i) {
+    if (a[i] == marker) continue;
+    const Int n = static_cast<Int>(std::lower_bound(b, b + bn, a[i]) - b);
+    if (n < bn && b[n] == a[i]) {
+      mark[i] = marker;
+      ++nmarked;
+      b += n;
+      bn -= n;
     }
   }
+  return nmarked;
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::LevelSetTri::
-prune_graph (const std::vector<Size>& gc, const std::vector<Size>& gp,
-             std::vector<Size>& g, std::vector<Int>& gsz,
-             std::vector<Size>& wrk, const Int max_gelen) {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::LevelSetTri::
+prune_graph (const Size* const gc, const Size* const gp, Size* const g,
+             Int* const gsz, Size* const wrk, const Int max_gelen) {
   // Time complexity is a little complicated. See Park et al 2014. Space is
   // O(#threads max |g(e)|).
   const int tid = omp_get_thread_num();
-  const Size n = static_cast<Size>(gsz.size());
-  const Size me = nlvls_*t_.size();
-  Size* mark = &wrk[tid*max_gelen];
+  const Size n = nlvls_*t_.size();
+  const Size& me = n; // marker
+  Size* const mark = &wrk[tid*max_gelen];
   // I find that it's more efficient to use a parfor than to work on a thread's
   // own e's.
 # pragma omp for schedule(static,1)
   for (Size e = 0; e < n; ++e) {
     const Int gcelen = static_cast<Int>(gp[e+1] - gp[e]);
+    gsz[e] = 0;
     if (gcelen == 0) continue;
     // e's dependencies.
     const Size* const gce = &gc[gp[e]];
-    for (Int i = 0; i < gcelen; ++i)
-      mark[i] = gce[i];
+    // Record only the deepest task in a tid group. The deps are sorted first by
+    // tid group, then by lvl, which we exploit here.
+    Int mark_len = 0;
+    Int prev_lvl_len = 0;
+    {
+      const Int elvl = ls_p2p_ind2lvl(e), etid = ls_p2p_ind2tid(e);
+      Size prev_e = me;
+      Int prev_tid = static_cast<Int>(t_.size());
+      for (Int i = 0; i <= gcelen; ++i) {
+        // A little bit of messiness so we can grab the last one.
+        Int edtid = 0;
+        if (i < gcelen)
+          edtid = ls_p2p_ind2tid(gce[i]);
+        if (i == gcelen || edtid != prev_tid) {
+          if (prev_e != me) {
+            const Int edlvl = ls_p2p_ind2lvl(prev_e);
+            if (edlvl+1 == elvl) {
+              // If a dep is only one level shallower, it cannot be
+              // pruned. Record it for later insertion unless its tid is e's
+              // tid, in which case it can and will be pruned.
+              if (prev_tid != etid)
+                mark[gcelen - prev_lvl_len++ - 1] = prev_e;
+            } else {
+              // The dep is prunable.
+              mark[mark_len++] = prev_e;
+            }
+          }
+          prev_tid = edtid;
+        }
+        if (i == gcelen) break;
+        prev_e = gce[i];
+      }
+    }
+    assert(mark_len + prev_lvl_len <= gcelen);
+    Int nmarked = 0;
     for (Int ied = 0; ied < gcelen; ++ied) { // For each of e's deps:
       const Size ed = gce[ied];
       assert(ed >= 0 && ed < n);
@@ -2619,73 +2879,65 @@ prune_graph (const std::vector<Size>& gc, const std::vector<Size>& gp,
       // ed's dependencies.
       const Size* const gced = &gc[gp[ed]];
       const Int gcedlen = static_cast<Int>(gp[ed+1] - gp[ed]);
-      mark_intersection(gce, gcelen, gced, gcedlen, mark, me);
+      nmarked += mark_intersection(mark, mark_len, gced, gcedlen, mark, me);
+      if (nmarked == mark_len) break;
     }
     // Insert the pruned set of dependencies.
     Int k = 0;
     Size* const ge = &g[gp[e]];
     const Int etid = ls_p2p_ind2tid(e);
-    for (Int i = 0; i < gcelen; ++i) {
+    for (Int i = 0; i < mark_len; ++i) {
       const Size ed = mark[i];
       if (ed == me) continue;
       const Int edtid = ls_p2p_ind2tid(ed);
       if (edtid != etid) ge[k++] = ed;
     }
+    for (Int i = 0; i < prev_lvl_len; ++i)
+      ge[k++] = mark[gcelen - i - 1];
     gsz[e] = k;
   }
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::LevelSetTri::
-fill_dependencies (const std::vector<Size>& g, const std::vector<Size>& gp,
-                   const std::vector<Int>& gsz) {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::LevelSetTri::
+fill_dependencies (const Size* const g, const Size* const gp,
+                   const Int* const gsz) {
   const int tid = omp_get_thread_num();
   Thread& t = t_[tid];
-  const std::vector<Int>& lsp = t.lsp;
+  const Array<Int>& lsp = t.lsp;
   // Allocate inside this thread up front. I could probably do this even more
   // efficiently, but fill_dependencies is negligible compared with fill_graph
   // and prune_graph.
-  t.p2p_depends_p.reserve(nlvls_ + 1);
+  t.p2p_depends_p.optclear_and_reserve(nlvls_ + 1);
   Int sz = 0;
   for (Int ils = 1, ils_lim = static_cast<Int>(lsp.size()) - 1;
        ils < ils_lim; ++ils)
     sz += gsz[ls_p2p_sub2ind(ils, tid)];
-  t.p2p_depends.reserve(sz);
+  t.p2p_depends.optclear_and_reserve(sz);
   // Make the final lists of dependencies.
-  t.p2p_depends_p.push_back(0);
+  t.p2p_depends_p.unsafe_push_back(0);
   for (Int ils = 1, ils_lim = static_cast<Int>(lsp.size()) - 1;
        ils < ils_lim; ++ils) {
     const Size e = ls_p2p_sub2ind(ils, tid);
     const Size* const ed = &g[gp[e]];
     const Int edsz = gsz[e];
-    // Sort by increasing level number. Heuristic to speed up the
-    // synchronization step in p2p_solve. Idea is to do p2p_done_ checking on
-    // dependencies higher up in the tree first, as those are likely done
-    // sooner.
-    std::vector<p2p_SortEntry> es(edsz); //todo Remove memory alloc.
-    for (Int ied = 0; ied < edsz; ++ied) {
-      es[ied].lvl = ls_p2p_ind2lvl(ed[ied]);
-      es[ied].tid = ls_p2p_ind2tid(ed[ied]);
-    }
-    std::sort(es.begin(), es.end());
     // Insert.
-    t.p2p_depends_p.push_back(t.p2p_depends_p[ils-1]);
+    t.p2p_depends_p.unsafe_push_back(t.p2p_depends_p[ils-1]);
     for (Int ied = 0; ied < edsz; ++ied) {
-      t.p2p_depends.push_back(ls_p2p_sub2ind(es[ied].lvl, es[ied].tid));
+      t.p2p_depends.unsafe_push_back(ed[ied]);
       ++t.p2p_depends_p.back();
     }
   }
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::LevelSetTri::p2p_init () {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::LevelSetTri::p2p_init () {
   if (t_[0].lsp.empty()) return;
 
-  Timer::start(Timer::lsp2p_1);
   if (p2p_done_.empty()) {
     p2p_done_value_ = 0;
-    p2p_done_.resize(t_[0].lsp.size()*t_.size(), 1);
+    p2p_done_.optclear_and_resize(t_[0].lsp.size()*t_.size(), 1);
   }
   if (t_[0].lsp.size() <= 1) return;
 
@@ -2695,102 +2947,89 @@ void Impl<Int, Size, Real>::LevelSetTri::p2p_init () {
       const CrsMatrix* const cm = t_[i].m;
       nnz += cm->ir[cm->m];
     }
-  const Size n = t_.size() * t_[0].lsp.size();
+  const Size n = t_.size() * nlvls_;
 
   // g is a graph. nnz is an upper bound on the memory needed.
   //   g(e) is the set of dependencies (incoming edges) for node e. gp is the
   // pointer to g(e). So g(e) is written g[gp[e]]. gsz is the size of g(e).
   //   A node e represents a pair (level, thread id) that is a task.
-  std::vector<Int> gsz;
-  std::vector<Size> g, gc, gp, wrk;
+  Array<Size> as;
+  Size* g, * gc, * gp;
+  Array<Int> gsz;
   // Thread and level responsible for a variable.
-  std::vector<p2p_Pair> pairs;
+  Array<p2p_Pair> pairs;
+  Array<Size> wrk;
   try {
-    g.resize(nnz);
-    gc.resize(nnz);
-    gp.resize(n+1, 0);
-    gsz.resize(n);
-    wrk.resize(nnz);
-    pairs.resize(n_);
+    wrk.optclear_and_resize(nnz);
+    gsz.optclear_and_resize(n);
+    pairs.optclear_and_resize(n_);
+    as.optclear_and_resize(2*nnz + n + 1);
+    g = as.data();
+    gp = g + nnz;
+    gp[0] = 0;
+    gc = gp + n + 1;
   } catch (...) {
     std::stringstream ss;
     ss << "p2p_init failed to resize: n = " << n << " nnz = " << nnz;
     throw hts::Exception(ss.str());
   }
-  Timer::stop(Timer::lsp2p_1);
 
   Int max_gelen;
+  bool ok = true;
 # pragma omp parallel
-  {
-    find_task_responsible_for_variable(pairs);
+  do {
+    find_task_responsible_for_variable(pairs.data());
 #   pragma omp barrier
-#ifdef TIME
-#   pragma omp master
-    Timer::start(Timer::lsp2p_3);
-#endif
-    const Int max_gelen_t = fill_graph(pairs, g, gp, wrk);
+    const Int max_gelen_t = fill_graph(pairs.data(), g, gp, wrk.data());
 #   pragma omp barrier
 #   pragma omp master
     {
-      Timer::stop(Timer::lsp2p_3);
       pairs.clear();
       // Tell all threads; only master's max_gelen_t is valid.
       max_gelen = max_gelen_t;
       // In the unlikely case that max_gelen * #threads > nnz, allocate more
       // workspace.
       const Size space = max_gelen * t_.size();
-      if (space > nnz)
-        try { wrk.resize(space); }
-        catch (...) {
-          std::stringstream ss;
-          ss << "p2p_init failed to resize wrk: space = " << space;
-          throw hts::Exception(ss.str());
-        }
+      if (space > nnz) {
+        try { wrk.optclear_and_resize(space); }
+        catch (...) { ok = false; }
+      }
     }
     // Keep the original graph.
 #   pragma omp for
     for (Size i = 0; i < nnz; ++i)
       gc[i] = g[i];
-#ifdef TIME
-#   pragma omp master
-    Timer::start(Timer::lsp2p_6);
-#endif
-    prune_graph(gc, gp, g, gsz, wrk, max_gelen);
+    if ( ! ok) break;
+    prune_graph(gc, gp, g, gsz.data(), wrk.data(), max_gelen);
 #   pragma omp barrier
-#ifdef TIME
-#   pragma omp master
-    Timer::stop(Timer::lsp2p_6);
-#endif
-    fill_dependencies(g, gp, gsz);
-  }
+    try { fill_dependencies(g, gp, gsz.data()); }
+    catch (...) { ok = false; }
+  } while (0);
+  if ( ! ok) throw hts::Exception("p2p_init failed to reallocate wrk.");
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::LevelSetTri::p2p_reset () const {
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::LevelSetTri::p2p_reset () const {
   p2p_done_value_ = ! p2p_done_.empty() ? (p2p_done_[0] + 1) % 2 : 0;
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-set_diag_reciprocal (CrsMatrix& T) {
-  for (Int i = 0; i < T.m; ++i) {
-    const Size j = T.ir[i+1]-1;
-    T.d[j] = 1/T.d[j];
-  }
-}
-
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 LevelSetTri::init_numeric (const CrsMatrix& T) {
+  bool ok = true;
 # pragma omp parallel
-  { const int tid = omp_get_thread_num();
+  {
+    const int tid = omp_get_thread_num();
     del(t_[tid].m);
-    t_[tid].m = get_matrix_p(T, ps_[tid]);
-    set_diag_reciprocal(*t_[tid].m); }
+    try { t_[tid].m = get_matrix_p(T, ps_[tid], true); }
+    catch (...) { ok = false; }
+  }
+  if ( ! ok)
+    throw hts::Exception("LevelSetTri::init_numeric failed to get_matrix_p.");
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 LevelSetTri::reinit_numeric (const CrsMatrix& T) {
   bool nthreads_ok;
   std::string msg;
@@ -2801,39 +3040,42 @@ LevelSetTri::reinit_numeric (const CrsMatrix& T) {
     const int tid = omp_get_thread_num();
     Thread& t = t_[tid];
     assert(t.m);
-    const std::vector<Int>& p = ps_[tid];
+    const Array<Int>& p = ps_[tid];
     for (size_t i = 0; i < p.size(); ++i) {
       const Int r = p[i], nc = static_cast<Int>(T.ir[r+1] - T.ir[r]);
       assert(nc == static_cast<Int>(t.m->ir[i+1] - t.m->ir[i]));
-      memcpy(t.m->d + t.m->ir[i], T.d + T.ir[r], nc*sizeof(*t.m->d));
+      Sclr* const d_start = t.m->d + t.m->ir[i];
+      memcpy(d_start, T.d + T.ir[r], nc*sizeof(*t.m->d));
+      d_start[nc-1] = 1.0/d_start[nc-1];
     }
-    set_diag_reciprocal(*t_[tid].m);
   } while (0);
   if ( ! nthreads_ok) throw hts::Exception(msg);
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::Permuter::clear () {
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::Permuter::clear () {
   if (q_ && q_ != p_) { deln(q_); }
   deln(p_);
   deln(scale_);
   deln(px_);
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::Permuter::init (
-  const Int n, const bool is_lo, const std::vector<Int>& lsis,
-  const std::vector<Int>& dpis, const Int nthreads, const Int max_nrhs,
-  const Int* p, const Int* q, const Real* scale)
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::Permuter::init (
+  const Int n, const bool is_lo, const Array<Int>& lsis, const Array<Int>& dpis,
+  const Int nthreads, const Int max_nrhs, const Int* p, const Int* q,
+  const Real* scale)
 {
   clear();
   n_ = n;
   max_nrhs_ = max_nrhs;
   is_lo_ = is_lo;
-  p_ = q_ = 0; px_ = scale_ = 0;
+  p_ = q_ = 0;
+  px_ = 0;
+  scale_ = 0;
   try {
     p_ = allocn<Int>(n_);
-    px_ = allocn<Real>(n_*max_nrhs);
+    px_ = allocn<Sclr>(n_*max_nrhs);
     q_ = p || q ? allocn<Int>(n_) : p_;
     if (scale) {
       scale_ = allocn<Real>(n_);
@@ -2878,43 +3120,44 @@ void Impl<Int, Size, Real>::Permuter::init (
   }
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 Permuter::reinit_numeric (const Real* scale) {
   if (scale)
     memcpy(scale_, scale, n_*sizeof(*scale_));
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 Permuter::reset_max_nrhs (const Int max_nrhs) {
   if (max_nrhs_ == max_nrhs) return;
   max_nrhs_ = max_nrhs;
   deln(px_);
-  px_ = Allocnator<Real>(n_*max_nrhs_, "Permuter::reset_max_nrhs").release();
+  px_ = Allocnator<Sclr>(n_*max_nrhs_, "Permuter::reset_max_nrhs").release();
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 Permuter::check_nrhs (const Int nrhs) const {
   if (nrhs > max_nrhs_)
     throw hts::Exception("nrhs is > max_nrhs.");
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::TriSolver::clear () {}
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::TriSolver::clear () {}
 
 // len(irt) == n-1 because of how the transpose algorithm offsets irt. Partition
 // by nonzeros. At exit, start[i] is the starting column for the i'th thread.
-template<typename Int, typename Size, typename Real> static void
-partition_irt (const Int n, const Size* const irt, const Size nnz,
-               const Int nparts, std::vector<Int>& start) {
+template<typename Int, typename Size>
+void partition_irt (const Int n, const Size* const irt, const Size nnz,
+                    const Int nparts, Array<Int>& start) {
   const Int nseg = std::min<Int>(nparts, n);
   Int i0 = 1, j0 = 1;
-  start.resize(nseg);
+  start.optclear_and_resize(nseg);
+  start[0] = 0;
   
   for (Int i = i0; i < nseg; ++i) {
-    const Real d = ((Real) i / nseg)*nnz;
+    const double d = ((double) i / nseg)*nnz;
     Int j = static_cast<Int>(std::upper_bound(irt + j0, irt + n - 1, d) - irt);
     if (d - irt[j-1] > irt[j] - d) ++j;
     j = std::min<Int>(j, n - nseg + i);
@@ -2929,15 +3172,15 @@ partition_irt (const Int n, const Size* const irt, const Size nnz,
   }
 }
 
-template<typename Int, typename Size, typename Real>
-static void transpose (
-  const Int m, const Size* const ir, const Int* const jc, const Real* const d,
-  Size* const irt, Int* const jct, Real* const dt,
-  std::vector<Size>* transpose_perm = 0)
+template<typename Int, typename Size, typename Sclr>
+void transpose (
+  const Int m, const Size* const ir, const Int* const jc, const Sclr* const d,
+  Size* const irt, Int* const jct, Sclr* const dt,
+  Array<Size>* transpose_perm = 0)
 {
   const Size nnz = ir[m];
-  if (transpose_perm) transpose_perm->resize(nnz);
-  std::vector<Int> start;
+  if (transpose_perm) transpose_perm->optclear_and_resize(nnz);
+  Array<Int> start;
 # pragma omp parallel
   {
 #   pragma omp for schedule(static)
@@ -2961,8 +3204,7 @@ static void transpose (
       assert(sum == nnz);
       // At this point, At.ir[i+1] gives what is normally in At.ir[i].
       // 3. Fill in jc and d.
-      partition_irt<Int, Size, Real>(m, irt + 2, nnz, omp_get_num_threads(),
-                                     start);
+      partition_irt<Int, Size>(m, irt + 2, nnz, omp_get_num_threads(), start);
     }
     const int tid = omp_get_thread_num();
     if (tid < static_cast<int>(start.size())) {
@@ -2992,38 +3234,39 @@ static void transpose (
   assert(irt[m] == nnz);
 }
 
-template<typename Int, typename Size, typename Real>
-typename Impl<Int, Size, Real>::ConstCrsMatrix* Impl<Int, Size, Real>::
-transpose (const ConstCrsMatrix& T, std::vector<Size>* transpose_perm) {
+template<typename Int, typename Size, typename Sclr>
+typename Impl<Int, Size, Sclr>::ConstCrsMatrix* Impl<Int, Size, Sclr>::
+transpose (const ConstCrsMatrix& T, Array<Size>* transpose_perm) {
   const Int n = T.m;
   SparseData sd(n, T.ir[n], "transpose");
   htsimpl::transpose(n, T.ir, T.jc, T.d, sd.ir, sd.jc, sd.d, transpose_perm);
   ConstCrsMatrix* ccm = 0;
   try {
     ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d,
-                             opposite<Int, Size, Real>(T.dir), true);
+                             Direction::opposite(T.dir), T.conj, true);
   } catch (...) { throw hts::Exception("transpose failed to alloc."); }
   sd.release();
   return ccm;
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
-compose_transpose (const std::vector<Size>& transpose_perm, Partition& p) {
-  std::vector<Size> A_idxs_copy(p.A_idxs);
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
+compose_transpose (const Array<Size>& transpose_perm, Partition& p) {
+  Array<Size> A_idxs_copy(p.nnz);
 # pragma omp for schedule(static)
-  for (size_t i = 0; i < p.A_idxs.size(); ++i)
+  for (Size i = 0; i < p.nnz; ++i)
+    A_idxs_copy[i] = p.A_idxs[i];
+# pragma omp for schedule(static)
+  for (Size i = 0; i < p.nnz; ++i)
     p.A_idxs[i] = transpose_perm[A_idxs_copy[i]];
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
                  const bool save_for_reprocess, const Int* p, const Int* q,
                  const Real* scale, const Options& o) {
-  Timer::init();
-  Timer::start(Timer::total_pre); Timer::start(Timer::setup);
   NumThreads nthreads_state;
   set_num_threads(nthreads, nthreads_state);
   throw_if_nthreads_not_ok(nthreads);
@@ -3040,36 +3283,32 @@ TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
     in.max_nrhs = max_nrhs;
     in.min_parallel_rows = o.min_parallel_rows;
 
-    Timer::stop(Timer::setup); Timer::start(Timer::transpose);
-    const bool make_transpose = T->dir == ConstCrsMatrix::transpose;
-    std::vector<Size> transpose_perm;
+    const bool make_transpose = T->dir == Direction::transpose;
+    Array<Size> transpose_perm;
     if (make_transpose) {
-      T = transpose(*T, save_for_reprocess ? &transpose_perm : 0);
+      assert( ! delete_T);
+      const ConstCrsMatrix* Tp = T;
+      T = transpose(*Tp, save_for_reprocess ? &transpose_perm : 0);
+      Tp->deallocate();
       delete_T = true;
     }
-    Timer::stop(Timer::transpose);
 
     // Determine shape.
-    Timer::start(Timer::tolower);
     Shape shape = determine_shape(*T);
     if ( ! shape.is_triangular) throw hts::NotTriangularException();
     if ( ! shape.has_full_diag) throw hts::NotFullDiagonal();
     is_lo_ = shape.is_lower;
-    Timer::stop(Timer::tolower);
 
     // Find level sets.
-    Timer::start(Timer::lsetfind);
     LevelSetter lstr;
     const Int lstr_threshold = o.lset_min_size * 
       (o.lset_min_size_scale_with_nthreads ? nthreads_ : 1);
     lstr.init(*T, lstr_threshold, is_lo_, o);
-    Timer::stop(Timer::lsetfind);
 
-    Timer::start(Timer::perm);
     if ( ! is_lo_) {
-      const ConstCrsMatrix* Tp = delete_T ? T : 0;
-      T = permute_to_other_tri(*T);
-      if (delete_T) del(Tp);
+      const ConstCrsMatrix* Tp = T;
+      T = permute_to_other_tri(*Tp);
+      if (delete_T) del(Tp); else Tp->deallocate();
       delete_T = true;
       lstr.reverse_variable_order(n_);
     }
@@ -3079,72 +3318,60 @@ TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
     //      (scatter) (2)],
     // where if is_lo_, (1) = level sets and (2) = data parallel; if ! is_lo_,
     // then the opposite.
-    std::vector<Int> lsis, dpis;
+    Array<Int> lsis, dpis;
     get_idxs(n_, lstr, lsis, dpis);
     if (o.printlvl > 0)
       std::cout << "n " << n_ << " |lsis| " << lsis.size() << " |dpis| "
                 << dpis.size() << "\n";
-    Timer::stop(Timer::perm);
     if (is_lo_) {
       // 1. Level-scheduling block.
-      Timer::start(Timer::lsetinit);
-      { PermVec lsis_pv(T->m, lsis);
-        get_matrix_pp_with_covers_all(*T, lsis_pv, p_[0]);
-        sort(p_[0]); }
+      {
+        PermVec lsis_pv(T->m, lsis);
+        get_matrix_pp_with_covers_all(*T, lsis_pv, p_[0], save_for_reprocess);
+      }
       lst_.init_lsets(lstr, save_for_reprocess);
       lst_.init(*p_[0].cm, 0, 0, p_[0].cm->m, in);
       lst_.update_permutation(lsis, p_[0]);
-      Timer::stop(Timer::lsetinit); Timer::start(Timer::lsetinitp2p);
-      lst_.p2p_init();
-      Timer::stop(Timer::lsetinitp2p);
-      Timer::start(Timer::dpb); Timer::start(Timer::dpb_getmatrix);
+      if ( ! save_for_reprocess) p_[0].clear();
       {
         PermVec dpis_pv(T->m, dpis), lsis_pv(T->m, lsis);
-        get_matrix_p_qp_with_covers_all(*T, dpis_pv, lsis_pv, p_[1]);
-        Timer::stop(Timer::dpb_getmatrix); Timer::start(Timer::dpb_sort);
-        sort(p_[1]);
-        Timer::stop(Timer::dpb_sort);
+        get_matrix_p_qp_with_covers_all(*T, dpis_pv, lsis_pv, p_[1],
+                                        save_for_reprocess);
       }
+      if (delete_T) del(T); else T->deallocate();
+      lst_.p2p_init();
       if (p_[1].cm->m > 0) {
-        Timer::start(Timer::dpb_tinit);
         // 2. No MVP block. It's in the data-parallel block.
         // 3. Data-parallel block (+ MVP block).
         const Int mvp_nc = p_[1].cm->n - p_[1].cm->m;
         t_.init(*p_[1].cm, 0, 0, p_[1].cm->m, in, mvp_nc);
-        Timer::stop(Timer::dpb_tinit);
       }
-      Timer::stop(Timer::dpb);
+      if ( ! save_for_reprocess) p_[1].clear();
     } else {
-      Timer::start(Timer::dpb); Timer::start(Timer::dpb_getmatrix);
-      PermVec dpis_pv(T->m, dpis);
-      get_matrix_pp_with_covers_all(*T, dpis_pv, p_[1]);
-      Timer::stop(Timer::dpb_getmatrix); Timer::start(Timer::dpb_sort);
-      sort(p_[1]);
-      Timer::stop(Timer::dpb_sort);
+      {
+        PermVec dpis_pv(T->m, dpis);
+        get_matrix_pp_with_covers_all(*T, dpis_pv, p_[1], save_for_reprocess);
+        {
+          PermVec lsis_pv(T->m, lsis);
+          get_matrix_p_qp_with_covers_all(*T, lsis_pv, dpis_pv, p_[0],
+                                          save_for_reprocess);
+        }
+      }
+      if (delete_T) del(T); else T->deallocate();
       if (p_[1].cm->m > 0) {
-        Timer::start(Timer::dpb_tinit);
         // 3. Data-parallel block.
         t_.init(*p_[1].cm, 0, 0, p_[1].cm->m, in);
         // 2. No MVP block. It's in the level scheduling block.
-        Timer::stop(Timer::dpb_tinit);
       }
-      Timer::stop(Timer::dpb);
+      if ( ! save_for_reprocess) p_[1].clear();
       // 1. Level-scheduling block (+ MVP block).
-      Timer::start(Timer::lsetinit);
-      { PermVec lsis_pv(T->m, lsis);
-        get_matrix_p_qp_with_covers_all(*T, lsis_pv, dpis_pv, p_[0]);
-        sort(p_[0]); }
       lst_.init_lsets(lstr, save_for_reprocess);
-      lst_.set_mvp_block_nc(p_[1].cm->m);
+      lst_.set_mvp_block_nc(dpis.size());
       lst_.init(*p_[0].cm, 0, 0, p_[0].cm->m, in);
       lst_.update_permutation(lsis, p_[0]);
-      Timer::stop(Timer::lsetinit); Timer::start(Timer::lsetinitp2p);
+      if ( ! save_for_reprocess) p_[0].clear();
       lst_.p2p_init();
-      Timer::stop(Timer::lsetinitp2p);
     }
-    Timer::start(Timer::setup);
-    if (delete_T) del(T);
-    Timer::stop(Timer::setup); Timer::start(Timer::for_reprocess);
     if (save_for_reprocess) {
       // For 32-bit Int, 64-bit Real, save 2/3 of memory during solves at little
       // extra init_numeric cost.
@@ -3156,57 +3383,33 @@ TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
           if (make_transpose)
             compose_transpose(transpose_perm, p_[i]);
         }
-    } else {
-      for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].clear();
     }
-    Timer::stop(Timer::for_reprocess); Timer::start(Timer::perm);
     perm_.init(n_, is_lo_, lsis, dpis, nthreads_, max_nrhs, p, q, scale);
-    Timer::stop(Timer::perm);
   } catch (...) {
-    if (delete_T) del(T);
+    if (delete_T) del(T); else T->deallocate();
     throw;
     restore_num_threads(nthreads_state);
   }
-  Timer::start(Timer::setup);
   restore_num_threads(nthreads_state);
-  Timer::stop(Timer::setup); Timer::stop(Timer::total_pre);
-#ifdef TIME
-  Timer::print_setup();
-#endif
 }
 
 // Reinitialize numbers, but keep the same structures.
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TriSolver::reinit_numeric (const ConstCrsMatrix* T, const Real* r) {
-  Timer::init();
-  Timer::start(Timer::total_re); Timer::start(Timer::numthr);
   NumThreads nthreads_state;
   set_num_threads(nthreads_, nthreads_state);
-  Timer::stop(Timer::numthr); Timer::start(Timer::numpart);
   for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].alloc_d();
   repartition_into_2_blocks(p_, *T);
-  Timer::stop(Timer::numpart); Timer::start(Timer::numls);
   lst_.reinit_numeric(*p_[0].cm);
-  Timer::stop(Timer::numls);
-  if (p_[1].cm->m > 0) {
-    //todo Tighten up some of these init_numeric impls. Might want to do
-    // reinit_numeric like for lst.
-    t_.init_numeric(*p_[1].cm);
-  }
+  if (p_[1].cm->m > 0) t_.reinit_numeric(*p_[1].cm);
   for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].clear_d();
-  Timer::start(Timer::numperm);
   if (r) perm_.reinit_numeric(r);
-  Timer::stop(Timer::numperm); Timer::start(Timer::numthr);
   restore_num_threads(nthreads_state);
-  Timer::stop(Timer::numthr); Timer::stop(Timer::total_re);
-#ifdef TIMENUM
-  Timer::print_numeric();
-#endif
 }
 
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::
 TriSolver::reset_max_nrhs (const Int max_nrhs) {
   perm_.reset_max_nrhs(max_nrhs);
   t_.reset_max_nrhs(max_nrhs);
@@ -3214,9 +3417,9 @@ TriSolver::reset_max_nrhs (const Int max_nrhs) {
 
 //> Solve code.
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-OnDiagTri::solve (const Real* b, const Int ldb, Real* x, const Int ldx,
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+OnDiagTri::solve (const Sclr* b, const Int ldb, Sclr* x, const Int ldx,
                   const Int nrhs) const {
   if (d_) {
     return t_.empty() ? solve_dense(b, ldb, x, ldx, nrhs) :
@@ -3225,13 +3428,13 @@ OnDiagTri::solve (const Real* b, const Int ldb, Real* x, const Int ldx,
   if (m_) return solve_spars(b, ldb, x, ldx, nrhs);
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-OnDiagTri::solve_dense (const Real* b, const Int ldb, Real* x, const Int ldx,
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+OnDiagTri::solve_dense (const Sclr* b, const Int ldb, Sclr* x, const Int ldx,
                         const Int nrhs) const {
   for (Int irhs = 0; ; ) {
     for (Int j = 0, k = 0; j < this->n_; ++j) {
-      Real a = b[j];
+      Sclr a = b[j];
       const Int ilim = j;
       for (Int i = 0; i < ilim; ++i, ++k)
         a -= x[i]*d_[k];
@@ -3244,16 +3447,16 @@ OnDiagTri::solve_dense (const Real* b, const Int ldb, Real* x, const Int ldx,
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-void Impl<Int, Size, Real>::OnDiagTri::
-solve_dense_inv (const Real* b, const Int ldb, Real* x, const Int ldx,
+template<typename Int, typename Size, typename Sclr>
+void Impl<Int, Size, Sclr>::OnDiagTri::
+solve_dense_inv (const Sclr* b, const Int ldb, Sclr* x, const Int ldx,
                  const Int nrhs) const {
   const int tid = omp_get_thread_num();
   if (tid >= nthreads()) return;
   const Thread& t = t_[tid];
   for (Int irhs = 0; ; ) {
     for (Int r = t.r0, rlim = t.r0 + t.nr, k = 0; r < rlim; ++r) {
-      Real a = 0;
+      Sclr a = 0;
       for (Int c = 0; c < r+1; ++c, ++k)
         a += b[c]*t.d[k];
       x[r] = a;
@@ -3264,21 +3467,21 @@ solve_dense_inv (const Real* b, const Int ldb, Real* x, const Int ldx,
   }
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-OnDiagTri::solve_spars (const Real* b, const Int ldb, Real* x, const Int ldx,
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+OnDiagTri::solve_spars (const Sclr* b, const Int ldb, Sclr* x, const Int ldx,
                         const Int nrhs) const {
   const CrsMatrix& T = *m_;
   const Int m = T.m;
   const Size* const ir = T.ir;
   const Int* const jc = T.jc;
-  const Real* const d = T.d;
+  const Sclr* const d = T.d;
   for (int irhs = 0; ; ) {
     for (int r = 0; r < m; ++r) {
       const Size
         rp_rp1 = ir[r+1],
         jlim = rp_rp1 - 1;
-      Real a = b[r];
+      Sclr a = b[r];
       for (Size j = ir[r]; j < jlim; ++j)
         a -= x[jc[j]] * d[j];
       x[r] = a * d[rp_rp1 - 1];
@@ -3289,20 +3492,20 @@ OnDiagTri::solve_spars (const Real* b, const Int ldb, Real* x, const Int ldx,
   }
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-SerialBlock::n1Axpy (const Real* x, const Int ldx, const Int nrhs,
-                     Real* y, const Int ldy) const {
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+SerialBlock::n1Axpy (const Sclr* x, const Int ldx, const Int nrhs,
+                     Sclr* y, const Int ldy) const {
   if ( ! d_) return;
   if (ir_) n1Axpy_spars(x + coff_, ldx, nrhs, y + roff_, ldy);
   else n1Axpy_dense(x + coff_, ldx, nrhs, y + roff_, ldy);
 }
 
-template<typename Int, typename Size, typename Real>
+template<typename Int, typename Size, typename Sclr>
 inline void SerialBlock_n1Axpy_spars (
   const Int nr_, const Int nc_, const Size* const ir_, const Int* const jc_,
-  const Real* const d_, const Real* x, const Int ldx, const Int nrhs,
-  Real* y, const Int ldy)
+  const Sclr* const d_, const Sclr* x, const Int ldx, const Int nrhs,
+  Sclr* y, const Int ldy)
 {
   for (Int k = 0; ; ) {
     Size iri = ir_[0];
@@ -3310,8 +3513,8 @@ inline void SerialBlock_n1Axpy_spars (
       const Size irip1 = ir_[i+1];
       const Int N = static_cast<Int>(irip1 - iri);
       if (N == 0) continue;
-      Real a = 0; {
-        const Real* const d = d_ + iri;
+      Sclr a = 0; {
+        const Sclr* const d = d_ + iri;
         const Int* const jc = jc_ + iri;
         for (Int j = 0; j < N; ++j)
           a += d[j] * x[jc[j]];
@@ -3343,26 +3546,26 @@ template<> inline void SerialBlock_n1Axpy_spars<MKL_INT, MKL_INT, double> (
 }
 #endif
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::SerialBlock::
-n1Axpy_spars (const Real* x, const Int ldx, const Int nrhs,
-              Real* y, const Int ldy) const {
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::SerialBlock::
+n1Axpy_spars (const Sclr* x, const Int ldx, const Int nrhs,
+              Sclr* y, const Int ldy) const {
   assert(ir_);
   if (ir_[nr_] == 0) return;
   SerialBlock_n1Axpy_spars(nr_, nc_, ir_, jc_, d_, x, ldx, nrhs, y, ldy);
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::SerialBlock::
-n1Axpy_dense (const Real* x, const Int ldx, const Int nrhs,
-              Real* y, const Int ldy) const {
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::SerialBlock::
+n1Axpy_dense (const Sclr* x, const Int ldx, const Int nrhs,
+              Sclr* y, const Int ldy) const {
   assert(d_);
 #if defined(HAVE_SHYLUHTS_BLAS) || defined(HAVE_SHYLUHTS_MKL)
-  gemm<Real>('t', 'n', nr_, nrhs, nc_, -1, d_, nc_, x, ldx, 1, y, ldy);
+  gemm<Sclr>('t', 'n', nr_, nrhs, nc_, -1, d_, nc_, x, ldx, 1, y, ldy);
 #else
   for (Int g = 0; ; ) {
     for (Int i = 0, k = 0; i < nr_; ++i) {
-      Real a = 0;
+      Sclr a = 0;
       for (Int j = 0; j < nc_; ++j, ++k) a += d_[k]*x[j];
       y[i] -= a;
     }
@@ -3374,9 +3577,9 @@ n1Axpy_dense (const Real* x, const Int ldx, const Int nrhs,
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-TMatrix::n1Axpy (const Real* x, const Int ldx, const Int nrhs, Real* y,
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+TMatrix::n1Axpy (const Sclr* x, const Int ldx, const Int nrhs, Sclr* y,
                  const Int ldy, const int tid) const {
   const int id = tid - tid_os_;
   if (id < 0) return;
@@ -3385,14 +3588,14 @@ TMatrix::n1Axpy (const Real* x, const Int ldx, const Int nrhs, Real* y,
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-inline Real* Impl<Int, Size, Real>::
-Permuter::from_outside (const Real* x, const Int nrhs, Int ldx) const {
+template<typename Int, typename Size, typename Sclr>
+inline Sclr* Impl<Int, Size, Sclr>::
+Permuter::from_outside (const Sclr* x, const Int nrhs, Int ldx) const {
   if ( ! ldx) ldx = n_;
   const int tid = omp_get_thread_num();
   const Int i0 = part_[tid], i1 = part_[tid+1];
-  Real* ppx = px_;
-  const Real* px = x;
+  Sclr* ppx = px_;
+  const Sclr* px = x;
   for (int k = 0; ; ) {
     if (scale_)
       for (Int i = i0; i < i1; ++i) {
@@ -3410,20 +3613,20 @@ Permuter::from_outside (const Real* x, const Int nrhs, Int ldx) const {
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::Permuter::
-to_outside (Real* x, const Int nrhs, const Real a, const Real b,
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::Permuter::
+to_outside (Sclr* x, const Int nrhs, const Sclr a, const Sclr b,
             Int ldx) const {
   if ( ! ldx) ldx = n_;
   const int tid = omp_get_thread_num();
   const Int i0 = part_[tid], i1 = part_[tid+1];
-  Real* ppx = px_;
-  Real* px = x;
-  if (b != 1) {
-    if (a) {
+  Sclr* ppx = px_;
+  Sclr* px = x;
+  if (b != 1.0) {
+    if (a != 0.0) {
       for (int k = 0; ; ) {
         for (Int i = i0; i < i1; ++i) {
-          Real* const pxqi = px + q_[i];
+          Sclr* const pxqi = px + q_[i];
           *pxqi = a * *pxqi + b*ppx[i];
         }
         if (++k == nrhs) break;
@@ -3440,10 +3643,10 @@ to_outside (Real* x, const Int nrhs, const Real a, const Real b,
       }
     }
   } else {
-    if (a) {
+    if (a != 0.0) {
       for (int k = 0; ; ) {
         for (Int i = i0; i < i1; ++i) {
-          Real* const pxqi = px + q_[i];
+          Sclr* const pxqi = px + q_[i];
           *pxqi = a * *pxqi + ppx[i];
         }
         if (++k == nrhs) break;
@@ -3463,22 +3666,22 @@ to_outside (Real* x, const Int nrhs, const Real a, const Real b,
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-LevelSetTri::solve (const Real* b, Real* x, const Int ldx,
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+LevelSetTri::solve (const Sclr* b, Sclr* x, const Int ldx,
                     const Int nrhs) const {
   if (nlvls_ == 0) return;
   const int tid = omp_get_thread_num();
   const Thread& t = t_[tid];
-  const std::vector<Int>& lsp = t.lsp;
+  const Array<Int>& lsp = t.lsp;
   const CrsMatrix* const T = t.m;
   const Size* const ir = T->ir;
   const Int* const jc = T->jc;
-  const Real* const d = T->d;
-  const std::vector<Int>& p = t.p;
+  const Sclr* const d = T->d;
+  const Array<Int>& p = t.p;
   const Int lsp_size_m2 = nlvls_ - 1;
-  const std::vector<Int>& p2p_depends_p = t.p2p_depends_p;
-  const std::vector<Size>& p2p_depends = t.p2p_depends;
+  const Array<Int>& p2p_depends_p = t.p2p_depends_p;
+  const Array<Size>& p2p_depends = t.p2p_depends;
   p2p_Done p2p_done_value = p2p_done_value_;
   for (Int irhs = 0; irhs < nrhs; ++irhs) {
     Int
@@ -3502,15 +3705,12 @@ LevelSetTri::solve (const Real* b, Real* x, const Int ldx,
           while (*done != p2p_done_value) ;
         }
       }
-      // Math. 'volatile' protects the synchronization variable p2p_done_, but
-      // technically nothing protects x from being inconsistent. In practice, it
-      // probably always is. Nonetheless, flush.
 #     pragma omp flush
       for (Int r = mvp_block_nc_ + p[ils];
            i < lsp_ilsp1;
            ++i, ++r) {
         const Size jlim = ir[i+1] - 1;
-        Real a = b[r];
+        Sclr a = b[r];
         for ( ; j < jlim; ++j)
           a -= x[jc[j]] * d[j];
         x[r] = a * d[j++];
@@ -3528,8 +3728,8 @@ LevelSetTri::solve (const Real* b, Real* x, const Int ldx,
   }
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
 rbwait (volatile p2p_Done* const s_done, const Size* s_ids,
         const Int* const s_idx, const Int i, const p2p_Done done_symbol) {
   const Int si = s_idx[i], si1 = s_idx[i+1];
@@ -3545,9 +3745,9 @@ rbwait (volatile p2p_Done* const s_done, const Size* s_ids,
 # pragma omp flush
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::RecursiveTri::
-ondiag_solve (const OnDiagTri& t, Real* x, const Int ldx, const Int nrhs,
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::RecursiveTri::
+ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
               const int tid, const Int step, volatile Int* const t_barrier,
               volatile Int* const inv_tri_done) const {
   const Int nthreads = t.nthreads();
@@ -3569,7 +3769,7 @@ ondiag_solve (const OnDiagTri& t, Real* x, const Int ldx, const Int nrhs,
     for (Int irhs = 0; irhs < nrhs; ++irhs)
       memcpy(x + irhs*ldx + row_start,
              wrk_.data() + irhs*t.n() + row_start,
-             nr*sizeof(Real));
+             nr*sizeof(Sclr));
     { // Wait for the memcpy's to finish.
       const Int done = (step << 1) + 1;
       inv_tri_done[tid] = done;
@@ -3586,16 +3786,16 @@ ondiag_solve (const OnDiagTri& t, Real* x, const Int ldx, const Int nrhs,
 }
 
 // inside || {}
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-RecursiveTri::solve (const Real* b, Real* x, const Int ldx,
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
                      const Int nrhs) const {
   if (nd_.t.empty()) return;
   assert(x == b);
   const int tid = omp_get_thread_num();
   Int os = 0;
   const Int sn = static_cast<Int>(nd_.s.size());
-  Real* x_osi, * x_os;
+  Sclr* x_osi, * x_os;
   volatile Int* const t_barrier = &nd_.t_barrier;
   volatile Int* const inv_tri_done = nd_.inv_tri_done.data();
   volatile p2p_Done* const s_done = nd_.s_done.data();
@@ -3636,10 +3836,10 @@ RecursiveTri::solve (const Real* b, Real* x, const Int ldx,
   }
 }
 
-template<typename Int, typename Size, typename Real>
-inline void Impl<Int, Size, Real>::
-TriSolver::solve (const Real* b, const Int nrhs, Real* x, const Real alpha,
-                  const Real beta, const Int ldb, const Int ldx) const {
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+TriSolver::solve (const Sclr* b, const Int nrhs, Sclr* x, const Sclr alpha,
+                  const Sclr beta, const Int ldb, const Int ldx) const {
   t_.p2p_reset();
   lst_.p2p_reset();
   perm_.check_nrhs(nrhs);
@@ -3651,7 +3851,7 @@ TriSolver::solve (const Real* b, const Int nrhs, Real* x, const Real alpha,
   do {
     nthreads_ok = check_nthreads(nthreads_, omp_get_num_threads(), msg);
     if ( ! nthreads_ok) break;
-    Real* px = perm_.from_outside(b, nrhs, ldb);
+    Sclr* px = perm_.from_outside(b, nrhs, ldb);
     if (is_lo_) {
 #     pragma omp barrier
       lst_.solve(px, px, n_, nrhs);
@@ -3677,10 +3877,11 @@ TriSolver::solve (const Real* b, const Int nrhs, Real* x, const Real alpha,
 //< Solve code.
 
 // Solve T x = x with size(x, 2) = nrhs. If is_lo, T is lower tri, else upper.
-template<typename Int, typename Size, typename Real>
+template<typename Int, typename Size, typename Sclr>
 void trisolve_serial (
-  const typename HTS<Int, Size, Real>::CrsMatrix& T, Real* ix, const Int nrhs,
-  bool is_lo, const Int* p, const Int* q, const Real* scale, Real* w)
+  const typename HTS<Int, Size, Sclr>::CrsMatrix& T, Sclr* ix, const Int nrhs,
+  bool is_lo, const Int* p, const Int* q,
+  const typename hts::ScalarTraits<Sclr>::Real* scale, Sclr* w)
 {
   assert(( ! p && ! q) || w);
 
@@ -3690,7 +3891,7 @@ void trisolve_serial (
       for (Int r = 0; r < T.m; ++r) ix[r] /= scale[r];
 
     // x = x(p) optionally.
-    Real* x;
+    Sclr* x;
     if (p) {
       x = w;
       for (Int r = 0; r < T.m; ++r) x[r] = ix[p[r]];
@@ -3698,19 +3899,103 @@ void trisolve_serial (
       x = ix;
 
     // Solve.
-    if (is_lo) {
-      for (Int r = 0; r < T.m; ++r) {
-        const Size rp_rp1 = T.ir[r+1];
-        for (Size j = T.ir[r]; j < rp_rp1 - 1; ++j)
-          x[r] -= x[T.jc[j]] * T.d[j];
-        x[r] /= T.d[rp_rp1 - 1];
+    if (T.dir == Direction::forward) {
+      if (T.conj) {
+        if (is_lo) {
+          for (Int r = 0; r < T.m; ++r) {
+            const Size rp_rp1 = T.ir[r+1];
+            for (Size j = T.ir[r]; j < rp_rp1 - 1; ++j) {
+              Sclr dj(T.d[j]);
+              conjugate(dj);
+              x[r] -= x[T.jc[j]] * dj;
+            }
+            Sclr diag(T.d[rp_rp1 - 1]);
+            conjugate(diag);
+            x[r] /= diag;
+          }
+        } else {
+          for (Int r = T.m - 1; r >= 0; --r) {
+            const Size rp_r = T.ir[r];
+            for (Size j = rp_r + 1; j < T.ir[r+1]; ++j) {
+              Sclr dj(T.d[j]);
+              conjugate(dj);
+              x[r] -= x[T.jc[j]] * dj;
+            }
+            Sclr diag(T.d[rp_r]);
+            conjugate(diag);
+            x[r] /= diag;
+          }
+        }
+      } else {
+        if (is_lo) {
+          for (Int r = 0; r < T.m; ++r) {
+            const Size rp_rp1 = T.ir[r+1];
+            for (Size j = T.ir[r]; j < rp_rp1 - 1; ++j)
+              x[r] -= x[T.jc[j]] * T.d[j];
+            x[r] /= T.d[rp_rp1 - 1];
+          }
+        } else {
+          for (Int r = T.m - 1; r >= 0; --r) {
+            const Size rp_r = T.ir[r];
+            for (Size j = rp_r + 1; j < T.ir[r+1]; ++j)
+              x[r] -= x[T.jc[j]] * T.d[j];
+            x[r] /= T.d[rp_r];
+          }
+        }
       }
-    } else {
-      for (Int r = T.m - 1; r >= 0; --r) {
-        const Size rp_r = T.ir[r];
-        for (Size j = rp_r + 1; j < T.ir[r+1]; ++j)
-          x[r] -= x[T.jc[j]] * T.d[j];
-        x[r] /= T.d[rp_r];
+    } else { // T.dir == Direction::transpose; treat as CCS
+      if (T.conj) {
+        if (is_lo) {
+          for (Int c = T.m - 1; c >= 0; --c) {
+            const Size js = T.ir[c], je = T.ir[c+1];
+            Sclr diag(T.d[je - 1]);
+            conjugate(diag);
+            x[c] /= diag;
+            const Sclr& xc = x[c];
+            for (Size j = js; j < je - 1; ++j) {
+              const Int r = T.jc[j];
+              Sclr dj(T.d[j]);
+              conjugate(dj);
+              x[r] -= dj*xc;
+            }
+          }
+        } else {
+          for (Int c = 0; c < T.n; ++c) {
+            const Size js = T.ir[c], je = T.ir[c+1];
+            Sclr diag(T.d[js]);
+            conjugate(diag);
+            x[c] /= diag;
+            const Sclr& xc = x[c];
+            for (Size j = js + 1; j < je; ++j) {
+              const Int r = T.jc[j];
+              Sclr dj(T.d[j]);
+              conjugate(dj);
+              x[r] -= dj*xc;
+            }
+          }
+        }
+      } else {
+        if (is_lo) {
+          for (Int c = T.m - 1; c >= 0; --c) {
+            const Size js = T.ir[c], je = T.ir[c+1];
+            x[c] /= T.d[je - 1];
+            const Sclr& xc = x[c];
+            for (Size j = js; j < je - 1; ++j) {
+              const Int r = T.jc[j];
+              x[r] -= T.d[j]*xc;
+            }
+          }
+        } else {
+          for (Int c = 0; c < T.n; ++c) {
+            const Size js = T.ir[c], je = T.ir[c+1];
+            x[c] /= T.d[js];
+            const Sclr& xc = x[c];
+            for (Size j = js + 1; j < je; ++j) {
+              const Int r = T.jc[j];
+              x[r] -= T.d[j]*xc;
+            }
+          }
+        }
       }
     }
 
@@ -3727,37 +4012,47 @@ void trisolve_serial (
 
 } // namespace htsimpl
 
-template<typename Int, typename Size, typename Real>
-typename HTS<Int, Size, Real>::CrsMatrix* HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+typename HTS<Int, Size, Sclr>::CrsMatrix* HTS<Int, Size, Sclr>::
 make_CrsMatrix (const Int nrow, const Size* rowptr, const Int* col,
-                const Real* val, const bool make_transpose) {
+                const Sclr* val, const bool make_transpose,
+                const bool make_conj) {
   static const bool Int_is_signed = static_cast<Int>(-1) < 1;
   if ( ! Int_is_signed)
     throw hts::Exception(
       "HTS<Int, Size, Scalar> cannot be used if Int is unsigned.");
-  typedef typename htsimpl::Impl<Int, Size, Real>::ConstCrsMatrix CCM;
+  typedef typename htsimpl::Impl<Int, Size, Sclr>::ConstCrsMatrix CCM;
   CrsMatrix* m;
+  const htsimpl::Direction::Enum dir = (make_transpose ?
+                                        htsimpl::Direction::transpose :
+                                        htsimpl::Direction::forward);
   try {
-    m = new CrsMatrix(nrow, rowptr, col, val,
-                      make_transpose ? CCM::transpose : CCM::forward);
+    m = new CrsMatrix(nrow, rowptr, col, val, dir, make_conj);
   } catch (...) { throw hts::Exception("make_CrsMatrix failed to alloc."); }
   return m;
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
 delete_CrsMatrix (CrsMatrix* T) { htsimpl::del(T); }
 
-template<typename Int, typename Size, typename Real>
-HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
+register_Deallocator (CrsMatrix* T, Deallocator* d) {
+  d->counter++;
+  T->deallocator = d;
+}
+
+template<typename Int, typename Size, typename Sclr>
+HTS<Int, Size, Sclr>::
 PreprocessArgs::PreprocessArgs ()
   : T(0), max_nrhs(1), nthreads(-1), save_for_reprocess(false), p(0), q(0),
     scale_rhs(0), scale_rhs_by_division(true), scale_solution(0),
     scale_solution_by_division(true), options(0)
 {}
 
-template<typename Int, typename Size, typename Real>
-typename HTS<Int, Size, Real>::Impl* HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+typename HTS<Int, Size, Sclr>::Impl* HTS<Int, Size, Sclr>::
 preprocess (const PreprocessArgs& a) {
   if ( ! a.T)
     throw hts::Exception("T is null.");
@@ -3772,7 +4067,7 @@ preprocess (const PreprocessArgs& a) {
   try { i = new Impl(); }
   catch (...) { throw hts::Exception("preprocess failed to alloc."); }
   if (a.options)
-    htsimpl::Impl<Int, Size, Real>::set_options(*a.options, i->o);
+    htsimpl::Impl<Int, Size, Sclr>::set_options(*a.options, i->o);
   try {
     i->ts.init(a.T, a.nthreads, a.max_nrhs, a.save_for_reprocess, a.p, a.q,
                a.scale_rhs, i->o);
@@ -3783,8 +4078,8 @@ preprocess (const PreprocessArgs& a) {
   return i;
 }
 
-template<typename Int, typename Size, typename Real>
-typename HTS<Int, Size, Real>::Impl* HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+typename HTS<Int, Size, Sclr>::Impl* HTS<Int, Size, Sclr>::
 preprocess (const CrsMatrix* T, const Int max_nrhs, const Int nthreads,
             const bool save_for_reprocess, const Int* p, const Int* q,
             const Real* r, const Options* options)
@@ -3802,70 +4097,71 @@ preprocess (const CrsMatrix* T, const Int max_nrhs, const Int nthreads,
   return preprocess(a);
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
 reprocess_numeric (Impl* impl, const CrsMatrix* T, const Real* r) {
   impl->ts.reinit_numeric(T, r);
 }
 
-template<typename Int, typename Size, typename Real>
-bool HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+bool HTS<Int, Size, Sclr>::
 is_lower_tri (const Impl* impl) { return impl->ts.is_lower_tri(); }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
 delete_Impl (Impl* impl) {
   htsimpl::del(impl);
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
 reset_max_nrhs (Impl* impl, const Int max_nrhs) {
   impl->ts.reset_max_nrhs(max_nrhs);
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
-solve_serial (const CrsMatrix* T, const bool is_lo, Real* xb, const Int nrhs,
-              const Int* p, const Int* q, const Real* r, Real* w) {
-  htsimpl::trisolve_serial<Int, Size, Real>(*T, xb, nrhs, is_lo, p, q, r, w);
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
+solve_serial (const CrsMatrix* T, const bool is_lo, Sclr* xb, const Int nrhs,
+              const Int* p, const Int* q,
+              const typename hts::ScalarTraits<Sclr>::Real* r, Sclr* w) {
+  htsimpl::trisolve_serial<Int, Size, Sclr>(*T, xb, nrhs, is_lo, p, q, r, w);
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
-solve_omp (Impl* impl, Real* x, const Int nrhs, const Int ldx) {
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
+solve_omp (Impl* impl, Sclr* x, const Int nrhs, const Int ldx) {
   impl->ts.solve(x, nrhs, x, 0, 1, ldx, ldx);
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
-solve_omp (Impl* impl, const Real* b, const Int nrhs, Real* x,
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
+solve_omp (Impl* impl, const Sclr* b, const Int nrhs, Sclr* x,
            const Int ldb, const Int ldx) {
   impl->ts.solve(b, nrhs, x, 0, 1, ldb, ldx);
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
-solve_omp (Impl* impl, const Real* b, const Int nrhs, Real* x,
-           const Real alpha, const Real beta,
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
+solve_omp (Impl* impl, const Sclr* b, const Int nrhs, Sclr* x,
+           const Sclr alpha, const Sclr beta,
            const Int ldb, const Int ldx) {
   impl->ts.solve(b, nrhs, x, alpha, beta, ldb, ldx);
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
 print_options (const Impl* i, std::ostream& os) {
-  htsimpl::Impl<Int, Size, Real>::print_options(i->o, os);
+  htsimpl::Impl<Int, Size, Sclr>::print_options(i->o, os);
 }
 
-template<typename Int, typename Size, typename Real>
-void HTS<Int, Size, Real>::
+template<typename Int, typename Size, typename Sclr>
+void HTS<Int, Size, Sclr>::
 set_level_schedule_only (Options& o) {
   o.min_lset_size = 0;
 }
 
-template<typename Int, typename Size, typename Real>
-HTS<Int, Size, Real>::Options::Options () {
+template<typename Int, typename Size, typename Sclr>
+HTS<Int, Size, Sclr>::Options::Options () {
   min_dense_density = 0.75;
   levelset_block_size = 1;
   lset_min_size_scale_with_nthreads = false;
@@ -3873,16 +4169,11 @@ HTS<Int, Size, Real>::Options::Options () {
   print_level = 0;
   lset_max_bad_fraction = 0.01;
   min_lset_size = lset_min_size_scale_with_nthreads ? 1 : 10;
-#ifdef __MIC__
   min_block_size = 256;
   min_parallel_rows = 64;
-#else
-  min_block_size = 128;
-  min_parallel_rows = 32;
-#endif
   pp_min_block_size = 256;
 }
 
 } // namespace Experimental
 
-#endif
+#endif // INCLUDE_SHYLU_HTS_IMPL_DEF_HPP

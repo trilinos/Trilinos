@@ -242,4 +242,8 @@ $ Test variable deletion
 {delete("new_var")}
 {new_var}  This should print warning about undefined variable
 
+$ Test extract
+{ex_found = extract("The test string is found", "test", "")}
+{ex_null  = extract("The test string is not found", "xxxx", "yyyy")}
+
 $End of test file

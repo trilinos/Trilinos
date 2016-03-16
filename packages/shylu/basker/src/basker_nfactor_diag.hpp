@@ -43,8 +43,8 @@ namespace BaskerNS
       Int kid = (Int)(thread.league_rank()*
 		      thread.team_size()+
 		      thread.team_rank());
-      Int total_threads = thread.league_size()*
-	thread.team_size();
+      //Int total_threads = thread.league_size()*
+      //	thread.team_size(); //Not used
 
 
       //================OLD EQ BLK=================//
@@ -82,11 +82,13 @@ namespace BaskerNS
 	basker->btf_schedule(kid);
       
 
-      printf("Chunk start: %d size: %d \n", 
-	     chunk_start, chunk_size);
+      //printf("Chunk start: %d size: %d \n", 
+      //     chunk_start, chunk_size);
+      if(chunk_size > 0)
+	{
       basker->t_nfactor_diag(kid, chunk_start,
 			     chunk_size);
-
+	}
 
 
 
@@ -128,8 +130,8 @@ namespace BaskerNS
       Int kid = (Int)(thread.league_rank()*
 		      thread.team_size()+
 		      thread.team_rank());
-      Int total_threads = thread.league_size()*
-	thread.team_size();
+      //Int total_threads = thread.league_size()*
+      //thread.team_size(); //Not used
 
 
       Int chunk_start = thread_start(kid);
@@ -200,7 +202,7 @@ namespace BaskerNS
    )
   {  
     Int bcol = BTF_C.scol;
-    Int brow = BTF_C.srow;
+    //Int brow = BTF_C.srow;
     Int btab = btf_tabs_offset;
     
     BASKER_MATRIX  &M = BTF_C;
@@ -217,7 +219,11 @@ namespace BaskerNS
     //	   kid, c, k, bcol, j);
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
     //	   kid, M.val[j], M.row_idx[j], M.srow);
-    
+
+    if(M.val(j) == 0)
+      {
+	printf("Error, zero diag in single factor\n");
+      }
     
     U.val(0)     = M.val(j);
     //M already has local idxing
@@ -248,7 +254,7 @@ namespace BaskerNS
    )
   {
     Int bcol = BTF_C.scol;
-    Int brow = BTF_C.srow;
+    //Int brow = BTF_C.srow;
     Int btab = btf_tabs_offset;
     
     BASKER_MATRIX  &M = BTF_C;
@@ -286,9 +292,9 @@ namespace BaskerNS
 
     Int llnnz  = L.nnz;
     Int uunnz  = U.nnz;
-    Entry maxv;
+    Entry maxv = (Entry) 0;
 
-    Int maxindex;
+    Int maxindex = 0;
 
     Int i,j, t;
     Int cu_ltop = 0;
@@ -452,6 +458,8 @@ namespace BaskerNS
 	    }
 	  #endif
   
+	   
+
           ucnt = ws_size - top - lcnt +1;
          
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
@@ -640,6 +648,10 @@ namespace BaskerNS
           //Fill in last element of U
 	  U.row_idx(unnz) = k - L.scol;
 	  U.val(unnz)       = lastU;
+	  if(lastU == 0)
+	    {
+	      printf("diag btf zero, error \n");
+	    }
           ++unnz;
 
           xnnz = 0;
@@ -718,7 +730,7 @@ namespace BaskerNS
  
     Int brow        = L.srow;
     
-    Int *color       = &(ws(0));
+    //Int *color       = &(ws(0));
     Int *pattern     = &(ws(ws_size));
     Int *stack       = &(pattern[ws_size]);
     Int *store       = &(stack[ws_size]);

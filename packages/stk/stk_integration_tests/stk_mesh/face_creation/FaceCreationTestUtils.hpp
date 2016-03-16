@@ -44,7 +44,7 @@ typedef std::vector<TestCase> TestCaseData;
 inline stk::mesh::Part & run_skin_mesh(stk::mesh::BulkData& bulkData, stk::mesh::Selector blocksToSkin)
 {
     stk::mesh::Part &skin = bulkData.mesh_meta_data().declare_part("skin", bulkData.mesh_meta_data().side_rank());
-    EXPECT_NO_FATAL_FAILURE(stk::mesh::create_exposed_boundary_sides(bulkData, blocksToSkin, {&skin}));
+    EXPECT_NO_FATAL_FAILURE(stk::mesh::create_exposed_block_boundary_sides(bulkData, blocksToSkin, {&skin}));
     return skin;
 }
 
@@ -104,7 +104,7 @@ inline void expect_exposed_sides_connected_as_specified_in_test_case(stk::mesh::
 {
     SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);
     SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
-    EXPECT_TRUE(stk::mesh::check_exposed_boundary_sides(bulkData, skinnedThings, skinnedPart));
+    EXPECT_TRUE(stk::mesh::check_exposed_block_boundary_sides(bulkData, skinnedThings, skinnedPart));
 }
 
 inline void expect_interior_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
@@ -115,6 +115,26 @@ inline void expect_interior_sides_connected_as_specified_in_test_case(stk::mesh:
     SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);
     SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
     EXPECT_TRUE(stk::mesh::check_interior_block_boundary_sides(bulkData, skinnedThings, skinnedPart));
+}
+
+inline void expect_all_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
+                                                                 const SideTestUtil::TestCase& testCase,
+                                                                 stk::mesh::Selector skinnedThings,
+                                                                 stk::mesh::Part &skinnedPart)
+{
+    SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);
+    SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
+    EXPECT_TRUE(stk::mesh::check_all_sides(bulkData, skinnedThings, skinnedPart));
+}
+
+inline void expect_all_boundary_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
+                                                                 const SideTestUtil::TestCase& testCase,
+                                                                 stk::mesh::Selector skinnedThings,
+                                                                 stk::mesh::Part &skinnedPart)
+{
+    SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);
+    SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
+//    EXPECT_TRUE(stk::mesh::check_all_boundary_sides(bulkData, skinnedThings, skinnedPart));
 }
 
 
@@ -131,7 +151,7 @@ public:
                 test_one_case(testCase, auraOption);
     }
 protected:
-    void test_one_case(const SideTestUtil::TestCase &testCase,
+    virtual void test_one_case(const SideTestUtil::TestCase &testCase,
                        stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         stk::mesh::MetaData metaData;
@@ -142,7 +162,7 @@ protected:
 
     virtual void test_side_creation(stk::mesh::BulkData& bulkData,
                                     const SideTestUtil::TestCase& testCase) = 0;
-private:
+
     MPI_Comm communicator;
 };
 

@@ -14,7 +14,7 @@
 
 
 #include <iostream>
-using namespace std;
+//using namespace std;
 
 namespace BaskerNS
 {
@@ -460,7 +460,8 @@ namespace BaskerNS
   void BaskerMatrix<Int,Entry,Exe_Space>::convert2D
   (
    BASKER_MATRIX &M,
-   BASKER_BOOL   alloc
+   BASKER_BOOL   alloc,
+   Int kid
    )
   {
 
@@ -530,7 +531,6 @@ namespace BaskerNS
     for(Int k = scol; k < scol+ncol; ++k)
       {
 	//note col_ptr[k-scol] contains the starting index
-
 	if(col_ptr(k-scol) == BASKER_MAX_IDX)
 	  {
 	    col_ptr(k-scol) = temp_count;
@@ -555,9 +555,9 @@ namespace BaskerNS
 
 	    if(j-srow <0)
 	      {
-		printf("j: %ld srow: %ld k: %d idx: %d   \n",
-		       j, srow, k, i);
-		BASKER_ASSERT(0==1, "NO");
+		printf("kid: %d j: %ld srow: %ld k: %d idx: %d   \n",
+		       kid, j, srow, k, i);
+		BASKER_ASSERT(0==1, "j-srow NO");
 	      }
 
 

@@ -31,19 +31,19 @@ namespace Ioss {
     char optmarker;		// option marker
     
   private:
-    int setcell(Cell *c, char *valtoken, char *nexttoken, const char *p);
+    int setcell(Cell *c, char *valtoken, char *nexttoken, const char *nameame);
   public:
     explicit GetLongOption(const char optmark = '-');
     ~GetLongOption();
     
-    static char *basename(char * const p);
+    static char *basename(char * const pathnameathname);
     
     int parse(int argc, char * const *argv);
     int parse(char * const str, char * const p);
     
     int enroll(const char * const opt, const OptType t,
 	       const char * const desc, const char * const val,
-	       const char * const opt_val=nullptr);
+	       const char * const optval = nullptr);
     const char *retrieve(const char * const opt) const;
     
     void usage(std::ostream &outfile = std::cout) const;

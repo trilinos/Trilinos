@@ -52,7 +52,6 @@
 #include "ROL_CVaR.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_HMCR.hpp"
-#include "ROL_KLDivergence.hpp"
 #include "ROL_MeanDeviationFromTarget.hpp"
 #include "ROL_MeanDeviation.hpp"
 #include "ROL_MeanVarianceFromTarget.hpp"
@@ -68,13 +67,16 @@
 #include "ROL_SmoothedWorstCaseQuadrangle.hpp"
 #include "ROL_TruncatedMeanQuadrangle.hpp"
 
+// F-Divergence Distributionally Robust Risk Measure Implementations
+#include "ROL_Chi2Divergence.hpp"
+#include "ROL_KLDivergence.hpp"
+
 namespace ROL {
 
   enum ERiskMeasure {
     RISKMEASURE_CVAR = 0,
     RISKMEASURE_EXPUTILITY,
     RISKMEASURE_HMCR,
-    RISKMEASURE_KLDIVERGENCE,
     RISKMEASURE_MEANDEVIATIONFROMTARGET, 
     RISKMEASURE_MEANDEVIATION,
     RISKMEASURE_MEANVARIANCEFROMTARGET,
@@ -87,6 +89,8 @@ namespace ROL {
     RISKMEASURE_QUANTILERADIUSQUADRANGLE,
     RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE,
     RISKMEASURE_TRUNCATEDMEANQUADRANGLE,
+    RISKMEASURE_CHI2DIVERGENCE,
+    RISKMEASURE_KLDIVERGENCE,
     RISKMEASURE_LAST
   };
 
@@ -99,8 +103,6 @@ namespace ROL {
              retString = "Exponential Utility";                     break;
       case RISKMEASURE_HMCR:
              retString = "HMCR";                                    break;
-      case RISKMEASURE_KLDIVERGENCE:
-             retString = "KL Divergence";                           break;
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
              retString = "Mean Plus Deviation From Target";         break;
       case RISKMEASURE_MEANDEVIATION:
@@ -125,6 +127,10 @@ namespace ROL {
              retString = "Smoothed Worst-Case Quadrangle";          break;
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
              retString = "Truncated Mean Quadrangle";               break;
+      case RISKMEASURE_CHI2DIVERGENCE:
+             retString = "Chi-Squared Divergence";                  break;
+      case RISKMEASURE_KLDIVERGENCE:
+             retString = "KL Divergence";                           break;
       case RISKMEASURE_LAST:
              retString = "Last Type (Dummy)";                       break;
       default:
@@ -137,7 +143,6 @@ namespace ROL {
     return( (ed == RISKMEASURE_CVAR) ||
             (ed == RISKMEASURE_EXPUTILITY) ||
             (ed == RISKMEASURE_HMCR) ||
-            (ed == RISKMEASURE_KLDIVERGENCE) ||
             (ed == RISKMEASURE_MEANDEVIATIONFROMTARGET) ||
             (ed == RISKMEASURE_MEANDEVIATION) ||
             (ed == RISKMEASURE_MEANVARIANCEFROMTARGET) ||
@@ -149,7 +154,9 @@ namespace ROL {
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILERADIUSQUADRANGLE) ||
             (ed == RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) ||
-            (ed == RISKMEASURE_TRUNCATEDMEANQUADRANGLE) );
+            (ed == RISKMEASURE_TRUNCATEDMEANQUADRANGLE) ||
+            (ed == RISKMEASURE_CHI2DIVERGENCE) ||
+            (ed == RISKMEASURE_KLDIVERGENCE) );
   }
 
   inline ERiskMeasure & operator++(ERiskMeasure &type) {
@@ -190,11 +197,9 @@ namespace ROL {
       case RISKMEASURE_CVAR:
              return Teuchos::rcp(new CVaR<Real>(parlist));
       case RISKMEASURE_EXPUTILITY:
-             return Teuchos::rcp(new ExpUtility<Real>);
+             return Teuchos::rcp(new ExpUtility<Real>(parlist));
       case RISKMEASURE_HMCR:
              return Teuchos::rcp(new HMCR<Real>(parlist));
-      case RISKMEASURE_KLDIVERGENCE:
-             return Teuchos::rcp(new KLDivergence<Real>(parlist));
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
              return Teuchos::rcp(new MeanDeviationFromTarget<Real>(parlist));
       case RISKMEASURE_MEANDEVIATION:
@@ -206,7 +211,7 @@ namespace ROL {
       case RISKMEASURE_MOREAUYOSIDACVAR:
              return Teuchos::rcp(new MoreauYosidaCVaR<Real>(parlist));
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
-             return Teuchos::rcp(new LogExponentialQuadrangle<Real>);
+             return Teuchos::rcp(new LogExponentialQuadrangle<Real>(parlist));
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
              return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:
@@ -219,6 +224,10 @@ namespace ROL {
              return Teuchos::rcp(new SmoothedWorstCaseQuadrangle<Real>(parlist));
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
              return Teuchos::rcp(new TruncatedMeanQuadrangle<Real>(parlist));
+      case RISKMEASURE_CHI2DIVERGENCE:
+             return Teuchos::rcp(new Chi2Divergence<Real>(parlist));
+      case RISKMEASURE_KLDIVERGENCE:
+             return Teuchos::rcp(new KLDivergence<Real>(parlist));
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                    "Invalid risk measure type" << dist);

@@ -233,8 +233,8 @@ struct ViewDimensionAssignable< ViewDimension< DstArgs ... >
   typedef ViewDimension< SrcArgs... > src ;
 
   enum { value =
-    dst::rank == src::rank &&
-    dst::rank_dynamic >= src::rank_dynamic &&
+    unsigned(dst::rank) == unsigned(src::rank) &&
+    unsigned(dst::rank_dynamic) >= unsigned(src::rank_dynamic) &&
     ( 0 < dst::rank_dynamic || size_t(dst::ArgN0) == size_t(src::ArgN0) ) &&
     ( 1 < dst::rank_dynamic || size_t(dst::ArgN1) == size_t(src::ArgN1) ) &&
     ( 2 < dst::rank_dynamic || size_t(dst::ArgN2) == size_t(src::ArgN2) ) &&
@@ -1675,7 +1675,7 @@ public:
 
   template< class DimRHS >
   KOKKOS_INLINE_FUNCTION
-  constexpr ViewOffset( const ViewOffset< DimRHS , Kokkos::LayoutLeft , void > & rhs )
+  constexpr ViewOffset( const ViewOffset< DimRHS , Kokkos::LayoutRight , void > & rhs )
     : m_dim( rhs.m_dim.N0 , rhs.m_dim.N1 , rhs.m_dim.N2 , rhs.m_dim.N3 
            , rhs.m_dim.N4 , rhs.m_dim.N5 , rhs.m_dim.N6 , rhs.m_dim.N7 )
     , m_stride( rhs.stride_0() )

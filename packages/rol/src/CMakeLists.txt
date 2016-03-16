@@ -55,6 +55,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/augmentedlagrangian
                     ${DIR}/moreauyosidapenalty
                     ${DIR}/interiorpoint
+                    ${DIR}/nonlinearcg
                    )
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/linesearch/*.hpp 
@@ -62,9 +63,8 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
                     ${DIR}/bundle/*.hpp
-                    ${DIR}/augmentedlagrangian/*.hpp
-                    ${DIR}/moreauyosidapenalty/*.hpp
                     ${DIR}/interiorpoint/*.hpp
+                    ${DIR}/nonlinearcg/*.hpp
                    )
 
 #
@@ -91,6 +91,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/distribution
                     ${DIR}/function/riskmeasure
                     ${DIR}/function/riskmeasure/quadrangle
+                    ${DIR}/function/riskmeasure/fdivergence
                     ${DIR}/algorithm
                     ${DIR}/vector
                     ${DIR}/sampler
@@ -100,6 +101,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/distribution/*.hpp
                     ${DIR}/function/riskmeasure/*.hpp
                     ${DIR}/function/riskmeasure/quadrangle/*.hpp
+                    ${DIR}/function/riskmeasure/fdivergence/*.hpp
                     ${DIR}/algorithm/*.hpp
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
@@ -111,6 +113,14 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
 #
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/elementwise)
+INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+#
+# utils headers
+#
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 INCLUDE_DIRECTORIES(${DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 

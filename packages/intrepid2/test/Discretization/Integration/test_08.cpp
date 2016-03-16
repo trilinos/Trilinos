@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -112,8 +111,8 @@ void computeIntegral(Teuchos::Array<double>& testIntFixDeg, int cubDegree) {
   int inc = 1;
   double alpha = 1.0;
   double beta  = 0.0;
-  myblas.GEMV(Teuchos::NO_TRANS, numPolys, numCubPoints, alpha, &functValues[0], numPolys,
-              &cubWeights[0], inc, beta, &testIntFixDeg[0], inc);
+  myblas.GEMV(Teuchos::NO_TRANS, numPolys, numCubPoints, alpha, &functValues(0,0), numPolys,
+              &cubWeights(0), inc, beta, &testIntFixDeg[0], inc);
 }
 
 

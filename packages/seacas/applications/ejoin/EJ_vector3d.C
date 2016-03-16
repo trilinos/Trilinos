@@ -51,8 +51,7 @@ vector3d::vector3d (double location[3])
 
 //----------------------------------------------------------------------------
 vector3d::vector3d (const vector3d& from)
-  : x(from.x), y(from.y), z(from.z)
-{}
+  = default;
 
 void vector3d::set(double X, double Y, double Z)
 {
@@ -69,12 +68,7 @@ void vector3d::set(double location[3])
 }
 
 vector3d& vector3d::operator= (const vector3d& from)
-{
-    x = from.x;
-    y = from.y;
-    z = from.z;
-    return *this;
-}
+= default;
 
 vector3d& vector3d::reverse()
 {

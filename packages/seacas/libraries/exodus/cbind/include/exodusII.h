@@ -67,13 +67,13 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.24f
-#define EX_API_VERS_NODOT 624
+#define EX_API_VERS 6.28f
+#define EX_API_VERS_NODOT 628
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
 #define NEMESIS_FILE_VERSION		2.6 
-
+#define EX_HAS_META_H
 /*
  * need following extern if this include file is used in a C++
  * program, to keep the C++ compiler from mangling the function names.
@@ -106,11 +106,16 @@ extern "C" {
 #define EX_NOCLOBBER            0x0004 /**< Don't overwrite existing database, default */
 #define EX_CLOBBER              0x0008 /**< Overwrite existing database if it exists */
 #define EX_NORMAL_MODEL         0x0010 /**< disable mods that permit storage of larger models */
-#define EX_LARGE_MODEL          0x0020 /**< enable mods that permit storage of larger models */
+#define EX_64BIT_OFFSET         0x0020 /**< enable mods that permit storage of larger models */
+#define EX_LARGE_MODEL          EX_64BIT_OFFSET /**< enable mods that permit storage of larger models */
+#define EX_64BIT_DATA           0x400000 /**< CDF-5 format: classic model but 64 bit dimensions and sizes */
 #define EX_NETCDF4              0x0040 /**< use the hdf5-based netcdf4 output */
 #define EX_NOSHARE              0x0080  /**< Do not open netcdf file in "share" mode */
 #define EX_SHARE                0x0100 /**< Do open netcdf file in "share" mode */
 #define EX_NOCLASSIC            0x0200 /**< Do not force netcdf to classic mode in netcdf4 mode */
+
+#define EX_DISKLESS             0x100000 /**< Experimental */
+#define EX_MMAP                 0x200000 /**< Experimental */
 
   /* Need to distinguish between storage on database (DB in name) and
      passed through the API functions (API in name).
@@ -393,13 +398,13 @@ extern "C" {
 
 #define ex_create(path, mode, comp_ws, io_ws) ex_create_int(path, mode, comp_ws, io_ws, EX_API_VERS_NODOT)  
 
-  EXODUS_EXPORT int ex_create_int (const char *path, int cmode, int *comp_ws, int *io_ws, int my_version);
+  EXODUS_EXPORT int ex_create_int (const char *path, int cmode, int *comp_ws, int *io_ws, int run_version);
 
   EXODUS_EXPORT int ex_create_group (int parent_id, const char *group_name);
 
-  EXODUS_EXPORT int ex_get_group_id(int exoid, const char *group_name, int *group_id);
+  EXODUS_EXPORT int ex_get_group_id(int parent_id, const char *group_name, int *group_id);
 
-  EXODUS_EXPORT int ex_get_group_ids(int exoid, int *num_children, int *child_ids);
+  EXODUS_EXPORT int ex_get_group_ids(int parent_id, int *num_groups, int *group_ids);
   
   EXODUS_EXPORT int ex_get_all_times (int   exoid,
 				      void *time_values);
@@ -449,9 +454,9 @@ extern "C" {
 
   EXODUS_EXPORT int ex_get_info (int exoid, char **info);
 
-  EXODUS_EXPORT int ex_put_init_ext (int exoid,  const ex_init_params *param);
+  EXODUS_EXPORT int ex_put_init_ext (int exoid,  const ex_init_params *model);
 
-  EXODUS_EXPORT int ex_get_init_ext (int exoid, ex_init_params *param);
+  EXODUS_EXPORT int ex_get_init_ext (int exoid, ex_init_params *info);
 
   EXODUS_EXPORT int ex_get_init (int   exoid,
 				 char *title,
@@ -489,14 +494,14 @@ extern "C" {
 					int   nodal_var_index,
 					int64_t start_node, 
 					int64_t num_nodes, 
-					void *nodal_var_vals);
+					void *var_vals);
 
   EXODUS_EXPORT int ex_get_partial_nodal_var (int   exoid,
 					int   time_step,
 					int   nodal_var_index,
 					int64_t start_node, 
 					int64_t num_nodes, 
-					void *nodal_var_vals);
+					void *var_vals);
 
 
   EXODUS_EXPORT int ex_get_prop_array (int   exoid,
@@ -515,7 +520,7 @@ extern "C" {
 					    ex_entity_id   map_id,
 					    int64_t ent_start,
 					    int64_t ent_count, 
-					    void_int  *elem_map);
+					    void_int  *map);
   
   EXODUS_EXPORT int ex_get_prop_names (int    exoid,
 				       ex_entity_type obj_type,
@@ -542,10 +547,10 @@ extern "C" {
 					   int  *num_vars);
 
   EXODUS_EXPORT int ex_get_object_truth_vector (int  exoid,
-						ex_entity_type var_type,
-						ex_entity_id   object_id,
+						ex_entity_type obj_type,
+						ex_entity_id   entity_id,
 						int  num_var,
-						int *var_vector);
+						int *var_vec);
 
   EXODUS_EXPORT int ex_get_truth_table (int  exoid,
 					ex_entity_type obj_type,
@@ -559,7 +564,7 @@ extern "C" {
 				 int    mode,
 				 int   *comp_ws,
 				 int   *io_ws,
-				 float *version, int my_version);
+				 float *version, int run_version);
   
   EXODUS_EXPORT int ex_add_attr(int exoid,
 				ex_entity_type obj_type,
@@ -587,7 +592,7 @@ extern "C" {
 					      char *elem_type[],
 					      const void_int*   num_elem_this_blk,
 					      const void_int*   num_nodes_per_elem,
-					      const void_int*   num_attr,
+					      const void_int*   num_attr_this_blk,
 					      int    define_maps);
 
   EXODUS_EXPORT int ex_put_coord_names (int   exoid,
@@ -613,11 +618,11 @@ extern "C" {
 				    const void *z_coor);
 
   EXODUS_EXPORT int ex_put_id_map(int exoid,
-				  ex_entity_type obj_type,
+				  ex_entity_type map_type,
 				  const void_int *map);
   
   EXODUS_EXPORT int ex_put_partial_id_map(int exoid,
-					  ex_entity_type obj_type,
+					  ex_entity_type map_type,
 					  int64_t   start_entity_num, 
 					  int64_t   num_entities, 
 					  const void_int *map);
@@ -625,25 +630,25 @@ extern "C" {
   EXODUS_EXPORT int ex_put_n_elem_num_map (int  exoid,
 					   int64_t  start_ent,
 					   int64_t  num_ents,
-					   const void_int *map);
+					   const void_int *elem_map);
 
   EXODUS_EXPORT int ex_put_n_node_num_map (int  exoid,
 					   int64_t  start_ent,
 					   int64_t  num_ents,
-					   const void_int *map);
+					   const void_int *node_map);
 
   EXODUS_EXPORT int ex_put_partial_elem_num_map (int  exoid,
 					   int64_t  start_ent,
 					   int64_t  num_ents,
-					   const void_int *map);
+					   const void_int *elem_map);
 
   EXODUS_EXPORT int ex_put_partial_node_num_map (int  exoid,
 					   int64_t  start_ent,
 					   int64_t  num_ents,
-					   const void_int *map);
+					   const void_int *node_map);
 
   EXODUS_EXPORT int ex_get_id_map(int exoid,
-				  ex_entity_type obj_type,
+				  ex_entity_type map_type,
 				  void_int *map);
   
   EXODUS_EXPORT int ex_get_partial_id_map (int   exoid,
@@ -741,10 +746,10 @@ extern "C" {
   EXODUS_EXPORT size_t ex_header_size(int exoid);
 
   EXODUS_EXPORT void ex_err(const char *module_name, const char *message, int err_num);
-  EXODUS_EXPORT void ex_get_err(const char** msg, const char** func, int* errcode);
+  EXODUS_EXPORT void ex_get_err(const char** msg, const char** func, int* err_num);
   EXODUS_EXPORT int ex_opts(int options);
-  EXODUS_EXPORT int ex_inquire(int exoid, int inquiry, void_int*, float*, char*);
-  EXODUS_EXPORT int64_t ex_inquire_int(int exoid, int inquiry);
+  EXODUS_EXPORT int ex_inquire(int exoid, int req_info, void_int* /*ret_int*/, float* /*ret_float*/, char* /*ret_char*/);
+  EXODUS_EXPORT int64_t ex_inquire_int(int exoid, int req_info);
   EXODUS_EXPORT int ex_int64_status(int exoid);
   EXODUS_EXPORT int ex_set_int64_status(int exoid, int mode);
 
@@ -956,7 +961,7 @@ extern "C" {
 				       ex_entity_type set_type,
 				       ex_entity_id   set_id,
 				       int64_t offset,
-				       int64_t count,
+				       int64_t num_to_put,
 				       const void_int *set_entry_list,
 				       const void_int *set_extra_list);
 
@@ -1249,31 +1254,31 @@ ex_put_loadbal_param_cc(int   exoid,		/* NetCDF/Exodus file ID */
  *===========================================================================*/
 EXODUS_EXPORT int
 ex_get_ns_param_global(int exoid,	         /* NetCDF/Exodus file ID */
-                       void_int *ns_ids_glob,    /* Global IDs of node sets */
-                       void_int *ns_n_cnt_glob,  /* Count of nodes in node sets */
-                       void_int *ns_df_cnt_glob  /* Count of dist. factors in ns */
+                       void_int *global_ids,    /* Global IDs of node sets */
+                       void_int *node_cnts,  /* Count of nodes in node sets */
+                       void_int *df_cnts  /* Count of dist. factors in ns */
                        );
 
 EXODUS_EXPORT int
 ex_put_ns_param_global(int exoid, 	         /* NemesisI file ID */
                        void_int *global_ids,	 /* Vector of global node-set IDs */
-                       void_int *global_n_cnts,  /* Vector of node counts in node-sets */
-                       void_int *global_df_cnts  /* Vector of dist factor counts in node-sets */
+                       void_int *node_cnts,  /* Vector of node counts in node-sets */
+                       void_int *df_cnts  /* Vector of dist factor counts in node-sets */
                        );
 
 EXODUS_EXPORT int
 ex_get_ss_param_global(int exoid,	    /* NetCDF/Exodus file ID */
-                       void_int *ss_ids_glob,    /* Global side-set IDs */
-                       void_int *ss_s_cnt_glob,  /* Global side count */
-                       void_int *ss_df_cnt_glob  /* Global dist. factor count */
+                       void_int *global_ids,    /* Global side-set IDs */
+                       void_int *side_cnts,  /* Global side count */
+                       void_int *df_cnts  /* Global dist. factor count */
                        );
 
 EXODUS_EXPORT int
 ex_put_ss_param_global(int exoid, 	    /* NemesisI file ID */
                        void_int *global_ids,	    /* Vector of global side-set IDs */
-                       void_int *global_el_cnts, /* Vector of element/side */
+                       void_int *side_cnts, /* Vector of element/side */
 					    /* counts in each side set */
-                       void_int *global_df_cnts  /* Vector of dist. factor */
+                       void_int *df_cnts  /* Vector of dist. factor */
 					    /* counts in each side set */
                        );
 
@@ -1315,7 +1320,7 @@ ex_get_n_side_set_df(int   exoid,		/* NetCDF/Exodus file ID */
                      ex_entity_id   side_set_id,		/* Side-set ID */
                      int64_t   start_num,		/* Starting df number */
                      int64_t   num_df_to_get,	/* Number of df's to read */
-                     void *side_set_df 		/* Distribution factors */
+                     void *side_set_dist_fact 		/* Distribution factors */
                      );
 
 EXODUS_EXPORT int
@@ -1323,14 +1328,14 @@ ex_put_n_side_set_df(int   exoid,                /* NetCDF/Exodus file ID */
                      ex_entity_id   side_set_id,         /* Side-set ID */
                      int64_t   start_num,           /* Starting df number */
                      int64_t   num_df_to_get,       /* Number of df's to write */
-                     void *side_set_df          /* Distribution factors */
+                     void *side_set_dist_fact          /* Distribution factors */
                      );
 
 EXODUS_EXPORT int
 ex_get_n_node_set(int  exoid,		   /* NetCDF/Exodus file ID */
                   ex_entity_id  node_set_id,	   /* Node set ID */
                   int64_t  start_node_num,	   /* Node index to start reading at */
-                  int64_t  num_node,	   /* Number of nodes to read */
+                  int64_t  num_nodes,	   /* Number of nodes to read */
                   void_int *node_set_node_list  /* List of nodes in node set */
                   );
 
@@ -1338,7 +1343,7 @@ EXODUS_EXPORT int
 ex_put_n_node_set(int  exoid,		   /* NetCDF/Exodus file ID */
                   ex_entity_id  node_set_id,	   /* Node set ID */
                   int64_t  start_node_num,	   /* Node index to start writing at */
-                  int64_t  num_node,	   /* Number of nodes to write */
+                  int64_t  num_nodes,	   /* Number of nodes to write */
                   const void_int *node_set_node_list  /* List of nodes in node set */
                   );
 
@@ -1347,7 +1352,7 @@ ex_get_n_node_set_df(int   exoid,		/* NetCDF/Exodus file ID */
                      ex_entity_id   node_set_id,		/* Node-set ID */
                      int64_t   start_num,		/* Starting df number */
                      int64_t   num_df_to_get,	/* Number of df's to read */
-                     void *node_set_df 		/* Distribution factors */
+                     void *node_set_dist_fact 		/* Distribution factors */
                      );
 
 EXODUS_EXPORT int
@@ -1355,7 +1360,7 @@ ex_put_n_node_set_df(int   exoid,		/* NetCDF/Exodus file ID */
                      ex_entity_id   node_set_id,		/* Node-set ID */
                      int64_t   start_num,		/* Starting df number */
                      int64_t   num_df_to_get,	/* Number of df's to write */
-                     void *node_set_df 		/* Distribution factors */
+                     void *node_set_dist_fact 		/* Distribution factors */
                      );
 
 EXODUS_EXPORT int
@@ -1412,7 +1417,7 @@ ex_get_partial_side_set_df(int   exoid,		/* NetCDF/Exodus file ID */
                      ex_entity_id   side_set_id,		/* Side-set ID */
                      int64_t   start_num,		/* Starting df number */
                      int64_t   num_df_to_get,	/* Number of df's to read */
-                     void *side_set_df 		/* Distribution factors */
+                     void *side_set_dist_fact 		/* Distribution factors */
                      );
 
 EXODUS_EXPORT int
@@ -1420,14 +1425,14 @@ ex_put_partial_side_set_df(int   exoid,                /* NetCDF/Exodus file ID 
                      ex_entity_id   side_set_id,         /* Side-set ID */
                      int64_t   start_num,           /* Starting df number */
                      int64_t   num_df_to_get,       /* Number of df's to write */
-                     void *side_set_df          /* Distribution factors */
+                     void *side_set_dist_fact          /* Distribution factors */
                      );
 
 EXODUS_EXPORT int
 ex_get_partial_node_set(int  exoid,		   /* NetCDF/Exodus file ID */
                   ex_entity_id  node_set_id,	   /* Node set ID */
                   int64_t  start_node_num,	   /* Node index to start reading at */
-                  int64_t  num_node,	   /* Number of nodes to read */
+                  int64_t  num_nodes,	   /* Number of nodes to read */
                   void_int *node_set_node_list  /* List of nodes in node set */
                   );
 
@@ -1435,7 +1440,7 @@ EXODUS_EXPORT int
 ex_put_partial_node_set(int  exoid,		   /* NetCDF/Exodus file ID */
                   ex_entity_id  node_set_id,	   /* Node set ID */
                   int64_t  start_node_num,	   /* Node index to start writing at */
-                  int64_t  num_node,	   /* Number of nodes to write */
+                  int64_t  num_nodes,	   /* Number of nodes to write */
                   const void_int *node_set_node_list  /* List of nodes in node set */
                   );
 
@@ -1444,7 +1449,7 @@ ex_get_partial_node_set_df(int   exoid,		/* NetCDF/Exodus file ID */
                      ex_entity_id   node_set_id,		/* Node-set ID */
                      int64_t   start_num,		/* Starting df number */
                      int64_t   num_df_to_get,	/* Number of df's to read */
-                     void *node_set_df 		/* Distribution factors */
+                     void *node_set_dist_fact 		/* Distribution factors */
                      );
 
 EXODUS_EXPORT int
@@ -1452,7 +1457,7 @@ ex_put_partial_node_set_df(int   exoid,		/* NetCDF/Exodus file ID */
                      ex_entity_id   node_set_id,		/* Node-set ID */
                      int64_t   start_num,		/* Starting df number */
                      int64_t   num_df_to_get,	/* Number of df's to write */
-                     void *node_set_df 		/* Distribution factors */
+                     void *node_set_dist_fact 		/* Distribution factors */
                      );
 
 EXODUS_EXPORT int
@@ -1559,7 +1564,7 @@ ex_put_processor_node_maps(int   exoid,		/* NetCDF/Exodus file ID */
 			   void_int  *node_mapi,	/* Internal FEM node IDs */
 			   void_int  *node_mapb,	/* Border FEM node IDs */
 			   void_int  *node_mape,	/* External FEM node IDs */
-			   int   processor		/* This processor ID */
+			   int   proc_id		/* This processor ID */
 			   );
 
 EXODUS_EXPORT int
@@ -1592,21 +1597,21 @@ ex_get_cmap_params(int exoid,                  /* NetCDF/Exodus file ID */
 
 EXODUS_EXPORT int
 ex_put_cmap_params(int  exoid,			/* NetCDF/Exodus file ID */
-                   void_int *node_map_ids,	/* Node map IDs */
-                   void_int *node_map_node_cnts,/* Nodes in nodal comm */
-                   void_int *elem_map_ids,	/* Elem map IDs */
-                   void_int *elem_map_elem_cnts,/* Elems in elemental comm */
+                   void_int *node_cmap_ids,	/* Node map IDs */
+                   void_int *node_cmap_node_cnts,/* Nodes in nodal comm */
+                   void_int *elem_cmap_ids,	/* Elem map IDs */
+                   void_int *elem_cmap_elem_cnts,/* Elems in elemental comm */
                    int64_t   processor		/* This processor ID */
                    );
 
 EXODUS_EXPORT int
 ex_put_cmap_params_cc(int  exoid,		/* NetCDF/Exodus file ID */
-                      void_int *node_map_ids,	/* Node map IDs */
-                      void_int *node_map_node_cnts,	/* Nodes in nodal comm */
+                      void_int *node_cmap_ids,	/* Node map IDs */
+                      void_int *node_cmap_node_cnts,	/* Nodes in nodal comm */
                       void_int *node_proc_ptrs,      /* Pointer into array for */
 						/* node maps		  */
-                      void_int *elem_map_ids,	/* Elem map IDs */
-                      void_int *elem_map_elem_cnts,	/* Elems in elemental comm */
+                      void_int *elem_cmap_ids,	/* Elem map IDs */
+                      void_int *elem_cmap_elem_cnts,	/* Elems in elemental comm */
                       void_int *elem_proc_ptrs	/* Pointer into array for */
 						/* elem maps		  */
                       );
@@ -1856,7 +1861,7 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
 				       const char *elem_type,
 				       int64_t   num_elem_this_blk,
 				       int64_t   num_nodes_per_elem,
-				       int64_t   num_attr);
+				       int64_t   num_attr_per_elem);
 
   EXODUS_EXPORT int ex_put_elem_conn (int   exoid,
 				      ex_entity_id   elem_blk_id,
@@ -1985,9 +1990,9 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
   /* Should be internal use only, but was in external include file for
      nemesis and some codes are using the function
   */
-  EXODUS_EXPORT int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
+  EXODUS_EXPORT int ex_get_idx(int      exoid,	 /* NetCDF/Exodus file ID */
 		 const char *ne_var_name, /* Nemesis index variable name */
-		 int64_t *index,	 /* array of length 2 to hold results */
+		 int64_t *my_index,	 /* array of length 2 to hold results */
 		 int      pos		 /* position of this proc/cmap in index */
 		 );
 

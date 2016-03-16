@@ -229,7 +229,6 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
-    m_side_rank(stk::topology::INVALID_RANK),
     m_part_fields()
 {
   // Declare the predefined parts
@@ -256,7 +255,6 @@ MetaData::MetaData()
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
-    m_side_rank(stk::topology::INVALID_RANK),
     m_part_fields()
 {
   // Declare the predefined parts
@@ -272,6 +270,7 @@ MetaData::MetaData()
 void MetaData::initialize(size_t spatial_dimension, const std::vector<std::string> &rank_names)
 {
   ThrowErrorMsgIf( !m_entity_rank_names.empty(), "already initialized");
+  ThrowErrorMsgIf( spatial_dimension == 0, "Min spatial dimension is 1");
   ThrowErrorMsgIf( spatial_dimension > 3, "Max spatial dimension is 3");
 
   if ( rank_names.empty() ) {
@@ -285,7 +284,6 @@ void MetaData::initialize(size_t spatial_dimension, const std::vector<std::strin
   }
 
   m_spatial_dimension = spatial_dimension;
-  m_side_rank = side_rank();
 
   internal_declare_known_cell_topology_parts();
 }
@@ -328,15 +326,11 @@ FieldBase const* MetaData::coordinate_field() const
 Part * MetaData::get_part( const std::string & p_name ,
                            const char * required_by ) const
 {
-  const PartVector & all_parts = m_part_repo.get_all_parts();
-
-  Part * const p = find( all_parts , p_name );
-
-  ThrowErrorMsgIf( required_by && NULL == p,
+  Part *part = m_part_repo.get_part_by_name(p_name);
+  ThrowErrorMsgIf( required_by && NULL == part,
                    "Failed to find part with name " << p_name <<
                    " for method " << required_by );
-
-  return p ;
+  return part;
 }
 
 void MetaData::add_new_part_in_part_fields()

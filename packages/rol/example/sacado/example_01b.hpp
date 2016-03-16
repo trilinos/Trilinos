@@ -89,7 +89,7 @@ ScalarT FunctionZakharov<ScalarT>::eval(const std::vector<ScalarT> & x) {
     // Compute dot products 
     for(uint i=0; i<x.size(); ++i) {
         xdotx += pow(x[i],2);       // (k,x)
-        kdotx += double(i+1)*x[i];  // (x,x)
+        kdotx += ScalarT(i+1)*x[i];  // (x,x)
     }
 
     // Sum terms in objective function

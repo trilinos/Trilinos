@@ -50,6 +50,7 @@
 #pragma once
 
 #include "Zoltan2_TestHelpers.hpp"
+#include <Zoltan2_Typedefs.hpp>
 #include <AdapterForTests.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
@@ -74,6 +75,7 @@ using std::map;
 using std::pair;
 using std::ostringstream;
 using Teuchos::reduceAll;
+using namespace Zoltan2_TestingFramework;
 
 /*! \brief A class used to save problem solutions and timers.
  */
@@ -82,30 +84,14 @@ class ComparisonSource
   
 public:
   
-  typedef AdapterForTests::base_adapter_t base_t;
-  typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
-  typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
-  typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
-  typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
-  typedef AdapterForTests::basic_vector_adapter basic_vector_t;
-  
-  typedef Zoltan2::Problem<base_t> problem_t;
-  typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
-  typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
-  typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mb problem type
-  
-  
   /*! \brief Destructor.
    */
   ~ComparisonSource()
   {
     if(adapter_kind == "XpetraCrsGraph")
-      delete reinterpret_cast<xcrsGraph_t *>(adapter.getRawPtr())->getCoordinateInput();
+      delete reinterpret_cast<xcrsGraph_adapter *>(adapter.getRawPtr())->getCoordinateInput();
     if(adapter_kind == "XpetraCrsMatrix")
-      delete reinterpret_cast<xcrsMatrix_t *>(adapter.getRawPtr())->getCoordinateInput();
+      delete reinterpret_cast<xcrsMatrix_adapter *>(adapter.getRawPtr())->getCoordinateInput();
   }
   /* \brief Add a timer by name to the comparison sources timers map.
    * \param name is the name of the timer to be defined
@@ -116,7 +102,7 @@ public:
     timers[name]->enable();
   }
   
-  RCP<basic_problem_t> problem;
+  RCP<base_problem_t> problem;
   RCP<basic_id_t> adapter;
   string problem_kind;
   string adapter_kind;
@@ -129,23 +115,6 @@ class ComparisonHelper
 {
   
 public:
-  
-  typedef AdapterForTests::base_adapter_t base_t;
-  typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
-  typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
-  typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
-  typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
-  typedef AdapterForTests::basic_vector_adapter basic_vector_t;
-  
-  typedef Zoltan2::Problem<base_t> problem_t;
-  typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
-  typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
-  typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mv problem type
-  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mv problem type
-  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mv problem type
-  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mv problem type
-  
-  typedef const Zoltan2::MetricValues<zscalar_t> metric_t;
   
   /* \brief Compare the solutions, metrics or timers of two Zoltan2 solutions.
    * \param pList is a parameter list defining the comparison
@@ -428,9 +397,9 @@ void ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
   {
     //    typedef Zoltan2::PartitioningSolution<basic_id_t> partitioning_solution_t; // BDD unused
     // have some solutions lets compare them
-    if(basic_problem_t * problem_a = reinterpret_cast<basic_problem_t *>(sourceA->problem.getRawPtr()))
+    if(partitioning_problem_t * problem_a = reinterpret_cast<partitioning_problem_t *>(sourceA->problem.getRawPtr()))
     {
-      if(basic_problem_t * problem_b = reinterpret_cast<basic_problem_t *>(sourceB->problem.getRawPtr()))
+      if(partitioning_problem_t * problem_b = reinterpret_cast<partitioning_problem_t *>(sourceB->problem.getRawPtr()))
       {
         auto solution_a = problem_a->getSolution();
         auto solution_b = problem_b->getSolution();
@@ -681,8 +650,8 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   RCP<const ComparisonSource> sourceRef = this->sources[ref_name];
   
   // get problems
-  auto problem = sourcePrb.get()->problem.get();
-  auto reference = sourceRef.get()->problem.get();
+  auto problem = reinterpret_cast<partitioning_problem_t *>(sourcePrb.get()->problem.get());
+  auto reference = reinterpret_cast<partitioning_problem_t *>(sourceRef.get()->problem.get());
   
   // get metrics
   std::map<const string, const metric_t> prb_metrics = this->metricArrayToMap(problem->getMetrics());
@@ -744,12 +713,12 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   }
 }
 
-std::map<const string, const ComparisonHelper::metric_t>
-ComparisonHelper::metricArrayToMap(const ArrayRCP<const ComparisonHelper::metric_t> &metrics)
+std::map<const string, const metric_t>
+ComparisonHelper::metricArrayToMap(const ArrayRCP<const metric_t> &metrics)
 {
   typedef std::pair<const string,const metric_t> pair_t;
   std::map<const string, const metric_t> metric_map;
-  ArrayRCP<const ComparisonHelper::metric_t>::size_type idx;
+  ArrayRCP<const metric_t>::size_type idx;
   for(idx = 0; idx < metrics.size(); idx++)
   {
     metric_map.insert(pair_t(metrics[idx].getName(),metrics[idx]));
@@ -783,20 +752,8 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
   // return an error message on failure
   bool pass = true;
   string test_name = metricPlist.name() + " test";
-  double local_ref_value = ref_metric.getMaxImbalance()/ref_metric.getAvgImbalance();
-  double local_value = metric.getMaxImbalance()/metric.getAvgImbalance();
-  
-  // reduce problem metric
-  double value;
-  Teuchos::Ptr<double> global(&value);
-  comm->barrier();
-  reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,local_value,global);
-  
-  // reduce reference metric
-  double ref_value;
-  Teuchos::Ptr<double> globalRef(&ref_value);
-  comm->barrier();
-  reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,local_ref_value,globalRef);
+  double ref_value = ref_metric.getMaxImbalance();
+  double value = metric.getMaxImbalance();
   
   // want to reduce value to max value for all procs
   
@@ -806,11 +763,11 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
     
     if(value < min)
     {
-      msg << test_name << " FAILED: Minimum imbalance per part, "
+      msg << test_name << " FAILED: imbalance per part, "
       << value << ", less than specified allowable minimum, " << min << ".\n";
       pass = false;
     }else{
-      msg << test_name << " PASSED: Minimum imbalance per part, "
+      msg << test_name << " PASSED: imbalance per part, "
       << value << ", greater than specified allowable minimum, " << min << ".\n";
     }
   }
@@ -820,11 +777,11 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
     double max = metricPlist.get<double>("upper") * ref_value;
     if (value > max)
     {
-      msg << test_name << " FAILED: Maximum imbalance per part, "
+      msg << test_name << " FAILED: imbalance per part, "
       << value << ", greater than specified allowable maximum, " << max << ".\n";
       pass = false;
     }else{
-      msg << test_name << " PASSED: Maximum imbalance per part, "
+      msg << test_name << " PASSED: imbalance per part, "
       << value << ", less than specified allowable maximum, " << max << ".\n";
     }
     

@@ -2260,7 +2260,6 @@ YY_RULE_SETUP
   {
     symrec *s;
     int quoted = false;
-    std::fstream *yytmp;
     char *pt = strchr(yytext, ')');
     *pt = '\0';
     /* Check to see if surrounded by double quote */ 
@@ -3733,7 +3732,7 @@ namespace SEAMS {
 
       gl_histadd(line);
   
-      if (strlen(line) > max_size - 2) {
+      if (strlen(line) > (size_t)max_size - 2) {
 	yyerror("input line is too long");
 	return 0;
       }

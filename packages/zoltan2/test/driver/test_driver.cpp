@@ -51,10 +51,13 @@
 // taking headers from existing driver template
 // will keep or remove as needed
 #include <UserInputForTests.hpp>
+#include <Zoltan2_Typedefs.hpp>
 #include <AdapterForTests.hpp>
 #include <Zoltan2_ComparisonHelper.hpp>
+#include <Zoltan2_MetricAnalyzer.hpp>
 
-#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_ProblemFactory.hpp>
+#include <Zoltan2_EvaluatePartitionFactory.hpp>
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
@@ -79,6 +82,7 @@ using Teuchos::Comm;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::XMLObject;
+using namespace Zoltan2_TestingFramework;
 
 using std::cout;
 using std::cerr;
@@ -95,7 +99,7 @@ using std::queue;
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
 // temporary methods for debugging and leanring
-typedef Zoltan2::MetricValues<zscalar_t> metric_t; // typedef metric_type
+//typedef Zoltan2::MetricValues<zscalar_t> metric_t; // typedef metric_type
 
 void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & plist)
 {
@@ -121,7 +125,6 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
   zoltan2Parameters.set("compute_metrics", "true");
 
 }
-
 
 void getParameterLists(const string &inputFileName,
                        queue<ParameterList> &problems,
@@ -152,58 +155,6 @@ void getParameterLists(const string &inputFileName,
     if(plist.name() == "Comparison") comparisons.emplace(plist);
     else problems.emplace(plist);
   }
-  
-}
-
-bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
-                      const metric_t & metric,
-                      const Teuchos::ParameterList & metricPlist,
-                      ostringstream &msg)
-{
-  // run a comparison of min and max agains a given metric
-  // return an error message on failure
-  bool pass = true;
-  string test_name = metric.getName() + " test";
-  double local_value = metric.getMaxImbalance()/metric.getMinImbalance();
-  
-  
-  // reduce problem metric to processor 0
-  double value;
-  Teuchos::Ptr<double> global(&value);
-  comm->barrier();
-  reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,local_value,global);
-  
-  // Perfom tests
-  if (metricPlist.isParameter("lower"))
-  {
-    double min = metricPlist.get<double>("lower");
-    
-    if(value < min)
-    {
-      msg << test_name << " FAILED: Minimum imbalance per part, "
-      << value << ", less than specified allowable minimum, " << min << ".\n";
-      pass = false;
-    }else{
-      msg << test_name << " PASSED: Minimum imbalance per part, "
-      << value << ", greater than specified allowable minimum, " << min << ".\n";
-    }
-  }
-  
-  if(metricPlist.isParameter("upper" ) && pass != false) {
-    double max = metricPlist.get<double>("upper");
-    if (value > max)
-    {
-      msg << test_name << " FAILED: Maximum imbalance per part, "
-      << value << ", greater than specified allowable maximum, " << max << ".\n";
-      pass = false;
-    }else{
-      msg << test_name << " PASSED: Maximum imbalance per part, "
-      << value << ", less than specified allowable maximum, " << max << ".\n";
-    }
-    
-  }
-  
-  return pass;
 }
 
 void run(const UserInputForTests &uinput,
@@ -217,25 +168,24 @@ void run(const UserInputForTests &uinput,
   // 3. solve the problem
   // 4. analyze metrics
   // 5. clean up
-  
-  typedef AdapterForTests::base_adapter_t base_t;
-  typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
-  typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
-  typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
-  typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
-  typedef AdapterForTests::basic_vector_adapter basic_vector_t;
-  typedef AdapterForTests::pamgen_adapter_t pamgen_t;
-
-  typedef Zoltan2::Problem<base_t> problem_t;
-//  typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type // BDD unused
-  typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
-  typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mv problem type
-  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_graph problem type
-  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_matrix problem type
-  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // vector problem type
-  typedef Zoltan2::PartitioningProblem<pamgen_t> pamgen_problem_t; // pamgen mesh problem type
 
   int rank = comm->getRank();
+  
+  if(!problem_parameters.isParameter("kind"))
+  {
+    if(rank == 0) std::cerr << "Problem kind not provided" << std::endl;
+    return;
+  }
+  if(!problem_parameters.isParameter("InputAdapterParameters"))
+  {
+    if(rank == 0) std::cerr << "Input adapter parameters not provided" << std::endl;
+    return;
+  }
+  if(!problem_parameters.isParameter("Zoltan2Parameters"))
+  {
+    if(rank == 0) std::cerr << "Zoltan2 problem parameters not provided" << std::endl;
+    return;
+  }
   if(rank == 0)
     cout << "\n\nRunning test: " << problem_parameters.name() << endl;
   
@@ -250,20 +200,10 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 1. get basic input adapter
   ////////////////////////////////////////////////////////////
-  if(!problem_parameters.isParameter("InputAdapterParameters"))
-  {
-    if(rank == 0) std::cerr << "Input adapter parameters not provided" << std::endl;
-    return;
-  }
-  if(!problem_parameters.isParameter("Zoltan2Parameters"))
-  {
-    if(rank == 0) std::cerr << "Zoltan2 problem parameters not provided" << std::endl;
-    return;
-  }
   
   const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
   comparison_source->timers["adapter construction time"]->start();
-  base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
+  base_adapter_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
   comparison_source->timers["adapter construction time"]->stop();
   
 //  if(rank == 0) cout << "Got input adapter... " << endl;
@@ -275,194 +215,181 @@ void run(const UserInputForTests &uinput,
   }
   
   ////////////////////////////////////////////////////////////
-  // 2. construct partitioning problem
+  // 2. construct a Zoltan2 problem
   ////////////////////////////////////////////////////////////
-  problem_t * problem;
   string adapter_name = adapterPlist.get<string>("input adapter"); // If we are here we have an input adapter, no need to check for one.
   // get Zoltan2 partion parameters
   ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
   
-//  if(rank == 0){
-//    cout << "\nZoltan 2 parameters:" << endl;
-//    zoltan2_parameters.print(std::cout);
-//    cout << endl;
-//  }
-  
+  //if(rank == 0){
+  //  cout << "\nZoltan 2 parameters:" << endl;
+  //  zoltan2_parameters.print(std::cout);
+  //  cout << endl;
+  //}
+
   comparison_source->timers["problem construction time"]->start();
+  std::string problem_kind = problem_parameters.get<std::string>("kind"); 
+  if (rank == 0) std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
 #ifdef HAVE_ZOLTAN2_MPI
-  
-  if(adapter_name == "BasicIdentifier"){
-    problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
-                                                                 &zoltan2_parameters,
-                                                                 MPI_COMM_WORLD));
-  }else if(adapter_name == "XpetraMultiVector")
-  {
-    problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
-                                                                     &zoltan2_parameters,
-                                                                     MPI_COMM_WORLD));
-  }else if(adapter_name == "XpetraCrsGraph"){
-    problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
-                                                                     &zoltan2_parameters,
-                                                                     MPI_COMM_WORLD));
-  }
-  else if(adapter_name == "XpetraCrsMatrix")
-  {
-    problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
-                                                                      &zoltan2_parameters,
-                                                                      MPI_COMM_WORLD));
-  }else if(adapter_name == "BasicVector")
-  {
-    problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
-                                                                       &zoltan2_parameters,
-                                                                       MPI_COMM_WORLD));
-  }else if(adapter_name == "PamgenMesh")
-  {
-    problem = reinterpret_cast<problem_t * >(new pamgen_problem_t(reinterpret_cast<pamgen_t *>(ia),
-                                                                       &zoltan2_parameters,
-                                                                       MPI_COMM_WORLD));
-  }
-  else
-  {
-    if(rank == 0) std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
-    return;
-  }
-  
-  
+  base_problem_t * problem = 
+    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters, MPI_COMM_WORLD);
 #else
-  if(adapter_name == "BasicIdentifier"){
-    problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
-                                                                 &zoltan2_parameters));
-  }else if(adapter_name == "XpetraMultiVector")
-  {
-    problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
-                                                                     &zoltan2_parameters));
-  }else if(adapter_name == "XpetraCrsGraph"){
-    problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
-                                                                     &zoltan2_parameters));
-  }
-  else if(adapter_name == "XpetraCrsMatrix")
-  {
-    problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
-                                                                      &zoltan2_parameters));
-  } else if(adapter_name == "BasicVector")
-  {
-    problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
-                                                                       &zoltan2_parameters));
-  }else if(adapter_name == "PamgenMesh")
-  {
-    problem = reinterpret_cast<problem_t * >(new pamgen_problem_t(reinterpret_cast<pamgen_t *>(ia),
-                                                                  &zoltan2_parameters));
-  }
-  else
-  {
-    if(rank == 0) std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
+  base_problem_t * problem = 
+    Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters);
+#endif
+
+  if (problem == nullptr) {
+    if (rank == 0)
+      std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
     return;
   }
-#endif
-  comparison_source->timers["problem construction time"]->stop();
-//  if(rank == 0) cout << "Got problem... " << endl;
 
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
+  
   comparison_source->timers["solve time"]->start();
-  reinterpret_cast<basic_problem_t *>(problem)->solve();
+  RCP<EvaluatePartition<basic_id_t> >metricObject;
+  if (problem_kind == "partitioning") {
+    reinterpret_cast<partitioning_problem_t *>(problem)->solve();
+    metricObject =
+      rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
+	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
+			       (problem), adapter_name, ia));
+  } else if (problem_kind == "ordering") {
+    reinterpret_cast<ordering_problem_t *>(problem)->solve();
+  } else if (problem_kind == "coloring") {
+    reinterpret_cast<coloring_problem_t *>(problem)->solve();
+  }
   comparison_source->timers["solve time"]->stop();
-  
   if (rank == 0)
-    cout << "Problem solved." << endl;
+    cout << problem_kind + "Problem solved." << endl;
   
-#define KDDKDD
+//#define KDDKDD
 #ifdef KDDKDD
   {
-  const base_t::gno_t *kddIDs = NULL;
+  const base_adapter_t::gno_t *kddIDs = NULL;
   ia->getIDsView(kddIDs);
-  for (size_t i = 0; i < ia->getLocalNumIDs(); i++) {
-    std::cout << rank << " LID " << i
-              << " GID " << kddIDs[i]
-              << " PART " 
-              << reinterpret_cast<basic_problem_t *>(problem)->getSolution().getPartListView()[i]
-              << std::endl;
-  }
+    for (size_t i = 0; i < ia->getLocalNumIDs(); i++) {
+      std::cout << rank << " LID " << i
+                << " GID " << kddIDs[i]
+                << " PART " 
+                << reinterpret_cast<partitioning_problem_t *>(problem)->getSolution().getPartListView()[i]
+                << std::endl;
+    }
   }
 #endif
 
   ////////////////////////////////////////////////////////////
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////
-  
-  // calculate pass fail based on imbalance
-  if(rank == 0) cout << "Comparing metrics...\n" << endl;
-
   // An environment.  This is usually created by the problem.
+  // BDD unused, only applicable to partitioning problems
+  // RCP<const Zoltan2::Environment> env =
+  //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
 
-  RCP<const Zoltan2::Environment> env =
-    reinterpret_cast<basic_problem_t *>(problem)->getEnvironment();
+  if( problem_parameters.isParameter("Metrics")) {
+    // calculate pass fail based on imbalance
+    if(rank == 0) cout << "Analyzing metrics..." << endl;
+    if(rank == 0 && problem_kind == "partitioning") {
+      std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
+      reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
+      //metricObject->printMetrics(cout);
+    }
 
-  if(problem_parameters.isParameter("Metrics"))
-  {
-    if(rank == 0)
-      reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
+    std::ostringstream msg;
+    auto metricsPlist = problem_parameters.sublist("Metrics");
+    bool all_tests_pass = false;
     
-    ArrayRCP<const metric_t> metrics
-    = reinterpret_cast<basic_problem_t *>(problem)->getMetrics();
+    if (problem_kind == "partitioning") {
+      all_tests_pass
+      = MetricAnalyzer<partitioning_problem_t>::analyzeMetrics( metricsPlist,
+                                                                reinterpret_cast<const partitioning_problem_t *>(const_cast<base_problem_t *>(problem)),
+                                                                comm,
+                                                                msg); 
+    } else if (problem_kind == "ordering") {
+      all_tests_pass
+      = MetricAnalyzer<ordering_problem_t>::analyzeMetrics( metricsPlist,
+                                                            reinterpret_cast<const ordering_problem_t *>(const_cast<base_problem_t *>(problem)),
+                                                            comm,
+                                                            msg); 
+    } else if (problem_kind == "coloring") {
+      all_tests_pass
+      = MetricAnalyzer<coloring_problem_t>::analyzeMetrics( metricsPlist,
+                                                            reinterpret_cast<const coloring_problem_t *>(const_cast<base_problem_t *>(problem)),
+                                                            comm,
+                                                            msg); 
+    }
+    std::cout << msg.str() << std::endl;
+    if(rank == 0 && all_tests_pass) cout << "All tests PASSED." << endl;
+    else if(rank == 0) cout << "Testing FAILED." << endl;
     
-    // get metric plist
-    const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
-    
-    string test_name;
-    bool all_tests_pass = true;
-    for(int i = 0; i < metrics.size(); i++)
-    {
-      // print their names...
-      ostringstream msg;
-      test_name = metrics[i].getName();
-      if(metricsPlist.isSublist(test_name))
-      {
-        if(!MetricBoundsTest(comm, metrics[i], metricsPlist.sublist(test_name), msg))
-          all_tests_pass = false;
+  }else if(rank == 0 && problem_kind == "partitioning") {
+    // BDD for debugging
+    cout << "No test metrics requested. Problem Metrics are: " << endl;
+    reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
+    //metricObject->printMetrics(cout);
+    cout << "PASSED." << endl;
+  }
+
+#define BDD
+#ifdef BDD 
+  if (problem_kind == "ordering") {
+    std::cout << "\nLet's examine the solution..." << std::endl;
+    auto solution = reinterpret_cast<ordering_problem_t *>(problem)->getSolution();
+    if (solution->haveSeparators() ) {
+      
+      std::ostringstream sol;
+      sol << "Number of column blocks: " << solution->getNumSeparatorBlocks() << std::endl;
+      if (solution->getPermutationSize() < 100) {
+        if (solution->havePerm()) {
+          sol << "permutation: {";
+          for (auto &x : solution->getPermutationRCPConst(false)) sol << " " << x;
+          sol << "}" << std::endl;
+        }
+       
+       if (solution->haveInverse()) { 
+          sol << "inverse permutation: {";
+          for (auto &x : solution->getPermutationRCPConst(true)) sol << " " << x;
+          sol << "}" << std::endl;
+       }
         
-        if(rank == 0) cout << msg.str() << endl;
+       if (solution->haveSeparatorRange()) {
+          sol << "separator range: {";
+          for (auto &x : solution->getSeparatorRangeRCPConst()) sol << " " << x;
+          sol << "}" << std::endl;
+       }
+       
+        if (solution->haveSeparatorTree()) { 
+          sol << "separator tree: {";
+          for (auto &x : solution->getSeparatorTreeRCPConst()) sol << " " << x;
+          sol << "}" << std::endl;
+        }
       }
-    }
-    
-    if(all_tests_pass)
-    {
-      if(rank == 0) cout << "All tests PASSED." << endl;
-    }
-    else
-    {
-      if(rank == 0) cout << "Testing FAILED." << endl;
-    }
-    
-  }else{
-    if(rank == 0)
-    {
-      cout << "No test metrics provided." << endl;
-      reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
+
+      std::cout << sol.str() << std::endl;
     }
   }
-  
+#endif
   // 4b. timers
 //  if(zoltan2_parameters.isParameter("timer_output_stream"))
-//    reinterpret_cast<basic_problem_t *>(problem)->printTimers();
-  
+//    reinterpret_cast<partitioning_problem_t *>(problem)->printTimers();
+
   ////////////////////////////////////////////////////////////
   // 5. Add solution to map for possible comparison testing
   ////////////////////////////////////////////////////////////
   comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
-  comparison_source->problem = RCP<basic_problem_t>(reinterpret_cast<basic_problem_t *>(problem));
+  comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
   
   // write mesh solution
-//  auto sol = reinterpret_cast<basic_problem_t *>(problem)->getSolution();
+//  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
 //  MyUtils::writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
 
   ////////////////////////////////////////////////////////////
   // 6. Clean up
   ////////////////////////////////////////////////////////////
-
 }
 
 int main(int argc, char *argv[])
@@ -527,8 +454,9 @@ int main(int argc, char *argv[])
 //     pamgen debugging
 //    MyUtils::writeMesh(uinput,comm);
 //    MyUtils::getConnectivityGraph(uinput, comm);
-    
-    RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
+        
+    RCP<ComparisonHelper> comparison_manager
+      = rcp(new ComparisonHelper);
     while (!problems.empty()) {
       run(uinput, problems.front(), comparison_manager, comm);
       problems.pop();

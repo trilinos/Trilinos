@@ -560,6 +560,52 @@ public:
    template <typename ArrayT>
    void getElementVertices(const std::vector<stk_classic::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const;
 
+   /** Get vertices associated with a number of elements of the same geometry. The vertex array will not be resized.
+     *
+     * \param[in] localIds Element local IDs to construct vertices
+     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
+     *
+     * \note If not all elements have the same number of vertices an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementVerticesNoResize(const std::vector<std::size_t> & localIds, ArrayT & vertices) const;
+
+   /** Get vertices associated with a number of elements of the same geometry. The vertex array will not be resized.
+     *
+     * \param[in] elements Element entities to construct vertices
+     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
+     *
+     * \note If not all elements have the same number of vertices an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementVerticesNoResize(const std::vector<stk_classic::mesh::Entity*> & elements, ArrayT & vertices) const;
+
+   /** Get vertices associated with a number of elements of the same geometry. The vertex array will not be resized.
+     *
+     * \param[in] localIds Element local IDs to construct vertices
+     * \param[in] eBlock Element block the elements are in
+     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
+     *
+     * \note If not all elements have the same number of vertices an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementVerticesNoResize(const std::vector<std::size_t> & localIds,const std::string & eBlock, ArrayT & vertices) const;
+
+   /** Get vertices associated with a number of elements of the same geometry. The vertex array will not be resized.
+     *
+     * \param[in] elements Element entities to construct vertices
+     * \param[in] eBlock Element block the elements are in
+     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
+     *
+     * \note If not all elements have the same number of vertices an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementVerticesNoResize(const std::vector<stk_classic::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const;
+
    // const stk_classic::mesh::fem::FEMInterface & getFEMInterface() const 
    // { return *femPtr_; }
 
@@ -686,6 +732,10 @@ public:
      */
    template <typename ArrayT>
    void getElementVertices_FromField(const std::vector<stk_classic::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const;
+
+   template <typename ArrayT>
+   void getElementVertices_FromFieldNoResize(const std::vector<stk_classic::mesh::Entity*> & elements,
+                                             const std::string & eBlock, ArrayT & vertices) const;
 
    /** Get vertices associated with a number of elements of the same geometry. This access the true mesh coordinates
      * array.
@@ -1014,6 +1064,72 @@ void STK_Interface::getElementVertices(const std::vector<std::size_t> & localEle
 }
 
 template <typename ArrayT>
+void STK_Interface::getElementVerticesNoResize(const std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
+{
+   if(!useFieldCoordinates_) {
+     //
+     // gather from the intrinsic mesh coordinates (non-lagrangian)
+     //
+
+     const std::vector<stk_classic::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+    
+     // convert to a vector of entity objects
+     std::vector<stk_classic::mesh::Entity*> selected_elements;
+     for(std::size_t cell=0;cell<localElementIds.size();cell++) 
+       selected_elements.push_back(elements[localElementIds[cell]]);
+
+     getElementVertices_FromCoordsNoResize(selected_elements,vertices);
+   }
+   else {
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                "STK_Interface::getElementVerticesNoResize: Cannot call this method when field coordinates are used "
+                                "without specifying an element block.");
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementVerticesNoResize(const std::vector<stk_classic::mesh::Entity*> & elements, ArrayT & vertices) const
+{
+   if(!useFieldCoordinates_) {
+     getElementVertices_FromCoordsNoResize(elements,vertices);
+   }
+   else {
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                "STK_Interface::getElementVerticesNoResize: Cannot call this method when field coordinates are used "
+                                "without specifying an element block.");
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementVerticesNoResize(const std::vector<stk_classic::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const
+{
+   if(!useFieldCoordinates_) {
+     getElementVertices_FromCoordsNoResize(elements,vertices);
+   }
+   else {
+     getElementVertices_FromFieldNoResize(elements,eBlock,vertices);
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementVerticesNoResize(const std::vector<std::size_t> & localElementIds,const std::string & eBlock, ArrayT & vertices) const
+{
+   const std::vector<stk_classic::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+
+   // convert to a vector of entity objects
+   std::vector<stk_classic::mesh::Entity*> selected_elements;
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) 
+     selected_elements.push_back(elements[localElementIds[cell]]);
+
+   if(!useFieldCoordinates_) {
+     getElementVertices_FromCoordsNoResize(selected_elements,vertices);
+   }
+   else {
+     getElementVertices_FromFieldNoResize(selected_elements,eBlock,vertices);
+   }
+}
+
+template <typename ArrayT>
 void STK_Interface::getElementVertices_FromCoords(const std::vector<stk_classic::mesh::Entity*> & elements, ArrayT & vertices) const
 {
    // nothing to do! silently return
@@ -1120,6 +1236,50 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk_classic::
 
    // allocate space
    vertices.resize(elements.size(),masterVertexCount,getDimension());
+
+   std::map<std::string,std::vector<std::string> >::const_iterator itr = meshCoordFields_.find(eBlock);
+   if(itr==meshCoordFields_.end()) {
+     // no coordinate field set for this element block
+     TEUCHOS_ASSERT(false);
+   }
+
+   const std::vector<std::string> & coordField = itr->second;
+   std::vector<SolutionFieldType*> fields(getDimension());
+   for(std::size_t d=0;d<fields.size();d++) {
+     fields[d] = this->getSolutionField(coordField[d],eBlock);
+   }
+
+   for(std::size_t cell=0;cell<elements.size();cell++) {
+      stk_classic::mesh::Entity * element = elements[cell];
+
+      // loop over nodes set solution values
+      stk_classic::mesh::PairIterRelation relations = element->relations(getNodeRank());
+      for(std::size_t i=0;i<relations.size();++i) {
+         stk_classic::mesh::Entity * node = relations[i].entity();
+
+         const double * coord = getNodeCoordinates(node->identifier());
+
+         for(unsigned d=0;d<getDimension();d++) {
+           double * solnData = stk_classic::mesh::field_data(*fields[d],*node);
+ 
+           // recall mesh field coordinates are stored as displacements
+           // from the mesh coordinates, make sure to add them together
+           vertices(cell,i,d) = solnData[0]+coord[d]; 
+         }
+      }
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementVertices_FromFieldNoResize(const std::vector<stk_classic::mesh::Entity*> & elements,
+                                                         const std::string & eBlock, ArrayT & vertices) const
+{
+   TEUCHOS_ASSERT(useFieldCoordinates_);
+
+   // nothing to do! silently return
+   if(elements.size()==0) {
+      return;
+   }
 
    std::map<std::string,std::vector<std::string> >::const_iterator itr = meshCoordFields_.find(eBlock);
    if(itr==meshCoordFields_.end()) {

@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     }
 
     // Create an Epetra_Matrix
-    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
+    Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, &NumNz[0]) );
 
     // Add  rows one-at-a-time
     // Need some vectors to help

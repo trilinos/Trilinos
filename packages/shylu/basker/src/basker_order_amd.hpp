@@ -58,7 +58,7 @@ namespace BaskerNS
 		     &(calloc), &(free), 
 		     cmember, 0);
 
-    amesos_csymamd_report(stats);
+    //amesos_csymamd_report(stats);
     
     return 0;
   }
@@ -89,7 +89,7 @@ namespace BaskerNS
 		     &(calloc), &(free), 
 		     cmember, 0);
 
-    amesos_csymamd_l_report(stats);
+    //amesos_csymamd_l_report(stats);
     
     return 0;
   }
@@ -137,6 +137,18 @@ namespace BaskerNS
       }
     printf("\n"); 
     #endif
+    
+    //If doing  iluk, we will not want this.
+    //See amd blk notes
+    if(Options.incomplete == BASKER_TRUE)
+      {
+	for(Int i = 0; i < M.ncol; i++)
+	  {
+	    p(i) = i;
+	  }
+	//printf("Short csym \n");
+	return;
+      }
 
 
 
@@ -337,7 +349,32 @@ namespace BaskerNS
    INT_1DARRAY btf_work
   )
   {
-    
+   
+
+    // printf("=============BTF_BLK_AMD_CALLED========\n");
+    if(Options.incomplete == BASKER_TRUE)
+      {
+	//We note that AMD on incomplete ILUK
+	//Seems realy bad and leads to a zero on the diag
+	//Therefore, we simply return the natural ordering
+	for(Int i = 0 ; i < M.ncol; i++)
+	  {
+	    p(i) = i;
+	  }
+	//We will makeup work to be 1, 
+	//Since BTF is not supported in our iluk
+	for(Int b = 0; b < btf_nblks; b++)
+	  {
+	    btf_nnz(b) = 1;
+	    btf_work(b) =1;
+	  }
+       
+	//printf("Short amd blk\n");
+
+	return;
+      }
+
+ 
     //p == length(M)
     //Scan over all blks
     //Note, that this needs to be made parallel in the 

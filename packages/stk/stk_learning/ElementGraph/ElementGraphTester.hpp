@@ -38,6 +38,8 @@ public:
 
     void fill_graph() { ElemElemGraph::fill_graph(); }
 
+    void write_graph(std::ostream& out) const { ElemElemGraph::write_graph(out); }
+
     void fill_parallel_graph(stk::mesh::impl::ElemSideToProcAndFaceId& elem_side_comm) { ElemElemGraph::fill_parallel_graph(elem_side_comm); }
 
     stk::mesh::Graph & get_graph() { return m_graph; }

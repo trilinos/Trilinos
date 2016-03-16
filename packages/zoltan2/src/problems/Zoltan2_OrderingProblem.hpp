@@ -162,9 +162,6 @@ private:
 
   RCP<OrderingSolution<lno_t, gno_t> > solution_;
 
-  RCP<Comm<int> > problemComm_;
-  RCP<const Comm<int> > problemCommConst_;
-
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -191,32 +188,32 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // Need some exception handling here, too.
 
   std::string method = this->params_->template get<std::string>("order_method", "rcm");
-
+  
   // TODO: Ignore case
   try
   {
   if (method.compare("rcm") == 0)
   {
       AlgRCM<base_adapter_t> alg(this->graphModel_,
-                                 this->params_, problemComm_);
+                                 this->params_, this->comm_);
       alg.order(this->solution_);
   }
   else if (method.compare("natural") == 0)
   {
       AlgNatural<base_adapter_t> alg(this->identifierModel_,
-                                     this->params_, problemComm_);
+                                     this->params_, this->comm_);
       alg.order(this->solution_);
   }
   else if (method.compare("random") == 0)
   {
       AlgRandom<base_adapter_t> alg(this->identifierModel_,
-                                    this->params_, problemComm_);
+                                    this->params_, this->comm_);
       alg.order(this->solution_);
   }
   else if (method.compare("sorted_degree") == 0)
   {
       AlgSortedDegree<base_adapter_t> alg(this->graphModel_,
-                                          this->params_, problemComm_);
+                                          this->params_, this->comm_);
       alg.order(this->solution_);
   }
   else if (method.compare("minimum_degree") == 0)
@@ -225,15 +222,22 @@ void OrderingProblem<Adapter>::solve(bool newData)
       if (pkg.compare("amd") == 0)
       {
           AlgAMD<base_adapter_t> alg(this->graphModel_,
-                                     this->params_, problemComm_);
+                                     this->params_, this->comm_);
           alg.order(this->solution_);
       }
+  }
+  else if (method.compare("scotch") == 0) // BDD Adding scotch ordering
+  {
+    AlgPTScotch<Adapter> alg(this->envConst_,
+                                    this->comm_,
+                                    this->baseInputAdapter_);
+    alg.order(this->solution_);
   }
 
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
   else if (method == std::string("nd")) 
   {
-      AlgND<Adapter> alg(this->envConst_,problemComm_,this->graphModel_,
+      AlgND<Adapter> alg(this->envConst_,this->comm_,this->graphModel_,
                          this->coordinateModel_,this->baseInputAdapter_);
 
       alg.order(this->solution_);
@@ -270,11 +274,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 #ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
-
-  // Create a copy of the user's communicator.
-
-  problemComm_ = this->comm_->duplicate();
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
@@ -313,7 +312,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
     graphFlags.set(REMOVE_SELF_EDGES);
     graphFlags.set(BUILD_LOCAL_GRAPH);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
+      this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags));
 
     this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);
@@ -324,7 +323,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   case IdentifierModelType:
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, problemCommConst_, idFlags));
+      this->baseInputAdapter_, this->envConst_, this->comm_, idFlags));
 
     this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->identifierModel_);

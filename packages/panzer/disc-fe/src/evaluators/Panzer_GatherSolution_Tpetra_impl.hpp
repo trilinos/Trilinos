@@ -50,6 +50,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -102,7 +103,7 @@ GatherSolution_Tpetra(
         tangentFields_[fd].resize((*tangent_field_names)[fd].size());
         for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
           tangentFields_[fd][i] =
-            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
+            PHX::MDField<const ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
           this->addDependentField(tangentFields_[fd][i]);
         }
       }
@@ -255,7 +256,7 @@ GatherSolution_Tpetra(
         tangentFields_[fd].resize((*tangent_field_names)[fd].size());
         for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
           tangentFields_[fd][i] =
-            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
+            PHX::MDField<const ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
           this->addDependentField(tangentFields_[fd][i]);
         }
       }
@@ -380,6 +381,8 @@ GatherSolution_Tpetra(
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
+  , disableSensitivities_(false)
+  , sensitivitiesName_("")
   , globalDataKey_("Solution Gather Container")
   , gatherSeedIndex_(-1)
 {
@@ -406,6 +409,9 @@ GatherSolution_Tpetra(
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
+  if (p.isType<bool>("Disable Sensitivities"))
+    disableSensitivities_ = p.get<bool>("Disable Sensitivities");
+
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
 
@@ -413,7 +419,24 @@ GatherSolution_Tpetra(
      gatherSeedIndex_ = p.get<int>("Gather Seed Index");
   }
 
-  this->setName("Gather Solution");
+  if (p.isType<std::string>("Sensitivities Name")) {
+     sensitivitiesName_ = p.get<std::string>("Sensitivities Name");
+  }
+
+  // figure out what the first active name is
+  std::string firstName = "<none>";
+  if(names.size()>0)
+    firstName = names[0];
+
+  // print out convenience
+  if(disableSensitivities_) {
+    std::string n = "GatherSolution (Tpetra, No Sensitivities): "+firstName+" ()";
+    this->setName(n);
+  }
+  else {
+    std::string n = "GatherSolution (Tpetra): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
+    this->setName(n);
+  }
 }
 
 // **********************************************************************
@@ -455,31 +478,75 @@ template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
-   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
 
-   // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+  typedef TpetraVector_ReadOnly_GlobalEvaluationData<double,LO,GO,NodeT> RO_GED;
 
-   if(tpetraContainer_==Teuchos::null) {
+  // manage sensitivities
+  ////////////////////////////////////////////////////////////
+  if(!disableSensitivities_) {
+    if(d.sensitivities_name==sensitivitiesName_)
+      applySensitivities_ = true;
+    else
+      applySensitivities_ = false;
+  }
+  else
+    applySensitivities_ = false;
+
+  ////////////////////////////////////////////////////////////
+
+  RCP<GlobalEvaluationData> ged;
+
+  // first try refactored ReadOnly container
+  std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
+  if(d.gedc.containsDataObject(globalDataKey_+post)) {
+    ged = d.gedc.getDataObject(globalDataKey_+post);
+
+    RCP<RO_GED> ro_ged = rcp_dynamic_cast<RO_GED>(ged,true);
+
+    x_vector = ro_ged->getGhostedVector_Tpetra();
+
+    x_vector->template sync<PHX::Device>();
+
+    return;
+  }
+
+  ged = d.gedc.getDataObject(globalDataKey_);
+
+  // try to extract linear object container
+  {
+    RCP<LOC> tpetraContainer = rcp_dynamic_cast<LOC>(ged);
+    RCP<LOCPair_GlobalEvaluationData> loc_pair = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+
+    if(loc_pair!=Teuchos::null) {
+      Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
-      tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
-   }
+      tpetraContainer = rcp_dynamic_cast<LOC>(loc);
+    }
 
-   if (useTimeDerivativeSolutionVector_) {
-     x_vector = tpetraContainer_->get_dxdt();
-   }
-   else if (gatherSeedIndex_<0) {
-     x_vector = tpetraContainer_->get_x();
-   }
-   else if(!useTimeDerivativeSolutionVector_) {
-     x_vector = tpetraContainer_->get_x();
-   }
-   else {
-     TEUCHOS_ASSERT(false);
-   }
+    if(tpetraContainer!=Teuchos::null) {
+      if (useTimeDerivativeSolutionVector_)
+        x_vector = tpetraContainer->get_dxdt();
+      else
+        x_vector = tpetraContainer->get_x();
 
-   x_vector->template sync<PHX::Device>();
+      x_vector->template sync<PHX::Device>();
+
+      return; // epetraContainer was found
+    }
+  }
+
+  // try to extract an EpetraVector_ReadOnly object (this is the last resort!, it throws if not found)
+  {
+    RCP<RO_GED> ro_ged = rcp_dynamic_cast<RO_GED>(ged,true);
+
+    x_vector = ro_ged->getGhostedVector_Tpetra();
+  }
+
+  x_vector->template sync<PHX::Device>();
 }
 
 // **********************************************************************
@@ -505,6 +572,12 @@ evaluateFields(typename TRAITS::EvalData workset)
    else {
      TEUCHOS_ASSERT(false);
    }
+
+   // turn off sensitivies: this may be faster if we don't expand the term
+   // but I suspect not because anywhere it is used the full complement of
+   // sensitivies will be needed anyway.
+   if(!applySensitivities_)
+      seed_value = 0.0;
 
    // switch to a faster assembly
    bool use_seed = true;

@@ -57,8 +57,11 @@ template<class Real>
 class Brents : public LineSearch<Real> {
 private:
   Real tol_;
+  int niter_;
+  bool test_;
+
   Teuchos::RCP<Vector<Real> > xnew_; 
-  Teuchos::RCP<LineSearch<Real> > btls_;
+//  Teuchos::RCP<LineSearch<Real> > btls_;
 
 public:
 
@@ -66,331 +69,183 @@ public:
 
   // Constructor
   Brents( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
-    tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",1.e-8);
-    btls_ = Teuchos::rcp(new BackTracking<Real>(parlist));
+    Real oem10(1.e-10);
+    Teuchos::ParameterList &list
+      = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Brent's");
+    tol_ = list.get("Tolerance",oem10);
+    niter_ = list.get("Iteration Limit",1000);
+    test_ = list.get("Run Test Upon Initialization",true);
+//    tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",1.e-8);
+//    btls_ = Teuchos::rcp(new BackTracking<Real>(parlist));
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
                    Objective<Real> &obj, BoundConstraint<Real> &con ) {
     LineSearch<Real>::initialize(x,s,g,obj,con);
     xnew_ = x.clone();
-    btls_->initialize(x,s,g,obj,con);
+//    btls_->initialize(x,s,g,obj,con);
+
+    if ( test_ ) {
+      if ( test_brents() ) {
+        std::cout << "Brent's Test Passed!\n";
+      }
+      else {
+        std::cout << "Brent's Test Failed!\n";
+      }
+    }
   }
 
+  // Find the minimum of phi(alpha) = f(x + alpha*s) using Brent's method
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
             Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    Real tol = std::sqrt(ROL_EPSILON);
-    ls_neval = 0;
-    ls_ngrad = 0;
+    ls_neval = 0; ls_ngrad = 0;
+
     // Get initial line search parameter
     alpha = LineSearch<Real>::getInitialAlpha(ls_neval,ls_ngrad,fval,gs,x,s,obj,con);
 
-    // Compute value phi(0)
-    Real tl = 0.0;         // Left interval point
-    Real val_tl = fval;
+    // TODO: Bracketing
 
-    // Initialize value phi(t)
-    Real tc = 0.0;        // Center interval point
-    Real val_tc = 0.0;
+    // Run Brents
+    Teuchos::RCP<typename LineSearch<Real>::ScalarFunction> phi
+      = Teuchos::rcp(new typename LineSearch<Real>::Phi(*xnew_,x,s,obj,con));
+    int neval = 0;
+    Real A(0), B = alpha;
+    run_brents(neval, fval, alpha, *phi, A, B);
+    ls_neval += neval;
+  }
 
-    // Compute value phi(alpha)
-    Real tr = alpha;      // Right interval point
-    LineSearch<Real>::updateIterate(*xnew_,x,s,tr,con);
-    obj.update(*xnew_);
-    Real val_tr = obj.value(*xnew_,tol);
-    ls_neval++;
-
-    // Check if phi(alpha) < phi(0)
-    if ( val_tr < val_tl ) {
-      if ( LineSearch<Real>::status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj,con) ) {
-        alpha = tr;
-        fval  = val_tr;
-        return;
+private:
+  void run_brents(int &neval, Real &fval, Real &alpha,
+                  typename LineSearch<Real>::ScalarFunction &phi,
+                  const Real A, const Real B) const {
+    neval = 0;
+    // ---> Set algorithmic constants
+    const Real zero(0), half(0.5), one(1), two(2), three(3), five(5);
+    const Real c   = half*(three - std::sqrt(five));
+    const Real eps = std::sqrt(ROL_EPSILON<Real>());
+    // ---> Set end points and initial guess
+    Real a = A, b = B;
+    alpha = a + c*(b-a);
+    // ---> Evaluate function
+    Real fx = phi.value(alpha);
+    neval++;
+    // ---> Initialize algorithm storage
+    Real v = alpha, w = v, u(0), fu(0);
+    Real p(0), q(0), r(0), d(0), e(0);
+    Real fv = fx, fw = fx, tol(0), t2(0), m(0);
+    for (int i = 0; i < niter_; i++) {
+      m = half*(a+b);
+      tol = eps*std::abs(alpha) + tol_; t2 = two*tol;
+      // Check stopping criterion
+      if (std::abs(alpha-m) <= t2 - half*(b-a)) {
+        break;
       }
-    }
-
-    // Compute min( phi(0), phi(alpha) )
-    Real t     = 0.0;
-    Real val_t = 0.0;
-    if ( val_tl < val_tr ) {
-      t     = tl;
-      val_t = val_tl;
-    }
-    else {
-      t     = tr;
-      val_t = val_tr;
-    }
-
-    // Determine bracketing triple
-    const Real gr                = (1.0+sqrt(5.0))/2.0;
-    const Real inv_gr2           = 1.0/(gr*gr);
-    const Real goldinv           = 1.0/(1.0+gr);
-    const Real tiny              = sqrt(ROL_EPSILON);
-    const Real max_extrap_factor = 100.0;
-    Real tmp    = 0.0;
-    Real q      = 0.0;
-    Real r      = 0.0; 
-    Real tm     = 0.0;
-    Real tlim   = 0.0; 
-    Real val_tm = 0.0;
-
-    int itbt = 0;
-    while ( val_tr > val_tl && itbt < 8 ) {
-      tc     = tr;
-      val_tc = val_tr;
-
-      tr     = goldinv * (tc + gr*tl);
-      LineSearch<Real>::updateIterate(*xnew_,x,s,tr,con);
-      obj.update(*xnew_);
-      val_tr = obj.value(*xnew_,tol);
-      ls_neval++;
-
-      itbt++;
-    }
-    if ( val_tr > val_tl ) {
-      tmp    = tl;
-      tl     = tr;
-      tr     = tmp;
-      tmp    = val_tr;
-      val_tr = val_tl;
-      val_tl = tmp;
-      tc     = 0.0;
-    }
-
-    if ( std::abs(tc) < ROL_EPSILON ) {
-      tc = tl + (gr-1.0)*(tr-tl);
-      LineSearch<Real>::updateIterate(*xnew_,x,s,tc,con);
-      obj.update(*xnew_);
-      val_tc = obj.value(*xnew_,tol);
-      ls_neval++;
-    }
-
-    if ( val_tl <= val_tr && val_tl <= val_tc ) {
-      t     = tl;
-      val_t = val_tl;
-    }
-    else if ( val_tc <= val_tr && val_tc <= val_tl ) {
-      t     = tc;
-      val_t = val_tc;
-    }
-    else {
-      t     = tr;
-      val_t = val_tr;
-    }
-
-    if ( LineSearch<Real>::status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con) ) {
-      alpha = t;
-      fval  = val_t;
-      return;
-    }
-    
-    int itb = 0;
-    while ( val_tr >= val_tc && itb < 8 ) {
-      q = ( val_tr-val_tl ) * (tr - tc);
-      r = ( val_tr-val_tc ) * (tr - tl);
-      tmp = std::abs(q-r);
-      tmp = (tmp > tiny ? tmp : -tmp);
-      tm  = tr - (q*(tr-tc) - r*(tr-tl))/(2.0*tmp);
-
-      tlim = tl + max_extrap_factor * (tc-tr);
-
-      if ( (tr-tm)*(tm-tc) > 0.0 ) {
-        LineSearch<Real>::updateIterate(*xnew_,x,s,tm,con);
-        obj.update(*xnew_);
-        val_tm = obj.value(*xnew_,tol);
-        ls_neval++;
-        if ( val_tm < val_tc ) {
-          tl     = tr;
-          val_tl = val_tr;
-          tr     = tm;
-          val_tr = val_tm;
+      p = zero; q = zero; r = zero;
+      if ( std::abs(e) > tol ) {
+        // Fit parabola
+        r = (alpha-w)*(fx-fv);         q = (alpha-v)*(fx-fw);
+        p = (alpha-v)*q - (alpha-w)*r; q = two*(q-r);
+        if ( q > zero ) {
+          p *= -one;
         }
-        else if ( val_tm > val_tr) {
-          tc     = tm;
-          val_tc = val_tm;
-        }
-        tm = tc + gr*(tc-tr);
-        LineSearch<Real>::updateIterate(*xnew_,x,s,tm,con);
-        obj.update(*xnew_);
-        val_tm = obj.value(*xnew_,tol);
-        ls_neval++;
+        q = std::abs(q);
+        r = e; e = d;
       }
-      else if ( (tc - tm)*(tm -tlim) > 0.0 ) {
-        LineSearch<Real>::updateIterate(*xnew_,x,s,tm,con);
-        obj.update(*xnew_);
-        val_tm = obj.value(*xnew_,tol);
-        ls_neval++;
-        if ( val_tm < val_tc ) {
-          tr     = tc;
-          val_tr = val_tc;
-
-          tc     = tm;
-          val_tc = val_tm;
-
-          tm     = tc + gr*(tc-tr);
-          LineSearch<Real>::updateIterate(*xnew_,x,s,tm,con);
-          obj.update(*xnew_);
-          val_tm = obj.value(*xnew_,tol);
-          ls_neval++;
+      if ( std::abs(p) < std::abs(half*q*r) && p > q*(a-alpha) && p < q*(b-alpha) ) {
+        // A parabolic interpolation step
+        d = p/q; u = alpha + d;
+        // f must not be evaluated too close to a or b
+        if ( (u - a) < t2 || (b - u) < t2 ) {
+          d = (alpha < m) ? tol : -tol;
         }
-      }
-      else if ( (tm-tlim)*(tlim-tc) >= 0.0 ) {
-        tm = tlim;
-        LineSearch<Real>::updateIterate(*xnew_,x,s,tm,con);
-        obj.update(*xnew_);
-        val_tm = obj.value(*xnew_,tol);
-        ls_neval++;
       }
       else {
-        tm = tc + gr*(tc-tr);
-        LineSearch<Real>::updateIterate(*xnew_,x,s,tm,con);
-        obj.update(*xnew_);
-        val_tm = obj.value(*xnew_,tol);
-        ls_neval++;
+        // A golden section step
+        e = ((alpha < m) ? b : a) - alpha; d = c*e;
       }
-      tl     = tr;
-      val_tl = val_tr;
-      tr     = tc;
-      val_tr = val_tc;
-      tc     = tm;
-      val_tc = val_tm;
-      itb++;
-    }
-     
-    if ( val_tl <= val_tr && val_tl <= val_tc ) {
-      t     = tl;
-      val_t = val_tl;
-    }
-    else if ( val_tc <= val_tr && val_tc <= val_tl ) {
-      t     = tc;
-      val_t = val_tc;
-    }
-    else {
-      t     = tr;
-      val_t = val_tr;
-    }
-
-    if ( LineSearch<Real>::status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con) ) {
-      alpha = t;
-      fval  = val_t;
-      return;
-    }
- 
-    // Run Brent's using the triple (tl,tr,tc)
-    Real a     = 0.0;
-    Real b     = 0.0;
-    Real d     = 0.0;
-    Real e     = 0.0;
-    Real etemp = 0.0; 
-    Real fu    = 0.0; 
-    Real fv    = 0.0;
-    Real fw    = 0.0;
-    Real ft    = 0.0;
-    Real p     = 0.0;
-    Real u     = 0.0;
-    Real v     = 0.0;
-    Real w     = 0.0;
-    int it     = 0;
- 
-    fw = (val_tl<val_tc ? val_tl : val_tc);
-    if ( fw == val_tl ) {
-      w  = tl;
-      v  = tc;
-      fv = val_tc;
-    }
-    else {
-      w  = tc;
-      v  = tl;
-      fv = val_tl; 
-    }
-    t  = tr;
-    ft = val_tr;
-    a  = (tr < tc ? tr : tc);
-    b  = (tr > tc ? tr : tc);
-
-    while (    !LineSearch<Real>::status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,t,fval,gs,ft,x,s,obj,con)
-            && std::abs(t - tm) > tol_*(b-a) ) {
-      if ( it < 2 ) {
-        e = 2.0*(b-a);
-      }
-      tm = (a+b)/2.0;
-
-      Real tol1 = tol_*std::abs(t) + tiny;
-      Real tol2 = 2.0*tol1;
-
-      if ( std::abs(e) > tol1 || it < 2 ) {
-        r     = (t-w)*(ft-fv);
-        q     = (t-v)*(ft-fw);
-        p     = (t-v)*q-(t-w)*r;
-        q     = 2.0*(q-r);
-        if ( q > 0.0 ) {
-          p = -p;
-        }
-        q     = std::abs(q);
-        etemp = e;
-        e     = d;
-        if ( std::abs(p) > std::abs(0.5*q*etemp) || p <= q*(a-t) || p >= q*(b-t) ) {
-          d = inv_gr2*(e=(t>=tm ? a-t : b-t));  
+      // f must not be evaluated too close to alpha
+      u  = alpha + ((std::abs(d) >= tol) ? d : ((d > zero) ? tol : -tol));
+      fu = phi.value(u);
+      neval++;
+      // Update a, b, v, w, and alpha
+      if ( fu <= fx ) {
+        if ( u < alpha ) {
+          b = alpha;
         }
         else {
-          d = p/q;
-          u = t+d;
-          if ( u-a < tol2 || b-u < tol2 ) {
-            d = ( tm-t > 0.0 ? std::abs(tol1) : -std::abs(tol1) );
-          }
+          a = alpha;
         }
-      }
-      else  {
-        d = inv_gr2*(e = (t>=tm ? a-t : b-t) );
-      }
-      u = (std::abs(d)>=tol1 ? t+d : t+(d>=0.0 ? std::abs(tol1) : -std::abs(tol1)));
-      LineSearch<Real>::updateIterate(*xnew_,x,s,u,con);
-      obj.update(*xnew_);
-      fu = obj.value(*xnew_,tol);
-      ls_neval++;
-
-      if ( fu <= ft ) {
-        if ( u >= t ) {
-          a = t;
-        }
-        else {
-          b = t;
-        }
-        v  = w;
-        fv = fw;
-        w  = t;
-        fw = ft;
-        t  = u;
-        ft = fu;
+        v = w; fv = fw; w = alpha; fw = fx; alpha = u; fx = fu;
       }
       else {
-        if ( u < t ) {
+        if ( u < alpha ) {
           a = u;
         }
         else {
           b = u;
         }
-        if ( fu <= fw || w == t ) {
-          v  = w;
-          fv = fw;
-          w  = u;
-          fw = fu;
+        if ( fu <= fw || w == alpha ) {
+          v = w; fv = fw; w = u; fw = fu;
         }
-        else if ( fu <= fv || v == t || v == w ) {
-          v  = u;
-          fv = fu;
+        else if ( fu <= fv || v == alpha || v == w ) {
+          v = u; fv = fu;
         }
       }
-      it++;
     }
-    alpha = t;
-    fval  = ft;
-
-    if ( alpha < ROL_EPSILON ) {
-      btls_->run(alpha,fval,ls_neval,ls_ngrad,gs,s,x,obj,con);
-    }
+    fval = fx;
   }
+
+  class testFunction : public LineSearch<Real>::ScalarFunction {
+  public:
+    Real value(const Real x) {
+      Real val(0), I(0), two(2), five(5);
+      for (int i = 0; i < 20; i++) {
+        I = (Real)(i+1);
+        val += std::pow((two*I - five)/(x-(I*I)),two);
+      }
+      return val;
+    }
+  };
+
+  bool test_brents(void) const {
+    Teuchos::RCP<typename LineSearch<Real>::ScalarFunction> phi
+       = Teuchos::rcp(new testFunction());
+    Real A(0), B(0), alpha(0), fval(0);
+    Real error(0), error_i(0);
+    Real zero(0), two(2), three(3);
+    int neval = 0;
+    std::vector<Real> fvector(19,zero), avector(19,zero);
+    fvector[0]  = 3.6766990169; avector[0]  =   3.0229153;
+    fvector[1]  = 1.1118500100; avector[1]  =   6.6837536;
+    fvector[2]  = 1.2182217637; avector[2]  =  11.2387017;
+    fvector[3]  = 2.1621103109; avector[3]  =  19.6760001;
+    fvector[4]  = 3.0322905193; avector[4]  =  29.8282273;
+    fvector[5]  = 3.7583856477; avector[5]  =  41.9061162;
+    fvector[6]  = 4.3554103836; avector[6]  =  55.9535958;
+    fvector[7]  = 4.8482959563; avector[7]  =  71.9856656;
+    fvector[8]  = 5.2587585400; avector[8]  =  90.0088685;
+    fvector[9]  = 5.6036524295; avector[9]  = 110.0265327;
+    fvector[10] = 5.8956037976; avector[10] = 132.0405517;
+    fvector[11] = 6.1438861542; avector[11] = 156.0521144;
+    fvector[12] = 6.3550764593; avector[12] = 182.0620604;
+    fvector[13] = 6.5333662003; avector[13] = 210.0711010;
+    fvector[14] = 6.6803639849; avector[14] = 240.0800483;
+    fvector[15] = 6.7938538365; avector[15] = 272.0902669;
+    fvector[16] = 6.8634981053; avector[16] = 306.1051233;
+    fvector[17] = 6.8539024631; avector[17] = 342.1369454;
+    fvector[18] = 6.6008470481; avector[18] = 380.2687097;
+    for ( int i = 0; i < 19; i++ ) {
+      A = std::pow((Real)(i+1),two);
+      B = std::pow((Real)(i+2),two);
+      run_brents(neval, fval, alpha, *phi, A, B);
+      error_i = std::max(std::abs(fvector[i]-fval)/fvector[i],
+                         std::abs(avector[i]-alpha)/avector[i]);
+      error = std::max(error,error_i);
+    }
+    return (error < three*(std::sqrt(ROL_EPSILON<Real>())*avector[18]+tol_)) ? true : false;
+  }
+
 };
 
 }

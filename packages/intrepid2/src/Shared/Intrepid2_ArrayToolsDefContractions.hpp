@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -141,7 +140,7 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
   TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
 			      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Second dimension of output container and first dimension of right input container must agree!");
 
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
 			      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 #endif
   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
@@ -258,7 +257,7 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): First dimension of output container and first dimension of left input container must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldVector): Second dimension of output container and first dimension of right input container must agree!");
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
@@ -387,7 +386,7 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): First dimension of output container and first dimension of left input container must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(2) != rightFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractFieldFieldTensor): Second dimension of output container and first dimension of right input container must agree!");
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
@@ -547,7 +546,7 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldScalar): First dimensions (number of fields) of the fields input and output containers must agree!");
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
@@ -743,7 +742,7 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldVector): First dimensions of output container and fields input container (number of fields) must agree!");
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 
@@ -949,7 +948,7 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(1) != inputFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataFieldTensor): First dimensions (number of fields) of output container and fields input container must agree!");
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
@@ -1053,7 +1052,7 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
 			      ">>> ERROR (ArrayTools::contractDataDataScalar): First dimensions (numbers of integration points) of the left and right input containers must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
 			      ">>> ERROR (ArrayTools::contractDataDataScalar): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
@@ -1151,7 +1150,7 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
                       ">>> ERROR (ArrayTools::contractDataDataVector): Second dimensions (numbers of vector components) of the left and right input containers must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::contractDataDataVector): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
@@ -1255,7 +1254,7 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
 			      ">>> ERROR (ArrayTools::contractDataDataTensor): Third dimensions (second tensor dimensions) of the left and right input containers must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outputData.dimension(0) != inputDataRight.dimension(0) ), std::invalid_argument,
 			      ">>> ERROR (ArrayTools::contractDataDataTensor): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
-  TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !isValidCompEngine(compEngine), std::invalid_argument,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif

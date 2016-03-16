@@ -31,7 +31,7 @@
 #include "MueLu_TrilinosSmoother_fwd.hpp"
 #include "MueLu_IfpackSmoother_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
-#include "MueLu_HierarchyHelpers_fwd.hpp"
+#include "MueLu_HierarchyUtils_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoupledAggregationFactory_fwd.hpp"

@@ -74,10 +74,11 @@ public:
 
   // Constructor
   CauchyPoint( Teuchos::ParameterList &parlist )
-    : TrustRegion<Real>(parlist), pRed_(0.0), alpha_(-1.0), useCGTCP_(false) {
+    : TrustRegion<Real>(parlist), pRed_(0), alpha_(-1), useCGTCP_(false) {
     // Unravel Parameter List
-    Real TRsafe = parlist.sublist("Step").sublist("Trust Region").get("Safeguard Size",100.0);
-    eps_        = TRsafe*ROL_EPSILON;
+    Real oe2(100);
+    Real TRsafe = parlist.sublist("Step").sublist("Trust Region").get("Safeguard Size",oe2);
+    eps_        = TRsafe*ROL_EPSILON<Real>();
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
@@ -115,12 +116,12 @@ private:
                   const Vector<Real> &grad,
                   const Real         &gnorm,
                         ProjectedObjective<Real> &pObj ) {
-    Real tol   = std::sqrt(ROL_EPSILON);
+    Real tol   = std::sqrt(ROL_EPSILON<Real>()), half(0.5);
     pObj.hessVec(*Hp_,grad.dual(),x,tol);
     Real gBg   = Hp_->dot(grad);
     Real gg    = gnorm*gnorm;
     Real alpha = del/gnorm;
-    if ( gBg > ROL_EPSILON ) {
+    if ( gBg > ROL_EPSILON<Real>() ) {
       alpha = std::min(gg/gBg, del/gnorm);
     }
 
@@ -129,28 +130,25 @@ private:
     snorm = alpha*gnorm;
     iflag = 0;
     iter  = 0;
-    pRed_ = alpha*(gg - 0.5*alpha*gBg);
+    pRed_ = alpha*(gg - half*alpha*gBg);
   }
 
   void cauchypoint_M( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                       const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), zero(0), half(0.5), oe4(1.e4), two(2);
 
     // Parameters
-    Real mu0   = 1.e-2;
-    Real mu1   = 1.0;
-    Real beta1 = 0.0;
-    Real beta2 = 0.0;
+    Real mu0(1.e-2), mu1(1), beta1(0), beta2(0);
     bool decr  = true;
     bool stat  = true;
 
     // Initial step length
-    Real alpha  = 1.0;
-    if ( alpha_ > 0.0 ) {
+    Real alpha(1);
+    if ( alpha_ > zero ) {
       alpha = alpha_;
     } 
     Real alpha0   = alpha;
-    Real alphamax = 1.e4*alpha;
+    Real alphamax = oe4*alpha;
     
     // Initial model value
     s.set(grad.dual());
@@ -159,18 +157,18 @@ private:
     snorm = s.norm();
     pObj.hessVec(*Hp_,s,x,tol);
     Real gs   = s.dot(grad.dual());
-    Real val  = gs + 0.5*s.dot(Hp_->dual());
+    Real val  = gs + half*s.dot(Hp_->dual());
     Real val0 = val;
 
     // Determine whether to increase or decrease alpha
     if ( val > mu0 * gs || snorm > mu1 * del ) { 
-      beta1 = 0.5; 
-      beta2 = 0.5; 
+      beta1 = half; 
+      beta2 = half; 
       decr  = true;
     }
     else {
-      beta1 = 2.0;
-      beta2 = 2.0;
+      beta1 = two;
+      beta2 = two;
       decr  = false;
     }
 
@@ -178,7 +176,7 @@ private:
       // Update step length
       alpha0 = alpha;
       val0   = val;
-      alpha *= (beta1+beta2)*0.5;
+      alpha *= half*(beta1+beta2);
   
       // Update model value
       s.set(grad.dual());
@@ -187,7 +185,7 @@ private:
       snorm = s.norm();
       pObj.hessVec(*Hp_,s,x,tol);
       gs    = s.dot(grad.dual());
-      val   = gs + 0.5*s.dot(Hp_->dual());
+      val   = gs + half*s.dot(Hp_->dual());
 
       // Update termination criterion
       if ( decr ) {
@@ -220,18 +218,12 @@ private:
 
   void cauchypoint_CGT( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                         const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1), half(0.5), two(2);
     bool tmax_flag = true;
     int maxit      = 20;
     Real t         = del/gnorm;
-    Real tmax      = 1.e10;
-    Real tmin      = 0.0;
-    Real gs        = 0.0;
-    Real c1        = 0.25;
-    Real c2        = 0.75;
-    Real c3        = 0.9;
-    Real c4        = 0.25;
-    Real pgnorm    = 0.0;
+    Real tmax(1.e10), tmin(0), gs(0), pgnorm(0);
+    Real c1(0.25), c2(0.75), c3(0.9), c4(0.25);
     for ( int i = 0; i < maxit; i++ ) {
       // Compute p = x + s = P(x - t*g)
       p_->set(x);
@@ -239,12 +231,12 @@ private:
       pObj.project(*p_);
       // Compute s = p - x = P(x - t*g) - x
       s.set(*p_);
-      s.axpy(-1.0,x);
+      s.axpy(-one,x);
       snorm = s.norm();
       // Evaluate Model
       pObj.hessVec(*Hp_,s,x,tol);
       gs = s.dot(grad.dual());
-      pRed_ = -gs - 0.5*s.dot(Hp_->dual());
+      pRed_ = -gs - half*s.dot(Hp_->dual());
 
       // Check Stopping Conditions
       g_->set(grad);
@@ -263,10 +255,10 @@ private:
    
       // Update t
       if ( tmax_flag ) {
-        t *= 2.0;
+        t *= two;
       }
       else {
-        t = 0.5*(tmax + tmin);
+        t = half*(tmax + tmin);
       }
     }
   }

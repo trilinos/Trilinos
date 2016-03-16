@@ -67,6 +67,7 @@ template <typename Adapter>
 
 private:
 
+  typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
@@ -100,24 +101,7 @@ public:
     const RCP<const Comm<int> > &problemComm,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
     const PartitioningSolution<Adapter> *soln,
-    bool useDegreeAsWeight,
-    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
-		    Teuchos::null);
-
-  /*! \brief Constructor
-      \param env   the problem environment
-      \param problemComm  the problem communicator
-      \param ia the problem input adapter
-      \param soln  the solution
-      \param graphModel the graph model
-
-      The constructor does global communication to compute the graph metrics.
-      The rest of the  methods are local.
-   */
-  EvaluatePartition(const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &problemComm,
-    const RCP<const typename Adapter::base_adapter_t> &ia, 
-    const PartitioningSolution<Adapter> *soln,
+    bool useDegreeAsWeight = false,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
 
@@ -214,7 +198,7 @@ template <typename Adapter>
   bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
-    metrics_(),  metricsConst_()
+    metrics_(),  metricsConst_(), graphMetrics_(), graphMetricsConst_()
 {
 
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
@@ -225,10 +209,9 @@ template <typename Adapter>
   // using all weights.
 
   const Teuchos::ParameterList &pl = env->getParameters();
+
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
-
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
-
   if (pe){
     std::string strChoice = pe->getValue<std::string>(&strChoice);
     if (strChoice == std::string("multicriteria_minimize_total_weight"))
@@ -250,81 +233,65 @@ template <typename Adapter>
     targetGlobalParts_ = problemComm->getSize();
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
-  env->debug(DETAILED_STATUS, std::string("Exiting EvaluatePartition"));
-}
 
-template <typename Adapter>
-  EvaluatePartition<Adapter>::EvaluatePartition(
-  const RCP<const Environment> &env,
-  const RCP<const Comm<int> > &problemComm,
-  const RCP<const typename Adapter::base_adapter_t> &ia, 
-  const PartitioningSolution<Adapter> *soln,
-  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
-    env_(env), numGlobalParts_(0), targetGlobalParts_(0),
-    graphMetrics_(),  graphMetricsConst_()
-{
+  BaseAdapterType inputType = ia->adapterType();
 
-  env->debug(DETAILED_STATUS,
-	     std::string("Entering EvaluatePartition"));
-  env->timerStart(MACRO_TIMERS, "Computing graph metrics");
-  // When we add parameters for which weights to use, we
-  // should check those here.  For now we compute graph metrics
-  // using all weights.
+  if (inputType == GraphAdapterType ||
+      inputType == MatrixAdapterType ||
+      inputType == MeshAdapterType){
+    env->timerStart(MACRO_TIMERS, "Computing graph metrics");
+    // When we add parameters for which weights to use, we
+    // should check those here.  For now we compute graph metrics
+    // using all weights.
 
-  typedef typename Adapter::part_t part_t;
-  typedef typename Adapter::base_adapter_t base_adapter_t;
+    std::bitset<NUM_MODEL_FLAGS> modelFlags;
 
-  std::bitset<NUM_MODEL_FLAGS> modelFlags;
+    // Create a GraphModel based on input data.
 
-  // Create a GraphModel based on input data.
+    RCP<GraphModel<base_adapter_t> > graph;
+    if (graphModel == Teuchos::null)
+      graph=rcp(new GraphModel<base_adapter_t>(ia,env,problemComm,modelFlags));
 
-  RCP<GraphModel<base_adapter_t> > graph;
-  if (graphModel == Teuchos::null)
-    graph = rcp(new GraphModel<base_adapter_t>(ia,env,problemComm,modelFlags));
+    // Local number of objects.
 
-  // Local number of objects.
+    size_t numLocalObjects = ia->getLocalNumIDs();
 
-  size_t numLocalObjects = ia->getLocalNumIDs();
+    // Parts to which objects are assigned.
 
-  // Parts to which objects are assigned.
-
-  const part_t *parts;
-  if (soln) {
-    parts = soln->getPartListView();
-    env->localInputAssertion(__FILE__, __LINE__, "parts not set",
-      ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
-  } else {
-    part_t *procs = new part_t [numLocalObjects];
-    for (size_t i=0; i<numLocalObjects; i++) procs[i] = problemComm->getRank();
-    parts = procs;
-  }
-  ArrayView<const part_t> partArray(parts, numLocalObjects);
-
-  ArrayRCP<scalar_t> globalSums;
-
-  if (graphModel == Teuchos::null) {
-    try{
-      globalWeightedCutsByPart<Adapter>(env,
-					problemComm, graph, partArray,
-					numGlobalParts_, graphMetrics_,
-					globalSums);
+    const part_t *parts;
+    if (soln) {
+      parts = soln->getPartListView();
+      env->localInputAssertion(__FILE__, __LINE__, "parts not set",
+        ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
+    } else {
+      part_t *procs = new part_t [numLocalObjects];
+      for (size_t i=0; i<numLocalObjects; i++) procs[i]=problemComm->getRank();
+      parts = procs;
     }
-    Z2_FORWARD_EXCEPTIONS;
-  } else {
-    try{
-      globalWeightedCutsByPart<Adapter>(env,
-					problemComm, graphModel, partArray,
-					numGlobalParts_, graphMetrics_,
-					globalSums);
+    ArrayView<const part_t> partArray(parts, numLocalObjects);
+
+    ArrayRCP<scalar_t> globalSums;
+
+    if (graphModel == Teuchos::null) {
+      try{
+	globalWeightedCutsByPart<Adapter>(env,
+					  problemComm, graph, partArray,
+					  numGlobalParts_, graphMetrics_,
+					  globalSums);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+    } else {
+      try{
+	globalWeightedCutsByPart<Adapter>(env,
+					  problemComm, graphModel, partArray,
+					  numGlobalParts_, graphMetrics_,
+					  globalSums);
+      }
+      Z2_FORWARD_EXCEPTIONS;
     }
-    Z2_FORWARD_EXCEPTIONS;
+
+    env->timerStop(MACRO_TIMERS, "Computing graph metrics");
   }
-
-  if (soln)
-  targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
-  else targetGlobalParts_ = problemComm->getSize();
-
-  env->timerStop(MACRO_TIMERS, "Computing graph metrics");
   env->debug(DETAILED_STATUS,
 	     std::string("Exiting EvaluatePartition"));
 }

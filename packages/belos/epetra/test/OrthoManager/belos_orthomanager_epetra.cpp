@@ -258,7 +258,7 @@ namespace {
   pMap = rcp (new map_type (numRows, 0, *pComm));
 
   // Third argument: max number of nonzero entries per row.
-  pMatrix = rcp (new sparse_matrix_type (Copy, *pMap, rnnzmax));
+  pMatrix = rcp (new sparse_matrix_type (Epetra_DataAccess::Copy, *pMap, rnnzmax));
 
   if (myRank == 0)
     {

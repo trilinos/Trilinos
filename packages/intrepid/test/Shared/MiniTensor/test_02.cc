@@ -49,9 +49,12 @@ main(int ac, char * av[])
 
   ::testing::InitGoogleTest(&ac, av);
 
-  return RUN_ALL_TESTS();
+  auto const
+  retval = RUN_ALL_TESTS();
 
   Kokkos::finalize();
+
+  return retval;
 }
 
 namespace Intrepid {
@@ -744,6 +747,181 @@ public:
 };
   
 //
+// Failure function to test failed mechanism
+//
+template<typename S>
+class Failure : public Intrepid::Function_Base<Failure<S>, S>
+{
+public:
+
+  Failure() {}
+
+  static constexpr
+  Intrepid::Index
+  DIMENSION{1};
+
+  static constexpr
+  char const * const
+  NAME{"Failure"};
+
+  // Explicit value.
+  template<typename T, Intrepid::Index N>
+  T
+  value(Intrepid::Vector<T, N> const & X)
+  {
+    // Get a convenience reference to the failed flag in case it is used more
+    // than once.
+    bool &
+    failed = Intrepid::Function_Base<Failure<S>, S>::failed;
+
+    // Set the flag to signal that an unrecoverable error happened.
+
+    failed = true;
+
+    T const
+    fn = 0.0;
+
+    return fn;
+  }
+
+  // Default AD gradient.
+  template<typename T, Intrepid::Index N>
+  Intrepid::Vector<T, N>
+  gradient(Intrepid::Vector<T, N> const & x)
+  {
+    return Intrepid::Function_Base<Failure<S>, S>::gradient(*this, x);
+  }
+
+  // Default AD hessian.
+  template<typename T, Intrepid::Index N>
+  Intrepid::Tensor<T, N>
+  hessian(Intrepid::Vector<T, N> const & x)
+  {
+    return Intrepid::Function_Base<Failure<S>, S>::hessian(*this, x);
+  }
+
+};
+
+//
+// Non-monotonic function to test monotonicity enforcement.
+//
+template<typename S>
+class Mesa : public Intrepid::Function_Base<Mesa<S>, S>
+{
+public:
+
+  Mesa() {}
+
+  static constexpr
+  Intrepid::Index
+  DIMENSION{1};
+
+  static constexpr
+  char const * const
+  NAME{"Mesa"};
+
+  // Explicit value.
+  template<typename T, Intrepid::Index N>
+  T
+  value(Intrepid::Vector<T, N> const & X)
+  {
+    T const &
+    x = X(0);
+
+    T
+    y = x * x;
+
+    if (-1.0 <= x && x <= 1.0) {
+      y = y + 100.0;
+    }
+
+    return y;
+  }
+
+  // Default AD gradient.
+  template<typename T, Intrepid::Index N>
+  Intrepid::Vector<T, N>
+  gradient(Intrepid::Vector<T, N> const & x)
+  {
+    return Intrepid::Function_Base<Mesa<S>, S>::gradient(*this, x);
+  }
+
+  // Default AD hessian.
+  template<typename T, Intrepid::Index N>
+  Intrepid::Tensor<T, N>
+  hessian(Intrepid::Vector<T, N> const & x)
+  {
+    return Intrepid::Function_Base<Mesa<S>, S>::hessian(*this, x);
+  }
+
+};
+
+//
+// Function to test boundedness or residual enforcement.
+//
+template<typename S>
+class Sigmoid : public Intrepid::Function_Base<Sigmoid<S>, S>
+{
+public:
+
+  Sigmoid() {}
+
+  static constexpr
+  Intrepid::Index
+  DIMENSION{1};
+
+  static constexpr
+  char const * const
+  NAME{"Sigmoid"};
+
+  // Explicit value.
+  template<typename T, Intrepid::Index N>
+  T
+  value(Intrepid::Vector<T, N> const & X)
+  {
+    T const &
+    x = X(0);
+
+    T const
+    x2 = x * x;
+
+    T const
+    x4 = x2 * x2;
+
+    T const
+    x8 = x4 * x4;
+
+    T const
+    x16 = x8 * x8;
+
+    T const
+    x32 = x16 * x16;
+
+    T
+    y = x * x32;
+
+    return y;
+  }
+
+  // Default AD gradient.
+  template<typename T, Intrepid::Index N>
+  Intrepid::Vector<T, N>
+  gradient(Intrepid::Vector<T, N> const & x)
+  {
+    return Intrepid::Function_Base<Sigmoid<S>, S>::gradient(*this, x);
+  }
+
+  // Default AD hessian.
+  template<typename T, Intrepid::Index N>
+  Intrepid::Tensor<T, N>
+  hessian(Intrepid::Vector<T, N> const & x)
+  {
+    return Intrepid::Function_Base<Sigmoid<S>, S>::hessian(*this, x);
+  }
+
+};
+
+//
 // Test the solution methods by themselves.
 //
 
@@ -1081,6 +1259,98 @@ TEST(Testing, MixedStorage)
     B.get_num_rows() == 4 && B.get_num_cols() == 2;
 
   ASSERT_EQ(passed, true);
+}
+
+TEST(Testing, FailedFlag)
+{
+  constexpr Intrepid::Index
+  dimension{1};
+
+  using MIN = Intrepid::Minimizer<Real, dimension>;
+  using FN = Failure<Real>;
+  using STEP = Intrepid::NewtonStep<FN, Real, dimension>;
+
+  MIN
+  minimizer;
+
+  FN
+  fn;
+
+  STEP
+  step;
+
+  Intrepid::Vector<Real, dimension>
+  x;
+
+  x(0) = 0.0;
+
+  minimizer.solve(step, fn, x);
+
+  ASSERT_EQ(minimizer.failed, true);
+}
+
+TEST(Testing, Monotonicity)
+{
+  constexpr Intrepid::Index
+  dimension{1};
+
+  using MIN = Intrepid::Minimizer<Real, dimension>;
+  using FN = Mesa<Real>;
+  using STEP = Intrepid::NewtonStep<FN, Real, dimension>;
+
+  MIN
+  minimizer;
+
+  minimizer.enforce_monotonicity = true;
+
+  FN
+  fn;
+
+  STEP
+  step;
+
+  Intrepid::Vector<Real, dimension>
+  x;
+
+  x(0) = 2.0;
+
+  minimizer.solve(step, fn, x);
+
+  ASSERT_EQ(minimizer.monotonic, false);
+  ASSERT_EQ(minimizer.failed, true);
+}
+
+TEST(Testing, Boundedness)
+{
+  constexpr Intrepid::Index
+  dimension{1};
+
+  using MIN = Intrepid::Minimizer<Real, dimension>;
+  using FN = Sigmoid<Real>;
+  using STEP = Intrepid::NewtonStep<FN, Real, dimension>;
+
+  MIN
+  minimizer;
+
+  minimizer.enforce_boundedness = true;
+
+  FN
+  fn;
+
+  STEP
+  step;
+
+  Intrepid::Vector<Real, dimension>
+  x;
+
+  x(0) = 0.5;
+
+  minimizer.solve(step, fn, x);
+
+  minimizer.printReport(std::cout);
+
+  ASSERT_EQ(minimizer.bounded, true);
+  ASSERT_EQ(minimizer.failed, false);
 }
 
 } // namespace Intrepid

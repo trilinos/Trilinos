@@ -298,7 +298,7 @@ SystemInterface::SystemInterface()
   enroll_options();
 }
 
-SystemInterface::~SystemInterface() {}
+SystemInterface::~SystemInterface() = default;
 
 void SystemInterface::show_version()
 {

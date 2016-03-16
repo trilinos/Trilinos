@@ -76,7 +76,7 @@ Ioss::ShellLine2D2::ShellLine2D2()
   Ioss::ElementTopology::alias("shellline2d2", "SHELL_LINE_2");
 }
 
-Ioss::ShellLine2D2::~ShellLine2D2() {}
+Ioss::ShellLine2D2::~ShellLine2D2() = default;
 
 int Ioss::ShellLine2D2::parametric_dimension()           const {return  1;}
 int Ioss::ShellLine2D2::spatial_dimension()           const {return  2;}
@@ -125,8 +125,9 @@ Ioss::IntVector Ioss::ShellLine2D2::face_connectivity(int /* face_number */) con
 Ioss::IntVector Ioss::ShellLine2D2::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 

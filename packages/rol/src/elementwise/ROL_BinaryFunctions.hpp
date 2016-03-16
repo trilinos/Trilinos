@@ -60,6 +60,15 @@ public:
   }  
 }; // class Multiply
 
+template<class Real>
+class Plus : public BinaryFunction<Real> {
+public:
+  Real apply( const Real &x, const Real &y ) const {
+    return x+y;
+  }
+};
+
+
 // Used to set every element in a vector to a specific value
 template<class Real>
 class Divide : public BinaryFunction<Real> {
@@ -70,6 +79,75 @@ public:
     return x/y;
   }  
 }; // class Divide
+
+
+template<class Real> 
+class Axpy : public BinaryFunction<Real> {
+private:
+  Real a_;
+public:
+  Axpy(Real a) : a_(a) {}
+  Real apply( const Real &x, const Real &y ) const {
+    return x+a_*y;
+  }
+};
+
+
+template<class Real> 
+class Aypx : public BinaryFunction<Real> {
+private:
+  Real a_;
+public:
+  Aypx(Real a) : a_(a) {}
+  Real apply( const Real &x, const Real &y ) const {
+    return a_*x+y;
+  }
+};
+
+
+template<class Real> 
+class Set : public BinaryFunction<Real> {
+public:
+  Real apply( const Real &x, const Real &y ) const {
+    return y;
+  }
+};
+
+template<class Real> 
+class Lesser : public BinaryFunction<Real> {
+public:
+  Real apply( const Real &x, const Real &y ) const {
+    return (x<y) ? x : y;
+  }
+};
+
+template<class Real> 
+class Greater : public BinaryFunction<Real> {
+public:
+  Real apply( const Real &x, const Real &y ) const {
+    return (x>y) ? x : y;
+  }
+};
+
+
+// Evaluate g(f(x,y))
+template<class Real> 
+class BinaryComposition : public BinaryFunction<Real> {
+
+private:
+
+  Teuchos::RCP<BinaryFunction<Real> > f_;
+  Teuchos::RCP<UnaryFunction<Real> >  g_;
+
+public:
+
+  BinaryComposition( Teuchos::RCP<BinaryFunction<Real> > &f,
+                     Teuchos::RCP<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
+  Real apply( const Real &x, const Real &y ) const {
+    return g_->apply(f_->apply(x,y));
+  }
+
+};
 
 
 } // namespace Elementwise

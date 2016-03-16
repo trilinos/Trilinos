@@ -205,6 +205,73 @@ ReuseHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > 
 #endif
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeriList,
+                   Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                   Teuchos::RCP<Xpetra::Matrix      <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                   Teuchos::RCP<const Xpetra::Map   <LocalOrdinal,GlobalOrdinal, Node> >&       map,
+                   Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
+                   Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullspace) {
+#include <MueLu_UseShortNames.hpp>
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ArrayRCP;
+  using Teuchos::RCP;
+  using Teuchos::TimeMonitor;
+
+  // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
+  //                                 d1  d2  d3
+  //                                 d4  d5  d6
+  //                                 d7  d8  d9
+  //                                 d10 d11 d12
+  // A perfect distribution is only possible when the #processors is a perfect square.
+  // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
+  // size. For example, np=14 will give a 7-by-2 distribution.
+  // If you don't want Galeri to do this, specify mx or my on the galeriList.
+
+  // Create map and coordinates
+  // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
+  // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
+  if (matrixType == "Laplace1D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+
+  } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
+             matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+
+  } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+  }
+
+  // Expand map to do multiple DOF per node for block problems
+  if (matrixType == "Elasticity2D")
+    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
+  if (matrixType == "Elasticity3D")
+    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
+
+  if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
+    // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
+    galeriList.set("right boundary" , "Neumann");
+    galeriList.set("bottom boundary", "Neumann");
+    galeriList.set("top boundary"   , "Neumann");
+    galeriList.set("front boundary" , "Neumann");
+    galeriList.set("back boundary"  , "Neumann");
+  }
+
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
+  A = Pr->BuildMatrix();
+
+  if (matrixType == "Elasticity2D" ||
+      matrixType == "Elasticity3D") {
+    nullspace = Pr->BuildNullspace();
+    A->SetFixedBlockSize((matrixType == "Elasticity2D") ? 2 : 3);
+  }
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
@@ -227,6 +294,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
+  out.setOutputToRootOnly(0);
 
   // =========================================================================
   // Parameters initialization
@@ -235,15 +303,19 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName = ""; clp.setOption("xml",        &xmlFileName, "read parameters from a file");
-  int         numRebuilds = 0;  clp.setOption("rebuild",    &numRebuilds, "#times to rebuild hierarchy");
+  std::string xmlFileName = "";     clp.setOption("xml",                &xmlFileName, "read parameters from a file");
+  int         numRebuilds = 0;      clp.setOption("rebuild",            &numRebuilds, "#times to rebuild hierarchy");
+  bool        useFilter   = true;   clp.setOption("filter", "nofilter", &useFilter,   "Print out only Setup times");
+  bool        modify      = true;   clp.setOption("modify", "nomodify", &modify,      "Change values of the matrix used for reuse");
 
+  clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
+  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
   ParameterList paramList;
   paramList.set("verbosity", "none");
@@ -259,108 +331,73 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // =========================================================================
   // For comments, see Driver.cpp
   out << "========================================================\n" << xpetraParameters << galeriParameters;
+  std::string matrixType = galeriParameters.GetMatrixType();
+  RCP<Matrix>       A, B;
+  RCP<const Map>    map;
+  RCP<MultiVector>  coordinates, nullspace;
+  ConstructData(matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
 
-  RCP<Matrix>      A;
-  RCP<const Map>   map;
-  RCP<MultiVector> coordinates;
-  RCP<MultiVector> nullspace;
-
-  {
-    // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
-    //                                 d1  d2  d3
-    //                                 d4  d5  d6
-    //                                 d7  d8  d9
-    //                                 d10 d11 d12
-    // A perfect distribution is only possible when the #processors is a perfect square.
-    // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
-    // size. For example, np=14 will give a 7-by-2 distribution.
-    // If you don't want Galeri to do this, specify mx or my on the galeriList.
-    std::string matrixType = galeriParameters.GetMatrixType();
-
-    // Create map and coordinates
-    // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
-    // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-    if (matrixType == "Laplace1D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
-
-    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
-               matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
-
-    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
-    }
-
-    // Expand map to do multiple DOF per node for block problems
-    if (matrixType == "Elasticity2D")
-      map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
-    if (matrixType == "Elasticity3D")
-      map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
-
-    out << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
-        << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
-        << "Processor subdomains in z direction: " << galeriList.get<GO>("mz") << std::endl
-        << "========================================================" << std::endl;
-
-    if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
-      // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
-      galeriList.set("right boundary" , "Neumann");
-      galeriList.set("bottom boundary", "Neumann");
-      galeriList.set("top boundary"   , "Neumann");
-      galeriList.set("front boundary" , "Neumann");
-      galeriList.set("back boundary"  , "Neumann");
-    }
-
-    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
-    A = Pr->BuildMatrix();
-
-    if (matrixType == "Elasticity2D" ||
-        matrixType == "Elasticity3D") {
-      nullspace = Pr->BuildNullspace();
-      A->SetFixedBlockSize((galeriParameters.GetMatrixType() == "Elasticity2D") ? 2 : 3);
-    }
+  if (modify) {
+    galeriList.set("stretchx", 2.2);
+    galeriList.set("stretchy", 1.2);
+    galeriList.set("stretchz", 0.3);
   }
+  ConstructData(matrixType, galeriList, lib, comm, B, map, coordinates, nullspace);
+
+  out << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
+      << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
+      << "Processor subdomains in z direction: " << galeriList.get<GO>("mz") << std::endl
+      << "========================================================" << std::endl;
 
   // =========================================================================
   // Setups and solves
   // =========================================================================
   RCP<Vector> X = VectorFactory::Build(map);
-  RCP<Vector> B = VectorFactory::Build(map);
-  B->setSeed(846930886);
-  B->randomize();
+  RCP<Vector> Y = VectorFactory::Build(map);
+  Y->setSeed(846930886);
+  Y->randomize();
 
   const int nIts = 9;
 
-  std::string thickSeparator = "==========================================================================================================================";
-  std::string thinSeparator  = "--------------------------------------------------------------------------------------------------------------------------";
-
-  RCP<TimeMonitor> tm;
+  std::string thickSeparator = "=============================================================";
+  std::string thinSeparator  = "-------------------------------------------------------------";
 
   // =========================================================================
   // Setup #1 (no reuse)
   // =========================================================================
-  out << thickSeparator << std::endl;
+  out << thickSeparator << " no reuse " << thickSeparator << std::endl;
   {
     RCP<Hierarchy> H;
 
+    // Run multiple builds for matrix A and time them
+    RCP<Teuchos::Time> tm = TimeMonitor::getNewTimer("Setup #1: no reuse");
     for (int i = 0; i <= numRebuilds; i++) {
-      if (numRebuilds == 0 || i == 1) {
-        // Skip timing first build if possible to reduce jitter
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Setup #1: no reuse")));
-      }
+      out << thinSeparator << " no reuse (rebuild #" << i << ") " << thinSeparator << std::endl;
+      // Start timing (skip first build to reduce jitter)
+      if (!(numRebuilds && i == 0))
+        tm->start();
 
       A->SetMaxEigenvalueEstimate(-one);
       H = CreateHierarchy(A, paramList, coordinates);
+
+      // Stop timing
+      if (!(numRebuilds && i == 0)) {
+        tm->stop();
+        tm->incrementNumCalls();
+      }
     }
-    tm = Teuchos::null;
 
     X->putScalar(zero);
-    H->Iterate(*B, *X, nIts);
-    out << "||Residual|| = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
+    H->Iterate(*Y, *X, nIts);
+    out << "residual(A) = " << Utilities::ResidualNorm(*A, *X, *Y)[0] << " [no reuse]" << std::endl;
+
+    // Run a build for matrix B to record its convergence
+    B->SetMaxEigenvalueEstimate(-one);
+    H = CreateHierarchy(B, paramList, coordinates);
+
+    X->putScalar(zero);
+    H->Iterate(*Y, *X, nIts);
+    out << "residual(B) = " << Utilities::ResidualNorm(*B, *X, *Y)[0] << " [no reuse]" << std::endl;
   }
 
   // =========================================================================
@@ -372,44 +409,54 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   reuseTypes.push_back("RP"); reuseNames.push_back("smoothed P and R");
 
   for (size_t k = 0; k < reuseTypes.size(); k++) {
-    out << thickSeparator << std::endl;
+    out << thickSeparator << " " << reuseTypes[k] << " " << thickSeparator << std::endl;
     A->SetMaxEigenvalueEstimate(-one);
 
     paramList.set("reuse: type", reuseTypes[k]);
 
+    out << thinSeparator << " " << reuseTypes[k] << " (initial) " << thinSeparator << std::endl;
     RCP<Hierarchy> H = CreateHierarchy(A, paramList, coordinates);
 
-    out << thinSeparator << "\nPreconditioner status:" << std::endl;
-    H->print(out, MueLu::Extreme);
+    X->putScalar(zero);
+    H->Iterate(*Y, *X, nIts);
+    out << "residual(A) = " << Utilities::ResidualNorm(*A, *X, *Y)[0] << " [reuse \"" << reuseNames[k] << "\"]" << std::endl;
 
     // Reuse setup
-    RCP<Matrix> Acopy = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(A);
+    RCP<Matrix> Bcopy = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(B);
 
+    RCP<Teuchos::Time> tm = TimeMonitor::getNewTimer("Setup #" + MueLu::toString(k+2) + ": reuse " + reuseNames[k]);
     for (int i = 0; i <= numRebuilds; i++) {
-      if (numRebuilds == 0 || i == 1) {
-        // Skip timing first build if possible to reduce jitter
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Setup #2: reuse " + reuseNames[k])));
+      out << thinSeparator << " " << reuseTypes[k] << " (rebuild #" << i << ") " << thinSeparator << std::endl;
+
+      // Start timing (skip first build to reduce jitter)
+      if (!(numRebuilds && i == 0))
+        tm->start();
+
+      B->SetMaxEigenvalueEstimate(-one);
+      ReuseHierarchy(B, *H);
+
+      // Stop timing
+      if (!(numRebuilds && i == 0)) {
+        tm->stop();
+        tm->incrementNumCalls();
       }
 
-      Acopy->SetMaxEigenvalueEstimate(-one);
-      ReuseHierarchy(Acopy, *H);
+      X->putScalar(zero);
+      H->Iterate(*Y, *X, nIts);
+      out << "residual(B) = " << Utilities::ResidualNorm(*B, *X, *Y)[0] << " [reuse \"" << reuseNames[k] << "\"]" << std::endl;
 
       // Change the pointers so that reuse is not a no-op
-      Acopy.swap(A);
+      B.swap(Bcopy);
     }
-    tm = Teuchos::null;
-
-    X->putScalar(zero);
-    H->Iterate(*B, *X, nIts);
-    out << "||Residual|| = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
   }
+  out << thickSeparator << thickSeparator << std::endl;
 
   {
-    const bool alwaysWriteLocal = false;
+    const bool alwaysWriteLocal = true;
     const bool writeGlobalStats = true;
     const bool writeZeroTimers  = false;
     const bool ignoreZeroTimers = true;
-    const std::string filter    = "Setup #";
+    const std::string filter    = (useFilter ? "Setup #" : "");
     TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
                            writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
   }
@@ -422,12 +469,12 @@ int main(int argc, char* argv[]) {
   bool success = false;
 
   try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
+    const bool throwExceptions = false;
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Teuchos::CommandLineProcessor clp(throwExceptions);
     Xpetra::Parameters xpetraParameters(clp);
 
+    clp.recogniseAllOptions(false);
     switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:

@@ -11,9 +11,23 @@
 //----------------------------------------------------------------------------
 // Command line processing:
 
-enum clp_return_type {CLP_HELP=0,
-      CLP_ERROR,
-      CLP_OK};
+enum clp_return_type {
+  CLP_HELP=0,
+  CLP_ERROR,
+  CLP_OK
+};
+
+enum GroupingType {
+  GROUPING_NATURAL=0,
+  GROUPING_MAX_ANISOTROPY,
+  GROUPING_MORTAN_Z
+};
+
+enum SamplingType {
+  SAMPLING_STOKHOS=0,
+  SAMPLING_TASMANIAN,
+  SAMPLING_FILE
+};
 
 struct CMD {
   bool USE_SERIAL;
@@ -35,21 +49,31 @@ struct CMD {
   bool USE_MUELU;
   bool USE_MEANBASED;
   bool USE_UQ;
+  SamplingType USE_UQ_SAMPLING;
   int USE_UQ_FAKE;
   int USE_UQ_DIM;
   int USE_UQ_ORDER;
+  int USE_UQ_INIT_LEVEL;
+  int USE_UQ_MAX_LEVEL;
+  double USE_UQ_TOL;
   double USE_DIFF_COEFF_LINEAR;
   double USE_DIFF_COEFF_CONSTANT;
   double USE_MEAN;
   double USE_VAR;
   double USE_COR;
+  bool USE_EXPONENTIAL;
+  double USE_EXP_SHIFT;
+  double USE_EXP_SCALE;
+  bool USE_ISOTROPIC;
   double USE_COEFF_SRC;
   double USE_COEFF_ADV;
   bool USE_SPARSE;
   int USE_UQ_ENSEMBLE;
+  GroupingType USE_GROUPING;
   bool VTUNE;
   bool VERBOSE;
   bool PRINT;
+  bool PRINT_ITS;
   bool SUMMARIZE;
   int ECHO;
   int ERROR;
@@ -74,21 +98,31 @@ struct CMD {
           USE_MUELU(false),
           USE_MEANBASED(false),
           USE_UQ(false),
+          USE_UQ_SAMPLING(SAMPLING_STOKHOS),
           USE_UQ_FAKE(0),
           USE_UQ_DIM(3),
           USE_UQ_ORDER(2),
+          USE_UQ_INIT_LEVEL(1),
+          USE_UQ_MAX_LEVEL(7),
+          USE_UQ_TOL(1e-2),
           USE_DIFF_COEFF_LINEAR(0.0),
           USE_DIFF_COEFF_CONSTANT(1.0),
           USE_MEAN(1),
           USE_VAR(0.1),
           USE_COR(0.25),
+          USE_EXPONENTIAL(false),
+          USE_EXP_SHIFT(1.0),
+          USE_EXP_SCALE(1.0),
+          USE_ISOTROPIC(true),
           USE_COEFF_SRC(1.0),
           USE_COEFF_ADV(0.0),
           USE_SPARSE(false),
           USE_UQ_ENSEMBLE(0),
+          USE_GROUPING(GROUPING_NATURAL),
           VTUNE(false),
           VERBOSE(false),
           PRINT(false),
+          PRINT_ITS(false),
           SUMMARIZE(false)
     {}
 };

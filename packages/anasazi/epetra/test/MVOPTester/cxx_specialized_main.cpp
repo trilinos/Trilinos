@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
   Map->MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an Epetra_Matrix
-  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, 1) );
+  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *Map, 1) );
    
   // Add  rows one-at-a-time
   std::vector<double> Values(1, 1.0);

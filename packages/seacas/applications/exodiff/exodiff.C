@@ -1188,7 +1188,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     // ----------------------------------------------------------------------
     // Output file containing differences...
     if (out_file_id >= 0) {
-      SMART_ASSERT(gvals != 0);
+      SMART_ASSERT(gvals != nullptr);
       for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
 	const string& name = (interface.glob_var_names)[out_idx];
 	int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
@@ -1275,7 +1275,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     // ---------------------------------------------------------------------
     // Output file containing differences...
     if (out_file_id >= 0) {
-      SMART_ASSERT(nvals != 0);
+      SMART_ASSERT(nvals != nullptr);
       int step2 = t2.step1;
       for (unsigned n_idx = 0; n_idx < interface.node_var_names.size(); ++n_idx) {
 	const string& name = (interface.node_var_names)[n_idx];
@@ -1450,7 +1450,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
   {
     bool diff_flag = false;
     
-    if (out_file_id >= 0) {SMART_ASSERT(evals != 0);}
+    if (out_file_id >= 0) {SMART_ASSERT(evals != nullptr);}
   
     if (out_file_id < 0 && !interface.quiet_flag && !interface.summary_flag && !interface.elmt_var_names.empty())
       std::cout << "Element variables:" << std::endl;
@@ -1568,7 +1568,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 		// for file 2.  Then convert to block index and elmt index.
 		file2.Global_to_Block_Local(
 					    elmt_map[global_elmt_index] + 1, b2, e2);
-		SMART_ASSERT(blocks2[b2] != 0);
+		SMART_ASSERT(blocks2[b2] != nullptr);
 		if (blocks2[b2]->is_valid_var(vidx2)) {
 		  v2 = blocks2[b2]->Get_Results(vidx2)[e2]; // Get value from file 2.
 		} else {
@@ -1661,7 +1661,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     string serr;
     bool diff_flag = false;
   
-    if (out_file_id >= 0) {SMART_ASSERT(vals != 0);}
+    if (out_file_id >= 0) {SMART_ASSERT(vals != nullptr);}
   
     int name_length = max_string_length(file1.NS_Var_Names())+1;
       
@@ -1847,7 +1847,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     string serr;
     bool diff_flag = false;
   
-    if (out_file_id >= 0) {SMART_ASSERT(vals != 0);}
+    if (out_file_id >= 0) {SMART_ASSERT(vals != nullptr);}
   
     int name_length = max_string_length(file1.SS_Var_Names())+1;
       
@@ -2068,15 +2068,17 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
 	
     size_t ecount = sset1->Size();
 
-    std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(ecount-1);
-    if (Invalid_Values(vals1, range1.second)) {
-      std::cout << "\tERROR: NaN found for distribution factors in sideset "
-		<< sset1->Id() << ", file 1\n";
-      diff_flag = true;
+    {
+      std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(ecount-1);
+      if (Invalid_Values(vals1, range1.second)) {
+	std::cout << "\tERROR: NaN found for distribution factors in sideset "
+		  << sset1->Id() << ", file 1\n";
+	diff_flag = true;
+      }
+      
+      // See if all df are the same value:
+      same1 = Equal_Values(vals1, range1.second, &value1);
     }
-
-    // See if all df are the same value:
-    same1 = Equal_Values(vals1, range1.second, &value1);
 
     double* vals2 = (double*)sset2->Distribution_Factors();
 
@@ -2088,15 +2090,17 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
       continue;
     }
 
-    std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(sset2->Size()-1);
-    if (Invalid_Values(vals2, range2.second)) {
-      std::cout << "\tERROR: NaN found for distribution factors in sideset "
-		<< sset2->Id() << ", file 2\n";
-      diff_flag = true;
-    }
+    {
+      std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(sset2->Size()-1);
+      if (Invalid_Values(vals2, range2.second)) {
+	std::cout << "\tERROR: NaN found for distribution factors in sideset "
+		  << sset2->Id() << ", file 2\n";
+	diff_flag = true;
+      }
 	
-    // See if all df are the same value:
-    same2 = Equal_Values(vals2, range2.second, &value2);
+      // See if all df are the same value:
+      same2 = Equal_Values(vals2, range2.second, &value2);
+    }
         
     if (same1 && same2 && (value1 == value2)) {
       continue;

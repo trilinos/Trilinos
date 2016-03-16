@@ -49,7 +49,7 @@ namespace Iotr {
       static const Scale_Factory* factory();
     private:
       Scale_Factory();
-      Ioss::Transform* make(const std::string&) const;
+      Ioss::Transform* make(const std::string& /*unused*/ /*unused*/) const;
     };
 
   class Scale: public Ioss::Transform

@@ -33,8 +33,8 @@ C
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'GJoin2  '
-      QAINFO(2) = '2009/12/02                      '
-      QAINFO(3) = ' 1.32                           '
+      QAINFO(2) = '2016/02/16                      '
+      QAINFO(3) = ' 1.33                           '
 
 C - Added EXPXYZ - By material matching
 C - Fixes in expxyz, matxyz, comand, irennp
@@ -97,3 +97,4 @@ c - handle mirroring in models with all shells
 c - fix shell sset mirroring -- since connectivity is fixed up, the shell side remains the same
 c - optimize nodeset combining since locint was taking lots of time on some compilers
 c - fixing sideset node count information for large models
+c - fixing sideset df copy if no sideset df

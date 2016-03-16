@@ -69,28 +69,6 @@
 
 using namespace Teuchos;
 
-namespace Belos {
-
-// Reports convergence after a set number of iterations
-// This is meant to exercise our ability to override status tests
-template <class ScalarType, class MV, class OP>
-class NumIterStatusTest: public StatusTest<ScalarType,MV,OP> {
-public:
-  NumIterStatusTest(int numIter) { desiredNumIter_ = numIter; myStatus_ = Undefined; }
-  ~NumIterStatusTest() {}
-  
-  StatusType checkStatus(Iteration<ScalarType,MV,OP> *iSolver);
-  StatusType getStatus() const { return myStatus_; }
-  void reset() { myStatus_ = Undefined; }
-  void print(std::ostream &os, int indent=0) const;
-  void printStatus(std::ostream &os, StatusType type) const;
-  
-private:
-  int curNumIter_, desiredNumIter_;
-  StatusType myStatus_;
-}; // end class 
-} // end namespace Belos
-
 int main(int argc, char *argv[]) {
   //
 #ifdef HAVE_COMPLEX
@@ -109,7 +87,6 @@ int main(int argc, char *argv[]) {
   typedef Belos::Operator<ST>               OP;
   typedef Belos::MultiVecTraits<ST,MV>     MVT;
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
-  typedef Belos::NumIterStatusTest<ST,MV,OP> StatusTest;
   ST one  = SCT::one();
   ST zero = SCT::zero();
 
@@ -131,7 +108,6 @@ int main(int argc, char *argv[]) {
     int numrhs = 1;
     int maxrestarts = 15;
     int length = 50;
-    int userDefinedNumIter = -1;
     std::string filename("mhd1280b.cua");
     MT tol = 1.0e-5;  // relative residual tolerance
 
@@ -145,7 +121,6 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("num-restarts",&maxrestarts,"Maximum number of restarts allowed for the GMRES solver.");
     cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
     cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
-    cmdp.setOption("user-defined-iterations",&userDefinedNumIter,"Number of GMRES iterations to perform (overrides status tests)");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return EXIT_FAILURE;
     }
@@ -200,11 +175,6 @@ int main(int argc, char *argv[]) {
     belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
     belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    if(userDefinedNumIter >= 0) {
-      belosList.set( "Explicit Residual Scaling", "User Provided");
-      belosList.set( "Implicit Residual Scaling", "User Provided");
-      belosList.set( "User Defined Residual Scaling", 1e10);
-    }
     if (verbose) {
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
           Belos::TimingDetails + Belos::StatusTestDetails );
@@ -256,12 +226,6 @@ int main(int argc, char *argv[]) {
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
-    
-    if(userDefinedNumIter >= 0) {
-      RCP<StatusTest> statusTest = rcp(new StatusTest(userDefinedNumIter));
-      solver->setUserConvStatusTest(statusTest);
-    }
-    
     //
     // Perform solve
     //
@@ -289,10 +253,7 @@ int main(int argc, char *argv[]) {
     delete [] rowind;
     delete [] cvals;
 
-    if(userDefinedNumIter >= 0)
-      success = ret==Belos::Converged && solver->getNumIters() == userDefinedNumIter;
-    else
-      success = ret==Belos::Converged && !norm_failure;
+    success = ret==Belos::Converged && !norm_failure;
     if (success) {
       if (proc_verbose)
         std::cout << "End Result: TEST PASSED" << std::endl;
@@ -305,60 +266,3 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } // end test_bl_gmres_complex_hb.cpp
-
-
-namespace Belos {
-
-template <class ScalarType, class MV, class OP>
-StatusType NumIterStatusTest<ScalarType,MV,OP>::checkStatus(Iteration<ScalarType,MV,OP> *iSolver)
-{
-  curNumIter_ = iSolver->getNumIters();
-  if(curNumIter_ == desiredNumIter_)
-    myStatus_ = Passed;
-  else
-    myStatus_ = Failed;
-  
-  return myStatus_;
-}
-
-template <class ScalarType, class MV, class OP>
-void NumIterStatusTest<ScalarType,MV,OP>::print(std::ostream &os, int indent) const
-{
-  for (int j = 0; j < indent; j ++)
-    os << ' ';
-  printStatus(os, myStatus_);
-  if (myStatus_==Undefined)
-    os << "NumIterStatusTest, desired number of iterations = " << desiredNumIter_ << std::endl;
-  else {
-    os << "current number of iterations (" << curNumIter_ << ")";
-    if(curNumIter_ < desiredNumIter_)
-      os << " < ";
-    else if(curNumIter_ > desiredNumIter_)
-      os << " > ";
-    else
-      os << " == ";
-    os << "desired number of iterations (" << desiredNumIter_ << ")\n";
-  }
-}
-
-template <class ScalarType, class MV, class OP>
-void NumIterStatusTest<ScalarType,MV,OP>::printStatus(std::ostream &os, StatusType type) const
-{
-  os << std::left << std::setw(13) << std::setfill('.');
-  switch (type) {
-  case  Passed:
-    os << "Converged";
-    break;
-  case  Failed:
-    os << "Unconverged";
-    break;
-  case  Undefined:
-  default:
-    os << "**";
-    break;
-  }
-  os << std::left << std::setfill(' ');
-    return; 
-}
-
-} // end namespace Belos

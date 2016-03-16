@@ -69,6 +69,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  OrderingScotch
+  SOURCES orderingScotch.cpp
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 ##########################################
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
 

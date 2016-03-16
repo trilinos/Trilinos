@@ -30,7 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-#include <math.h>
+#include <cmath>
 class DiffData
 {
  public:
@@ -90,15 +90,15 @@ class MinMaxData
 
     void spec_min_max(double val, int step, int id=-1, int blk=0)
     {
-      if (fabs(val) < min_val) {
-	min_val = fabs(val);
+      if (std::fabs(val) < min_val) {
+	min_val = std::fabs(val);
 	min_step = step;
 	if (id  != -1) min_id  = id;
 	if (blk != 0) min_blk = blk;
       }
     
-      if (fabs(val) > max_val) {
-	max_val = fabs(val);
+      if (std::fabs(val) > max_val) {
+	max_val = std::fabs(val);
 	max_step = step;
 	if (id  != -1) max_id  = id;
 	if (blk != 0) max_blk = blk;

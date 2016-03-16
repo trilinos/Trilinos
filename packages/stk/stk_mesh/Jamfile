@@ -74,6 +74,7 @@ alias install-serial-targets ;
 explicit install-targets ;
 alias install-targets
   : stk_mesh_utest
+    stk_mesh_utest_field_blas
     stk_mesh_docs_tests 
   ;
 
@@ -117,7 +118,9 @@ exe stk_mesh_utest
     [ glob $(stk_mesh-root)/unit_tests/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/*.cpp 
            $(stk_mesh-root)/unit_tests/change_parts/*.cpp 
+           $(stk_mesh-root)/unit_tests/face_creation/user_created/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/skin_mesh/*.cpp 
+           $(stk_mesh-root)/unit_tests/face_creation/mesh_diagnostics/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/integration/*.cpp 
            $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp 
            $(stk_mesh-root)/unit_tests/entity_sorting/*.cpp 
@@ -132,6 +135,22 @@ exe stk_mesh_utest
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
+
+exe stk_mesh_utest_field_blas
+  :
+    $(stk_mesh-root)/unit_tests/UnitTestMain.cpp
+    [ glob $(stk_mesh-root)/unit_tests/FieldBlas/*.cpp ]
+    stk_mesh_base
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_io//stk_io
+    stk_mesh_fixtures
+    /sierra/stk_util//stk_util_use_case
+    /tpl/trilinos//teuchos
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
 
 exe stk_mesh_docs_tests
   :
@@ -178,6 +197,7 @@ lib stk_mesh_fixtures
         [ glob $(stk_mesh-root)/stk_mesh/fixtures/*.cpp ]
     ]
     stk_mesh_base
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util

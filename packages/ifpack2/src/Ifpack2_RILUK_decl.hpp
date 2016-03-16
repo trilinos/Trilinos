@@ -584,9 +584,18 @@ protected:
 
 
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
+  typedef typename node_type::device_type  kokkos_device;
+  typedef typename kokkos_device::execution_space kokkos_exe;
+  
+  static_assert( std::is_same< kokkos_exe,
+		 Kokkos::OpenMP>::value,
+		 "Kokkos node type not supported by exepertimentalthread basker RILUK decl");
+
   Teuchos::RCP< BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP> >
   myBasker;
   local_ordinal_type basker_threads;
+  scalar_type        basker_user_fill;
+  bool               basker_reuse;
 #endif
 
 
@@ -595,6 +604,7 @@ protected:
   bool isAllocated_;
   bool isInitialized_;
   bool isComputed_;
+  bool isExperimental_;
 
   int numInitialize_;
   int numCompute_;
@@ -607,8 +617,6 @@ protected:
   magnitude_type RelaxValue_;
   magnitude_type Athresh_;
   magnitude_type Rthresh_;
-
-  bool isExperimental_;
 
 };
 

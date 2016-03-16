@@ -36,9 +36,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -61,6 +60,9 @@ Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar,ArrayScalar>::Basis_HGRAD_LINE_Cn_FEM_JACO
     this -> basisType_         = BASIS_FEM_HIERARCHICAL;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    initializeTags();
+    this->basisTagsAreSet_ = true;
 }
 
 
@@ -225,7 +227,7 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::initializeTags() {
   // Basis-independent function, sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
   Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
                               this -> ordinalToTag_,
-                              &tags[0],
+                               &tags(0,0),
                               this -> basisCardinality_,
                               tagSize,
                               posScDim,

@@ -105,7 +105,7 @@ main (int argc, char *argv[])
   }
 
   // Create an Epetra_Matrix
-  RCP<Epetra_CrsMatrix> A = rcp (new Epetra_CrsMatrix (Copy, Map, &NumNz[0]));
+  RCP<Epetra_CrsMatrix> A = rcp (new Epetra_CrsMatrix (Epetra_DataAccess::Copy, Map, &NumNz[0]));
 
   // Compute coefficients for discrete convection-diffution operator
   const double one = 1.0;
@@ -235,7 +235,7 @@ main (int argc, char *argv[])
   A->SetTracebackMode (1); // Shutdown Epetra Warning tracebacks
 
   // Create a identity matrix for the temporary mass matrix
-  RCP<Epetra_CrsMatrix> M = rcp (new Epetra_CrsMatrix (Copy, Map, 1));
+  RCP<Epetra_CrsMatrix> M = rcp (new Epetra_CrsMatrix (Epetra_DataAccess::Copy, Map, 1));
   for (int i=0; i<NumMyElements; i++) {
     Values[0] = one;
     Indices[0] = i;

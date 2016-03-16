@@ -49,6 +49,7 @@
 
 //----------------------------------------------------------------------------
 
+#include <Cuda/Kokkos_Cuda_TaskPolicy.hpp>
 #include <impl/Kokkos_ViewTileLeft.hpp>
 #include <TestTile.hpp>
 
@@ -77,6 +78,7 @@
 #include <TestTemplateMetaFunctions.hpp>
 #include <TestCXX11Deduction.hpp>
 
+#include <TestTaskPolicy.hpp>
 #include <TestPolicyConstruction.hpp>
 
 //----------------------------------------------------------------------------
@@ -123,12 +125,6 @@ TEST_F( cuda , compiler_macros )
 TEST_F( cuda , memory_space )
 {
   TestMemorySpace< Kokkos::Cuda >();
-}
-
-TEST_F( cuda , memory_pool )
-{
-  bool val = TestMemoryPool::test_mempool< Kokkos::Cuda >( 32, 8000000 );
-  ASSERT_TRUE( val );
 }
 
 TEST_F( cuda, uvm )
@@ -292,6 +288,7 @@ TEST_F( cuda, view_api )
   typedef Kokkos::View< const int * , Kokkos::Cuda , Kokkos::MemoryTraits< Kokkos::RandomAccess | Kokkos::Unmanaged > > view_texture_unmanaged ;
 
   TestViewAPI< double , Kokkos::Cuda >();
+  TestViewAPI< double , Kokkos::CudaUVMSpace >();
 
 #if 0
   Kokkos::View<double, Kokkos::Cuda > x("x");
@@ -513,6 +510,18 @@ TEST_F( cuda , team_scan )
   TestScanTeam< Kokkos::Cuda , Kokkos::Schedule<Kokkos::Dynamic> >( 10000 );
 }
 
+TEST_F( cuda , memory_pool )
+{
+  bool val_uvm = TestMemoryPool::test_mempool< Kokkos::Cuda, Kokkos::CudaUVMSpace >( 128, 128000 );
+  ASSERT_TRUE( val_uvm );
+
+  Kokkos::Cuda::fence();
+
+  TestMemoryPool::test_mempool2< Kokkos::Cuda, Kokkos::CudaUVMSpace >( 128, 2560000 );
+
+  Kokkos::Cuda::fence();
+}
+
 }
 
 //----------------------------------------------------------------------------
@@ -546,3 +555,35 @@ TEST_F( cuda , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(10) ) );
 }
 }
+
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_ENABLE_CUDA_TASK_POLICY )
+
+TEST_F( cuda , task_policy )
+{
+  TestTaskPolicy::test_task_dep< Kokkos::Cuda >( 10 );
+
+  for ( long i = 0 ; i < 15 ; ++i ) {
+      // printf("TestTaskPolicy::test_fib< Kokkos::Cuda >(%d);\n",i);
+    TestTaskPolicy::test_fib< Kokkos::Cuda >(i,4096);
+  }
+  for ( long i = 0 ; i < 35 ; ++i ) {
+      // printf("TestTaskPolicy::test_fib2< Kokkos::Cuda >(%d);\n",i);
+    TestTaskPolicy::test_fib2< Kokkos::Cuda >(i,4096);
+  }
+}
+
+TEST_F( cuda , task_team )
+{
+  TestTaskPolicy::test_task_team< Kokkos::Cuda >(1000);
+}
+
+TEST_F( cuda , task_latch )
+{
+  TestTaskPolicy::test_latch< Kokkos::Cuda >(10);
+  TestTaskPolicy::test_latch< Kokkos::Cuda >(1000);
+}
+
+#endif /* #if defined( KOKKOS_ENABLE_CUDA_TASK_POLICY ) */
+

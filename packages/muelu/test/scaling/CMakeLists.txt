@@ -35,6 +35,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     SOURCE_FILES scaling.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
    )
 
+ TRIBITS_ADD_EXECUTABLE(
+   ImportPerformance
+   SOURCES ImportPerformance
+   COMM mpi
+   )
+ 
+
   IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
 
     TRIBITS_ADD_EXECUTABLE(
@@ -66,6 +73,11 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   ENDIF() # ENABLE_BROKEN_TESTS
+
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp
+    SOURCE_FILES import.xml
+    )
 
 ENDIF()
 
@@ -115,6 +127,14 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
     ENDIF()
 
   ENDIF()
+
+  TRIBITS_ADD_TEST(
+    ImportPerformance
+    NAME "ImportPerformance_Epetra"
+    ARGS "--linAlgebra=Epetra --nx=30 --ny=30"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
 
   TRIBITS_ADD_TEST(
     Driver

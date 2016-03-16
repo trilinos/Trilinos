@@ -101,13 +101,13 @@ int ex_put_partial_side_set_df (int   exoid,
               side_set_id, exoid);
       ex_err("ex_put_side_set_fact",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
      "Error: failed to locate side set id %"PRId64" in VAR_SS_IDS array in file id %d",
               side_set_id, exoid);
       ex_err("ex_put_partial_side_set_df",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   /* inquire id's of previously defined dimension and variable */
@@ -121,14 +121,14 @@ int ex_put_partial_side_set_df (int   exoid,
       ex_err("ex_put_partial_side_set_df",errmsg,exerrval);
       return (EX_WARN);
 
-    } else {
+    } 
       exerrval = status;
       sprintf(errmsg,
   "Error: failed to locate number of dist factors in side set %"PRId64" in file id %d",
               side_set_id, exoid);
       ex_err("ex_put_partial_side_set_df",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &num_df_in_set)) != NC_NOERR) {
@@ -176,8 +176,9 @@ int ex_put_partial_side_set_df (int   exoid,
   /* write out the distribution factors array */
   start[0] = --start_num;
   count[0] = num_df_to_get;
-  if (num_df_to_get == 0)
+  if (num_df_to_get == 0) {
     start[0] = 0;
+}
   
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, dist_id, start, count, side_set_dist_fact);

@@ -39,13 +39,14 @@
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
 #include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 #include <string>                       // for string
-#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+#include <stk_unit_test_utils/BulkDataTester.hpp>
+
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
@@ -66,7 +67,7 @@ public:
   ~BoxFixture () {}
 
   MetaData & fem_meta () { return m_fem_meta; }
-  stk::mesh::unit_test::BulkDataTester & bulk_data () { return m_bulk_data; }
+  stk::unit_test_util::BulkDataTester & bulk_data () { return m_bulk_data; }
 
   int  comm_size() const { return m_comm_size; }
   int  comm_rank() const { return m_comm_rank; }
@@ -94,7 +95,7 @@ public:
 
 protected:
   MetaData m_fem_meta;
-  stk::mesh::unit_test::BulkDataTester m_bulk_data;
+  stk::unit_test_util::BulkDataTester m_bulk_data;
 
   int m_comm_rank;
   int m_comm_size;

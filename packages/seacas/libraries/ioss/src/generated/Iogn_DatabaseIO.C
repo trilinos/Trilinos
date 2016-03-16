@@ -36,7 +36,7 @@
 #include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR
 #include <assert.h>                     // for assert
 #include <generated/Iogn_GeneratedMesh.h>  // for GeneratedMesh
-#include <math.h>                       // for sqrt
+#include <cmath>                        // for sqrt
 #include <algorithm>                    // for copy
 #include <iostream>                     // for ostringstream, operator<<, etc
 #include <string>                       // for string, operator==, etc
@@ -83,12 +83,12 @@ namespace {
     double *rdata = static_cast<double*>(data);
     if (component_count == 1) {
       for (size_t i=0; i < ids.size(); i++) {
-        rdata[i] = sqrt((double)ids[i]);
+        rdata[i] = std::sqrt((double)ids[i]);
       }
     } else {
       for (size_t i=0; i < ids.size(); i++) {
         for (size_t j=0; j < component_count; j++) {
-          rdata[i*component_count + j] = j+sqrt((double)ids[i]);
+          rdata[i*component_count + j] = j+std::sqrt((double)ids[i]);
         }
       }
     }
@@ -140,7 +140,8 @@ namespace Iogn {
         m_generatedMesh(nullptr),  spatialDimension(3), nodeCount(0),
         elementCount(0), nodeBlockCount(0),
         elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-        nodeMap("node"), elemMap("elem"), m_useVariableDf(true)
+        nodeMap("node", filename, myProcessor), elemMap("elem", filename, myProcessor),
+	m_useVariableDf(true)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
@@ -201,7 +202,6 @@ namespace Iogn {
     get_commsets();
 
     this_region->property_add(Ioss::Property(std::string("title"), std::string("GeneratedMesh: ") += get_filename()));
-    this_region->property_add(Ioss::Property(std::string("spatial_dimension"), 3));
   }
 
   bool DatabaseIO::begin(Ioss::State /* state */)
@@ -260,9 +260,9 @@ namespace Iogn {
         num_to_get = Ioss::Utils::field_warning(nb, field, "input");
       }
       return num_to_get;
-    } else {
+    } 
       fill_transient_data(nb, field, data);
-    }
+    
     return num_to_get;
   }
 
@@ -555,18 +555,18 @@ namespace Iogn {
   }
 
   // Input only database -- these will never be called...
-  int64_t DatabaseIO::put_field_internal(const Ioss::Region*,      const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet*,  const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::SideSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
-  int64_t DatabaseIO::put_field_internal(const Ioss::CommSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::Region* /*reg*/,      const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock* /*eb*/,const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock* /*nb*/,   const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock* /*nb*/,   const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock* /*nb*/,   const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet* /*ns*/,  const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet* /*ns*/,     const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet* /*ns*/,     const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet* /*ns*/,     const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::SideSet* /*fs*/,     const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock* /*fb*/,   const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
+  int64_t DatabaseIO::put_field_internal(const Ioss::CommSet* /*cs*/,     const Ioss::Field& /*field*/, void* /*data*/, size_t /*data_size*/) const {return -1;}
 
   const Ioss::Map& DatabaseIO::get_node_map() const
   {
@@ -574,35 +574,23 @@ namespace Iogn {
     // Can be called multiple times, allocate 1 time only
     if (nodeMap.map.empty()) {
       nodeMap.map.resize(nodeCount+1);
-
-      if (is_input()) {
-        std::vector<int64_t> map;
-        m_generatedMesh->node_map(map);
-
-        // Map needed for Ioss starts at position 1 since the
-        // sequential/non-sequential flag is at position 0...
-        std::copy(map.begin(), map.end(), &nodeMap.map[1]);
-
-        // Check for sequential node map.
-        // If not, build the reverse G2L node map...
-        nodeMap.map[0] = -1;
-        for (int64_t i=1; i < nodeCount+1; i++) {
-          if (i != nodeMap.map[i]) {
-            nodeMap.map[0] = 1;
-            break;
-          }
-        }
-
-        nodeMap.build_reverse_map(myProcessor);
-
-      } else {
-        // Output database; nodeMap not set yet... Build a default map.
-        for (int64_t i=1; i < nodeCount+1; i++) {
-          nodeMap.map[i] = i;
-        }
-        // Sequential map
-        nodeMap.map[0] = -1;
+      std::vector<int64_t> map;
+      m_generatedMesh->node_map(map);
+      
+      // Map needed for Ioss starts at position 1 since the
+      // sequential/non-sequential flag is at position 0...
+      std::copy(map.begin(), map.end(), &nodeMap.map[1]);
+      
+      // Check for sequential node map.
+      // If not, build the reverse G2L node map...
+      nodeMap.map[0] = -1;
+      for (int64_t i=1; i < nodeCount+1; i++) {
+	if (i != nodeMap.map[i]) {
+	  nodeMap.map[0] = 1;
+	  break;
+	}
       }
+      nodeMap.build_reverse_map();
     }
     return nodeMap;
   }
@@ -613,35 +601,25 @@ namespace Iogn {
     // Can be called multiple times, allocate 1 time only
     if (elemMap.map.empty()) {
       elemMap.map.resize(elementCount+1);
+      std::vector<int64_t> map;
+      m_generatedMesh->element_map(map);
 
-      if (is_input()) {
-        std::vector<int64_t> map;
-        m_generatedMesh->element_map(map);
+      // Map needed for Ioss starts at position 1 since the
+      // sequential/non-sequential flag is at position 0...
+      std::copy(map.begin(), map.end(), &elemMap.map[1]);
 
-        // Map needed for Ioss starts at position 1 since the
-        // sequential/non-sequential flag is at position 0...
-        std::copy(map.begin(), map.end(), &elemMap.map[1]);
+      // Check for sequential element map.
+      // If not, build the reverse G2L element map...
+      elemMap.map[0] = -1;
+      for (int64_t i=1; i < elementCount+1; i++) {
+	if (i != elemMap.map[i]) {
+	  elemMap.map[0] = 1;
+	  break;
+	}
+      }
 
-        // Check for sequential element map.
-        // If not, build the reverse G2L element map...
-        elemMap.map[0] = -1;
-        for (int64_t i=1; i < elementCount+1; i++) {
-          if (i != elemMap.map[i]) {
-            elemMap.map[0] = 1;
-            break;
-          }
-        }
-
-        if (elemMap.map[0] == 1) {
-          elemMap.build_reverse_map(myProcessor);
-        }
-
-      } else {
-        // Output database; elementMap not set yet... Build a default map.
-        for (int64_t i=1; i < elementCount+1; i++) {
-          elemMap.map[i] = i;
-        }
-        elemMap.map[0] = -1;
+      if (elemMap.map[0] == 1) {
+	elemMap.build_reverse_map();
       }
     }
     return elemMap;
@@ -765,9 +743,7 @@ namespace Iogn {
       }
       else
       {
-        for(std::vector<std::string>::const_iterator it = touching_blocks.begin(); it != touching_blocks.end(); ++it)
-        {
-          const std::string & touching_block = *it;
+        for(auto & touching_block : touching_blocks) {
           std::string ef_block_name = "surface_" + touching_block + "_edge2_" + Ioss::Utils::to_string(ifs+1);
           std::string side_topo_name = "quad4";
           std::string elem_topo_name = "unknown";

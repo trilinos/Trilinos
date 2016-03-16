@@ -543,7 +543,7 @@ private:
     typedef std::vector<mj_partBox_t> mj_partBoxVector_t;
 
     RCP<const Environment> mj_env; //the environment object
-    RCP<Comm<int> > mj_problemComm; //initial comm object
+    RCP<const Comm<int> > mj_problemComm; //initial comm object
 
     double imbalance_tolerance; //input imbalance tolerance.
     mj_part_t *part_no_array; //input part array specifying num part to divide along each dim.
@@ -1255,7 +1255,7 @@ public:
      */
     void multi_jagged_part(
                 const RCP<const Environment> &env,
-                RCP<Comm<int> > &problemComm,
+                RCP<const Comm<int> > &problemComm,
 
                 double imbalance_tolerance,
                 size_t num_global_parts,
@@ -1383,8 +1383,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
 
         this->mj_env = env;
         const RCP<Comm<int> > commN;
-        this->comm = this->mj_problemComm =  Teuchos::rcp_const_cast<Comm<int> >
-        (Teuchos::DefaultComm<int>::getDefaultSerialComm(commN));
+        this->mj_problemComm = 
+              Teuchos::DefaultComm<int>::getDefaultSerialComm(commN);
+        this->comm = 
+              Teuchos::rcp_const_cast<Comm<int> >(this->mj_problemComm);
         this->myActualRank = this->myRank = 1;
 
 #ifdef HAVE_ZOLTAN2_OMP
@@ -1752,6 +1754,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
 
         freeArray<mj_lno_t>(this->part_xadj);
         this->part_xadj = this->new_part_xadj;
+        this->new_part_xadj = NULL;
     }
 
     for(mj_lno_t i = 0; i < num_total_coords; ++i){
@@ -5590,7 +5593,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::free_work_memory(){
 
         freeArray<mj_scalar_t>(this->max_min_coords);
 
-        freeArray<mj_lno_t>(this->new_part_xadj);
+        freeArray<mj_lno_t>(this->part_xadj);
 
         freeArray<mj_lno_t>(this->coordinate_permutations);
 
@@ -5684,7 +5687,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
 
         const RCP<const Environment> &env,
-        RCP<Comm<int> > &problemComm,
+        RCP<const Comm<int> > &problemComm,
 
         double imbalance_tolerance_,
         size_t num_global_parts_,
@@ -5830,7 +5833,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         //skip this dimension. For example, this happens when 1 is given in the input
         //part array is given. P=4,5,1,2
         if(output_part_count_in_dimension == current_num_parts) {
-                //still need to swap the input output arrays.
+            //still need to swap the input output arrays.
             tmpPartVect= future_num_part_in_parts;
             future_num_part_in_parts = next_future_num_parts_in_parts;
             next_future_num_parts_in_parts = tmpPartVect;
@@ -6166,7 +6169,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         }
         freeArray<mj_lno_t>(this->part_xadj);
         this->part_xadj = this->new_part_xadj;
-
+        this->new_part_xadj = NULL;
         this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Problem_Partitioning_" + istring);
     }
 
@@ -6219,7 +6222,7 @@ private:
     AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t> mj_partitioner;
 
     RCP<const Environment> mj_env; //the environment object
-    RCP<Comm<int> > mj_problemComm; //initial comm object
+    RCP<const Comm<int> > mj_problemComm; //initial comm object
     RCP<const coordinateModel_t> mj_coords; //coordinate adapter
 
     //PARAMETERS
@@ -6271,7 +6274,7 @@ private:
 public:
 
     Zoltan2_AlgMJ(const RCP<const Environment> &env,
-                  RCP<Comm<int> > &problemComm,
+                  RCP<const Comm<int> > &problemComm,
                   const RCP<const coordinateModel_t> &coords) :
                         mj_partitioner(), mj_env(env),
                         mj_problemComm(problemComm),

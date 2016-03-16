@@ -294,6 +294,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, iterators, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, arrayView_convertToConst, T )
+{
+  const int nsize = 3;
+  T t[nsize];
+  t[0] = 1; 
+  t[1] = 2; 
+  t[2] = 3;
+  ArrayView<const T> av1 = arrayView<T>(&t[0], nsize);
+  TEST_EQUALITY_CONST(av1[0], 1);
+  TEST_EQUALITY_CONST(av1[1], 2);
+  TEST_EQUALITY_CONST(av1[2], 3);
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_std_vector, T )
 {
   ArrayView<T> av;
@@ -359,6 +373,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, resize_raw_ptr_self_view, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, assignmentOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, iterators, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView_convertToConst, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, danglingView_std_vector, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, danglingView_rcp_std_vector, T ) \
   DEBUG_UNIT_TEST_GROUP( T )

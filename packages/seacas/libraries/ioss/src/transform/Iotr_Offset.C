@@ -52,17 +52,17 @@ namespace Iotr {
     Factory::alias("offset", "add");
   }
 
-  Ioss::Transform* Offset_Factory::make(const std::string&) const
+  Ioss::Transform* Offset_Factory::make(const std::string& /*unused*/) const
   { return new Offset(); }
 
   Offset::Offset()
     : intOffset(0), realOffset(0.0)
   {}
 
-  void Offset::set_property(const std::string&, int value)
+  void Offset::set_property(const std::string& /*name*/, int value)
   { intOffset = value; }
 
-  void Offset::set_property(const std::string&, double value)
+  void Offset::set_property(const std::string& /*name*/, double value)
   { realOffset = value; }
 
   const Ioss::VariableType

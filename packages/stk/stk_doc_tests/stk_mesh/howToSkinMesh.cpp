@@ -47,8 +47,8 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace
 {
 //BEGIN_CREATE_EXPOSED_BOUNDARY
-  TEST(StkMeshHowTo, SkinHex)
-  {
+TEST(StkMeshHowTo, SkinExposedHex)
+{
     // ============================================================
     // INITIALIZATION
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -69,11 +69,57 @@ namespace
     stk::mesh::Part &skinPart = metaData.declare_part("skin", metaData.side_rank());
     stk::io::put_io_part_attribute(skinPart);
 
-    stk::mesh::create_exposed_boundary_sides(bulkData, allEntities, {&skinPart});
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, allEntities, {&skinPart});
 
     // ==================================================
     // VERIFICATION
-    EXPECT_TRUE(stk::mesh::check_exposed_boundary_sides(bulkData, allEntities, skinPart));
-  }
+    EXPECT_TRUE(stk::mesh::check_exposed_block_boundary_sides(bulkData, allEntities, skinPart));
+    stk::mesh::Selector skin(skinPart & metaData.locally_owned_part());
+    unsigned numSkinnedSides = stk::mesh::count_selected_entities(skin, bulkData.buckets(metaData.side_rank()));
+    EXPECT_EQ(6u, numSkinnedSides) << "in part " << skinPart.name();
+}
 //END_CREATE_EXPOSED_BOUNDARY
+
+//BEGIN_CREATE_INTERIOR_BOUNDARY
+TEST(StkMeshHowTo, SkinInteriorHex)
+{
+    // ============================================================
+    // INITIALIZATION
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
+    stk::io::StkMeshIoBroker stkIo(communicator);
+
+    const std::string generatedFileName = "generated:1x1x2";
+    stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+    stkIo.create_input_mesh();
+    stkIo.populate_bulk_data();
+
+    // ============================================================
+    //+ EXAMPLE
+    //+ Skin the mesh and create the exposed boundary sides..
+    stk::mesh::MetaData &metaData = stkIo.meta_data();
+    stk::mesh::BulkData &bulkData = stkIo.bulk_data();
+    stk::mesh::Selector allEntities = metaData.universal_part();
+    stk::mesh::Part &skinPart = metaData.declare_part("skin", metaData.side_rank());
+    stk::io::put_io_part_attribute(skinPart);
+
+    stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2u);
+    stk::mesh::Part *block_1 = metaData.get_part("block_1");
+
+    bulkData.modification_begin();
+    stk::mesh::Part &block_2 = metaData.declare_part("block_2", stk::topology::ELEM_RANK);
+    stk::io::put_io_part_attribute(block_2);
+    bulkData.change_entity_parts(elem2, {&block_2}, {block_1});
+    bulkData.modification_end();
+
+    stk::mesh::create_interior_block_boundary_sides(bulkData, allEntities, {&skinPart});
+
+    // ==================================================
+    // VERIFICATION
+    EXPECT_TRUE(stk::mesh::check_interior_block_boundary_sides(bulkData, allEntities, skinPart));
+    stk::mesh::Selector skin(skinPart & metaData.locally_owned_part());
+    unsigned numSkinnedSides = stk::mesh::count_selected_entities(skin, bulkData.buckets(metaData.side_rank()));
+    EXPECT_EQ(1u, numSkinnedSides) << "in part " << skinPart.name();
+}
+//END_CREATE_INTERIOR_BOUNDARY
 }

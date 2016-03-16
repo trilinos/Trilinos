@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __EXAMPLE_CHOL_PERFORMANCE_HPP__
-#define __EXAMPLE_CHOL_PERFORMANCE_HPP__
+#ifndef __EXAMPLE_CHOL_PERFORMANCE_SINGLE_HPP__
+#define __EXAMPLE_CHOL_PERFORMANCE_SINGLE_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>

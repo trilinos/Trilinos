@@ -198,6 +198,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
 
+  clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -554,14 +555,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       globalTimeMonitor = Teuchos::null;
 
       if (printTimings) {
-        const bool alwaysWriteLocal = false;
-        const bool writeGlobalStats = true;
-        const bool writeZeroTimers  = false;
-        const bool ignoreZeroTimers = true;
-        const std::string filter    = "";
-        TimeMonitor::summarize(comm.ptr(), out, alwaysWriteLocal, writeGlobalStats,
-                               writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
-
         RCP<ParameterList> reportParams = rcp(new ParameterList);
         if (timingsFormat == "yaml") {
           reportParams->set("Report format",             "YAML");            // "Table" or "YAML"
@@ -572,6 +565,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         reportParams->set("writeGlobalStats",          true);
         reportParams->set("writeZeroTimers",           false);
         // FIXME: no "ignoreZeroTimers"
+
+        const std::string filter = "";
 
         std::ios_base::fmtflags ff(out.flags());
         if (timingsFormat == "table-fixed") out << std::fixed;
@@ -608,14 +603,14 @@ int main(int argc, char* argv[]) {
   bool verbose = true;
 
   try {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
+    const bool throwExceptions = false;
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Teuchos::CommandLineProcessor clp(throwExceptions);
     Xpetra::Parameters xpetraParameters(clp);
 
     std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
 
+    clp.recogniseAllOptions(false);
     switch (clp.parse(argc, argv, NULL)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:

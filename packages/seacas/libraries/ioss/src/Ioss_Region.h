@@ -65,35 +65,34 @@ namespace Ioss {
 
   class CoordinateFrame;
 
-  typedef std::vector<NodeBlock*>    NodeBlockContainer;
-  typedef std::vector<EdgeBlock*>    EdgeBlockContainer;
-  typedef std::vector<FaceBlock*>    FaceBlockContainer;
-  typedef std::vector<ElementBlock*> ElementBlockContainer;
+  using NodeBlockContainer = std::vector<NodeBlock*>;
+  using EdgeBlockContainer = std::vector<EdgeBlock*>;
+  using FaceBlockContainer = std::vector<FaceBlock*>;
+  using ElementBlockContainer = std::vector<ElementBlock*>;
 
-  typedef std::vector<NodeSet*>      NodeSetContainer;
-  typedef std::vector<EdgeSet*>      EdgeSetContainer;
-  typedef std::vector<FaceSet*>      FaceSetContainer;
-  typedef std::vector<ElementSet*>   ElementSetContainer;
+  using NodeSetContainer =    std::vector<NodeSet*>;
+  using EdgeSetContainer =    std::vector<EdgeSet*>;
+  using FaceSetContainer =    std::vector<FaceSet*>;
+  using ElementSetContainer = std::vector<ElementSet*>;
 
-  typedef std::vector<SideSet*>      SideSetContainer;
-  typedef std::vector<CommSet*>      CommSetContainer;
-  typedef std::vector<double>        StateTimeContainer;
+  using SideSetContainer   = std::vector<SideSet*>;
+  using CommSetContainer   = std::vector<CommSet*>;
+  using StateTimeContainer = std::vector<double>;
 
-  typedef std::vector<CoordinateFrame> CoordinateFrameContainer;
+  using CoordinateFrameContainer = std::vector<CoordinateFrame>;
   
-  typedef std::map<std::string, std::string, std::less<std::string> > AliasMap;
-  typedef AliasMap::value_type IOAliasValuePair;
+  using AliasMap = std::map<std::string, std::string, std::less<std::string>>;
 
   class Region : public GroupingEntity {
   public:
 
-    explicit Region(DatabaseIO *iodatabase = nullptr, const std::string& name="");
+    explicit Region(DatabaseIO *iodatabase = nullptr, const std::string& my_name="");
 
-    ~Region();
+    ~Region() override;
 
-    std::string type_string() const {return "Region";}
-    std::string short_type_string() const {return "region";}
-    EntityType type() const {return REGION;}
+    std::string type_string() const override {return "Region";}
+    std::string short_type_string() const override {return "region";}
+    EntityType type() const override {return REGION;}
 
     void output_summary(std::ostream &strm, bool do_transient=true);
     
@@ -134,17 +133,17 @@ namespace Ioss {
     std::pair<int, double> get_min_time() const;
 
     // Functions for an output region...
-    bool add(NodeBlock    *block);
-    bool add(EdgeBlock    *block);
-    bool add(FaceBlock    *block);
-    bool add(ElementBlock *block);
-    bool add(SideSet      *set);
-    bool add(NodeSet      *set);
-    bool add(EdgeSet      *set);
-    bool add(FaceSet      *set);
-    bool add(ElementSet   *set);
-    bool add(CommSet      *set);
-    bool add(const CoordinateFrame &set);
+    bool add(NodeBlock    *node_block);
+    bool add(EdgeBlock    *edge_block);
+    bool add(FaceBlock    *face_block);
+    bool add(ElementBlock *element_block);
+    bool add(SideSet      *sideset);
+    bool add(NodeSet      *nodeset);
+    bool add(EdgeSet      *edgeset);
+    bool add(FaceSet      *faceset);
+    bool add(ElementSet   *elementset);
+    bool add(CommSet      *commset);
+    bool add(const CoordinateFrame &frame);
 
     const NodeBlockContainer&    get_node_blocks() const;
     const EdgeBlockContainer&    get_edge_blocks() const;
@@ -160,19 +159,19 @@ namespace Ioss {
 
     // Retrieve the Grouping Entity with the specified name.
     // Returns nullptr if the entity does not exist
-    GroupingEntity* get_entity(const std::string& name, EntityType io_type) const;
-    GroupingEntity* get_entity(const std::string& name) const;
-    NodeBlock*      get_node_block(const std::string& name) const;
-    EdgeBlock*      get_edge_block(const std::string& name) const;
-    FaceBlock*      get_face_block(const std::string& name) const;
-    ElementBlock*   get_element_block(const std::string& name) const;
-    SideSet*        get_sideset(const std::string& name) const;
-    SideBlock*      get_sideblock(const std::string& name) const;
-    NodeSet*        get_nodeset(const std::string& name) const;
-    EdgeSet*        get_edgeset(const std::string& name) const;
-    FaceSet*        get_faceset(const std::string& name) const;
-    ElementSet*     get_elementset(const std::string& name) const;
-    CommSet*        get_commset(const std::string& name) const;
+    GroupingEntity* get_entity(const std::string& my_name, EntityType io_type) const;
+    GroupingEntity* get_entity(const std::string& my_name) const;
+    NodeBlock*      get_node_block(const std::string& my_name) const;
+    EdgeBlock*      get_edge_block(const std::string& my_name) const;
+    FaceBlock*      get_face_block(const std::string& my_name) const;
+    ElementBlock*   get_element_block(const std::string& my_name) const;
+    SideSet*        get_sideset(const std::string& my_name) const;
+    SideBlock*      get_sideblock(const std::string& my_name) const;
+    NodeSet*        get_nodeset(const std::string& my_name) const;
+    EdgeSet*        get_edgeset(const std::string& my_name) const;
+    FaceSet*        get_faceset(const std::string& my_name) const;
+    ElementSet*     get_elementset(const std::string& my_name) const;
+    CommSet*        get_commset(const std::string& my_name) const;
 
     const CoordinateFrame& get_coordinate_frame(int64_t id) const;
 
@@ -186,7 +185,7 @@ namespace Ioss {
     const AliasMap & get_alias_map() const;
 
     /// Get a map containing all aliases defined for the entity with basename 'name' 
-      int get_aliases(const std::string &name,
+      int get_aliases(const std::string &my_name,
 		      std::vector<std::string> &aliases) const;
       
     // This routine transfers all relavant aliases from the 'this'
@@ -194,7 +193,7 @@ namespace Ioss {
     void transfer_mesh_aliases(Region *to) const;
 
     // Ensure that the 'this' region has the same ids and names as the 'from' region.
-    void synchronize_id_and_name(const Region *from, bool synchronize_attribute_field_names=false);
+    void synchronize_id_and_name(const Region *from, bool sync_attribute_field_names=false);
 
     // Returns true if the passed in name refers to a known Entity
     // defined on this region.  If true, then 'type' (if non-nullptr) is
@@ -203,8 +202,8 @@ namespace Ioss {
     // consolidate several distinct implementations of this code in
     // client code. Because of this, the 'type' used in the client
     // code is repeated here instead of something more generic.
-    bool is_valid_io_entity(const std::string& name, unsigned int io_type,
-			    std::string *type = nullptr) const;
+    bool is_valid_io_entity(const std::string& my_name, unsigned int io_type,
+			    std::string *my_type = nullptr) const;
 
     // Retrieve the element block that contains the specified element
     // The 'local_id' is the local database id (1-based), not the global id.
@@ -215,7 +214,7 @@ namespace Ioss {
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
+    Property get_implicit_property(const std::string& my_name) const override;
 
     const std::vector<std::string> &get_information_records() const;
     void add_information_records(const std::vector<std::string> &info);
@@ -227,13 +226,13 @@ namespace Ioss {
 
   protected:
     int64_t internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
+				void *data, size_t data_size) const override;
 
     int64_t internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
+				void *data, size_t data_size) const override;
 
   private:
-    void delete_database();
+    void delete_database() override;
 
     AliasMap aliases_; ///< Stores alias mappings
 
@@ -265,7 +264,7 @@ inline int Ioss::Region::get_current_state() const
 {return currentState;}
 
 inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const
-{return get_database()->entity_field_support() & fld_type;}
+{return static_cast<unsigned int>((get_database()->entity_field_support() & fld_type) != 0u);}
 
 inline int64_t Ioss::Region::node_global_to_local(int64_t global, bool must_exist) const
 { return get_database()->node_global_to_local(global,must_exist); }

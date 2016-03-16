@@ -142,6 +142,8 @@ int Zoltan_RB_find_median(
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank=0;                    /* rank in partition (Tflops_Special) */
   int     loopCount=0;
+  int     moveSome = 0;              /* Flag indicating whether to move at least
+                                        some dots that are along the cut */
 
   /* MPI data types and user functions */
 
@@ -256,9 +258,19 @@ int Zoltan_RB_find_median(
         if (tmp_half < valuemin || tmp_half > valuemax)
           tmp_half = 0.5 * (valuemin + valuemax);
       }
-      else if (weight)
+      else if (weight) {
+        /* Note, since zoltan provides artificial weights of 1 for non-weighted
+         * problems, this computation of tmp_half is always used.  
+         * 
+         * Some problems with many zero-weighted dots do not behave well
+         * with this computation of tmp_half.  
+         * Removing it, however, increases the number of iterations needed for
+         * many Zoltan tests.  
+         * KDD 2/2016
+         */
         tmp_half = valuemin + (targetlo - weightlo) /
                     (weight - weightlo - weighthi) * (valuemax - valuemin);
+      }
       else
         tmp_half = 0.5 * (valuemin + valuemax);
 
@@ -328,6 +340,11 @@ int Zoltan_RB_find_median(
          MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
       }
 
+#undef KDD_NOISY
+#ifdef KDD_NOISY
+if (proc==0) printf("%d tmp_half %.20f weightlo/hi %.0f %.0f valuemin/max %.20f %.20f wtlo/hi %.0f %.0f\n", loopCount, tmp_half, weightlo, weighthi, valuemin, valuemax, med.wtlo, med.wthi);
+#endif
+
       /* test median guess for convergence */
       /* move additional dots that are next to cut across it */
 
@@ -352,12 +369,18 @@ int Zoltan_RB_find_median(
         else {                                   /* multiple dots to move */
           breakflag = 0;
           wtok = 0.0;
-          if (medme.valuehi == med.valuehi) wtok = medme.wthi;   
+          moveSome = 0;
+          if (medme.valuehi == med.valuehi) {
+            wtok = medme.wthi;   
+            moveSome = 1;
+          }
           if (weightlo + med.wthi >= targetlo) {                /* all done */
             if (rectilinear_blocks) {
-              if (weightlo + med.wthi - targetlo > targetlo - weightlo)
+              if (weightlo + med.wthi - targetlo > targetlo - weightlo) {
+                moveSome = 0;
                 wtok = 0.0;                      /* don't move if moving group
                                                     of dots has worse balance*/
+              }
             } else {
               if (Tflops_Special)
                 Zoltan_RB_scan_double(&wtok, &wtupto, 1, local_comm, 
@@ -369,11 +392,17 @@ int Zoltan_RB_find_median(
             }
             breakflag = 1;
           }                                      /* wtok = most I can move */
-          for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++) {
+          wtsum = 0.0;
+          if (moveSome) 
+          for (j = 0; j < numlist;  j++)
+          {
             i = dotlist[j];
             if (dots[i] == med.valuehi) { /* only move if better */
               tmp_wgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
-              if (wtsum + tmp_wgt - wtok < wtok - wtsum) {
+              if (rectilinear_blocks || /* move all when rectilinear_blocks */
+                 ((tmp_wgt == 0.) || (wtsum + tmp_wgt - wtok < wtok - wtsum)))
+                 /* weight is either zero or small enough to not exceed wtok */
+              {
                 dotmark[i] = 0;
                 wtsum += tmp_wgt;  /* KDD Moved sum inside if test 1/2002 */
               }
@@ -424,12 +453,18 @@ int Zoltan_RB_find_median(
         else {                                   /* multiple dots to move */
           breakflag = 0;
           wtok = 0.0;
-          if (medme.valuelo == med.valuelo) wtok = medme.wtlo;   
+          moveSome = 0;
+          if (medme.valuelo == med.valuelo) {
+            wtok = medme.wtlo;   
+            moveSome = 1;
+          }
           if (weighthi + med.wtlo >= targethi) {                /* all done */
             if (rectilinear_blocks) {
-              if (weighthi + med.wtlo - targethi > targethi - weighthi)
+              if (weighthi + med.wtlo - targethi > targethi - weighthi) {
+                moveSome = 0;
                 wtok = 0.0;                      /* don't move if moving group
                                                     of dots has worse balance*/
+              }
             } else {
               if (Tflops_Special)
                 Zoltan_RB_scan_double(&wtok, &wtupto, 1, local_comm, 
@@ -441,11 +476,17 @@ int Zoltan_RB_find_median(
             }
             breakflag = 1;
           }                                      /* wtok = most I can move */
-          for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++) {
+          wtsum = 0.0;
+          if (moveSome) 
+          for (j = 0; j < numlist;  j++)
+          {
             i = dotlist[j];
             if (dots[i] == med.valuelo) { /* only move if better */
               tmp_wgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
-              if (wtsum + tmp_wgt - wtok < wtok - wtsum) {
+              if (rectilinear_blocks || /* move all when rectilinear_blocks */
+                 ((tmp_wgt == 0.) || (wtsum + tmp_wgt - wtok < wtok - wtsum)))
+                 /* weight is either zero or small enough to not exceed wtok */
+              {
                 dotmark[i] = 1;
                 wtsum += tmp_wgt; /* KDD Moved sum inside if test 1/2002 */
               }
@@ -497,6 +538,9 @@ int Zoltan_RB_find_median(
     weighthi = 0.;
     tmp_half = valuemax;
   }
+#ifdef KDD_NOISY
+if (proc==0) printf("FINAL tmp_half %.20f weightlo/hi %.0f %.0f valuemin/max %.20f %.20f \n", tmp_half, weightlo, weighthi, valuemin, valuemax);
+#endif
 
   /* found median */
   *valuehalf = tmp_half;

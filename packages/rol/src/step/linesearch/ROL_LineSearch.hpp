@@ -54,6 +54,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
+#include "ROL_ScalarFunction.hpp"
 
 namespace ROL { 
 
@@ -79,7 +80,8 @@ private:
   Teuchos::RCP<Vector<Real> > xtst_; 
   Teuchos::RCP<Vector<Real> > d_;
   Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<const Vector<Real> > grad_;
+  Teuchos::RCP<Vector<Real> > grad_;
+//  Teuchos::RCP<const Vector<Real> > grad_;
 
 public:
 
@@ -87,72 +89,96 @@ public:
   virtual ~LineSearch() {}
 
   // Constructor
-  LineSearch( Teuchos::ParameterList &parlist ) : eps_(0.0) {
+  LineSearch( Teuchos::ParameterList &parlist ) : eps_(0) {
+    Real one(1), p9(0.9), p6(0.6), p4(0.4), oem4(1.e-4), zero(0);
     // Enumerations
     edesc_ = StringToEDescent(parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Quasi-Newton Method"));
     econd_ = StringToECurvatureCondition(parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
     // Linesearc Parameters
-    alpha0_    = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size",1.0);
+    alpha0_    = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size",one);
     useralpha_ = parlist.sublist("Step").sublist("Line Search").get("User Defined Initial Step Size",false);
     acceptMin_ = parlist.sublist("Step").sublist("Line Search").get("Accept Linesearch Minimizer",false);
     maxit_     = parlist.sublist("Step").sublist("Line Search").get("Function Evaluation Limit",20);
-    c1_        = parlist.sublist("Step").sublist("Line Search").get("Sufficient Decrease Tolerance",1.e-4);
-    c2_        = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("General Parameter",0.9);
-    c3_        = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Generalized Wolfe Parameter",0.6);
+    c1_        = parlist.sublist("Step").sublist("Line Search").get("Sufficient Decrease Tolerance",oem4);
+    c2_        = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("General Parameter",p9);
+    c3_        = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Generalized Wolfe Parameter",p6);
 
     fmin_      = std::numeric_limits<Real>::max();
     alphaMin_  = 0; 
     itcond_    = false;
 
-    c1_ = ((c1_ < 0.0) ? 1.e-4 : c1_);
-    c2_ = ((c2_ < 0.0) ? 0.9   : c2_);
-    c3_ = ((c3_ < 0.0) ? 0.9   : c3_);
+    c1_ = ((c1_ < zero) ? oem4 : c1_);
+    c2_ = ((c2_ < zero) ? p9   : c2_);
+    c3_ = ((c3_ < zero) ? p9   : c3_);
     if ( c2_ <= c1_ ) {
-      c1_ = 1.e-4;
-      c2_ = 0.9;
+      c1_ = oem4;
+      c2_ = p9;
     }
     if ( edesc_ == DESCENT_NONLINEARCG ) {
-      c2_ = 0.4;
-      c3_ = std::min(1.0-c2_,c3_);
+      c2_ = p4;
+      c3_ = std::min(one-c2_,c3_);
     }
   }
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
                            Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    grad_ = Teuchos::rcp(&g, false);
+    grad_ = g.clone();
     xtst_ = x.clone();
     d_    = s.clone();
     g_    = g.clone();
   }
 
-  void setData(Real &eps) {
+  virtual void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
+                    const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+                    Objective<Real> &obj, BoundConstraint<Real> &con ) = 0;
+
+  // Set epsilon for epsilon active sets
+  void setData(Real &eps, const Vector<Real> &g) {
     eps_ = eps;
+    grad_->set(g);
   }
 
+  // use this function to modify alpha and fval if the maximum number of iterations
+  // are reached
+  void setMaxitUpdate(Real &alpha, Real &fnew, const Real &fold) {
+    // Use local minimizer
+    if( itcond_ && acceptMin_ ) {
+      alpha = alphaMin_;
+      fnew = fmin_;
+    }
+    // Take no step
+    else if(itcond_ && !acceptMin_) {
+      alpha = 0;
+      fnew = fold;
+    }
+  }
+ 
+
+protected:
   virtual bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
                        const Real fold, const Real sgold, const Real fnew, 
                        const Vector<Real> &x, const Vector<Real> &s, 
                        Objective<Real> &obj, BoundConstraint<Real> &con ) { 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1), two(2);
 
     // Check Armijo Condition
     bool armijo = false;
     if ( con.isActivated() ) {
-      Real gs = 0.0;
+      Real gs(0);
       if ( edesc_ == DESCENT_STEEPEST ) {
         updateIterate(*d_,x,s,alpha,con);
-        d_->scale(-1.0);
+        d_->scale(-one);
         d_->plus(x);
         gs = -s.dot(*d_);
       }
       else {
         d_->set(s);
-        d_->scale(-1.0);
+        d_->scale(-one);
         con.pruneActive(*d_,grad_->dual(),x,eps_);
         gs = alpha*(grad_)->dot(d_->dual());
         d_->zero();
         updateIterate(*d_,x,s,alpha,con);
-        d_->scale(-1.0);
+        d_->scale(-one);
         d_->plus(x);
         con.pruneInactive(*d_,grad_->dual(),x,eps_);
         gs += d_->dot(grad_->dual());
@@ -178,7 +204,7 @@ public:
     if ( armijo && ((type != LINESEARCH_BACKTRACKING && type != LINESEARCH_CUBICINTERP) ||
                     (edesc_ == DESCENT_NONLINEARCG)) ) {
       if (econd_ == CURVATURECONDITION_GOLDSTEIN) {
-        if (fnew >= fold + (1.0-c1_)*alpha*sgold) {
+        if (fnew >= fold + (one-c1_)*alpha*sgold) {
           curvcond = true;
         }
       }
@@ -189,7 +215,7 @@ public:
         updateIterate(*xtst_,x,s,alpha,con);
         obj.update(*xtst_);
         obj.gradient(*g_,*xtst_,tol);
-        Real sgnew = 0.0;
+        Real sgnew(0);
         if ( con.isActivated() ) {
           d_->set(s);
           d_->scale(-alpha);
@@ -208,7 +234,7 @@ public:
              || ((econd_ == CURVATURECONDITION_GENERALIZEDWOLFE) 
                      && (c2_*sgold <= sgnew && sgnew <= -c3_*sgold))
              || ((econd_ == CURVATURECONDITION_APPROXIMATEWOLFE) 
-                     && (c2_*sgold <= sgnew && sgnew <= (2.0*c1_ - 1.0)*sgold)) ) {
+                     && (c2_*sgold <= sgnew && sgnew <= (two*c1_ - one)*sgold)) ) {
           curvcond = true;
         }
       }
@@ -232,35 +258,31 @@ public:
     }
   }
 
-  virtual void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-                    const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-                    Objective<Real> &obj, BoundConstraint<Real> &con ) = 0;
-
   virtual Real getInitialAlpha(int &ls_neval, int &ls_ngrad, const Real fval, const Real gs, 
                                const Vector<Real> &x, const Vector<Real> &s, 
                                Objective<Real> &obj, BoundConstraint<Real> &con) {
-    Real val = 1.0;
+    Real val(1), one(1), half(0.5), p1(1.e-1);
     if (useralpha_) {
       val = alpha0_;
     }
     else {
       if (edesc_ == DESCENT_STEEPEST || edesc_ == DESCENT_NONLINEARCG) {
-        Real tol = std::sqrt(ROL_EPSILON);
+        Real tol = std::sqrt(ROL_EPSILON<Real>());
         // Evaluate objective at x + s
-        updateIterate(*d_,x,s,1.0,con);
+        updateIterate(*d_,x,s,one,con);
         obj.update(*d_);
         Real fnew = obj.value(*d_,tol);
         ls_neval++;
         // Minimize quadratic interpolate to compute new alpha
         Real denom = (fnew - fval - gs);
-        Real alpha = ((denom > ROL_EPSILON) ? -0.5*gs/denom : 1.0);
-        val = ((alpha > 1.e-1) ? alpha : 1.0);
+        Real alpha = ((denom > ROL_EPSILON<Real>()) ? -half*gs/denom : one);
+        val = ((alpha > p1) ? alpha : one);
 
         alpha0_ = val;
         useralpha_ = true;
       }
       else {
-        val = 1.0;
+        val = one;
       }
     }
     return val;
@@ -284,23 +306,6 @@ public:
   bool takeNoStep() {
     return itcond_ && !acceptMin_;
   }
-
-  // use this function to modify alpha and fval if the maximum number of iterations
-  // are reached
-  void setMaxitUpdate(Real &alpha, Real &fnew, const Real &fold) {
-    // Use local minimizer
-    if( itcond_ && acceptMin_ ) {
-      alpha = alphaMin_;
-      fnew = fmin_;
-    }
-    // Take no step
-    else if(itcond_ && !acceptMin_) {
-      alpha = 0;
-      fnew = fold;
-    }
-  }
- 
-
 };
 
 }

@@ -124,7 +124,8 @@ int ex_put_node_cmap(int  exoid,
     return (EX_FATAL);
   }
 
-  if (value == 0) return(EX_NOERR);   /* NULL set */
+  if (value == 0) { return(EX_NOERR);   /* NULL set */
+}
 
   /* now I need to get the comm map data index */
   if (ex_get_idx(exoid, VAR_N_COMM_DATA_IDX, varidx, map_idx) == -1) {

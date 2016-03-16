@@ -377,13 +377,13 @@ int ex_put_prop (int   exoid,
 	      ex_name_of_object(obj_type), obj_id,exoid);
       ex_err("ex_put_prop",errmsg,EX_NULLENTITY);
       return (EX_WARN);
-    } else {
+    } 
       sprintf(errmsg,
 	      "Error: failed to find value %"PRId64" in %s property array in file id %d",
 	      obj_id, ex_name_of_object(obj_type), exoid);
       ex_err("ex_put_prop",errmsg,exerrval);
       return (EX_FATAL);
-    }
+    
   }
 
   start[0] = start[0] - 1; 

@@ -33,8 +33,6 @@
 
 #include <cstdlib>
 #include <cstdio>
-#include <math.h>
-#include <ctype.h>
 #include <vector>
 
 #include "Tolerance.h"

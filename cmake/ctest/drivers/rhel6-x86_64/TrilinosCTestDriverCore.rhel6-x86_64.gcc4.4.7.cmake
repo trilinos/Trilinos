@@ -90,6 +90,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_MAKE_PROGRAM=make"
     "-DCMAKE_CXX_FLAGS='-O3 -fPIC'"
     "-DCMAKE_C_FLAGS='-O3 -fPIC'"
+    "-DParMETIS_LIBRARY_DIRS=$ENV{SEMS_PARMETIS_LIBRARY_PATH}"
+    "-DParMETIS_INCLUDE_DIRS=$ENV{SEMS_PARMETIS_INCLUDE_PATH}"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")
@@ -107,12 +109,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc"
-      "-DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpic++"
-      "-DCMAKE_Fortran_COMPILER=/usr/lib64/openmpi/bin/mpif77"
-      "-DMPI_EXEC=/usr/lib64/openmpi/bin/mpiexec"
+      "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
       )
-#      "-DMPI_BASE_DIR:PATH=/home/trilinos/gcc4.7.2/openmpi-1.6.5"
+#      "-DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc"
+#      "-DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpic++"
+#      "-DCMAKE_Fortran_COMPILER=/usr/lib64/openmpi/bin/mpif77"
+#      "-DMPI_EXEC=/usr/lib64/openmpi/bin/mpiexec"
 #      )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS

@@ -47,6 +47,10 @@
 
 #cmakedefine HAVE_MUELU_KOKKOSCLASSIC
 
+#cmakedefine HAVE_MUELU_KOKKOSCONTAINERS
+
+#cmakedefine HAVE_MUELU_KOKKOSCORE
+
 #cmakedefine HAVE_MUELU_ML
 
 #cmakedefine HAVE_MUELU_TEKO
@@ -57,8 +61,6 @@
 #cmakedefine HAVE_MUELU_TPETRA_INST_INT_INT
 
 #cmakedefine HAVE_MUELU_STRATIMIKOS
-
-#cmakedefine HAVE_MUELU_TEKO
 
 #cmakedefine HAVE_MUELU_ZOLTAN
 

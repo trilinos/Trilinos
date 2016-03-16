@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -1617,32 +1616,6 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
   return data_ptr_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
 }
 
-
-
-template<class Scalar, int ArrayTypeId>
-const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int address) const {
-#ifdef HAVE_INTREPID2_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
-                      std::invalid_argument,
-                      ">>> ERROR (FieldContainer): Specified address is out of range.");
-#endif
-  return data_ptr_[address];
-}
-
-
-
-template<class Scalar, int ArrayTypeId>
-Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int address) {
-#ifdef HAVE_INTREPID2_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
-                      std::invalid_argument,
-                      ">>> ERROR (FieldContainer): Specified address is out of range.");
-#endif
-  return data_ptr_[address];
-}
-
-
-
 template<class Scalar, int ArrayTypeId>
 inline FieldContainer<Scalar, ArrayTypeId>& FieldContainer<Scalar, ArrayTypeId>::operator = (const FieldContainer<Scalar, ArrayTypeId>& right)
 {
@@ -1719,7 +1692,17 @@ std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar, ArrayT
     os << std::setw(20) << address;
     os << "             ";
     os.setf(std::ios::left, std::ios::adjustfield);
-    os << std::setw(myprec+8) << container[address] << "\n";
+
+    if ( rank == 1)
+      os << std::setw(myprec+8) << container(multiIndex[0]) << "\n";
+    else if ( rank == 2)
+      os << std::setw(myprec+8) << container(multiIndex[0],multiIndex[1]) << "\n";
+    else if ( rank == 3)
+      os << std::setw(myprec+8) << container(multiIndex[0],multiIndex[1],multiIndex[2]) << "\n";
+    else if ( rank == 4)
+      os << std::setw(myprec+8) << container(multiIndex[0],multiIndex[1],multiIndex[2],multiIndex[3]) << "\n";
+    else if ( rank == 5)
+      os << std::setw(myprec+8) << container(multiIndex[0],multiIndex[1],multiIndex[2],multiIndex[3],multiIndex[4]) << "\n";
   }
 
   os<< "====================================================================================\n\n";

@@ -94,7 +94,9 @@ protected:
   SharedAllocationRecord *       m_next ;
   int                            m_count ;
 
+  SharedAllocationRecord( SharedAllocationRecord && ) = delete ;
   SharedAllocationRecord( const SharedAllocationRecord & ) = delete ;
+  SharedAllocationRecord & operator = ( SharedAllocationRecord && ) = delete ;
   SharedAllocationRecord & operator = ( const SharedAllocationRecord & ) = delete ;
 
   /**\brief  Construct and insert into 'arg_root' tracking set.
@@ -122,7 +124,7 @@ public:
 
   ~SharedAllocationRecord() = default ;
 
-  constexpr SharedAllocationRecord()
+  SharedAllocationRecord()
     : m_alloc_ptr( 0 )
     , m_alloc_size( 0 )
     , m_dealloc( 0 )
@@ -142,10 +144,10 @@ public:
   void * data() const { return reinterpret_cast<void*>( m_alloc_ptr + 1 ); }
 
   /* User's memory begins at the end of the header */
-  constexpr size_t size() const { return m_alloc_size - sizeof(SharedAllocationHeader) ; }
+  size_t size() const { return m_alloc_size - sizeof(SharedAllocationHeader) ; }
 
   /* Cannot be 'constexpr' because 'm_count' is volatile */
-  int use_count() const { return m_count ; }
+  int use_count() const { return *static_cast<const volatile int *>(&m_count); }
 
   /* Increment use count */
   static void increment( SharedAllocationRecord * );

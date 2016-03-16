@@ -38,12 +38,14 @@
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 
+#include "Teuchos_ParameterList.hpp"
+
 namespace ROL {
 
 
 /** @ingroup func_group
     \class ROL::ObjectiveFromBoundConstraint 
-    \brief Create a logarithmic penalty objective from upper and lower bound vectors
+    \brief Create a penalty objective from upper and lower bound vectors
  */
 
 template <class Real> 
@@ -51,117 +53,301 @@ class ObjectiveFromBoundConstraint : public Objective<Real> {
 
   typedef Vector<Real> V;
 
+  typedef Elementwise::Axpy<Real>              Axpy;
+  typedef Elementwise::Aypx<Real>              Aypx;
+  typedef Elementwise::Scale<Real>             Scale;
+  typedef Elementwise::Reciprocal<Real>        Reciprocal;
+  typedef Elementwise::Power<Real>             Power;
+  typedef Elementwise::Logarithm<Real>         Logarithm;
+  typedef Elementwise::Multiply<Real>          Multiply; 
+  typedef Elementwise::Heaviside<Real>         Heaviside;
+  typedef Elementwise::ThresholdUpper<Real>    ThresholdUpper;
+  typedef Elementwise::ThresholdLower<Real>    ThresholdLower;
+  typedef Elementwise::ReductionSum<Real>      Sum;
+  typedef Elementwise::UnaryFunction<Real>     UnaryFunction;
+ 
+
+
+  enum EBarrierType {
+    BARRIER_LOGARITHM = 0,
+    BARRIER_QUADRATIC,     
+    BARRIER_DOUBLEWELL,  
+    BARRIER_LAST
+  } eBarrierType_; 
+
+  inline std::string EBarrierToString( EBarrierType type ) {
+    std::string retString;
+    switch(type) {
+      case BARRIER_LOGARITHM:
+        retString = "Logarithmic"; 
+        break;
+      case BARRIER_QUADRATIC:
+        retString = "Quadratic";
+        break;
+      case BARRIER_DOUBLEWELL:
+        retString = "Double Well";
+        break;   
+      case BARRIER_LAST:
+        retString = "Last Type (Dummy)";
+        break;
+      default:
+        retString = "Invalid EBarrierType";
+        break;
+    }
+    return retString;
+  }
+
+  inline EBarrierType StringToEBarrierType( std::string s ) {
+    s = removeStringFormat(s);
+    EBarrierType type = BARRIER_LOGARITHM;
+    for( int to = BARRIER_LOGARITHM; to != BARRIER_LAST; ++to ) {
+      type = static_cast<EBarrierType>(to);
+      if( !s.compare(removeStringFormat(EBarrierToString(type))) ) {
+        return type;
+      }
+    }
+    return type;
+  }   
+
+
+
+
 private:
   Teuchos::RCP<V> lo_;
   Teuchos::RCP<V> up_;
-
-  Teuchos::RCP<V> x_minus_lo_;
-  Teuchos::RCP<V> up_minus_x_; 
-
-  class LogarithmLower : public Elementwise::BinaryFunction<Real> {
-  public: 
-  
-    Real apply( const Real &x, const Real &y ) const {
-      return y>ROL_NINF ? std::log(x-y) : 0.0;   
-    }
-  };
-
-  class LogarithmUpper : public Elementwise::BinaryFunction<Real> {
-  public:
-   
-    Real apply( const Real &x, const Real &y ) const {
-      return y<ROL_INF ? std::log(y-x) : 0.0;
-    }
-  };
-
-  class ReciprocalLower : public Elementwise::BinaryFunction<Real> {
-  public:
-    
-    Real apply( const Real &x, const Real &y ) const {
-      return y>ROL_NINF ? 1.0/(x-y) : 0.0;
-    }
-  };
-
-  class ReciprocalUpper : public Elementwise::BinaryFunction<Real> {
-  public:
-   
-    Real apply( const Real &x, const Real &y ) const {
-      return y<ROL_INF ? 1./(y-x) : 0.0;
-    }
-  };
-
-
-  Elementwise::Multiply<Real>     mult_;
-  Elementwise::ReductionSum<Real> sum_;
-
-
+  Teuchos::RCP<V> a_;     // scratch vector
+  Teuchos::RCP<V> b_;     // scratch vector
+  EBarrierType    btype_;
 
 public:
-
-  ObjectiveFromBoundConstraint( const BoundConstraint<Real> &bc ) :
+ 
+  ObjectiveFromBoundConstraint( const BoundConstraint<Real> &bc,
+                                Teuchos::ParameterList &parlist ) :
     lo_( bc.getLowerVectorRCP() ),
     up_( bc.getUpperVectorRCP() ) {
 
-    x_minus_lo_ = lo_->clone();
-    up_minus_x_ = up_->clone();
+    a_ = lo_->clone();
+    b_ = up_->clone();
 
+    std::string bfstring = parlist.sublist("Barrier Function").get("Type","Logarithmic");
+    btype_ = StringToEBarrierType(bfstring); 
   }
+
+  ObjectiveFromBoundConstraint( const BoundConstraint<Real> &bc ) :
+    lo_( bc.getLowerVectorRCP() ),
+    up_( bc.getUpperVectorRCP() )
+    { 
+      a_ = lo_->clone();
+      b_ = up_->clone();
+    }
+
 
   Real value( const Vector<Real> &x, Real &tol ) {
 
-    x_minus_lo_->set(x);
-    up_minus_x_->set(x);
+    Teuchos::RCP<UnaryFunction> func;
 
-    LogarithmLower logl;
-    LogarithmUpper logu; 
+    switch(btype_) {
+      case BARRIER_LOGARITHM:
 
-    x_minus_lo_->applyBinary(logl,*lo_);
-    up_minus_x_->applyBinary(logu,*up_);
+        a_->set(*lo_);                         // a = l
+        a_->applyBinary(Aypx(-1.0),x);         // a = x-l
+        a_->applyUnary(Logarithm());           // a = log(x-l)
+        a_->applyUnary(Scale(-1.0));           // a = -log(x-l)  
+               
+        b_->set(x);                            // b = x
+        b_->applyBinary(Aypx(-1.0),*up_);      // b = u-x
+        b_->applyUnary(Logarithm());           // b = log(u-x)
+        b_->applyUnary(Scale(-1.0));           // b = -log(u-x)
 
-    Real result = -(x_minus_lo_->reduce(sum_)); 
-         result -= (up_minus_x_->reduce(sum_));
+        b_->plus(*a_);                         // b = -log(x-l)-log(u-x)
 
+        break;
+
+      case BARRIER_QUADRATIC:
+        
+        a_->set(*lo_);                         // a = l
+        a_->applyBinary(Aypx(-1.0),x);         // a = x-l
+        a_->applyUnary(ThresholdLower(0.0));   // a = min(x-l,0)
+        a_->applyUnary(Power(2.0));            // a = min(x-l,0)^2
+
+        b_->set(*up_);                         // b = u
+        b_->applyBinary(Aypx(-1.0),x);         // b = x-u
+        b_->applyUnary(ThresholdUpper(0.0));   // b = max(x-u,0)
+        b_->applyUnary(Power(2.0));            // b = max(x-u,0)^2
+
+        b_->plus(*a_);                         // b = min(x-l,0)^2 + max(x-u,0)^2  
+  
+        break;
+
+      case BARRIER_DOUBLEWELL:
+
+        a_->set(*lo_);                        // a = l
+        a_->applyBinary(Aypx(-1.0),x);        // a = x-l
+        a_->applyUnary(Power(2.0));           // a = (x-l)^2
+
+        b_->set(x);                           // b = x
+        b_->applyBinary(Aypx(-1.0),*up_);     // b = u-x
+        b_->applyUnary(Power(2.0));           // b = (u-x)^2
+       
+        b_->applyBinary(Multiply(),*a_);      // b = (x-l)^2*(u-x)^2 
+
+        break;
+
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ">>>(ObjectiveFromBoundConstraint::value): Undefined barrier function type!"); 
+
+        break;
+    }
+
+    Real result = b_->reduce(Sum()); 
     return result;
 
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
-    x_minus_lo_->set(x);
-    up_minus_x_->set(x);
+    switch(btype_) {
+      case BARRIER_LOGARITHM:
 
-    ReciprocalLower recipl;
-    ReciprocalUpper recipu;  
+        a_->set(*lo_);                     // a = l
+        a_->applyBinary(Aypx(-1.0),x);     // a = x-l
+        a_->applyUnary(Reciprocal());      // a = 1/(x-l)
+        a_->applyUnary(Scale(-1.0));       // a = -1/(x-l)  
+               
+        b_->set(x);                        // b = x
+        b_->applyBinary(Aypx(-1.0),*up_);  // b = u-x
+        b_->applyUnary(Reciprocal());      // b = 1/(u-x)
 
-    x_minus_lo_->applyBinary(recipl, *lo_);
-    up_minus_x_->applyBinary(recipu, *up_);
-     
-    g.set(*up_minus_x_);
-    g.axpy(-1.0,*x_minus_lo_);
-     
+        b_->plus(*a_);                     // b = -1/(x-l)+1/(u-x)
+
+        break;
+
+      case BARRIER_QUADRATIC:
+
+        a_->set(*lo_);                         // a = l
+        a_->applyBinary(Aypx(-1.0),x);         // a = x-l
+        a_->applyUnary(ThresholdLower(0.0));   // a = min(x-l,0)
+
+        b_->set(*up_);                         // b = u
+        b_->applyBinary(Aypx(-1.0),x);         // b = x-u
+        b_->applyUnary(ThresholdUpper(0.0));   // b = max(x-u,0)
+
+        b_->plus(*a_);                         // b = max(x-u,0) + min(x-l,0)
+        b_->scale(2.0);                        // b = 2*max(x-u,0) + 2*min(x-l,0)
+        break;
+
+      case BARRIER_DOUBLEWELL:
+
+        a_->set(*lo_);                     // a = l
+        a_->applyBinary(Aypx(-1.0),x);     // a = x-l
+
+        b_->set(x);                        // b = x
+        b_->applyBinary(Aypx(-1.0),*up_);  // b = u-x
+       
+        a_->applyBinary(Aypx(-1.0),*b_);   // a = (u-x)-(x-l)
+        a_->applyUnary(Scale(2.0));        // a = 2*[(u-x)-(x-l)]          
+ 
+        b_->set(x);                        // b = x
+        b_->applyBinary(Aypx(-1.0),*up_);  // b = u-x
+
+        a_->applyBinary(Multiply(),*b_);   // a = [(u-x)-(x-l)]*(u-x);
+         
+        
+        b_->set(*lo_);                     // b = l
+        b_->applyBinary(Aypx(-1.0),x);     // b = x-l
+        b_->applyBinary(Multiply(),*a_);   // b = [(u-x)-(x-l)]*(u-x)*(x-l) 
+
+        break;
+
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ">>>(ObjectiveFromBoundConstraint::gradient): Undefined barrier function type!"); 
+
+        break;
+    }
+
+    g.set(*b_);
+
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-    x_minus_lo_->set(x);
-    up_minus_x_->set(x);
+    switch(btype_) {
+      case BARRIER_LOGARITHM:
+
+        a_->set(*lo_);                     // a = l
+        a_->applyBinary(Axpy(-1.0),x);     // a = x-l
+        a_->applyUnary(Reciprocal());      // a = 1/(x-l)
+        a_->applyUnary(Power(2.0));        // a = 1/(x-l)^2  
+               
+        b_->set(x);                        // b = x
+        b_->applyBinary(Axpy(-1.0),*up_);  // b = u-x
+        b_->applyUnary(Reciprocal());      // b = 1/(u-x)
+        b_->applyUnary(Power(2.0));        // b = 1/(u-x)^2
+
+        b_->plus(*a_);                     // b = 1/(x-l)^2 + 1/(u-x)^2
+
+        break;
+  
+      case BARRIER_QUADRATIC:
  
-    ReciprocalLower recipl;
-    ReciprocalUpper recipu;  
+        a_->set(*lo_);                     // a = l
+        a_->applyBinary(Axpy(-1.0),x);     // a = x-l
+        a_->scale(-1.0);                   // a = l-x
+        a_->applyUnary(Heaviside());       // a = theta(l-x)
 
-    x_minus_lo_->applyBinary(recipl, *lo_);
-    up_minus_x_->applyBinary(recipu, *up_);
+        b_->set(*up_);                     // b = u
+        b_->applyBinary(Axpy(-1.0),x);     // b = x-u
+        b_->applyUnary(Heaviside());       // b = theta(x-u)
+        b_->plus(*a_);                     // b = theta(l-x) + theta(x-u)
+        b_->scale(2.0);                    // b = 2*theta(l-x) + 2*theta(x-u)
 
-    x_minus_lo_->applyBinary(mult_,*x_minus_lo_);
-    up_minus_x_->applyBinary(mult_,*up_minus_x_);
-    
+        break;
 
-    hv.set(*x_minus_lo_);
-    hv.plus(*up_minus_x_); 
-    hv.applyBinary(mult_,v);
-     
-  }
+      case BARRIER_DOUBLEWELL:
+
+        a_->set(*lo_);                      // a = l
+        a_->applyBinary(Axpy(-1.0),x);      // a = x-l
+
+        b_->set(x);                         // b = x
+        b_->applyBinary(Axpy(-1.0),*up_);   // b = u-x
+
+        b_->applyBinary(Multiply(),*a_);    // b = (u-x)*(x-l)
+        b_->applyUnary(Scale(-8.0));        // b = -8*(u-x)*(x-l)
+ 
+        a_->applyUnary(Power(2.0));         // a = (x-l)^2
+        a_->applyUnary(Scale(2.0));         // a = 2*(x-l)^2
+        
+        b_->applyBinary(Axpy(1.0),*a_);     // b = 2*(x-l)^2-8*(u-x)*(x-l)
+
+        a_->set(x);                         // a = x
+        a_->applyBinary(Axpy(-1.0),*up_);   // a = u-x
+        a_->applyUnary(Power(2.0));         // a = (u-x)^2
+        a_->applyUnary(Scale(2.0));         // a = 2*(u-x)^2
+
+        b_->plus(*a_);                      // b = 2*(u-x)^2-8*(u-x)*(x-l)+2*(x-l)         
+         
+        
+        break;
+
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ">>>(ObjectiveFromBoundConstraint::hessVec): Undefined barrier function type!"); 
+
+        break;
+    }
    
+    hv.set(v);
+    hv.applyBinary(Multiply(),*b_); 
+    
+  }
+  
+  // For testing purposes
+  Teuchos::RCP<Vector<Real> > getBarrierVector(void) {
+    return b_;
+  } 
+
 
 }; // class ObjectiveFromBoundConstraint
 

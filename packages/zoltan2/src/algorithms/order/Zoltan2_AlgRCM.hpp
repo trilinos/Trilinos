@@ -66,7 +66,7 @@ class AlgRCM : public Algorithm<Adapter>
 
   const RCP<GraphModel<Adapter> > model;
   const RCP<Teuchos::ParameterList> pl;
-  const RCP<Teuchos::Comm<int> > comm;
+  const RCP<const Teuchos::Comm<int> > comm;
 
   public:
 
@@ -77,7 +77,7 @@ class AlgRCM : public Algorithm<Adapter>
   AlgRCM(
     const RCP<GraphModel<Adapter> > &model__,
     const RCP<Teuchos::ParameterList> &pl__,
-    const RCP<Teuchos::Comm<int> > &comm__
+    const RCP<const Teuchos::Comm<int> > &comm__
   ) : model(model__), pl(pl__), comm(comm__)
   {
   }
@@ -109,7 +109,7 @@ class AlgRCM : public Algorithm<Adapter>
 #endif
   
     // RCM constructs invPerm, not perm
-    ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
+    const ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
   
     // Check if there are actually edges to reorder.
     // If there are not, then just use the natural ordering.

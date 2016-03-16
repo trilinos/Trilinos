@@ -76,20 +76,25 @@ public:
    */
   OrderingSolution(
     size_t perm_size // This should be equal to nlids
-  )
+  ) : separatorColBlocks_(0)
   {
     HELLO;
-    perm_size_ = perm_size;
-    gids_   = ArrayRCP<gno_t>(perm_size_);
-    perm_  = ArrayRCP<lno_t>(perm_size_);
-    invperm_  = ArrayRCP<lno_t>(perm_size_);
+    perm_size_  = perm_size;
+    //gids_       = ArrayRCP<gno_t>(perm_size_);
+    perm_       = ArrayRCP<lno_t>(perm_size_);
+    invperm_    = ArrayRCP<lno_t>(perm_size_);
+    separatorRange_   = ArrayRCP<lno_t>(perm_size_+1);
+    separatorTree_    = ArrayRCP<lno_t>(perm_size_);
+
     havePerm_ = false;
     haveInverse_ = false;
+    haveSeparatorRange_ = false;
+    haveSeparatorTree_ = false;
   }
 
   /*! \brief Do we have the direct permutation?
    */
-  bool havePerm()
+  bool havePerm() const
   {
     return havePerm_; 
   }
@@ -104,7 +109,7 @@ public:
 
   /*! \brief Do we have the inverse permutation?
    */
-  bool haveInverse()
+  bool haveInverse() const
   {
     return haveInverse_; 
   }
@@ -114,6 +119,49 @@ public:
   void setHaveInverse(bool status)
   {
     haveInverse_ = status; 
+  }
+ 
+  /*! \brief set all separator flags.
+   */
+ void setHaveSeparator(bool status) {
+    this->setHavePerm(status);
+    this->setHaveInverse(status);
+    this->setHaveSeparatorRange(status);
+    this->setHaveSeparatorTree(status);
+ } 
+  /*! \brief Do we have the seperator range?
+   */
+  bool haveSeparatorRange() const
+  {
+    return haveSeparatorRange_; 
+  }
+
+  /*! \brief Set haveSeparatorRange (intended for ordering algorithms only)
+   */
+  void setHaveSeparatorRange(bool status)
+  {
+    haveSeparatorRange_ = status; 
+  }
+  
+  /*! \brief Do we have the seperator tree?
+   */
+  bool haveSeparatorTree() const
+  {
+    return haveSeparatorTree_; 
+  }
+  
+  /*! \brief Do we have the seperators?
+   */
+  bool haveSeparators() const
+  {
+    return haveSeparatorRange() && haveSeparatorTree(); 
+  }
+
+  /*! \brief Set haveSeparatorTree (intended for ordering algorithms only)
+   */
+  void setHaveSeparatorTree(bool status)
+  {
+    haveSeparatorTree_ = status; 
   }
 
   /*! \brief Compute direct permutation from inverse.
@@ -148,6 +196,9 @@ public:
     }
   }
 
+  /*! \brief Set number of separator column blocks.
+   */
+  inline void setNumSeparatorBlocks(lno_t nblks) {separatorColBlocks_ = nblks;}
 
   //////////////////////////////////////////////
   // Accessor functions, allowing algorithms to get ptrs to solution memory.
@@ -156,31 +207,65 @@ public:
 
   /*! \brief Get (local) size of permutation.
    */
-  inline size_t getPermutationSize() {return perm_size_;}
+  inline size_t getPermutationSize() const {return perm_size_;}
+  
+  /*! \brief Get number of separator column blocks.
+   */
+  inline lno_t getNumSeparatorBlocks() const {return separatorColBlocks_;}
 
   /*! \brief Get (local) permuted GIDs by RCP.
    */
-  inline ArrayRCP<gno_t>  &getGidsRCP()  {return gids_;}
+ // inline ArrayRCP<lno_t>  &getGidsRCP()  {return gids_;}
 
   /*! \brief Get (local) permutation by RCP.
    *  If inverse = true, return inverse permutation.
    *  By default, perm[i] is where new index i can be found in the old ordering.
    *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
    */
-  inline ArrayRCP<lno_t> &getPermutationRCP(bool inverse=false) 
+  inline const ArrayRCP<lno_t> &getPermutationRCP(bool inverse=false) const
   {
     if (inverse)
       return invperm_;
     else
       return perm_;
   }
+  
+  /*! \brief return vertex separator variables by reference.
+    */
+  bool getVertexSeparator (lno_t &numBlocks,
+                           lno_t *range,
+                           lno_t *tree) const {
+
+    if (this->haveSeparators()) {
+      numBlocks = this->getNumSeparatorBlocks();
+      range = this->getSeparatorRangeView();
+      tree = this->getSeparatorTreeView();
+      return true;
+    }
+
+    return false;
+  }
+
+  /*! \brief Get (local) seperator range by RCP.
+   */
+  inline const ArrayRCP<lno_t> &getSeparatorRangeRCP() const
+  {
+    return separatorRange_;
+  }
+  
+  /*! \brief Get (local) seperator tree by RCP.
+   */
+  inline const ArrayRCP<lno_t> &getSeparatorTreeRCP() const
+  {
+    return separatorTree_;
+  }
 
   /*! \brief Get (local) permuted GIDs by const RCP.
    */
-  inline ArrayRCP<gno_t>  &getGidsRCPConst()  const
-  {
-    return const_cast<ArrayRCP<gno_t>& > (gids_);
-  }
+ // inline ArrayRCP<lno_t>  &getGidsRCPConst()  const
+ // {
+ //   return const_cast<ArrayRCP<lno_t>& > (gids_);
+ // }
 
   /*! \brief Get (local) permutation by const RCP.
    *  If inverse = true, return inverse permutation.
@@ -194,37 +279,80 @@ public:
     else
       return const_cast<ArrayRCP<lno_t>& > (perm_);
   }
-
-  /*! \brief Get pointer to (local) GIDs.
+  
+  /*! \brief Get (local) seperator range by const RCP.
    */
-  inline gno_t  *getGids()
+  inline ArrayRCP<lno_t> &getSeparatorRangeRCPConst() const
   {
-    return gids_.getRawPtr();
+    return const_cast<ArrayRCP<lno_t> & > (separatorRange_);
+  }
+  
+  /*! \brief Get (local) seperator tree by const RCP.
+   */
+  inline ArrayRCP<lno_t> &getSeparatorTreeRCPConst() const
+  {
+    return const_cast<ArrayRCP<lno_t> & > (separatorTree_);
   }
 
   /*! \brief Get pointer to (local) permutation.
    *  If inverse = true, return inverse permutation.
    *  By default, perm[i] is where new index i can be found in the old ordering.
-   *  When inverse==true, perm[i] is where old index i can be found in the new ordering.
+   *  When inverse==true, perm[i] is where old index i can be found 
+   *  in the new ordering.
    */
-  inline lno_t *getPermutation(bool inverse = false)
+  inline lno_t *getPermutationView(bool inverse = false) const
   {
-    if (inverse)
-      return invperm_.getRawPtr();
+    if (perm_size_) {
+      if (inverse)
+        return invperm_.getRawPtr();
+      else
+        return perm_.getRawPtr();
+    }
     else
-      return perm_.getRawPtr();
+      return NULL;
+  }
+  
+  /*! \brief Get pointer to (local) serparator range.
+   */
+  inline lno_t *getSeparatorRangeView() const
+  {
+    // Here, don't need to check perm_size_ before calling getRawPtr.
+    // separatorRange_ always has some length, since it is allocated larger
+    // than other arrays.
+    return separatorRange_.getRawPtr();
+  }
+
+  /*! \brief Get pointer to (local) serparator tree.
+   */
+  inline lno_t *getSeparatorTreeView() const
+  {
+    if (perm_size_)
+      return separatorTree_.getRawPtr();
+    else
+      return NULL;
+  }
+  
+  /*! \brief Get reference to (local) separator column block.
+   */
+  inline lno_t &NumSeparatorBlocks()
+  {
+    return separatorColBlocks_; 
   }
 
 protected:
   // Ordering solution consists of permutation vector(s).
   // Either perm or invperm should be computed by the algorithm.
   size_t perm_size_;
-  ArrayRCP<gno_t>  gids_; // TODO: Remove?
   // For now, assume permutations are local. Revisit later (e.g., for Scotch)
-  bool havePerm_;    // has perm_ been computed yet?
-  bool haveInverse_; // has invperm_ been computed yet?
+  bool havePerm_;           // has perm_ been computed yet?
+  bool haveInverse_;        // has invperm_ been computed yet?
+  bool haveSeparatorRange_;          // has sepRange_ been computed yet?
+  bool haveSeparatorTree_;        // has sepTree_ been computed yet?
   ArrayRCP<lno_t> perm_;    // zero-based local permutation
   ArrayRCP<lno_t> invperm_; // inverse of permutation above
+  ArrayRCP<lno_t> separatorRange_;   // range iterator for separator tree
+  ArrayRCP<lno_t> separatorTree_; // separator tree
+  lno_t separatorColBlocks_;        // number of column blocks in separator
 };
 
 }

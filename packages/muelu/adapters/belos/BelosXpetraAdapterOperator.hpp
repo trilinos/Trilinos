@@ -51,6 +51,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 
 #ifdef HAVE_XPETRA_EPETRA
+#include <Epetra_config.h>
 #include <BelosOperator.hpp>
 #endif
 
@@ -71,12 +72,27 @@ namespace Belos {
     XpetraOpFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  // TODO: doc
-  // TODO: should be it named XpetraOp (if Xpetra used by other packages) ?
+  //@}
+
+  //! @name Belos operator for Xpetra
+  //@{
+
+  /*! @class XpetraOp
+   *
+   * @brief Implementation of the Belos::XpetraOp. It derives from the Belos::OperatorT templated on
+   *        the Xpetra::MultiVector and the Tpetra::MultiVector (if Teptra is enabled)
+   *        Note, in contrast to Belos::MueLuOp this operator administrates an Xpetra::Matrix<> object
+   *        and implements the effect of a vector applied to the stored matrix.
+   *
+   *        The Belos::OperatorT class is a generalization of the Belos::Operator<> class, which
+   *        deals with any kind of vector (not only Belos::MultiVec as the Belos::Operator<> interface does).
+   *
+   *        This is the general implementation for Tpetra only.
+   */
   template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class XpetraOp :
     public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #ifdef HAVE_XPETRA_TPETRA
@@ -143,12 +159,25 @@ namespace Belos {
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
   };
 
+#ifdef HAVE_MUELU_EPETRA
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  /*! @class XpetraOp
+   *
+   * @brief Implementation of the Belos::XpetraOp. It derives from the Belos::OperatorT templated on
+   *        the Xpetra::MultiVector and/or the Tpetra::MultiVector (if Teptra is enabled) and/or the
+   *        EpetraMultiVector (if Epetra is enabled)
+   *
+   *        This is the specialization for <double,int,int,Xpetra::EpetraNode>
+   */
   template <>
-  class XpetraOp<double, int, int>
+  class XpetraOp<double, int, int, Xpetra::EpetraNode>
     :
-    public OperatorT<Xpetra::MultiVector<double, int, int> >
+    public OperatorT<Xpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
 #ifdef HAVE_XPETRA_TPETRA
-    , public OperatorT<Tpetra::MultiVector<double, int, int> >
+#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+    , public OperatorT<Tpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
+#endif
 #endif
 #ifdef HAVE_XPETRA_EPETRA
     , public OperatorT<Epetra_MultiVector>
@@ -157,7 +186,7 @@ namespace Belos {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
+    typedef Xpetra::EpetraNode Node;
 
   public:
 
@@ -176,6 +205,8 @@ namespace Belos {
     }
 
 #ifdef HAVE_XPETRA_TPETRA
+#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
                          "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported.");
@@ -190,6 +221,7 @@ namespace Belos {
 
       Op_->apply(tX,tY);
     }
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -219,6 +251,106 @@ namespace Belos {
 
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
   };
+#endif // !EPETRA_NO_32BIT_GLOBAL_INDICES
+#endif // HAVE_MUELU_EPETRA
+
+#ifdef HAVE_MUELU_EPETRA
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  /*! @class XpetraOp
+   *
+   * @brief Implementation of the Belos::XpetraOp. It derives from the Belos::OperatorT templated on
+   *        the Xpetra::MultiVector and/or the Tpetra::MultiVector (if Teptra is enabled) and/or the
+   *        EpetraMultiVector (if Epetra64 is enabled). Please be aware that Epetra64 is not supported
+   *        by MueLu. Don't expect it to work or produce reasonable results.
+   *
+   *        This is the specialization for <double,int,long long,Xpetra::EpetraNode>
+   */
+  template <>
+  class XpetraOp<double, int, long long, Xpetra::EpetraNode>
+    :
+    public OperatorT<Xpetra::MultiVector<double, int, long long, Xpetra::EpetraNode> >
+#ifdef HAVE_XPETRA_TPETRA
+#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
+    , public OperatorT<Tpetra::MultiVector<double, int, long long, Xpetra::EpetraNode> >
+#endif
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+    , public OperatorT<Epetra_MultiVector>
+#endif
+  {
+    typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef long long GlobalOrdinal;
+    typedef Xpetra::EpetraNode Node;
+
+  public:
+
+    XpetraOp(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & Op) : Op_(Op) {}
+
+    virtual ~XpetraOp() {};
+
+    void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
+                         "Belos::XpetraOp::Apply, transpose mode != NOTRANS not supported.");
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      y.putScalar(0.0);
+
+      Op_->apply(x,y);
+    }
+
+#ifdef HAVE_XPETRA_TPETRA
+#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
+    void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
+                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported.");
+
+      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
+
+      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
+      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      tY.putScalar(0.0);
+
+      Op_->apply(tX,tY);
+    }
+#endif
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
+    /*! \brief This routine takes the Epetra_MultiVector \c x and applies the operator
+      to it resulting in the Epetra_MultiVector \c y, which is returned.
+      \note It is expected that any problem with applying this operator to \c x will be
+      indicated by an std::exception being thrown.
+    */
+    void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
+                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported.");
+
+      Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
+
+      const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> tX(rcpFromRef(temp_x));
+      Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>       tY(rcpFromRef(y));
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      tY.putScalar(0.0);
+
+      Op_->apply(tX,tY);
+    }
+#endif
+
+  private:
+
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
+  };
+#endif // !EPETRA_NO_64BIT_GLOBAL_INDICES
+#endif // HAVE_MUELU_EPETRA
+
+  //@}
 
 } // namespace Belos
 

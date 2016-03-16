@@ -81,9 +81,9 @@ int ex_put_attr_param (int   exoid,
   int numattrdim;
   
   /* Determine index of obj_id in obj_type id array */
-  if (obj_type == EX_NODAL)
+  if (obj_type == EX_NODAL) {
     obj_id_ndx = 0;
-  else {
+  } else {
     obj_id_ndx = ex_id_lkup(exoid,obj_type,obj_id);
     
     if (exerrval != 0) {
@@ -93,13 +93,13 @@ int ex_put_attr_param (int   exoid,
 		ex_name_of_object(obj_type),obj_id,exoid);
 	ex_err("ex_put_attr_param",errmsg,EX_NULLENTITY);
 	return (EX_WARN);              /* no attributes for this object */
-      } else {
+      } 
 	sprintf(errmsg,
 		"Warning: failed to locate %s id %"PRId64" in id array in file id %d",
 		ex_name_of_object(obj_type),obj_id, exoid);
 	ex_err("ex_put_attr_param",errmsg,exerrval);
 	return (EX_WARN);
-      }
+      
     }
   }
 

@@ -69,7 +69,7 @@ private:
 public:
 
   // Constructor
-  DoubleDogLeg( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0.0) {
+  DoubleDogLeg( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
     cpt_ = Teuchos::rcp(new CauchyPoint<Real>(parlist));
   }
 
@@ -83,15 +83,15 @@ public:
 
   void run( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
             const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) { 
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1), zero(0), half(0.5), p2(0.2), p8(0.8), two(2);
 
     // Compute quasi-Newton step
     pObj.reducedInvHessVec(*s_,grad,x,grad,x,tol);
-    s_->scale(-1.0);
+    s_->scale(-one);
     Real sNnorm = s_->norm();
     Real tmp    = s_->dot(grad.dual());
     bool negCurv = false;
-    if ( tmp >= 0.0 ) {
+    if ( tmp >= zero ) {
       negCurv = true;
     }
     Real gsN = std::abs(tmp);
@@ -100,27 +100,27 @@ public:
       cpt_->run(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
       pRed_ = cpt_->getPredictedReduction();
       iflag = 2;
-    }  
+    }
     else {
       // Approximately solve trust region subproblem using double dogleg curve
       if (sNnorm <= del) {        // Use the quasi-Newton step
         s.set(*s_); 
         snorm = sNnorm;
-        pRed_ = 0.5*gsN;
+        pRed_ = half*gsN;
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
         pObj.reducedHessVec(*Hp_,grad.dual(),x,grad,x,tol);
-        Real alpha  = 0.0;
-        Real beta   = 0.0;
+        Real alpha  = zero;
+        Real beta   = zero;
         Real gnorm2 = gnorm*gnorm;
         Real gBg    = grad.dot(*Hp_);
         Real gamma1 = gnorm/gBg;
         Real gamma2 = gnorm/gsN;
-        Real eta    = 0.8*gamma1*gamma2 + 0.2;
-        if (eta*sNnorm <= del || gBg <= 0.0) { // Dogleg Point is inside trust region
+        Real eta    = p8*gamma1*gamma2 + p2;
+        if (eta*sNnorm <= del || gBg <= zero) { // Dogleg Point is inside trust region
           alpha = del/sNnorm;
-          beta  = 0.0;
+          beta  = zero;
           s.set(*s_);
           s.scale(alpha);
           snorm = del;
@@ -128,7 +128,7 @@ public:
         }
         else {
           if (gnorm2*gamma1 >= del) { // Cauchy Point is outside trust region
-            alpha = 0.0;
+            alpha = zero;
             beta  = -del/gnorm;
             s.set(grad.dual()); 
             s.scale(beta); 
@@ -139,23 +139,23 @@ public:
             s.set(grad.dual());
             s.scale(-gamma1*gnorm);
             v_->set(s);
-            v_->scale(-1.0);
+            v_->scale(-one);
             v_->axpy(eta,*s_);
             Real wNorm = v_->dot(*v_);
-            Real sigma = del*del-std::pow(gamma1*gnorm,2.0);
+            Real sigma = del*del-std::pow(gamma1*gnorm,two);
             Real phi   = s.dot(*v_);
             Real theta = (-phi + std::sqrt(phi*phi+wNorm*sigma))/wNorm;
             s.axpy(theta,*v_); 
             snorm = del;
             alpha = theta*eta;
-            beta  = (1.0-theta)*(-gamma1*gnorm);
+            beta  = (one-theta)*(-gamma1*gnorm);
             iflag = 3;
           }
         }
-        pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
+        pRed_ = -(alpha*(half*alpha-one)*gsN + half*beta*beta*gBg + beta*(one-alpha)*gnorm2);
       }
-      TrustRegion<Real>::setPredictedReduction(pRed_);
     }
+    TrustRegion<Real>::setPredictedReduction(pRed_);
   }
 };
 

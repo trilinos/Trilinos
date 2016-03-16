@@ -61,6 +61,10 @@
 
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="CVaR" />
+      <!-- ===========  EXPONENTIAL UTILITY  =========== -->
+      <ParameterList name="Exponential Utility">
+        <Parameter name="Rate" type="double" value="2.0" />
+      </ParameterList>
       <!-- ===========  CVAR SUBLIST  =========== -->
       <ParameterList name="CVaR">
         <Parameter name="Confidence Level"             type="double" value="0.8"   />

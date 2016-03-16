@@ -87,6 +87,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
+#include "stk_mesh/base/FieldParallel.hpp"
 
 
 namespace {
@@ -511,8 +512,15 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                     stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], elem_side[is*2+1]);
 
                     if (par_dimen == 1) {
-                      stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_id, elem, side_ordinal);
-                        bulk.change_entity_parts( side, add_parts );
+                        if(bulk.mesh_meta_data().spatial_dimension()==2 && behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
+                        {
+                            stk::mesh::declare_element_side_using_graph(bulk, side_id, elem, side_ordinal, add_parts);
+                        }
+                        else
+                        {
+                            stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_id, elem, side_ordinal);
+                            bulk.change_entity_parts( side, add_parts );
+                        }
                     }
                     else if (par_dimen == 2) {
                         if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CLASSIC) {
@@ -522,6 +530,9 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT) {
                             stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_id,stk::mesh::PartVector(1,sb_part));
                             stk::mesh::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
+                        }
+                        else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
+                            stk::mesh::declare_element_side_using_graph(bulk, side_id, elem, side_ordinal, add_parts);
                         }
                     }
                 }
@@ -1450,7 +1461,7 @@ namespace stk {
           bulk_data().deactivate_field_updating();
         }
 
-        bool i_started_modification_cycle = bulk_data().modification_begin();
+        bool i_started_modification_cycle = bulk_data().modification_begin("Mesh Read");
 
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
         bool ints64bit = db_api_int_size(region) == 8;
@@ -1463,7 +1474,6 @@ namespace stk {
 #endif
           process_elementblocks(*region, bulk_data(), zero);
           process_nodesets(*region,      bulk_data(), zero);
-          process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
         } else {
           int zero = 0;
 #ifdef STK_BUILT_IN_SIERRA
@@ -1473,16 +1483,28 @@ namespace stk {
 #endif
           process_elementblocks(*region, bulk_data(), zero);
           process_nodesets(*region,      bulk_data(), zero);
-          process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
         }
 
-        if (i_started_modification_cycle) {
-          bulk_data().modification_end();
+        bulk_data().resolve_node_sharing();
+
+        if(m_sideset_face_creation_behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
+        {
+            process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
+            bool saveOption = bulk_data().use_entity_ids_for_resolving_sharing();
+            bulk_data().set_use_entity_ids_for_resolving_sharing(true);
+            bulk_data().modification_end_after_node_sharing_resolution();
+            bulk_data().set_use_entity_ids_for_resolving_sharing(saveOption);
+        }
+        else
+        {
+            bulk_data().initialize_graph();
+            process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
+            bulk_data().modification_end_after_node_sharing_resolution();
         }
 
-        if (region->get_property("state_count").get_int() == 0) {
-          region->get_database()->release_memory();
-        }
+        // Not sure if this is needed anymore. Don't think it'll be called with a nested modification cycle
+        if(!i_started_modification_cycle)
+            bulk_data().modification_begin();
       }
 
       void StkMeshIoBroker::populate_field_data()
@@ -1511,6 +1533,10 @@ namespace stk {
           process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
           process_nodesets_df(*region,      bulk_data(), zero);
           process_sidesets_df(*region,      bulk_data());
+        }
+
+        if (region->get_property("state_count").get_int() == 0) {
+          region->get_database()->release_memory();
         }
       }
 
@@ -1550,17 +1576,16 @@ namespace stk {
         // to preserve behavior for callers of this method, don't do the
         // delay-field-data-allocation optimization.
         // If want the optimization, call the population_mesh/populate_field_data methods separately.
-        bool delay_field_data_allocation = false;
 
-        //- This modifcation begin/end should not be needed, but a percept test fails without it...
-        bool i_started = bulk_data().modification_begin();
+        bool delay_field_data_allocation = false;
         populate_mesh(delay_field_data_allocation);
+
         populate_field_data();
-        if (i_started) {
-          bool saveOption = bulk_data().use_entity_ids_for_resolving_sharing();
-          bulk_data().set_use_entity_ids_for_resolving_sharing(true);
-          bulk_data().modification_end();
-          bulk_data().set_use_entity_ids_for_resolving_sharing(saveOption);
+
+        if(m_bulk_data->is_automatic_aura_on())
+        {
+            std::vector< const stk::mesh::FieldBase *> fields(m_meta_data->get_fields().begin(), m_meta_data->get_fields().end());
+            stk::mesh::communicate_field_data(m_bulk_data->aura_ghosting(), fields);
         }
       }
 

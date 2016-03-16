@@ -4,6 +4,6 @@
 # optional TPLs.
 
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
-  LIB_REQUIRED_PACKAGES KokkosCore KokkosContainers TeuchosCore TeuchosComm KokkosAlgorithms
+  LIB_REQUIRED_PACKAGES KokkosCore KokkosContainers TeuchosCore TeuchosComm KokkosAlgorithms 
   LIB_OPTIONAL_TPLS quadmath
 )

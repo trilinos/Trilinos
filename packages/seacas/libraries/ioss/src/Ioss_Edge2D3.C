@@ -76,7 +76,7 @@ Ioss::Edge2D3::Edge2D3()
   //  Ioss::ElementTopology::alias("edge2d3", "LINE_3");
 }
 
-Ioss::Edge2D3::~Edge2D3() {}
+Ioss::Edge2D3::~Edge2D3() = default;
 
 int Ioss::Edge2D3::parametric_dimension()           const {return  1;}
 int Ioss::Edge2D3::spatial_dimension()           const {return  2;}
@@ -118,8 +118,9 @@ Ioss::IntVector Ioss::Edge2D3::face_connectivity(int /* face_number */) const
 Ioss::IntVector Ioss::Edge2D3::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++)
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
+}
   return connectivity;
 }
 

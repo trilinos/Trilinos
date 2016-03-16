@@ -150,8 +150,8 @@ public:
     adaptive_      = list.get("Adaptive Sampling",false);
     numNewSamples_ = list.get("Number of New Samples Per Adaptation",0);
     print_         = list.get("Output to Screen",false);
-    ptol_          = list.get("Probability Tolerance",1.e2*std::sqrt(ROL_EPSILON));
-    atol_          = list.get("Atom Tolerance",1.e2*std::sqrt(ROL_EPSILON));
+    ptol_          = list.get("Probability Tolerance",1.e2*std::sqrt(ROL_EPSILON<Real>()));
+    atol_          = list.get("Atom Tolerance",1.e2*std::sqrt(ROL_EPSILON<Real>()));
     print_        *= !SampleGenerator<Real>::batchID();
     // Compute batch local number of samples
     int rank    = (int)SampleGenerator<Real>::batchID();
@@ -192,9 +192,24 @@ public:
       Teuchos::RCP<Algorithm<Real> > algo;
       initialize_optimizer(algo,list,optProb);
       if ( optProb ) {
-        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(&list,false);
-        ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,l,plist);
-        algo->run(optProblem,print_);
+        std::string type = list.sublist("Step").get("Type","Trust Region");
+        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcpFromRef(list);
+        Teuchos::RCP<OptimizationProblem<Real> > optProblem;
+        if (type == "Augmented Lagrangian") {
+          Teuchos::RCP<Objective<Real> > augLag
+            = Teuchos::rcp(new AugmentedLagrangian<Real>(obj,con,*l,1.,*x,l->dual(),parlist));
+          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(augLag,x,bnd,con,l,plist));
+        }
+        else if (type == "Moreau-Yosida Penalty") {
+          Teuchos::RCP<Objective<Real> > myPen
+            = Teuchos::rcp(new MoreauYosidaPenalty<Real>(obj,bnd,*x,10.0));
+          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(myPen,x,bnd,con,l,plist));
+        }
+        else {
+          optProblem = Teuchos::rcp(new OptimizationProblem<Real>(obj,x,bnd,con,l,plist));
+        }
+        //ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,l,plist);
+        algo->run(*optProblem,print_);
       }
       else {
         algo->run(*x,*obj,*bnd,print_);
@@ -216,7 +231,7 @@ private:
     for (int j = 0; j < dimension_; j++) {
       mean = std::abs(dist_[j]->moment(1));
       var  = dist_[j]->moment(2) - mean*mean;
-      mean = ((mean > ROL_EPSILON) ? mean : std::sqrt(var));
+      mean = ((mean > ROL_EPSILON<Real>()) ? mean : std::sqrt(var));
       for (int i = 0; i < numMySamples_; i++) {
         typx[i*dimension_ + j] = 1./(mean*mean);
       }

@@ -177,7 +177,7 @@ alias install-targets
 # This rule provides a common name for the multiple install rules.
 
 explicit install-user-include ;
-alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include3 install-user-include4 install-user-include5 ;
+alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include2b install-user-include3 install-user-include4 install-user-include5 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -202,6 +202,13 @@ install install-user-include2
   : [ path.glob-tree $(seacas-root)/libraries/exodus/cbind/include : *.h ]
   : <location>$(install-root)/seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus/cbind/include
+  ;
+
+explicit install-user-include2b ;
+install install-user-include2b
+  : $(seacas-root)/libraries/exodus/cbind/sierra/exodusII_meta.h
+  : <location>$(install-root)/seacas/include/exodus
+    <install-source-root>$(seacas-root)/libraries/exodus/cbind/sierra
   ;
 
 # This rule copies all headers it finds in the named directory of the
@@ -707,7 +714,6 @@ lib exodus
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/cbind/include
 	<define>PARALLEL_AWARE_EXODUS
-	<define>ENABLE_NETCDF4
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -721,14 +727,12 @@ lib exodus
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/cbind/include
 	<define>PARALLEL_AWARE_EXODUS
-	<define>ENABLE_NETCDF4
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <include>$(sierra-root)/seacas/include/exodus
 	<define>PARALLEL_AWARE_EXODUS
-	<define>ENABLE_NETCDF4
     ]
   ;
 

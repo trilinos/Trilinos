@@ -315,7 +315,6 @@ int main(int narg, char *arg[]) {
       pparams.set("ghost_layers",layers);
       pparams.set("ghost_bridge",m->getDimension()-1);
     }
-    params.set("compute_metrics","yes");
     adjacency="vertex";
   }
   else if (action=="zoltan_hg") {
@@ -356,24 +355,27 @@ int main(int narg, char *arg[]) {
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
   typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
   typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
   
   double time_1=PCU_Time();
-  inputAdapter_t ia(*CommT, m,primary,adjacency,needSecondAdj);  
+  inputAdapter_t *ia =
+    new inputAdapter_t(*CommT, m,primary,adjacency,needSecondAdj);  
   double time_2=PCU_Time();
  
   
-  inputAdapter_t::scalar_t* arr = new inputAdapter_t::scalar_t[ia.getLocalNumOf(ia.getPrimaryEntityType())];
-  for (size_t i=0;i<ia.getLocalNumOf(ia.getPrimaryEntityType());i++) {
+  inputAdapter_t::scalar_t* arr =
+    new inputAdapter_t::scalar_t[ia->getLocalNumOf(ia->getPrimaryEntityType())];
+  for (size_t i=0;i<ia->getLocalNumOf(ia->getPrimaryEntityType());i++) {
     arr[i]=PCU_Comm_Self()+1;
   }
   
   const inputAdapter_t::scalar_t* weights=arr;
-  ia.setWeights(ia.getPrimaryEntityType(),weights,1);
+  ia->setWeights(ia->getPrimaryEntityType(),weights,1);
   
 
   if (ghost_metric) {
-    const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(&ia);
+    const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(ia);
     Zoltan2::modelFlag_t graphFlags_;
     RCP<Zoltan2::Environment> env;
     try{
@@ -394,7 +396,7 @@ int main(int narg, char *arg[]) {
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";
 
-    Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
+    Zoltan2::PartitioningProblem<inputAdapter_t> problem(ia, &params, CommT);
 
     // call the partitioner
     if (me == 0) cout << "Calling the partitioner ... \n\n";
@@ -405,16 +407,28 @@ int main(int narg, char *arg[]) {
 
     if (me==0) cout << "Applying Solution to Mesh\n\n";
     apf::Mesh2** new_mesh = &m;
-    ia.applyPartitioningSolution(m,new_mesh,problem.getSolution());
+    ia->applyPartitioningSolution(m,new_mesh,problem.getSolution());
     
-    
+    // An environment.  This is usually create by the problem.
 
-    if (!me) problem.printMetrics(cout);
+    RCP<const Zoltan2::Environment> env = problem.getEnvironment();
+
+    const baseMeshAdapter_t *bia = dynamic_cast<const baseMeshAdapter_t *>(ia);
+
+    RCP<const baseMeshAdapter_t> rcpbia = rcp(bia);
+
+    // create metric object (also usually create by a problem)
+    RCP<quality_t> metricObject =
+      rcp(new quality_t(env, CommT, rcpbia, &problem.getSolution(), false));
+
+    if (!me) {
+      metricObject->printMetrics(cout);
+    }
   }
   else {
     if (me == 0) cout << "Creating coloring problem ... \n\n";
 
-    Zoltan2::ColoringProblem<inputAdapter_t> problem(&ia, &params);
+    Zoltan2::ColoringProblem<inputAdapter_t> problem(ia, &params);
 
     // call the partitioner
     if (me == 0) cout << "Calling the coloring algorithm ... \n\n";
@@ -429,7 +443,7 @@ int main(int narg, char *arg[]) {
   double time_4=PCU_Time();
   
   //Destroy the adapter
-  ia.destroy();
+  ia->destroy();
   delete [] arr;
   //Parma_PrintPtnStats(m,"after");
   

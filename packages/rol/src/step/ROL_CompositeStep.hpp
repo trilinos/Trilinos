@@ -140,6 +140,9 @@ private:
   }
 
 public:
+  using Step<Real>::initialize;
+  using Step<Real>::compute;
+  using Step<Real>::update;  
 
   virtual ~CompositeStep() {}
 
@@ -222,7 +225,7 @@ public:
     algo_state.ncval = 0;
     algo_state.ngrad = 0;
 
-    Real zerotol = std::sqrt(ROL_EPSILON);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
 
     // Update objective and constraint.
     obj.update(x,true,algo_state.iter);
@@ -248,7 +251,7 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con,
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    Real zerotol = std::sqrt(ROL_EPSILON);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
     Real f = 0.0;
     Teuchos::RCP<Vector<Real> > n   = xvec_->clone();
     Teuchos::RCP<Vector<Real> > c   = cvec_->clone();
@@ -297,10 +300,16 @@ public:
                AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 
-    Real zero = 0.0;
-    Real half = 0.5;
-    Real zerotol = std::sqrt(ROL_EPSILON);//zero;
-    Real ratio = zero;
+    Real zero(0);
+    Real one(1);
+    Real two(2);
+    Real seven(7);
+    Real half(0.5);
+    Real zp9(0.9);
+    Real zp8(0.8);
+    Real em12(1e-12);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());//zero;
+    Real ratio(zero);
 
     Teuchos::RCP<Vector<Real> > g   = gvec_->clone();
     Teuchos::RCP<Vector<Real> > ajl = gvec_->clone();
@@ -310,16 +319,16 @@ public:
     // Determine if the step gives sufficient reduction in the merit function,
     // update the trust-region radius.
     ratio = ared_/pred_;
-    if ((std::abs(ared_) < 1e-12) && std::abs(pred_) < 1e-12) {
-      ratio = 1.0;
+    if ((std::abs(ared_) < em12) && std::abs(pred_) < em12) {
+      ratio = one;
     }
     if (ratio >= eta_) {
       x.plus(s);
-      if (ratio >= 0.9) {
-          Delta_ = std::max(7.0*snorm_, Delta_);
+      if (ratio >= zp9) {
+          Delta_ = std::max(seven*snorm_, Delta_);
       }
-      else if (ratio >= 0.8) {
-          Delta_ = std::max(2.0*snorm_, Delta_);
+      else if (ratio >= zp8) {
+          Delta_ = std::max(two*snorm_, Delta_);
       }
       obj.update(x,true,algo_state.iter);
       con.update(x,true,algo_state.iter);
@@ -456,7 +465,8 @@ public:
   */
   void computeLagrangeMultiplier(Vector<Real> &l, const Vector<Real> &x, const Vector<Real> &gf, EqualityConstraint<Real> &con) {
 
-    Real zerotol = std::sqrt(ROL_EPSILON);
+    Real one(1);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>());
     std::vector<Real> augiters;
 
     if (infoLM_) {
@@ -473,7 +483,7 @@ public:
     Teuchos::RCP<Vector<Real> > b1 = gvec_->clone();
     Teuchos::RCP<Vector<Real> > b2 = cvec_->clone();
     // b1 is the negative gradient of the Lagrangian
-    b1->set(gf); b1->plus(*ajl); b1->scale(-1.0);
+    b1->set(gf); b1->plus(*ajl); b1->scale(-one);
     // b2 is zero
     b2->zero();
 
@@ -528,9 +538,9 @@ public:
       std::cout << hist.str();
     }
 
-    Real zero    = 0.0;
-    Real one     = 1.0;
-    Real zerotol = std::sqrt(ROL_EPSILON); //zero;
+    Real zero(0);
+    Real one(1);
+    Real zerotol = std::sqrt(ROL_EPSILON<Real>()); //zero;
     std::vector<Real> augiters;
 
     /* Compute Cauchy step nCP. */
@@ -637,14 +647,14 @@ public:
     /* Initialization of the CG step. */
     bool orthocheck = true;  // set to true if want to check orthogonality
                              // of Wr and r, otherwise set to false
-    Real tol_ortho  = 0.5;   // orthogonality measure; represets a bound on norm( \hat{S}, 2), where
+    Real tol_ortho = 0.5;    // orthogonality measure; represets a bound on norm( \hat{S}, 2), where
                              // \hat{S} is defined in Heinkenschloss/Ridzal., "A Matrix-Free Trust-Region SQP Method"
-    Real S_max      = 1.0;   // another orthogonality measure; norm(S) needs to be bounded by
+    Real S_max = 1.0;        // another orthogonality measure; norm(S) needs to be bounded by
                              // a modest constant; norm(S) is small if the approximation of
                              // the null space projector is good
-    Real zero    =  0.0;
-    Real one     =  1.0;
-    Real zerotol =  std::sqrt(ROL_EPSILON);
+    Real zero(0);
+    Real one(1);
+    Real zerotol =  std::sqrt(ROL_EPSILON<Real>());
     std::vector<Real> augiters;
     iterCG_ = 1;
     flagCG_ = 0;
@@ -680,7 +690,7 @@ public:
     std::vector<Teuchos::RCP<Vector<Real > > >  rs;   // stores duals of residuals
     std::vector<Teuchos::RCP<Vector<Real > > >  Wrs;  // stores duals of projected residuals
 
-    Real rptol = 1e-12;
+    Real rptol(1e-12);
 
     if (infoTS_) {
       std::stringstream hist;
@@ -793,7 +803,7 @@ public:
             T(i,j)    = Wrr(i,j)/(normWr[i]*normWr[j]);
             Tm1(i,j)  = T(i,j);
             if (i==j) {
-              Tm1(i,j) = Tm1(i,j) - 1.0;
+              Tm1(i,j) = Tm1(i,j) - one;
             }
           }
         }
@@ -807,7 +817,7 @@ public:
           lapack.GETRI(iterCG_, T.values(), T.stride(), &ipiv[0], &work[0], 3*iterCG_, &info);
           Tm1 = T;
           for (int i=0; i<iterCG_; i++) {
-            Tm1(i,i) = Tm1(i,i) - 1.0;
+            Tm1(i,i) = Tm1(i,i) - one;
           }
           if (Tm1.normOne() > S_max) {
             flagCG_ = 4;
@@ -981,7 +991,7 @@ public:
     Real one       =  1.0;
     Real two       =  2.0;
     Real half      =  one/two;
-    Real zerotol   =  std::sqrt(ROL_EPSILON);
+    Real zerotol   =  std::sqrt(ROL_EPSILON<Real>());
     std::vector<Real> augiters;
 
     Real pred          = zero;
@@ -1192,8 +1202,10 @@ public:
     fdiff = f - f_new;
     // Heuristic 1: If fdiff is very small compared to f, set it to 0,
     // in order to prevent machine precision issues.
-    if (std::abs(fdiff / (f+1e-24)) < tol_fdiff) {
-      fdiff = 1e-14;
+    Real em24(1e-24);
+    Real em14(1e-14);
+    if (std::abs(fdiff / (f+em24)) < tol_fdiff) {
+      fdiff = em14;
     }
     // change ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
     // change ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(std::pow(c.norm(),2) - std::pow(c_new.norm(),2));

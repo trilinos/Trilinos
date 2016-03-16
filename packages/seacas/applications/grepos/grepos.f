@@ -265,18 +265,13 @@ C     --Read information from the database and close file
 
       CALL DBIELB (NDBIN, '*', 1, NELBLK,
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
-     &     A(1), IA(1), KLINK, KATRIB, C(KBKTYP), *60)
+     &     A(1), IA(1), KLINK, KATRIB, C(KBKTYP),
+     *     numatt, *60)
       
       call CHKTOP(NELBLK, C(KBKTYP), COMTOP)
       call getnam(NDBIN, 1, nelblk, C(KNAMEB))
 
 C ... Attribute names...
-C ... get total attribute count...
-      numatt = 0
-      do i=1, nelblk
-        numatt = numatt + ia(knatr+i-1)
-      end do
-      
       call mcrsrv('NAMATT', KNAMATT, maxnam*NUMATT)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
@@ -403,6 +398,12 @@ C     .. Set up status arrays for element to nodal variable conversion
 
  25   CONTINUE
 
+        goff = 0
+        noff = goff + (nvargl * maxnam)
+        eoff = noff + (nvarnp * maxnam)
+        moff = eoff + (nvarel * maxnam)
+        soff = moff + (nvarns * maxnam)
+
       CALL COMAND (NDBIN, EXECUT, 
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &     IA(KIDNS),  IA(KNNNS), IA(KNDNPS),IA(KIXNNS),IA(KIXDNS),
@@ -415,7 +416,9 @@ C     .. Set up status arrays for element to nodal variable conversion
      &     IA(KIELBS), IA(KINPSS), IA(KIESSS),
      &     NQAREC, C(KQAREC), NINFO, c(kinfo), c(kbktyp),
      *     c(knameb), c(knamnp), c(knamss), c(knamatt),
-     &     c(knames+nvargl*maxnam), nvarnp, IA(KINOD2EL),
+     &     c(knames+goff), nvargl, c(knames+noff), nvarnp,
+     &     c(knames+eoff), nvarel, c(knames+moff), nvarns,
+     *     c(knames+soff), nvarss, IA(KINOD2EL),
      &     SWPSS, SMOOTH, USRSUB, CENTRD,
      &     NSTEPS, A(KTIMES), IA(KITIMS), A, IA, *60)
 

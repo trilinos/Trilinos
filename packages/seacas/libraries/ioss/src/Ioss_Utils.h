@@ -57,15 +57,13 @@ namespace Ioss { class SideBlock; }
 #define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
 #define IOSS_WARNING std::cerr
 
-#define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
-
 namespace Ioss {
   
   class Utils {
   public:
 
     Utils();
-    ~Utils() {}
+    ~Utils() = default;
     
     // Assignment operator
     // Copy constructor
@@ -197,12 +195,6 @@ namespace Ioss {
      * real mesh. This routine will add the mesh portion to a history file.
      */
     static void generate_history_mesh(Ioss::Region *region);
-
-    /*!
-     * This function is used to create the path to an output directory (or history, restart, etc.)
-     * if it does not exist.
-     */
-    static void create_path(const std::string& path);
   };
 
 }

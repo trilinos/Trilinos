@@ -364,7 +364,7 @@ setParameters (const Teuchos::ParameterList& params)
   //Do not think catch is the method for this. JDB
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
   try {
-    isExperimental_ = params.get<bool> ("fact: iluk experimental");
+    isExperimental_ = params.get<bool> ("fact: iluk experimental basker");
   }
   catch (InvalidParameterType&) {
     //Use default
@@ -374,7 +374,7 @@ setParameters (const Teuchos::ParameterList& params)
   }
  
   try {
-    basker_threads = params.get<int> ("fact: iluk experimental threads");
+    basker_threads = params.get<int> ("fact: iluk experimental basker threads");
   }
   catch (InvalidParameterType&) {
     basker_threads = 1;
@@ -382,6 +382,17 @@ setParameters (const Teuchos::ParameterList& params)
   catch (InvalidParameterName&) {
     basker_threads = 1;
   }
+
+  try {
+    basker_user_fill = (scalar_type) params.get<double>("fact: iluk experimental basker user_fill");
+  }
+  catch (InvalidParameterType&) {
+    basker_user_fill = (scalar_type) 0;
+  }
+  catch (InvalidParameterName&) {
+    basker_user_fill = (scalar_type) 0;
+  }
+
 
 #endif 
   
@@ -544,17 +555,60 @@ void RILUK<MatrixType>::initialize ()
     else
       {
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
+	typedef typename node_type::device_type    kokkos_device;
+	typedef typename kokkos_device::execution_space kokkos_exe;
+	static_assert( std::is_same< kokkos_exe, 
+		       Kokkos::OpenMP>::value, 
+		       "Kokkos node type not supported by experimental thread basker RILUK");
+
+
 	myBasker = rcp( new BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP>);
-	myBasker->Options.no_pivot   = true;
-	myBasker->Options.symmetric  = false;
-	myBasker->Options.realloc    = true;
-	myBasker->Options.btf        = false;
-	myBasker->Options.incomplete = true;
-	myBasker->Options.inc_lvl    = LevelOfFill_;
+	myBasker->Options.no_pivot     = true;
+	myBasker->Options.transpose    = true; //CRS not CCS
+	myBasker->Options.symmetric    = false;
+	myBasker->Options.realloc      = true;
+	myBasker->Options.btf          = false;
+	myBasker->Options.incomplete   = true;
+	myBasker->Options.inc_lvl      = LevelOfFill_;
+	myBasker->Options.user_fill    = basker_user_fill;
+	myBasker->Options.same_pattern = false;
 	myBasker->SetThreads(basker_threads);
+	basker_reuse = false;
+	
+	Teuchos::ArrayRCP<const size_t> r_ptr;
+	Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
+	Teuchos::ArrayRCP<const scalar_type>         val;
+	A_local_crs_->getAllValues(r_ptr, c_idx, val);
+	Teuchos::ArrayRCP<local_ordinal_type> rl_ptr(r_ptr.size()+1);
+        
+	for(int btemp = 0; btemp < r_ptr.size(); btemp++)
+	  rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
+
+	int basker_error = 
+	myBasker->Symbolic(
+	 ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
+	 ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
+	 ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
+	  (rl_ptr.getRawPtr()),
+	  (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
+	  (const_cast<scalar_type *>(val.getRawPtr()))
+			   );
+
+
+	/*
+	std::cout << "TEST SYM NNZ: " 
+		  << A_local_crs_->getNodeNumEntries()
+		  << std::endl;
+	*/
+
+	TEUCHOS_TEST_FOR_EXCEPTION(
+        basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
+	 "Error in basker Symbolic");
+
+
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(
-      0==1, std::logic_error, "Ifpack2::RILUK::initialize: "
+      0==0, std::logic_error, "Ifpack2::RILUK::initialize: "
       "Using experimental ILUK without compiling experimental "
       "Try again with -DIFPACK2_ILUK_EXPERIMENAL.");
 #endif
@@ -894,25 +948,61 @@ void RILUK<MatrixType>::compute ()
   } 
   else{
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
-    //We might want to set early so use less memory
-    Teuchos::ArrayRCP<const size_t> r_ptr;
-    Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
-    Teuchos::ArrayRCP<const scalar_type>         val;
-    A_local_crs_->getAllValues(r_ptr, c_idx, val);
-    Teuchos::ArrayRCP<local_ordinal_type> rl_ptr(r_ptr.size()+1);
-    
-    for(int btemp = 0; btemp < r_ptr.size(); btemp++)
-      rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
-   
-    myBasker->Symbolic(
-		       ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
-		       ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
-		       ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
-		       (rl_ptr.getRawPtr()),
-		       (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
-		       (const_cast<scalar_type *>(val.getRawPtr()))
-		       );
-     myBasker->Factor_Inc(0);
+    Teuchos::Time timerbasker ("RILUK::basercompute");
+    {
+      //
+      if(basker_reuse == false)
+	{
+	  //We don't have to reimport Matrix because same
+	  {
+	    //Teuchos::TimeMonitor timeMon(timerbasker);
+	    myBasker->Factor_Inc(0);
+	    basker_reuse = true;
+	  }
+	}
+      else
+	{
+	  //Do we need to import Matrix with file again?
+	  myBasker->Options.same_pattern = true;
+	  Teuchos::ArrayRCP<const size_t> r_ptr;
+	  Teuchos::ArrayRCP<const local_ordinal_type> c_idx;
+	  Teuchos::ArrayRCP<const scalar_type>         val;
+	  A_local_crs_->getAllValues(r_ptr, c_idx, val);
+	  Teuchos::ArrayRCP<local_ordinal_type> 
+	    rl_ptr(r_ptr.size()+1);
+        
+	  for(int btemp = 0; btemp < r_ptr.size(); btemp++)
+	    rl_ptr[btemp] = (local_ordinal_type) r_ptr[btemp];
+
+	  {
+	    //Teuchos::TimeMonitor timeMon(timerbasker);
+	  int basker_error = 
+	    myBasker->Factor(
+	 ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
+	 ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
+	 ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
+	 (rl_ptr.getRawPtr()),
+	 (const_cast<local_ordinal_type *>(c_idx.getRawPtr())),
+	 (const_cast<scalar_type *>(val.getRawPtr()))
+			   );
+
+	  /*
+	  std::cout << "numeric nnz: "
+		    << A_local_crs_->getNodeNumEntries()
+	  	    << std::endl;
+	  */
+
+	TEUCHOS_TEST_FOR_EXCEPTION(
+        basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
+	 "Error in basker compute");
+	  }
+
+	}
+    }
+    //std::cout << "Basker compute time " 
+    //	      << timerbasker.totalElapsedTime ()
+    //	      << std::endl;
+    //myBasker->DEBUG_PRINT();
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
        0==1, std::runtime_error,

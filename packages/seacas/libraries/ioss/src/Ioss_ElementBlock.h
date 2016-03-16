@@ -46,29 +46,29 @@ namespace Ioss {
   class ElementBlock : public EntityBlock {
   public:
     ElementBlock(DatabaseIO *io_database,
-		 const std::string& name, const std::string& element_type,
+		 const std::string& my_name, const std::string& element_type,
 		 int64_t number_elements);
 
-    ~ElementBlock();
+    ~ElementBlock() override;
 
-    std::string type_string() const {return "ElementBlock";}
-    std::string short_type_string() const {return "block";}
-    EntityType type() const {return ELEMENTBLOCK;}
+    std::string type_string() const override {return "ElementBlock";}
+    std::string short_type_string() const override {return "block";}
+    EntityType type() const override {return ELEMENTBLOCK;}
 
     /// Handle implicit properties -- These are calcuated from data stored
     /// in the grouping entity instead of having an explicit value assigned.
     /// An example would be 'element_block_count' for a region.
-    Property get_implicit_property(const std::string& name) const;
+    Property get_implicit_property(const std::string& my_name) const override;
 
-    void get_block_adjacencies(std::vector<std::string> &block_adjacency_list) const;
+    void get_block_adjacencies(std::vector<std::string> &block_adjacency) const;
     AxisAlignedBoundingBox get_bounding_box() const;
 
   protected:
     int64_t internal_get_field_data(const Field& field,
-				void *data, size_t data_size) const;
+				void *data, size_t data_size) const override;
 
     int64_t internal_put_field_data(const Field& field,
-				void *data, size_t data_size) const;
+				void *data, size_t data_size) const override;
   private:
 
   };

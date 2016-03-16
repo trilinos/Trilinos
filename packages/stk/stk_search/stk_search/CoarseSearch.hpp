@@ -116,8 +116,10 @@ void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain
   switch( method )
   {
   case BOOST_RTREE:
+#ifndef __NVCC__
     coarse_search_boost_rtree(domain,range,comm,intersections,communicateRangeBoxInfo);
     break;
+#endif
   case OCTREE:
     coarse_search_octree(domain,range,comm,intersections,communicateRangeBoxInfo);
     break;

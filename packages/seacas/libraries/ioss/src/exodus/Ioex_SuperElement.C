@@ -79,11 +79,11 @@ namespace {
 	// Value is zero if the dimension is not defined.
 	*count = 0;
 	return 0;
-      } else {
+      } 
 	errmsg << "ERROR: Failed to locate number of " << label
 	       << " in superelement file.";
 	IOSS_ERROR(errmsg);
-      }
+      
       return -1;
     }
 
@@ -100,9 +100,9 @@ namespace {
   const std::string SCALAR() { return std::string("scalar");}
 }
 
-Ioex::SuperElement::SuperElement(const std::string &filename,
+Ioex::SuperElement::SuperElement(std::string filename,
 				 const std::string &my_name)
-  : Ioss::GroupingEntity(nullptr, my_name, 1), fileName(filename),
+  : Ioss::GroupingEntity(nullptr, my_name, 1), fileName(std::move(filename)),
     numDOF(0), num_nodes(0), numEIG(0), num_dim(0), filePtr(-1)
 {
 
@@ -274,7 +274,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field& field,
 
 Ioex::SuperElement::~SuperElement()
 {
-  if (filePtr) nc_close(filePtr);
+  if (filePtr != 0) { nc_close(filePtr);
+}
 }
 
 int64_t Ioex::SuperElement::internal_put_field_data(const Ioss::Field& /* field */,
@@ -288,7 +289,7 @@ Ioss::Property Ioex::SuperElement::get_implicit_property(const std::string& the_
   if (Ioss::Utils::case_strcmp(the_name, "numDOF") == 0) {
     return Ioss::Property(the_name, (int)numDOF);
   }
-  else if (Ioss::Utils::case_strcmp(the_name, "num_nodes") == 0) {
+  if (Ioss::Utils::case_strcmp(the_name, "num_nodes") == 0) {
     return Ioss::Property(the_name, (int)num_nodes);
   }
   else if (Ioss::Utils::case_strcmp(the_name, "numEIG") == 0) {

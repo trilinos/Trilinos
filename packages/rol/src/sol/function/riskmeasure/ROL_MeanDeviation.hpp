@@ -99,27 +99,28 @@ private:
     gvp1_.clear(); gvp2_.clear(); gvp3_.clear();
     gvs1_.clear(); gvs2_.clear(); gvs3_.clear();
 
-    dev0_.resize(NumMoments_,0.0); dev1_.resize(NumMoments_,0.0);
-    dev2_.resize(NumMoments_,0.0); dev3_.resize(NumMoments_,0.0);
-    des0_.resize(NumMoments_,0.0); des1_.resize(NumMoments_,0.0);
-    des2_.resize(NumMoments_,0.0); des3_.resize(NumMoments_,0.0);
-    devp_.resize(NumMoments_,0.0);
-    gvp1_.resize(NumMoments_,0.0); gvp2_.resize(NumMoments_,0.0);
-    gvp3_.resize(NumMoments_,0.0);
-    gvs1_.resize(NumMoments_,0.0); gvs2_.resize(NumMoments_,0.0);
-    gvs3_.resize(NumMoments_,0.0);
+    dev0_.resize(NumMoments_); dev1_.resize(NumMoments_);
+    dev2_.resize(NumMoments_); dev3_.resize(NumMoments_);
+    des0_.resize(NumMoments_); des1_.resize(NumMoments_);
+    des2_.resize(NumMoments_); des3_.resize(NumMoments_);
+    devp_.resize(NumMoments_);
+    gvp1_.resize(NumMoments_); gvp2_.resize(NumMoments_);
+    gvp3_.resize(NumMoments_);
+    gvs1_.resize(NumMoments_); gvs2_.resize(NumMoments_);
+    gvs3_.resize(NumMoments_);
   }
 
   void clear(void) {
-    dev0_.assign(NumMoments_,0.0); dev1_.assign(NumMoments_,0.0);
-    dev2_.assign(NumMoments_,0.0); dev3_.assign(NumMoments_,0.0);
-    des0_.assign(NumMoments_,0.0); des1_.assign(NumMoments_,0.0);
-    des2_.assign(NumMoments_,0.0); des3_.assign(NumMoments_,0.0);
-    devp_.assign(NumMoments_,0.0);
-    gvp1_.assign(NumMoments_,0.0); gvp2_.assign(NumMoments_,0.0);
-    gvp3_.assign(NumMoments_,0.0);
-    gvs1_.assign(NumMoments_,0.0); gvs2_.assign(NumMoments_,0.0);
-    gvs3_.assign(NumMoments_,0.0);
+    Real zero(0);
+    dev0_.assign(NumMoments_,zero); dev1_.assign(NumMoments_,zero);
+    dev2_.assign(NumMoments_,zero); dev3_.assign(NumMoments_,zero);
+    des0_.assign(NumMoments_,zero); des1_.assign(NumMoments_,zero);
+    des2_.assign(NumMoments_,zero); des3_.assign(NumMoments_,zero);
+    devp_.assign(NumMoments_,zero);
+    gvp1_.assign(NumMoments_,zero); gvp2_.assign(NumMoments_,zero);
+    gvp3_.assign(NumMoments_,zero);
+    gvs1_.assign(NumMoments_,zero); gvs2_.assign(NumMoments_,zero);
+    gvs3_.assign(NumMoments_,zero);
 
     value_storage_.clear();
     gradient_storage_.clear();
@@ -133,9 +134,10 @@ public:
   MeanDeviation( Real order, Real coeff,
                  Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     order_.clear(); coeff_.clear();
-    order_.push_back((order < 2.0) ? 2.0 : order);
-    coeff_.push_back((coeff < 0.0) ? 1.0 : coeff);
+    order_.push_back((order < two) ? two : order);
+    coeff_.push_back((coeff < zero) ? one : coeff);
     NumMoments_ = order_.size();
     initialize();
   }
@@ -143,20 +145,22 @@ public:
   MeanDeviation( std::vector<Real> &order, std::vector<Real> &coeff, 
                  Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     order_.clear(); coeff_.clear();
     NumMoments_ = order.size();
     if ( NumMoments_ != coeff.size() ) {
-      coeff.resize(NumMoments_,1.0);
+      coeff.resize(NumMoments_,one);
     }
     for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+      order_.push_back((order[i] < two) ? two : order[i]);
+      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
     }
     initialize();
   }
 
   MeanDeviation( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(), firstReset_(true) {
+    Real zero(0), one(1), two(2);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation");
     // Get data from parameter list
@@ -168,11 +172,11 @@ public:
     NumMoments_ = order.size();
     order_.clear(); coeff_.clear();
     if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
-      coeff.resize(NumMoments_,1.0);
+      coeff.resize(NumMoments_,one);
     }
     for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
-      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+      order_.push_back((order[i] < two) ? two : order[i]);
+      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
     }
     // Build (approximate) positive function
     if ( list.get("Deviation Type","Upper") == "Upper" ) {
@@ -240,10 +244,10 @@ public:
 
   Real getValue(SampleGenerator<Real> &sampler) {
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_, ev = 0.0;
+    Real val = RiskMeasure<Real>::val_, ev(0);
     sampler.sumAll(&val,&ev,1);
     // Compute deviation
-    Real diff = 0.0, pf0 = 0.0, dev = 0.0;
+    Real diff(0), pf0(0), dev(0), one(1);
     for ( uint i = 0; i < weights_.size(); i++ ) {
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
@@ -253,7 +257,7 @@ public:
     }
     sampler.sumAll(&dev0_[0],&des0_[0],NumMoments_);
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      dev += coeff_[p]*std::pow(des0_[p],1.0/order_[p]);
+      dev += coeff_[p]*std::pow(des0_[p],one/order_[p]);
     }
     // Return mean plus deviation
     return ev + dev;
@@ -261,38 +265,38 @@ public:
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_, ev = 0.0;
+    Real val = RiskMeasure<Real>::val_, ev(0);
     sampler.sumAll(&val,&ev,1);
     // Compute deviation
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, c = 0.0;
+    Real diff(0), pf0(0), pf1(0), c(0), one(1), zero(0);
     for ( uint i = 0; i < weights_.size(); i++ ) {
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
       for ( uint p = 0; p < NumMoments_; p++ ) {
         dev0_[p] += weights_[i] * std::pow(pf0,order_[p]);
-        dev1_[p] += weights_[i] * std::pow(pf0,order_[p]-1.0) * pf1;
+        dev1_[p] += weights_[i] * std::pow(pf0,order_[p]-one) * pf1;
       }
     }
     sampler.sumAll(&dev0_[0],&des0_[0],NumMoments_);
     sampler.sumAll(&dev1_[0],&des1_[0],NumMoments_);
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      dev0_[p] = std::pow(des0_[p],1.0-1.0/order_[p]);
+      dev0_[p] = std::pow(des0_[p],one-one/order_[p]);
     }
     // Compute derivative
     for ( uint i = 0; i < weights_.size(); i++ ) {
-      c    = 0.0;
+      c    = zero;
       diff = value_storage_[i]-ev;
       pf0 = positiveFunction_->evaluate(diff,0);
       pf1 = positiveFunction_->evaluate(diff,1);
       for ( uint p = 0; p < NumMoments_; p++ ) {
-        if ( dev0_[p] > 0.0 ) {
-          c += coeff_[p]/dev0_[p] * (std::pow(pf0,order_[p]-1.0)*pf1 - des1_[p]);
+        if ( dev0_[p] > zero ) {
+          c += coeff_[p]/dev0_[p] * (std::pow(pf0,order_[p]-one)*pf1 - des1_[p]);
         }
       }
       dualVector1_->axpy(weights_[i]*c,*(gradient_storage_[i]));
     }
-    dualVector1_->axpy(1.0,*(RiskMeasure<Real>::g_));
+    dualVector1_->plus(*(RiskMeasure<Real>::g_));
     sampler.sumAll(*dualVector1_,*dualVector2_);
     // Set RiskVector
     (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector2_);
@@ -300,13 +304,14 @@ public:
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     // Compute expected value
-    Real val = RiskMeasure<Real>::val_, ev = 0.0;
-    sampler.sumAll(&val,&ev,1);
-    Real gv  = RiskMeasure<Real>::gv_, egv = 0.0;
-    sampler.sumAll(&gv,&egv,1);
+    std::vector<Real> myval(2), val(2);
+    myval[0] = RiskMeasure<Real>::val_;
+    myval[1] = RiskMeasure<Real>::gv_;
+    sampler.sumAll(&myval[0],&val[0],2);
+    Real ev = val[0], egv = val[1];
     // Compute deviation
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0;
-    Real cg = 0.0, ch = 0.0, diff1 = 0.0, diff2 = 0.0, diff3 = 0.0;
+    Real diff(0), pf0(0), pf1(0), pf2(0), zero(0), one(1), two(2);
+    Real cg(0), ch(0), diff1(0), diff2(0), diff3(0);
     for ( uint i = 0; i < weights_.size(); i++ ) {
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
@@ -314,9 +319,9 @@ public:
       pf2  = positiveFunction_->evaluate(diff,2);
       for ( uint p = 0; p < NumMoments_; p++ ) {
         dev0_[p] += weights_[i] * std::pow(pf0,order_[p]);
-        dev1_[p] += weights_[i] * std::pow(pf0,order_[p]-1.0) * pf1;
-        dev2_[p] += weights_[i] * std::pow(pf0,order_[p]-2.0) * pf1 * pf1;
-        dev3_[p] += weights_[i] * std::pow(pf0,order_[p]-1.0) * pf2;
+        dev1_[p] += weights_[i] * std::pow(pf0,order_[p]-one) * pf1;
+        dev2_[p] += weights_[i] * std::pow(pf0,order_[p]-two) * pf1 * pf1;
+        dev3_[p] += weights_[i] * std::pow(pf0,order_[p]-one) * pf2;
       }
     }
     sampler.sumAll(&dev0_[0],&des0_[0],NumMoments_);
@@ -324,8 +329,8 @@ public:
     sampler.sumAll(&dev2_[0],&des2_[0],NumMoments_);
     sampler.sumAll(&dev3_[0],&des3_[0],NumMoments_);
     for ( uint p = 0; p < NumMoments_; p++ ) {
-      devp_[p] = std::pow(des0_[p],2.0-1.0/order_[p]);
-      dev0_[p] = std::pow(des0_[p],1.0-1.0/order_[p]);
+      devp_[p] = std::pow(des0_[p],two-one/order_[p]);
+      dev0_[p] = std::pow(des0_[p],one-one/order_[p]);
     }
     for ( uint i = 0; i < value_storage_.size(); i++ ) {
       diff = value_storage_[i]-ev;
@@ -333,11 +338,11 @@ public:
       pf1  = positiveFunction_->evaluate(diff,1);
       pf2  = positiveFunction_->evaluate(diff,2);
       for ( uint p = 0; p < NumMoments_; p++ ) {
-        gvp1_[p] += weights_[i] * (std::pow(pf0,order_[p]-1.0)*pf1-des1_[p]) *
+        gvp1_[p] += weights_[i] * (std::pow(pf0,order_[p]-one)*pf1-des1_[p]) *
                      (gradvec_storage_[i] - egv);
-        gvp2_[p] += weights_[i] * (std::pow(pf0,order_[p]-2.0)*pf1*pf1-des2_[p]) *
+        gvp2_[p] += weights_[i] * (std::pow(pf0,order_[p]-two)*pf1*pf1-des2_[p]) *
                      (gradvec_storage_[i] - egv);
-        gvp3_[p] += weights_[i] * (std::pow(pf0,order_[p]-1.0)*pf2-des3_[p]) *
+        gvp3_[p] += weights_[i] * (std::pow(pf0,order_[p]-one)*pf2-des3_[p]) *
                      (gradvec_storage_[i] - egv);
       }
     }
@@ -346,20 +351,20 @@ public:
     sampler.sumAll(&gvp3_[0],&gvs3_[0],NumMoments_);
     // Compute derivative
     for ( uint i = 0; i < weights_.size(); i++ ) {
-      cg   = 1.0;
-      ch   = 0.0;
+      cg   = one;
+      ch   = zero;
       diff = value_storage_[i]-ev;
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
       pf2  = positiveFunction_->evaluate(diff,2);
       for ( uint p = 0; p < NumMoments_; p++ ) {
-        if ( dev0_[p] > 0.0 ) {
-          diff1 = std::pow(pf0,order_[p]-1.0)*pf1-des1_[p];
-          diff2 = std::pow(pf0,order_[p]-2.0)*pf1*pf1*(gradvec_storage_[i]-egv)-gvs2_[p];
-          diff3 = std::pow(pf0,order_[p]-1.0)*pf2*(gradvec_storage_[i]-egv)-gvs3_[p];
+        if ( dev0_[p] > zero ) {
+          diff1 = std::pow(pf0,order_[p]-one)*pf1-des1_[p];
+          diff2 = std::pow(pf0,order_[p]-two)*pf1*pf1*(gradvec_storage_[i]-egv)-gvs2_[p];
+          diff3 = std::pow(pf0,order_[p]-one)*pf2*(gradvec_storage_[i]-egv)-gvs3_[p];
           cg   += coeff_[p]*diff1/dev0_[p];
-          ch   += coeff_[p]*(((order_[p]-1.0)*diff2+diff3)/dev0_[p] -
-                    (order_[p]-1.0)*gvs1_[p]*diff1/devp_[p]);
+          ch   += coeff_[p]*(((order_[p]-one)*diff2+diff3)/dev0_[p] -
+                    (order_[p]-one)*gvs1_[p]*diff1/devp_[p]);
         }
       }
       dualVector1_->axpy(weights_[i]*ch,*(gradient_storage_[i]));

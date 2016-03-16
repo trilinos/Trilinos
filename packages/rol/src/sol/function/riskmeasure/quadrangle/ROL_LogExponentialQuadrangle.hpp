@@ -50,26 +50,41 @@ namespace ROL {
 
 template<class Real>
 class LogExponentialQuadrangle : public ExpectationQuad<Real> {
+private:
+  Real coeff_;
+
 public:
 
-  LogExponentialQuadrangle(void) : ExpectationQuad<Real>() {}
+  LogExponentialQuadrangle(const Real coeff = 1) : ExpectationQuad<Real>() {
+    Real zero(0), one(1);
+    coeff_ = ((coeff > zero) ? coeff : one);
+  }
+
+  LogExponentialQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
+    Real zero(0), one(1);
+    Teuchos::ParameterList &list
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Log-Exponential Quadrangle");
+    Real coeff = list.get("Rate",one);
+    coeff_ = ((coeff > zero) ? coeff : one);
+  }
 
   Real error(Real x, int deriv = 0) {
-    Real err = 0.0;
+    Real err(0), one(1), cx = coeff_*x;
     if (deriv==0) {
-      err = std::exp(x) - x - 1.0;
+      err = (std::exp(cx) - cx - one)/coeff_;
     }
     else if (deriv==1) {
-      err = std::exp(x) - 1.0;
+      err = std::exp(cx) - one;
     }
     else {
-      err = std::exp(x);
+      err = coeff_*std::exp(cx);
     }
     return err;
   }
 
   Real regret(Real x, int deriv = 0) {
-    Real X = ((deriv==0) ? x : ((deriv==1) ? 1.0 : 0.0));
+    Real zero(0), one(1);
+    Real X = ((deriv==0) ? x : ((deriv==1) ? one : zero));
     Real reg = error(x,deriv) + X;
     return reg;
   }

@@ -297,12 +297,13 @@ file ID %d",
       } else {
 	num_icm = ((int*)n_var_idx)[iproc+1] - ((int*)n_var_idx)[iproc];
       }
-      for(icm=0; icm < num_icm; icm++)
+      for(icm=0; icm < num_icm; icm++) {
 	if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
 	  ncnt_cmap += ((int64_t*)node_cmap_node_cnts)[((int64_t*)node_proc_ptrs)[iproc]+icm];
 	} else {
 	  ncnt_cmap += ((int*)node_cmap_node_cnts)[((int*)node_proc_ptrs)[iproc]+icm];
 	}
+}
     }
 
     if ((status = nc_def_dim(exoid, DIM_NCNT_CMAP, ncnt_cmap, &n_dimid[0])) != NC_NOERR) {
@@ -373,12 +374,13 @@ file ID %d",
       } else {
 	num_icm = ((int*)e_var_idx)[iproc+1] - ((int*)e_var_idx)[iproc];
       }
-      for(icm=0; icm < num_icm; icm++)
+      for(icm=0; icm < num_icm; icm++) {
 	if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
 	  ecnt_cmap += ((int64_t*)elem_cmap_elem_cnts)[((int64_t*)elem_proc_ptrs)[iproc]+icm];
 	} else {
 	  ecnt_cmap += ((int*)elem_cmap_elem_cnts)[((int*)elem_proc_ptrs)[iproc]+icm];
 	}
+}
     }
 
     /* Add dimensions for elemental communications maps */
@@ -493,10 +495,11 @@ file ID %d",
 	} else {
 	  start[0] = ((int*)n_var_idx)[iproc] + icm;
 	}
-	if (cnt > 0)
+	if (cnt > 0) {
 	  nmstat = 1;
-	else
+	} else {
 	  nmstat = 0;
+}
 
 	if ((status = nc_put_var1_int(exoid, n_varid[0], start, &nmstat)) != NC_NOERR) {
 	  exerrval = status;
@@ -608,10 +611,11 @@ file ID %d",
 	} else {
 	  start[0] = ((int*)e_var_idx)[iproc] + icm;
 	}
-	if (cnt > 0)
+	if (cnt > 0) {
 	  nmstat = 1;
-	else
+	} else {
 	  nmstat = 0;
+}
 
 	if ((status = nc_put_var1_int(exoid, e_varid[0], start, &nmstat)) != NC_NOERR) {
 	  exerrval = status;

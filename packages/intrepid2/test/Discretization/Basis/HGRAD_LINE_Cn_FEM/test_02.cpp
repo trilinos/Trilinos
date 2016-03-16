@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -329,7 +328,7 @@ int main(int argc, char *argv[]) {
         int info = 0;
         Teuchos::LAPACK<int, double> solver;
         //solver.GESV(numRows, 1, &fe_mat(0,0), numRows, &ipiv(0), &fe_vec(0), numRows, &info);
-        solver.GESV(numFields, 1, &fe_matrix[0], numFields, &ipiv(0), &rhs_and_soln_vector[0], numFields, &info);
+        solver.GESV(numFields, 1, &fe_matrix(0,0,0), numFields, &ipiv(0), &rhs_and_soln_vector(0,0), numFields, &info);
         /////////////////////////////
 
         ////////////////////////
@@ -348,9 +347,9 @@ int main(int argc, char *argv[]) {
 
         *outStream << "\nNorm-2 difference between exact solution polynomial of order "
                    << soln_order << " and finite element interpolant of order " << basis_order << ": "
-                   << RealSpaceTools<double>::vectorNorm(&interpolant[0], interpolant.dimension(1), NORM_TWO) << "\n";
+                   << RealSpaceTools<double>::vectorNorm(&interpolant(0,0), interpolant.dimension(1), NORM_TWO) << "\n";
 
-        if (RealSpaceTools<double>::vectorNorm(&interpolant[0], interpolant.dimension(1), NORM_TWO) > zero) {
+        if (RealSpaceTools<double>::vectorNorm(&interpolant(0,0), interpolant.dimension(1), NORM_TWO) > zero) {
           *outStream << "\n\nPatch test failed for solution polynomial order "
                      << soln_order << " and basis order " << basis_order << "\n\n";
           errorFlag++;

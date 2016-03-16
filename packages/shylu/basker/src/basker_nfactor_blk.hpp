@@ -150,13 +150,14 @@ namespace BaskerNS
     Int       ws_size  = thread_array[kid].iws_size;
     #endif
    
-    Int          bcol  = L.scol;  //begining col
+    //Int          bcol  = L.scol;  //begining col //NOT UD
     Int          brow  = L.srow;  //begining row //Note: move out in future
     Int          lval  = 0;
     Int          uval  = 0;
 
     Int i,j,k;
-    Int top, top1, maxindex, t; 
+    Int top, top1, maxindex, t;
+    //Int top, maxindex, t;
     Int lnnz, unnz, xnnz, lcnt, ucnt;
     Int cu_ltop, cu_utop;
    
@@ -166,8 +167,8 @@ namespace BaskerNS
 
     Int llnnz = L.nnz;
     Int uunnz = U.nnz;
-    Int scol  = L.scol; //Note: this seems like over kill --clean up variables
-    Int ecol  = L.ecol;
+    //Int scol  = L.scol; //Note: this seems like over kill --clean up variables
+    //Int ecol  = L.ecol; //Not used
     
     //Why did we need this?
     Int col_idx_offset = M.nnz;
@@ -214,7 +215,7 @@ namespace BaskerNS
 		 k+M.scol);
 	  //k);
 	    }
-	  #endif
+	   #endif
 	  value = 0.0;
 	  pivot = 0.0;
 	  //Why do we need?
@@ -722,7 +723,7 @@ namespace BaskerNS
    )
   {
     const Int b      = S(lvl)(kid);
-    const Int wsb    = S(0)(kid);
+    //const Int wsb    = S(0)(kid);
     BASKER_MATRIX &L = LL(b)(0);
     const Int U_col  = S(lvl)(kid);
     Int U_row        = LU_size(U_col)-1;
@@ -731,7 +732,7 @@ namespace BaskerNS
 	//U_row = (lvl==1)?(kid%2):S(l)(kid)%LU_size(U_col);
       }
     BASKER_MATRIX &U = LU(U_col)(U_row);
-    const Int brow   = L.srow;
+    //const Int brow   = L.srow;
 
 
     //printf("t_prune,k: %d  L: %d %d U: %d %d pivotrow: %d\n", 
@@ -868,6 +869,7 @@ namespace BaskerNS
     Int i, t, head, i1;
     Int start, end, done;
     
+
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("local_reach, L: %d %d  X: %d %d j: %d, kid: %d \n",
 	   b, 0, wsb, l, j, kid);
@@ -1259,8 +1261,8 @@ namespace BaskerNS
    
     INT_1DARRAY   ws    = LL(X_col)(X_row).iws;
     ENTRY_1DARRAY X     = LL(X_col)(X_row).ews;
-    const Int   ws_size = LL(X_col)(X_row).iws_size;
-    const Int   p_size  = LL(X_col)(X_row).p_size;
+    //const Int   ws_size = LL(X_col)(X_row).iws_size;
+    //const Int   p_size  = LL(X_col)(X_row).p_size;
    
 
     #ifdef BASKER_DEBUG_NFACTOR_BLK
@@ -1270,11 +1272,11 @@ namespace BaskerNS
 
    
     Int *color   = &(ws(0));
-    Int *pattern = &(color[ws_size]);
+    //Int *pattern = &(color[ws_size]);
 
-    const Int    brow  = L.srow;
-    const Int    bcol  = L.scol;
-    const Int    llnnz = L.nnz;
+    //const Int    brow  = L.srow;
+    //const Int    bcol  = L.scol;
+    //const Int    llnnz = L.nnz;
     Int    lnnz  = L.col_ptr(k);
    
     /*
@@ -1294,7 +1296,7 @@ namespace BaskerNS
 	if(X(j)!=0)
 	  {
 
-	Int t = gperm(j+brow);
+            //Int t = gperm(j+brow);
 	
 	#ifdef BASKER_DEBUG_NFACTOR_BLK
 	printf("L-Moving, kid: %d j: %d val: %f lnnz: %d \n",
@@ -1360,8 +1362,8 @@ namespace BaskerNS
     Int *color   = &(ws(0));
     Int *pattern = &(color[ws_size]);
 
-    const Int    brow  = L.srow;
-    const Int    bcol  = L.scol;
+    //const Int    brow  = L.srow;
+    //const Int    bcol  = L.scol;
     const Int    llnnz = L.nnz;
           Int    lnnz  = L.col_ptr(k);
 
@@ -1395,7 +1397,7 @@ namespace BaskerNS
     for(Int i = 0; i < p_size; i++)
       {
 	Int j = pattern[i];
-	Int t = gperm(j+brow);
+	//Int t = gperm(j+brow);
 	
 	#ifdef BASKER_DEBUG_NFACTOR_BLK
 	printf("L-Moving, kid: %d j: %d val: %f lnnz: %d \n",
@@ -1448,11 +1450,11 @@ namespace BaskerNS
 
     INT_1DARRAY   ws            = LL(X_col)(X_row).iws;
     ENTRY_1DARRAY X             = LL(X_col)(X_row).ews;
-    Int         ws_size         = LL(X_col)(X_row).iws_size;
+    //Int         ws_size         = LL(X_col)(X_row).iws_size;
     
     Int    nnz            = LL(X_col)(X_row).p_size;
-    const Int    brow           = L.srow;
-    const Int    bcol           = L.scol;
+    //const Int    brow           = L.srow;
+    //const Int    bcol           = L.scol;
   
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("\n\n");
@@ -1467,8 +1469,8 @@ namespace BaskerNS
     // B.info();
     //B.print();
 
-    Int *color =   &(ws(0));
-    Int *pattern = &(color[ws_size]);
+    //Int *color =   &(ws(0));
+    //Int *pattern = &(color[ws_size]);
     
     //Preload with A
     if(A_option == BASKER_TRUE)
@@ -1665,8 +1667,8 @@ namespace BaskerNS
     Int         ws_size         = LL(X_col)(X_row).iws_size;
     
     Int    nnz            = LL(X_col)(X_row).p_size;
-    const Int    brow           = L.srow;
-    const Int    bcol           = L.scol;
+    //const Int    brow           = L.srow;
+    //const Int    bcol           = L.scol;
   
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     if(kid == 8)
@@ -1837,32 +1839,7 @@ namespace BaskerNS
 
 
 
-  //We need an easier and faster way to do this.  
-  //Could get very big
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  Int Basker<Int,Entry,Exe_Space>::find_leader(Int kid, Int l)
-  {
-    l = l+1;
-    Int my_token = S[l][kid];
-    Int my_loc = kid;
-    while((my_loc > 0))
-      {
-	my_loc--;
-	if(S[l][my_loc] != my_token)
-	  {
-	    my_loc++;
-	    break;
-	  }
-      }
-
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
-    printf("find_leader, kid: %d l: %d leader: %d \n",
-	   kid, l, my_loc);
-    #endif
-    return my_loc;
-
-  }//end find_leader()
+ 
 
 }//end namespace baskerNS -- contains functions
 

@@ -1,12 +1,6 @@
 #ifndef __Panzer_ResponseMESupport_Default_impl_hpp__
 #define __Panzer_ResponseMESupport_Default_impl_hpp__
 
-#include "Thyra_DefaultSpmdVectorSpace.hpp"
-#include "Thyra_SpmdVectorBase.hpp"
-
-#include "Epetra_LocalMap.h"
-#include "Epetra_Map.h"
-
 namespace panzer {
 
 template <typename EvalT>
@@ -26,7 +20,7 @@ getThyraVector() const
 
    Teuchos::ArrayRCP<double> data;
    Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(tVector_,true)->getNonconstLocalData(Teuchos::outArg(data));
- 
+
    return data;
 }
 

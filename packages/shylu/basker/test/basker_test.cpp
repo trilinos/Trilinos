@@ -206,8 +206,9 @@ int main(int argc, char* argv[])
   cout << "--------------Done NFactor-----------------" << endl;
   mybasker.DEBUG_PRINT();
   cout << "--------------Done Print----------------------"<<endl;
-  mybasker.SolveTest();
+  //mybasker.SolveTest();
   //mybasker.Solve(y,x);
+  mybasker.Solve(1,y,x);
   cout << "--------------Done Solve----------------------"<<endl;
 
     Int *lperm;
