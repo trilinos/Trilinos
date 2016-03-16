@@ -1,8 +1,8 @@
 ************************************************************************
 ************************************************************************
 testwt - single precision write test...
-Exodus Library Warning/Error: [ex_put_name]
-	Error: element block id 10 not found in file id 65536
+Exodus Library Warning/ERROR: [ex_put_name]
+	ERROR: element block id 10 not found in file id 65536
 Warning: The element block variable name 'this_variable_name_is_tooooo_long' is too long.
 	It will be truncated from 33 to 32 characters
 testrd - single precision read test...
@@ -20,11 +20,11 @@ testwt1 ... [Expect WEDGE6 warning from this test]
 testrd1 - single precision read test of a file with several side sets...
 testrd1 ... [Expect file create failure error, NOCLOBBER]
 testrd1 ... [Expect failure locating elem var 1 for elem block 12]
-Exodus Library Warning/Error: [ex_create]
-	Error: file create failed for test.exo, mode: NOCLOBBER
+Exodus Library Warning/ERROR: [ex_create]
+	ERROR: file create failed for test.exo, mode: NOCLOBBER
 	NetCDF: File exists && NC_NOCLOBBER
-Exodus Library Warning/Error: [ex_get_var]
-	Error: failed to locate element block 12 var 1 in file id 65536
+Exodus Library Warning/ERROR: [ex_get_var]
+	ERROR: failed to locate element block 12 var 1 in file id 65536
 	NetCDF: Variable not found
 testwt_ss - write files to test side sets...
 testwt_ss ... [Expect WEDGE6 warning from this test]
@@ -50,7 +50,7 @@ testrd - read long name file truncating to 32 characters on read...
 testrd-long-name - read long name file...
 test_nemesis - read long name file...
 test-empty - read an empty (only ex_create called) exodus file...
-Exodus Library Warning/Error: [ex_get_init_ext]
+Exodus Library Warning/ERROR: [ex_get_init_ext]
 	Warning: no title in file id 65536
 	NetCDF: Attribute not found
 testwt-compress - verify can create compressed netcdf-4 files...
