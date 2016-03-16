@@ -67,6 +67,9 @@ const SideTestUtil::TestCaseData userCreatedFaceTestCases = {
     {"ALRA_doubleKissing.e", 2, 2, {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
     {"TDg.e", 2, 2, {{1, 1}, {2, 1}}}, // Tet adjacent to degenerate quad
+    {"TLg.e",     2,        1,    {{1, 1}}},
+    {"TRg.e",     2,        1,    {{2, 1}}},
+
     {"ZDZ.e", 2, 1, {{1, 5}, {2, 4}}}, // degenerate Hex adjacent to degenerate Hex
 
     // Started passing on March 4th
