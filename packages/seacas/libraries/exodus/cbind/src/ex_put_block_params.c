@@ -68,8 +68,8 @@ int ex_put_block_params( int         exoid,
   int connid;
   int npeid;
   char errmsg[MAX_ERR_LENGTH];
-  char *entity_type1;
-  char *entity_type2;
+  char *entity_type1 = NULL;
+  char *entity_type2 = NULL;
   int* blocks_to_define = NULL;
   const char* dnumblk = NULL;
   const char* vblkids = NULL;
