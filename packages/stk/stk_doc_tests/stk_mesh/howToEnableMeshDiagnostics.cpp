@@ -32,49 +32,22 @@
 //
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
-#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
+#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/base/SkinBoundary.hpp>   // for Selector
-#include <stk_topology/topology.hpp>    // for topology, etc
-#include <string>                       // for string
-#include <vector>                       // for vector
-#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
-#include <stk_util/parallel/ParallelReduceBool.hpp>
-
-namespace stk { namespace mesh { class BulkData; } }
 
 namespace
 {
 //BEGIN_ENABLE_MESH_DIAGNOSTICS
 TEST(StkMeshHowTo, EnableMeshDiagnostics)
 {
-    // ============================================================
-    // INITIALIZATION
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkIo(communicator);
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:2x2x2|sideset:xX", bulkData, bulkData.parallel());
 
-    const std::string generatedFileName = "generated:2x2x2";
-    stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.populate_bulk_data();
-    //+ Enable mesh diagnostic for rule 3
-    stkIo.bulk_data().enable_mesh_diagnostic_rule(stk::mesh::RULE_3);
-
-    // ============================================================
-    //+ EXAMPLE
-    //+ Create the faces..
-    stk::mesh::create_faces(stkIo.bulk_data());
-    // ==================================================
-
-    // ==================================================
-    // VERIFICATION
-    unsigned numErrors = stkIo.bulk_data().get_mesh_diagnostic_error_count();
-    EXPECT_EQ(0u, numErrors);
+    bulkData.enable_mesh_diagnostic_rule(stk::mesh::RULE_3);
+    EXPECT_EQ(0u, bulkData.get_mesh_diagnostic_error_count());
 }
 //END_ENABLE_MESH_DIAGNOSTICS
 
