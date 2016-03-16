@@ -98,7 +98,7 @@ public:
   /*! \brief Constructor that takes an Teuchos communicator
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
-                 Teuchos::RCP<const Teuchos::Comm<int> > &ucomm_,
+                 const Teuchos::RCP<const Teuchos::Comm<int> > &ucomm_,
                  partsoln_t *partition_ = NULL, machine_t *machine_ = NULL) : 
     Problem<Adapter>(A_, p_, ucomm_) 
   {

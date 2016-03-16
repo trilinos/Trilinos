@@ -172,7 +172,7 @@ switch (outRank) {
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataScalar): Computational engine not defined!");
   } // switch(compEngine)  
     }
@@ -228,7 +228,7 @@ switch (outRank) {
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataVector): Computational engine not defined!");
   } // switch(compEngine)
 
@@ -294,7 +294,7 @@ switch (outRank) {
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataDataTensor): Computational engine not defined!");
   } // switch(compEngine)
 
@@ -395,7 +395,7 @@ switch (outRank) {
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldScalar): Computational engine not defined!");
   } // switch(compEngine)
     }
@@ -491,7 +491,7 @@ switch (outRank) {
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldVector): Computational engine not defined!");
   } // switch(compEngine)
     }
@@ -598,7 +598,7 @@ switch (outRank) {
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractDataFieldTensor): Computational engine not defined!");
   } // switch(compEngine)    
 }
@@ -675,7 +675,7 @@ TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std:
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
   } // switch(compEngine)
 
@@ -746,7 +746,7 @@ TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std:
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldVector): Computational engine not defined!");
   } // switch(compEngine)
 }
@@ -823,7 +823,7 @@ TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std:
     break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( !isValidCompEngine(compEngine) ), std::invalid_argument,
                           ">>> ERROR (ArrayTools::contractFieldFieldTensor): Computational engine not defined!");
   } // switch(compEngine)
 }

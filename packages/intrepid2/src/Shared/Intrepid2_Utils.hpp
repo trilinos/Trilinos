@@ -54,6 +54,17 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Intrepid2_KokkosRank.hpp"
+
+namespace Kokkos {
+  
+  template<typename RangeType, typename FunctorType>
+  static void serial_for(const RangeType n,
+                         const FunctorType f) {
+    for (RangeType i=0;i<n;++i)
+      f( i );
+  }
+}
+
 namespace Intrepid2 {
 
 /***************************************************************************************************

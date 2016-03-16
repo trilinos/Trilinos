@@ -75,10 +75,11 @@ struct conditional_eSpace {
 	typedef Kokkos::HostSpace::execution_space execution_space;
 };
 
+  // UVM confuses the space allocated in intrepid, so for now redirect to host space only
 template<class T>
 struct conditional_eSpace<T, typename Intrepid2::Void<typename T::execution_space>::type > {
-
-	typedef typename T::execution_space execution_space;
+  //typedef typename T::execution_space execution_space;
+  typedef Kokkos::HostSpace::execution_space execution_space;
 };
 template<class A>
 struct CheckType{static const bool value = false; };

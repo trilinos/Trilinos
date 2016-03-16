@@ -83,6 +83,10 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   blocks_.y = by;
   blocks_.z = 1;  // even though its 2D do this
 
+  totalElements_.x = nx*bx;
+  totalElements_.y = ny*by;
+  totalElements_.z = 1*1;
+
   totalNodes_ = (bx*nx+1)*(by*ny+1);
   totalEdges_ = (bx*nx+1)*(by*ny)+(bx*nx)*(by*ny+1);
   totalFaces_ = (bx*nx)*(by*ny);
@@ -119,6 +123,10 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   blocks_.y = by;
   blocks_.z = bz;
 
+  totalElements_.x = nx*bx;
+  totalElements_.y = ny*by;
+  totalElements_.z = nz*bz;
+
   totalNodes_ = (bx*nx+1)*(by*ny+1)*(bz*nx+1);
   totalEdges_ = (bx*nx+1)*(by*ny)*(bz*nz+1)+(bx*nx)*(by*ny+1)*(bz*nz+1)+(bx*nx+1)*(by*ny+1)*(bz*nz);
   totalFaces_ = (bx*nx)*(by*ny)*(bz*nz+1) + (bx*nx)*(by*ny+1)*(bz*nz) + (bx*nx+1)*(by*ny)*(bz*nz);
@@ -136,6 +144,7 @@ buildConnectivity(const panzer::FieldPattern & fp)
   int numIds = fp.numberIds();
 
   connectivity_.clear();
+  connectivity_.resize(myElements_.x*myElements_.y*myElements_.z);
   
   std::vector<std::string> elementBlockIds;
   getElementBlockIds(elementBlockIds);
@@ -149,12 +158,12 @@ buildConnectivity(const panzer::FieldPattern & fp)
       LocalOrdinal element = elmts[e];
       std::vector<GlobalOrdinal> & conn = connectivity_[element];
       
-      // allocate some space, intialize with -1 for error checking
-      conn.resize(numIds,-1);
-
       // loop over each dimension, add in coefficients
-      for(int d=0;d<dim;d++)
+      // ASSUME: Field pattern has logical ordering nodes, edges, faces, cells
+      for(int d=0;d<=dim;d++)
         updateConnectivity(fp,d,element,conn);
+
+      TEUCHOS_ASSERT(numIds==Teuchos::as<int>(conn.size()));
     }
   }
 }
@@ -279,6 +288,14 @@ computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element,const Triplet<G
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
+GlobalOrdinal 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element) const
+{
+  return computeGlobalElementIndex(element,totalElements_);
+}
+
+template <typename LocalOrdinal,typename GlobalOrdinal>
 LocalOrdinal 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 computeLocalElementIndex(const Triplet<GlobalOrdinal> & element,
@@ -311,23 +328,17 @@ void
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 buildLocalElements()
 {
-  // compute the total number of elemetns
-  Triplet<GlobalOrdinal> ttlElements;
-  ttlElements.x = elements_.x * blocks_.x;
-  ttlElements.y = elements_.y * blocks_.y;
-  ttlElements.z = elements_.z * blocks_.z;
-
   // figure out largest possible even subdivision
   Triplet<GlobalOrdinal> evenElements;
-  evenElements.x = ttlElements.x / processors_.x;
-  evenElements.y = ttlElements.y / processors_.y;
-  evenElements.z = ttlElements.z / processors_.z;
+  evenElements.x = totalElements_.x / processors_.x;
+  evenElements.y = totalElements_.y / processors_.y;
+  evenElements.z = totalElements_.z / processors_.z;
 
   // compute the reaminder
   Triplet<GlobalOrdinal> remainderElements;
-  remainderElements.x = ttlElements.x - evenElements.x * processors_.x;
-  remainderElements.y = ttlElements.y - evenElements.y * processors_.y;
-  remainderElements.z = ttlElements.z - evenElements.z * processors_.z;
+  remainderElements.x = totalElements_.x - evenElements.x * processors_.x;
+  remainderElements.y = totalElements_.y - evenElements.y * processors_.y;
+  remainderElements.z = totalElements_.z - evenElements.z * processors_.z;
 
   // compute the processor rank triplet
   Triplet<int> myRank = computeMyRankTriplet(myRank_,dim_,processors_);
@@ -363,12 +374,30 @@ updateConnectivity(const panzer::FieldPattern & fp,
 {
   Triplet<GlobalOrdinal> index = computeLocalElementGlobalTriplet(localElementId,myElements_,myOffset_);
  
-  TEUCHOS_ASSERT(fp.numberIds()==Teuchos::as<int>(conn.size()));
-
   for(int c=0;c<fp.getSubcellCount(subcellDim);c++) {
-    const std::vector<int> & indices = fp.getSubcellIndices(subcellDim,c);
-
-     
+    std::size_t num = fp.getSubcellIndices(subcellDim,c).size();
+    TEUCHOS_ASSERT(num==1 || num==0);
+ 
+    if(num==0) continue;
+ 
+    // there is an index to add here
+    if(subcellDim==0) {
+      // node number     =  Number for the lower left          
+      GlobalOrdinal node =  (totalElements_.x+1)*index.y + index.x
+                           + (c==1 || c==2) * 1                    // shift for i+1
+                           + (c==3 || c==2) * (totalElements_.x+1); // shift for j+1
+      conn.push_back(node);
+    }
+    else if(subcellDim==1) {
+      // node number     =  Number for the lower left          
+      GlobalOrdinal edge =  totalNodes_ + (2*totalElements_.x+1)*index.y + index.x
+                                        + (        c==1) * 1                     
+                                        + (        c==2) * (2*totalElements_.x+1)
+                                        + (c==1 || c==3) * totalElements_.x;
+      conn.push_back(edge);
+    } 
+    else if(subcellDim==2)
+      conn.push_back(totalNodes_+totalEdges_+computeGlobalElementIndex(index));
   }
 }
 
