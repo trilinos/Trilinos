@@ -44,7 +44,7 @@ TEST(StkMeshHowTo, EnableMeshDiagnostics)
 {
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:2x2x2|sideset:xX", bulkData, bulkData.parallel());
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:4x4x4|sideset:xX", bulkData, bulkData.parallel());
 
     bulkData.enable_mesh_diagnostic_rule(stk::mesh::RULE_3);
     EXPECT_EQ(0u, bulkData.get_mesh_diagnostic_error_count());
