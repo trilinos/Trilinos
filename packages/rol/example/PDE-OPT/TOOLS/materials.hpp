@@ -173,6 +173,7 @@ private:
 
 Real density_;
 int powerP_;
+Real minDensity_;
 
 public:
 
@@ -181,18 +182,19 @@ virtual void InitializeSIMP(int dim, bool planeStrain, Real modulus, Real poisso
 	this->InitializeMaterial(dim, planeStrain, modulus, poissonRatio);
 	density_ = density;
 	powerP_ = powerP;
+  minDensity_ = 1.e-4;
 }
 
 Real getSIMPScaleFactor()
 {
-	return std::pow(density_, powerP_);
+	return minDensity_ + (1.0-minDensity_)*std::pow(density_, powerP_);
 }
 
 Real getSIMPFirstDerivativeScaleFactor()
 {
 	Real scale;
 	if(powerP_ >= 1)
-		scale = powerP_ * (std::pow(density_, powerP_-1));
+		scale = (1.0-minDensity_) * powerP_ * (std::pow(density_, powerP_-1));
 	else
 		scale = 0.0;
 	
@@ -203,7 +205,7 @@ Real getSIMPSecondDerivativeScaleFactor()
 {
 	Real scale;
 	if(powerP_ >= 2)
-		scale = powerP_ * (powerP_-1) * (std::pow(density_, powerP_-2));
+		scale = (1.0-minDensity_) * powerP_ * (powerP_-1) * (std::pow(density_, powerP_-2));
 	else
 		scale = 0.0;
 	
