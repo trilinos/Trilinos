@@ -56,6 +56,7 @@
 #endif
 
 #include <algorithm>
+#include <complex>
 #include <string>
 #include <sstream>
 #include <limits>
@@ -1229,6 +1230,41 @@ std::string NumberToString( T Number )
                                   };
 
   }
+
+
+// Generic conversion from Element type to Real type
+template<class Real, class Element>
+struct TypeCaster {
+  static Real ElementToReal( const Element &val ) {
+    return Real(0);
+  }
+};
+
+// Partially specialize for complex<Real>
+template<class Real>
+struct TypeCaster<Real, std::complex<Real> > {
+  static Real ElementToReal( const std::complex<Real> &val ) {
+    return val.real();
+  } 
+};
+
+// Fully specialize for double,float
+template<>
+struct TypeCaster<double,float> {
+  static double ElementToReal( const float &val ) {
+    return static_cast<double>(val);
+  }
+};
+
+// Cast from Element type to Real type
+template<class Element, class Real>
+Real rol_cast(const Element &val) {
+  return TypeCaster<Real,Element>::ElementToReal(val);
+}
+
+
+
+
 
 
 namespace Exception {
