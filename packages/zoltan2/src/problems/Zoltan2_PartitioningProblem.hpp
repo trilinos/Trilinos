@@ -201,18 +201,6 @@ public:
       return metrics_->getMetrics();
   }
 
-  /*! \brief Print the array of metrics
-   *   \param os the output stream for the report.
-   *   Metrics were only computed if user requested
-   *   metrics with a parameter.
-   *
-  void printMetrics(std::ostream &os) const {
-    if (metrics_.is_null())
-      os << "No metrics available." << std::endl;
-    else
-      metrics_->printMetrics(os);
-      };*/
-
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
    *
    *  \param len  The size of the \c partIds and \c partSizes lists
