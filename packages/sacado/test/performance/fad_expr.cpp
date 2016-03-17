@@ -32,6 +32,7 @@
 #include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Random.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
+#include "Sacado_Fad_SimpleFad.hpp"
 
 #include "Fad/fad.h"
 #include "TinyFadET/tfad.h"
@@ -155,6 +156,9 @@ int main(int argc, char* argv[]) {
 
     ta = do_time_analytic(nderiv, nloop);
     std::cout << "Analytic:  " << std::setw(w) << ta << std::endl;
+
+    t = do_time< Sacado::Fad::SimpleFad<double> >(nderiv, nloop);
+    std::cout << "SimpleFad: " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
     t = do_time< FAD::TFad<10,double> >(nderiv, nloop);
     std::cout << "TFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
