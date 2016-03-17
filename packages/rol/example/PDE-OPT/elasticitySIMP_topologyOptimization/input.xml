@@ -160,7 +160,7 @@
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
     <ParameterList name="Augmented Lagrangian">
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
-      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e-2"        />
+      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"        />
       <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
       <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
       <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
