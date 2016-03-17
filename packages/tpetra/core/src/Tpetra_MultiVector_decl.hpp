@@ -2319,7 +2319,7 @@ namespace Tpetra {
       typedef typename MultiVector<DS, DL, DG, DN, dstClassic>::dual_view_type::t_host::execution_space HES;
       typedef typename MultiVector<DS, DL, DG, DN, dstClassic>::dual_view_type::t_dev::execution_space DES;
 
-      if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+      if (src.getDualView ().modified_device () >= src.getDualView ().modified_host ()) {
         // Device memory has the most recent version of src.
         dst.template modify<DES> (); // We are about to modify dst on device.
         // Copy from src to dst on device.
@@ -2347,7 +2347,7 @@ namespace Tpetra {
         // We can't sync src, since it is only an input argument.
         // Thus, we have to use the most recently modified version of
         // src, which coudl be either the device or host version.
-        if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+        if (src.getDualView ().modified_device () >= src.getDualView ().modified_host ()) {
           // Copy from the device version of src.
           //
           // whichVecs tells the kernel which vectors (columns) of src
@@ -2397,7 +2397,7 @@ namespace Tpetra {
       }
       else { // dst is NOT constant stride
         if (src.isConstantStride ()) {
-          if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+          if (src.getDualView ().modified_device () >= src.getDualView ().modified_host ()) {
             // Copy from the device version of src.
             //
             // whichVecs tells the kernel which vectors (columns) of dst
@@ -2452,7 +2452,7 @@ namespace Tpetra {
           }
         }
         else { // neither src nor dst have constant stride
-          if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+          if (src.getDualView ().modified_device () >= src.getDualView ().modified_host ()) {
             // Copy from the device version of src.
             //
             // whichVectorsDst tells the kernel which vectors
