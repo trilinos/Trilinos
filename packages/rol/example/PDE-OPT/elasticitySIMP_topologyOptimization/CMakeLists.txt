@@ -13,7 +13,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     example_01
     SOURCES example_01.cpp
     ARGS PrintItAll
-    NUM_MPI_PROCS 4
+    NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
   )
@@ -21,7 +21,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ElasticitySIMPOperatorsCopy
     SOURCE_FILES
-      input.xml
+      input.xml plotdensity.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
