@@ -255,6 +255,8 @@ FieldContainer_Kokkos(const FieldContainer_Kokkos& inContainer);
 ~FieldContainer_Kokkos();
 
 typedef Kokkos::Threads execution_space;
+  typedef Kokkos::RangePolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > range_policy;
+
 template<class ScalarPoindex_typeer>
 FieldContainer_Kokkos(Kokkos::View<ScalarPoindex_typeer,Kokkos::LayoutRight,Kokkos::Threads>& InContainer){
 dim0=dim[0]=InContainer.dimension(0);
@@ -382,12 +384,13 @@ index_type dimension_6()const{return dim6;}
 index_type dimension_7()const{return dim7;}
 
 void initialize(Scalar initValue){
-Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+
+  Kokkos::parallel_for(range_policy(0, sizeValue),initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
 
 void initialize(){
 Scalar initValue=Scalar(0.0);
-Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+ Kokkos::parallel_for(range_policy(0, sizeValue),initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
 
 };
