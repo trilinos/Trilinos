@@ -486,7 +486,6 @@ namespace Belos {
     const ScalarType STone = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType STzero = Teuchos::ScalarTraits<ScalarType>::zero();
     const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
-    const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     std::vector< ScalarType > beta(numRHS_,STzero);
     std::vector<int> index(1);
     //
