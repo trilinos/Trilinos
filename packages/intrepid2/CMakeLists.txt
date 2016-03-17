@@ -38,7 +38,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
 # C) Add the libraries, tests, and examples
 #
 
+IF (NOT Intrepid2_ENABLE_KokkosDynRankView)
 ADD_SUBDIRECTORY(src)
+ELSE()
+ADD_SUBDIRECTORY(src-kokkos)
+ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
