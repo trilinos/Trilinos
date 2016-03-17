@@ -44,6 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Util.hpp"
 #include "Kokkos_View.hpp"
+#include <vector>
 
 namespace { // (anonymous)
   using std::endl;
@@ -269,8 +270,82 @@ namespace { // (anonymous)
     }
   }
 
+
+  // Test findRelOffset with a longer array.  This ensures that even
+  // if findRelOffset optimizes for short arrays by using linear
+  // search, we'll still get test coverage for longer arrays.
+  //
+  // This test doesn't need to exercise all the Kokkos device types.
+  // Even if the aforementioned short-array optimization has different
+  // constants for different Kokkos device types, a sufficiently long
+  // array should exercise all cases.  Thus, this is not a templated
+  // test, so we don't need to add it to the list of instantiations
+  // for templated tests at the bottom of this file.
+  TEUCHOS_UNIT_TEST( findRelOffset, LongArray )
+  {
+    using Tpetra::Details::findRelOffset;
+    typedef long LO; // just for a change
+
+    Teuchos::OSTab tab0 (out);
+    out << "Test findRelOffset with a long array" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    // Start with the array [0, 1, 2, ..., 2n], where the number of
+    // entries N = 2n+1 for natural numbers n.  Permute every other
+    // entry symmetrically about the middle entry (which exists
+    // because the number of entries is odd).  For example, for n = 4:
+    // [0 1 2 3 4 5 6 7 8] gets permuted to [8 1 6 3 4 5 2 7 0].  Use
+    // this to test findRelOffset.  (We don't just reverse x, in case
+    // implementations optimize for reverse contiguous order.)
+
+    const LO n = 100;
+    const LO N = 2*n + 1;
+    std::vector<LO> indsToSearch (N);
+
+    for (LO k = 0; k < n; ++k) {
+      indsToSearch[2*k] = 2*(n - k);
+      indsToSearch[2*k + 1] = 2*k + 1;
+    }
+
+    // We don't need to test all possible hints, just two per search
+    // value: the correct hint and some wrong hint.
+    for (LO k = 0; k < N; ++k) {
+      // We use std::vector<LO> in as the template parameter of
+      // findRelOffset, because the function should work just fine
+      // with anything that acts like a 1-D raw array.
+      {
+	const LO indToFind = indsToSearch[k];
+	const LO expectedOffset = k;
+	const LO correctHint = expectedOffset;
+	// Add some number not 1 to make the "wrong hint," in case
+	// there is a "search nearest" optimization (unlikely -- too
+	// many branches).
+	const LO wrongHint = expectedOffset + 7;
+
+	const LO offset0 = 
+	  findRelOffset<LO, std::vector<LO> > (indsToSearch, N, indToFind,
+					       correctHint, false);
+	TEST_EQUALITY( offset0, expectedOffset );
+	const LO offset1 =
+	  findRelOffset<LO, std::vector<LO> > (indsToSearch, N, indToFind,
+					       wrongHint, false);
+	TEST_EQUALITY( offset1, expectedOffset );      
+      }
+      {
+	// This is the "index not in array" case.  We only need to
+	// test one hint here, since all hints are wrong.
+	const LO indToFind = N + 1; // not in the array
+	const LO hint = 0;
+	const LO offset0 =
+	  findRelOffset<LO, std::vector<LO> > (indsToSearch, N, indToFind,
+					       hint, false);
+	TEST_EQUALITY( offset0, N );
+      }
+    }
+  }
+
 //
-// INSTANTIATIONS
+// Instantiations of templated unit tests
 //
 
 #define UNIT_TEST_GROUP( NODE ) \
