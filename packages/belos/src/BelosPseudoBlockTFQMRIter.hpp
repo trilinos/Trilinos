@@ -380,7 +380,7 @@ namespace Belos {
 
       // Compute the native residuals.
       for (int i=0; i<numRHS_; i++) {
-        (*normvec)[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( iter_ + one )*tau_[i];
+        (*normvec)[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( 2*iter_ + one )*tau_[i];
       }
     }
 
@@ -498,130 +498,133 @@ namespace Belos {
     //
     while (stest_->checkStatus(this) != Passed) {
 
-      //
-      //--------------------------------------------------------
-      // Compute the new alpha if we need to
-      //--------------------------------------------------------
-      //
-      if (iter_%2 == 0) {
-	MVT::MvDot( *V_, *Rtilde_, alpha_ );      //   alpha = rho / (r_tilde, v) 
-        for (int i=0; i<numRHS_; i++) {
-	  rho_old_[i] = rho_[i];                   // rho_old = rho
-	  alpha_[i] = rho_old_[i]/alpha_[i];
+      for (int iIter=0; iIter<2; iIter++)
+      {
+        //
+        //--------------------------------------------------------
+        // Compute the new alpha if we need to
+        //--------------------------------------------------------
+        //
+        if (iIter == 0) {
+  	  MVT::MvDot( *V_, *Rtilde_, alpha_ );      //   alpha = rho / (r_tilde, v) 
+          for (int i=0; i<numRHS_; i++) {
+	    rho_old_[i] = rho_[i];                   // rho_old = rho
+	    alpha_[i] = rho_old_[i]/alpha_[i];
+          }
         }
-      }
-      //
-      //--------------------------------------------------------
-      // Loop over all RHS and compute updates.
-      //--------------------------------------------------------
-      //
-      for (int i=0; i<numRHS_; ++i) {
-        index[0] = i;
-
         //
         //--------------------------------------------------------
-        // Update w.
-        //   w = w - alpha*Au
+        // Loop over all RHS and compute updates.
         //--------------------------------------------------------
         //
-        Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
-        Teuchos::RCP<MV> W_i = MVT::CloneViewNonConst( *W_, index );
-        MVT::MvAddMv( STone, *W_i, -alpha_[i], *AU_i, *W_i );
-        //
-        //--------------------------------------------------------
-        // Update d.
-        //   d = u + (theta^2/alpha)eta*d
-        //--------------------------------------------------------
-        //
-        Teuchos::RCP<const MV> U_i = MVT::CloneView( *U_, index );
-        Teuchos::RCP<MV> D_i = MVT::CloneViewNonConst( *D_, index );
-        MVT::MvAddMv( STone, *U_i, (theta_[i]*theta_[i]/alpha_[i])*eta_[i], *D_i, *D_i );
-        //
-        //--------------------------------------------------------
-        // Update u if we need to.
-        //   u = u - alpha*v
-        //   
-        // Note: This is usually computed with alpha (above), but we're trying be memory efficient.
-        //--------------------------------------------------------
-        //
-        if (iter_%2 == 0) {
-          // Compute new U.
-          Teuchos::RCP<const MV> V_i = MVT::CloneView( *V_, index );
-          Teuchos::RCP<MV> U2_i = MVT::CloneViewNonConst( *U_, index );
-	  MVT::MvAddMv( STone, *U2_i, -alpha_[i], *V_i, *U2_i );
-        }
-      }
-      //
-      //--------------------------------------------------------
-      // Update Au for the next iteration.
-      //--------------------------------------------------------
-      //
-      if (iter_%2 == 0) {
-	lp_->apply( *U_, *AU_ );                       
-      }
-      //
-      //--------------------------------------------------------
-      // Compute the new theta, c, eta, tau; i.e. the update to the least squares solution.
-      //--------------------------------------------------------
-      //
-      MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
-
-      for (int i=0; i<numRHS_; ++i) {
-        theta_[i] /= tau_[i];
-        // cs = 1.0 / sqrt(1.0 + theta^2)
-        MagnitudeType cs = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[i]*theta_[i]);  
-        tau_[i] *= theta_[i]*cs;     // tau = tau * theta * cs
-        eta_[i] = cs*cs*alpha_[i];     // eta = cs^2 * alpha
-      }
-      //
-      //--------------------------------------------------------
-      // Accumulate the update for the solution x := x + eta*D_
-      //--------------------------------------------------------
-      //
-      for (int i=0; i<numRHS_; ++i) {
-        index[0]=i;
-        Teuchos::RCP<const MV> D_i = MVT::CloneView( *D_, index );
-        Teuchos::RCP<MV> update_i = MVT::CloneViewNonConst( *solnUpdate_, index );
-	MVT::MvAddMv( STone, *update_i, eta_[i], *D_i, *update_i );
-      }      
-      //
-      if (iter_%2) {
-	//
-	//--------------------------------------------------------
-	// Compute the new rho, beta if we need to.
-	//--------------------------------------------------------
-	//
-	MVT::MvDot( *W_, *Rtilde_, rho_ );         // rho = (r_tilde, w)
-      
         for (int i=0; i<numRHS_; ++i) {
-	  beta[i] = rho_[i]/rho_old_[i];           // beta = rho / rho_old
+          index[0] = i;
 
+          //
+          //--------------------------------------------------------
+          // Update w.
+          //   w = w - alpha*Au
+          //--------------------------------------------------------
+          //
+          Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
+          Teuchos::RCP<MV> W_i = MVT::CloneViewNonConst( *W_, index );
+          MVT::MvAddMv( STone, *W_i, -alpha_[i], *AU_i, *W_i );
+          //
+          //--------------------------------------------------------
+          // Update d.
+          //   d = u + (theta^2/alpha)eta*d
+          //--------------------------------------------------------
+          //
+          Teuchos::RCP<const MV> U_i = MVT::CloneView( *U_, index );
+          Teuchos::RCP<MV> D_i = MVT::CloneViewNonConst( *D_, index );
+          MVT::MvAddMv( STone, *U_i, (theta_[i]*theta_[i]/alpha_[i])*eta_[i], *D_i, *D_i );
+          //
+          //--------------------------------------------------------
+          // Update u if we need to.
+          //   u = u - alpha*v
+          //   
+          // Note: This is usually computed with alpha (above), but we're trying be memory efficient.
+          //--------------------------------------------------------
+          //
+          if (iIter == 0) {
+            // Compute new U.
+            Teuchos::RCP<const MV> V_i = MVT::CloneView( *V_, index );
+            Teuchos::RCP<MV> U2_i = MVT::CloneViewNonConst( *U_, index );
+  	    MVT::MvAddMv( STone, *U2_i, -alpha_[i], *V_i, *U2_i );
+          }
+        }
+        //
+        //--------------------------------------------------------
+        // Update Au for the next iteration.
+        //--------------------------------------------------------
+        //
+        if (iIter == 0) {
+  	  lp_->apply( *U_, *AU_ );                       
+        }
+        //
+        //--------------------------------------------------------
+        // Compute the new theta, c, eta, tau; i.e. the update to the least squares solution.
+        //--------------------------------------------------------
+        //
+        MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
+
+        for (int i=0; i<numRHS_; ++i) {
+          theta_[i] /= tau_[i];
+          // cs = 1.0 / sqrt(1.0 + theta^2)
+          MagnitudeType cs = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[i]*theta_[i]);  
+          tau_[i] *= theta_[i]*cs;     // tau = tau * theta * cs
+          eta_[i] = cs*cs*alpha_[i];     // eta = cs^2 * alpha
+        }
+        //
+        //--------------------------------------------------------
+        // Accumulate the update for the solution x := x + eta*D_
+        //--------------------------------------------------------
+        //
+        for (int i=0; i<numRHS_; ++i) {
+          index[0]=i;
+          Teuchos::RCP<const MV> D_i = MVT::CloneView( *D_, index );
+          Teuchos::RCP<MV> update_i = MVT::CloneViewNonConst( *solnUpdate_, index );
+	  MVT::MvAddMv( STone, *update_i, eta_[i], *D_i, *update_i );
+        }      
+        //
+        if (iIter == 1) {
   	  //
 	  //--------------------------------------------------------
-	  // Update u, v, and Au if we need to.
-	  // Note: We are updating v in two stages to be memory efficient
+	  // Compute the new rho, beta if we need to.
 	  //--------------------------------------------------------
 	  //
-          index[0]=i;
-          Teuchos::RCP<const MV> W_i = MVT::CloneView( *W_, index );
-          Teuchos::RCP<MV> U_i = MVT::CloneViewNonConst( *U_, index );
-	  MVT::MvAddMv( STone, *W_i, beta[i], *U_i, *U_i );       // u = w + beta*u
-	
-	  // First stage of v update.
-          Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
-          Teuchos::RCP<MV> V_i = MVT::CloneViewNonConst( *V_, index );
-	  MVT::MvAddMv( STone, *AU_i, beta[i], *V_i, *V_i );      // v = Au + beta*v 
-	}
+	  MVT::MvDot( *W_, *Rtilde_, rho_ );         // rho = (r_tilde, w)
+      
+          for (int i=0; i<numRHS_; ++i) {
+	    beta[i] = rho_[i]/rho_old_[i];           // beta = rho / rho_old
 
-	// Update Au.
-	lp_->apply( *U_, *AU_ );                          // Au = A*u
+  	    //
+	    //--------------------------------------------------------
+	    // Update u, v, and Au if we need to.
+	    // Note: We are updating v in two stages to be memory efficient
+	    //--------------------------------------------------------
+	    //
+            index[0]=i;
+            Teuchos::RCP<const MV> W_i = MVT::CloneView( *W_, index );
+            Teuchos::RCP<MV> U_i = MVT::CloneViewNonConst( *U_, index );
+	    MVT::MvAddMv( STone, *W_i, beta[i], *U_i, *U_i );       // u = w + beta*u
 	
-	// Second stage of v update.
-        for (int i=0; i<numRHS_; ++i) {
-          index[0]=i;
-          Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
-          Teuchos::RCP<MV> V_i = MVT::CloneViewNonConst( *V_, index );
-	  MVT::MvAddMv( STone, *AU_i, beta[i], *V_i, *V_i );      // v = Au + beta*v 
+	    // First stage of v update.
+            Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
+            Teuchos::RCP<MV> V_i = MVT::CloneViewNonConst( *V_, index );
+	    MVT::MvAddMv( STone, *AU_i, beta[i], *V_i, *V_i );      // v = Au + beta*v 
+	  }
+
+	  // Update Au.
+	  lp_->apply( *U_, *AU_ );                          // Au = A*u
+	
+	  // Second stage of v update.
+          for (int i=0; i<numRHS_; ++i) {
+            index[0]=i;
+            Teuchos::RCP<const MV> AU_i = MVT::CloneView( *AU_, index );
+            Teuchos::RCP<MV> V_i = MVT::CloneViewNonConst( *V_, index );
+	    MVT::MvAddMv( STone, *AU_i, beta[i], *V_i, *V_i );      // v = Au + beta*v 
+          }
         }
       }
 

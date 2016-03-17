@@ -309,7 +309,7 @@ template<class ScalarType, class MV, class OP>
 const int TFQMRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
-const bool TFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = true;
+const bool TFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = false;
 
 template<class ScalarType, class MV, class OP>
 const int TFQMRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
