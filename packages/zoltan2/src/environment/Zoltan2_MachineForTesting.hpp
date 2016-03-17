@@ -43,6 +43,29 @@ public:
     gatherMachineCoordinates(comm);
   }
 
+  MachineForTesting(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ):
+    Machine<pcoord_t,part_t>(comm),
+    networkDim(3),
+    procCoords(NULL)
+  {
+    //allocate memory for processor coordinates.
+    procCoords = new pcoord_t *[networkDim];
+    for (int i = 0; i < networkDim; ++i){
+      procCoords[i] = new pcoord_t[this->numRanks];
+      memset(procCoords[i], 0, sizeof(pcoord_t) * this->numRanks);
+    }
+
+    //obtain the coordinate of the processor.
+    pcoord_t *xyz = new pcoord_t[networkDim];
+    getMyMachineCoordinate(xyz);
+    for (int i = 0; i < networkDim; i++)
+      procCoords[i][this->myRank] = xyz[i];
+    delete [] xyz;
+
+    //reduceAll the coordinates of each processor.
+    gatherMachineCoordinates(comm);
+  }
+
   virtual ~MachineForTesting() {
     for (int i = 0; i < networkDim; i++){
       delete [] procCoords[i];
