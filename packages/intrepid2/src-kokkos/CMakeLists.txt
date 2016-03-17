@@ -47,8 +47,6 @@ APPEND_SET(HEADERS
   Shared/Intrepid2_ArrayTools.hpp
   Shared/Intrepid2_BurkardtRules.hpp
   Shared/Intrepid2_BurkardtRulesDef.hpp
-  Shared/Intrepid2_FieldContainerDef.hpp
-  Shared/Intrepid2_FieldContainer.hpp
   Shared/Intrepid2_PointToolsDef.hpp
   Shared/Intrepid2_PointTools.hpp
   Shared/Intrepid2_PolylibDef.hpp
@@ -58,22 +56,6 @@ APPEND_SET(HEADERS
   Shared/Intrepid2_Types.hpp
   Shared/Intrepid2_Utils.hpp
   )
-
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
-  APPEND_SET(HEADERS ${HEADERS}
-  Kokkos/Intrepid2_KokkosRank.hpp
-  Kokkos/Intrepid2_FieldContainer_Kokkos.hpp
-  Kokkos/Intrepid2_FieldContainer_Kokkos_CUDA_Left.hpp
-  Kokkos/Intrepid2_FieldContainer_Kokkos_CUDA_Right.hpp
-  Kokkos/Intrepid2_FieldContainer_Kokkos_OpenMP_Left.hpp
-  Kokkos/Intrepid2_FieldContainer_Kokkos_OpenMP_Right.hpp 
-  Kokkos/Intrepid2_FieldContainer_Kokkos_PThreads_Left.hpp
-  Kokkos/Intrepid2_FieldContainer_Kokkos_PThreads_Right.hpp
-  Kokkos/Intrepid2_FieldContainer_Kokkos_Serial_Left.hpp
-  Kokkos/Intrepid2_FieldContainer_Kokkos_Serial_Right.hpp
- )
-
-
 
 #
 # MiniTensor headers

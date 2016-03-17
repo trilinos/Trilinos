@@ -53,7 +53,6 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Intrepid2_KokkosRank.hpp"
 
 namespace Kokkos {
   
@@ -66,6 +65,9 @@ namespace Kokkos {
 }
 
 namespace Intrepid2 {
+
+  // KJ temporary thing ; should be removed
+  typedef int index_type;
 
 /***************************************************************************************************
  ***************************************************************************************************

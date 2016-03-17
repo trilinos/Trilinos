@@ -53,8 +53,6 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Assert.hpp"
 
-
-#include <Intrepid2_KokkosRank.hpp>
 #include "Kokkos_Core.hpp"
 namespace Intrepid2 {
   

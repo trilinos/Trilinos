@@ -53,7 +53,6 @@
 #include "Shards_CellTopology.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Intrepid2_Polylib.hpp"
-#include "Intrepid2_FieldContainer.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include <stdexcept>
 

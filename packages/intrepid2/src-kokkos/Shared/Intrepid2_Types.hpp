@@ -48,6 +48,13 @@
 #ifndef INTREPID2_INTREPID2_TYPES_HPP
 #define INTREPID2_INTREPID2_TYPES_HPP
 
+#include <Kokkos_Core.hpp>
+#include <Kokkos_DynRankView.hpp>
+
+namespace Intrepid2 {
+  template<typename ...T> using DynRankView = Kokkos::Experimental::DynRankView<T...>;
+}
+
 #ifdef  HAVE_INTREPID2_DEBUG
 #define INTREPID2_VALIDATE( A )  A
 #else
@@ -622,7 +629,7 @@ namespace Intrepid2 {
   \li <a href="http://trilinos.sandia.gov/packages/shards/">Shards</a> cell topologies,
   \li numerical integration / Intrepid2::Cubature,
   \li discrete (e.g. finite element) bases / Intrepid2::Basis / \ref basis_page,
-  \li multi-dimensional arrays / Intrepid2::FieldContainer / \ref md_array_page,
+  \li multi-dimensional arrays / Intrepid2::DynRankView / \ref md_array_page,
   \li cell mappings and transformations / Intrepid2::CellTools / \ref cell_tools_page, and
   \li function mappings (pullbacks) / Intrepid2::FunctionSpaceTools / \ref function_space_tools_page.
 
@@ -654,7 +661,7 @@ namespace Intrepid2 {
   \subsection bases_qs_sec Step 3: Select discrete basis
   
   \code
-      Basis_HGRAD_TET_C1_FEM<double, FieldContainer<double> > tetBasis;                       // create tet basis
+      Basis_HGRAD_TET_C1_FEM<double, DynRankView<double> > tetBasis;                       // create tet basis
       int numFields = tetBasis.getCardinality();                                              // get basis cardinality
   \endcode
 
@@ -662,20 +669,20 @@ namespace Intrepid2 {
   \subsection mdarray_qs_sec Step 4: Format multi-dimensional arrays
 
   \code
-      FieldContainer<double> cub_points(numCubPoints, spaceDim);
-      FieldContainer<double> cub_weights(numCubPoints);
+      DynRankView<double> cub_points(numCubPoints, spaceDim);
+      DynRankView<double> cub_weights(numCubPoints);
 
-      FieldContainer<double> cell_nodes(numCells, numNodes, spaceDim);
+      DynRankView<double> cell_nodes(numCells, numNodes, spaceDim);
 
-      FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
-      FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
-      FieldContainer<double> jacobian_det(numCells, numCubPoints);
-      FieldContainer<double> weighted_measure(numCells, numCubPoints);
+      DynRankView<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
+      DynRankView<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
+      DynRankView<double> jacobian_det(numCells, numCubPoints);
+      DynRankView<double> weighted_measure(numCells, numCubPoints);
 
-      FieldContainer<double> grad_at_cub_points(numFields, numCubPoints, spaceDim);
-      FieldContainer<double> transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
-      FieldContainer<double> weighted_transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
-      FieldContainer<double> stiffness_matrices(numCells, numFields, numFields);
+      DynRankView<double> grad_at_cub_points(numFields, numCubPoints, spaceDim);
+      DynRankView<double> transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
+      DynRankView<double> weighted_transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
+      DynRankView<double> stiffness_matrices(numCells, numFields, numFields);
   \endcode
 
   We assume that the array \c cell_nodes is filled with nodes defining a set of computational (physical) cells.

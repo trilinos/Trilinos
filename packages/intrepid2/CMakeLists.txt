@@ -44,9 +44,15 @@ ELSE()
 ADD_SUBDIRECTORY(src)
 ENDIF()
 
+IF (Intrepid2_ENABLE_KokkosDynRankView)
+TRIBITS_ADD_TEST_DIRECTORIES(test-kokkos)
+ELSE()
 TRIBITS_ADD_TEST_DIRECTORIES(test)
+ENDIF()
 
+IF (NOT Intrepid2_ENABLE_KokkosDynRankView)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+ENDIF()
 
 #
 # Exclude files for source package.
