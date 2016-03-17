@@ -39,6 +39,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsGraph_findRelOffset
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
+  NUM_MPI_PROCS 1
   )
 
 # TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCrsGraphCopyFiles
