@@ -1509,13 +1509,12 @@ namespace {
       }
       {
         // check that 1dView and 1dCopy have the same values
-        ArrayRCP<ArrayRCP<Scalar> > views;
         Array<Scalar> copyspace(numLocal*numVectors);
         Array<ArrayView<Scalar> > copies(numVectors);
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
-        views = A.get2dViewNonConst();
+        ArrayRCP<ArrayRCP<Scalar> > views = A.get2dViewNonConst();
         A.get2dCopy(copies());
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
