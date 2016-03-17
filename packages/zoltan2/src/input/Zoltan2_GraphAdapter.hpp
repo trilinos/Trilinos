@@ -179,7 +179,7 @@ public:
   {
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
 
@@ -206,7 +206,7 @@ public:
   {
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
 
