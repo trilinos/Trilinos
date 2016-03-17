@@ -52,14 +52,12 @@
 template<class Real>
 class EqualityConstraint_PDEOPT_ElasticitySIMP_Volume : public ROL::EqualityConstraint<Real> {
 private:
-
   Real volFrac_;
 
 public:
-
   EqualityConstraint_PDEOPT_ElasticitySIMP_Volume(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
                                                   const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
-	  volFrac_ = parlist->sublist("ElasticityTopoOpt").get("volfrac", 0.5);
+    volFrac_ = parlist->sublist("ElasticityTopoOpt").get("volfrac", 0.5);
   }
 
   using ROL::EqualityConstraint<Real>::value;
@@ -98,7 +96,7 @@ public:
   void applyAdjointHessian(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                            const ROL::Vector<Real> &z, Real &tol) 
   {
-  	ahwv.zero();	
+    ahwv.zero();	
   }
 
 };
