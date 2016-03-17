@@ -34,6 +34,7 @@ public:
 #endif
     procCoords(NULL), machine_extent(NULL)
   {
+    machine_extent = new int[networkDim];
     this->getMachineExtent(this->machine_extent);
     //allocate memory for processor coordinates.
     procCoords = new pcoord_t *[networkDim];
@@ -120,7 +121,15 @@ public:
     return true;
   }
 
-
+  bool getMachineExtentWrapArounds(part_t *wrap_around) const {
+    wrap_around[0] = true;
+    wrap_around[1] = true;
+    wrap_around[2] = true;
+    wrap_around[3] = true;
+    wrap_around[4] = true;
+    wrap_around[5] = true;
+    return true;
+  }
   inline bool getMachineCoordinate(const int rank,
                                    pcoord_t *xyz) const {
     return false;
