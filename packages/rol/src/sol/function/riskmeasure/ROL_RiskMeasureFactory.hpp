@@ -50,6 +50,7 @@
 
 // Standard Risk Measure Implementations
 #include "ROL_CVaR.hpp"
+#include "ROL_CoherentExpUtility.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_HMCR.hpp"
 #include "ROL_MeanDeviationFromTarget.hpp"
@@ -75,6 +76,7 @@ namespace ROL {
 
   enum ERiskMeasure {
     RISKMEASURE_CVAR = 0,
+    RISKMEASURE_COHERENTEXPUTILITY,
     RISKMEASURE_EXPUTILITY,
     RISKMEASURE_HMCR,
     RISKMEASURE_MEANDEVIATIONFROMTARGET, 
@@ -99,6 +101,8 @@ namespace ROL {
     switch(ed) {
       case RISKMEASURE_CVAR:
              retString = "CVaR";                                    break;
+      case RISKMEASURE_COHERENTEXPUTILITY:
+             retString = "Coherent Exponential Utility";            break;
       case RISKMEASURE_EXPUTILITY:
              retString = "Exponential Utility";                     break;
       case RISKMEASURE_HMCR:
@@ -141,6 +145,7 @@ namespace ROL {
 
   inline int isValidRiskMeasure(ERiskMeasure ed) {
     return( (ed == RISKMEASURE_CVAR) ||
+            (ed == RISKMEASURE_COHERENTEXPUTILITY) ||
             (ed == RISKMEASURE_EXPUTILITY) ||
             (ed == RISKMEASURE_HMCR) ||
             (ed == RISKMEASURE_MEANDEVIATIONFROMTARGET) ||
@@ -196,6 +201,8 @@ namespace ROL {
     switch(ed) {
       case RISKMEASURE_CVAR:
              return Teuchos::rcp(new CVaR<Real>(parlist));
+      case RISKMEASURE_COHERENTEXPUTILITY:
+             return Teuchos::rcp(new CoherentExpUtility<Real>());
       case RISKMEASURE_EXPUTILITY:
              return Teuchos::rcp(new ExpUtility<Real>(parlist));
       case RISKMEASURE_HMCR:

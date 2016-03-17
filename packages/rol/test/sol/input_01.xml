@@ -10,7 +10,7 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
-      <Parameter name="Initial Radius"                       type="double" value="10.0"         />
+      <Parameter name="Initial Radius"                       type="double" value="-1.0"         />
       <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
       <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
