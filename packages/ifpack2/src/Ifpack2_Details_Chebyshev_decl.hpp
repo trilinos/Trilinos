@@ -445,6 +445,12 @@ private:
   /// Estimate for maximum eigenvalue of A.
   /// This is the value actually used by ifpackApplyImpl().
   ST lambdaMaxForApply_;
+
+  /// @brief Factor used to increase estimate of A's maximum eigenvalue.
+  /// lambdaMaxForApply_ is multiplied by this factor in ifpackApplyImpl(). The idea is to ensure that
+  /// A's maximum eigenvalue is less than the result. Otherwise high-energy error modes could
+  /// actually be magnified by the smoother.  The default value is 1.1.
+  ST boostFactor_;
   /// Estimate for minimum eigenvalue of A.
   /// This is the value actually used by ifpackApplyImpl().
   ST lambdaMinForApply_;
