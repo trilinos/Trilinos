@@ -1048,14 +1048,6 @@ KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokko
 
 #ifdef KOKKOS_HAVE_CUDA
 
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
@@ -1085,12 +1077,6 @@ KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokk
 KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
-
-#ifdef KOKKOS_HAVE_CUDA
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
 

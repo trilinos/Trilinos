@@ -2104,19 +2104,6 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads
 
 #ifdef KOKKOS_HAVE_CUDA
 
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
