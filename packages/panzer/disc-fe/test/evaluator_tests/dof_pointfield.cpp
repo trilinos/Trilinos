@@ -150,6 +150,8 @@ PHX_EVALUATE_FIELDS(RefCoordEvaluator,workset)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 {
+  typedef Sacado::ScalarValue<typename EvalType::ScalarT> SV;
+
   PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
@@ -339,8 +341,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   // check the results
   for(int cell=0;cell<refField.dimension_0();cell++) {
     for(int pt=0;pt<refField.dimension_1();pt++) {
-      TEST_EQUALITY(refField(cell,pt),dofPointField0(cell,pt));
-      TEST_EQUALITY(refField(cell,pt),dofPointField1(cell,pt));
+      TEST_FLOATING_EQUALITY(SV::eval(refField(cell,pt)),SV::eval(dofPointField0(cell,pt)),1e-15);
+      TEST_FLOATING_EQUALITY(SV::eval(refField(cell,pt)),SV::eval(dofPointField1(cell,pt)),1e-15);
+      // TEST_EQUALITY(refField(cell,pt),dofPointField0(cell,pt));
+      // TEST_EQUALITY(refField(cell,pt),dofPointField1(cell,pt));
     }
   }
 }
