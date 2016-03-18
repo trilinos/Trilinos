@@ -53,11 +53,12 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+void find_entities_these_nodes_have_in_common2(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
 {
   entity_vector.clear();
-  std::vector<Entity> tmp;
   std::vector<Entity> intersect;
+  std::vector<Entity> tmp;
+
   for(unsigned i=0; i<numNodes; ++i) {
     const Entity* entities = mesh.begin(nodes[i],rank);
     unsigned numEntities = mesh.num_connectivity(nodes[i],rank);
@@ -75,6 +76,45 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
        entity_vector.swap(intersect);
     }
   }
+}
+
+void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+{
+  entity_vector.clear();
+
+  unsigned maxNumEntities = 0;
+  for(unsigned i=0; i<numNodes; ++i)
+      maxNumEntities += mesh.num_connectivity(nodes[i],rank);
+
+  entity_vector.reserve(maxNumEntities);
+
+  for(unsigned i=0; i<numNodes; ++i) {
+    const Entity* entities = mesh.begin(nodes[i],rank);
+    unsigned numEntities = mesh.num_connectivity(nodes[i],rank);
+    entity_vector.insert(entity_vector.end(), entities, entities+numEntities);
+  }
+
+  std::sort(entity_vector.begin(), entity_vector.end());
+
+  unsigned counter = 1;
+  unsigned numUniqueEntities = 0;
+
+  for(unsigned i=0; i<maxNumEntities-numNodes; i += counter)
+  {
+      counter = 1;
+
+      while((counter < numNodes) && (entity_vector[i] == entity_vector[i+counter]))
+      {
+          ++counter;
+      }
+
+      if(counter == numNodes)
+      {
+          entity_vector[numUniqueEntities++] = entity_vector[i];
+      }
+  }
+
+  entity_vector.resize(numUniqueEntities);
 }
 
 void find_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)

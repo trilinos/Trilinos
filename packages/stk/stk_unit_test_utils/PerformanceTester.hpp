@@ -41,8 +41,8 @@ protected:
             enabledTimerSet(CHILDMASK1),
             rootTimer(createRootTimer("totalTestRuntime", enabledTimerSet)),
             childTimer("timed algorithm", CHILDMASK1, rootTimer),
-            duration(0.0),
-            communicator(comm)
+            communicator(comm),
+            duration(0.0)
     {
     }
     virtual ~PerformanceTester()
@@ -52,6 +52,13 @@ protected:
 
     virtual void run_algorithm_to_time() = 0;
     virtual size_t get_value_to_output_as_iteration_count() = 0;
+
+protected:
+    const int CHILDMASK1 = 1;
+    stk::diag::TimerSet enabledTimerSet;
+    stk::diag::Timer rootTimer;
+    stk::diag::Timer childTimer;
+    MPI_Comm communicator;
 
 private:
     void time_algorithm()
@@ -68,12 +75,7 @@ private:
         print_output_for_graph_generation(duration, rootTimer, communicator);
     }
 
-    const int CHILDMASK1 = 1;
-    stk::diag::TimerSet enabledTimerSet;
-    stk::diag::Timer rootTimer;
-    stk::diag::Timer childTimer;
     double duration;
-    MPI_Comm communicator;
 };
 
 }
