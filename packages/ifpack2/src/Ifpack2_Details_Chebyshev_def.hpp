@@ -293,6 +293,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params
   computedLambdaMax_ (STS::nan ()),
   computedLambdaMin_ (STS::nan ()),
   lambdaMaxForApply_ (STS::nan ()),
+  boostFactor_(Teuchos::as<ST> (1.1)),
   lambdaMinForApply_ (STS::nan ()),
   eigRatioForApply_ (STS::nan ()),
   userLambdaMax_ (STS::nan ()),
@@ -338,6 +339,7 @@ setParameters (Teuchos::ParameterList& plist)
   // ML an Epetra matrix, it will use Ifpack for Chebyshev, in which
   // case it would defer to Ifpack's default settings.)
   const ST defaultEigRatio = Teuchos::as<ST> (30);
+  const double defaultBoostFactor = Teuchos::as<double>(1.1);
   const ST defaultMinDiagVal = STS::eps ();
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
@@ -354,6 +356,7 @@ setParameters (Teuchos::ParameterList& plist)
   ST lambdaMax = defaultLambdaMax;
   ST lambdaMin = defaultLambdaMin;
   ST eigRatio = defaultEigRatio;
+  double boostFactor = defaultBoostFactor;
   ST minDiagVal = defaultMinDiagVal;
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
@@ -532,6 +535,13 @@ setParameters (Teuchos::ParameterList& plist)
     "parameter (also called \"smoother: Chebyshev alpha\") must be >= 1, "
     "but you supplied the value " << eigRatio << ".");
 
+  boostFactor = plist.get("chebyshev: boost factor", defaultBoostFactor);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    boostFactor < Teuchos::as<double>(1.0),
+    std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters: \"chebyshev: boost factor\""
+    "parameter must be >= 1, but you supplied the value " << boostFactor << ".");
+
   // Same name in Ifpack2 and Ifpack.
   minDiagVal = plist.get ("chebyshev: min diagonal value", minDiagVal);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -623,6 +633,7 @@ setParameters (Teuchos::ParameterList& plist)
   userLambdaMax_ = lambdaMax;
   userLambdaMin_ = lambdaMin;
   userEigRatio_ = eigRatio;
+  boostFactor_ = Teuchos::as<ST>(boostFactor);
   minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
@@ -1113,7 +1124,7 @@ ifpackApplyImpl (const op_type& A,
 
   // Initialize coefficients
   const ST alpha = lambdaMax / eigRatio;
-  const ST beta = Teuchos::as<ST> (1.1) * lambdaMax;
+  const ST beta = boostFactor_ * lambdaMax;
   const ST delta = two / (beta - alpha);
   const ST theta = (beta + alpha) / two;
   const ST s1 = theta * delta;
@@ -1254,6 +1265,7 @@ powerMethodWithInitGuess (const op_type& A,
     "compute the initial guess), or because the norm2 method has a bug.  The "
     "first is not impossible, but unlikely.");
 
+  //std::cerr.precision(15);
   //std::cerr << "Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << std::endl;
   x.scale (one / norm);
   //std::cerr << "norm1(x.scale(one/norm)): " << x.norm1 () << std::endl;
@@ -1272,6 +1284,7 @@ powerMethodWithInitGuess (const op_type& A,
     }
     x.update (one / norm, y, zero);
   }
+  //std::cerr << "lambdaMax: " << lambdaMax << std::endl;
   return lambdaMax;
 }
 
@@ -1348,6 +1361,7 @@ description () const {
       << ", lambdaMax: " << lambdaMaxForApply_
       << ", alpha: " << eigRatioForApply_
       << ", lambdaMin: " << lambdaMinForApply_
+      << ", boost factor: " << boostFactor_
       << "}";
   return oss.str();
 }
