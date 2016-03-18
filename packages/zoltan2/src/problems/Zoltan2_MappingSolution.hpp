@@ -52,6 +52,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Zoltan2_Environment.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
+#include <unordered_map>
 
 namespace Zoltan2 {
 
@@ -69,62 +70,70 @@ public:
 
 /*! \brief Constructor 
  */
-  MappingSolution() : maxPart(0), nRanks(1) {}
+  MappingSolution(
+      const RCP<const Teuchos::Comm<int> > &comm, 
+      const RCP<Algorithm<Adapter> > &algorithm_ = Teuchos::null) 
+    : nParts(0), nRanks(1), myRank(comm->getRank()), maxPart(0),
+      algorithm(algorithm_) {}
 
   ~MappingSolution() {}
 
   typedef std::unordered_map<part_t, int> rankmap_t;
 
-  /*! \brief Get the parts belonging to a process.
-   *  \param rank a process rank
+  /*! \brief Get the parts belonging to this rank
    *  \param numParts on return, set to the number of parts assigned to rank.
    *  \param parts on return, pointer (view) to the parts assigned to rank
-   *
    */
-  // TODO:  KDDKDD Decide whether information should be avail for any process
-  // TODO:  KDDKDD (requiring more storage or a directory) or only for the 
-  // TODO:  KDDKDD local process.
-  // TODO:  KDDKDD Could require O(nprocs) storage
-  void getPartsForRankView(int rank, part_t &numParts, part_t *&parts)
+  void getMyPartsView(part_t &numParts, part_t *&parts)
   {
-    if ((partsForRankIdx == Teuchos::null) && (rankForPart == Teuchos::null)) {
-      numParts = 0;
-      parts = NULL;
-      throw std::runtime_error("No mapping solution available.");
-    }
+    bool useAlg = true;
 
-    if (rank < 0 || rank >= nRanks) {
-      numParts = 0;
-      parts = NULL;
-      throw std::runtime_error("Invalid rank input to getPartsForRankView");
-    }
-
-    if (partsForRankIdx == Teuchos::null) {
-      // Need data stored in CRS format; create the arrays.
-      partsForRankIdx = arcp(new part_t[nRanks+1], 0, nRanks+1, true);
-      for (int i = 0; i <= nRanks; i++) partsForRankIdx[i] = 0;
-
-      size_t nParts = rankForPart->size();
-      partsForRank = arcp(new part_t[nParts], 0, nParts, true);
-
-      for (typename rankmap_t::iterator it = rankForPart->begin();
-           it != rankForPart->end(); it++) {
-        partsForRankIdx[it->second+1]++;       
+    // Check first whether this algorithm answers getMyPartsView.
+    if (algorithm != Teuchos::null) {
+      try {
+        algorithm->getMyPartsView(numParts, parts);
       }
-      for (int i = 1; i <= nRanks; i++)
-        partsForRankIdx[i] += partsForRankIdx[i-1];
-      for (typename rankmap_t::iterator it = rankForPart->begin();
-           it != rankForPart->end(); it++) {
-        partsForRank[partsForRankIdx[it->second]] = it->first;
-        partsForRankIdx[it->second]++;
+      catch (NotImplemented &e) {
+        // It is OK if the algorithm did not implement this method;
+        // we'll get the information from the solution below.
+        useAlg = false;
       }
-      for (int i = nRanks; i > 0; i--)
-        partsForRankIdx[i] = partsForRankIdx[i-1];
-      partsForRankIdx[0] = 0;
+      Z2_FORWARD_EXCEPTIONS;
     }
 
-    numParts = partsForRankIdx[rank+1] - partsForRankIdx[rank];
-    parts = &(partsForRank[rank]);
+    if (!useAlg) {  
+
+      // Algorithm did not implement this method.
+
+      // Did the algorithm register a result with the solution?
+      if ((partsForRank==Teuchos::null) && (rankForPart==Teuchos::null)) {
+        numParts = 0;
+        parts = NULL;
+        throw std::runtime_error("No mapping solution available.");
+      }
+  
+      if (partsForRank == Teuchos::null) {
+        // Need to create the array since we haven't created it before.
+        Teuchos::Array<part_t> tmp;
+
+        part_t cnt = 0;
+        for (typename rankmap_t::iterator it = rankForPart->begin();
+             it != rankForPart->end(); it++) {
+          if (it->second == myRank) {
+            tmp.push_back(it->first); 
+            cnt++;
+          }
+        }
+        if (cnt)
+          partsForRank = arcp(&tmp[0], 0, cnt, true);
+      }
+
+      numParts = partsForRank.size();
+      if (numParts)
+        parts = partsForRank.getRawPtr();
+      else 
+        parts = NULL;
+    }
   }
 
   /*! \brief Get the rank containing a part.
@@ -133,49 +142,78 @@ public:
    *  \param part Id of the part whose rank is sought
    *  \return rank to which part is assigned
    */
-  // TODO:  KDDKDD Decide how to handle reduced storage case, where entire
-  // TODO:  map is not stored on each processor.
-
   int getRankForPart(part_t part) {
 
-    if ((partsForRankIdx == Teuchos::null) && (rankForPart == Teuchos::null)) {
-      throw std::runtime_error("No mapping solution available.");
+    int r = -1;
+
+    // Check first whether this algorithm answers getRankForPart.
+    // Some algorithms can compute getRankForPart implicitly, without having
+    // to store the mapping explicitly.  It is more efficient for them
+    // to implement getRankForPart themselves.
+    if (algorithm != Teuchos::null) {
+      try {
+        r = algorithm->getRankForPart(part);
+      }
+      catch (NotImplemented &e) {
+        // It is OK if the algorithm did not implement this method;
+        // we'll get the information from the solution below.
+      }
+      Z2_FORWARD_EXCEPTIONS;
     }
 
-    if (part < 0 || part > maxPart) {
-      throw std::runtime_error("Invalid part number input to getRankForPart");
-    }
+    if (r == -1) {  // Algorithm did not implement this method
+      if (rankForPart==Teuchos::null) {
+        throw std::runtime_error("No mapping solution available.");
+      }
 
-    if (rankForPart == Teuchos::null) {
-      // Need data stored in unordered_map; create it
-      rankForPart = rcp(new rankmap_t(partsForRankIdx[nRanks]));
-      for (int i = 0; i < nRanks; i++)
-        for (part_t j = partsForRankIdx[i]; j < partsForRankIdx[i+1]; j++)
-          (*rankForPart)[partsForRank[j]] = i;
-    }
+      if (part < 0 || part > maxPart) {
+        throw std::runtime_error("Invalid part number input to getRankForPart");
+      }
 
-    typename rankmap_t::iterator it;
-    if ((it = rankForPart->find(part)) != rankForPart->end())
-      return it->second;
-    else 
-      throw std::runtime_error("Invalid part number input to getRankForPart");
+
+      typename rankmap_t::iterator it;
+      if ((it = rankForPart->find(part)) != rankForPart->end())
+        r = it->second;
+      else 
+        throw std::runtime_error("Invalid part number input to getRankForPart");
+    }
+    return r;
   }
 
   ///////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////
+  // Methods for storing mapping data in the solution.
+  // Algorithms can store their data in the solution, or implement
+  // getRankForPart and getMyPartsView themselves.
 
   void setMap_PartsForRank(ArrayRCP<int> &idx, ArrayRCP<part_t> &parts) {
     nRanks = idx.size() - 1;
-    partsForRankIdx = idx;
-    partsForRank = parts;
-    size_t nparts = parts.size();
-    for (size_t i = 0; i < nparts; i++)
-      if (parts[i] > maxPart) maxPart = parts[i];
+    nParts = parts.size();
+
+    // Need data stored in unordered_map; create it
+    rankForPart = rcp(new rankmap_t(idx[nRanks]));
+
+    maxPart = 0;
+    for (int i = 0; i < nRanks; i++) {
+      for (part_t j = idx[i]; j < idx[i+1]; j++) {
+        (*rankForPart)[parts[j]] = i;
+        if (parts[j] > maxPart) maxPart = parts[j];
+      }
+    }
+
+    // Parts for this rank are already contiguous in parts arcp.  
+    // Keep a view of them.
+    partsForRank = parts->persistingView(idx[myRank],idx[myRank+1]-idx[myRank]);
   }
 
   void setMap_RankForPart(ArrayRCP<part_t> &parts, ArrayRCP<int> &ranks) {
-    size_t nparts = parts.size();
+    nParts = parts.size();
     int maxRank = 0;
-    for (size_t i = 0; i < nparts; i++) {
+
+    // Need data stored in unordered_map; create it
+    rankForPart = rcp(new rankmap_t(parts.size()));
+
+    for (size_t i = 0; i < nParts; i++) {
       (*rankForPart)[parts[i]] = ranks[i];
       if (parts[i] > maxPart) maxPart = parts[i];
       if (ranks[i] > maxRank) maxRank = ranks[i];
@@ -185,9 +223,10 @@ public:
 
   void setMap_RankForPart(RCP<rankmap_t> &rankmap) {
     rankForPart = rankmap;
+    nParts = rankForPart.size();
     int maxRank = 0;
-    for (typename rankmap_t::iterator it = rankForPart->begin();
-         it != rankForPart->end(); it++) {
+    typename rankmap_t::iterator it;
+    for (it = rankForPart->begin(); it != rankForPart->end(); it++) {
       if (it->first > maxPart) maxPart = it->first;
       if (it->second > maxRank) maxRank = it->second;
     }
@@ -198,12 +237,18 @@ public:
 
 private:
 
-  part_t maxPart;
-  int nRanks;
+  part_t nParts;  // Global number of parts
+  int nRanks;     // Global number of ranks
+  int myRank;     // This ranks
+  part_t maxPart; // Maximum part number
+
+  // Ways to access the answer:  it can be stored in MappingSolution or
+  // provided by the Algorithm.
   ArrayRCP<part_t> partsForRankIdx;
   ArrayRCP<part_t> partsForRank;
   RCP<rankmap_t> rankForPart;
 
+  const RCP<Algorithm<Adapter> > algorithm;
 
 };
 

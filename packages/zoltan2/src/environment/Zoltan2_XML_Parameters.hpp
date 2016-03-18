@@ -307,7 +307,7 @@
     docString='  scotch ordering - Dissection imbalance ratio (default  )' \
     /> \
    <Parameter  \
-    id=\"61\" name=\"mapping_algorithm\" type=\"string\" validatorId=\"52\" value=\"geometric\" \
+    id=\"61\" name=\"mapping_algorithm\" type=\"string\" validatorId=\"52\" value=\"default\" \
     docString='  mapping algorithm' \
     /> \
    <ParameterList  name=\"zoltan_parameters\"> \
@@ -548,6 +548,8 @@
       </Validator> \
       <Validator type=\"StringValidator\" validatorId=\"52\"> \
         <String value=\"geometric\"/> \
+        <String value=\"default\"/> \
+        <String value=\"block\"/> \
       </Validator> \
     </Validators> \
   </ParameterList>"
