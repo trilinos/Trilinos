@@ -755,10 +755,10 @@ namespace Xpetra {
     RCP<const Map > getRangeMap(size_t i, bool bThyraMode = false) const     { return rangemaps_->getMap(i, bRangeThyraMode_); }
 
     //! Returns map extractor class for range map
-    RCP<const MapExtractor> getRangeMapExtractor()  { return rangemaps_; }
+    RCP<const MapExtractor> getRangeMapExtractor() const { return rangemaps_; }
 
     //! Returns map extractor for domain map
-    RCP<const MapExtractor> getDomainMapExtractor() { return domainmaps_; }
+    RCP<const MapExtractor> getDomainMapExtractor() const { return domainmaps_; }
 
     //@}
 
