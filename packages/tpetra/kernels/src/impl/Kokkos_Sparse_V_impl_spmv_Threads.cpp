@@ -48,9 +48,9 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_PTHREAD
 
-KOKKOSSPARSE_IMPL_SPMV_DEFAULT_OFFSET_DEF( int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DEFAULT_OFFSET_DEF( long, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DEFAULT_OFFSET_DEF( double, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( int, int, Kokkos::Threads, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( long, int, Kokkos::Threads, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( double, int, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
 
