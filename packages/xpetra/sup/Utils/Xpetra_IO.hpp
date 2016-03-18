@@ -84,6 +84,7 @@
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
+#include "Xpetra_BlockedCrsMatrix.hpp"
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_StridedMap.hpp"
@@ -285,6 +286,46 @@ namespace Xpetra {
 
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
     } //Write
+
+    /*! @brief Save matrix to file in Matrix Market format. */
+    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+      typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
+      typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
+      typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
+      typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
+      typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
+      typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
+      typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
+      typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
+      typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
+      typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
+
+      // write all matrices with their maps
+      for (size_t r = 0; r < Op.Rows(); ++r) {
+        for (size_t c = 0; c < Op.Cols(); ++c) {
+          RCP<const XpCrsMat > m = Op.getMatrix(r,c);
+          RCP<XpCrsMat> mm = Teuchos::rcp_const_cast<XpCrsMat>(m);
+          RCP<XpMat> mat = rcp(new XpCrsMatWrap(mm));
+          if (!mat.is_null()) XpIO::Write(fileName + toString(r) + toString(c) + ".m", *mat);
+        }
+      }
+
+      // write map information of map extractors
+      RCP<const XpMapExtractor> rangeMapExtractor  = Op.getRangeMapExtractor();
+      RCP<const XpMapExtractor> domainMapExtractor = Op.getDomainMapExtractor();
+
+      for(size_t r = 0; r < rangeMapExtractor->NumMaps(); ++r) {
+        RCP<const XpMap> map = rangeMapExtractor->getMap(r);
+        XpIO::Write("subRangeMap_" + fileName + toString(r) + ".m", *map);
+      }
+      XpIO::Write("fullRangeMap_" + fileName +".m",*(rangeMapExtractor->getFullMap()));
+
+      for(size_t c = 0; c < domainMapExtractor->NumMaps(); ++c) {
+        RCP<const XpMap> map = domainMapExtractor->getMap(c);
+        XpIO::Write("subDomainMap_" + fileName + toString(c) + ".m", *map);
+      }
+      XpIO::Write("fullDomainMap_" + fileName+ ".m",*(domainMapExtractor->getFullMap()));
+    } //WriteBlockCrsMatrix
 
     //! @brief Read matrix from file in Matrix Market or binary format.
     static Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary = false) {
@@ -557,7 +598,13 @@ namespace Xpetra {
 
     }
 
-
+    //! Little helper function to convert non-string types to strings
+    template<class T>
+    std::string toString(const T& what) {
+      std::ostringstream buf;
+      buf << what;
+      return buf.str();
+    }
   };
 
 
@@ -710,6 +757,46 @@ namespace Xpetra {
 
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
     } //Write
+
+    /*! @brief Save matrix to file in Matrix Market format. */
+    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+      typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
+      typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
+      typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
+      typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
+      typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
+      typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
+      typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
+      typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
+      typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
+      typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
+
+      // write all matrices with their maps
+      for (size_t r = 0; r < Op.Rows(); ++r) {
+        for (size_t c = 0; c < Op.Cols(); ++c) {
+          RCP<const XpCrsMat > m = Op.getMatrix(r,c);
+          RCP<XpCrsMat> mm = Teuchos::rcp_const_cast<XpCrsMat>(m);
+          RCP<XpMat> mat = rcp(new XpCrsMatWrap(mm));
+          if (!mat.is_null()) XpIO::Write(fileName + toString(r) + toString(c) + ".m", *mat);
+        }
+      }
+
+      // write map information of map extractors
+      RCP<const XpMapExtractor> rangeMapExtractor  = Op.getRangeMapExtractor();
+      RCP<const XpMapExtractor> domainMapExtractor = Op.getDomainMapExtractor();
+
+      for(size_t r = 0; r < rangeMapExtractor->NumMaps(); ++r) {
+        RCP<const XpMap> map = rangeMapExtractor->getMap(r);
+        XpIO::Write("subRangeMap_" + fileName + toString(r) + ".m", *map);
+      }
+      XpIO::Write("fullRangeMap_" + fileName +".m",*(rangeMapExtractor->getFullMap()));
+
+      for(size_t c = 0; c < domainMapExtractor->NumMaps(); ++c) {
+        RCP<const XpMap> map = domainMapExtractor->getMap(c);
+        XpIO::Write("subDomainMap_" + fileName + toString(c) + ".m", *map);
+      }
+      XpIO::Write("fullDomainMap_" + fileName+ ".m",*(domainMapExtractor->getFullMap()));
+    } //WriteBlockCrsMatrix
 
     //! @brief Read matrix from file in Matrix Market or binary format.
     static Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary = false) {
@@ -1022,7 +1109,13 @@ namespace Xpetra {
 
     }
 
-
+    //! Little helper function to convert non-string types to strings
+    template<class T>
+    std::string toString(const T& what) {
+      std::ostringstream buf;
+      buf << what;
+      return buf.str();
+    }
   };
 #endif // HAVE_XPETRA_EPETRA
 
