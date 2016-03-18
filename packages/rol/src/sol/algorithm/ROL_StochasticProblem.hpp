@@ -402,7 +402,8 @@ public:
                                                           const int order = 1 ) {
     Teuchos::RCP<Vector<Real> > dp = d.clone();
     dp->set(d);
-    Teuchos::RCP<Vector<Real> > D = createVector(dp);
+    Real stat(5.1264386);
+    Teuchos::RCP<Vector<Real> > D = createVector(dp,stat);
     return OptimizationProblem<Real>::checkObjectiveGradient(*D,printToStream,outStream,numSteps,order);
   }
 
@@ -413,7 +414,8 @@ public:
                                                          const int order = 1 ) {
     Teuchos::RCP<Vector<Real> > vp = v.clone();
     vp->set(v);
-    Teuchos::RCP<Vector<Real> > V = createVector(vp);
+    Real stat(3.223468906);
+    Teuchos::RCP<Vector<Real> > V = createVector(vp,stat);
     return OptimizationProblem<Real>::checkObjectiveHessVec(*V,printToStream,outStream,numSteps,order);
   } 
 
@@ -434,7 +436,7 @@ private:
     return mean;
   }
 
-  Teuchos::RCP<Vector<Real> > createVector(Teuchos::RCP<Vector<Real> > &vec) {
+  Teuchos::RCP<Vector<Real> > createVector(Teuchos::RCP<Vector<Real> > &vec, Real stat = 1) {
     if ( parlist_ == Teuchos::null ) {
      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
        ">>> ERROR (ROL::StochasticProblem): parameter list not set!");
@@ -446,11 +448,11 @@ private:
         return vec;
       }
       else if ( type == "Risk Averse" ) {
-        return Teuchos::rcp(new RiskVector<Real>(*parlist_,vec));
+        return Teuchos::rcp(new RiskVector<Real>(*parlist_,vec,stat));
       }
       else if ( type == "BPOE" ) {
-        std::vector<Real> stat(1,1);
-        return Teuchos::rcp(new RiskVector<Real>(vec,stat,true));
+        std::vector<Real> statistic(1,stat);
+        return Teuchos::rcp(new RiskVector<Real>(vec,statistic,true));
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,

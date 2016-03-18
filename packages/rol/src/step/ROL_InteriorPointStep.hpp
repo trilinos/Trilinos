@@ -81,7 +81,8 @@ private:
   Teuchos::RCP<Vector<Real> > c_;
 
   Real mu_;      // Barrier parameter
-  Real eps_;     // Minimal value of barrier parameter
+  Real mumin_;   // Minimal value of barrier parameter
+  Real mumax_;   // Maximal value of barrier parameter 
   Real rho_;     // Barrier parameter reduction factor
   int  maxit_;   // Maximum number of interior point subproblem solves
 
@@ -121,7 +122,8 @@ public:
     ParameterList& iplist  = parlist.sublist("Step").sublist("Interior Point");
 
     mu_             = iplist.get("Initial Barrier Penalty",1.0);
-    eps_            = iplist.get("Minimum Barrier Penalty",1.e-4);
+    mumin_          = iplist.get("Minimum Barrier Penalty",1.e-4);
+    mumax_          = iplist.get("Maximum Barrier Penalty",1e8);
     rho_            = iplist.get("Barrier Penalty Reduction Factor",0.5);
     subproblemIter_ = iplist.get("Subproblem Iteration Limit",10);
 
@@ -230,8 +232,8 @@ public:
   void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s, Objective<Real> &obj, 
                EqualityConstraint<Real> &con,  AlgorithmState<Real> &algo_state ) {
 
-    // If we can reduce the barrier parameter, do so
-    if(mu_ > eps_) {
+    // If we can change the barrier parameter, do so
+    if( (rho_< 1.0 && mu_ > mumin_) || (rho_ > 1.0 && mu_ < mumax_) ) {
       mu_ *= rho_;
       ipobj_->updatePenalty(mu_);
     }

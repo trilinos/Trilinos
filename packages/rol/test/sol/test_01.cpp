@@ -341,6 +341,15 @@ int main(int argc, char* argv[]) {
     setRandomVector(*x_rcp);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
+//    /**********************************************************************************************/
+//    /************************* COHERENT EXPONENTIAL UTILITY FUNCTION ******************************/
+//    /**********************************************************************************************/
+//    *outStream << "\nCOHERENT EXPONENTIAL UTILITY FUNCTION\n";
+//    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+//    list.sublist("SOL").sublist("Risk Measure").set("Name","Coherent Exponential Utility");
+//    setRandomVector(*x_rcp);
+//    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+//    printSolution(*x_rcp,*outStream);
     /**********************************************************************************************/
     /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
     /**********************************************************************************************/

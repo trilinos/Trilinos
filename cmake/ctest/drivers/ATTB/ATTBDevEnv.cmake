@@ -156,8 +156,3 @@ SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
 # See Trilinos #202
 SET(STKUnit_tests_util_parallel_UnitTest_MPI_4_DISABLE ON
   CACHE BOOL  "Set in ATTBDevEnv.cmake")
-# See Trilinos #211
-SET(TeuchosNumerics_BLAS_ROTG_test_DISABLE ON
-  CACHE BOOL  "Set in ATTBDevEnv.cmake")
-SET(TeuchosNumerics_BLAS_ROTG_test_MPI_1_DISABLE ON
-  CACHE BOOL  "Set in ATTBDevEnv.cmake")

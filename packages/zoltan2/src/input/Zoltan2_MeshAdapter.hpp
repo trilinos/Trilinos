@@ -185,7 +185,7 @@ public:
                                  enum EntityTopologyType const *&Types) const
   {
     Types = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Return the number of weights per entity.
@@ -213,7 +213,7 @@ public:
   {
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
 
@@ -242,7 +242,7 @@ public:
   {
     coords = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
 
@@ -274,7 +274,7 @@ public:
   {
     offsets = NULL;
     adjacencyIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
 
@@ -314,7 +314,7 @@ public:
   {
     offsets = NULL;
     adjacencyIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
@@ -341,7 +341,7 @@ public:
   {
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   ////////////////////////////////////////////////////////////////////////////

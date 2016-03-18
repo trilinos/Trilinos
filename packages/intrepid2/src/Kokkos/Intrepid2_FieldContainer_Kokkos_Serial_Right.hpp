@@ -307,7 +307,8 @@ containerMemory=InContainer.ptr_on_device();
 }
 
 typedef Kokkos::Serial execution_space;
-
+typedef Kokkos::RangePolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > range_policy;
+ 
 Scalar& operator[] (const index_type i0);
 
 Scalar& operator() (const index_type i0);
@@ -384,12 +385,12 @@ index_type dimension_6()const{return dim6;}
 index_type dimension_7()const{return dim7;}
 
 void initialize(Scalar initValue){
-Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+Kokkos::parallel_for(range_policy(0, sizeValue),initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
 
 void initialize(){
-Scalar initValue=Scalar(0.0);
-Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+  Scalar initValue=Scalar(0.0);
+  Kokkos::parallel_for(range_policy(0, sizeValue),initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
 
 

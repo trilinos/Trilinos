@@ -160,7 +160,7 @@ public:
   virtual void getRowIDsView(const gno_t *&rowIds) const
   {
     rowIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Sets pointers to this process' matrix entries using
@@ -180,7 +180,7 @@ public:
     // Default implementation; no CRS view provided.
     offsets = NULL;
     colIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Sets pointers to this process' matrix entries
@@ -205,7 +205,7 @@ public:
     offsets = NULL;
     colIds = NULL;
     values = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Returns the number of weights per row (0 or greater).
@@ -225,7 +225,7 @@ public:
     // Default implementation
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Indicate whether row weight with index idx should be the
@@ -233,7 +233,7 @@ public:
    */
   virtual bool useNumNonzerosAsRowWeight(int idx) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Indicates whether the MatrixAdapter implements a view of the
@@ -249,7 +249,7 @@ public:
   virtual void getColumnIDsView(const gno_t *&colIds) const
   {
     colIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Sets pointers to this process' matrix entries using
@@ -269,7 +269,7 @@ public:
     // Default implementation; no CCS view provided.
     offsets = NULL;
     rowIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Sets pointers to this process' matrix entries
@@ -294,7 +294,7 @@ public:
     offsets = NULL;
     rowIds = NULL;
     values = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Returns the number of weights per column (0 or greater).
@@ -314,7 +314,7 @@ public:
     // Default implementation
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Indicate whether column weight with index idx should be the
