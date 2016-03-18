@@ -237,7 +237,7 @@ struct SPMV_Functor {
         sum += val * m_x(row.colidx(iEntry));
       }
 
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
       if (blockDim.x > 1)
         sum += Kokkos::shfl_down(sum, 1,blockDim.x);
       if (blockDim.x > 2)
@@ -252,7 +252,7 @@ struct SPMV_Functor {
       if (threadIdx.x==0) {
 #else
       if (true) {
-#endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         if (doalpha == -1) {
           sum *= value_type(-1);
         } else if (doalpha * doalpha != 1) {
@@ -880,7 +880,7 @@ struct SPMV_MV_LayoutLeft_Functor {
     if (doalpha == -1) {
       for (int ii=0; ii < UNROLL; ++ii) {
         value_type sumt=sum[ii];
-        #ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         if (blockDim.x > 1)
           sumt += Kokkos::shfl_down(sumt, 1,blockDim.x);
         if (blockDim.x > 2)
@@ -891,14 +891,14 @@ struct SPMV_MV_LayoutLeft_Functor {
           sumt += Kokkos::shfl_down(sumt, 8,blockDim.x);
         if (blockDim.x > 16)
           sumt += Kokkos::shfl_down(sumt, 16,blockDim.x);
-        #endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         sum[ii] = - sumt;
       }
     }
     else {
       for (int ii=0; ii < UNROLL; ++ii) {
         value_type sumt = sum[ii];
-        #ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         if (blockDim.x > 1)
           sumt += Kokkos::shfl_down(sumt, 1,blockDim.x);
         if (blockDim.x > 2)
@@ -909,16 +909,16 @@ struct SPMV_MV_LayoutLeft_Functor {
           sumt += Kokkos::shfl_down(sumt, 8,blockDim.x);
         if (blockDim.x > 16)
           sumt += Kokkos::shfl_down(sumt, 16,blockDim.x);
-        #endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         sum[ii] = sumt;
       }
     }
 
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
     if (threadIdx.x==0) {
 #else
     if (true) {
-#endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
       if (doalpha * doalpha != 1) {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1015,7 +1015,7 @@ struct SPMV_MV_LayoutLeft_Functor {
                   row.value(iEntry);
       sum += val * m_x(row.colidx(iEntry),0);
     }
-    #ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
     if (blockDim.x > 1)
       sum += Kokkos::shfl_down(sum, 1,blockDim.x);
     if (blockDim.x > 2)
@@ -1026,13 +1026,13 @@ struct SPMV_MV_LayoutLeft_Functor {
       sum += Kokkos::shfl_down(sum, 8,blockDim.x);
     if (blockDim.x > 16)
       sum += Kokkos::shfl_down(sum, 16,blockDim.x);
-    #endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
 
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
     if (threadIdx.x==0) {
 #else
     if (true) {
-#endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
       if (doalpha == -1) {
         sum *= value_type(-1);
       } else if (doalpha * doalpha != 1) {
