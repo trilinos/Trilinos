@@ -649,15 +649,15 @@ namespace Xpetra {
       RCP<const XpMapExtractor> domainMapExtractor =
           Teuchos::rcp(new XpMapExtractor(fullDomainMap, doMapVec, bDomainUseThyraStyleNumbering));
 
-      RCP<XpBlockedCrsMat> bOp = Teuchos::rcp(new XpBlockedCrsMat(rangeMapExtractor,domainMapExtractor));
+      RCP<XpBlockedCrsMat> bOp = Teuchos::rcp(new XpBlockedCrsMat(rangeMapExtractor,domainMapExtractor,33));
 
       // write all matrices with their maps
       for (size_t r = 0; r < numBlocks; ++r) {
         for (size_t c = 0; c < numBlocks; ++c) {
           RCP<const XpMap> rowSubMap = XpIO::ReadMap("rowmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
-          RCP<const XpMap> colSubMap = XpIO::ReadMap("colmap_A" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
-          RCP<const XpMap> domSubMap = XpIO::ReadMap("domainmap_A" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
-          RCP<const XpMap> ranSubMap = XpIO::ReadMap("rangemap_A" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> colSubMap = XpIO::ReadMap("colmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> domSubMap = XpIO::ReadMap("domainmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> ranSubMap = XpIO::ReadMap("rangemap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
           RCP<XpMat> mat = XpIO::Read(fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", rowSubMap, colSubMap, domSubMap, ranSubMap);
           RCP<XpCrsMatWrap> cmat = Teuchos::rcp_dynamic_cast<XpCrsMatWrap>(mat);
           RCP<XpCrsMat> crsmat = cmat->getCrsMatrix();
@@ -1147,7 +1147,7 @@ namespace Xpetra {
         Epetra_Map *eMap;
         int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
         if (rv != 0)
-          throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + Teuchos::toString(rv) + ")");
+          throw Exceptions::RuntimeError("Error reading map from file " + fileName + " with EpetraExt::MatrixMarketToMap (returned " + Teuchos::toString(rv) + ")");
 
         RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
         return Xpetra::toXpetra<int,Node>(*eMap1);
@@ -1234,15 +1234,15 @@ namespace Xpetra {
       RCP<const XpMapExtractor> domainMapExtractor =
           Teuchos::rcp(new XpMapExtractor(fullDomainMap, doMapVec, bDomainUseThyraStyleNumbering));
 
-      RCP<XpBlockedCrsMat> bOp = Teuchos::rcp(new XpBlockedCrsMat(rangeMapExtractor,domainMapExtractor));
+      RCP<XpBlockedCrsMat> bOp = Teuchos::rcp(new XpBlockedCrsMat(rangeMapExtractor,domainMapExtractor,33));
 
       // write all matrices with their maps
       for (size_t r = 0; r < numBlocks; ++r) {
         for (size_t c = 0; c < numBlocks; ++c) {
           RCP<const XpMap> rowSubMap = XpIO::ReadMap("rowmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
-          RCP<const XpMap> colSubMap = XpIO::ReadMap("colmap_A" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
-          RCP<const XpMap> domSubMap = XpIO::ReadMap("domainmap_A" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
-          RCP<const XpMap> ranSubMap = XpIO::ReadMap("rangemap_A" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> colSubMap = XpIO::ReadMap("colmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> domSubMap = XpIO::ReadMap("domainmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> ranSubMap = XpIO::ReadMap("rangemap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
           RCP<XpMat> mat = XpIO::Read(fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", rowSubMap, colSubMap, domSubMap, ranSubMap);
           RCP<XpCrsMatWrap> cmat = Teuchos::rcp_dynamic_cast<XpCrsMatWrap>(mat);
           RCP<XpCrsMat> crsmat = cmat->getCrsMatrix();
