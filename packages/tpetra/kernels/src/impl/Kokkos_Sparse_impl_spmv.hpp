@@ -612,14 +612,6 @@ KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Th
 
 #ifdef KOKKOS_HAVE_CUDA
 
-KOKKOSSPARSE_IMPL_SPMV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-
 KOKKOSSPARSE_IMPL_SPMV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSSPARSE_IMPL_SPMV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
@@ -1756,14 +1748,6 @@ KOKKOSSPARSE_IMPL_SPMV_MV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::T
 KOKKOSSPARSE_IMPL_SPMV_MV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
-
-#ifdef KOKKOS_HAVE_CUDA
-
-KOKKOSSPARSE_IMPL_SPMV_MV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_MV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_MV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
 
