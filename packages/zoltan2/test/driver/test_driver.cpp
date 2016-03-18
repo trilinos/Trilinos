@@ -378,6 +378,7 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
   comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
+  comparison_source->metricObject = metricObject;
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
   
