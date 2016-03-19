@@ -108,7 +108,6 @@ public:
                               const RCP<const Comm<int>> &comm,
                               std::ostringstream &msg_stream) {
 
-    //ArrayRCP<const metric_t> metrics = (problem)->getMetrics();
       ArrayRCP<const metric_t> metrics = (metricObject)->getMetrics();
       
       string test_name;
