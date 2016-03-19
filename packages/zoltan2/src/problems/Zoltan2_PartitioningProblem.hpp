@@ -191,7 +191,7 @@ public:
   /*! \brief Get the array of metrics
    *   Metrics were only computed if user requested
    *   metrics with a parameter.
-   */
+   *
   ArrayRCP<const MetricValues<scalar_t> > getMetrics() const {
    if (metrics_.is_null()){
       ArrayRCP<const MetricValues<scalar_t> > emptyMetrics;
@@ -199,7 +199,7 @@ public:
     }
     else
       return metrics_->getMetrics();
-  }
+      }*/
 
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
    *
