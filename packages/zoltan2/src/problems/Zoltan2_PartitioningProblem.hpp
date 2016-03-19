@@ -649,19 +649,19 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   std::string defString("default");
 
-  // Did the user ask for computation of quality metrics?
+  /* Did the user ask for computation of quality metrics?
 
   int yesNo=0;
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("compute_metrics");
   if (pe){
     yesNo = pe->getValue<int>(&yesNo);
     metricsRequested_ = true;
-  }
+    }*/
 
   // Did the user specify a computational model?
 
   std::string model(defString);
-  pe = pl.getEntryPtr("model");
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("model");
   if (pe)
     model = pe->getValue<std::string>(&model);
 
