@@ -650,7 +650,7 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   RCP<const ComparisonSource> sourcePrb = this->sources[prb_name];
   RCP<const ComparisonSource> sourceRef = this->sources[ref_name];
   
-  // get problems
+  // get metric objects
   auto metricObjectPrb = sourcePrb.get()->metricObject.get();
   auto metricObjectRef = sourceRef.get()->metricObject.get();
   
