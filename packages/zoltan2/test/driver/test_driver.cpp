@@ -122,8 +122,6 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
     zoltan2Parameters.setParameters(sub);
   }
   
-  //zoltan2Parameters.set("compute_metrics", "true");
-
 }
 
 void getParameterLists(const string &inputFileName,
