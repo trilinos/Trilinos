@@ -32,10 +32,10 @@ public:
 
     virtual ~BulkDataCoincidenceDetector() {}
 
-    virtual bool are_graph_edge_elements_coincident(const stk::mesh::GraphEdge &graphEdge) const
+    virtual bool are_graph_edge_elements_coincident(const stk::mesh::GraphEdge &graphEdge, ScratchEntityVectors& scratch) const
     {
         return  are_graph_edge_elements_fully_coincident(graphEdge) ||
-                are_graph_edge_elements_partially_coincident(graphEdge);
+                are_graph_edge_elements_partially_coincident(graphEdge, scratch);
     }
 
 
@@ -69,7 +69,7 @@ private:
         return stk::mesh::impl::are_graph_edge_elements_fully_coincident(m_graph, m_topologies, graphEdge);
     }
 
-    virtual bool are_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge) const
+    virtual bool are_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge, ScratchEntityVectors& scratch) const
     {
         if(are_side_nodes_degenerate(get_side_nodes(graphEdge.elem1, graphEdge.side1)))
             return false;
@@ -77,7 +77,7 @@ private:
         if(!impl::is_local_element(graphEdge.elem2))
             return are_parallel_graph_edge_elements_partially_coincident(graphEdge);
 
-        return are_local_graph_edge_elements_partially_coincident(graphEdge);
+        return are_local_graph_edge_elements_partially_coincident(graphEdge, scratch);
     }
 
     stk::mesh::EntityVector get_side_nodes(const impl::LocalId elemId, const int side) const
@@ -87,6 +87,14 @@ private:
         stk::mesh::Entity element = m_localIdToElementEntity[elemId];
         m_topologies[elemId].side_nodes(m_bulkData.begin_nodes(element), side, sideNodes.begin());
         return sideNodes;
+    }
+
+    void fill_side_nodes(const impl::LocalId elemId, const int side, stk::mesh::EntityVector& sideNodes) const
+    {
+        unsigned numSideNodes = m_topologies[elemId].side_topology(side).num_nodes();
+        sideNodes.resize(numSideNodes);
+        stk::mesh::Entity element = m_localIdToElementEntity[elemId];
+        m_topologies[elemId].side_nodes(m_bulkData.begin_nodes(element), side, sideNodes.begin());
     }
 
     bool are_parallel_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge) const
@@ -117,15 +125,15 @@ private:
         return sortedEntities.size() != sideNodesElement1.size();
     }
 
-    bool are_local_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge) const
+    bool are_local_graph_edge_elements_partially_coincident(const stk::mesh::GraphEdge &graphEdge, ScratchEntityVectors& scratch) const
     {
-        stk::mesh::EntityVector sideNodesElement1 = get_side_nodes(graphEdge.elem1, graphEdge.side1);
-        stk::mesh::EntityVector sideNodesElement2 = get_side_nodes(graphEdge.elem2, graphEdge.side2);
+        fill_side_nodes(graphEdge.elem1, graphEdge.side1, scratch.vec1);
+        fill_side_nodes(graphEdge.elem2, graphEdge.side2, scratch.vec2);
 
-        if(sideNodesElement1.size() != sideNodesElement2.size())
+        if(scratch.vec1.size() != scratch.vec2.size())
             return false;
 
-        return do_side_nodes_for_graph_edge_have_same_polarity(graphEdge, sideNodesElement1, sideNodesElement2);
+        return do_side_nodes_for_graph_edge_have_same_polarity(graphEdge, scratch.vec1, scratch.vec2);
     }
 
     stk::mesh::BulkData &m_bulkData;

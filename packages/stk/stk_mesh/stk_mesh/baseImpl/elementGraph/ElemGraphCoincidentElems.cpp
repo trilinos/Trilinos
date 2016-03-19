@@ -26,9 +26,9 @@ namespace mesh
 namespace impl
 {
 
-int count_shared_sides(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
+unsigned count_shared_sides(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
 {
-    int numSharedSides = 0;
+    unsigned numSharedSides = 0;
     for(size_t i=0; i < graph.get_num_edges_for_element(graphEdge.elem1); i++)
     {
         const stk::mesh::GraphEdge &elem1GraphEdge = graph.get_edge_for_element(graphEdge.elem1, i);
@@ -38,13 +38,31 @@ int count_shared_sides(const stk::mesh::Graph &graph, const std::vector<stk::top
     return numSharedSides;
 }
 
-bool are_graph_edge_elements_fully_coincident(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
+bool are_all_sides_shared(const stk::mesh::Graph &graph, const stk::mesh::GraphEdge &graphEdge)
 {
-    int numSides = topologies[graphEdge.elem1].num_sides();
-    int numSharedSides = count_shared_sides(graph, topologies, graphEdge);
-    return (numSharedSides == numSides);
+    size_t numEdges = graph.get_num_edges_for_element(graphEdge.elem1);
+    for(size_t i=0; i < numEdges; i++)
+    {
+        const stk::mesh::GraphEdge &elem1GraphEdge = graph.get_edge_for_element(graphEdge.elem1, i);
+        if(elem1GraphEdge.elem2 != graphEdge.elem2)
+            return false;
+    }
+    return true;
 }
 
+bool are_graph_edge_elements_fully_coincident(const stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, const stk::mesh::GraphEdge &graphEdge)
+{
+    unsigned numTopologySides = topologies[graphEdge.elem1].num_sides();
+    unsigned numEdges = graph.get_num_edges_for_element(graphEdge.elem1);
+    if (numEdges < numTopologySides) {
+        return false;
+    }
+    if (numEdges == numTopologySides) {
+        return are_all_sides_shared(graph, graphEdge);
+    }
+    unsigned numSharedSides = count_shared_sides(graph, topologies, graphEdge);
+    return (numSharedSides == numTopologySides);
+}
 
 void CoincidentSideExtractor::delete_edges(const GraphEdgeVector& edgesToDelete)
 {
@@ -62,10 +80,11 @@ void CoincidentSideExtractor::extract_coincident_sides_for_element(LocalId elemI
                                                                    GraphEdgeVector &coincidentSides,
                                                                    const CoincidenceDetector &detector)
 {
+    ScratchEntityVectors scratch;
     for(size_t edgeIndex = 0; edgeIndex < m_graph.get_num_edges_for_element(elemId); edgeIndex++)
     {
         const GraphEdge &graphEdge = m_graph.get_edge_for_element(elemId, edgeIndex);
-        if(detector.are_graph_edge_elements_coincident(graphEdge))
+        if(detector.are_graph_edge_elements_coincident(graphEdge, scratch))
             coincidentSides.push_back(graphEdge);
     }
 }

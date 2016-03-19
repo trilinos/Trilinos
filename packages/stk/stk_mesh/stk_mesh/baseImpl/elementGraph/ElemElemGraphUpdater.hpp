@@ -57,8 +57,13 @@ public:
 
     virtual void started_modification_end_notification()
     {
-        elemGraph.delete_elements(elementsDeleted);
-        elementsDeleted.clear();
+        size_t numLocalElementsDeleted = elementsDeleted.size();
+        size_t numGlobalElementsDeleted = 0;
+        stk::all_reduce_sum(bulkData.parallel(), &numLocalElementsDeleted, &numGlobalElementsDeleted, 1);
+        if (numGlobalElementsDeleted > 0) {
+            elemGraph.delete_elements(elementsDeleted);
+            elementsDeleted.clear();
+        }
     }
 
     virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)

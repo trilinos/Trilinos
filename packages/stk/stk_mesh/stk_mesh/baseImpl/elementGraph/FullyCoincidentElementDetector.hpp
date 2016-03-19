@@ -24,7 +24,7 @@ public:
 
     virtual ~FullyCoincidentElementDetector() {}
 
-    virtual bool are_graph_edge_elements_coincident(const stk::mesh::GraphEdge &graphEdge) const
+    virtual bool are_graph_edge_elements_coincident(const stk::mesh::GraphEdge &graphEdge, ScratchEntityVectors& /*scratch*/) const
     {
         return stk::mesh::impl::are_graph_edge_elements_fully_coincident(m_graph, m_topologies, graphEdge);
     }

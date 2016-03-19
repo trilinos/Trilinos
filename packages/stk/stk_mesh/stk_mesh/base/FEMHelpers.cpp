@@ -451,6 +451,9 @@ get_ordinal_and_permutation_with_filter(const stk::mesh::BulkData& mesh,
         elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology);
 
         pFilter.set_ordinal_and_permutation(nodes_of_sub_rank, nodes_of_sub_topology, sub_topology, i, ordinalAndPermutation);
+        if (ordinalAndPermutation.first != stk::mesh::INVALID_CONNECTIVITY_ORDINAL) {
+            break;
+        }
     }
 
     return ordinalAndPermutation;

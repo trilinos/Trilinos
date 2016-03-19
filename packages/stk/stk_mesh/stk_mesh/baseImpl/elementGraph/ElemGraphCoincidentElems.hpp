@@ -33,12 +33,18 @@ public:
     virtual stk::mesh::impl::LocalId globalToLocal(stk::mesh::EntityId global) const = 0;
 };
 
+struct ScratchEntityVectors {
+  stk::mesh::EntityVector vec1;
+  stk::mesh::EntityVector vec2;
+};
+
+
 class CoincidenceDetector
 {
 public:
     virtual ~CoincidenceDetector() {}
 
-    virtual bool are_graph_edge_elements_coincident(const stk::mesh::GraphEdge &graphEdge) const = 0;
+    virtual bool are_graph_edge_elements_coincident(const stk::mesh::GraphEdge &graphEdge, ScratchEntityVectors& scratch) const = 0;
 
     virtual void report_coincident_sides(std::ostream &stream,
                                          const GraphEdgeVector& coincidentSides) const {};
