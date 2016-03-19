@@ -120,8 +120,7 @@ public:
       inputType_(InvalidAdapterType),
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(),
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)/*,
-								      metricsRequested_(false), metrics_()*/
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -135,8 +134,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(),
       partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false)/*,
-						 metricsRequested_(false), metrics_()*/
+      levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -150,8 +148,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(),
       partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false)/*,
-						 metricsRequested_(false), metrics_()*/
+      levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -326,11 +323,6 @@ private:
 
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
-
-  /* Did the user request metrics?
-
-  bool metricsRequested_;
-  RCP<const EvaluatePartition<Adapter> > metrics_;*/
 };
 ////////////////////////////////////////////////////////////////////////
 
