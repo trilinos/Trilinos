@@ -586,20 +586,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     //if mapping is 1 -- graph mapping
   }
 
-  /*if (metricsRequested_){
-    typedef EvaluatePartition<Adapter> psq_t;
-
-    psq_t *quality = NULL;
-
-    try{
-      quality=new psq_t(this->envConst_, this->comm_,
-			this->baseInputAdapter_,&this->getSolution(),false);
-    }
-    Z2_FORWARD_EXCEPTIONS
-
-    metrics_ = rcp(quality);
-    }*/
-
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
 }
 
