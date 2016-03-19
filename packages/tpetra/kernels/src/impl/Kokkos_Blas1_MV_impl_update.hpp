@@ -758,14 +758,6 @@ KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Thread
 
 #ifdef KOKKOS_HAVE_CUDA
 
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
@@ -905,14 +897,6 @@ KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads,
 KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
-
-#ifdef KOKKOS_HAVE_CUDA
-
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
 
