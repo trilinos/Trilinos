@@ -145,14 +145,15 @@ class TEUCHOSCORE_LIB_DLL_EXPORT RCPNode {
 public:
   /** \brief . */
   RCPNode(bool has_ownership_in)
-    : extra_data_map_(NULL) {
+    : extra_data_map_(NULL)
+  {
 #ifdef TEUCHOS_DEBUG
-      insertion_number_.store(-1)
+    insertion_number_.store(-1);
 #endif // TEUCHOS_DEBUG
-      has_ownership_.store(has_ownership_in);
-      count_[RCP_STRONG].store(0);
-      count_[RCP_WEAK].store(0);
-    }
+    has_ownership_.store(has_ownership_in);
+    count_[RCP_STRONG].store(0);
+    count_[RCP_WEAK].store(0);
+  }
   /** \brief . */
   virtual ~RCPNode()
     {
@@ -271,7 +272,7 @@ private:
 public:
   void set_insertion_number(int insertion_number_in)
     {
-      insertion_number_store(insertion_number_in);
+      insertion_number_.store(insertion_number_in);
     }
   int insertion_number() const
     {
