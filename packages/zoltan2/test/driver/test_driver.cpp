@@ -302,6 +302,7 @@ void run(const UserInputForTests &uinput,
       all_tests_pass
       = MetricAnalyzer<partitioning_problem_t>::analyzeMetrics( metricsPlist,
                                                                 reinterpret_cast<const partitioning_problem_t *>(const_cast<base_problem_t *>(problem)),
+								metricObject,
                                                                 comm,
                                                                 msg); 
     } else if (problem_kind == "ordering") {
