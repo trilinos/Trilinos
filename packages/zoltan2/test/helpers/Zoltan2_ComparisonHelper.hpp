@@ -651,16 +651,12 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   RCP<const ComparisonSource> sourceRef = this->sources[ref_name];
   
   // get problems
-  //auto problem = reinterpret_cast<partitioning_problem_t *>(sourcePrb.get()->problem.get());
   auto metricObjectPrb = sourcePrb.get()->metricObject.get();
-  //auto reference = reinterpret_cast<partitioning_problem_t *>(sourceRef.get()->problem.get());
   auto metricObjectRef = sourceRef.get()->metricObject.get();
   
   // get metrics
-  //std::map<const string, const metric_t> prb_metrics = this->metricArrayToMap(problem->getMetrics());
   std::map<const string, const metric_t> prb_metrics = this->metricArrayToMap
     (metricObjectPrb->getMetrics());
-  //std::map<const string, const metric_t> ref_metrics = this->metricArrayToMap(reference->getMetrics());
   std::map<const string, const metric_t> ref_metrics = this->metricArrayToMap
     (metricObjectRef->getMetrics());
   
