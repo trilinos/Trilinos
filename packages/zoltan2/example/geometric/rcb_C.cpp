@@ -163,11 +163,9 @@ int main(int argc, char *argv[])
 
   RCP<const Environment> env1 = problem1->getEnvironment();
 
-  //const base_adapter_t *bia1 = dynamic_cast<const base_adapter_t *>(ia1);
-
   // create metric object
 
-  quality_t *metricObject1 = new quality_t(env1, problem1->getComm(), /*b*/ia1,
+  quality_t *metricObject1 = new quality_t(env1, problem1->getComm(), ia1,
 					   &problem1->getSolution(), false);
   // Check the solution.
 
@@ -228,11 +226,9 @@ int main(int argc, char *argv[])
 
   RCP<const Environment> env2 = problem2->getEnvironment();
 
-  //const base_adapter_t *bia2 = dynamic_cast<const base_adapter_t *>(ia2);
-
   // create metric object
 
-  quality_t *metricObject2 = new quality_t(env2, problem2->getComm(), /*b*/ia2,
+  quality_t *metricObject2 = new quality_t(env2, problem2->getComm(), ia2,
 					   &problem2->getSolution(), false);
   // Check the solution.
 
@@ -304,11 +300,9 @@ int main(int argc, char *argv[])
 
   RCP<const Environment> env3 = problem3->getEnvironment();
 
-  //const base_adapter_t *bia3 = dynamic_cast<const base_adapter_t *>(ia3);
-
   // create metric object
 
-  quality_t *metricObject3 = new quality_t(env3, problem3->getComm(), /*b*/ia3,
+  quality_t *metricObject3 = new quality_t(env3, problem3->getComm(), ia3,
 					   &problem3->getSolution(), false);
   // Check the solution.
 
@@ -342,7 +336,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), /*b*/ia3,
+  metricObject3 = new quality_t(env3, problem3->getComm(), ia3,
                                 &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
@@ -366,7 +360,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), /*b*/ia3,
+  metricObject3 = new quality_t(env3, problem3->getComm(), ia3,
                                 &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
@@ -437,7 +431,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject1 = new quality_t(env1, problem1->getComm(), /*b*/ia1,
+  metricObject1 = new quality_t(env1, problem1->getComm(), ia1,
                                 &problem1->getSolution(), false);
   // Check the solution.
 
