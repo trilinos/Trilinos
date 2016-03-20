@@ -122,8 +122,6 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
     zoltan2Parameters.setParameters(sub);
   }
   
-  zoltan2Parameters.set("compute_metrics", "true");
-
 }
 
 void getParameterLists(const string &inputFileName,
@@ -304,6 +302,7 @@ void run(const UserInputForTests &uinput,
       all_tests_pass
       = MetricAnalyzer<partitioning_problem_t>::analyzeMetrics( metricsPlist,
                                                                 reinterpret_cast<const partitioning_problem_t *>(const_cast<base_problem_t *>(problem)),
+								metricObject,
                                                                 comm,
                                                                 msg); 
     } else if (problem_kind == "ordering") {
@@ -378,6 +377,7 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
   comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
+  comparison_source->metricObject = metricObject;
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
   

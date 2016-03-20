@@ -296,12 +296,10 @@ int main(int narg, char *arg[]) {
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
-    RCP<const base_adapter_t> rcpbia =  rcp(bia);
-
-    // create metric object (also usually created by a problem)
+    // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, CommT, rcpbia, &problem.getSolution(), false));
+      rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
 
     if (!me) {
       metricObject->printMetrics(cout);

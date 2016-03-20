@@ -155,11 +155,9 @@ int main(int narg, char **arg)
 
   const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(adapter);
 
-  RCP<const base_adapter_t> rcpbia = rcp(bia);
+  // create metric object
 
-  // create metric object (also usually created by a problem)
-
-  quality_t*metricObject=new quality_t(env,comm,rcpbia,&solution);
+  quality_t *metricObject = new quality_t(env, comm, bia, &solution);
 
   // Some output 
   zscalar_t *totalWeight = new zscalar_t [nprocs];
@@ -173,6 +171,7 @@ int main(int narg, char **arg)
   zscalar_t libImbalance;
   metricObject->getWeightImbalance(libImbalance, 0);
   delete metricObject;
+  delete adapter;
 
   for (int i=0; i < numMyIdentifiers; i++){
     totalCnt[partList[i]]++;

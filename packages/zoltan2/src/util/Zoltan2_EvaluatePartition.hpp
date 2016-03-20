@@ -99,7 +99,7 @@ public:
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const typename Adapter::base_adapter_t> &ia, 
+    const typename Adapter::base_adapter_t *bia, 
     const PartitioningSolution<Adapter> *soln,
     bool useDegreeAsWeight = false,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
@@ -193,7 +193,7 @@ template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const typename Adapter::base_adapter_t> &ia, 
+  const typename Adapter::base_adapter_t *bia, 
   const PartitioningSolution<Adapter> *soln,
   bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
@@ -219,6 +219,8 @@ template <typename Adapter>
     else if (strChoice == std::string("multicriteria_minimize_maximum_weight"))
       mcnorm = normMinimizeMaximumWeight;
   } 
+
+  const RCP<const typename Adapter::base_adapter_t> ia = rcp(bia, false);
 
   try{
     objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln,
