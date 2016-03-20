@@ -687,12 +687,12 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
-    RCP<const base_adapter_t> rcpbia = rcp(bia);
+    //RCP<const base_adapter_t> rcpbia = rcp(bia);
 
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
+      rcp(new quality_t(env,comm,/*rcp*/bia,&problem->getSolution(),false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -716,6 +716,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         delete [] coords;
     }
     delete problem;
+    delete ia;
     return ierr;
 }
 
@@ -887,12 +888,12 @@ int testFromDataFile(
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
-    RCP<const base_adapter_t> rcpbia = rcp(bia);
+    //RCP<const base_adapter_t> rcpbia = rcp(bia);
 
     // create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
+      rcp(new quality_t(env,comm,/*rcp*/bia,&problem->getSolution(),false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -908,6 +909,7 @@ int testFromDataFile(
     }
 
     delete problem;
+    delete ia;
     return ierr;
 }
 
@@ -1077,13 +1079,13 @@ int testFromSeparateDataFiles(
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
-    RCP<const base_adapter_t> rcpbia =
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
+    /*RCP<const base_adapter_t> rcpbia =
+      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));*/
 
     //create metric object (also usually created by a problem)
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
+      rcp(new quality_t(env,comm,/*rcp*/bia,&problem->getSolution(),false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -1099,6 +1101,7 @@ int testFromSeparateDataFiles(
     }
 
     delete problem;
+    delete ia;
     return ierr;
 }
 #endif

@@ -165,11 +165,11 @@ int main(int argc, char *argv[])
 
   const base_adapter_t *bia1 = dynamic_cast<const base_adapter_t *>(ia1);
 
-  RCP<const base_adapter_t> rcpbia1 = rcp(bia1);
+  //RCP<const base_adapter_t> rcpbia1 = rcp(bia1);
 
   // create metric object (also usually created by a problem)
 
-  quality_t*metricObject1 = new quality_t(env1,problem1->getComm(),rcpbia1,
+  quality_t*metricObject1 = new quality_t(env1,problem1->getComm(),/*rcp*/bia1,
 					 &problem1->getSolution(),
 					 false);
   // Check the solution.
@@ -233,11 +233,11 @@ int main(int argc, char *argv[])
 
   const base_adapter_t *bia2 = dynamic_cast<const base_adapter_t *>(ia2);
 
-  RCP<const base_adapter_t> rcpbia2 = rcp(bia2);
+  //RCP<const base_adapter_t> rcpbia2 = rcp(bia2);
 
   // create metric object (also usually created by a problem)
 
-  quality_t*metricObject2 = new quality_t(env2,problem2->getComm(),rcpbia2,
+  quality_t*metricObject2 = new quality_t(env2,problem2->getComm(),/*rcp*/bia2,
 					  &problem2->getSolution(),
 					  false);
   // Check the solution.
@@ -312,11 +312,11 @@ int main(int argc, char *argv[])
 
   const base_adapter_t *bia3 = dynamic_cast<const base_adapter_t *>(ia3);
 
-  RCP<const base_adapter_t> rcpbia3 = rcp(bia3);
+  //RCP<const base_adapter_t> rcpbia3 = rcp(bia3);
 
   // create metric object (also usually created by a problem)
 
-  quality_t*metricObject3 = new quality_t(env3,problem3->getComm(),rcpbia3,
+  quality_t*metricObject3 = new quality_t(env3,problem3->getComm(),/*rcp*/bia3,
 					  &problem3->getSolution(),
 					  false);
   // Check the solution.
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), rcpbia3,
+  metricObject3 = new quality_t(env3, problem3->getComm(), /*rcp*/bia3,
                                 &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), rcpbia3,
+  metricObject3 = new quality_t(env3, problem3->getComm(), /*rcp*/bia3,
                                 &problem3->getSolution(), false);
   if (rank == 0){
     metricObject3->printMetrics(cout);
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject1 = new quality_t(env1, problem1->getComm(), rcpbia1,
+  metricObject1 = new quality_t(env1, problem1->getComm(), /*rcp*/bia1,
                                 &problem1->getSolution(), false);
   // Check the solution.
 
@@ -472,8 +472,11 @@ int main(int argc, char *argv[])
     delete [] globalIds;
 
   delete problem1;
+  delete ia1;
   delete problem2;
+  delete ia2;
   delete problem3;
+  delete ia3;
 
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Finalize();

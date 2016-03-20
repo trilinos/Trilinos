@@ -208,7 +208,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   }
 
   const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-  RCP<const base_adapter_t> rcpbia;
+  /*RCP<const base_adapter_t> rcpbia;
 
   try{
   rcpbia = rcp(bia);
@@ -216,7 +216,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   }
   catch (std::exception &e){
     fail=1;
-  }
+    }*/
 
   TEST_FAIL_AND_EXIT(*comm, fail==0, "create adapter", 1);
 
@@ -253,7 +253,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   RCP<quality_t> metricObject;
 
   try{
-    metricObject = rcp(new quality_t(env, comm, rcpbia, solution.getRawPtr(), 
+    metricObject = rcp(new quality_t(env,comm,/*rcp*/bia,solution.getRawPtr(), 
 				     false));
   }
   catch (std::exception &e){
@@ -310,4 +310,5 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   }
 
   TEST_FAIL_AND_EXIT(*comm, fail==0, "print metrics", 1);
+  delete ia;
 }
