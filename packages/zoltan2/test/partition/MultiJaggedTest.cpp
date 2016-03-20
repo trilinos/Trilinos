@@ -687,12 +687,10 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
-    //RCP<const base_adapter_t> rcpbia = rcp(bia);
-
-    // create metric object (also usually created by a problem)
+    // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env,comm,/*rcp*/bia,&problem->getSolution(),false));
+      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -888,12 +886,10 @@ int testFromDataFile(
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
-    //RCP<const base_adapter_t> rcpbia = rcp(bia);
-
-    // create metric object (also usually created by a problem)
+    // create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env,comm,/*rcp*/bia,&problem->getSolution(),false));
+      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -1079,13 +1075,10 @@ int testFromSeparateDataFiles(
 
     const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
-    /*RCP<const base_adapter_t> rcpbia =
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));*/
-
-    //create metric object (also usually created by a problem)
+    //create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env,comm,/*rcp*/bia,&problem->getSolution(),false));
+      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
