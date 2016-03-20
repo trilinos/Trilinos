@@ -183,10 +183,8 @@ int main(int argc, char *argv[]){
     const base_adapter_t *bia =
       dynamic_cast<const base_adapter_t *>(ia.getRawPtr());
 
-    //RCP<const base_adapter_t> rcpbia = rcp(ia);
-
     RCP<quality_t>metricObject = 
-      rcp(new quality_t(env,tcomm,/*rcp*/bia,&partition_problem->getSolution()));
+      rcp(new quality_t(env, tcomm, bia, &partition_problem->getSolution()));
 
     if (tcomm->getRank() == 0){
       metricObject->printMetrics(std::cout);
