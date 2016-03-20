@@ -325,11 +325,9 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
 
   RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
-  //const baseMeshAdapter_t *bia = dynamic_cast<const baseMeshAdapter_t *>(ia);
-
   //create metric object
   RCP<quality_t> metricObject =
-    rcp(new quality_t(env, CommT, /*b*/ia, &problem.getSolution(), false));
+    rcp(new quality_t(env, CommT, ia, &problem.getSolution(), false));
 
   if (!me) {
     metricObject->printMetrics(cout);
