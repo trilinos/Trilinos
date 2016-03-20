@@ -434,11 +434,9 @@ for(int i = 0; i < nump; i++) {
   const matrixAdapter_t::base_adapter_t *bia =
     dynamic_cast<const matrixAdapter_t::base_adapter_t *>(ia);
 
-  //RCP<const matrixAdapter_t::base_adapter_t> rcpbia = rcp(bia);
+  // create metric object
 
-  // create metric object (also usually created by a problem)
-
-  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), /*rcp*/bia,
+  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), bia,
 					       &problem->getSolution(),false));
   if (me == 0){
     metricObject->printMetrics(cout);
