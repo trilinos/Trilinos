@@ -180,11 +180,11 @@ int main(int argc, char *argv[]){
     tcomm->barrier();
     RCP<const Zoltan2::Environment> env = partition_problem->getEnvironment();
 
-    const base_adapter_t *bia =
-      dynamic_cast<const base_adapter_t *>(ia.getRawPtr());
+    /*const base_adapter_t *bia =
+      dynamic_cast<const base_adapter_t *>(ia.getRawPtr());*/
 
     RCP<quality_t>metricObject = 
-      rcp(new quality_t(env, tcomm, bia, &partition_problem->getSolution()));
+      rcp(new quality_t(env, tcomm, /*b*/ia.getRawPtr(), &partition_problem->getSolution()));
 
     if (tcomm->getRank() == 0){
       metricObject->printMetrics(std::cout);

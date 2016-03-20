@@ -153,11 +153,11 @@ int main(int narg, char **arg)
 
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
-  const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(adapter);
+  //const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(adapter);
 
   // create metric object
 
-  quality_t *metricObject = new quality_t(env, comm, bia, &solution);
+  quality_t *metricObject = new quality_t(env, comm, adapter, &solution);
 
   // Some output 
   zscalar_t *totalWeight = new zscalar_t [nprocs];

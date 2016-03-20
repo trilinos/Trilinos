@@ -73,7 +73,7 @@ namespace Zoltan2_TestingFramework {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<basic_vector_adapter>
 	   (env, CommT,
-	    reinterpret_cast<const basic_vector_adapter::base_adapter_t *>
+	    reinterpret_cast<const basic_vector_adapter/*::base_adapter_t*/ *>
 	    (input), reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<basic_vector_adapter> *>
 	    (&problem->getSolution())));
@@ -81,7 +81,7 @@ namespace Zoltan2_TestingFramework {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<xpetra_mv_adapter>
 	   (env, CommT,
-	    reinterpret_cast<const xpetra_mv_adapter::base_adapter_t *>
+	    reinterpret_cast<const xpetra_mv_adapter/*::base_adapter_t*/ *>
 	    (input), reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<xpetra_mv_adapter> *>
 	    (&problem->getSolution())));
@@ -89,7 +89,7 @@ namespace Zoltan2_TestingFramework {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<xcrsGraph_adapter>
 	   (env, CommT,
-	    reinterpret_cast<const xcrsGraph_adapter::base_adapter_t *>
+	    reinterpret_cast<const xcrsGraph_adapter/*::base_adapter_t*/ *>
 	    (input), reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<xcrsGraph_adapter> *>
 	    (&problem->getSolution())));
@@ -97,7 +97,7 @@ namespace Zoltan2_TestingFramework {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<xcrsMatrix_adapter>
 	   (env, CommT,
-	    reinterpret_cast<const xcrsMatrix_adapter::base_adapter_t *>
+	    reinterpret_cast<const xcrsMatrix_adapter/*::base_adapter_t*/ *>
 	    (input), reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<xcrsMatrix_adapter> *>
 	    (&problem->getSolution())));
@@ -105,7 +105,7 @@ namespace Zoltan2_TestingFramework {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<basic_vector_adapter>
 	   (env, CommT,
-	    reinterpret_cast<const basic_vector_adapter::base_adapter_t *>
+	    reinterpret_cast<const basic_vector_adapter/*::base_adapter_t*/ *>
 	    (input), reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<basic_vector_adapter> *>
 	    (&problem->getSolution())));
@@ -113,7 +113,7 @@ namespace Zoltan2_TestingFramework {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<pamgen_adapter_t>
 	   (env, CommT,
-	    reinterpret_cast<const pamgen_adapter_t::base_adapter_t *>
+	   reinterpret_cast<const pamgen_adapter_t/*::base_adapter_t*/ *>
 	    (input), reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<pamgen_adapter_t> *>
 	    (&problem->getSolution())));

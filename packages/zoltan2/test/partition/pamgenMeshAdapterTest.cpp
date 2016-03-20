@@ -294,12 +294,12 @@ int main(int narg, char *arg[]) {
 
     RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
-    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+    //const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
     // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
+      rcp(new quality_t(env, CommT, /*b*/ia, &problem.getSolution(), false));
 
     if (!me) {
       metricObject->printMetrics(cout);

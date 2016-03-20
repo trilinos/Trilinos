@@ -209,7 +209,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   TEST_FAIL_AND_EXIT(*comm, fail==0, "create adapter", 1);
 
-  const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
+  //const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
 
   // A solution (usually created by a problem)
 
@@ -244,7 +244,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   RCP<quality_t> metricObject;
 
   try{
-    metricObject = rcp(new quality_t(env, comm, bia, solution.getRawPtr(), 
+    metricObject = rcp(new quality_t(env, comm, /*b*/ia, solution.getRawPtr(), 
 				     false));
   }
   catch (std::exception &e){

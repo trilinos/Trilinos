@@ -99,7 +99,7 @@ public:
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const typename Adapter::base_adapter_t *bia, 
+		    const /*typename*/ Adapter/*::base_adapter_t*/ */*b*/ia, 
     const PartitioningSolution<Adapter> *soln,
     bool useDegreeAsWeight = false,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
@@ -193,7 +193,7 @@ template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const typename Adapter::base_adapter_t *bia, 
+  const /*typename*/ Adapter/*::base_adapter_t*/ */*b*/ia, 
   const PartitioningSolution<Adapter> *soln,
   bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
@@ -220,10 +220,11 @@ template <typename Adapter>
       mcnorm = normMinimizeMaximumWeight;
   } 
 
-  const RCP<const typename Adapter::base_adapter_t> ia = rcp(bia, false);
+  const RCP<const base_adapter_t> bia =
+    rcp(dynamic_cast<const base_adapter_t *>(/*b*/ia), false);
 
   try{
-    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln,
+    objectMetrics<Adapter>(env, problemComm, mcnorm, bia, soln,
 			   useDegreeAsWeight, graphModel, numGlobalParts_,
 			   numNonEmpty_,metrics_);
   }
@@ -236,7 +237,7 @@ template <typename Adapter>
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
 
-  BaseAdapterType inputType = ia->adapterType();
+  BaseAdapterType inputType = bia->adapterType();
 
   if (inputType == GraphAdapterType ||
       inputType == MatrixAdapterType ||
@@ -252,11 +253,12 @@ template <typename Adapter>
 
     RCP<GraphModel<base_adapter_t> > graph;
     if (graphModel == Teuchos::null)
-      graph=rcp(new GraphModel<base_adapter_t>(ia,env,problemComm,modelFlags));
+      graph = rcp(new GraphModel<base_adapter_t>(bia, env, problemComm, 
+						 modelFlags));
 
     // Local number of objects.
 
-    size_t numLocalObjects = ia->getLocalNumIDs();
+    size_t numLocalObjects = bia->getLocalNumIDs();
 
     // Parts to which objects are assigned.
 

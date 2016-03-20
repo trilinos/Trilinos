@@ -431,12 +431,12 @@ for(int i = 0; i < nump; i++) {
 
   RCP<const Zoltan2::Environment> env = problem->getEnvironment();
 
-  const matrixAdapter_t::base_adapter_t *bia =
-    dynamic_cast<const matrixAdapter_t::base_adapter_t *>(ia);
+  /*const matrixAdapter_t::base_adapter_t *bia =
+    dynamic_cast<const matrixAdapter_t::base_adapter_t *>(ia);*/
 
   // create metric object
 
-  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), bia,
+  RCP<quality_t>metricObject=rcp(new quality_t(env,problem->getComm(),/*b*/ia,
 					       &problem->getSolution(),false));
   if (me == 0){
     metricObject->printMetrics(cout);
