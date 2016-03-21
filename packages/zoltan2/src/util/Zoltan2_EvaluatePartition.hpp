@@ -99,7 +99,7 @@ public:
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-		    const /*typename*/ Adapter/*::base_adapter_t*/ */*b*/ia, 
+		    const Adapter *ia, 
     const PartitioningSolution<Adapter> *soln,
     bool useDegreeAsWeight = false,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
@@ -193,7 +193,7 @@ template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const /*typename*/ Adapter/*::base_adapter_t*/ */*b*/ia, 
+  const Adapter *ia, 
   const PartitioningSolution<Adapter> *soln,
   bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
@@ -221,7 +221,7 @@ template <typename Adapter>
   } 
 
   const RCP<const base_adapter_t> bia =
-    rcp(dynamic_cast<const base_adapter_t *>(/*b*/ia), false);
+    rcp(dynamic_cast<const base_adapter_t *>(ia), false);
 
   try{
     objectMetrics<Adapter>(env, problemComm, mcnorm, bia, soln,
