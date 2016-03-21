@@ -242,8 +242,8 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   RCP<quality_t> metricObject;
 
   try{
-    metricObject = rcp(new quality_t(env, comm, ia, solution.getRawPtr(), 
-				     false));
+    metricObject = rcp(new quality_t(env, comm, ia, solution.getRawPtr()
+				     /*, false*/));
   }
   catch (std::exception &e){
     fail=1;
