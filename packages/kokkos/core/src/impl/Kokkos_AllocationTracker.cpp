@@ -398,7 +398,7 @@ struct AllocationRecordPool
           oss << "   " << string_vec[i] << std::endl;
         }
 
-        std::cerr << oss.str() << std::endl;
+        //std::cerr << oss.str() << std::endl;
       }
     }
 
