@@ -602,11 +602,15 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   }
 
   char    cTitle[MAX_LINE_LENGTH+1];
-
-  if (proc_for == 0)
+  cTitle[0] = '\0';
+  
+  if (proc_for == 0) {
     strncpy(cTitle, GeomTitle, MAX_LINE_LENGTH);
-  else
+    cTitle[MAX_LINE_LENGTH] = '\0';
+  }
+  else {
     sprintf(cTitle, "Parallel Mesh File for Processor %d", proc_for);
+  }
 
   /* Output the initial information to the parallel Exodus file(s) */
   bytes_out += strlen(cTitle)*sizeof(char) + 6*sizeof(INT);

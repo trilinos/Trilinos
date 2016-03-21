@@ -107,7 +107,8 @@ void NemSpread<T,INT>::read_mesh_param ()
   error = ex_get_init_ext(exoid, &info);
   check_exodus_error (error, "ex_get_init");
   
-  strcpy(GeomTitle, info.title);
+  strncpy(GeomTitle, info.title, MAX_LINE_LENGTH);
+  GeomTitle[MAX_LINE_LENGTH] = '\0';
   globals.Num_Dim = info.num_dim;
   globals.Num_Node = info.num_nodes;
   globals.Num_Elem = info.num_elem;
