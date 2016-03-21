@@ -266,21 +266,21 @@ namespace Iofx {
     }
 
     bool abort_if_error = false;
-    bool ok;
+    bool is_ok;
     if (is_input()) {
-      ok = open_input_file(write_message, error_msg, bad_count, abort_if_error);
+      is_ok = open_input_file(write_message, error_msg, bad_count, abort_if_error);
     }
     else {
       // See if file exists... Don't overwrite (yet) it it exists.
       bool overwrite = false;
-      ok = handle_output_file(write_message, error_msg, bad_count, overwrite, abort_if_error);
+      is_ok = handle_output_file(write_message, error_msg, bad_count, overwrite, abort_if_error);
       // Close all open files...
       if (exodusFilePtr >= 0) {
 	ex_close(exodusFilePtr);
 	exodusFilePtr = -1;
       }
     }
-    return ok;
+    return is_ok;
   }
 
   bool DatabaseIO::open_input_file(bool write_message, std::string *error_msg, int *bad_count,
@@ -306,9 +306,9 @@ namespace Iofx {
     exodusFilePtr = ex_open(decoded_filename.c_str(), EX_READ|mode,
 			    &cpu_word_size, &io_word_size, &version);
 
-    bool ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
+    bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
-    if (ok) {
+    if (is_ok) {
       assert(exodusFilePtr >= 0);
       // Check byte-size of integers stored on the database...
       if (ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) {
@@ -325,7 +325,7 @@ namespace Iofx {
       ex_set_max_name_length(exodusFilePtr, maximumNameLength);
     }
     ex_opts(app_opt_val); // Reset back to what it was.
-    return ok;
+    return is_ok;
   }
 
   bool DatabaseIO::handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
@@ -340,7 +340,7 @@ namespace Iofx {
     // new or append to existing file.
 
     // if 'overwrite' is true, then clobber/append
-    bool ok = false;
+    bool is_ok = false;
     
     std::string decoded_filename = util().decode_filename(get_filename(),
 							  isParallel);
@@ -348,11 +348,11 @@ namespace Iofx {
     if (!overwrite) {
       // check if file exists and is writeable. If so, return true.
       Ioss::FileInfo file(decoded_filename);
-      int is_ok = file.exists() && file.is_writable() ? 1 : 0;
+      int int_is_ok = file.exists() && file.is_writable() ? 1 : 0;
 
       // Check for consistency among all processors.
       // OK if *all* 0 or *all* 1
-      int sum = util().global_minmax(is_ok, Ioss::ParallelUtils::DO_SUM);
+      int sum = util().global_minmax(int_is_ok, Ioss::ParallelUtils::DO_SUM);
       if (sum == util().parallel_size()) {
 	// Note that at this point, we cannot totally guarantee that
 	// we will be able to create the file when needed, but we have
@@ -392,9 +392,9 @@ namespace Iofx {
 				&cpu_word_size, &dbRealWordSize);
     }
 
-    ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
+    is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
-    if (ok) {
+    if (is_ok) {
       ex_set_max_name_length(exodusFilePtr, maximumNameLength);
 
       // Check properties handled post-create/open...
@@ -408,7 +408,7 @@ namespace Iofx {
       }
     }
     ex_opts(app_opt_val); // Reset back to what it was.
-    return ok;
+    return is_ok;
   }
 
   int DatabaseIO::get_file_pointer() const
