@@ -2955,6 +2955,18 @@ namespace Iopx {
       if (fb->owner()->block_count() == 1 && number_sides == entity_count) {
         assert(number_sides == 0 || number_distribution_factors % number_sides == 0);
         assert(number_sides == 0 || number_distribution_factors / number_sides == nfnodes);
+	if (number_sides * nfnodes != number_distribution_factors &&
+	    number_sides != number_distribution_factors) {
+          std::ostringstream errmsg;
+          errmsg << "ERROR: SideBlock '" << fb->name() << "' in file '" << get_filename() << "'\n"
+		 << "\thas incorrect distribution factor count.\n"
+		 << "\tThere are " << number_sides << " '" << ftopo->name() << "' sides with "
+		 << nfnodes << " nodes per side, but there are " << number_distribution_factors
+		 << " distribution factors which is not correct.\n"
+		 << "\tThere should be either "
+		 << number_sides << " or " << number_sides * nfnodes << " distribution factors.\n";
+          IOSS_ERROR(errmsg);
+	}
         std::string storage = "Real["+Ioss::Utils::to_string(nfnodes)+"]";
         Ioss::Field dist("distribution_factors", Ioss::Field::REAL, storage, Ioss::Field::MESH, number_sides);
         decomp->get_set_mesh_double(get_file_pointer(), EX_SIDE_SET, id, dist, dist_fact);

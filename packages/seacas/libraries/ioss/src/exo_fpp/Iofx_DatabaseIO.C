@@ -3824,6 +3824,20 @@ namespace Iofx {
       // and all distribution factors on the database are transferred
       // 1-to-1 into 'dist_fact' array.
       if (my_side_count == number_sides) {
+	// Verify that number_distribution_factors is sane...
+	if (number_sides * nfnodes != number_distribution_factors &&
+	    number_sides != number_distribution_factors) {
+          std::ostringstream errmsg;
+          errmsg << "ERROR: SideBlock '" << fb->name() << "' in file '" << get_filename() << "'\n"
+		 << "\thas incorrect distribution factor count.\n"
+		 << "\tThere are " << number_sides << " '" << ftopo->name() << "' sides with "
+		 << nfnodes << " nodes per side, but there are " << number_distribution_factors
+		 << " distribution factors which is not correct.\n"
+		 << "\tThere should be either "
+		 << number_sides << " or " << number_sides * nfnodes << " distribution factors.\n";
+          IOSS_ERROR(errmsg);
+	  
+	}
         return ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, dist_fact);
       }
 
