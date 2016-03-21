@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.27 (2016/02/29)";
+  const char* version_string = "4.28 (2016/03/21)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -83,6 +83,8 @@ namespace SEAMS {
 
   Aprepro::~Aprepro()
   {
+    outputStream.top()->flush();
+
     if(stringScanner && stringScanner != lexer)
       delete stringScanner;
 
