@@ -323,6 +323,8 @@ NAMED_PAIR( ProcVecFaceIdPair , std::vector<int> , proc_vec , stk::mesh::EntityI
 
 typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
+unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData);
+
 void fill_topologies(stk::mesh::BulkData& bulkData, stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
 
 ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData);

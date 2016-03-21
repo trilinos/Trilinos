@@ -23,19 +23,22 @@ public:
     }
     void initialize(const stk::mesh::BulkData &bulk)
     {
-        unsigned numElems = stk::mesh::count_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK));
+        unsigned numElems = impl::get_num_local_elems(bulk);
         localIdToElement.resize(numElems, Entity());
-        elementToLocalId.resize(stk::mesh::get_num_entities(bulk)+1, impl::INVALID_LOCAL_ID);
+        elementToLocalId.resize(bulk.get_size_of_entity_index_space(), impl::INVALID_LOCAL_ID);
 
-        const stk::mesh::BucketVector & elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part());
-        impl::LocalId localId = 0;
-        for(size_t i=0; i<elemBuckets.size(); ++i)
+        if(bulk.mesh_meta_data().entity_rank_count() >= stk::topology::ELEM_RANK)
         {
-            const stk::mesh::Bucket& bucket = *elemBuckets[i];
-            for(size_t j=0; j<bucket.size(); ++j)
+            const stk::mesh::BucketVector & elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part());
+            impl::LocalId localId = 0;
+            for(size_t i=0; i<elemBuckets.size(); ++i)
             {
-                add_new_entity_with_local_id(bucket[j], localId);
-                localId++;
+                const stk::mesh::Bucket& bucket = *elemBuckets[i];
+                for(size_t j=0; j<bucket.size(); ++j)
+                {
+                    add_new_entity_with_local_id(bucket[j], localId);
+                    localId++;
+                }
             }
         }
     }
@@ -75,7 +78,7 @@ public:
             maxEntity.set_local_offset(std::max(maxEntity.local_offset(), elem.local_offset()));
 
         if(maxEntity.local_offset() >= elementToLocalId.size())
-            elementToLocalId.resize(maxEntity.local_offset() + 1);
+            elementToLocalId.resize(maxEntity.local_offset() + 1, impl::INVALID_LOCAL_ID);
     }
 
     void create_local_ids_for_elements(const stk::mesh::EntityVector & elements)

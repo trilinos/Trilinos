@@ -152,15 +152,17 @@ void ElemElemGraph::generate_initial_side_ids(size_t numPotentialParallelBoundar
 void ElemElemGraph::fill_from_mesh()
 {
     clear_data_members();
-    int numElems = size_data_members();
 
+    impl::ElemSideToProcAndFaceId elementSideIdsToSend;
+
+    int numElems = size_data_members();
     if (numElems > 0)
     {
         impl::fill_topologies(m_bulk_data, m_idMapper, m_element_topologies);
         fill_graph();
+        elementSideIdsToSend = impl::gather_element_side_ids_to_send(m_bulk_data);
     }
 
-    impl::ElemSideToProcAndFaceId elementSideIdsToSend = impl::gather_element_side_ids_to_send(m_bulk_data);
     generate_initial_side_ids(elementSideIdsToSend.size());
 
     m_parallelInfoForGraphEdges.clear();
@@ -304,7 +306,7 @@ impl::LocalId ElemElemGraph::get_local_element_id(stk::mesh::Entity local_elemen
 
 int ElemElemGraph::size_data_members()
 {
-    unsigned numElems = stk::mesh::count_selected_entities(m_bulk_data.mesh_meta_data().locally_owned_part(), m_bulk_data.buckets(stk::topology::ELEM_RANK));
+    unsigned numElems = impl::get_num_local_elems(m_bulk_data);
     m_graph.set_num_local_elements(numElems);
     m_element_topologies.resize(numElems);
 

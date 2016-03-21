@@ -752,6 +752,8 @@ public:
   unsigned get_mesh_diagnostic_error_count() const ;
   void throw_on_mesh_diagnostic_error();
 
+  size_t get_size_of_entity_index_space() const { return m_entity_keys.size(); }
+
 protected: //functions
 
   bool resolve_node_sharing()

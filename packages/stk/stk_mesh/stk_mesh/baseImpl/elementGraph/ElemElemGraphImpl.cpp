@@ -24,6 +24,14 @@ namespace stk { namespace mesh {
 namespace impl
 {
 
+unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData)
+{
+    if(bulkData.mesh_meta_data().entity_rank_count() < stk::topology::ELEM_RANK)
+        return 0;
+    else
+        return count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
+}
+
 void fill_topologies(stk::mesh::BulkData& bulkData,
                                                              stk::mesh::impl::ElementLocalIdMapper & localMapper,
                                                              std::vector<stk::topology>& element_topologies)
