@@ -221,9 +221,8 @@ template <typename Adapter>
     rcp(dynamic_cast<const base_adapter_t *>(ia), false);
 
   try{
-    objectMetrics<Adapter>(env, problemComm, mcnorm, bia, soln,
-			   false, graphModel, numGlobalParts_,
-			   numNonEmpty_,metrics_);
+    objectMetrics<Adapter>(env, problemComm, mcnorm, bia, soln, graphModel,
+			   numGlobalParts_, numNonEmpty_,metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
 

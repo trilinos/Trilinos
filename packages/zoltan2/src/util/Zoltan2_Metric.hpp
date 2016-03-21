@@ -1209,8 +1209,6 @@ template <typename scalar_t, typename part_t>
  *   \param comm  The problem communicator.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
- *   \param useDegreeAsWeight whether vertex degree is ever used as vertex
- *           weight.
  *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
@@ -1242,7 +1240,6 @@ template <typename Adapter>
     multiCriteriaNorm mcNorm,
     const RCP<const typename Adapter::base_adapter_t> &ia,
     const PartitioningSolution<Adapter> *solution,
-    bool useDegreeAsWeight,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
@@ -1287,6 +1284,8 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
+    // whether vertex degree is ever used as vertex weight.
+    bool useDegreeAsWeight = false;
     if (useDegreeAsWeight) {
       ArrayView<const gno_t> Ids;
       ArrayView<sdata_t> vwgts;
