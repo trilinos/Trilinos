@@ -3,6 +3,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/PerformanceTester.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
@@ -20,55 +21,6 @@
 namespace
 {
 
-void find_intersection(unsigned numNodes, const int* nodes, const std::vector< std::vector<int> > &data, std::vector<int>& intersection)
-{
-  intersection.clear();
-
-  unsigned maxNumEntities = 0;
-  for(unsigned i=0; i<numNodes; ++i)
-      maxNumEntities += data[nodes[i]].size();
-
-  intersection.reserve(maxNumEntities);
-
-  for(unsigned i=0; i<numNodes; ++i) {
-    const int* entities = data[nodes[i]].data();
-    unsigned numEntities = data[nodes[i]].size();
-    intersection.insert(intersection.end(), entities, entities+numEntities);
-  }
-
-  std::sort(intersection.begin(), intersection.end());
-
-  unsigned counter = 1;
-  unsigned numUniqueData = 0;
-
-  for(unsigned i=0; i<maxNumEntities-numNodes; i += counter)
-  {
-      counter = 1;
-
-      while((counter < numNodes) && (intersection[i] == intersection[i+counter]))
-      {
-          ++counter;
-      }
-
-      if(counter == numNodes)
-      {
-          intersection[numUniqueData++] = intersection[i];
-      }
-  }
-
-  intersection.resize(numUniqueData);
-}
-
-void do_intersection_test()
-{
-    int nodes[] = {0, 1, 2, 3};
-    std::vector< std::vector<int> > data{ {1,2,3,4}, {4,5,6,7}, {4,8,9,10}, {4,11,12,13}};
-    std::vector<int> intersection;
-    find_intersection(4, nodes, data, intersection);
-
-    ASSERT_EQ(intersection.size(), 1u);
-    ASSERT_TRUE(intersection[0] == 4);
-}
 std::string get_file_name(const std::string &parameters)
 {
     std::string filename = parameters;
@@ -96,13 +48,19 @@ void get_mesh_dimensions(const std::string &parameters, int &numX, int &numY, in
     numZ = std::strtol(tokens[2].c_str(), nullptr, 10);
 }
 
-std::vector<int> get_ids_along_boundary(const std::string &meshSpec)
+struct DeletedMeshInfo
+{
+    std::vector<stk::mesh::EntityId> boundaryIds;
+    std::vector< std::vector<stk::mesh::Entity> > elemNodes;
+};
+
+void get_ids_along_boundary(const stk::mesh::BulkData &bulkData, const std::string &meshSpec, DeletedMeshInfo &meshInfo)
 {
     int nx, ny, nz;
 
     get_mesh_dimensions(meshSpec, nx, ny, nz);
 
-    std::vector<int> boundaryIds(ny*nz);
+    meshInfo.boundaryIds.resize(ny*nz);
 
     int count = 0;
 
@@ -110,14 +68,24 @@ std::vector<int> get_ids_along_boundary(const std::string &meshSpec)
     {
         for(int y = 0; y < ny; ++y)
         {
+            if((y%2 == 0) || ((ny-1) == y)) continue;
+
             int id = 1 + nx*(y + ny*z);
-            boundaryIds[count] = id;
-            ++count;
+
+            stk::mesh::EntityId elemId = static_cast<stk::mesh::EntityId> (id);
+            stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+
+            if(bulkData.is_valid(elem) && bulkData.bucket(elem).owned())
+            {
+                meshInfo.boundaryIds[count] = static_cast<stk::mesh::EntityId> (id);
+                ++count;
+            }
         }
     }
 
-    return boundaryIds;
+    meshInfo.boundaryIds.resize(count);
 }
+
 
 class ElementGraphPerformance : public stk::unit_test_util::PerformanceTester
 {
@@ -126,10 +94,15 @@ public:
             stk::unit_test_util::PerformanceTester(bulk.parallel()),
             bulkData(bulk),
             meshSpec(fileSpec),
-            addElemTimer("add elements", 1, childTimer),
-            deleteElemTimer("delete elements", 1, childTimer)
+            addElemTimer("add elements", CHILDMASK1, childTimer),
+            deleteElemTimer("delete elements", CHILDMASK1, childTimer),
+            createGraphTimer("create graph", CHILDMASK1, childTimer)
     {
-        elemGraph = new stk::mesh::ElemElemGraph(bulk, bulk.mesh_meta_data().universal_part());
+        {
+            stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createGraphTimer, communicator);
+            elemGraph = new stk::mesh::ElemElemGraph(bulk, bulk.mesh_meta_data().universal_part());
+        }
+
         elemGraphUpdater = new stk::mesh::ElemElemGraphUpdater(bulk, *elemGraph);
         bulk.register_observer(elemGraphUpdater);
     }
@@ -141,37 +114,43 @@ public:
     }
 
 protected:
-    std::vector< std::vector<stk::mesh::Entity> > delete_boundary_elements(const std::vector<int> &boundaryIds)
+    void delete_boundary_elements(DeletedMeshInfo &meshInfo)
     {
         stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(deleteElemTimer, communicator);
-        std::vector< std::vector<stk::mesh::Entity> > elemNodes(boundaryIds.size());
+        meshInfo.elemNodes.resize(meshInfo.boundaryIds.size());
 
         bulkData.modification_begin();
-        for(size_t i = 0; i < boundaryIds.size(); ++i)
+        for(size_t i = 0; i < meshInfo.boundaryIds.size(); ++i)
         {
-            stk::mesh::EntityId elemId = static_cast<stk::mesh::EntityId> (boundaryIds[i]);
+            stk::mesh::EntityId elemId = meshInfo.boundaryIds[i];
             stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
-            elemNodes[i].assign(bulkData.begin_nodes(elem), bulkData.end_nodes(elem));
+
+            EXPECT_TRUE(bulkData.is_valid(elem));
+
+            meshInfo.elemNodes[i].assign(bulkData.begin_nodes(elem), bulkData.end_nodes(elem));
+
             bulkData.destroy_entity(elem);
         }
         bulkData.modification_end();
-
-        return elemNodes;
     }
 
-    void add_boundary_elements(const std::vector<int> &boundaryIds, const std::vector< std::vector<stk::mesh::Entity> > &elemNodes)
+    void add_boundary_elements(DeletedMeshInfo &meshInfo)
     {
         stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(addElemTimer, communicator);
+
         bulkData.modification_begin();
         stk::mesh::Part &hexPart = bulkData.mesh_meta_data().get_topology_root_part(stk::topology::HEX_8);
-        for(size_t i = 0; i < boundaryIds.size(); ++i)
+        stk::mesh::Part *block_1 = bulkData.mesh_meta_data().get_part("block_1");
+        stk::mesh::PartVector parts{&hexPart, block_1};
+        for(size_t i = 0; i < meshInfo.boundaryIds.size(); ++i)
         {
-            stk::mesh::EntityId elemId = static_cast<stk::mesh::EntityId> (boundaryIds[i]);
-            stk::mesh::Entity elem = bulkData.declare_entity(stk::topology::ELEM_RANK, elemId, hexPart);
+            stk::mesh::EntityId elemId = meshInfo.boundaryIds[i];
+            stk::mesh::Entity elem = bulkData.declare_entity(stk::topology::ELEM_RANK, elemId, parts);
 
-            for(size_t j = 0; j<elemNodes[i].size(); ++j)
+            for(size_t j = 0; j<meshInfo.elemNodes[i].size(); ++j)
             {
-                bulkData.declare_relation(elem, elemNodes[i][j], j);
+                stk::mesh::Entity node = meshInfo.elemNodes[i][j];
+                bulkData.declare_relation(elem, node, j);
             }
         }
         bulkData.modification_end();
@@ -179,17 +158,17 @@ protected:
 
     virtual void run_algorithm_to_time()
     {
-        do_intersection_test();
+        DeletedMeshInfo meshInfo;
 
         unsigned oldGraphEdgeCount = elemGraph->num_edges();
-        std::vector<int> boundaryIds = get_ids_along_boundary(meshSpec);
+        get_ids_along_boundary(bulkData, meshSpec, meshInfo);
 
-        std::vector< std::vector<stk::mesh::Entity> > elemNodes = delete_boundary_elements(boundaryIds);
+        delete_boundary_elements(meshInfo);
 
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
-        add_boundary_elements(boundaryIds, elemNodes);
+        add_boundary_elements(meshInfo);
 
         unsigned finalGraphEdgeCount = elemGraph->num_edges();
         ASSERT_EQ(oldGraphEdgeCount, finalGraphEdgeCount);
@@ -204,10 +183,9 @@ protected:
     stk::mesh::ElemElemGraphUpdater *elemGraphUpdater = nullptr;
     const std::string meshSpec;
 
-    int ADDMASK = 2;
-    int DELETEMASK = 3;
     stk::diag::Timer addElemTimer;
     stk::diag::Timer deleteElemTimer;
+    stk::diag::Timer createGraphTimer;
 };
 
 class ElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture

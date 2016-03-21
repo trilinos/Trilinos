@@ -53,31 +53,6 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-void find_entities_these_nodes_have_in_common2(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
-{
-  entity_vector.clear();
-  std::vector<Entity> intersect;
-  std::vector<Entity> tmp;
-
-  for(unsigned i=0; i<numNodes; ++i) {
-    const Entity* entities = mesh.begin(nodes[i],rank);
-    unsigned numEntities = mesh.num_connectivity(nodes[i],rank);
-    tmp.assign(entities, entities+numEntities);
-    std::sort(tmp.begin(), tmp.end());
-    if (i==0) {
-      entity_vector.assign(tmp.begin(), tmp.end());
-    }
-    else {
-       intersect.clear();
-       std::back_insert_iterator<std::vector<Entity> > intersect_itr(intersect);
-       std::set_intersection(entity_vector.begin(), entity_vector.end(),
-                             tmp.begin(), tmp.end(),
-                             intersect_itr);
-       entity_vector.swap(intersect);
-    }
-  }
-}
-
 void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
 {
   entity_vector.clear();
@@ -99,7 +74,7 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
   unsigned counter = 1;
   unsigned numUniqueEntities = 0;
 
-  for(unsigned i=0; i<maxNumEntities-numNodes; i += counter)
+  for(unsigned i=0; i<maxNumEntities-numNodes+1; i += counter)
   {
       counter = 1;
 

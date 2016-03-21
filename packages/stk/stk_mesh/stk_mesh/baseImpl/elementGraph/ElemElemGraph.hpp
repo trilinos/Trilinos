@@ -171,7 +171,7 @@ public:
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,
                               std::vector<stk::mesh::sharing_info> &shared_modified);
-    void write_graph(std::ostream& out) const;
+    void write_graph(std::ostream& out, const std::string preamble = "") const;
 
     stk::mesh::Entity get_entity(stk::mesh::impl::LocalId localId) const
     {

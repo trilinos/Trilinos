@@ -421,9 +421,10 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId & elementS
         connect_remote_element_to_existing_graph(receivedSharedEdge);
 }
 
-void ElemElemGraph::write_graph(std::ostream& out) const
+void ElemElemGraph::write_graph(std::ostream& out, const std::string preamble) const
 {
     std::ostringstream os;
+    os << preamble;
     os << "Graph for processor " << m_bulk_data.parallel_rank() << std::endl;
     for(size_t localId=0;localId<m_graph.get_num_elements_in_graph();++localId)
     {
