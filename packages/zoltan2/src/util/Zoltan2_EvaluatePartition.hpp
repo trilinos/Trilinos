@@ -91,7 +91,6 @@ public:
       \param problemComm  the problem communicator
       \param ia the problem input adapter
       \param soln  the solution
-      \param useDegreeAsWeight whether to use vertex degree as vertex weight
       \param graphModel the graph model
 
       The constructor does global communication to compute the metrics.
@@ -101,7 +100,6 @@ public:
     const RCP<const Comm<int> > &problemComm,
 		    const Adapter *ia, 
     const PartitioningSolution<Adapter> *soln,
-    bool useDegreeAsWeight = false,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
 
@@ -195,7 +193,6 @@ template <typename Adapter>
   const RCP<const Comm<int> > &problemComm,
   const Adapter *ia, 
   const PartitioningSolution<Adapter> *soln,
-  bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_(), graphMetrics_(), graphMetricsConst_()
@@ -225,7 +222,7 @@ template <typename Adapter>
 
   try{
     objectMetrics<Adapter>(env, problemComm, mcnorm, bia, soln,
-			   useDegreeAsWeight, graphModel, numGlobalParts_,
+			   false, graphModel, numGlobalParts_,
 			   numNonEmpty_,metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
