@@ -40,20 +40,18 @@ public:
 
     void write_graph(std::ostream& out) const { ElemElemGraph::write_graph(out); }
 
-    void fill_parallel_graph(stk::mesh::impl::ElemSideToProcAndFaceId& elem_side_comm) { ElemElemGraph::fill_parallel_graph(elem_side_comm); }
-
     stk::mesh::Graph & get_graph() { return m_graph; }
     stk::mesh::impl::ParallelGraphInfo & get_parallel_graph_info() { return m_parallelInfoForGraphEdges.get_parallel_graph_info(); }
     stk::mesh::ParallelInfoForGraphEdges& get_parallel_graph() { return m_parallelInfoForGraphEdges; }
 
     stk::mesh::BulkData & get_bulk_data() { return m_bulk_data; }
-    size_t get_graph_size() { return m_local_id_to_element_entity.size(); }
+    size_t get_graph_size() { return m_graph.get_num_elements_in_graph(); }
 
     stk::mesh::EntityId get_entity_id(stk::mesh::impl::LocalId localId)
     {
         stk::mesh::EntityId id = -localId;
         if(localId >= 0)
-            id = get_bulk_data().identifier(m_local_id_to_element_entity[localId]);
+            id = get_bulk_data().identifier(m_idMapper.local_to_entity(localId));
         return id;
     }
 
