@@ -28,10 +28,13 @@ namespace Tacho {
     typedef Kokkos::View<value_type*,space_type>   value_type_array;
     typedef Kokkos::View<ordinal_type*,space_type> ordinal_type_array;
 
+    // range type
+    template<typename T> using range_type = Kokkos::pair<T,T>;
+
     template<typename, typename, typename, typename>
     friend class DenseMatrixBase;
 
-    friend class DenseMatrixTools;
+    //friend class DenseMatrixTools;
 
   private:                          
     char               _label[Util::LabelSize]; //!< object label
@@ -49,6 +52,7 @@ namespace Tacho {
     /// Properties: 
     /// - Compile with Device (o), 
     /// - Callable in KokkosFunctors (x)
+    KOKKOS_INLINE_FUNCTION    
     void createInternalArrays(const ordinal_type m, 
                               const ordinal_type n,
                               const ordinal_type rs,
@@ -93,6 +97,7 @@ namespace Tacho {
     /// Properties: 
     /// - Compile with Device (o), 
     /// - Callable in KokkosFunctors (x)
+    KOKKOS_INLINE_FUNCTION        
     void createInternalArrays(const ordinal_type m, 
                               const ordinal_type n) {
       createInternalArrays(m, n, 1, m);
@@ -105,7 +110,6 @@ namespace Tacho {
     /// Properties: 
     /// - Compile with Device (o), 
     /// - Callable in KokkosFunctors (o)
-
     KOKKOS_INLINE_FUNCTION    
     bool isValueArrayNull() const {
       return !_a.dimension_0();
@@ -156,8 +160,8 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     value_type* ValuePtr() const { return &_a[0]; }
 
-    KOKKOS_INLINE_FUNCTION
-    value_type_array& ValueArray() const { return _a; }
+    //KOKKOS_INLINE_FUNCTION
+    //value_type_array ValueArray() const { return _a; }
 
     /// ------------------------------------------------------------------
     
@@ -207,6 +211,7 @@ namespace Tacho {
         _cs(b._cs),
         _a(b._a) 
     { 
+      // need static assert to evaluate space type
       setLabel(b._label); 
     }
     
@@ -251,7 +256,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     ~DenseMatrixBase() = default;
 
-    /// Creationg and mirroring
+    /// Create and mirror
     /// ------------------------------------------------------------------
     /// Properties: 
     /// - Compile with Device (o), 
@@ -287,10 +292,9 @@ namespace Tacho {
         _a  = b._a;
       } else {
         // when the space is different, perform deep copy
-        createInternalArrays(b.NumRows(), b.NumCols(), b.RowStride(), b.ColStride(), false);
+        createInternalArrays(b._m, b._n, b._rs, b._cs, false);
         
-        const auto range 
-          = Kokkos::pair<ordinal_type,ordinal_type>(0, Util::min(_a.dimension_0(), b._a.dimension_0())); 
+        const auto range = range_type<ordinal_type>(0, Util::min(_a.dimension_0(), b._a.dimension_0())); 
         
         space_type::execution_space::fence();      
         Kokkos::deep_copy(Kokkos::subview(_a, range), Kokkos::subview(b._a, range));
@@ -320,18 +324,18 @@ namespace Tacho {
          << std::endl
          << "    ValueArray dimensions  = " << _a.dimension_0() << std::endl
          << std::endl;
-      
+
       const int w = 4;
       if (_a.size()) {
         for (ordinal_type i=0;i<_m;++i) {
           for (ordinal_type j=0;j<_n;++j) {
             const value_type val = this->Value(i,j);
-            os << std::setw(w) << val << "  ";
+            os << std::setw(w) << std::showpos << val << std::noshowpos << "  ";
           }
           os << std::endl;
         }
       }
-      
+
       os.unsetf(std::ios::scientific);
       os.precision(prec);
       

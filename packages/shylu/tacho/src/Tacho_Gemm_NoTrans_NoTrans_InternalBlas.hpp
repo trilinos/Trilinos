@@ -93,7 +93,7 @@ namespace Tacho {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, n),
                                [&](const ordinal_type j) {
                                  const value_type tmp = B.Value(l, j);
-#pragma unroll
+                                 //#pragma unroll
                                  for (ordinal_type i=0;i<m;++i)
                                    C.Value(i, j) += A.Value(i, l)*tmp;
                                });

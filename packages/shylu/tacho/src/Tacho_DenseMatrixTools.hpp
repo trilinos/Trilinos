@@ -1,4 +1,3 @@
-#pragma once
 #ifndef __TACHO_DENSE_MATRIX_TOOLS_HPP__
 #define __TACHO_DENSE_MATRIX_TOOLS_HPP__
 
@@ -16,7 +15,7 @@ namespace Tacho {
     /// ------------------------------------------------------------------
     /// Properties: 
     /// - Compile with Device (o), 
-    /// - Callable in KokkosFunctors (o)
+    /// - Callable in KokkosFunctors (x), no team interface
     /// - Blocking with fence (o)
 
     /// \brief elementwise copy 
@@ -40,7 +39,7 @@ namespace Tacho {
       Kokkos::parallel_for( range_policy(0, B.NumCols()), 
                             [&](const ordinal_type j) 
                             {
-#pragma unroll
+                              //#pragma unroll
                               for (auto i=0;i<B.NumRows();++i)
                                 A.Value(i,j) = B.Value(i,j);
                             } );
@@ -48,13 +47,14 @@ namespace Tacho {
       space_type::execution_space::fence();
     }
 
-    /// \brief elementwise copy of lower/upper triangular of matrix 
+    /// \brief elementwise copy of lower/upper triangular of matrix including diagonals
     template<typename DenseMatrixTypeA, 
              typename DenseMatrixTypeB>
     KOKKOS_INLINE_FUNCTION
     static void
     copy(DenseMatrixTypeA &A,
          const int uplo,
+         const int offset,
          const DenseMatrixTypeB &B) {
       static_assert( Kokkos::Impl
                      ::is_same<
@@ -73,18 +73,18 @@ namespace Tacho {
         Kokkos::parallel_for( range_policy(0, B.NumCols()),
                               [&](const ordinal_type j)
                               {
-#pragma unroll
-                                for (ordinal_type i=j;i<B.NumRows();++i)
+                                //#pragma unroll
+                                for (ordinal_type i=(j+offset);i<B.NumRows();++i)
                                   A.Value(i, j) = B.Value(i, j);
                               } );
         break;
       }
       case Uplo::Upper: {
-        Kokkos::parallel_for( range_policy(0, B.Numcols()),
+        Kokkos::parallel_for( range_policy(0, B.NumCols()),
                               [&](const ordinal_type j)
                               {
-#pragma unroll
-                                for (ordinal_type i=0;i<(j+1);++i)
+                                //#pragma unroll
+                                for (ordinal_type i=0;i<=(j-offset);++i)
                                   A.Value(i, j) = B.Value(i, j);
                               } );
         break;
@@ -165,7 +165,7 @@ namespace Tacho {
                               const OrdinalType ntmp = offn + nb; 
                               const OrdinalType n    = ntmp < fn ? nb : (fn - offn); 
 
-#pragma unroll
+                              //#pragma unroll
                               for (ordinal_type i=0;i<hm;++i) {
                                 const OrdinalType offm = mb*i;
                                 const OrdinalType mtmp = offm + mb; 
