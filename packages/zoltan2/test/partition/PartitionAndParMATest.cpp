@@ -327,7 +327,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
 
   //create metric object
   RCP<quality_t> metricObject =
-    rcp(new quality_t(env, CommT, ia, &problem.getSolution(), false));
+    rcp(new quality_t(env, CommT, ia, &problem.getSolution()/*, false*/));
 
   if (!me) {
     metricObject->printMetrics(cout);
