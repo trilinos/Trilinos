@@ -10,15 +10,14 @@
 
 namespace Tacho {
 
-  template<typename OrdinalType, typename SizeType = OrdinalType>
+  template<typename OrdinalType, 
+           typename SizeType = OrdinalType, 
+           typename SpaceType = void>
   class GraphTools_Scotch {
   public:
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
-
-    // force to use host space
-    typedef typename
-    Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space space_type;
+    typedef SpaceType   space_type;
 
     typedef Kokkos::View<ordinal_type*, space_type> ordinal_type_array;
     typedef Kokkos::View<size_type*,    space_type> size_type_array;
@@ -65,7 +64,8 @@ namespace Tacho {
     ordinal_type_array TreeVector()    const { return _tree; }
 
     ordinal_type NumBlocks() const { return _cblk; }
-    
+
+    // static assert is necessary to enforce to use host space
     GraphTools_Scotch() = default;
     GraphTools_Scotch(const GraphTools_Scotch &b) = default;
     virtual~GraphTools_Scotch() {
@@ -122,7 +122,7 @@ namespace Tacho {
       }
     }
     
-    void setStratGraph(const SCOTCH_Num strat = 0) {
+    void setStrategy(const SCOTCH_Num strat = 0) {
       // a typical choice
       //(SCOTCH_STRATLEVELMAX));//   |
       //SCOTCH_STRATLEVELMIN   |
@@ -135,26 +135,27 @@ namespace Tacho {
       _level = level;
     }
 
-    int computeOrdering(const ordinal_type treecut = 0) {
+    void computeOrdering(const ordinal_type treecut = 0) {
       int ierr = 0;
       
       // pointers for global graph ordering
-      const ordinal_type *perm  = _perm.ptr_on_device();
-      const ordinal_type *peri  = _peri.ptr_on_device();
-      const ordinal_type *range = _range.ptr_on_device();
-      const ordinal_type *tree  = _tree.ptr_on_device();
+      ordinal_type *perm  = _perm.ptr_on_device();
+      ordinal_type *peri  = _peri.ptr_on_device();
+      ordinal_type *range = _range.ptr_on_device();
+      ordinal_type *tree  = _tree.ptr_on_device();
 
       {
         // set desired tree level
-        const int level = (_level ? _level : max(1, int(log2(_m)-treecut))); // level = log2(_nnz)+10;
+        const int level = (_level ? _level : Util::max(1, int(log2(_m)-treecut))); // level = log2(_nnz)+10;
 
         SCOTCH_Strat stradat;
         SCOTCH_Num straval = _strat;
 
-        ierr = SCOTCH_stratInit(&stradat);CHKERR(ierr);
+        ierr = SCOTCH_stratInit(&stradat);TACHO_TEST_FOR_ABORT(ierr, "Failed in SCOTCH_stratInit");
+
 
         // if both are zero, do not build strategy
-        if (_strat) {
+        if (_strat || _level) {
           std::cout << "GraphTools_Scotch:: User provide a strategy and/or level" << std::endl
                     << "                    strategy = " << _strat << ", level =  " << _level << std::endl
                     << "                    strategy & SCOTCH_STRATLEVELMAX   = " << (_strat & SCOTCH_STRATLEVELMAX) << std::endl
@@ -162,15 +163,8 @@ namespace Tacho {
                     << "                    strategy & SCOTCH_STRATLEAFSIMPLE = " << (_strat & SCOTCH_STRATLEAFSIMPLE) << std::endl
                     << "                    strategy & SCOTCH_STRATSEPASIMPLE = " << (_strat & SCOTCH_STRATSEPASIMPLE) << std::endl
                     << std::endl;
-          
-          if ((SCOTCH_STRATLEVELMAX & _strat) && _level <= 1) {
-            std::cout << "GraphTools_Scotch:: Strategy SCOTCH_STRATLEVELMAX is used with level below 1" << std::endl
-                      << "                    Provided strategy is ignored" << std::endl
-                      << std::endl;
-          } else {
-            ierr = SCOTCH_stratGraphOrderBuild(&stradat, straval, level, 0.2);
-            TACHO_TEST_FOR_ABORT(ierr, "Failed in SCOTCH_stratGraphOrderBuild");  
-          }
+          ierr = SCOTCH_stratGraphOrderBuild(&stradat, straval, level, 0.2);
+          TACHO_TEST_FOR_ABORT(ierr, "Failed in SCOTCH_stratGraphOrderBuild");  
         }
         ierr = SCOTCH_graphOrder(&_graph,
                                  &stradat,
@@ -189,7 +183,10 @@ namespace Tacho {
         for (ordinal_type i=0;i<_cblk;++i)
           nroot += (_tree[i] == -1);
 
-        if (nroot) {
+        if (nroot > 1) {
+          std::cout << "GraphTools_Scotch:: # of roots " << nroot << std::endl
+                    << "                    a fake root is created to complete the tree" << std::endl
+                    << std::endl;
           _tree [_cblk]   = -1;          // dummy root
           _range[_cblk+1] = _range[_cblk]; // zero range for the dummy root
           
@@ -205,12 +202,10 @@ namespace Tacho {
       //std::cout << "Range   Tree " << std::endl;
       //for (int i=0;i<_cblk;++i)
       //  std::cout << _range[i] << " :: " << i << " " << _tree[i] << std::endl;
-
-      return 0;
     }
 
-    int pruneTree(const ordinal_type cut) {
-      if (cut <=0 ) return 0;
+    void pruneTree(const ordinal_type cut) {
+      if (cut <=0 ) return;
 
       ordinal_type_array work = ordinal_type_array("Scotch::WorkArray", _cblk+1);
       for (ordinal_type iter=0;iter<cut && _cblk > 1;++iter) {
@@ -297,14 +292,12 @@ namespace Tacho {
         }
         _tree[_cblk] = 0;
       }
-
-      return 0;
     }
 
     std::ostream& showMe(std::ostream &os) const {
       std::streamsize prec = os.precision();
       os.precision(4);
-      os << scientific;
+      os << std::scientific;
 
       os << " -- Scotch input -- " << std::endl
          << "    Base Value     = " << _base << std::endl
@@ -318,12 +311,12 @@ namespace Tacho {
 
       const int w = 6;
       for (ordinal_type i=0;i<_m;++i)
-        os << setw(w) << _perm[i] << "   "
-           << setw(w) << _peri[i] << "   "
-           << setw(w) << _range[i] << "   "
-           << setw(w) << _tree[i] << std::endl;
+        os << std::setw(w) << _perm[i] << "   "
+           << std::setw(w) << _peri[i] << "   "
+           << std::setw(w) << _range[i] << "   "
+           << std::setw(w) << _tree[i] << std::endl;
 
-      os.unsetf(ios::scientific);
+      os.unsetf(std::ios::scientific);
       os.precision(prec);
 
       return os;

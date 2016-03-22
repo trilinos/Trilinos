@@ -195,8 +195,8 @@ namespace Tacho {
                               [&](const ordinal_type i)
                               {
                                 const auto ii = ip[i];
-                                const auto W_cols = W.ColsInRow(i);
-                                const auto W_vals = W.ValuesInRow(i);
+                                const auto W_cols = W.ColsInRow(ii);
+                                const auto W_vals = W.ValuesInRow(ii);
                                 
                                 const auto A_cols = A.ColsInRow(i);
                                 const auto A_vals = A.ValuesInRow(i);
@@ -206,7 +206,8 @@ namespace Tacho {
                                   W_cols[j] = j;  // use W as workspace of indices
                                 }
                                 
-                                Util::sort(A_cols, W_cols);
+                                const ordinal_type begin = 0, end = A_cols.dimension_0();
+                                Util::sort(A_cols, W_cols, begin, end);
 
                                 for (size_type j=0;j<W_cols.dimension_0();++j) 
                                   A_vals[W_cols[j]] = W_vals[j];

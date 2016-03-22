@@ -35,7 +35,7 @@ namespace Tacho {
 #define MSG_INVALID_TEMPLATE_ARGS "Invaid template arguments"
 
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
-  if (ierr != 0) {                                                      \
+  if ((ierr) != 0) {                                                    \
     fprintf(stderr, ">> Error in file %s, line %d, error %d \n",__FILE__,__LINE__,ierr); \
     fprintf(stderr, "   %s\n", msg);                                    \
     Kokkos::abort(">> Tacho abort\n");                                    \
@@ -177,13 +177,13 @@ namespace Tacho {
              typename IndexType, 
              typename OrdinalType, 
              typename SpaceType>
-    KOKKOS_FORCEINLINE_FUNCTION    
-    static void sort(Kokkos::View<ValueType*,SpaceType> &data,
-                     Kokkos::View<IndexType*,SpaceType> &idx,
+    KOKKOS_INLINE_FUNCTION    
+    static void sort(Kokkos::View<ValueType*,SpaceType> data,
+                     Kokkos::View<IndexType*,SpaceType> idx,
                      const OrdinalType begin,
                      const OrdinalType end) {
-      if (end > begin + 1) {
-        const auto piv = data[0];
+      if (begin + 1 < end) {
+        const auto piv = data[begin];
         OrdinalType left = (begin + 1), right = end;
         while (left < right) {
           if (data[left] <= piv) {
@@ -193,14 +193,15 @@ namespace Tacho {
             Util::swap(data[left], data[right]);
             Util::swap(idx [left], idx [right]);
           }
-          --left;
-          Util::swap(data[left], data[begin]);
-          Util::swap(idx [left], idx [begin]);
-
-          // recursion
-          Util::sort(Kokkos::subview(data, Kokkos::pair<int,int>(begin, left)));
-          Util::sort(Kokkos::subview(data, Kokkos::pair<int,int>(right, end)));
         }
+
+        --left;
+        Util::swap(data[left], data[begin]);
+        Util::swap(idx [left], idx [begin]);
+        
+        // recursion
+        Util::sort(data, idx, begin, left);
+        Util::sort(data, idx, right, end );
       }
     }
                      

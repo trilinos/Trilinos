@@ -32,6 +32,12 @@ int main (int argc, char *argv[]) {
   std::string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
+  int treecut = 0;
+  clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
+
+  int prunecut = 0;
+  clp.setOption("prunecut", &prunecut, "Level to prune tree from bottom");
+
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -45,7 +51,7 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
     r_val = exampleGraphTools<exec_space>
-      (file_input, verbose);
+      (file_input, treecut, prunecut, verbose);
     
     exec_space::finalize();
   }

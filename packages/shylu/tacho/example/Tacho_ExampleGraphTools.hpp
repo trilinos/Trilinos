@@ -14,13 +14,21 @@
 #include "Tacho_MatrixMarket.hpp"
 
 #include "Tacho_GraphTools.hpp"
-//#include "Tacho_GraphTools_Scotch.hpp"
-//#include "Tacho_GraphTools_CAMD.hpp"
+
+#ifdef HAVE_SHYLUTACHO_SCOTCH
+#include "Tacho_GraphTools_Scotch.hpp"
+#ifdef HAVE_SHYLUTACHO_CHOLMOD
+#include "Tacho_GraphTools_CAMD.hpp"
+#endif
+#endif
+
 
 namespace Tacho {
   
   template<typename DeviceSpaceType>
   int exampleGraphTools(const std::string file_input,
+                        const int treecut,
+                        const int prunecut,
                         const bool verbose) {
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
@@ -31,6 +39,13 @@ namespace Tacho {
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> CrsMatrixBaseHostType;
     typedef GraphTools<ordinal_type,size_type,HostSpaceType> GraphToolsHostType;
+
+#ifdef HAVE_SHYLUTACHO_SCOTCH
+    typedef GraphTools_Scotch<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_Scotch;
+#ifdef HAVE_SHYLUTACHO_CHOLMOD
+    typedef GraphTools_CAMD<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_CAMD;
+#endif
+#endif
 
     int r_val = 0;
 
@@ -48,6 +63,9 @@ namespace Tacho {
       MatrixMarket::read(AA, in);
     }
     double t_read = timer.seconds();
+
+    if (verbose)
+      AA.showMe(std::cout) << std::endl;
     
     typename GraphToolsHostType::size_type_array rptr("Graph::RowPtrArray", AA.NumRows() + 1);
     typename GraphToolsHostType::ordinal_type_array cidx("Graph::ColIndexArray", AA.NumNonZeros());
@@ -55,6 +73,64 @@ namespace Tacho {
     timer.reset();
     GraphToolsHostType::getGraph(rptr, cidx, AA);
     double t_graph = timer.seconds();
+
+#ifdef HAVE_SHYLUTACHO_SCOTCH
+    GraphToolsHostType_Scotch S;
+    S.setGraph(AA.NumRows(), rptr, cidx);
+    S.setSeed(0);
+    S.setStrategy( SCOTCH_STRATLEVELMAX   |
+                   SCOTCH_STRATLEVELMIN   |
+                   SCOTCH_STRATLEAFSIMPLE |
+                   SCOTCH_STRATSEPASIMPLE );
+
+    timer.reset();
+    S.computeOrdering(treecut);
+    double t_scotch = timer.seconds();
+
+    S.pruneTree(prunecut);
+    S.showMe(std::cout) << std::endl;
+
+    CrsMatrixBaseHostType BB("BB");
+    BB.createConfTo(AA);
+
+    CrsMatrixTools::copy(BB, 
+                         S.PermVector(),
+                         S.InvPermVector(),
+                         AA);
+
+    if (verbose)
+      BB.showMe(std::cout) << std::endl;
+
+#ifdef HAVE_SHYLUTACHO_CHOLMOD
+
+    timer.reset();
+    GraphToolsHostType::getGraph(rptr, cidx, BB);
+    t_graph += timer.seconds();
+
+    GraphToolsHostType_CAMD C;
+    C.setGraph(BB.NumRows(), 
+               rptr, cidx, 
+               S.NumBlocks(), 
+               S.RangeVector());
+
+    timer.reset();
+    C.computeOrdering();
+    double t_camd = timer.seconds();
+
+    C.showMe(std::cout) << std::endl;
+
+    CrsMatrixBaseHostType CC("CC");
+    CC.createConfTo(BB);
+
+    CrsMatrixTools::copy(CC, 
+                         C.PermVector(),
+                         C.InvPermVector(),
+                         BB);
+
+    if (verbose)
+      CC.showMe(std::cout) << std::endl;
+#endif // cholmod
+#endif // scotch
 
     {
       const auto prec = std::cout.precision();
@@ -64,7 +140,13 @@ namespace Tacho {
                 << "GraphTools:: dimension = " << AA.NumRows() << " x " << AA.NumCols()
                 << ", " << " nnz = " << AA.NumNonZeros() << ", "
                 << "read = " << t_read << " [sec], "
-                << "graph generation = " << t_graph << " [sec] "
+                << "graph generation = " << (t_graph/2.0) << " [sec] "
+#ifdef HAVE_SHYLUTACHO_SCOTCH
+                << "scotch reordering = " << t_scotch << " [sec] "
+#ifdef HAVE_SHYLUTACHO_CHOLMOD
+                << "camd reordering = " << t_camd << " [sec] "
+#endif // cholmod
+#endif // scotch
                 << std::endl;
 
       std::cout.unsetf(std::ios::scientific);
