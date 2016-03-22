@@ -60,8 +60,6 @@
 #include "stk_unit_test_utils/ElemGraphTestUtils.hpp"
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 
-namespace {
-
 class TwoElemMultipleSharedSideTester : public ::testing::Test
 {
 public:
@@ -194,7 +192,7 @@ public:
 
 };
 
-void remove_part_if_owned(stk::mesh::BulkData& bulkData, stk::mesh::Entity entity, stk::mesh::Part& part)
+inline void remove_part_if_owned(stk::mesh::BulkData& bulkData, stk::mesh::Entity entity, stk::mesh::Part& part)
 {
     if (bulkData.is_valid(entity) && bulkData.bucket(entity).owned())
     {
@@ -246,7 +244,7 @@ inline void test_element_death_with_multiple_shared_sides(stk::mesh::BulkData& b
 }
 
 
-stk::mesh::EntityId get_connected_elem_id(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, size_t i)
+inline stk::mesh::EntityId get_connected_elem_id(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, size_t i)
 {
     if(bulkData.parallel_size() > 1)
     {
@@ -258,7 +256,7 @@ stk::mesh::EntityId get_connected_elem_id(stk::mesh::BulkData &bulkData, stk::me
     }
 }
 
-bool is_connected_elem_local(int numProcs, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, size_t i)
+inline bool is_connected_elem_local(int numProcs, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, size_t i)
 {
     if(numProcs > 1)
     {
@@ -270,13 +268,13 @@ bool is_connected_elem_local(int numProcs, stk::mesh::ElemElemGraph& elem_elem_g
     }
 }
 
-void test_local_or_remote_connections(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::EntityId expectedRemoteId, stk::mesh::Entity localElem, size_t i)
+inline void test_local_or_remote_connections(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::EntityId expectedRemoteId, stk::mesh::Entity localElem, size_t i)
 {
     EXPECT_TRUE(is_connected_elem_local(bulkData.parallel_size(), elem_elem_graph, localElem, i));
     EXPECT_EQ(expectedRemoteId, get_connected_elem_id(bulkData, elem_elem_graph, localElem, i));
 }
 
-void test_elements_connected_n_times(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, stk::mesh::EntityId remoteId, size_t numTimesConnected)
+inline void test_elements_connected_n_times(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, stk::mesh::EntityId remoteId, size_t numTimesConnected)
 {
     ASSERT_EQ(numTimesConnected, elem_elem_graph.get_num_connected_elems(localElem));
     for(size_t i=0; i<numTimesConnected; ++i)
@@ -329,9 +327,6 @@ public:
         TwoElemMultipleSharedSideTester(2, twoQuadTwoSharedSideNodeIDs, twoQuadTwoSharedSideSharedNodeIds, stk::mesh::BulkData::NO_AUTO_AURA)
     {}
 };
-
-
-}
 
 #endif
 
