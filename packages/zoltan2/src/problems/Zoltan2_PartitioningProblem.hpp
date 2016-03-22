@@ -1025,7 +1025,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     } 
     if(modelAvail_[HypergraphModelType]==true)
     {
-      std::cout << "Hypergraph model not implemented yet..." << std::endl;
+      //KDD USING ZOLTAN FOR HYPERGRAPH FOR NOW
+      //KDD std::cout << "Hypergraph model not implemented yet..." << std::endl;
     }
 
     if(modelAvail_[CoordinateModelType]==true)
