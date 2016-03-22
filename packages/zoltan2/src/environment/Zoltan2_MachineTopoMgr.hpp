@@ -105,7 +105,7 @@ public:
       }
 
       else if (approach == "EIGNORE"){
-        if (myRank == 0) std::cout << "Ignoring E Dimension" << std::endl;
+        if (this->myRank == 0) std::cout << "Ignoring E Dimension" << std::endl;
         transformed_network_dim = networkDim - 2;
         transformed_coordinates = procCoords;
       }
