@@ -274,6 +274,17 @@ namespace Tacho {
     /// - Callable in KokkosFunctors (x)
     KOKKOS_INLINE_FUNCTION
     void
+    clear() {
+      _m = 0; _n = 0; _nnz = 0;
+
+      _ap_begin = size_type_array();
+      _ap_end   = size_type_array();
+      _aj       = ordinal_type_array();
+      _ax       = value_type_array();
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void
     create(const ordinal_type m,
            const ordinal_type n,
            const size_type nnz) {
@@ -434,70 +445,4 @@ namespace Tacho {
 
     // int hermitianize(int uplo) {
     //   return symmetrize(uplo, true);
-    // }
-
-    // int exportMatrixMarket(ofstream &file,
-    //                        const string comment,
-    //                        const int uplo = 0) {
-    //   streamsize prec = file.precision();
-    //   file.precision(8);
-    //   file << scientific;
-
-    //   file << "%%MatrixMarket matrix coordinate "
-    //        << (is_fundamental<value_type>::value ? "real " : "complex ")
-    //        << ((uplo == Uplo::Upper || uplo == Uplo::Lower) ? "symmetric " : "general ")
-    //        << endl;
-
-    //   file << comment << endl;
-      
-    //   // cnt nnz
-    //   size_type nnz = 0;
-    //   for (ordinal_type i=0;i<_m;++i) {
-    //     const size_type jbegin = _ap[i], jend = _ap[i+1];
-    //     for (size_type j=jbegin;j<jend;++j) {
-    //       if (uplo == Uplo::Upper && i <= _aj[j]) ++nnz;
-    //       if (uplo == Uplo::Lower && i >= _aj[j]) ++nnz;
-    //       if (!uplo) ++nnz;
-    //     }
-    //   }
-    //   file << _m << " " << _n << " " << nnz << endl;
-
-    //   const int w = 10;
-    //   for (ordinal_type i=0;i<_m;++i) {
-    //     const size_type jbegin = _ap[i], jend = _ap[i+1];
-    //     for (size_type j=jbegin;j<jend;++j) {
-    //       bool flag = false;
-    //       if (uplo == Uplo::Upper && i <= _aj[j]) flag = true;
-    //       if (uplo == Uplo::Lower && i >= _aj[j]) flag = true;
-    //       if (!uplo) flag = true;
-    //       if (flag) {
-    //         value_type val = _ax[j];
-    //         file << std::setw(w) << (     i+1) << "  " 
-    //              << std::setw(w) << (_aj[j]+1) << "  " 
-    //              << std::setw(w) <<    val << endl;
-    //       }
-    //     }
-    //   }
-
-    //   file.unsetf(ios::scientific);
-    //   file.precision(prec);
-
-    //   return 0;
-    // }
-
-    // int convertGraph(size_type_array rptr,
-    //                  ordinal_type_array cidx) const {
-    //   ordinal_type ii = 0;
-    //   size_type jj = 0;
-      
-    //   for (ordinal_type i=0;i<_m;++i) {
-    //     size_type jbegin = _ap[i], jend = _ap[i+1];
-    //     rptr[ii++] = jj;
-    //     for (size_type j=jbegin;j<jend;++j)
-    //       if (i != _aj[j])
-    //         cidx[jj++] = _aj[j];
-    //   }
-    //   rptr[ii] = jj;
-
-    //   return 0;
     // }

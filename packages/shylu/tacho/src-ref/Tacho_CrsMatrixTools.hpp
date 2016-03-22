@@ -19,19 +19,19 @@ namespace Tacho {
     /// - Blocking with fence (o)
 
     /// \brief elementwise copy 
-    template<typename CrsMatrixTypeA, 
-             typename CrsMatrixTypeB>
+    template<typename CrsMatBaseTypeA, 
+             typename CrsMatBaseTypeB>
     KOKKOS_INLINE_FUNCTION
     static void
-    copy(CrsMatrixTypeA &A,
-         const CrsMatrixTypeB &B) {
+    copy(CrsMatBaseTypeA &A,
+         const CrsMatBaseTypeB &B) {
       static_assert( Kokkos::Impl::is_same<
-                     typename CrsMatrixTypeA::space_type,
-                     typename CrsMatrixTypeB::space_type
+                     typename CrsMatBaseTypeA::space_type,
+                     typename CrsMatBaseTypeB::space_type
                      >::value,
                      "Space type of input matrices does not match" );
       
-      typedef typename CrsMatrixTypeA::space_type space_type;
+      typedef typename CrsMatBaseTypeA::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
 
       space_type::execution_space::fence();      
@@ -52,31 +52,32 @@ namespace Tacho {
                             } );
       
       space_type::execution_space::fence();
+      A.setNumNonZeros();
     }
     
     /// \brief elementwise copy of lower/upper triangular of matrix
-    template<typename CrsMatrixTypeA, 
-             typename CrsMatrixTypeB>
+    template<typename CrsMatBaseTypeA, 
+             typename CrsMatBaseTypeB>
     KOKKOS_INLINE_FUNCTION
     static void
-    copy(CrsMatrixTypeA &A,
+    copy(CrsMatBaseTypeA &A,
          const int uplo,
          const int offset,
-         const CrsMatrixTypeB &B) {
+         const CrsMatBaseTypeB &B) {
       static_assert( Kokkos::Impl
                      ::is_same<
-                     typename CrsMatrixTypeA::space_type,
-                     typename CrsMatrixTypeB::space_type
+                     typename CrsMatBaseTypeA::space_type,
+                     typename CrsMatBaseTypeB::space_type
                      >::value,
                      "Space type of input matrices does not match" );
       
-      //typedef typename CrsMatrixTypeA::space_type space_type;
+      //typedef typename CrsMatBaseTypeA::space_type space_type;
       //typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
       
       //space_type::execution_space::fence();      
 
       switch (uplo) {
-      case Uplo::Lower: {
+      case Uplo::Upper: {
         // parallel for  : compute size of each row dimension
         // parallel scan : compute offsets 
         // parallel for  : assignment
@@ -99,7 +100,7 @@ namespace Tacho {
         A.setNumNonZeros();
         break;
       }
-      case Uplo::Upper: {
+      case Uplo::Lower: {
         // parallel for  : compute size of each row dimension
         // parallel scan : compute offsets 
         // parallel for  : assignment
@@ -127,27 +128,27 @@ namespace Tacho {
     }
 
     /// \brief elementwise copy with permutation
-    template<typename CrsMatrixTypeA, 
-             typename CrsMatrixTypeB,
+    template<typename CrsMatBaseTypeA, 
+             typename CrsMatBaseTypeB,
              typename OrdinalTypeArray>
     KOKKOS_INLINE_FUNCTION
     static void
-    copy(CrsMatrixTypeA &A,
+    copy(CrsMatBaseTypeA &A,
          const OrdinalTypeArray &p,
          const OrdinalTypeArray &ip,
-         const CrsMatrixTypeB &B) {
+         const CrsMatBaseTypeB &B) {
       static_assert( Kokkos::Impl
                      ::is_same<
-                     typename CrsMatrixTypeA::space_type,
-                     typename CrsMatrixTypeB::space_type
+                     typename CrsMatBaseTypeA::space_type,
+                     typename CrsMatBaseTypeB::space_type
                      >::value,
                      "Space type of input matrices does not match" );
       
-      typedef typename CrsMatrixTypeA::space_type space_type;
+      typedef typename CrsMatBaseTypeA::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
 
       // create work space
-      CrsMatrixTypeA W;
+      CrsMatBaseTypeA W;
       W.createConfTo(A);
 
       space_type::execution_space::fence();      
@@ -323,114 +324,3 @@ namespace Tacho {
 }
 
 #endif
-
-
-
-//     /// \brief elementwise copy of matrix b
-//     template<typename DenseMatrixTypeA, 
-//              typename DenseMatrixTypeB,
-//              typename OrdinalArrayTypeIp,
-//              typename OrdinalArrayTypeJp>
-//     KOKKOS_INLINE_FUNCTION
-//     static void
-//     copy(DenseMatrixTypeA &A,
-//          const DenseMatrixTypeB &B,
-//          const OrdinalArrayTypeIp &ip,         
-//          const OrdinalArrayTypeJp &jp) { 
-      
-//       static_assert( Kokkos::Impl::is_same<DenseMatrixTypeA::space_type,DenseMatrixTypeB::space_type>::value,
-//                      "Space type of input matrices does not match" );
-      
-//       typedef DenseMatrixTypeA::space_type space_type;
-//       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
-      
-//       const int idx = ip.is_null() * 10 + jp.is_null();
-
-//       space_type::execution_space::fence();      
-
-//       switch (idx) {
-//       case 11: { // ip is null and jp is null: no permutation
-//         Kokkos::parallel_for( range_policy_type(0, B.NumCols()), 
-//                               KOKKOS_LAMBDA(const ordinal_type j) 
-//                               {
-// #pragma unroll
-//                                 for (auto i=0;i<B.NumRows();++i)
-//                                   A.fValue(i,j) = B.Value(i,j);
-//                               } );
-//         break;
-//       }
-//       case 0: { // ip is not null and jp is not null: row/column permutation 
-//         Kokkos::parallel_for( range_policy_type(0, B._n), 
-//                               KOKKOS_LAMBDA(const ordinal_type j) 
-//                               {
-// #pragma unroll 
-//                                 for (auto i=0;i<B._m;++i)
-//                                   A.Value(i, j) = B.Value(ip(i), jp(j));
-//                               } );
-//         break;
-//       }
-//       case 10: { // ip is not null and jp is null: row permutation
-//         Kokkos::parallel_for( range_policy_type(0, B._n), 
-//                               [&](const ordinal_type j) 
-//                               {
-// #pragma unroll 
-//                                 for (auto i=0;i<B._m;++i)
-//                                   A.Value(i, j) = B.Value(ip(i), j);
-//                               } );
-//         break;
-//       } 
-//       case 1: { // ip is null and jp is not null: column permutation
-//         Kokkos::parallel_for( range_policy_type(0, B._n), 
-//                               [&](const ordinal_type j) 
-//                               {
-//                                 const ordinal_type jj = jp(j);
-// #pragma unroll 
-//                                 for (auto i=0;i<B._m;++i)
-//                                   A.Value(i, j) = B.Value(i, jj);
-//                               } );
-//         break;
-//       }
-//       }
-
-//       space_type::execution_space::fence();
-//     }
-
-//     /// \brief elementwise copy of lower/upper triangular of matrix b
-//     template<typename VT,
-//              typename OT,
-//              typename ST>
-//     KOKKOS_INLINE_FUNCTION
-//     void
-//     copy(const int uplo, 
-//          const DenseMatrixBase<VT,OT,ST,space_type> &b) { 
-
-//       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Dynamic> > range_policy_type;
-
-//       space_type::execution_space::fence();
-
-//       switch (uplo) {
-//       case Uplo::Lower: {
-//         Kokkos::parallel_for( range_policy_type(0, B._n), 
-//                               [&](const ordinal_type j) 
-//                               { 
-// #pragma unroll 
-//                                 for (ordinal_type i=j;i<B._m;++i) 
-//                                   A.Value(i, j) = B.Value(i, j);
-//                               } );
-//         break;
-//       }
-//       case Uplo::Upper: {
-//         Kokkos::parallel_for( range_policy_type(0, B._n), 
-//                               [&](const ordinal_type j) 
-//                               { 
-// #pragma unroll 
-//                                 for (ordinal_type i=0;i<(j+1);++i) 
-//                                   A.Value(i, j) = B.Value(i, j);
-//                               } );
-//         break;
-//       }
-//       }
-
-//       space_type::execution_space::fence();
-//     }
-    /// ------------------------------------------------------------------

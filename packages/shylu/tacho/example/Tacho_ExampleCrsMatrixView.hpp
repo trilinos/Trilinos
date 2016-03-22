@@ -19,6 +19,10 @@ namespace Tacho {
     typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+
+    const bool detail = false;
+    std::cout << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, detail);
+    std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
     
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,HostSpaceType>   CrsMatrixBaseHostType;
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,DeviceSpaceType> CrsMatrixBaseDeviceType;

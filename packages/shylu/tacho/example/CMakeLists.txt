@@ -88,6 +88,19 @@ IF(Kokkos_ENABLE_Pthread)
   )
 ENDIF()
 
+# Graph Tools
+# ===========
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleGraphTools_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleGraphTools_Pthreads.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+
 # # Do not compile if Scotch is not enabled
 # IF(TPL_ENABLE_Scotch)
 

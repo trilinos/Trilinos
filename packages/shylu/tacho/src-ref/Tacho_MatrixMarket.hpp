@@ -16,11 +16,11 @@ namespace Tacho {
     /// - Compile with Device (x), 
     /// - Callable in KokkosFunctors (x), no team interface
     /// - Blocking with fence (x)
-
+ 
     /// \brief elementwise copy 
     template<typename CrsMatrixType>
     static void
-    import(CrsMatrixType &A, std::ifstream &file) {
+    read(CrsMatrixType &A, std::ifstream &file) {
       // static_assert( Kokkos::Impl::is_same<
       //                typename CrsMatrixType::space_type,
       //                Kokkos::HostSpace
@@ -134,55 +134,64 @@ namespace Tacho {
         A.Value(k) = ax.at(k);
       }
     }
-    
-    // int exportMatrixMarket(ofstream &file,
-    //                        const string comment,
-    //                        const int uplo = 0) {
-    //   streamsize prec = file.precision();
-    //     file.precision(8);
-    //     file << scientific;
 
-    //     file << "%%MatrixMarket matrix coordinate "
-    //          << (is_fundamental<value_type>::value ? "real " : "complex ")
-    //          << ((uplo == Uplo::Upper || uplo == Uplo::Lower) ? "symmetric " : "general ")
-    //          << endl;
+    /// \brief elementwise copy 
+    template<typename CrsMatrixType>
+    static void
+    write(std::ofstream &file, 
+          const CrsMatrixType A,
+          const std::string comment = "%% Tacho::MatrixMarket::Export",
+          const int uplo = 0) {
+      typedef typename CrsMatrixType::value_type   value_type;
+      typedef typename CrsMatrixType::ordinal_type ordinal_type;
+      typedef typename CrsMatrixType::size_type    size_type;
 
-    //     file << comment << endl;
+      std::streamsize prec = file.precision();
+      file.precision(8);
+      file << std::scientific;
+      
+      file << "%%MatrixMarket matrix coordinate "
+           << (Util::isComplex<value_type>() ? "complex " : "real ")
+           << ((uplo == Uplo::Upper || uplo == Uplo::Lower) ? "symmetric " : "general ")
+           << std::endl;
+      
+      file << comment << std::endl;
+      
+      // cnt nnz
+      size_type nnz = 0;
+      for (ordinal_type i=0;i<A.NumRows();++i) {
+        const size_type jbegin = A.RowPtrBegin(i), jend = A.RowPtrEnd(i);
+        for (size_type j=jbegin;j<jend;++j) {
+          const auto aj = A.Col(j);
+          if (uplo == Uplo::Upper && i <= aj) ++nnz;
+          if (uplo == Uplo::Lower && i >= aj) ++nnz;
+          if (!uplo) ++nnz;
+        }
+      }
+      file << A.NumRows() << " " << A.NumCols() << " " << nnz << std::endl;
+      
+      const int w = 10;
+      for (ordinal_type i=0;i<A.NumRows();++i) {
+        const size_type jbegin = A.RowPtrBegin(i), jend = A.RowPtrEnd(i);
+        for (size_type j=jbegin;j<jend;++j) {
+          const auto aj = A.Col(j);
+          bool flag = false;
+          if (uplo == Uplo::Upper && i <= aj) flag = true;
+          if (uplo == Uplo::Lower && i >= aj) flag = true;
+          if (!uplo) flag = true;
+          if (flag) {
+            value_type val = A.Value(j);
+            file << std::setw(w) << ( i+1) << "  "
+                 << std::setw(w) << (aj+1) << "  "
+                 << std::setw(w) <<    val << std::endl;
+          }
+        }
+      }
+      
+      file.unsetf(std::ios::scientific);
+      file.precision(prec);
+    }
 
-    //     // cnt nnz
-    //     size_type nnz = 0;
-    //     for (ordinal_type i=0;i<_m;++i) {
-    //       const size_type jbegin = _ap[i], jend = _ap[i+1];
-    //       for (size_type j=jbegin;j<jend;++j) {
-    //         if (uplo == Uplo::Upper && i <= _aj[j]) ++nnz;
-    //         if (uplo == Uplo::Lower && i >= _aj[j]) ++nnz;
-    //         if (!uplo) ++nnz;
-    //       }
-    //     }
-    //     file << _m << " " << _n << " " << nnz << endl;
-
-    //     const int w = 10;
-    //     for (ordinal_type i=0;i<_m;++i) {
-    //       const size_type jbegin = _ap[i], jend = _ap[i+1];
-    //       for (size_type j=jbegin;j<jend;++j) {
-    //         bool flag = false;
-    //         if (uplo == Uplo::Upper && i <= _aj[j]) flag = true;
-    //         if (uplo == Uplo::Lower && i >= _aj[j]) flag = true;
-    //         if (!uplo) flag = true;
-    //         if (flag) {
-    //           value_type val = _ax[j];
-    //           file << std::setw(w) << (     i+1) << "  "
-    //                << std::setw(w) << (_aj[j]+1) << "  "
-    //                << std::setw(w) <<    val << endl;
-    //         }
-    //       }
-    //     }
-
-    //     file.unsetf(ios::scientific);
-    //     file.precision(prec);
-
-    //     return 0;
-    //   }
   };
 
 }

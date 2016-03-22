@@ -43,7 +43,6 @@ int main (int argc, char *argv[]) {
   int r_val = 0;
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
-    exec_space::print_configuration(std::cout, true);
 
     r_val = exampleMatrixMarket<exec_space>
       (file_input, verbose);
