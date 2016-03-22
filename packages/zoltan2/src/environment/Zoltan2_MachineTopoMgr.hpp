@@ -104,8 +104,10 @@ public:
         transformed_coordinates = procCoords;
       }
 
-      else if (approach == "TABCDE"){
-
+      else if (approach == "EIGNORE"){
+        if (myRank == 0) std::cout << "Ignoring E Dimension" << std::endl;
+        transformed_network_dim = networkDim - 2;
+        transformed_coordinates = procCoords;
       }
     }
   }
