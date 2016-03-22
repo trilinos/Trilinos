@@ -49,50 +49,50 @@
 #  PYTHON_INCLUDE_PATH  = path to where Python.h is found
 #
 
+MESSAGE(STATUS "Using PyTrilinos FindPythonInclude.cmake")
+MESSAGE(STATUS "PYTHON_EXECUTABLE is ${PYTHON_EXECUTABLE}")
+
 IF(PYTHON_EXECUTABLE)
-  # Obtain the candidate path for python include
-  EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c 
-    "import sys; print(sys.prefix + '/include/python' + sys.version[:3])"
-    OUTPUT_VARIABLE CANDIDATE
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  # Verify theat Python.h exists within the candidate path
-  IF(EXISTS "${CANDIDATE}")
-    IF(EXISTS ${CANDIDATE}/Python.h)
-      SET(PYTHON_INCLUDE_FOUND TRUE)
-      SET(PYTHON_INCLUDE_PATH ${CANDIDATE})
-    ENDIF(EXISTS ${CANDIDATE}/Python.h)
-  ENDIF(EXISTS "${CANDIDATE}")
-  # Obtain the candidate path for python library
+
+  # Obtain the Python version string
   EXECUTE_PROCESS(COMMAND
     ${PYTHON_EXECUTABLE} -c 
     "import sys; print('python' + sys.version[:3])"
     OUTPUT_VARIABLE PYVERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+
+  # Obtain the Python prefix path
   EXECUTE_PROCESS(COMMAND
     ${PYTHON_EXECUTABLE} -c 
-    "import sys; print(sys.prefix + '/lib/python' + sys.version[:3] + '/config')"
-    OUTPUT_VARIABLE CANDIDATE
+    "import sys; print(sys.prefix)"
+    OUTPUT_VARIABLE PYPREFIX
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-  # Verify theat Python.h exists within the candidate path
-  IF(EXISTS "${CANDIDATE}")
-    FOREACH(SUFFIX dll dylib so a)
-      SET(LIB_CANDIDATE ${CANDIDATE}/lib${PYVERSION}.${SUFFIX})
-      IF(EXISTS ${LIB_CANDIDATE})
-	SET(PYTHON_LIB_FOUND TRUE)
-	SET(PYTHON_LIBRARIES ${LIB_CANDIDATE})
-	BREAK()
-      ENDIF(EXISTS ${LIB_CANDIDATE})
-    ENDFOREACH(SUFFIX)
-  ENDIF(EXISTS "${CANDIDATE}")
-ENDIF(PYTHON_EXECUTABLE)
 
-# Set any python variables that did not get set by the above logic
-IF(PYTHON_INCLUDE_FOUND AND PYTHON_LIB_FOUND)
-  # We're good
-ELSE(PYTHON_INCLUDE_FOUND AND PYTHON_LIB_FOUND)
-  FIND_PACKAGE(PythonLibs)
-ENDIF(PYTHON_INCLUDE_FOUND AND PYTHON_LIB_FOUND)
+  # Check ${PYPREFIX}/include/${PYVERSION}
+  SET(CANDIDATE1 ${PYPREFIX}/include/${PYVERSION})
+
+  # Verify theat Python.h exists within the candidate path
+  IF(EXISTS "${CANDIDATE1}")
+    IF(EXISTS ${CANDIDATE1}/Python.h)
+      SET(PYTHON_INCLUDE_FOUND TRUE)
+      SET(PYTHON_INCLUDE_PATH ${CANDIDATE1})
+    ENDIF(EXISTS ${CANDIDATE1}/Python.h)
+  ELSE(EXISTS "${CANDIDATE1}")
+
+    # Check ${PYPREFIX}/include/${PYVERSION}
+    SET(CANDIDATE2 ${PYPREFIX}/Headers)
+
+    # Verify theat Python.h exists within the candidate path
+    IF(EXISTS "${CANDIDATE2}")
+      IF(EXISTS ${CANDIDATE2}/Python.h)
+        SET(PYTHON_INCLUDE_FOUND TRUE)
+        SET(PYTHON_INCLUDE_PATH ${CANDIDATE2})
+      ENDIF(EXISTS ${CANDIDATE2}/Python.h)
+    ENDIF(EXISTS "${CANDIDATE2}")
+  ENDIF(EXISTS "${CANDIDATE1}")
+
+  MESSAGE(STATUS "PYTHON_INCLUDE_PATH is ${PYTHON_INCLUDE_PATH}")
+
+ENDIF(PYTHON_EXECUTABLE)
