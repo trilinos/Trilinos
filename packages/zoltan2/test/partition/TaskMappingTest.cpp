@@ -297,7 +297,7 @@ int main(int argc, char *argv[]){
           double distance2 = 0;
           mach.getHopCount(procId1, procId2, distance2);
           hops2 += distance2;
-          for (int k = 0 ; k < mach_coord_dim - 1; ++k){
+          for (int k = 0 ; k < mach_coord_dim ; ++k){
             part_t distance = ZOLTAN2_ABS(proc_coords[k][procId1] - proc_coords[k][procId2]);
             if (machine_extent_wrap_around[k]){
               if (machine_extent[k] - distance < distance){
