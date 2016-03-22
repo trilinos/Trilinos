@@ -143,6 +143,8 @@ namespace Amesos2 {
     // Must do this after grid has been created in        //
     // case user specifies the nprow and npcol parameters //
     ////////////////////////////////////////////////////////
+    SLUD::set_default_options_dist(&data_.options);
+
     RCP<ParameterList> default_params =
       parameterList (* (this->getValidParameters ()));
     this->setParameters (default_params);

@@ -379,7 +379,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getAggGID(LocalOrdinal LID) const {
     int naggx = nx_/bx_ + (nx_ % bx_ ? 1 : 0), naggy = 1;
-    int i = (*xMap_)[x_[LID]]/bx_, j = 0, k = 0;
+    int i = (*xMap_)[x_[LID]]/bx_, j = 0;
+    GlobalOrdinal k = 0;
     if (nDim_ > 1) {
       naggy = ny_/by_ + (ny_ % by_ ? 1 : 0);
       j = (*yMap_)[y_[LID]]/by_;
@@ -387,7 +388,7 @@ namespace MueLu {
     if (nDim_ == 3)
       k = (*zMap_)[z_[LID]]/bz_;
 
-    return k*naggy*naggx + j*naggx + i;
+    return Teuchos::as<GlobalOrdinal>(k*naggy*naggx) + Teuchos::as<GlobalOrdinal>(j*naggx) + i;
   }
 
 

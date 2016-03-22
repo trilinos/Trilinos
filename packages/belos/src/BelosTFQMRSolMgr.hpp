@@ -309,7 +309,7 @@ template<class ScalarType, class MV, class OP>
 const int TFQMRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
-const bool TFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = true;
+const bool TFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = false;
 
 template<class ScalarType, class MV, class OP>
 const int TFQMRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
@@ -510,7 +510,6 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
 
     // Only update the scaling if it's different.
     if (impResScale_ != tempImpResScale) {
-      Belos::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
       impResScale_ = tempImpResScale;
 
       // Update parameter in our list and residual tests
@@ -526,7 +525,6 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
 
     // Only update the scaling if it's different.
     if (expResScale_ != tempExpResScale) {
-      Belos::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
       expResScale_ = tempExpResScale;
 
       // Update parameter in our list and residual tests

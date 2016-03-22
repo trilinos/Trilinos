@@ -38,11 +38,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
 # C) Add the libraries, tests, and examples
 #
 
+IF (Intrepid2_ENABLE_KokkosDynRankView)
+ADD_SUBDIRECTORY(src-kokkos)
+ELSE()
 ADD_SUBDIRECTORY(src)
+ENDIF()
 
+IF (Intrepid2_ENABLE_KokkosDynRankView)
+TRIBITS_ADD_TEST_DIRECTORIES(test-kokkos)
+ELSE()
 TRIBITS_ADD_TEST_DIRECTORIES(test)
+ENDIF()
 
+IF (NOT Intrepid2_ENABLE_KokkosDynRankView)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+ENDIF()
 
 #
 # Exclude files for source package.

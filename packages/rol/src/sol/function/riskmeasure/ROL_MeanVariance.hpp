@@ -163,36 +163,6 @@ public:
     weights_.push_back(weight);    
   }
 
-  void update(const Real val, const Vector<Real> &g, const Real weight) {
-    RiskMeasure<Real>::val_ += weight * val;
-    RiskMeasure<Real>::g_->axpy(weight,g);
-    value_storage_.push_back(val);
-    gradient_storage_.push_back(g.clone());
-    typename std::vector<Teuchos::RCP<Vector<Real> > >::iterator it = gradient_storage_.end();
-    it--;
-    (*it)->set(g);
-    weights_.push_back(weight);    
-  }
-
-  void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
-              const Real weight) {
-    RiskMeasure<Real>::val_ += weight * val;
-    RiskMeasure<Real>::gv_  += weight * gv;
-    RiskMeasure<Real>::g_->axpy(weight,g);
-    RiskMeasure<Real>::hv_->axpy(weight,hv);
-    value_storage_.push_back(val);
-    gradient_storage_.push_back(g.clone());
-    typename std::vector<Teuchos::RCP<Vector<Real> > >::iterator it = gradient_storage_.end();
-    it--;
-    (*it)->set(g);
-    gradvec_storage_.push_back(gv);
-    hessvec_storage_.push_back(hv.clone());
-    it = hessvec_storage_.end();
-    it--;
-    (*it)->set(hv);
-    weights_.push_back(weight);
-  }
-
   Real getValue(SampleGenerator<Real> &sampler) {
     // Compute expected value
     Real val = RiskMeasure<Real>::val_, ev(0), zero(0);
@@ -210,6 +180,17 @@ public:
     sampler.sumAll(&val,&var,1);
     // Return mean plus deviation
     return ev + var;
+  }
+
+  void update(const Real val, const Vector<Real> &g, const Real weight) {
+    RiskMeasure<Real>::val_ += weight * val;
+    RiskMeasure<Real>::g_->axpy(weight,g);
+    value_storage_.push_back(val);
+    gradient_storage_.push_back(g.clone());
+    typename std::vector<Teuchos::RCP<Vector<Real> > >::iterator it = gradient_storage_.end();
+    it--;
+    (*it)->set(g);
+    weights_.push_back(weight);    
   }
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
@@ -236,6 +217,25 @@ public:
     dualVector3_->plus(*dualVector2_);
     // Set RiskVector
     (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector3_);
+  }
+
+  void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
+              const Real weight) {
+    RiskMeasure<Real>::val_ += weight * val;
+    RiskMeasure<Real>::gv_  += weight * gv;
+    RiskMeasure<Real>::g_->axpy(weight,g);
+    RiskMeasure<Real>::hv_->axpy(weight,hv);
+    value_storage_.push_back(val);
+    gradient_storage_.push_back(g.clone());
+    typename std::vector<Teuchos::RCP<Vector<Real> > >::iterator it = gradient_storage_.end();
+    it--;
+    (*it)->set(g);
+    gradvec_storage_.push_back(gv);
+    hessvec_storage_.push_back(hv.clone());
+    it = hessvec_storage_.end();
+    it--;
+    (*it)->set(hv);
+    weights_.push_back(weight);
   }
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
@@ -270,7 +270,7 @@ public:
       dualVector1_->axpy(weights_[i]*ch,*(hessvec_storage_[i]));
     }
     sampler.sumAll(&ech,&echs,1);
-    dualVector4_->scale(two-echs);
+    dualVector4_->scale(one-echs);
     sampler.sumAll(&ecg,&ecgs,1);
     dualVector4_->axpy(-ecgs,*dualVector3_);
     sampler.sumAll(*dualVector1_,*dualVector2_);

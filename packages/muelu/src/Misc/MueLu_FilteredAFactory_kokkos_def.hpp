@@ -195,7 +195,8 @@ namespace MueLu {
               continue;
             }
 
-            diagExtra += rowFA.value(j);
+            // TAW: 3/14/2016: not sure whether this works with CUDA
+            diagExtra += Teuchos::as<SC>(rowFA.value(j));
 
             rowFA.value(j) = zero;
           }

@@ -830,13 +830,11 @@ namespace MueLuTests {
     TEST_EQUALITY(norms[0]<1e-15, true);
   }
 
-
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
-#ifdef HAVE_MUELU_BROKEN_TESTS
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra);
 
     out << "===== Generating matrices =====" << std::endl;
@@ -847,7 +845,13 @@ namespace MueLuTests {
     matrixList.set("matrixType",  "Laplace2D");
 
     // Construct block matrix
-    RCP<Matrix>           A        = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBlockMatrix(matrixList);
+    RCP<Matrix> A = TestHelpers::TpetraTestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBlockMatrix(matrixList,Xpetra::UseTpetra);
+    if(A==Teuchos::null) { // if A is Teuchos::null, we could not build the matrix as it is not instantiated in Tpetra
+      out << "Skipping test" << std::endl;
+      return;
+    }
+
+    // extract information
     RCP<const Map>        rangeMap = A->getRangeMap();
     Xpetra::UnderlyingLib lib      = rangeMap->lib();
 
@@ -928,7 +932,6 @@ namespace MueLuTests {
     int iterations = 10;
     H.IsPreconditioner(false);
     H.Iterate(*RHS, *X, iterations);
-#endif
 #endif
     TEST_EQUALITY(0,0);
   }

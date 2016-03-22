@@ -218,8 +218,7 @@ namespace MueLu {
           merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
 
           // Add Dirichlet rows to the list of seeds
-          ArrayRCP<const bool> boundaryNodes;
-          boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
+          ArrayRCP<const bool> boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
           bool haveBoundary = false;
           for (LO i = 0; i < boundaryNodes.size(); i++)
             if (boundaryNodes[i]) {

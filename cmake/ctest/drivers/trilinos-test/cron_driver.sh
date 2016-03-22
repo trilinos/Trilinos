@@ -13,6 +13,7 @@ export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
 # Trilinos settings:
 #
 export TDD_CTEST_TEST_TYPE=Nightly
+export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 # Machine specific environment:
 #

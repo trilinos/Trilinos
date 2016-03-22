@@ -122,8 +122,6 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
     zoltan2Parameters.setParameters(sub);
   }
   
-  zoltan2Parameters.set("compute_metrics", "true");
-
 }
 
 void getParameterLists(const string &inputFileName,
@@ -213,7 +211,6 @@ void run(const UserInputForTests &uinput,
       cout << "Get adapter for input failed" << endl;
     return;
   }
-  RCP<basic_id_t> rcpia = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
   
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
@@ -256,7 +253,7 @@ void run(const UserInputForTests &uinput,
     metricObject =
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
 	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
-			       (problem), adapter_name, rcpia));
+			       (problem), adapter_name, ia));
   } else if (problem_kind == "ordering") {
     reinterpret_cast<ordering_problem_t *>(problem)->solve();
   } else if (problem_kind == "coloring") {
@@ -294,8 +291,7 @@ void run(const UserInputForTests &uinput,
     if(rank == 0) cout << "Analyzing metrics..." << endl;
     if(rank == 0 && problem_kind == "partitioning") {
       std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
-      reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
-      //metricObject->printMetrics(cout);
+      metricObject->printMetrics(cout);
     }
 
     std::ostringstream msg;
@@ -306,6 +302,7 @@ void run(const UserInputForTests &uinput,
       all_tests_pass
       = MetricAnalyzer<partitioning_problem_t>::analyzeMetrics( metricsPlist,
                                                                 reinterpret_cast<const partitioning_problem_t *>(const_cast<base_problem_t *>(problem)),
+								metricObject,
                                                                 comm,
                                                                 msg); 
     } else if (problem_kind == "ordering") {
@@ -328,8 +325,7 @@ void run(const UserInputForTests &uinput,
   }else if(rank == 0 && problem_kind == "partitioning") {
     // BDD for debugging
     cout << "No test metrics requested. Problem Metrics are: " << endl;
-    reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
-    //metricObject->printMetrics(cout);
+    metricObject->printMetrics(cout);
     cout << "PASSED." << endl;
   }
 
@@ -379,8 +375,9 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 5. Add solution to map for possible comparison testing
   ////////////////////////////////////////////////////////////
-  comparison_source->adapter = rcpia;
+  comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
   comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
+  comparison_source->metricObject = metricObject;
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
   

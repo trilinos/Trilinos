@@ -9,15 +9,13 @@ ENDIF()
 
 MESSAGE("-- ATTB: Setting compilers and TPL paths for ATTB system ...")
 
-IF (NOT ATTB_SKIP_ZERO_OUT_LIBRARY_PATH)
-  MESSAGE("-- ATTB: Zeroing out env var LIBRARY_PATH to avoid problems with"
-    " CMake not adding lib paths ...")
-  SET(ENV{LIBRARY_PATH} "")
-ELSE()
-  MESSAGE("-- ATTB: Leaving env var LIBRARY_PATH intact since"
-    " ATTB_SKIP_ZERO_OUT_LIBRARY_PATH=${ATTB_SKIP_ZERO_OUT_LIBRARY_PATH} is set!")
-ENDIF()
-#MESSAGE("-- ENV{LIBRARY_PATH} = $ENV{LIBRARY_PATH}")
+ASSERT_DEFINED(ENV{GCC_VERSION})
+SET(GCC_LIBRARY_PATH
+  "/home/projects/x86-64-haswell/gnu/$ENV{GCC_VERSION}/lib/gcc/x86_64-unknown-linux-gnu/$ENV{GCC_VERSION}")
+MESSAGE("-- ATTB: Set env var LIBRARY_PATH=.../x86_64-unknown-linux-gnu/$ENV{GCC_VERSION} to avoid problems with"
+  " CMake not adding lib paths for other TPLs ...")
+SET(ENV{LIBRARY_PATH} "${GCC_LIBRARY_PATH}")
+MESSAGE("-- ENV{LIBRARY_PATH} = $ENV{LIBRARY_PATH}")
 
 # Define cmpilers
 ASSERT_DEFINED(ENV{MPICC})
@@ -101,12 +99,16 @@ SET(TPL_ENABLE_BLAS ON CACHE BOOL "Set in ATTBDevEnv.cmake")
 ASSERT_DEFINED(ENV{BLAS_ROOT})
 SET(BLAS_LIBRARY_DIRS "$ENV{BLAS_ROOT}/lib"
   CACHE PATH "Set in ATTBDevEnv.cmake")
+SET(BLAS_LIBRARY_NAMES "openblas"
+  CACHE STRING "Set in ATTBDevEnv.cmake")
 
 # LAPACK
 SET(TPL_ENABLE_LAPACK ON CACHE BOOL "Set in ATTBDevEnv.cmake")
 ASSERT_DEFINED(ENV{LAPACK_ROOT})
 SET(LAPACK_LIBRARY_DIRS "$ENV{LAPACK_ROOT}/lib"
   CACHE PATH "Set in ATTBDevEnv.cmake")
+SET(LAPACK_LIBRARY_NAMES "openblas"
+  CACHE STRING "Set in ATTBDevEnv.cmake")
 
 # Boost
 SET(TPL_ENABLE_Boost ON CACHE BOOL "Set in ATTBDevEnv.cmake")
@@ -153,9 +155,4 @@ SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
 
 # See Trilinos #202
 SET(STKUnit_tests_util_parallel_UnitTest_MPI_4_DISABLE ON
-  CACHE BOOL  "Set in ATTBDevEnv.cmake")
-# See Trilinos #211
-SET(TeuchosNumerics_BLAS_ROTG_test_DISABLE ON
-  CACHE BOOL  "Set in ATTBDevEnv.cmake")
-SET(TeuchosNumerics_BLAS_ROTG_test_MPI_1_DISABLE ON
   CACHE BOOL  "Set in ATTBDevEnv.cmake")

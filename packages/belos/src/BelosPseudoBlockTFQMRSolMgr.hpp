@@ -309,7 +309,7 @@ template<class ScalarType, class MV, class OP>
 const int PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
-const bool PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = true;
+const bool PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = false;
 
 template<class ScalarType, class MV, class OP>
 const int PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
@@ -501,7 +501,6 @@ void PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     // Only update the scaling if it's different.
     if (impResScale_ != tempImpResScale) {
-      Belos::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
       impResScale_ = tempImpResScale;
 
       // Update parameter in our list.
@@ -515,7 +514,6 @@ void PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     // Only update the scaling if it's different.
     if (expResScale_ != tempExpResScale) {
-      Belos::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
       expResScale_ = tempExpResScale;
 
       // Update parameter in our list.
@@ -692,10 +690,9 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
   int numCurrRHS = numRHS2Solve;
 
-  std::vector<int> currIdx( numRHS2Solve ), currIdx2( numRHS2Solve );
+  std::vector<int> currIdx( numRHS2Solve );
   for (int i=0; i<numRHS2Solve; ++i) {
     currIdx[i] = startPtr+i;
-    currIdx2[i]=i;
   }
 
   // Inform the linear problem of the current linear system to solve.
@@ -784,13 +781,11 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
               }
               if (!found) {
                 unconvIdx[have] = i;
-                currIdx2[have] = currIdx2[i];
                 currRHSIdx[have++] = currRHSIdx[i];
               }
             }
             unconvIdx.resize(have);
             currRHSIdx.resize(have);
-            currIdx2.resize(have);
 
             // Set the remaining indices after deflation.
             problem_->setLSIndex( currRHSIdx );
@@ -865,9 +860,8 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
       if ( numRHS2Solve > 0 ) {
         numCurrRHS = numRHS2Solve;
         currIdx.resize( numCurrRHS );
-        currIdx2.resize( numCurrRHS );
         for (int i=0; i<numCurrRHS; ++i)
-          { currIdx[i] = startPtr+i; currIdx2[i] = i; }
+          { currIdx[i] = startPtr+i; }
 
         // Adapt the status test quorum if we need to.
         if (defQuorum_ > numCurrRHS) {

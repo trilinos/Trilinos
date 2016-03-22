@@ -338,15 +338,10 @@ namespace Tacho {
       return os;
     }
 
-    // /// \brief stream operator over-riding.
-    // template<typename T0, typename T1, typename T2, typename T3>
-    // friend std::ostream& std::operator<<(std::ostream &os, const DenseMatrixBase<T0,T1,T2,T3> &self) {
-    //   return self.showMe(os);
-    // }
-
     /// ------------------------------------------------------------------
   };
-  
+
+
 }
 
 #endif

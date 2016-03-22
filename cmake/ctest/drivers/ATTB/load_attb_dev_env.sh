@@ -11,7 +11,6 @@ else
   echo "On some unknown machine, aborting!" 
 fi
 
-
 echo
 echo "Setting up default dev env $ATTB_DEVPACK_MODULE"
 module load $ATTB_DEVPACK_MODULE

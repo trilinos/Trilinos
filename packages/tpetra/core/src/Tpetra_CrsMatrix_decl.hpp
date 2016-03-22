@@ -2219,8 +2219,8 @@ namespace Tpetra {
     /// \brief Get offsets of the diagonal entries in the matrix.
     ///
     /// \warning This method is DEPRECATED.  Call
-    ///   CrsGraph::getLocalDiagCopy, in particular the overload that
-    ///   returns the offsets as a Kokkos::View.
+    ///   CrsGraph::getLocalDiagOffsets, in particular the overload
+    ///   that returns the offsets as a Kokkos::View.
     ///
     /// \warning This method is only for expert users.
     /// \warning We make no promises about backwards compatibility

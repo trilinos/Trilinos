@@ -32,7 +32,7 @@ namespace Tacho {
                       ExecViewTypeB &B,
                       const ScalarType beta,
                       ExecViewTypeC &C) { 
-      fprintf(stderr, ">> Template Args - TransA %d, TransB %d, ArgAlgo %d, ArgVariant %d\n", 
+      fprintf(stderr, ">> Template Args - TransA %d, TransB %d, Algo %d, Variant %d\n", 
               ArgTransA, ArgTransB, ArgAlgo, ArgVariant);  
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return 0;
@@ -75,7 +75,7 @@ namespace Tacho {
       { }
 
       KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return "Dense::Gemm"; }
+      const char* Label() const { return "Gemm"; }
 
       KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {

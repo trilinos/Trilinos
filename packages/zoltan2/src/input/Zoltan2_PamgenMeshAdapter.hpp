@@ -207,7 +207,7 @@ public:
     } else {
       coords = NULL;
       stride = 0;
-      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+      Z2_THROW_NOT_IMPLEMENTED
     }
   }
 
@@ -254,7 +254,7 @@ public:
     } else {
       offsets = NULL;
       adjacencyIds = NULL;
-      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+      Z2_THROW_NOT_IMPLEMENTED
     }
   }
 
@@ -307,7 +307,7 @@ public:
     } else {
       offsets = NULL;
       adjacencyIds = NULL;
-      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+      Z2_THROW_NOT_IMPLEMENTED
     }
   }
 #endif
@@ -376,7 +376,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       this->setEntityTypes(typestr, "face", "face");
   }
   else {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   coords_ = new scalar_t [num_nodes_ * dimension_];

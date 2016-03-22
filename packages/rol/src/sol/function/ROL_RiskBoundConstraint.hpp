@@ -97,13 +97,13 @@ public:
         lower_.clear(); lower_.resize(nStat_,ROL_NINF<Real>());
         upper_.clear(); upper_.resize(nStat_,ROL_INF<Real>());
       }
-      else if ( type == "KL Divergence" ) {
+      else if ( type == "Coherent Exponential Utility" ||
+                type == "KL Divergence" ) {
         augmented_ = true;
         activated_ = true;
         nStat_     = 1;
-        lower_.clear(); lower_.resize(nStat_,ROL_NINF<Real>());
+        lower_.clear(); lower_.resize(nStat_,(Real)0);
         upper_.clear(); upper_.resize(nStat_,ROL_INF<Real>());
-        lower_[0] = (Real)0;
       }
       else if ( type == "Chi-Squared Divergence" ) {
         augmented_ = true;

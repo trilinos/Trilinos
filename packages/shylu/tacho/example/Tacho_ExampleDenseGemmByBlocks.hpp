@@ -19,7 +19,6 @@
 #include "Tacho_TaskFactory.hpp"
 
 #include "Tacho_Gemm.hpp"
-#include "Tacho_DenseFlopCount.hpp"
 
 #ifdef HAVE_SHYLUTACHO_MKL
 #include "mkl_service.h"
@@ -115,7 +114,7 @@ namespace Tacho {
       mkl_set_num_threads(mkl_nthreads);
 #endif
 
-      os << "DenseGemmByBlocks:: m = " << m << " n = " << m << " k = " << k;
+      os << "DenseGemmByBlocks:: m = " << m << " n = " << m << " k = " << k << "  ";
       if (check) {
         timer.reset();
         DenseMatrixViewHostType A_host(AA_host), B_host(BB_host), C_host(CB_host);

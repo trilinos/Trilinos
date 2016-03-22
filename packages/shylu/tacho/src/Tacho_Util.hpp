@@ -58,6 +58,37 @@ namespace Tacho {
 #define CtrlDetail(name,algo,variant,component)                         \
   CtrlComponent(name,algo,variant,component,0),CtrlComponent(name,algo,variant,component,1),name
 
+  template<typename T>
+  struct is_complex_type {
+    static bool value;
+  };
+  
+  // default value 
+  template<typename T> bool is_complex_type<T>::value = false;
+
+  // specialization
+  template<> bool is_complex_type<float>::value = false;
+  template<> bool is_complex_type<double>::value = false;
+  template<> bool is_complex_type<Kokkos::complex<float> >::value = true;
+  template<> bool is_complex_type<Kokkos::complex<double> >::value = true;
+  
+  template<typename T>
+  struct is_scalar_type {
+    static bool value;
+  };
+
+  // default value 
+  template<typename T> bool is_scalar_type<T>::value = false;
+  
+  template<> bool is_scalar_type<int>::value = true;
+  template<> bool is_scalar_type<unsigned int>::value = true;
+  template<> bool is_scalar_type<long>::value = true;
+  template<> bool is_scalar_type<size_t>::value = true;
+  template<> bool is_scalar_type<float>::value = true;
+  template<> bool is_scalar_type<double>::value = true;
+  template<> bool is_scalar_type<Kokkos::complex<float> >::value = true;
+  template<> bool is_scalar_type<Kokkos::complex<double> >::value = true;
+  
   class Util {
   public:
     static const size_t LabelSize = 64;    
@@ -96,7 +127,26 @@ namespace Tacho {
       i = k%stride;
       j = k/stride;
     }
-    
+
+    template<size_t N, typename Lambda, typename IterT>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static void unrollLoop(const Lambda &f, const IterT& iter) {
+      if (N != 0) unrollLoop<N-1>(f, iter);
+      f(iter + N);
+    }
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static bool isComplex() {
+      return is_complex_type<T>::value;
+    }
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static bool isScalar() {
+      return is_scalar_type<T>::value;
+    }
+
   };
   
   /// \class Partition
