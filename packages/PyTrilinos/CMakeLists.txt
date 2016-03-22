@@ -187,9 +187,8 @@ IF(NOX_ENABLE_LOCA)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(NOX_ENABLE_LOCA)
 
-# Python interpreter, library, and header files are required.
+# Python interpreter and header files are required
 FIND_PACKAGE(PythonInterp 2.5 REQUIRED)
-#FIND_PACKAGE(PythonLibs 2.5 REQUIRED)
 FIND_PACKAGE(PythonInclude REQUIRED)
 
 # Python module numpy is required
