@@ -437,7 +437,8 @@ int ex_create_par_int (const char *path,
     char errmsg[MAX_ERR_LENGTH];
     exerrval = EX_BADFILEID;
     sprintf(errmsg,"ERROR: There is an existing file already using the file id %d which was also assigned to file %s.\n\tWas nc_close() called instead of ex_close() on an open Exodus file?\n", exoid, path);
-    ex_err("ex_create_par",errmsg,exerrval);
+    ex_err(routine,errmsg,exerrval);
+    nc_close(exoid);
     return (EX_FATAL);
   }
 

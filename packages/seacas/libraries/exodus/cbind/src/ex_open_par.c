@@ -159,7 +159,7 @@ int ex_open_par_int (const char  *path,
   if ((mode & EX_READ) && (mode & EX_WRITE)) {
     exerrval = EX_BADFILEMODE;
     sprintf(errmsg,"ERROR: Cannot specify both EX_READ and EX_WRITE");
-    ex_err("ex_open",errmsg,exerrval); 
+    ex_err("ex_open_par",errmsg,exerrval); 
     return (EX_FATAL);
   }
 
@@ -224,7 +224,7 @@ int ex_open_par_int (const char  *path,
       exerrval = status;
 
       sprintf(errmsg,"ERROR: failed to open %s read only",path);
-      ex_err("ex_open",errmsg,exerrval); 
+      ex_err("ex_open_par",errmsg,exerrval); 
       return(EX_FATAL);
     }
   }
@@ -238,7 +238,7 @@ int ex_open_par_int (const char  *path,
 #endif
 #endif
 	sprintf(errmsg,"ERROR: failed to open %s write only",path);
-	ex_err("ex_open",errmsg,exerrval); 
+	ex_err("ex_open_par",errmsg,exerrval); 
 	return(EX_FATAL);
       } 
 
@@ -248,7 +248,7 @@ int ex_open_par_int (const char  *path,
 	sprintf(errmsg,
 		"ERROR: failed to set nofill mode in file id %d",
 		exoid);
-	ex_err("ex_open", errmsg, exerrval);
+	ex_err("ex_open_par", errmsg, exerrval);
 	return (EX_FATAL);
       }
 
@@ -279,7 +279,7 @@ int ex_open_par_int (const char  *path,
     exerrval  = status;
     sprintf(errmsg,"ERROR: failed to get database version for file id: %d",
 	    exoid);
-    ex_err("ex_open",errmsg,exerrval);
+    ex_err("ex_open_par",errmsg,exerrval);
     return(EX_FATAL);
   }
    
@@ -288,7 +288,7 @@ int ex_open_par_int (const char  *path,
     exerrval  = EX_FATAL;
     sprintf(errmsg,"ERROR: Unsupported file version %.2f in file id: %d",
 	    *version, exoid);
-    ex_err("ex_open",errmsg,exerrval);
+    ex_err("ex_open_par",errmsg,exerrval);
     return(EX_FATAL);
   }
    
@@ -299,7 +299,7 @@ int ex_open_par_int (const char  *path,
 	  exerrval  = EX_FATAL;
 	  sprintf(errmsg,"ERROR: failed to get file wordsize from file id: %d",
 		  exoid);
-	  ex_err("ex_open",errmsg,exerrval);
+	  ex_err("ex_open_par",errmsg,exerrval);
 	  return(exerrval);
 	}
     }
@@ -327,6 +327,7 @@ int ex_open_par_int (const char  *path,
     exerrval = EX_BADFILEID;
     sprintf(errmsg,"ERROR: There is an existing file already using the file id %d which was also assigned to file %s.\n\tWas nc_close() called instead of ex_close() on an open Exodus file?\n", exoid, path);
     ex_err("ex_open_par",errmsg,exerrval);
+    nc_close(exoid);
     return (EX_FATAL);
   }
 
@@ -336,7 +337,7 @@ int ex_open_par_int (const char  *path,
     sprintf(errmsg,
 	    "ERROR: failed to initialize conversion routines in file id %d",
             exoid);
-    ex_err("ex_open", errmsg, exerrval);
+    ex_err("ex_open_par", errmsg, exerrval);
     return (EX_FATAL);
   }
 
