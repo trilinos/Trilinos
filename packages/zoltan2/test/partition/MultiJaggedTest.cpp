@@ -627,7 +627,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     vector <int> stride;
 
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+    typedef Zoltan2::EvaluatePartition<inputAdapter_t, tMVector_t> quality_t;
     typedef inputAdapter_t::base_adapter_t base_adapter_t;
     //inputAdapter_t ia(coordsConst);
     inputAdapter_t *ia = new inputAdapter_t(coordsConst,weights, stride);
@@ -685,12 +685,10 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     RCP<const Environment> env = problem->getEnvironment();
 
-    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-
     // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, ia, &problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -745,7 +743,7 @@ int testFromDataFile(
 
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+    typedef Zoltan2::EvaluatePartition<inputAdapter_t, tMVector_t> quality_t;
     typedef inputAdapter_t::base_adapter_t base_adapter_t;
     inputAdapter_t *ia = new inputAdapter_t(coordsConst);
 
@@ -884,12 +882,10 @@ int testFromDataFile(
 
     RCP<const Environment> env = problem->getEnvironment();
 
-    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-
     // create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, ia, &problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -995,7 +991,7 @@ int testFromSeparateDataFiles(
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
 
     typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
-    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+    typedef Zoltan2::EvaluatePartition<inputAdapter_t, tMVector_t> quality_t;
     typedef inputAdapter_t::base_adapter_t base_adapter_t;
     inputAdapter_t *ia = new inputAdapter_t(coordsConst);
 
@@ -1073,12 +1069,10 @@ int testFromSeparateDataFiles(
 
     RCP<const Environment> env = problem->getEnvironment();
 
-    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-
     //create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, bia, &problem->getSolution(), false));
+      rcp(new quality_t(env, comm, ia, &problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);

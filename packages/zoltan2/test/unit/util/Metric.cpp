@@ -100,7 +100,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 {
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> user_t;
   typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
-  typedef Zoltan2::EvaluatePartition<idInput_t> quality_t;
+  typedef Zoltan2::EvaluatePartition<idInput_t, user_t> quality_t;
   typedef idInput_t::part_t part_t;
   typedef idInput_t::base_adapter_t base_adapter_t;
 
@@ -209,8 +209,6 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   TEST_FAIL_AND_EXIT(*comm, fail==0, "create adapter", 1);
 
-  const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-
   // A solution (usually created by a problem)
 
   RCP<Zoltan2::PartitioningSolution<idInput_t> > solution;
@@ -244,8 +242,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   RCP<quality_t> metricObject;
 
   try{
-    metricObject = rcp(new quality_t(env, comm, bia, solution.getRawPtr(), 
-				     false));
+    metricObject = rcp(new quality_t(env, comm, ia, solution.getRawPtr()));
   }
   catch (std::exception &e){
     fail=1;

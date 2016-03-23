@@ -163,7 +163,7 @@ int main(int argc, char *argv[]){
 
     //create partitioning problem
     typedef Zoltan2::PartitioningProblem<my_adapter_t> xcrsGraph_problem_t; // xpetra_graph problem type
-    typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
+    typedef Zoltan2::EvaluatePartition<my_adapter_t,tcrsGraph_t,tMVector_t> quality_t;
     typedef my_adapter_t::base_adapter_t base_adapter_t;
     ParameterList zoltan2_parameters;
     zoltan2_parameters.set("compute_metrics", "true");
@@ -180,11 +180,9 @@ int main(int argc, char *argv[]){
     tcomm->barrier();
     RCP<const Zoltan2::Environment> env = partition_problem->getEnvironment();
 
-    const base_adapter_t *bia =
-      dynamic_cast<const base_adapter_t *>(ia.getRawPtr());
-
     RCP<quality_t>metricObject = 
-      rcp(new quality_t(env, tcomm, bia, &partition_problem->getSolution()));
+      rcp(new quality_t(env, tcomm, ia.getRawPtr(),
+			&partition_problem->getSolution()));
 
     if (tcomm->getRank() == 0){
       metricObject->printMetrics(std::cout);
@@ -299,7 +297,7 @@ int main(int argc, char *argv[]){
           double distance2 = 0;
           mach.getHopCount(procId1, procId2, distance2);
           hops2 += distance2;
-          for (int k = 0 ; k < mach_coord_dim - 1; ++k){
+          for (int k = 0 ; k < mach_coord_dim ; ++k){
             part_t distance = ZOLTAN2_ABS(proc_coords[k][procId1] - proc_coords[k][procId2]);
             if (machine_extent_wrap_around[k]){
               if (machine_extent[k] - distance < distance){

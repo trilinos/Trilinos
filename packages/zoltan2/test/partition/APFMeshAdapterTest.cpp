@@ -355,7 +355,7 @@ int main(int narg, char *arg[]) {
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
   typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
-  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t, apf::Mesh2*> quality_t;
   typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
   
   double time_1=PCU_Time();
@@ -413,11 +413,9 @@ int main(int narg, char *arg[]) {
 
     RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
-    const baseMeshAdapter_t *bia = dynamic_cast<const baseMeshAdapter_t *>(ia);
-
     // create metric object
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
+      rcp(new quality_t(env, CommT, ia, &problem.getSolution()));
 
     if (!me) {
       metricObject->printMetrics(cout);

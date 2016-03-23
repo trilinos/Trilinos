@@ -190,7 +190,7 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
-  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t, tMVector_t> quality_t;
   typedef inputAdapter_t::part_t part_t;
   typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
@@ -294,12 +294,10 @@ int main(int narg, char *arg[]) {
 
     RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
-    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-
     // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, CommT, bia, &problem.getSolution(), false));
+      rcp(new quality_t(env, CommT, ia, &problem.getSolution()));
 
     if (!me) {
       metricObject->printMetrics(cout);

@@ -1209,8 +1209,6 @@ template <typename scalar_t, typename part_t>
  *   \param comm  The problem communicator.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
- *   \param useDegreeAsWeight whether vertex degree is ever used as vertex
- *           weight.
  *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
@@ -1235,14 +1233,13 @@ template <typename scalar_t, typename part_t>
  *   \todo check that part sizes sum to one if we're doing COMPLEX_ASSERTION
  */
 
-template <typename Adapter>
+template <typename Adapter, typename User, typename UserCoord=User>
   void objectMetrics(
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     multiCriteriaNorm mcNorm,
-    const RCP<const typename Adapter::base_adapter_t> &ia,
+    const Adapter *ia,
     const PartitioningSolution<Adapter> *solution,
-    bool useDegreeAsWeight,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
@@ -1287,13 +1284,28 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
+    // whether vertex degree is ever used as vertex weight.
+    enum BaseAdapterType adapterType = ia->adapterType();
+    bool useDegreeAsWeight = false;
+    if (adapterType == GraphAdapterType) {
+      useDegreeAsWeight = reinterpret_cast
+	<const GraphAdapter<User, UserCoord> *>(ia)->useDegreeAsWeight(0);
+    } else if (adapterType == MatrixAdapterType) {
+      useDegreeAsWeight = reinterpret_cast
+	<const MatrixAdapter<User, UserCoord> *>(ia)->useDegreeAsWeight(0);
+    } else if (adapterType == MeshAdapterType) {
+      useDegreeAsWeight =
+	reinterpret_cast<const MeshAdapter<User> *>(ia)->useDegreeAsWeight(0);
+    }
     if (useDegreeAsWeight) {
       ArrayView<const gno_t> Ids;
       ArrayView<sdata_t> vwgts;
       if (graphModel == Teuchos::null) {
 	std::bitset<NUM_MODEL_FLAGS> modelFlags;
 	RCP<GraphModel<base_adapter_t> > graph;
-	graph = rcp(new GraphModel<base_adapter_t>(ia, env, comm, modelFlags));
+	const RCP<const base_adapter_t> bia =
+	  rcp(dynamic_cast<const base_adapter_t *>(ia), false);
+	graph = rcp(new GraphModel<base_adapter_t>(bia,env,comm,modelFlags));
 	graph->getVertexList(Ids, vwgts);
       } else {
 	graphModel->getVertexList(Ids, vwgts);

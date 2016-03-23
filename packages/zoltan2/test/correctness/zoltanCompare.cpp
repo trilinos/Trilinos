@@ -118,7 +118,7 @@ typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tMatrix_t;
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
 typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
-typedef Zoltan2::EvaluatePartition<matrixAdapter_t> quality_t;
+typedef Zoltan2::EvaluatePartition<matrixAdapter_t,tMatrix_t,tMVector_t> quality_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Zoltan callbacks
@@ -431,13 +431,10 @@ for(int i = 0; i < nump; i++) {
 
   RCP<const Zoltan2::Environment> env = problem->getEnvironment();
 
-  const matrixAdapter_t::base_adapter_t *bia =
-    dynamic_cast<const matrixAdapter_t::base_adapter_t *>(ia);
-
   // create metric object
 
-  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), bia,
-					       &problem->getSolution(),false));
+  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), ia,
+					       &problem->getSolution()));
   if (me == 0){
     metricObject->printMetrics(cout);
   }

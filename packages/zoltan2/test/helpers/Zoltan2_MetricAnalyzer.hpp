@@ -104,7 +104,7 @@ public:
   static bool analyzeMetrics( const ParameterList &metricsPlist,
                               const partitioning_problem_t * problem,
 			      const RCP<const Zoltan2::EvaluatePartition
-			      <basic_id_t> > &metricObject,
+			      <basic_id_t, userTypes_t> > &metricObject,
                               const RCP<const Comm<int>> &comm,
                               std::ostringstream &msg_stream) {
 

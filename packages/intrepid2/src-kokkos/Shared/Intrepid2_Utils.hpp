@@ -66,6 +66,14 @@ namespace Kokkos {
 
 namespace Intrepid2 {
 
+#define INTREPID2_TEST_FOR_ABORT(test, exception, msg)                  \
+  if (test) {                                                           \
+    fprintf(stderr, "[Intrepid2] Test failed in file %s, line %d\n",__FILE__,__LINE__); \
+    fprintf(stderr, "            Test that evaluated to true: %s\n" #test); \
+    fprintf(stderr, "            %s \n" msg);                           \
+    Kokkos::abort(  "[Intrepid2] Abort\n");                             \
+  }
+  
   // KJ temporary thing ; should be removed
   typedef int index_type;
 
