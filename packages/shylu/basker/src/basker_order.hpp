@@ -336,6 +336,7 @@ namespace BaskerNS
 	    //printMTX("B_BTF_AMD.mtx", BTF_B);
 	    sort_matrix(BTF_C);
 	    //printMTX("C_BTF_AMD.mtx", BTF_C);
+	    
 	  }
     
 
@@ -368,7 +369,10 @@ namespace BaskerNS
     if(btf_nblks > 1)
       {
 	sort_matrix(BTF_C);
-	//printMTX("C_TEST.mtx", BTF_C);
+	if(Options.verbose_matrix_out == BASKER_TRUE)
+	  {
+	    printMTX("C_Symbolic.mtx", BTF_C);
+	  }
 	//Permute C
 
 
@@ -401,6 +405,7 @@ namespace BaskerNS
       }
 	
   
+   
 
     //printf("Done with ordering\n");
     

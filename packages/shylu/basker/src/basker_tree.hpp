@@ -1480,6 +1480,14 @@ namespace BaskerNS
     #endif
       }
 
+    if(btf_nblks > 1)
+      {
+	if(Options.verbose_matrix_out == BASKER_TRUE)
+	  {
+	    printMTX("C_Factor.mtx", BTF_C);
+	  }
+      }
+
 
     /*
     if(btf_nblks > 1)

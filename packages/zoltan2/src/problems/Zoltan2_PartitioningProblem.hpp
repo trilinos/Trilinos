@@ -489,6 +489,24 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
                                          this->comm_, this->identifierModel_));
     }
+    else if (algName_ == std::string("phg") ||
+             algName_ == std::string("patoh")) {
+      // phg and patoh provided through Zoltan
+      Teuchos::ParameterList &pl = this->env_->getParametersNonConst();
+      Teuchos::ParameterList &zparams = pl.sublist("zoltan_parameters",false);
+      if (numberOfWeights_ > 0) {
+        char strval[10];
+        sprintf(strval, "%d", numberOfWeights_);
+        zparams.set("OBJ_WEIGHT_DIM", strval);
+      }
+      zparams.set("LB_METHOD", algName_.c_str());
+      zparams.set("LB_APPROACH", "PARTITION"); 
+      algName_ = std::string("zoltan");
+
+      this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
+                                           this->comm_,
+                                           this->baseInputAdapter_));
+    }
     else if (algName_ == std::string("forTestingOnly")) {
       this->algorithm_ = rcp(new AlgForTestingOnly<Adapter>(this->envConst_,
                                            this->comm_,
@@ -1007,7 +1025,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     } 
     if(modelAvail_[HypergraphModelType]==true)
     {
-      std::cout << "Hypergraph model not implemented yet..." << std::endl;
+      //KDD USING ZOLTAN FOR HYPERGRAPH FOR NOW
+      //KDD std::cout << "Hypergraph model not implemented yet..." << std::endl;
     }
 
     if(modelAvail_[CoordinateModelType]==true)
