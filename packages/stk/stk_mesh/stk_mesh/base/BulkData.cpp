@@ -4087,9 +4087,6 @@ void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::Ent
   {
       std::vector<Entity> shared_modified;
 
-      // Update the parallel index and
-      // output shared and modified entities.
-      //internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(rank, shared_modified);
       internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(rank, shared_modified);
 
       // ------------------------------------------------------------

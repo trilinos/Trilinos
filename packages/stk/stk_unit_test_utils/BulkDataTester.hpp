@@ -173,10 +173,9 @@ public:
         return this->internal_modification_end_for_change_entity_owner(opt);
     }
 
-    bool my_modification_end_for_entity_creation( stk::mesh::EntityRank entity_rank, stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT)
+    bool my_modification_end_for_entity_creation( const std::vector<stk::mesh::EntityRank> & entityRanks, stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT)
     {
-        std::vector<stk::mesh::EntityRank> entity_rank_vector = {entity_rank};
-        return this->modification_end_for_entity_creation(entity_rank_vector, opt);
+        return this->modification_end_for_entity_creation(entityRanks, opt);
     }
 
     bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)

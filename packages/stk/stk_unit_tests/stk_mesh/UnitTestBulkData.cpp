@@ -5989,7 +5989,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
 
         mesh.change_entity_key_and_update_sharing_info(potentially_shared_sides);
 
-        mesh.my_modification_end_for_entity_creation(stk::topology::FACE_RANK);
+        mesh.my_modification_end_for_entity_creation({stk::topology::FACE_RANK});
 
         stk::mesh::comm_mesh_counts(mesh, counts);
         EXPECT_EQ(1u, counts[stk::topology::FACE_RANK]);
