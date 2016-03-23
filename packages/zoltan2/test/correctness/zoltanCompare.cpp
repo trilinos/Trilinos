@@ -118,7 +118,7 @@ typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tMatrix_t;
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
 typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
-typedef Zoltan2::EvaluatePartition<matrixAdapter_t> quality_t;
+typedef Zoltan2::EvaluatePartition<matrixAdapter_t,tMatrix_t,tMVector_t> quality_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Zoltan callbacks

@@ -163,7 +163,7 @@ int main(int argc, char *argv[]){
 
     //create partitioning problem
     typedef Zoltan2::PartitioningProblem<my_adapter_t> xcrsGraph_problem_t; // xpetra_graph problem type
-    typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
+    typedef Zoltan2::EvaluatePartition<my_adapter_t,tcrsGraph_t,tMVector_t> quality_t;
     typedef my_adapter_t::base_adapter_t base_adapter_t;
     ParameterList zoltan2_parameters;
     zoltan2_parameters.set("compute_metrics", "true");

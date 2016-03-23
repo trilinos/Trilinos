@@ -247,7 +247,7 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   
   comparison_source->timers["solve time"]->start();
-  RCP<EvaluatePartition<basic_id_t> >metricObject;
+  RCP<EvaluatePartition<basic_id_t, userTypes_t> >metricObject;
   if (problem_kind == "partitioning") {
     reinterpret_cast<partitioning_problem_t *>(problem)->solve();
     metricObject =

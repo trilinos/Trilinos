@@ -1233,7 +1233,7 @@ template <typename scalar_t, typename part_t>
  *   \todo check that part sizes sum to one if we're doing COMPLEX_ASSERTION
  */
 
-template <typename Adapter>
+template <typename Adapter, typename User, typename UserCoord=User>
   void objectMetrics(
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
@@ -1288,11 +1288,14 @@ template <typename Adapter>
     enum BaseAdapterType adapterType = ia->adapterType();
     bool useDegreeAsWeight = false;
     if (adapterType == GraphAdapterType) {
-
+      useDegreeAsWeight = reinterpret_cast
+	<const GraphAdapter<User, UserCoord> *>(ia)->useDegreeAsWeight(0);
     } else if (adapterType == MatrixAdapterType) {
-
+      useDegreeAsWeight = reinterpret_cast
+	<const MatrixAdapter<User, UserCoord> *>(ia)->useDegreeAsWeight(0);
     } else if (adapterType == MeshAdapterType) {
-
+      useDegreeAsWeight =
+	reinterpret_cast<const MeshAdapter<User> *>(ia)->useDegreeAsWeight(0);
     }
     if (useDegreeAsWeight) {
       ArrayView<const gno_t> Ids;

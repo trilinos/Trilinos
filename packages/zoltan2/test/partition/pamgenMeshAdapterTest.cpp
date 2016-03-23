@@ -190,7 +190,7 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
-  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t, tMVector_t> quality_t;
   typedef inputAdapter_t::part_t part_t;
   typedef inputAdapter_t::base_adapter_t base_adapter_t;
 

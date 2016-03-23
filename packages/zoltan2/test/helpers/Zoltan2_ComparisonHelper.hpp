@@ -102,7 +102,7 @@ public:
     timers[name]->enable();
   }
   
-  RCP<Zoltan2::EvaluatePartition<basic_id_t> > metricObject;
+  RCP<Zoltan2::EvaluatePartition<basic_id_t, userTypes_t> > metricObject;
   RCP<base_problem_t> problem;
   RCP<basic_id_t> adapter;
   string problem_kind;
