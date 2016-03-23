@@ -1238,7 +1238,7 @@ template <typename Adapter>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     multiCriteriaNorm mcNorm,
-    const RCP<const typename Adapter::base_adapter_t> &ia,
+    const Adapter *ia,
     const PartitioningSolution<Adapter> *solution,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
@@ -1285,14 +1285,24 @@ template <typename Adapter>
   }
   else{
     // whether vertex degree is ever used as vertex weight.
+    enum BaseAdapterType adapterType = ia->adapterType();
     bool useDegreeAsWeight = false;
+    if (adapterType == GraphAdapterType) {
+
+    } else if (adapterType == MatrixAdapterType) {
+
+    } else if (adapterType == MeshAdapterType) {
+
+    }
     if (useDegreeAsWeight) {
       ArrayView<const gno_t> Ids;
       ArrayView<sdata_t> vwgts;
       if (graphModel == Teuchos::null) {
 	std::bitset<NUM_MODEL_FLAGS> modelFlags;
 	RCP<GraphModel<base_adapter_t> > graph;
-	graph = rcp(new GraphModel<base_adapter_t>(ia, env, comm, modelFlags));
+	const RCP<const base_adapter_t> bia =
+	  rcp(dynamic_cast<const base_adapter_t *>(ia), false);
+	graph = rcp(new GraphModel<base_adapter_t>(bia,env,comm,modelFlags));
 	graph->getVertexList(Ids, vwgts);
       } else {
 	graphModel->getVertexList(Ids, vwgts);
