@@ -25,8 +25,6 @@ namespace stk { namespace mesh { class BulkData; } }
 
 namespace stk { namespace mesh {
 
-typedef std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int>> SplitCoincidentInfo;
-
 struct moved_parallel_graph_info {
 
     moved_parallel_graph_info(int in_proc_to_tell,
@@ -261,7 +259,6 @@ protected:
     size_t m_num_parallel_edges;
     stk::mesh::SideIdPool m_sideIdPool;
     impl::SparseGraph m_coincidentGraph;
-    SplitCoincidentInfo m_splitCoincidents;
     impl::ElementLocalIdMapper m_idMapper;
 private:
     stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,

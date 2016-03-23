@@ -50,7 +50,7 @@ const TestCaseData badDecomps =
 
 void expect_split_coincidents(const stk::mesh::BulkData &bulkData,
                               const std::vector<std::vector<SplitElementInfo>> &expectedSplitElementsPerProc,
-                              const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > &splitCoincidentElements)
+                              const stk::mesh::SplitCoincidentInfo &splitCoincidentElements)
 {
     const std::vector<SplitElementInfo> &expectedSplits = expectedSplitElementsPerProc[bulkData.parallel_rank()];
     ASSERT_EQ(expectedSplits.size(), splitCoincidentElements.size());
@@ -85,7 +85,7 @@ public:
         stk::mesh::BulkData bulkData(metaData, get_comm(), auraOption);
         SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
 
-        std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
+        stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
 
         expect_split_coincidents(bulkData, testCase.expectedSplitElementsPerProc, splitCoincidentElements);
         stk::mesh::throw_if_any_proc_has_false(bulkData.parallel(), splitCoincidentElements.empty());
@@ -115,7 +115,7 @@ TEST(MeshCheckerIncremental, createSplitCoincident)
         stk::mesh::BulkData bulkData(metaData, comm, stk::mesh::BulkData::NO_AUTO_AURA);
         SideTestUtil::read_and_decompose_mesh("Ae.e", bulkData);
 
-        std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
+        stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
         ASSERT_EQ(0u, splitCoincidentElements.size());
 
         bulkData.modification_begin();

@@ -1,3 +1,4 @@
+#include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
 #include <stddef.h>                     // for size_t, nullptr
 #include <string>                       // for string
 #include <stk_util/parallel/ParallelReduceBool.hpp>
@@ -78,7 +79,7 @@ SplitCoincidentInfo get_split_coincident_elements(stk::mesh::BulkData& bulkData)
     return get_split_coincident_elements_from_received_element_sides(bulkData, localIdMapper, elementSidesReceived);
 }
 
-std::vector<std::string> get_messages_for_split_coincident_elements(const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > & splitCoincidentElements)
+std::vector<std::string> get_messages_for_split_coincident_elements(const stk::mesh::BulkData& bulkData, const stk::mesh::SplitCoincidentInfo & splitCoincidentElements)
 {
     std::vector<std::string> errorList;
     std::ostringstream out;

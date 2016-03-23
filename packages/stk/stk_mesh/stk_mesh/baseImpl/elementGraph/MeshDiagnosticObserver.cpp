@@ -36,7 +36,7 @@ void MeshDiagnosticObserver::finished_modification_end_notification()
 
         if(m_diagnosticFlag & RULE_1)
         {
-            std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitCoincidentElements = stk::mesh::get_split_coincident_elements(m_bulkData);
+            stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(m_bulkData);
             std::vector<std::string> splitCoincidentErrors = stk::mesh::get_messages_for_split_coincident_elements(m_bulkData, splitCoincidentElements);
             gather_new_errors(out, splitCoincidentErrors);
         }

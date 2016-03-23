@@ -6,10 +6,12 @@
 
 namespace stk { namespace mesh {
 
+typedef std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int>> SplitCoincidentInfo;
+
 class BulkData;
 
-std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > get_split_coincident_elements(stk::mesh::BulkData& bulkData);
-std::vector<std::string> get_messages_for_split_coincident_elements(const stk::mesh::BulkData& bulkData, const std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > & splitCoincidentElements);
+stk::mesh::SplitCoincidentInfo get_split_coincident_elements(stk::mesh::BulkData& bulkData);
+std::vector<std::string> get_messages_for_split_coincident_elements(const stk::mesh::BulkData& bulkData, const stk::mesh::SplitCoincidentInfo & splitCoincidentElements);
 
 std::vector<stk::mesh::EntityKeyProc> get_non_unique_key_procs(const stk::mesh::BulkData& bulkData);
 std::vector<std::string> get_non_unique_key_messages(const stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKeyProc> &badKeyProcs);
