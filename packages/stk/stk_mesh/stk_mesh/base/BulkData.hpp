@@ -272,7 +272,7 @@ public:
    *  enough communication that it will be most efficient to batch up all
    *  desired changes so that it can be called only once.
    */
-  void change_entity_owner( const EntityProcVec & arg_change)
+  virtual void change_entity_owner( const EntityProcVec & arg_change)
   {
       notifier.notify_elements_about_to_move_procs(arg_change);
       m_meshModification.change_entity_owner(arg_change);
