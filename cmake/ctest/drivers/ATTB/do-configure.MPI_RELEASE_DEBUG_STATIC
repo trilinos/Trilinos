@@ -10,6 +10,7 @@ fi
 TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
 
 cmake \
+  -DTrilinos_USE_ATTB_DEV_ENV=ON \
   -DTPL_ENABLE_MPI=ON \
   -DCMAKE_BUILD_TYPE=Release \
   -DTrilinos_ENABLE_DEBUG=ON \
