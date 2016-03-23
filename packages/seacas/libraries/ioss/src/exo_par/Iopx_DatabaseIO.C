@@ -303,8 +303,12 @@ namespace Iopx {
       // File didn't exist above, but this OK if is an output
       // file. See if we can create it...
       int mode = 0;
-      if (int_byte_size_api() == 8)
+      if (int_byte_size_api() == 8) {
         mode |= EX_ALL_INT64_DB;
+      }
+
+      if ((mode & EX_ALL_INT64_DB) && par_mode == EX_PNETCDF)
+	par_mode = EX_MPIIO;
 
       app_opt_val = ex_opts(EX_VERBOSE); 
       exodus_file_ptr = ex_create_par(get_filename().c_str(), exodusMode|mode|par_mode,
@@ -403,6 +407,10 @@ namespace Iopx {
           if (int_byte_size_api() == 8)
             mode |= EX_ALL_INT64_DB;
 	  int app_opt_val = ex_opts(EX_VERBOSE); 
+
+	  if ((mode & EX_ALL_INT64_DB) && par_mode == EX_PNETCDF)
+	    par_mode = EX_MPIIO;
+
           exodusFilePtr = ex_create_par(get_filename().c_str(), mode|par_mode,
                                         &cpu_word_size, &dbRealWordSize,
 					util().communicator(), info);
