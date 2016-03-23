@@ -282,6 +282,15 @@ void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max
   get_max_min_avg(comm, hwm, hwm_max, hwm_min, hwm_avg);
 }
 
+void get_current_memory_usage_across_processors(MPI_Comm comm, size_t& curr_max, size_t& curr_min, size_t& curr_avg)
+{
+  size_t now = 0;
+  size_t hwm = 0;
+  stk::get_memory_usage(now, hwm);
+
+  get_max_min_avg(comm, now, curr_max, curr_min, curr_avg);
+}
+
 void get_memory_available_across_processors(MPI_Comm comm, size_t& avail_max, size_t& avail_min, size_t& avail_avg)
 {
   size_t avail = 0;

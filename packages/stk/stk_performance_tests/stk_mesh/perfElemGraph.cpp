@@ -6,6 +6,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/PerformanceTester.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
+#include <stk_util/environment/memory_util.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <tokenize.h>                   // for tokenize
@@ -86,6 +87,50 @@ void get_ids_along_boundary(const stk::mesh::BulkData &bulkData, const std::stri
     meshInfo.boundaryIds.resize(count);
 }
 
+void print_memory(stk::ParallelMachine communicator, const std::string &preamble)
+{
+    double maxHwmInMB = stk::get_max_hwm_across_procs(communicator) / (1024.0 * 1024.0);
+
+    size_t curr_max, curr_min, curr_avg;
+    stk::get_current_memory_usage_across_processors(communicator, curr_max, curr_min, curr_avg);
+    curr_max /= (1024.0 * 1024.0);
+    curr_min /= (1024.0 * 1024.0);
+    curr_avg /= (1024.0 * 1024.0);
+
+    if(stk::parallel_machine_rank(communicator) == 0)
+    {
+        std::ostringstream os;
+        os << preamble << " high water mark = " << maxHwmInMB << " Mb, current max = " << curr_max << " Mb" << std::endl;
+        std::cerr << os.str();
+    }
+}
+
+class ElemElemGraphUpdaterWithTiming : public stk::mesh::ElemElemGraphUpdater
+{
+public:
+    ElemElemGraphUpdaterWithTiming(stk::mesh::BulkData &bulk, stk::mesh::ElemElemGraph &elemGraph_, stk::diag::Timer &addElemTimer_, stk::diag::Timer &deleteElemTimer_)
+    : ElemElemGraphUpdater(bulk, elemGraph_), addElemTimer(addElemTimer_), deleteElemTimer(deleteElemTimer_), bulkData(bulk)
+
+    {
+    }
+
+    virtual void finished_modification_end_notification()
+    {
+        stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(addElemTimer, bulkData.parallel());
+        stk::mesh::ElemElemGraphUpdater::finished_modification_end_notification();
+    }
+
+    virtual void started_modification_end_notification()
+    {
+        stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(deleteElemTimer, bulkData.parallel());
+        stk::mesh::ElemElemGraphUpdater::started_modification_end_notification();
+    }
+
+private:
+    stk::diag::Timer &addElemTimer;
+    stk::diag::Timer &deleteElemTimer;
+    stk::mesh::BulkData &bulkData;
+};
 
 class ElementGraphPerformance : public stk::unit_test_util::PerformanceTester
 {
@@ -99,11 +144,13 @@ public:
             createGraphTimer("create graph", CHILDMASK1, childTimer)
     {
         {
+            print_memory(bulk.parallel(), "Before elem graph creation");
             stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createGraphTimer, communicator);
             elemGraph = new stk::mesh::ElemElemGraph(bulk, bulk.mesh_meta_data().universal_part());
+            print_memory(bulk.parallel(), "After elem graph creation");
         }
 
-        elemGraphUpdater = new stk::mesh::ElemElemGraphUpdater(bulk, *elemGraph);
+        elemGraphUpdater = new ElemElemGraphUpdaterWithTiming(bulk, *elemGraph, addElemTimer, deleteElemTimer);
         bulk.register_observer(elemGraphUpdater);
     }
 
@@ -116,7 +163,6 @@ public:
 protected:
     void delete_boundary_elements(DeletedMeshInfo &meshInfo)
     {
-        stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(deleteElemTimer, communicator);
         meshInfo.elemNodes.resize(meshInfo.boundaryIds.size());
 
         bulkData.modification_begin();
@@ -136,8 +182,6 @@ protected:
 
     void add_boundary_elements(DeletedMeshInfo &meshInfo)
     {
-        stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(addElemTimer, communicator);
-
         bulkData.modification_begin();
         stk::mesh::Part &hexPart = bulkData.mesh_meta_data().get_topology_root_part(stk::topology::HEX_8);
         stk::mesh::Part *block_1 = bulkData.mesh_meta_data().get_part("block_1");
@@ -164,7 +208,7 @@ protected:
         get_ids_along_boundary(bulkData, meshSpec, meshInfo);
 
         delete_boundary_elements(meshInfo);
-
+        //stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
@@ -180,7 +224,7 @@ protected:
 
     stk::mesh::BulkData &bulkData;
     stk::mesh::ElemElemGraph *elemGraph = nullptr;
-    stk::mesh::ElemElemGraphUpdater *elemGraphUpdater = nullptr;
+    ElemElemGraphUpdaterWithTiming *elemGraphUpdater = nullptr;
     const std::string meshSpec;
 
     stk::diag::Timer addElemTimer;
@@ -212,7 +256,16 @@ TEST_F(ElementGraphPerformanceTest, read_mesh_with_auto_decomp)
 
 TEST_F(ElementGraphPerformanceTest, read_mesh)
 {
+    print_memory(MPI_COMM_WORLD, "Before mesh creation");
     setup_mesh(get_mesh_spec(), stk::mesh::BulkData::AUTO_AURA);
+
+    run_element_graph_perf_test();
+}
+
+TEST_F(ElementGraphPerformanceTest, read_mesh_no_aura)
+{
+    print_memory(MPI_COMM_WORLD, "Before mesh creation");
+    setup_mesh(get_mesh_spec(), stk::mesh::BulkData::NO_AUTO_AURA);
 
     run_element_graph_perf_test();
 }

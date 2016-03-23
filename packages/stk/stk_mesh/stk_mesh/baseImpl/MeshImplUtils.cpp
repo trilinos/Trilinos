@@ -61,6 +61,9 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
   for(unsigned i=0; i<numNodes; ++i)
       maxNumEntities += mesh.num_connectivity(nodes[i],rank);
 
+  if(maxNumEntities < numNodes)
+      return;
+
   entity_vector.reserve(maxNumEntities);
 
   for(unsigned i=0; i<numNodes; ++i) {
