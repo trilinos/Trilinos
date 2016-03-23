@@ -1484,7 +1484,7 @@ namespace BaskerNS
       {
 	if(Options.verbose_matrix_out == BASKER_TRUE)
 	  {
-	    printf("C_Factor.mtx", BTF_C);
+	    printMTX("C_Factor.mtx", BTF_C);
 	  }
       }
 
