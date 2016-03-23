@@ -35,6 +35,8 @@ public:
     procCoords(NULL), machine_extent(NULL),
     delete_transformed_coords(false), transformed_network_dim(0),transformed_coordinates (NULL), pl(NULL)
   {
+    transformed_network_dim = networkDim - 1;
+    transformed_coordinates = procCoords;
     machine_extent = new int[networkDim];
     this->getMachineExtent(this->machine_extent);
     //allocate memory for processor coordinates.
@@ -54,8 +56,6 @@ public:
     //reduceAll the coordinates of each processor.
     gatherMachineCoordinates(comm);
 
-    transformed_network_dim = networkDim - 1;
-    transformed_coordinates = procCoords;
   }
 
   MachineTopoMgr(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl_ ):
@@ -71,6 +71,8 @@ public:
     delete_transformed_coords(false), transformed_network_dim(0),transformed_coordinates (NULL),
     pl(&pl_)
   {
+    transformed_network_dim = networkDim - 1;
+    transformed_coordinates = procCoords;
     machine_extent = new int[networkDim];
     this->getMachineExtent(this->machine_extent);
     //allocate memory for processor coordinates.
@@ -92,9 +94,6 @@ public:
 
     const Teuchos::ParameterEntry *pe = this->pl->getEntryPtr("machine_coord_transformation");
 
-    transformed_network_dim = networkDim - 1;
-    transformed_coordinates = procCoords;
-
     if (pe){
 
       std::string approach;
@@ -105,8 +104,10 @@ public:
         transformed_coordinates = procCoords;
       }
 
-      else if (approach == "TABCDE"){
-
+      else if (approach == "EIGNORE"){
+        if (this->myRank == 0) std::cout << "Ignoring E Dimension" << std::endl;
+        transformed_network_dim = networkDim - 2;
+        transformed_coordinates = procCoords;
       }
     }
   }

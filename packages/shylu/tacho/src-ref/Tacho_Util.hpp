@@ -35,7 +35,7 @@ namespace Tacho {
 #define MSG_INVALID_TEMPLATE_ARGS "Invaid template arguments"
 
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
-  if (ierr != 0) {                                                      \
+  if ((ierr) != 0) {                                                    \
     fprintf(stderr, ">> Error in file %s, line %d, error %d \n",__FILE__,__LINE__,ierr); \
     fprintf(stderr, "   %s\n", msg);                                    \
     Kokkos::abort(">> Tacho abort\n");                                    \
@@ -147,6 +147,64 @@ namespace Tacho {
       return is_scalar_type<T>::value;
     }
 
+    template<typename ValueType, typename SpaceType, typename IterType> 
+    KOKKOS_FORCEINLINE_FUNCTION
+    static IterType getLowerBound(const Kokkos::View<ValueType*,SpaceType> &data,
+                                  const IterType begin,
+                                  const IterType end,
+                                  const ValueType val) {
+      IterType it = begin, tmp = begin, count = end - begin, step = 0;
+      while (count > 0) {
+        it = tmp ;
+        it += ( step = (count >> 1) );
+        if (data[it] < val) {
+          tmp = ++it;
+          count -= (step+1);
+        } else { 
+          count=step;
+        }
+      }
+      return tmp;
+    }
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION    
+    static void swap(T &a, T &b) {
+      T c(a); a = b; b = c;
+    }
+
+    template<typename ValueType, 
+             typename IndexType, 
+             typename OrdinalType, 
+             typename SpaceType>
+    KOKKOS_INLINE_FUNCTION    
+    static void sort(Kokkos::View<ValueType*,SpaceType> data,
+                     Kokkos::View<IndexType*,SpaceType> idx,
+                     const OrdinalType begin,
+                     const OrdinalType end) {
+      if (begin + 1 < end) {
+        const auto piv = data[begin];
+        OrdinalType left = (begin + 1), right = end;
+        while (left < right) {
+          if (data[left] <= piv) {
+            ++left;
+          } else {
+            --right;
+            Util::swap(data[left], data[right]);
+            Util::swap(idx [left], idx [right]);
+          }
+        }
+
+        --left;
+        Util::swap(data[left], data[begin]);
+        Util::swap(idx [left], idx [begin]);
+        
+        // recursion
+        Util::sort(data, idx, begin, left);
+        Util::sort(data, idx, right, end );
+      }
+    }
+                     
   };
   
   /// \class Partition
@@ -255,6 +313,54 @@ namespace Tacho {
   public:
     static const int DenseByBlocks = 2301;
   };
+
+
+  /// \class Coo
+  /// \brief Sparse coordinate format; (i, j, val).
+  template<typename OrdinalType, typename ValueType>
+  class Coo {
+  public:
+    typedef OrdinalType ordinal_type;
+    typedef ValueType   value_type;
+
+  public:
+    ordinal_type _i,_j;
+    value_type _val;
+
+  public:
+    ordinal_type& Row() { return _i;   } 
+    ordinal_type& Col() { return _j;   }
+    value_type&   Val() { return _val; }
+
+    ordinal_type  Row() const { return _i;   } 
+    ordinal_type  Col() const { return _j;   }
+    value_type    Val() const { return _val; }
+    
+    Coo() = default;
+    Coo(const ordinal_type i, 
+        const ordinal_type j, 
+        const value_type val) 
+      : _i(i), _j(j), _val(val) {}
+    Coo(const Coo& b) = default;
+
+    /// \brief Compare "less" index i and j only.
+    bool operator<(const Coo &y) const {
+      ordinal_type r_val = (this->_i - y._i);
+      return (r_val == 0 ? this->_j < y._j : r_val < 0);
+    }  
+    
+    /// \brief Compare "equality" only index i and j.
+    bool operator==(const Coo &y) const {
+      return (this->_i == y._i) && (this->_j == y._j);
+    }  
+ 
+    /// \brief Compare "in-equality" only index i and j.   
+    bool operator!=(const Coo &y) const {
+      return !(*this == y);
+    }  
+  };
+
+
 
 }
 

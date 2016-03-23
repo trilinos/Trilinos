@@ -8,7 +8,7 @@ typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
 
-#include "Tacho_ExampleDenseMatrixBase.hpp"
+#include "Tacho_ExampleGraphTools.hpp"
 
 using namespace Tacho;
 
@@ -29,14 +29,14 @@ int main (int argc, char *argv[]) {
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
-  int mmin = 1000;
-  clp.setOption("mmin", &mmin, "C(mmin,mmin)");
+  std::string file_input = "test.mtx";
+  clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
-  int mmax = 8000;
-  clp.setOption("mmax", &mmax, "C(mmax,mmax)");
+  int treecut = 0;
+  clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
 
-  int minc = 1000;
-  clp.setOption("minc", &minc, "Increment of m");
+  int prunecut = 0;
+  clp.setOption("prunecut", &prunecut, "Level to prune tree from bottom");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -50,9 +50,8 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
-    r_val = exampleDenseMatrixBase<exec_space>
-      (mmin, mmax, minc, 
-       verbose);
+    r_val = exampleGraphTools<exec_space>
+      (file_input, treecut, prunecut, verbose);
     
     exec_space::finalize();
   }

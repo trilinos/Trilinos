@@ -148,8 +148,8 @@ public:
       nxyz[5] = 1;
       break;
     case 128:
-      nxyz[0] = 1;
-      nxyz[1] = 4;
+      nxyz[0] = 2;
+      nxyz[1] = 2;
       nxyz[2] = 4;
       nxyz[3] = 4;
       nxyz[4] = 2;
@@ -157,10 +157,10 @@ public:
       break;
     case 256:
       nxyz[0] = 4;
-      nxyz[1] = 4;
+      nxyz[1] = 2;
       nxyz[2] = 4;
       nxyz[3] = 4;
-      nxyz[4] = 1;
+      nxyz[4] = 2;
       nxyz[5] = 1;
       break;
     case 512:
@@ -188,8 +188,8 @@ public:
       nxyz[5] = 1;
       break;
     case 4096:
-      nxyz[0] = 4;
-      nxyz[1] = 8;
+      nxyz[0] = 8;
+      nxyz[1] = 4;
       nxyz[2] = 4;
       nxyz[3] = 16;
       nxyz[4] = 2;

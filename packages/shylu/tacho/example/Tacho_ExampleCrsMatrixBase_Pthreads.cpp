@@ -8,7 +8,7 @@ typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
 
-#include "Tacho_ExampleDenseMatrixBase.hpp"
+#include "Tacho_ExampleCrsMatrixBase.hpp"
 
 using namespace Tacho;
 
@@ -29,15 +29,6 @@ int main (int argc, char *argv[]) {
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
-  int mmin = 1000;
-  clp.setOption("mmin", &mmin, "C(mmin,mmin)");
-
-  int mmax = 8000;
-  clp.setOption("mmax", &mmax, "C(mmax,mmax)");
-
-  int minc = 1000;
-  clp.setOption("minc", &minc, "Increment of m");
-
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -50,9 +41,8 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
-    r_val = exampleDenseMatrixBase<exec_space>
-      (mmin, mmax, minc, 
-       verbose);
+    r_val = exampleCrsMatrixBase<exec_space>
+      (verbose);
     
     exec_space::finalize();
   }
