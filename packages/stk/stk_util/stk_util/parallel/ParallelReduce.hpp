@@ -77,6 +77,14 @@ void all_reduce_sum( ParallelMachine comm , const T * local , T * global , unsig
   all_reduce_impl(comm, local, global, count, MPI_SUM);
 }
 
+template<typename T>
+T get_global_sum(ParallelMachine comm, T local)
+{
+    T global;
+    stk::all_reduce_sum(comm, &local, &global, 1);
+    return global;
+}
+
 template<typename T, typename IdType>
 void
 all_reduce_loc_impl(ParallelMachine comm,

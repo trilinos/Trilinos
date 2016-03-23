@@ -78,6 +78,7 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
+namespace stk { namespace mesh { class ElemElemGraphUpdater; } }
 namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
 namespace stk { namespace mesh { class ModificationObserver; } }
@@ -745,8 +746,8 @@ public:
 
   void register_observer(stk::mesh::ModificationObserver *observer);
 
-  virtual void initialize_graph() {}
-  virtual stk::mesh::ElemElemGraph& get_graph() { ThrowRequireWithSierraHelpMsg(false); stk::mesh::ElemElemGraph *graph = nullptr; return *graph;}
+  void initialize_face_adjacent_element_graph();
+  stk::mesh::ElemElemGraph& get_face_adjacent_element_graph();
 
   void enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag);
   unsigned get_mesh_diagnostic_error_count() const ;
@@ -823,6 +824,7 @@ protected: //functions
   inline void set_state(Entity entity, EntityState entity_state);
   void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0); // Mod Mark
+  std::pair<Entity, bool> internal_get_or_create_entity_with_notification(EntityKey key, size_t preferred_offset = 0);
 
 
   /** \brief  Declare a collection of relations by simply iterating
@@ -1416,6 +1418,8 @@ private: // data
   // If needing debug info for modifications, comment out above line and uncomment line below
   //stk::ModificationSummary m_modSummary;
   stk::mesh::MeshDiagnosticObserver m_meshDiagnosticObserver;
+  stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
+  stk::mesh::ElemElemGraphUpdater* m_elemElemGraphUpdater = nullptr;
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);

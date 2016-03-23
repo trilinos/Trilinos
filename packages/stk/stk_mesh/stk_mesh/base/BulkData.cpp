@@ -76,6 +76,7 @@
 #include "stk_util/diag/StringUtil.hpp"
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 
 
@@ -539,6 +540,9 @@ BulkData::~BulkData()
   }
 
   mesh_meta_data().set_mesh_bulk_data(NULL);
+
+  delete m_elemElemGraph;
+  delete m_elemElemGraphUpdater;
 }
 
 void BulkData::get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes)
@@ -830,7 +834,7 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
 
   EntityKey key( ent_rank , ent_id );
 
-  std::pair< Entity , bool > result = internal_create_entity( key );
+  std::pair< Entity , bool > result = internal_get_or_create_entity_with_notification( key );
 
   Entity declared_entity = result.first;
 
@@ -854,8 +858,6 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
   }
 
   m_check_invalid_rels = true;
-
-  notifier.notify_entity_added(declared_entity);
 
   return declared_entity ;
 }
@@ -1134,6 +1136,14 @@ std::pair<Entity, bool> BulkData::internal_create_entity(EntityKey key, size_t p
         notifier.notify_local_entities_created_or_deleted(key.rank());
         notifier.notify_local_buckets_changed(key.rank());
     }
+
+    return entityBoolPair;
+}
+
+std::pair<Entity, bool> BulkData::internal_get_or_create_entity_with_notification(EntityKey key, size_t preferred_offset)
+{
+    std::pair<Entity, bool> entityBoolPair = internal_create_entity(key, preferred_offset);
+    notifier.notify_entity_added(entityBoolPair.first);
     return entityBoolPair;
 }
 
@@ -1144,7 +1154,7 @@ void BulkData::addMeshEntities(stk::topology::rank_t rank, const std::vector<stk
     {
         EntityKey key(rank, new_ids[i]);
         require_good_rank_and_id(key.rank(), key.id());
-        std::pair<Entity, bool> result = internal_create_entity(key);
+        std::pair<Entity, bool> result = internal_get_or_create_entity_with_notification(key);
 
         ThrowErrorMsgIf( ! result.second,
                 "Generated id " << key.id() << " of rank " << key.rank() <<
@@ -2822,8 +2832,9 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
     {
         for ( EntityVector::reverse_iterator i = unique_list_of_send_closure.rbegin() ; i != unique_list_of_send_closure.rend() ; ++i) {
-            if ( ! this->owned_closure(*i) ) {
-                ThrowRequireMsg( internal_destroy_entity( *i ), "Failed to destroy entity " << identifier(*i) );
+            stk::mesh::Entity entity = *i;
+            if ( ! this->owned_closure(entity) ) {
+                ThrowRequireMsg( internal_destroy_entity( entity ), "Failed to destroy entity " << identifier(entity) );
             }
         }
     }
@@ -3203,7 +3214,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
             m_ghost_reuse_map.erase(f_itr);
           }
 
-          std::pair<Entity ,bool> result = internal_create_entity( key, use_this_offset );
+          std::pair<Entity ,bool> result = internal_get_or_create_entity_with_notification( key, use_this_offset );
 
           Entity entity = result.first;
           const bool created   = result.second ;
@@ -7205,6 +7216,22 @@ unsigned BulkData::get_mesh_diagnostic_error_count() const
 void BulkData::throw_on_mesh_diagnostic_error()
 {
     m_meshDiagnosticObserver.throw_if_errors_exist();
+}
+
+void BulkData::initialize_face_adjacent_element_graph()
+{
+    if (m_elemElemGraph == nullptr)
+    {
+        m_elemElemGraph = new ElemElemGraph(*this,mesh_meta_data().locally_owned_part());
+        m_elemElemGraphUpdater = new ElemElemGraphUpdater(*this,*m_elemElemGraph);
+        register_observer(m_elemElemGraphUpdater);
+    }
+}
+
+stk::mesh::ElemElemGraph& BulkData::get_face_adjacent_element_graph()
+{
+    ThrowRequireMsg(m_elemElemGraph != nullptr, "Error, Please call initialize_face_adjacent_element_graph before calling get_face_adjacent_element_graph!");
+    return *m_elemElemGraph;
 }
 
 #ifdef SIERRA_MIGRATION

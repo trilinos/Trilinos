@@ -19,6 +19,8 @@ typedef std::vector<stk::mesh::PartOrdinal> PartOrdinals;
 typedef std::map<stk::mesh::GraphEdge, PartOrdinals, GraphEdgeLessByElem2> ParallelPartInfo;
 
 void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo);
+void update_parallel_graph_for_air_selector(const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, stk::mesh::Selector air);
+void update_parallel_graph_for_skin_selector(const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, stk::mesh::Selector skinSelector);
 
 }
 }

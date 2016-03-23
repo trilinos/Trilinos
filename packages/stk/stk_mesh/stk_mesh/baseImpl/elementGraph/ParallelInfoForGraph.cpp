@@ -39,16 +39,11 @@ void pack_data_for_part_ordinals(stk::CommSparse &comm, const ElemElemGraph& gra
         stk::mesh::Entity local_element = graph.get_entity(edge.elem1);
         std::vector<stk::mesh::PartOrdinal> partOrdinals = stk::mesh::impl::get_element_block_part_ordinals(local_element, bulkData);
 
-        bool didPartChangesOccur = true;
+        pack_edge(comm, graph, bulkData, edge, pinfo.get_proc_rank_of_neighbor());
 
-        if(didPartChangesOccur)
-        {
-            pack_edge(comm, graph, bulkData, edge, pinfo.get_proc_rank_of_neighbor());
-
-            comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<size_t>(partOrdinals.size());
-            for(stk::mesh::PartOrdinal partOrdinal : partOrdinals)
-                comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<stk::mesh::PartOrdinal>(partOrdinal);
-        }
+        comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<size_t>(partOrdinals.size());
+        for(stk::mesh::PartOrdinal partOrdinal : partOrdinals)
+            comm.send_buffer(pinfo.get_proc_rank_of_neighbor()).pack<stk::mesh::PartOrdinal>(partOrdinal);
     }
 }
 
@@ -98,6 +93,145 @@ stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkDat
     stk::mesh::impl::LocalId localId2 = graph.get_local_element_id(element);
     stk::mesh::GraphEdge edge(localId2, side2, -id1, side1);
     return edge;
+}
+
+
+int64_t encode_id_for_selected_value(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, stk::mesh::Selector sel)
+{
+    int64_t id = bulkData.identifier(local_element);
+    if(!sel(bulkData.bucket(local_element)))
+        id = -id;
+    return id;
+}
+
+void pack_selected_value_for_par_info(stk::CommSparse &comm, int procRank, const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, stk::mesh::Selector sel)
+{
+    int64_t id = encode_id_for_selected_value(bulkData, local_element, sel);
+    comm.send_buffer(procRank).pack<int64_t>(id);
+}
+
+void pack_data_for_selector(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, stk::mesh::Selector sel)
+{
+    for(const auto& item : graph.get_parallel_graph().get_parallel_graph_info())
+    {
+        const stk::mesh::GraphEdge &edge = item.first;
+        const stk::mesh::impl::ParallelInfo &parInfo = item.second;
+        pack_selected_value_for_par_info(comm, parInfo.get_proc_rank_of_neighbor(), bulkData, graph.get_entity(edge.elem1), sel);
+    }
+}
+
+void pack_and_communicate_selector(const stk::mesh::BulkData& bulkData,
+                                   stk::CommSparse& comm,
+                                   ElemElemGraph& graph,
+                                   stk::mesh::Selector airSelector)
+{
+    stk::pack_and_communicate(comm, [&comm, &graph, &bulkData, &airSelector]()
+    {
+        pack_data_for_selector(comm, graph, bulkData, airSelector);
+    });
+}
+
+class RemoteSelectedValue
+{
+public:
+    void set_id_as_selected(int64_t id)
+    {
+        idsTrue.push_back(id);
+    }
+    void set_id_as_not_selected(int64_t id)
+    {
+        idsFalse.push_back(id);
+    }
+    void sort()
+    {
+        std::sort(idsTrue.begin(), idsTrue.end());
+        std::sort(idsFalse.begin(), idsFalse.end());
+    }
+
+    bool is_id_selected(int64_t id) const
+    {
+        return std::binary_search(idsTrue.begin(), idsTrue.end(), id);
+    }
+    bool is_id_not_selected(int64_t id) const
+    {
+        return std::binary_search(idsFalse.begin(), idsFalse.end(), id);
+    }
+private:
+    std::vector<int64_t> idsTrue;
+    std::vector<int64_t> idsFalse;
+};
+
+void decode_selected_value_for_id(int64_t id, RemoteSelectedValue &remoteSelectedValue)
+{
+    if(id > 0)
+        remoteSelectedValue.set_id_as_selected(id);
+    else
+        remoteSelectedValue.set_id_as_not_selected(-id);
+}
+
+void unpack_selector_value(stk::CommSparse& comm, int rank, RemoteSelectedValue &remoteSelectedValue)
+{
+    int64_t id;
+    comm.recv_buffer(rank).unpack<int64_t>(id);
+    decode_selected_value_for_id(id, remoteSelectedValue);
+}
+
+void unpack_selected_states(const stk::mesh::BulkData& bulkData,
+                            stk::CommSparse& comm,
+                            RemoteSelectedValue &remoteSelectedValue)
+{
+    stk::unpack_communications(comm, [&comm, &remoteSelectedValue](int rank)
+    {
+        unpack_selector_value(comm, rank, remoteSelectedValue);
+    });
+    remoteSelectedValue.sort();
+}
+
+template<typename ParInfoUpdater>
+void update_par_info_from_received_bools(int64_t id,
+                                         stk::mesh::impl::ParallelInfo &pinfo,
+                                         const RemoteSelectedValue &remoteSelectedValue,
+                                         const ParInfoUpdater &parInfoUpdater)
+{
+    if(remoteSelectedValue.is_id_selected(id))
+        parInfoUpdater(pinfo, true);
+    else if(remoteSelectedValue.is_id_not_selected(id))
+        parInfoUpdater(pinfo, false);
+}
+
+template<typename ParInfoUpdater>
+void update_all_par_infos(ElemElemGraph& graph,
+                          const RemoteSelectedValue &remoteSelectedValue,
+                          const ParInfoUpdater& parInfoUpdater)
+{
+    stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_graph().get_parallel_graph_info();
+    for(stk::mesh::impl::ParallelGraphInfo::value_type& edgeAndParInfo : parallel_info)
+    {
+        const stk::mesh::GraphEdge &graphEdge = edgeAndParInfo.first;
+        update_par_info_from_received_bools(-graphEdge.elem2, edgeAndParInfo.second, remoteSelectedValue, parInfoUpdater);
+    }
+}
+
+template <typename ParInfoUpdater>
+void unpack_and_update_skin_selector(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, const ParInfoUpdater &parInfoUpdater)
+{
+    RemoteSelectedValue remoteSelectedValue;
+    unpack_selected_states(bulkData, comm, remoteSelectedValue);
+    update_all_par_infos(graph, remoteSelectedValue, parInfoUpdater);
+}
+
+void update_parallel_graph_for_air_selector(const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, stk::mesh::Selector airSelector)
+{
+    stk::CommSparse comm(bulkData.parallel());
+    pack_and_communicate_selector(bulkData, comm, graph, airSelector);
+    unpack_and_update_skin_selector(comm, bulkData, graph, [](stk::mesh::impl::ParallelInfo &pinfo, bool b){pinfo.set_is_in_air(b);});
+}
+
+void update_parallel_graph_for_skin_selector(const stk::mesh::BulkData& bulkData, ElemElemGraph& graph, stk::mesh::Selector skinSelector)
+{
+    stk::CommSparse comm(bulkData.parallel());
+    pack_and_communicate_selector(bulkData, comm, graph, skinSelector);
+    unpack_and_update_skin_selector(comm, bulkData, graph, [](stk::mesh::impl::ParallelInfo &pinfo, bool b){pinfo.set_body_to_be_skinned(b);});
 }
 
 }

@@ -20,7 +20,7 @@ namespace mesh
 {
 
 
-SkinMeshUtil::SkinMeshUtil(const ElemElemGraph& elemElemGraph,
+SkinMeshUtil::SkinMeshUtil(ElemElemGraph& elemElemGraph,
                            const stk::mesh::PartVector& skinParts,
                            const stk::mesh::Selector& inputSkinSelector,
                            const stk::mesh::Selector* inputAirSelector)
@@ -167,6 +167,10 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
     std::vector<SideSetEntry> skinnedSideSet;
 
     const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
+    stk::mesh::impl::update_parallel_graph_for_skin_selector(bulkData, eeGraph, skinSelector);
+    if (airSelector != nullptr)
+        impl::update_parallel_graph_for_air_selector(bulkData, eeGraph, *airSelector);
+
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
 
     for(size_t i=0;i<buckets.size();++i)
@@ -198,6 +202,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
 
     stk::mesh::impl::ParallelPartInfo parallelPartInfo;
     stk::mesh::impl::populate_part_ordinals_for_remote_edges(bulkData, eeGraph, parallelPartInfo);
+    stk::mesh::impl::update_parallel_graph_for_skin_selector(bulkData, eeGraph, skinSelector);
 
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     for(const stk::mesh::Bucket* bucket : buckets)
@@ -252,6 +257,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
 std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
 {
     const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
+    stk::mesh::impl::update_parallel_graph_for_skin_selector(bulkData, eeGraph, skinSelector);
 
     unsigned maxNumSides = eeGraph.get_graph().get_num_edges();
     std::vector<SideSetEntry> sideSet;

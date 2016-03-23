@@ -408,18 +408,17 @@ class BulkDataElemGraphFaceSharingTester :  public BulkDataFaceSharingTester
 {
 public:
     BulkDataElemGraphFaceSharingTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-        BulkDataFaceSharingTester(mesh_meta_data, comm), graph(nullptr)
+        BulkDataFaceSharingTester(mesh_meta_data, comm)
     {
     }
 
     BulkDataElemGraphFaceSharingTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
-        BulkDataFaceSharingTester(mesh_meta_data, comm, auto_aura_option), graph(nullptr)
+        BulkDataFaceSharingTester(mesh_meta_data, comm, auto_aura_option)
     {
     }
 
     ~BulkDataElemGraphFaceSharingTester()
     {
-        delete graph;
     }
 
     virtual void fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<stk::mesh::Entity> &shared_new);
@@ -429,22 +428,10 @@ public:
         return entity_comm_map_insert(entity,val);
     }
 
-    virtual void initialize_graph()
-    {
-        if(graph==nullptr)
-            graph = new stk::mesh::ElemElemGraph(*this, this->mesh_meta_data().locally_owned_part());
-    }
-
-    virtual stk::mesh::ElemElemGraph& get_graph()
-    {
-        return *graph;
-    }
-
 protected:
     void add_comm_map_for_sharing(const std::vector<stk::unit_test_util::SideSharingData>& sideSharingDataToSend, stk::mesh::EntityVector& shared_entities);
 
     void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
-    stk::mesh::ElemElemGraph *graph;
 };
 
 

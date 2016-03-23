@@ -232,7 +232,7 @@ Entity declare_element_side_using_graph(BulkData& bulkData, const stk::mesh::Ent
     }
     else
     {
-        stk::mesh::ElemElemGraph &graph = bulkData.get_graph();
+        stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
         graph.write_graph(std::cerr);
         stk::mesh::SideConnector sideConnector = graph.get_side_connector();
         sideEntity = stk::mesh::declare_element_side(bulkData, global_side_id, elem, side_ordinal, add_parts);

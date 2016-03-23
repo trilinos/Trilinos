@@ -46,10 +46,7 @@ public:
 
     virtual void finished_modification_end_notification()
     {
-        size_t numLocalElementsAdded = elementsAdded.size();
-        size_t numGlobalElementsAdded = 0;
-        stk::all_reduce_sum(bulkData.parallel(), &numLocalElementsAdded, &numGlobalElementsAdded, 1);
-        if (numGlobalElementsAdded > 0) {
+        if (get_global_sum(bulkData.parallel(), elementsAdded.size()) > 0) {
             elemGraph.add_elements(elementsAdded);
             elementsAdded.clear();
         }
@@ -57,10 +54,7 @@ public:
 
     virtual void started_modification_end_notification()
     {
-        size_t numLocalElementsDeleted = elementsDeleted.size();
-        size_t numGlobalElementsDeleted = 0;
-        stk::all_reduce_sum(bulkData.parallel(), &numLocalElementsDeleted, &numGlobalElementsDeleted, 1);
-        if (numGlobalElementsDeleted > 0) {
+        if (get_global_sum(bulkData.parallel(), elementsDeleted.size()) > 0) {
             elemGraph.delete_elements(elementsDeleted);
             elementsDeleted.clear();
         }
