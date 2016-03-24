@@ -82,9 +82,9 @@ class EpetraMapTestCase(unittest.TestCase):
         self.numGlobalEl      = self.comm.SumAll(self.numMyEl)
         self.elSize           = 1
         self.indexBase        = 0
-        globalEls             = range(self.numGlobalEl)
+        globalEls             = list(range(self.numGlobalEl))
         globalEls.reverse()  # Force this to be different from the linear distribution
-        self.start            = 4*self.myPID + self.myPID*(self.myPID-1)/2
+        self.start            = 4*self.myPID + self.myPID*(self.myPID-1) // 2
         self.myGlobalEls      = globalEls[self.start:self.start+self.numMyEl]
 
         self.map1             = Epetra.Map(self.numGlobalElConst,
@@ -146,16 +146,16 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testRemoteIDList1(self):
         "Test Epetra.Map RemoteIDList method for constant element size"
-        gidList  = range(self.numGlobalEl)
+        gidList  = list(range(self.numGlobalEl))
         gidList.reverse()  # Match the setUp pattern
         pidList  = zeros( self.numGlobalEl)
         lidList  = arange(self.numGlobalEl)
         sizeList = ones(  self.numGlobalEl)
         for p in range(1,self.numProc):
-            start  = 4*p + p*(p-1)/2
+            start  = 4*p + p*(p-1) // 2
             length = 4 + p
             pidList[start:] += 1
-            lidList[ start:start+length] = range(length)
+            lidList[ start:start+length] = list(range(length))
         result = self.map3.RemoteIDList(gidList)
         self.failUnless((result[0] == pidList ).all())
         self.failUnless((result[1] == lidList ).all())
@@ -163,16 +163,16 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testRemoteIDList2(self):
         "Test Epetra.Map RemoteIDList method for variable element size"
-        gidList  = range(self.numGlobalEl)
+        gidList  = list(range(self.numGlobalEl))
         gidList.reverse()  # Match the setUp pattern
         pidList  = zeros( self.numGlobalEl)
         lidList  = arange(self.numGlobalEl)
         sizeList = ones(  self.numGlobalEl)
         for p in range(1,self.numProc):
-            start  = 4*p + p*(p-1)/2
+            start  = 4*p + p*(p-1) // 2
             length = 4 + p
             pidList[start:] += 1
-            lidList[ start:start+length] = range(length)
+            lidList[ start:start+length] = list(range(length))
         result = self.map3.RemoteIDList(gidList)
         self.failUnless((result[0] == pidList ).all())
         self.failUnless((result[1] == lidList ).all())
@@ -378,8 +378,8 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testFirstPointInElementList(self):
         "Test Epetra.Map FirstPointInElementList method"
-        firstPoints1 = range(self.numMyElConst)
-        firstPoints2 = range(self.numMyEl     )
+        firstPoints1 = list(range(self.numMyElConst))
+        firstPoints2 = list(range(self.numMyEl     ))
         firstPoints3 = firstPoints2
         result1      = self.map1.FirstPointInElementList()
         result2      = self.map2.FirstPointInElementList()
@@ -402,7 +402,7 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testPointToElementList(self):
         "Test Epetra.Map PointToElementList method"
-        elementList = range(self.map3.NumMyElements())
+        elementList = list(range(self.map3.NumMyElements()))
         result      = self.map3.PointToElementList()
         self.failUnless((result == elementList).all())
 
