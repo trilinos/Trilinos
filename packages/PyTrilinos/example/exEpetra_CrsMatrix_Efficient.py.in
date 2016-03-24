@@ -77,7 +77,7 @@ def main():
     A     = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
     NumMyRows = Map.NumMyElements()
     # Loop over all local rows to create a tridiagonal matrix
-    for ii in xrange(NumMyRows):
+    for ii in range(NumMyRows):
       # `i' is the global ID of local ID `ii'
       i = Map.GID(ii)
       if i != NumGlobalRows - 1:
