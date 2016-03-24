@@ -54,7 +54,7 @@
 # System imports
 from   __future__ import print_function
 import sys
-from   types      import *
+import types
 
 #
 # Parse the command-line arguments
@@ -89,9 +89,9 @@ def main(iAmRoot):
 
     # The isType() method is disabled.  In its place is a type() method that
     # returns a python type object:
-    assert(pList.type("maxiters") is IntType   )
-    assert(pList.type("tol"     ) is FloatType )
-    assert(pList.type("precond" ) is StringType)
+    assert(pList.type("maxiters") is int  )
+    assert(pList.type("tol"     ) is float)
+    assert(pList.type("precond" ) is str  )
 
     # The python ParameterList has been augmented to support python dictionary
     # methods:
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     errors = 0
     try:
         main(iAmRoot)
-    except Exception, e:
+    except Exception as e:
         print("Processor", comm.getRank(), ": Exception raised")
         print("  Exception text = '%s'" % str(e))
         errors = 1
