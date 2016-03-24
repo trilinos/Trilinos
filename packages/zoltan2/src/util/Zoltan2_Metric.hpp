@@ -248,10 +248,10 @@ void setGlobalMax(scalar_t x) { values_[evalGlobalMax] = x;}
 /*! \brief Get the name of the item measured. */
 const std::string &getName() const { return metricName_; }
 
-/*! \brief Get the global sum for all parts. */
+/*! \brief Get the global sum of edge cuts for all parts. */
 scalar_t getGlobalSum() const { return values_[evalGlobalSum];}
 
-/*! \brief Get the global maximum across all parts. */
+/*! \brief Get the global maximum of edge cuts per part across all parts. */
 scalar_t getGlobalMax() const { return values_[evalGlobalMax];}
 
 };  // end class
@@ -1267,6 +1267,7 @@ template <typename Adapter>
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
   } else {
     part_t *procs = new part_t [numLocalObjects];
+    // TODO Add option to use input adapter's input parts here.
     for (size_t i = 0; i < numLocalObjects; i++) procs[i] = comm->getRank();
     parts = procs;
   }
