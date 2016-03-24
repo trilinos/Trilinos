@@ -347,7 +347,7 @@ PyObject* methodName(PyObject* partialObj)
 %}
 
 %inline
-{
+%{
   PyObject* Epetra_MPI_Init_Argv(PyObject *args)
   {
     // Check if MPI is already initialized
@@ -373,7 +373,16 @@ PyObject* methodName(PyObject* partialObj)
 	PyErr_SetString(PyExc_TypeError, "Init_Argv argument list contains non-string");
 	goto fail;
       }
+#if PY_VERSION_HEX >= 0x03000000
+      PyObject * pyBytes = PyUnicode_AsASCIIString(item);
+      if (!pyBytes) goto fail;
+      char * bytes = PyBytes_AsString(pyBytes);
+      argv[i] = new char[strlen(bytes)+1];
+      strcpy(bytes,argv[i]);
+      Py_DECREF(pyBytes);
+#else
       argv[i] = PyString_AsString(item);
+#endif
     }
     argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
 
@@ -384,10 +393,21 @@ PyObject* methodName(PyObject* partialObj)
       PyErr_Format(PyExc_RuntimeError, "MPI initialization error %d", ierr);
       goto fail;
     }
+#if PY_VERSION_HEX >= 0x03000000
+    for (int i=0; i<argc; ++i) delete [] argv[i];
+#endif
     delete [] argv;
     Py_RETURN_TRUE;
+
   fail:
-    if (argv) delete [] argv;
+    if (argv)
+    {
+#if PY_VERSION_HEX >= 0x03000000
+      for (int i=0; i<argc; ++i)
+        if (argv[i]) delete [] argv[i];
+#endif
+      delete [] argv;
+    }
     return NULL;
   }
 
@@ -407,7 +427,7 @@ PyObject* methodName(PyObject* partialObj)
     }
     return Py_BuildValue("");
   }
-}
+%}
 
 // Add python code to call MPI_Init() if appropriate.  If
 // Epetra_MPI_Init_Argv() returns True, then MPI_Init() was not called

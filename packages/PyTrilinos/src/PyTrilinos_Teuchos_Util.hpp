@@ -70,6 +70,7 @@
 //    bool       	    <--> bool
 //    int        	    <--> int
 //    float      	    <--> double
+//    unicode string         --> std::string
 //    string     	    <--> std::string
 //    string     	    <--  char *
 //    dict       	     --> ParameterList
@@ -150,12 +151,16 @@ void copyNumPyToTeuchosArray(PyObject * pyArray,
 
 // Specialize copyNumPyToTeuchosArray() for template type std::string,
 // because the Teuchos::Array will be of type std::string and the
-// NumPy array will be of type char*.
+// NumPy array will be either of type char* (Python 2.x) or UCS4
+// characters (Python 3).
 
 template<>
 void copyNumPyToTeuchosArray(PyObject * pyArray,
                              Teuchos::Array< std::string > & tArray)
 {
+#if PY_VERSION_HEX >= 0x03000000
+  int bytes_per_uchar = 4;
+#endif
   typedef typename Teuchos::Array< std::string >::size_type size_type;
   size_type stride = PyArray_STRIDE((PyArrayObject*)pyArray, 0);
   size_type length = PyArray_DIM((PyArrayObject*) pyArray, 0);
@@ -164,11 +169,23 @@ void copyNumPyToTeuchosArray(PyObject * pyArray,
   for (typename Teuchos::Array< std::string >::iterator it = tArray.begin();
        it != tArray.end(); ++it)
   {
+#if PY_VERSION_HEX < 0x03000000
     char temp[stride+1];
     strncpy(temp, data, stride);
     temp[stride] = 0;
-    *it = std::string(temp);
     data += stride;
+#else
+    int  nchar = stride / bytes_per_uchar;
+    char temp[nchar+1];
+    for (int i=0; i < nchar; ++i)
+    {
+      // I take the first byte, essentially converting to ASCII
+      temp[i] = data[0];
+      data += bytes_per_uchar;
+    }
+    temp[nchar] = 0;
+#endif
+    *it = std::string(temp);
   }
 }
 

@@ -2,7 +2,7 @@
 // ***********************************************************************
 //
 //          PyTrilinos: Python Interfaces to Trilinos Packages
-//                 Copyright (2014) Sandia Corporation
+//                 Copyright (2016) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia
 // Corporation, the U.S. Government retains certain rights in this
@@ -40,49 +40,29 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_NUMPYIMPORTER_HPP
-#define PYTRILINOS_NUMPYIMPORTER_HPP
+#ifndef PYTHON3COMPAT_HPP
+#define PYTHON3COMPAT_HPP
 
-#include "numpy_include.hpp"
+#include <Python.h>
 
 #if PY_VERSION_HEX >= 0x03000000
-#  define import_array_type void*
-#  define return_value NULL
-#else
-#  define import_array_type void
-#  define return_value 
+
+#define PyClass_Check(obj) PyObject_IsInstance(obj, (PyObject *)&PyType_Type)
+#define PyInt_Check(x) PyLong_Check(x)
+#define PyInt_AsLong(x) PyLong_AsLong(x)
+#define PyInt_FromLong(x) PyLong_FromLong(x)
+#define PyInt_FromSize_t(x) PyLong_FromSize_t(x)
+#define PyString_Check(name) PyBytes_Check(name)
+#define PyString_FromString(x) PyUnicode_FromString(x)
+#define PyString_FromStringAndSize(x,s) PyUnicode_FromStringAndSize(x,s)
+#define PyString_Format(fmt, args)  PyUnicode_Format(fmt, args)
+#define PyString_AsString(str) PyBytes_AsString(str)
+#define PyString_Size(str) PyBytes_Size(str)    
+#define PyString_InternFromString(key) PyUnicode_InternFromString(key)
+#define Py_TPFLAGS_HAVE_CLASS Py_TPFLAGS_BASETYPE
+#define PyString_AS_STRING(x) PyUnicode_AS_STRING(x)
+#define _PyLong_FromSsize_t(x) PyLong_FromSsize_t(x)
+
 #endif
 
-namespace PyTrilinos
-{
-
-// Singleton class that ensures that the numpy (macro) function
-// import_array() gets called once and only once.
-
-class NumPyImporter
-{
-  static import_array_type import_array_method()
-  {
-    import_array();
-    return return_value;
-  }
-
-protected:
-  // These are protected instead of private to keep compilers happy.
-  ~NumPyImporter() { }
-  NumPyImporter() {import_array_type result = import_array_method();}
-
-private:
-  NumPyImporter(const NumPyImporter & a_ref);
-  const NumPyImporter & operator = (const NumPyImporter & a_rhs);
-
-private:
-  // The singleton, i.e. the only instance of this object is this
-  // attribute
-  static NumPyImporter m_singleton;
-  
-};
-
-}  // Namespace PyTrilinos
-
-#endif // PYTRILINOS_NUMPYIMPORTER_HPP
+#endif

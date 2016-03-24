@@ -433,7 +433,7 @@ or it will hang your code."
   // by a MyPrint() (renamed Print()) method here that takes a python
   // file object as its optional argument.  If no argument is given,
   // then output is to standard out.
-  void Print(PyObject*pf=NULL) const
+  void Print(PyObject * pf=NULL) const
   {
     if (pf == NULL)
     {
@@ -441,18 +441,10 @@ or it will hang your code."
     }
     else
     {
-      if (!PyFile_Check(pf))
-      {
-	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
-      }
-      else
-      {
-	std::FILE * f = PyFile_AsFile(pf);
-	PyTrilinos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->Print(os);
-	os.flush();
-      }
+      std::ostringstream s;
+      self->Print(s);
+      if (PyFile_WriteString(s.str().c_str(), pf))
+        throw PyTrilinos::PythonException();
     }
   }
 }

@@ -46,6 +46,7 @@
 // Include the NumPy and Python headers
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
+#include "Python3Compat.hpp"
 
 // Teuchos includes
 #include "Teuchos_Array.hpp"
