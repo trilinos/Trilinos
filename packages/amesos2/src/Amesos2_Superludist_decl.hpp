@@ -56,6 +56,7 @@
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Superludist_FunctionMap.hpp"
+#include "Amesos2_config.h"
 
 namespace Amesos2 {
 
@@ -283,8 +284,13 @@ private:
     SLUD::int_t                   *sizes, *fstVtxSep; // memory allocated by get_perm_c_parmetis
     SLUD::Pslu_freeable_t          pslu_freeable;
 
+#ifdef HAVE_SUPERLUDIST_OPTIONST
     SLUD::superlu_options_t          options;
     SLUD::mem_usage_t                mem_usage;
+#else
+    SLUD::superlu_dist_options_t     options;
+    SLUD::superlu_dist_mem_usage_t   mem_usage;
+#endif
     SLUD::gridinfo_t                 grid;
     MPI_Comm                         mat_comm; ///< Raw communicator used by the matrix A
     typename type_map::LUstruct_t    lu; ///< stores the L and U factors
