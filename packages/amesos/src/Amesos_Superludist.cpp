@@ -53,7 +53,11 @@ public:
   //! SuperLU_DIST's grid information.
   gridinfo_t grid_;
   //! Vector of options.
+#ifdef HAVE_SUPERLUDIST_OPTIONST
   superlu_options_t options_;
+#else
+  superlu_dist_options_t options_;
+#endif
   
 } ;
 
