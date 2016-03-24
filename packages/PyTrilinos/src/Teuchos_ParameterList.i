@@ -43,6 +43,9 @@
 // @HEADER
 
 %{
+// Python 3 compatibility
+#include "Python3Compat.hpp"
+
 // Teuchos includes
 #include "Teuchos_any.hpp"
 #include "Teuchos_ParameterEntry.hpp"
@@ -526,7 +529,9 @@ Teuchos::ParameterList::values
   /******************************************************************/
   // Print method: change name from "print" to "_print" because
   // "print" is a python keyword
-  PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false,
+  PyObject * _print(PyObject * pf=NULL,
+                    int indent=0,
+                    bool showTypes=false,
 		    bool showFlags=true)
   {
     PyObject * returnObject = pf;
@@ -539,19 +544,10 @@ Teuchos::ParameterList::values
     // Given non-file pf argument
     else
     {
-      if (!PyFile_Check(pf))
-      {
-	PyErr_SetString(PyExc_IOError, "_print() method expects a file object");
-	goto fail;
-      }
-      // Given file pf argument
-      else
-      {
-	std::FILE *f = PyFile_AsFile(pf);
-	Teuchos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->print(os,indent,showTypes,showFlags);
-      }
+      std::ostringstream os;
+      self->print(os, indent, showTypes, showFlags);
+      if (PyFile_WriteString(os.str().c_str(), pf))
+        throw PyTrilinos::PythonException();
     }
     Py_INCREF(returnObject);
     return returnObject;
@@ -571,19 +567,10 @@ Teuchos::ParameterList::values
     // Given non-file pf argument
     else
     {
-      if (!PyFile_Check(pf))
-      {
-	PyErr_SetString(PyExc_IOError, "unused() method expects a file object");
-	goto fail;
-      }
-      // Given file pf argument
-      else
-      {
-	std::FILE *f = PyFile_AsFile(pf);
-	Teuchos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->unused(os);
-      }
+      std::ostringstream os;
+      self->unused(os);
+      if (PyFile_WriteString(os.str().c_str(), pf))
+        throw PyTrilinos::PythonException();
     }
     return Py_BuildValue("");
   fail:
@@ -623,6 +610,7 @@ Teuchos::ParameterList::values
   // ** give ParameterList a PyDict "feel" ** //
   //////////////////////////////////////////////
 
+#if PY_VERSION_HEX >= 0x03000000
   /******************************************************************/
   // Comparison operators
   int __cmp__(PyObject * obj) const
@@ -654,6 +642,7 @@ Teuchos::ParameterList::values
     Py_XDECREF(dict2);
     return -2;
   }
+#endif
  
   /******************************************************************/
   // Contains operator
@@ -790,11 +779,16 @@ Teuchos::ParameterList::values
   PyObject * __repr__() const
   {
     std::string reprStr;
-    PyObject * dict    = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
+    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * dictStr = 0;
     PyObject * result = 0;
     if (dict == NULL) goto fail;
+%#if PY_VERSION_HEX >= 0x03000000
+    dictStr = PyUnicode_AsASCIIString(PyObject_Str(dict));
+%#else
     dictStr = PyObject_Str(dict);
+%#endif
+    if (dictStr == NULL) goto fail;
     reprStr = std::string("ParameterList(") + 
               std::string(PyString_AsString(dictStr)) +
               std::string(")");
