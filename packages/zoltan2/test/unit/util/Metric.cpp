@@ -100,7 +100,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 {
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> user_t;
   typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
-  typedef Zoltan2::EvaluatePartition<idInput_t, user_t> quality_t;
+  typedef Zoltan2::EvaluatePartition<idInput_t> quality_t;
   typedef idInput_t::part_t part_t;
   typedef idInput_t::base_adapter_t base_adapter_t;
 

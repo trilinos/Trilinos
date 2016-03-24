@@ -627,7 +627,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     vector <int> stride;
 
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-    typedef Zoltan2::EvaluatePartition<inputAdapter_t, tMVector_t> quality_t;
+    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
     typedef inputAdapter_t::base_adapter_t base_adapter_t;
     //inputAdapter_t ia(coordsConst);
     inputAdapter_t *ia = new inputAdapter_t(coordsConst,weights, stride);
@@ -743,7 +743,7 @@ int testFromDataFile(
 
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-    typedef Zoltan2::EvaluatePartition<inputAdapter_t, tMVector_t> quality_t;
+    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
     typedef inputAdapter_t::base_adapter_t base_adapter_t;
     inputAdapter_t *ia = new inputAdapter_t(coordsConst);
 
@@ -991,7 +991,7 @@ int testFromSeparateDataFiles(
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
 
     typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
-    typedef Zoltan2::EvaluatePartition<inputAdapter_t, tMVector_t> quality_t;
+    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
     typedef inputAdapter_t::base_adapter_t base_adapter_t;
     inputAdapter_t *ia = new inputAdapter_t(coordsConst);
 

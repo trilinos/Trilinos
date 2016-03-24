@@ -62,7 +62,7 @@ namespace Zoltan2{
     \todo write a unit test for this class
  */
 
-  template <typename Adapter, typename User, typename UserCoord=User>
+  template <typename Adapter>
   class EvaluatePartition {
 
 private:
@@ -187,8 +187,8 @@ public:
   }
 };
 
-  template <typename Adapter, typename User, typename UserCoord>
-  EvaluatePartition<Adapter, User, UserCoord>::EvaluatePartition(
+  template <typename Adapter>
+  EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const Adapter *ia, 
@@ -221,9 +221,8 @@ public:
     rcp(dynamic_cast<const base_adapter_t *>(ia), false);
 
   try{
-    objectMetrics<Adapter, User, UserCoord>(env, problemComm, mcnorm, ia, soln,
-					    graphModel,	numGlobalParts_,
-					    numNonEmpty_,metrics_);
+    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, graphModel,
+			   numGlobalParts_, numNonEmpty_,metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
