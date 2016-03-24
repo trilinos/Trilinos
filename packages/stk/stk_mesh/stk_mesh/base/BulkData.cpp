@@ -1271,7 +1271,19 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
 
 void BulkData::comm_shared_procs(EntityKey key, std::vector<int> & procs ) const
 {
-  fill_sorted_procs(internal_entity_comm_map_shared(key), procs);
+    procs.clear();
+    const EntityComm* entityComm = m_entity_comm_map.entity_comm(key);
+    if (entityComm != nullptr && !entityComm->comm_map.empty()) {
+       const EntityCommInfoVector& comm_map = entityComm->comm_map;
+       for(const EntityCommInfo& commInfo : comm_map) {
+           if (commInfo.ghost_id == BulkData::SHARED) {
+               procs.push_back(commInfo.proc);
+           }
+           else {
+               break;
+           }
+       }
+    }
 }
 
 void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const
