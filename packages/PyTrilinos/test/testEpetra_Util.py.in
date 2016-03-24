@@ -52,6 +52,11 @@ import sys
 import unittest
 
 #
+# Python 2/3 compatibility
+if sys.version_info.major >= 3:
+    xrange = range
+
+#
 # Parse the command-line arguments
 parser = OptionParser()
 parser.add_option("-t", "--testharness", action="store_true",
