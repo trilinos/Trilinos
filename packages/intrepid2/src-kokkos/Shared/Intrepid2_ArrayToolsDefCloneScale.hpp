@@ -82,7 +82,17 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl) {
-        Kokkos::deep_copy(Kokkos::subview(_outputFields, cl /* , Kokkos::All() */ ), _inputFields);
+        const ordinal_type numFields = outputFields.dimension(1);
+        const ordinal_type numPoints = outputFields.dimension(2);
+        const ordinal_type dim1Tens  = outputFields.rank() > 3 ? 0 : outputFields.dimension(3);
+        const ordinal_type dim2Tens  = outputFields.rank() > 4 ? 0 : outputFields.dimension(4);
+
+        for(ordinal_type bf = 0; bf < numFields; ++bf)
+          for(ordinal_type pt = 0; pt < numPoints; ++pt)
+            for(ordinal_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
+              for(ordinal_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
+                outputFieldsWrap(cl, bf, pt, iTens1, iTens2) 
+                  = inputFieldswrap(bf, pt, iTens1, iTens2);
       }
     };
 
@@ -129,6 +139,9 @@ namespace Intrepid2 {
               Kokkos::DynRankView<inputFactorProperties...> &inputFactors_,
               Kokkos::DynRankView<intputFieldProperties...> &inputFields_)
         : _outputFields(outputFields_), _inputFactors(inputFactors_), _inputFields(inputFields_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl) {
@@ -178,6 +191,9 @@ namespace Intrepid2 {
       Functor(Kokkos::DynRankView<inoutFieldProperties...>  &inoutFields_,
               Kokkos::DynRankView<inputFactorProperties...> &inputFactors_)
         : _inoutFields(inoutFields_), _inputFactors(inputFactors_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl) {
