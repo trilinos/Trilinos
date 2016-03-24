@@ -153,6 +153,8 @@ namespace Ioex {
       void compute_block_membership(Ioss::SideBlock *efblock,
                                     std::vector<std::string> &block_membership) const;
 
+      void set_int_byte_size_api(Ioss::DataSize size) const override;
+      
   protected:
       virtual int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
 					 void *data, size_t data_size) const = 0;

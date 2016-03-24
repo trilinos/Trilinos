@@ -209,7 +209,7 @@ namespace Ioss {
     AxisAlignedBoundingBox get_bounding_box(const Ioss::ElementBlock *eb) const;
     
     int  int_byte_size_api() const; //! Returns 4 or 8
-    void set_int_byte_size_api(Ioss::DataSize size) const;
+    virtual void set_int_byte_size_api(Ioss::DataSize size) const;
 
     /*!
      * The owning region of this database.
