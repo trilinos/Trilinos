@@ -108,7 +108,7 @@ def main():
     # Output the results
     totalFails = comm.reduce(fails)
     if iAmRoot:
-        print("End Result: TEST", end="")
+        print("End Result: TEST", end=" ")
         if totalFails > 0:
             print("FAILED")
         else:
