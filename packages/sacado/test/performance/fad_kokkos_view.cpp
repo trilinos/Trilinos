@@ -133,6 +133,7 @@ run_mat_vec(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   MatVecFunctor<ViewTypeA, ViewTypeB, ViewTypeC> f( A, b, c );
   Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::fence();
 }
 
 // Create a mat-vec derivative functor from given A, b, c
@@ -142,6 +143,7 @@ run_mat_vec_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   MatVecDerivFunctor<ViewTypeA, ViewTypeB, ViewTypeC> f( A, b, c );
   Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::fence();
 }
 
 struct Perf {
@@ -431,9 +433,11 @@ int main(int argc, char* argv[]) {
 
 #ifdef KOKKOS_HAVE_CUDA
     if (cuda) {
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize();
       do_times_layout<SFadSize,SLFadSize,Kokkos::Cuda>(m,n,p,nloop,layout,
                                                        "Cuda");
+      Kokkos::HostSpace::execution_space::finalize();
       Kokkos::Cuda::finalize();
     }
 #endif

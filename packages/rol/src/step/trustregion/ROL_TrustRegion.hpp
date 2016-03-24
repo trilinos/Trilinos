@@ -101,14 +101,14 @@ public:
     // Unravel Parameter List
     // Trust-Region Parameters
     Teuchos::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
-    delmax_ = list.get("Maximum Radius",5000.0);
-    eta0_   = list.get("Step Acceptance Threshold",0.05);
-    eta1_   = list.get("Radius Shrinking Threshold",0.05);
-    eta2_   = list.get("Radius Growing Threshold",0.9);
-    gamma0_ = list.get("Radius Shrinking Rate (Negative rho)",0.0625);
-    gamma1_ = list.get("Radius Shrinking Rate (Positive rho)",0.25);
-    gamma2_ = list.get("Radius Growing Rate",2.5);
-    TRsafe_ = list.get("Safeguard Size",100.0);
+    delmax_ = list.get("Maximum Radius",static_cast<Real>(5000.0));
+    eta0_   = list.get("Step Acceptance Threshold",static_cast<Real>(0.05));
+    eta1_   = list.get("Radius Shrinking Threshold",static_cast<Real>(0.05));
+    eta2_   = list.get("Radius Growing Threshold",static_cast<Real>(0.9));
+    gamma0_ = list.get("Radius Shrinking Rate (Negative rho)",static_cast<Real>(0.0625));
+    gamma1_ = list.get("Radius Shrinking Rate (Positive rho)",static_cast<Real>(0.25));
+    gamma2_ = list.get("Radius Growing Rate",static_cast<Real>(2.5));
+    TRsafe_ = list.get("Safeguard Size",static_cast<Real>(100.0));
     eps_    = TRsafe_*ROL_EPSILON<Real>();
 
     // Inexactness Information
@@ -116,11 +116,11 @@ public:
     useInexact_.push_back(parlist.sublist("General").get("Inexact Objective Function", false));
     useInexact_.push_back(parlist.sublist("General").get("Inexact Gradient", false));
     useInexact_.push_back(parlist.sublist("General").get("Inexact Hessian-Times-A-Vector", false));
-    scale_       = list.sublist("Inexact").sublist("Value").get("Tolerance Scaling",1.e-1);
-    omega_       = list.sublist("Inexact").sublist("Value").get("Exponent",0.9);
-    force_       = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Initial Value",1.0);
-    updateIter_  = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Update Frequency",10);
-    forceFactor_ = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Reduction Factor",0.1);
+    scale_       = list.sublist("Inexact").sublist("Value").get("Tolerance Scaling",static_cast<Real>(1.e-1));
+    omega_       = list.sublist("Inexact").sublist("Value").get("Exponent",static_cast<Real>(0.9));
+    force_       = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Initial Value",static_cast<Real>(1.0));
+    updateIter_  = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Update Frequency",static_cast<int>(10));
+    forceFactor_ = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Reduction Factor",static_cast<Real>(0.1));
 
   }
 

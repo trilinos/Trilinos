@@ -37,7 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-
 #
 # CMake script file to generate an xml dependencies file for PROJECT_NAME
 #
@@ -63,6 +62,10 @@ SET( CMAKE_MODULE_PATH
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
   )
+
+INCLUDE(TribitsConstants)
+TRIBITS_ASESRT_MINIMUM_CMAKE_VERSION()
+INCLUDE(TribitsCMakePolicies)
 
 INCLUDE(TribitsGlobalMacros)
 

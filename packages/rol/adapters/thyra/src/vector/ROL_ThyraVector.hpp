@@ -46,7 +46,11 @@
 
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 #include "ROL_Vector.hpp"
+
+#include <exception>
 
 /** \class ROL::ThyraVector
     \brief Implements the ROL::Vector interface for a Thyra Vector.
@@ -58,7 +62,182 @@ template <class Real>
 class ThyraVector : public Vector<Real> {
 private:
 
-  Teuchos::RCP< Thyra::VectorBase<Real> >  thyra_vec_;
+  Teuchos::RCP<Thyra::VectorBase<Real> >  thyra_vec_;
+
+  class GetEleAccelerator {
+    Teuchos::RCP<const Thyra::VectorBase<Real> > vec_;
+
+    std::vector<Teuchos::ArrayRCP<const Real> > flatVec_;
+
+    GetEleAccelerator(); // hide default constructor
+
+    // This function assumes Thyra vectors are just product and SPMD vectors and
+    // produces a flat array of ArrayRCP objects
+    std::vector<Teuchos::ArrayRCP<const Real> > buildFlatStructure(const Thyra::VectorBase<Real> & vec)
+    { 
+      using Teuchos::Ptr;
+      using Teuchos::ptrFromRef;
+      using Teuchos::ptr_dynamic_cast;
+
+      // is an spmd vector?
+      Ptr<const Thyra::SpmdVectorBase<Real> > spmd_vec = ptr_dynamic_cast<const Thyra::SpmdVectorBase<Real> >(ptrFromRef(vec));
+
+      if(spmd_vec!=Teuchos::null) {
+        std::vector<Teuchos::ArrayRCP<const Real> > flatVec(1);
+        Teuchos::ArrayRCP<const Real> ptrArray;
+        spmd_vec->getLocalData(ptrFromRef(ptrArray));
+
+        flatVec[0] = ptrArray;
+
+        return flatVec;
+      }
+
+      // it must be a product vector then
+      Ptr<const Thyra::ProductVectorBase<Real> > prod_vec = ptr_dynamic_cast<const Thyra::ProductVectorBase<Real> >(ptrFromRef(vec));
+
+      std::vector<Teuchos::ArrayRCP<const Real> > flatVec;
+      for(int i=0;i<prod_vec->productSpace()->numBlocks();i++) {
+        Teuchos::RCP<const Thyra::VectorBase<Real> > block = prod_vec->getVectorBlock(i);
+
+        std::vector<Teuchos::ArrayRCP<const Real> > subVec = buildFlatStructure(*block);
+        flatVec.insert(flatVec.end(),subVec.begin(),subVec.end());
+      }
+
+      return flatVec;
+    }
+
+  public: 
+    GetEleAccelerator(const Teuchos::RCP<const Thyra::VectorBase<Real> > & vec)
+      : vec_(vec) 
+    { 
+      flatVec_ = buildFlatStructure(*vec);
+    }
+
+    ::Thyra::Ordinal getSize() const { return vec_->space()->dim(); }
+    ::Thyra::Ordinal getLocalSize() const 
+    {
+      Thyra::Ordinal sum=0;
+      for(std::size_t b=0;b<flatVec_.size();b++)
+        sum += flatVec_[b].size(); 
+      return sum;
+    }
+
+    Real getEle(::Thyra::Ordinal i) const
+    { return ::Thyra::get_ele(*vec_,i); }
+
+    Real getLocalEle(::Thyra::Ordinal i) const
+    { 
+      Teuchos::Ordinal sum = 0;
+      std::size_t b=0;
+      for(b=0;b<flatVec_.size();b++) {
+        if(i<sum+flatVec_[b].size())
+          break;
+        sum += flatVec_[b].size();
+      }
+
+      TEUCHOS_ASSERT(b<flatVec_.size());
+
+      return flatVec_[b][i-sum];
+    }
+  };
+
+  class SetGetEleAccelerator {
+    Teuchos::RCP<Thyra::VectorBase<Real> > vec_;
+
+    SetGetEleAccelerator(); // hide default constructor
+
+    std::vector<Teuchos::ArrayRCP<Real> > flatVec_;
+
+    // This function assumes Thyra vectors are just product and SPMD vectors and
+    // produces a flat array of ArrayRCP objects
+    std::vector<Teuchos::ArrayRCP<Real> > buildFlatStructure(Thyra::VectorBase<Real> & vec)
+    { 
+      using Teuchos::Ptr;
+      using Teuchos::ptrFromRef;
+      using Teuchos::ptr_dynamic_cast;
+
+      // is an spmd vector?
+      Ptr<Thyra::SpmdVectorBase<Real> > spmd_vec = ptr_dynamic_cast<Thyra::SpmdVectorBase<Real> >(ptrFromRef(vec));
+
+      if(spmd_vec!=Teuchos::null) {
+        std::vector<Teuchos::ArrayRCP<Real> > flatVec(1);
+        Teuchos::ArrayRCP<Real> ptrArray;
+        spmd_vec->getNonconstLocalData(Teuchos::ptrFromRef(ptrArray));
+
+        flatVec[0] = ptrArray;
+        return flatVec;
+      }
+
+      // it must be a product vector then
+      Ptr<Thyra::ProductVectorBase<Real> > prod_vec = ptr_dynamic_cast<Thyra::ProductVectorBase<Real> >(ptrFromRef(vec));
+
+      std::vector<Teuchos::ArrayRCP<Real> > flatVec;
+      for(int i=0;i<prod_vec->productSpace()->numBlocks();i++) {
+        Teuchos::RCP<Thyra::VectorBase<Real> > block = prod_vec->getNonconstVectorBlock(i);
+
+        std::vector<Teuchos::ArrayRCP<Real> > subVec = buildFlatStructure(*block);
+        flatVec.insert(flatVec.end(),subVec.begin(),subVec.end());
+      }
+
+      return flatVec;
+    }
+  public: 
+    SetGetEleAccelerator(const Teuchos::RCP<Thyra::VectorBase<Real> > & vec)
+      : vec_(vec) 
+    { 
+      flatVec_ = buildFlatStructure(*vec);
+      flatVec_ = buildFlatStructure(*vec);
+    }
+
+    ::Thyra::Ordinal getSize() const { return vec_->space()->dim(); }
+    ::Thyra::Ordinal getLocalSize() const 
+    {
+      Thyra::Ordinal sum=0;
+      for(std::size_t b=0;b<flatVec_.size();b++)
+        sum += flatVec_[b].size(); 
+      return sum;
+    }
+
+    void setEle(::Thyra::Ordinal i,Real v) 
+    { ::Thyra::set_ele(i,v,vec_.ptr()); }
+
+    void setLocalEle(::Thyra::Ordinal i,Real v) const
+    { 
+      Teuchos::Ordinal sum = 0;
+      std::size_t b=0;
+      for(b=0;b<flatVec_.size();b++) {
+        if(i<sum+flatVec_[b].size())
+          break;
+        sum += flatVec_[b].size();
+      }
+
+      TEUCHOS_ASSERT(b<flatVec_.size());
+
+      flatVec_[b][i-sum] = v;
+    }
+
+    Real getEle(::Thyra::Ordinal i) const
+    { return ::Thyra::get_ele(*vec_,i); }
+
+    Real getLocalEle(::Thyra::Ordinal i) const
+    { 
+      Teuchos::Ordinal sum = 0;
+      std::size_t b=0;
+      for(b=0;b<flatVec_.size();b++) {
+        if(i<sum+flatVec_[b].size())
+          break;
+        sum += flatVec_[b].size();
+      }
+
+     
+      std::stringstream ss;
+      ss << "Block identifier b= " << b << " is too large for i=" << i << " on array with " << getLocalSize() <<
+            " and " << flatVec_.size() << " blocks.";
+      TEUCHOS_TEST_FOR_EXCEPTION(b>=flatVec_.size(),std::logic_error, ss.str());
+
+      return flatVec_[b][i-sum];
+    }
+  };
 
 public:
   ~ThyraVector() {}
@@ -152,22 +331,47 @@ public:
   }
 
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    SetGetEleAccelerator thisAccel(thyra_vec_);
+
+    for(::Thyra::Ordinal i=0;i<thisAccel.getLocalSize();i++) {
+      Real val  = thisAccel.getLocalEle(i); 
+
+      thisAccel.setLocalEle(i,f.apply(val));
+    }
+/*
     for(::Thyra::Ordinal i=0;i<thyra_vec_->space()->dim();i++) {
       Real val = ::Thyra::get_ele(*thyra_vec_,i);
       ::Thyra::set_ele(i,f.apply(val),thyra_vec_.ptr());
     }
+*/
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
     const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
     Teuchos::RCP< const Thyra::VectorBase<Real> > xp = ex.getVector();
 
-    for(::Thyra::Ordinal i=0;i<thyra_vec_->space()->dim();i++) {
-      Real val  = ::Thyra::get_ele(*thyra_vec_,i);
-      Real xval = ::Thyra::get_ele(*xp,i);
+    SetGetEleAccelerator thisAccel(thyra_vec_);
+    GetEleAccelerator xpAccel(xp);
 
-      ::Thyra::set_ele(i,f.apply(val,xval),thyra_vec_.ptr());
+    TEUCHOS_ASSERT(thisAccel.getLocalSize()==xpAccel.getLocalSize());
+    for(::Thyra::Ordinal i=0;i<thisAccel.getLocalSize();i++) {
+      Real val  = thisAccel.getLocalEle(i); 
+      Real xval = xpAccel.getLocalEle(i); 
+
+      thisAccel.setLocalEle(i,f.apply(val,xval));
     }
+/*
+    TEUCHOS_ASSERT(thisAccel.getSize()==thyra_vec_->space()->dim());
+    TEUCHOS_ASSERT(xpAccel.getSize()==xp->space()->dim());
+
+    for(::Thyra::Ordinal i=0;i<thyra_vec_->space()->dim();i++) {
+      Real val  = thisAccel.getEle(i); // ::Thyra::get_ele(*thyra_vec_,i);
+      Real xval = xpAccel.getEle(i); // ::Thyra::get_ele(*xp,i);
+
+      // ::Thyra::set_ele(i,f.apply(val,xval),thyra_vec_.ptr());
+      thisAccel.setEle(i,f.apply(val,xval));
+    }
+*/
   }
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
