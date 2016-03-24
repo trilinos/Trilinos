@@ -66,7 +66,7 @@ namespace Kokkos {
 
 namespace Intrepid2 {
 
-#define INTREPID2_TEST_FOR_ABORT(test, exception, msg)                  \
+#define INTREPID2_TEST_FOR_ABORT(test, msg)                             \
   if (test) {                                                           \
     fprintf(stderr, "[Intrepid2] Test failed in file %s, line %d\n",__FILE__,__LINE__); \
     fprintf(stderr, "            Test that evaluated to true: %s\n" #test); \
