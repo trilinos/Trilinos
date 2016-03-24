@@ -45,7 +45,8 @@
 
 #
 # System imports
-from   numpy    import *
+from   __future__ import print_function
+from   numpy      import *
 import sys
 import unittest
 

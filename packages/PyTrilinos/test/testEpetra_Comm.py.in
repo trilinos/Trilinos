@@ -206,10 +206,10 @@ class EpetraPyCommTestCase(unittest.TestCase):
     def testBroadcastString1(self):
         "Test Epetra.PyComm Broadcast method for single string"
         root = 0
-        data = "Now is the time for all good men to come to the " + \
-               "aid of their country."
+        data = b"Now is the time for all good men to come to the " + \
+               b"aid of their country."
         dtype = "|S%d" % len(data)
-        rootArray = array([""], dtype)
+        rootArray = array([b""], dtype)
         if self.comm.MyPID() == root:
             rootArray[0] = data
         self.comm.Broadcast(rootArray, root)
@@ -218,10 +218,10 @@ class EpetraPyCommTestCase(unittest.TestCase):
     def testBroadcastString2(self):
         "Test Epetra.PyComm Broadcast method for two strings"
         root = 0
-        data = ["Now is the time for all good men to come to the ",
-                "aid of their country."]
+        data = [b"Now is the time for all good men to come to the ",
+                b"aid of their country."]
         dtype = "|S%d" % len(data[0])
-        rootArray = array(["",""], dtype)
+        rootArray = array([b"",b""], dtype)
         if self.comm.MyPID() == root:
             rootArray[:] = data
         self.comm.Broadcast(rootArray, root)

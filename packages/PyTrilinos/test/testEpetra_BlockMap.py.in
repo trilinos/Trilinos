@@ -45,7 +45,8 @@
 
 #
 # System imports
-from   numpy    import *
+from   __future__ import print_function
+from   numpy      import *
 import sys
 import unittest
 
@@ -80,11 +81,11 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.numGlobalElConst = self.numMyElConst * self.numProc
         self.numGlobalEl      = self.comm.SumAll(self.numMyEl)
         self.elSizeConst      = 10
-        self.elSizeList       = range(5,5+self.numMyEl)
+        self.elSizeList       = list(range(5,5+self.numMyEl))
         self.indexBase        = 0
-        globalEls             = range(self.numGlobalEl)
+        globalEls             = list(range(self.numGlobalEl))
         globalEls.reverse()  # Force this to be different from the linear distribution
-        self.start            = 4*self.myPID + self.myPID*(self.myPID-1)/2
+        self.start            = 4*self.myPID + self.myPID*(self.myPID-1)//2
         self.myGlobalEls      = globalEls[self.start:self.start+self.numMyEl]
 
         self.map1             = Epetra.BlockMap(self.numGlobalElConst,
@@ -220,7 +221,7 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testRemoteIDList1(self):
         "Test Epetra.BlockMap RemoteIDList method for constant element size"
-        gidList  = range(self.numGlobalEl)
+        gidList  = list(range(self.numGlobalEl))
         gidList.reverse()  # Match the setUp pattern
         pidList  = zeros( self.numGlobalEl)
         lidList  = arange(self.numGlobalEl)
@@ -237,7 +238,7 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testRemoteIDList2(self):
         "Test Epetra.BlockMap RemoteIDList method for variable element size"
-        gidList  = range(self.numGlobalEl)
+        gidList  = list(range(self.numGlobalEl))
         gidList.reverse()  # Match the setUp pattern
         pidList  = zeros( self.numGlobalEl)
         lidList  = arange(self.numGlobalEl)

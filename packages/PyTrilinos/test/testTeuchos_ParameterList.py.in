@@ -80,18 +80,14 @@ class ParameterListTestCase(unittest.TestCase):
     def assertEqual(self, obj1, obj2):
         if isinstance(obj1, (dict,Teuchos.ParameterList)):
             self.assertDictsEqual(obj1, obj2)
-        elif isinstance(obj1, (list,tuple)):
+        elif isinstance(obj1, (list,tuple)) or isinstance(obj2, (list,tuple)):
             self.assertSequenceEqual(obj1, obj2)
         else:
-            result = (obj1 == obj2)
-            if hasattr(result, "all"):
-                self.assertTrue(result.all())
-            else:
-                self.assertTrue(result)
+            self.assertTrue(obj1 == obj2)
 
     def assertDictsEqual(self, dict1, dict2):
-        keys1 = dict1.keys()
-        keys2 = dict2.keys()
+        keys1 = list(dict1.keys())
+        keys2 = list(dict2.keys())
         keys1.sort()
         keys2.sort()
         self.assertEqual(keys1, keys2)
@@ -99,12 +95,20 @@ class ParameterListTestCase(unittest.TestCase):
             self.assertEqual(dict1[key], dict2[key])
 
     def assertSequenceEqual(self, seq1, seq2):
+        self.assertTrue(len(seq1), len(seq2))
         for items in zip(seq1, seq2):
-            self.assertEqual(items[0], items[1])
+            item0 = items[0]
+            item1 = items[1]
+            if isinstance(item0, str) and isinstance(item1, bytes):
+                item0 = item0.encode('ascii', errors='backslashreplace')
+            if isinstance(item1, str) and isinstance(item0, bytes):
+                item1 = item1.encode('ascii', errors='backslashreplace')
+            self.assertEqual(item0, item1)
 
     ########################################################
 
     def setUp(self):
+        self.py_version = sys.version_info.major
         self.comm  = Teuchos.DefaultComm.getComm()
         if ('MpiComm' in dir(Teuchos)):
             self.commType = "MPI"
@@ -418,20 +422,22 @@ class ParameterListTestCase(unittest.TestCase):
 
     def test__cmp__1(self):
         "Test Teuchos.ParameterList __cmp__ method with dictionary"
-        d1 = { "a" : 2 }
-        d2 = { "a" : 2, "b" : 1 }
-        plist = Teuchos.ParameterList(d1)
-        self.assertEqual(cmp(plist, d1), 0)
-        self.assertEqual(cmp(plist, d2),-1)
+        if self.py_version < 3:
+            d1 = { "a" : 2 }
+            d2 = { "a" : 2, "b" : 1 }
+            plist = Teuchos.ParameterList(d1)
+            self.assertEqual(cmp(plist, d1), 0)
+            self.assertEqual(cmp(plist, d2),-1)
 
     def test__cmp__2(self):
         "Test Teuchos.ParameterList __cmp__ method with ParameterList"
-        d = { "a" : 2, "b" : 1 }
-        plist1 = Teuchos.ParameterList(d)
-        plist2 = Teuchos.ParameterList(d)
-        self.assertEqual(cmp(plist1, plist2), 0)
-        plist1.set("c",3)
-        self.assertEqual(cmp(plist1, plist2), 1)
+        if self.py_version < 3:
+            d = { "a" : 2, "b" : 1 }
+            plist1 = Teuchos.ParameterList(d)
+            plist2 = Teuchos.ParameterList(d)
+            self.assertEqual(cmp(plist1, plist2), 0)
+            plist1.set("c",3)
+            self.assertEqual(cmp(plist1, plist2), 1)
 
     def test__contains__(self):
         "Test Teuchos.ParameterList __contains__ method"
@@ -461,7 +467,13 @@ class ParameterListTestCase(unittest.TestCase):
         "Test Teuchos.ParameterList __getitem__ method"
         plist = Teuchos.ParameterList(self.dict)
         for key in plist.asDict():
-            self.assertEqual(plist[key], plist.get(key))
+            value1 = plist[key]
+            value2 = plist.get(key)
+            if (isinstance(value1, numpy.ndarray) and
+                isinstance(value2, numpy.ndarray)):
+                self.assertTrue((value1 == value2).all())
+            else:
+                self.assertEqual(value1, value2)
 
     def test__getitem__bad1(self):
         "Test Teuchos.ParameterList __getitem__ method for nonexisting parameter"
@@ -543,18 +555,18 @@ class ParameterListTestCase(unittest.TestCase):
     def testAsDict(self):
         "Test Teuchos.ParameterList asDict method"
         plist = Teuchos.ParameterList(self.dict)
-        self.assertItemsEqual(plist.asDict(), self.dict)
+        self.assertDictsEqual(plist.asDict(), self.dict)
 
     def testItems(self):
         "Test Teuchos.ParameterList items method"
         plist = Teuchos.ParameterList(self.dict)
-        self.assertItemsEqual(plist, self.dict)
+        self.assertDictsEqual(plist, self.dict)
 
     def testKeys(self):
         "Test Teuchos.ParameterList keys method"
         plist = Teuchos.ParameterList(self.dict)
-        keys1 = plist.keys()
-        keys2 = self.dict.keys()
+        keys1 = list(plist.keys())
+        keys2 = list(self.dict.keys())
         keys1.sort()
         keys2.sort()
         self.assertEqual(keys1, keys2)
@@ -562,10 +574,10 @@ class ParameterListTestCase(unittest.TestCase):
     def testValues(self):
         "Test Teuchos.ParameterList values method"
         plist = Teuchos.ParameterList(self.dict)
-        keys1 = plist.keys()
-        keys2 = self.dict.keys()
-        values1 = plist.values()
-        values2 = self.dict.values()
+        keys1 = list(plist.keys())
+        keys2 = list(self.dict.keys())
+        values1 = list(plist.values())
+        values2 = list(self.dict.values())
         for key in keys1:
             i1 = keys1.index(key)
             i2 = keys2.index(key)

@@ -45,8 +45,9 @@
 
 #
 # System imports
-from   numpy    import *
-from   optparse import *
+from   __future__ import print_function
+from   numpy      import *
+from   optparse   import *
 import sys
 import unittest
 
@@ -253,7 +254,7 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         "Test Epetra.CrsGraph RemoveMyIndices method w/o indices"
         crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, self.colMap, 3, False)
         self.fillGraphLocal(crsg,False)  # Cannot FillComplete() if we want to remove
-        lrid = self.mySize / 2
+        lrid = self.mySize // 2
         result = crsg.RemoveMyIndices(lrid)
         self.assertEqual(crsg.NumMyIndices(lrid), 0)
 
