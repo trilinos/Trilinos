@@ -49,9 +49,6 @@
 #  PYTHON_INCLUDE_PATH  = path to where Python.h is found
 #
 
-MESSAGE(STATUS "Using PyTrilinos FindPythonInclude.cmake")
-MESSAGE(STATUS "PYTHON_EXECUTABLE is ${PYTHON_EXECUTABLE}")
-
 IF(PYTHON_EXECUTABLE)
 
   # Obtain the Python version string
