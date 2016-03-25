@@ -12,9 +12,12 @@
   </ParameterList>
 
   <ParameterList name="ElasticitySIMP">
-    <Parameter name="initialDensity"    type="double"  value="1.0"    />
-    <Parameter name="penaltyPowerP"     type="int"     value="3"    />
-    <Parameter name="loadcase"          type="int"     value="1"  />
+    <Parameter name="Initial Density"    type="double" value="1.0"     />
+    <Parameter name="SIMP Power"         type="int"    value="3"       />
+    <Parameter name="Load Case"          type="int"    value="1"       />
+    <Parameter name="Load Magnitude"     type="double" value="10.0"    />
+    <Parameter name="Load Polar Angle"   type="double" value="-3.1415" />
+    <Parameter name="Load Azimuth Angle" type="double" value="0.0"     />
   </ParameterList>
   
   <ParameterList name="ElasticityTopoOpt">
