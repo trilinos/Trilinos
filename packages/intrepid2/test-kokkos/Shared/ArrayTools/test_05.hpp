@@ -41,38 +41,35 @@
 // @HEADER
 
 /** \file test_05.cpp
-\brief  Unit test for the clone / scale operations of the ArrayTools class.
-\author Created by P. Bochev and D. Ridzal.
+    \brief  Unit test for the clone / scale operations of the ArrayTools class.
+    \author Kyungjoo Kim
 */
 
 #include "Intrepid2_ArrayTools.hpp"
-#include "Intrepid2_FieldContainer.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-using namespace std;
-using namespace Intrepid2;
-
-#define INTREPID_TEST_COMMAND( S )                                                                                  \
-{                                                                                                                   \
-  try {                                                                                                             \
-    S ;                                                                                                             \
-  }                                                                                                                 \
-  catch (std::logic_error err) {                                                                                    \
-      *outStream << "Expected Error ----------------------------------------------------------------\n";            \
-      *outStream << err.what() << '\n';                                                                             \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n";    \
-  };                                                                                                                \
-}
+#define INTREPID_TEST_COMMAND( S )                                      \
+  {                                                                     \
+    try {                                                               \
+      S ;                                                               \
+    }                                                                   \
+    catch (std::logic_error err) {                                      \
+      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                 \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+    };                                                                  \
+  }
 
 
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
- Kokkos::initialize();
+  Kokkos::initialize();
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -88,19 +85,19 @@ int main(int argc, char *argv[]) {
   oldFormatState.copyfmt(std::cout);
 
   *outStream \
-  << "===============================================================================\n" \
-  << "|                                                                             |\n" \
-  << "|                       Unit Test (ArrayTools)                                |\n" \
-  << "|                                                                             |\n" \
-  << "|     1) Array operations: clone / scale                                      |\n" \
-  << "|                                                                             |\n" \
-  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-  << "|                                                                             |\n" \
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-  << "|                                                                             |\n" \
-  << "===============================================================================\n";
+    << "===============================================================================\n" \
+    << "|                                                                             |\n" \
+    << "|                       Unit Test (ArrayTools)                                |\n" \
+    << "|                                                                             |\n" \
+    << "|     1) Array operations: clone / scale                                      |\n" \
+    << "|                                                                             |\n" \
+    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
+    << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+    << "|                                                                             |\n" \
+    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+    << "|                                                                             |\n" \
+    << "===============================================================================\n";
 
 
   int errorFlag = 0;
@@ -116,10 +113,10 @@ int main(int argc, char *argv[]) {
 #endif
 
   *outStream \
-  << "\n"
-  << "===============================================================================\n"\
-  << "| TEST 1: exceptions                                                          |\n"\
-  << "===============================================================================\n";
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 1: exceptions                                                          |\n"\
+    << "===============================================================================\n";
 
   try{
 
@@ -188,15 +185,15 @@ int main(int argc, char *argv[]) {
 #endif
 
   *outStream \
-  << "\n"
-  << "===============================================================================\n"\
-  << "| TEST 2: correctness of math operations                                      |\n"\
-  << "===============================================================================\n";
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 2: correctness of math operations                                      |\n"\
+    << "===============================================================================\n";
 
   outStream->precision(20);
 
   try {
-      { // start scope
+    { // start scope
       *outStream << "\n************ Checking cloneFields ************\n";
 
       int c=5, p=9, f=7, d1=7, d2=13;
@@ -248,9 +245,9 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\nINCORRECT cloneFields (3): check multiplyScalarData vs. cloneFields\n\n";
         errorFlag = -1000;
       }
-      } // end scope
+    } // end scope
 
-      { // start scope
+    { // start scope
       *outStream << "\n************ Checking cloneScaleFields ************\n";
       int c=5, p=9, f=7, d1=7, d2=13;
 
@@ -327,9 +324,9 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\nINCORRECT cloneScaleValue (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
-      } // end scope
+    } // end scope
 
-      { // start scope
+    { // start scope
       *outStream << "\n************ Checking scaleFields ************\n";
       int c=5, p=9, f=7, d1=7, d2=13;
 
@@ -384,10 +381,10 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\nINCORRECT cloneScaleValue (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
-      } // end scope
+    } // end scope
 
       /******************************************/
-      *outStream << "\n";
+    *outStream << "\n";
   }
   catch (std::logic_error err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
@@ -404,6 +401,6 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
- Kokkos::finalize();
+  Kokkos::finalize();
   return errorFlag;
 }
