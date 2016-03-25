@@ -6,14 +6,32 @@ xsize = round(sqrt(size(density, 1)));
 ysize = xsize;
 
 density = reshape(density, xsize, ysize);
-Xnodes  = reshape(nodes(:,1), xsize+1, ysize+1);
-Ynodes  = reshape(nodes(:,2), xsize+1, ysize+1);
 
-Xnodes  = 0.5*(Xnodes(1:end-1,1:end-1)+Xnodes(2:end,1:end-1));
-Ynodes  = 0.5*(Ynodes(1:end-1,1:end-1)+Ynodes(1:end-1,2:end));
+xnodes  = reshape(nodes(:,1), xsize+1, ysize+1);
+ynodes  = reshape(nodes(:,2), xsize+1, ysize+1);
+
+xmax = max(max(xnodes));
+ymax = max(max(ynodes));
+
+X = []; Y = []; D = [];
+for i = 1:xsize
+  for j = 1:ysize
+    x = xnodes(i:i+1,j:j+1);
+    y = ynodes(i:i+1,j:j+1);
+    x = x(:);
+    y = y(:);
+    x(3:4) = x(4:-1:3);
+    d = density(i,j)^3;
+    X = [X,x];
+    Y = [Y,y];
+    D = [D,d];
+  end
+end
 
 figure
-fill(Xnodes,Ynodes,density.^3)
+fill(X,Y,D)
+xlim([0,xmax])
+ylim([0,ymax])
 colorbar
 %view(2)
 axis('equal','tight');

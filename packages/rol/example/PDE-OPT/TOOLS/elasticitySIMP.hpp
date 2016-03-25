@@ -279,10 +279,7 @@ public:
 
   virtual Real funcRHS_2D(const Real &x1, const Real &x2, const int k) {
     Real val(0), eps(std::sqrt(ROL::ROL_EPSILON<Real>()));
-    Real cx(cx_+eps), cy(cy_+eps), half(0.5);
-    std::cout << cx << "  " << cx_ << "  " << eps << std::endl;
-    std::cout << cy << "  " << cy_ << "  " << eps << std::endl;
-    std::cout << loadCase_ << "\n";
+    Real cx(2*cx_+eps), cy(2*cy_+eps), half(0.5);
     switch(loadCase_) {
       case(0): { // Force applied to center of top boundary
         if ( (x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx)) &&
@@ -294,7 +291,6 @@ public:
         if ( (x1 > xmax_-cx) &&
              (x2 > ymax_-cy) ) {
           val = loadMag_*((k==0) ? std::cos(loadAngle1_) : std::sin(loadAngle1_));
-          std::cout << x1 << "  " << x2 << "  " << k << "\n";
         }
       }
       case(2): { // Force applied to center of right boundary
