@@ -9,13 +9,17 @@ density = reshape(density, xsize, ysize);
 Xnodes  = reshape(nodes(:,1), xsize+1, ysize+1);
 Ynodes  = reshape(nodes(:,2), xsize+1, ysize+1);
 
-Xnodes  = 0.5*(Xnodes(1:end-1,1:end-1)+Xnodes(2:end,2:end));
-Ynodes  = 0.5*(Ynodes(1:end-1,1:end-1)+Ynodes(2:end,2:end));
+Xnodes  = 0.5*(Xnodes(1:end-1,1:end-1)+Xnodes(2:end,1:end-1));
+Ynodes  = 0.5*(Ynodes(1:end-1,1:end-1)+Ynodes(1:end-1,2:end));
 
-surf(Xnodes,Ynodes,density.^3)
+figure
+fill(Xnodes,Ynodes,density.^3)
 colorbar
-view(2)
+%view(2)
 axis('equal','tight');
-colormap('autumn')
-%imagesc(density.^3);
-%colorbar
+colormap('bone')
+
+figure
+imagesc(density.^3);
+colorbar
+colormap('bone')
