@@ -1,23 +1,23 @@
 // Copyright (c) 2014, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 
 #include <exo_par/Iopx_DecompositionData.h>
@@ -171,7 +171,7 @@ namespace {
 
     // At the time this is called, we don't have much information
     // These routines are the ones that are developing that
-    // information... 
+    // information...
     size_t element_count  = zdata->elementCount;
     size_t element_offset = zdata->elementOffset;
 
@@ -364,7 +364,7 @@ namespace Iopx {
               << nodeCount << " nodes; offset = " << nodeOffset << ".\n";
 #endif
     std::vector<INT> pointer; // Index into adjacency, processor list for each element...
-    std::vector<INT> adjacency; // Size is sum of element connectivity sizes 
+    std::vector<INT> adjacency; // Size is sum of element connectivity sizes
     generate_adjacency_list(exodusId, pointer, adjacency, info.num_elem_blk);
 
     std::string method = "LINEAR";
@@ -523,7 +523,7 @@ namespace Iopx {
 
       size_t local = node_dist[myProcessor+1] - node_dist[myProcessor];
       assert(local == nodeCount);
-      
+
       localNodeMap.resize(local);
       nodeGTL.resize(local);
       std::iota(localNodeMap.begin(), localNodeMap.end(), nodeOffset);
@@ -550,7 +550,7 @@ namespace Iopx {
     // If not, decide how to proceed...
     if (sizeof(INT) == sizeof(idx_t)) {
       internal_metis_decompose(method, (idx_t*)TOPTR(element_dist), (idx_t*)TOPTR(pointer), (idx_t*)TOPTR(adjacency), TOPTR(elem_partition));
-    } 
+    }
 
     // Now know that they don't match... Are we widening or narrowing...
     else if (sizeof(idx_t) > sizeof(INT)) {
@@ -633,7 +633,7 @@ namespace Iopx {
     std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
     generate_index(importElementIndex);
 
-    Ioss::MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex, 
+    Ioss::MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex,
                        importElementMap, importElementCount, importElementIndex, comm_);
 
 #if DEBUG_OUTPUT
@@ -667,7 +667,7 @@ namespace Iopx {
 
     std::vector<idx_t> options(3);
     options[0] = 1; // Use my values instead of default
-    options[1] = 0; // PARMETIS_DBGLVL_TIME; 
+    options[1] = 0; // PARMETIS_DBGLVL_TIME;
     options[2] = 1234567; // Random number seed
 
     if (method == "KWAY") {
@@ -954,7 +954,7 @@ namespace Iopx {
       for (size_t i=0; i < import_conn.size(); i++) {
         nodes.push_back(import_conn[i]);
       }
-    }    
+    }
 
     // Nodes on local elements...
     for (size_t i=0; i < localElementMap.size(); i++) {
@@ -1020,7 +1020,7 @@ namespace Iopx {
     std::copy(importNodeCount.begin(), importNodeCount.end(), importNodeIndex.begin());
     generate_index(importNodeIndex);
 
-    Ioss::MY_Alltoallv(import_nodes,  importNodeCount, importNodeIndex, 
+    Ioss::MY_Alltoallv(import_nodes,  importNodeCount, importNodeIndex,
                        exportNodeMap, exportNodeCount, exportNodeIndex, comm_);
 
     // Map that converts nodes from the global index (1-based) to a local-per-processor index (1-based)
@@ -1135,7 +1135,7 @@ namespace Iopx {
     std::vector<INT> recv_comm_map_disp(recv_comm_map_count);
     generate_index(recv_comm_map_disp);
     nodeCommMap.resize(recv_comm_map_disp[processorCount-1] + recv_comm_map_count[processorCount-1]);
-    Ioss::MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, 
+    Ioss::MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp,
                        nodeCommMap, recv_comm_map_count, recv_comm_map_disp, comm_);
 
     // Map global 0-based index to local 1-based index.
@@ -1288,7 +1288,7 @@ namespace Iopx {
     // Issues:
     // 1. Large node count in nodeset(s) that could overwhelm a single
     //    processor.  For example, every node in the model is in a
-    //    nodeset. 
+    //    nodeset.
     //    -- Cannot blindly read all nodeset data on proc 0 and
     //       broadcast.
     //
@@ -1309,7 +1309,7 @@ namespace Iopx {
     //    -- What if nodelist is big and non-sorted so that a
     //       processors nodes cannot be read in a single contiguous
     //       read...
-    // 
+    //
     // 6. Alternatively, only processor 0 reads, but only communicates
     //    to the processors that have nodes in the nodeset.
     //    == REMEMBER: nodes are shared, so a node could be sent to
@@ -1748,7 +1748,7 @@ namespace Iopx {
       }
     }
 
-    Ioss::MY_Alltoallv(node_comm_recv, recv_count, recv_disp, 
+    Ioss::MY_Alltoallv(node_comm_recv, recv_count, recv_disp,
                        node_comm_send, send_count, send_disp, comm_);
 
     // At this point, 'node_comm_send' contains the list of nodes that I need to provide
@@ -1781,11 +1781,11 @@ namespace Iopx {
       coord_send.push_back(x[node]);
       if (spatialDimension > 1)
         coord_send.push_back(y[node]);
-      if (spatialDimension > 2) 
+      if (spatialDimension > 2)
         coord_send.push_back(z[node]);
     }
     assert(coord_send.size() == node_comm_send.size() * spatialDimension);
-    
+
     // Send the coordinate data back to the processors that requested it...
     for (int i=0; i < processorCount; i++) {
       send_count[i] *= spatialDimension;
@@ -1794,7 +1794,7 @@ namespace Iopx {
       recv_disp[i]  *= spatialDimension;
     }
 
-    Ioss::MY_Alltoallv(coord_send, send_count, send_disp, 
+    Ioss::MY_Alltoallv(coord_send, send_count, send_disp,
                        coord_recv, recv_count, recv_disp, comm_);
 
     // Don't need coord_send data anymore ... clean out the vector.
@@ -1874,7 +1874,7 @@ namespace Iopx {
     // Find number of imported elements that are less than the current local_map[0]
     b = 0;
     size_t proc = 0;
-    std::vector<size_t> imp_index(num_elem_block); 
+    std::vector<size_t> imp_index(num_elem_block);
     for (size_t i=0; i < importElementMap.size(); i++) {
       size_t elem = importElementMap[i];
       while (i >= (size_t)importElementIndex[proc+1])
@@ -2008,7 +2008,7 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(export_data, export_count, export_disp, 
+      Ioss::MY_Alltoallv(export_data, export_count, export_disp,
                          import_data, import_count, import_disp, comm_);
 
       // Copy the imported data into ioss_data...
@@ -2050,7 +2050,7 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(export_data, exportElementCount, exportElementIndex, 
+      Ioss::MY_Alltoallv(export_data, exportElementCount, exportElementIndex,
                          import_data, importElementCount, importElementIndex, comm_);
 
       // Copy the imported data into ioss_data...
@@ -2093,7 +2093,7 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(export_data, export_count, export_disp, 
+      Ioss::MY_Alltoallv(export_data, export_count, export_disp,
                          import_data, import_count, import_disp, comm_);
 
       // Copy the imported data into ioss_data...
@@ -2242,7 +2242,7 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(exports, blk.exportCount, blk.exportIndex, 
+      Ioss::MY_Alltoallv(exports, blk.exportCount, blk.exportIndex,
                          imports, blk.importCount, blk.importIndex, comm_);
 
       // Map local and imported data to ioss_data.
@@ -2273,7 +2273,7 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(exports, export_count, export_disp, 
+      Ioss::MY_Alltoallv(exports, export_count, export_disp,
                          imports, import_count, import_disp, comm_);
 
       // Map local and imported data to ioss_data.
@@ -2659,7 +2659,7 @@ namespace Iopx {
   }
 
   template <typename INT>
-  int DecompositionData<INT>::get_elem_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const 
+  int DecompositionData<INT>::get_elem_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const
   {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
@@ -2667,7 +2667,7 @@ namespace Iopx {
     size_t offset = get_block_element_offset(blk_seq);
 
     std::vector<double> file_data(count*comp_count);
-    int ierr = ex_get_partial_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_data)); 
+    int ierr = ex_get_partial_attr(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_data));
 
     if (ierr >= 0)
       communicate_block_data(TOPTR(file_data), ioss_data, blk_seq, comp_count);
@@ -2676,7 +2676,7 @@ namespace Iopx {
   }
 
   template <typename INT>
-  int DecompositionData<INT>::get_one_elem_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const 
+  int DecompositionData<INT>::get_one_elem_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const
   {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
@@ -2823,12 +2823,12 @@ namespace Iopx {
       } else {
         assert(1==0);
       }
-    }    
+    }
     return ierr;
   }
 
   template <typename INT> template <typename T>
-  int DecompositionData<INT>::handle_sset_df(int exodusId, ex_entity_id id, const Ioss::Field& field, T* ioss_data) const 
+  int DecompositionData<INT>::handle_sset_df(int exodusId, ex_entity_id id, const Ioss::Field& field, T* ioss_data) const
   {
     int ierr = 0;
 
@@ -3047,7 +3047,7 @@ namespace Iopx {
       snd_count[owning_proc[i]]++;
       if (owning_proc[i] == myProcessor) {
         global_implicit_map[i] = position++;
-      } 
+      }
     }
     snd_count[myProcessor] = 0;
 
@@ -3117,4 +3117,3 @@ namespace Iopx {
   }
 
 }
-
