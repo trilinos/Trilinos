@@ -260,13 +260,22 @@ public:
 
     const part_t *parts;
     if (soln) {
+      // User provided a partitioning solution; use it.
       parts = soln->getPartListView();
       env->localInputAssertion(__FILE__, __LINE__, "parts not set",
         ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
     } else {
-      part_t *procs = new part_t [numLocalObjects];
-      for (size_t i=0; i<numLocalObjects; i++) procs[i]=problemComm->getRank();
-      parts = procs;
+      // User did not provide a partitioning solution;
+      // Use input adapter partition.
+
+      parts = NULL;
+      bia->getPartsView(parts);
+      if (parts == NULL) {
+	// User has not provided input parts in input adapter
+	part_t *procs = new part_t [numLocalObjects];
+	for (size_t i=0;i<numLocalObjects;i++) procs[i]=problemComm->getRank();
+	parts = procs;
+      }
     }
     ArrayView<const part_t> partArray(parts, numLocalObjects);
 
