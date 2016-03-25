@@ -219,7 +219,7 @@ protected:
     }
     virtual size_t get_value_to_output_as_iteration_count()
     {
-        return 0;
+        return 1;
     }
 
     stk::mesh::BulkData &bulkData;
