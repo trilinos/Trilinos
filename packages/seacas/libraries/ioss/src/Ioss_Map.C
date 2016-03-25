@@ -33,6 +33,7 @@
 #include <Ioss_Map.h>
 #include <Ioss_Field.h>                 // for Field, etc
 #include <Ioss_Utils.h>                 // for IOSS_ERROR
+#include <Ioss_Sort.h>
 #include <assert.h>                     // for assert
 #include <stddef.h>                     // for size_t
 #include <sys/types.h>                  // for ssize_t
@@ -77,7 +78,6 @@ namespace {
 
 
   // map global to local ids
-  typedef Ioss::ReverseMapContainer::value_type RMCValuePair;
 
   // Class to support storing global/local element id map in sorted vector...
   class IdPairCompare
@@ -174,7 +174,7 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset)
   }
 
   // Sort that vector...
-  std::sort(new_ids.begin(), new_ids.end(), IdPairCompare());
+  Ioss::qsort(new_ids);
 
   int64_t new_id_min = new_ids.empty() ? 0 : new_ids.front().first;
   int64_t old_id_max = reverse.empty() ? 0 : reverse.back().first;
