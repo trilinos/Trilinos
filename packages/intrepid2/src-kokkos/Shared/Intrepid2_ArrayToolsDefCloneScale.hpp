@@ -34,9 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
-//                    Denis Ridzal  (dridzal@sandia.gov), or
-//                    Kara Peterson (kjpeter@sandia.gov)
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -46,6 +45,9 @@
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
+
+#ifndef __INTREPID2_ARRAYTOOLS_DEF_CLONESCALE_HPP__
+#define __INTREPID2_ARRAYTOOLS_DEF_CLONESCALE_HPP__
 
 namespace Intrepid2 {
 
@@ -65,7 +67,7 @@ namespace Intrepid2 {
                               ">>> ERROR (ArrayTools::cloneFields): Input fields container must have rank 2, 3, or 4.");
     INTREPID2_TEST_FOR_ABORT( ( outputFields.rank() != (inputFields.rank()+1) ),
                               ">>> ERROR (ArrayTools::cloneFields): The rank of the input fields container must be one less than the rank of the output fields container.");
-    for (ordinal_type i=0;i<inputFields.rank();++i) {
+    for (size_type i=0;i<inputFields.rank();++i) {
       INTREPID2_TEST_FOR_ABORT( (inputFields.dimension(i) != outputFields.dimension(i+1)),
                                 ">>> ERROR (ArrayTools::cloneFields): Dimensions of input and output fields containers do not match.");
     }
@@ -81,17 +83,20 @@ namespace Intrepid2 {
         : _outputFields(outputFields_), _inputFields(inputFields_) {}
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl) {
-        const ordinal_type numFields = outputFields.dimension(1);
-        const ordinal_type numPoints = outputFields.dimension(2);
-        const ordinal_type dim1Tens  = outputFields.rank() > 3 ? 0 : outputFields.dimension(3);
-        const ordinal_type dim2Tens  = outputFields.rank() > 4 ? 0 : outputFields.dimension(4);
+      ~Functor = default;
 
-        for(ordinal_type bf = 0; bf < numFields; ++bf)
-          for(ordinal_type pt = 0; pt < numPoints; ++pt)
-            for(ordinal_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-              for(ordinal_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
-                outputFieldsWrap(cl, bf, pt, iTens1, iTens2) 
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type cl) {
+        const size_type numFields = outputFields.dimension(1);
+        const size_type numPoints = outputFields.dimension(2);
+        const size_type dim1Tens  = outputFields.dimension(3);
+        const size_type dim2Tens  = outputFields.dimension(4);
+
+        for(size_type bf = 0; bf < numFields; ++bf)
+          for(size_type pt = 0; pt < numPoints; ++pt)
+            for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
+              for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
+                outputFieldsWrap(cl, bf, pt, iTens1, iTens2)
                   = inputFieldswrap(bf, pt, iTens1, iTens2);
       }
     };
@@ -123,7 +128,7 @@ namespace Intrepid2 {
                               ">>> ERROR (ArrayTools::cloneScaleFields): Zeroth dimensions of input factors container and output fields container (numbers of integration domains) must agree!");
     INTREPID2_TEST_FOR_ABORT( inputFactors.dimension(1) != outputFields.dimension(1),
                               ">>> ERROR (ArrayTools::cloneScaleFields): First dimensions of input factors container and output fields container (numbers of fields) must agree!");
-    for (ordinal_type i=0;i<inputFields.rank();++i) {
+    for (size_type i=0;i<inputFields.rank();++i) {
       INTREPID2_TEST_FOR_ABORT( (inputFields.dimension(i) != outputFields.dimension(i+1)),
                                 ">>> ERROR (ArrayTools::cloneScaleFields): Dimensions of input and output fields containers do not match.");
     }
@@ -144,16 +149,16 @@ namespace Intrepid2 {
       ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl) {
-        const ordinal_type numFields = outputFields.dimension(1);
-        const ordinal_type numPoints = outputFields.dimension(2);
-        const ordinal_type dim1Tens  = outputFields.dimension(3);
-        const ordinal_type dim2Tens  = outputFields.dimension(4);
+      void operator()(const size_type cl) {
+        const size_type numFields = outputFields.dimension(1);
+        const size_type numPoints = outputFields.dimension(2);
+        const size_type dim1Tens  = outputFields.dimension(3);
+        const size_type dim2Tens  = outputFields.dimension(4);
 
-        for(ordinal_type bf = 0; bf < numFields; ++bf)
-          for(ordinal_type pt = 0; pt < numPoints; ++pt)
-            for(ordinal_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-              for(ordinal_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
+        for(size_type bf = 0; bf < numFields; ++bf)
+          for(size_type pt = 0; pt < numPoints; ++pt)
+            for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
+              for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
                 outputFieldsWrap(cl, bf, pt, iTens1, iTens2)
                   = inputFieldsWrap(bf, pt, iTens1, iTens2) * inputFactorswrap(cl, bf);
       }
@@ -196,16 +201,16 @@ namespace Intrepid2 {
       ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl) {
-        const ordinal_type numFields = outputFields.dimension(1);
-        const ordinal_type numPoints = outputFields.dimension(2);
-        const ordinal_type dim1Tens  = outputFields.dimension(3);
-        const ordinal_type dim2Tens  = outputFields.dimension(4);
+      void operator()(const size_type cl) {
+        const size_type numFields = outputFields.dimension(1);
+        const size_type numPoints = outputFields.dimension(2);
+        const size_type dim1Tens  = outputFields.dimension(3);
+        const size_type dim2Tens  = outputFields.dimension(4);
 
-        for(ordinal_type bf = 0; bf < numFields; ++bf)
-          for(ordinal_type pt = 0; pt < numPoints; ++pt)
-            for(ordinal_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-              for(ordinal_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
+        for(size_type bf = 0; bf < numFields; ++bf)
+          for(size_type pt = 0; pt < numPoints; ++pt)
+            for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
+              for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
                 inoutFields(cl, bf, pt, iTens1, iTens2)
                   = inoutFields(cl, bf, pt, iTens1, iTens2) * inputFactors(cl, bf);
       }
@@ -217,3 +222,5 @@ namespace Intrepid2 {
   }
 
 } // end namespace Intrepid2
+
+#endif
