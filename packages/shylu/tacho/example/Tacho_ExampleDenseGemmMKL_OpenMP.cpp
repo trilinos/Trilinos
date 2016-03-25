@@ -55,7 +55,6 @@ int main (int argc, char *argv[]) {
   int r_val = 0;
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
-    exec_space::print_configuration(std::cout, true);
 
 #ifdef HAVE_SHYLUTACHO_MKL
     std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << std::endl;

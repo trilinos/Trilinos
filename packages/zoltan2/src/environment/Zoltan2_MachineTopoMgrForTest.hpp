@@ -20,6 +20,29 @@ public:
    *  \param comm Communication object.
    */
 
+  MachineBGQTest(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ):
+      Machine<pcoord_t,part_t>(comm),
+      networkDim(6),
+      procCoords(NULL){
+    this->getMachineExtent(this->machine_extent);
+    //allocate memory for processor coordinates.
+    procCoords = new pcoord_t *[networkDim];
+    for (int i = 0; i < networkDim; ++i){
+      procCoords[i] = new pcoord_t[this->numRanks];
+      memset(procCoords[i], 0, sizeof(pcoord_t) * this->numRanks);
+    }
+
+    //obtain the coordinate of the processor.
+    pcoord_t *xyz = new pcoord_t[networkDim];
+    getMyMachineCoordinate(xyz);
+    for (int i = 0; i < networkDim; i++)
+      procCoords[i][this->myRank] = xyz[i];
+    delete [] xyz;
+
+    //reduceAll the coordinates of each processor.
+    gatherMachineCoordinates(comm);
+  }
+
   MachineBGQTest(const Teuchos::Comm<int> &comm):
     Machine<pcoord_t,part_t>(comm),
     networkDim(6),
@@ -125,8 +148,8 @@ public:
       nxyz[5] = 1;
       break;
     case 128:
-      nxyz[0] = 1;
-      nxyz[1] = 4;
+      nxyz[0] = 2;
+      nxyz[1] = 2;
       nxyz[2] = 4;
       nxyz[3] = 4;
       nxyz[4] = 2;
@@ -134,10 +157,10 @@ public:
       break;
     case 256:
       nxyz[0] = 4;
-      nxyz[1] = 4;
+      nxyz[1] = 2;
       nxyz[2] = 4;
       nxyz[3] = 4;
-      nxyz[4] = 1;
+      nxyz[4] = 2;
       nxyz[5] = 1;
       break;
     case 512:
@@ -165,8 +188,8 @@ public:
       nxyz[5] = 1;
       break;
     case 4096:
-      nxyz[0] = 4;
-      nxyz[1] = 8;
+      nxyz[0] = 8;
+      nxyz[1] = 4;
       nxyz[2] = 4;
       nxyz[3] = 16;
       nxyz[4] = 2;

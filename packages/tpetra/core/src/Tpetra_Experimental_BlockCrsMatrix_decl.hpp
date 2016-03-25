@@ -592,13 +592,13 @@ public:
   ///   has a column Map).
   /// \pre All diagonal entries of the matrix's graph must be
   ///   populated on this process.  Results are undefined otherwise.
-  /// \post <tt>offsets.size() == getNodeNumRows()</tt>
+  /// \post <tt>offsets.dimension_0() == getNodeNumRows()</tt>
   ///
   /// This method creates an array of offsets of the local diagonal
   /// entries in the matrix.  This array is suitable for use in the
   /// two-argument version of getLocalDiagCopy().  However, its
   /// contents are not defined in any other context.  For example,
-  /// you should not rely on offsets[i] being the index of the
+  /// you should not rely on \c offsets(i) being the index of the
   /// diagonal entry in the views returned by getLocalRowView().
   /// This may be the case, but it need not be.  (For example, we
   /// may choose to optimize the lookups down to the optimized
@@ -610,7 +610,17 @@ public:
   /// is fill complete, then the offsets array remains valid through
   /// calls to fillComplete() and resumeFill().  "Invalidates" means
   /// that you must call this method again to recompute the offsets.
-  void getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
+  void
+  getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, 
+		         Kokkos::MemoryUnmanaged>& offsets) const;
+
+  /// \brief DEPRECATED overload of this method that writes offsets to
+  ///   a Teuchos::ArrayRCP instead of a Kokkos::View.
+  ///
+  /// Please use the version of this method directly above, that
+  /// writes offsets a Kokkos::View instead of to a Teuchos::ArrayRCP.
+  void TPETRA_DEPRECATED
+  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
 
   /// \brief Variant of getLocalDiagCopy() that uses precomputed
   ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.

@@ -50,10 +50,7 @@ int main (int argc, char *argv[]) {
   int r_val = 0;
   {
     exec_space::initialize();
-    exec_space::print_configuration(std::cout, true);
-
     host_space::initialize(nthreads, numa, core_per_numa);
-    host_space::print_configuration(std::cout, true);
 
     r_val = exampleDenseMatrixBase<exec_space>
       (mmin, mmax, minc, 

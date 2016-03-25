@@ -295,7 +295,7 @@ namespace BaskerNS
 		  nrow, ncol, nnz, col_ptr, row_idx, val);
 	    A.scol = 0;
 	    A.srow = 0;
-	    //printMTX("A_LOAD.mtx", A);
+	    
 	  }
 	else
 	  {
@@ -310,6 +310,12 @@ namespace BaskerNS
 			     A);
 	  }
 	sort_matrix(A);
+
+	if(Options.verbose_matrix_out == BASKER_TRUE)
+	  {
+	    printMTX("A_Symbolic.mtx", A);
+	  }
+
 	matrix_flag = BASKER_TRUE;
 
 	//std::cout << "Transpose A: " << timer_move.seconds()
@@ -456,6 +462,10 @@ namespace BaskerNS
 			 A);
       }
     sort_matrix(A);
+    if(Options.verbose_matrix_out == BASKER_TRUE)
+      {
+	printMTX("A_Factor.mtx", A);
+      }
     matrix_flag = BASKER_TRUE;
 	
 

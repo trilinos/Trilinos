@@ -80,11 +80,11 @@ void RealSpaceTools<Scalar>::absval(ArrayAbs & absArray, const ArrayIn & inArray
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::absval): Dimensions of array arguments do not agree!");
     }
-#endif 
-  
+#endif
+
    ArrayWrapper<Scalar,ArrayAbs, Rank<ArrayAbs >::value, false>absArrayWrap(absArray);
    ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inArrayWrap(inArray);
- 
+
    int inArrayRank=getrank(inArray);
 
 
@@ -96,30 +96,30 @@ void RealSpaceTools<Scalar>::absval(ArrayAbs & absArray, const ArrayIn & inArray
           for (index_type m=0; m<static_cast<index_type>(static_cast<index_type>(inArray.dimension(4))); m++){
          absArrayWrap(i,j,k,l,m) = std::abs(inArrayWrap(i,j,k,l,m));
           }
-	}else if(inArrayRank==4){
+        }else if(inArrayRank==4){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++)
       for (index_type k=0; k<static_cast<index_type>(static_cast<index_type>(inArray.dimension(2))); k++)
         for (index_type l=0; l<static_cast<index_type>(static_cast<index_type>(inArray.dimension(3))); l++){
             absArrayWrap(i,j,k,l) = std::abs(inArrayWrap(i,j,k,l));
           }
-	}else if(inArrayRank==3){
+        }else if(inArrayRank==3){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++)
       for (index_type k=0; k<static_cast<index_type>(static_cast<index_type>(inArray.dimension(2))); k++){
          absArrayWrap(i,j,k) = std::abs(inArrayWrap(i,j,k));
           }
-	}else if(inArrayRank==2){
+        }else if(inArrayRank==2){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++){
          absArrayWrap(i,j) = std::abs(inArrayWrap(i,j));
           }
-	}else if(inArrayRank==1){
+        }else if(inArrayRank==1){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++){
         absArrayWrap(i) = std::abs(inArrayWrap(i));
 
           }
-	}  
+        }
 }
 
 
@@ -169,15 +169,15 @@ template<class ArrayIn>
 Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm normType) {
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( ( !(getrank(inVec) >= 1 && getrank(inVec) <= 5) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::vectorNorm): Vector argument must have rank 1!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::vectorNorm): Vector argument must have rank 1!");
 #endif
   ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inVecWrap(inVec);
   int inVecRank=getrank(inVecWrap);
   Scalar temp = (Scalar)0;
   switch(normType) {
     case NORM_TWO:{
-   if(inVecRank==5){ 
+   if(inVecRank==5){
    for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inVec.dimension(2)); k++)
@@ -189,20 +189,20 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inVec.dimension(2)); k++)
         for (index_type l=0; l<static_cast<index_type>(inVec.dimension(3)); l++)
-      temp += inVecWrap(i,j,k,l)*inVecWrap(i,j,k,l); 	 
-	 }else if(inVecRank==3){
+      temp += inVecWrap(i,j,k,l)*inVecWrap(i,j,k,l);
+         }else if(inVecRank==3){
    for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inVec.dimension(2)); k++)
-      temp += inVecWrap(i,j,k)*inVecWrap(i,j,k); 	 
-	 }else if(inVecRank==2){
+      temp += inVecWrap(i,j,k)*inVecWrap(i,j,k);
+         }else if(inVecRank==2){
    for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++)
-      temp += inVecWrap(i,j)*inVecWrap(i,j); 	 
-	 }else if(inVecRank==1){
+      temp += inVecWrap(i,j)*inVecWrap(i,j);
+         }else if(inVecRank==1){
    for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
-      temp += inVecWrap(i)*inVecWrap(i); 	 
-	 }         
+      temp += inVecWrap(i)*inVecWrap(i);
+         }
       temp = std::sqrt(temp);
   }
       break;
@@ -217,39 +217,39 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
           for (index_type m=1; m<static_cast<index_type>(inVec.dimension(4)); m++){
          Scalar absData = std::abs(inVecWrap(i,j,k,l,m));
          if (temp < absData) temp = absData;
-	    }
-	}else if(inVecRank==4){
- temp = std::abs(inVecWrap(0,0,0,0));		
+            }
+        }else if(inVecRank==4){
+ temp = std::abs(inVecWrap(0,0,0,0));
   for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inVec.dimension(2)); k++)
         for (index_type l=1; l<static_cast<index_type>(inVec.dimension(3)); l++){
          Scalar absData = std::abs(inVecWrap(i,j,k,l));
          if (temp < absData) temp = absData;
-	    }	
-	}else if(inVecRank==3){
-  temp = std::abs(inVecWrap(0,0,0));		
+            }
+        }else if(inVecRank==3){
+  temp = std::abs(inVecWrap(0,0,0));
   for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inVec.dimension(2)); k++){
          Scalar absData = std::abs(inVecWrap(i,j,k));
          if (temp < absData) temp = absData;
-	    }	
-	}else if(inVecRank==2){
-  temp = std::abs(inVecWrap(0,0));		
+            }
+        }else if(inVecRank==2){
+  temp = std::abs(inVecWrap(0,0));
   for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++){
          Scalar absData = std::abs(inVecWrap(i,j));
          if (temp < absData) temp = absData;
-	    }	
-	}else if(inVecRank==1){
-  temp = std::abs(inVecWrap(0));		
+            }
+        }else if(inVecRank==1){
+  temp = std::abs(inVecWrap(0));
   for (index_type i=1; i<static_cast<index_type>(inVec.dimension(0)); i++){
          Scalar absData = std::abs(inVecWrap(i));
          if (temp < absData) temp = absData;
-	    }	
-	}
-}  
+            }
+        }
+}
       break;
     case NORM_ONE:{
         if(inVecRank==5){
@@ -260,29 +260,29 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
           for (index_type m=0; m<static_cast<index_type>(inVec.dimension(4)); m++){
           temp += std::abs(inVecWrap(i,j,k,l,m));
           }
-	}else if(inVecRank==4){
+        }else if(inVecRank==4){
    for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inVec.dimension(2)); k++)
         for (index_type l=0; l<static_cast<index_type>(inVec.dimension(3)); l++){
           temp += std::abs(inVecWrap(i,j,k,l));
           }
-	}else if(inVecRank==3){
+        }else if(inVecRank==3){
    for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inVec.dimension(2)); k++){
           temp += std::abs(inVecWrap(i,j,k));
           }
-	}else if(inVecRank==2){
+        }else if(inVecRank==2){
    for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inVec.dimension(1)); j++){
           temp += std::abs(inVecWrap(i,j));
           }
-	}else if(inVecRank==1){
+        }else if(inVecRank==1){
    for (index_type i=0; i<static_cast<index_type>(inVec.dimension(0)); i++){
           temp += std::abs(inVecWrap(i));
           }
-	}	
+        }
 }
       break;
     default:
@@ -342,15 +342,15 @@ void RealSpaceTools<Scalar>::vectorNorm(ArrayNorm & normArray, const ArrayIn & i
   index_type arrayRank = getrank(inVecs);
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != getrank(normArray)+1 ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::vectorNorm): Ranks of norm and vector array arguments are incompatible!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::vectorNorm): Ranks of norm and vector array arguments are incompatible!");
   TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 3) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::vectorNorm): Rank of vector array must be 2 or 3!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::vectorNorm): Rank of vector array must be 2 or 3!");
   for (index_type i=0; i<arrayRank-1; i++) {
     TEUCHOS_TEST_FOR_EXCEPTION( ( inVecs.dimension(i) != normArray.dimension(i) ),
-				std::invalid_argument,
-				">>> ERROR (RealSpaceTools::vectorNorm): Dimensions of norm and vector arguments do not agree!");
+                                std::invalid_argument,
+                                ">>> ERROR (RealSpaceTools::vectorNorm): Dimensions of norm and vector arguments do not agree!");
   }
 #endif
 
@@ -410,9 +410,9 @@ void RealSpaceTools<Scalar>::vectorNorm(ArrayNorm & normArray, const ArrayIn & i
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::vectorNorm): Invalid argument normType.");
   }
-      
-      
-      
+
+
+
       break;
     case 2:
       dim_i1 = static_cast<index_type>(inVecs.dimension(0));
@@ -426,7 +426,7 @@ void RealSpaceTools<Scalar>::vectorNorm(ArrayNorm & normArray, const ArrayIn & i
           }
           normArrayWrap(i1) = std::sqrt(temp);
         }
-      
+
       break;
     } // case NORM_TWO
 
@@ -459,9 +459,9 @@ void RealSpaceTools<Scalar>::vectorNorm(ArrayNorm & normArray, const ArrayIn & i
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::vectorNorm): Invalid argument normType.");
   }
-      
-      
-      
+
+
+
       break;
   }
 
@@ -590,40 +590,40 @@ void RealSpaceTools<Scalar>::transpose(ArrayTranspose & transposeMats, const Arr
   index_type arrayRank = getrank(inMats);
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != getrank(transposeMats) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::transpose): Matrix array arguments do not have identical ranks!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::transpose): Matrix array arguments do not have identical ranks!");
   TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 4) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::transpose): Rank of matrix array must be 2, 3, or 4!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::transpose): Rank of matrix array must be 2, 3, or 4!");
   for (index_type i=0; i<arrayRank; i++) {
     TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<index_type>(inMats.dimension(i)) != static_cast<index_type>(transposeMats.dimension(i)) ),
-				std::invalid_argument,
-				">>> ERROR (RealSpaceTools::transpose): Dimensions of matrix arguments do not agree!");
+                                std::invalid_argument,
+                                ">>> ERROR (RealSpaceTools::transpose): Dimensions of matrix arguments do not agree!");
   }
   TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<index_type>(inMats.dimension(arrayRank-2)) != static_cast<index_type>(inMats.dimension(arrayRank-1)) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::transpose): Matrices are not square!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::transpose): Matrices are not square!");
 #endif
   index_type dim_i0 = 1; // first  index dimension (e.g. cell index)
   index_type dim_i1 = 1; // second index dimension (e.g. point index)
   index_type dim    = static_cast<index_type>(inMats.dimension(arrayRank-2)); // spatial dimension
 
 
-		ArrayWrapper<Scalar,ArrayTranspose,Rank<ArrayTranspose>::value,false>transposeArr(transposeMats);
-		ArrayWrapper<Scalar,ArrayIn,Rank<ArrayIn>::value,true>inputArr(inMats);
+                ArrayWrapper<Scalar,ArrayTranspose,Rank<ArrayTranspose>::value,false>transposeArr(transposeMats);
+                ArrayWrapper<Scalar,ArrayIn,Rank<ArrayIn>::value,true>inputArr(inMats);
   // determine i0 and i1 dimensions
   switch(arrayRank) {
     case 4:
       dim_i0 = static_cast<index_type>(inMats.dimension(0));
       dim_i1 = static_cast<index_type>(inMats.dimension(1));
-      
+
        for (index_type i0=0; i0<dim_i0; i0++) {
     for (index_type i1=0; i1<dim_i1; i1++) {
       for(index_type i=0; i < dim; i++){
-		transposeArr(i0,i1,i,i)=inputArr(i0,i1,i,i);         
+                transposeArr(i0,i1,i,i)=inputArr(i0,i1,i,i);
         for(index_type j=i+1; j < dim; j++){
-		  transposeArr(i0,i1,i,j)=inputArr(i0,i1,j,i);	
-		  transposeArr(i0,i1,j,i)=inputArr(i0,i1,i,j);	  
+                  transposeArr(i0,i1,i,j)=inputArr(i0,i1,j,i);
+                  transposeArr(i0,i1,j,i)=inputArr(i0,i1,i,j);
         }
       }
 
@@ -634,13 +634,13 @@ void RealSpaceTools<Scalar>::transpose(ArrayTranspose & transposeMats, const Arr
       dim_i1 = static_cast<index_type>(inMats.dimension(0));
     for (index_type i1=0; i1<dim_i1; i1++) {
       for(index_type i=0; i < dim; i++){
-		transposeArr(i1,i,i)=inputArr(i1,i,i);         
+                transposeArr(i1,i,i)=inputArr(i1,i,i);
         for(index_type j=i+1; j < dim; j++){
-		  transposeArr(i1,i,j)=inputArr(i1,j,i);	
-		  transposeArr(i1,j,i)=inputArr(i1,i,j);
+                  transposeArr(i1,i,j)=inputArr(i1,j,i);
+                  transposeArr(i1,j,i)=inputArr(i1,i,j);
         }
     } // i1
- } 
+ }
       break;
   }
 
@@ -769,9 +769,9 @@ typedef typename Intrepid2::conditional_eSpace<ArrayInverse>::execution_space ex
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i0) const {
- index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));     
+ index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
         for (index_type i1=0; i1<dim_i1; i1++) {
-         
+
 
           index_type i, j, rowID = 0, colID = 0;
           int rowperm[3]={0,1,2};
@@ -785,12 +785,10 @@ typedef typename Intrepid2::conditional_eSpace<ArrayInverse>::execution_space ex
               }
             }
           }
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
 #endif
           if( rowID ){
             rowperm[0] = rowID;
@@ -813,12 +811,10 @@ typedef typename Intrepid2::conditional_eSpace<ArrayInverse>::execution_space ex
             }
           }
           Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
 #endif
 
           Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
@@ -863,21 +859,19 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i0) const {
-index_type dim_i1 = static_cast<index_type>(inMats.dimension(1)); 
+index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
        for (index_type i1=0; i1<dim_i1; i1++) {
- 
+
 
           Scalar determinant    = inMats(i0,i1,0,0)*inMats(i0,i1,1,1)-inMats(i0,i1,0,1)*inMats(i0,i1,1,0);
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(i0,i1,0,0)==(Scalar)0)   && (inMats(i0,i1,0,1)==(Scalar)0) &&
-					(inMats(i0,i1,1,0)==(Scalar)0) && (inMats(i0,i1,1,1)==(Scalar)0) ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+                                        (inMats(i0,i1,1,0)==(Scalar)0) && (inMats(i0,i1,1,1)==(Scalar)0) ),
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
           TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
 #endif
           inverseMats(i0,i1,0,0)   = inMats(i0,i1,1,1) / determinant;
           inverseMats(i0,i1,0,1) = - inMats(i0,i1,0,1) / determinant;
@@ -905,19 +899,17 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i0) const {
-    index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));      
+    index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
         for (index_type i1=0; i1<dim_i1; i1++) {
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(i0,i1,0,0) == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
 #endif
 
           inverseMats(i0,i1,0,0) = (Scalar)1 / inMats(i0,i1,0,0);
         } // for i1
-    
+
    }
 };
 
@@ -951,12 +943,10 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
               }
             }
           }
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
 #endif
 
           if( rowID ){
@@ -980,12 +970,10 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
             }
           }
           Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
 #endif
 
 
@@ -1028,10 +1016,9 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i1) const {
- 
+
           Scalar determinant    = inMats(i1,0,0)*inMats(i1,1,1)-inMats(i1,0,1)*inMats(i1,1,0);
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(i1,0,0)==(Scalar)0)   && (inMats(i1,0,1)==(Scalar)0) &&
                                         (inMats(i1,1,0)==(Scalar)0) && (inMats(i1,1,1)==(Scalar)0) ),
                                       std::invalid_argument,
@@ -1039,7 +1026,6 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
           TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
 
           inverseMats(i1,0,0)   = inMats(i1,1,1) / determinant;
@@ -1068,17 +1054,15 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i1) const {
- 
- #ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
-	TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(i1,0,0) == (Scalar)0 ),
-				    std::invalid_argument,
-				    ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
+
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
+        TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(i1,0,0) == (Scalar)0 ),
+                                    std::invalid_argument,
+                                    ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
 #endif
 
 
-        inverseMats(i1,0,0) = (Scalar)1 / inMats(i1,0,0); 
+        inverseMats(i1,0,0) = (Scalar)1 / inMats(i1,0,0);
    }
 };
 
@@ -1087,10 +1071,10 @@ struct inverse2_3 {
   ArrayInverseWrap inverseMats;
   ArrayInWrap inMats;
 #if !defined(KOKKOS_HAVE_CUDA) and !defined(KOKKOS_HAVE_OPENMP)
-  typedef typename Kokkos::Serial execution_space; 
+  typedef typename Kokkos::Serial execution_space;
 #else
   typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
-#endif 
+#endif
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
   // operator= only do shallow copies.  Thus, you can pass View
@@ -1116,12 +1100,10 @@ struct inverse2_3 {
               }
             }
           }
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
 #endif
 
           if( rowID ){
@@ -1145,12 +1127,10 @@ struct inverse2_3 {
             }
           }
           Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
 
           Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
@@ -1171,8 +1151,8 @@ struct inverse2_3 {
               inverseMats(i,j) = Bi[colperm[i]][rowperm[j]]; // set inverse
             }
           }
-   
- 
+
+
    }
 };
 
@@ -1198,10 +1178,9 @@ struct inverse2_2 {
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i1) const {
-  
+
    Scalar determinant    = inMats(0,0)*inMats(1,1)-inMats(0,1)*inMats(1,0);
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(0,0)==(Scalar)0)   && (inMats(0,1)==(Scalar)0) &&
                                         (inMats(1,0)==(Scalar)0) && (inMats(1,1)==(Scalar)0) ),
                                       std::invalid_argument,
@@ -1209,7 +1188,6 @@ struct inverse2_2 {
           TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
           inverseMats(0,0)   = inMats(1,1) / determinant;
           inverseMats(0,1) = - inMats(0,1) / determinant;
@@ -1241,15 +1219,13 @@ struct inverse2_1 {
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i1) const {
-  #ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
       TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(0,0) == (Scalar)0 ),
-				  std::invalid_argument,
-				  ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+                                  std::invalid_argument,
+                                  ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
 #endif
-#endif
-           inverseMats(0,0) = (Scalar)1 / inMats(0,0);   
- 
+           inverseMats(0,0) = (Scalar)1 / inMats(0,0);
+
    }
 };
 
@@ -1257,7 +1233,7 @@ struct inverse2_1 {
 template<class Scalar>
 template<class ArrayInverse, class ArrayIn>
 void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn & inMats) {
-	
+
  ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>inverseMatsWrap(inverseMats);
  ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inMatsWrap(inMats);
 
@@ -1265,22 +1241,22 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != getrank(inverseMats) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
   TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 4) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
   for (index_type i=0; i<arrayRank; i++) {
     TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<index_type>(inMats.dimension(i)) != static_cast<index_type>(inverseMats.dimension(i)) ),
-				std::invalid_argument,
-				">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
+                                std::invalid_argument,
+                                ">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
   }
   TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<index_type>(inMats.dimension(arrayRank-2)) != static_cast<index_type>(inMats.dimension(arrayRank-1)) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::inverse): Matrices are not square!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::inverse): Matrices are not square!");
   TEUCHOS_TEST_FOR_EXCEPTION( ( (static_cast<index_type>(inMats.dimension(arrayRank-2)) < 1) || (static_cast<index_type>(inMats.dimension(arrayRank-2)) > 3) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
 #endif
 
   index_type dim_i0 = 1; // first  index dimension (e.g. cell index)
@@ -1296,7 +1272,7 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
     case 3: {
      Kokkos::parallel_for (dim_i0, inverse4_3<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
 
-   
+
       break;
     } // case 3
 
@@ -1308,12 +1284,12 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
 
     case 1: {
    Kokkos::parallel_for (dim_i0, inverse4_1<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
-          
-      
+
+
       break;
     } // case 1
 
-  } // switch (dim)	
+  } // switch (dim)
       break;
     case 3:
       dim_i1 = static_cast<index_type>(inMats.dimension(0));
@@ -1321,52 +1297,52 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
     case 3: {
 
        Kokkos::parallel_for (dim_i1, inverse3_3<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
-      
+
       break;
     } // case 3
 
     case 2: {
 
       Kokkos::parallel_for (dim_i1, inverse3_2<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
-    
- 
+
+
       break;
     } // case 2
 
     case 1: {
-   
-   Kokkos::parallel_for (dim_i1, inverse3_1<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));       
-      
+
+   Kokkos::parallel_for (dim_i1, inverse3_1<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
+
        break;
       } // case 1
 
-    } // switch (dim)	
+    } // switch (dim)
       break;
     case 2:
      switch(dim) {
     case 3: {
-     Kokkos::parallel_for (dim_i1, inverse2_3<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));   
+     Kokkos::parallel_for (dim_i1, inverse2_3<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
       break;
     } // case 3
 
     case 2: {
-        
-     Kokkos::parallel_for (dim_i1, inverse2_2<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));      
+
+     Kokkos::parallel_for (dim_i1, inverse2_2<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
       break;
     } // case 2
 
     case 1: {
-        Kokkos::parallel_for (dim_i1, inverse2_1<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));   
+        Kokkos::parallel_for (dim_i1, inverse2_1<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
       break;
     } // case 1
 
   }
-    break;  
+    break;
   }
 
-  
+
 }
-	
+
 
 
 
@@ -1538,7 +1514,7 @@ typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
   void operator () (const index_type i0) const {
 index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
         for (index_type i1=0; i1<dim_i1; i1++) {
-      
+
 
           int i,j,rowID = 0;
           int colID = 0;
@@ -1580,7 +1556,7 @@ index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
           }
           detArray(i0,i1)= determinant;
         } // for i1
- 
+
    }
 };
 
@@ -1607,7 +1583,7 @@ index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
 
           detArray(i0,i1) = inMats(i0,i1,0,0)*inMats(i0,i1,1,1)-inMats(i0,i1,0,1)*inMats(i0,i1,1,0);
         } // for i1
- 
+
    }
 };
 
@@ -1633,7 +1609,7 @@ index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
               for (index_type i1=0; i1<dim_i1; i1++) {
           detArray(i0,i1) = inMats(i0,i1,0,0);
         } // for i1
- 
+
    }
 };
 template <class Scalar,class ArrayDetWrap,class ArrayInWrap,class ArrayDet>
@@ -1659,7 +1635,7 @@ typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
           int rowperm[3]={0,1,2};
           int colperm[3]={0,1,2}; // Complete pivoting
           Scalar emax(0), determinant(0);
-	
+
 
           for(i=0; i < 3; ++i){
             for(j=0; j < 3; ++j){
@@ -1694,7 +1670,7 @@ typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
             if( colID ) determinant = -determinant;
           }
           detArray(i1) = determinant;
- 
+
    }
 };
 template <class Scalar,class ArrayDetWrap,class ArrayInWrap,class ArrayDet>
@@ -1716,7 +1692,7 @@ typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i1) const {
       detArray(i1) = inMats(i1,0,0)*inMats(i1,1,1)-inMats(i1,0,1)*inMats(i1,1,0);
- 
+
    }
 };
 
@@ -1739,7 +1715,7 @@ typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i1) const {
       detArray(i1) = inMats(i1,0,0);
- 
+
    }
 };
 template<class Scalar>
@@ -1751,22 +1727,22 @@ void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
   index_type matArrayRank = getrank(inMats);
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( ( matArrayRank != getrank(detArray)+2 ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::det): Determinant and matrix array arguments do not have compatible ranks!");
+      std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::det): Determinant and matrix array arguments do not have compatible ranks!");
   TEUCHOS_TEST_FOR_EXCEPTION( ( (matArrayRank < 3) || (matArrayRank > 4) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::det): Rank of matrix array must be 3 or 4!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::det): Rank of matrix array must be 3 or 4!");
   for (index_type i=0; i<matArrayRank-2; i++) {
     TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<index_type>(inMats.dimension(i)) != static_cast<index_type>(detArray.dimension(i)) ),
-				std::invalid_argument,
-				">>> ERROR (RealSpaceTools::det): Dimensions of determinant and matrix array arguments do not agree!");
+                                std::invalid_argument,
+                                ">>> ERROR (RealSpaceTools::det): Dimensions of determinant and matrix array arguments do not agree!");
   }
   TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<index_type>(inMats.dimension(matArrayRank-2)) != static_cast<index_type>(inMats.dimension(matArrayRank-1)) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::det): Matrices are not square!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::det): Matrices are not square!");
   TEUCHOS_TEST_FOR_EXCEPTION( ( (static_cast<index_type>(inMats.dimension(matArrayRank-2)) < 1) || (static_cast<index_type>(inMats.dimension(matArrayRank-2)) > 3) ),
-			      std::invalid_argument,
-			      ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
+                              std::invalid_argument,
+                              ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
 #endif
 
   index_type dim_i0 = 1; // first  index dimension (e.g. cell index)
@@ -1780,13 +1756,13 @@ void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
       dim_i1 = static_cast<index_type>(inMats.dimension(1));
         switch(dim) {
     case 3: {
-   
+
      Kokkos::parallel_for (dim_i0, det4_3<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
-     
+
       break;
     } // case 3
 
-    case 2: {   
+    case 2: {
 
        Kokkos::parallel_for (dim_i0, det4_2<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
       break;
@@ -1803,11 +1779,11 @@ void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
     case 3:
       dim_i1 = static_cast<index_type>(inMats.dimension(0));
         switch(dim) {
-    case 3: {   
+    case 3: {
       for (index_type i1=0; i1<dim_i1; i1++) {
           Kokkos::parallel_for (dim_i1, det3_3<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
 
-	  }       
+          }
       break;
     } // case 3
 
@@ -1824,9 +1800,9 @@ Kokkos::parallel_for (dim_i1, det3_1<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<A
 break;
 
   } // switch (dim)
-		
-		}
-		
+
+                }
+
 
 
 template<class Scalar>
@@ -1862,8 +1838,8 @@ void RealSpaceTools<Scalar>::add(ArraySum & sumArray, const ArrayIn1 & inArray1,
 #endif
 
 
-  
-  
+
+
    ArrayWrapper<Scalar,ArraySum, Rank<ArraySum >::value, false>sumArrayWrap(sumArray);
    ArrayWrapper<Scalar,ArrayIn1, Rank<ArrayIn1 >::value, true>inArray1Wrap(inArray1);
    ArrayWrapper<Scalar,ArrayIn2, Rank<ArrayIn2 >::value, true>inArray2Wrap(inArray2);
@@ -1878,30 +1854,30 @@ void RealSpaceTools<Scalar>::add(ArraySum & sumArray, const ArrayIn1 & inArray1,
           for (index_type m=0; m<static_cast<index_type>(inArray1.dimension(4)); m++){
     sumArrayWrap(i,j,k,l,m) = inArray1Wrap(i,j,k,l,m)+inArray2Wrap(i,j,k,l,m);
           }
-	}else if(inArrayRank==4){
+        }else if(inArrayRank==4){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inArray1.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inArray1.dimension(2)); k++)
         for (index_type l=0; l<static_cast<index_type>(inArray1.dimension(3)); l++){
            sumArrayWrap(i,j,k,l) = inArray1Wrap(i,j,k,l)+inArray2Wrap(i,j,k,l);
           }
-	}else if(inArrayRank==3){
+        }else if(inArrayRank==3){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inArray1.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inArray1.dimension(2)); k++){
         sumArrayWrap(i,j,k) = inArray1Wrap(i,j,k)+inArray2Wrap(i,j,k);
           }
-	}else if(inArrayRank==2){
+        }else if(inArrayRank==2){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inArray1.dimension(1)); j++){
          sumArrayWrap(i,j) = inArray1Wrap(i,j)+inArray2Wrap(i,j);
           }
-	}else if(inArrayRank==1){
+        }else if(inArrayRank==1){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++){
        sumArrayWrap(i) = inArray1Wrap(i)+inArray2Wrap(i);
 
           }
-	}
+        }
 }
 
 
@@ -1919,9 +1895,9 @@ void RealSpaceTools<Scalar>::add(ArraySum & inoutSumArray, const ArrayIn & inArr
                           ">>> ERROR (RealSpaceTools::add): Dimensions of array arguments do not agree!");
     }
 #endif
-   
-  	 ArrayWrapper<Scalar,ArraySum, Rank<ArraySum >::value, false>inoutSumArrayWrap(inoutSumArray);
-	 ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inArrayWrap(inArray);
+
+         ArrayWrapper<Scalar,ArraySum, Rank<ArraySum >::value, false>inoutSumArrayWrap(inoutSumArray);
+         ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inArrayWrap(inArray);
    int inArrayRank=getrank(inArray);
 
 
@@ -1933,30 +1909,30 @@ void RealSpaceTools<Scalar>::add(ArraySum & inoutSumArray, const ArrayIn & inArr
           for (index_type m=0; m<static_cast<index_type>(static_cast<index_type>(inArray.dimension(4))); m++){
     inoutSumArrayWrap(i,j,k,l,m) += inArrayWrap(i,j,k,l,m);
           }
-	}else if(inArrayRank==4){
+        }else if(inArrayRank==4){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++)
       for (index_type k=0; k<static_cast<index_type>(static_cast<index_type>(inArray.dimension(2))); k++)
         for (index_type l=0; l<static_cast<index_type>(static_cast<index_type>(inArray.dimension(3))); l++){
           inoutSumArrayWrap(i,j,k,l) += inArrayWrap(i,j,k,l);
           }
-	}else if(inArrayRank==3){
+        }else if(inArrayRank==3){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++)
       for (index_type k=0; k<static_cast<index_type>(inArray.dimension(2)); k++){
           inoutSumArrayWrap(i,j,k) += inArrayWrap(i,j,k);
           }
-	}else if(inArrayRank==2){
+        }else if(inArrayRank==2){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++){
           inoutSumArrayWrap(i,j) += inArrayWrap(i,j);
           }
-	}else if(inArrayRank==1){
+        }else if(inArrayRank==1){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++){
           inoutSumArrayWrap(i) += inArrayWrap(i);
 
           }
-	}
+        }
 }
 
 
@@ -1982,19 +1958,19 @@ void RealSpaceTools<Scalar>::subtract(Scalar* inoutDiffArray, const Scalar* inAr
 template<class Scalar>
 template<class ArrayDiff, class ArrayIn1, class ArrayIn2>
 void RealSpaceTools<Scalar>::subtract(ArrayDiff & diffArray, const ArrayIn1 & inArray1, const ArrayIn2 & inArray2) {
-	 ArrayWrapper<Scalar,ArrayDiff, Rank<ArrayDiff >::value, false>diffArrayWrap(diffArray);
-	 ArrayWrapper<Scalar,ArrayIn1, Rank<ArrayIn1 >::value, true>inArray1Wrap(inArray1);
-	 ArrayWrapper<Scalar,ArrayIn2, Rank<ArrayIn2 >::value, true>inArray2Wrap(inArray2);	 
-	 index_type inArray1Rank=getrank(inArray1);
+         ArrayWrapper<Scalar,ArrayDiff, Rank<ArrayDiff >::value, false>diffArrayWrap(diffArray);
+         ArrayWrapper<Scalar,ArrayIn1, Rank<ArrayIn1 >::value, true>inArray1Wrap(inArray1);
+         ArrayWrapper<Scalar,ArrayIn2, Rank<ArrayIn2 >::value, true>inArray2Wrap(inArray2);
+         index_type inArray1Rank=getrank(inArray1);
 #ifdef HAVE_INTREPID2_DEBUG
-	 TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(inArray1) != getrank(inArray2)) || (getrank(inArray1) != getrank(diffArray)) ),
-				     std::invalid_argument,
-				     ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
-	 for (index_type i=0; i<getrank(inArray1); i++) {
-	   TEUCHOS_TEST_FOR_EXCEPTION( ( (static_cast<index_type>(inArray1.dimension(i)) != static_cast<index_type>(inArray2.dimension(i))) || (static_cast<index_type>(inArray1.dimension(i)) != static_cast<index_type>(diffArray.dimension(i))) ),
-				       std::invalid_argument,
-				       ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
-	 }
+         TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(inArray1) != getrank(inArray2)) || (getrank(inArray1) != getrank(diffArray)) ),
+                                     std::invalid_argument,
+                                     ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
+         for (index_type i=0; i<getrank(inArray1); i++) {
+           TEUCHOS_TEST_FOR_EXCEPTION( ( (static_cast<index_type>(inArray1.dimension(i)) != static_cast<index_type>(inArray2.dimension(i))) || (static_cast<index_type>(inArray1.dimension(i)) != static_cast<index_type>(diffArray.dimension(i))) ),
+                                       std::invalid_argument,
+                                       ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
+         }
 #endif
        if(inArray1Rank==5){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++)
@@ -2004,30 +1980,30 @@ void RealSpaceTools<Scalar>::subtract(ArrayDiff & diffArray, const ArrayIn1 & in
           for (index_type m=0; m<static_cast<index_type>(inArray1.dimension(4)); m++){
     diffArrayWrap(i,j,k,l,m) = inArray1Wrap(i,j,k,l,m)-inArray2Wrap(i,j,k,l,m);
           }
-	}else if(inArray1Rank==4){
+        }else if(inArray1Rank==4){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inArray1.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inArray1.dimension(2)); k++)
         for (index_type l=0; l<static_cast<index_type>(inArray1.dimension(3)); l++){
     diffArrayWrap(i,j,k,l) = inArray1Wrap(i,j,k,l)-inArray2Wrap(i,j,k,l);
           }
-	}else if(inArray1Rank==3){
+        }else if(inArray1Rank==3){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inArray1.dimension(1)); j++)
       for (index_type k=0; k<static_cast<index_type>(inArray1.dimension(2)); k++){
     diffArrayWrap(i,j,k) = inArray1Wrap(i,j,k)-inArray2Wrap(i,j,k);
           }
-	}else if(inArray1Rank==2){
+        }else if(inArray1Rank==2){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++)
     for (index_type j=0; j<static_cast<index_type>(inArray1.dimension(1)); j++){
     diffArrayWrap(i,j) = inArray1Wrap(i,j)-inArray2Wrap(i,j);
           }
-	}else if(inArray1Rank==1){
+        }else if(inArray1Rank==1){
    for (index_type i=0; i<static_cast<index_type>(inArray1.dimension(0)); i++){
     diffArrayWrap(i) = inArray1Wrap(i)-inArray2Wrap(i);
 
           }
-	}
+        }
 
 }
 
@@ -2035,17 +2011,17 @@ void RealSpaceTools<Scalar>::subtract(ArrayDiff & diffArray, const ArrayIn1 & in
 template<class Scalar>
 template<class ArrayDiff, class ArrayIn>
 void RealSpaceTools<Scalar>::subtract(ArrayDiff & inoutDiffArray, const ArrayIn & inArray) {
-	 ArrayWrapper<Scalar,ArrayDiff, Rank<ArrayDiff >::value, false>inoutDiffArrayWrap(inoutDiffArray);
-	 ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inArrayWrap(inArray);
+         ArrayWrapper<Scalar,ArrayDiff, Rank<ArrayDiff >::value, false>inoutDiffArrayWrap(inoutDiffArray);
+         ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inArrayWrap(inArray);
    int inArrayRank=getrank(inArray);
 #ifdef HAVE_INTREPID2_DEBUG
    TEUCHOS_TEST_FOR_EXCEPTION( ( getrank(inArray) != getrank(inoutDiffArray) ),
-			       std::invalid_argument,
-			       ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
+                               std::invalid_argument,
+                               ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
    for (index_type i=0; i<getrank(inArray); i++) {
      TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<index_type>(inArray.dimension(i)) != static_cast<index_type>(inoutDiffArray.dimension(i)) ),
-				 std::invalid_argument,
-				 ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
+                                 std::invalid_argument,
+                                 ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
    }
 #endif
 
@@ -2057,31 +2033,31 @@ void RealSpaceTools<Scalar>::subtract(ArrayDiff & inoutDiffArray, const ArrayIn 
           for (index_type m=0; m<static_cast<index_type>(static_cast<index_type>(inArray.dimension(4))); m++){
     inoutDiffArrayWrap(i,j,k,l,m) -= inArrayWrap(i,j,k,l,m);
           }
-	}else if(inArrayRank==4){
+        }else if(inArrayRank==4){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++)
       for (index_type k=0; k<static_cast<index_type>(static_cast<index_type>(inArray.dimension(2))); k++)
         for (index_type l=0; l<static_cast<index_type>(static_cast<index_type>(inArray.dimension(3))); l++){
           inoutDiffArrayWrap(i,j,k,l) -= inArrayWrap(i,j,k,l);
           }
-	}else if(inArrayRank==3){
+        }else if(inArrayRank==3){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++)
       for (index_type k=0; k<static_cast<index_type>(static_cast<index_type>(inArray.dimension(2))); k++){
           inoutDiffArrayWrap(i,j,k) -= inArrayWrap(i,j,k);
           }
-	}else if(inArrayRank==2){
+        }else if(inArrayRank==2){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++){
           inoutDiffArrayWrap(i,j) -= inArrayWrap(i,j);
           }
-	}else if(inArrayRank==1){
+        }else if(inArrayRank==1){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++){
           inoutDiffArrayWrap(i) -= inArrayWrap(i);
 
           }
-	}
-  
+        }
+
 }
 
 
@@ -2129,30 +2105,30 @@ void RealSpaceTools<Scalar>::scale(ArrayScaled & scaledArray, const ArrayIn & in
           for (index_type m=0; m<static_cast<index_type>(static_cast<index_type>(inArray.dimension(4))); m++){
     scaledArrayWrap(i,j,k,l,m) = scalar*inArrayWrap(i,j,k,l,m);
           }
-	}else if(inArrayRank==4){
+        }else if(inArrayRank==4){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++)
       for (index_type k=0; k<static_cast<index_type>(static_cast<index_type>(inArray.dimension(2))); k++)
         for (index_type l=0; l<static_cast<index_type>(static_cast<index_type>(inArray.dimension(3))); l++){
     scaledArrayWrap(i,j,k,l) = scalar*inArrayWrap(i,j,k,l);
           }
-	}else if(inArrayRank==3){
+        }else if(inArrayRank==3){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++)
       for (index_type k=0; k<static_cast<index_type>(static_cast<index_type>(inArray.dimension(2))); k++){
     scaledArrayWrap(i,j,k) = scalar*inArrayWrap(i,j,k);
           }
-	}else if(inArrayRank==2){
+        }else if(inArrayRank==2){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++)
     for (index_type j=0; j<static_cast<index_type>(static_cast<index_type>(inArray.dimension(1))); j++){
     scaledArrayWrap(i,j) = scalar*inArrayWrap(i,j);
           }
-	}else if(inArrayRank==1){
+        }else if(inArrayRank==1){
    for (index_type i=0; i<static_cast<index_type>(static_cast<index_type>(inArray.dimension(0))); i++){
      scaledArrayWrap(i) = scalar*inArrayWrap(i);
 
           }
-	}
+        }
 }
 
 
@@ -2174,7 +2150,7 @@ Scalar RealSpaceTools<Scalar>::dot(const Scalar* inArray1, const Scalar* inArray
   for (int i=0; i<size; i++) {
     dot += inArray1[i]*inArray2[i];
   }
-  return dot;  
+  return dot;
 }
 
 
@@ -2196,7 +2172,7 @@ Scalar RealSpaceTools<Scalar>::dot(const ArrayVec1 & inVec1, const ArrayVec2 & i
   for (index_type i=0; i<static_cast<index_type>(inVec1.dimension(0)); i++) {
     dot += inVec1Wrap(i)*inVec2Wrap(i);
   }
-  return dot;  
+  return dot;
 
 }
 
@@ -2267,10 +2243,10 @@ void RealSpaceTools<Scalar>::dot(ArrayDot & dotArray, const ArrayVec1 & inVecs1,
         dot += inVecs1Wrap(i)*inVecs2Wrap(i);
       }
       dotArrayWrap(0) = dot;
-    
-    break;      
-  }  
-  
+
+    break;
+  }
+
 }
 
 
@@ -2282,7 +2258,7 @@ void RealSpaceTools<Scalar>::matvec(Scalar* matVec, const Scalar* inMat, const S
     for (index_type j=0; j<dim; j++) {
       sumdot += inMat[i*dim+j]*inVec[j];
     }
-    matVec[i] = sumdot; 
+    matVec[i] = sumdot;
   }
 }
 
@@ -2343,7 +2319,7 @@ void RealSpaceTools<Scalar>::matvec(ArrayMatVec & matVecs, const ArrayMat & inMa
       break;
     case 3:
       dim_i1 = static_cast<index_type>(inMats.dimension(0));
-  
+
     for (index_type i1=0; i1<dim_i1; i1++) {
       for (index_type i=0; i<dim; i++) {
         Scalar sumdot(0);
@@ -2353,11 +2329,11 @@ void RealSpaceTools<Scalar>::matvec(ArrayMatVec & matVecs, const ArrayMat & inMa
         matVecsWrap(i1,i) = sumdot;
       }
     }
-        
+
       break;
-          
+
   }
-  
+
 }
 template<class Scalar>
 template<class ArrayVecProd, class ArrayIn1, class ArrayIn2>
@@ -2372,37 +2348,37 @@ void RealSpaceTools<Scalar>::vecprod(ArrayVecProd & vecProd, const ArrayIn1 & in
      *      (2) spatial dimension should be 2 or 3
      */
     std::string errmsg = ">>> ERROR (RealSpaceTools::vecprod):";
-  
+
     // (1) check rank range on inLeft and then compare the other arrays with inLeft
     TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inLeft,  1,3), std::invalid_argument, errmsg);
-    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, inRight), std::invalid_argument, errmsg);    
-    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, vecProd), std::invalid_argument, errmsg);   
-  
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, inRight), std::invalid_argument, errmsg);
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, vecProd), std::invalid_argument, errmsg);
+
     // (2) spatial dimension ordinal = array rank - 1. Suffices to check only one array because we just
-    //     checked whether or not the arrays have matching dimensions. 
+    //     checked whether or not the arrays have matching dimensions.
     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inLeft, getrank(inLeft) - 1,  2,3), std::invalid_argument, errmsg);
-  
-#endif 
+
+#endif
 
     int spaceDim = static_cast<index_type>(inLeft.dimension(getrank(inLeft) - 1));
 
     switch(getrank(inLeft) ){
-    
+
     case 1:
-      {        
+      {
         vecProdWrap(0) = inLeftWrap(1)*inRightWrap(2) - inLeftWrap(2)*inRightWrap(1);
-        vecProdWrap(1) = inLeftWrap(2)*inRightWrap(0) - inLeftWrap(0)*inRightWrap(2);              
-        vecProdWrap(2) = inLeftWrap(0)*inRightWrap(1) - inLeftWrap(1)*inRightWrap(0);    
+        vecProdWrap(1) = inLeftWrap(2)*inRightWrap(0) - inLeftWrap(0)*inRightWrap(2);
+        vecProdWrap(2) = inLeftWrap(0)*inRightWrap(1) - inLeftWrap(1)*inRightWrap(0);
       }
       break;
-      
+
     case 2:
       {
         index_type dim0 = static_cast<index_type>(inLeft.dimension(0));
         if(spaceDim == 3) {
           for(index_type i0 = 0; i0 < dim0; i0++){
             vecProdWrap(i0, 0) = inLeftWrap(i0, 1)*inRightWrap(i0, 2) - inLeftWrap(i0, 2)*inRightWrap(i0, 1);
-            vecProdWrap(i0, 1) = inLeftWrap(i0, 2)*inRightWrap(i0, 0) - inLeftWrap(i0, 0)*inRightWrap(i0, 2);              
+            vecProdWrap(i0, 1) = inLeftWrap(i0, 2)*inRightWrap(i0, 0) - inLeftWrap(i0, 0)*inRightWrap(i0, 2);
             vecProdWrap(i0, 2) = inLeftWrap(i0, 0)*inRightWrap(i0, 1) - inLeftWrap(i0, 1)*inRightWrap(i0, 0);
           }// i0
         } //spaceDim == 3
@@ -2414,7 +2390,7 @@ void RealSpaceTools<Scalar>::vecprod(ArrayVecProd & vecProd, const ArrayIn1 & in
         }// spaceDim == 2
       }// case 2
       break;
-      
+
     case 3:
       {
         index_type dim0 = static_cast<index_type>(inLeft.dimension(0));
@@ -2423,7 +2399,7 @@ void RealSpaceTools<Scalar>::vecprod(ArrayVecProd & vecProd, const ArrayIn1 & in
           for(index_type i0 = 0; i0 < dim0; i0++){
             for(index_type i1 = 0; i1 < dim1; i1++){
               vecProdWrap(i0, i1, 0) = inLeftWrap(i0, i1, 1)*inRightWrap(i0, i1, 2) - inLeftWrap(i0, i1, 2)*inRightWrap(i0, i1, 1);
-              vecProdWrap(i0, i1, 1) = inLeftWrap(i0, i1, 2)*inRightWrap(i0, i1, 0) - inLeftWrap(i0, i1, 0)*inRightWrap(i0, i1, 2);              
+              vecProdWrap(i0, i1, 1) = inLeftWrap(i0, i1, 2)*inRightWrap(i0, i1, 0) - inLeftWrap(i0, i1, 0)*inRightWrap(i0, i1, 2);
               vecProdWrap(i0, i1, 2) = inLeftWrap(i0, i1, 0)*inRightWrap(i0, i1, 1) - inLeftWrap(i0, i1, 1)*inRightWrap(i0, i1, 0);
             }// i1
           }// i0
@@ -2438,12 +2414,12 @@ void RealSpaceTools<Scalar>::vecprod(ArrayVecProd & vecProd, const ArrayIn1 & in
         }// spaceDim == 2
       } // case 3
       break;
-      
+
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
-                         ">>> ERROR (RealSpaceTools::vecprod): rank-1,2,3 arrays required");      
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                         ">>> ERROR (RealSpaceTools::vecprod): rank-1,2,3 arrays required");
   }
-  
+
 }
 
 

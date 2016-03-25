@@ -6,11 +6,13 @@
 #
 
 IF (NOT $ENV{ATTB_ENV} STREQUAL "")
-  SET(${PROJECT_NAME}_USE_ATTB_DEV_ENV_DEFAULT TRUE)
-  IF ("${${PROJECT_NAME}_USE_ATTB_DEV_ENV}" STREQUAL "")
-    MESSAGE("-- NOTE: Env var ATTB_ENV=$ENV{ATTB_ENV} => Including ATTBDevEnv.cmake "
-      " by default!  (To skip, set -D${PROJECT_NAME}_USE_ATTB_DEV_ENV=FALSE)")
-  ENDIF()
+  #SET(${PROJECT_NAME}_USE_ATTB_DEV_ENV_DEFAULT TRUE)
+  #IF ("${${PROJECT_NAME}_USE_ATTB_DEV_ENV}" STREQUAL "")
+  #  MESSAGE("-- NOTE: Env var ATTB_ENV=$ENV{ATTB_ENV} => Including ATTBDevEnv.cmake "
+  #    " by default!  (To skip, set -D${PROJECT_NAME}_USE_ATTB_DEV_ENV=FALSE)")
+  #ENDIF()
+  SET(${PROJECT_NAME}_USE_ATTB_DEV_ENV_DEFAULT FALSE)
+  # ToDo: Turn the default back on again once we get working on more platforms
 ELSE()
   SET(${PROJECT_NAME}_USE_ATTB_DEV_ENV_DEFAULT FALSE)
 ENDIF()

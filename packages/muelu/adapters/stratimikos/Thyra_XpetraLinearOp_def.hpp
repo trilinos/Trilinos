@@ -118,7 +118,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 XpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::domain() const
 {
-  return domainSpace_;return Teuchos::null;
+  return domainSpace_;
 }
 
 // Protected Overridden functions from LinearOpBase

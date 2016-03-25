@@ -23,6 +23,9 @@ namespace Tacho {
                           const ordinal_type minc,
                           const ordinal_type k,
                           const bool verbose) {
+    const bool detail = false;
+    std::cout << "HostSpace::  ";   HostSpaceType::print_configuration(std::cout, detail);
+
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> DenseMatrixBaseType;
 
     int r_val = 0;

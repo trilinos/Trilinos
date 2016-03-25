@@ -120,8 +120,7 @@ public:
       inputType_(InvalidAdapterType),
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(),
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_()
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -135,8 +134,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(),
       partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_()
+      levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -150,8 +148,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(),
       partIds_(), partSizes_(), numberOfCriteria_(),
-      levelNumberParts_(), hierarchical_(false),
-      metricsRequested_(false), metrics_()
+      levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -187,19 +184,6 @@ public:
   const PartitioningSolution<Adapter> &getSolution() {
     return *(solution_.getRawPtr());
   };
-
-  /*! \brief Get the array of metrics
-   *   Metrics were only computed if user requested
-   *   metrics with a parameter.
-   */
-  ArrayRCP<const MetricValues<scalar_t> > getMetrics() const {
-   if (metrics_.is_null()){
-      ArrayRCP<const MetricValues<scalar_t> > emptyMetrics;
-      return emptyMetrics;
-    }
-    else
-      return metrics_->getMetrics();
-  }
 
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
    *
@@ -339,11 +323,6 @@ private:
 
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
-
-  // Did the user request metrics?
-
-  bool metricsRequested_;
-  RCP<const EvaluatePartition<Adapter> > metrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -510,6 +489,24 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
                                          this->comm_, this->identifierModel_));
     }
+    else if (algName_ == std::string("phg") ||
+             algName_ == std::string("patoh")) {
+      // phg and patoh provided through Zoltan
+      Teuchos::ParameterList &pl = this->env_->getParametersNonConst();
+      Teuchos::ParameterList &zparams = pl.sublist("zoltan_parameters",false);
+      if (numberOfWeights_ > 0) {
+        char strval[10];
+        sprintf(strval, "%d", numberOfWeights_);
+        zparams.set("OBJ_WEIGHT_DIM", strval);
+      }
+      zparams.set("LB_METHOD", algName_.c_str());
+      zparams.set("LB_APPROACH", "PARTITION"); 
+      algName_ = std::string("zoltan");
+
+      this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
+                                           this->comm_,
+                                           this->baseInputAdapter_));
+    }
     else if (algName_ == std::string("forTestingOnly")) {
       this->algorithm_ = rcp(new AlgForTestingOnly<Adapter>(this->envConst_,
                                            this->comm_,
@@ -599,20 +596,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     //if mapping is 1 -- graph mapping
   }
 
-  if (metricsRequested_){
-    typedef EvaluatePartition<Adapter> psq_t;
-
-    psq_t *quality = NULL;
-
-    try{
-      quality=new psq_t(this->envConst_, this->comm_,
-			this->baseInputAdapter_,&this->getSolution(),false);
-    }
-    Z2_FORWARD_EXCEPTIONS
-
-    metrics_ = rcp(quality);
-  }
-
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
 }
 
@@ -676,19 +659,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   std::string defString("default");
 
-  // Did the user ask for computation of quality metrics?
-
-  int yesNo=0;
-  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("compute_metrics");
-  if (pe){
-    yesNo = pe->getValue<int>(&yesNo);
-    metricsRequested_ = true;
-  }
-
   // Did the user specify a computational model?
 
   std::string model(defString);
-  pe = pl.getEntryPtr("model");
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("model");
   if (pe)
     model = pe->getValue<std::string>(&model);
 
@@ -1051,7 +1025,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     } 
     if(modelAvail_[HypergraphModelType]==true)
     {
-      std::cout << "Hypergraph model not implemented yet..." << std::endl;
+      //KDD USING ZOLTAN FOR HYPERGRAPH FOR NOW
+      //KDD std::cout << "Hypergraph model not implemented yet..." << std::endl;
     }
 
     if(modelAvail_[CoordinateModelType]==true)

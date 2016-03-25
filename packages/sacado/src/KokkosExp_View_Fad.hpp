@@ -54,6 +54,8 @@
 
 #include <impl/KokkosExp_ViewMapping.hpp>
 
+#define SACADO_SUPPORT_RANK_8 0
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -225,10 +227,26 @@ private:
   typedef ScalarType        non_const_scalar_type ;
   typedef const ScalarType  const_scalar_type ;
 
+#if SACADO_SUPPORT_RANK_8
+
+  // Append the FAD static dimension
+  // This is a hack for rank-8 dynamic view
+  typedef typename
+    std::conditional<
+      unsigned(array_analysis::dimension::rank) == 8 ,
+      typename array_analysis::dimension,
+      typename array_analysis::dimension::
+        template append<( DimFad ? DimFad + 1 : 0 )>::type >::type
+      scalar_dimension ;
+
+#else
+
   // Append the FAD static dimension
   typedef typename array_analysis::dimension::
     template append<( DimFad ? DimFad + 1 : 0 )>::type
       scalar_dimension ;
+
+#endif
 
 public:
 
@@ -354,6 +372,22 @@ private:
 
   typedef ViewArrayAnalysis< typename Traits::data_type > array_analysis ;
 
+#if SACADO_SUPPORT_RANK_8
+
+  // Append the fad dimension for the internal offset mapping.
+  // This is a hack for rank-8 dynamic view
+  typedef ViewOffset
+    < typename std::conditional<
+        unsigned(array_analysis::dimension::rank) == 8,
+        typename array_analysis::dimension,
+        typename array_analysis::dimension::
+          template append<( FadStaticDimension ? FadStaticDimension + 1 : 0 )>::type >::type
+    , typename Traits::array_layout
+    , void
+    >  offset_type ;
+
+#else
+
   // Append the fad dimension for the internal offset mapping.
   typedef ViewOffset
     < typename array_analysis::dimension::
@@ -361,6 +395,8 @@ private:
     , typename Traits::array_layout
     , void
     >  offset_type ;
+
+#endif
 
   handle_type  m_handle ;
   offset_type  m_offset ;
@@ -520,6 +556,20 @@ public:
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
                            , m_fad_size.value
                            , m_offset.stride_7() ); }
+
+#if SACADO_SUPPORT_RANK_8
+
+  // This is a hack for rank-8 dynamic view
+  template< typename I0 , typename I1 , typename I2 , typename I3
+          , typename I4 , typename I5 , typename I6 , typename I7>
+  KOKKOS_FORCEINLINE_FUNCTION
+  reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
+                          , const I4 & i4 , const I5 & i5 , const I6 & i6 , const I7 & i7 ) const
+    { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
+                           , m_fad_size.value
+                           , m_offset.stride_7() ); }
+
+#endif
 
   //----------------------------------------
 

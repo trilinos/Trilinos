@@ -180,11 +180,9 @@ int main(int argc, char *argv[]){
     tcomm->barrier();
     RCP<const Zoltan2::Environment> env = partition_problem->getEnvironment();
 
-    RCP<const base_adapter_t> rcpbia =
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(ia);
-
     RCP<quality_t>metricObject = 
-      rcp(new quality_t(env,tcomm,rcpbia,&partition_problem->getSolution()));
+      rcp(new quality_t(env, tcomm, ia.getRawPtr(),
+			&partition_problem->getSolution()));
 
     if (tcomm->getRank() == 0){
       metricObject->printMetrics(std::cout);
@@ -299,7 +297,7 @@ int main(int argc, char *argv[]){
           double distance2 = 0;
           mach.getHopCount(procId1, procId2, distance2);
           hops2 += distance2;
-          for (int k = 0 ; k < mach_coord_dim - 1; ++k){
+          for (int k = 0 ; k < mach_coord_dim ; ++k){
             part_t distance = ZOLTAN2_ABS(proc_coords[k][procId1] - proc_coords[k][procId2]);
             if (machine_extent_wrap_around[k]){
               if (machine_extent[k] - distance < distance){

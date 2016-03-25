@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Shards Sacado KokkosCore)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Shards Sacado KokkosCore KokkosContainers)
 SET(LIB_OPTIONAL_DEP_PACKAGES KokkosAlgorithms)
 SET(TEST_REQUIRED_DEP_PACKAGES Gtest)
 SET(TEST_OPTIONAL_DEP_PACKAGES Epetra EpetraExt Amesos Pamgen)

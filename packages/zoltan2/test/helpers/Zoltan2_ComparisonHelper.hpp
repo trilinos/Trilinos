@@ -102,6 +102,7 @@ public:
     timers[name]->enable();
   }
   
+  RCP<Zoltan2::EvaluatePartition<basic_id_t> > metricObject;
   RCP<base_problem_t> problem;
   RCP<basic_id_t> adapter;
   string problem_kind;
@@ -649,13 +650,15 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   RCP<const ComparisonSource> sourcePrb = this->sources[prb_name];
   RCP<const ComparisonSource> sourceRef = this->sources[ref_name];
   
-  // get problems
-  auto problem = reinterpret_cast<partitioning_problem_t *>(sourcePrb.get()->problem.get());
-  auto reference = reinterpret_cast<partitioning_problem_t *>(sourceRef.get()->problem.get());
+  // get metric objects
+  auto metricObjectPrb = sourcePrb.get()->metricObject.get();
+  auto metricObjectRef = sourceRef.get()->metricObject.get();
   
   // get metrics
-  std::map<const string, const metric_t> prb_metrics = this->metricArrayToMap(problem->getMetrics());
-  std::map<const string, const metric_t> ref_metrics = this->metricArrayToMap(reference->getMetrics());
+  std::map<const string, const metric_t> prb_metrics = this->metricArrayToMap
+    (metricObjectPrb->getMetrics());
+  std::map<const string, const metric_t> ref_metrics = this->metricArrayToMap
+    (metricObjectRef->getMetrics());
   
   // get timing data
   std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);

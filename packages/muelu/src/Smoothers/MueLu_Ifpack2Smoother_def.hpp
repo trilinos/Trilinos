@@ -218,8 +218,7 @@ namespace MueLu {
           merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
 
           // Add Dirichlet rows to the list of seeds
-          ArrayRCP<const bool> boundaryNodes;
-          boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
+          ArrayRCP<const bool> boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
           bool haveBoundary = false;
           for (LO i = 0; i < boundaryNodes.size(); i++)
             if (boundaryNodes[i]) {
@@ -390,7 +389,7 @@ namespace MueLu {
         A_->SetMaxEigenvalueEstimate(lambdaMax);
         this->GetOStream(Statistics1) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax << std::endl;
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
+      TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): no maximum eigenvalue estimate");
     }
   }
 
@@ -432,7 +431,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack2
     // TODO:  It might be nice to switch back the internal

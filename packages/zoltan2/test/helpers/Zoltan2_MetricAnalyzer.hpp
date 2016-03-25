@@ -103,10 +103,12 @@ public:
   /// @return returns a boolean value indicated pass/failure.
   static bool analyzeMetrics( const ParameterList &metricsPlist,
                               const partitioning_problem_t * problem,
+			      const RCP<const Zoltan2::EvaluatePartition
+			      <basic_id_t> > &metricObject,
                               const RCP<const Comm<int>> &comm,
                               std::ostringstream &msg_stream) {
 
-      ArrayRCP<const metric_t> metrics = (problem)->getMetrics();
+      ArrayRCP<const metric_t> metrics = (metricObject)->getMetrics();
       
       string test_name;
       bool all_tests_pass = true;

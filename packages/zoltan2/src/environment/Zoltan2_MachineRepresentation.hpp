@@ -37,6 +37,9 @@ public:
     MachineRepresentation(const Teuchos::Comm<int> &comm) :
       machine(new machine_t(comm)) { }
 
+    MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ) :
+          machine(new machine_t(comm, pl)) { }
+
     ~MachineRepresentation() {delete machine;}
 
     // Interface functions follow.

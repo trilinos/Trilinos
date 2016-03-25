@@ -61,16 +61,6 @@ class Algorithm;
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 
-#define Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM \
-  { \
-    std::ostringstream emsg; \
-    emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " <<  __func__zoltan2__ \
-         << " is not implement in selected algorithm " \
-         << std::endl; \
-    throw std::runtime_error(emsg.str()); \
-  }
-  
 
 namespace Zoltan2 {
 
@@ -98,22 +88,22 @@ public:
   //! \brief Ordering method
   virtual int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution) 
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM 
+    Z2_THROW_NOT_IMPLEMENTED 
   }
   
   //! \brief Coloring method
   virtual void color(const RCP<ColoringSolution<Adapter> > &solution) 
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
   
   //! \brief Matching method
-  virtual void match() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
+  virtual void match() { Z2_THROW_NOT_IMPLEMENTED }
 
   //! \brief Partitioning method
   virtual void partition(const RCP<PartitioningSolution<Adapter> > &solution) 
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief  for partitioning methods, return bounding boxes of the 
@@ -124,7 +114,7 @@ public:
   virtual std::vector<coordinateModelPartBox<scalar_t, part_t> > &
   getPartBoxesView() const
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief pointAssign method: Available only for some partitioning algorithms
@@ -138,7 +128,7 @@ public:
   //   \return the part number of a part overlapping the given point
   virtual part_t pointAssign(int dim, scalar_t *point) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief boxAssign method:  Available only for some partitioning algorithms
@@ -157,7 +147,7 @@ public:
   virtual void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
                          size_t &nParts, part_t **partsFound) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief returns serial communication graph of a computed partition
@@ -176,7 +166,7 @@ public:
     ArrayRCP<part_t> &comAdj)
     // TODO:  Should the return args be ArrayViews?
   {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
 private:

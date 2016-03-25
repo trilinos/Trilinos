@@ -281,6 +281,7 @@ FieldContainer_Kokkos(FieldContainer_Kokkos& inContainer);
 FieldContainer_Kokkos(const FieldContainer_Kokkos& inContainer);
 ~FieldContainer_Kokkos();
 typedef Kokkos::Cuda execution_space;
+  typedef Kokkos::RangePolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > range_policy;
 
 KOKKOS_INLINE_FUNCTION
 Scalar& operator[] (const index_type i0);
@@ -399,12 +400,13 @@ KOKKOS_INLINE_FUNCTION
 index_type dimension_7()const{return dim7;}
 
 void initialize(Scalar initValue){
-Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+
+  Kokkos::parallel_for(range_policy(0, sizeValue),initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
 
 void initialize(){
 Scalar initValue=Scalar(0.0);
-Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+ Kokkos::parallel_for(range_policy(0, sizeValue),initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
 
 };

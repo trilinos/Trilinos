@@ -99,9 +99,11 @@ namespace MueLu {
     ParameterListAcceptorImpl() { }
 
     virtual ~ParameterListAcceptorImpl() {
-      bool warnings = false; //TODO
+      // TAW: 3/17/2016
+      // The following code is useless. Comment it out to make coverity happy (CID22611)
+      /*bool warnings = false; //TODO
       if (warnings)
-        paramList_.unused(std::cout);
+        paramList_.unused(std::cout);*/
     }
 
     virtual void SetParameterList(const ParameterList& paramList) {

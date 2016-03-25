@@ -79,6 +79,8 @@ public:
   const Teuchos::RCP <const Adapter > input_adapter;
   const Teuchos::RCP <const Zoltan2::PartitioningSolution<Adapter> >soln;
   const Teuchos::RCP <const Environment >env;
+  const part_t num_parts;
+  const part_t *solution_parts;
 
 
 /*! \brief Constructor 
@@ -101,7 +103,27 @@ public:
       machine(machine_),
       input_adapter(input_adapter_),
       soln(soln_),
-      env(envConst_)
+      env(envConst_),num_parts(soln_->getActualGlobalNumberOfParts()),
+      solution_parts(soln_->getPartListView())
+          {} ;
+
+  PartitionMapping(
+      const Teuchos::RCP <const Teuchos::Comm<int> >comm_,
+      const Teuchos::RCP <const Zoltan2::MachineRepresentation<pcoord_t,part_t> >machine_, // If NULL, assume homogeneous
+                                                    // Make optional
+      const Teuchos::RCP <const Adapter> input_adapter_, // Needed to get information about
+                                           // the application data (coords, graph)
+      const part_t num_parts_,
+      const part_t *result_parts,
+      const Teuchos::RCP <const Environment > envConst_  // Perhaps envConst should be optional
+                                           // so applications can create a mapping
+                                           // directly
+    ):comm(comm_),
+      machine(machine_),
+      input_adapter(input_adapter_),
+      soln(),
+      env(envConst_),num_parts(num_parts_),
+      solution_parts(result_parts)
           {} ;
 
   PartitionMapping(
@@ -113,7 +135,8 @@ public:
       machine(),
       input_adapter(),
       soln(),
-      env(envConst_)
+      env(envConst_),num_parts(0),
+      solution_parts(NULL)
           {} ;
 
   PartitionMapping():
@@ -121,14 +144,16 @@ public:
           machine(0),
           input_adapter(0),
           soln(0),
-          env(0){};
+          env(0),
+          solution_parts(NULL){};
 
   PartitionMapping(const Teuchos::RCP <const Environment >envConst_):
           comm(0),
           machine(0),
           input_adapter(0),
           soln(0),
-          env(envConst_){};
+          env(envConst_),num_parts(0),
+          solution_parts(NULL){};
 
   PartitionMapping(
       const Teuchos::RCP <const Environment > envConst_,
@@ -139,7 +164,8 @@ public:
           machine(machine_),
           input_adapter(0),
           soln(0),
-          env(envConst_){};
+          env(envConst_),num_parts(0),
+          solution_parts(NULL){};
 
 
   virtual ~PartitionMapping(){}

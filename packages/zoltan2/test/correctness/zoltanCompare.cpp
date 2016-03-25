@@ -431,15 +431,10 @@ for(int i = 0; i < nump; i++) {
 
   RCP<const Zoltan2::Environment> env = problem->getEnvironment();
 
-  const matrixAdapter_t::base_adapter_t *bia =
-    dynamic_cast<const matrixAdapter_t::base_adapter_t *>(ia);
+  // create metric object
 
-  RCP<const matrixAdapter_t::base_adapter_t> rcpbia = rcp(bia);
-
-  // create metric object (also usually created by a problem)
-
-  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), rcpbia,
-					       &problem->getSolution(),false));
+  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), ia,
+					       &problem->getSolution()));
   if (me == 0){
     metricObject->printMetrics(cout);
   }
@@ -464,7 +459,7 @@ for(int i = 0; i < nump; i++) {
   // CLEAN UP
   /////////////////////////////////////////
   zz.LB_Free_Part(&pgid, &plid, &pproc, &ppart);
-  //delete ia;
+  delete ia;
   delete ca;
   delete problem;
   delete uinput;

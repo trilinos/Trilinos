@@ -37,6 +37,7 @@ if [ "$ATTB_ENV" == "" ] ; then
 fi
 
 echo "
+-DTrilinos_USE_ATTB_DEV_ENV=ON
 -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
 -DBUILD_SHARED_LIBS=OFF
 " > COMMON.config

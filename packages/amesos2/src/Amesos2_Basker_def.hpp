@@ -108,6 +108,7 @@ Basker<Matrix,Vector>::Basker(
   basker->Options.amd_btf       = BASKER_TRUE;
   basker->Options.amd_dom       = BASKER_TRUE;
   basker->Options.transpose     = BASKER_FALSE;
+  basker->Options.verbose_matrix_out = BASKER_FALSE;
   num_threads = Kokkos::OpenMP::max_hardware_threads();
 #endif  
 #endif
@@ -358,7 +359,7 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
     }
   if(parameterList->isParameter("verbose"))
     {
-      basker->Options.verbose = parameterList->get<bool>("verbose");
+      basker->Options.verbose_matrix_out = parameterList->get<bool>("verbose");
     }
   if(parameterList->isParameter("matching"))
     {
@@ -413,7 +414,7 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
       pl->set("realloc" , false, 
 	      "Should realloc space if not enough");
       pl->set("verbose", false,
-	      "Give information (Not Supported)");
+	      "Give Permuted Matrices");
       pl->set("matching", true,
 	      "Use WC matching (Not Supported)");
       pl->set("matching_type", 0, 

@@ -3,6 +3,8 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 
+#include <stdexcept>
+
 #include "ml_config.h"
 #include "ml_include.h"
 #if defined(HAVE_ML_IFPACK) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA)
@@ -228,6 +230,8 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
       // create the preconditioner
       Prec = Factory.Create(Type, Ifpack_Matrix, Overlap);
+      if (Prec == NULL)
+        throw(std::runtime_error("ml_ifpack_wrap.cpp: failed to create Ifpack_Preconditioner of type \"" + std::string(Type) + "\""));
       Prec->SetParameters(List);
       ML_CHK_ERR(Prec->Compute());
 

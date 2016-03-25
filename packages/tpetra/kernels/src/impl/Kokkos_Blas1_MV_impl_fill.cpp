@@ -148,13 +148,6 @@ fill (const XMV& X, const XMV::non_const_value_type& val)
 
 #ifdef KOKKOS_HAVE_CUDA
 
-  KOKKOSBLAS_IMPL_MV_FILL_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-
-#ifdef KOKKOS_HAVE_CUDA
-
   KOKKOSBLAS_IMPL_MV_FILL_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA
