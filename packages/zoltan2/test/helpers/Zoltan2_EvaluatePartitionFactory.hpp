@@ -70,43 +70,43 @@ namespace Zoltan2_TestingFramework {
       if (adapter_name == "BasicIdentifier") {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<basic_vector_adapter>
-	   (CommT, reinterpret_cast<const basic_vector_adapter *>(input),
-	    params, reinterpret_cast
+	   (reinterpret_cast<const basic_vector_adapter *>(input),
+	    params, CommT, reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<basic_vector_adapter> *>
 	    (&problem->getSolution())));
       } else if (adapter_name == "XpetraMultiVector") {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<xpetra_mv_adapter>
-	   (CommT, reinterpret_cast<const xpetra_mv_adapter *>(input),
-	    params, reinterpret_cast
+	   (reinterpret_cast<const xpetra_mv_adapter *>(input),
+	    params, CommT, reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<xpetra_mv_adapter> *>
 	    (&problem->getSolution())));
       } else if (adapter_name == "XpetraCrsGraph") {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<xcrsGraph_adapter>
-	   (CommT, reinterpret_cast<const xcrsGraph_adapter *>(input),
-	    params, reinterpret_cast
+	   (reinterpret_cast<const xcrsGraph_adapter *>(input),
+	    params, CommT, reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<xcrsGraph_adapter> *>
 	    (&problem->getSolution())));
       } else if (adapter_name == "XpetraCrsMatrix") {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<xcrsMatrix_adapter>
-	   (CommT, reinterpret_cast<const xcrsMatrix_adapter *>(input),
-	    params, reinterpret_cast
+	   (reinterpret_cast<const xcrsMatrix_adapter *>(input),
+	    params, CommT, reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<xcrsMatrix_adapter> *>
 	    (&problem->getSolution())));
       } else if (adapter_name == "BasicVector") {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<basic_vector_adapter>
-	   (CommT, reinterpret_cast<const basic_vector_adapter *>(input),
-	    params, reinterpret_cast
+	   (reinterpret_cast<const basic_vector_adapter *>(input),
+	    params, CommT, reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<basic_vector_adapter> *>
 	    (&problem->getSolution())));
       } else if (adapter_name == "PamgenMesh") {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
 	  (new Zoltan2::EvaluatePartition<pamgen_adapter_t>
-	   (CommT, reinterpret_cast<const pamgen_adapter_t *>(input),
-	    params, reinterpret_cast
+	   (reinterpret_cast<const pamgen_adapter_t *>(input),
+	    params, CommT, reinterpret_cast
 	    <const Zoltan2::PartitioningSolution<pamgen_adapter_t> *>
 	    (&problem->getSolution())));
       }

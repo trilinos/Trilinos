@@ -683,7 +683,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(comm,ia,params.getRawPtr(),&problem->getSolution()));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -876,7 +876,7 @@ int testFromDataFile(
     // create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(comm,ia,params.getRawPtr(),&problem->getSolution()));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -1059,7 +1059,7 @@ int testFromSeparateDataFiles(
     //create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(comm,ia,params.getRawPtr(),&problem->getSolution()));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);

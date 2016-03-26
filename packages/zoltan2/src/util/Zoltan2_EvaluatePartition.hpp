@@ -85,17 +85,17 @@ private:
 public:
 
   /*! \brief Constructor
-      \param problemComm  the problem communicator
       \param ia the problem input adapter
+      \param problemComm  the problem communicator
       \param soln  the solution
       \param graphModel the graph model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
-    EvaluatePartition(const RCP<const Comm<int> > &problemComm,
-    const Adapter *ia, 
+    EvaluatePartition(const Adapter *ia, 
     ParameterList *p,
+    const RCP<const Comm<int> > &problemComm,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
@@ -186,9 +186,9 @@ public:
 
   template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
-  const RCP<const Comm<int> > &problemComm,
   const Adapter *ia, 
   ParameterList *p,
+  const RCP<const Comm<int> > &problemComm,
   const PartitioningSolution<Adapter> *soln,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),

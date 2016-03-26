@@ -429,8 +429,8 @@ for(int i = 0; i < nump; i++) {
 
   // create metric object
 
-  RCP<quality_t>metricObject = rcp(new quality_t(problem->getComm(),ia,&params,
-						 &problem->getSolution()));
+ RCP<quality_t>metricObject = rcp(new quality_t(ia,&params,problem->getComm(),
+						&problem->getSolution()));
   if (me == 0){
     metricObject->printMetrics(cout);
   }

@@ -411,7 +411,7 @@ int main(int narg, char *arg[]) {
     
     // create metric object
     RCP<quality_t> metricObject =
-      rcp(new quality_t(CommT, ia, &params, &problem.getSolution()));
+      rcp(new quality_t(ia, &params, CommT, &problem.getSolution()));
 
     if (!me) {
       metricObject->printMetrics(cout);
