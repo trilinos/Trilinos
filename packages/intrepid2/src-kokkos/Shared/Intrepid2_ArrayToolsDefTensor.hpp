@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid2 Package
+//                           Intrepid Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -40,22 +40,30 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_ArrayToolsDefTensor.hpp
+/** \file   Intrepid2_ArrayToolsDefTensor.hpp
     \brief  Definition file for tensor multiply operations of the array tools interface.
     \author Created by P. Bochev and D. Ridzal.
+    Kokkorized by Kyungjoo Kim
 */
 
+#ifndef __INTREPID2_ARRAYTOOLS_DEF_TENSOR_HPP__
+#define __INTREPID2_ARRAYTOOLS_DEF_TENSOR_HPP__
+
 namespace Intrepid2 {
-  
-  template<class Scalar, 
-           class ArrayOutFields, 
-           class ArrayInData, 
-           class ArrayInFields>
-  void ArrayTools::crossProductDataField(ArrayOutFields &       outputFields,
-                                         const ArrayInData &    inputData,
-                                         const ArrayInFields &  inputFields){
-#ifdef HAVE_INTREPID2_DEBUG
-    std::string errmsg = ">>> ERROR (ArrayTools::crossProductDataField):";
+
+  template<typename ExecSpaceType>
+  template<class ...outputFieldProperties,
+           class ...inputDataProperties,
+           class ...inputFieldProperties>
+  KOKKOS_INLINE_FUNCTION
+  static void
+  ArrayTools<ExecSpaceType>::
+  crossProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
+                         const Kokkos::DynRankView<inputDataProperties...>   inputData,
+                         const Kokkos::DynRankView<intputFieldProperties...> inputFields ) {
+
+#ifdef HAVE_INTREPID_DEBUG
+    const char errmsg[] = ">>> ERROR (ArrayTools::crossProductDataField):";
     /*
      *   Check array rank and spatial dimension range (if applicable)
      *      (1) inputData(C,P,D);    
@@ -135,111 +143,22 @@ namespace Intrepid2 {
       }
     }
 #endif  
-ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>outputFieldsWrap(outputFields);    
-ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(inputData);    
-ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFieldsWrap(inputFields);    
 
-    // 3D cross product
-    if(inputData.dimension(2) == 3) {
-      
-      // inputFields is (C,F,P,D)
-      if(getrank(inputFields) == 4){
-        
-        for(index_type cell = 0; cell < static_cast<index_type>(outputFields.dimension(0)); cell++){
-          for(index_type field = 0; field < static_cast<index_type>(outputFields.dimension(1)); field++){
-            for(index_type point = 0; point < static_cast<index_type>(outputFields.dimension(2)); point++){
-              // 
-              outputFieldsWrap(cell, field, point, 0) = \
-                inputDataWrap(cell, point, 1)*inputFieldsWrap(cell, field, point, 2) - 
-                inputDataWrap(cell, point, 2)*inputFieldsWrap(cell, field, point, 1); 
-              // 
-              outputFieldsWrap(cell, field, point, 1) = \
-                inputDataWrap(cell, point, 2)*inputFieldsWrap(cell, field, point, 0) - 
-                inputDataWrap(cell, point, 0)*inputFieldsWrap(cell, field, point, 2); 
-              // 
-              outputFieldsWrap(cell, field, point, 2) = \
-                inputDataWrap(cell, point, 0)*inputFieldsWrap(cell, field, point, 1) - 
-                inputDataWrap(cell, point, 1)*inputFieldsWrap(cell, field, point, 0); 
-            }// point
-          }// field
-        } // cell
-      }// rank = 4
-      // inputFields is (F,P,D)
-      else if(getrank(inputFields) == 3){
-        
-        for(index_type cell = 0; cell < static_cast<index_type>(outputFields.dimension(0)); cell++){
-          for(index_type field = 0; field < static_cast<index_type>(outputFields.dimension(1)); field++){
-            for(index_type point = 0; point < static_cast<index_type>(outputFields.dimension(2)); point++){
-              // 
-              outputFieldsWrap(cell, field, point, 0) = \
-		inputDataWrap(cell, point, 1)*inputFieldsWrap(field, point, 2) - 
-		inputDataWrap(cell, point, 2)*inputFieldsWrap(field, point, 1); 
-              // 
-              outputFieldsWrap(cell, field, point, 1) = \
-                inputDataWrap(cell, point, 2)*inputFieldsWrap(field, point, 0) - 
-                inputDataWrap(cell, point, 0)*inputFieldsWrap(field, point, 2); 
-              // 
-              outputFieldsWrap(cell, field, point, 2) = \
-                inputDataWrap(cell, point, 0)*inputFieldsWrap(field, point, 1) - 
-                inputDataWrap(cell, point, 1)*inputFieldsWrap(field, point, 0); 
-            }// point
-          }// field
-        } // cell
-      }// rank = 3
-      else{
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				    ">>> ERROR (ArrayTools::crossProductDataField): inputFields rank 3 or 4 required.")
-	  }    
-    }
-    // 2D cross product
-    else if(inputData.dimension(2) == 2){
-      
-      // inputFields is (C,F,P,D)
-      if(getrank(inputFields) == 4){
-        
-        for(index_type cell = 0; cell < static_cast<index_type>(outputFields.dimension(0)); cell++){
-          for(index_type field = 0; field < static_cast<index_type>(outputFields.dimension(1)); field++){
-            for(index_type point = 0; point < static_cast<index_type>(outputFields.dimension(2)); point++){
-              outputFieldsWrap(cell, field, point) = \
-                inputDataWrap(cell, point, 0)*inputFieldsWrap(cell, field, point, 1) - 
-                inputDataWrap(cell, point, 1)*inputFieldsWrap(cell, field, point, 0); 
-            }// point
-          }// field
-        } // cell
-      }// rank = 4
-      // inputFields is (F,P,D)
-      else if(getrank(inputFields) == 3) {
-        
-        for(index_type cell = 0; cell < static_cast<index_type>(outputFields.dimension(0)); cell++){
-          for(index_type field = 0; field < static_cast<index_type>(outputFields.dimension(1)); field++){
-            for(index_type point = 0; point < static_cast<index_type>(outputFields.dimension(2)); point++){
-              outputFieldsWrap(cell, field, point) = \
-                inputDataWrap(cell, point, 0)*inputFieldsWrap(field, point, 1) - 
-                inputDataWrap(cell, point, 1)*inputFieldsWrap(field, point, 0); 
-            }// point
-          }// field
-        } // cell
-      }// rank = 3
-    }
-    // Error: wrong dimension
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				  ">>> ERROR (ArrayTools::crossProductDataField): spatial dimension 2 or 3 required.")
-	}
+    // body
   }
   
-  
-  
-  template<class Scalar, 
-           class ArrayOutData, 
-           class ArrayInDataLeft, 
-           class ArrayInDataRight>
-  void ArrayTools::crossProductDataData(ArrayOutData &            outputData,
-                                        const ArrayInDataLeft &   inputDataLeft,
-                                        const ArrayInDataRight &  inputDataRight){
+  template<typename ExecSpaceType>
+  template<class ...outputDataProperties,
+           class ...inputDataLeftProperties,
+           class ...inputDataRightProperties>
+  KOKKOS_INLINE_FUNCTION
+  static void
+  ArrayTools<ExecSpaceType>::
+  crossProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
+                        const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
+                        const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight ) {
 
-
-#ifdef HAVE_INTREPID2_DEBUG
+#ifdef HAVE_INTREPID_DEBUG
     std::string errmsg = ">>> ERROR (ArrayTools::crossProductDataData):";
     /*
      *   Check array rank and spatial dimension range (if applicable)
@@ -321,103 +240,22 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       }
     }
 #endif  
-
-
-ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWrap(outputData);    
-ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);    
-ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight); 
-    // 3D cross product
-    if(inputDataLeft.dimension(2) == 3) {
-      
-      // inputDataRight is (C,P,D)
-      if(getrank(inputDataRight) == 3){
-        
-        for(index_type cell = 0; cell < (index_type)inputDataLeft.dimension(0); cell++){
-          for(index_type point = 0; point < (index_type)inputDataLeft.dimension(1); point++){
-            // 
-            outputDataWrap(cell, point, 0) = \
-	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(cell, point, 2) - 
-	      inputDataLeftWrap(cell, point, 2)*inputDataRightWrap(cell, point, 1); 
-            // 
-            outputDataWrap(cell, point, 1) = \
-              inputDataLeftWrap(cell, point, 2)*inputDataRightWrap(cell, point, 0) - 
-              inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(cell, point, 2); 
-            // 
-            outputDataWrap(cell, point, 2) = \
-              inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(cell, point, 1) - 
-              inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(cell, point, 0); 
-          }// point
-        } // cell
-      }// rank = 3
-       // inputDataRight is (P,D)
-      else if(getrank(inputDataRight) == 2){
-        
-        for(index_type cell = 0; cell < (index_type)inputDataLeft.dimension(0); cell++){
-          for(index_type point = 0; point < (index_type)inputDataLeft.dimension(1); point++){
-            // 
-            outputDataWrap(cell, point, 0) = \
-	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(point, 2) - 
-	      inputDataLeftWrap(cell, point, 2)*inputDataRightWrap(point, 1); 
-            // 
-            outputDataWrap(cell, point, 1) = \
-              inputDataLeftWrap(cell, point, 2)*inputDataRightWrap(point, 0) - 
-              inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(point, 2); 
-            // 
-            outputDataWrap(cell, point, 2) = \
-              inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(point, 1) - 
-              inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(point, 0); 
-          }// point
-        } // cell
-      }// rank = 2
-      else{
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				    ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight rank 2 or 3 required.")
-	  }    
-    }
-    // 2D cross product
-    else if(inputDataLeft.dimension(2) == 2){
-      
-      // inputDataRight is (C,P,D)
-      if(getrank(inputDataRight) == 3){
-        
-        for(index_type cell = 0; cell < (index_type)inputDataLeft.dimension(0); cell++){
-	  for(index_type point = 0; point < (index_type)inputDataLeft.dimension(1); point++){
-	    outputDataWrap(cell, point) = \
-	      inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(cell, point, 1) - 
-	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(cell, point, 0); 
-	  }// point
-        } // cell
-      }// rank = 3
-       // inputDataRight is (P,D)
-      else if(getrank(inputDataRight) == 2) {
-        
-        for(index_type cell = 0; cell < (index_type)inputDataLeft.dimension(0); cell++){
-	  for(index_type point = 0; point < (index_type)inputDataLeft.dimension(1); point++){
-	    outputDataWrap(cell, point) = \
-	      inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(point, 1) - 
-	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(point, 0); 
-	  }// point
-        } // cell
-      }// rank = 2
-    }
-    // Error: wrong dimension
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				  ">>> ERROR (ArrayTools::crossProductDataData): spatial dimension 2 or 3 required.")
-	}
+    // body
+    
   }
   
+  template<typename ExecSpaceType>
+  template<class ...outputFieldProperties,
+           class ...inputDataProperties,
+           class ...inputFieldProperties>
+  KOKKOS_INLINE_FUNCTION
+  static void
+  ArrayTools<ExecSpaceType>::
+  outerProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
+                         const Kokkos::DynRankView<inputDataProperties...>   inputData,
+                         const Kokkos::DynRankView<intputFieldProperties...> inputFields ) {
   
-  
-  template<class Scalar, 
-           class ArrayOutFields, 
-           class ArrayInData, 
-           class ArrayInFields>
-  void ArrayTools::outerProductDataField(ArrayOutFields &       outputFields,
-                                         const ArrayInData &    inputData,
-                                         const ArrayInFields &  inputFields){
-
-#ifdef HAVE_INTREPID2_DEBUG
+#ifdef HAVE_INTREPID_DEBUG
     std::string errmsg = ">>> ERROR (ArrayTools::outerProductDataField):";
     /*
      *   Check array rank and spatial dimension range (if applicable)
@@ -480,59 +318,21 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
 				  std::invalid_argument, errmsg);
     }
 #endif  
-ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>outputFieldsWrap(outputFields);    
-ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(inputData);    
-ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFieldsWrap(inputFields);  
-    
-    // inputFields is (C,F,P,D)
- if(getrank(inputFields) == 4){
-      
-      for(index_type cell = 0; cell < (index_type)outputFields.dimension(0); cell++){
-        for(index_type field = 0; field < (index_type)outputFields.dimension(1); field++){
-          for(index_type point = 0; point < (index_type)outputFields.dimension(2); point++){
-            for(index_type row = 0; row < (index_type)outputFields.dimension(3); row++){
-              for(index_type col = 0; col < (index_type)outputFields.dimension(4); col++){
-                outputFieldsWrap(cell, field, point, row, col) = \
-                  inputDataWrap(cell, point, row)*inputFieldsWrap(cell, field, point, col);
-              }// col
-            }// row
-          }// point
-        }// field
-      } // cell
-    }// rank = 4
-     // inputFields is (F,P,D)
- else if(getrank(inputFields) == 3){
-      
-      for(index_type cell = 0; cell < (index_type)outputFields.dimension(0); cell++){
-        for(index_type field = 0; field < (index_type)outputFields.dimension(1); field++){
-          for(index_type point = 0; point < (index_type)outputFields.dimension(2); point++){
-            for(index_type row = 0; row < (index_type)outputFields.dimension(3); row++){
-              for(index_type col = 0; col < (index_type)outputFields.dimension(4); col++){
-                outputFieldsWrap(cell, field, point, row, col) = \
-                  inputDataWrap(cell, point, row)*inputFieldsWrap(field, point, col);
-              }// col
-            }// row
-          }// point
-        }// field
-      } // cell
-    }// rank = 3
-    else{
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				  ">>> ERROR (ArrayTools::outerProductDataField): inputFields rank 3 or 4 required.")
-	}    
+    // body
   }
   
-  
-  
-  template<class Scalar, 
-           class ArrayOutData, 
-           class ArrayInDataLeft, 
-           class ArrayInDataRight>
-  void ArrayTools::outerProductDataData(ArrayOutData &            outputData,
-                                        const ArrayInDataLeft &   inputDataLeft,
-                                        const ArrayInDataRight &  inputDataRight){
+  template<typename ExecSpaceType>
+  template<class ...outputDataProperties,
+           class ...inputDataLeftProperties,
+           class ...inputDataRightProperties>
+  KOKKOS_INLINE_FUNCTION
+  static void
+  ArrayTools<ExecSpaceType>::
+  outerProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
+                        const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
+                        const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight ) {
 
-#ifdef HAVE_INTREPID2_DEBUG
+#ifdef HAVE_INTREPID_DEBUG
     std::string errmsg = ">>> ERROR (ArrayTools::outerProductDataData):";
     /*
      *   Check array rank and spatial dimension range (if applicable)
@@ -594,560 +394,22 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
 				  std::invalid_argument, errmsg);
     }
 #endif
-
-ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWrap(outputData);    
-ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);    
-ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight); 
-
-    // inputDataRight is (C,P,D)
- if(getrank(inputDataRight) == 3){
-      
-      for(index_type cell = 0; cell <(index_type) inputDataLeft.dimension(0); cell++){
-        for(index_type point = 0; point <(index_type) inputDataLeft.dimension(1); point++){
-          for(index_type row = 0; row <(index_type) inputDataLeft.dimension(2); row++){
-            for(index_type col = 0; col <(index_type) inputDataLeft.dimension(2); col++){
-              
-              outputDataWrap(cell, point, row, col) = \
-                inputDataLeftWrap(cell, point, row)*inputDataRightWrap(cell, point, col); 
-            }// col
-          }// row
-        }// point
-      } // cell
-    }// rank = 3
-     // inputDataRight is (P,D)
- else if(getrank(inputDataRight) == 2){
-      
-      for(index_type cell = 0; cell <(index_type) inputDataLeft.dimension(0); cell++){
-        for(index_type point = 0; point <(index_type) inputDataLeft.dimension(1); point++){
-          for(index_type row = 0; row <(index_type) inputDataLeft.dimension(2); row++){
-            for(index_type col = 0; col <(index_type) inputDataLeft.dimension(2); col++){
-              // 
-              outputDataWrap(cell, point, row, col) = \
-		inputDataLeftWrap(cell, point, row)*inputDataRightWrap(point, col); 
-            } // col
-          } // row
-        } // point
-      } // cell
-    }// rank = 2
-    else{
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				  ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight rank 2 or 3 required.")
-	}    
+    // body
   }
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_4_2 {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
 
-  matvecProductDataField_4_2 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
+  template<typename ExecSpaceType>
+  template<class ...outputFieldProperties,
+           class ...inputDataProperties,
+           class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for( index_type row = 0; row < matDim; row++) {
-		  outputFields(cell, field, point, row) = \
-		    inputData(cell, point)*inputFields(cell, field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-   }
-};    
+  static void
+  ArrayTools<ExecSpaceType>
+  matvecProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
+                          const Kokkos::DynRankView<inputDataProperties...>   inputData,
+                          const Kokkos::DynRankView<intputFieldProperties...> inputFields,
+                          const char transpose ) {
 
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_4_3 {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_4_3 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  outputFields(cell, field, point, row) = \
-		    inputData(cell, point, row)*inputFields(cell, field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-   }
-};         
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_4_4_n {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_4_4_n (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    outputFields(cell, field, point, row) = 0.0;
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFields(cell, field, point, row) += \
-			inputData(cell, point, row, col)*inputFields(cell, field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-   }
-};  
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_4_4_t {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_4_4_t (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    outputFields(cell, field, point, row) = 0.0;
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFields(cell, field, point, row) += \
-			inputData(cell, point, col, row)*inputFields(cell, field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-   }
-};
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_4_2_const {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_4_2_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  outputFields(cell, field, point, row) = \
-		    inputData(cell, 0)*inputFields(cell, field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-   }
-};    
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_4_3_const {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_4_3_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  outputFields(cell, field, point, row) = \
-		    inputData(cell, 0, row)*inputFields(cell, field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-   }
-};         
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_4_4_n_const {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_4_4_n_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    outputFields(cell, field, point, row) = 0.0;
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFields(cell, field, point, row) += \
-			inputData(cell, 0, row, col)*inputFields(cell, field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-   }
-};  
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_4_4_t_const {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_4_4_t_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    outputFields(cell, field, point, row) = 0.0;
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFields(cell, field, point, row) += \
-			inputData(cell, 0, col, row)*inputFields(cell, field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-   }
-};     
-
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_3_2 {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_3_2 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  outputFields(cell, field, point, row) = \
-		    inputData(cell, point)*inputFields(field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-   }
-};    
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_3_3 {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_3_3 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  outputFields(cell, field, point, row) = \
-		    inputData(cell, point, row)*inputFields(field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-   }
-};         
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_3_4_n {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_3_4_n (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    outputFields(cell, field, point, row) = 0.0;
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFields(cell, field, point, row) += \
-			inputData(cell, point, row, col)*inputFields(field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-   }
-};  
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_3_4_t {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_3_4_t (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    outputFields(cell, field, point, row) = 0.0;
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFields(cell, field, point, row) += \
-			inputData(cell, point, col, row)*inputFields(field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-   }
-};
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_3_2_const {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_3_2_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  outputFields(cell, field, point, row) = \
-                    inputData(cell, 0)*inputFields(field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-   }
-};    
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_3_3_const {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_3_3_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  outputFields(cell, field, point, row) = \
-                    inputData(cell, 0, row)*inputFields(field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-   }
-};         
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_3_4_n_const {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_3_4_n_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
- 	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    outputFields(cell, field, point, row) = 0.0;
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFields(cell, field, point, row) += \
-                        inputData(cell, 0, row, col)*inputFields(field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-   }
-};  
-
-template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
-struct matvecProductDataField_3_4_t_const {
-  ArrayOutFieldsWrap outputFields;
-  ArrayInDataWrap inputData;
-  ArrayInFieldsWrap inputFields;
-  
-typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
-
-  matvecProductDataField_3_4_t_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
-    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
-  {}
-
-  // Fill the View with some data.  The parallel_for loop will iterate
-  // over the View's first dimension N.
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const index_type cell) const {
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    outputFields(cell, field, point, row) = 0.0;
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFields(cell, field, point, row) += \
-                        inputData(cell, 0, col, row)*inputFields(field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-   }
-};                     
-  template<class Scalar, 
-           class ArrayOutFields, 
-           class ArrayInData, 
-           class ArrayInFields>
-  void ArrayTools::matvecProductDataField(ArrayOutFields &       outputFields,
-                                          const ArrayInData &    inputData,
-                                          const ArrayInFields &  inputFields,
-                                          const char              transpose){
-
-#ifdef HAVE_INTREPID2_DEBUG
+#ifdef HAVE_INTREPID_DEBUG
     std::string errmsg = ">>> ERROR (ArrayTools::matvecProductDataField):";
     /*
      *   Check array rank and spatial dimension range (if applicable)
@@ -1270,570 +532,161 @@ typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_sp
 				  std::invalid_argument, errmsg);
     }
 #endif
-
-   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>outputFieldsWrap(outputFields);
-   ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(inputData);
-   ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldsWrap(inputFields);	
-    index_type dataRank   = getrank(inputData);
-    index_type numDataPts = inputData.dimension(1);
-    index_type inRank     = getrank(inputFields);    
-    index_type numCells   = outputFields.dimension(0);
-
-    /*********************************************************************************************
-     *                              inputFields is (C,F,P,D)                                     *
-     *********************************************************************************************/
-    if(inRank == 4){
-      if(numDataPts != 1){  // non-constant data
-        
-        switch(dataRank){
-	case 2:
-
- Kokkos::parallel_for (numCells, matvecProductDataField_4_2<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-
-	  break;
-            
-	case 3:
-Kokkos::parallel_for (numCells, matvecProductDataField_4_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-Kokkos::parallel_for (numCells, matvecProductDataField_4_4_n<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-Kokkos::parallel_for (numCells, matvecProductDataField_4_4_t<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matvecProductDataField): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataRank == 2) || (dataRank == 3) || (dataRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matvecProductDataField): inputData rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      }
-      else{  // constant data case
-        switch(dataRank){
-	case 2:
-Kokkos::parallel_for (numCells, matvecProductDataField_4_2_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  break;
-            
-	case 3:
-Kokkos::parallel_for (numCells, matvecProductDataField_4_3_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-Kokkos::parallel_for (numCells, matvecProductDataField_4_4_n_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-Kokkos::parallel_for (numCells, matvecProductDataField_4_4_t_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matvecProductDataField): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataRank == 2) || (dataRank == 3) || (dataRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matvecProductDataField): inputData rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      } // end constant data case
-    } // inputFields rank 4
-    /*********************************************************************************************
-     *                              inputFields is (F,P,D)                                       *
-     *********************************************************************************************/
-    else if(inRank == 3) {
-      if(numDataPts != 1){  // non-constant data
-        
-        switch(dataRank){
-	case 2:
-Kokkos::parallel_for (numCells, matvecProductDataField_3_2<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  break;
-            
-	case 3:
-Kokkos::parallel_for (numCells, matvecProductDataField_3_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-Kokkos::parallel_for (numCells, matvecProductDataField_3_4_n<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matvecProductDataField): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataRank == 2) || (dataRank == 3) || (dataRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matvecProductDataField): inputData rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      }
-      else{  // constant data case
-        switch(dataRank){
-	case 2:
-Kokkos::parallel_for (numCells, matvecProductDataField_3_2_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  break;
-            
-	case 3:
-Kokkos::parallel_for (numCells, matvecProductDataField_3_3_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-Kokkos::parallel_for (numCells, matvecProductDataField_3_4_n_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matvecProductDataField): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataRank == 2) || (dataRank == 3) || (dataRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matvecProductDataField): inputData rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      } // end constant data case
-    } // inputFields rank 3
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				  ">>> ERROR (ArrayTools::matvecProductDataField): inputFields rank 3 or 4 required.")      
-	}// rank error
+    // body
   } 
-  
-  
- 
-   template<class Scalar, 
-           class ArrayOutData, 
-           class ArrayInDataLeft, 
-           class ArrayInDataRight>
-  void ArrayTools::matvecProductDataData(ArrayOutData &            outputData,
-                                         const ArrayInDataLeft &   inputDataLeft,
-                                         const ArrayInDataRight &  inputDataRight,
-                                         const char                transpose){
 
-#ifdef HAVE_INTREPID2_DEBUG
-     std::string errmsg = ">>> ERROR (ArrayTools::matvecProductDataData):";
-     /*
-      *   Check array rank and spatial dimension range (if applicable)
-      *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data   
-      *      (2) inputDataRight(C,P,D) or (P,D);   
-      *      (3) outputData(C,P,D)
-      */
-     // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required  
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inputDataLeft,  2,4), 
-				 std::invalid_argument, errmsg);
-     if(getrank(inputDataLeft) > 2) {
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataLeft, 2,  1,3), 
-				   std::invalid_argument, errmsg);
-     }
-     if(getrank(inputDataLeft) == 4) {
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataLeft, 3,  1,3), 
-				   std::invalid_argument, errmsg);
-     }
-     // (2) inputDataRight is (C, P, D) or (P, D) and 1 <= (D=dimension(rank - 1)) <= 3 is required. 
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inputDataRight,  2,3), 
-				 std::invalid_argument, errmsg);
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataRight, getrank(inputDataRight)-1,  1,3), 
-				 std::invalid_argument, errmsg);
-     // (3) outputData is (C,P,D)
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, outputData, 3,3), std::invalid_argument, errmsg);
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, outputData, 2,  1,3), 
-				 std::invalid_argument, errmsg);
-     /*
-      *   Dimension cross-checks:
-      *      (1) inputDataLeft vs. inputDataRight
-      *      (2) outputData    vs. inputDataLeft
-      *      (3) outputData    vs. inputDataRight 
-      *
-      *   Cross-check (2): outputData(C,P,D) vs. inputDataLeft(C,P), (C,P,D) or (C,P,D,D):
-      *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
-      *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
-      *   inputDataLeft(C,1,...)
-      */
-     if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							  outputData,     1,
-							  inputDataLeft,  1),
-				   std::invalid_argument, errmsg);    
-     }
-     if(getrank(inputDataLeft) == 2){  // inputDataLeft(C,P): check C
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							  outputData,    0,
-							  inputDataLeft, 0),
-				   std::invalid_argument, errmsg);    
-     }
-     if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check C and D
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							  outputData,    0,2,
-							  inputDataLeft, 0,2),
-				   std::invalid_argument, errmsg);    
-     }
-     if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check C and D
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							  outputData,    0,2,2,
-							  inputDataLeft, 0,2,3),
-				   std::invalid_argument, errmsg);    
-     }
-     /*
-      *   Cross-checks (1,3):
-      */
-     if( getrank(inputDataRight) == 3) {
-       // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D):  dimensions  C, P, D must match
-       if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							    inputDataLeft,  1,
-							    inputDataRight, 1),
-				     std::invalid_argument, errmsg);    
-       }      
-       if(getrank(inputDataLeft) == 2){  // inputDataLeft(C,P): check C
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  0, 
-							    inputDataRight, 0),
-				     std::invalid_argument, errmsg);  
-       }      
-       if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check C and D
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  0,2, 
-							    inputDataRight, 0,2),
-				     std::invalid_argument, errmsg);  
-       }      
-       if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check C and D
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  0,2,3, 
-							    inputDataRight, 0,2,2),
-				     std::invalid_argument, errmsg);  
-       }
+  template<typename ExecSpaceType>
+  template<class ...outputDataProperties,
+           class ...inputDataLeftProperties,
+           class ...inputDataRightProperties>
+  KOKKOS_INLINE_FUNCTION
+  static void
+  ArrayTools<ExecSpaceType>::
+  matvecProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>    outputData,
+                         const Kokkos::DynRankView<inputDataLeftProperties...> inputDataLeft,
+                         const Kokkos::DynRankView<intputFieldProperties...>   inputDataRight,
+                         const char transpose ) {
+
+#ifdef HAVE_INTREPID_DEBUG
+    std::string errmsg = ">>> ERROR (ArrayTools::matvecProductDataData):";
+    /*
+     *   Check array rank and spatial dimension range (if applicable)
+     *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data   
+     *      (2) inputDataRight(C,P,D) or (P,D);   
+     *      (3) outputData(C,P,D)
+     */
+    // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required  
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inputDataLeft,  2,4), 
+                                std::invalid_argument, errmsg);
+    if(getrank(inputDataLeft) > 2) {
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataLeft, 2,  1,3), 
+                                  std::invalid_argument, errmsg);
+    }
+    if(getrank(inputDataLeft) == 4) {
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataLeft, 3,  1,3), 
+                                  std::invalid_argument, errmsg);
+    }
+    // (2) inputDataRight is (C, P, D) or (P, D) and 1 <= (D=dimension(rank - 1)) <= 3 is required. 
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inputDataRight,  2,3), 
+                                std::invalid_argument, errmsg);
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataRight, getrank(inputDataRight)-1,  1,3), 
+                                std::invalid_argument, errmsg);
+    // (3) outputData is (C,P,D)
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, outputData, 3,3), std::invalid_argument, errmsg);
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, outputData, 2,  1,3), 
+                                std::invalid_argument, errmsg);
+    /*
+     *   Dimension cross-checks:
+     *      (1) inputDataLeft vs. inputDataRight
+     *      (2) outputData    vs. inputDataLeft
+     *      (3) outputData    vs. inputDataRight 
+     *
+     *   Cross-check (2): outputData(C,P,D) vs. inputDataLeft(C,P), (C,P,D) or (C,P,D,D):
+     *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
+     *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
+     *   inputDataLeft(C,1,...)
+     */
+    if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                         outputData,     1,
+                                                         inputDataLeft,  1),
+                                  std::invalid_argument, errmsg);    
+    }
+    if(getrank(inputDataLeft) == 2){  // inputDataLeft(C,P): check C
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                         outputData,    0,
+                                                         inputDataLeft, 0),
+                                  std::invalid_argument, errmsg);    
+    }
+    if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check C and D
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                         outputData,    0,2,
+                                                         inputDataLeft, 0,2),
+                                  std::invalid_argument, errmsg);    
+    }
+    if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check C and D
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                         outputData,    0,2,2,
+                                                         inputDataLeft, 0,2,3),
+                                  std::invalid_argument, errmsg);    
+    }
+    /*
+     *   Cross-checks (1,3):
+     */
+    if( getrank(inputDataRight) == 3) {
+      // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D):  dimensions  C, P, D must match
+      if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                           inputDataLeft,  1,
+                                                           inputDataRight, 1),
+                                    std::invalid_argument, errmsg);    
+      }      
+      if(getrank(inputDataLeft) == 2){  // inputDataLeft(C,P): check C
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  0, 
+                                                           inputDataRight, 0),
+                                    std::invalid_argument, errmsg);  
+      }      
+      if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check C and D
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  0,2, 
+                                                           inputDataRight, 0,2),
+                                    std::invalid_argument, errmsg);  
+      }      
+      if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check C and D
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  0,2,3, 
+                                                           inputDataRight, 0,2,2),
+                                    std::invalid_argument, errmsg);  
+      }
       
-       // Cross-check (3): outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, outputData, inputDataRight),
-				   std::invalid_argument, errmsg);
-     }
-     else{
-       // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D): dimensions  P, D must match
-       if(inputDataLeft.dimension(1) > 1){ // check P if P>1 in inputData 
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							    inputDataLeft,  1,
-							    inputDataRight, 0),
-				     std::invalid_argument, errmsg);    
-       }
-       if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check D
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  2, 
-							    inputDataRight, 1),
-				     std::invalid_argument, errmsg); 
-       }
-       if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check D      
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  2,3, 
-							    inputDataRight, 1,1),
-				     std::invalid_argument, errmsg); 
-       }
-       // Cross-check (3): outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							  outputData,     1,2, 
-							  inputDataRight, 0,1),
-				   std::invalid_argument, errmsg);
-     }
+      // Cross-check (3): outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, outputData, inputDataRight),
+                                  std::invalid_argument, errmsg);
+    }
+    else{
+      // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D): dimensions  P, D must match
+      if(inputDataLeft.dimension(1) > 1){ // check P if P>1 in inputData 
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                           inputDataLeft,  1,
+                                                           inputDataRight, 0),
+                                    std::invalid_argument, errmsg);    
+      }
+      if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check D
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  2, 
+                                                           inputDataRight, 1),
+                                    std::invalid_argument, errmsg); 
+      }
+      if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check D      
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  2,3, 
+                                                           inputDataRight, 1,1),
+                                    std::invalid_argument, errmsg); 
+      }
+      // Cross-check (3): outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                         outputData,     1,2, 
+                                                         inputDataRight, 0,1),
+                                  std::invalid_argument, errmsg);
+    }
 #endif
-
- ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWrap(outputData);
- ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);
- ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight);
-    index_type dataLeftRank   = getrank(inputDataLeft);
-    index_type numDataLeftPts = inputDataLeft.dimension(1);
-    index_type dataRightRank  = getrank(inputDataRight);    
-    index_type numCells       = outputData.dimension(0);
-    index_type numPoints      = outputData.dimension(1);
-    index_type matDim         = outputData.dimension(2);
-    
-    /*********************************************************************************************
-     *                              inputDataRight is (C,P,D)                                   *
-     *********************************************************************************************/
-    if(dataRightRank == 3){
-      if(numDataLeftPts != 1){  // non-constant left data
-        
-        switch(dataLeftRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		outputDataWrap(cell, point, row) = \
-                  inputDataLeftWrap(cell, point)*inputDataRightWrap(cell, point, row);
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		outputDataWrap(cell, point, row) = \
-                  inputDataLeftWrap(cell, point, row)*inputDataRightWrap(cell, point, row);
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  outputDataWrap(cell, point, row) = 0.0;
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row) += \
-                      inputDataLeftWrap(cell, point, row, col)*inputDataRightWrap(cell, point, col);
-		  }// col
-		} //row
-	      }// point
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  outputDataWrap(cell, point, row) = 0.0;
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row) += \
-                      inputDataLeftWrap(cell, point, col, row)*inputDataRightWrap(cell, point, col);
-		  }// col
-		} //row
-	      }// point
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matvecProductDataData): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataLeftRank == 2) || (dataLeftRank == 3) || (dataLeftRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft rank 2, 3 or 4 required.")      
-	    } // switch inputDataLeft rank
-      }
-      else{  // constant data case
-        switch(dataLeftRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		outputDataWrap(cell, point, row) = \
-                  inputDataLeftWrap(cell, 0)*inputDataRightWrap(cell, point, row);
-	      } // Row-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		outputDataWrap(cell, point, row) = \
-                  inputDataLeftWrap(cell, 0, row)*inputDataRightWrap(cell, point, row);
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  outputDataWrap(cell, point, row) = 0.0;
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row) += \
-                      inputDataLeftWrap(cell, 0, row, col)*inputDataRightWrap(cell, point, col);
-		  }// col
-		} //row
-	      }// point
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  outputDataWrap(cell, point, row) = 0.0;
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row) += \
-                      inputDataLeftWrap(cell, 0, col, row)*inputDataRightWrap(cell, point, col);
-		  }// col
-		} //row
-	      }// point
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matvecProductDataData): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataLeftRank == 2) || (dataLeftRank == 3) || (dataLeftRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft rank 2, 3 or 4 required.")      
-	    } // switch inputDataLeft rank
-      } // end constant data case
-    } // inputDataRight rank 4
-    /*********************************************************************************************
-     *                              inputDataRight is (P,D)                                     *
-     *********************************************************************************************/
-    else if(dataRightRank == 2) {
-      if(numDataLeftPts != 1){  // non-constant data
-        
-        switch(dataLeftRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		outputDataWrap(cell, point, row) = \
-                  inputDataLeftWrap(cell, point)*inputDataRightWrap(point, row);
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		outputDataWrap(cell, point, row) = \
-                  inputDataLeftWrap(cell, point, row)*inputDataRightWrap(point, row);
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  outputDataWrap(cell, point, row) = 0.0;
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row) += \
-                      inputDataLeftWrap(cell, point, row, col)*inputDataRightWrap(point, col);
-		  }// col
-		} //row
-	      }// point
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  outputDataWrap(cell, point, row) = 0.0;
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row) += \
-                      inputDataLeftWrap(cell, point, col, row)*inputDataRightWrap(point, col);
-		  }// col
-		} //row
-	      }// point
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matvecProductDataData): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataLeftRank == 2) || (dataLeftRank == 3) || (dataLeftRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft rank 2, 3 or 4 required.")      
-	    } // switch inputDataLeft rank
-      }
-      else{  // constant data case
-        switch(dataLeftRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		outputDataWrap(cell, point, row) = \
-                  inputDataLeftWrap(cell, 0)*inputDataRightWrap(point, row);
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		outputDataWrap(cell, point, row) = \
-                  inputDataLeftWrap(cell, 0, row)*inputDataRightWrap(point, row);
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  outputDataWrap(cell, point, row) = 0.0;
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row) += \
-                      inputDataLeftWrap(cell, 0, row, col)*inputDataRightWrap(point, col);
-		  }// col
-		} //row
-	      }// point
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  outputDataWrap(cell, point, row) = 0.0;
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row) += \
-                      inputDataLeftWrap(cell, 0, col, row)*inputDataRightWrap(point, col);
-		  }// col
-		} //row
-	      }// point
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matvecProductDataData): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataLeftRank == 2) || (dataLeftRank == 3) || (dataLeftRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft rank 2, 3 or 4 required.")      
-	    } // switch inputDataLeft rank
-      } // end constant inputDataLeft case
-    } // inputDataRight rank 2
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				  ">>> ERROR (ArrayTools::matvecProductDataData): inputDataRight rank 2 or 3 required.")      
-	}// rank error
+    // body
   } 
   
- 
-  
-  template<class Scalar, 
-           class ArrayOutFields, 
-           class ArrayInData, 
-           class ArrayInFields>
-  void ArrayTools::matmatProductDataField(ArrayOutFields &       outputFields,
-                                          const ArrayInData &    inputData,
-                                          const ArrayInFields &  inputFields,
-                                          const char             transpose){
-#ifdef HAVE_INTREPID2_DEBUG
+  template<typename ExecSpaceType>
+  template<class ...outputDataProperties,
+           class ...inputDataLeftProperties,
+           class ...inputDataRightProperties>
+  KOKKOS_INLINE_FUNCTION
+  static void
+  ArrayTools<ExecSpaceType>::
+  matmatProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
+                         const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
+                         const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight,
+                         const char transpose  ) {
+
+#ifdef HAVE_INTREPID_DEBUG
     std::string errmsg = ">>> ERROR (ArrayTools::matmatProductDataField):";
     /*
      *   Check array rank and spatial dimension range (if applicable)
@@ -1960,819 +813,150 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 				  std::invalid_argument, errmsg);
     }
 #endif
-    ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>outputFieldsWrap(outputFields);
-    ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(inputData);
-    ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFieldsWrap(inputFields);
-
-
-    index_type dataRank   = getrank(inputData);
-    index_type numDataPts = inputData.dimension(1);
-    index_type inRank     = getrank(inputFields);    
-    index_type numCells   = outputFields.dimension(0);
-    index_type numFields  = outputFields.dimension(1);
-    index_type numPoints  = outputFields.dimension(2);
-    index_type matDim     = outputFields.dimension(3);
-    
-    /*********************************************************************************************
-     *                              inputFields is (C,F,P,D,D)                                     *
-     *********************************************************************************************/
-    if(inRank == 5){
-      if(numDataPts != 1){  // non-constant data
-        
-        switch(dataRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  for(index_type col = 0; col < matDim; col++) {
-		    outputFieldsWrap(cell, field, point, row, col) = \
-                      inputDataWrap(cell, point)*inputFieldsWrap(cell, field, point, row, col);
-		  }// Col-loop
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  for(index_type col = 0; col < matDim; col++) {
-		    outputFieldsWrap(cell, field, point, row, col) = \
-                      inputDataWrap(cell, point, row)*inputFieldsWrap(cell, field, point, row, col);
-		  }// Col-loop
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(index_type i = 0; i < matDim; i++){
-			outputFieldsWrap(cell, field, point, row, col) += \
-                          inputDataWrap(cell, point, row, i)*inputFieldsWrap(cell, field, point, i, col);
-		      }// i
-		    } // col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(index_type i = 0; i < matDim; i++){
-			outputFieldsWrap(cell, field, point, row, col) += \
-                          inputDataWrap(cell, point, i, row)*inputFieldsWrap(cell, field, point, i, col);
-		      }// i
-		    } // col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matmatProductDataField): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataRank == 2) || (dataRank == 3) || (dataRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matmatProductDataField): inputData rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      }
-      else{  // constant data case
-        switch(dataRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  for(index_type col = 0; col < matDim; col++) {
-		    outputFieldsWrap(cell, field, point, row, col) = \
-                      inputDataWrap(cell, 0)*inputFieldsWrap(cell, field, point, row, col);
-		  }// Col-loop
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  for(index_type col = 0; col < matDim; col++) {
-		    outputFieldsWrap(cell, field, point, row, col) = \
-                      inputDataWrap(cell, 0, row)*inputFieldsWrap(cell, field, point, row, col);
-		  }// Col-loop
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(index_type i = 0; i < matDim; i++){
-			outputFieldsWrap(cell, field, point, row, col) += \
-                          inputDataWrap(cell, 0, row, i)*inputFieldsWrap(cell, field, point, i, col);
-		      }// i
-		    } // col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(index_type i = 0; i < matDim; i++){
-			outputFieldsWrap(cell, field, point, row, col) += \
-                          inputDataWrap(cell, 0, i, row)*inputFieldsWrap(cell, field, point, i, col);
-		      }// i
-		    } // col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matmatProductDataField): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataRank == 2) || (dataRank == 3) || (dataRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matmatProductDataField): inputData rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      } // end constant data case
-    } // inputFields rank 5
-    /**********************************************************************************************
-     *                              inputFields is (F,P,D,D)                                     *
-     *********************************************************************************************/
-    else if(inRank == 4) {
-      if(numDataPts != 1){  // non-constant data
-        
-        switch(dataRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  for(index_type col = 0; col < matDim; col++) {
-		    outputFieldsWrap(cell, field, point, row, col) = \
-                      inputDataWrap(cell, point)*inputFieldsWrap(field, point, row, col);
-		  }// Col-loop
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  for(index_type col = 0; col < matDim; col++) {
-		    outputFieldsWrap(cell, field, point, row, col) = \
-                      inputDataWrap(cell, point, row)*inputFieldsWrap(field, point, row, col);
-		  }// Col-loop
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(index_type i = 0; i < matDim; i++){
-			outputFieldsWrap(cell, field, point, row, col) += \
-                          inputDataWrap(cell, point, row, i)*inputFieldsWrap(field, point, i, col);
-		      }// i
-		    } // col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(index_type i = 0; i < matDim; i++){
-			outputFieldsWrap(cell, field, point, row, col) += \
-                          inputDataWrap(cell, point, i, row)*inputFieldsWrap(field, point, i, col);
-		      }// i
-		    } // col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matmatProductDataField): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataRank == 2) || (dataRank == 3) || (dataRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matmatProductDataField): inputData rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      }
-      else{  // constant data case
-        switch(dataRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  for(index_type col = 0; col < matDim; col++) {
-		    outputFieldsWrap(cell, field, point, row, col) = \
-                      inputDataWrap(cell, 0)*inputFieldsWrap(field, point, row, col);
-		  }// Col-loop
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type field = 0; field < numFields; field++) {
-	      for(index_type point = 0; point < numPoints; point++) {
-		for(index_type row = 0; row < matDim; row++) {
-		  for(index_type col = 0; col < matDim; col++) {
-		    outputFieldsWrap(cell, field, point, row, col) = \
-                      inputDataWrap(cell, 0, row)*inputFieldsWrap(field, point, row, col);
-		  }// Col-loop
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(index_type i = 0; i < matDim; i++){
-			outputFieldsWrap(cell, field, point, row, col) += \
-                          inputDataWrap(cell, 0, row, i)*inputFieldsWrap(field, point, i, col);
-		      }// i
-		    } // col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type field = 0; field < numFields; field++){
-		for(index_type point = 0; point < numPoints; point++){
-		  for(index_type row = 0; row < matDim; row++){
-		    for(index_type col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(index_type i = 0; i < matDim; i++){
-			outputFieldsWrap(cell, field, point, row, col) += \
-                          inputDataWrap(cell, 0, i, row)*inputFieldsWrap(field, point, i, col);
-		      }// i
-		    } // col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matmatProductDataField): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataRank == 2) || (dataRank == 3) || (dataRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matmatProductDataField): inputData rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      } // end constant data case
-    } // inputFields rank 4
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				  ">>> ERROR (ArrayTools::matmatProductDataField): inputFields rank 4 or 5 required.")      
-	}// rank error
+    // body
   }
 
-
-   template<class Scalar, 
-           class ArrayOutData, 
-           class ArrayInDataLeft, 
-           class ArrayInDataRight>
-  void ArrayTools::matmatProductDataData(ArrayOutData &            outputData,
-                                         const ArrayInDataLeft &   inputDataLeft,
-                                         const ArrayInDataRight &  inputDataRight,
-                                         const char                transpose){
-
-#ifdef HAVE_INTREPID2_DEBUG
-     std::string errmsg = ">>> ERROR (ArrayTools::matmatProductDataData):";
-     /*
-      *   Check array rank and spatial dimension range (if applicable)
-      *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data   
-      *      (2) inputDataRight(C,P,D,D) or (P,D,D);   
-      *      (3) outputData(C,P,D,D)
-      */
-     // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required  
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inputDataLeft,  2,4), 
-				 std::invalid_argument, errmsg);
-     if(getrank(inputDataLeft) > 2) {
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataLeft, 2,  1,3), 
-				   std::invalid_argument, errmsg);
-     }
-     if(getrank(inputDataLeft) == 4) {
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataLeft, 3,  1,3), 
-				   std::invalid_argument, errmsg);
-     }
-     // (2) inputDataRight is (C,P,D,D) or (P,D,D) and 1 <= (D=dimension(rank-1),(rank-2)) <= 3 is required. 
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inputDataRight,  3,4), 
-				 std::invalid_argument, errmsg);
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataRight, getrank(inputDataRight)-1,  1,3), 
-				 std::invalid_argument, errmsg);
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataRight, getrank(inputDataRight)-2,  1,3), 
-				 std::invalid_argument, errmsg);
-     // (3) outputData is (C,P,D,D)
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, outputData, 4, 4), std::invalid_argument, errmsg);      
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, outputData, 2,  1,3), 
-				 std::invalid_argument, errmsg);
-     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, outputData, 3,  1,3), 
-				 std::invalid_argument, errmsg);
-     /*
-      *   Dimension cross-checks:
-      *      (1) inputDataLeft vs. inputDataRight
-      *      (2) outputData    vs. inputDataLeft
-      *      (3) outputData    vs. inputDataRight 
-      *
-      *   Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P), (C,P,D) or (C,P,D,D):
-      *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
-      *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
-      *   inputDataLeft(C,1,...)
-      */
-     if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							  outputData,     1,
-							  inputDataLeft,  1),
-				   std::invalid_argument, errmsg);    
-     }
-     if(getrank(inputDataLeft) == 2){  // inputDataLeft(C,P): check C
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							  outputData,    0,
-							  inputDataLeft, 0),
-				   std::invalid_argument, errmsg);    
-     }
-     if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check C and D
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							  outputData,    0,2,3,
-							  inputDataLeft, 0,2,2),
-				   std::invalid_argument, errmsg);    
-     }
-     if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check C and D
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							  outputData,    0,2,3,
-							  inputDataLeft, 0,2,3),
-				   std::invalid_argument, errmsg);    
-     }
-     /*
-      *   Cross-checks (1,3):
-      */
-     if( getrank(inputDataRight) == 4) {
-       // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D,D):  dimensions  C, P, D must match
-       if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							    inputDataLeft,  1,
-							    inputDataRight, 1),
-				     std::invalid_argument, errmsg);    
-       }      
-       if(getrank(inputDataLeft) == 2){  // inputDataLeft(C,P): check C
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  0, 
-							    inputDataRight, 0),
-				     std::invalid_argument, errmsg);  
-       }      
-       if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check C and D
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  0,2,2, 
-							    inputDataRight, 0,2,3),
-				     std::invalid_argument, errmsg);  
-       }      
-       if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check C and D
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  0,2,3, 
-							    inputDataRight, 0,2,3),
-				     std::invalid_argument, errmsg);  
-       }
-       // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D,D): all dimensions C, P, D must match
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, outputData, inputDataRight),
-				   std::invalid_argument, errmsg);
-     }
-     else{
-       // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D,D): dimensions  P, D must match
-       if(inputDataLeft.dimension(1) > 1){ // check P if P>1 in inputData 
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
-							    inputDataLeft,  1,
-							    inputDataRight, 0),
-				     std::invalid_argument, errmsg);    
-       }
-       if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check D
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  2,2, 
-							    inputDataRight, 1,2),
-				     std::invalid_argument, errmsg); 
-       }
-       if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check D      
-	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							    inputDataLeft,  2,3, 
-							    inputDataRight, 1,2),
-				     std::invalid_argument, errmsg); 
-       }
-       // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D,D): dimensions P, D must match
-       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
-							  outputData,     1,2,3, 
-							  inputDataRight, 0,1,2),
-				   std::invalid_argument, errmsg);
-     }
+  template<typename ExecSpaceType>
+  template<class ...outputDataProperties,
+           class ...inputDataLeftProperties,
+           class ...inputDataRightProperties>
+  KOKKOS_INLINE_FUNCTION
+  static void
+  ArrayTools<ExecSpaceType>
+  matmatProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
+                         const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
+                         const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight,
+                         const char transpose  ) {
+    
+#ifdef HAVE_INTREPID_DEBUG
+    std::string errmsg = ">>> ERROR (ArrayTools::matmatProductDataData):";
+    /*
+     *   Check array rank and spatial dimension range (if applicable)
+     *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data   
+     *      (2) inputDataRight(C,P,D,D) or (P,D,D);   
+     *      (3) outputData(C,P,D,D)
+     */
+    // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required  
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inputDataLeft,  2,4), 
+                                std::invalid_argument, errmsg);
+    if(getrank(inputDataLeft) > 2) {
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataLeft, 2,  1,3), 
+                                  std::invalid_argument, errmsg);
+    }
+    if(getrank(inputDataLeft) == 4) {
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataLeft, 3,  1,3), 
+                                  std::invalid_argument, errmsg);
+    }
+    // (2) inputDataRight is (C,P,D,D) or (P,D,D) and 1 <= (D=dimension(rank-1),(rank-2)) <= 3 is required. 
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inputDataRight,  3,4), 
+                                std::invalid_argument, errmsg);
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataRight, getrank(inputDataRight)-1,  1,3), 
+                                std::invalid_argument, errmsg);
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataRight, getrank(inputDataRight)-2,  1,3), 
+                                std::invalid_argument, errmsg);
+    // (3) outputData is (C,P,D,D)
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, outputData, 4, 4), std::invalid_argument, errmsg);      
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, outputData, 2,  1,3), 
+                                std::invalid_argument, errmsg);
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, outputData, 3,  1,3), 
+                                std::invalid_argument, errmsg);
+    /*
+     *   Dimension cross-checks:
+     *      (1) inputDataLeft vs. inputDataRight
+     *      (2) outputData    vs. inputDataLeft
+     *      (3) outputData    vs. inputDataRight 
+     *
+     *   Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P), (C,P,D) or (C,P,D,D):
+     *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
+     *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
+     *   inputDataLeft(C,1,...)
+     */
+    if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                         outputData,     1,
+                                                         inputDataLeft,  1),
+                                  std::invalid_argument, errmsg);    
+    }
+    if(getrank(inputDataLeft) == 2){  // inputDataLeft(C,P): check C
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                         outputData,    0,
+                                                         inputDataLeft, 0),
+                                  std::invalid_argument, errmsg);    
+    }
+    if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check C and D
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                         outputData,    0,2,3,
+                                                         inputDataLeft, 0,2,2),
+                                  std::invalid_argument, errmsg);    
+    }
+    if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check C and D
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                         outputData,    0,2,3,
+                                                         inputDataLeft, 0,2,3),
+                                  std::invalid_argument, errmsg);    
+    }
+    /*
+     *   Cross-checks (1,3):
+     */
+    if( getrank(inputDataRight) == 4) {
+      // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D,D):  dimensions  C, P, D must match
+      if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                           inputDataLeft,  1,
+                                                           inputDataRight, 1),
+                                    std::invalid_argument, errmsg);    
+      }      
+      if(getrank(inputDataLeft) == 2){  // inputDataLeft(C,P): check C
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  0, 
+                                                           inputDataRight, 0),
+                                    std::invalid_argument, errmsg);  
+      }      
+      if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check C and D
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  0,2,2, 
+                                                           inputDataRight, 0,2,3),
+                                    std::invalid_argument, errmsg);  
+      }      
+      if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check C and D
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  0,2,3, 
+                                                           inputDataRight, 0,2,3),
+                                    std::invalid_argument, errmsg);  
+      }
+      // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D,D): all dimensions C, P, D must match
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, outputData, inputDataRight),
+                                  std::invalid_argument, errmsg);
+    }
+    else{
+      // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D,D): dimensions  P, D must match
+      if(inputDataLeft.dimension(1) > 1){ // check P if P>1 in inputData 
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
+                                                           inputDataLeft,  1,
+                                                           inputDataRight, 0),
+                                    std::invalid_argument, errmsg);    
+      }
+      if(getrank(inputDataLeft) == 3){   // inputDataLeft(C,P,D): check D
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  2,2, 
+                                                           inputDataRight, 1,2),
+                                    std::invalid_argument, errmsg); 
+      }
+      if(getrank(inputDataLeft) == 4){   // inputDataLeft(C,P,D,D): check D      
+        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                           inputDataLeft,  2,3, 
+                                                           inputDataRight, 1,2),
+                                    std::invalid_argument, errmsg); 
+      }
+      // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D,D): dimensions P, D must match
+      TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
+                                                         outputData,     1,2,3, 
+                                                         inputDataRight, 0,1,2),
+                                  std::invalid_argument, errmsg);
+    }
 #endif
-
-
- ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWrap(outputData);
- ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);
- ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight);
-
-    index_type dataLeftRank   = getrank(inputDataLeft);
-    index_type numDataLeftPts = inputDataLeft.dimension(1);
-    index_type dataRightRank  = getrank(inputDataRight);    
-    index_type numCells       = outputData.dimension(0);
-    index_type numPoints      = outputData.dimension(1);
-    index_type matDim         = outputData.dimension(2);
-    
-    /*********************************************************************************************
-     *                              inputDataRight is (C,P,D,D)                                 *
-     *********************************************************************************************/
-    if(dataRightRank == 4){
-      if(numDataLeftPts != 1){  // non-constant data
-        
-        switch(dataLeftRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		for(index_type col = 0; col < matDim; col++) {
-		  outputDataWrap(cell, point, row, col) = \
-		    inputDataLeftWrap(cell, point)*inputDataRightWrap(cell, point, row, col);
-		}// Col-loop
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		for(index_type col = 0; col < matDim; col++) {
-		  outputDataWrap(cell, point, row, col) = \
-		    inputDataLeftWrap(cell, point, row)*inputDataRightWrap(cell, point, row, col);
-		}// Col-loop
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(index_type i = 0; i < matDim; i++){
-		      outputDataWrap(cell, point, row, col) += \
-			inputDataLeftWrap(cell, point, row, i)*inputDataRightWrap(cell, point, i, col);
-		    }// i
-		  } // col
-		} //row
-	      }// point
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(index_type i = 0; i < matDim; i++){
-		      outputDataWrap(cell, point, row, col) += \
-			inputDataLeftWrap(cell, point, i, row)*inputDataRightWrap(cell, point, i, col);
-		    }// i
-		  } // col
-		} //row
-	      }// point
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matmatProductDataData): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataLeftRank == 2) || (dataLeftRank == 3) || (dataLeftRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft rank 2, 3 or 4 required.")      
-	    } // switch inputData rank
-      }
-      else{  // constant data case
-        switch(dataLeftRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		for(index_type col = 0; col < matDim; col++) {
-		  outputDataWrap(cell, point, row, col) = \
-		    inputDataLeftWrap(cell, 0)*inputDataRightWrap(cell, point, row, col);
-		}// Col-loop
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		for(index_type col = 0; col < matDim; col++) {
-		  outputDataWrap(cell, point, row, col) = \
-		    inputDataLeftWrap(cell, 0, row)*inputDataRightWrap(cell, point, row, col);
-		}// Col-loop
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(index_type i = 0; i < matDim; i++){
-		      outputDataWrap(cell, point, row, col) += \
-			inputDataLeftWrap(cell, 0, row, i)*inputDataRightWrap(cell, point, i, col);
-		    }// i
-		  } // col
-		} //row
-	      }// point
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(index_type i = 0; i < matDim; i++){
-		      outputDataWrap(cell, point, row, col) += \
-			inputDataLeftWrap(cell, 0, i, row)*inputDataRightWrap(cell, point, i, col);
-		    }// i
-		  } // col
-		} //row
-	      }// point
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matmatProductDataData): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataLeftRank == 2) || (dataLeftRank == 3) || (dataLeftRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft rank 2, 3 or 4 required.")      
-	    } // switch inputDataLeft rank
-      } // end constant data case
-    } // inputDataRight rank 4
-    /**********************************************************************************************
-     *                              inputDataRight is (P,D,D)                                    *
-     *********************************************************************************************/
-    else if(dataRightRank == 3) {
-      if(numDataLeftPts != 1){  // non-constant data
-        
-        switch(dataLeftRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		for(index_type col = 0; col < matDim; col++) {
-		  outputDataWrap(cell, point, row, col) = \
-		    inputDataLeftWrap(cell, point)*inputDataRightWrap(point, row, col);
-		}// Col-loop
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		for(index_type col = 0; col < matDim; col++) {
-		  outputDataWrap(cell, point, row, col) = \
-		    inputDataLeftWrap(cell, point, row)*inputDataRightWrap(point, row, col);
-		}// Col-loop
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(index_type i = 0; i < matDim; i++){
-		      outputDataWrap(cell, point, row, col) += \
-			inputDataLeftWrap(cell, point, row, i)*inputDataRightWrap(point, i, col);
-		    }// i
-		  } // col
-		} //row
-	      }// point
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(index_type i = 0; i < matDim; i++){
-		      outputDataWrap(cell, point, row, col) += \
-			inputDataLeftWrap(cell, point, i, row)*inputDataRightWrap(point, i, col);
-		    }// i
-		  } // col
-		} //row
-	      }// point
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matmatProductDataData): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataLeftRank == 2) || (dataLeftRank == 3) || (dataLeftRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft rank 2, 3 or 4 required.")      
-	    } // switch inputDataLeft rank
-      }
-      else{  // constant data case
-        switch(dataLeftRank){
-	case 2:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		for(index_type col = 0; col < matDim; col++) {
-		  outputDataWrap(cell, point, row, col) = \
-		    inputDataLeftWrap(cell, 0)*inputDataRightWrap(point, row, col);
-		}// Col-loop
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 3:
-	  for(index_type cell = 0; cell < numCells; cell++) {
-	    for(index_type point = 0; point < numPoints; point++) {
-	      for(index_type row = 0; row < matDim; row++) {
-		for(index_type col = 0; col < matDim; col++) {
-		  outputDataWrap(cell, point, row, col) = \
-		    inputDataLeftWrap(cell, 0, row)*inputDataRightWrap(point, row, col);
-		}// Col-loop
-	      } // Row-loop
-	    } // P-loop
-	  }// C-loop
-	  break;
-            
-	case 4:
-	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(index_type i = 0; i < matDim; i++){
-		      outputDataWrap(cell, point, row, col) += \
-			inputDataLeftWrap(cell, 0, row, i)*inputDataRightWrap(point, i, col);
-		    }// i
-		  } // col
-		} //row
-	      }// point
-	    }// cell
-	  } // no transpose
-	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(index_type cell = 0; cell < numCells; cell++){
-	      for(index_type point = 0; point < numPoints; point++){
-		for(index_type row = 0; row < matDim; row++){
-		  for(index_type col = 0; col < matDim; col++){
-		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(index_type i = 0; i < matDim; i++){
-		      outputDataWrap(cell, point, row, col) += \
-			inputDataLeftWrap(cell, 0, i, row)*inputDataRightWrap(point, i, col);
-		    }// i
-		  } // col
-		} //row
-	      }// point
-	    }// cell
-	  } //transpose
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
-					">>> ERROR (ArrayTools::matmatProductDataData): The transpose flag must be 'n', 'N', 't' or 'T'.");
-	  }
-	  break;
-            
-	default:
-	  TEUCHOS_TEST_FOR_EXCEPTION( !( (dataLeftRank == 2) || (dataLeftRank == 3) || (dataLeftRank == 4) ), std::invalid_argument,
-				      ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft rank 2, 3 or 4 required.")      
-	    } // switch inputDataLeft rank
-      } // end constant data case
-    } // inputDataRight rank 3
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-				  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight rank 3 or 4 required.")      
-	}// rank error
+    //body
   }
   
-  
-  
-  
-} // end namespace Intrepid2
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+} // end namespace Intrepid
+#endif
