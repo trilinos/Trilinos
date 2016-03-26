@@ -147,15 +147,11 @@ int main(int narg, char **arg)
 
   problem.solve();
 
-  // An environment.  This is usually created by the problem.
-
-  //RCP<const Zoltan2::Environment> env = problem.getEnvironment();
-
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
   // create metric object
 
-  quality_t *metricObject = new quality_t(/*env,*/comm,adapter,&params,&solution);
+  quality_t *metricObject = new quality_t(comm, adapter, &params, &solution);
 
   // Some output 
   zscalar_t *totalWeight = new zscalar_t [nprocs];

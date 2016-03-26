@@ -55,7 +55,6 @@
 /**************************************************************/
 
 #include <Zoltan2_APFMeshAdapter.hpp>
-#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 
@@ -321,13 +320,9 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   new_mesh=NULL;
   double time_4=PCU_Time();
 
-  // An environment.  This is usually created by a problem.
-
-  //RCP<const Zoltan2::Environment> env = problem.getEnvironment();
-
   //create metric object
   RCP<quality_t> metricObject =
-    rcp(new quality_t(/*env, */CommT, ia, &params, &problem.getSolution()));
+    rcp(new quality_t(CommT, ia, &params, &problem.getSolution()));
 
   if (!me) {
     metricObject->printMetrics(cout);
