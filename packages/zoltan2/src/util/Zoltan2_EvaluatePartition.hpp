@@ -207,10 +207,10 @@ public:
   // should check those here.  For now we compute metrics
   // using all weights.
 
-  const Teuchos::ParameterList &pl = env->getParameters();
+  //const Teuchos::ParameterList &pl = env->getParameters();
 
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
-  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
+  const Teuchos::ParameterEntry *pe = p->getEntryPtr("partitioning_objective");
   if (pe){
     std::string strChoice = pe->getValue<std::string>(&strChoice);
     if (strChoice == std::string("multicriteria_minimize_total_weight"))
