@@ -94,7 +94,7 @@ public:
   }
 
 private:
-  Signature	m_function;
+  Signature m_function;
 };
 
 
@@ -120,7 +120,7 @@ public:
   }
 
 private:
-  Signature	m_function;
+  Signature m_function;
 };
 
 
@@ -146,7 +146,7 @@ public:
   }
 
 private:
-  Signature	m_function;
+  Signature m_function;
 };
 
 template <>
@@ -171,7 +171,7 @@ public:
   }
 
 private:
-  Signature	m_function;
+  Signature m_function;
 };
 
 template <>
@@ -196,7 +196,7 @@ public:
   }
 
 private:
-  Signature	m_function;
+  Signature m_function;
 };
 
 typedef CFunction<CExtern0> CFunction0;
@@ -316,14 +316,46 @@ extern "C" {
     return std::sqrt((x * x) + (y * y));
   }
 
-  double cosine_ramp3(double t, double rampStartTime, double rampEndTime) {
-    if( t < rampStartTime    )
+  double cosine_ramp3(double t, double t1, double t2) {
+    if( t < t1    )
     {
       return 0.0;
     }
-    else if( t < rampEndTime )
+    else if( t < t2 )
     {
-      return (1.0 - std::cos((t-rampStartTime)*s_pi/(rampEndTime-rampStartTime)))/2.0;
+      return (1.0 - std::cos((t-t1)*s_pi/(t2-t1)))/2.0;
+    }
+    else 
+    {
+      return 1.0;
+    }
+  }
+
+  static double haversine_ramp(double t, double t1, double t2)
+  {
+    if( t < t1 )
+    {
+      return 0.0;
+    }
+    else if( t < t2 )
+    {
+      return std::pow(std::sin(s_pi*(t-t1)/(t2-t1)),2);
+    }
+    else 
+    {
+      return 0.0;
+    }
+  }
+
+  static double cycloidal_ramp(double t, double t1, double t2)
+  {
+    if( t < t1 )
+    {
+      return 0.0;
+    }
+    else if( t < t2 )
+    {
+      return (t-t1)/(t2-t1)-1/(s_two_pi)*sin(s_two_pi/(t2-t1)*(t-t1));
     }
     else 
     {
@@ -508,6 +540,8 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction1(cosine_ramp1)));
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction2(cosine_ramp2)));
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction3(cosine_ramp3)));
+  (*this).insert(std::make_pair("haversine_ramp",  new CFunction3(haversine_ramp)));
+  (*this).insert(std::make_pair("cycloidal_ramp",  new CFunction3(cycloidal_ramp)));
 
   (*this).insert(std::make_pair("sign",            new CFunction1(sign)));
   (*this).insert(std::make_pair("unit_step",       new CFunction3(unit_step3)));
