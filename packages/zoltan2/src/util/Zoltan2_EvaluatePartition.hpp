@@ -73,7 +73,7 @@ private:
   typedef typename Adapter::scalar_t scalar_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  const RCP<const Environment> env_;
+    //const RCP<const Environment> env_;
 
   part_t numGlobalParts_;           // desired
   part_t targetGlobalParts_;        // actual
@@ -96,10 +96,10 @@ public:
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
-  EvaluatePartition(const RCP<const Environment> &env,
+    EvaluatePartition(//const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const Adapter *ia, 
-    const ParameterList *p,
+    ParameterList *p,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
@@ -190,16 +190,16 @@ public:
 
   template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
-  const RCP<const Environment> &env,
+						//const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const Adapter *ia, 
-  const ParameterList *p,
+  ParameterList *p,
   const PartitioningSolution<Adapter> *soln,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
-    env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
+    /*env_(env), */numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_(), graphMetrics_(), graphMetricsConst_()
 {
-
+  RCP<Environment> env = rcp(new Environment(*p, problemComm));
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
   env->timerStart(MACRO_TIMERS, "Computing metrics");
 

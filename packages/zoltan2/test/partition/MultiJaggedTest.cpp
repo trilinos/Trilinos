@@ -683,12 +683,12 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Environment> env = problem->getEnvironment();
+    //RCP<const Environment> env = problem->getEnvironment();
 
     // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, comm, ia, params.getRawPtr(),
+      rcp(new quality_t(/*env, */comm, ia, params.getRawPtr(),
 			&problem->getSolution()));
 
     if (comm->getRank() == 0){
@@ -881,12 +881,12 @@ int testFromDataFile(
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Environment> env = problem->getEnvironment();
+    //RCP<const Environment> env = problem->getEnvironment();
 
     // create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, ia, params.getRawPtr(),
+      rcp(new quality_t(/*env, */comm, ia, params.getRawPtr(),
 			&problem->getSolution()));
 
     if (comm->getRank() == 0){
@@ -1069,12 +1069,12 @@ int testFromSeparateDataFiles(
 
     // An environment.  This is usually created by the problem.
 
-    RCP<const Environment> env = problem->getEnvironment();
+    //RCP<const Environment> env = problem->getEnvironment();
 
     //create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, ia, params.getRawPtr(),
+      rcp(new quality_t(/*env, */comm, ia, params.getRawPtr(),
 			&problem->getSolution()));
 
     if (comm->getRank() == 0){

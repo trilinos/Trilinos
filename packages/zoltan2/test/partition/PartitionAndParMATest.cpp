@@ -323,11 +323,11 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
 
   // An environment.  This is usually created by a problem.
 
-  RCP<const Zoltan2::Environment> env = problem.getEnvironment();
+  //RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
   //create metric object
   RCP<quality_t> metricObject =
-    rcp(new quality_t(env, CommT, ia, &params, &problem.getSolution()));
+    rcp(new quality_t(/*env, */CommT, ia, &params, &problem.getSolution()));
 
   if (!me) {
     metricObject->printMetrics(cout);

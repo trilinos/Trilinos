@@ -411,11 +411,11 @@ int main(int narg, char *arg[]) {
     
     // An environment.  This is usually create by the problem.
 
-    RCP<const Zoltan2::Environment> env = problem.getEnvironment();
+    //RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
     // create metric object
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, CommT, ia, &params, &problem.getSolution()));
+      rcp(new quality_t(/*env, */CommT, ia, &params, &problem.getSolution()));
 
     if (!me) {
       metricObject->printMetrics(cout);
