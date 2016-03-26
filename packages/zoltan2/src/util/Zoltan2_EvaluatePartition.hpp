@@ -207,8 +207,6 @@ public:
   // should check those here.  For now we compute metrics
   // using all weights.
 
-  //const Teuchos::ParameterList &pl = env->getParameters();
-
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
   const Teuchos::ParameterEntry *pe = p->getEntryPtr("partitioning_objective");
   if (pe){
