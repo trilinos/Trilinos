@@ -98,7 +98,8 @@ public:
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-		    const Adapter *ia, 
+    const Adapter *ia, 
+    const ParameterList *p,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
@@ -192,6 +193,7 @@ public:
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const Adapter *ia, 
+  const ParameterList *p,
   const PartitioningSolution<Adapter> *soln,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),

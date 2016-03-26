@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   // create metric object
 
   quality_t *metricObject1 = new quality_t(env1, problem1->getComm(), ia1,
-					   &problem1->getSolution());
+					   &params, &problem1->getSolution());
   // Check the solution.
 
   if (rank == 0) {
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
   // create metric object
 
   quality_t *metricObject2 = new quality_t(env2, problem2->getComm(), ia2,
-					   &problem2->getSolution());
+					   &params, &problem2->getSolution());
   // Check the solution.
 
   if (rank == 0) {
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
   // create metric object
 
   quality_t *metricObject3 = new quality_t(env3, problem3->getComm(), ia3,
-					   &problem3->getSolution());
+					   &params, &problem3->getSolution());
   // Check the solution.
 
   if (rank == 0) {
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), ia3,
+  metricObject3 = new quality_t(env3, problem3->getComm(), ia3, &params,
                                 &problem3->getSolution());
   if (rank == 0){
     metricObject3->printMetrics(cout);
@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), ia3,
+  metricObject3 = new quality_t(env3, problem3->getComm(), ia3, &params,
                                 &problem3->getSolution());
   if (rank == 0){
     metricObject3->printMetrics(cout);
@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject1 = new quality_t(env1, problem1->getComm(), ia1,
+  metricObject1 = new quality_t(env1, problem1->getComm(), ia1, &params,
                                 &problem1->getSolution());
   // Check the solution.
 

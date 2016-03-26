@@ -155,7 +155,7 @@ int main(int narg, char **arg)
 
   // create metric object
 
-  quality_t *metricObject = new quality_t(env, comm, adapter, &solution);
+  quality_t *metricObject = new quality_t(env,comm,adapter,&params,&solution);
 
   // Some output 
   zscalar_t *totalWeight = new zscalar_t [nprocs];
