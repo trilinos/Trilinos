@@ -188,13 +188,17 @@ public:
   EvaluatePartition<Adapter>::EvaluatePartition(
   const Adapter *ia, 
   ParameterList *p,
-  const RCP<const Comm<int> > &problemComm,
+  const RCP<const Comm<int> > &comm,
   const PartitioningSolution<Adapter> *soln,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
     metricsConst_(), graphMetrics_(), graphMetricsConst_()
 {
-  if (problemComm == Teuchos::null) {
+  RCP<const Comm<int> > problemComm;
+  if (comm == Teuchos::null) {
+    problemComm = DefaultComm<int>::getComm();//communicator is Teuchos default
+  } else {
+    problemComm = comm;
   }
   RCP<Environment> env = rcp(new Environment(*p, problemComm));
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
