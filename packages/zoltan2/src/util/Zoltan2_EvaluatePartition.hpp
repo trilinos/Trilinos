@@ -194,6 +194,8 @@ public:
     numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
     metricsConst_(), graphMetrics_(), graphMetricsConst_()
 {
+  if (problemComm == Teuchos::null) {
+  }
   RCP<Environment> env = rcp(new Environment(*p, problemComm));
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
   env->timerStart(MACRO_TIMERS, "Computing metrics");
