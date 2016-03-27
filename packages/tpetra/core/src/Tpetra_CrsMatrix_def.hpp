@@ -1600,9 +1600,9 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   insertLocalValues (const LocalOrdinal localRow,
-		     const LocalOrdinal numEnt,
-		     const Scalar vals[],
-		     const LocalOrdinal cols[])
+                     const LocalOrdinal numEnt,
+                     const Scalar vals[],
+                     const LocalOrdinal cols[])
   {
     Teuchos::ArrayView<const LocalOrdinal> colsT (cols, numEnt);
     Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
@@ -1882,9 +1882,9 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   insertGlobalValues (const GlobalOrdinal globalRow,
-		      const LocalOrdinal numEnt,
-		      const Scalar vals[],
-		      const GlobalOrdinal inds[])
+                      const LocalOrdinal numEnt,
+                      const Scalar vals[],
+                      const GlobalOrdinal inds[])
   {
     Teuchos::ArrayView<const GlobalOrdinal> indsT (inds, numEnt);
     Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
@@ -2030,18 +2030,18 @@ namespace Tpetra {
     LIVT lclColsIn (lclCols.getRawPtr (), lclCols.size ());
     const IST* valsRaw = reinterpret_cast<const IST*> (vals.getRawPtr ());
     ISVT valsIn (valsRaw, vals.size ());
-    return this->template replaceLocalValues<LIVT, ISVT> (localRow, 
-							  lclColsIn, 
-							  valsIn);
+    return this->template replaceLocalValues<LIVT, ISVT> (localRow,
+                                                          lclColsIn,
+                                                          valsIn);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceLocalValues (const LocalOrdinal localRow,
-		      const LocalOrdinal numEnt,
-		      const Scalar inputVals[],
-		      const LocalOrdinal inputCols[]) const
+                      const LocalOrdinal numEnt,
+                      const Scalar inputVals[],
+                      const LocalOrdinal inputCols[]) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
@@ -2056,8 +2056,8 @@ namespace Tpetra {
     LIVT indsK (inputCols, numEnt);
     ISVT valsK (reinterpret_cast<const IST*> (inputVals), numEnt);
     return this->template replaceLocalValues<LIVT, ISVT> (localRow,
-							  indsK, 
-							  valsK);
+                                                          indsK,
+                                                          valsK);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -2077,13 +2077,13 @@ namespace Tpetra {
     typedef View<const GO*, HD, MemoryUnmanaged> GIVT; // gbl ind view type
     typedef View<const IST*, HD, MemoryUnmanaged> ISVT; // impl scalar view type
 
-    const IST* inputValsRaw = 
+    const IST* inputValsRaw =
       reinterpret_cast<const IST*> (inputVals.getRawPtr ());
     GIVT indsK (inputInds.getRawPtr (), inputInds.size ());
     ISVT valsK (inputValsRaw, inputVals.size ());
-    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow, 
-							   indsK,
-							   valsK);
+    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow,
+                                                           indsK,
+                                                           valsK);
   }
 
 
@@ -2091,9 +2091,9 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceGlobalValues (const GlobalOrdinal globalRow,
-		       const LocalOrdinal numEnt,
-		       const Scalar inputVals[],
-		       const GlobalOrdinal inputCols[]) const
+                       const LocalOrdinal numEnt,
+                       const Scalar inputVals[],
+                       const GlobalOrdinal inputCols[]) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
@@ -2107,9 +2107,9 @@ namespace Tpetra {
 
     GIVT indsK (inputCols, numEnt);
     ISVT valsK (reinterpret_cast<const IST*> (inputVals), numEnt);
-    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow, 
-							   indsK,
-							   valsK);
+    return this->template replaceGlobalValues<GIVT, ISVT> (globalRow,
+                                                           indsK,
+                                                           valsK);
   }
 
 
@@ -2180,10 +2180,10 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   sumIntoGlobalValues (const GlobalOrdinal globalRow,
-		       const LocalOrdinal numEnt,
-		       const Scalar vals[],
-		       const GlobalOrdinal cols[],
-		       const bool atomic)
+                       const LocalOrdinal numEnt,
+                       const Scalar vals[],
+                       const GlobalOrdinal cols[],
+                       const bool atomic)
   {
     Teuchos::ArrayView<const GlobalOrdinal> colsIn (cols, numEnt);
     Teuchos::ArrayView<const Scalar> valsIn (vals, numEnt);
@@ -2219,10 +2219,10 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   sumIntoLocalValues (const LocalOrdinal localRow,
-		      const LocalOrdinal numEnt,
-		      const Scalar vals[],
-		      const LocalOrdinal cols[],
-		      const bool atomic) const
+                      const LocalOrdinal numEnt,
+                      const Scalar vals[],
+                      const LocalOrdinal cols[],
+                      const bool atomic) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
@@ -6808,29 +6808,18 @@ namespace Tpetra {
 #endif
 
     // Tpetra-specific stuff
-    //
-    // FIXME (mfh 15 May 2014) This should work fine if CrsMatrix
-    // inherits from DistObject (in which case all arrays that get
-    // resized here are Teuchos::Array), but it won't work if
-    // CrsMatrix inherits from DistObjectKA (in which case all arrays
-    // that get resized here are Kokkos::View).  In the latter case,
-    // imports_ and numExportPacketsPerLID_ each have only a device
-    // view, but numImportPacketsPerLID_ has a device view and a host
-    // view (host_numImportPacketsPerLID_).
-    //
-    // Currently, CrsMatrix inherits from DistObject, not
-    // DistObjectKA, so the code below should be fine for the Kokkos
-    // refactor version of CrsMatrix.
-    //
-    // For this and for all other cases in this function that want to
-    // resize the DistObject's communication arrays, it would make
-    // sense to give DistObject (and DistObjectKA) methods for
-    // resizing that don't expose the details of whether these are
-    // Teuchos::Array or Kokkos::View.
     size_t constantNumPackets = destMat->constantNumberOfPackets ();
     if (constantNumPackets == 0) {
-      destMat->numExportPacketsPerLID_old_.resize (ExportLIDs.size ());
-      destMat->numImportPacketsPerLID_old_.resize (RemoteLIDs.size ());
+      destMat->numExportPacketsPerLID_ =
+        decltype (destMat->numExportPacketsPerLID_) ("numExportPacketsPerLID",
+                                                     ExportLIDs.size ());
+      destMat->host_numExportPacketsPerLID_ =
+        Kokkos::create_mirror_view (destMat->numExportPacketsPerLID_);
+      destMat->numImportPacketsPerLID_ =
+        decltype (destMat->numImportPacketsPerLID_) ("numImportPacketsPerLID",
+                                                     RemoteLIDs.size ());
+      destMat->host_numImportPacketsPerLID_ =
+        Kokkos::create_mirror_view (destMat->numImportPacketsPerLID_);
     }
     else {
       // There are a constant number of packets per element.  We
@@ -6870,9 +6859,10 @@ namespace Tpetra {
       std::ostringstream os;
       int lclErr = 0;
       try {
+        Teuchos::ArrayView<size_t> numExportPacketsPerLID (destMat->host_numExportPacketsPerLID_.ptr_on_device (), destMat->host_numExportPacketsPerLID_.dimension_0 ());
         Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
                                                    destMat->exports_old_,
-                                                   destMat->numExportPacketsPerLID_old_ (),
+                                                   numExportPacketsPerLID,
                                                    constantNumPackets, Distor,
                                                    SourcePids);
       }
@@ -6905,25 +6895,17 @@ namespace Tpetra {
     }
 
 #else
-    Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
-                                               destMat->exports_old_,
-                                               destMat->numExportPacketsPerLID_old_ (),
-                                               constantNumPackets, Distor,
-                                               SourcePids);
+    {
+      Teuchos::ArrayView<size_t> numExportPacketsPerLID (destMat->host_numExportPacketsPerLID_.ptr_on_device (), destMat->host_numExportPacketsPerLID_.dimension_0 ());
+      Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
+                                                 destMat->exports_old_,
+                                                 numExportPacketsPerLID,
+                                                 constantNumPackets, Distor,
+                                                 SourcePids);
+    }
 #endif // HAVE_TPETRA_DEBUG
 
     // Do the exchange of remote data.
-    //
-    // FIXME (mfh 15 May 2014) This should work fine if CrsMatrix
-    // inherits from DistObject (in which case all arrays that get
-    // passed in here are Teuchos::Array), but it won't work if
-    // CrsMatrix inherits from DistObjectKA (in which case all arrays
-    // that get passed in here are Kokkos::View).
-    //
-    // In the latter case, imports_, exports_, and
-    // numExportPacketsPerLID_ each have only a device view.
-    // numImportPacketsPerLIDs_ is a device view, and also has a host
-    // view (host_numImportPacketsPerLID_).
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Transfer"))));
 #endif
@@ -6931,17 +6913,19 @@ namespace Tpetra {
     if (communication_needed) {
       if (reverseMode) {
         if (constantNumPackets == 0) { // variable number of packets per LID
-          Distor.doReversePostsAndWaits (destMat->numExportPacketsPerLID_old_ ().getConst (), 1,
-                                         destMat->numImportPacketsPerLID_old_ ());
+          Teuchos::ArrayView<size_t> numExportPacketsPerLID (destMat->host_numExportPacketsPerLID_.ptr_on_device (), destMat->host_numExportPacketsPerLID_.dimension_0 ());
+          Teuchos::ArrayView<size_t> numImportPacketsPerLID (destMat->host_numImportPacketsPerLID_.ptr_on_device (), destMat->host_numImportPacketsPerLID_.dimension_0 ());
+          Distor.doReversePostsAndWaits (numExportPacketsPerLID.getConst (), 1,
+                                         numImportPacketsPerLID);
           size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < destMat->numImportPacketsPerLID_old_.size (); ++i) {
-            totalImportPackets += destMat->numImportPacketsPerLID_old_[i];
+          for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
+            totalImportPackets += numImportPacketsPerLID[i];
           }
           destMat->imports_old_.resize (totalImportPackets);
           Distor.doReversePostsAndWaits (destMat->exports_old_ ().getConst (),
-                                         destMat->numExportPacketsPerLID_old_ (),
+                                         numExportPacketsPerLID,
                                          destMat->imports_old_ (),
-                                         destMat->numImportPacketsPerLID_old_ ());
+                                         numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
           Distor.doReversePostsAndWaits (destMat->exports_old_ ().getConst (),
@@ -6951,17 +6935,19 @@ namespace Tpetra {
       }
       else { // forward mode (the default)
         if (constantNumPackets == 0) { // variable number of packets per LID
-          Distor.doPostsAndWaits (destMat->numExportPacketsPerLID_old_ ().getConst (), 1,
-                                  destMat->numImportPacketsPerLID_old_ ());
+          Teuchos::ArrayView<size_t> numExportPacketsPerLID (destMat->host_numExportPacketsPerLID_.ptr_on_device (), destMat->host_numExportPacketsPerLID_.dimension_0 ());
+          Teuchos::ArrayView<size_t> numImportPacketsPerLID (destMat->host_numImportPacketsPerLID_.ptr_on_device (), destMat->host_numImportPacketsPerLID_.dimension_0 ());
+          Distor.doPostsAndWaits (numExportPacketsPerLID.getConst (), 1,
+                                  numImportPacketsPerLID);
           size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < destMat->numImportPacketsPerLID_old_.size (); ++i) {
-            totalImportPackets += destMat->numImportPacketsPerLID_old_[i];
+          for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
+            totalImportPackets += numImportPacketsPerLID[i];
           }
           destMat->imports_old_.resize (totalImportPackets);
           Distor.doPostsAndWaits (destMat->exports_old_ ().getConst (),
-                                  destMat->numExportPacketsPerLID_old_ (),
+                                  numExportPacketsPerLID,
                                   destMat->imports_old_ (),
-                                  destMat->numImportPacketsPerLID_old_ ());
+                                  numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
           Distor.doPostsAndWaits (destMat->exports_old_ ().getConst (),
@@ -6975,24 +6961,21 @@ namespace Tpetra {
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
-    // FIXME (mfh 15 May 2014) This should work fine if CrsMatrix
-    // inherits from DistObject (in which case all arrays that get
-    // passed in here are Teuchos::Array), but it won't work if
-    // CrsMatrix inherits from DistObjectKA (in which case all arrays
-    // that get passed in here are Kokkos::View).
-    //
-    // In the latter case, imports_ only has a device view.
-    // numImportPacketsPerLIDs_ is a device view, and also has a host
-    // view (host_numImportPacketsPerLID_).
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1"))));
 #endif
+
+    // Backwards compatibility measure.  We'll use this again below.
+    Teuchos::ArrayView<size_t> numImportPacketsPerLID (destMat->host_numImportPacketsPerLID_.ptr_on_device (), destMat->host_numImportPacketsPerLID_.dimension_0 ());
+
     size_t mynnz =
       Import_Util::unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs,
                                                         destMat->imports_old_ (),
-                                                        destMat->numImportPacketsPerLID_old_ (),
-                                                        constantNumPackets, Distor, INSERT,
-                                                        NumSameIDs, PermuteToLIDs,
+                                                        numImportPacketsPerLID,
+                                                        constantNumPackets,
+                                                        Distor, INSERT,
+                                                        NumSameIDs,
+                                                        PermuteToLIDs,
                                                         PermuteFromLIDs);
     size_t N = BaseRowMap->getNodeNumElements ();
 
@@ -7029,7 +7012,7 @@ namespace Tpetra {
     // abstraction?  Implementing a concrete DistObject subclass only
     // takes five methods.
     Import_Util::unpackAndCombineIntoCrsArrays (*this, RemoteLIDs, destMat->imports_old_ (),
-                                                destMat->numImportPacketsPerLID_old_ (),
+                                                numImportPacketsPerLID,
                                                 constantNumPackets, Distor, INSERT, NumSameIDs,
                                                 PermuteToLIDs, PermuteFromLIDs, N, mynnz, MyPID,
                                                 CSR_rowptr (), CSR_colind_GID (), CSR_vals (),

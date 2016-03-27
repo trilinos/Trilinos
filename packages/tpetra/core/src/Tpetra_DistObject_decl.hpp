@@ -700,7 +700,7 @@ namespace Tpetra {
   protected:
     Teuchos::Array<packet_type> imports_old_;
 
-  private:
+  protected:
     /// \brief Number of packets to receive for each receive operation.
     ///
     /// This array is used in Distributor::doPosts() (and
@@ -711,11 +711,12 @@ namespace Tpetra {
     /// (For example, MultiVector sets the constantNumPackets output
     /// argument of packAndPrepare() to the number of columns in
     /// the multivector.)
+    ///
+    /// Unfortunately, I had to declare these protected, because
+    /// CrsMatrix uses them at one point.  Please, nobody else use
+    /// them.
     Kokkos::View<size_t*, execution_space> numImportPacketsPerLID_;
     typename Kokkos::View<size_t*, execution_space>::HostMirror host_numImportPacketsPerLID_;
-
-  protected:
-    Teuchos::Array<size_t> numImportPacketsPerLID_old_;
 
   private:
     //! Buffer from which packed data are exported (sent to other processes).
@@ -724,7 +725,7 @@ namespace Tpetra {
   protected:
     Teuchos::Array<packet_type> exports_old_;
 
-  private:
+  protected:
     /// \brief Number of packets to send for each send operation.
     ///
     /// This array is used in Distributor::doPosts() (and
@@ -735,9 +736,12 @@ namespace Tpetra {
     /// (For example, MultiVector sets the constantNumPackets output
     /// argument of packAndPrepare() to the number of columns in the
     /// multivector.)
-    Kokkos::View<size_t*,execution_space> numExportPacketsPerLID_;
-  protected:
-    Teuchos::Array<size_t> numExportPacketsPerLID_old_;
+    ///
+    /// Unfortunately, I had to declare these protected, because
+    /// CrsMatrix uses them at one point.  Please, nobody else use
+    /// them.
+    Kokkos::View<size_t*, execution_space> numExportPacketsPerLID_;
+    typename Kokkos::View<size_t*, execution_space> host_numExportPacketsPerLID_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
   private:
