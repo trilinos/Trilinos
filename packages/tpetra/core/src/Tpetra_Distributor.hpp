@@ -2128,12 +2128,30 @@ namespace Tpetra {
 
     // Each message has the same number of packets.
     const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      const size_t importBufSize = static_cast<size_t> (imports.dimension_0 ());
+      const int lclBad = (importBufSize < totalNumImportPackets) ? 1 : 0;
+      int gblBad = 0;
+      using Teuchos::reduceAll;
+      using Teuchos::REDUCE_MAX;
+      using Teuchos::outArg;
+      reduceAll (*comm_, REDUCE_MAX, lclBad, outArg (gblBad));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (gblBad != 0, std::runtime_error, "Tpetra::Distributor::doPosts(3 args)"
+         ": On one or more processes, the 'imports' array does not have enough "
+         "entries to hold the expected number of import packets.  ");
+    }
+#else
     TEUCHOS_TEST_FOR_EXCEPTION(
       static_cast<size_t> (imports.dimension_0 ()) < totalNumImportPackets,
       std::runtime_error, "Tpetra::Distributor::doPosts(3 args): The 'imports' "
       "array must have enough entries to hold the expected number of import "
       "packets.  imports.dimension_0() = " << imports.dimension_0 () << " < "
-      "totalNumImportPackets = " << totalNumImportPackets << ".");
+      "totalNumImportPackets = " << totalNumImportPackets << " = "
+      "totalReceiveLength_ (" << totalReceiveLength_ << ") * numPackets ("
+      << numPackets << ").");
+#endif // HAVE_TPETRA_DEBUG
 
     // MPI tag for nonblocking receives and blocking sends in this
     // method.  Some processes might take the "fast" path
