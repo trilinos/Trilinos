@@ -6827,8 +6827,10 @@ namespace Tpetra {
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
       const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
-      if (static_cast<size_t> (destMat->imports_old_.size ()) != rbufLen) {
-        destMat->imports_old_.resize (rbufLen);
+      if (static_cast<size_t> (destMat->imports_.size ()) != rbufLen ||
+          destMat->host_imports_.size () != destMat->imports_.size ()) {
+        Kokkos::realloc (destMat->imports_, rbufLen);
+        destMat->host_imports_ = Kokkos::create_mirror_view (destMat->imports_);
       }
     }
 
@@ -6921,16 +6923,25 @@ namespace Tpetra {
           for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
             totalImportPackets += numImportPacketsPerLID[i];
           }
-          destMat->imports_old_.resize (totalImportPackets);
+
+          if (static_cast<size_t> (destMat->imports_.size ()) != totalImportPackets ||
+              destMat->host_imports_.size () != destMat->imports_.size ()) {
+            Kokkos::realloc (destMat->imports_, totalImportPackets);
+            destMat->host_imports_ = Kokkos::create_mirror_view (destMat->imports_);
+          }
+          Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
+                                                destMat->host_imports_.size ());
           Distor.doReversePostsAndWaits (destMat->exports_old_ ().getConst (),
                                          numExportPacketsPerLID,
-                                         destMat->imports_old_ (),
+                                         hostImports,
                                          numImportPacketsPerLID);
         }
-        else { // constant number of packets per LID
+        else { // constant number of packets per LI
+          Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
+                                                destMat->host_imports_.size ());
           Distor.doReversePostsAndWaits (destMat->exports_old_ ().getConst (),
                                          constantNumPackets,
-                                         destMat->imports_old_ ());
+                                         hostImports);
         }
       }
       else { // forward mode (the default)
@@ -6943,16 +6954,25 @@ namespace Tpetra {
           for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
             totalImportPackets += numImportPacketsPerLID[i];
           }
-          destMat->imports_old_.resize (totalImportPackets);
+
+          if (static_cast<size_t> (destMat->imports_.size ()) != totalImportPackets ||
+              destMat->host_imports_.size () != destMat->imports_.size ()) {
+            Kokkos::realloc (destMat->imports_, totalImportPackets);
+            destMat->host_imports_ = Kokkos::create_mirror_view (destMat->imports_);
+          }
+          Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
+                                                destMat->host_imports_.size ());
           Distor.doPostsAndWaits (destMat->exports_old_ ().getConst (),
                                   numExportPacketsPerLID,
-                                  destMat->imports_old_ (),
+                                  hostImports,
                                   numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
+          Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
+                                                destMat->host_imports_.size ());
           Distor.doPostsAndWaits (destMat->exports_old_ ().getConst (),
                                   constantNumPackets,
-                                  destMat->imports_old_ ());
+                                  hostImports);
         }
       }
     }
@@ -6968,9 +6988,11 @@ namespace Tpetra {
     // Backwards compatibility measure.  We'll use this again below.
     Teuchos::ArrayView<size_t> numImportPacketsPerLID (destMat->host_numImportPacketsPerLID_.ptr_on_device (), destMat->host_numImportPacketsPerLID_.dimension_0 ());
 
+    Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
+                                          destMat->host_imports_.size ());
     size_t mynnz =
       Import_Util::unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs,
-                                                        destMat->imports_old_ (),
+                                                        hostImports,
                                                         numImportPacketsPerLID,
                                                         constantNumPackets,
                                                         Distor, INSERT,
@@ -7011,7 +7033,7 @@ namespace Tpetra {
     // in a huge list of arrays is icky.  Can't we have a bit of an
     // abstraction?  Implementing a concrete DistObject subclass only
     // takes five methods.
-    Import_Util::unpackAndCombineIntoCrsArrays (*this, RemoteLIDs, destMat->imports_old_ (),
+    Import_Util::unpackAndCombineIntoCrsArrays (*this, RemoteLIDs, hostImports,
                                                 numImportPacketsPerLID,
                                                 constantNumPackets, Distor, INSERT, NumSameIDs,
                                                 PermuteToLIDs, PermuteFromLIDs, N, mynnz, MyPID,

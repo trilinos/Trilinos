@@ -693,12 +693,15 @@ namespace Tpetra {
     //! The Map over which this object is distributed.
     Teuchos::RCP<const map_type> map_;
 
-  private:
-    //! Buffer into which packed data are imported (received from other processes).
-    Kokkos::View<packet_type*, execution_space> imports_;
-
   protected:
-    Teuchos::Array<packet_type> imports_old_;
+    /// \brief Buffer into which packed data are imported (received
+    ///   from other processes).
+    ///
+    /// Unfortunately, I had to declare these protected, because
+    /// CrsMatrix uses them at one point.  Please, nobody else use
+    /// them.
+    Kokkos::View<packet_type*, execution_space> imports_;
+    typename decltype (imports_)::HostMirror host_imports_;
 
   protected:
     /// \brief Number of packets to receive for each receive operation.

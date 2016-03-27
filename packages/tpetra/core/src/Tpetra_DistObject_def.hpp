@@ -535,8 +535,14 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-        if (static_cast<size_t> (imports_old_.size()) != rbufLen) {
-          imports_old_.resize (rbufLen);
+
+        if (static_cast<size_t> (imports_.dimension_0 ()) != rbufLen ||
+            host_imports_.dimension_0 () != imports_.dimension_0 ()) {
+          Kokkos::realloc (imports_, rbufLen);
+          // This is doTransferOld, so we need the host version of
+          // imports_.  We'll wrap its data in a Teuchos::ArrayView
+          // and use the backwards compatibility interface.
+          host_imports_ = Kokkos::create_mirror_view (imports_);
         }
       }
 
@@ -572,16 +578,28 @@ namespace Tpetra {
             for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
               totalImportPackets += numImportPacketsPerLID[i];
             }
-            imports_old_.resize(totalImportPackets);
+
+            if (static_cast<size_t> (imports_.dimension_0 ()) != totalImportPackets ||
+                host_imports_.dimension_0 () != imports_.dimension_0 ()) {
+              Kokkos::realloc (imports_, totalImportPackets);
+              // This is doTransferOld, so we need the host version of
+              // imports_.  We'll wrap its data in a Teuchos::ArrayView
+              // and use the backwards compatibility interface.
+              host_imports_ = Kokkos::create_mirror_view (imports_);
+            }
+            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                         host_imports_.dimension_0 ());
             distor.doReversePostsAndWaits (exports_old_().getConst(),
                                            numExportPacketsPerLID,
-                                           imports_old_(),
+                                           hostImports,
                                            numImportPacketsPerLID);
           }
           else {
+            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                         host_imports_.dimension_0 ());
             distor.doReversePostsAndWaits (exports_old_ ().getConst (),
                                            constantNumPackets,
-                                           imports_old_ ());
+                                           hostImports);
           }
         }
         else { // revOp == DoForward
@@ -597,16 +615,28 @@ namespace Tpetra {
             for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
               totalImportPackets += numImportPacketsPerLID[i];
             }
-            imports_old_.resize(totalImportPackets);
+
+            if (static_cast<size_t> (imports_.dimension_0 ()) != totalImportPackets ||
+                host_imports_.dimension_0 () != imports_.dimension_0 ()) {
+              Kokkos::realloc (imports_, totalImportPackets);
+              // This is doTransferOld, so we need the host version of
+              // imports_.  We'll wrap its data in a Teuchos::ArrayView
+              // and use the backwards compatibility interface.
+              host_imports_ = Kokkos::create_mirror_view (imports_);
+            }
+            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                         host_imports_.dimension_0 ());
             distor.doPostsAndWaits (exports_old_().getConst(),
                                     numExportPacketsPerLID,
-                                    imports_old_(),
+                                    hostImports,
                                     numImportPacketsPerLID);
           }
           else {
+            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                         host_imports_.dimension_0 ());
             distor.doPostsAndWaits (exports_old_ ().getConst (),
                                     constantNumPackets,
-                                    imports_old_ ());
+                                    hostImports);
           }
         }
         {
@@ -614,7 +644,9 @@ namespace Tpetra {
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
-          unpackAndCombine (remoteLIDs, imports_old_(), numImportPacketsPerLID,
+          Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                       host_imports_.dimension_0 ());
+          unpackAndCombine (remoteLIDs, hostImports, numImportPacketsPerLID,
                             constantNumPackets, distor, CM);
         }
       }
@@ -800,8 +832,10 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-        if (static_cast<size_t> (imports_.size()) != rbufLen) {
-          Kokkos::Compat::realloc (imports_, rbufLen);
+        if (static_cast<size_t> (imports_.dimension_0 ()) != rbufLen) {
+          Kokkos::realloc (imports_, rbufLen);
+          // This is doTransferNew, so we don't need to allocate the
+          // host version of imports_.
         }
       }
 
@@ -855,8 +889,11 @@ namespace Tpetra {
             for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
               totalImportPackets += host_numImportPacketsPerLID_[i];
             }
-            // FIXME (mfh 17 Feb 2014) Only realloc if necessary.
-            Kokkos::Compat::realloc (imports_, totalImportPackets);
+            if (static_cast<size_t> (imports_.dimension_0 ()) != totalImportPackets) {
+              Kokkos::realloc (imports_, totalImportPackets);
+              // This is doTransferNew, so we don't need to allocate the
+              // host version of imports_.
+            }
             distor.doReversePostsAndWaits (create_const_view (exports_),
                                            getArrayView (host_numExportPacketsPerLID_),
                                            imports_,
@@ -883,8 +920,12 @@ namespace Tpetra {
             for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
               totalImportPackets += host_numImportPacketsPerLID_[i];
             }
-            // FIXME (mfh 17 Feb 2014) Only realloc if necessary.
-            Kokkos::Compat::realloc (imports_, totalImportPackets);
+
+            if (static_cast<size_t> (imports_.dimension_0 ()) != totalImportPackets) {
+              Kokkos::realloc (imports_, totalImportPackets);
+              // This is doTransferNew, so we don't need to allocate
+              // the host version of imports_.
+            }
             distor.doPostsAndWaits (create_const_view (exports_),
                                     getArrayView (host_numExportPacketsPerLID_),
                                     imports_,
