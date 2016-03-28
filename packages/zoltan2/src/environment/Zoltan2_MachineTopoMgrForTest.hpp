@@ -20,11 +20,17 @@ public:
    *  \param comm Communication object.
    */
 
-  MachineBGQTest(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ):
+  MachineBGQTest(const Teuchos::Comm<int> &comm ):
       Machine<pcoord_t,part_t>(comm),
       networkDim(6),
-      procCoords(NULL){
+      procCoords(NULL),machine_extent(NULL),
+      delete_transformed_coords(false), transformed_network_dim(0),transformed_coordinates (NULL), pl(NULL){
+    transformed_network_dim = networkDim - 1;
+    transformed_coordinates = procCoords;
+
+    machine_extent = new int[networkDim];
     this->getMachineExtent(this->machine_extent);
+    machine_extent[5] = 1;
     //allocate memory for processor coordinates.
     procCoords = new pcoord_t *[networkDim];
     for (int i = 0; i < networkDim; ++i){
@@ -34,22 +40,29 @@ public:
 
     //obtain the coordinate of the processor.
     pcoord_t *xyz = new pcoord_t[networkDim];
-    getMyMachineCoordinate(xyz);
+    getMyActualMachineCoordinate(xyz);
     for (int i = 0; i < networkDim; i++)
       procCoords[i][this->myRank] = xyz[i];
     delete [] xyz;
 
     //reduceAll the coordinates of each processor.
     gatherMachineCoordinates(comm);
+
   }
 
-  MachineBGQTest(const Teuchos::Comm<int> &comm):
+  MachineBGQTest(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl_):
     Machine<pcoord_t,part_t>(comm),
     networkDim(6),
-    procCoords(NULL)
+    procCoords(NULL),machine_extent(NULL),
+    delete_transformed_coords(false), transformed_network_dim(0),transformed_coordinates (NULL),
+    pl(&pl_)
   {
+    transformed_network_dim = networkDim - 1;
+    transformed_coordinates = procCoords;
+    machine_extent = new int[networkDim];
 
     this->getMachineExtent(this->machine_extent);
+    machine_extent[5] = 1;
     //allocate memory for processor coordinates.
     procCoords = new pcoord_t *[networkDim];
     for (int i = 0; i < networkDim; ++i){
@@ -59,152 +72,254 @@ public:
 
     //obtain the coordinate of the processor.
     pcoord_t *xyz = new pcoord_t[networkDim];
-    getMyMachineCoordinate(xyz);
+    getMyActualMachineCoordinate(xyz);
     for (int i = 0; i < networkDim; i++)
       procCoords[i][this->myRank] = xyz[i];
     delete [] xyz;
 
     //reduceAll the coordinates of each processor.
     gatherMachineCoordinates(comm);
+
+    const Teuchos::ParameterEntry *pe = this->pl->getEntryPtr("machine_coord_transformation");
+
+    if (pe){
+
+      std::string approach;
+      approach = pe->getValue<std::string>(&approach);
+
+      if (approach == "Node"){
+        transformed_network_dim = networkDim - 1;
+        transformed_coordinates = procCoords;
+      }
+
+      else if (approach == "EIGNORE"){
+        if (this->myRank == 0) std::cout << "Ignoring E Dimension" << std::endl;
+        transformed_network_dim = networkDim - 2;
+        transformed_coordinates = procCoords;
+      }
+    }
   }
+
 
   virtual ~MachineBGQTest() {
     for (int i = 0; i < networkDim; i++){
       delete [] procCoords[i];
     }
     delete [] procCoords;
+
+    delete [] machine_extent;
+    if (delete_transformed_coords){
+      for (int i = 0; i < transformed_network_dim; i++){
+        delete [] transformed_coordinates[i];
+      }
+      delete [] transformed_coordinates;
+    }
   }
 
   bool hasMachineCoordinates() const { return true; }
 
-  int getMachineDim() const { return networkDim; }
-
-  bool getMachineExtentWrapArounds(part_t *wrap_around) const {
-    wrap_around[0] = true;
-    wrap_around[1] = true;
-    wrap_around[2] = true;
-    wrap_around[3] = true;
-    wrap_around[4] = true;
-    wrap_around[5] = true;
-    return true;
-  }
-
+  int getMachineDim() const { return transformed_network_dim; }
 
   bool getMachineExtentWrapArounds(bool *wrap_around) const {
-    wrap_around[0] = wrap_around[1] = wrap_around[2] =
-        wrap_around[3] = wrap_around[4] = wrap_around[5] = true;
+    int dim = 0;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
     return true;
   }
 
-  bool getMachineExtent(part_t *nxyz) const {
+
+  bool getMachineExtentWrapArounds(part_t *wrap_around) const {
+
+    int dim = 0;
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+
+    if (dim < transformed_network_dim)
+      wrap_around[dim++] = true;
+    return true;
+  }
+
+  bool getMachineExtent(part_t *extent) const {
+    part_t nxyz[6];
+
+    nxyz[0] = 1;
+    nxyz[1] = 1;
+    nxyz[2] = 1;
+    nxyz[3] = 1;
+    nxyz[4] = 1;
+    nxyz[5] = 1;
     const int rank_per_node = 1;
-    switch (this->numRanks / rank_per_node){
-    case 0:
-    case 1:
+    const int num_nodes = this->numRanks / rank_per_node;
+    if (num_nodes <= 1){
       nxyz[0] = nxyz[1] = nxyz[2] = nxyz[3] = 1;
       nxyz[4] = 1;
       nxyz[5] = 1;
-      break;
-    case 2:
+    }
+    else if (num_nodes <= 2){
+
       nxyz[0] = nxyz[1] = nxyz[2] = nxyz[3] = 1;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 4:
+    }
+    else if (num_nodes <= 4){
       nxyz[0] = nxyz[1] = nxyz[2] = 1;
       nxyz[3] = 2;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 8:
+
+    }
+    else if (num_nodes <= 8){
       nxyz[0] = nxyz[1] = 1;
       nxyz[2] = 2;
       nxyz[3] = 2;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 16:
+    }
+
+    else if (num_nodes <= 16){
+
       nxyz[0] = 1;
       nxyz[1] = 2;
       nxyz[2] = 2;
       nxyz[3] = 2;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 32:
+    }
+
+    else if (num_nodes <= 32){
+
       nxyz[0] = 1;
       nxyz[1] = 2;
       nxyz[2] = 2;
       nxyz[3] = 4;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 64:
+    }
+
+    else if (num_nodes <= 64){
+
       nxyz[0] = 1;
       nxyz[1] = 2;
       nxyz[2] = 4;
       nxyz[3] = 4;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 128:
+    }
+
+    else if (num_nodes <= 128){
+
       nxyz[0] = 2;
       nxyz[1] = 2;
       nxyz[2] = 4;
       nxyz[3] = 4;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 256:
+    }
+    else if (num_nodes <= 256){
+
       nxyz[0] = 4;
       nxyz[1] = 2;
       nxyz[2] = 4;
       nxyz[3] = 4;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 512:
+    }
+    else if (num_nodes <= 512){
+
       nxyz[0] = 4;
       nxyz[1] = 4;
       nxyz[2] = 4;
       nxyz[3] = 4;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 1024:
+    }
+    else if (num_nodes <= 1024){
+
       nxyz[0] = 4;
       nxyz[1] = 4;
       nxyz[2] = 4;
       nxyz[3] = 8;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 2048:
+    }
+    else if (num_nodes <= 2048){
+
       nxyz[0] = 4;
       nxyz[1] = 4;
       nxyz[2] = 4;
       nxyz[3] = 16;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    case 4096:
+    }
+    else if (num_nodes <= 4096){
+
       nxyz[0] = 8;
       nxyz[1] = 4;
       nxyz[2] = 4;
       nxyz[3] = 16;
       nxyz[4] = 2;
       nxyz[5] = 1;
-      break;
-    default:
-      std::cerr << "Too many ranks to test" << std::endl;
-      break;
     }
+    else {
 
+      std::cerr << "Too many ranks to test" << std::endl;
+    }
     nxyz[5] = rank_per_node;
+
+
+    int dim = 0;
+    if (dim < transformed_network_dim)
+      extent[dim] = nxyz[dim];
+    ++dim;
+    if (dim < transformed_network_dim)
+      extent[dim] = nxyz[dim];
+    ++dim;
+    if (dim < transformed_network_dim)
+      extent[dim] = nxyz[dim];
+    ++dim;
+    if (dim < transformed_network_dim)
+      extent[dim] = nxyz[dim];
+    ++dim;
+    if (dim < transformed_network_dim)
+      extent[dim] = nxyz[dim];
+    ++dim;
+    if (dim < transformed_network_dim)
+      extent[dim] = nxyz[dim];
+
     return true;
   }
 
+
   bool getMyMachineCoordinate(pcoord_t *xyz) {
+    for (int i = 0; i < this->transformed_network_dim; ++i){
+      xyz[i] = transformed_coordinates[i][this->myRank];
+    }
+    return true;
+  }
+
+  bool getMyActualMachineCoordinate(pcoord_t *xyz) {
     int a,b,c,d,e,t;
 
     int me = this->myRank;
@@ -246,6 +361,7 @@ public:
   }
 
   virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops){
+
     hops = 0;
     for (int i = 0; i < networkDim - 1; ++i){
       pcoord_t distance = procCoords[i][rank1] - procCoords[i][rank2];
@@ -253,6 +369,13 @@ public:
       if (machine_extent[i] - distance < distance) distance = machine_extent[i] - distance;
       hops += distance;
     }
+
+    /*
+    if (this->myRank == 0){
+      std::cout << "rank1:" << rank1 << " rank2:" << rank2 << " hops:" << hops << std::endl;
+    }
+    */
+
     return true;
   }
 
@@ -261,7 +384,15 @@ private:
 
   int networkDim;
   pcoord_t **procCoords;   // KDD Maybe should be RCP?
-  part_t machine_extent[6];
+  part_t *machine_extent;
+
+
+
+
+  bool delete_transformed_coords;
+  int transformed_network_dim;
+  pcoord_t **transformed_coordinates;
+  const Teuchos::ParameterList *pl;
 
   void gatherMachineCoordinates(const Teuchos::Comm<int> &comm) {
     // reduces and stores all machine coordinates.
