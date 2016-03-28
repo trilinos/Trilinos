@@ -912,8 +912,6 @@ namespace Intrepid2 {
                               ">>> ERROR (RealSpaceTools::vecprod): Dimensions of arrays (rank-1) must be 2 or 3!");                              
 #endif
 
-    const bool is_vecprod_3d = true;
-
     struct Functor {
       /**/  Kokkos::DynRankView<vecProdProperties...> _vecProd;
       const Kokkos::DynRankView<inLeftProperties...>  _inLeft;
