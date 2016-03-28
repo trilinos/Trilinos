@@ -785,12 +785,10 @@ typedef typename Intrepid2::conditional_eSpace<ArrayInverse>::execution_space ex
               }
             }
           }
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
 #endif
           if( rowID ){
             rowperm[0] = rowID;
@@ -813,12 +811,10 @@ typedef typename Intrepid2::conditional_eSpace<ArrayInverse>::execution_space ex
             }
           }
           Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
 
           Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
@@ -868,8 +864,7 @@ index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
 
 
           Scalar determinant    = inMats(i0,i1,0,0)*inMats(i0,i1,1,1)-inMats(i0,i1,0,1)*inMats(i0,i1,1,0);
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(i0,i1,0,0)==(Scalar)0)   && (inMats(i0,i1,0,1)==(Scalar)0) &&
                                         (inMats(i0,i1,1,0)==(Scalar)0) && (inMats(i0,i1,1,1)==(Scalar)0) ),
                                       std::invalid_argument,
@@ -877,7 +872,6 @@ index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
           TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
           inverseMats(i0,i1,0,0)   = inMats(i0,i1,1,1) / determinant;
           inverseMats(i0,i1,0,1) = - inMats(i0,i1,0,1) / determinant;
@@ -907,12 +901,10 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
   void operator () (const index_type i0) const {
     index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
         for (index_type i1=0; i1<dim_i1; i1++) {
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(i0,i1,0,0) == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
 #endif
 
           inverseMats(i0,i1,0,0) = (Scalar)1 / inMats(i0,i1,0,0);
@@ -951,12 +943,10 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
               }
             }
           }
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
 #endif
 
           if( rowID ){
@@ -980,12 +970,10 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
             }
           }
           Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
 
 
@@ -1030,8 +1018,7 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
   void operator () (const index_type i1) const {
 
           Scalar determinant    = inMats(i1,0,0)*inMats(i1,1,1)-inMats(i1,0,1)*inMats(i1,1,0);
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(i1,0,0)==(Scalar)0)   && (inMats(i1,0,1)==(Scalar)0) &&
                                         (inMats(i1,1,0)==(Scalar)0) && (inMats(i1,1,1)==(Scalar)0) ),
                                       std::invalid_argument,
@@ -1039,7 +1026,6 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
           TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
 
           inverseMats(i1,0,0)   = inMats(i1,1,1) / determinant;
@@ -1069,12 +1055,10 @@ typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_spa
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type i1) const {
 
- #ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
         TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(i1,0,0) == (Scalar)0 ),
                                     std::invalid_argument,
                                     ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
 #endif
 
 
@@ -1116,12 +1100,10 @@ struct inverse2_3 {
               }
             }
           }
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
 #endif
 
           if( rowID ){
@@ -1145,12 +1127,10 @@ struct inverse2_3 {
             }
           }
           Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
 
           Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
@@ -1200,8 +1180,7 @@ struct inverse2_2 {
   void operator () (const index_type i1) const {
 
    Scalar determinant    = inMats(0,0)*inMats(1,1)-inMats(0,1)*inMats(1,0);
-#ifdef HAVE_INTREPID2_DEBUG
-#ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
+#if defined(HAVE_INTREPID2_DEBUG) && defined(HAVE_INTREPID2_DEBUG_INF_CHECK) && ! defined(KOKKOS_HAVE_CUDA)
           TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(0,0)==(Scalar)0)   && (inMats(0,1)==(Scalar)0) &&
                                         (inMats(1,0)==(Scalar)0) && (inMats(1,1)==(Scalar)0) ),
                                       std::invalid_argument,
@@ -1209,7 +1188,6 @@ struct inverse2_2 {
           TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
                                       std::invalid_argument,
                                       ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
 #endif
           inverseMats(0,0)   = inMats(1,1) / determinant;
           inverseMats(0,1) = - inMats(0,1) / determinant;

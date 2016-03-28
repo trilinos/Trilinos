@@ -409,13 +409,9 @@ int main(int narg, char *arg[]) {
     apf::Mesh2** new_mesh = &m;
     ia->applyPartitioningSolution(m,new_mesh,problem.getSolution());
     
-    // An environment.  This is usually create by the problem.
-
-    RCP<const Zoltan2::Environment> env = problem.getEnvironment();
-
     // create metric object
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, CommT, ia, &problem.getSolution()));
+      rcp(new quality_t(ia, &params, CommT, &problem.getSolution()));
 
     if (!me) {
       metricObject->printMetrics(cout);

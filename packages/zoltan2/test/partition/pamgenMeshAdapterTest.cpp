@@ -55,7 +55,6 @@
 /**************************************************************/
 
 #include <Zoltan2_PamgenMeshAdapter.hpp>
-#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 
@@ -290,14 +289,10 @@ int main(int narg, char *arg[]) {
 
     problem.solve();
 
-    // An environment.  This is usually created by the problem.
-
-    RCP<const Zoltan2::Environment> env = problem.getEnvironment();
-
     // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, CommT, ia, &problem.getSolution()));
+      rcp(new quality_t(ia, &params, CommT, &problem.getSolution()));
 
     if (!me) {
       metricObject->printMetrics(cout);

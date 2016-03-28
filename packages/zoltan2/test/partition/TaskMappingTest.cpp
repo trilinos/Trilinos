@@ -181,7 +181,7 @@ int main(int argc, char *argv[]){
     RCP<const Zoltan2::Environment> env = partition_problem->getEnvironment();
 
     RCP<quality_t>metricObject = 
-      rcp(new quality_t(env, tcomm, ia.getRawPtr(),
+      rcp(new quality_t(ia.getRawPtr(), &zoltan2_parameters, tcomm,
 			&partition_problem->getSolution()));
 
     if (tcomm->getRank() == 0){

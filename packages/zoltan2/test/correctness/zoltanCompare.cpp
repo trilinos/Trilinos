@@ -427,14 +427,10 @@ for(int i = 0; i < nump; i++) {
   std::cout << me << " KDD Z2 " << coords->getMap()->getGlobalElement(i)  << " " << i << " " << problem->getSolution().getPartListView()[i] << std::endl;
 }
 
-  // An environment.  This is usually created by the problem.
-
-  RCP<const Zoltan2::Environment> env = problem->getEnvironment();
-
   // create metric object
 
-  RCP<quality_t>metricObject=rcp(new quality_t(env, problem->getComm(), ia,
-					       &problem->getSolution()));
+ RCP<quality_t>metricObject = rcp(new quality_t(ia,&params,problem->getComm(),
+						&problem->getSolution()));
   if (me == 0){
     metricObject->printMetrics(cout);
   }

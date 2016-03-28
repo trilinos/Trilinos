@@ -84,6 +84,7 @@
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
+#include "Xpetra_BlockedCrsMatrix.hpp"
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_StridedMap.hpp"
@@ -285,6 +286,42 @@ namespace Xpetra {
 
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
     } //Write
+
+    /*! @brief Save matrix to file in Matrix Market format. */
+    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+      typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
+      typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
+      typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
+      typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
+      typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
+      typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
+
+      // write all matrices with their maps
+      for (size_t r = 0; r < Op.Rows(); ++r) {
+        for (size_t c = 0; c < Op.Cols(); ++c) {
+          RCP<const XpCrsMat > m = Op.getMatrix(r,c);
+          RCP<XpCrsMat> mm = Teuchos::rcp_const_cast<XpCrsMat>(m);
+          RCP<XpMat> mat = rcp(new XpCrsMatWrap(mm));
+          if (!mat.is_null()) XpIO::Write(fileName + toString(r) + toString(c) + ".m", *mat);
+        }
+      }
+
+      // write map information of map extractors
+      RCP<const XpMapExtractor> rangeMapExtractor  = Op.getRangeMapExtractor();
+      RCP<const XpMapExtractor> domainMapExtractor = Op.getDomainMapExtractor();
+
+      for(size_t r = 0; r < rangeMapExtractor->NumMaps(); ++r) {
+        RCP<const XpMap> map = rangeMapExtractor->getMap(r);
+        XpIO::Write("subRangeMap_" + fileName + XpIO::toString<size_t>(r) + ".m", *map);
+      }
+      XpIO::Write("fullRangeMap_" + fileName +".m",*(rangeMapExtractor->getFullMap()));
+
+      for(size_t c = 0; c < domainMapExtractor->NumMaps(); ++c) {
+        RCP<const XpMap> map = domainMapExtractor->getMap(c);
+        XpIO::Write("subDomainMap_" + fileName + XpIO::toString<size_t>(c) + ".m", *map);
+      }
+      XpIO::Write("fullDomainMap_" + fileName+ ".m",*(domainMapExtractor->getFullMap()));
+    } //WriteBlockCrsMatrix
 
     //! @brief Read matrix from file in Matrix Market or binary format.
     static Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary = false) {
@@ -557,7 +594,97 @@ namespace Xpetra {
 
     }
 
+    /*! @brief Read matrix to file in Matrix Market format. */
+    static RCP<const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >   ReadBlockedCrsMatrix (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
+      typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
+      typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
+      typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
+      typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
+      typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
+      typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
+      typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
 
+      size_t numBlocks = 2; // TODO user parameter?
+
+      std::vector<RCP<const XpMap> > rgMapVec;
+      for(size_t r = 0; r < numBlocks; ++r) {
+        RCP<const XpMap> map = XpIO::ReadMap("subRangeMap_" + fileName + XpIO::toString<size_t>(r) + ".m", lib, comm);
+        rgMapVec.push_back(map);
+      }
+      RCP<const XpMap> fullRangeMap = XpIO::ReadMap("fullRangeMap_" + fileName + ".m", lib, comm);
+
+      std::vector<RCP<const XpMap> > doMapVec;
+      for(size_t c = 0; c < numBlocks; ++c) {
+        RCP<const XpMap> map = XpIO::ReadMap("subDomainMap_" + fileName + XpIO::toString<size_t>(c) + ".m", lib, comm);
+        doMapVec.push_back(map);
+      }
+      RCP<const XpMap> fullDomainMap = XpIO::ReadMap("fullDomainMap_" + fileName + ".m", lib, comm);
+
+      /*std::vector<RCP<const XpMap> > testRgMapVec;
+      for(size_t r = 0; r < numBlocks; ++r) {
+        RCP<const XpMap> map = XpIO::ReadMap("rangemap_" + fileName + XpIO::toString<size_t>(r) + "0.m", lib, comm);
+        testRgMapVec.push_back(map);
+      }
+      std::vector<RCP<const XpMap> > testDoMapVec;
+      for(size_t c = 0; c < numBlocks; ++c) {
+        RCP<const XpMap> map = XpIO::ReadMap("domainmap_" + fileName + "0" + XpIO::toString<size_t>(c) + ".m", lib, comm);
+        testDoMapVec.push_back(map);
+      }*/
+
+      // create map extractors
+
+      // range map extractor
+      bool bRangeUseThyraStyleNumbering = false;
+      /*GlobalOrdinal gMinGids = 0;
+      for(size_t v = 0; v < testRgMapVec.size(); ++v) {
+        gMinGids += testRgMapVec[v]->getMinAllGlobalIndex();
+      }
+      if ( gMinGids==0 && testRgMapVec.size() > 1 ) bRangeUseThyraStyleNumbering = true;
+      */
+      RCP<const XpMapExtractor> rangeMapExtractor =
+          Teuchos::rcp(new XpMapExtractor(fullRangeMap, rgMapVec, bRangeUseThyraStyleNumbering));
+
+
+      // domain map extractor
+      bool bDomainUseThyraStyleNumbering = false;
+      /*gMinGids = 0;
+      for(size_t v = 0; v < testDoMapVec.size(); ++v) {
+        gMinGids += testDoMapVec[v]->getMinAllGlobalIndex();
+      }
+      if ( gMinGids==0 && testDoMapVec.size() > 1 ) bDomainUseThyraStyleNumbering = true;
+      */
+      RCP<const XpMapExtractor> domainMapExtractor =
+          Teuchos::rcp(new XpMapExtractor(fullDomainMap, doMapVec, bDomainUseThyraStyleNumbering));
+
+      RCP<XpBlockedCrsMat> bOp = Teuchos::rcp(new XpBlockedCrsMat(rangeMapExtractor,domainMapExtractor,33));
+
+      // write all matrices with their maps
+      for (size_t r = 0; r < numBlocks; ++r) {
+        for (size_t c = 0; c < numBlocks; ++c) {
+          RCP<const XpMap> rowSubMap = XpIO::ReadMap("rowmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> colSubMap = XpIO::ReadMap("colmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> domSubMap = XpIO::ReadMap("domainmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> ranSubMap = XpIO::ReadMap("rangemap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<XpMat> mat = XpIO::Read(fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", rowSubMap, colSubMap, domSubMap, ranSubMap);
+          RCP<XpCrsMatWrap> cmat = Teuchos::rcp_dynamic_cast<XpCrsMatWrap>(mat);
+          RCP<XpCrsMat> crsmat = cmat->getCrsMatrix();
+          bOp->setMatrix(r, c, crsmat);
+        }
+      }
+
+      bOp->fillComplete();
+
+      return bOp;
+    } //ReadBlockedCrsMatrix
+
+
+    //! Little helper function to convert non-string types to strings
+    template<class T>
+    static std::string toString(const T& what) {
+      std::ostringstream buf;
+      buf << what;
+      return buf.str();
+    }
   };
 
 
@@ -710,6 +837,42 @@ namespace Xpetra {
 
       throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
     } //Write
+
+    /*! @brief Save matrix to file in Matrix Market format. */
+    static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
+      typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
+      typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
+      typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
+      typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
+      typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
+      typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
+
+      // write all matrices with their maps
+      for (size_t r = 0; r < Op.Rows(); ++r) {
+        for (size_t c = 0; c < Op.Cols(); ++c) {
+          RCP<const XpCrsMat > m = Op.getMatrix(r,c);
+          RCP<XpCrsMat> mm = Teuchos::rcp_const_cast<XpCrsMat>(m);
+          RCP<XpMat> mat = rcp(new XpCrsMatWrap(mm));
+          if (!mat.is_null()) XpIO::Write(fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", *mat);
+        }
+      }
+
+      // write map information of map extractors
+      RCP<const XpMapExtractor> rangeMapExtractor  = Op.getRangeMapExtractor();
+      RCP<const XpMapExtractor> domainMapExtractor = Op.getDomainMapExtractor();
+
+      for(size_t r = 0; r < rangeMapExtractor->NumMaps(); ++r) {
+        RCP<const XpMap> map = rangeMapExtractor->getMap(r);
+        XpIO::Write("subRangeMap_" + fileName + XpIO::toString<size_t>(r) + ".m", *map);
+      }
+      XpIO::Write("fullRangeMap_" + fileName +".m",*(rangeMapExtractor->getFullMap()));
+
+      for(size_t c = 0; c < domainMapExtractor->NumMaps(); ++c) {
+        RCP<const XpMap> map = domainMapExtractor->getMap(c);
+        XpIO::Write("subDomainMap_" + fileName + XpIO::toString<size_t>(c) + ".m", *map);
+      }
+      XpIO::Write("fullDomainMap_" + fileName+ ".m",*(domainMapExtractor->getFullMap()));
+    } //WriteBlockCrsMatrix
 
     //! @brief Read matrix from file in Matrix Market or binary format.
     static Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary = false) {
@@ -987,7 +1150,7 @@ namespace Xpetra {
         Epetra_Map *eMap;
         int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
         if (rv != 0)
-          throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + Teuchos::toString(rv) + ")");
+          throw Exceptions::RuntimeError("Error reading map from file " + fileName + " with EpetraExt::MatrixMarketToMap (returned " + Teuchos::toString(rv) + ")");
 
         RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
         return Xpetra::toXpetra<int,Node>(*eMap1);
@@ -1022,7 +1185,95 @@ namespace Xpetra {
 
     }
 
+    /*! @brief Read matrix to file in Matrix Market format. */
+    static RCP<const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >   ReadBlockedCrsMatrix (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
+      typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
+      typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
+      typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
+      typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
+      typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
+      typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
+      typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
 
+
+      size_t numBlocks = 2; // TODO user parameter?
+
+      std::vector<RCP<const XpMap> > rgMapVec;
+      for(size_t r = 0; r < numBlocks; ++r) {
+        RCP<const XpMap> map = XpIO::ReadMap("subRangeMap_" + fileName + XpIO::toString<size_t>(r) + ".m", lib, comm);
+        rgMapVec.push_back(map);
+      }
+      RCP<const XpMap> fullRangeMap = XpIO::ReadMap("fullRangeMap_" + fileName + ".m", lib, comm);
+
+      std::vector<RCP<const XpMap> > doMapVec;
+      for(size_t c = 0; c < numBlocks; ++c) {
+        RCP<const XpMap> map = XpIO::ReadMap("subDomainMap_" + fileName + XpIO::toString<size_t>(c) + ".m", lib, comm);
+        doMapVec.push_back(map);
+      }
+      RCP<const XpMap> fullDomainMap = XpIO::ReadMap("fullDomainMap_" + fileName + ".m", lib, comm);
+
+      /*std::vector<RCP<const XpMap> > testRgMapVec;
+      for(size_t r = 0; r < numBlocks; ++r) {
+        RCP<const XpMap> map = XpIO::ReadMap("rangemap_" + fileName + XpIO::toString<size_t>(r) + "0.m", lib, comm);
+        testRgMapVec.push_back(map);
+      }
+      std::vector<RCP<const XpMap> > testDoMapVec;
+      for(size_t c = 0; c < numBlocks; ++c) {
+        RCP<const XpMap> map = XpIO::ReadMap("domainmap_" + fileName + "0" + XpIO::toString<size_t>(c) + ".m", lib, comm);
+        testDoMapVec.push_back(map);
+      }*/
+
+      // create map extractors
+
+      // range map extractor
+      bool bRangeUseThyraStyleNumbering = false;
+      /*
+      GlobalOrdinal gMinGids = 0;
+      for(size_t v = 0; v < testRgMapVec.size(); ++v) {
+        gMinGids += testRgMapVec[v]->getMinAllGlobalIndex();
+      }
+      if ( gMinGids==0 && testRgMapVec.size() > 1 ) bRangeUseThyraStyleNumbering = true;*/
+      RCP<const XpMapExtractor> rangeMapExtractor =
+          Teuchos::rcp(new XpMapExtractor(fullRangeMap, rgMapVec, bRangeUseThyraStyleNumbering));
+
+      // domain map extractor
+      bool bDomainUseThyraStyleNumbering = false;
+      /*gMinGids = 0;
+      for(size_t v = 0; v < testDoMapVec.size(); ++v) {
+        gMinGids += testDoMapVec[v]->getMinAllGlobalIndex();
+      }
+      if ( gMinGids==0 && testDoMapVec.size() > 1) bDomainUseThyraStyleNumbering = true;*/
+      RCP<const XpMapExtractor> domainMapExtractor =
+          Teuchos::rcp(new XpMapExtractor(fullDomainMap, doMapVec, bDomainUseThyraStyleNumbering));
+
+      RCP<XpBlockedCrsMat> bOp = Teuchos::rcp(new XpBlockedCrsMat(rangeMapExtractor,domainMapExtractor,33));
+
+      // write all matrices with their maps
+      for (size_t r = 0; r < numBlocks; ++r) {
+        for (size_t c = 0; c < numBlocks; ++c) {
+          RCP<const XpMap> rowSubMap = XpIO::ReadMap("rowmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> colSubMap = XpIO::ReadMap("colmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> domSubMap = XpIO::ReadMap("domainmap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<const XpMap> ranSubMap = XpIO::ReadMap("rangemap_" + fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", lib, comm);
+          RCP<XpMat> mat = XpIO::Read(fileName + XpIO::toString<size_t>(r) + XpIO::toString<size_t>(c) + ".m", rowSubMap, colSubMap, domSubMap, ranSubMap);
+          RCP<XpCrsMatWrap> cmat = Teuchos::rcp_dynamic_cast<XpCrsMatWrap>(mat);
+          RCP<XpCrsMat> crsmat = cmat->getCrsMatrix();
+          bOp->setMatrix(r, c, crsmat);
+        }
+      }
+
+      bOp->fillComplete();
+
+      return bOp;
+    } //ReadBlockedCrsMatrix
+
+    //! Little helper function to convert non-string types to strings
+    template<class T>
+    static std::string toString(const T& what) {
+      std::ostringstream buf;
+      buf << what;
+      return buf.str();
+    }
   };
 #endif // HAVE_XPETRA_EPETRA
 

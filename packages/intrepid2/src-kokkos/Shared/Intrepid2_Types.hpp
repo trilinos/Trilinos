@@ -51,15 +51,15 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DynRankView.hpp>
 
-namespace Intrepid2 {
-  template<typename ...T> using DynRankView = Kokkos::Experimental::DynRankView<T...>;
-}
 
-#ifdef  HAVE_INTREPID2_DEBUG
-#define INTREPID2_VALIDATE( A )  A
-#else
-#define INTREPID2_VALIDATE( A ) /* empty */
-#endif
+
+// KJ :: Let's not use this.
+
+// #ifdef  HAVE_INTREPID2_DEBUG
+// #define INTREPID2_VALIDATE( A )  A
+// #else
+// #define INTREPID2_VALIDATE( A ) /* empty */
+// #endif
 
 #include <Teuchos_ScalarTraits.hpp>
 
@@ -114,6 +114,10 @@ namespace Intrepid2 {
 #define INTREPID2_MAX_DERIVATIVE 10
 
 namespace Intrepid2 {
+
+  // use ordinal_type and size_type everywhere (no index type)
+  typedef int ordinal_type;
+  typedef size_t size_type;
   
   /** \brief  Platform-dependent machine epsilon. 
    */

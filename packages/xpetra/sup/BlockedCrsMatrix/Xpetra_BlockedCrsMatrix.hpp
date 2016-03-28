@@ -232,6 +232,7 @@ namespace Xpetra {
      *
      * Merges all Xpetra::Map objects in std::vector subMaps and returns a new Xpetra::Map containing all entries.
      * Helper function only used in constructor of Xpetra_BlockedCrsMatrix for transforming a Thyra::BlockedLinearOp object
+     * All GID entries are sorted and duplicates are eliminated.
      */
     Teuchos::RCP<const Map> mergeMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps) {
       // TODO merging for Thyra mode is missing (similar to what we do in constructor of MapExtractor
@@ -754,10 +755,10 @@ namespace Xpetra {
     RCP<const Map > getRangeMap(size_t i, bool bThyraMode = false) const     { return rangemaps_->getMap(i, bRangeThyraMode_); }
 
     //! Returns map extractor class for range map
-    RCP<const MapExtractor> getRangeMapExtractor()  { return rangemaps_; }
+    RCP<const MapExtractor> getRangeMapExtractor() const { return rangemaps_; }
 
     //! Returns map extractor for domain map
-    RCP<const MapExtractor> getDomainMapExtractor() { return domainmaps_; }
+    RCP<const MapExtractor> getDomainMapExtractor() const { return domainmaps_; }
 
     //@}
 

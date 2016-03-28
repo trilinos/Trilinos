@@ -66,7 +66,6 @@
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
-using Zoltan2::Environment;
 
 
 //#define hopper_separate_test
@@ -681,14 +680,10 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     }
     CATCH_EXCEPTIONS_AND_RETURN("solve()")
 
-    // An environment.  This is usually created by the problem.
-
-    RCP<const Environment> env = problem->getEnvironment();
-
     // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, comm, ia, &problem->getSolution()));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -878,14 +873,10 @@ int testFromDataFile(
             << " part " << zparts[i] << endl;
     }
 
-    // An environment.  This is usually created by the problem.
-
-    RCP<const Environment> env = problem->getEnvironment();
-
     // create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, ia, &problem->getSolution()));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -1065,14 +1056,10 @@ int testFromSeparateDataFiles(
             << " part " << zparts[i] << endl;
     }
 
-    // An environment.  This is usually created by the problem.
-
-    RCP<const Environment> env = problem->getEnvironment();
-
     //create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, ia, &problem->getSolution()));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);

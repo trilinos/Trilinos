@@ -59,26 +59,20 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 
-#include "ROL_ScaledStdVector.hpp"
-
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_AugmentedLagrangian.hpp"
-#include "ROL_Algorithm.hpp"
-
 #include <iostream>
 #include <algorithm>
 
 #include "data.hpp"
 #include "objective.hpp"
 #include "constraint.hpp"
-#include "volume_constraint.hpp"
+#include "ROL_ExperimentDesignObjective.hpp"
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint = argc - 1;
+  int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
@@ -104,111 +98,86 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    Teuchos::RCP<ElasticitySIMPOperators<RealT> > data = Teuchos::rcp(new ElasticitySIMPOperators<RealT>(comm, parlist, outStream));
+    Teuchos::RCP<PoissonData<RealT> > data = Teuchos::rcp(new PoissonData<RealT>(comm, parlist, outStream));
+
     /*** Build vectors and dress them up as ROL vectors. ***/
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getDomainMapA();
-    Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getCellMap();
+    Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
+    Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
+    Teuchos::RCP<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > c_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_c, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > dw_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > dz2_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<std::vector<RealT> >    vscale_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
-    Teuchos::RCP<std::vector<RealT> >    vc_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
-    Teuchos::RCP<std::vector<RealT> >    vc_lam_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
-    // Set all values to 1 in u, z.
+    // Set all values to 1 in u, z and c.
     u_rcp->putScalar(1.0);
-    // Set z to gray solution.
-    RealT volFrac = parlist->sublist("ElasticityTopoOpt").get("volfrac", 0.5), one(1), two(2);
-    z_rcp->putScalar(volFrac);
-    (*vscale_rcp)[0] = one/std::pow(static_cast<RealT>(z_rcp->getGlobalLength())*(one-volFrac),two);
-
-   //test     
-   /*data->updateMaterialDensity (z_rcp);
-    Teuchos::RCP<Tpetra::MultiVector<RealT> > rhs = Teuchos::rcp(new Tpetra::MultiVector<> (data->getVecF()->getMap(), 1, true));
-    data->ApplyMatAToVec(rhs, u_rcp);
-    data->outputTpetraVector(rhs, "KU0.txt");
-    data->ApplyInverseJacobian1ToVec(u_rcp, rhs, false);
-    data->outputTpetraVector(u_rcp, "KKU0.txt");
-    
-    data->ApplyJacobian1ToVec(rhs, u_rcp);
-    data->outputTpetraVector(rhs, "KU1.txt");
-    data->ApplyInverseJacobian1ToVec(u_rcp, rhs, false);
-    data->outputTpetraVector(u_rcp, "KKU1.txt");
-  */
-    //u_rcp->putScalar(1.0);
-    //z_rcp->putScalar(1.0);
+    z_rcp->putScalar(1.0);
+    c_rcp->putScalar(1.0);
     // Randomize d vectors.
     du_rcp->randomize();
-    dw_rcp->randomize();
     dz_rcp->randomize();
-    dz2_rcp->randomize();
     // Create ROL::TpetraMultiVectors.
     Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(c_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dwp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dw_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dz2p = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz2_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > vcp
-      = Teuchos::rcp(new ROL::PrimalScaledStdVector<RealT>(vc_rcp,vscale_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > vc_lamp
-      = Teuchos::rcp(new ROL::DualScaledStdVector<RealT>(vc_lam_rcp,vscale_rcp));
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
-    ROL::Vector_SimOpt<RealT> d2(dwp,dz2p);
 
     /*** Build objective function, constraint and reduced objective function. ***/
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
-       = Teuchos::rcp(new Objective_PDEOPT_ElasticitySIMP<RealT>(data, parlist));
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
-       = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP<RealT>(data, parlist));
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
-       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, dwp));
-    Teuchos::RCP<ROL::EqualityConstraint<RealT> > volcon
-       = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP_Volume<RealT>(data, parlist));
-
-    /*** Build bound constraint ***/
-    Teuchos::RCP<Tpetra::MultiVector<> > lo_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > hi_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    lo_rcp->putScalar(0.0); hi_rcp->putScalar(1.0);
-    Teuchos::RCP<ROL::Vector<RealT> > lop = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(lo_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > hip = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(hi_rcp));
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+    Teuchos::RCP<Objective_PDEOPT_Poisson<RealT> > obj =
+      Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, parlist));
+    Teuchos::RCP<EqualityConstraint_PDEOPT_Poisson<RealT> > con =
+      Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
+      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, up));
 
     /*** Check functional interface. ***/
-    *outStream << "Checking Objective:" << "\n";
     obj->checkGradient(x,d,true,*outStream);
     obj->checkHessVec(x,d,true,*outStream);
-    obj->checkHessSym(x,d,d2,true,*outStream);
-    *outStream << "Checking Constraint:" << "\n";
-    con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
-    con->checkAdjointConsistencyJacobian_1(*dwp, *dup, *up, *zp, true, *outStream);
-    con->checkAdjointConsistencyJacobian_2(*dwp, *dzp, *up, *zp, true, *outStream);
-    con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
-    con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
     con->checkApplyJacobian(x,d,*up,true,*outStream);
     con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
-    *outStream << "Checking Reduced Objective:" << "\n";
+    con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+    con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
+    con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
     objReduced->checkGradient(*zp,*dzp,true,*outStream);
     objReduced->checkHessVec(*zp,*dzp,true,*outStream);
-    *outStream << "Checking Volume Constraint:" << "\n";
-    volcon->checkAdjointConsistencyJacobian(*vcp,*dzp,*zp,true,*outStream);
-    volcon->checkApplyJacobian(*zp,*dzp,*vcp,true,*outStream);
-    volcon->checkApplyAdjointHessian(*zp,*vcp,*dzp,*zp,true,*outStream);
 
-    /*** Run optimization ***/
-    ROL::AugmentedLagrangian<RealT> augLag(objReduced,volcon,*vc_lamp,1.0,*zp,*vcp,*parlist);
-    ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
-    algo.run(*zp,*vc_lamp,augLag,*volcon,*bnd,true,*outStream);
-    //ROL::MoreauYosidaPenalty<RealT> MYpen(objReduced,bnd,*zp,1.0);
-    //ROL::Algorithm<RealT> algo("Moreau-Yosida Penalty",*parlist,false);
-    //algo.run(*zp,*vc_lamp,MYpen,*volcon,*bnd,true,*outStream);
+    RealT tol = 1e-8;
+    zp->zero();
+    con->solve(*cp, *up, *zp, tol);
+    data->outputTpetraVector(u_rcp, "data.txt");
+    data->outputTpetraVector(data->getVecF(), "sources.txt");
 
-    data->outputTpetraVector(z_rcp, "density.txt");
+    data->setVecUd(u_rcp);
+    data->zeroRHS();
+
+    /*** Solve optimization problem. ***/
+
+    ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
+    zp->zero(); // set zero initial guess
+    algo_tr.run(*zp, *objReduced, true, *outStream);
+    con->solve(*cp, *up, *zp, tol);
+
+    //ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist,false);
+    //x.zero(); // set zero initial guess
+    //algo_cs.run(x, *cp, *obj, *con, true, *outStream);
+
+    // *outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;
+
     data->outputTpetraVector(u_rcp, "state.txt");
+    data->outputTpetraVector(z_rcp, "control.txt");
+    data->outputTpetraVector(data->getVecWeights(), "weights.txt");
+    //data->outputTpetraVector(data->getVecF(), "control.txt");
+    //data->outputTpetraData();
+
+    std::vector<Teuchos::RCP<const ROL::Vector<RealT> > > training_models;
+    training_models.push_back(zp);
+    training_models.push_back(zp);
+    ROL::ExperimentDesignObjective<RealT> objOED(obj, con, up, up, zp, cp, up, training_models, up);
+
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

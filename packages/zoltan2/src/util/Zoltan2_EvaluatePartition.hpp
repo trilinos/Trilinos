@@ -73,8 +73,6 @@ private:
   typedef typename Adapter::scalar_t scalar_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  const RCP<const Environment> env_;
-
   part_t numGlobalParts_;           // desired
   part_t targetGlobalParts_;        // actual
   part_t numNonEmpty_;              // of actual
@@ -87,18 +85,17 @@ private:
 public:
 
   /*! \brief Constructor
-      \param env   the problem environment
-      \param problemComm  the problem communicator
       \param ia the problem input adapter
+      \param problemComm  the problem communicator
       \param soln  the solution
       \param graphModel the graph model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
-  EvaluatePartition(const RCP<const Environment> &env,
+    EvaluatePartition(const Adapter *ia, 
+    ParameterList *p,
     const RCP<const Comm<int> > &problemComm,
-		    const Adapter *ia, 
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
@@ -189,15 +186,21 @@ public:
 
   template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
-  const RCP<const Environment> &env,
-  const RCP<const Comm<int> > &problemComm,
   const Adapter *ia, 
+  ParameterList *p,
+  const RCP<const Comm<int> > &comm,
   const PartitioningSolution<Adapter> *soln,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
-    env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
-    metrics_(),  metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
 {
-
+  RCP<const Comm<int> > problemComm;
+  if (comm == Teuchos::null) {
+    problemComm = DefaultComm<int>::getComm();//communicator is Teuchos default
+  } else {
+    problemComm = comm;
+  }
+  RCP<Environment> env = rcp(new Environment(*p, problemComm));
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
   env->timerStart(MACRO_TIMERS, "Computing metrics");
 
@@ -205,10 +208,8 @@ public:
   // should check those here.  For now we compute metrics
   // using all weights.
 
-  const Teuchos::ParameterList &pl = env->getParameters();
-
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
-  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
+  const Teuchos::ParameterEntry *pe = p->getEntryPtr("partitioning_objective");
   if (pe){
     std::string strChoice = pe->getValue<std::string>(&strChoice);
     if (strChoice == std::string("multicriteria_minimize_total_weight"))
@@ -260,13 +261,22 @@ public:
 
     const part_t *parts;
     if (soln) {
+      // User provided a partitioning solution; use it.
       parts = soln->getPartListView();
       env->localInputAssertion(__FILE__, __LINE__, "parts not set",
         ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
     } else {
-      part_t *procs = new part_t [numLocalObjects];
-      for (size_t i=0; i<numLocalObjects; i++) procs[i]=problemComm->getRank();
-      parts = procs;
+      // User did not provide a partitioning solution;
+      // Use input adapter partition.
+
+      parts = NULL;
+      bia->getPartsView(parts);
+      if (parts == NULL) {
+	// User has not provided input parts in input adapter
+	part_t *procs = new part_t [numLocalObjects];
+	for (size_t i=0;i<numLocalObjects;i++) procs[i]=problemComm->getRank();
+	parts = procs;
+      }
     }
     ArrayView<const part_t> partArray(parts, numLocalObjects);
 

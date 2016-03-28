@@ -253,7 +253,8 @@ void run(const UserInputForTests &uinput,
     metricObject =
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
 	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
-			       (problem), adapter_name, ia));
+			       (problem), adapter_name, ia,
+			       &zoltan2_parameters));
   } else if (problem_kind == "ordering") {
     reinterpret_cast<ordering_problem_t *>(problem)->solve();
   } else if (problem_kind == "coloring") {

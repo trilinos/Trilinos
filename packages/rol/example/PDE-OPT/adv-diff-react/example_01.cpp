@@ -65,6 +65,7 @@
 #include "data.hpp"
 #include "objective.hpp"
 #include "constraint.hpp"
+//#include "ROL_ExperimentDesignObjective.hpp"
 
 typedef double RealT;
 
@@ -147,6 +148,8 @@ int main(int argc, char *argv[]) {
     RealT tol = 1e-8;
     zp->zero();
     con->solve(*cp, *up, *zp, tol);
+    data->outputTpetraVector(u_rcp, "data.txt");
+    data->outputTpetraVector(data->getVecF(), "sources.txt");
 
     data->setVecUd(u_rcp);
     data->zeroRHS();
@@ -166,6 +169,7 @@ int main(int argc, char *argv[]) {
 
     data->outputTpetraVector(u_rcp, "state.txt");
     data->outputTpetraVector(z_rcp, "control.txt");
+    data->outputTpetraVector(data->getVecWeights(), "weights.txt");
     //data->outputTpetraVector(data->getVecF(), "control.txt");
     //data->outputTpetraData();
 

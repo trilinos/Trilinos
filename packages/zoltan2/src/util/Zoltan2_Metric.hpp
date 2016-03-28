@@ -248,10 +248,10 @@ void setGlobalMax(scalar_t x) { values_[evalGlobalMax] = x;}
 /*! \brief Get the name of the item measured. */
 const std::string &getName() const { return metricName_; }
 
-/*! \brief Get the global sum for all parts. */
+/*! \brief Get the global sum of edge cuts for all parts. */
 scalar_t getGlobalSum() const { return values_[evalGlobalSum];}
 
-/*! \brief Get the global maximum across all parts. */
+/*! \brief Get the global maximum of edge cuts per part across all parts. */
 scalar_t getGlobalMax() const { return values_[evalGlobalMax];}
 
 };  // end class
@@ -1262,13 +1262,22 @@ template <typename Adapter>
 
   const part_t *parts;
   if (solution) {
+    // User provided a partitioning solution; use it.
     parts = solution->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
   } else {
-    part_t *procs = new part_t [numLocalObjects];
-    for (size_t i = 0; i < numLocalObjects; i++) procs[i] = comm->getRank();
-    parts = procs;
+    // User did not provide a partitioning solution;
+    // Use input adapter partition.
+
+    parts = NULL;
+    ia->getPartsView(parts);
+    if (parts == NULL) {
+      // User has not provided input parts in input adapter
+      part_t *procs = new part_t [numLocalObjects];
+      for (size_t i = 0; i < numLocalObjects; i++) procs[i] = comm->getRank();
+      parts = procs;
+    }
   }
   ArrayView<const part_t> partArray(parts, numLocalObjects);
 
