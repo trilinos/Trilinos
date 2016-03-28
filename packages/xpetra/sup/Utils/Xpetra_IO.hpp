@@ -291,13 +291,9 @@ namespace Xpetra {
     static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
       typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
-      typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
-      typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
       typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
       typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
-      typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
       typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
-      typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
       typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
 
       // write all matrices with their maps
@@ -602,13 +598,10 @@ namespace Xpetra {
     static RCP<const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >   ReadBlockedCrsMatrix (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
       typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
-      typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
-      typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
       typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
       typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
-      typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
       typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
-      typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
+      typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
       typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
 
       size_t numBlocks = 2; // TODO user parameter?
@@ -849,13 +842,9 @@ namespace Xpetra {
     static void WriteBlockedCrsMatrix(const std::string& fileName, const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
       typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
-      typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
-      typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
       typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
       typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
-      typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
       typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
-      typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
       typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
 
       // write all matrices with their maps
@@ -1200,13 +1189,10 @@ namespace Xpetra {
     static RCP<const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >   ReadBlockedCrsMatrix (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
       typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                     XpMap;
       typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>  XpMapExtractor;
-      typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
-      typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
       typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
       typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
       typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
       typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
-      typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
       typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>            XpIO;
 
 

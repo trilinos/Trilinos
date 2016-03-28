@@ -628,6 +628,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMarket, M, MA, Scalar, LO, GO, Node )
 {
+#ifdef HAVE_XPETRA_THYRA
   typedef Xpetra::Map<LO, GO, Node> MapClass;
   typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
   typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
@@ -794,6 +795,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMa
   TEST_INEQUALITY(bMat2->getRangeMap(1)->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(bMat2->getDomainMap(0)->getMinAllGlobalIndex(), 0);
   TEST_INEQUALITY(bMat2->getDomainMap(1)->getMinAllGlobalIndex(), 0);
+#endif
 }
 //
 // INSTANTIATIONS
