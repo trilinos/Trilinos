@@ -693,6 +693,50 @@ namespace Intrepid2 {
                            const Kokkos::DynRankView<inputDataLeftProperties...> inputDataLeft,
                            const Kokkos::DynRankView<intputFieldProperties...>   inputDataRight,
                            const char transpose = 'N');
+
+    /** \brief There are two use cases:
+               (1) matrix-matrix product of a rank-5 container \a <b>inputFields</b> with dimensions (C,F,P,D1,D2),
+               representing the values of a set of tensor fields, on the left by the values in a rank-2, 3, or 4
+               container \a <b>inputData</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively,
+               representing the values of tensor data, OR
+               (2) matrix-matrix product of a rank-4 container \a <b>inputFields</b> with dimensions (F,P,D1,D2),
+               representing the values of a tensor field, on the left by the values in a rank-2, 3, or 4
+               container \a <b>inputData</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively,
+               representing the values of tensor data; the output value container \a <b>outputFields</b> is
+               indexed by (C,F,P,D1,D2), regardless of which of the two use cases is considered.
+
+        \remarks
+               The rank of <b>inputData</b> implicitly defines the type of tensor data:
+               \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
+               \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
+               \li rank = 4 corresponds to a full tensor \f$ \{a_{ij}\}\f$
+
+        \note  It is assumed that all tensors are square!
+
+        \note  The method is defined for spatial dimensions D = 1, 2, 3
+
+        \code
+          C    - num. integration domains
+          F    - num. fields
+          P    - num. integration points
+          D1*  - first spatial (tensor) dimension index
+          D2** - second spatial (tensor) dimension index
+        \endcode
+
+        \param  outputFields   [out] - Output (matrix-matrix product) fields array.
+        \param  inputData       [in] - Data array.
+        \param  inputFields     [in] - Input fields array.
+        \param  transpose       [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
+    */
+    template<class ...outputFieldProperties,
+             class ...inputDataProperties,
+             class ...inputFieldsProperties>
+    KOKKOS_INLINE_FUNCTION
+    static void
+    matmatProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
+                            const Kokkos::DynRankView<inputDataProperties...>   inputData,
+                            const Kokkos::DynRankView<inputFieldProperties...>  inputFields,
+                            const char transpose = 'N' );
     
     /** \brief There are two use cases:
         (1) matrix-matrix product of a rank-4 container \a <b>inputDataRight</b> with dimensions (C,P,D1,D2),
