@@ -57,54 +57,64 @@ namespace Intrepid {
   ArrayTools<ExecSpaceType>::Internal::
   dotMultiply( /**/  Kokkos::DynRankView<outputProperties...>     output,
                const Kokkos::DynRankView<leftInputProperties...>  leftInput,
-               const Kokkos::DynRankView<rightInputProperties...> rightInput ) {
+               const Kokkos::DynRankView<rightInputProperties...> rightInput,
+               const bool hasField ) {
+    typedef typename leftInput::value_type value_type;
+
     struct Functor {
       /**/  Kokkos::DynRankView<outputProperties...>     _output;
       const Kokkos::DynRankView<leftInputProperties...>  _leftInput;
       const Kokkos::DynRankView<rightInputProperties...> _rightInput;
+      const bool _hasField;
 
       KOKKOS_INLINE_FUNCTION
       Functor(Kokkos::DynRankView<outputProperties...>     &output_,
               Kokkos::DynRankView<leftInputProperties...>  &leftInput_,
-              Kokkos::DynRankView<rightInputProperties...> &rightInput_)
-        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_) {}
+              Kokkos::DynRankView<rightInputProperties...> &rightInput_,
+              const bool hasField_)
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
+          _hasField(hasField_) {}
 
       KOKKOS_INLINE_FUNCTION
       ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type cl) {
-        auto result = Kokkos::subdynrankview(_output, cl, Kokkos::ALL(), Kokkos::ALL());
+      void operator()(const size_type iter) {
+        size_type cl, bf, pt;
 
-        const auto left = Kokkos::subdynrankview(_leftInput, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        if (_hasField) 
+          unrollIndex( cl, bf, pt, 
+                       _output.dimension(0),
+                       _output.dimension(1), 
+                       iter );
+        else          
+          unrollIndex( cl, pt,
+                       _output.dimension(0),
+                       iter);
 
-        const auto right = ( _rightInput.rank() == (_leftInput.rank() +1) ?
-                             Kokkos::subdynrankview(_rightInput, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) :
-                             Kokkos::subdynrankview(_rightInput,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) );
+        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cl, bf, pt) :
+                        /**/        Kokkos::subdynrankview(_output, cl,     pt));
+        
+        const auto left = Kokkos::subdynrankview(_leftInput, cl, pt, Kokkos::ALL(), Kokkos::ALL());
+        
+        const auto right = ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                             /**/        Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
+        
+        const size_type iend  = left.dimension(1);
+        const size_type jend  = left.dimension(2);
 
-        const size_type numFields = result.dimension(0);
-        const size_type numPoints = result.dimension(1);
-        const size_type dim1Tens  = left.dimension(1);
-        const size_type dim2Tens  = left.dimension(2);
-
-        temp += inputDataWrap(cl, pt, iTens1, iTens2)*inputFieldsWrap(cl, bf, pt, iTens1, iTens2);
-        outputFieldsWrap(cl, bf, pt) =  temp;
-
-          for(size_type bf = 0; bf < numFields; ++bf)
-            for(size_type pt = 0; pt < numPoints; ++pt) {
-              value_type tmp(0);
-              for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-                for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
-                  temp += left(pt, iTens1, iTens2)*right(bf, pt, iTens1, iTens2);
-              result(bf, pt) = tmp;
-            }
-
+        value_type tmp(0);
+        for(size_type i = 0; i < iend; ++i)
+          for(size_type j = 0; j < jend; ++j)
+            tmp += left(i, j)*right(i, j);
+        result() = tmp;
       }
     };
 
-    const size_type numCells = output.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
-    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput) );
+    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
+                                 /**/       output.dimension(0)*output.dimension(1) );
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField) );
   }
 
   template<typename ExecSpaceType>
@@ -164,7 +174,8 @@ namespace Intrepid {
 
     ArrayTools<ExecSpaceType>::Internal::dotMultiply( outputFields,
                                                       inputData,
-                                                      inputFields );
+                                                      inputFields,
+                                                      true );
   }
 
 
@@ -223,7 +234,8 @@ namespace Intrepid {
 
     ArrayTools<ExecSpaceType>::Internal::dotMultiply( outputData,
                                                       inputDataLeft,
-                                                      inputDataRight );
+                                                      inputDataRight,
+                                                      false );
   }
 
 } // end namespace Intrepid2

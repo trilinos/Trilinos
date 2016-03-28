@@ -60,38 +60,50 @@ namespace Intrepid2 {
   ArrayTools<ExecSpaceType>::Internal::
   crossProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
                 const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                const Kokkos::DynRankView<rightInputProperties...>  rightInput ) {
-    
+                const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+                const bool hasField) {
     struct Functor {
       /**/  Kokkos::DynRankView<outputProperties...>    _output;
       const Kokkos::DynRankView<leftInputProperties...> _leftInput;
       const Kokkos::DynRankView<leftInputProperties...> _rightInput;
-      const bool _is_crossprod_3d;
-      
+      const bool _hasField, _isCrossProd3D;
+
       KOKKOS_INLINE_FUNCTION
       Functor(Kokkos::DynRankView<outputProperties...>    &output_,
               Kokkos::DynRankView<leftInputProperties...> &leftInput_,
               Kokkos::DynRankView<leftInputProperties...> &rightInput_,
-              const bool is_crossprod_3d_);
-      : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), _is_crossprod_3d(is_crossprod_3d_) {}
-      
+              const bool hasField_,
+              const bool isCrossProd3D_)
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
+          _hasField(hasField_), _isCrossProd3D(isCrossProd3D_) {}
+
       KOKKOS_INLINE_FUNCTION
       ~Functor = default;
-      
+
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) {
-        size_type i, j, k;
-        Util::unrollIndex(i, j, k, _output, iter);
-        
-        auto result = Kokkos::subdynrankview(_output,     i, j, k, Kokkos::ALL());
-        auto left   = Kokkos::subdynrankview(_leftInput,  i,    k, Kokkos::ALL());
-    
-        const size_type r = _rightInput.rank();
-        auto right  = ( r == 3 ? Kokkos::subdynrankview(_rightInput,     j, k, Kokkos::ALL()) :
-                        /**/     Kokkos::subdynrankview(_rightInput,  i, j, k, Kokkos::ALL()) );
-        
+        size_type cell, field, point;
+
+        if (_hasField) 
+          unrollIndex( cell, field, point, 
+                       _output.dimension(0),
+                       _output.dimension(1),
+                       iter );
+        else           
+          unrollIndex( cell, point, 
+                       _output.dimension(0), 
+                       iter );
+
+        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL()));
+
+        auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL());
+
+        auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
+
         // branch prediction is possible
-        if (_is_crossprod_3d) {
+        if (_isCrossProd3D) {
           result(0) = left(1)*right(2) - left(2)*right(1);
           result(1) = left(2)*right(0) - left(0)*right(2);
           result(2) = left(0)*right(1) - left(1)*right(0);
@@ -101,9 +113,9 @@ namespace Intrepid2 {
       }
     };
     const size_type loopSize = output.dimension(0)*output.dimension(1)*output.dimension(2);
-    const bool is_crossprod_3d = (leftInput.dimension(2) == 3);
+    const bool isCrossProd3D = (leftInput.dimension(2) == 3);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, is_crossprod_3d) );
+    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField, isCrossProd3D) );
   }
 
   template<typename ExecSpaceType>
@@ -220,8 +232,11 @@ namespace Intrepid2 {
       }
     }
 #endif
-
     // body
+    ArrayTools<ExecSpace>::Internal::crossProduct( outputFields,
+                                                   inputData,
+                                                   inputFields,
+                                                   true );
   }
 
   template<typename ExecSpaceType>
@@ -335,7 +350,73 @@ namespace Intrepid2 {
     }
 #endif
     // body
+    ArrayTools<ExecSpace>::Internal::crossProduct( outputData,
+                                                   inputDataLeft,
+                                                   inputDataRight,
+                                                   false );
+  }
 
+  template<typename ExecSpaceType>
+  template<class ...outputProperties,
+           class ...leftInputProperties,
+           class ...rightInputProperties>
+  KOKKOS_INLINE_FUNCTION
+  static void
+  ArrayTools<ExecSpaceType>::Internal::
+  outerProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
+                const Kokkos::DynRankView<leftInputProperties...>   leftInput,
+                const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+                const bool hasField ) {
+    struct Functor {
+      /**/  Kokkos::DynRankView<outputProperties...>    _output;
+      const Kokkos::DynRankView<leftInputProperties...> _leftInput;
+      const Kokkos::DynRankView<leftInputProperties...> _rightInput;
+      const bool _hasField;
+
+      KOKKOS_INLINE_FUNCTION
+      Functor(Kokkos::DynRankView<outputProperties...>    &output_,
+              Kokkos::DynRankView<leftInputProperties...> &leftInput_,
+              Kokkos::DynRankView<leftInputProperties...> &rightInput_,
+              const bool hasField_)
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
+          _hasField(hasField_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      ~Functor = default;
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type iter) {
+        size_type cell, field, point;
+
+        if (_hasField) 
+          unrollIndex( cell, field, point, 
+                       _output.dimension(0),
+                       _output.dimension(1),
+                       iter );
+        else           
+          unrollIndex( cell, point, 
+                       _output.dimension(0), 
+                       iter );
+
+        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
+
+        auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL());
+
+        auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
+
+        const size_type iend = result.dimension(0);
+        const size_type jend = result.dimension(1);
+        for (size_type i=0; i<iend; ++i)
+          for (size_type j=0; j<jend; ++j)
+            result(i, j) = left(i)*right(j);
+      }
+    };
+    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
+                                 /**/       output.dimension(0)*output.dimension(1) );
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField) );
   }
 
   template<typename ExecSpaceType>
@@ -437,6 +518,10 @@ namespace Intrepid2 {
     }
 #endif
     // body
+    ArrayTools<ExecSpaceType>::Internal::outerProductDataField(  outputFields,
+                                                                 inputData,
+                                                                 inputFields,
+                                                                 true );
   }
 
   template<typename ExecSpaceType>
@@ -535,6 +620,82 @@ namespace Intrepid2 {
     }
 #endif
     // body
+    ArrayTools<ExecSpaceType>::Internal::outerProductDataData( outputData,
+                                                               inputDataLeft,
+                                                               inputDataRight,
+                                                               false );
+  }
+
+  template<typename ExecSpaceType>
+  template<class ...outputProperties,
+           class ...leftInputProperties,
+           class ...rightInputProperties>
+  KOKKOS_INLINE_FUNCTION
+  ArrayTools<ExecSpaceType>::Internal::
+  static void
+  matvecProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
+                 const Kokkos::DynRankView<leftInputProperties...>   leftInput,
+                 const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+                 const bool hasField,
+                 const bool isTranspose ) {
+    typedef typename leftInput::value_type value_type;
+
+    struct Functor {
+      /**/  Kokkos::DynRankView<outputProperties...>    _output;
+      const Kokkos::DynRankView<leftInputProperties...> _leftInput;
+      const Kokkos::DynRankView<leftInputProperties...> _rightInput;
+      const bool _hasField, _isTranspose;
+
+      KOKKOS_INLINE_FUNCTION
+      Functor(Kokkos::DynRankView<outputProperties...>    &output_,
+              Kokkos::DynRankView<leftInputProperties...> &leftInput_,
+              Kokkos::DynRankView<leftInputProperties...> &rightInput_,
+              const bool hasField_,
+              const bool isTranspose_)
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
+          _hasField(hasField_), _isTranspose(isTranspose_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      ~Functor = default;
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type iter) {
+        size_type cell, field, point;
+
+        if (_hasField) 
+          unrollIndex( cell, field, point, 
+                       _output.dimension(0),
+                       _output.dimension(1),
+                       iter );
+        else           
+          unrollIndex( cell, point, 
+                       _output.dimension(0), 
+                       iter );
+
+        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL()));
+
+        auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL(), Kokkos::ALL());
+
+        auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
+
+        result(0) = value_type(0);
+        if (_isTranspose) {
+          for (size_type i=0; i<iend; ++i)
+            for (size_type j=0; j<jend; ++j)
+              result(i) += left(i, j) * right(j);
+        } else {
+          for (size_type i=0; i<iend; ++i)
+            for (size_type j=0; j<jend; ++j)
+              result(i) += left(j, i) * right(j);
+        }
+      }
+    };
+    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
+                                 /**/       output.dimension(0)*output.dimension(1) );
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField, isTranspose) );
   }
 
   template<typename ExecSpaceType>
@@ -681,6 +842,11 @@ namespace Intrepid2 {
     }
 #endif
     // body
+    ArrayTools<ExecSpaceType>::Internal::matvecProduct( outputFields,
+                                                        inputData,
+                                                        inputFields,
+                                                        true,
+                                                        transpose == 't' || transpose == 'T' );
   }
 
   template<typename ExecSpaceType>
@@ -829,6 +995,93 @@ namespace Intrepid2 {
     }
 #endif
     // body
+    ArrayTools<ExecSpaceType>::Internal::matvecProduct( outputData,
+                                                        inputDataLeft,
+                                                        inputDataRight,
+                                                        false,
+                                                        transpose == 't' || transpose == 'T' );
+  }
+
+  template<typename ExecSpaceType>
+  template<class ...outputProperties,
+           class ...leftInputProperties,
+           class ...rightInputProperties>
+  KOKKOS_INLINE_FUNCTION
+  ArrayTools<ExecSpaceType>::Internal::
+  static void
+  matmatProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
+                 const Kokkos::DynRankView<leftInputProperties...>   leftInput,
+                 const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+                 const bool hasField,
+                 const bool isTranspose ) {
+    typedef typename leftInput::value_type value_type;
+
+    struct Functor {
+      /**/  Kokkos::DynRankView<outputProperties...>    _output;
+      const Kokkos::DynRankView<leftInputProperties...> _leftInput;
+      const Kokkos::DynRankView<leftInputProperties...> _rightInput;
+      const bool _hasField, _isTranspose;
+
+      KOKKOS_INLINE_FUNCTION
+      Functor(Kokkos::DynRankView<outputProperties...>    &output_,
+              Kokkos::DynRankView<leftInputProperties...> &leftInput_,
+              Kokkos::DynRankView<leftInputProperties...> &rightInput_,
+              const bool hasField_,
+              const bool isTranspose)
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
+          _hasField(hasField_), _isTranspose(isTranspose_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      ~Functor = default;
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type iter) {
+        size_type cell, field, point;
+
+        if (_hasField) 
+          unrollIndex( cell, field, point, 
+                       _output.dimension(0),
+                       _output.dimension(1),
+                       iter );
+        else           
+          unrollIndex( cell, point, 
+                       _output.dimension(0), 
+                       iter );
+
+        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
+
+        auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL(), Kokkos::ALL());
+
+        auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()) );
+
+        const size_type iend = result.dimension(0);
+        const size_type jend = result.dimension(0);
+
+        if (_isTranspose) {
+          const size_type kend = left.dimension(0);
+          for (size_type i=0; i<iend; ++i)
+            for (size_type j=0; j<jend; ++j) {
+              result(i, j) = value_type(0);
+              for (size_type k=0; k<kend; ++k)
+                result(i, j) += left(k, i) * right(k, j);
+            }
+        } else {
+          const size_type kend = left.dimension(1);
+          for (size_type i=0; i<iend; ++i)
+            for (size_type j=0; j<jend; ++j) {
+              result(i, j) = value_type(0);
+              for (size_type k=0; k<kend; ++k)
+                result(i, j) += left(i, k) * right(k, j);
+            }
+        }
+      }
+    };
+    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
+                                 /**/       output.dimension(0)*output.dimension(1) );
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField, isTranspose) );
   }
 
   template<typename ExecSpaceType>
@@ -987,6 +1240,11 @@ namespace Intrepid2 {
     }
 #endif
     // body
+    ArrayTools<ExecSpaceType>::Internal::matmatProduct( outputFields,
+                                                        inputData,
+                                                        inputFields,
+                                                        true,
+                                                        transpose == 't' || transpose == 'T' );
   }
 
   template<typename ExecSpaceType>
@@ -1011,38 +1269,38 @@ namespace Intrepid2 {
     // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required
     INTREPID2_TEST_FOR_ABORT( inputDataLeft.rank() < 2 ||
                               inputDataLeft.rank() > 4,
-                              "h:: inputDataLeft must have rank 2,3 or 4" );
+                              ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft must have rank 2,3 or 4" );
     if (inputDataLeft.rank() > 2) {
-      INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(2) < 1 || 
+      INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(2) < 1 ||
                                 inputDataLeft.dimension(2) > 3,
-                                "h:: inputDataLeft dimension (2) must be 1,2 or 3" );
+                                ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (2) must be 1,2 or 3" );
     }
     if (inputDataLeft.rank() == 4) {
-      INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(3) < 1 || 
+      INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(3) < 1 ||
                                 inputDataLeft.dimension(3) > 3,
-                                "h:: inputDataLeft dimension (3) must be 1,2 or 3" );
+                                ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (3) must be 1,2 or 3" );
     }
 
     // (2) inputDataRight is (C,P,D,D) or (P,D,D) and 1 <= (D=dimension(rank-1),(rank-2)) <= 3 is required.
     INTREPID2_TEST_FOR_ABORT( inputDataRight.rank() < 3 ||
                               inputDataRight.rank() > 4,
-                              "h:: inputDataRight must have rank 3 or 4" );
+                              ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight must have rank 3 or 4" );
     INTREPID2_TEST_FOR_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 1 ||
                               inputDataRight.dimension(inputDataRight.rank()-1) > 3 ||
-                              "h:: inputDataRight (rank-1) must be 1,2 or 3" );
+                              ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight (rank-1) must be 1,2 or 3" );
     INTREPID2_TEST_FOR_ABORT( inputDataRight.dimension(inputDataRight.rank()-2) < 1 ||
                               inputDataRight.dimension(inputDataRight.rank()-2) > 3 ||
-                              "h:: inputDataRight (rank-2) must be 1,2 or 3" );
+                              ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight (rank-2) must be 1,2 or 3" );
 
     // (3) outputData is (C,P,D,D)
     INTREPID2_TEST_FOR_ABORT( outputData.rank() != 4,
-                              "h:: outputData must have rank 4" );                              
+                              ">>> ERROR (ArrayTools::matmatProductDataData): outputData must have rank 4" );
     INTREPID2_TEST_FOR_ABORT( outputData.dimension(2) < 1 ||
                               outputData.dimension(2) > 3 ||
-                              "h:: outputData (2) must be 1,2 or 3" );
+                              ">>> ERROR (ArrayTools::matmatProductDataData): outputData (2) must be 1,2 or 3" );
     INTREPID2_TEST_FOR_ABORT( outputData.dimension(3) < 1 ||
                               outputData.dimension(3) > 3 ||
-                              "h:: outputData (3) must be 1,2 or 3" );
+                              ">>> ERROR (ArrayTools::matmatProductDataData): outputData (3) must be 1,2 or 3" );
 
     /*
      *   Dimension cross-checks:
@@ -1057,24 +1315,24 @@ namespace Intrepid2 {
      */
     if (inputDataLeft.dimension(1) > 1) { // check P dimension if P>1 in inputDataLeft
       INTREPID2_TEST_FOR_ABORT( outputData.dimension(1) != inputDataLeft.dimension(1),
-                                "h:: outputData dimension (1) does not match to inputDataLeft dimension (1)" );                                
+                                ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension (1) does not match to inputDataLeft dimension (1)" );
     }
     if (inputDataLeft.rank() == 2) { // inputDataLeft(C,P): check C
       INTREPID2_TEST_FOR_ABORT( outputData.dimension(0) != inputDataLeft.dimension(0),
-                                "h:: outputData dimension (0) does not match to inputDataLeft dimension (0)" );                                
+                                ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension (0) does not match to inputDataLeft dimension (0)" );
     }
     if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
       const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
       for (ordinal_type i=0; i<3; ++i) {
         INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]),
-                                    "h:: outputData dimension does not match to inputDataLeft dimension" );
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataLeft dimension" );
       }
     }
     if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
       const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
       for (ordinal_type i=0; i<3; ++i) {
         INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]),
-                                  "h:: outputData dimension does not match to inputDataLeft dimension" );
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataLeft dimension" );
       }
     }
 
@@ -1085,49 +1343,50 @@ namespace Intrepid2 {
       // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D,D):  dimensions  C, P, D must match
       if (inputDataLeft.dimension(1) > 1) { // check P dimension if P>1 in inputDataLeft
         INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(1),
-                                  "h:: inputDataLeft dimension (1) does not match to inputDataRight dimension (1)" );
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (1) does not match to inputDataRight dimension (1)" );
       }
       if (getrank(inputDataLeft) == 2) { // inputDataLeft(C,P): check C
         INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(0) != inputDataRight.dimension(0),
-                                  "h:: inputDataLeft dimension (0) does not match to inputDataRight dimension (0)" );
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (0) does not match to inputDataRight dimension (0)" );
       }
       if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
         const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
         for (ordinal_type i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    "h:: intputDataLeft dimension does not match to inputDataRight dimension" );
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
         }
       }
       if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
         const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
         for (ordinal_type i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    "h:: intputDataLeft dimension does not match to inputDataRight dimension" );
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
         }
       }
 
       // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D,D): all dimensions C, P, D must match
       for (ordinal_type i=0; i< outputData.rank(); ++i) {
         INTREPID2_TEST_FOR_ABORT( outputData.dimension(i) !=  inputDataRight.dimension(i),
-                                  "h:: outputData dimension does not match to inputDataRight dimension" );
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataRight dimension" );
+      }
     } else {
       // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D,D): dimensions  P, D must match
       if (inputDataLeft.dimension(1) > 1) { // check P if P>1 in inputData
         INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(0),
-                                  "h:: inputDataLeft dimension (1) does not match to inputDataRight dimension (0)" );
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (1) does not match to inputDataRight dimension (0)" );
       }
       if (getrank(inputDataLeft) == 3) {  // inputDataLeft(C,P,D): check D
         const ordinal_type f1[] = { 2, 2 }, f2[] = { 1, 2 };
         for (ordinal_type i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    "h:: intputDataLeft dimension does not match to inputDataRight dimension" );
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
         }
       }
       if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check D
         const ordinal_type f1[] = { 2, 3 }, f2[] = { 1, 2 };
         for (ordinal_type i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    "h:: intputDataLeft dimension does not match to inputDataRight dimension" );
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
         }
       }
       // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D,D): dimensions P, D must match
@@ -1135,13 +1394,18 @@ namespace Intrepid2 {
         const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
         for (ordinal_type i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    "h:: outputData dimension does not match to inputDataRight dimension" );
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataRight dimension" );
         }
       }
     }
 #endif
-    //body
+    // body
+    ArrayTools<ExecSpaceType>::Internal::matmatProduct( outputData,
+                                                        inputDataLeft,
+                                                        inputDataRight,
+                                                        false,
+                                                        transpose == 't' || transpose == 'T' );
   }
 
-} // end namespace Intrepid
+} // end namespace Intrepid2
 #endif

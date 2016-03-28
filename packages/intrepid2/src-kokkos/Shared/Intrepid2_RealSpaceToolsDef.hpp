@@ -208,8 +208,10 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) {
         // the rank of normArray is either 1 or 2
-        const size_type i = iter % _normArray.dimension(0);
-        const size_type j = iter / _normArray.dimension(0);
+        size_type i, j;
+        unrollIndex( i, j,
+                     _normArray.dimension(0),
+                     iter );
 
         auto vec = ( _inVecs.rank() == 2 ? Kokkos::subdynrankview(_inVecs, i,    Kokkos::ALL()) :
                      /**/                  Kokkos::subdynrankview(_inVecs, i, j, Kokkos::ALL()) );
@@ -262,8 +264,10 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) {
         // the rank of normArray is either 1 or 2
-        const size_type i = iter % _transposeMats.dimension(0);
-        const size_type j = iter / _transposeMats.dimension(0);
+        size_type i, j;
+        unrollIndex( i, j,
+                     _transposeMats.dimension(0),
+                     iter );
 
         const size_type r = _transposeMats.rank();
         auto dst = ( r == 2 ? Kokkos::subdynrankview(_transposeMats,       Kokkos::ALL(), Kokkos::ALL()) :
@@ -275,10 +279,10 @@ namespace Intrepid2 {
                      /**/     Kokkos::subdynrankview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
 
         for (size_type i=0;i<src.dimension(0);++i) {
-          dst(i,i) = src(i,i);
+          dst(i, i) = src(i, i);
           for (size_type j=i+1;j<src.dimension(1);++j) {
-            dst(i,j) = src(j,i);
-            dst(j,i) = src(i,j);
+            dst(i, j) = src(j, i);
+            dst(j, i) = src(i, j);
           }
         }
       }
@@ -331,8 +335,10 @@ namespace Intrepid2 {
       
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) {
-        const size_type i = iter % _inMats.dimension(0);
-        const size_type j = iter / _inMats.dimension(0);
+        size_type i, j;
+        unrollIndex( i, j,
+                     _inMats.dimension(0),
+                     iter );
         
         const size_type r = _inMats.rank();
         auto mat = ( r == 2 ? Kokkos::subdynrankview(_inMats,       Kokkos::ALL(), Kokkos::ALL()) :
@@ -466,8 +472,10 @@ namespace Intrepid2 {
       
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) {
-        const size_type i = iter % _inMats.dimension(0);
-        const size_type j = iter / _inMats.dimension(0);
+        size_type i, j;
+        unrollIndex( i, j,
+                     _inMats.dimension(0),
+                     iter );
         
         const size_type r = _inMats.rank();
         auto mat = ( r == 3 ? Kokkos::subdynrankview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
@@ -771,8 +779,10 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) {
         // the rank of normArray is either 1 or 2
-        const size_type i = iter % _transposeMats.dimension(0);
-        const size_type j = iter / _transposeMats.dimension(0);
+        size_type i, j;
+        unrollIndex( i, j,
+                     _dotArray.dimension(0),
+                     iter );
         
         const size_type r = _inVec1.rank();
         auto vec1 = ( r == 2 ? Kokkos::subdynrankview(_inVec1, i,    Kokkos::ALL()) :
@@ -837,8 +847,10 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) {
-        const size_type i = iter % _inMats.dimension(0);
-        const size_type j = iter / _inMats.dimension(0);
+        size_type i, j;
+        unrollIndex( i, j,
+                     _inMats.dimension(0),
+                     iter );
 
         const size_type rm = _inMats.rank();
         auto mat    = ( rm == 2 ? Kokkos::subdynrankview(_inMats,        Kokkos::ALL(), Kokkos::ALL()) : 
@@ -930,8 +942,10 @@ namespace Intrepid2 {
       
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) {
-        const size_type i = iter % _inLeft.dimension(0);
-        const size_type j = iter / _inLeft.dimension(0);
+        size_type i, j;
+        unrollIndex( i, j,
+                     _inLeft.dimension(0),
+                     iter );
         
         const size_type r = _inLeft.rank();
 

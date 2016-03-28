@@ -86,23 +86,27 @@ namespace Intrepid2 {
       ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type cl) {
-        const size_type numFields = outputFields.dimension(1);
-        const size_type numPoints = outputFields.dimension(2);
-        const size_type dim1Tens  = outputFields.dimension(3);
-        const size_type dim2Tens  = outputFields.dimension(4);
+      void operator()(const size_type iter) {
+        size_type cl, bf, pt;
+        unrollIndex( cl, bf, pt,
+                     _outputFields.dimension(0), 
+                     _outputFields.dimension(1),
+                     iter );
 
-        for(size_type bf = 0; bf < numFields; ++bf)
-          for(size_type pt = 0; pt < numPoints; ++pt)
-            for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-              for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
-                outputFieldsWrap(cl, bf, pt, iTens1, iTens2)
-                  = inputFieldswrap(bf, pt, iTens1, iTens2);
+        auto       output = Kokkos::subdynrankview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto input  = Kokkos::subdynrankview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+
+        const size_type iend  = out.dimension(0);
+        const size_type jend  = out.dimension(1);
+
+        for(size_type i = 0; i < iend; ++i)
+          for(size_type j = 0; j < jend; ++j)
+            output(i, j) = input(i, j);
       }
     };
 
-    const size_type numCells = outputFields.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
+    const size_type loopSize = outputFields.dimension(0)*outputFields.dimension(1)*outputFields.dimension(2);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(outputFields, inputFields) );
   }
 
@@ -115,7 +119,7 @@ namespace Intrepid2 {
   cloneScaleFields( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
                     const Kokkos::DynRankView<inputFactorProperties...> inputFactors,
                     const Kokkos::DynRankView<intputFieldProperties...> inputFields ) {
-
+    
     // static assert
 #ifdef HAVE_INTREPID_DEBUG
     INTREPID2_TEST_FOR_ABORT( inputFactors.rank() != 2,
@@ -149,23 +153,29 @@ namespace Intrepid2 {
       ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type cl) {
-        const size_type numFields = outputFields.dimension(1);
-        const size_type numPoints = outputFields.dimension(2);
-        const size_type dim1Tens  = outputFields.dimension(3);
-        const size_type dim2Tens  = outputFields.dimension(4);
+      void operator()(const size_type iter) {
+        size_type cl, bf, pt;
+        unrollIndex( cl, bf, pt,
+                     _outputFields.dimension(0),
+                     _outputFields.dimension(1),
+                     iter );
 
-        for(size_type bf = 0; bf < numFields; ++bf)
-          for(size_type pt = 0; pt < numPoints; ++pt)
-            for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-              for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
-                outputFieldsWrap(cl, bf, pt, iTens1, iTens2)
-                  = inputFieldsWrap(bf, pt, iTens1, iTens2) * inputFactorswrap(cl, bf);
+        auto       output = Kokkos::subdynrankview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto field  = Kokkos::subdynrankview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto factor = Kokkos::subdynrankview( _inputFactors, cl, bf );
+
+        const size_type iend  = outputFields.dimension(3);
+        const size_type jend  = outputFields.dimension(4);
+
+        const auto val = factor();
+        for(size_type i = 0; i < iend; ++i)
+          for(size_type j = 0; j < jend; ++j)
+            output(i, j) = field(i, j) * val;
       }
     };
-
-    const size_type numCells = outputFields.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
+    
+    const size_type loopSize = outputFields.dimension(0)*outputFields.dimension(1)*outputFields.dimension(2);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(outputFields, inputFactors, inputFields) );
   }
 
@@ -201,23 +211,28 @@ namespace Intrepid2 {
       ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type cl) {
-        const size_type numFields = outputFields.dimension(1);
-        const size_type numPoints = outputFields.dimension(2);
-        const size_type dim1Tens  = outputFields.dimension(3);
-        const size_type dim2Tens  = outputFields.dimension(4);
+      void operator()(const size_type iter) {
+        size_type cl, bf, pt;
+        unrollIndex( cl, bf, pt,
+                     _outputFields.dimension(0),
+                     _outputFields.dimension(1),
+                     iter );
+        
+        auto       inout  = Kokkos::subdynrankview( cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto factor = Kokkos::subdynrankview( cl, bf );
 
-        for(size_type bf = 0; bf < numFields; ++bf)
-          for(size_type pt = 0; pt < numPoints; ++pt)
-            for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-              for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
-                inoutFields(cl, bf, pt, iTens1, iTens2)
-                  = inoutFields(cl, bf, pt, iTens1, iTens2) * inputFactors(cl, bf);
+        const size_type iend  = outputFields.dimension(3);
+        const size_type jend  = outputFields.dimension(4);
+
+        const auto val = factor();
+        for(size_type i = 0; i < iend; ++i)
+          for(size_type j = 0; j < jend; ++j)
+            inout(i, j) *= val;
       }
     };
-
-    const size_type numCells = outputFields.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
+    
+    const size_type loopSize = outputFields.dimension(0)*outputFields.dimension(1)*outputFields.dimension(2);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(inoutFactors, inputFields) );
   }
 

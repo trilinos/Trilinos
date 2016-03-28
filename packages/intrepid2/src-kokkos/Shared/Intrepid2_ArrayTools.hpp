@@ -900,7 +900,8 @@ namespace Intrepid2 {
       scalarMultiply( /**/  Kokkos::DynRankView<outputProperties...>     output,
                       const Kokkos::DynRankView<leftInputProperties...>  left,
                       const Kokkos::DynRankView<rightInputProperties...> rightInput,
-                      const bool reciprocal = false );
+                      const bool hasField,
+                      const bool reciprocal );
       
       template<class ...outputProperties,
                class ...leftInputProperties,
@@ -918,7 +919,8 @@ namespace Intrepid2 {
       static void
       crossProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
                     const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                    const Kokkos::DynRankView<rightInputProperties...>  rightInput );
+                    const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+                    const bool hasField );
       
       template<class ...outputProperties,
                class ...leftInputProperties,
@@ -927,8 +929,20 @@ namespace Intrepid2 {
       static void
       outerProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
                     const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                    const Kokkos::DynRankView<rightInputProperties...>  rightInput );
+                    const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+                    const bool hasField );
       
+      template<class ...outputProperties,
+               class ...leftInputProperties,
+               class ...rightInputProperties>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      matvecProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
+                     const Kokkos::DynRankView<leftInputProperties...>   leftInput,
+                     const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+                     const bool hasField,
+                     const bool isTranspose );
+
       template<class ...outputProperties,
                class ...leftInputProperties,
                class ...rightInputProperties>
@@ -937,7 +951,8 @@ namespace Intrepid2 {
       matmatProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
                      const Kokkos::DynRankView<leftInputProperties...>   leftInput,
                      const Kokkos::DynRankView<rightInputProperties...>  rightInput,
-                     const char transpose = 'N');
+                     const bool hasField,
+                     const bool isTranspose );
     }
 
   }; // end class ArrayTools
