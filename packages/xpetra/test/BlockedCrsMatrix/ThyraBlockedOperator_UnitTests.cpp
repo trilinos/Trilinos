@@ -625,6 +625,176 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M,
   TEST_EQUALITY(bOp->getDomainMap(1)->getMinAllGlobalIndex(), 0);
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMarket, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> MapClass;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+  typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractorClass;
+  typedef Xpetra::MapExtractorFactory<Scalar,LO,GO,Node> MapExtractorFactoryClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  M testMap(1,0,comm);
+  Xpetra::UnderlyingLib lib = testMap.lib();
+
+  // generate problem
+  GO nEle = 63;
+  const Teuchos::RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+  LO NumMyElements = map->getNodeNumElements();
+  GO NumGlobalElements = map->getGlobalNumElements();
+  Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+  TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
+
+  for (LO i = 0; i < NumMyElements; i++) {
+     if (MyGlobalElements[i] == 0) {
+       A->insertGlobalValues(MyGlobalElements[i],
+                             Teuchos::tuple<GO>(MyGlobalElements[i], MyGlobalElements[i] +1),
+                             Teuchos::tuple<Scalar> (Teuchos::as<Scalar>(i)*STS::one(), -1.0));
+     }
+     else if (MyGlobalElements[i] == NumGlobalElements - 1) {
+       A->insertGlobalValues(MyGlobalElements[i],
+                             Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i]),
+                             Teuchos::tuple<Scalar> (-1.0, Teuchos::as<Scalar>(i)*STS::one()));
+     }
+     else {
+       A->insertGlobalValues(MyGlobalElements[i],
+                             Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i], MyGlobalElements[i] +1),
+                             Teuchos::tuple<Scalar> (-1.0, Teuchos::as<Scalar>(i)*STS::one(), -1.0));
+     }
+  }
+
+  A->fillComplete();
+  TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == false || A->isFillActive() == true, std::runtime_error, "");
+
+  Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node> > mat =
+      Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node>(A));
+
+  Teuchos::Array<GO> gids1;
+  Teuchos::Array<GO> gids2;
+  for(LO i=0; i<NumMyElements; i++) {
+    if(i % 3 < 2)
+      gids1.push_back(map->getGlobalElement(i));
+    else
+      gids2.push_back(map->getGlobalElement(i));
+  }
+
+  const Teuchos::RCP<const MapClass> map1 = MapFactoryClass::Build (lib,
+      Teuchos::OrdinalTraits<GO>::invalid(),
+      gids1.view(0,gids1.size()),
+      0,
+      comm);
+  const Teuchos::RCP<const MapClass> map2 = MapFactoryClass::Build (lib,
+      Teuchos::OrdinalTraits<GO>::invalid(),
+      gids2.view(0,gids2.size()),
+      0,
+      comm);
+
+  std::vector<Teuchos::RCP<const MapClass> > xmaps;
+  xmaps.push_back(map1);
+  xmaps.push_back(map2);
+
+  Teuchos::RCP<const MapExtractorClass> map_extractor = MapExtractorFactoryClass::Build(map,xmaps);
+
+  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bMat =
+      Xpetra::MatrixUtils<Scalar, LO, GO, Node>::SplitMatrix(*mat,map_extractor,map_extractor,Teuchos::null,true);
+
+
+  // Write matrices out, read fine A back in, and check that the read was ok
+  // by using a matvec with a random vector.
+  // JJH: 22-Feb-2016 Append scalar type to file name. The theory is that for dashboard
+  //      tests with multiple Scalar instantiations of this test, a test with Scalar type
+  //      A could try to read in the results of the test with Scalar type B, simply because
+  //      the test with type B overwrote A's output matrix file.  A better solution would be
+  //      to write to a file stream, but this would involve writing new interfaces to Epetra's
+  //      file I/O capabilities.
+  std::string tname = "MATRIX";
+  tname = tname + typeid(Scalar).name();
+  tname = tname + typeid(LO).name();
+  tname = tname + typeid(GO).name();
+#ifdef HAVE_MUELU_KOKKOSCORE
+  std::string nn = Kokkos::Compat::KokkosDeviceWrapperNode<typename Node::execution_space>::name();
+  nn.erase(std::remove(nn.begin(), nn.end(), '/'), nn.end());
+  tname = tname + nn;
+#endif
+  tname = "_" + tname;
+
+  Xpetra::IO<Scalar, LO, GO, Node>::WriteBlockedCrsMatrix(tname, *bMat);
+  Teuchos::RCP<const Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bMat2 = Xpetra::IO<Scalar, LO, GO, Node>::ReadBlockedCrsMatrix(tname, lib, comm);
+
+  TEST_EQUALITY(bMat->getMatrix(0,0)->getGlobalNumEntries(),bMat2->getMatrix(0,0)->getGlobalNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(0,1)->getGlobalNumEntries(),bMat2->getMatrix(0,1)->getGlobalNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(1,0)->getGlobalNumEntries(),bMat2->getMatrix(1,0)->getGlobalNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(1,1)->getGlobalNumEntries(),bMat2->getMatrix(1,1)->getGlobalNumEntries());
+
+  TEST_EQUALITY(bMat->getMatrix(0,0)->getNodeNumEntries(),bMat2->getMatrix(0,0)->getNodeNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(0,1)->getNodeNumEntries(),bMat2->getMatrix(0,1)->getNodeNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(1,0)->getNodeNumEntries(),bMat2->getMatrix(1,0)->getNodeNumEntries());
+  TEST_EQUALITY(bMat->getMatrix(1,1)->getNodeNumEntries(),bMat2->getMatrix(1,1)->getNodeNumEntries());
+
+  TEST_EQUALITY(bMat->getMatrix(0,0)->getFrobeniusNorm(),bMat2->getMatrix(0,0)->getFrobeniusNorm());
+  TEST_EQUALITY(bMat->getMatrix(0,1)->getFrobeniusNorm(),bMat2->getMatrix(0,1)->getFrobeniusNorm());
+  TEST_EQUALITY(bMat->getMatrix(1,0)->getFrobeniusNorm(),bMat2->getMatrix(1,0)->getFrobeniusNorm());
+  TEST_EQUALITY(bMat->getMatrix(1,1)->getFrobeniusNorm(),bMat2->getMatrix(1,1)->getFrobeniusNorm());
+
+  TEST_EQUALITY(bMat->getRangeMapExtractor()->getMap(0)->isSameAs(*(bMat2->getRangeMapExtractor()->getMap(0))),true);
+  TEST_EQUALITY(bMat->getDomainMapExtractor()->getMap(0)->isSameAs(*(bMat2->getDomainMapExtractor()->getMap(0))),true);
+
+  TEST_EQUALITY(bMat->getRangeMapExtractor()->getFullMap()->isSameAs(*(bMat2->getRangeMapExtractor()->getFullMap())),true);
+  TEST_EQUALITY(bMat->getDomainMapExtractor()->getFullMap()->isSameAs(*(bMat2->getDomainMapExtractor()->getFullMap())),true);
+
+  // these tests are false with Tpetra? TODO check me: why only in Tpetra?
+  // bMat2 is always in Xpetra mode so far. This is, since the Read routine and Write routine for the MapExtractor do not really
+  // consider the Thyra mode so far.
+  //TEST_EQUALITY(bMat->getRangeMapExtractor()->getMap(1)->isSameAs(*(bMat2->getRangeMapExtractor()->getMap(1))),true);
+  //TEST_EQUALITY(bMat->getDomainMapExtractor()->getMap(1)->isSameAs(*(bMat2->getDomainMapExtractor()->getMap(1))),true);
+
+  TEST_EQUALITY(bMat->getMatrix(0,0)->getRowMap()->isSameAs(*(bMat2->getMatrix(0,0)->getRowMap())),true);
+  TEST_EQUALITY(bMat->getMatrix(0,1)->getRowMap()->isSameAs(*(bMat2->getMatrix(0,1)->getRowMap())),true);
+  TEST_EQUALITY(bMat->getMatrix(1,0)->getRowMap()->isSameAs(*(bMat2->getMatrix(1,0)->getRowMap())),true);
+  TEST_EQUALITY(bMat->getMatrix(1,1)->getRowMap()->isSameAs(*(bMat2->getMatrix(1,1)->getRowMap())),true);
+
+  TEST_EQUALITY(bMat->getMatrix(0,0)->getColMap()->isSameAs(*(bMat2->getMatrix(0,0)->getColMap())),true);
+  TEST_EQUALITY(bMat->getMatrix(0,1)->getColMap()->isSameAs(*(bMat2->getMatrix(0,1)->getColMap())),true);
+  // the following test fails with Teptra. Why?
+  //TEST_EQUALITY(bMat->getMatrix(1,0)->getColMap()->isSameAs(*(bMat2->getMatrix(1,0)->getColMap())),true);
+  TEST_EQUALITY(bMat->getMatrix(1,1)->getColMap()->isSameAs(*(bMat2->getMatrix(1,1)->getColMap())),true);
+
+
+  // build gloabl vector with one entries
+  Teuchos::RCP<VectorClass> ones_A   = VectorFactoryClass::Build(bMat->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(bMat->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> ones_bOp = VectorFactoryClass::Build(bMat2->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(bMat2->getRangeMap(), true);
+  ones_A->putScalar(STS::one());
+  ones_bOp->putScalar(STS::one());
+
+  bMat->apply(*ones_A, *exp);
+  bMat2->apply(*ones_bOp, *res);
+
+  TEST_EQUALITY(res->norm2(),exp->norm2());
+  TEST_EQUALITY(res->normInf(),exp->normInf());
+  TEST_EQUALITY(bMat->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(bMat->getDomainMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(bMat->getRangeMap(0)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(bMat->getRangeMap(1)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(bMat->getDomainMap(0)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(bMat->getDomainMap(1)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(bMat2->getRangeMapExtractor()->getThyraMode(), false);  // thyra mode is not correctly transferred!!
+  TEST_EQUALITY(bMat2->getDomainMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(bMat2->getRangeMap(0)->getMinAllGlobalIndex(), 0);
+  TEST_INEQUALITY(bMat2->getRangeMap(1)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(bMat2->getDomainMap(0)->getMinAllGlobalIndex(), 0);
+  TEST_INEQUALITY(bMat2->getDomainMap(1)->getMinAllGlobalIndex(), 0);
+}
 //
 // INSTANTIATIONS
 //
@@ -649,6 +819,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M,
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraOperator2XpetraCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraShrinkMaps,            M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, SplitMatrixForThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ReadWriteMatrixMatrixMarket, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, XpetraBlockedCrsMatConstructor, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
