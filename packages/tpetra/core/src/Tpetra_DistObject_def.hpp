@@ -790,6 +790,7 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
+
         // FIXME (mfh 17 Feb 2014) Don't "realloc" unless you really
         // need to.  That will avoid a bit of time for reinitializing
         // the Views' data.
@@ -827,12 +828,16 @@ namespace Tpetra {
     // We only need to send data if the combine mode is not ZERO.
     if (CM != ZERO) {
       if (constantNumPackets != 0) {
+
         // There are a constant number of packets per element.  We
         // already know (from the number of "remote" (incoming)
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
         if (static_cast<size_t> (imports_.dimension_0 ()) != rbufLen) {
+          // FIXME (mfh 28 Mar 2016) This helps fix #227.
+          execution_space::fence ();
+
           Kokkos::realloc (imports_, rbufLen);
           // This is doTransferNew, so we don't need to allocate the
           // host version of imports_.
@@ -843,6 +848,18 @@ namespace Tpetra {
       // Furthermore, if we do need to do this, we should only do it
       // _once_, since the arrays are constant (they come from the
       // Import / Export object, which is constant).
+
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (host_numExportPacketsPerLID_.dimension_0 () !=
+         numExportPacketsPerLID_.dimension_0 (), std::logic_error, "Tpetra::"
+         "DistObject::doTransferNew: host_numExportPacketsPerLID_.dimension_0()"
+         " = " << host_numExportPacketsPerLID_.dimension_0 () << " != "
+         "numExportPacketsPerLID_.dimension_0() = " <<
+         numExportPacketsPerLID_.dimension_0() << ".  Please report this bug "
+         "to the Tpetra developers.");
+
+      // FIXME (mfh 28 Mar 2016) This helps fix #227.
+      execution_space::fence ();
 
       // Copy numExportPacketsPerLID to host
       Kokkos::deep_copy (host_numExportPacketsPerLID_, numExportPacketsPerLID_);
