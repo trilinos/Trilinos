@@ -1,7 +1,7 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Penalty parameter"           type="double"  value="1e-6" />
+    <Parameter name="Penalty parameter"           type="double"  value="1e-2" />
     <Parameter name="Diffusivity"                 type="double"  value="1e-1" />
     <Parameter name="Advection Horizontal"        type="double"  value="1e+0" />
     <Parameter name="Advection Vertical"          type="double"  value="3e-1" />
@@ -201,8 +201,8 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-10"  />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-10"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
     <Parameter name="Iteration Limit"      type="int"    value="200"    />
   </ParameterList>

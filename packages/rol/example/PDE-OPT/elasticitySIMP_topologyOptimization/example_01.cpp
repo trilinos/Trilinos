@@ -208,6 +208,7 @@ int main(int argc, char *argv[]) {
     //algo.run(*zp,*vc_lamp,MYpen,*volcon,*bnd,true,*outStream);
 
     data->outputTpetraVector(z_rcp, "density.txt");
+    data->outputTpetraVector(u_rcp, "state.txt");
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

@@ -103,6 +103,7 @@ private:
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_overlap_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_dirichlet_;
+  Teuchos::RCP<Tpetra::MultiVector<> >  vecWeights_;
 
   Teuchos::Array<int> myCellIds_;
 
@@ -488,7 +489,36 @@ public:
         }
       }
     }
-    
+    // vecWeights
+    vecWeights_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
+    vecWeights_->putScalar(0.0);
+    Real mask1_x1 = 0.30, mask1_x2 = 0.90, mask1_y1 = 0.20, mask1_y2 = 0.80;
+    Real mask2_x1 = 0.15, mask2_x2 = 0.25, mask2_y1 = 0.55, mask2_y2 = 0.65;
+    Real mask3_x1 = 0.45, mask3_x2 = 0.55, mask3_y1 = 0.05, mask3_y2 = 0.15;
+    for (int i=0; i<vecWeights_->getMap()->getMaxLocalIndex(); ++i) {
+      vecWeights_->replaceLocalValue(i, 0, !(i%5) ? ((static_cast<Real>(rand()) / static_cast<Real>(RAND_MAX))) : static_cast<Real>(0) );
+      //vecWeights_->replaceLocalValue(i, 0, !(i%5) ? 1 : static_cast<Real>(0) );
+    }
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numCubPoints_; ++j) {
+        if ( !( ((*cubPointsPhysical_)(i, j, 0) >= mask1_x1) &&
+                ((*cubPointsPhysical_)(i, j, 0) <= mask1_x2) &&
+                ((*cubPointsPhysical_)(i, j, 1) >= mask1_y1) &&
+                ((*cubPointsPhysical_)(i, j, 1) <= mask1_y2) ) &&
+             !( ((*cubPointsPhysical_)(i, j, 0) >= mask2_x1) &&
+                ((*cubPointsPhysical_)(i, j, 0) <= mask2_x2) &&
+                ((*cubPointsPhysical_)(i, j, 1) >= mask2_y1) &&
+                ((*cubPointsPhysical_)(i, j, 1) <= mask2_y2) ) &&
+             !( ((*cubPointsPhysical_)(i, j, 0) >= mask3_x1) &&
+                ((*cubPointsPhysical_)(i, j, 0) <= mask3_x2) &&
+                ((*cubPointsPhysical_)(i, j, 1) >= mask3_y1) &&
+                ((*cubPointsPhysical_)(i, j, 1) <= mask3_y2) ) ) {
+          vecWeights_->replaceGlobalValue(cellDofs(myCellIds_[i],j), 0, 0);
+        }
+      }
+    }
+
+
     // Apply Dirichlet conditions.
     // Stiffness matrix with Dirichlet conditions:
     //  AD = [ A11  A12 ]  where A = [ A11 A12 ]
@@ -646,6 +676,11 @@ public:
 
   void setVecUd(Teuchos::RCP<Tpetra::MultiVector<> > & datavec) {
     Tpetra::deep_copy(*vecUd_, *datavec);;
+  }
+
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getVecWeights() const {
+    return vecWeights_;
   }
 
 
