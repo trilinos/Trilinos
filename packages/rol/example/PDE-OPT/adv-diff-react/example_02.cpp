@@ -65,7 +65,7 @@
 #include "data.hpp"
 #include "objective.hpp"
 #include "constraint.hpp"
-//#include "ROL_ExperimentDesignObjective.hpp"
+#include "ROL_ExperimentDesignObjective.hpp"
 
 typedef double RealT;
 
@@ -165,13 +165,18 @@ int main(int argc, char *argv[]) {
     //x.zero(); // set zero initial guess
     //algo_cs.run(x, *cp, *obj, *con, true, *outStream);
 
-    //*outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;
+    // *outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;
 
     data->outputTpetraVector(u_rcp, "state.txt");
     data->outputTpetraVector(z_rcp, "control.txt");
     data->outputTpetraVector(data->getVecWeights(), "weights.txt");
     //data->outputTpetraVector(data->getVecF(), "control.txt");
     //data->outputTpetraData();
+
+    std::vector<Teuchos::RCP<const ROL::Vector<RealT> > > training_models;
+    training_models.push_back(zp);
+    training_models.push_back(zp);
+    ROL::ExperimentDesignObjective<RealT> objOED(obj, con, up, up, zp, cp, up, training_models, up);
 
   }
   catch (std::logic_error err) {
