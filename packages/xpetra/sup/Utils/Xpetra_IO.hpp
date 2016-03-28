@@ -627,25 +627,39 @@ namespace Xpetra {
       }
       RCP<const XpMap> fullDomainMap = XpIO::ReadMap("fullDomainMap_" + fileName + ".m", lib, comm);
 
+      /*std::vector<RCP<const XpMap> > testRgMapVec;
+      for(size_t r = 0; r < numBlocks; ++r) {
+        RCP<const XpMap> map = XpIO::ReadMap("rangemap_" + fileName + XpIO::toString<size_t>(r) + "0.m", lib, comm);
+        testRgMapVec.push_back(map);
+      }
+      std::vector<RCP<const XpMap> > testDoMapVec;
+      for(size_t c = 0; c < numBlocks; ++c) {
+        RCP<const XpMap> map = XpIO::ReadMap("domainmap_" + fileName + "0" + XpIO::toString<size_t>(c) + ".m", lib, comm);
+        testDoMapVec.push_back(map);
+      }*/
+
       // create map extractors
 
       // range map extractor
       bool bRangeUseThyraStyleNumbering = false;
-      size_t numAllElements = 0;
-      for(size_t v = 0; v < rgMapVec.size(); ++v) {
-        numAllElements += rgMapVec[v]->getGlobalNumElements();
+      /*GlobalOrdinal gMinGids = 0;
+      for(size_t v = 0; v < testRgMapVec.size(); ++v) {
+        gMinGids += testRgMapVec[v]->getMinAllGlobalIndex();
       }
-      if ( fullRangeMap->getGlobalNumElements() != numAllElements) bRangeUseThyraStyleNumbering = true;
+      if ( gMinGids==0 && testRgMapVec.size() > 1 ) bRangeUseThyraStyleNumbering = true;
+      */
       RCP<const XpMapExtractor> rangeMapExtractor =
           Teuchos::rcp(new XpMapExtractor(fullRangeMap, rgMapVec, bRangeUseThyraStyleNumbering));
 
+
       // domain map extractor
       bool bDomainUseThyraStyleNumbering = false;
-      numAllElements = 0;
-      for(size_t v = 0; v < doMapVec.size(); ++v) {
-        numAllElements += doMapVec[v]->getGlobalNumElements();
+      /*gMinGids = 0;
+      for(size_t v = 0; v < testDoMapVec.size(); ++v) {
+        gMinGids += testDoMapVec[v]->getMinAllGlobalIndex();
       }
-      if ( fullDomainMap->getGlobalNumElements() != numAllElements) bDomainUseThyraStyleNumbering = true;
+      if ( gMinGids==0 && testDoMapVec.size() > 1 ) bDomainUseThyraStyleNumbering = true;
+      */
       RCP<const XpMapExtractor> domainMapExtractor =
           Teuchos::rcp(new XpMapExtractor(fullDomainMap, doMapVec, bDomainUseThyraStyleNumbering));
 
@@ -1212,25 +1226,37 @@ namespace Xpetra {
       }
       RCP<const XpMap> fullDomainMap = XpIO::ReadMap("fullDomainMap_" + fileName + ".m", lib, comm);
 
+      /*std::vector<RCP<const XpMap> > testRgMapVec;
+      for(size_t r = 0; r < numBlocks; ++r) {
+        RCP<const XpMap> map = XpIO::ReadMap("rangemap_" + fileName + XpIO::toString<size_t>(r) + "0.m", lib, comm);
+        testRgMapVec.push_back(map);
+      }
+      std::vector<RCP<const XpMap> > testDoMapVec;
+      for(size_t c = 0; c < numBlocks; ++c) {
+        RCP<const XpMap> map = XpIO::ReadMap("domainmap_" + fileName + "0" + XpIO::toString<size_t>(c) + ".m", lib, comm);
+        testDoMapVec.push_back(map);
+      }*/
+
       // create map extractors
 
       // range map extractor
       bool bRangeUseThyraStyleNumbering = false;
-      size_t numAllElements = 0;
-      for(size_t v = 0; v < rgMapVec.size(); ++v) {
-        numAllElements += rgMapVec[v]->getGlobalNumElements();
+      /*
+      GlobalOrdinal gMinGids = 0;
+      for(size_t v = 0; v < testRgMapVec.size(); ++v) {
+        gMinGids += testRgMapVec[v]->getMinAllGlobalIndex();
       }
-      if ( fullRangeMap->getGlobalNumElements() != numAllElements) bRangeUseThyraStyleNumbering = true;
+      if ( gMinGids==0 && testRgMapVec.size() > 1 ) bRangeUseThyraStyleNumbering = true;*/
       RCP<const XpMapExtractor> rangeMapExtractor =
           Teuchos::rcp(new XpMapExtractor(fullRangeMap, rgMapVec, bRangeUseThyraStyleNumbering));
 
       // domain map extractor
       bool bDomainUseThyraStyleNumbering = false;
-      numAllElements = 0;
-      for(size_t v = 0; v < doMapVec.size(); ++v) {
-        numAllElements += doMapVec[v]->getGlobalNumElements();
+      /*gMinGids = 0;
+      for(size_t v = 0; v < testDoMapVec.size(); ++v) {
+        gMinGids += testDoMapVec[v]->getMinAllGlobalIndex();
       }
-      if ( fullDomainMap->getGlobalNumElements() != numAllElements) bDomainUseThyraStyleNumbering = true;
+      if ( gMinGids==0 && testDoMapVec.size() > 1) bDomainUseThyraStyleNumbering = true;*/
       RCP<const XpMapExtractor> domainMapExtractor =
           Teuchos::rcp(new XpMapExtractor(fullDomainMap, doMapVec, bDomainUseThyraStyleNumbering));
 
