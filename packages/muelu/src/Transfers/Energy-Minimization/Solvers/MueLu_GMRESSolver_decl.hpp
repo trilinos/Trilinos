@@ -43,76 +43,68 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_EMINPFACTORY_DECL_HPP
-#define MUELU_EMINPFACTORY_DECL_HPP
+#ifndef MUELU_GMRESSOLVER_DECL_HPP
+#define MUELU_GMRESSOLVER_DECL_HPP
+
+#include <Xpetra_CrsMatrixFactory_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_StridedMapFactory_fwd.hpp>
-
-#include "MueLu_EminPFactory_fwd.hpp"
-
-#include "MueLu_CGSolver_fwd.hpp"
+#include "MueLu_SolverBase.hpp"
 #include "MueLu_Constraint_fwd.hpp"
-#include "MueLu_GMRESSolver_fwd.hpp"
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_PFactory.hpp"
-#include "MueLu_SolverBase_fwd.hpp"
-#include "MueLu_SteepestDescentSolver_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
   /*!
-    @class EminPFactory class.
-    @brief Factory for building Energy Minimization prolongators.
-    @ingroup MueLuTransferClasses
+    @class GMRESSolver class.
+    @brief Implements conjugate gradient algorithm for energy-minimization
+
+    This is GMRES applied to the problem
+    \f[ \min_P  \frac12 \sum_i (p_i)^T A p_i \f]
+    subject to
+    \f[ P(i,j) = 0 \quad \mbox{if} \; (i,j) \mbox{ is not in SparsityPattern} \f]
+    and
+    \f[ P cnull =  fnull. \f]
+
+    \note
+        For now we assume, that matrices have real values. The case of complex values is not explored.
     */
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class EminPFactory : public PFactory {
-#undef MUELU_EMINPFACTORY_SHORT
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class GMRESSolver : public SolverBase<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+#undef MUELU_GMRESSOLVER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
-
-    //! @name Constructors/Destructors.
+    //! @name Constructors / destructors
     //@{
 
-    //! @brief Constructor.
-    EminPFactory() { }
-
-    //! Destructor.
-    virtual ~EminPFactory() { }
-
-    //@}
-
-    RCP<const ParameterList> GetValidParameterList() const;
-
-    //! @name Input
-    //@{
-
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
-
-    //@}
-
-    //! @name Build methods.
-    //@{
-
-    /*!
-      @brief Build method.
-
-      Builds energy minimization prolongator and returns it in <tt>coarseLevel</tt>.
+    /*! Constructor
+      \param Its -- Number of performed iterations
       */
-    void Build(Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
+    GMRESSolver(size_t Its);
 
     //@}
 
-  }; // class EminPFactory
+    //! @name Iterate methods.
+    //@{
+
+    //! Iterate
+    void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const;
+
+    //@}
+
+  private:
+    void givapp(SC* c, SC* s, SC* v, int k) const;
+
+  private:
+    size_t nIts_;           //!< Number of performed iterations
+  };
 
 } // namespace MueLu
 
-#define MUELU_EMINPFACTORY_SHORT
-#endif // MUELU_EMINPFACTORY_DECL_HPP
+#define MUELU_GMRESSOLVER_SHORT
+#endif // MUELU_GMRESSOLVER_DECL_HPP
