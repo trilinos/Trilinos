@@ -4,8 +4,6 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "ShyLUTacho_config.h"
-
 #include "Tacho_Util.hpp"
 #include "Tacho_DenseMatrixBase.hpp"
 #include "Tacho_DenseMatrixTools.hpp"

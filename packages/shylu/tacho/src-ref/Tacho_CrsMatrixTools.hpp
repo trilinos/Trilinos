@@ -14,17 +14,16 @@ namespace Tacho {
     /// Elementwise copy
     /// ------------------------------------------------------------------
     /// Properties: 
-    /// - Compile with Device (o), 
-    /// - Callable in KokkosFunctors (x), no team interface
+    /// - Runnable on Device (o), 
+    /// - Callable in KokkosFunctors (x),
     /// - Blocking with fence (o)
 
     /// \brief elementwise copy 
     template<typename CrsMatBaseTypeA, 
              typename CrsMatBaseTypeB>
-    KOKKOS_INLINE_FUNCTION
     static void
     copy(CrsMatBaseTypeA &A,
-         const CrsMatBaseTypeB &B) {
+         const CrsMatBaseTypeB B) {
       static_assert( Kokkos::Impl::is_same<
                      typename CrsMatBaseTypeA::space_type,
                      typename CrsMatBaseTypeB::space_type
@@ -58,12 +57,11 @@ namespace Tacho {
     /// \brief elementwise copy of lower/upper triangular of matrix
     template<typename CrsMatBaseTypeA, 
              typename CrsMatBaseTypeB>
-    KOKKOS_INLINE_FUNCTION
     static void
     copy(CrsMatBaseTypeA &A,
          const int uplo,
          const int offset,
-         const CrsMatBaseTypeB &B) {
+         const CrsMatBaseTypeB B) {
       static_assert( Kokkos::Impl
                      ::is_same<
                      typename CrsMatBaseTypeA::space_type,
@@ -97,7 +95,6 @@ namespace Tacho {
           }
           A.RowPtrEnd(i) = nnz;
         }
-        A.setNumNonZeros();
         break;
       }
       case Uplo::Lower: {
@@ -120,23 +117,22 @@ namespace Tacho {
           }
           A.RowPtrEnd(i) = nnz;
         }
-        A.setNumNonZeros();
         break;
       }
       }
       //space_type::execution_space::fence();
+      A.setNumNonZeros();
     }
 
     /// \brief elementwise copy with permutation
     template<typename CrsMatBaseTypeA, 
              typename CrsMatBaseTypeB,
              typename OrdinalTypeArray>
-    KOKKOS_INLINE_FUNCTION
     static void
     copy(CrsMatBaseTypeA &A,
-         const OrdinalTypeArray &p,
-         const OrdinalTypeArray &ip,
-         const CrsMatBaseTypeB &B) {
+         const OrdinalTypeArray p,
+         const OrdinalTypeArray ip,
+         const CrsMatBaseTypeB B) {
       static_assert( Kokkos::Impl
                      ::is_same<
                      typename CrsMatBaseTypeA::space_type,
@@ -148,7 +144,7 @@ namespace Tacho {
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
 
       // create work space
-      CrsMatBaseTypeA W;
+      CrsMatBaseTypeA W("CrsMatrixTools::copy::W");
       W.createConfTo(A);
 
       space_type::execution_space::fence();      
@@ -173,14 +169,14 @@ namespace Tacho {
                                 const auto W_vals = W.ValuesInRow(i);
                                 
                                 for (size_type j=0;j<B_cols.dimension_0();++j) {
-                                  W_cols[j] = p[B_cols[j]];
-                                  W_vals[j] = B_vals[j];
+                                  W_cols(j) = p(B_cols(j));
+                                  W_vals(j) = B_vals(j);
                                 }
                               } );
       } else {
         copy(W, B);
       }
-
+      
       // row exchange and sort
       if (ip.dimension_0()) {
         // structure copy
@@ -202,21 +198,62 @@ namespace Tacho {
                                 const auto A_vals = A.ValuesInRow(i);
                                 
                                 for (size_type j=0;j<W_cols.dimension_0();++j) {
-                                  A_cols[j] = W_cols[j];
-                                  W_cols[j] = j;  // use W as workspace of indices
+                                  A_cols(j) = W_cols(j);
+                                  //A_vals(j) = W_vals(j);
+                                  W_cols(j) = j;  // use W as workspace of indices
                                 }
                                 
                                 const ordinal_type begin = 0, end = A_cols.dimension_0();
                                 Util::sort(A_cols, W_cols, begin, end);
 
-                                for (size_type j=0;j<W_cols.dimension_0();++j) 
-                                  A_vals[W_cols[j]] = W_vals[j];
+                                for (size_type j=begin;j<end;++j) 
+                                  A_vals(j) = W_vals(W_cols(j)); 
                               } );
       } else {
         copy(A, W);
       }
+
       space_type::execution_space::fence();
+      A.setNumNonZeros();
     }
+
+
+    /// \brief elementwise add
+    template<typename CrsMatBaseTypeA, 
+             typename CrsMatBaseTypeB>
+    static void
+    add(CrsMatBaseTypeA &A,
+        const CrsMatBaseTypeB B) {
+      static_assert( Kokkos::Impl
+                     ::is_same<
+                     typename CrsMatBaseTypeA::space_type,
+                     typename CrsMatBaseTypeB::space_type
+                     >::value,
+                     "Space type of input matrices does not match" );
+
+      typedef typename CrsMatBaseTypeA::space_type space_type;
+      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
+      
+      const ordinal_type m = Util::min(A.NumRows(), A.NumRows());
+      
+      space_type::execution_space::fence();      
+      Kokkos::parallel_for( range_policy_type(0, m),
+                            [&](const ordinal_type i)
+                            {
+                              size_type ja = A.RowPtrBegin(i);
+                              size_type jb = B.RowPtrBegin(i);
+
+                              const size_type jaend = A.RowPtrEnd(i);
+                              const size_type jbend = B.RowPtrEnd(i);
+                              
+                              for ( ;jb<jbend;++jb) {
+                                for ( ;(A.Col(ja)<B.Col(jb) && ja<jaend);++ja);
+                                A.Value(ja) += (A.Col(ja) == B.Col(jb))*B.Value(jb);
+                              }
+                            } );
+      space_type::execution_space::fence();      
+    }
+
 
 
     // /// Flat to Hier

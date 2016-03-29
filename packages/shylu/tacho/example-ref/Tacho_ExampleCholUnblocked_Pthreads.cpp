@@ -1,9 +1,8 @@
 #include <Kokkos_Core.hpp>
-
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Threads.hpp>
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp>  
 
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_BLAS.hpp"
 
 #include "ShyLUTacho_config.h"
 
@@ -11,17 +10,18 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::OpenMP exec_space;
+typedef Kokkos::Threads exec_space;
 
-#include "Tacho_ExampleDenseGemmMKL.hpp"
-
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
+#include "Tacho_ExampleCholUnblocked.hpp"
 using namespace Tacho;
+#endif
 
 int main (int argc, char *argv[]) {
-  
+
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of dense Gemm on Kokkos::Threads execution space.\n");
-  
+  clp.setDocString("Tacho::DenseMatrixBase examples on Pthreads execution space.\n");
+
   int nthreads = 0;
   clp.setOption("nthreads", &nthreads, "Number of threads");
 
@@ -30,21 +30,24 @@ int main (int argc, char *argv[]) {
 
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
-  
+
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
-  int mmin = 1000;
-  clp.setOption("mmin", &mmin, "C(mmin,mmin)");
+  std::string file_input = "test.mtx";
+  clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
-  int mmax = 8000;
-  clp.setOption("mmax", &mmax, "C(mmax,mmax)");
+  int treecut = 0;
+  clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
 
-  int minc = 1000;
-  clp.setOption("minc", &minc, "Increment of m");
+  int prunecut = 0;
+  clp.setOption("prunecut", &prunecut, "Level to prune tree from bottom");
 
-  int k = 1024;
-  clp.setOption("k", &k, "A(mmax,k) or A(k,mmax) according to transpose flags");
+  int fill_level = 0;
+  clp.setOption("fill-level", &fill_level, "Fill level");
+
+  int rows_per_team = 100;
+  clp.setOption("rows-per-team", &rows_per_team, "Workset size");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -58,18 +61,16 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
-#ifdef HAVE_SHYLUTACHO_MKL
-    std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << std::endl;
-    mkl_set_num_threads(nthreads);
-    r_val = exampleDenseGemmMKL<exec_space>
-      (mmin, mmax, minc, k,
-       verbose);
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
+    r_val = exampleCholUnblocked<exec_space>
+      (file_input, treecut, prunecut, fill_level, rows_per_team, verbose);
 #else
-    TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("MKL") );
+    r_val = -1;
+    std::cout << "Scotch or Cholmod is NOT configured in Trilinos" << std::endl;
 #endif
 
     exec_space::finalize();
   }
-
+  
   return r_val;
 }

@@ -88,8 +88,8 @@ IF(Kokkos_ENABLE_Pthread)
   )
 ENDIF()
 
-# Graph Tools
-# ===========
+# Graph Tools and Symbolic Factorization
+# ======================================
 
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
@@ -98,7 +98,28 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleGraphTools_Pthreads.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleSymbolicFactorization_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleSymbolicFactorization_Pthreads.cpp
+    COMM serial mpi
+  )
 ENDIF()
+
+
+# Numeric Factorization
+# =====================
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholUnblocked_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholUnblocked_Pthreads.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
         SOURCE_FILES test.mtx

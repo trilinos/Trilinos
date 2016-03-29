@@ -1,6 +1,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Threads.hpp>
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "ShyLUTacho_config.h"
 
 typedef double value_type;
 typedef int    ordinal_type;
@@ -8,9 +9,10 @@ typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
 
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
 #include "Tacho_ExampleGraphTools.hpp"
-
 using namespace Tacho;
+#endif
 
 int main (int argc, char *argv[]) {
 
@@ -50,9 +52,14 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
     r_val = exampleGraphTools<exec_space>
       (file_input, treecut, prunecut, verbose);
-    
+#else
+    r_val = -1;
+    std::cout << "Scotch or Cholmod is NOT configured in Trilinos" << std::endl;
+#endif
+
     exec_space::finalize();
   }
   

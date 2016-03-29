@@ -1,6 +1,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Cuda.hpp>
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "ShyLUTacho_config.h"
 
 typedef double value_type;
 typedef int    ordinal_type;
