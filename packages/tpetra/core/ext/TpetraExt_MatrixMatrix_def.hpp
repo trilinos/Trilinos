@@ -2125,86 +2125,94 @@ void import_and_extract_views(
   if (userAssertsThereAreNoRemotes)
     return;
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap"))));
-#endif
-
-  // Mark each row in targetMap as local or remote, and go ahead and get a view
-  // for the local rows
-  RCP<const map_type> rowMap = A.getRowMap(), remoteRowMap;
-  size_t numRemote = 0;
-  int mode = 0;
-  if (!prototypeImporter.is_null() &&
-      prototypeImporter->getSourceMap()->isSameAs(*rowMap)     &&
-      prototypeImporter->getTargetMap()->isSameAs(*targetMap)) {
-    // We have a valid prototype importer --- ask it for the remotes
-    ArrayView<const LO> remoteLIDs = prototypeImporter->getRemoteLIDs();
-    numRemote = prototypeImporter->getNumRemoteIDs();
-
-    Array<GO> remoteRows(numRemote);
-    for (size_t i = 0; i < numRemote; i++)
-      remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
-
-    remoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                    rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
-    mode = 1;
-
-  } else if (prototypeImporter.is_null()) {
-    // No prototype importer --- count the remotes the hard way
-    ArrayView<const GO> rows    = targetMap->getNodeElementList();
-    size_t              numRows = targetMap->getNodeNumElements();
-
-    Array<GO> remoteRows(numRows);
-    for(size_t i = 0; i < numRows; ++i) {
-      const LO mlid = rowMap->getLocalElement(rows[i]);
-
-      if (mlid == OrdinalTraits<LO>::invalid())
-        remoteRows[numRemote++] = rows[i];
-    }
-    remoteRows.resize(numRemote);
-    remoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                    rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
-    mode = 2;
+  RCP<const import_type> importer;
+  if (params != null && params->isParameter("importer")) {
+    importer = params->get<RCP<const import_type> >("importer");
 
   } else {
-    // PrototypeImporter is bad.  But if we're in serial that's OK.
-    mode = 3;
-  }
-
-  const int numProcs = rowMap->getComm()->getSize();
-  if (numProcs < 2) {
-    TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
-      "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows." <<std::endl);
-    // If only one processor we don't need to import any remote rows, so return.
-    return;
-  }
-
-  //
-  // Now we will import the needed remote rows of A, if the global maximum
-  // value of numRemote is greater than 0.
-  //
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Collective-0"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap"))));
 #endif
 
-  global_size_t globalMaxNumRemote = 0;
-  Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote) );
+    // Mark each row in targetMap as local or remote, and go ahead and get a view
+    // for the local rows
+    RCP<const map_type> rowMap = A.getRowMap(), remoteRowMap;
+    size_t numRemote = 0;
+    int mode = 0;
+    if (!prototypeImporter.is_null() &&
+        prototypeImporter->getSourceMap()->isSameAs(*rowMap)     &&
+        prototypeImporter->getTargetMap()->isSameAs(*targetMap)) {
+      // We have a valid prototype importer --- ask it for the remotes
+      ArrayView<const LO> remoteLIDs = prototypeImporter->getRemoteLIDs();
+      numRemote = prototypeImporter->getNumRemoteIDs();
 
+      Array<GO> remoteRows(numRemote);
+      for (size_t i = 0; i < numRemote; i++)
+        remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
 
-  if (globalMaxNumRemote > 0) {
+      remoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), remoteRows(),
+                                      rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
+      mode = 1;
+
+    } else if (prototypeImporter.is_null()) {
+      // No prototype importer --- count the remotes the hard way
+      ArrayView<const GO> rows    = targetMap->getNodeElementList();
+      size_t              numRows = targetMap->getNodeNumElements();
+
+      Array<GO> remoteRows(numRows);
+      for(size_t i = 0; i < numRows; ++i) {
+        const LO mlid = rowMap->getLocalElement(rows[i]);
+
+        if (mlid == OrdinalTraits<LO>::invalid())
+          remoteRows[numRemote++] = rows[i];
+      }
+      remoteRows.resize(numRemote);
+      remoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), remoteRows(),
+                                      rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
+      mode = 2;
+
+    } else {
+      // PrototypeImporter is bad.  But if we're in serial that's OK.
+      mode = 3;
+    }
+
+    const int numProcs = rowMap->getComm()->getSize();
+    if (numProcs < 2) {
+      TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
+            "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows.");
+      // If only one processor we don't need to import any remote rows, so return.
+      return;
+    }
+
+    //
+    // Now we will import the needed remote rows of A, if the global maximum
+    // value of numRemote is greater than 0.
+    //
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-2"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Collective-0"))));
 #endif
-    // Create an importer with target-map remoteRowMap and source-map rowMap.
-    RCP<const import_type> importer;
 
-    if (mode == 1)
-      importer = prototypeImporter->createRemoteOnlyImport(remoteRowMap);
-    else if (mode == 2)
-      importer = rcp(new import_type(rowMap, remoteRowMap));
-    else
-      throw std::runtime_error("prototypeImporter->SourceMap() does not match A.getRowMap()!");
+    global_size_t globalMaxNumRemote = 0;
+    Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote) );
 
+    if (globalMaxNumRemote > 0) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-2"))));
+#endif
+      // Create an importer with target-map remoteRowMap and source-map rowMap.
+      if (mode == 1)
+        importer = prototypeImporter->createRemoteOnlyImport(remoteRowMap);
+      else if (mode == 2)
+        importer = rcp(new import_type(rowMap, remoteRowMap));
+      else
+        throw std::runtime_error("prototypeImporter->SourceMap() does not match A.getRowMap()!");
+    }
+
+    if (params != null)
+      params->set("importer", importer);
+  }
+
+  if (importer != null) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-3"))));
 #endif
@@ -2212,8 +2220,8 @@ void import_and_extract_views(
     // Now create a new matrix into which we can import the remote rows of A that we need.
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
-    Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcp(&A,false),
-                                *importer, A.getDomainMap(), remoteRowMap, rcp(&labelList,false));
+    Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
+                                    A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 
 #ifdef HAVE_TPETRA_MMM_STATISTICS
     printMultiplicationStatistics(importer, label + std::string(" I&X MMM"));
