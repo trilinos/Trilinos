@@ -222,6 +222,8 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
       if (tmpResTest != Teuchos::null) {
         resTestVec_.resize( 1 );
         resTestVec_[0] = tmpResTest;
+        resTestNamesVec_.resize( 1 );
+        resTestNamesVec_[0] = "IMPLICIT RES";
         continue;
       }
 
@@ -234,6 +236,7 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
       comboType_ = tmpComboTest->getComboType();
 
       // Add only status tests which are not in the user-specified list of tagged status tests
+      // More specifically: we want to add the implicit residual test
       typename std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP> > >::iterator it;
       for (int j=0; j<tmpVec.size(); ++j) {
         tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[j]);
@@ -244,12 +247,16 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
         for(it = taggedTests_->begin(); it != taggedTests_->end(); ++it) {
           if(tmpVec[j] == it->second) { bFound = true; break; }
         }
-        if(!bFound) resTestVec_.push_back(tmpResTest);
+        if(!bFound) {
+          resTestVec_.push_back(tmpResTest);
+          resTestNamesVec_.push_back("IMPLICIT RES");
+        }
       }
 
-      typename std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP> > >::reverse_iterator rit;
-      for(rit = taggedTests_->rbegin(); rit != taggedTests_->rend(); ++rit) {
-        resTestVec_.push_back(rit->second);
+      // add all tagged tests (the ordering is by the Tag names in alphabetical ordering)
+      for(it = taggedTests_->begin(); it != taggedTests_->end(); ++it) {
+        resTestVec_.push_back(it->second);
+        resTestNamesVec_.push_back(it->first);
       }
     }
 
@@ -321,6 +328,20 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
       os << ind << starFront << " Status tests: " << std::endl;
       test_->print(os,indent + 3);
       os << ind << starLine << std::endl;
+      os.setf(std::ios_base::right, std::ios_base::adjustfield);
+      std::string indheader( 7 + numIterDgts_, ' ' );
+      os << indheader;
+      for (int i=0; i<currNumRHS_; ++i) {
+        if ( i > 0 && currIdx_[i]!=-1 ) {
+          // Put in space where 'Iter :' is in the previous lines
+          os << ind << indheader;
+        }
+        os << "[" << std::setw(numLSDgts_) << currIdx_[i]+1 << "] : ";
+        for (int j=0; j<resTestVec_.size(); ++j) {
+          os << std::setw(15) << resTestNamesVec_[j];
+        }
+        os << std::endl;
+      }
       headerPrinted_ = true;
     }
 
@@ -369,6 +390,9 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
     //! Vector of residual status tests
     std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > resTestVec_;
+
+    //! Name tags for status tests
+    std::vector<std::string> resTestNamesVec_;
 
     std::string solverDesc_;
     std::string precondDesc_;
