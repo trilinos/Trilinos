@@ -317,11 +317,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   }
   Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
-  ParameterList paramList;
-  paramList.set("verbosity", "none");
-  if (xmlFileName != "")
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
-
   // Retrieve matrix parameters (they may have been changed on the command line)
   // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
   ParameterList galeriList = galeriParameters.GetParameterList();
@@ -361,6 +356,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   std::string thickSeparator = "=============================================================";
   std::string thinSeparator  = "-------------------------------------------------------------";
+
+  ParameterList paramList;
+  paramList.set("verbosity", "none");
+  if (xmlFileName != "")
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+
+  out << "Parameter list:" << std::endl << paramList << std::endl;
 
   // =========================================================================
   // Setup #1 (no reuse)
