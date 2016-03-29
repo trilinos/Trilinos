@@ -83,7 +83,8 @@ void Multiply(
   bool transposeB,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   // Convience typedefs
   typedef Scalar                            SC;
@@ -250,7 +251,8 @@ void Jacobi(Scalar omega,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
             CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
             bool call_FillComplete_on_result,
-	    const std::string & label)
+	         const std::string& label,
+            const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   // Convience typedefs
   typedef Scalar                            SC;
@@ -923,8 +925,9 @@ void mult_AT_B_newmatrix(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label) {
-
+  const std::string & label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
+{
   // Using &  Typedefs
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1005,7 +1008,8 @@ void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   typedef Teuchos::ScalarTraits<Scalar> STS;
   // TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
@@ -1241,7 +1245,8 @@ void mult_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1468,7 +1473,8 @@ void mult_A_B_reuse(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1635,7 +1641,8 @@ void jacobi_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1886,7 +1893,8 @@ void jacobi_A_B_reuse(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -2075,7 +2083,8 @@ void import_and_extract_views(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
   RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
   bool userAssertsThereAreNoRemotes,
-  const std::string & label)
+  const std::string & label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -2243,7 +2252,8 @@ void import_and_extract_views(
     bool transposeB, \
     CrsMatrix< SCALAR , LO , GO , NODE >& C, \
     bool call_FillComplete_on_result, \
-    const std::string & label); \
+    const std::string & label, \
+    const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
 template \
   void MatrixMatrix::Jacobi( \
@@ -2253,7 +2263,8 @@ template \
     const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
     CrsMatrix< SCALAR , LO , GO , NODE >& C, \
     bool call_FillComplete_on_result, \
-    const std::string & label); \
+    const std::string & label, \
+    const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
   template \
   void MatrixMatrix::Add( \
