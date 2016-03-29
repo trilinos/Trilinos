@@ -123,7 +123,11 @@ namespace Amesos2 {
      * See Superlu documentation for a further description of function
      * arguments.
      */
-    static void gstrf(SLUD::superlu_options_t* options, int m, int n, double anorm, 
+#ifdef HAVE_SUPERLUDIST_OPTIONST
+    static void gstrf(SLUD::superlu_options_t* options, int m, int n, double anorm,
+#else
+    static void gstrf(SLUD::superlu_dist_options_t* options, int m, int n, double anorm,
+#endif
 		      type_map::LUstruct_t* LU, SLUD::gridinfo_t* grid, SLUD::SuperLUStat_t* stat, 
 		      int* info)
     {
@@ -361,7 +365,11 @@ namespace Amesos2 {
       return SLUD::D::pdlangs(norm, A, grid);
     }
 
+#ifdef HAVE_SUPERLUDIST_OPTIONST
     static void SolveInit(SLUD::superlu_options_t* options, SLUD::SuperMatrix* A, 
+#else
+    static void SolveInit(SLUD::superlu_dist_options_t* options, SLUD::SuperMatrix* A,
+#endif
 			  SLUD::int_t* perm_r, SLUD::int_t* perm_c, SLUD::int_t nrhs, 
 			  type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
 			  type_map::SOLVEstruct_t* solve_struct)
@@ -390,7 +398,11 @@ namespace Amesos2 {
       SLUD::D::LUstructFree(lu);
     }
 
+#ifdef HAVE_SUPERLUDIST_OPTIONST
     static void SolveFinalize(SLUD::superlu_options_t* options,
+#else
+    static void SolveFinalize(SLUD::superlu_dist_options_t* options,
+#endif
 			      type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::D::dSolveFinalize(options, solve_struct);
@@ -407,7 +419,11 @@ namespace Amesos2 {
   {
     typedef TypeMap<Superludist,std::complex<double> > type_map;
 
-    static void gstrf(SLUD::superlu_options_t* options, int m, int n, double anorm, 
+#ifdef HAVE_SUPERLUDIST_OPTIONST
+    static void gstrf(SLUD::superlu_options_t* options, int m, int n, double anorm,
+#else
+    static void gstrf(SLUD::superlu_dist_options_t* options, int m, int n, double anorm,
+#endif
 		      type_map::LUstruct_t* LU, SLUD::gridinfo_t* grid,
 		      SLUD::SuperLUStat_t* stat, int* info)
     {
@@ -531,7 +547,11 @@ namespace Amesos2 {
       return SLUD::Z::pzlangs(norm, A, grid);
     }
 
+#ifdef HAVE_SUPERLUDIST_OPTIONST
     static void SolveInit(SLUD::superlu_options_t* options, SLUD::SuperMatrix* A,
+#else
+    static void SolveInit(SLUD::superlu_dist_options_t* options, SLUD::SuperMatrix* A,
+#endif
 			  SLUD::int_t* perm_r, SLUD::int_t* perm_c, SLUD::int_t nrhs,
 			  type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
 			  type_map::SOLVEstruct_t* solve_struct)
@@ -558,7 +578,11 @@ namespace Amesos2 {
       SLUD::Z::LUstructFree(lu);
     }
 
+#ifdef HAVE_SUPERLUDIST_OPTIONST
     static void SolveFinalize(SLUD::superlu_options_t* options,
+#else
+    static void SolveFinalize(SLUD::superlu_dist_options_t* options,
+#endif
 			      type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::Z::zSolveFinalize(options, solve_struct);

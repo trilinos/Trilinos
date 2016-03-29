@@ -115,6 +115,9 @@
 /* Define to 1 if SuperLU_DIST's LUstructInit is declared with 2 arguments. */
 #cmakedefine HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
 
+/* Define to 1 if SuperLU_DIST uses superlu_options_t rather than superlu_dist_options_t */
+#cmakedefine HAVE_SUPERLUDIST_OPTIONST
+
 /* Defined if you want to enable amesos2-MUMPS */
 #cmakedefine HAVE_AMESOS2_MUMPS
 
