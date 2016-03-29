@@ -406,9 +406,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // Setup #2-inf (reuse)
   // =========================================================================
   std::vector<std::string> reuseTypes, reuseNames;
-  reuseTypes.push_back("S");  reuseNames.push_back("smoothers");
-  reuseTypes.push_back("tP"); reuseNames.push_back("tentative P");
-  reuseTypes.push_back("RP"); reuseNames.push_back("smoothed P and R");
+  reuseTypes.push_back("none"); reuseNames.push_back("none");
+  reuseTypes.push_back("S");    reuseNames.push_back("smoothers");
+  reuseTypes.push_back("tP");   reuseNames.push_back("tentative P");
+  reuseTypes.push_back("RP");   reuseNames.push_back("smoothed P and R");
 
   for (size_t k = 0; k < reuseTypes.size(); k++) {
     out << thickSeparator << " " << reuseTypes[k] << " " << thickSeparator << std::endl;
