@@ -231,8 +231,8 @@ Level 1
    filtered matrix: use lumping = 1   [default]
    filtered matrix: reuse graph = 1   [default]
    filtered matrix: reuse eigenvalue = 1   [default]
-   
-   Reusing previous AP graph
+
+   Reusing previous AP data
   sa: damping factor = 1.33   [default]
   sa: calculate eigenvalue estimate = 0   [default]
   sa: eigenvalue estimate num iterations = 10   [default]
@@ -254,11 +254,11 @@ Level 1
  type = Restriction
  write start = -1   [default]
  write end = -1   [default]
- 
+
  Computing Ac (MueLu::RebalanceAcFactory)
   Computing Ac (MueLu::RAPFactory)
-   Reusing previous AP graph
-   Reusing previous RAP graph
+   Reusing previous AP data
+   Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
   write start = -1   [default]
   write end = -1   [default]
@@ -294,8 +294,8 @@ Level 2
    filtered matrix: use lumping = 1   [default]
    filtered matrix: reuse graph = 1   [default]
    filtered matrix: reuse eigenvalue = 1   [default]
-   
-   Reusing previous AP graph
+
+   Reusing previous AP data
   sa: damping factor = 1.33   [default]
   sa: calculate eigenvalue estimate = 0   [default]
   sa: eigenvalue estimate num iterations = 10   [default]
@@ -317,11 +317,11 @@ Level 2
  type = Restriction
  write start = -1   [default]
  write end = -1   [default]
- 
+
  Computing Ac (MueLu::RebalanceAcFactory)
   Computing Ac (MueLu::RAPFactory)
-   Reusing previous AP graph
-   Reusing previous RAP graph
+   Reusing previous AP data
+   Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
   write start = -1   [default]
   write end = -1   [default]

@@ -232,11 +232,11 @@ Level 1
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
- 
+
  Computing Ac (MueLu::RebalanceAcFactory)
   Computing Ac (MueLu::RAPFactory)
-   Reusing previous AP graph
-   Reusing previous RAP graph
+   Reusing previous AP data
+   Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
   write start = -1   [default]
   write end = -1   [default]
@@ -272,11 +272,11 @@ Level 2
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
- 
+
  Computing Ac (MueLu::RebalanceAcFactory)
   Computing Ac (MueLu::RAPFactory)
-   Reusing previous AP graph
-   Reusing previous RAP graph
+   Reusing previous AP data
+   Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
   write start = -1   [default]
   write end = -1   [default]
