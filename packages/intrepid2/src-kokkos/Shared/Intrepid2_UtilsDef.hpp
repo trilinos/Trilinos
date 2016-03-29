@@ -436,27 +436,22 @@ namespace Intrepid2 {
   //--------------------------------------------------------------------------------------------//
 
   // this cannot be called inside of functor
-  template<typename TagToOrdinalType,  // 3D table
-           typename OrdinalToTagType,  // 2D table
-           typename OrdinalArrayType>  // 1D array
+  template<class ...tagToOrdinalProperties,
+           class ...ordinalToTagProperties,
+           class ...tagProperties>
   KOKKOS_INLINE_FUNCTION
-  void setOrdinalTagData(TagToOrdinalType       &tagToOrdinal,
-                         OrdinalToTagType       &ordinalToTag,
-                         const char             *tagLabel,
-                         const OrdinalArrayType tags,
-                         const ordinal_type     basisCard,
-                         const ordinal_type     tagSize,
-                         const ordinal_type     posScDim,
-                         const ordinal_type     posScOrd,
-                         const ordinal_type     posDfOrd) {
+  void setOrdinalTagData(Kokkos::View<ordinal_type***,  tagToOrdinalProperties...> &tagToOrdinal,
+                         Kokkos::View<ordinal_type*[4], ordinalToTagProperties...> &ordinalToTag,
+                         const Kokkos::View<ordinal_type*, tagProperties...> tags,
+                         const ordinal_type  basisCard,
+                         const ordinal_type  tagSize,
+                         const ordinal_type  posScDim,
+                         const ordinal_type  posScOrd,
+                         const ordinal_type  posDfOrd) {
+    // Create ordinalToTag
+    ordinalToTag = Kokkos::View<ordinal_type*[4],ordinalToTagProperties...>("ordinalToTag", basisCard);
 
-    {
-      char label[INTREPID2_LABELSIZE*2];
-      strcat(label, tagLabel);
-      strcat(label, "::OrdinalToTag");
-      ordinalToTag = OrdinalToTagType(label, basisCard, 4);
-    }
-
+    // Initialize with -1
     {
       const ordinal_type iend = ordinalToTag.dimension(0);
       const ordinal_type jend = ordinalToTag.dimension(1);
@@ -470,7 +465,7 @@ namespace Intrepid2 {
       for (ordinal_type j=0; j<tagSize; ++j)
         ordinalToTag(i, j) = tags(i*tagSize + j);
 
-
+    // Find out dimension of tagToOrdinal
     ordinal_type maxScDim = 0;  // first dimension of tagToOrdinal
     for (ordinal_type i=0; i<basisCard; ++i)
       if (maxScDim < tags(i*tagSize + posScDim))
@@ -489,12 +484,8 @@ namespace Intrepid2 {
         maxDfOrd = tags[i*tagSize + posDfOrd];
     maxDfOrd += 1;
 
-    {
-      char label[INTREPID2_LABELSIZE*2];
-      strcat(label, tagLabel);
-      strcat(label, "::OrdinalToTag");
-      tagToOrdinal = TagToOrdinalType(label, maxScDim, maxScOrd, maxDfOrd);
-    }
+    // Create tagToOrdinal
+    tagToOrdinal = Kokkos::View<ordinal_type***,tagToOrdinalProperties...>("tagToOrdinal", maxScDim, maxScOrd, maxDfOrd);
 
     // Initialize with -1
     {

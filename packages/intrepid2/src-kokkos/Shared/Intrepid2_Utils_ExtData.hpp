@@ -55,7 +55,12 @@
 #include "Teuchos_RCP.hpp"
 
 namespace Intrepid2 {
-  
+
+  /**
+     Note: 
+     - NOT compiled on device (host only)
+   */
+
   /***************************************************************************************************
    **                                                                                               **
    **                      Declarations of templated utility functions                              **
@@ -63,10 +68,10 @@ namespace Intrepid2 {
    ***************************************************************************************************/
 
   enum TypeOfExactData{
-    INTREPID_UTILS_FRACTION = 0,
+    INTREPID2_UTILS_FRACTION = 0,
     INTREPID2_UTILS_SCALAR
   };
-  
+
   /***************************************************************************************************
    *                                                                                                 *
    *               Utility functions for handling external data in tests                             *
@@ -76,41 +81,22 @@ namespace Intrepid2 {
   /** \brief  Compares the values in the test matrix <var><b>testMat</b></var> to precomputed
       analytic values stored in a file, where the input matrix is an array of arrays.
 
-      \param  testMat          [in]     -  test matrix
       \param  inputFile        [in]     -  input file
+      \param  testMat          [in]     -  test matrix
       \param  reltol           [in]     -  relative tolerance for equality comparisons
       \param  iprint           [in]     -  if 0, no output; if 1, details are printed
       \param  analyticDataType [in]     -  type of analytic data for comparison:
-      \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
+      \li if INTREPID2_UTILS_FRACTION, analytic fractions are parsed and computed
       \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
       \return 0 if pass; error code otherwise
   */
-  template<class Scalar>
-  ordinal_type compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
-                                 std::ifstream & inputFile,
-                                 Scalar reltol,
-                                 ordinal_type iprint,
-                                 TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION);
-
-  /** \brief  Compares the values in the test matrix <var><b>testMat</b></var> to precomputed
-      analytic values stored in a file, where the input matrix is a single contiguous
-      array.
-
-      \param  testMat          [in]     -  test matrix
-      \param  inputFile        [in]     -  input file
-      \param  reltol           [in]     -  relative tolerance for equality comparisons
-      \param  iprint           [in]     -  if 0, no output; if 1, details are printed
-      \param  analyticDataType [in]     -  type of analytic data for comparison:
-      \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
-      \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
-      \return 0 if pass; error code otherwise
-  */
-  template<class Scalar>
-  ordinal_type compareToAnalytic(const Scalar * testMat,
-                                 std::ifstream & inputFile,
-                                 Scalar reltol,
-                                 ordinal_type iprint,
-                                 TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION);
+  template<typename ValueType,
+           class ...testMatProperties>
+  ordinal_type compareToAnalytic( const std::ifstream inputFile,
+                                  const Kokkos::DynRankView<ValueType,testMatProperties...> testMat,
+                                  const ValueType reltol,
+                                  const ordinal_type iprint,
+                                  const TypeOfExactData analyticDataType = INTREPID2_UTILS_FRACTION );
 
   /** \brief  Loads analytic values stored in a file into the matrix <var><b>testMat</b></var>,
       where the output matrix is an array of arrays.
@@ -118,27 +104,15 @@ namespace Intrepid2 {
       \param  testMat          [in]     -  test matrix
       \param  inputFile        [in]     -  input file
       \param  analyticDataType [in]     -  type of analytic data for comparison:
-      \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
+      \li if INTREPID2_UTILS_FRACTION, analytic fractions are parsed and computed
       \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
   */
-  template<class Scalar>
-  void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
-                   std::ifstream & inputFile,
-                   TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION);
-  
-  /** \brief  Loads analytic values stored in a file into the matrix <var><b>testMat</b></var>,
-      where the output matrix is a single contiguous array.
-
-      \param  testMat          [in]     -  test matrix
-      \param  inputFile        [in]     -  input file
-      \param  analyticDataType [in]     -  type of analytic data for comparison:
-      \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
-      \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
-  */
-  template<class Scalar>
-  void getAnalytic(Scalar * testMat,
-                   std::ifstream & inputFile,
-                   TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION);
+  template<typename ValueType,
+           class ...testMatProperties>
+  template<typename ValueType>
+  void getAnalytic( Kokkos::DynRankView<ValueType,testMatProperties...> testMat,
+                    const std::ifstream inputFile,
+                    const TypeOfExactData analyticDataType = INTREPID2_UTILS_FRACTION );
 
 } // end namespace Intrepid2
 

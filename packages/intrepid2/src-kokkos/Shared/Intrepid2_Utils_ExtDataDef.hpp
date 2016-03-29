@@ -58,31 +58,32 @@ namespace Intrepid2 {
    *                                                                                                 *
    ***************************************************************************************************/
 
-  template<class Scalar>
-  ordinal_type compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
-                                 std::ifstream & inputFile,
-                                 Scalar reltol,
-                                 ordinal_type iprint,
-                                 TypeOfExactData analyticDataType ) {
+  template<typename ValueType,
+           class ...testMatProperties>
+  ordinal_type compareToAnalytic( const std::ifstream inputFile,
+                                  const Kokkos::DynRankView<ValueType,testMatProperties...> testMat,
+                                  const ValueType reltol,
+                                  const ordinal_type iprint,
+                                  const TypeOfExactData analyticDataType ) {
+    INTREPID2_TEST_FOR_ABORT( testMat.rank() != 2,
+                              ">>> ERROR (compareToAnalytic): testMat must have rank 2");
 
-    // This little trick lets us prordinal_type to std::cout only if
-    // iprordinal_type > 0.
     Teuchos::RCP<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    Teuchos::oblackholestream  outNothing;
     if (iprordinal_type > 0)
       outStream = Teuchos::rcp(&std::cout, false);
     else
-      outStream = Teuchos::rcp(&bhs, false);
+      outStream = Teuchos::rcp(&outNothing, false);
 
     // Save the format state of the original std::cout.
     Teuchos::oblackholestream oldFormatState;
     oldFormatState.copyfmt(std::cout);
 
     std::string line;
-    Scalar testentry;
-    Scalar abstol;
-    Scalar absdiff;
-    ordinal_type i=0, j=0;
+    ValueType testentry;
+    ValueType abstol;
+    ValueType absdiff;
+    ordinal_type i = 0, j = 0;
     ordinal_type err = 0;
 
     while (! inputFile.eof() )
@@ -100,38 +101,38 @@ namespace Intrepid2 {
             std::istringstream chunkstream(chunk);
             chunkstream >> num1;
             chunkstream >> num2;
-            testentry = (Scalar)(num1)/(Scalar)(num2);
+            testentry = (ValueType)(num1)/(ValueType)(num2);
             abstol = ( std::fabs(testentry) < reltol ? reltol : std::fabs(reltol*testentry) );
-            absdiff = std::fabs(testentry - testMat[i][j]);
+            absdiff = std::fabs(testentry - testMat(i, j));
             if (absdiff > abstol) {
-              err++;
+              ++err;
               *outStream << "FAILURE --> ";
             }
             *outStream << "entry[" << i << "," << j << "]:" << "   "
-                       << testMat[i][j] << "   " << num1 << "/" << num2 << "   "
+                       << testMat(i, j) << "   " << num1 << "/" << num2 << "   "
                        << absdiff << "   " << "<?" << "   " << abstol << "\n";
           }
           else {
             std::istringstream chunkstream(chunk);
-            if (analyticDataType == INTREPID_UTILS_FRACTION) {
+            if (analyticDataType == INTREPID2_UTILS_FRACTION) {
               chunkstream >> num1;
-              testentry = (Scalar)(num1);
+              testentry = (ValueType)(num1);
             }
             else if (analyticDataType == INTREPID2_UTILS_SCALAR)
               chunkstream >> testentry;
             abstol = ( std::fabs(testentry) < reltol ?reltol : std::fabs(reltol*testentry) );
-            absdiff = std::fabs(testentry - testMat[i][j]);
+            absdiff = std::fabs(testentry - testMat(i, j));
             if (absdiff > abstol) {
-              err++;
+              ++err;
               *outStream << "FAILURE --> ";
             }
             *outStream << "entry[" << i << "," << j << "]:" << "   "
-                       << testMat[i][j] << "   " << testentry << "   "
+                       << testMat(i, j) << "   " << testentry << "   "
                        << absdiff << "   " << "<?" << "   " << abstol << "\n";
           }
-          j++;
+          ++j;
         }
-        i++;
+        ++i;
       }
 
     // reset format state of std::cout
@@ -140,32 +141,21 @@ namespace Intrepid2 {
     return err;
   } // end compareToAnalytic
 
-  template<class Scalar>
-  ordinal_type compareToAnalytic(const Scalar * testMat,
-                                 std::ifstream & inputFile,
-                                 Scalar reltol,
-                                 ordinal_type iprint,
-                                 TypeOfExactData analyticDataType ) {
+  template<typename ValueType,
+           class ...testMatProperties>
+  template<typename ValueType>
+  void getAnalytic( Kokkos::DynRankView<ValueType,testMatProperties...> testMat,
+                    const std::ifstream inputFile,
+                    const TypeOfExactData analyticDataType ) {
+    INTREPID2_TEST_FOR_ABORT( testMat.rank() != 2,
+                              ">>> ERROR (getToAnalytic): testMat must have rank 2");
 
-    // This little trick lets us prordinal_type to std::cout only if
-    // iprordinal_type > 0.
-    Teuchos::RCP<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
-    if (iprordinal_type > 0)
-      outStream = Teuchos::rcp(&std::cout, false);
-    else
-      outStream = Teuchos::rcp(&bhs, false);
-
-    // Save the format state of the original std::cout.
     Teuchos::oblackholestream oldFormatState;
     oldFormatState.copyfmt(std::cout);
 
     std::string line;
-    Scalar testentry;
-    Scalar abstol;
-    Scalar absdiff;
-    ordinal_type i=0, j=0, offset=0;
-    ordinal_type err = 0;
+    ValueType testentry;
+    ordinal_type i = 0, j = 0;
 
     while (! inputFile.eof() )
       {
@@ -182,142 +172,22 @@ namespace Intrepid2 {
             std::istringstream chunkstream(chunk);
             chunkstream >> num1;
             chunkstream >> num2;
-            testentry = (Scalar)(num1)/(Scalar)(num2);
-            abstol = ( std::fabs(testentry) < reltol ? reltol : std::fabs(reltol*testentry) );
-            absdiff = std::fabs(testentry - testMat[i*offset+j]);
-            if (absdiff > abstol) {
-              err++;
-              *outStream << "FAILURE --> ";
-            }
-            *outStream << "entry[" << i << "," << j << "]:" << "   "
-                       << testMat[i*offset+j] << "   " << num1 << "/" << num2 << "   "
-                       << absdiff << "   " << "<?" << "   " << abstol << "\n";
+            testentry = (ValueType)(num1)/(ValueType)(num2);
+            testMat(i, j) = testentry;
           }
           else {
             std::istringstream chunkstream(chunk);
-            if (analyticDataType == INTREPID_UTILS_FRACTION) {
+            if (analyticDataType == INTREPID2_UTILS_FRACTION) {
               chunkstream >> num1;
-              testentry = (Scalar)(num1);
+              testentry = (ValueType)(num1);
             }
             else if (analyticDataType == INTREPID2_UTILS_SCALAR)
               chunkstream >> testentry;
-            abstol = ( std::fabs(testentry) < reltol ?reltol : std::fabs(reltol*testentry) );
-            absdiff = std::fabs(testentry - testMat[i*offset+j]);
-            if (absdiff > abstol) {
-              err++;
-              *outStream << "FAILURE --> ";
-            }
-            *outStream << "entry[" << i << "," << j << "]:" << "   "
-                       << testMat[i*offset+j] << "   " << testentry << "   "
-                       << absdiff << "   " << "<?" << "   " << abstol << "\n";
+            testMat(i, j) = testentry;
           }
-          j++;
+          ++j;
         }
-        i++;
-        offset = j;
-      }
-
-    // reset format state of std::cout
-    std::cout.copyfmt(oldFormatState);
-
-    return err;
-  } // end compareToAnalytic
-
-  template<class Scalar>
-  void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
-                   std::ifstream & inputFile,
-                   TypeOfExactData analyticDataType ) {
-
-    // Save the format state of the original std::cout.
-    Teuchos::oblackholestream oldFormatState;
-    oldFormatState.copyfmt(std::cout);
-
-    std::string line;
-    Scalar testentry;
-    ordinal_type i=0, j=0;
-
-    while (! inputFile.eof() )
-      {
-        std::getline (inputFile,line);
-        std::istringstream linestream(line);
-        std::string chunk;
-        j = 0;
-        while( linestream >> chunk ) {
-          ordinal_type num1;
-          ordinal_type num2;
-          std::string::size_type loc = chunk.find( "/", 0);
-          if( loc != std::string::npos ) {
-            chunk.replace( loc, 1, " ");
-            std::istringstream chunkstream(chunk);
-            chunkstream >> num1;
-            chunkstream >> num2;
-            testentry = (Scalar)(num1)/(Scalar)(num2);
-            testMat[i][j] = testentry;
-          }
-          else {
-            std::istringstream chunkstream(chunk);
-            if (analyticDataType == INTREPID_UTILS_FRACTION) {
-              chunkstream >> num1;
-              testentry = (Scalar)(num1);
-            }
-            else if (analyticDataType == INTREPID2_UTILS_SCALAR)
-              chunkstream >> testentry;
-            testMat[i][j] = testentry;
-          }
-          j++;
-        }
-        i++;
-      }
-
-    // reset format state of std::cout
-    std::cout.copyfmt(oldFormatState);
-  } // end getAnalytic
-
-  template<class Scalar>
-  void getAnalytic(Scalar * testMat,
-                   std::ifstream & inputFile,
-                   TypeOfExactData analyticDataType) {
-
-    // Save the format state of the original std::cout.
-    Teuchos::oblackholestream oldFormatState;
-    oldFormatState.copyfmt(std::cout);
-
-    std::string line;
-    Scalar testentry;
-    ordinal_type i=0, j=0, offset=0;
-
-    while (! inputFile.eof() )
-      {
-        std::getline (inputFile,line);
-        std::istringstream linestream(line);
-        std::string chunk;
-        j = 0;
-        while( linestream >> chunk ) {
-          ordinal_type num1;
-          ordinal_type num2;
-          std::string::size_type loc = chunk.find( "/", 0);
-          if( loc != std::string::npos ) {
-            chunk.replace( loc, 1, " ");
-            std::istringstream chunkstream(chunk);
-            chunkstream >> num1;
-            chunkstream >> num2;
-            testentry = (Scalar)(num1)/(Scalar)(num2);
-            testMat[i*offset+j] = testentry;
-          }
-          else {
-            std::istringstream chunkstream(chunk);
-            if (analyticDataType == INTREPID_UTILS_FRACTION) {
-              chunkstream >> num1;
-              testentry = (Scalar)(num1);
-            }
-            else if (analyticDataType == INTREPID2_UTILS_SCALAR)
-              chunkstream >> testentry;
-            testMat[i*offset+j] = testentry;
-          }
-          j++;
-        }
-        i++;
-        offset = j;
+        ++i;
       }
 
     // reset format state of std::cout
