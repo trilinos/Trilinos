@@ -65,9 +65,9 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   RTOp                  packages/rtop                     PS
   Sacado                packages/sacado                   PS
   Epetra                packages/epetra                   PS
+  SCORECpcu             SCOREC/pcu                        SS
   SCORECgmi             SCOREC/gmi                        SS
   SCORECgmi_sim         SCOREC/gmi_sim                    SS
-  SCORECpcu             SCOREC/pcu                        SS
   SCORECapf             SCOREC/apf                        SS
   SCORECapf_sim         SCOREC/apf_sim                    SS
   SCORECmds             SCOREC/mds                        SS
