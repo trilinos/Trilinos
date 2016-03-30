@@ -81,6 +81,7 @@
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 #include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosXpetraStatusTestGenResSubNorm.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
@@ -451,6 +452,9 @@ int main(int argc, char *argv[]) {
       // TODO plausibility checks
       // TODO set number of dofs per node
 
+      // use bOp as A
+      A = bOp;
+
       if(bThyraMode == false) {
         // use Xpetra style GIDs
         H->GetLevel(0)->Set("A",            Teuchos::rcp_dynamic_cast<Matrix>(bOp));
@@ -494,12 +498,10 @@ int main(int argc, char *argv[]) {
         X = VectorFactory::Build(thy_map_extractor->getFullMap(),1);
         X->putScalar(zero);
 
-        // also the GID ordering of bOp is not consistent with A any more. Use bOp as A.
-        A = Teuchos::rcp_dynamic_cast<Matrix>(bOp);
-
         // TODO the ordering of the solution vector X is different!
       }
     } else {
+      // standard (non-blocked) case
       H->GetLevel(0)->Set("A",           A);
       H->GetLevel(0)->Set("Nullspace",   nullspace);
       H->GetLevel(0)->Set("Coordinates", coordinates);
@@ -567,11 +569,42 @@ int main(int argc, char *argv[]) {
       belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
       belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosList.set("Output Frequency",      output);
-      belosList.set("Output Style",          Belos::Brief);
-      //belosList.set("Orthogonalization",     "ICGS");
-      if (convType == "none") {
-        belosList.set("Explicit Residual Scaling",  "None");
-        belosList.set("Implicit Residual Scaling",  "None");
+      if(blockedSystem != 1) {
+        belosList.set("Output Style",          Belos::Brief);
+        if (convType == "none") {
+          belosList.set("Explicit Residual Scaling",  "None");
+          belosList.set("Implicit Residual Scaling",  "None");
+        }
+      } else {
+        belosList.set("Output Style",          Belos::User);
+        belosList.set("User Status Tests Combo Type", "OR");
+        Teuchos::ParameterList& userList = belosList.sublist("User Status Tests");
+        userList.set("Test Type","Combo");
+        userList.set("Combo Type","AND");
+        userList.set("Number of Tests",3);
+        Teuchos::ParameterList& userList1 = userList.sublist("Test 0");
+        userList1.set("Tag","1 FULL");
+        userList1.set("Test Type","ResidualNorm");
+        userList1.set("Convergence Tolerance",tol);
+        userList1.set("Scaling Type","None");
+        userList1.set("Residual Norm","OneNorm");
+        userList1.set("Scaling Norm","OneNorm");
+        Teuchos::ParameterList& userList2 = userList.sublist("Test 1");
+        userList2.set("Tag","2 PRIM");
+        userList2.set("Test Type","PartialResidualNorm");
+        userList2.set("Block index",0);
+        userList2.set("Convergence Tolerance",tol);
+        userList2.set("Scaling Type","None");
+        userList2.set("Residual Norm","OneNorm");
+        userList2.set("Scaling Norm","OneNorm");
+        Teuchos::ParameterList& userList3 = userList.sublist("Test 2");
+        userList3.set("Tag","3 SECOND");
+        userList3.set("Test Type","PartialResidualNorm");
+        userList3.set("Block index",1);
+        userList3.set("Convergence Tolerance",tol);
+        userList3.set("Scaling Type","None");
+        userList3.set("Residual Norm","OneNorm");
+        userList3.set("Scaling Norm","OneNorm");
       }
 
       // Create an iterative solver manager
