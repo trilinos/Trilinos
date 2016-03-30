@@ -44,18 +44,11 @@ void SharedSidesCommunication::pack_shared_side_nodes_of_elements(stk::CommSpars
         stk::mesh::EntityId element_id     = m_bulkData.identifier(elem);
         stk::mesh::EntityId suggested_side_id = iter->second.side_id;
         stk::topology topology = m_bulkData.bucket(elem).topology();
-        const bool isSelected = m_skinnedSelector(m_bulkData.bucket(elem));
 
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(element_id);
         comm.send_buffer(sharing_proc).pack<stk::topology>(topology);
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(suggested_side_id);
-        comm.send_buffer(sharing_proc).pack<bool>(isSelected);
-        if(m_airSelector != nullptr)
-        {
-            bool is_in_air = (*m_airSelector)(m_bulkData.bucket(elem));
-            comm.send_buffer(sharing_proc).pack<bool>(is_in_air);
-        }
 
         stk::mesh::EntityVector side_nodes =impl:: get_element_side_nodes_from_topology(m_bulkData, elem, side_index);
         std::vector<stk::mesh::EntityKey> side_node_entity_keys(side_nodes.size());
@@ -79,25 +72,17 @@ SideNodeToReceivedElementDataMap SharedSidesCommunication::unpack_side_data(stk:
                 stk::mesh::EntityId elementIdentifier, suggestedFaceId;
                 stk::topology topology;
                 unsigned side_index = 0;
-                bool isInPart;
                 comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(elementIdentifier);
                 comm.recv_buffer(proc_id).unpack<stk::topology>(topology);
                 comm.recv_buffer(proc_id).unpack<unsigned>(side_index);
                 comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(suggestedFaceId);
-                comm.recv_buffer(proc_id).unpack<bool>(isInPart);
                 stk::mesh::impl::ParallelElementData elementData;
                 elementData.set_proc_rank(proc_id);
                 elementData.set_element_identifier(elementIdentifier);
                 elementData.set_element_topology(topology);
                 elementData.set_element_side_index(side_index);
-                elementData.set_body_to_be_skinned(isInPart);
                 elementData.m_suggestedFaceId = suggestedFaceId;
-                if(m_airSelector != nullptr)
-                {
-                    bool isAir = false;
-                    comm.recv_buffer(proc_id).unpack<bool>(isAir);
-                    elementData.set_is_in_air(isAir);
-                }
+
                 std::vector<stk::mesh::EntityKey> node_keys;
                 stk::unpack_vector_from_proc(comm, node_keys, proc_id);
                 elementData.set_element_side_nodes(convert_keys_to_entities(m_bulkData, node_keys));
@@ -119,10 +104,8 @@ void SharedSidesCommunication::communicate_element_sides()
     m_elementSidesReceived = unpack_side_data(comm);
 }
 
-ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector& sel, const stk::mesh::Selector* air) :
+ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) :
         m_bulk_data(bulkData),
-        m_skinned_selector(sel),
-        m_air_selector(air),
         m_parallelInfoForGraphEdges(bulkData.parallel_rank()),
         m_sideIdPool(bulkData),
         m_idMapper()
@@ -386,7 +369,7 @@ void ElemElemGraph::fill_graph()
 SideNodeToReceivedElementDataMap ElemElemGraph::communicate_shared_sides(impl::ElemSideToProcAndFaceId& elementSidesToSend)
 {
      impl::fill_suggested_side_ids(m_sideIdPool, elementSidesToSend);
-     SharedSidesCommunication sharedSidesCommunication(m_bulk_data, m_skinned_selector, m_air_selector, elementSidesToSend);
+     SharedSidesCommunication sharedSidesCommunication(m_bulk_data, elementSidesToSend);
      SideNodeToReceivedElementDataMap elementSidesReceived = sharedSidesCommunication.get_received_element_sides();
      return elementSidesReceived;
 }
@@ -498,12 +481,6 @@ void ElemElemGraph::communicate_remote_edges_for_pre_existing_graph_nodes(const 
 
                 comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(remoteEdgeInfo.m_chosenSideId);
 
-                bool isInPart = false, isInAir = false;
-                comm.recv_buffer(proc_id).unpack<bool>(isInPart);
-                comm.recv_buffer(proc_id).unpack<bool>(isInAir);
-                remoteEdgeInfo.set_body_to_be_skinned(isInPart);
-                remoteEdgeInfo.set_is_in_air(isInAir);
-
                 comm.recv_buffer(proc_id).unpack<stk::topology>(remoteEdgeInfo.m_remoteElementTopology);
                 unsigned numNodes = 0;
                 comm.recv_buffer(proc_id).unpack<unsigned>(numNodes);
@@ -542,9 +519,7 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
     impl::ParallelInfo parInfo(receivedSharedEdge.get_remote_processor_rank(),
                                 permutationIfConnected.second,
                                 receivedSharedEdge.m_chosenSideId,
-                                receivedSharedEdge.m_remoteElementTopology,
-                                receivedSharedEdge.is_in_body_to_be_skinned(),
-                                receivedSharedEdge.is_considered_air());
+                                receivedSharedEdge.m_remoteElementTopology);
 
     m_parallelInfoForGraphEdges.insert_parallel_info_for_graph_edge(graphEdge, parInfo);
 }
@@ -573,9 +548,7 @@ void add_shared_edge(const impl::ParallelElementData& elementDataOtherProc, stk:
 
     sharedEdgeInfo.m_sharedNodes = localElemSideNodes;
     sharedEdgeInfo.m_chosenSideId = elementDataOtherProc.m_suggestedFaceId;
-    sharedEdgeInfo.set_body_to_be_skinned(elementDataOtherProc.is_in_body_to_be_skinned());
     sharedEdgeInfo.m_remoteElementTopology = elem_topology;
-    sharedEdgeInfo.set_is_in_air(elementDataOtherProc.is_considered_air());
     newlySharedEdges.push_back(sharedEdgeInfo);
 }
 
@@ -672,9 +645,7 @@ void ElemElemGraph::add_parallel_edge_and_info(const stk::mesh::impl::ElemSideTo
             impl::ParallelInfo parInfo(elemDataFromOtherProc.get_proc_rank_of_neighbor(),
                                         thisElemSidePermutation,
                                         chosen_side_id,
-                                        elemDataFromOtherProc.get_element_topology(),
-                                        elemDataFromOtherProc.is_in_body_to_be_skinned(),
-                                        elemDataFromOtherProc.is_considered_air());
+                                        elemDataFromOtherProc.get_element_topology());
 
             m_parallelInfoForGraphEdges.insert_parallel_info_for_graph_edge(graphEdge, parInfo);
         }
@@ -759,7 +730,9 @@ public:
     {}
     ~RemoteDeathBoundary(){}
 
-    void update_death_boundary_for_remotely_killed_elements(std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector& deletedEntities)
+    void update_death_boundary_for_remotely_killed_elements(std::vector<stk::mesh::sharing_info> &shared_modified,
+                                                            stk::mesh::EntityVector& deletedEntities,
+                                                            stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector)
     {
         std::vector<impl::GraphEdgeProc> remote_edges = get_remote_edges();
 
@@ -773,15 +746,22 @@ public:
             stk::mesh::Entity element = m_bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
 
             impl::ParallelInfo &parallel_edge_info = m_elementGraph.get_parallel_edge_info(element, local_side, remote_id, remote_side);
-            parallel_edge_info.set_body_to_be_skinned(false);
+            remoteActiveSelector[-remote_id] = false;
 
             m_topology_modified = true;
 
             bool create_side = m_bulkData.bucket(element).member(m_active);
             if(create_side==true)
             {
-                impl::add_side_into_exposed_boundary(m_bulkData, parallel_edge_info, element, local_side, remote_id, m_parts_for_creating_side,
-                        shared_modified, m_boundary_mesh_parts);
+                impl::add_side_into_exposed_boundary(m_bulkData,
+                                                     parallel_edge_info,
+                                                     element,
+                                                     local_side,
+                                                     remote_id,
+                                                     m_parts_for_creating_side,
+                                                     shared_modified,
+                                                     remoteActiveSelector,
+                                                     m_boundary_mesh_parts);
             }
             else
             {
@@ -845,6 +825,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                              ElemElemGraph& elementGraph,
                              const stk::mesh::EntityVector& killedElements,
                              stk::mesh::Part& active,
+                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
                              const stk::mesh::PartVector& parts_for_creating_side,
                              const stk::mesh::PartVector* boundary_mesh_parts)
 {
@@ -855,7 +836,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
     stk::mesh::EntityVector deletedEntities;
 
     RemoteDeathBoundary remote_death_boundary(bulkData, elementGraph, killedElements, parts_for_creating_side, active, boundary_mesh_parts);
-    remote_death_boundary.update_death_boundary_for_remotely_killed_elements(shared_modified, deletedEntities);
+    remote_death_boundary.update_death_boundary_for_remotely_killed_elements(shared_modified, deletedEntities, remoteActiveSelector);
 
     std::vector<impl::ElementSidePair> element_side_pairs;
     element_side_pairs.reserve(impl::get_element_side_multiplier() * killedElements.size());
@@ -936,13 +917,13 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                     stk::mesh::EntityId remote_id = remote_id_side_pair.id;
                     int remote_side = elementGraph.get_connected_elements_side(this_element, j);
                     impl::ParallelInfo &parallel_edge_info = elementGraph.get_parallel_edge_info(this_element, remote_id_side_pair.side, remote_id, remote_side);
-                    bool other_element_active = parallel_edge_info.is_in_body_to_be_skinned();
+                    bool other_element_active = remoteActiveSelector[-remote_id];
                     bool create_side = other_element_active;
 
                     if(create_side)
                     {
                         impl::add_side_into_exposed_boundary(bulkData, parallel_edge_info, this_element, remote_id_side_pair.side, remote_id, parts_for_creating_side,
-                                shared_modified, boundary_mesh_parts);
+                                shared_modified, remoteActiveSelector, boundary_mesh_parts);
                     }
                     else
                     {
@@ -1629,13 +1610,7 @@ impl::ParallelInfo ElemElemGraph::create_parallel_info(stk::mesh::Entity connect
     stk::mesh::Permutation permutation = get_permutation_given_neighbors_node_ordering(connected_element, elemToSend, elemToSendSideId);
     stk::mesh::EntityId faceId = m_sideIdPool.get_available_id();
     stk::topology elemTopology = m_bulk_data.bucket(elemToSend).topology();
-    bool inBodyToBeSkinned = m_skinned_selector(m_bulk_data.bucket(connected_element));
-    bool isAir = false;
-    if(m_air_selector != nullptr)
-    {
-        isAir = (*m_air_selector)(m_bulk_data.bucket(elemToSend));
-    }
-    return impl::ParallelInfo(destination_proc, permutation, faceId, elemTopology, inBodyToBeSkinned, isAir);
+    return impl::ParallelInfo(destination_proc, permutation, faceId, elemTopology);
 }
 
 stk::mesh::Permutation ElemElemGraph::get_permutation_given_neighbors_node_ordering(stk::mesh::Entity neighborElem,

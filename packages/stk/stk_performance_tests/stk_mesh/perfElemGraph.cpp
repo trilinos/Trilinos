@@ -146,7 +146,7 @@ public:
         {
             print_memory(bulk.parallel(), "Before elem graph creation");
             stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createGraphTimer, communicator);
-            elemGraph = new stk::mesh::ElemElemGraph(bulk, bulk.mesh_meta_data().universal_part());
+            elemGraph = new stk::mesh::ElemElemGraph(bulk);
             print_memory(bulk.parallel(), "After elem graph creation");
         }
 

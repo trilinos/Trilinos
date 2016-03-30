@@ -1,5 +1,5 @@
-#ifndef STK_ELEM_ELEM_GRAPH_UPDATER_HPP
-#define STK_ELEM_ELEM_GRAPH_UPDATER_HPP
+#ifndef STK_REMOTE_SELECTOR_UPDATER_HPP
+#define STK_REMOTE_SELECTOR_UPDATER_HPP
 
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -20,11 +20,12 @@
 
 namespace stk { namespace mesh {
 
-class ElemElemGraphUpdater : public stk::mesh::ModificationObserver
+class RemoteSelectorUpdater : public stk::mesh::ModificationObserver
 {
 public:
-    ElemElemGraphUpdater(stk::mesh::BulkData &bulk, stk::mesh::ElemElemGraph &elemGraph_)
-    : bulkData(bulk), elemGraph(elemGraph_)
+    RemoteSelectorUpdater(stk::mesh::BulkData &bulk, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector_,
+                          stk::mesh::Selector sel)
+    : bulkData(bulk), remoteActiveSelector(remoteActiveSelector_), selector(sel)
     {
     }
 
@@ -32,7 +33,7 @@ public:
     {
         if(bulkData.entity_rank(entity) == stk::topology::ELEM_RANK)
         {
-            elementsAdded.push_back(entity);
+            numModifiedElems++;
         }
     }
 
@@ -40,48 +41,45 @@ public:
     {
         if(bulkData.entity_rank(entity) == stk::topology::ELEM_RANK && bulkData.bucket(entity).owned())
         {
-            elementsDeleted.push_back({entity, bulkData.identifier(entity), bulkData.bucket(entity).topology().is_shell()});
+            numModifiedElems++;
         }
     }
 
     virtual void finished_modification_end_notification()
     {
-        if (maxNumAdded > 0) {
-            elemGraph.add_elements(elementsAdded);
-            elementsAdded.clear();
-        }
-    }
-
-    virtual void started_modification_end_notification()
-    {
-        if (get_global_sum(bulkData.parallel(), elementsDeleted.size()) > 0) {
-            elemGraph.delete_elements(elementsDeleted);
-            elementsDeleted.clear();
+        if (numModifiedElems > 0) {
+            stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData,
+                                                                         bulkData.get_face_adjacent_element_graph(),
+                                                                         selector,
+                                                                         remoteActiveSelector);
+            numModifiedElems = 0;
         }
     }
 
     virtual void fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
     {
         valuesToReduce.clear();
-        valuesToReduce.push_back(elementsAdded.size());
+        valuesToReduce.push_back(numModifiedElems);
     }
 
     virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
     {
-        maxNumAdded = reducedValues[0];
+        numModifiedElems = reducedValues[0];
     }
 
     virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
-        elemGraph.fill_from_mesh();
+        stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData,
+                                                                     bulkData.get_face_adjacent_element_graph(),
+                                                                     selector,
+                                                                     remoteActiveSelector);
+        numModifiedElems = 0;
     }
 private:
     stk::mesh::BulkData &bulkData;
-    stk::mesh::ElemElemGraph &elemGraph;
-    stk::mesh::impl::ParallelGraphInfo newParallelGraphEntries;
-    stk::mesh::EntityVector elementsAdded;
-    stk::mesh::impl::DeletedElementInfoVector elementsDeleted;
-    size_t maxNumAdded = 0;
+    stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector;
+    stk::mesh::Selector selector;
+    size_t numModifiedElems = 0;
 };
 
 }} // end stk mesh namespaces

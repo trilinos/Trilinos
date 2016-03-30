@@ -56,7 +56,7 @@ public:
             bulk(bulk_),
             activePart(activePart_),
             boundaryPart(boundaryPart_),
-            elemGraph(bulk, activePart),
+            elemGraph(bulk),
             observer(bulk, elemGraph)
     {
         bulk.register_observer(&observer);
@@ -66,12 +66,16 @@ public:
     {
         deactivate_elements(elementsToKill);
 
+        stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+        stk::mesh::impl::populate_selected_value_for_remote_elements(bulk, elemGraph, activePart, remoteActiveSelector);
+
         stk::mesh::PartVector newlyCreatedBoundaryFacesGetAddedToTheseParts = {&boundaryPart};
         stk::mesh::PartVector exposedButExistingBoundaryFacesGetAddedToTheseParts = {&boundaryPart};
         process_killed_elements(bulk,
                                 elemGraph,
                                 elementsToKill,
                                 activePart,
+                                remoteActiveSelector,
                                 newlyCreatedBoundaryFacesGetAddedToTheseParts,
                                 &exposedButExistingBoundaryFacesGetAddedToTheseParts);
     }

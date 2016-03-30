@@ -106,7 +106,7 @@ TEST_F(HexShellShell, Hex0Shell1Shell1Parallel)
     {
         setup_hex_shell_shell_on_procs({0, 1, 1});
 
-        stk::mesh::ElemElemGraph elemElemGraph(get_bulk(), get_meta().universal_part());
+        stk::mesh::ElemElemGraph elemElemGraph(get_bulk());
 
         if(stk::parallel_machine_rank(get_comm()) == 0)
         {
@@ -164,7 +164,7 @@ TEST_F(HexShellShell, DISABLED_Hex0Shell0Shell1Parallel )
     {
         setup_hex_shell_shell_on_procs({0, 0, 1});
 
-        stk::mesh::ElemElemGraph elemElemGraph(get_bulk(), get_meta().universal_part());
+        stk::mesh::ElemElemGraph elemElemGraph(get_bulk());
 
         if(stk::parallel_machine_rank(get_comm()) == 0)
         {
@@ -224,7 +224,7 @@ TEST_F(HexShellShell, DISABLED_Hex0Shell1Shell2Parallel_testChosenIds )
     {
         setup_hex_shell_shell_on_procs({0, 1, 2});
 
-        stk::mesh::ElemElemGraph elemElemGraph(get_bulk(), get_meta().universal_part());
+        stk::mesh::ElemElemGraph elemElemGraph(get_bulk());
 
         stk::mesh::EntityId chosen_id;
 
@@ -300,7 +300,7 @@ TEST_F(HexShellShell, SideConnections)
     {
         setup_hex_shell_shell_on_procs({0, 0, 0});
 
-        stk::mesh::ElemElemGraph elemElemGraph(get_bulk(), get_meta().universal_part());
+        stk::mesh::ElemElemGraph elemElemGraph(get_bulk());
         stk::mesh::SideConnector sideConnector = elemElemGraph.get_side_connector();
 
         get_bulk().modification_begin();
@@ -379,7 +379,7 @@ TEST( ElementGraph, HexAddShellAddShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     mesh.modification_begin();
     stk::mesh::EntityVector added_shells;
@@ -469,7 +469,7 @@ TEST( ElementGraph, HexAddShellAddShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     mesh.modification_begin();
     stk::mesh::EntityVector added_shells;
@@ -520,8 +520,8 @@ namespace {
 class ElemElemGraphTester : public stk::mesh::ElemElemGraph
 {
 public:
-    ElemElemGraphTester(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr)
-      :ElemElemGraph(bulkData,selector,air) {}
+    ElemElemGraphTester(stk::mesh::BulkData& bulkData)
+      :ElemElemGraph(bulkData) {}
     const stk::mesh::impl::SparseGraph& my_get_coincident_graph() {return m_coincidentGraph; }
 };
 
@@ -579,7 +579,7 @@ protected:
 
     void create_elem_elem_graph()
     {
-        elemElemGraph = new ElemElemGraphTester(get_bulk(), get_meta().universal_part());
+        elemElemGraph = new ElemElemGraphTester(get_bulk());
         updater = new stk::mesh::ElemElemGraphUpdater(get_bulk(), *elemElemGraph);
         get_bulk().register_observer(updater);
         coincident_graph = &elemElemGraph->my_get_coincident_graph();
@@ -833,7 +833,7 @@ TEST( ElementGraph, HexShellShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     const stk::mesh::Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const stk::mesh::Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -918,7 +918,7 @@ TEST( ElementGraph, HexShellShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     const stk::mesh::Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const stk::mesh::Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1015,7 +1015,7 @@ TEST( ElementGraph, HexShellReversedShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     const stk::mesh::Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const stk::mesh::Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1133,7 +1133,7 @@ TEST( ElementGraph, Hex0Shell0Shell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     const stk::mesh::Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const stk::mesh::Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1262,7 +1262,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     const stk::mesh::Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const stk::mesh::Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1392,7 +1392,7 @@ TEST( ElementGraph, Hex0Shell0ReversedShell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     const stk::mesh::Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const stk::mesh::Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1518,7 +1518,7 @@ TEST( ElementGraph, Hex1Shell0Shell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh, meta.universal_part());
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
     const stk::mesh::Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const stk::mesh::Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);

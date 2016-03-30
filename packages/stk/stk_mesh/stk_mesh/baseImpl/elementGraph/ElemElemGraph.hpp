@@ -7,6 +7,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ParallelInfoForGraph.hpp>
 #include <stk_mesh/base/SideIdPool.hpp>
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 #include <stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp>
@@ -22,7 +23,6 @@
 namespace stk { class CommBuffer; }
 
 namespace stk { namespace mesh { class BulkData; } }
-
 namespace stk { namespace mesh {
 
 struct moved_parallel_graph_info {
@@ -63,12 +63,8 @@ class SharedSidesCommunication
 {
 public:
     SharedSidesCommunication(stk::mesh::BulkData& bulkData,
-                             const stk::mesh::Selector thingsToSkin,
-                             const stk::mesh::Selector *airSelector,
                              const impl::ElemSideToProcAndFaceId & elementSidesToSend)
     : m_bulkData(bulkData),
-      m_skinnedSelector(thingsToSkin),
-      m_airSelector(airSelector),
       m_elementSidesToSend(elementSidesToSend)
     {
         communicate_element_sides();
@@ -81,8 +77,6 @@ private:
     SideNodeToReceivedElementDataMap unpack_side_data(stk::CommSparse comm) const;
 private:
     stk::mesh::BulkData& m_bulkData;
-    const stk::mesh::Selector m_skinnedSelector;
-    const stk::mesh::Selector* m_airSelector;
     const impl::ElemSideToProcAndFaceId & m_elementSidesToSend;
     SideNodeToReceivedElementDataMap m_elementSidesReceived;
 };
@@ -91,7 +85,7 @@ private:
 class ElemElemGraph
 {
 public:
-    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr);
+    ElemElemGraph(stk::mesh::BulkData& bulkData);
 
     virtual ~ElemElemGraph();
 
@@ -250,8 +244,6 @@ protected:
     bool is_valid_graph_element(stk::mesh::Entity local_element) const;
 
     stk::mesh::BulkData &m_bulk_data;
-    const stk::mesh::Selector m_skinned_selector;
-    const stk::mesh::Selector* m_air_selector;
     Graph m_graph;
     ParallelInfoForGraphEdges m_parallelInfoForGraphEdges;
     std::vector<impl::LocalId> m_deleted_element_local_id_pool;
@@ -323,8 +315,13 @@ private:
     void generate_initial_side_ids(size_t numPotentialParallelBoundarySides);
 };
 
-bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-        const stk::mesh::PartVector& side_parts, const stk::mesh::PartVector* boundary_mesh_parts = nullptr);
+bool process_killed_elements(stk::mesh::BulkData& bulkData,
+                             ElemElemGraph& elementGraph,
+                             const stk::mesh::EntityVector& killedElements,
+                             stk::mesh::Part& active,
+                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                             const stk::mesh::PartVector& side_parts,
+                             const stk::mesh::PartVector* boundary_mesh_parts = nullptr);
 
 namespace impl
 {

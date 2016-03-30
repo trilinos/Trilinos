@@ -4209,6 +4209,11 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
   }
 }
 
+void BulkData::notify_finished_mod_end()
+{
+    notifier.notify_finished_modification_end(parallel());
+}
+
 void BulkData::internal_modification_end_for_change_ghosting()
 {
     internal_resolve_send_ghost_membership();
@@ -4225,7 +4230,7 @@ void BulkData::internal_modification_end_for_change_ghosting()
     internal_update_fast_comm_maps();
 
     m_meshModification.set_sync_state_synchronized();
-    notifier.notify_finished_modification_end();
+    notify_finished_mod_end();
 }
 
 bool BulkData::internal_modification_end_for_change_parts()
@@ -4252,7 +4257,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     internal_update_fast_comm_maps();
 
     m_meshModification.set_sync_state_synchronized();
-    notifier.notify_finished_modification_end();
+    notify_finished_mod_end();
     return true;
 }
 
@@ -4603,7 +4608,7 @@ void BulkData::internal_finish_modification_end(impl::MeshModification::modifica
 
     update_deleted_entities_container();
 
-    notifier.notify_finished_modification_end();
+    notify_finished_mod_end();
 }
 
 bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, impl::MeshModification::modification_optimization opt, stk::mesh::Selector selectedToSkin,
@@ -7222,7 +7227,7 @@ void BulkData::initialize_face_adjacent_element_graph()
 {
     if (m_elemElemGraph == nullptr)
     {
-        m_elemElemGraph = new ElemElemGraph(*this,mesh_meta_data().locally_owned_part());
+        m_elemElemGraph = new ElemElemGraph(*this);
         m_elemElemGraphUpdater = new ElemElemGraphUpdater(*this,*m_elemElemGraph);
         register_observer(m_elemElemGraphUpdater);
     }

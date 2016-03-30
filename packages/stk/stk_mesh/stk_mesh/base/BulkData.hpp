@@ -66,6 +66,7 @@
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
+#include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
@@ -105,8 +106,13 @@ void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<cons
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
-bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-        const stk::mesh::PartVector& parts_for_creating_side, const stk::mesh::PartVector& boundary_mesh_parts);
+bool process_killed_elements(stk::mesh::BulkData& bulkData,
+                             ElemElemGraph& elementGraph,
+                             const stk::mesh::EntityVector& killedElements,
+                             stk::mesh::Part& active,
+                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                             const stk::mesh::PartVector& parts_for_creating_side,
+                             const stk::mesh::PartVector& boundary_mesh_parts);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
@@ -1078,6 +1084,7 @@ protected: //functions
   stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
 
   void set_modification_summary_proc_id(int proc_id) { m_modSummary.set_proc_id(proc_id); }
+  virtual void notify_finished_mod_end();
 
 private: //functions
 
@@ -1295,8 +1302,13 @@ private:
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
-  friend bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-          const stk::mesh::PartVector& parts_for_creating_side, const stk::mesh::PartVector* boundary_mesh_parts);
+  friend bool process_killed_elements(stk::mesh::BulkData& bulkData,
+                                        ElemElemGraph& elementGraph,
+                                        const stk::mesh::EntityVector& killedElements,
+                                        stk::mesh::Part& active,
+                                        stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                                        const stk::mesh::PartVector& parts_for_creating_side,
+                                        const stk::mesh::PartVector* boundary_mesh_parts);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);
@@ -1357,6 +1369,7 @@ private:
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
+  ModificationNotifier notifier;
 
 protected: //data
   static const uint16_t orphaned_node_marking;
@@ -1412,7 +1425,6 @@ private: // data
   mutable SelectorBucketMap m_selector_to_buckets_map;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
-  ModificationNotifier notifier;
   std::string m_lastModificationDescription;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below

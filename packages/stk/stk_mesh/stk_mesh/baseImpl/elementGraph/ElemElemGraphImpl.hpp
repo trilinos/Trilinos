@@ -8,6 +8,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include "../../base/FEMHelpers.hpp"
+#include "GraphTypes.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct sharing_info; } }
@@ -21,29 +22,22 @@ namespace stk { namespace mesh {
 namespace impl
 {
 
-typedef int64_t LocalId;
 static const LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
 
 struct RemoteElementData
 {
 public:
-    RemoteElementData() : m_other_proc(-1), m_in_body_to_be_skinned(false), m_is_air(false) {}
+    RemoteElementData() : m_other_proc(-1) {}
 
-    RemoteElementData(int proc, bool in_body, bool is_air) :
-        m_other_proc(proc), m_in_body_to_be_skinned(in_body), m_is_air(is_air) {}
+    RemoteElementData(int proc) :
+        m_other_proc(proc) {}
 
-    bool is_in_body_to_be_skinned() const { return m_in_body_to_be_skinned; }
-    bool is_considered_air() const { return m_is_air; }
     int get_proc_rank_of_neighbor() const { return m_other_proc; }
 
-    void set_body_to_be_skinned(bool val) { m_in_body_to_be_skinned = val; }
-    void set_is_in_air(bool val) { m_is_air = val; }
     void set_proc_rank(int proc) { m_other_proc = proc; }
 
 private:
     int m_other_proc;
-    bool m_in_body_to_be_skinned;
-    bool m_is_air;
 };
 
 struct GraphEdgeProc
@@ -72,15 +66,11 @@ private:
 struct ParallelInfo
 {
 public:
-    ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false) :
-        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_chosen_side_id(chosen_face_id), remoteElementData(proc, inPart, isInAir) {}
+    ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology) :
+        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_chosen_side_id(chosen_face_id), remoteElementData(proc) {}
 
-    bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
-    bool is_considered_air() const { return remoteElementData.is_considered_air(); }
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
-    void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
-    void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
     int m_permutation;
@@ -97,8 +87,6 @@ std::ostream& operator<<(std::ostream& out, const ParallelInfo& info)
     out << "(other_proc=" << info.get_proc_rank_of_neighbor()
             << ", perm=" << info.m_permutation
             << ", remote_top=" << info.m_remote_element_toplogy
-            << ", in_body=" << (info.is_in_body_to_be_skinned() ?"true":"false")
-            << ", is_air=" << (info.is_considered_air()?"true":"false")
             << ", chosen_side_id=" << info.m_chosen_side_id
             << ")";
     return out;
@@ -171,12 +159,8 @@ struct ParallelElementData
 
     stk::mesh::EntityVector::iterator side_nodes_begin() { return serialElementData.side_nodes_begin(); }
 
-    bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
-    bool is_considered_air() const { return remoteElementData.is_considered_air(); }
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
-    void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
-    void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
     stk::mesh::EntityId m_suggestedFaceId;
@@ -202,12 +186,8 @@ public:
 
     void set_graph_edge_proc(GraphEdgeProc& graph_edge_proc) { graphEdgeProc = graph_edge_proc; }
 
-    bool is_in_body_to_be_skinned() const { return remoteElementData.is_in_body_to_be_skinned(); }
-    bool is_considered_air() const { return remoteElementData.is_considered_air(); }
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
-    void set_body_to_be_skinned(bool val) { remoteElementData.set_body_to_be_skinned(val); }
-    void set_is_in_air(bool val) { remoteElementData.set_is_in_air(val); }
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
     stk::mesh::EntityId m_chosenSideId;
@@ -341,7 +321,7 @@ void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<GraphEdgePro
 
 void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
         stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
-        std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
+        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
 
 void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
         stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id);

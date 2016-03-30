@@ -326,7 +326,7 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
 
 void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
         stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
-        std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts)
+        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector, const stk::mesh::PartVector *boundary_mesh_parts)
 {
     stk::mesh::EntityId side_global_id = parallel_edge_info.m_chosen_side_id;
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
@@ -336,7 +336,7 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
     int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
     int owning_proc = std::min(other_proc, bulkData.parallel_rank());
 
-    if(parallel_edge_info.is_in_body_to_be_skinned())
+    if(remoteActiveSelector[-remote_id])
     {
         perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
     }
@@ -420,8 +420,6 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         int remote_side_index    = iter->get_remote_element_side_index();
         int sharing_proc       = iter->get_remote_processor_rank();
         stk::mesh::EntityId chosenId = iter->m_chosenSideId;
-        const bool isInPart = iter->is_in_body_to_be_skinned();
-        const bool isAir    = iter->is_considered_air();
 
         size_t numNodes= iter->m_sharedNodes.size();
         std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
@@ -435,8 +433,6 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         comm.send_buffer(sharing_proc).pack<int>(local_side_index);
         comm.send_buffer(sharing_proc).pack<int>(remote_side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
-        comm.send_buffer(sharing_proc).pack<bool>(isInPart);
-        comm.send_buffer(sharing_proc).pack<bool>(isAir);
         comm.send_buffer(sharing_proc).pack<stk::topology>(bulkData.bucket(localEntity).topology());
         comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
         for(size_t i=0; i<numNodes; ++i)

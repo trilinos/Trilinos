@@ -126,7 +126,7 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVec
     // Element 2, side 3: face 23
     // Are these faces the same? Yes: delete face 23, then connect face 15 to element 2 with negative permutation
 
-    stk::mesh::ElemElemGraph graph(bulkData, bulkData.mesh_meta_data().locally_owned_part());
+    stk::mesh::ElemElemGraph graph(bulkData);
 
     for(size_t i=0;i<sidesThatNeedFixing.size();++i)
     {

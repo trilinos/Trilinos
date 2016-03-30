@@ -50,7 +50,7 @@ SideNodeToReceivedElementDataMap get_element_sides_from_other_procs(stk::mesh::B
 {
     impl::ElemSideToProcAndFaceId elementSideIdsToSend = impl::gather_element_side_ids_to_send(bulkData);
     impl::fill_suggested_side_ids(sideIdPool, elementSideIdsToSend);
-    SharedSidesCommunication sharedSidesCommunication(bulkData, bulkData.mesh_meta_data().locally_owned_part(), nullptr, elementSideIdsToSend);
+    SharedSidesCommunication sharedSidesCommunication(bulkData, elementSideIdsToSend);
     return sharedSidesCommunication.get_received_element_sides();
 }
 

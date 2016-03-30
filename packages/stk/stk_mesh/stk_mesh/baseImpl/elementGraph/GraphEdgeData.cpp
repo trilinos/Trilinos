@@ -122,8 +122,6 @@ std::string get_par_info_description(const impl::ParallelInfo &parInfo)
     s << "    chosen id: " << parInfo.m_chosen_side_id << std::endl;
     s << "    permutation: " << parInfo.m_permutation << std::endl;
     s << "    remote topology: " << parInfo.m_remote_element_toplogy << std::endl;
-    s << "    in body to be skinned: " << parInfo.is_in_body_to_be_skinned() << std::endl;
-    s << "    is air: " << parInfo.is_considered_air() << std::endl;
     return s.str();
 }
 

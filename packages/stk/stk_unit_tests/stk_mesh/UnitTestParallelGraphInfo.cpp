@@ -12,8 +12,8 @@
 class ElemElemGraphTester : public stk::mesh::ElemElemGraph
 {
 public:
-    ElemElemGraphTester(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr) :
-        stk::mesh::ElemElemGraph(bulkData, selector, air) { }
+    ElemElemGraphTester(stk::mesh::BulkData& bulkData) :
+        stk::mesh::ElemElemGraph(bulkData) { }
 
     stk::mesh::impl::ParallelGraphInfo& get_parallel_info() { return m_parallelInfoForGraphEdges.get_parallel_graph_info(); }
 };
@@ -81,13 +81,13 @@ public:
         expect_some_elements_selected(get_skin_selector());
     }
 
-    void verify_selectors_not_in_parallel_graph(const stk::mesh::impl::ParallelGraphInfo& parallel_info) const
+    void verify_selectors_not_in_parallel_graph(const stk::mesh::impl::ParallelGraphInfo& parallel_info)
     {
         for(const auto& item : parallel_info)
         {
-            const stk::mesh::impl::ParallelInfo &pinfo = item.second;
-            EXPECT_TRUE(pinfo.is_considered_air() == false);
-            EXPECT_TRUE(pinfo.is_in_body_to_be_skinned() == false);
+            stk::mesh::impl::LocalId elemOnOtherProc = item.first.elem2;
+            EXPECT_FALSE(remoteAirSelector[elemOnOtherProc]);
+            EXPECT_FALSE(remoteSkinSelector[elemOnOtherProc]);
         }
     }
 
@@ -101,21 +101,20 @@ public:
         }
     }
 
-    void verify_selectors_in_parallel_graph(const stk::mesh::impl::ParallelGraphInfo& parallel_info) const
+    void verify_selectors_in_parallel_graph(const stk::mesh::impl::ParallelGraphInfo& parallel_info)
     {
         for(const auto& item : parallel_info)
         {
-            const stk::mesh::GraphEdge &edge = item.first;
-            const stk::mesh::impl::ParallelInfo& pinfo = item.second;
-            if(edge.elem2 %2 == 0)
+            stk::mesh::impl::LocalId elemOnOtherProc = item.first.elem2;
+            if(elemOnOtherProc %2 == 0)
             {
-                EXPECT_TRUE(pinfo.is_considered_air()) << " for element " << -edge.elem2;
-                EXPECT_TRUE(pinfo.is_in_body_to_be_skinned()) << " for element " << -edge.elem2;
+                EXPECT_TRUE(remoteAirSelector[elemOnOtherProc]) << " for element " << -elemOnOtherProc;
+                EXPECT_TRUE(remoteSkinSelector[elemOnOtherProc]) << " for element " << -elemOnOtherProc;
             }
             else
             {
-                EXPECT_FALSE(pinfo.is_considered_air()) << " for element " << -edge.elem2;
-                EXPECT_FALSE(pinfo.is_in_body_to_be_skinned()) << " for element " << -edge.elem2;
+                EXPECT_FALSE(remoteAirSelector[elemOnOtherProc]) << " for element " << -elemOnOtherProc;
+                EXPECT_FALSE(remoteSkinSelector[elemOnOtherProc]) << " for element " << -elemOnOtherProc;
             }
         }
     }
@@ -139,7 +138,6 @@ public:
         }
     }
 
-private:
 
     void make_part_an_element_block_by_setting_id()
     {
@@ -179,6 +177,8 @@ private:
     stk::mesh::Part* skinPart = nullptr;
     stk::mesh::Selector air;
     stk::mesh::Selector skinSelector;
+    stk::mesh::impl::ParallelSelectedInfo remoteSkinSelector;
+    stk::mesh::impl::ParallelSelectedInfo remoteAirSelector;
 };
 
 // Need updater for part ordinals
@@ -188,25 +188,25 @@ TEST_F(ParallelGraphUpdate, updateAirSelector)
     if(stk::parallel_machine_size(MPI_COMM_WORLD)==4)
     {
         setup_mesh("generated:4x4x4", stk::mesh::BulkData::NO_AUTO_AURA);
-        ElemElemGraphTester graph(get_bulk(), get_meta().locally_owned_part());
+        ElemElemGraphTester graph(get_bulk());
 
         stk::mesh::impl::ParallelPartInfo parallelPartInfo;
         stk::mesh::impl::populate_part_ordinals_for_remote_edges(get_bulk(), graph, parallelPartInfo);
-        stk::mesh::impl::update_parallel_graph_for_skin_selector(get_bulk(), graph, get_skin_selector());
+        stk::mesh::impl::populate_selected_value_for_remote_elements(get_bulk(), graph, get_skin_selector(), remoteSkinSelector);
 
         verify_selectors_not_in_parallel_graph(graph.get_parallel_info());
         verify_part_ordinals_not_in_parallel_graph(parallelPartInfo);
 
         move_elements_into_parts_and_verify();
-        stk::mesh::impl::update_parallel_graph_for_air_selector(get_bulk(), graph, get_air_selector());
-        stk::mesh::impl::update_parallel_graph_for_skin_selector(get_bulk(), graph, get_skin_selector());
+        stk::mesh::impl::populate_selected_value_for_remote_elements(get_bulk(), graph, get_air_selector(), remoteAirSelector);
+        stk::mesh::impl::populate_selected_value_for_remote_elements(get_bulk(), graph, get_skin_selector(), remoteSkinSelector);
         stk::mesh::impl::populate_part_ordinals_for_remote_edges(get_bulk(), graph, parallelPartInfo);
         verify_selectors_in_parallel_graph(graph.get_parallel_info());
         verify_part_ordinals_are_in_parallel_graph(parallelPartInfo);
 
         move_elements_out_of_parts();
-        stk::mesh::impl::update_parallel_graph_for_air_selector(get_bulk(), graph, get_air_selector());
-        stk::mesh::impl::update_parallel_graph_for_skin_selector(get_bulk(), graph, get_skin_selector());
+        stk::mesh::impl::populate_selected_value_for_remote_elements(get_bulk(), graph, get_air_selector(), remoteAirSelector);
+        stk::mesh::impl::populate_selected_value_for_remote_elements(get_bulk(), graph, get_skin_selector(), remoteSkinSelector);
         stk::mesh::impl::populate_part_ordinals_for_remote_edges(get_bulk(), graph, parallelPartInfo);
         verify_selectors_not_in_parallel_graph(graph.get_parallel_info());
         verify_part_ordinals_not_in_parallel_graph(parallelPartInfo);

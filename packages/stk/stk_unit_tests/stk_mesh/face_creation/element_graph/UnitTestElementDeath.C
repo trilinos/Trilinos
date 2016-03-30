@@ -132,9 +132,13 @@ TEST(ElementDeath, replicate_random_death_test)
         }
         boundary_mesh_parts.push_back(&active);
 
-        stk::mesh::ElemElemGraph graph(bulkData, active);
+        stk::mesh::ElemElemGraph graph(bulkData);
         ElemGraphTestUtils::deactivate_elements(elements_to_kill, bulkData,  active);
-        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts, &boundary_mesh_parts));
+
+        stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+        stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
+
+        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts));
 
         stk::mesh::Selector sel = death_1_part;
         stk::mesh::EntityVector faces;
@@ -154,7 +158,7 @@ TEST(ElementDeath, replicate_random_death_test)
         }
 
         ElemGraphTestUtils::deactivate_elements(elements_to_kill, bulkData,  active);
-        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts, &boundary_mesh_parts));
+        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts));
 
         stk::mesh::comm_mesh_counts(bulkData, mesh_counts);
         ASSERT_EQ(20u, mesh_counts[stk::topology::FACE_RANK]);
@@ -185,7 +189,7 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
         stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
-        stk::mesh::ElemElemGraph graph(bulkData, active);
+        stk::mesh::ElemElemGraph graph(bulkData);
 
         size_t num_gold_edges = 6 / bulkData.parallel_size();
         ASSERT_EQ(num_gold_edges, graph.num_edges());
@@ -227,7 +231,10 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
             ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
+            stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+            stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
+
+            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
@@ -270,13 +277,14 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
             ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-            stk::mesh::EntityId face_id;
+            stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+            stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
             stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
             EXPECT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
-            face_id = bulkData.identifier(face_between_elem2_and_elem3);
+            stk::mesh::EntityId face_id = bulkData.identifier(face_between_elem2_and_elem3);
             ASSERT_FALSE(bulkData.bucket(face_between_elem2_and_elem3).member(active));
 
             stk::mesh::Entity face_23 = bulkData.get_entity(stk::topology::FACE_RANK, face_id);
@@ -310,7 +318,7 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
         stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
-        stk::mesh::ElemElemGraph graph(bulkData, active);
+        stk::mesh::ElemElemGraph graph(bulkData);
 
         size_t num_gold_edges = 6 / bulkData.parallel_size();
         ASSERT_EQ(num_gold_edges, graph.num_edges());
@@ -354,7 +362,10 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
+            stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+            stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
+
+            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
             stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
@@ -396,7 +407,10 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
             stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
+            stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+            stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
+
+            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
             EXPECT_FALSE(bulkData.is_valid(face_between_elem2_and_elem3));
         }

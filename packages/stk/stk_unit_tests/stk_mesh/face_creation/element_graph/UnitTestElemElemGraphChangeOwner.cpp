@@ -117,7 +117,6 @@ protected:
         stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
         const stk::mesh::impl::ParallelInfo &parInfo = get_elem_graph().get_parallel_edge_info(elem2, 5, 3, 4);
         expect_otherProc_permutation_chosenId(parInfo, 1, 4, 1);
-        expect_parallel_info_part_memberships(parInfo);
     }
 
     void expect_parallel_info_from_elem3_to_2()
@@ -125,7 +124,6 @@ protected:
         stk::mesh::Entity elem3 = get_bulk().get_entity(stk::topology::ELEM_RANK, 3);
         const stk::mesh::impl::ParallelInfo &parInfo = get_elem_graph().get_parallel_edge_info(elem3, 4, 2, 5);
         expect_otherProc_permutation_chosenId(parInfo, 0, 4, 1);
-        expect_parallel_info_part_memberships(parInfo);
     }
 
     void expect_connected_to_local_elem_id_via_side(stk::mesh::Entity elem, stk::mesh::EntityId connectedId, int viaSide)
@@ -157,12 +155,6 @@ protected:
         EXPECT_EQ(otherProc, parInfo.get_proc_rank_of_neighbor());
         EXPECT_EQ(perm, parInfo.m_permutation);
         EXPECT_EQ(chosenId, parInfo.m_chosen_side_id);
-    }
-
-    void expect_parallel_info_part_memberships(const stk::mesh::impl::ParallelInfo &parInfo)
-    {
-        EXPECT_TRUE(parInfo.is_in_body_to_be_skinned());
-        EXPECT_FALSE(parInfo.is_considered_air());
     }
 
     void move_elements(const EntityIdProcVector &elementIdProcsToMove)
@@ -278,7 +270,6 @@ protected:
         stk::mesh::Entity elem3 = get_bulk().get_entity(stk::topology::ELEM_RANK, 3);
         const stk::mesh::impl::ParallelInfo &parInfo = get_elem_graph().get_parallel_edge_info(elem3, 5, 4, 4);
         expect_otherProc_permutation_chosenId(parInfo, 1, 4, 1);
-        expect_parallel_info_part_memberships(parInfo);
     }
 
     void expect_element4_connected_to_3_remotely_via_side_3()
@@ -293,7 +284,6 @@ protected:
         stk::mesh::Entity elem4 = get_bulk().get_entity(stk::topology::ELEM_RANK, 4);
         const stk::mesh::impl::ParallelInfo &parInfo = get_elem_graph().get_parallel_edge_info(elem4, 4, 3, 5);
         expect_otherProc_permutation_chosenId(parInfo, 0, 4, 1);
-        expect_parallel_info_part_memberships(parInfo);
     }
 };
 TEST_F(ElemGraphChangeOwnerMoveFrom1To0, withAura)
@@ -673,7 +663,10 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
         bulkData.batch_change_entity_parts(killedElements, add_parts, remove_parts);
         boundary_mesh_parts.push_back(&active);
 
-        process_killed_elements(bulkData, elem_graph, killedElements, active, boundary_mesh_parts, &boundary_mesh_parts);
+        stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+        stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, elem_graph, bulkData.mesh_meta_data().universal_part(), remoteActiveSelector);
+
+        process_killed_elements(bulkData, elem_graph, killedElements, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
         if (proc == 1)
         {
@@ -688,10 +681,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
         }
         if (proc == 0)
         {
-            stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
-            stk::mesh::impl::ParallelInfo &elem1_to_elem2_info = elem_graph.get_parallel_edge_info(elem_1, 5, stk::mesh::EntityId(2), 4);
-
-            EXPECT_FALSE(elem1_to_elem2_info.is_in_body_to_be_skinned());
+            EXPECT_FALSE(remoteActiveSelector[-2]);
 
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, 5, stk::mesh::EntityId(3), 4), std::logic_error);
        }

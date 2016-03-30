@@ -4,6 +4,7 @@
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk
 {
@@ -46,8 +47,25 @@ public:
         }
     }
 
-    void notify_finished_modification_end()
+    void notify_finished_modification_end(MPI_Comm communicator)
     {
+        std::vector<size_t> allObserverValues;
+        std::vector<std::vector<size_t>> observerValues(observers.size());
+        for(size_t i=0; i<observers.size(); ++i)
+        {
+            observers[i]->fill_values_to_reduce(observerValues[i]);
+            allObserverValues.insert(allObserverValues.end(), observerValues[i].begin(), observerValues[i].end());
+        }
+        std::vector<size_t> maxValues(allObserverValues.size());
+        stk::all_reduce_max(communicator, allObserverValues.data(), maxValues.data(), maxValues.size());
+        size_t offset = 0;
+        for(size_t i=0; i<observers.size(); ++i)
+        {
+            observerValues[i].assign(maxValues.begin()+offset, maxValues.begin()+offset+observerValues[i].size());
+            offset += observerValues[i].size();
+            observers[i]->set_reduced_values(observerValues[i]);
+        }
+
         for(ModificationObserver *observer : observers)
         {
             observer->finished_modification_end_notification();

@@ -237,9 +237,13 @@ inline stk::mesh::EntityVector get_killed_elements(stk::mesh::BulkData& bulkData
 
 inline void test_element_death_with_multiple_shared_sides(stk::mesh::BulkData& bulkData, stk::mesh::Part& activePart, stk::mesh::Part& skinPart)
 {
-    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
+    stk::mesh::ElemElemGraph elem_elem_graph(bulkData);
     remove_element_from_part(bulkData, 2, activePart);
-    process_killed_elements(bulkData, elem_elem_graph, get_killed_elements(bulkData), activePart, {&activePart, &skinPart});
+
+    stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+    stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, elem_elem_graph, activePart, remoteActiveSelector);
+
+    process_killed_elements(bulkData, elem_elem_graph, get_killed_elements(bulkData), activePart, remoteActiveSelector, {&activePart, &skinPart});
     test_total_sides_and_sides_per_element(bulkData, 2u, {2u, 2u});
 }
 
@@ -285,7 +289,7 @@ inline void test_elements_connected_n_times(stk::mesh::BulkData &bulkData, stk::
 
 inline void test_elems_kissing_n_times(stk::mesh::BulkData& bulkData, stk::mesh::Part& activePart, size_t numKisses)
 {
-    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
+    stk::mesh::ElemElemGraph elem_elem_graph(bulkData);
     stk::mesh::EntityId id = 1 + bulkData.parallel_rank();
     stk::mesh::EntityId remoteId = 2u-bulkData.parallel_rank();
     test_elements_connected_n_times(bulkData, elem_elem_graph, bulkData.get_entity(stk::topology::ELEM_RANK, id), remoteId, numKisses);

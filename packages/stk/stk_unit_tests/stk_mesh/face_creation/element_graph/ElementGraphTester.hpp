@@ -29,10 +29,7 @@ class ElemElemGraphTester : public stk::mesh::ElemElemGraph
 {
 public:
     ElemElemGraphTester(stk::mesh::BulkData& bulkData)
-      : ElemElemGraph(bulkData, bulkData.mesh_meta_data().universal_part()) {};
-
-    ElemElemGraphTester(stk::mesh::BulkData& bulkData, stk::mesh::Part &part)
-      : ElemElemGraph(bulkData, part) {};
+      : ElemElemGraph(bulkData) {};
 
     virtual ~ElemElemGraphTester() {}
 
