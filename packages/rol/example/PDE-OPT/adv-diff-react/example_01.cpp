@@ -65,7 +65,6 @@
 #include "data.hpp"
 #include "objective.hpp"
 #include "constraint.hpp"
-//#include "ROL_ExperimentDesignObjective.hpp"
 
 typedef double RealT;
 

@@ -491,7 +491,8 @@ public:
     }
     // vecWeights
     vecWeights_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
-    vecWeights_->putScalar(0.0);
+    vecWeights_->putScalar(1.0);
+    /*vecWeights_->putScalar(0.0);
     Real mask1_x1 = 0.30, mask1_x2 = 0.90, mask1_y1 = 0.20, mask1_y2 = 0.80;
     Real mask2_x1 = 0.15, mask2_x2 = 0.25, mask2_y1 = 0.55, mask2_y2 = 0.65;
     Real mask3_x1 = 0.45, mask3_x2 = 0.55, mask3_y1 = 0.05, mask3_y2 = 0.15;
@@ -516,7 +517,7 @@ public:
           vecWeights_->replaceGlobalValue(cellDofs(myCellIds_[i],j), 0, 0);
         }
       }
-    }
+    }*/
 
 
     // Apply Dirichlet conditions.

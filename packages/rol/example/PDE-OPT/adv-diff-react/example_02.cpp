@@ -173,10 +173,12 @@ int main(int argc, char *argv[]) {
     //data->outputTpetraVector(data->getVecF(), "control.txt");
     //data->outputTpetraData();
 
-    std::vector<Teuchos::RCP<const ROL::Vector<RealT> > > training_models;
+    std::vector<Teuchos::RCP<ROL::Vector<RealT> > > training_models;
     training_models.push_back(zp);
     training_models.push_back(zp);
-    ROL::ExperimentDesignObjective<RealT> objOED(obj, con, up, up, zp, cp, up, training_models, up);
+    ROL::ExperimentDesignObjective<RealT> objOED(obj, con, up, up, zp, cp, up, training_models, up, parlist);
+    RealT objtol = 1e-8;
+    *outStream << "OED Objective Value: " << objOED.value(*zp, objtol) << std::endl;
 
   }
   catch (std::logic_error err) {

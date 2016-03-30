@@ -50,66 +50,85 @@
 namespace ROL {
 
 template <class Real>
-class ExperimentDesignObjective : public Objective<Real> {
+class ExperimentDesignObjective;
 
-  class ReducedHessian : public LinearOperator<Real> {
-  public:
-    ReducedHessian(ExperimentDesignObjective<Real> & edObj) : edObj_(edObj) {}
+template <class Real>
+class ReducedHessian : public LinearOperator<Real> {
+private:
+  const ExperimentDesignObjective<Real> edo_;
+  Teuchos::RCP<const Vector<Real> > w_;
 
-    void apply( Vector<Real> &hv, const Vector<Real> &v, Real &tol ) const {
-      Real mytol(1e-8);
-      const Teuchos::RCP<Vector<Real> > Bv = edObj_.constraint_->clone();
-      const Teuchos::RCP<Vector<Real> > AiBv = edObj_.state_->clone();
-      const Teuchos::RCP<Vector<Real> > QAiBv = edObj_.observation_->clone();
-      const Teuchos::RCP<Vector<Real> > WQAiBv = (edObj_.observation_->dual()).clone();
-      const Teuchos::RCP<Vector<Real> > QtWQAiBv = (edObj_.state_->dual()).clone();
-      const Teuchos::RCP<Vector<Real> > AitQtWQAiBv = (edObj_.constraint_->dual()).clone();
+public:
 
-      const Teuchos::RCP<Vector<Real> > BtAitQtWQAiBv = (edObj_.control_->dual()).clone();
+  ReducedHessian(const ExperimentDesignObjective<Real> & edo, Teuchos::RCP<const Vector<Real> > w) : edo_(edo), w_(w) {}
 
-      edObj_.con_->applyJacobian_2(*Bv, v, *(edObj_.state_), *(edObj_.control_), mytol);
-      edObj_.con_->applyInverseJacobian_1(*AiBv, *Bv, *(edObj_.state_), *(edObj_.control_), mytol);
-      edObj_.applyObserveOp(*QAiBv, *AiBv);
-      edObj_.applyWeightOp(*WQAiBv, *QAiBv, *w_);
-      edObj_.applyAdjointObserveOp(*QtWQAiBv, *WQAiBv);
-      edObj_.con_->applyInverseAdjointJacobian_1(*AitQtWQAiBv, *QtWQAiBv, *(edObj_.state_), *(edObj_.control_), mytol);
-      edObj_.con_->applyAdjointJacobian_2(*BtAitQtWQAiBv, *AitQtWQAiBv, *(edObj_.state_), *(edObj_.control_), mytol);
+  void apply( Vector<Real> &hv, const Vector<Real> &v, Real &tol ) const {
+    Real mytol(1e-8);
+    Teuchos::RCP<Vector<Real> > Bv = edo_.getConstraintVec()->clone();
+    Teuchos::RCP<Vector<Real> > AiBv = edo_.getStateVec()->clone();
+    Teuchos::RCP<Vector<Real> > QAiBv = edo_.getObservationVec()->clone();
+    Teuchos::RCP<Vector<Real> > WQAiBv = (edo_.getObservationVec()->dual()).clone();
+    Teuchos::RCP<Vector<Real> > QtWQAiBv = (edo_.getStateVec()->dual()).clone();
+    Teuchos::RCP<Vector<Real> > AitQtWQAiBv = (edo_.getConstraintVec()->dual()).clone();
 
-      edObj_.obj_->hessVec_22(hv, v, *(edObj_.state_), *(edObj_.control_), mytol);
-      hv.plus(*BtAitQtWQAiBv);
+    Teuchos::RCP<Vector<Real> > BtAitQtWQAiBv = (edo_.getControlVec()->dual()).clone();
+
+    edo_.getConstraint()->applyJacobian_2(*Bv, v, *(edo_.getStateVec()), *(edo_.getControlVec()), mytol);
+    edo_.getConstraint()->applyInverseJacobian_1(*AiBv, *Bv, *(edo_.getStateVec()), *(edo_.getControlVec()), mytol);
+    edo_.applyObserveOp(*QAiBv, *AiBv);
+    edo_.applyWeightOp(*WQAiBv, *QAiBv, *w_);
+    edo_.applyAdjointObserveOp(*QtWQAiBv, *WQAiBv);
+    edo_.getConstraint()->applyInverseAdjointJacobian_1(*AitQtWQAiBv, *QtWQAiBv, *(edo_.getStateVec()), *(edo_.getControlVec()), mytol);
+    edo_.getConstraint()->applyAdjointJacobian_2(*BtAitQtWQAiBv, *AitQtWQAiBv, *(edo_.getStateVec()), *(edo_.getControlVec()), mytol);
+
+    edo_.getObjective()->hessVec_22(hv, v, *(edo_.getStateVec()), *(edo_.getControlVec()), mytol);
+    hv.plus(*BtAitQtWQAiBv);
    
-    }
+  }
 
-    void setWeights(const Teuchos::RCP<const Vector<Real> > &w) {
-      w_ = w;
-    }
+};
 
-  private:
-    ExperimentDesignObjective<Real> & edObj_;
-    Teuchos::RCP<const Vector<Real> > w_;
+template <class Real>
+class ExperimentDesignObjective : public Objective<Real> {
+private:
+  Teuchos::RCP<Objective_SimOpt<Real> > obj_;
+  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;
+  Teuchos::RCP<Vector<Real> > state_;
+  Teuchos::RCP<Vector<Real> > adjoint_;
+  Teuchos::RCP<Vector<Real> > control_;
+  Teuchos::RCP<Vector<Real> > constraint_;
+  Teuchos::RCP<Vector<Real> > observation_;
+  std::vector<Teuchos::RCP<Vector<Real> > > training_;
+  Teuchos::RCP<Vector<Real> > ones_;
+  Teuchos::RCP<Reduced_Objective_SimOpt<Real> > redobj_;
 
-  };
+  Real cgabstol_;
+  Real cgreltol_;
+  int  cgmaxiter_;
 
 public:
   ExperimentDesignObjective(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
                             const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con,
-                            const Teuchos::RCP<const Vector<Real> > &state,
-                            const Teuchos::RCP<const Vector<Real> > &adjoint,
-                            const Teuchos::RCP<const Vector<Real> > &control,
-                            const Teuchos::RCP<const Vector<Real> > &constraint,
-                            const Teuchos::RCP<const Vector<Real> > &observation,
-                            const std::vector<Teuchos::RCP<const Vector<Real> > > &training,
-                            const Teuchos::RCP<const Vector<Real> > &ones) :
+                            const Teuchos::RCP<Vector<Real> > &state,
+                            const Teuchos::RCP<Vector<Real> > &adjoint,
+                            const Teuchos::RCP<Vector<Real> > &control,
+                            const Teuchos::RCP<Vector<Real> > &constraint,
+                            const Teuchos::RCP<Vector<Real> > &observation,
+                            const std::vector<Teuchos::RCP<Vector<Real> > > &training,
+                            const Teuchos::RCP<Vector<Real> > &ones,
+                            const Teuchos::RCP<Teuchos::ParameterList> &parlist) :
     obj_(obj), con_(con), state_(state), adjoint_(adjoint),
     control_(control), constraint_(constraint), observation_(observation),
-    training_(training), ones_(ones), reducedHessian_(*this) {
-    // Start ExperimentDesignObjective.
-    //redobj_ = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<Real> (obj_, con_, state_, adjoint_));
+    training_(training), ones_(ones) {
+    //
+    cgabstol_  = parlist->sublist("Problem").get("OED CG Absolute Tolerance", 1e10);
+    cgreltol_  = parlist->sublist("Problem").get("OED CG Relative Tolerance", 1e-4);
+    cgmaxiter_ = parlist->sublist("Problem").get("OED CG Iteration Limit", 1000);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const Teuchos::RCP<Vector<Real> > Mtrain = (control_->dual()).clone();
-    const Teuchos::RCP<Vector<Real> > CinvMtrain = control_->clone();
+    Teuchos::RCP<Vector<Real> > Mtrain = (control_->dual()).clone();
+    Teuchos::RCP<Vector<Real> > CinvMtrain = control_->clone();
     int numTraining = training_.size();
     Real sumB(0);
     for (int i=0; i<numTraining; ++i) {
@@ -128,68 +147,39 @@ public:
     hv.zero();
   }
 
-private:
-  const Teuchos::RCP<Objective_SimOpt<Real> > obj_;
-  const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;
-  const Teuchos::RCP<const Vector<Real> > state_;
-  const Teuchos::RCP<const Vector<Real> > adjoint_;
-  const Teuchos::RCP<const Vector<Real> > control_;
-  const Teuchos::RCP<const Vector<Real> > constraint_;
-  const Teuchos::RCP<const Vector<Real> > observation_;
-  const std::vector<Teuchos::RCP<const Vector<Real> > > training_;
-  const Teuchos::RCP<const Vector<Real> > ones_;
-  const Teuchos::RCP<Reduced_Objective_SimOpt<Real> > redobj_;
-  ReducedHessian reducedHessian_;
-
-  /*void applyReducedHessian(Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &w) const {
-    Real tol(1e-8);
-    const Teuchos::RCP<Vector<Real> > Bv = constraint_->clone();
-    const Teuchos::RCP<Vector<Real> > AiBv = state_->clone();
-    const Teuchos::RCP<Vector<Real> > QAiBv = observation_->clone();
-    const Teuchos::RCP<Vector<Real> > WQAiBv = (observation_->dual()).clone();
-    const Teuchos::RCP<Vector<Real> > QtWQAiBv = (state_->dual()).clone();
-    const Teuchos::RCP<Vector<Real> > AitQtWQAiBv = (constraint_->dual()).clone();
-
-    const Teuchos::RCP<Vector<Real> > BtAitQtWQAiBv = (control_->dual()).clone();
-
-    con_->applyJacobian_2(Bv, v, state_, control_, tol);
-    con_->applyInverseJacobian_1(AiBv, Bv, state_, control_, tol);
-    applyObserveOp(QAiBv, AiBv);
-    applyWeightOp(WQAiBv, QAiBv, w);
-    applyAdjointObserveOp(QtWQAiBv, WQAiBv);
-    con_->applyInverseAdjointJacobian_1(AitQtWQAiBv, QtWQAiBv, state_, control_, tol);
-    con_->applyAdjointJacobian_2(BtAitQtWQAiBv, AitQtWQAiBv, state_, control_, tol);
-
-    obj_->hessVec_22(hv, v, state_, control_, tol);
-    hv.plus(BtAitQtWQAiBv);
-  }*/
-
-  void applyInverseReducedHessian(Vector<Real> &ihv, const Vector<Real> &v, const Vector<Real> &w) const {
-    Real abstol(1e-4);
-    Real reltol(1e-8);
-    int  maxiter(100);
-    int iter(0);
-    int flag(0);
-    ConjugateGradients<Real> cg(abstol, reltol, maxiter, false);
-    reducedHessian_.setWeights(Teuchos::rcpFromRef(w));
-    cg.run(ihv, reducedHessian_, v, reducedHessian_, iter, flag);
-  }
-
-  void applyObserveOp(Vector<Real> &obsv, const Vector<Real> &v) const {
+  virtual void applyObserveOp(Vector<Real> &obsv, const Vector<Real> &v) const {
     obsv.set(v);
   }
 
 
-  void applyAdjointObserveOp(Vector<Real> &aobsv, const Vector<Real> &v) const {
+  virtual void applyAdjointObserveOp(Vector<Real> &aobsv, const Vector<Real> &v) const {
     aobsv.set(v);
   }
 
 
-  void applyWeightOp(Vector<Real> &weightv, const Vector<Real> &v, const Vector<Real> &w) const {
+  virtual void applyWeightOp(Vector<Real> &weightv, const Vector<Real> &v, const Vector<Real> &w) const {
     weightv.set(v.dual());
   }
 
-  
+  Teuchos::RCP<Vector<Real> > getStateVec() const { return state_; }
+  Teuchos::RCP<Vector<Real> > getAdjointVec() const { return adjoint_; }
+  Teuchos::RCP<Vector<Real> > getControlVec() const { return control_; }
+  Teuchos::RCP<Vector<Real> > getObservationVec() const { return observation_; }
+  Teuchos::RCP<Vector<Real> > getConstraintVec() const { return constraint_; }
+  Teuchos::RCP<Objective_SimOpt<Real> > getObjective() const { return obj_; }
+  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > getConstraint() const { return con_; }
+
+private:
+
+  void applyInverseReducedHessian(Vector<Real> &ihv, const Vector<Real> &v, const Vector<Real> &w) const {
+    int iter(0);
+    int flag(0);
+    ConjugateGradients<Real> cg(cgabstol_, cgreltol_, cgmaxiter_, false);
+    ReducedHessian<Real> reducedHessian(*this, Teuchos::rcpFromRef(w));
+    cg.run(ihv, reducedHessian, v, reducedHessian, iter, flag);
+std::cout << "iter = " << iter << std::endl;
+std::cout << "flag = " << flag << std::endl;
+  }
 
 }; // class ExperimentDesignObjective
 
