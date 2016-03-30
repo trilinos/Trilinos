@@ -22,16 +22,6 @@
 
 namespace stk { namespace mesh {
 
-template <typename T>
-void unpack_into_vector_of_data(stk::CommSparse& comm, T& data, int fromProc)
-{
-    unsigned num_items = 0;
-    comm.recv_buffer(fromProc).unpack<unsigned>(num_items);
-    data.resize(num_items);
-    for(unsigned i=0;i<num_items;++i)
-        comm.recv_buffer(fromProc).unpack<typename T::value_type>(data[i]);
-}
-
 stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKey>& keys)
 {
     stk::mesh::EntityVector entities;
@@ -73,7 +63,7 @@ void SharedSidesCommunication::pack_shared_side_nodes_of_elements(stk::CommSpars
         {
             side_node_entity_keys[i] = m_bulkData.entity_key(side_nodes[i]);
         }
-        impl::pack_vector_to_proc(comm, side_node_entity_keys, sharing_proc);
+        stk::pack_vector_to_proc(comm, side_node_entity_keys, sharing_proc);
     }
 }
 
@@ -109,7 +99,7 @@ SideNodeToReceivedElementDataMap SharedSidesCommunication::unpack_side_data(stk:
                     elementData.set_is_in_air(isAir);
                 }
                 std::vector<stk::mesh::EntityKey> node_keys;
-                stk::unpack_into_vector_of_data(comm, node_keys, proc_id);
+                stk::unpack_vector_from_proc(comm, node_keys, proc_id);
                 elementData.set_element_side_nodes(convert_keys_to_entities(m_bulkData, node_keys));
                 stk::mesh::EntityVector sortedSideNodes = elementData.get_side_nodes();
                 std::sort(sortedSideNodes.begin(), sortedSideNodes.end());

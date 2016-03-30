@@ -226,7 +226,7 @@ void pack_side_node_keys(const std::vector<stk::mesh::Entity>& orphanedSides,
         for(int proc : sharingProcs)
         {
             comm.send_buffer(proc).pack<stk::mesh::EntityKey>(sideKey);
-            impl::pack_vector_to_proc(comm, nodeKeys, proc);
+            stk::pack_vector_to_proc(comm, nodeKeys, proc);
         }
     }
 }
@@ -246,7 +246,7 @@ void unpack_side_nodes_and_check_for_attached_elements(const stk::mesh::BulkData
                 comm.recv_buffer(proc_id).unpack<stk::mesh::EntityKey>(sideKey);
 
                 std::vector<stk::mesh::EntityKey> nodeKeys;
-                stk::unpack_into_vector_of_data(comm, nodeKeys, proc_id);
+                stk::unpack_vector_from_proc(comm, nodeKeys, proc_id);
 
                 std::vector<stk::mesh::Entity> nodes(nodeKeys.size());
                 for(unsigned i =0; i<nodeKeys.size(); ++i)

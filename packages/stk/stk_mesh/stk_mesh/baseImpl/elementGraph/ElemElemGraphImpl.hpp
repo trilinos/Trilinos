@@ -378,14 +378,6 @@ bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity 
 bool is_local_element(stk::mesh::impl::LocalId elemId);
 stk::mesh::EntityVector get_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index);
 
-template <typename T>
-void pack_vector_to_proc(stk::CommSparse& comm, const T& data, int otherProc)
-{
-    comm.send_buffer(otherProc).pack<unsigned>(data.size());
-    for(size_t i=0; i<data.size(); ++i)
-        comm.send_buffer(otherProc).pack<typename T::value_type>(data[i]);
-}
-
 template <typename SideData>
 void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh,
                                               const stk::mesh::Entity localElement,
