@@ -131,13 +131,11 @@ TEST(InteriorBlockBoundaryTest, DISABLED_failing_run_all_test_cases_aura)
 {
     InteriorBlockBoundaryTester().run_all_test_cases(failingInteriorBlockBoundaryTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
-// disabled due to split coincident elements
-TEST(InteriorBlockBoundaryTest, DISABLED_run_coincident_element_test_cases_no_aura)
+TEST(InteriorBlockBoundaryTest, run_coincident_element_test_cases_no_aura)
 {
     InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
-// disabled due to split coincident elements
-TEST(CreateInteriorBoundaryForSingleBlockTest, DISABLED_run_coincident_element_test_cases_no_aura)
+TEST(CreateInteriorBoundaryForSingleBlockTest, run_coincident_element_test_cases_no_aura)
 {
     OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }

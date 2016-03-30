@@ -89,8 +89,7 @@ TEST(AllSidesTest, DISABLED_run_all_failing_test_cases_aura)
 {
     AllSidesTester().run_all_test_cases(failingAllSidesTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
-// disabled due to split coincident elements
-TEST(AllSidesTest, DISABLED_run_coincident_element_test_cases_no_aura)
+TEST(AllSidesTest, run_coincident_element_test_cases_no_aura)
 {
     AllSidesTester().run_all_test_cases(allSidesCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
