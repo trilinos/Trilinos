@@ -658,7 +658,7 @@ lib iovs
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/../TPLs/ParaViewCatalystSierraAdaptor/include
+        <include>$(seacas-root)/../TPLs_src/ParaViewCatalystSierraAdaptor/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
