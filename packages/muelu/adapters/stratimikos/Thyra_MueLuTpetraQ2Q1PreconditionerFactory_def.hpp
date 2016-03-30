@@ -515,7 +515,7 @@ namespace Thyra {
     std::string   coarseType   = MUELU_GPD("coarse: type", std::string, "direct");
     ParameterList coarseParams;
     if (paramList.isSublist("coarse: params"))
-        coarseParams = paramList.sublist("coarse: params");
+      coarseParams = paramList.sublist("coarse: params");
     M.SetFactory("CoarseSolver", GetSmoother(coarseType, coarseParams, true/*coarseSolver?*/));
 
 #ifdef HAVE_MUELU_DEBUG
@@ -737,6 +737,13 @@ namespace Thyra {
     ParameterList eminParams = *(EminPFact->GetValidParameterList());
     if (paramList.isParameter("emin: num iterations"))
       eminParams.set("emin: num iterations", paramList.get<int>("emin: num iterations"));
+    if (mode == "pressure") {
+      eminParams.set("emin: iterative method", "cg");
+    } else {
+      eminParams.set("emin: iterative method", "gmres");
+      if (paramList.isParameter("emin: iterative method"))
+        eminParams.set("emin: iterative method", paramList.get<std::string>("emin: iterative method"));
+    }
     EminPFact->SetParameterList(eminParams);
     EminPFact->SetFactory("A",          AFact);
     EminPFact->SetFactory("Constraint", CFact);
