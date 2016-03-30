@@ -120,7 +120,7 @@ namespace MueLu {
       V[0] = MatrixFactory2::BuildCopy(T);
       Utilities::MyOldScaleMatrix(*V[0], D, true/*doInverse*/, true/*doFillComplete*/, false/*doOptimizeStorage*/);
 
-      rho = Utilities::Frobenius(*V[0], *V[0]);
+      rho = sqrt(Utilities::Frobenius(*V[0], *V[0]));
 
       V[0]->resumeFill();
       V[0]->scale(-one/rho);
@@ -149,7 +149,7 @@ namespace MueLu {
         // V_{i+1} = V_{i+1} - h(j,i+1)*V_j
 #ifndef TWO_ARG_MATRIX_ADD
         newV = Teuchos::null;
-        MatrixMatrix::TwoMatrixAdd(*V[j], false, -h[I(j,i+1)], *V[i+1], false, one, newV, mmfancy);
+        MatrixMatrix::TwoMatrixAdd(*V[j], false, -h[I(j,i)], *V[i+1], false, one, newV, mmfancy);
         newV->fillComplete(V[i+1]->getDomainMap(), V[i+1]->getRangeMap());
         V[i+1].swap(newV);
 #else
@@ -161,10 +161,10 @@ namespace MueLu {
         //   Throw test that evaluated to true: B.isLocallyIndexed()
         //
         //   TpetraExt::MatrixMatrix::Add(): ERROR, input matrix B must not be locally indexed
-        MatrixMatrix::TwoMatrixAdd(*V[j], false, -h[I(j,i+1)], *V[i+1], one);
+        MatrixMatrix::TwoMatrixAdd(*V[j], false, -h[I(j,i)], *V[i+1], one);
 #endif
       }
-      h[I(i+1,i)] = Utilities::Frobenius(*V[i+1], *V[i+1]);
+      h[I(i+1,i)] = sqrt(Utilities::Frobenius(*V[i+1], *V[i+1]));
 
       // NOTE: potentially we'll need some reorthogonalization code here
       // The matching MATLAB code is
@@ -205,7 +205,7 @@ namespace MueLu {
     //   y = solve(H, \rho e_1)
     std::vector<SC> y(nIts_);
     if (nIts_ == 1) {
-      y[0] = h[I(0,0)] / g[0];
+      y[0] = g[0] / h[I(0,0)];
     }
 #undef I
 
