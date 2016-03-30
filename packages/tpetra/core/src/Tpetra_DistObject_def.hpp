@@ -910,6 +910,14 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
         Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+        if (debug) {
+          std::ostringstream os;
+          const int myRank = this->getMap ()->getComm ()->getRank ();
+          os << ">>> (Proc " << myRank << ") 5.0. Before packAndPrepareNew, "
+            "exports_.size()=" << exports_.size () << std::endl;
+          std::cerr << os.str ();
+        }
         // Ask the source to pack data.  Also ask it whether there are a
         // constant number of packets per element (constantNumPackets is
         // an output argument).  If there are, constantNumPackets will
@@ -917,6 +925,13 @@ namespace Tpetra {
         // numExportPacketsPerLID_ array.
         packAndPrepareNew (src, exportLIDs, exports_, numExportPacketsPerLID_,
                            constantNumPackets, distor);
+        if (debug) {
+          std::ostringstream os;
+          const int myRank = this->getMap ()->getComm ()->getRank ();
+          os << ">>> (Proc " << myRank << ") 5.0. After packAndPrepareNew, "
+            "exports_.size()=" << exports_.size () << std::endl;
+          std::cerr << os.str ();
+        }
       }
     }
 
@@ -1102,7 +1117,8 @@ namespace Tpetra {
 
               std::ostringstream os;
               os << ">>> (Proc " << myRank << "): 9.1. Const # packets per LID:"
-                " imports_.size() = " << imports_.size () << std::endl;
+                " exports_.size()=" << exports_.size () << ", imports_.size()="
+                 << imports_.size () << std::endl;
               std::cerr << os.str ();
             }
             distor.doReversePostsAndWaits (create_const_view (exports_),
@@ -1175,7 +1191,12 @@ namespace Tpetra {
           }
           else {
             if (debug) {
-              std::cerr << ">>> 9.1. Constant # packets / LID" << std::endl;
+              const int myRank = this->getMap ()->getComm ()->getRank ();
+              std::ostringstream os;
+              os << ">>> (Proc " << myRank << "): 9.1. Const # packets per LID:"
+                " exports_.size()=" << exports_.size () << ", imports_.size()="
+                 << imports_.size () << std::endl;
+              std::cerr << os.str ();
             }
             distor.doPostsAndWaits (create_const_view (exports_),
                                     constantNumPackets,
