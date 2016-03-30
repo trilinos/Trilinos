@@ -324,6 +324,7 @@ do_times_layout(const size_t m, const size_t n, const size_t p,
             << device
             << " performance for layout "
             << layout_names[layout]
+            << " m = " << m << " n = " << n << " p = " << p
             << std::endl << std::endl;
   std::cout << "Computation \t Time     \t Throughput \t Ratio" << std::endl;
 
@@ -363,7 +364,7 @@ int main(int argc, char* argv[]) {
     int m = 1000000;
     clp.setOption("m", &m, "Number of matrix rows");
     int n = 10;
-    clp.setOption("n", &m, "Number of matrix columns");
+    clp.setOption("n", &n, "Number of matrix columns");
     int p = 8;
     clp.setOption("p", &p, "Number of derivative components");
     int nloop = 10;
