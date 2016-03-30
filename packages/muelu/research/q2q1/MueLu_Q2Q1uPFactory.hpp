@@ -52,6 +52,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -765,11 +766,11 @@ namespace MueLu {
 
 #if 0
     if (pressureMode) {
-      Utils::Write("Ap_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
-      Utils::Write("Pp_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
+      IO::Write("Ap_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
+      IO::Write("Pp_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
     } else {
-      Utils::Write("Av_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
-      Utils::Write("Pv_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
+      IO::Write("Av_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
+      IO::Write("Pv_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
     }
 #endif
 
