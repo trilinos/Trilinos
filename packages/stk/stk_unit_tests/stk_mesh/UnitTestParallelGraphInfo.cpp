@@ -124,9 +124,9 @@ public:
     {
         for(const auto& item : parallelPartInfo)
         {
-            const stk::mesh::GraphEdge &edge = item.first;
+            const stk::mesh::impl::LocalId elemOnOtherProc = item.first;
             const stk::mesh::impl::PartOrdinals &partOrdinals = item.second;
-            if(edge.elem2%2 == 0)
+            if(elemOnOtherProc%2 == 0)
             {
                 EXPECT_TRUE(std::binary_search(partOrdinals.begin(), partOrdinals.end(), airPart->mesh_meta_data_ordinal()));
                 EXPECT_TRUE(std::binary_search(partOrdinals.begin(), partOrdinals.end(), skinPart->mesh_meta_data_ordinal()));

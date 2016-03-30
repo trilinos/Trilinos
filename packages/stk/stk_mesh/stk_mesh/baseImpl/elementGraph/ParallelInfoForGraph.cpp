@@ -73,7 +73,7 @@ void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::Bul
             for(stk::mesh::PartOrdinal &partOrdinal : partOrdinals)
                 comm.recv_buffer(i).unpack<stk::mesh::PartOrdinal>(partOrdinal);
 
-            parallelPartInfo[edge] = partOrdinals;
+            parallelPartInfo[edge.elem2] = partOrdinals;
         }
     }
 }

@@ -227,7 +227,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
                     const impl::ParallelInfo &parallel_edge_info = eeGraph.get_parallel_info_for_graph_edge(graphEdge);
                     isElement2InSelector = parallel_edge_info.is_in_body_to_be_skinned();
                     if(!isElement1InSelector && !isElement2InSelector) continue;
-                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge]);
+                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge.elem2]);
                 }
                 else
                 {
