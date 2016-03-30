@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_BlockedPFactory_decl.hpp
- *
- *  Created on: 02.01.2012
- *      Author: tobias
- */
 
 #ifndef MUELU_BLOCKEDPFACTORY_DECL_HPP_
 #define MUELU_BLOCKEDPFACTORY_DECL_HPP_
@@ -127,9 +121,7 @@ namespace MueLu {
   class BlockedPFactory : public PFactory {
 #undef MUELU_BLOCKEDPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
-
   public:
-
 
     //! @name Constructors/Destructors.
     //@{

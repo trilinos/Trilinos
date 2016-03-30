@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_BlockedPFactory_def.hpp
- *
- *  Created on: 02.01.2012
- *      Author: tobias
- */
 
 #ifndef MUELU_BLOCKEDPFACTORY_DEF_HPP_
 #define MUELU_BLOCKEDPFACTORY_DEF_HPP_
@@ -105,7 +99,6 @@ namespace MueLu {
       else
         coarseLevel.DeclareInput("R", factManager->GetFactory("R").get(), this);
     }
-
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -186,11 +179,11 @@ namespace MueLu {
     bool bDoSortRangeGIDs  = rangeAMapExtractor->getThyraMode()  ? false : true;
     bool bDoSortDomainGIDs = domainAMapExtractor->getThyraMode() ? false : true;
 
-    if(bDoSortRangeGIDs) {
+    if (bDoSortRangeGIDs) {
       sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
       fullRangeMapVector.erase(std::unique(fullRangeMapVector.begin(), fullRangeMapVector.end()), fullRangeMapVector.end());
     }
-    if(bDoSortDomainGIDs) {
+    if (bDoSortDomainGIDs) {
       sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
       fullDomainMapVector.erase(std::unique(fullDomainMapVector.begin(), fullDomainMapVector.end()), fullDomainMapVector.end());
     }
@@ -238,11 +231,13 @@ namespace MueLu {
                             A->getRangeMap()->getComm());
     }
 
-    Teuchos::ArrayView<GO> fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
-    Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
-    Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
-    if (stridedDoFullMap != Teuchos::null) {
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
+    ArrayView<GO>         fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
+    RCP<const StridedMap> stridedDoFullMap = rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
+    RCP<const Map >       fullDomainMap    = null;
+    if (stridedDoFullMap != null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap == Teuchos::null, Exceptions::BadCast,
+        "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
+
       std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
       fullDomainMap = StridedMapFactory::Build(
                                    A->getDomainMap()->lib(),
@@ -279,7 +274,9 @@ namespace MueLu {
     if (fullDomainMap->getGlobalNumElements() != numAllElements) bDomainUseThyraStyleNumbering = true;*/
     bool bRangeUseThyraStyleNumbering  = !this->areGidsUnique(fullRangeMapVector);
     bool bDomainUseThyraStyleNumbering = !this->areGidsUnique(fullDomainMapVector);
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = Ain->getRowMap()->getComm();
+
+    RCP<const Teuchos::Comm<int> > comm = Ain->getRowMap()->getComm();
+
     int maxRangeStyles  = 0;
     int maxDomainStyles = 0;
     MueLu_maxAll(comm, bRangeUseThyraStyleNumbering  == true ? 1 : 0, maxRangeStyles);
