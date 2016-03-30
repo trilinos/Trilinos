@@ -68,6 +68,7 @@ panzer_stk_classic::GatherFields<EvalT, Traits>::
 
   Teuchos::RCP<panzer::BasisIRLayout> basis = 
     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis");
+  isConstant_ = basis->getBasis()->getElementSpace()==panzer::PureBasis::CONST;
 
   gatherFields_.resize(names.size());
   stkFields_.resize(names.size());
@@ -126,11 +127,18 @@ evaluateFields(typename Traits::EvalData workset)
 
          std::size_t basisCnt = gatherFields_[fieldIndex].dimension(1);
 
-         // loop over basis functions and fill the fields
-         for(std::size_t basis=0;basis<basisCnt;basis++) {
-            stk_classic::mesh::Entity * node = relations[basis].entity();
-            stk_classic::mesh::EntityArray<VariableField> fieldData(*field,*node);
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = fieldData(); // from STK
+         if(isConstant_) {
+           // loop over basis functions and fill the fields
+           stk_classic::mesh::EntityArray<VariableField> fieldData(*field,*localElements[cellLocalId]);
+           (gatherFields_[fieldIndex])(worksetCellIndex,0) = fieldData(); // from STK
+         }
+         else {
+           // loop over basis functions and fill the fields
+           for(std::size_t basis=0;basis<basisCnt;basis++) {
+              stk_classic::mesh::Entity * node = relations[basis].entity();
+              stk_classic::mesh::EntityArray<VariableField> fieldData(*field,*node);
+              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = fieldData(); // from STK
+           }
          }
       }
    }
