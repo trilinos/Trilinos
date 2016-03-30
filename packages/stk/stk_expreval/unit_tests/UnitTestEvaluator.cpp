@@ -370,8 +370,8 @@ EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*s_pi))/2);
 EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*s_pi/1.0))/2);
 EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*s_pi/1.0))/2);
 
-EXPREVAL_DEFINE_TEST(k5, haversine_ramp(x, 0.0, 1.0), std::pow(std::sin(s_pi*x),2)   );
-EXPREVAL_DEFINE_TEST(k6, cycloidal_ramp(x, 0.0, 1.0), x-1/(s_two_pi)*sin(s_two_pi*x) );
+EXPREVAL_DEFINE_TEST(k5, haversine_pulse(x, 0.0, 1.0), std::pow(std::sin(s_pi*x),2)   );
+EXPREVAL_DEFINE_TEST(k6,  cycloidal_ramp(x, 0.0, 1.0), x-1/(s_two_pi)*sin(s_two_pi*x) );
 
 #undef EXPREVAL_DEFINE_TEST1
 

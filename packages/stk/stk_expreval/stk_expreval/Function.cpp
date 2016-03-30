@@ -331,7 +331,7 @@ extern "C" {
     }
   }
 
-  static double haversine_ramp(double t, double t1, double t2)
+  static double haversine_pulse(double t, double t1, double t2)
   {
     if( t < t1 )
     {
@@ -540,7 +540,7 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction1(cosine_ramp1)));
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction2(cosine_ramp2)));
   (*this).insert(std::make_pair("cosine_ramp",     new CFunction3(cosine_ramp3)));
-  (*this).insert(std::make_pair("haversine_ramp",  new CFunction3(haversine_ramp)));
+  (*this).insert(std::make_pair("haversine_pulse", new CFunction3(haversine_pulse)));
   (*this).insert(std::make_pair("cycloidal_ramp",  new CFunction3(cycloidal_ramp)));
 
   (*this).insert(std::make_pair("sign",            new CFunction1(sign)));
