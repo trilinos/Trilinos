@@ -20,7 +20,7 @@ namespace stk { namespace mesh {
 void fill_single_split_coincident_connection(const stk::mesh::BulkData &bulk, stk::mesh::Entity localElem, const impl::ParallelElementData & connectedElemParallelData,
                                                SplitCoincidentInfo & splitCoincidents)
 {
-    splitCoincidents[bulk.identifier(localElem)] = {connectedElemParallelData.get_element_identifier(), connectedElemParallelData.get_proc_rank_of_neighbor()};
+    splitCoincidents[bulk.identifier(localElem)].push_back({connectedElemParallelData.get_element_identifier(), connectedElemParallelData.get_proc_rank_of_neighbor()});
 }
 
 void fill_split_coincident_connections_for_elem(const stk::mesh::BulkData &bulk, stk::mesh::Entity localElem, const impl::ParallelElementData &localElementData, const impl::ParallelElementDataVector &elementsConnectedToThisElementSide,
@@ -69,7 +69,9 @@ SplitCoincidentInfo get_split_coincident_elements_from_received_element_sides(st
 SplitCoincidentInfo get_split_coincident_elements(stk::mesh::BulkData& bulkData)
 {
     SideIdPool sideIdPool(bulkData);
-    unsigned numSideIdsNeeded = 6 * stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
+    const int maxNumSidesPerElement = 6;
+    const int numSidesNeededIfCoincident = maxNumSidesPerElement + 2;
+    unsigned numSideIdsNeeded = numSidesNeededIfCoincident * stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
     sideIdPool.generate_initial_ids(numSideIdsNeeded);
 
     SideNodeToReceivedElementDataMap elementSidesReceived = get_element_sides_from_other_procs(bulkData, sideIdPool);
@@ -95,7 +97,8 @@ std::vector<std::string> get_messages_for_split_coincident_elements(const stk::m
             }
         }
         blockNames += " }";
-        out << "ERROR: [" << bulkData.parallel_rank() << "] Element " << item.first << " (" << bulkData.bucket(element).topology() << ") in blocks " << blockNames << " is coincident with element " << item.second.first << " on processor " << item.second.second << std::endl;
+        for(size_t i=0;i<item.second.size();++i)
+            out << "ERROR: [" << bulkData.parallel_rank() << "] Element " << item.first << " (" << bulkData.bucket(element).topology() << ") in blocks " << blockNames << " is coincident with element " << item.second[i].first << " on processor " << item.second[i].second << std::endl;
         errorList.push_back(out.str());
     }
     return errorList;

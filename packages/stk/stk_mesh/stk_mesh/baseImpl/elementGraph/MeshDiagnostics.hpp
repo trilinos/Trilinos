@@ -6,7 +6,7 @@
 
 namespace stk { namespace mesh {
 
-typedef std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int>> SplitCoincidentInfo;
+typedef std::map<stk::mesh::EntityId, std::vector<std::pair<stk::mesh::EntityId, int>>> SplitCoincidentInfo;
 
 class BulkData;
 

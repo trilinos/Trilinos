@@ -58,8 +58,8 @@ void expect_split_coincidents(const stk::mesh::BulkData &bulkData,
     for(size_t i = 0; i < expectedSplits.size(); i++)
     {
         EXPECT_EQ(expectedSplits[i].localElementId,  foundSplitCoincident->first);
-        EXPECT_EQ(expectedSplits[i].remoteElementId, foundSplitCoincident->second.first);
-        EXPECT_EQ(expectedSplits[i].neighboringProc, foundSplitCoincident->second.second);
+        EXPECT_EQ(expectedSplits[i].remoteElementId, foundSplitCoincident->second[0].first);
+        EXPECT_EQ(expectedSplits[i].neighboringProc, foundSplitCoincident->second[0].second);
         foundSplitCoincident++;
     }
 }
