@@ -104,6 +104,12 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleSymbolicFactorization_Pthreads.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleHierMatrix_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleHierMatrix_Pthreads.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 

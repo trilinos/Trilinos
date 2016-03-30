@@ -66,10 +66,14 @@ namespace Tacho {
     GraphToolsHostType_Scotch S;
     S.setGraph(AA.NumRows(), rptr, cidx);
     S.setSeed(0);
-    S.setStrategy( SCOTCH_STRATLEVELMAX   |
-                   SCOTCH_STRATLEVELMIN   |
-                   SCOTCH_STRATLEAFSIMPLE |
-                   SCOTCH_STRATSEPASIMPLE );
+    S.setTreeLevel();
+    S.setStrategy( SCOTCH_STRATSPEED 
+                   | SCOTCH_STRATSPEED       
+                   | SCOTCH_STRATLEVELMAX  
+                   | SCOTCH_STRATLEVELMIN  
+                   | SCOTCH_STRATLEAFSIMPLE
+                   | SCOTCH_STRATSEPASIMPLE 
+                   );
 
     timer.reset();
     S.computeOrdering(treecut);

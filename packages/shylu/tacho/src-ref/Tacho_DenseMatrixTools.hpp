@@ -135,8 +135,7 @@ namespace Tacho {
     getHierMatrix(DenseMatrixHierType &hier,
                   const DenseMatrixFlatType &flat,
                   const OrdinalType mb,
-                  const OrdinalType nb,
-                  const bool create = false) {
+                  const OrdinalType nb) {
       static_assert( Kokkos::Impl::is_same<
                      typename DenseMatrixHierType::space_type,
                      typename DenseMatrixFlatType::space_type
@@ -146,14 +145,7 @@ namespace Tacho {
       typedef typename DenseMatrixHierType::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
 
-      OrdinalType hm, hn;
-      getDimensionOfHierMatrix(hm, hn,
-                               flat, 
-                               mb, nb);
-      
-      if (create)
-        hier.create(hm, hn);
-
+      const OrdinalType hm = hier.NumRows(), hn = hier.NumCols();
       const OrdinalType fm = flat.NumRows(), fn = flat.NumCols();
 
       space_type::execution_space::fence();
@@ -189,10 +181,13 @@ namespace Tacho {
                      const OrdinalType mb,
                      const OrdinalType nb) {
       OrdinalType hm, hn;
-      getDimensionOfHierMatrix(hm, hn, 
-                               flat,
+      getDimensionOfHierMatrix(hm, hn,
+                               flat, 
                                mb, nb);
-      getHierMatrix(hier, flat, mb , nb, true);
+      
+      hier.create(hm, hn);
+      
+      getHierMatrix(hier, flat, mb , nb);
     }
     
   };

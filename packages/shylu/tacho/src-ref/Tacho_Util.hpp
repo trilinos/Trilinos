@@ -330,8 +330,7 @@ namespace Tacho {
     static const int ExternalPardiso        = 1002;
 
     // - Block sparse matrix
-    static const int RightLookByBlocks      = 1101;
-    static const int ByBlocks               = RightLookByBlocks;
+    static const int ByBlocks               = 1101;
 
     // - Flat matrix
     static const int DenseTeamParallel      = 1201;
@@ -346,8 +345,8 @@ namespace Tacho {
   /// \brief Various matrix BLAS algorithms for sparse and dense operations.
   class AlgoBlas {
   public:
-    static const int ForFactorBlocked   = 2001;
-    static const int ForTriSolveBlocked = 2011;
+    static const int ForFactorization   = 2001;
+    static const int ForTriSolve        = 2011;
     static const int ExternalBlas       = 2021;
     static const int InternalBlas       = 2022;
   };

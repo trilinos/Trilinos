@@ -1,7 +1,5 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Threads.hpp>
-#include <Threads/Kokkos_Threads_TaskPolicy.hpp>  
-
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #include "ShyLUTacho_config.h"
@@ -13,7 +11,7 @@ typedef int    size_type;
 typedef Kokkos::Threads exec_space;
 
 #if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
-#include "Tacho_ExampleCholUnblocked.hpp"
+#include "Tacho_ExampleHierMatrix.hpp"
 using namespace Tacho;
 #endif
 
@@ -62,7 +60,7 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
 #if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
-    r_val = exampleCholUnblocked<exec_space>
+    r_val = exampleHierMatrix<exec_space>
       (file_input, treecut, prunecut, fill_level, rows_per_team, verbose);
 #else
     r_val = -1;

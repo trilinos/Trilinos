@@ -1,5 +1,5 @@
-#ifndef __TACHO_EXAMPLE_CHOL_UNBLOCKED_HPP__
-#define __TACHO_EXAMPLE_CHOL_UNBLOCKED_HPP__
+#ifndef __TACHO_EXAMPLE_SYMBOLIC_FACTORIZATION_HPP__
+#define __TACHO_EXAMPLE_SYMBOLIC_FACTORIZATION_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>

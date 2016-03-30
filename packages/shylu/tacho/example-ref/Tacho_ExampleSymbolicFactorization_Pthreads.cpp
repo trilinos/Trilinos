@@ -41,7 +41,7 @@ int main (int argc, char *argv[]) {
   int prunecut = 0;
   clp.setOption("prunecut", &prunecut, "Level to prune tree from bottom");
 
-  int fill_level = 0;
+  int fill_level = -1;
   clp.setOption("fill-level", &fill_level, "Fill level");
 
   int rows_per_team = 100;

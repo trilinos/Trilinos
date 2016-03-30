@@ -64,6 +64,15 @@ namespace Tacho {
     ordinal_type_array TreeVector()    const { return _tree; }
 
     ordinal_type NumBlocks() const { return _cblk; }
+    ordinal_type TreeLevel() const { 
+      ordinal_type r_val;
+      if (_strat & SCOTCH_STRATLEVELMAX ||                                                                          
+          _strat & SCOTCH_STRATLEVELMIN)
+        r_val = _level;
+      else
+        r_val = 0;
+      return r_val;
+    }
 
     // static assert is necessary to enforce to use host space
     GraphTools_Scotch() = default;
@@ -131,8 +140,11 @@ namespace Tacho {
       _strat = strat;
     }
 
-    void setTreeLevel(const int level = 0) {
-      _level = level;
+    void setTreeLevel(const unsigned int level = 0) {
+      if (level)
+        _level = level;
+      else
+        _level = Util::max(1, int(log2(_m)));
     }
 
     void computeOrdering(const ordinal_type treecut = 0) {
@@ -146,8 +158,12 @@ namespace Tacho {
 
       {
         // set desired tree level
-        const int level = (_level ? _level : Util::max(1, int(log2(_m)-treecut))); // level = log2(_nnz)+10;
-
+        if (_strat & SCOTCH_STRATLEVELMAX ||
+            _strat & SCOTCH_STRATLEVELMIN) {
+          TACHO_TEST_FOR_ABORT(_level == 0, "SCOTCH_STRATLEVEL(MIN/MAX) is used but level is not specified");
+        }
+        const int level = Util::max(1, _level-treecut);
+        
         SCOTCH_Strat stradat;
         SCOTCH_Num straval = _strat;
 

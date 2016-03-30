@@ -1,5 +1,5 @@
-#ifndef __TACHO_EXAMPLE_CHOL_UNBLOCKED_HPP__
-#define __TACHO_EXAMPLE_CHOL_UNBLOCKED_HPP__
+#ifndef __TACHO_EXAMPLE_HIER_MATRIX_HPP__
+#define __TACHO_EXAMPLE_HIER_MATRIX_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -9,6 +9,7 @@
 #include "Tacho_CrsMatrixBase.hpp"
 #include "Tacho_CrsMatrixView.hpp"
 #include "Tacho_CrsRowView.hpp"
+
 #include "Tacho_CrsMatrixTools.hpp"
 
 #include "Tacho_MatrixMarket.hpp"
@@ -20,23 +21,15 @@
 
 #include "Tacho_SymbolicFactorization.hpp"
 
-#include "Tacho_TaskView.hpp"
-#include "Tacho_TaskFactory.hpp"
-
-#include "Tacho_Gemm.hpp"
-#include "Tacho_Herk.hpp"
-#include "Tacho_Trsm.hpp"
-#include "Tacho_Chol.hpp"
-
 namespace Tacho {
 
   template<typename DeviceSpaceType>
-  int exampleCholUnblocked(const std::string file_input,
-                           const int treecut,
-                           const int prunecut,
-                           const int fill_level,
-                           const int rows_per_team,
-                           const bool verbose) {
+  int exampleHierMatrix(const std::string file_input,
+                        const int treecut,
+                        const int prunecut,
+                        const int fill_level,
+                        const int rows_per_team,
+                        const bool verbose) {
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -44,7 +37,11 @@ namespace Tacho {
     std::cout << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, detail);
     std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
 
+    // for simple test, let's use host space only here
+
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> CrsMatrixBaseHostType;
+    typedef CrsMatrixView<CrsMatrixBaseHostType> CrsMatrixViewHostType;
+
     typedef GraphTools<ordinal_type,size_type,HostSpaceType> GraphToolsHostType;
 
     typedef GraphTools_Scotch<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_Scotch;
@@ -52,12 +49,7 @@ namespace Tacho {
 
     typedef SymbolicFactorization<CrsMatrixBaseHostType> SymbolicFactorizationType;
 
-    typedef Kokkos::Experimental::TaskPolicy<DeviceSpaceType> PolicyType;
-
-    typedef CrsMatrixBase<value_type,ordinal_type,size_type,DeviceSpaceType> CrsMatrixBaseDeviceType;
-
-    typedef CrsMatrixView<CrsMatrixBaseDeviceType> CrsMatrixViewDeviceType;
-    typedef TaskView<CrsMatrixViewDeviceType> CrsTaskViewDeviceType;
+    typedef CrsMatrixBase<CrsMatrixViewHostType,ordinal_type,size_type,HostSpaceType> CrsHierBaseHostType;
 
     int r_val = 0;
 
@@ -90,11 +82,11 @@ namespace Tacho {
     S.setGraph(AA_host.NumRows(), rptr, cidx);
     S.setSeed(0);
     S.setTreeLevel();
-    S.setStrategy( SCOTCH_STRATSPEED
-                   | SCOTCH_STRATLEVELMAX  
-                   | SCOTCH_STRATLEVELMIN  
-                   | SCOTCH_STRATLEAFSIMPLE
-                   | SCOTCH_STRATSEPASIMPLE
+    S.setStrategy( SCOTCH_STRATSPEED 
+                   | SCOTCH_STRATLEVELMAX   
+                   | SCOTCH_STRATLEVELMIN   
+                   | SCOTCH_STRATLEAFSIMPLE 
+                   | SCOTCH_STRATSEPASIMPLE 
                    );
 
     timer.reset();
@@ -157,55 +149,68 @@ namespace Tacho {
     if (verbose)
       DD_host.showMe(std::cout) << std::endl;
 
-    // ==================================================================================
-
-    CrsMatrixBaseDeviceType AA_device("AA_device");
-    AA_device.mirror(DD_host);
-
-    const size_type max_concurrency = 10;
-    const size_type max_task_size = (3*sizeof(CrsTaskViewDeviceType)+sizeof(PolicyType)+128);
-    const size_type max_task_dependence = 0;
-    const size_type team_size = 1;
-
-    PolicyType policy(max_concurrency,
-                      max_task_size,
-                      max_task_dependence,
-                      team_size);
-
-    CrsMatrixViewDeviceType A_device(AA_device);
-    Kokkos::View<typename CrsMatrixViewDeviceType::row_view_type*,DeviceSpaceType> 
-      rowviews("RowViewInMatView", AA_device.NumRows());
-    A_device.setRowViewArray(rowviews);
-    
     timer.reset();
-    int ierr = Chol<Uplo::Upper,AlgoChol::Unblocked,Variant::One>::invoke
-      (policy, policy.member_single(),
-       A_device);
-    double t_chol = timer.seconds();
-    TACHO_TEST_FOR_ABORT( ierr, "Fail to perform Cholesky (serial)");
+    CrsHierBaseHostType HA_host("HA_host");
+    CrsMatrixTools::createHierMatrix(HA_host, DD_host, 
+                                     S.NumBlocks(),
+                                     S.RangeVector(),
+                                     S.TreeVector());
+    double t_hier = timer.seconds();    
 
-    if (verbose) {
-      DD_host.mirror(AA_device);
-      DD_host.showMe(std::cout) << std::endl;
+    // block preprocessing
+    timer.reset();
+    {
+      Kokkos::View<ordinal_type*,HostSpaceType> nrowview_blocks("NumRowViewInBlocks", HA_host.NumNonZeros() + 1);
+      
+      nrowview_blocks(0) = 0;
+      for (ordinal_type i=0;i<HA_host.NumNonZeros();++i) 
+        nrowview_blocks(i+1) = nrowview_blocks(i) + HA_host.Value(i).NumRows();
+      
+      Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType>
+        rowview_blocks("RowViewInBlocks", nrowview_blocks(HA_host.NumNonZeros()));
+
+      typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+      Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, HA_host.NumNonZeros()),
+                           [&](const size_type i) {
+                             const auto begin = nrowview_blocks(i);
+                             const auto end   = nrowview_blocks(i+1);
+                             HA_host.Value(i).setRowViewArray
+                               (Kokkos::subview(rowview_blocks, range_type(begin, end)));
+                           } );
+
+      CrsMatrixTools::filterEmptyBlocks(HA_host);
     }
+    double t_block = timer.seconds();    
+
+    size_type nnz_blocks = 0;
+    for (size_type i=0; i<HA_host.NumNonZeros(); ++i) 
+      nnz_blocks += HA_host.Value(i).NumNonZeros();
+
+    if (nnz_blocks != DD_host.NumNonZeros()) 
+      std::cout << "Error, nnz blocks = " << nnz_blocks << " vs flat nnz = " << DD_host.NumNonZeros() 
+                << std::endl;
 
     {
       const auto prec = std::cout.precision();
       std::cout.precision(4);
 
       std::cout << std::scientific;
-      std::cout << "SymbolicFactorization:: Given matrix  dimension = " << AA_host.NumRows() << " x " << AA_host.NumCols()
+      std::cout << "HierMatrix:: Given matrix  dimension = " << AA_host.NumRows() << " x " << AA_host.NumCols()
                 << ", " << " nnz = " << AA_host.NumNonZeros() << std::endl;
-      std::cout << "SymbolicFactorization:: Upper factors dimension = " << DD_host.NumRows() << " x " << DD_host.NumCols()
+      std::cout << "HierMatrix:: Upper factors dimension = " << DD_host.NumRows() << " x " << DD_host.NumCols()
                 << ", " << " nnz = " << DD_host.NumNonZeros() << std::endl;
+      std::cout << "HierMatrix:: Hier matrix   dimension = " << HA_host.NumRows() << " x " << HA_host.NumCols()
+                << ", " << " nnz = " << HA_host.NumNonZeros() << std::endl;
 
-      std::cout << "SymbolicFactorization:: "
+      std::cout << "HierMatrix:: "
                 << "read = " << t_read << " [sec], "
                 << "graph generation = " << (t_graph/2.0) << " [sec] "
                 << "scotch reordering = " << t_scotch << " [sec] "
-                << "camd reordering = " << t_camd << " [sec] "
+                << "camd reordering = " << t_camd << " [sec] " << std::endl
+                << "HierMatrix:: "
                 << "symbolic factorization = " << t_symbolic << " [sec] "
-                << "Cholesky factorization = " << t_chol << " [sec] "
+                << "hier creation = " << t_hier << " [sec] "
+                << "block specification = " << t_block << " [sec] "
                 << std::endl;
 
       std::cout.unsetf(std::ios::scientific);

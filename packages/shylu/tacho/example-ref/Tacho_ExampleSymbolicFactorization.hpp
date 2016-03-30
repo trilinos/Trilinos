@@ -72,16 +72,22 @@ namespace Tacho {
     GraphToolsHostType_Scotch S;
     S.setGraph(AA.NumRows(), rptr, cidx);
     S.setSeed(0);
-    S.setStrategy( SCOTCH_STRATLEVELMAX   |
-                   SCOTCH_STRATLEVELMIN   |
-                   SCOTCH_STRATLEAFSIMPLE |
-                   SCOTCH_STRATSEPASIMPLE );
+    S.setTreeLevel();
+    S.setStrategy( SCOTCH_STRATSPEED     
+                   | SCOTCH_STRATLEVELMAX   
+                   | SCOTCH_STRATLEVELMIN   
+                   | SCOTCH_STRATLEAFSIMPLE 
+                   | SCOTCH_STRATSEPASIMPLE 
+                   );
 
     timer.reset();
     S.computeOrdering(treecut);
     double t_scotch = timer.seconds();
 
+    std::cout << "Using tree level ( " << (S.TreeLevel() - treecut)<< " ), Scotch # of ranges = " << S.NumBlocks() << std::endl;
     S.pruneTree(prunecut);
+    std::cout << "After prunecut level ( " << prunecut << " ),  # of ranges = " << S.NumBlocks()  << std::endl;
+
     if (verbose)
       S.showMe(std::cout) << std::endl;
 
