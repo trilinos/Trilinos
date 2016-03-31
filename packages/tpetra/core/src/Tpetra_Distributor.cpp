@@ -514,7 +514,15 @@ namespace Tpetra {
   void
   Distributor::createReverseDistributor() const
   {
-    reverseDistributor_ = Teuchos::rcp (new Distributor (comm_));
+    reverseDistributor_ = Teuchos::rcp (new Distributor (comm_, out_));
+    reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+    reverseDistributor_->sendType_ = sendType_;
+    reverseDistributor_->barrierBetween_ = barrierBetween_;
+    reverseDistributor_->debug_ = debug_;
+    reverseDistributor_->enable_cuda_rdma_ = enable_cuda_rdma_;
+
+    // FIXME (mfh 13 Mar 2016) numExports_ (number of export IDs on
+    // input to createFromSends) not set here.  Why not?
 
     // The total length of all the sends of this Distributor.  We
     // calculate it because it's the total length of all the receives
@@ -539,20 +547,32 @@ namespace Tpetra {
     // Initialize all of reverseDistributor's data members.  This
     // mainly just involves flipping "send" and "receive," or the
     // equivalent "to" and "from."
-    reverseDistributor_->lengthsTo_ = lengthsFrom_;
+
+    reverseDistributor_->selfMessage_ = selfMessage_;
+    reverseDistributor_->numSends_ = numReceives_;
     reverseDistributor_->imagesTo_ = imagesFrom_;
-    reverseDistributor_->indicesTo_ = indicesFrom_;
     reverseDistributor_->startsTo_ = startsFrom_;
+    reverseDistributor_->lengthsTo_ = lengthsFrom_;
+    reverseDistributor_->maxSendLength_ = maxReceiveLength;
+    reverseDistributor_->indicesTo_ = indicesFrom_;
+    reverseDistributor_->numReceives_ = numSends_;
+    reverseDistributor_->totalReceiveLength_ = totalSendLength;
     reverseDistributor_->lengthsFrom_ = lengthsTo_;
     reverseDistributor_->imagesFrom_ = imagesTo_;
-    reverseDistributor_->indicesFrom_ = indicesTo_;
     reverseDistributor_->startsFrom_ = startsTo_;
-    reverseDistributor_->numSends_ = numReceives_;
-    reverseDistributor_->numReceives_ = numSends_;
-    reverseDistributor_->selfMessage_ = selfMessage_;
-    reverseDistributor_->maxSendLength_ = maxReceiveLength;
-    reverseDistributor_->totalReceiveLength_ = totalSendLength;
-    reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+    reverseDistributor_->indicesFrom_ = indicesTo_;
+
+    // requests_: Allocated on demand.
+    // reverseDistributor_: See note below
+
+    // mfh 31 Mar 2016: These are statistics, kept on calls to
+    // doPostsAndWaits or doReversePostsAndWaits.  They weren't here
+    // when I started, and I didn't add them, so I don't know if they
+    // are accurate.
+    reverseDistributor_->lastRoundBytesSend_ = 0;
+    reverseDistributor_->lastRoundBytesRecv_ = 0;
+
+    reverseDistributor_->useDistinctTags_ = useDistinctTags_;
 
     // Note: technically, I am my reverse distributor's reverse distributor, but
     //       we will not set this up, as it gives us an opportunity to test

@@ -801,14 +801,14 @@ namespace Tpetra {
 
     //@}
 
-    /// \brief The number of export process IDs on input to \c createFromSends().
+    /// \brief The number of export process ranks on input to createFromSends().
     ///
     /// This may differ from the number of sends.  We always want to
     /// send either zero or one messages to any process.  However, the
-    /// user may have specified a process ID twice in \c
-    /// createFromSends()'s input array of process IDs (\c
-    /// exportNodeIDs).  This is allowed, but may affect whether sends
-    /// require a buffer.
+    /// user may have specified a process rank twice in
+    /// createFromSends's input array of process ranks
+    /// <tt>exportNodeIDs</tt>.  This is allowed, but may affect
+    /// whether sends require a buffer.
     size_t numExports_;
 
     /// \brief Whether I am supposed to send a message to myself.
