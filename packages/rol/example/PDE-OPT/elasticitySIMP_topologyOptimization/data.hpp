@@ -82,7 +82,7 @@ void ElasticitySIMPOperators_Initialize(const Teuchos::RCP<const Teuchos::Comm<i
         	   	const Teuchos::RCP<std::ostream> &outStream) 
 {
 	this->ElasticitySIMP_Initialize(comm, parlist, outStream);
-	volFrac_     = this->parlist_->sublist("ElasticityTopoOpt").get("volfrac", 0.5);
+	volFrac_     = this->parlist_->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5);
 	this->initDensity_ = volFrac_;
 }
 

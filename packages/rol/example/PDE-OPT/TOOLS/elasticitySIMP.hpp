@@ -54,6 +54,7 @@ template<class Real>
 class ElasticitySIMP : public Elasticity <Real> {
 protected:
   Real initDensity_;
+  Real minDensity_;
   int powerP_;
   Real xmax_;
   Real ymax_;
@@ -84,6 +85,7 @@ public:
     // new material parameters
     powerP_      = this->parlist_->sublist("ElasticitySIMP").get("SIMP Power", 3);
     initDensity_ = this->parlist_->sublist("ElasticitySIMP").get("Initial Density", one);
+    minDensity_  = this->parlist_->sublist("ElasticitySIMP").get("Minimum Density", one);
 
     // Loading magnitude and angles
     loadCase_    = this->parlist_->sublist("ElasticitySIMP").get("Load Case", 0);
@@ -151,7 +153,8 @@ public:
   virtual void CreateMaterial() {
     for(int i=0; i<this->numCells_; i++) {
       Teuchos::RCP<Material_SIMP<Real> > CellMaterial = Teuchos::rcp(new Material_SIMP<Real>());
-      CellMaterial->InitializeSIMP(this->spaceDim_, this->planeStrain_, this->E_, this->poissonR_, initDensity_, powerP_);
+      CellMaterial->InitializeSIMP(this->spaceDim_, this->planeStrain_, this->E_,
+                                   this->poissonR_, initDensity_, powerP_, minDensity_);
       this->materialTensorDim_ = CellMaterial->GetMaterialTensorDim();
       SIMPmaterial_.push_back(CellMaterial);
     }
@@ -300,7 +303,8 @@ public:
 
 
   virtual Real funcRHS_2D(const Real &x1, const Real &x2, const int k) {
-    Real val(0), eps(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    Real val(0);
+    //Real eps(std::sqrt(ROL::ROL_EPSILON<Real>()));
     //Real cx(2*cx_+eps), cy(2*cy_+eps), half(0.5);
     Real cx(0.1), cy(0.05), half(0.5);
     switch(loadCase_) {

@@ -5,14 +5,15 @@
   </ParameterList>
   
   <ParameterList name="Elasticity">
-    <Parameter name="Order of FE discretization"  type="int"     value="1"    />
-    <Parameter name="planeStrain"       type="bool"    value="false"/>
-    <Parameter name="YModulus"          type="double"  value="1.0"  />
-    <Parameter name="poissonR"          type="double"  value="0.3"  />
+    <Parameter name="Order of FE discretization"  type="int"    value="1"    />
+    <Parameter name="Plane Strain"                type="bool"   value="false"/>
+    <Parameter name="Young's Modulus"             type="double" value="1.0"  />
+    <Parameter name="Poisson Ratio"               type="double" value="0.3"  />
   </ParameterList>
 
   <ParameterList name="ElasticitySIMP">
     <Parameter name="Initial Density"    type="double" value="0.75"    />
+    <Parameter name="Minimum Density"    type="double" value="1.e-4"   />
     <Parameter name="SIMP Power"         type="int"    value="3"       />
     <Parameter name="Load Case"          type="int"    value="0"       />
     <Parameter name="Load Magnitude"     type="double" value="10.0"    />
@@ -21,9 +22,7 @@
   </ParameterList>
   
   <ParameterList name="ElasticityTopoOpt">
-    <Parameter name="volfrac"           type="double"  value="0.40"  />
-    <Parameter name="threshold"         type="double"  value="0.004"  />
-    <Parameter name="maxIter"           type="int"     value="500"  />
+    <Parameter name="Volume Fraction" type="double" value="0.40" />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->

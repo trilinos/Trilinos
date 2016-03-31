@@ -150,18 +150,17 @@ protected:
 
 public:
 
-// constructor
-PDE_FEM() {}
-// destructor
-virtual ~PDE_FEM() {}
-
-virtual void Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-        	   	const Teuchos::RCP<Teuchos::ParameterList> &parlist,
-        	   	const Teuchos::RCP<std::ostream> &outStream)  { }
-
-
-virtual void SetParallelStructure()
-{
+  // constructor
+  PDE_FEM() {}
+  // destructor
+  virtual ~PDE_FEM() {}
+  
+  virtual void Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
+                          const Teuchos::RCP<std::ostream> &outStream)  { }
+  
+  
+  virtual void SetParallelStructure(void) {
     int cellSplit = parlist_->sublist("Geometry").get("Partition type", 1);
     /****************************************************/
     /*** Build parallel communication infrastructure. ***/
@@ -198,7 +197,7 @@ virtual void SetParallelStructure()
         }
         break;
     }
-    
+      
     cellDofs_ = *(dofMgr_->getCellDofs());
     numLocalDofs_ = cellDofs_.dimension(1);
     *outStream_ << "Cell offsets across processors: " << cellOffsets_ << std::endl;
@@ -216,17 +215,16 @@ virtual void SetParallelStructure()
                                                    myGlobIds_, 0, commPtr_));
     //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
     /** One can also use the non-member function:
-          myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, commPtr_);
+        myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, commPtr_);
         to build the overlap map.
     **/
     myUniqueMap_ = Tpetra::createOneToOne<int,int>(myOverlapMap_);
     //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
-}
-
-
-
-virtual void SetUpLocalIntrepidArrays() 
-{
+  }
+  
+  
+  
+  virtual void SetUpLocalIntrepidArrays(void) {
     /****************************************************/
     /*** Set up local discretization data and arrays. ***/
     /****************************************************/
@@ -301,17 +299,16 @@ virtual void SetUpLocalIntrepidArrays()
                                                   *cellNodes_,
                                                   cellType_);
     
-} 
-
-virtual void ComputeLocalSystemMats() { } 
- 
-virtual void ComputeLocalForceVec() { }   
-
-virtual void SetUpTrueDataOnNodes() { }
-
-
-virtual void AssembleSystemMats()
-{ 
+  } 
+  
+  virtual void ComputeLocalSystemMats(void) { }
+   
+  virtual void ComputeLocalForceVec(void) { }
+  
+  virtual void SetUpTrueDataOnNodes(void) { }
+  
+  
+  virtual void AssembleSystemMats(void) { 
     /****************************************/
     /*** Assemble global data structures. ***/
     /****************************************/
@@ -348,11 +345,10 @@ virtual void AssembleSystemMats()
       }
     }
     matM_->fillComplete();
-}
-
-
-virtual void AssembleRHSVector()
-{
+  }
+  
+  
+  virtual void AssembleRHSVector(void) {
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
     vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
@@ -366,12 +362,11 @@ virtual void AssembleRHSVector()
     }
     Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
-}
-
-
-
-virtual void AssembleDataVector()
-{
+  }
+  
+  
+  
+  virtual void AssembleDataVector(void) {
     // vecUd_ does not require assembly
     vecUd_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
     for (int i=0; i<numCells_; ++i) {
@@ -383,19 +378,18 @@ virtual void AssembleDataVector()
         }
       }
     }
-}
-
-// check to see if a globaldof is on boundary
-virtual bool check_myGlobalDof_on_boundary(int globalDof)
-{
-    	if (std::binary_search(myDirichletDofs_.begin(), myDirichletDofs_.end(), globalDof))
-		return true;
-	return false;
-}
-
-//create myDirichletCellIds_ and myDirichletDofs_
-virtual void SetUpMyDBCInfo(std::vector<int> dbc_side)
-{
+  }
+  
+  // check to see if a globaldof is on boundary
+  virtual bool check_myGlobalDof_on_boundary(int globalDof) {
+    if (std::binary_search(myDirichletDofs_.begin(), myDirichletDofs_.end(), globalDof)) {
+      return true;
+    }
+    return false;
+  }
+  
+  //create myDirichletCellIds_ and myDirichletDofs_
+  virtual void SetUpMyDBCInfo(std::vector<int> dbc_side) {
     Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
     std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
     Teuchos::Array<int> mySortedCellIds_(myCellIds_);
@@ -430,23 +424,19 @@ virtual void SetUpMyDBCInfo(std::vector<int> dbc_side)
     int nfields = basisPtrs_.size();
     numDofsPerNode = numDofsPerNode * nfields;
     numDofsPerEdge = numDofsPerEdge * nfields;
-
+  
     int n_dbc = dbc_side.size();
-    for (int i=0; i<static_cast<int>(myDirichletCellIds_.size()); ++i) 
-    {
-     
-     bool isdbc = false;
-     for(int i_dbc = 0; i_dbc < n_dbc; i_dbc++)
-     {
-	if(i == dbc_side[i_dbc])
-	{
-	  isdbc = true;
-	  break;
-	}
+    for (int i=0; i<static_cast<int>(myDirichletCellIds_.size()); ++i) {
+      bool isdbc = false;
+      for(int i_dbc = 0; i_dbc < n_dbc; i_dbc++) {
+        if(i == dbc_side[i_dbc]) {
+          isdbc = true;
+          break;
+        }
       }
       if(!isdbc)
-	continue;	
-	
+        continue;	
+      
       for (int j=0; j<myDirichletCellIds_[i].size(); ++j) {
         for (int k=0; k<numDofsPerNode; ++k) {
           const CellTopologyData * ctd = cellType_.getCellTopologyData();
@@ -462,11 +452,9 @@ virtual void SetUpMyDBCInfo(std::vector<int> dbc_side)
     }
     std::sort(myDirichletDofs_.begin(), myDirichletDofs_.end());
     myDirichletDofs_.erase( std::unique(myDirichletDofs_.begin(), myDirichletDofs_.end()), myDirichletDofs_.end() );
-}
+  }
 
-
-virtual void EnforceDBC( )
-{    
+  virtual void EnforceDBC(void) {    
     // Apply Dirichlet conditions.
     // zero out row and column, make matrix symmetric  
     Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
@@ -479,47 +467,42 @@ virtual void EnforceDBC( )
     matM_dirichlet_->resumeFill();
     
     int gDof; 
-    for(int i=0; i<numCells_; i++)
-    {
-	for(int j=0; j<numLocalDofs_; j++)
-	{
-	       gDof = cellDofs_(myCellIds_[i], j);
-               if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof))
-	       {
-       			size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
-        		Teuchos::Array<int> indices(numRowEntries, 0);    
-        		Teuchos::Array<Real> values(numRowEntries, 0);
-        		Teuchos::Array<Real> canonicalValues(numRowEntries, 0);    
-        		Teuchos::Array<Real> zeroValues(numRowEntries, 0);    
-        		matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
-        		matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
-        		for (int k=0; k<indices.size(); k++) {
-          			if (indices[k] == gDof) 
-				{
-            			   	canonicalValues[k] = 1.0;
-				}
-       	 		}
-        		matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
-        		matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
-        		vecF_dirichlet_->replaceGlobalValue (gDof, 0, 0);
-      		}
+    for(int i=0; i<numCells_; i++) {
+      for(int j=0; j<numLocalDofs_; j++) {
+        gDof = cellDofs_(myCellIds_[i], j);
+        if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof)) {
+          size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
+          Teuchos::Array<int> indices(numRowEntries, 0);    
+          Teuchos::Array<Real> values(numRowEntries, 0);
+          Teuchos::Array<Real> canonicalValues(numRowEntries, 0);    
+          Teuchos::Array<Real> zeroValues(numRowEntries, 0);    
+          matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+          matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+          for (int k=0; k<indices.size(); k++) {
+            if (indices[k] == gDof) {
+              canonicalValues[k] = 1.0;
+            }
+          }
+          matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
+          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+          vecF_dirichlet_->replaceGlobalValue (gDof, 0, 0);
+        }
                
-		if (!check_myGlobalDof_on_boundary(gDof))
-		{
-       			size_t numDBCDofs = myDirichletDofs_.size();
-        		Teuchos::Array<int> indices(numDBCDofs, 0);    
-        		Teuchos::Array<Real> zeroValues(numDBCDofs, 0);    
- 			for (int k=0; k<indices.size(); k++) {
-            			indices[k] = myDirichletDofs_[k];
-       	 		}
-        		matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
-        		matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
-    		}
-	}
+        if (!check_myGlobalDof_on_boundary(gDof)) {
+          size_t numDBCDofs = myDirichletDofs_.size();
+          Teuchos::Array<int> indices(numDBCDofs, 0);    
+          Teuchos::Array<Real> zeroValues(numDBCDofs, 0);    
+          for (int k=0; k<indices.size(); k++) {
+            indices[k] = myDirichletDofs_[k];
+          }
+          matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+        }
+      }
     }	
     matA_dirichlet_->fillComplete();
     matM_dirichlet_->fillComplete();
-}
+  }
 
 /*
 virtual void GenerateTransposedMats()
@@ -532,16 +515,16 @@ virtual void GenerateTransposedMats()
 }
 */
 
-virtual void ConstructSolvers()
-{
+  virtual void ConstructSolvers(void) {
     // Construct solver using Amesos2 factory.
-    try{
+    try {
       solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
-    } catch (std::invalid_argument e) {
+    }
+    catch (std::invalid_argument e) {
       std::cout << e.what() << std::endl;
     }
     solverA_->numericFactorization();
-}
+  }
 
 /*
 virtual void ConstructAdjointSolvers()
