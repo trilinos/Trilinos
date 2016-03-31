@@ -801,16 +801,6 @@ namespace Tpetra {
 
     //@}
 
-    /// \brief The number of export process ranks on input to createFromSends().
-    ///
-    /// This may differ from the number of sends.  We always want to
-    /// send either zero or one messages to any process.  However, the
-    /// user may have specified a process rank twice in
-    /// createFromSends's input array of process ranks
-    /// <tt>exportNodeIDs</tt>.  This is allowed, but may affect
-    /// whether sends require a buffer.
-    size_t numExports_;
-
     /// \brief Whether I am supposed to send a message to myself.
     ///
     /// This is set in createFromSends or createReverseDistributor.
@@ -930,10 +920,9 @@ namespace Tpetra {
 
     /// \brief The reverse distributor.
     ///
-    /// This is created on demand in \c getReverse() and cached for
+    /// This is created on demand in getReverse() and cached for
     /// later reuse.  This is why it is declared "mutable".
     mutable RCP<Distributor> reverseDistributor_;
-
 
     /// \brief The number of bytes sent by this proc in the last call to do/doReverse
     size_t lastRoundBytesSend_;
