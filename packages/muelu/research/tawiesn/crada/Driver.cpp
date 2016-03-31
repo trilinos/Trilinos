@@ -57,6 +57,7 @@
 
 // Teuchos
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -196,6 +197,7 @@ int main(int argc, char *argv[]) {
     Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
     std::string xmlFileName = "driver.xml";      clp.setOption("xml",                   &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'scalingTest.xml'");
+    std::string belosFileName = "";              clp.setOption("belosXml",              &belosFileName,   "read parameters for Belos from a file.");
     int    amgAsPrecond     = 1;                 clp.setOption("precond",               &amgAsPrecond,     "apply multigrid as preconditioner");
     int    amgAsSolver      = 0;                 clp.setOption("fixPoint",              &amgAsSolver,      "apply multigrid as solver");
     bool   printTimings     = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
@@ -565,18 +567,20 @@ int main(int argc, char *argv[]) {
 
       // Belos parameter list
       Teuchos::ParameterList belosList;
-      belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-      belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-      belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-      belosList.set("Output Frequency",      output);
-      if(blockedSystem != 1) {
+      if(belosFileName == "") {
+        belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
+        belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
+        belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+        belosList.set("Output Frequency",      output);
         belosList.set("Output Style",          Belos::Brief);
         if (convType == "none") {
           belosList.set("Explicit Residual Scaling",  "None");
           belosList.set("Implicit Residual Scaling",  "None");
         }
       } else {
-        belosList.set("Output Style",          Belos::User);
+        Teuchos::updateParametersFromXmlFileAndBroadcast(belosFileName, Teuchos::Ptr<Teuchos::ParameterList>(&belosList), *comm);
+
+        /*belosList.set("Output Style",          Belos::User);
         belosList.set("User Status Tests Combo Type", "OR");
         Teuchos::ParameterList& userList = belosList.sublist("User Status Tests");
         userList.set("Test Type","Combo");
@@ -604,7 +608,7 @@ int main(int argc, char *argv[]) {
         userList3.set("Convergence Tolerance",tol);
         userList3.set("Scaling Type","None");
         userList3.set("Residual Norm","OneNorm");
-        userList3.set("Scaling Norm","OneNorm");
+        userList3.set("Scaling Norm","OneNorm");*/
       }
 
       // Create an iterative solver manager
