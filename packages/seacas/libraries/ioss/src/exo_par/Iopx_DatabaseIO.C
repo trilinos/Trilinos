@@ -293,11 +293,16 @@ namespace Iopx {
     int par_mode = get_parallel_io_mode(properties);
 
     MPI_Info info = MPI_INFO_NULL;
-    int app_opt_val = ex_opts(EX_VERBOSE); 
+    int app_opt_val = 0;
+    if (is_input()) {
+      app_opt_val = ex_opts(EX_VERBOSE);
+    }
     int exodus_file_ptr = ex_open_par(get_filename().c_str(), EX_READ|par_mode,
                                       &cpu_word_size, &io_word_size, &version,
 				      util().communicator(), info);
-    ex_opts(app_opt_val); // Reset back to what it was.
+    if (is_input()) {
+      ex_opts(app_opt_val); // Reset back to what it was.
+    }
 
     if (!is_input() && exodus_file_ptr < 0) {
       // File didn't exist above, but this OK if is an output
