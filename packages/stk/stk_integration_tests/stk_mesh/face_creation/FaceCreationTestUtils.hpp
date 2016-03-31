@@ -15,8 +15,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
-#include "penso/internal/privateDeclarations.hpp"
-#include "penso/pensoUtils.hpp"
+#include "penso/penso.hpp"
 #include "stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 
@@ -26,50 +25,6 @@ namespace mesh {
     EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet);
     bool is_sideset_equivalent_to_skin(BulkData &bulkData, EntityVector &sidesetSides, const Part& skinnedPart);
 }}
-
-namespace penso
-{
-
-inline stk::mesh::EntityProcVec get_rebalance_by_moving_split_coincident_elements(stk::mesh::BulkData& bulkData, const stk::mesh::SplitCoincidentInfo &splitCoincidentElements)
-{
-    stk::mesh::EntityProcVec elementsToMigrate;
-    elementsToMigrate.reserve(splitCoincidentElements.size());
-    for(const stk::mesh::SplitCoincidentInfo::value_type& item : splitCoincidentElements)
-    {
-        int min_proc = bulkData.parallel_size();
-        stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK,item.first);
-        for(size_t i=0;i<item.second.size();++i)
-            min_proc=std::min(min_proc, item.second[i].second);
-        if(min_proc<bulkData.parallel_rank())
-            elementsToMigrate.push_back(stk::mesh::EntityProc(element, min_proc));
-    }
-    return elementsToMigrate;
-}
-
-inline void rebalance_elements(stk::mesh::BulkData& bulkData, const stk::mesh::EntityProcVec &elementsToMove)
-{
-    penso::DecompositionChangeList changeList(bulkData, elementsToMove);
-    if(bulkData.parallel_rank()==0)
-        std::cerr << "Fixing up mesh due to detection of violation of parallel mesh rule #1.\n";
-    penso::internal::rebalance(changeList);
-}
-
-inline void rebalance_mesh_to_avoid_split_coincident_elements(stk::mesh::BulkData& bulkData, const stk::mesh::SplitCoincidentInfo &splitCoincidentElements)
-{
-    stk::mesh::EntityProcVec elementsToMove = get_rebalance_by_moving_split_coincident_elements(bulkData, splitCoincidentElements);
-    rebalance_elements(bulkData, elementsToMove);
-}
-
-inline void make_mesh_consisitent_with_parallel_mesh_rule1(stk::mesh::BulkData& bulkData)
-{
-    stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
-    bool allOkThisProc = splitCoincidentElements.size()==0;
-    bool allOkEverywhere = stk::is_true_on_all_procs(bulkData.parallel(), allOkThisProc);
-    if(!allOkEverywhere)
-        rebalance_mesh_to_avoid_split_coincident_elements(bulkData, splitCoincidentElements);
-}
-
-}
 
 namespace SideTestUtil
 {
@@ -208,7 +163,7 @@ protected:
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, communicator, auraOption);
         SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
-        penso::make_mesh_consisitent_with_parallel_mesh_rule1(bulkData);
+        penso::make_mesh_consistent_with_parallel_mesh_rule1(bulkData);
 
         stk::mesh::SplitCoincidentInfo splitCoincidentElementsAfter = stk::mesh::get_split_coincident_elements(bulkData);
         bool allOkAfterThisProc = splitCoincidentElementsAfter.size()==0;
