@@ -933,25 +933,25 @@ namespace Tpetra {
     ///   Lisp terms).
     template<class OffsetType, class IndexViewType>
     KOKKOS_INLINE_FUNCTION OffsetType
-    findRelOffset (const IndexViewType& indsToSearch, 
-		   const OffsetType numEnt,
-		   /* typename IndexViewType::const_value_type */
-		   const typename std::decay<decltype (indsToSearch[0]) >::type indToFind, 
-		   const OffsetType hint,
-		   const bool isSorted)
+    findRelOffset (const IndexViewType& indsToSearch,
+                   const OffsetType numEnt,
+                   /* typename IndexViewType::const_value_type */
+                   const typename std::decay<decltype (indsToSearch[0]) >::type indToFind,
+                   const OffsetType hint,
+                   const bool isSorted)
     {
       // IndexViewType doesn't have to be a Kokkos::View; it just has to
       // implement operator[] like a 1-D array.
       //
-      // static_assert (Kokkos::is_view<IndexViewType>::value, 
-      // 		 "IndexViewType must be a Kokkos::View");
-      // static_assert (static_cast<int> (IndexViewType::rank) == 1, 
-      // 		 "IndexViewType must be a rank-1 Kokkos::View");
-      static_assert (std::is_integral<OffsetType>::value, 
-		     "OffsetType must be an integer.");
-  
+      // static_assert (Kokkos::is_view<IndexViewType>::value,
+      //                 "IndexViewType must be a Kokkos::View");
+      // static_assert (static_cast<int> (IndexViewType::rank) == 1,
+      //                 "IndexViewType must be a rank-1 Kokkos::View");
+      static_assert (std::is_integral<OffsetType>::value,
+                     "OffsetType must be an integer.");
+
       if (hint < numEnt && indsToSearch[hint] == indToFind) {
-	return hint; // hint was correct
+        return hint; // hint was correct
       }
 
 #if 0
@@ -965,45 +965,43 @@ namespace Tpetra {
 #else
       if (! isSorted) {
 #endif
-	for (OffsetType k = 0; k < numEnt; ++k) {
-	  if (indsToSearch[k] == indToFind) {
-	    return k;
-	  }
-	}
+        for (OffsetType k = 0; k < numEnt; ++k) {
+          if (indsToSearch[k] == indToFind) {
+            return k;
+          }
+        }
       }
       else { // use binary search
-	OffsetType start = 0;
-	OffsetType end = numEnt;
-	// Compare epetra/src/Epetra_Util.cpp, Epetra_Util_binary_search.
-	// Unlike that function, I don't use end = numEnt-1, because I
-	// want this code to work also for unsigned OffsetType (signed is
-	// preferred, though).  Thus, in my code, end is always "one past
-	// the last valid index."
-	while (end > start) {
-	  // Invariants: 0 <= start < end, thus start + end > 0.
-	  const OffsetType mid = (start + end - 1) / 2;
-	  // Invariants: 0 <= start <= mid < end.
-	  if (indsToSearch[mid] < indToFind) {
-	    // Invariant: start < mid+1 (thus, recursion terminates),
-	    // and for all k <= mid, indsToSearch[k] < indToFind.
-	    start = mid + 1; // Invariant: 0 < mid < start <= end.
-	  }
-	  else { // indsToSearch[mid] >= indToFind
-	    // Invariant: mid < end (thus, recursion terminates),
-	    // and for all k <= mid, indsToSearch[k] >= indToFind.
-	    end = mid; // Invariant: 0 <= start <= mid <= end.
-	  }
-	}
-	// Invariant: 0 <= start == end.
+        OffsetType start = 0;
+        OffsetType end = numEnt;
+        // Compare epetra/src/Epetra_Util.cpp, Epetra_Util_binary_search.
+        // Unlike that function, I don't use end = numEnt-1, because I
+        // want this code to work also for unsigned OffsetType (signed is
+        // preferred, though).  Thus, in my code, end is always "one past
+        // the last valid index."
+        while (end > start) {
+          // Invariants: 0 <= start < end, thus start + end > 0.
+          const OffsetType mid = (start + end - 1) / 2;
+          // Invariants: 0 <= start <= mid < end.
+          if (indsToSearch[mid] < indToFind) {
+            // Invariant: start < mid+1 (thus, recursion terminates),
+            // and for all k <= mid, indsToSearch[k] < indToFind.
+            start = mid + 1; // Invariant: 0 < mid < start <= end.
+          }
+          else { // indsToSearch[mid] >= indToFind
+            // Invariant: mid < end (thus, recursion terminates),
+            // and for all k <= mid, indsToSearch[k] >= indToFind.
+            end = mid; // Invariant: 0 <= start <= mid <= end.
+          }
+        }
+        // Invariant: 0 <= start == end.
 
-	// Don't actually check the first entry if numEnt == 0.  If numEnt
-	// > 0 and indsToSearch == NULL, that's the caller's problem.
-	if (numEnt > static_cast<OffsetType> (0) && 
-	    indsToSearch[start] == indToFind) {
-	  return start;
-	}
+        // Don't check if we've already passed the end.
+        if (start < numEnt && indsToSearch[start] == indToFind) {
+          return start;
+        }
       }
-      
+
       return numEnt; // "end of sequence"
     }
 
