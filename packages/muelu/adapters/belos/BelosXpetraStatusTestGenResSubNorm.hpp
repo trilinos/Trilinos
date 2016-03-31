@@ -260,26 +260,26 @@ class StatusTestGenResSubNorm<Scalar,Xpetra::MultiVector<Scalar,LocalOrdinal,Glo
     // (if any of them don't meet the tolerance or are NaN, then we exit with that status)
     //
     if ( scalevector_.size() > 0 ) {
-      typename std::vector<int>::iterator p = curLSIdx_.begin();
-      for (; p<curLSIdx_.end(); ++p) {
+      typename std::vector<int>::iterator pp = curLSIdx_.begin();
+      for (; pp<curLSIdx_.end(); ++pp) {
         // Check if this index is valid
-        if (*p != -1) {
+        if (*pp != -1) {
           // Scale the std::vector accordingly
-          if ( scalevector_[ *p ] != zero ) {
+          if ( scalevector_[ *pp ] != zero ) {
             // Don't intentionally divide by zero.
-            testvector_[ *p ] = resvector_[ *p ] / scalevector_[ *p ] / scalevalue_;
+            testvector_[ *pp ] = resvector_[ *pp ] / scalevector_[ *pp ] / scalevalue_;
           } else {
-            testvector_[ *p ] = resvector_[ *p ] / scalevalue_;
+            testvector_[ *pp ] = resvector_[ *pp ] / scalevalue_;
           }
         }
       }
     }
     else {
-      typename std::vector<int>::iterator p = curLSIdx_.begin();
-      for (; p<curLSIdx_.end(); ++p) {
+      typename std::vector<int>::iterator pp = curLSIdx_.begin();
+      for (; pp<curLSIdx_.end(); ++pp) {
         // Check if this index is valid
-        if (*p != -1)
-          testvector_[ *p ] = resvector_[ *p ] / scalevalue_;
+        if (*pp != -1)
+          testvector_[ *pp ] = resvector_[ *pp ] / scalevalue_;
       }
     }
     // Check status of new linear system residuals and see if we have the quorum.
