@@ -9,6 +9,9 @@
 #include "Tacho_Control.hpp"
 #include "Tacho_Partition.hpp"
 
+#include "Tacho_ScaleCrsMatrix.hpp"
+#include "Tacho_ScaleDenseMatrix.hpp"
+
 namespace Tacho {
   
   template<int ArgTransA, int ArgTransB, 

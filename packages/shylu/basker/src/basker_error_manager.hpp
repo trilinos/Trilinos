@@ -262,6 +262,20 @@ namespace BaskerNS
 	    return BASKER_ERROR;
 	  }//end if NOMALLOC
 	
+	
+	//Find lvl in sep error happend
+	Int error_sep_lvl = BASKER_MAX_IDX;
+	for(Int l = 1; l < tree.nlvls; l++)
+	  {
+	    if(thread_array(ti).error_blk == 
+	       S(l)(ti))
+	      {
+		error_sep_lvl = l;
+		break;
+	      }
+	  }
+
+
 	if(thread_array(ti).error_type ==
 	   BASKER_ERROR_REMALLOC)
 	  {
@@ -273,8 +287,10 @@ namespace BaskerNS
 		   ti,
 		   thread_array(ti).error_blk, 
 		   thread_array(ti).error_subblk);
-	    
 
+	    printf("ERROR SEPLVL: %d \n",
+		   error_sep_lvl);
+	    
 	    //If on diagonal, want to compare L and U
 	    Int resize_L = BASKER_MAX_IDX;   
 	    Int resize_U = BASKER_MAX_IDX;
@@ -288,7 +304,7 @@ namespace BaskerNS
 	    if(thread_array(ti).error_subblk > -1)
 	      {
 		resize_U = thread_array(ti).error_info;
-		//printf("U size: %d \n", resize_U);
+		printf("U size: %d \n", resize_U);
 	      }
 
 	    //Resize L
@@ -363,7 +379,26 @@ namespace BaskerNS
 		  }//if ws is filled
 	      }//for-other all threads
 	     
+
+	    //Clear perm
+	      for(Int p = 0; p < num_threads; p++)
+	      {
+		Int blk = S(error_sep_lvl)(p);
+		//printf("perm clear blk: %d \n", blk);
+		//if(LL(blk)(0).w_fill == BASKER_TRUE)
+		{
+		  BASKER_MATRIX &TM = LL(blk)(0);
+		  for(Int i = TM.scol; i < TM.scol+TM.ncol; i++)
+		    {
+		      gperm(i) = BASKER_MAX_IDX;
+		    }
+		  
+		}//if ws is filled
+	      }//for-other all threads
+	  
+
 	    //printf("done resize workspace\n");
+	    //Note, will have to clear the perm in all sep blk in that level
 	    //Clear permuation
 	    BASKER_MATRIX &SL = 
 	      LL(thread_array(ti).error_blk)(0);
@@ -390,6 +425,17 @@ namespace BaskerNS
 	    nthread_remalloc++;
     
 	  }//if REMALLOC
+
+	//Reset Inc vector 
+	if(Options.inc_lvl == BASKER_TRUE)
+	  {
+	    for(Int i = 0; i < INC_LVL_TEMP.dimension_0(); i++)
+	      {
+		INC_LVL_TEMP(i) = BASKER_MAX_IDX;
+	      }
+
+	  }
+
 
       }//for all threads
     

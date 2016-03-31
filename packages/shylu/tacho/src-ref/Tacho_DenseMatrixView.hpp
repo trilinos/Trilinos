@@ -7,7 +7,7 @@
 
 #include "Tacho_Util.hpp"
 
-namespace Tacho { 
+namespace Tacho {
 
   /// \class DenseMatrixView
   /// \breif Dense matrix view object set a 2D view that defines a computing region.
@@ -15,12 +15,12 @@ namespace Tacho {
   class DenseMatrixView {
   public:
     typedef DenseMatBaseType mat_base_type;
-    
+
     typedef typename mat_base_type::value_type   value_type;
     typedef typename mat_base_type::ordinal_type ordinal_type;
     typedef typename mat_base_type::size_type    size_type;
     typedef typename mat_base_type::space_type   space_type;
-    
+
     template<typename>
     friend class DenseMatrixView;
 
@@ -64,7 +64,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     ordinal_type  OffsetCols() const { return _offn; }
 
-    KOKKOS_INLINE_FUNCTION    
+    KOKKOS_INLINE_FUNCTION
     ordinal_type  NumRows() const { return _m; }
 
     KOKKOS_INLINE_FUNCTION
@@ -73,13 +73,18 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     value_type& Value(const ordinal_type i,
                       const ordinal_type j) { return _base.Value(_offm+i, _offn+j); }
-    
+
     KOKKOS_INLINE_FUNCTION
     value_type Value(const ordinal_type i,
                      const ordinal_type j) const { return _base.Value(_offm+i, _offn+j); }
-    
+
     KOKKOS_INLINE_FUNCTION
     value_type* ValuePtr() { return &_base.Value(_offm, _offn); }
+
+    KOKKOS_INLINE_FUNCTION
+    bool isNull() const {
+      return (_m == 0 || _n == 0);
+    }
 
     /// ------------------------------------------------------------------
 
@@ -97,7 +102,7 @@ namespace Tacho {
         _offn(0),
         _m(0),
         _n(0)
-    { } 
+    { }
 
     /// \brief Copy constructor (shallow copy)
     KOKKOS_INLINE_FUNCTION
@@ -107,9 +112,9 @@ namespace Tacho {
         _offn(b._offn),
         _m(b._m),
         _n(b._n)
-    { } 
+    { }
 
-    /// \brief Wrapping the base object 
+    /// \brief Wrapping the base object
     KOKKOS_INLINE_FUNCTION
     DenseMatrixView(const DenseMatBaseType &b)
       : _base(b),
@@ -117,19 +122,19 @@ namespace Tacho {
         _offn(0),
         _m(b.NumRows()),
         _n(b.NumCols())
-    { } 
+    { }
 
-    /// \brief Wrapping the base object with view 
+    /// \brief Wrapping the base object with view
     KOKKOS_INLINE_FUNCTION
     DenseMatrixView(const DenseMatBaseType &b,
                     const ordinal_type offm, const ordinal_type m,
-                    const ordinal_type offn, const ordinal_type n) 
+                    const ordinal_type offn, const ordinal_type n)
       : _base(b),
         _offm(offm),
         _offn(offn),
         _m(m),
-        _n(n) 
-    { } 
+        _n(n)
+    { }
 
     /// Destructor
     /// ------------------------------------------------------------------
@@ -157,14 +162,14 @@ namespace Tacho {
 
       return os;
     }
-    
+
     std::ostream& showMeDetail(std::ostream &os) const {
       showMe(os) << std::endl;
-      
+
       std::streamsize prec = os.precision();
       os.precision(8);
       os << std::scientific;
-      
+
       const int w = 10;
       if (_base.isValueArrayNull()) {
         for (ordinal_type i=0;i<NumRows();++i) {
@@ -178,7 +183,7 @@ namespace Tacho {
 
       os.unsetf(std::ios::scientific);
       os.precision(prec);
-      
+
       return os;
     }
 

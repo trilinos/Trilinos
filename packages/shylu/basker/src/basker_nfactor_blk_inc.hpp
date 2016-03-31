@@ -1020,8 +1020,11 @@ namespace BaskerNS
 	pop_top++;
       }
     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+    if(kid == 0)
+      {
     printf("end sample top: %d p:%d %d \n",
 	   pop_top, pattern[pop_top], pattern[pop_top+1]);
+      }
     #endif
 
     //printf("short test: %d %d kid: %d \n",

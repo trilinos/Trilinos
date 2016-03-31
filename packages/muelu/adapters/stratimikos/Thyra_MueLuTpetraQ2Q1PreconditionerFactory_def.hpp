@@ -100,8 +100,6 @@
 
 #include <string>
 
-// #define IMPLICIT_TRANSPOSE
-
 namespace Thyra {
 
 #define MUELU_GPD(name, type, defaultValue) \
@@ -472,12 +470,6 @@ namespace Thyra {
     finestLevel->Set("AForPat",               A_11_9Pt);
     H->SetMaxCoarseSize(MUELU_GPD("coarse: max size", int, 1));
 
-#ifdef IMPLICIT_TRANSPOSE
-    out << "Using implicit transpose" << std::endl;
-
-    H->SetImplicitTranspose(true);
-#endif
-
     // The first invocation of Setup() builds the hierarchy using the filtered
     // matrix. This build includes the grid transfers but not the creation of the
     // smoothers.
@@ -657,20 +649,12 @@ namespace Thyra {
     PFact->AddFactoryManager(M22);
     M.SetFactory("P", PFact);
 
-    RCP<MueLu::Factory > AcFact = rcp(new BlockedRAPFactory());
-#ifdef IMPLICIT_TRANSPOSE
-    M.SetFactory("R", Teuchos::null);
-
-    ParameterList RAPparams;
-    RAPparams.set("transpose: use implicit", true);
-    AcFact->SetParameterList(RAPparams);
-#else
     RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
     RFact->SetFactory("P", PFact);
     M.SetFactory("R", RFact);
 
+    RCP<MueLu::Factory > AcFact = rcp(new BlockedRAPFactory());
     AcFact->SetFactory("R", RFact);
-#endif
     AcFact->SetFactory("P", PFact);
     M.SetFactory("A", AcFact);
 
@@ -688,6 +672,7 @@ namespace Thyra {
   SetBlockDependencyTree(MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>& M, LocalOrdinal row, LocalOrdinal col, const std::string& mode, const ParameterList& paramList) const {
     typedef MueLu::ConstraintFactory <SC,LO,GO,NO> ConstraintFactory;
     typedef MueLu::EminPFactory      <SC,LO,GO,NO> EminPFactory;
+    typedef MueLu::GenericRFactory   <SC,LO,GO,NO> GenericRFactory;
     typedef MueLu::PatternFactory    <SC,LO,GO,NO> PatternFactory;
     typedef MueLu::Q2Q1PFactory      <SC,LO,GO,NO> Q2Q1PFactory;
     typedef MueLu::Q2Q1uPFactory     <SC,LO,GO,NO> Q2Q1uPFactory;
@@ -749,6 +734,14 @@ namespace Thyra {
     EminPFact->SetFactory("Constraint", CFact);
     EminPFact->SetFactory("P",          Q2Q1Fact);
     M.SetFactory("P", EminPFact);
+
+    if (mode == "velocity" && (!paramList.isParameter("velocity: use transpose") || paramList.get<bool>("velocity: use transpose") == false)) {
+      // Pressure system is symmetric, so it does not matter
+      // Velocity system may benefit from running emin in restriction mode (with A^T)
+      RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
+      RFact->SetFactory("P", EminPFact);
+      M.SetFactory("R", RFact);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -828,6 +821,7 @@ namespace Thyra {
       smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("bs: sweeps", int, 1)));
       smootherPrototype->SetParameter("lumping",        ParameterEntry(lumping));
       smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
+      smootherPrototype->SetParameter("q2q1 mode",      ParameterEntry(true));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
     }
 

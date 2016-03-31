@@ -92,6 +92,12 @@ namespace MueLu {
     // Get the matrix
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
 
+    if (restrictionMode_) {
+      SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
+
+      A = Utilities::Transpose(*A, true);
+    }
+
     // Get/make initial guess
     RCP<Matrix> P0;
     int         numIts;
@@ -123,7 +129,6 @@ namespace MueLu {
     }
     GetOStream(Runtime0) << "Number of emin iterations = " << numIts << std::endl;
 
-
     std::string solverType = pL.get<std::string>("emin: iterative method");
     RCP<SolverBase> solver;
     if (solverType == "cg")
@@ -136,7 +141,7 @@ namespace MueLu {
     RCP<Matrix> P;
     solver->Iterate(*A, *X, *P0, P);
 
-    // NOTE: The code below is extremely fragile
+    // NOTE: EXPERIMENTAL and FRAGILE
     if (!P->IsView("stridedMaps")) {
       if (A->IsView("stridedMaps") == true) {
         GetOStream(Runtime1) << "Using A to fillComplete P" << std::endl;
@@ -155,27 +160,50 @@ namespace MueLu {
       }
     }
 
-    Set(coarseLevel, "P", P);
-    if (pL.get<bool>("Keep P0")) {
-      // NOTE: we must do Keep _before_ set as the Needs class only sets if
-      //  a) data has been requested (which is not the case here), or
-      //  b) data has some keep flag
-      coarseLevel.Keep("P0", this);
-      Set(coarseLevel, "P0", P);
-    }
-    if (pL.get<bool>("Keep Constraint0")) {
-      // NOTE: we must do Keep _before_ set as the Needs class only sets if
-      //  a) data has been requested (which is not the case here), or
-      //  b) data has some keep flag
-      coarseLevel.Keep("Constraint0", this);
-      Set(coarseLevel, "Constraint0", X);
-    }
+    // Level Set
+    if (!restrictionMode_) {
+      // The factory is in prolongation mode
+      Set(coarseLevel, "P", P);
 
-    if (IsPrint(Statistics1)) {
-      RCP<ParameterList> params = rcp(new ParameterList());
-      params->set("printLoadBalancingInfo", true);
-      params->set("printCommInfo",          true);
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+      if (pL.get<bool>("Keep P0")) {
+        // NOTE: we must do Keep _before_ set as the Needs class only sets if
+        //  a) data has been requested (which is not the case here), or
+        //  b) data has some keep flag
+        coarseLevel.Keep("P0", this);
+        Set(coarseLevel, "P0", P);
+      }
+      if (pL.get<bool>("Keep Constraint0")) {
+        // NOTE: we must do Keep _before_ set as the Needs class only sets if
+        //  a) data has been requested (which is not the case here), or
+        //  b) data has some keep flag
+        coarseLevel.Keep("Constraint0", this);
+        Set(coarseLevel, "Constraint0", X);
+      }
+
+      if (IsPrint(Statistics1)) {
+        RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        params->set("printCommInfo",          true);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+      }
+
+    } else {
+      // The factory is in restriction mode
+      RCP<Matrix> R;
+      {
+        SubFactoryMonitor m2(*this, "Transpose P", coarseLevel);
+
+        R = Utilities::Transpose(*P, true);
+      }
+
+      Set(coarseLevel, "R", R);
+
+      if (IsPrint(Statistics1)) {
+        RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        params->set("printCommInfo",          true);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+      }
     }
   }
 
