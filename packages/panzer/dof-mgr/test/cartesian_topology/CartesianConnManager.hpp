@@ -129,15 +129,35 @@ public:
      */
    Triplet<GlobalOrdinal> getMyOffsetTriplet() const { return myOffset_; }
 
+   /** This computes the local element index, from the global triplet. If the index isn't
+     * on this processor a -1 is returned.
+     */
+   LocalOrdinal computeLocalElementIndex(const Triplet<GlobalOrdinal> & element) const;
+
+   /** Compute the global index from a global triplet. 
+     */
+   GlobalOrdinal computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element) const;
+
    /** Utility function for computing the processor i,j,k ranking. Publically exposed for testing.
      */
-   static Triplet<int> computeMyRankIndex(int myRank,int dim,const Triplet<int> & procs); 
+   static Triplet<int> computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs); 
 
    /** Utility function for computing a global element triplet from a local element index
      * Publically exposed for testing.
      */
-   static Triplet<GlobalOrdinal> computeGlobalElementTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
+   static Triplet<GlobalOrdinal> computeLocalElementGlobalTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
                                                                        const Triplet<GlobalOrdinal> & myOffset);
+
+   /** Compute the global index from a global triplet. 
+     */
+   static GlobalOrdinal computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element,
+                                                  const Triplet<GlobalOrdinal> & shape);
+
+   /** Compute the global index for a triplet. 
+     */
+   static LocalOrdinal computeLocalElementIndex(const Triplet<GlobalOrdinal> & element,
+                                                const Triplet<GlobalOrdinal> & myElements,
+                                                const Triplet<GlobalOrdinal> & myOffset);
 
    // The next functions are all pure virtual from ConnManager
    ////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +176,7 @@ public:
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const { return 0; }
+   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const { return &connectivity_[localElmtId][0]; }
 
    /** How many mesh IDs are associated with this element?
      *
@@ -164,8 +184,10 @@ public:
      *
      * \returns Number of mesh IDs that are associated with this element.
      */
-   virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const { return 0; }
+   virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const 
+   { return Teuchos::as<LocalOrdinal>(connectivity_[localElmtId].size()); }
 
+   
    /** Get the block ID for a particular element.
      *
      * \param[in] localElmtId Local element ID
@@ -206,11 +228,18 @@ private:
    // For const returns associated with neighbor access (not implemented)
    const std::vector<LocalOrdinal> emptyVector_;
 
+   // Update the connectivity vector with the field pattern. The connectivity is specified
+   // here using the i,j,k index of the local element. Also, this is where the ordering
+   // of a cell is embedded into the system. 
+   void updateConnectivity(const panzer::FieldPattern & fp,int subcellDim,int localElementId,
+                           std::vector<GlobalOrdinal> & conn) const;
+
    int numProc_;
    int myRank_;
    Triplet<int> myRankIndex_;
 
    int dim_; 
+   Triplet<GlobalOrdinal> totalElements_; // over all blocks and processors how many elements
    Triplet<GlobalOrdinal> elements_; // per block element counts
    Triplet<int> processors_;         // full mesh
    Triplet<int> blocks_;             // number of element blocks
@@ -219,6 +248,14 @@ private:
    Triplet<GlobalOrdinal> myOffset_;
 
    std::map<std::string,std::vector<int> > localElements_;
+
+   // element vector to connectivity
+   std::vector<std::vector<GlobalOrdinal> > connectivity_;
+ 
+   GlobalOrdinal totalNodes_; 
+   GlobalOrdinal totalEdges_;
+   GlobalOrdinal totalFaces_;
+   GlobalOrdinal totalCells_;
 };
 
 } // end unit test

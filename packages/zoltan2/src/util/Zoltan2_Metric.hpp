@@ -61,6 +61,7 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <set>
 
 namespace Zoltan2{
 
@@ -83,6 +84,7 @@ private:
   ArrayRCP<scalar_t> values_;
   std::string metricName_;
   multiCriteriaNorm mcnorm_;   // store "actualNorm + 1"
+  static std::set<std::string> metrics_;
 
 public:
 
@@ -192,7 +194,51 @@ scalar_t getMaxImbalance() const { return values_[evalMaxImbalance];}
 /*! \brief Get the average of the part imbalances. */
 scalar_t getAvgImbalance() const { return values_[evalAvgImbalance];}
 
+/// \brief Return a metric value specified by name
+///
+/// @param metric_name Name of metric to return
+/// @param[out] value metric value returned by reference
+///
+/// @return Returns a boolean indicated whether or not the metric was returned 
+scalar_t getMetricValue(const std::string & metric_name) const {
+  if (metric_name == "local sum") {
+    return this->getLocalSum();
+  } else if (metric_name == "global sum") {
+    return this->getGlobalSum();
+  } else if (metric_name == "global maximum") {
+    return this->getGlobalMax();
+  } else if (metric_name == "global minimum") {
+    return this->getGlobalMin();
+  } else if (metric_name == "global average") {
+    return this->getGlobalAvg();
+  } else if (metric_name == "minimum imbalance") {
+    return this->getMinImbalance();
+  } else if (metric_name == "maximum imbalance") {
+    return this->getMaxImbalance();
+  } else if (metric_name == "average imbalance") {
+    return this->getAvgImbalance();
+  } else {
+    return 0.0; // throw error
+  }
+}
+
+bool hasMetricValue(const std::string & metric_name) const {
+  return MetricValues<scalar_t>::metrics_.find(metric_name) !=
+         MetricValues<scalar_t>::metrics_.end();
+}
 };  // end class
+
+template <typename scalar_t>
+std::set<std::string> MetricValues<scalar_t>::metrics_ = {
+  "local sum",
+  "global sum",
+  "global maximum",
+  "global minimum",
+  "global average",
+  "minimum imbalance",
+  "maximum imbalance",
+  "average imbalance",
+};
 
 /*! \brief A class containing the metrics for one measurable item.
  */
@@ -208,6 +254,7 @@ private:
   }
   ArrayRCP<scalar_t> values_;
   std::string metricName_;
+  static std::set<std::string> metrics_;
 
 public:
 
@@ -248,13 +295,39 @@ void setGlobalMax(scalar_t x) { values_[evalGlobalMax] = x;}
 /*! \brief Get the name of the item measured. */
 const std::string &getName() const { return metricName_; }
 
-/*! \brief Get the global sum for all parts. */
+/*! \brief Get the global sum of edge cuts for all parts. */
 scalar_t getGlobalSum() const { return values_[evalGlobalSum];}
 
-/*! \brief Get the global maximum across all parts. */
+/*! \brief Get the global maximum of edge cuts per part across all parts. */
 scalar_t getGlobalMax() const { return values_[evalGlobalMax];}
 
+/// \brief Return a metric value specified by name
+///
+/// @param metric_name Name of metric to return
+/// @param[out] value metric value returned by reference
+///
+/// @return Returns a boolean indicated whether or not the metric was returned 
+scalar_t getMetricValue(const std::string & metric_name) const {
+  if (metric_name == "global maximum") {
+    return this->getGlobalMax();
+  } else if (metric_name == "global sum") {
+    return this->getGlobalSum();
+  } else {
+    return 0.0; // throw error
+  }
+}
+
+bool hasMetricValue(const std::string & metric_name) const {
+  return GraphMetricValues<scalar_t>::metrics_.find(metric_name) !=
+         GraphMetricValues<scalar_t>::metrics_.end();
+}
 };  // end class
+
+template <typename scalar_t>
+std::set<std::string> GraphMetricValues<scalar_t>::metrics_ = {
+  "global sum",
+  "global maximum",
+};
 
 template <typename scalar_t>
   void MetricValues<scalar_t>::printLine(std::ostream &os) const
@@ -1209,8 +1282,6 @@ template <typename scalar_t, typename part_t>
  *   \param comm  The problem communicator.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
- *   \param useDegreeAsWeight whether vertex degree is ever used as vertex
- *           weight.
  *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
@@ -1240,9 +1311,8 @@ template <typename Adapter>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     multiCriteriaNorm mcNorm,
-    const RCP<const typename Adapter::base_adapter_t> &ia,
+    const Adapter *ia,
     const PartitioningSolution<Adapter> *solution,
-    bool useDegreeAsWeight,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
@@ -1265,13 +1335,22 @@ template <typename Adapter>
 
   const part_t *parts;
   if (solution) {
+    // User provided a partitioning solution; use it.
     parts = solution->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
   } else {
-    part_t *procs = new part_t [numLocalObjects];
-    for (size_t i = 0; i < numLocalObjects; i++) procs[i] = comm->getRank();
-    parts = procs;
+    // User did not provide a partitioning solution;
+    // Use input adapter partition.
+
+    parts = NULL;
+    ia->getPartsView(parts);
+    if (parts == NULL) {
+      // User has not provided input parts in input adapter
+      part_t *procs = new part_t [numLocalObjects];
+      for (size_t i = 0; i < numLocalObjects; i++) procs[i] = comm->getRank();
+      parts = procs;
+    }
   }
   ArrayView<const part_t> partArray(parts, numLocalObjects);
 
@@ -1287,13 +1366,31 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
+    // whether vertex degree is ever used as vertex weight.
+    enum BaseAdapterType adapterType = ia->adapterType();
+    bool useDegreeAsWeight = false;
+    if (adapterType == GraphAdapterType) {
+      useDegreeAsWeight = reinterpret_cast<const GraphAdapter
+	<typename Adapter::user_t, typename Adapter::userCoord_t> *>(ia)->
+	useDegreeAsWeight(0);
+    } else if (adapterType == MatrixAdapterType) {
+      useDegreeAsWeight = reinterpret_cast<const MatrixAdapter
+	<typename Adapter::user_t, typename Adapter::userCoord_t> *>(ia)->
+	useDegreeAsWeight(0);
+    } else if (adapterType == MeshAdapterType) {
+      useDegreeAsWeight =
+	reinterpret_cast<const MeshAdapter<typename Adapter::user_t> *>(ia)->
+	useDegreeAsWeight(0);
+    }
     if (useDegreeAsWeight) {
       ArrayView<const gno_t> Ids;
       ArrayView<sdata_t> vwgts;
       if (graphModel == Teuchos::null) {
 	std::bitset<NUM_MODEL_FLAGS> modelFlags;
 	RCP<GraphModel<base_adapter_t> > graph;
-	graph = rcp(new GraphModel<base_adapter_t>(ia, env, comm, modelFlags));
+	const RCP<const base_adapter_t> bia =
+	  rcp(dynamic_cast<const base_adapter_t *>(ia), false);
+	graph = rcp(new GraphModel<base_adapter_t>(bia,env,comm,modelFlags));
 	graph->getVertexList(Ids, vwgts);
       } else {
 	graphModel->getVertexList(Ids, vwgts);

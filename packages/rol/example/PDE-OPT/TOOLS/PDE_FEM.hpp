@@ -1,0 +1,695 @@
+// @HEADER
+// ************************************************************************
+//
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
+/*! \file  data.hpp
+    \brief Generates and manages data for the Poisson example, including
+           all mesh and discretization data, matrices, etc.
+*/
+
+#ifndef ROL_PDEOPT_PDE_FEM_H
+#define ROL_PDEOPT_PDE_FEM_H
+
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Version.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+
+#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid_CellTools.hpp"
+
+#include "Amesos2.hpp"
+#include "./dofmanager.hpp"
+
+template<class Real>
+class PDE_FEM {
+
+protected:
+
+  Teuchos::RCP<MeshManager<Real> > meshMgr_;
+  Teuchos::RCP<DofManager<Real> >  dofMgr_;
+  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface_;
+  Intrepid::FieldContainer<int> cellDofs_;
+              
+  Teuchos::RCP<Teuchos::ParameterList> parlist_;
+  Teuchos::RCP<const Teuchos::Comm<int> > commPtr_;
+  Teuchos::RCP<std::ostream> outStream_;
+    
+  int numLocalDofs_;
+  Intrepid::FieldContainer<int> ctn_;
+  Intrepid::FieldContainer<int> cte_;
+
+  int myRank_;
+  int numProcs_;
+
+  Real alpha_;
+  int  basisOrder_;
+
+  Teuchos::RCP<const Tpetra::Map<> >    myOverlapMap_;
+  Teuchos::RCP<const Tpetra::Map<> >    myUniqueMap_;
+  Teuchos::RCP<Tpetra::CrsGraph<> >     matGraph_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >    matA_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >    matA_dirichlet_;
+//  Teuchos::RCP<Tpetra::CrsMatrix<> >    matA_dirichlet_trans_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >    matM_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >    matM_dirichlet_;
+//  Teuchos::RCP<Tpetra::CrsMatrix<> >    matM_dirichlet_trans_;
+  Teuchos::RCP<Tpetra::MultiVector<> >  vecUd_;
+  Teuchos::RCP<Tpetra::MultiVector<> >  vecF_;
+  Teuchos::RCP<Tpetra::MultiVector<> >  vecF_overlap_;
+  Teuchos::RCP<Tpetra::MultiVector<> >  vecF_dirichlet_;
+
+  Teuchos::Array<int> myCellIds_;
+  std::vector<Teuchos::Array<int> > myDirichletCellIds_;
+  Teuchos::Array<int> myDirichletDofs_;
+
+  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_;
+//  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_trans_;
+
+  shards::CellTopology cellType_;
+  int spaceDim_;
+  int numNodesPerCell_;
+  int numCubPoints_;
+  int lfs_;
+
+  int totalNumCells_;
+  int totalNumDofs_;
+  int numCells_;
+
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cubPoints_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cubWeights_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cellJac_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cellJacInv_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cellJacDet_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cellWeightedMeasure_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > valReference_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradReference_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > valPhysical_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysical_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > valPhysicalWeighted_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalWeighted_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradgradMats_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > valvalMats_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cubPointsPhysical_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > dataF_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > datavalVecF_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPoints_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPointsPhysical_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > dataUd_;
+
+public:
+
+// constructor
+PDE_FEM() {}
+// destructor
+virtual ~PDE_FEM() {}
+
+virtual void Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+        	   	const Teuchos::RCP<Teuchos::ParameterList> &parlist,
+        	   	const Teuchos::RCP<std::ostream> &outStream)  { }
+
+
+virtual void SetParallelStructure()
+{
+    int cellSplit = parlist_->sublist("Geometry").get("Partition type", 1);
+    /****************************************************/
+    /*** Build parallel communication infrastructure. ***/
+    /****************************************************/
+    // Partition the cells in the mesh.  We use a basic quasi-equinumerous partitioning,
+    // where the remainder, if any, is assigned to the last processor.
+    Teuchos::Array<int> myGlobIds_;
+    Teuchos::Array<int> cellOffsets_(numProcs_, 0);
+    int cellsPerProc = totalNumCells_ / numProcs_;
+    numCells_ = cellsPerProc;
+    switch(cellSplit) {
+      case 0:
+        if (myRank_ == 0) {  // remainder in the first
+          numCells_ += totalNumCells_ % numProcs_;
+        }
+        for (int i=1; i<numProcs_; ++i) {
+          cellOffsets_[i] = cellOffsets_[i-1] + cellsPerProc + (static_cast<int>(i==1))*(totalNumCells_ % numProcs_);
+        }
+        break;
+      case 1:
+        if (myRank_ == numProcs_-1) { // remainder in the last
+          numCells_ += totalNumCells_ % numProcs_;
+        }
+        for (int i=1; i<numProcs_; ++i) {
+          cellOffsets_[i] = cellOffsets_[i-1] + cellsPerProc;
+        }
+        break;
+      case 2:
+        if (myRank_ < (totalNumCells_%numProcs_)) { // spread remainder, starting from the first
+          numCells_++;
+        }
+        for (int i=1; i<numProcs_; ++i) {
+          cellOffsets_[i] = cellOffsets_[i-1] + cellsPerProc + (static_cast<int>(i-1<(totalNumCells_%numProcs_)));
+        }
+        break;
+    }
+    
+    cellDofs_ = *(dofMgr_->getCellDofs());
+    numLocalDofs_ = cellDofs_.dimension(1);
+    *outStream_ << "Cell offsets across processors: " << cellOffsets_ << std::endl;
+    for (int i=0; i<numCells_; ++i) {
+      myCellIds_.push_back(cellOffsets_[myRank_]+i);
+      for (int j=0; j<numLocalDofs_; ++j) {
+        myGlobIds_.push_back( cellDofs_(cellOffsets_[myRank_]+i,j) );
+      }
+    }
+    std::sort(myGlobIds_.begin(), myGlobIds_.end());
+    myGlobIds_.erase( std::unique(myGlobIds_.begin(), myGlobIds_.end()), myGlobIds_.end() );
+
+    // Build maps.
+    myOverlapMap_ = Teuchos::rcp(new Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                                                   myGlobIds_, 0, commPtr_));
+    //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
+    /** One can also use the non-member function:
+          myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, commPtr_);
+        to build the overlap map.
+    **/
+    myUniqueMap_ = Tpetra::createOneToOne<int,int>(myOverlapMap_);
+    //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
+}
+
+
+
+virtual void SetUpLocalIntrepidArrays() 
+{
+    /****************************************************/
+    /*** Set up local discretization data and arrays. ***/
+    /****************************************************/
+    // Retrieve some basic cell information.
+    cellType_ = (basisPtrs_[0])->getBaseCellTopology();   // get the cell type from any basis
+    spaceDim_ = cellType_.getDimension();                 // retrieve spatial dimension
+    numNodesPerCell_ = cellType_.getNodeCount();          // retrieve number of nodes per cell
+
+    // Cubature data.
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;                                          // create cubature factory
+    int cubDegree = 4;                                                                          // set cubature degree, e.g., 2
+    Teuchos::RCP<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType_, cubDegree);  // create default cubature
+    numCubPoints_ = cellCub->getNumPoints();                                                    // retrieve number of cubature points
+
+    lfs_ = dofMgr_->getLocalFieldSize(0);
+    // Discretization data. 
+    cubPoints_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCubPoints_, spaceDim_));
+    cubWeights_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCubPoints_));
+    cubPointsPhysical_    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, numCubPoints_, spaceDim_));
+    dofPoints_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(lfs_, spaceDim_));
+    dofPointsPhysical_    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs_, spaceDim_));
+    cellNodes_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, numNodesPerCell_, spaceDim_));
+    cellJac_              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, numCubPoints_, spaceDim_, spaceDim_));
+    cellJacInv_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, numCubPoints_, spaceDim_, spaceDim_));
+    cellJacDet_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, numCubPoints_));
+    cellWeightedMeasure_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, numCubPoints_));
+    valReference_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(lfs_, numCubPoints_));  
+    gradReference_        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(lfs_, numCubPoints_, spaceDim_));  
+    valPhysical_          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs_, numCubPoints_));
+    gradPhysical_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs_, numCubPoints_, spaceDim_));
+    valPhysicalWeighted_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs_, numCubPoints_));
+    gradPhysicalWeighted_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs_, numCubPoints_, spaceDim_));
+    
+    // Geometric definition of the cells in the mesh, based on the cell-to-node map and the domain partition.
+    Intrepid::FieldContainer<Real> &nodes = *meshMgr_->getNodes();
+    ctn_   = *meshMgr_->getCellToNodeMap();
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numNodesPerCell_; ++j) {
+        for (int k=0; k<spaceDim_; ++k) {
+          (*cellNodes_)(i, j, k) = nodes(ctn_(myCellIds_[i],j), k);
+        }
+      }
+    }
+
+    //Compute Intrepid Arrays
+    cellCub->getCubature(*cubPoints_, *cubWeights_);                                         // retrieve cubature points and weights
+    (*basisPtrs_[0]).getValues(*gradReference_, *cubPoints_, Intrepid::OPERATOR_GRAD);       // evaluate grad operator at cubature points
+    (*basisPtrs_[0]).getValues(*valReference_, *cubPoints_, Intrepid::OPERATOR_VALUE);       // evaluate value operator at cubature points
+
+    Intrepid::CellTools<Real>::setJacobian(*cellJac_, *cubPoints_, *cellNodes_, cellType_);  // compute cell Jacobians
+    Intrepid::CellTools<Real>::setJacobianInv(*cellJacInv_, *cellJac_);                      // compute inverses of cell Jacobians
+    Intrepid::CellTools<Real>::setJacobianDet(*cellJacDet_, *cellJac_);                      // compute determinants of cell Jacobians
+
+    Intrepid::FunctionSpaceTools::computeCellMeasure<Real>(*cellWeightedMeasure_,            // compute weighted cell measure
+                                                           *cellJacDet_,
+                                                           *cubWeights_);
+
+    Intrepid::FunctionSpaceTools::HGRADtransformGRAD<Real>(*gradPhysical_,                   // transform reference gradients into physical space
+                                                           *cellJacInv_,
+                                                           *gradReference_);
+    Intrepid::FunctionSpaceTools::multiplyMeasure<Real>(*gradPhysicalWeighted_,              // multiply with weighted measure
+                                                        *cellWeightedMeasure_,
+                                                        *gradPhysical_);
+
+    Intrepid::FunctionSpaceTools::HGRADtransformVALUE<Real>(*valPhysical_,                   // transform reference values into physical space
+                                                            *valReference_);
+    Intrepid::FunctionSpaceTools::multiplyMeasure<Real>(*valPhysicalWeighted_,               // multiply with weighted measure
+                                                        *cellWeightedMeasure_,
+                                                        *valPhysical_);
+    Intrepid::CellTools<Real>::mapToPhysicalFrame(*cubPointsPhysical_,                        // map reference cubature points to physical space
+                                                  *cubPoints_,
+                                                  *cellNodes_,
+                                                  cellType_);
+    
+} 
+
+virtual void ComputeLocalSystemMats() { } 
+ 
+virtual void ComputeLocalForceVec() { }   
+
+virtual void SetUpTrueDataOnNodes() { }
+
+
+virtual void AssembleSystemMats()
+{ 
+    /****************************************/
+    /*** Assemble global data structures. ***/
+    /****************************************/
+    // Assemble graph.
+    matGraph_ = Teuchos::rcp(new Tpetra::CrsGraph<>(myUniqueMap_, 0));
+    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs_.getData();
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs_; ++j) {
+        matGraph_->insertGlobalIndices(cellDofs_(myCellIds_[i],j), cellDofsArrayRCP(myCellIds_[i]*numLocalDofs_, numLocalDofs_));
+      }
+    }
+    matGraph_->fillComplete();
+    // Assemble matrices.
+    // Stiffness matrix A.
+    matA_ = Tpetra::rcp(new Tpetra::CrsMatrix<>(matGraph_));
+    int numLocalMatEntries = numLocalDofs_ * numLocalDofs_;
+    Teuchos::ArrayRCP<const Real> gradgradArrayRCP = gradgradMats_->getData();
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs_; ++j) {
+        matA_->sumIntoGlobalValues(cellDofs_(myCellIds_[i],j),
+                                   cellDofsArrayRCP(myCellIds_[i] * numLocalDofs_, numLocalDofs_),
+                                   gradgradArrayRCP(i*numLocalMatEntries+j*numLocalDofs_, numLocalDofs_));
+      }
+    }
+    matA_->fillComplete();
+    // Mass matrix M.
+    matM_ = Tpetra::rcp(new Tpetra::CrsMatrix<>(matGraph_));
+    Teuchos::ArrayRCP<const Real> valvalArrayRCP = valvalMats_->getData();
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs_; ++j) {
+        matM_->sumIntoGlobalValues(cellDofs_(myCellIds_[i],j),
+                                   cellDofsArrayRCP(myCellIds_[i]*numLocalDofs_, numLocalDofs_),
+                                   valvalArrayRCP(i*numLocalMatEntries+j*numLocalDofs_, numLocalDofs_));
+      }
+    }
+    matM_->fillComplete();
+}
+
+
+virtual void AssembleRHSVector()
+{
+    // Assemble vectors.
+    // vecF_ requires assembly using vecF_overlap_ and redistribution
+    vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
+    for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
+      for (int j=0; j<numLocalDofs_; ++j) {
+        vecF_overlap_->sumIntoGlobalValue(cellDofs_(myCellIds_[i],j),
+                                          0,
+                                          (*datavalVecF_)[i*numLocalDofs_+j]);
+      }
+    }
+    Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
+    vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
+}
+
+
+
+virtual void AssembleDataVector()
+{
+    // vecUd_ does not require assembly
+    vecUd_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs_; ++j) {
+        if (vecUd_->getMap()->isNodeGlobalElement(cellDofs_(myCellIds_[i],j))) {
+          vecUd_->replaceGlobalValue(cellDofs_(myCellIds_[i],j),
+                                     0,
+                                     (*dataUd_)[i*numLocalDofs_+j]);
+        }
+      }
+    }
+}
+
+// check to see if a globaldof is on boundary
+virtual bool check_myGlobalDof_on_boundary(int globalDof)
+{
+    	if (std::binary_search(myDirichletDofs_.begin(), myDirichletDofs_.end(), globalDof))
+		return true;
+	return false;
+}
+
+//create myDirichletCellIds_ and myDirichletDofs_
+virtual void SetUpMyDBCInfo(std::vector<int> dbc_side)
+{
+    Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
+    std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
+    Teuchos::Array<int> mySortedCellIds_(myCellIds_);
+    std::sort(mySortedCellIds_.begin(), mySortedCellIds_.end());
+    mySortedCellIds_.erase( std::unique(mySortedCellIds_.begin(), mySortedCellIds_.end()), mySortedCellIds_.end() );
+    
+    myDirichletCellIds_.resize(dss[0].size());
+    
+    for (int i=0; i<static_cast<int>(dss[0].size()); ++i) {
+      for (int j=0; j<dss[0][i].dimension(0); ++j) {
+        if (std::binary_search(mySortedCellIds_.begin(), mySortedCellIds_.end(), dss[0][i](j))) {
+          myDirichletCellIds_[i].push_back(dss[0][i](j));
+        }
+      }
+    }
+    
+    cte_ = *(meshMgr_->getCellToEdgeMap());
+    Intrepid::FieldContainer<int>  &nodeDofs = *(dofMgr_->getNodeDofs());
+    Intrepid::FieldContainer<int>  &edgeDofs = *(dofMgr_->getEdgeDofs());
+    std::vector<std::vector<int> > dofTags = (basisPtrs_[0])->getAllDofTags();
+    int numDofsPerNode = 0;
+    int numDofsPerEdge = 0;
+    for (int j=0; j<(basisPtrs_[0])->getCardinality(); ++j) {
+      if (dofTags[j][0] == 0) {
+        numDofsPerNode = dofTags[j][3];
+      }
+      if (dofTags[j][0] == 1) {
+        numDofsPerEdge = dofTags[j][3];
+      }
+    }
+    // vector field
+    int nfields = basisPtrs_.size();
+    numDofsPerNode = numDofsPerNode * nfields;
+    numDofsPerEdge = numDofsPerEdge * nfields;
+
+    int n_dbc = dbc_side.size();
+    for (int i=0; i<static_cast<int>(myDirichletCellIds_.size()); ++i) 
+    {
+     
+     bool isdbc = false;
+     for(int i_dbc = 0; i_dbc < n_dbc; i_dbc++)
+     {
+	if(i == dbc_side[i_dbc])
+	{
+	  isdbc = true;
+	  break;
+	}
+      }
+      if(!isdbc)
+	continue;	
+	
+      for (int j=0; j<myDirichletCellIds_[i].size(); ++j) {
+        for (int k=0; k<numDofsPerNode; ++k) {
+          const CellTopologyData * ctd = cellType_.getCellTopologyData();
+          Teuchos::ArrayView<unsigned> locNodes(const_cast<unsigned *>(ctd->subcell[spaceDim_-1][i].node), cellType_.getVertexCount(spaceDim_-1, i));
+          for (int l=0; l<static_cast<int>(cellType_.getVertexCount(spaceDim_-1, i)); ++l) {
+            myDirichletDofs_.push_back(nodeDofs(ctn_(myDirichletCellIds_[i][j], locNodes[l]), k));
+          }
+        }
+        for (int k=0; k<numDofsPerEdge; ++k) {
+           myDirichletDofs_.push_back(edgeDofs(cte_(myDirichletCellIds_[i][j], i), k));
+        }
+      }
+    }
+    std::sort(myDirichletDofs_.begin(), myDirichletDofs_.end());
+    myDirichletDofs_.erase( std::unique(myDirichletDofs_.begin(), myDirichletDofs_.end()), myDirichletDofs_.end() );
+}
+
+
+virtual void EnforceDBC( )
+{    
+    // Apply Dirichlet conditions.
+    // zero out row and column, make matrix symmetric  
+    Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
+    matA_dirichlet_ = matA_->clone(node);
+    matM_dirichlet_ = matM_->clone(node);
+    vecF_dirichlet_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
+    
+    matA_dirichlet_->resumeFill();
+    matM_dirichlet_->resumeFill();
+    
+    int gDof; 
+    for(int i=0; i<numCells_; i++)
+    {
+	for(int j=0; j<numLocalDofs_; j++)
+	{
+	       gDof = cellDofs_(myCellIds_[i], j);
+               if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof))
+	       {
+       			size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
+        		Teuchos::Array<int> indices(numRowEntries, 0);    
+        		Teuchos::Array<Real> values(numRowEntries, 0);
+        		Teuchos::Array<Real> canonicalValues(numRowEntries, 0);    
+        		Teuchos::Array<Real> zeroValues(numRowEntries, 0);    
+        		matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+        		matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+        		for (int k=0; k<indices.size(); k++) {
+          			if (indices[k] == gDof) 
+				{
+            			   	canonicalValues[k] = 1.0;
+				}
+       	 		}
+        		matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
+        		matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+        		vecF_dirichlet_->replaceGlobalValue (gDof, 0, 0);
+      		}
+               
+		if (!check_myGlobalDof_on_boundary(gDof))
+		{
+       			size_t numDBCDofs = myDirichletDofs_.size();
+        		Teuchos::Array<int> indices(numDBCDofs, 0);    
+        		Teuchos::Array<Real> zeroValues(numDBCDofs, 0);    
+ 			for (int k=0; k<indices.size(); k++) {
+            			indices[k] = myDirichletDofs_[k];
+       	 		}
+        		matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+        		matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+    		}
+	}
+    }	
+    matA_dirichlet_->fillComplete();
+    matM_dirichlet_->fillComplete();
+}
+
+/*
+virtual void GenerateTransposedMats()
+{
+    // Create matrix transposes.
+    Tpetra::RowMatrixTransposer<> transposerA(matA_dirichlet_);
+    Tpetra::RowMatrixTransposer<> transposerM(matM_dirichlet_);
+    matA_dirichlet_trans_ = transposerA.createTranspose();
+    matM_dirichlet_trans_ = transposerM.createTranspose();
+}
+*/
+
+virtual void ConstructSolvers()
+{
+    // Construct solver using Amesos2 factory.
+    try{
+      solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
+    } catch (std::invalid_argument e) {
+      std::cout << e.what() << std::endl;
+    }
+    solverA_->numericFactorization();
+}
+
+/*
+virtual void ConstructAdjointSolvers()
+{
+    // Construct solver using Amesos2 factory.
+    try{
+      solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_trans_);
+    } catch (std::invalid_argument e) {
+      std::cout << e.what() << std::endl;
+    }
+    solverA_trans_->numericFactorization();
+}
+*/
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getMatA(const bool &transpose = false) const {
+    if (transpose) {
+      //return matA_dirichlet_trans_;
+      return matA_dirichlet_;
+    }
+    else {
+      return matA_dirichlet_;
+    }
+  }
+
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getMatB(const bool &transpose = false) const {
+    if (transpose) {
+      //return matM_dirichlet_trans_;
+      return matM_dirichlet_;
+    }
+    else {
+      return matM_dirichlet_;
+    }
+  }
+
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getMatM() const {
+    return matM_;
+  }
+
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getMatR() const {
+    return matM_;
+  }
+
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getVecUd() const {
+    return vecUd_;
+  }
+
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getVecF() const {
+    return vecF_dirichlet_;
+  }
+
+
+  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > getSolver(const bool &transpose = false) const {
+    if (transpose) {
+      //return solverA_trans_;
+      return solverA_;
+    }
+    else {
+      return solverA_;
+    }
+  }
+
+
+ virtual Real funcRHS(const Real &x1, const Real &x2) const { return 0.0; }
+
+ virtual Real funcTarget(const Real &x1, const Real &x2) const { return 0.0; }
+
+
+  void printMeshData(std::ostream &outStream) const {
+    
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > nodesPtr = meshMgr_->getNodes();
+    Teuchos::RCP<Intrepid::FieldContainer<int> >  cellToNodeMapPtr = meshMgr_->getCellToNodeMap();
+    Intrepid::FieldContainer<Real>  &nodes = *nodesPtr;
+    Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
+    outStream << "Number of nodes = " << meshMgr_->getNumNodes() << std::endl;
+    outStream << "Number of cells = " << meshMgr_->getNumCells() << std::endl;
+    outStream << "Number of edges = " << meshMgr_->getNumEdges() << std::endl;
+    // Print mesh to file.
+    if ((myRank_ == 0)) {
+      std::ofstream meshfile;
+      meshfile.open("cell_to_node_quad.txt");
+      for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
+        for (int j=0; j<cellToNodeMap.dimension(1); ++j) {
+          meshfile << cellToNodeMap(i,j) << "  ";
+        }
+        meshfile << std::endl;
+      }
+      meshfile.close();
+      
+      meshfile.open("cell_to_node_tri.txt");
+      for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
+        for (int j=0; j<3; ++j) {
+          meshfile << cellToNodeMap(i,j) << "  ";
+        }
+        meshfile << std::endl;
+        for (int j=2; j<5; ++j) {
+          meshfile << cellToNodeMap(i,j%4) << "  ";
+        }
+        meshfile << std::endl;
+      }
+      meshfile.close();
+     
+      meshfile.open("nodes.txt");
+      meshfile.precision(16);
+      for (int i=0; i<nodes.dimension(0); ++i) {
+        for (int j=0; j<nodes.dimension(1); ++j) {
+          meshfile << std::scientific << nodes(i,j) << "  ";
+        }
+        meshfile << std::endl;
+      }
+      meshfile.close();
+      /* This somewhat clunky output is for gnuplot.
+      meshfile.open("mesh.txt");
+      for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
+        meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
+        meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
+        meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
+        meshfile << nodes(cellToNodeMap(i,3), 0) << "  " << nodes(cellToNodeMap(i,3), 1) << std::endl;
+        meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
+        meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
+        meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
+      }
+      meshfile.close();
+      */
+    } //myRank 0 print
+  } // prinf function end
+
+
+  void outputTpetraData() const {
+    Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> >   matWriter;
+    Tpetra::MatrixMarket::Writer< Tpetra::MultiVector<> > vecWriter;
+    matWriter.writeSparseFile("stiffness_mat", matA_);
+    matWriter.writeSparseFile("dirichlet_mat", matA_dirichlet_);
+    matWriter.writeSparseFile("mass_mat", matM_);
+    vecWriter.writeDenseFile("Ud_vec", vecUd_);
+  }
+
+
+  void outputTpetraVector(const Teuchos::RCP<const Tpetra::MultiVector<> > &vec,
+                          const std::string &filename) const {
+    Tpetra::MatrixMarket::Writer<Tpetra::MultiVector<> > vecWriter;
+    vecWriter.writeDenseFile(filename, vec);
+  }
+
+}; // class PDE_FEM
+
+#endif

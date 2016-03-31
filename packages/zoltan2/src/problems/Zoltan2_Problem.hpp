@@ -85,7 +85,7 @@ public:
   /*! \brief Constructor where Teuchos communicator is specified
    */
   Problem(const Adapter *input, ParameterList *params, 
-          RCP<const Comm<int> > &comm):
+        const RCP<const Comm<int> > &comm):
         inputAdapter_(rcp(input,false)),
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),

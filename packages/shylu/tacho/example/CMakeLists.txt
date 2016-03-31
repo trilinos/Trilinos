@@ -56,6 +56,48 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleDenseGemmByBlocks_Pthreads.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseCholByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseCholByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+# Crs Matrix Objects
+# ==================
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCrsMatrixBase_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCrsMatrixBase_Pthreads.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCrsMatrixView_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCrsMatrixView_Pthreads.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleMatrixMarket_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleMatrixMarket_Pthreads.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+# Graph Tools
+# ===========
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleGraphTools_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleGraphTools_Pthreads.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 
@@ -383,8 +425,8 @@ ENDIF()
 
 # ENDIF()
 
-# TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
-#         SOURCE_FILES test.mtx
-#         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-#         DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-# )
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
+        SOURCE_FILES test.mtx
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+        DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)

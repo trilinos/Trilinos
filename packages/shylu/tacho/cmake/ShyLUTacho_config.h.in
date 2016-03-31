@@ -16,6 +16,12 @@
 /* Define if want to build with VTune enabled */
 #cmakedefine HAVE_SHYLUTACHO_VTUNE
 
+/* Define if want to build with Scotch enabled */
+#cmakedefine HAVE_SHYLUTACHO_SCOTCH
+
+/* Define if want to build with CHOLMOD enabled */
+#cmakedefine HAVE_SHYLUTACHO_CHOLMOD
+
 /* Define if want to build with Teuchos enabled */
 #cmakedefine HAVE_SHYLUTACHO_TEUCHOS
 

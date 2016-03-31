@@ -163,6 +163,14 @@ public:
     return vec2_; 
   }
 
+  Teuchos::RCP<Vector<Real> > get_1() { 
+    return vec1_; 
+  }
+
+  Teuchos::RCP<Vector<Real> > get_2() { 
+    return vec2_; 
+  }
+
   void set_1(const Vector<Real>& vec) { 
     vec1_->set(vec);
   }

@@ -27,18 +27,17 @@ fi
 
 TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
 
-DRIVERS_BASE_DIR="$TRILINOS_DIR_ABS/cmake/ctest/drivers/ATTB"
-
 # Packages in Trilinos to disable (mostly for auotmated CI server)
 DISABLE_PACKAGES=PyTrilinos,Pliris,Claps,TriKota
 
 # Check to make sure that the env has been loaded correctly
 if [ "$ATTB_ENV" == "" ] ; then
-  echo "Error, must local module module load devpack/openmpi/1.10.0/gcc/4.8.4/cuda/7.5.18"
+  echo "Error, must load correct module (see load_attb_dev_env.sh)!"
   exit 1
 fi
 
 echo "
+-DTrilinos_USE_ATTB_DEV_ENV=ON
 -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
 -DBUILD_SHARED_LIBS=OFF
 " > COMMON.config

@@ -66,32 +66,7 @@ using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using namespace Zoltan2_TestingFramework;
 
-template <class Problem>
 class MetricAnalyzer {
-public:
-  /// \brief analyze metrics for a problem based on a range of tolerances
-  ///
-  /// @param metricsPlist parameter list defining tolerances
-  /// @param problem the problem whose metrics are to be analyzed
-  /// @param comm an RCP for a communicator
-  /// @param[out] msg_stream a std::ostringstream stream to return information from the analysis
-  ///
-  /// @return returns a boolean value indicated pass/failure.
-  static bool analyzeMetrics( const ParameterList &metricsPlist,
-                              const Problem * problem,
-                              const RCP<const Comm<int>> &comm,
-                              std::ostringstream &msg_stream) {
-    msg_stream << "Metric analysis is not supported for problems of this type." << std::endl;
-    return false;
-  }
-
-private:
-
-};
-
-template<>
-class MetricAnalyzer<partitioning_problem_t> {
-
 public:
   /// \brief Analyze metrics for a problem based on a range of tolerances
   ///
@@ -102,33 +77,92 @@ public:
   ///
   /// @return returns a boolean value indicated pass/failure.
   static bool analyzeMetrics( const ParameterList &metricsPlist,
-                              const partitioning_problem_t * problem,
+                              const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
                               const RCP<const Comm<int>> &comm,
                               std::ostringstream &msg_stream) {
-
-      ArrayRCP<const metric_t> metrics = (problem)->getMetrics();
-      
-      string test_name;
-      bool all_tests_pass = true;
-      for(int i = 0; i < metrics.size(); i++)
-      {
-        // print their names...
-        test_name = metrics[i].getName();
-        if(metricsPlist.isSublist(test_name))
-        {
-          if(!MetricAnalyzer<partitioning_problem_t>::MetricBoundsTest(comm,
-                metrics[i],
-                metricsPlist.sublist(test_name),
-                msg_stream)) {
-            all_tests_pass = false;
-          }
-        }
-      }
-
-      return all_tests_pass;
+    auto type = metricsPlist.name();
+    if (type == "Metrics")
+      return MetricAnalyzer::analyzePartitionMetrics( metricsPlist,
+                                                      metricObject,
+                                                      comm,
+                                                      msg_stream);  
+    else if (type == "Graph Metrics")
+      return MetricAnalyzer::analyzeGraphMetrics( metricsPlist,
+                                                  metricObject,
+                                                  comm,
+                                                  msg_stream);  
+    return false;
   }
 
 private:
+
+  static bool analyzePartitionMetrics(  const ParameterList &metricsPlist,
+                                        const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
+                                        const RCP<const Comm<int>> &comm,
+                                        std::ostringstream &msg_stream) {
+
+      ArrayRCP<const metric_t> metrics = metricObject->getMetrics();
+      bool all_tests_pass = true;
+      zscalar_t metric_value = 0.0;
+      for (int i = 0; i < metrics.size(); i++) {
+        // print their names...
+        if (metricsPlist.isSublist(metrics[i].getName())) {
+          auto metric_plist = metricsPlist.sublist(metrics[i].getName());
+          // loop on tests
+          auto p= metric_plist.begin(); // iterator
+          while (p != metric_plist.end()) {
+            auto test_name = metric_plist.name(p);
+            if( metrics[i].hasMetricValue(test_name)) {
+              if(!MetricAnalyzer::MetricBoundsTest( metrics[i].getMetricValue(test_name),
+                                                    test_name,
+                                                    metric_plist.sublist(test_name),
+                                                    comm,
+                                                    msg_stream)) {
+                all_tests_pass = false;
+              }
+            } else msg_stream << "UNKNOWN TEST: " + test_name << std::endl;
+            ++p;
+          }
+        } else {
+          msg_stream << "UNKNOWN METRIC: " + metrics[i].getName() << std::endl;
+        }
+      }
+      return all_tests_pass;
+  }
+  
+  static bool analyzeGraphMetrics(  const ParameterList &metricsPlist,
+                                    const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
+                                    const RCP<const Comm<int>> &comm,
+                                    std::ostringstream &msg_stream) {
+
+      ArrayRCP<const graph_metric_t> metrics = metricObject->getGraphMetrics();
+      bool all_tests_pass = true;
+      zscalar_t metric_value = 0.0;
+      for (int i = 0; i < metrics.size(); i++) {
+        // print their names...
+        if (metricsPlist.isSublist(metrics[i].getName())) {
+          auto metric_plist = metricsPlist.sublist(metrics[i].getName());
+          // loop on tests
+          auto p= metric_plist.begin(); // iterator
+          while (p != metric_plist.end()) {
+            auto test_name = metric_plist.name(p);
+            if( metrics[i].hasMetricValue(test_name)) {
+              if(!MetricAnalyzer::MetricBoundsTest( metrics[i].getMetricValue(test_name),
+                                                    test_name,
+                                                    metric_plist.sublist(test_name),
+                                                    comm,
+                                                    msg_stream)) {
+                all_tests_pass = false;
+              }
+            } else msg_stream << "UNKNOWN TEST: " + test_name << std::endl;
+            ++p;
+          }
+        } else {
+          msg_stream << "UNKNOWN METRIC: " + metrics[i].getName() << std::endl;
+        }
+      }
+      return all_tests_pass;
+  }
 
   /// \brief Preforms the analysis
   ///
@@ -138,32 +172,28 @@ private:
   /// @param[out] msg_stream a std::ostringstream stream to return information from the analysis
   ///
   /// @return returns a boolean value indicated pass/failure.
-  static bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
-                        const metric_t & metric,
-                        const Teuchos::ParameterList & metricPlist,
-                        ostringstream &msg)
+  static bool MetricBoundsTest( zscalar_t value,
+                                const std::string &test_name,
+                                const Teuchos::ParameterList & metricPlist,
+                                const RCP<const Comm<int>> &comm,
+                                ostringstream &msg)
   {
     // run a comparison of min and max agains a given metric
     // return an error message on failure
     bool pass = true;
-    string test_name = metric.getName() + " test";
-    double value = metric.getMaxImbalance();
-    
     // Perfom tests
-    if (metricPlist.isParameter("lower"))
-    {
+    if (metricPlist.isParameter("lower")) {
       double min = metricPlist.get<double>("lower");
       
-      if(value < min)
-      {
+      if(value < min) {
         if (comm->getRank() == 0)
-          msg << test_name << " FAILED: imbalance per part, "
+          msg << test_name << " FAILED: " + test_name + ": "
               << value << ", less than specified allowable minimum, " 
               << min << ".\n";
         pass = false;
-      }else{
+      } else {
         if (comm->getRank() == 0)
-          msg << test_name << " PASSED: imbalance per part, "
+          msg << test_name << " PASSED: " + test_name  + ": "
               << value << ", greater than specified allowable minimum, " 
               << min << ".\n";
       }
@@ -171,22 +201,19 @@ private:
     
     if(metricPlist.isParameter("upper" ) && pass != false) {
       double max = metricPlist.get<double>("upper");
-      if (value > max)
-      {
+      if (value > max) {
         if (comm->getRank() == 0)
-          msg << test_name << " FAILED: imbalance per part, "
+          msg << test_name << " FAILED: " + test_name + ": "
               << value << ", greater than specified allowable maximum, " 
               << max << ".\n";
         pass = false;
-      }else{
+      } else {
         if (comm->getRank() == 0)
-          msg << test_name << " PASSED: imbalance per part, "
+          msg << test_name << " PASSED: " + test_name + ": "  
               << value << ", less than specified allowable maximum, " 
               << max << ".\n";
       }
-      
     }
-    
     return pass;
   }
 };

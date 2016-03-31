@@ -237,7 +237,7 @@ struct SPMV_Functor {
         sum += val * m_x(row.colidx(iEntry));
       }
 
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
       if (blockDim.x > 1)
         sum += Kokkos::shfl_down(sum, 1,blockDim.x);
       if (blockDim.x > 2)
@@ -252,7 +252,7 @@ struct SPMV_Functor {
       if (threadIdx.x==0) {
 #else
       if (true) {
-#endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         if (doalpha == -1) {
           sum *= value_type(-1);
         } else if (doalpha * doalpha != 1) {
@@ -581,6 +581,62 @@ struct SPMV<const SCALAR_TYPE, \
         const XVector& x, const Scalar& beta, const YVector& y); \
 };
 
+
+//
+// Macro for declaring a full specialization of the SPMV struct, which
+// implements KokkosSparse::spmv for single vectors (1-D Views).  This
+// version of the macro uses the default OFFSET_TYPE, instead of
+// letting users specify it (as with the above macro).  It also uses
+// LAYOUT_TYPE = Kokkos::LayoutLeft (Tpetra's layout).
+//
+// We need to redefine this macro in full, rather than calling the one
+// above, because macros don't allow arguments with commas in them.
+// The correct OFFSET_TYPE default would otherwise (as of 18 Mar 2016;
+// see Tpetra::CrsGraph public typedef 'local_graph_type') be
+// Kokkos::StaticCrsGraph<ORDINAL_TYPE, Kokkos::LayoutLeft,
+// EXEC_SPACE_TYPE>::size_type.
+//
+// SCALAR_TYPE: The type of each entry in the sparse matrix
+// ORDINAL_TYPE: The type of each column index in the sparse matrix
+// EXEC_SPACE_TYPE: The execution space type
+// MEM_SPACE_TYPE: The memory space type
+//
+#define KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( SCALAR_TYPE, ORDINAL_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+template<> \
+struct SPMV<const SCALAR_TYPE, \
+            ORDINAL_TYPE, \
+            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+            Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+            Kokkos::StaticCrsGraph<ORDINAL_TYPE, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE> >::size_type, \
+            const SCALAR_TYPE*, \
+            Kokkos::LayoutLeft, \
+            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+            Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
+            SCALAR_TYPE*, \
+            Kokkos::LayoutLeft, \
+            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+            Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+{ \
+  typedef CrsMatrix<const SCALAR_TYPE, \
+                    ORDINAL_TYPE, \
+                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::StaticCrsGraph<ORDINAL_TYPE, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE> >::size_type> AMatrix; \
+  typedef Kokkos::View<const SCALAR_TYPE*, \
+                       Kokkos::LayoutLeft, \
+                       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector; \
+  typedef Kokkos::View<SCALAR_TYPE*, \
+                       Kokkos::LayoutLeft, \
+                       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector; \
+  typedef typename YVector::non_const_value_type Scalar; \
+ \
+  static void \
+  spmv (const char mode[], const Scalar& alpha, const AMatrix& A, \
+        const XVector& x, const Scalar& beta, const YVector& y); \
+};
+
 //
 // Declarations of full specializations of the SPMV struct.
 // Definitions go in various .cpp file(s) in this directory.
@@ -588,41 +644,33 @@ struct SPMV<const SCALAR_TYPE, \
 
 #ifdef KOKKOS_HAVE_SERIAL
 
-KOKKOSSPARSE_IMPL_SPMV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( int, int, Kokkos::Serial, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( long, int, Kokkos::Serial, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( double, int, Kokkos::Serial, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
 
-KOKKOSSPARSE_IMPL_SPMV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( int, int, Kokkos::OpenMP, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( long, int, Kokkos::OpenMP, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( double, int, Kokkos::OpenMP, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
 
-KOKKOSSPARSE_IMPL_SPMV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( int, int, Kokkos::Threads, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( long, int, Kokkos::Threads, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( double, int, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
 
-KOKKOSSPARSE_IMPL_SPMV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-
-KOKKOSSPARSE_IMPL_SPMV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( int, int, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( long, int, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL( double, int, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA
 
@@ -646,6 +694,50 @@ SPMV<const SCALAR_TYPE, \
      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
      Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
      OFFSET_TYPE, \
+     const SCALAR_TYPE*, \
+     Kokkos::LayoutLeft, \
+     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+     Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
+     SCALAR_TYPE*, \
+     Kokkos::LayoutLeft, \
+     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+     Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+spmv (const char mode[], const Scalar& alpha, const AMatrix& A, \
+      const XVector& x, const Scalar& beta, const YVector& y) \
+{ \
+  if (alpha == Kokkos::Details::ArithTraits<Scalar>::zero ()) { \
+    spmv_alpha<AMatrix,XVector,YVector,0> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  if (alpha == Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+    spmv_alpha<AMatrix,XVector,YVector,1> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  if (alpha == -Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+    spmv_alpha<AMatrix,XVector,YVector,-1> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  spmv_alpha<AMatrix,XVector,YVector,2> (mode, alpha, A, x, beta, y); \
+}
+
+//
+// Macro for defining (not declaring; for the declaration macro, see
+// above) a full specialization of the SPMV struct, using the default
+// OFFSET_TYPE and LAYOUT_TYPE = Kokkos::LayoutLeft (Tpetra's layout).
+// We use this macro in various .cpp file(s) in this directory.
+//
+// SCALAR_TYPE: The type of each entry in the sparse matrix
+// ORDINAL_TYPE: The type of each column index in the sparse matrix
+// EXEC_SPACE_TYPE: The execution space type
+// MEM_SPACE_TYPE: The memory space type
+//
+#define KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( SCALAR_TYPE, ORDINAL_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+void \
+SPMV<const SCALAR_TYPE, \
+     ORDINAL_TYPE, \
+     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+     Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+     Kokkos::StaticCrsGraph<ORDINAL_TYPE, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE> >::size_type, \
      const SCALAR_TYPE*, \
      Kokkos::LayoutLeft, \
      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -880,7 +972,7 @@ struct SPMV_MV_LayoutLeft_Functor {
     if (doalpha == -1) {
       for (int ii=0; ii < UNROLL; ++ii) {
         value_type sumt=sum[ii];
-        #ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         if (blockDim.x > 1)
           sumt += Kokkos::shfl_down(sumt, 1,blockDim.x);
         if (blockDim.x > 2)
@@ -891,14 +983,14 @@ struct SPMV_MV_LayoutLeft_Functor {
           sumt += Kokkos::shfl_down(sumt, 8,blockDim.x);
         if (blockDim.x > 16)
           sumt += Kokkos::shfl_down(sumt, 16,blockDim.x);
-        #endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         sum[ii] = - sumt;
       }
     }
     else {
       for (int ii=0; ii < UNROLL; ++ii) {
         value_type sumt = sum[ii];
-        #ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         if (blockDim.x > 1)
           sumt += Kokkos::shfl_down(sumt, 1,blockDim.x);
         if (blockDim.x > 2)
@@ -909,16 +1001,16 @@ struct SPMV_MV_LayoutLeft_Functor {
           sumt += Kokkos::shfl_down(sumt, 8,blockDim.x);
         if (blockDim.x > 16)
           sumt += Kokkos::shfl_down(sumt, 16,blockDim.x);
-        #endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
         sum[ii] = sumt;
       }
     }
 
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
     if (threadIdx.x==0) {
 #else
     if (true) {
-#endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
       if (doalpha * doalpha != 1) {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1015,7 +1107,7 @@ struct SPMV_MV_LayoutLeft_Functor {
                   row.value(iEntry);
       sum += val * m_x(row.colidx(iEntry),0);
     }
-    #ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
     if (blockDim.x > 1)
       sum += Kokkos::shfl_down(sum, 1,blockDim.x);
     if (blockDim.x > 2)
@@ -1026,13 +1118,13 @@ struct SPMV_MV_LayoutLeft_Functor {
       sum += Kokkos::shfl_down(sum, 8,blockDim.x);
     if (blockDim.x > 16)
       sum += Kokkos::shfl_down(sum, 16,blockDim.x);
-    #endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
 
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
     if (threadIdx.x==0) {
 #else
     if (true) {
-#endif
+#endif // defined(__CUDA_ARCH__) && defined(KOKKOS_HAVE_CUDA)
       if (doalpha == -1) {
         sum *= value_type(-1);
       } else if (doalpha * doalpha != 1) {
@@ -1759,14 +1851,6 @@ KOKKOSSPARSE_IMPL_SPMV_MV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos:
 
 #ifdef KOKKOS_HAVE_CUDA
 
-KOKKOSSPARSE_IMPL_SPMV_MV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_MV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_MV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-
 KOKKOSSPARSE_IMPL_SPMV_MV_DECL( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSSPARSE_IMPL_SPMV_MV_DECL( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSSPARSE_IMPL_SPMV_MV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
@@ -1977,6 +2061,237 @@ SPMV_MV<const SCALAR_TYPE*, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+spmv_mv (const char mode[], \
+         const aCoeffs::non_const_value_type& alpha, \
+         const AMatrix& A, \
+         const XVector& x, \
+         const bCoeffs::non_const_value_type& beta, \
+         const YVector& y) \
+{ \
+  typedef aCoeffs::non_const_value_type Scalar; \
+  if (alpha == Kokkos::Details::ArithTraits<Scalar>::zero ()) { \
+    spmv_alpha_mv<aCoeffs,AMatrix,XVector,bCoeffs,YVector,0> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  if (alpha == Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+    spmv_alpha_mv<aCoeffs,AMatrix,XVector,bCoeffs,YVector,1> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  if (alpha == -Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+    spmv_alpha_mv<aCoeffs,AMatrix,XVector,bCoeffs,YVector,-1> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  const aCoeffs alphav = GetCoeffView<Scalar,aCoeffs::device_type>::get_view (alpha, x.dimension_1 ()); \
+  spmv_mv (mode, alphav, A, x, beta, y); \
+}
+
+
+
+//
+// Macro for defining (not declaring; for the declaration macro, see
+// above) a full specialization of the SPMV_MV struct, with the
+// default OFFSET_TYPE and LAYOUT_TYPE = Kokkos::LayoutLeft (Tpetra's
+// layout).  We use this macro in various .cpp file(s) in this
+// directory.
+//
+// SCALAR_TYPE: The type of each entry in the sparse matrix
+// ORDINAL_TYPE: The type of each column index in the sparse matrix
+// EXEC_SPACE_TYPE: The execution space type
+// MEM_SPACE_TYPE: The memory space type
+//
+#define KOKKOSSPARSE_IMPL_SPMV_MV_DEFAULTS_DEF( SCALAR_TYPE, ORDINAL_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+void \
+SPMV_MV<const SCALAR_TYPE*, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        const SCALAR_TYPE, \
+        ORDINAL_TYPE, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        Kokkos::StaticCrsGraph<ORDINAL_TYPE, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE> >::size_type, \
+        const SCALAR_TYPE**, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
+        const SCALAR_TYPE*, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        SCALAR_TYPE**, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+spmv_mv (const char mode[], \
+         const aCoeffs& alpha, \
+         const AMatrix& A, \
+         const XVector& x, \
+         const bCoeffs& beta, \
+         const YVector& y) \
+{ \
+  if (A.values.capacity () < static_cast<AMatrix::size_type> (INT_MAX) && \
+      x.capacity () < static_cast<AMatrix::size_type> (INT_MAX) && \
+      y.capacity () < static_cast<AMatrix::size_type> (INT_MAX)) { \
+    spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,bCoeffs,YVector,2,2,int> (mode, alpha, A, x, beta, y); \
+  } else { \
+    spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,bCoeffs,YVector,2,2,AMatrix::size_type> (mode, alpha, A, x, beta, y); \
+  } \
+} \
+  \
+void \
+SPMV_MV<const SCALAR_TYPE*, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
+        const SCALAR_TYPE, \
+        ORDINAL_TYPE, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        Kokkos::StaticCrsGraph<ORDINAL_TYPE, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE> >::size_type, \
+        const SCALAR_TYPE**, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> , \
+        const SCALAR_TYPE*, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
+        SCALAR_TYPE**, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+spmv_mv (const char mode[], \
+         const aCoeffs::non_const_value_type& alpha, \
+         const AMatrix& A, \
+         const XVector& x, \
+         const bCoeffs& beta, \
+         const YVector& y) \
+{ \
+  typedef aCoeffs::non_const_value_type Scalar; \
+  if (A.values.capacity () < static_cast<AMatrix::size_type> (INT_MAX) && \
+      x.capacity () < static_cast<AMatrix::size_type> (INT_MAX) && \
+      y.capacity () < static_cast<AMatrix::size_type> (INT_MAX)) { \
+    if (alpha == Kokkos::Details::ArithTraits<Scalar>::zero ()) { \
+      spmv_alpha_beta_mv<bCoeffs,AMatrix,XVector,bCoeffs,YVector,0,2,int> (mode, beta, A, x, beta, y); \
+      return; \
+    } \
+    if (alpha == Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+      spmv_alpha_beta_mv<bCoeffs,AMatrix,XVector,bCoeffs,YVector,1,2,int> (mode, beta, A, x, beta, y); \
+      return; \
+    } \
+    if (alpha == -Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+      spmv_alpha_beta_mv<bCoeffs,AMatrix,XVector,bCoeffs,YVector,-1,2,int> (mode, beta, A, x, beta, y); \
+      return; \
+    } \
+    spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,bCoeffs,YVector,2,2,int> (mode, \
+      GetCoeffView<Scalar,aCoeffs::device_type>::get_view (alpha, x.dimension_1 ()), \
+      A,x,beta,y); \
+  } else { \
+    if (alpha == Kokkos::Details::ArithTraits<Scalar>::zero ()) { \
+      spmv_alpha_beta_mv<bCoeffs,AMatrix,XVector,bCoeffs,YVector,0,2,AMatrix::size_type> (mode, beta, A, x, beta, y); \
+      return; \
+    } \
+    if (alpha == Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+      spmv_alpha_beta_mv<bCoeffs,AMatrix,XVector,bCoeffs,YVector,1,2,AMatrix::size_type> (mode, beta, A, x, beta, y); \
+      return; \
+    } \
+    if (alpha == -Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+      spmv_alpha_beta_mv<bCoeffs,AMatrix,XVector,bCoeffs,YVector,-1,2,AMatrix::size_type> (mode, beta, A, x, beta, y); \
+      return; \
+    } \
+    spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,bCoeffs,YVector,2,2,AMatrix::size_type> (mode, \
+      GetCoeffView<Scalar,aCoeffs::device_type>::get_view (alpha, x.dimension_1 ()), \
+      A, x, beta, y); \
+  } \
+} \
+  \
+void \
+SPMV_MV<const SCALAR_TYPE*, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
+        const SCALAR_TYPE, \
+        ORDINAL_TYPE, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        Kokkos::StaticCrsGraph<ORDINAL_TYPE, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE> >::size_type, \
+        const SCALAR_TYPE**, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> , \
+        const SCALAR_TYPE*, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
+        SCALAR_TYPE**, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+spmv_mv (const char mode[], \
+         const aCoeffs& alpha, \
+         const AMatrix& A, \
+         const XVector& x, \
+         const bCoeffs::non_const_value_type& beta, \
+         const YVector& y) \
+{ \
+  typedef bCoeffs::non_const_value_type Scalar; \
+  if (A.values.capacity () < static_cast<AMatrix::size_type> (INT_MAX) && \
+      x.capacity () < static_cast<AMatrix::size_type> (INT_MAX) && \
+      y.capacity () < static_cast<AMatrix::size_type> (INT_MAX)) { \
+    if (beta == Kokkos::Details::ArithTraits<Scalar>::zero ()) { \
+      spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,aCoeffs,YVector,2,0,int> (mode, alpha, A, x, alpha, y); \
+      return; \
+    } \
+    if (beta == Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+      spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,aCoeffs,YVector,2,1,int> (mode, alpha, A, x, alpha, y); \
+      return; \
+    } \
+    if (beta == -Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+      spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,aCoeffs,YVector,2,-1,int> (mode, alpha, A, x, alpha, y); \
+      return; \
+    } \
+    spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,aCoeffs,YVector,2,2,int> (mode,alpha,A,x, \
+      GetCoeffView<Scalar,bCoeffs::device_type>::get_view(beta,x.dimension_1()),y); \
+  } else { \
+    if (beta == Kokkos::Details::ArithTraits<Scalar>::zero ()) { \
+      spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,aCoeffs,YVector,2,0,AMatrix::size_type> (mode, alpha, A, x, alpha, y); \
+      return; \
+    } \
+    if (beta == Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+      spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,aCoeffs,YVector,2,1,AMatrix::size_type> (mode, alpha, A, x, alpha, y); \
+      return; \
+    } \
+    if (beta == -Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+      spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,aCoeffs,YVector,2,-1,AMatrix::size_type> (mode, alpha, A, x, alpha, y); \
+      return; \
+    } \
+    spmv_alpha_beta_mv<aCoeffs,AMatrix,XVector,aCoeffs,YVector,2,2,AMatrix::size_type> (mode, alpha, A, x, \
+      GetCoeffView<Scalar,bCoeffs::device_type>::get_view (beta, x.dimension_1 ()), y); \
+  } \
+} \
+  \
+void \
+SPMV_MV<const SCALAR_TYPE*, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
+        const SCALAR_TYPE, \
+        ORDINAL_TYPE, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        Kokkos::StaticCrsGraph<ORDINAL_TYPE, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE> >::size_type, \
+        const SCALAR_TYPE**, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> , \
+        const SCALAR_TYPE*, \
+        Kokkos::LayoutLeft, \
+        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
+        SCALAR_TYPE**, \
+        Kokkos::LayoutLeft, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
 spmv_mv (const char mode[], \

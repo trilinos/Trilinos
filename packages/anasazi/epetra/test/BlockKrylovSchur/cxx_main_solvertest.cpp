@@ -39,7 +39,7 @@
 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicOutputManager.hpp"
-#include "AnasaziSVQBOrthoManager.hpp"
+#include "AnasaziBasicOrthoManager.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
 #include "AnasaziSolverUtils.hpp"
@@ -326,8 +326,8 @@ int main(int argc, char *argv[])
   }
 
   // create the orthogonalization managers: one standard and one M-based
-  RCP< MatOrthoManager<ScalarType,AT::MV,AT::OP> > orthostd = rcp( new SVQBOrthoManager<ScalarType,AT::MV,AT::OP>() );
-  RCP< MatOrthoManager<ScalarType,AT::MV,AT::OP> > orthogen = rcp( new SVQBOrthoManager<ScalarType,AT::MV,AT::OP>(M) );
+  RCP< MatOrthoManager<ScalarType,AT::MV,AT::OP> > orthostd = rcp( new BasicOrthoManager<ScalarType,AT::MV,AT::OP>() );
+  RCP< MatOrthoManager<ScalarType,AT::MV,AT::OP> > orthogen = rcp( new BasicOrthoManager<ScalarType,AT::MV,AT::OP>(M) );
   // create the sort manager
   RCP< SortManager<AT::MagnitudeType> > sorter = rcp( new BasicSort<AT::MagnitudeType>("LM") );
   // create the parameter list specifying blocksize > nev and full orthogonalization

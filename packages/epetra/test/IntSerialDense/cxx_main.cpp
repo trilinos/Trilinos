@@ -661,7 +661,7 @@ int matrixExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
-	
+  if (matrix != NULL) delete matrix;	
 	return(returnierr);
 }
 
@@ -1442,7 +1442,7 @@ int vectorExceptions(bool verbose, bool debug) {
 #endif // end of HAVE_EPETRA_ARRAY_BOUNDS_CHECK conditional
 
 	// we don't need to check for ISDV = ISDM, as that is a compile-time error
-	
+  if (vector != NULL) delete vector;	
 	return(returnierr);
 }
 

@@ -45,6 +45,8 @@
 
 #include "CartesianConnManager.hpp"
 
+#include "Panzer_FieldPattern.hpp"
+
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
@@ -81,6 +83,15 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   blocks_.y = by;
   blocks_.z = 1;  // even though its 2D do this
 
+  totalElements_.x = nx*bx;
+  totalElements_.y = ny*by;
+  totalElements_.z = 1*1;
+
+  totalNodes_ = (bx*nx+1)*(by*ny+1);
+  totalEdges_ = (bx*nx+1)*(by*ny)+(bx*nx)*(by*ny+1);
+  totalFaces_ = (bx*nx)*(by*ny);
+  totalCells_ = totalFaces_;
+
   buildLocalElements();
 }
 
@@ -112,6 +123,15 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   blocks_.y = by;
   blocks_.z = bz;
 
+  totalElements_.x = nx*bx;
+  totalElements_.y = ny*by;
+  totalElements_.z = nz*bz;
+
+  totalNodes_ = (bx*nx+1)*(by*ny+1)*(bz*nx+1);
+  totalEdges_ = (bx*nx+1)*(by*ny)*(bz*nz+1)+(bx*nx)*(by*ny+1)*(bz*nz+1)+(bx*nx+1)*(by*ny+1)*(bz*nz);
+  totalFaces_ = (bx*nx)*(by*ny)*(bz*nz+1) + (bx*nx)*(by*ny+1)*(bz*nz) + (bx*nx+1)*(by*ny)*(bz*nz);
+  totalCells_ = (bx*nx)*(by*ny)*(bz*nz);
+
   buildLocalElements();
 }
 
@@ -120,6 +140,32 @@ void
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 buildConnectivity(const panzer::FieldPattern & fp)
 {
+  int dim = fp.getDimension();
+  int numIds = fp.numberIds();
+
+  connectivity_.clear();
+  connectivity_.resize(myElements_.x*myElements_.y*myElements_.z);
+  
+  std::vector<std::string> elementBlockIds;
+  getElementBlockIds(elementBlockIds);
+
+  // loop over all element blocks
+  for(std::size_t i=0;i<elementBlockIds.size();i++) {
+
+    // loop over each element block 
+    const std::vector<LocalOrdinal> & elmts = getElementBlock(elementBlockIds[i]);
+    for(std::size_t e=0;e<elmts.size();e++) {
+      LocalOrdinal element = elmts[e];
+      std::vector<GlobalOrdinal> & conn = connectivity_[element];
+      
+      // loop over each dimension, add in coefficients
+      // ASSUME: Field pattern has logical ordering nodes, edges, faces, cells
+      for(int d=0;d<=dim;d++)
+        updateConnectivity(fp,d,element,conn);
+
+      TEUCHOS_ASSERT(numIds==Teuchos::as<int>(conn.size()));
+    }
+  }
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
@@ -169,11 +215,14 @@ std::string
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 getBlockId(LocalOrdinal localElmtId) const
 {
-  auto globalTriplet = computeGlobalElementTriplet(localElmtId,myElements_,myOffset_);
+  auto globalTriplet = computeLocalElementGlobalTriplet(localElmtId,myElements_,myOffset_);
 
-  int i = Teuchos::as<int>(globalTriplet.x/blocks_.x);
-  int j = Teuchos::as<int>(globalTriplet.y/blocks_.y);
-  int k = Teuchos::as<int>(globalTriplet.z/blocks_.z);
+  // int i = Teuchos::as<int>(globalTriplet.x/blocks_.x);
+  // int j = Teuchos::as<int>(globalTriplet.y/blocks_.y);
+  // int k = Teuchos::as<int>(globalTriplet.z/blocks_.z);
+  int i = Teuchos::as<int>(globalTriplet.x/elements_.x);
+  int j = Teuchos::as<int>(globalTriplet.y/elements_.y);
+  int k = Teuchos::as<int>(globalTriplet.z/elements_.z);
 
   std::stringstream ss;
   ss << "eblock-" << i << "_" << j;
@@ -186,7 +235,7 @@ getBlockId(LocalOrdinal localElmtId) const
 template <typename LocalOrdinal,typename GlobalOrdinal>
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::Triplet<int> 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
-computeMyRankIndex(int myRank,int dim,const Triplet<int> & procs) 
+computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs) 
 {
   // for 2D the rank satisfies:  r = px * j + i
   // for 3D the rank satisfies:  r = px * py * k + px * j + i
@@ -214,8 +263,8 @@ computeMyRankIndex(int myRank,int dim,const Triplet<int> & procs)
 template <typename LocalOrdinal,typename GlobalOrdinal>
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::Triplet<GlobalOrdinal> 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
-computeGlobalElementTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
-                                      const Triplet<GlobalOrdinal> & myOffset)
+computeLocalElementGlobalTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
+                                           const Triplet<GlobalOrdinal> & myOffset)
 {
   Triplet<GlobalOrdinal> localIndex;
 
@@ -231,30 +280,68 @@ computeGlobalElementTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
+GlobalOrdinal
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element,const Triplet<GlobalOrdinal> & shape)
+{
+  return shape.x * shape.y * element.z + shape.x * element.y + element.x;
+}
+
+template <typename LocalOrdinal,typename GlobalOrdinal>
+GlobalOrdinal 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element) const
+{
+  return computeGlobalElementIndex(element,totalElements_);
+}
+
+template <typename LocalOrdinal,typename GlobalOrdinal>
+LocalOrdinal 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+computeLocalElementIndex(const Triplet<GlobalOrdinal> & element,
+                         const Triplet<GlobalOrdinal> & myElements,
+                         const Triplet<GlobalOrdinal> & myOffset)
+{
+  // first make sure its in range
+  GlobalOrdinal dx = element.x-myOffset.x;  
+  GlobalOrdinal dy = element.y-myOffset.y;  
+  GlobalOrdinal dz = element.z-myOffset.z;  
+
+  if(   dx>=myElements.x || dx<0
+     || dy>=myElements.y || dy<0
+     || dz>=myElements.z || dz<0)
+    return -1;
+
+  return myElements.x*myElements.y*dz + myElements.x*dy + dx;
+}
+
+template <typename LocalOrdinal,typename GlobalOrdinal>
+LocalOrdinal 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+computeLocalElementIndex(const Triplet<GlobalOrdinal> & element) const
+{
+  return computeLocalElementIndex(element,myElements_,myOffset_);
+}
+
+template <typename LocalOrdinal,typename GlobalOrdinal>
 void 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 buildLocalElements()
 {
-  // compute the total number of elemetns
-  Triplet<GlobalOrdinal> ttlElements;
-  ttlElements.x = elements_.x * blocks_.x;
-  ttlElements.y = elements_.y * blocks_.y;
-  ttlElements.z = elements_.z * blocks_.z;
-
   // figure out largest possible even subdivision
   Triplet<GlobalOrdinal> evenElements;
-  evenElements.x = ttlElements.x / processors_.x;
-  evenElements.y = ttlElements.y / processors_.y;
-  evenElements.z = ttlElements.z / processors_.z;
+  evenElements.x = totalElements_.x / processors_.x;
+  evenElements.y = totalElements_.y / processors_.y;
+  evenElements.z = totalElements_.z / processors_.z;
 
   // compute the reaminder
   Triplet<GlobalOrdinal> remainderElements;
-  remainderElements.x = ttlElements.x - evenElements.x * processors_.x;
-  remainderElements.y = ttlElements.y - evenElements.y * processors_.y;
-  remainderElements.z = ttlElements.z - evenElements.z * processors_.z;
+  remainderElements.x = totalElements_.x - evenElements.x * processors_.x;
+  remainderElements.y = totalElements_.y - evenElements.y * processors_.y;
+  remainderElements.z = totalElements_.z - evenElements.z * processors_.z;
 
   // compute the processor rank triplet
-  Triplet<int> myRank = computeMyRankIndex(myRank_,dim_,processors_);
+  Triplet<int> myRank = computeMyRankTriplet(myRank_,dim_,processors_);
 
   // how many elements in each direction owned by this proccessor
   Triplet<GlobalOrdinal> myElements;
@@ -275,6 +362,43 @@ buildLocalElements()
   // loop over all your elements and assign them to an element block that owns them
   for(GlobalOrdinal i=0;i<myElements_.x*myElements_.y*myElements_.z;i++)
     localElements_[getBlockId(Teuchos::as<GlobalOrdinal>(i))].push_back(Teuchos::as<int>(i)); 
+}
+
+template <typename LocalOrdinal,typename GlobalOrdinal>
+void 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+updateConnectivity(const panzer::FieldPattern & fp,
+                   int subcellDim,
+                   int localElementId,
+                   std::vector<GlobalOrdinal> & conn) const
+{
+  Triplet<GlobalOrdinal> index = computeLocalElementGlobalTriplet(localElementId,myElements_,myOffset_);
+ 
+  for(int c=0;c<fp.getSubcellCount(subcellDim);c++) {
+    std::size_t num = fp.getSubcellIndices(subcellDim,c).size();
+    TEUCHOS_ASSERT(num==1 || num==0);
+ 
+    if(num==0) continue;
+ 
+    // there is an index to add here
+    if(subcellDim==0) {
+      // node number     =  Number for the lower left          
+      GlobalOrdinal node =  (totalElements_.x+1)*index.y + index.x
+                           + (c==1 || c==2) * 1                    // shift for i+1
+                           + (c==3 || c==2) * (totalElements_.x+1); // shift for j+1
+      conn.push_back(node);
+    }
+    else if(subcellDim==1) {
+      // node number     =  Number for the lower left          
+      GlobalOrdinal edge =  totalNodes_ + (2*totalElements_.x+1)*index.y + index.x
+                                        + (        c==1) * 1                     
+                                        + (        c==2) * (2*totalElements_.x+1)
+                                        + (c==1 || c==3) * totalElements_.x;
+      conn.push_back(edge);
+    } 
+    else if(subcellDim==2)
+      conn.push_back(totalNodes_+totalEdges_+computeGlobalElementIndex(index));
+  }
 }
 
 } // end unit test

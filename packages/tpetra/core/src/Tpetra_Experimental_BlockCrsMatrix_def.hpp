@@ -405,9 +405,55 @@ namespace Experimental {
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
-  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
+  getLocalDiagOffsets (const Kokkos::View<size_t*, device_type,
+                         Kokkos::MemoryUnmanaged>& offsets) const
   {
     graph_.getLocalDiagOffsets (offsets);
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void TPETRA_DEPRECATED
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
+  {
+    // mfh 19 Mar 2016: We plan to deprecate the ArrayRCP version of
+    // this method in CrsGraph too, so don't call it (otherwise build
+    // warnings will show up and annoy users).  Instead, copy results
+    // in and out, if the memory space requires it.
+
+    const size_t lclNumRows = graph_.getNodeNumRows ();
+    if (static_cast<size_t> (offsets.size ()) < lclNumRows) {
+      offsets.resize (lclNumRows);
+    }
+
+    // Kokkos #178 (closed because it was considered a question, not
+    // because it was resolved) talks about how the first argument
+    // of this metafunction (despite its name) must be a memory
+    // space, not an execution space.
+    using Kokkos::Impl::VerifyExecutionCanAccessMemorySpace;
+    const bool canReachHost =
+      VerifyExecutionCanAccessMemorySpace<typename device_type::memory_space,
+                                          Kokkos::HostSpace>::value;
+    if (canReachHost) {
+      // This matrix's execution space can access host memory.  Thus,
+      // we don't need to copy.
+      //
+      // It is always syntactically correct to assign a raw host
+      // pointer to a device View, so this code will compile correctly
+      // (though never execute) even if canReachHost is false.
+      typedef Kokkos::View<size_t*, device_type,
+                           Kokkos::MemoryUnmanaged> output_type;
+      output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
+      graph_.getLocalDiagOffsets (offsetsOut);
+    }
+    else {
+      Kokkos::View<size_t*, device_type> offsetsTmp ("diagOffsets", lclNumRows);
+      graph_.getLocalDiagOffsets (offsetsTmp);
+      typedef Kokkos::View<size_t*, Kokkos::HostSpace,
+                           Kokkos::MemoryUnmanaged> output_type;
+      output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
+      Kokkos::deep_copy (offsetsOut, offsetsTmp);
+    }
   }
 
   template <class Scalar, class LO, class GO, class Node>
@@ -2944,34 +2990,34 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalDiagCopy (Tpetra::Vector<Scalar,LO,GO,Node> &diag) const
   {
+    const size_t lclNumMeshRows = graph_.getNodeNumRows ();
+
+    Kokkos::View<size_t*, device_type> diagOffsets ("diagOffsets", lclNumMeshRows);
+    graph_.getLocalDiagOffsets (diagOffsets);
+
+    // The code below works on host, so use a host View.
+    auto diagOffsetsHost = Kokkos::create_mirror_view (diagOffsets);
+    Kokkos::deep_copy (diagOffsetsHost, diagOffsets);
+    // We're filling diag on host for now.
+    diag.template modify<typename decltype (diagOffsetsHost)::memory_space> ();
+
     // TODO amk: This is a temporary measure to make the code run with Ifpack2
-    int rowOffset = 0;
-    int offset = 0;
+    size_t rowOffset = 0;
+    size_t offset = 0;
     LO bs = getBlockSize();
-    Teuchos::ArrayRCP<size_t> colOffsets;
-    getLocalDiagOffsets (colOffsets);
     for(size_t r=0; r<getNodeNumRows(); r++)
     {
       // move pointer to start of diagonal block
-      offset = rowOffset + colOffsets[r]*bs*bs;
+      offset = rowOffset + diagOffsetsHost(r)*bs*bs;
       for(int b=0; b<bs; b++)
       {
-        std::cout << "offset: " << offset+b*(bs+1) << std::endl;
         diag.replaceLocalValue(r*bs+b, val_[offset+b*(bs+1)]);
       }
       // move pointer to start of next block row
       rowOffset += getNumEntriesInLocalRow(r)*bs*bs;
     }
 
-#if 0
-    Teuchos::RCP<Teuchos::FancyOStream> wrappedStream = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-    diag.describe (*wrappedStream, Teuchos::VERB_EXTREME);
-
-    std::cout << "Raw data:\n";
-    int nnz = getNodeNumEntries()*bs*bs;
-    for(int i=0; i<nnz; i++)
-      std::cout << "val[" << i << "] = " << val_[i] << std::endl;
-#endif // 0
+    diag.template sync<memory_space> (); // sync vec of diag entries back to dev
   }
 
   template<class Scalar, class LO, class GO, class Node>

@@ -25,6 +25,9 @@
 /* Define if want to build with kokkos-core enabled */
 #cmakedefine HAVE_SACADO_KOKKOSCORE
 
+/* Define if want to build with kokkos-containers enabled */
+#cmakedefine HAVE_SACADO_KOKKOSCONTAINERS
+
 /* Define if want to build with TeuchosKokkosComm subpackage enabled */
 #cmakedefine HAVE_SACADO_TEUCHOSKOKKOSCOMM
 #ifdef HAVE_SACADO_TEUCHOSKOKKOSCOMM

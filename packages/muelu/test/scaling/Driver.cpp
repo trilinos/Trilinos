@@ -514,6 +514,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         bool set = belosProblem->setProblem();
         if (set == false) {
           out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+          // this fixes the resource leak detected by coverity (CID134984)
+          if (openedOut != NULL) {
+            fclose(openedOut);
+            openedOut = NULL;
+          }
           return EXIT_FAILURE;
         }
 

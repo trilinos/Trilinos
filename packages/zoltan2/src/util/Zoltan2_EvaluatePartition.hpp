@@ -62,7 +62,7 @@ namespace Zoltan2{
     \todo write a unit test for this class
  */
 
-template <typename Adapter>
+  template <typename Adapter>
   class EvaluatePartition {
 
 private:
@@ -72,8 +72,6 @@ private:
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef StridedData<lno_t, scalar_t> input_t;
-
-  const RCP<const Environment> env_;
 
   part_t numGlobalParts_;           // desired
   part_t targetGlobalParts_;        // actual
@@ -87,21 +85,18 @@ private:
 public:
 
   /*! \brief Constructor
-      \param env   the problem environment
-      \param problemComm  the problem communicator
       \param ia the problem input adapter
+      \param problemComm  the problem communicator
       \param soln  the solution
-      \param useDegreeAsWeight whether to use vertex degree as vertex weight
       \param graphModel the graph model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
-  EvaluatePartition(const RCP<const Environment> &env,
+    EvaluatePartition(const Adapter *ia, 
+    ParameterList *p,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const typename Adapter::base_adapter_t> &ia, 
     const PartitioningSolution<Adapter> *soln,
-    bool useDegreeAsWeight = false,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
 
@@ -189,18 +184,23 @@ public:
   }
 };
 
-template <typename Adapter>
+  template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
-  const RCP<const Environment> &env,
-  const RCP<const Comm<int> > &problemComm,
-  const RCP<const typename Adapter::base_adapter_t> &ia, 
+  const Adapter *ia, 
+  ParameterList *p,
+  const RCP<const Comm<int> > &comm,
   const PartitioningSolution<Adapter> *soln,
-  bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
-    env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
-    metrics_(),  metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
 {
-
+  RCP<const Comm<int> > problemComm;
+  if (comm == Teuchos::null) {
+    problemComm = DefaultComm<int>::getComm();//communicator is Teuchos default
+  } else {
+    problemComm = comm;
+  }
+  RCP<Environment> env = rcp(new Environment(*p, problemComm));
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
   env->timerStart(MACRO_TIMERS, "Computing metrics");
 
@@ -208,10 +208,8 @@ template <typename Adapter>
   // should check those here.  For now we compute metrics
   // using all weights.
 
-  const Teuchos::ParameterList &pl = env->getParameters();
-
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
-  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
+  const Teuchos::ParameterEntry *pe = p->getEntryPtr("partitioning_objective");
   if (pe){
     std::string strChoice = pe->getValue<std::string>(&strChoice);
     if (strChoice == std::string("multicriteria_minimize_total_weight"))
@@ -220,10 +218,12 @@ template <typename Adapter>
       mcnorm = normMinimizeMaximumWeight;
   } 
 
+  const RCP<const base_adapter_t> bia =
+    rcp(dynamic_cast<const base_adapter_t *>(ia), false);
+
   try{
-    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln,
-			   useDegreeAsWeight, graphModel, numGlobalParts_,
-			   numNonEmpty_,metrics_);
+    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, graphModel,
+			   numGlobalParts_, numNonEmpty_,metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -234,7 +234,7 @@ template <typename Adapter>
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
 
-  BaseAdapterType inputType = ia->adapterType();
+  BaseAdapterType inputType = bia->adapterType();
 
   if (inputType == GraphAdapterType ||
       inputType == MatrixAdapterType ||
@@ -250,23 +250,33 @@ template <typename Adapter>
 
     RCP<GraphModel<base_adapter_t> > graph;
     if (graphModel == Teuchos::null)
-      graph=rcp(new GraphModel<base_adapter_t>(ia,env,problemComm,modelFlags));
+      graph = rcp(new GraphModel<base_adapter_t>(bia, env, problemComm, 
+						 modelFlags));
 
     // Local number of objects.
 
-    size_t numLocalObjects = ia->getLocalNumIDs();
+    size_t numLocalObjects = bia->getLocalNumIDs();
 
     // Parts to which objects are assigned.
 
     const part_t *parts;
     if (soln) {
+      // User provided a partitioning solution; use it.
       parts = soln->getPartListView();
       env->localInputAssertion(__FILE__, __LINE__, "parts not set",
         ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
     } else {
-      part_t *procs = new part_t [numLocalObjects];
-      for (size_t i=0; i<numLocalObjects; i++) procs[i]=problemComm->getRank();
-      parts = procs;
+      // User did not provide a partitioning solution;
+      // Use input adapter partition.
+
+      parts = NULL;
+      bia->getPartsView(parts);
+      if (parts == NULL) {
+	// User has not provided input parts in input adapter
+	part_t *procs = new part_t [numLocalObjects];
+	for (size_t i=0;i<numLocalObjects;i++) procs[i]=problemComm->getRank();
+	parts = procs;
+      }
     }
     ArrayView<const part_t> partArray(parts, numLocalObjects);
 

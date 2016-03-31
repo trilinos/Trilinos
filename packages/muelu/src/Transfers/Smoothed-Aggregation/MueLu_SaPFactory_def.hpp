@@ -175,21 +175,33 @@ namespace MueLu {
       if (Ptent->IsView("stridedMaps"))
         finalP->CreateView("stridedMaps", Ptent);
 
+      if (IsPrint(Statistics1)) {
+        RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        params->set("printCommInfo",          true);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*finalP, "P", params);
+      }
+
     } else {
       // The factory is in restriction mode
-      RCP<Matrix> R = Utilities::Transpose(*finalP, true);
+      RCP<Matrix> R;
+      {
+        SubFactoryMonitor m2(*this, "Transpose P", coarseLevel);
+        R = Utilities::Transpose(*finalP, true);
+      }
+
       Set(coarseLevel, "R", R);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
-        R->CreateView("stridedMaps", Ptent, true);
-    }
+        R->CreateView("stridedMaps", Ptent, true/*transposeA*/);
 
-    if (IsPrint(Statistics1)) {
-      RCP<ParameterList> params = rcp(new ParameterList());
-      params->set("printLoadBalancingInfo", true);
-      params->set("printCommInfo",          true);
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
+      if (IsPrint(Statistics1)) {
+        RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        params->set("printCommInfo",          true);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+      }
     }
 
   } //Build()

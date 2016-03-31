@@ -9,9 +9,8 @@ fi
 
 TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
 
-DRIVERS_BASE_DIR="$TRILINOS_DIR_ABS/cmake/ctest/drivers/ATTB"
-
 cmake \
+  -DTrilinos_USE_ATTB_DEV_ENV=ON \
   -DTPL_ENABLE_MPI=ON \
   -DCMAKE_BUILD_TYPE=Release \
   -DTrilinos_ENABLE_DEBUG=ON \

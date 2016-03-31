@@ -37,6 +37,9 @@ public:
     MachineRepresentation(const Teuchos::Comm<int> &comm) :
       machine(new machine_t(comm)) { }
 
+    MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ) :
+          machine(new machine_t(comm, pl)) { }
+
     ~MachineRepresentation() {delete machine;}
 
     // Interface functions follow.
@@ -106,6 +109,11 @@ public:
     /*! \brief return the number of ranks.
      */
     inline int getNumRanks() const { return machine->getNumRanks(); }
+
+
+    inline bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
+      return machine->getHopCount(rank1, rank2, hops);
+    }
 
 
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.

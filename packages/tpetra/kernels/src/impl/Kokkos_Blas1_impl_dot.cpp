@@ -67,12 +67,6 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_CUDA
 
-  KOKKOSBLAS_IMPL_V_DOT_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-
   KOKKOSBLAS_IMPL_V_DOT_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA

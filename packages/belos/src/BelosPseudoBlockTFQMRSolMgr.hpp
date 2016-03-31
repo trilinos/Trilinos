@@ -270,6 +270,7 @@ namespace Belos {
     
     // Default solver values.
     static const MagnitudeType convtol_default_;
+    static const MagnitudeType impTolScale_default_;
     static const int maxIters_default_;
     static const bool expResTest_default_;
     static const int verbosity_default_;
@@ -282,7 +283,7 @@ namespace Belos {
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
     // Current solver values.
-    MagnitudeType convtol_, achievedTol_;
+    MagnitudeType convtol_, impTolScale_, achievedTol_;
     int maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_, defQuorum_;
     bool expResTest_;
@@ -300,6 +301,9 @@ namespace Belos {
 // Default solver values.
 template<class ScalarType, class MV, class OP>
 const typename PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::MagnitudeType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+
+template<class ScalarType, class MV, class OP>
+const typename PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::MagnitudeType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::impTolScale_default_ = 10.0;
 
 template<class ScalarType, class MV, class OP>
 const int PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
@@ -337,6 +341,7 @@ template<class ScalarType, class MV, class OP>
 PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::PseudoBlockTFQMRSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
+  impTolScale_(impTolScale_default_),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxIters_(maxIters_default_),
   numIters_(0),
@@ -361,6 +366,7 @@ PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::PseudoBlockTFQMRSolMgr(
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
+  impTolScale_(impTolScale_default_),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxIters_(maxIters_default_),
   numIters_(0),
@@ -479,32 +485,27 @@ void PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
-    if (impConvTest_ != Teuchos::null)
-      impConvTest_->setTolerance( convtol_ );
-    if (expConvTest_ != Teuchos::null)
-      expConvTest_->setTolerance( convtol_ );
+    isSTSet_ = false;
   }
-  
-  // Check for a change in scaling, if so we need to build new residual tests.
+ 
+  if (params->isParameter("Implicit Tolerance Scale Factor")) {
+    impTolScale_ = params->get("Implicit Tolerance Scale Factor",impTolScale_default_);
+
+    // Update parameter in our list.
+    params_->set("Implicit Tolerance Scale Factor", impTolScale_);
+    isSTSet_ = false;
+  }
+
   if (params->isParameter("Implicit Residual Scaling")) {
     std::string tempImpResScale = Teuchos::getParameter<std::string>( *params, "Implicit Residual Scaling" );
 
     // Only update the scaling if it's different.
     if (impResScale_ != tempImpResScale) {
-      Belos::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
       impResScale_ = tempImpResScale;
 
-      // Update parameter in our list and residual tests
+      // Update parameter in our list.
       params_->set("Implicit Residual Scaling", impResScale_);
-      if (impConvTest_ != Teuchos::null) {
-        try { 
-          impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
-        }
-        catch (std::exception& e) { 
-          // Make sure the convergence test gets constructed again.
-          isSTSet_ = false;
-        }
-      }
+      isSTSet_ = false;
     }      
   }
   
@@ -513,20 +514,11 @@ void PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     // Only update the scaling if it's different.
     if (expResScale_ != tempExpResScale) {
-      Belos::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
       expResScale_ = tempExpResScale;
 
-      // Update parameter in our list and residual tests
+      // Update parameter in our list.
       params_->set("Explicit Residual Scaling", expResScale_);
-      if (expConvTest_ != Teuchos::null) {
-        try { 
-          expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
-        }
-        catch (std::exception& e) {
-          // Make sure the convergence test gets constructed again.
-          isSTSet_ = false;
-        }
-      }
+      isSTSet_ = false;
     }      
   }
 
@@ -579,7 +571,7 @@ bool PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::checkStatusTest() {
    
     // Implicit residual test, using the native residual to determine if convergence was achieved.
     Teuchos::RCP<StatusTestGenResNorm_t> tmpImpConvTest =
-      Teuchos::rcp( new StatusTestGenResNorm_t( convtol_, defQuorum_ ) );
+      Teuchos::rcp( new StatusTestGenResNorm_t( impTolScale_*convtol_, defQuorum_ ) );
     tmpImpConvTest->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );
     impConvTest_ = tmpImpConvTest;
 
@@ -636,6 +628,9 @@ PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Convergence Tolerance", convtol_default_,
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
+    pl->set("Implicit Tolerance Scale Factor", impTolScale_default_,
+      "The scale factor used by the implicit residual test when explicit residual\n"
+      "testing is used.  May enable faster convergence when TFQMR bound is too loose.");
     pl->set("Maximum Iterations", maxIters_default_,
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
@@ -695,10 +690,9 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
   int numCurrRHS = numRHS2Solve;
 
-  std::vector<int> currIdx( numRHS2Solve ), currIdx2( numRHS2Solve );
+  std::vector<int> currIdx( numRHS2Solve );
   for (int i=0; i<numRHS2Solve; ++i) {
     currIdx[i] = startPtr+i;
-    currIdx2[i]=i;
   }
 
   // Inform the linear problem of the current linear system to solve.
@@ -787,13 +781,11 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
               }
               if (!found) {
                 unconvIdx[have] = i;
-                currIdx2[have] = currIdx2[i];
                 currRHSIdx[have++] = currRHSIdx[i];
               }
             }
             unconvIdx.resize(have);
             currRHSIdx.resize(have);
-            currIdx2.resize(have);
 
             // Set the remaining indices after deflation.
             problem_->setLSIndex( currRHSIdx );
@@ -868,9 +860,8 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
       if ( numRHS2Solve > 0 ) {
         numCurrRHS = numRHS2Solve;
         currIdx.resize( numCurrRHS );
-        currIdx2.resize( numCurrRHS );
         for (int i=0; i<numCurrRHS; ++i)
-          { currIdx[i] = startPtr+i; currIdx2[i] = i; }
+          { currIdx[i] = startPtr+i; }
 
         // Adapt the status test quorum if we need to.
         if (defQuorum_ > numCurrRHS) {

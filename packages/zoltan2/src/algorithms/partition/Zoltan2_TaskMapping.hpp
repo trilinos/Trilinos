@@ -20,9 +20,8 @@
 #include "Teuchos_Comm.hpp"
 #ifdef HAVE_ZOLTAN2_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
-#else
-#include "Teuchos_DefaultSerialComm.hpp"
 #endif // HAVE_ZOLTAN2_MPI
+#include <Teuchos_DefaultSerialComm.hpp>
 
 //#define gnuPlot
 #include "Zoltan2_XpetraMultiVectorAdapter.hpp"
@@ -138,7 +137,8 @@ void getSolutionCenterCoordinates(
     const Environment *envConst,
     const Teuchos::Comm<int> *comm,
     const Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *coords,
-    const Zoltan2::PartitioningSolution<Adapter> *soln_,
+    //const Zoltan2::PartitioningSolution<Adapter> *soln_,
+    const part_t *parts,
     int coordDim,
     part_t ntasks,
     scalar_t **partCenters){
@@ -177,7 +177,7 @@ void getSolutionCenterCoordinates(
   }
 
   //get parts with parallel gnos.
-  const part_t *parts = soln_->getPartListView();
+  //const part_t *parts = soln_->getPartListView();
   /*
     for (lno_t i=0; i < numLocalCoords; i++){
   cout << "me:" << comm->getRank() << " gno:" << soln_gnos[i] << " tmp.part :" << parts[i]<< endl;
@@ -235,7 +235,9 @@ void getCoarsenedPartGraph(
     const Environment *envConst,
     const Teuchos::Comm<int> *comm,
     const Zoltan2::GraphModel<typename Adapter::base_adapter_t> *graph,
-    const Zoltan2::PartitioningSolution<Adapter> *soln_,
+    //const Zoltan2::PartitioningSolution<Adapter> *soln_,
+    part_t np,
+    const part_t *parts,
     ArrayRCP<part_t> &g_part_xadj,
     ArrayRCP<part_t> &g_part_adj,
     ArrayRCP<scalar_t> &g_part_ew
@@ -250,12 +252,14 @@ void getCoarsenedPartGraph(
   //int myRank = comm->getRank();
 
   //get parts with parallel gnos.
+  /*
   const part_t *parts = soln_->getPartListView();
 
   part_t np = soln_->getActualGlobalNumberOfParts();
   if (part_t (soln_->getTargetGlobalNumberOfParts()) > np){
     np = soln_->getTargetGlobalNumberOfParts();
   }
+  */
 
 
   t_lno_t localNumVertices = graph->getLocalNumVertices();
@@ -287,6 +291,8 @@ void getCoarsenedPartGraph(
   //create a zoltan dictionary to get the parts of the vertices
   //at the other end of edges
   std::vector <part_t> e_parts (localNumEdges);
+#ifdef HAVE_ZOLTAN2_MPI
+  if (comm->getSize() > 1)
   {
     Zoltan_DD_Struct *dd = NULL;
 
@@ -317,6 +323,81 @@ void getCoarsenedPartGraph(
         NULL
         );
     Zoltan_DD_Destroy(&dd);
+  } else
+#endif
+  {
+
+    /*
+    std::cout << "localNumVertices:" << localNumVertices
+              << " np:" << np
+              << " globalNumVertices:" << globalNumVertices
+              << " localNumEdges:" << localNumEdges << std::endl;
+              */
+
+    for (t_lno_t i = 0; i < localNumEdges; ++i){
+      t_gno_t ei = edgeIds[i];
+      part_t p = parts[ei];
+      e_parts[i] = p;
+    }
+
+    //get the vertices in each part in my part.
+    std::vector <t_lno_t> part_begins(np, -1);
+    std::vector <t_lno_t> part_nexts(localNumVertices, -1);
+
+    //cluster vertices according to their parts.
+    //create local part graph.
+    for (t_lno_t i = 0; i < localNumVertices; ++i){
+      part_t ap = parts[i];
+      part_nexts[i] = part_begins[ap];
+      part_begins[ap] = i;
+    }
+
+
+    g_part_xadj = ArrayRCP<part_t> (np + 1);
+    g_part_adj = ArrayRCP<part_t> (localNumEdges);
+    g_part_ew = ArrayRCP<t_scalar_t> (localNumEdges);
+    part_t nindex = 0;
+    g_part_xadj[0] = 0;
+    std::vector <part_t> part_neighbors (np);
+    std::vector <t_scalar_t> part_neighbor_weights(np, 0);
+    std::vector <t_scalar_t> part_neighbor_weights_ordered(np);
+
+    //coarsen for all vertices in my part in order with parts.
+    for (t_lno_t i = 0; i < np; ++i){
+      part_t num_neighbor_parts = 0;
+      t_lno_t v = part_begins[i];
+      //get part i, and first vertex in this part v.
+      while (v != -1){
+        //now get the neightbors of v.
+        for (t_lno_t j = offsets[v]; j < offsets[v+1]; ++j){
+          //get the part of the second vertex.
+          part_t ep = e_parts[j];
+
+          t_scalar_t ew = 1;
+          if (numWeightPerEdge > 0){
+            ew = edge_weights[j];
+          }
+          //std::cout << "part:" << i << " v:" << v << " part2:" << ep  << " v2:" << edgeIds[j] << " w:" << ew << std::endl;
+          //add it to my local part neighbors for part i.
+          if (part_neighbor_weights[ep] < 0.00001){
+            part_neighbors[num_neighbor_parts++] = ep;
+          }
+          part_neighbor_weights[ep] += ew;
+        }
+        v = part_nexts[v];
+      }
+
+
+      //now get the part list.
+      for (t_lno_t j = 0; j < num_neighbor_parts; ++j){
+        part_t neighbor_part = part_neighbors[j];
+        g_part_adj[nindex] = neighbor_part;
+        g_part_ew[nindex++] = part_neighbor_weights[neighbor_part];
+        part_neighbor_weights[neighbor_part] = 0;
+      }
+      g_part_xadj[i + 1] = nindex;
+    }
+    return;
   }
 
   RCP<const Teuchos::Comm<int> > tcomm = rcpFromRef(*comm);
@@ -326,6 +407,9 @@ void getCoarsenedPartGraph(
   typedef Tpetra::CrsMatrix<t_scalar_t, part_t, part_t, t_node_t> tcrsMatrix_t;
   Teuchos::RCP<tcrsMatrix_t> tMatrix(new tcrsMatrix_t (map, 0));
 
+
+
+  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE Coarsen");
   {
     //get the vertices in each part in my part.
     std::vector <t_lno_t> part_begins(np, -1);
@@ -384,7 +468,10 @@ void getCoarsenedPartGraph(
       }
     }
   }
+  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE Coarsen");
+  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE fillComplete");
   tMatrix->fillComplete ();
+  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE fillComplete");
 
 
   std::vector <part_t> part_indices(np);
@@ -399,6 +486,7 @@ void getCoarsenedPartGraph(
   Teuchos::RCP<const map_t> gatherRowMap(new map_t (
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), global_ids, 0, tcomm));
 
+  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE Import");
   //create the importer for gatherAll
   Teuchos::RCP<tcrsMatrix_t> A_gather =
       Teuchos::rcp (new tcrsMatrix_t (gatherRowMap, 0));
@@ -406,6 +494,7 @@ void getCoarsenedPartGraph(
   import_type import (map, gatherRowMap);
   A_gather->doImport (*tMatrix, import, Tpetra::INSERT);
   A_gather->fillComplete ();
+  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE Import");
 
   //create the output part arrays.
   //all processors owns whole copy.
@@ -418,6 +507,8 @@ void getCoarsenedPartGraph(
   t_scalar_t *taskadjwgt = g_part_ew.getRawPtr();
 
   taskidx[0] = 0;
+
+  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE Import Copy");
   for (part_t i = 0; i < np; i++) {
     part_t length = A_gather->getNumEntriesInLocalRow(i);  // Use Global to get same
     size_t nentries;
@@ -427,6 +518,7 @@ void getCoarsenedPartGraph(
     Teuchos::ArrayView<t_scalar_t> Values(taskadjwgt + taskidx[i], length);
     A_gather->getLocalRowCopy(i, Indices, Values, nentries);
   }
+  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE Import Copy");
 }
 
 
@@ -812,15 +904,22 @@ public:
         part_t neighborTask = task_communication_adj[task2];
         //cout << "neighborTask :" << neighborTask  << endl;
         int neighborProc = task_to_proc[neighborTask];
-        double distance = getProcDistance(assigned_proc, neighborProc);
-        //cout << "assigned_proc:" << assigned_proc << " neighborProc:" << neighborProc << " d:" << distance << endl;
 
+        double distance = getProcDistance(assigned_proc, neighborProc);
 
         if (task_communication_edge_weight == NULL){
           totalCost += distance ;
         }
         else {
           totalCost += distance * task_communication_edge_weight[task2];
+
+          /*
+          std::cout <<  "\ttask:" << task << " assigned_proc:" << assigned_proc <<
+                        "task2:" << task << " neighborProc:" << neighborProc <<
+                        " d:" << distance << " task_communication_edge_weight[task2]:" << task_communication_edge_weight[task2] <<
+                        " wh:" << distance * task_communication_edge_weight[task2] <<
+                        std::endl;
+          */
         }
       }
     }
@@ -864,6 +963,7 @@ public:
 
   int *machine_extent;
   bool *machine_extent_wrap_around;
+  const MachineRepresentation<pcoord_t,part_t> *machine;
 
   //public:
   CoordinateCommunicationModel():
@@ -875,7 +975,8 @@ public:
     partArraySize(-1),
     partNoArray(NULL),
     machine_extent(NULL),
-    machine_extent_wrap_around(NULL){}
+    machine_extent_wrap_around(NULL),
+    machine(NULL){}
 
   virtual ~CoordinateCommunicationModel(){}
 
@@ -895,15 +996,17 @@ public:
       part_t no_procs_,
       part_t no_tasks_,
       int *machine_extent_,
-      bool *machine_extent_wrap_around_
+      bool *machine_extent_wrap_around_,
+      const MachineRepresentation<pcoord_t,part_t> *machine_ = NULL
   ):
     CommunicationModel<part_t, pcoord_t>(no_procs_, no_tasks_),
     proc_coord_dim(pcoord_dim_), proc_coords(pcoords_),
     task_coord_dim(tcoord_dim_), task_coords(tcoords_),
-    partArraySize(std::min(tcoord_dim_, pcoord_dim_)),
+    partArraySize(-1),
     partNoArray(NULL),
     machine_extent(machine_extent_),
-    machine_extent_wrap_around(machine_extent_wrap_around_){
+    machine_extent_wrap_around(machine_extent_wrap_around_),
+    machine(machine_){
   }
 
 
@@ -968,16 +1071,22 @@ public:
   }
 
   virtual double getProcDistance(int procId1, int procId2) const{
-    double distance = 0;
-    for (int i = 0 ; i < this->proc_coord_dim; ++i){
-      double d = ZOLTAN2_ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
-      if (machine_extent_wrap_around && machine_extent_wrap_around[i]){
-        if (machine_extent[i] - d < d){
-          d = machine_extent[i] - d;
+    pcoord_t distance = 0;
+    if (machine == NULL){
+      for (int i = 0 ; i < this->proc_coord_dim; ++i){
+        double d = ZOLTAN2_ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
+        if (machine_extent_wrap_around && machine_extent_wrap_around[i]){
+          if (machine_extent[i] - d < d){
+            d = machine_extent[i] - d;
+          }
         }
+        distance += d;
       }
-      distance += d;
     }
+    else {
+      this->machine->getHopCount(procId1, procId2, distance);
+    }
+
     return distance;
   }
 
@@ -1055,14 +1164,28 @@ public:
     //obtain the number of parts that should be divided.
     part_t num_parts = MINOF(this->no_procs, this->no_tasks);
     //obtain the min coordinate dim.
-    part_t minCoordDim = MINOF(this->task_coord_dim, this->proc_coord_dim);
+    //No more want to do min coord dim. If machine dimension > task_dim,
+    //we end up with a long line.
+    //part_t minCoordDim = MINOF(this->task_coord_dim, this->proc_coord_dim);
 
     int recursion_depth = partArraySize;
-    if(partArraySize < minCoordDim) recursion_depth = minCoordDim;
+    //if(partArraySize < minCoordDim) recursion_depth = minCoordDim;
+    if (partArraySize == -1)
+      recursion_depth = log(float(this->no_procs)) / log(2.0) + 1;
+
 
     int taskPerm = z2Fact<int>(this->task_coord_dim); //get the number of different permutations for task dimension ordering
     int procPerm = z2Fact<int>(this->proc_coord_dim); //get the number of different permutations for proc dimension ordering
+
     int permutations =  taskPerm * procPerm; //total number of permutations
+    //now add the ones, where we divide the processors with longest dimension,
+    //but task with order.
+    permutations +=  taskPerm;
+    //and divide tasks with longest dimension, and processors with order.
+    permutations += procPerm; //total number of permutations
+    //and both with longest dimension.
+    permutations += 1;
+    //add one also that partitions based the longest dimension.
 
     //holds the pointers to proc_adjList
     part_t *proc_xadj = allocMemory<part_t> (num_parts+1);
@@ -1082,9 +1205,56 @@ public:
     }
 
     int myPermutation = myRank % permutations; //the index of the permutation
+    bool task_partition_along_longest_dim = false;
+    bool proc_partition_along_longest_dim = false;
 
-    int myProcPerm=  myPermutation % procPerm; // the index of the proc permutation
-    int myTaskPerm  = myPermutation / procPerm; // the index of the task permutation
+
+    int myProcPerm = 0;
+    int myTaskPerm = 0;
+
+    if (myPermutation == 0){
+      task_partition_along_longest_dim = true;
+      proc_partition_along_longest_dim = true;
+    }
+    else {
+      --myPermutation;
+      if (myPermutation < taskPerm){
+        proc_partition_along_longest_dim = true;
+        myTaskPerm  = myPermutation; // the index of the task permutation
+      }
+      else{
+        myPermutation -= taskPerm;
+        if (myPermutation < procPerm){
+          task_partition_along_longest_dim = true;
+          myProcPerm  = myPermutation; // the index of the task permutation
+        }
+        else {
+          myPermutation -= procPerm;
+          myProcPerm = myPermutation % procPerm; // the index of the proc permutation
+          myTaskPerm = myPermutation / procPerm; // the index of the task permutation
+        }
+      }
+    }
+
+
+
+
+    /*
+    if (task_partition_along_longest_dim && proc_partition_along_longest_dim){
+      std::cout <<"me:" << myRank << " task:longest proc:longest" << " numPerms:" << permutations << std::endl;
+    }
+    else if (proc_partition_along_longest_dim){
+      std::cout <<"me:" << myRank << " task:" <<  myTaskPerm << " proc:longest" << " numPerms:" << permutations << std::endl;
+    }
+    else if (task_partition_along_longest_dim){
+      std::cout <<"me:" << myRank << " task: longest" << " proc:" <<  myProcPerm  << " numPerms:" << permutations << std::endl;
+    }
+    else {
+      std::cout <<"me:" << myRank << " task:" <<  myTaskPerm << " proc:" <<  myProcPerm  << " numPerms:" << permutations << std::endl;
+    }
+    */
+
+
 
     int *permutation = allocMemory<int> ((this->proc_coord_dim > this->task_coord_dim)
         ? this->proc_coord_dim : this->task_coord_dim);
@@ -1099,6 +1269,8 @@ public:
     }
 
 
+    //if (partNoArray == NULL) std::cout << "partNoArray is null" << std::endl;
+    //std::cout << "recursion_depth:" << recursion_depth << " partArraySize:" << partArraySize << std::endl;
     //do the partitioning and renumber the parts.
     env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
 
@@ -1108,12 +1280,14 @@ public:
         this->no_procs,
         used_num_procs,
         num_parts,
-        minCoordDim,
+        this->proc_coord_dim,
+        //minCoordDim,
         pcoords,//this->proc_coords,
         proc_adjList,
         proc_xadj,
         recursion_depth,
-        partNoArray
+        partNoArray,
+        proc_partition_along_longest_dim
         //,"proc_partitioning"
     );
     env->timerStop(MACRO_TIMERS, "Mapping - Proc Partitioning");
@@ -1141,12 +1315,14 @@ public:
         this->no_tasks,
         this->no_tasks,
         num_parts,
-        minCoordDim,
+        this->task_coord_dim,
+        //minCoordDim,
         tcoords, //this->task_coords,
         task_adjList,
         task_xadj,
         recursion_depth,
-        partNoArray
+        partNoArray,
+        task_partition_along_longest_dim
         //,"task_partitioning"
     );
     env->timerStop(MACRO_TIMERS, "Mapping - Task Partitioning");
@@ -1266,6 +1442,8 @@ protected:
     int procPerm = z2Fact<int>(taskDim); //get the number of different permutations for proc dimension ordering
     int idealGroupSize =  taskPerm * procPerm; //total number of permutations
 
+    idealGroupSize += taskPerm + procPerm + 1; //for the one that does longest dimension partitioning.
+
     int myRank = this->comm->getRank();
     int commSize = this->comm->getSize();
 
@@ -1307,7 +1485,7 @@ protected:
     RCP<Comm<int> > subComm = this->create_subCommunicator();
     //calculate cost.
     double myCost = this->proc_task_comm->getCommunicationCostMetric();
-    //cout << "me:" << this->comm->getRank() << " myCost:" << myCost << endl;
+    //std::cout << "me:" << this->comm->getRank() << " myCost:" << myCost << std::endl;
     double localCost[2], globalCost[2];
 
     localCost[0] = myCost;
@@ -1320,6 +1498,14 @@ protected:
 
     int sender = int(globalCost[1]);
 
+    if ( this->comm->getRank() == 0){
+      std::cout << "me:" << localCost[1] <<
+            " localcost:" << localCost[0]<<
+            " bestcost:" << globalCost[0] <<
+            " Sender:" << sender <<
+            " procDim" << proc_task_comm->proc_coord_dim <<
+            " taskDim:" << proc_task_comm->task_coord_dim << std::endl;
+    }
     //cout << "me:" << localCost[1] << " localcost:" << localCost[0]<< " bestcost:" << globalCost[0] << endl;
     //cout << "me:" << localCost[1] << " proc:" << globalCost[1] << endl;
     broadcast (*subComm, sender, this->ntasks, this->task_to_proc.getRawPtr());
@@ -1690,10 +1876,13 @@ public:
     //get the tasks information, such as coordinate dimension,
     //number of parts.
     int coordDim = coordinateModel_->getCoordinateDim();
+
+
     this->ntasks = soln_->getActualGlobalNumberOfParts();
     if (part_t (soln_->getTargetGlobalNumberOfParts()) > this->ntasks){
       this->ntasks = soln_->getTargetGlobalNumberOfParts();
     }
+    this->solution_parts = soln_->getPartListView();
 
     //we need to calculate the center of parts.
     tcoord_t **partCenters = NULL;
@@ -1704,6 +1893,7 @@ public:
 
     typedef typename Adapter::scalar_t t_scalar_t;
 
+
     envConst->timerStart(MACRO_TIMERS, "Mapping - Solution Center");
 
     //get centers for the parts.
@@ -1711,7 +1901,9 @@ public:
         envConst.getRawPtr(),
         comm_.getRawPtr(),
         coordinateModel_.getRawPtr(),
-        this->soln.getRawPtr(),
+        this->solution_parts,
+        //soln_->getPartListView();
+        //this->soln.getRawPtr(),
         coordDim,
         ntasks,
         partCenters);
@@ -1721,11 +1913,14 @@ public:
 
     //create the part graph
     if (graph_model_.getRawPtr() != NULL){
-      getCoarsenedPartGraph(
+      getCoarsenedPartGraph<Adapter, t_scalar_t, part_t> (
           envConst.getRawPtr(),
           comm_.getRawPtr(),
           graph_model_.getRawPtr(),
-          this->soln.getRawPtr(),
+          this->ntasks,
+          this->solution_parts,
+          //soln_->getPartListView(),
+          //this->soln.getRawPtr(),
           task_communication_xadj,
           task_communication_adj,
           task_communication_edge_weight
@@ -1742,7 +1937,8 @@ public:
             this->nprocs,
             this->ntasks,
             machine_extent,
-            machine_extent_wrap_around);
+            machine_extent_wrap_around,
+            machine_.getRawPtr());
 
     int myRank = comm_->getRank();
 
@@ -1828,6 +2024,267 @@ public:
 
   }
 
+
+  /*! \brief Constructor. Instead of Solution we have two parameters, numparts
+   * When this constructor is called, in order to calculate the communication metric,
+   * the task adjacency graph is created based on the coordinate model input and partitioning of it.
+   * if the communication graph is already calculated, use the other constructors.
+   *  \param comm_ is the communication object.
+   *  \param machine_ is the machineRepresentation object. Stores the coordinates of machines.
+   *  \param model_ is the input adapter.
+   *  \param soln_ is the solution object. Holds the assignment of points.
+   *  \param envConst_ is the environment object.
+   */
+  CoordinateTaskMapper(
+      const Teuchos::RCP <const Teuchos::Comm<int> > comm_,
+      const Teuchos::RCP <const MachineRepresentation<pcoord_t,part_t> > machine_,
+      const Teuchos::RCP <const Adapter> input_adapter_,
+      const part_t num_parts_,
+      const part_t *result_parts,
+      const Teuchos::RCP <const Environment> envConst,
+      bool is_input_adapter_distributed = true):
+        PartitionMapping<Adapter> (comm_, machine_, input_adapter_, num_parts_, result_parts, envConst),
+        proc_to_task_xadj(0),
+        proc_to_task_adj(0),
+        task_to_proc(0),
+        isOwnerofModel(true),
+        proc_task_comm(0),
+        task_communication_xadj(0),
+        task_communication_adj(0),
+        task_communication_edge_weight(0){
+    using namespace Teuchos;
+    typedef typename Adapter::base_adapter_t ctm_base_adapter_t;
+
+    RCP<Zoltan2::GraphModel<ctm_base_adapter_t> > graph_model_;
+    RCP<Zoltan2::CoordinateModel<ctm_base_adapter_t> > coordinateModel_ ;
+
+    RCP<const Teuchos::Comm<int> > rcp_comm = comm_;
+    RCP<const Teuchos::Comm<int> > ia_comm = rcp_comm;
+    if (!is_input_adapter_distributed){
+      ia_comm =  Teuchos::createSerialComm<int>();
+    }
+    RCP<const Environment> envConst_ = envConst;
+
+    RCP<const ctm_base_adapter_t> baseInputAdapter_ (
+        rcp(dynamic_cast<const ctm_base_adapter_t *>(input_adapter_.getRawPtr()), false));
+
+    modelFlag_t coordFlags_, graphFlags_;
+
+    //create coordinate model
+    //since this is coordinate task mapper,
+    //the adapter has to have the coordinates
+    coordinateModel_ = rcp(new CoordinateModel<ctm_base_adapter_t>(
+          baseInputAdapter_, envConst_, ia_comm, coordFlags_));
+
+    //if the adapter has also graph model, we will use graph model
+    //to calculate the cost mapping.
+    BaseAdapterType inputType_ = input_adapter_->adapterType();
+    if (inputType_ == MatrixAdapterType ||
+        inputType_ == GraphAdapterType ||
+        inputType_ == MeshAdapterType)
+    {
+      graph_model_ = rcp(new GraphModel<ctm_base_adapter_t>(
+          baseInputAdapter_, envConst_, ia_comm,
+            graphFlags_));
+    }
+
+    if (!machine_->hasMachineCoordinates()) {
+      throw std::runtime_error("Existing machine does not provide coordinates "
+                               "for coordinate task mapping");
+    }
+
+    //if mapping type is 0 then it is coordinate mapping
+    int procDim = machine_->getMachineDim();
+    this->nprocs = machine_->getNumRanks();
+
+    //get processor coordinates.
+    pcoord_t **procCoordinates = NULL;
+    if (!machine_->getAllMachineCoordinatesView(procCoordinates)) {
+      throw std::runtime_error("Existing machine does not implement "
+                               "getAllMachineCoordinatesView");
+    }
+
+    //get the machine extent.
+    //if we have machine extent,
+    //if the machine has wrap-around links, we would like to shift the coordinates,
+    //so that the largest hap would be the wrap-around.
+    std::vector <int> machine_extent_vec (procDim);
+    //std::vector <bool> machine_extent_wrap_around_vec(procDim, 0);
+    int *machine_extent = &(machine_extent_vec[0]);
+    bool *machine_extent_wrap_around = new bool[procDim];
+    machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
+
+
+
+    // KDDKDD ASK MEHMET:  SHOULD WE GET AND USE machine_dimension HERE IF IT
+    // KDDKDD ASK MEHMET:  IS PROVIDED BY THE MACHINE REPRESENTATION?
+    // KDDKDD ASK MEHMET:  IF NOT HERE, THEN WHERE?
+    // MD: Yes, I ADDED BELOW:
+    if (machine_->getMachineExtent(machine_extent)) {
+      procCoordinates =
+          this->shiftMachineCoordinates (
+              procDim,
+              machine_extent,
+              machine_extent_wrap_around,
+              this->nprocs,
+              procCoordinates);
+    }
+
+
+    //get the tasks information, such as coordinate dimension,
+    //number of parts.
+    int coordDim = coordinateModel_->getCoordinateDim();
+
+
+    this->ntasks = num_parts_;
+    this->solution_parts = result_parts;
+
+    //we need to calculate the center of parts.
+    tcoord_t **partCenters = NULL;
+    partCenters = allocMemory<tcoord_t *>(coordDim);
+    for (int i = 0; i < coordDim; ++i){
+      partCenters[i] = allocMemory<tcoord_t>(this->ntasks);
+    }
+
+    typedef typename Adapter::scalar_t t_scalar_t;
+
+
+    envConst->timerStart(MACRO_TIMERS, "Mapping - Solution Center");
+
+    //get centers for the parts.
+    getSolutionCenterCoordinates<Adapter, t_scalar_t,part_t>(
+        envConst.getRawPtr(),
+        ia_comm.getRawPtr(),
+        coordinateModel_.getRawPtr(),
+        this->solution_parts,
+        //soln_->getPartListView();
+        //this->soln.getRawPtr(),
+        coordDim,
+        ntasks,
+        partCenters);
+
+    envConst->timerStop(MACRO_TIMERS, "Mapping - Solution Center");
+
+    envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE");
+    //create the part graph
+    if (graph_model_.getRawPtr() != NULL){
+      getCoarsenedPartGraph<Adapter, t_scalar_t, part_t> (
+          envConst.getRawPtr(),
+          ia_comm.getRawPtr(),
+          graph_model_.getRawPtr(),
+          this->ntasks,
+          this->solution_parts,
+          //soln_->getPartListView(),
+          //this->soln.getRawPtr(),
+          task_communication_xadj,
+          task_communication_adj,
+          task_communication_edge_weight
+      );
+    }
+    envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE");
+
+
+    envConst->timerStart(MACRO_TIMERS, "CoordinateCommunicationModel Create");
+    //create coordinate communication model.
+    this->proc_task_comm =
+        new Zoltan2::CoordinateCommunicationModel<pcoord_t,tcoord_t,part_t>(
+            procDim,
+            procCoordinates,
+            coordDim,
+            partCenters,
+            this->nprocs,
+            this->ntasks,
+            machine_extent,
+            machine_extent_wrap_around,
+            machine_.getRawPtr());
+
+    envConst->timerStop(MACRO_TIMERS, "CoordinateCommunicationModel Create");
+
+    int myRank = comm_->getRank();
+
+
+    envConst->timerStart(MACRO_TIMERS, "Mapping - Processor Task map");
+    this->doMapping(myRank);
+    envConst->timerStop(MACRO_TIMERS, "Mapping - Processor Task map");
+
+
+    envConst->timerStart(MACRO_TIMERS, "Mapping - Communication Graph");
+
+    /*soln_->getCommunicationGraph(task_communication_xadj,
+               task_communication_adj);
+     */
+
+    envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Graph");
+  #ifdef gnuPlot
+    if (comm_->getRank() == 0){
+
+      part_t taskCommCount = task_communication_xadj.size();
+      std::cout << " TotalComm:" << task_communication_xadj[taskCommCount] << std::endl;
+      part_t maxN = task_communication_xadj[0];
+      for (part_t i = 1; i <= taskCommCount; ++i){
+        part_t nc = task_communication_xadj[i] - task_communication_xadj[i-1];
+        if (maxN < nc) maxN = nc;
+      }
+      std::cout << " maxNeighbor:" << maxN << std::endl;
+    }
+
+    this->writeGnuPlot(comm_, soln_, coordDim, partCenters);
+  #endif
+
+    envConst->timerStart(MACRO_TIMERS, "Mapping - Communication Cost");
+
+    if (task_communication_xadj.getRawPtr() && task_communication_adj.getRawPtr()){
+      this->proc_task_comm->calculateCommunicationCost(
+          task_to_proc.getRawPtr(),
+          task_communication_xadj.getRawPtr(),
+          task_communication_adj.getRawPtr(),
+          task_communication_edge_weight.getRawPtr()
+      );
+    }
+
+    //std::cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << std::endl;
+
+    envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Cost");
+
+    //processors are divided into groups of size procDim! * coordDim!
+    //each processor in the group obtains a mapping with a different rotation
+    //and best one is broadcasted all processors.
+    this->getBestMapping();
+
+    /*
+
+    {
+      if (task_communication_xadj.getRawPtr() && task_communication_adj.getRawPtr())
+        this->proc_task_comm->calculateCommunicationCost(
+            task_to_proc.getRawPtr(),
+            task_communication_xadj.getRawPtr(),
+            task_communication_adj.getRawPtr(),
+            task_communication_edge_weight.getRawPtr()
+        );
+      std::cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << std::endl;
+    }
+    */
+
+
+
+  #ifdef gnuPlot
+    this->writeMapping2(comm_->getRank());
+  #endif
+
+    delete []machine_extent_wrap_around;
+    if (machine_->getMachineExtent(machine_extent)){
+      for (int i = 0; i < procDim; ++i){
+        delete [] procCoordinates[i];
+      }
+      delete [] procCoordinates;
+    }
+
+    for (int i = 0; i < coordDim; ++i){
+      freeArray<tcoord_t>(partCenters[i]);
+    }
+    freeArray<tcoord_t *>(partCenters);
+
+  }
 
   /*! \brief Constructor
    * The mapping constructor which will also perform the mapping operation.
@@ -1984,9 +2441,11 @@ public:
   }
 
 
+  /*
   double getCommunicationCostMetric(){
     return this->proc_task_comm->getCommCost();
   }
+  */
 
   /*! \brief Returns the number of parts to be assigned to this process.
    */

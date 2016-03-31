@@ -138,14 +138,20 @@ namespace MueLu {
     strcpy(str, name.c_str());
     //Strip leading and trailing whitespace
     char* firstWord = strtok(str, " ");
-    if(!firstWord)
+    if(!firstWord) {
+      free(str);
       return false;
+    }
     char* secondWord = strtok(NULL, " ");
-    if(!secondWord)
+    if(!secondWord) {
+      free(str);
       return false;
+    }
     char* thirdWord = strtok(NULL, " ");
-    if(thirdWord)
+    if(thirdWord) {
+      free(str);
       return false;
+    }
     //convert first word to all lowercase for case insensitive compare
     char* tolowerIt = firstWord;
     while(*tolowerIt)

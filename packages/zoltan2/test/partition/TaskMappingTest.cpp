@@ -17,16 +17,15 @@
 
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
-typedef int part_t;
 
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> my_adapter_t;
 
 
-
 int main(int argc, char *argv[]){
 
+  typedef my_adapter_t::part_t part_t;
 
   Teuchos::GlobalMPISession session(&argc, &argv);
   Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
@@ -164,6 +163,8 @@ int main(int argc, char *argv[]){
 
     //create partitioning problem
     typedef Zoltan2::PartitioningProblem<my_adapter_t> xcrsGraph_problem_t; // xpetra_graph problem type
+    typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
+    typedef my_adapter_t::base_adapter_t base_adapter_t;
     ParameterList zoltan2_parameters;
     zoltan2_parameters.set("compute_metrics", "true");
     zoltan2_parameters.set("imbalance_tolerance", "1.0");
@@ -179,8 +180,12 @@ int main(int argc, char *argv[]){
     tcomm->barrier();
     RCP<const Zoltan2::Environment> env = partition_problem->getEnvironment();
 
+    RCP<quality_t>metricObject = 
+      rcp(new quality_t(ia.getRawPtr(), &zoltan2_parameters, tcomm,
+			&partition_problem->getSolution()));
+
     if (tcomm->getRank() == 0){
-      partition_problem->printMetrics(std::cout);
+      metricObject->printMetrics(std::cout);
     }
     partition_problem->printTimers();
 
@@ -272,6 +277,7 @@ int main(int argc, char *argv[]){
       zscalar_t **proc_coords;
       mach.getAllMachineCoordinatesView(proc_coords);
       part_t hops=0;
+      part_t hops2 = 0;
       int *machine_extent = new int [mach_coord_dim];
       bool *machine_extent_wrap_around = new bool[mach_coord_dim];
 
@@ -288,7 +294,10 @@ int main(int argc, char *argv[]){
           zlno_t n = task_communication_adj_tmp[j];
           part_t procId2 = ctm.getAssignedProcForTask(all_parts[n]);
 
-          for (int k = 0 ; k < mach_coord_dim; ++k){
+          double distance2 = 0;
+          mach.getHopCount(procId1, procId2, distance2);
+          hops2 += distance2;
+          for (int k = 0 ; k < mach_coord_dim ; ++k){
             part_t distance = ZOLTAN2_ABS(proc_coords[k][procId1] - proc_coords[k][procId2]);
             if (machine_extent_wrap_around[k]){
               if (machine_extent[k] - distance < distance){
@@ -303,7 +312,7 @@ int main(int argc, char *argv[]){
       delete [] machine_extent;
 
       if (tcomm->getRank() == 0)
-        std::cout << "HOPS:" << hops << std::endl;
+        std::cout << "HOPS:" << hops << " HOPS2:" << hops2 << std::endl;
 
       delete [] task_communication_xadj_tmp;
       delete [] task_communication_adj_tmp;

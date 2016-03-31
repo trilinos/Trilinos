@@ -375,7 +375,7 @@ public:
 
       // Create penalties
       RCP<Objective<Real> > slack_barrier = rcp( new LogBarrierObjective<Real> );
-      RCP<Objective<Real> > bc_barrier = rcp( new ObjectiveFromBoundConstraint<Real>(*bnd) );
+      RCP<Objective<Real> > bc_barrier = rcp( new ObjectiveFromBoundConstraint<Real>(*bnd,*parlist) );
 
       obj_ = rcp( new PenalizedObjective<Real>(obj,slack_barrier,bc_barrier,*sol_,mu) );
 

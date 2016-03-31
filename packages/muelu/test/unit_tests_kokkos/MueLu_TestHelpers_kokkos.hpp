@@ -322,55 +322,6 @@ namespace MueLuTests {
         return mtx;
       }
 
-     // Create a matrix as specified by parameter list options
-     static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) {
-       RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
-       RCP<Matrix> Op;
-
-        if (lib == Xpetra::NotSpecified)
-          lib = TestHelpers_kokkos::Parameters::getLib();
-
-        // This only works for Tpetra
-        if(lib!=Xpetra::UseTpetra) return Op;
-
-        // Make the graph
-        RCP<Matrix> FirstMatrix = BuildMatrix(matrixList,lib);
-        RCP<const Xpetra::CrsGraph<LO,GO,NO> > Graph = FirstMatrix->getCrsGraph();
-
-#if defined(HAVE_MUELU_TPETRA)
-        // Thanks for the code, Travis!
-        int blocksize = 3;
-        RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
-        RCP<const Tpetra::CrsGraph<LO,GO,NO> > TTGraph = TGraph->getTpetra_CrsGraph();
-
-        RCP<Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> > bcrsmatrix = rcp(new Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> (*TTGraph, blocksize));
-
-        const Tpetra::Map<LO,GO,NO>& meshRowMap = *bcrsmatrix->getRowMap();
-        const Scalar zero   = Teuchos::ScalarTraits<SC>::zero();
-        const Scalar one   = Teuchos::ScalarTraits<SC>::one();
-        const Scalar two   = one+one;
-        const Scalar three = two+one;
-
-        Teuchos::Array<SC> basematrix(blocksize*blocksize, zero);
-        basematrix[0] = two;
-        basematrix[2] = three;
-        basematrix[3] = three;
-        basematrix[4] = two;
-        basematrix[7] = three;
-        basematrix[8] = two;
-        Teuchos::Array<LO> lclColInds(1);
-        for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
-          lclColInds[0] = lclRowInd;
-          bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
-        }
-
-        RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
-        Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
-#endif
-        return Op;
-     } // BuildBlockMatrix()
-
-
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createSingleLevelHierarchy(Level& currentLevel) {
@@ -413,6 +364,118 @@ namespace MueLuTests {
 #endif
     }; // class TestFactory
 
+    // Helper class which has some Tpetra specific code inside
+    // We put this into an extra helper class as we need partial specializations and
+    // do not want to introduce partial specializations for the full TestFactory class
+    //
+    // The BuildBlockMatrix is only available with Teptra. However, if both Epetra
+    // and Tpetra are enabled it may be that Tpetra is not instantiated on either
+    // GO=int/long long and/or Node=Serial/OpenMP. We need partial specializations
+    // with an empty BuildBlockMatrix routine for all instantiations Teptra is not
+    // enabled for, but are existing in Xpetra due to Epetra enabled.
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    class TpetraTestFactory {
+#include "MueLu_UseShortNames.hpp"
+    public:
+
+      // Create a matrix as specified by parameter list options
+      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
+        RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+        RCP<Matrix> Op;
+
+         if (lib == Xpetra::NotSpecified)
+           lib = TestHelpers_kokkos::Parameters::getLib();
+
+         // This only works for Tpetra
+         if (lib!=Xpetra::UseTpetra) return Op;
+
+#if defined(HAVE_MUELU_TPETRA)
+         // Thanks for the code, Travis!
+
+         // Make the graph
+         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > FirstMatrix = TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList,lib);
+         RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > Graph = FirstMatrix->getCrsGraph();
+
+         int blocksize = 3;
+         RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(Graph);
+         RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > TTGraph = TGraph->getTpetra_CrsGraph();
+
+         RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bcrsmatrix = rcp(new Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (*TTGraph, blocksize));
+
+         const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& meshRowMap = *bcrsmatrix->getRowMap();
+         const Scalar zero   = Teuchos::ScalarTraits<Scalar>::zero();
+         const Scalar one   = Teuchos::ScalarTraits<Scalar>::one();
+         const Scalar two   = one+one;
+         const Scalar three = two+one;
+
+         Teuchos::Array<Scalar> basematrix(blocksize*blocksize, zero);
+         basematrix[0] = two;
+         basematrix[2] = three;
+         basematrix[3] = three;
+         basematrix[4] = two;
+         basematrix[7] = three;
+         basematrix[8] = two;
+         Teuchos::Array<LocalOrdinal> lclColInds(1);
+         for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
+           lclColInds[0] = lclRowInd;
+           bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
+         }
+
+         RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));
+         Op = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(temp));
+#endif
+         return Op;
+      } // BuildBlockMatrix()
+
+    private:
+      TpetraTestFactory() {} // static class
+
+    }; // class TpetraTestFactory
+
+    // TAW: 3/14/2016: If both Epetra and Tpetra are enabled we need partial specializations
+    //                 on GO=int/long long as well as NO=EpetraNode to disable BuildBlockMatrix
+#ifdef HAVE_MUELU_EPETRA
+    // partial specializations (GO=int not enabled with Tpetra)
+#if !defined(HAVE_TPETRA_INST_INT_INT)
+    template <class Scalar, class LocalOrdinal, class Node>
+    class TpetraTestFactory<Scalar, LocalOrdinal, int, Node> {
+      typedef int GlobalOrdinal;
+#include "MueLu_UseShortNames.hpp"
+    public:
+      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
+    private:
+      TpetraTestFactory() {} // static class
+    }; // class TpetraTestFactory
+#endif
+
+    // partial specializations (GO=long long not enabled with Tpetra)
+#if !defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+    template <class Scalar, class LocalOrdinal, class Node>
+    class TpetraTestFactory<Scalar, LocalOrdinal, long long, Node> {
+      typedef long long GlobalOrdinal;
+#include "MueLu_UseShortNames.hpp"
+    public:
+      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
+    private:
+      TpetraTestFactory() {} // static class
+    }; // class TpetraTestFactory
+#endif
+
+    // partial specializations (NO=EpetraNode not enabled with Tpetra)
+#if ((defined(EPETRA_HAVE_OMP) && !(defined(HAVE_TPETRA_INST_OPENMP))) || \
+    (!defined(EPETRA_HAVE_OMP) && !(defined(HAVE_TPETRA_INST_SERIAL))))
+
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+    class TpetraTestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> {
+      typedef Xpetra::EpetraNode Node;
+#include "MueLu_UseShortNames.hpp"
+    public:
+      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
+    private:
+      TpetraTestFactory() {} // static class
+    }; // class TpetraTestFactory
+#endif
+#endif // endif HAVE_MUELU_EPETRA
 
     //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
     ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string & filter);

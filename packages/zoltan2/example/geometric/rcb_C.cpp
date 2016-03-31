@@ -156,21 +156,10 @@ int main(int argc, char *argv[])
 
   problem1->solve();
 
-  // An environment.  This is usually created by the problem.
-  // Note:  These RCPs will go away in Spring 2016 when we finish simplication
-  // of the EvaluatePartition interface.
+  // create metric object
 
-  RCP<const Zoltan2::Environment> env1 = problem1->getEnvironment();
-
-  const base_adapter_t *bia1 = dynamic_cast<const base_adapter_t *>(ia1);
-
-  RCP<const base_adapter_t> rcpbia1 = rcp(bia1);
-
-  // create metric object (also usually created by a problem)
-
-  quality_t*metricObject1 = new quality_t(env1,problem1->getComm(),rcpbia1,
-					 &problem1->getSolution(),
-					 false);
+  quality_t *metricObject1 = new quality_t(ia1, &params, problem1->getComm(),
+					   &problem1->getSolution());
   // Check the solution.
 
   if (rank == 0) {
@@ -224,21 +213,10 @@ int main(int argc, char *argv[])
 
   problem2->solve();
 
-  // An environment.  This is usually created by the problem.
-  // Note:  These RCPs will go away in Spring 2016 when we finish simplication
-  // of the EvaluatePartition interface.
+  // create metric object
 
-  RCP<const Zoltan2::Environment> env2 = problem2->getEnvironment();
-
-  const base_adapter_t *bia2 = dynamic_cast<const base_adapter_t *>(ia2);
-
-  RCP<const base_adapter_t> rcpbia2 = rcp(bia2);
-
-  // create metric object (also usually created by a problem)
-
-  quality_t*metricObject2 = new quality_t(env2,problem2->getComm(),rcpbia2,
-					  &problem2->getSolution(),
-					  false);
+  quality_t *metricObject2 = new quality_t(ia2, &params, problem2->getComm(),
+					   &problem2->getSolution());
   // Check the solution.
 
   if (rank == 0) {
@@ -303,21 +281,10 @@ int main(int argc, char *argv[])
 
   problem3->solve();
 
-  // An environment.  This is usually created by the problem.
-  // Note:  These RCPs will go away in Spring 2016 when we finish simplication
-  // of the EvaluatePartition interface.
+  // create metric object
 
-  RCP<const Zoltan2::Environment> env3 = problem3->getEnvironment();
-
-  const base_adapter_t *bia3 = dynamic_cast<const base_adapter_t *>(ia3);
-
-  RCP<const base_adapter_t> rcpbia3 = rcp(bia3);
-
-  // create metric object (also usually created by a problem)
-
-  quality_t*metricObject3 = new quality_t(env3,problem3->getComm(),rcpbia3,
-					  &problem3->getSolution(),
-					  false);
+  quality_t *metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
+					   &problem3->getSolution());
   // Check the solution.
 
   if (rank == 0) {
@@ -344,14 +311,10 @@ int main(int argc, char *argv[])
   problem3->resetParameters(&params);
   problem3->solve(dataHasChanged);    
 
-  // Objective changed!
-
-  env3 = problem3->getEnvironment();
-
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), rcpbia3,
-                                &problem3->getSolution(), false);
+  metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
+                                &problem3->getSolution());
   if (rank == 0){
     metricObject3->printMetrics(cout);
     scalar_t imb;
@@ -368,14 +331,10 @@ int main(int argc, char *argv[])
   problem3->resetParameters(&params);
   problem3->solve(dataHasChanged);    
 
-  // Objective changed!
-
-  env3 = problem3->getEnvironment();
-
   // Solution changed!
 
-  metricObject3 = new quality_t(env3, problem3->getComm(), rcpbia3,
-                                &problem3->getSolution(), false);
+  metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
+                                &problem3->getSolution());
   if (rank == 0){
     metricObject3->printMetrics(cout);
     scalar_t imb;
@@ -445,8 +404,8 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject1 = new quality_t(env1, problem1->getComm(), rcpbia1,
-                                &problem1->getSolution(), false);
+  metricObject1 = new quality_t(ia1, &params, problem1->getComm(),
+                                &problem1->getSolution());
   // Check the solution.
 
   if (rank == 0) {
@@ -471,8 +430,11 @@ int main(int argc, char *argv[])
     delete [] globalIds;
 
   delete problem1;
+  delete ia1;
   delete problem2;
+  delete ia2;
   delete problem3;
+  delete ia3;
 
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Finalize();

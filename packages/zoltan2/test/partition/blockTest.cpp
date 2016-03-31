@@ -147,19 +147,11 @@ int main(int narg, char **arg)
 
   problem.solve();
 
-  // An environment.  This is usually created by the problem.
-
-  RCP<const Zoltan2::Environment> env = problem.getEnvironment();
-
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
-  const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(adapter);
+  // create metric object
 
-  RCP<const base_adapter_t> rcpbia = rcp(bia);
-
-  // create metric object (also usually created by a problem)
-
-  quality_t*metricObject=new quality_t(env,comm,rcpbia,&solution);
+  quality_t *metricObject = new quality_t(adapter, &params, comm, &solution);
 
   // Some output 
   zscalar_t *totalWeight = new zscalar_t [nprocs];
@@ -173,6 +165,7 @@ int main(int narg, char **arg)
   zscalar_t libImbalance;
   metricObject->getWeightImbalance(libImbalance, 0);
   delete metricObject;
+  delete adapter;
 
   for (int i=0; i < numMyIdentifiers; i++){
     totalCnt[partList[i]]++;

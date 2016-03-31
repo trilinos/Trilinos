@@ -48,14 +48,6 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_CUDA
 
-KOKKOSSPARSE_IMPL_SPMV_MV_DEF( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_MV_DEF( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-KOKKOSSPARSE_IMPL_SPMV_MV_DEF( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-
 KOKKOSSPARSE_IMPL_SPMV_MV_DEF( int, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSSPARSE_IMPL_SPMV_MV_DEF( long, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSSPARSE_IMPL_SPMV_MV_DEF( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )

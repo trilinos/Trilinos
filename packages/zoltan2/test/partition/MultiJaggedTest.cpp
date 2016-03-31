@@ -680,18 +680,10 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     }
     CATCH_EXCEPTIONS_AND_RETURN("solve()")
 
-    // An environment.  This is usually created by the problem.
-
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
-
-    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-
-    RCP<const base_adapter_t> rcpbia = rcp(bia);
-
-    // create metric object (also usually created by a problem)
+    // create metric object
 
     RCP<quality_t> metricObject = 
-      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -715,6 +707,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         delete [] coords;
     }
     delete problem;
+    delete ia;
     return ierr;
 }
 
@@ -880,18 +873,10 @@ int testFromDataFile(
             << " part " << zparts[i] << endl;
     }
 
-    // An environment.  This is usually created by the problem.
-
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
-
-    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-
-    RCP<const base_adapter_t> rcpbia = rcp(bia);
-
-    // create metric object (also usually created by a problem)
+    // create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -907,6 +892,7 @@ int testFromDataFile(
     }
 
     delete problem;
+    delete ia;
     return ierr;
 }
 
@@ -1070,19 +1056,10 @@ int testFromSeparateDataFiles(
             << " part " << zparts[i] << endl;
     }
 
-    // An environment.  This is usually created by the problem.
-
-    RCP<const Zoltan2::Environment> env = problem->getEnvironment();
-
-    const base_adapter_t *bia = dynamic_cast<const base_adapter_t *>(ia);
-
-    RCP<const base_adapter_t> rcpbia =
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
-
-    //create metric object (also usually created by a problem)
+    //create metric object
 
     RCP<quality_t> metricObject =
-      rcp(new quality_t(env, comm, rcpbia, &problem->getSolution(), false));
+      rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
       metricObject->printMetrics(cout);
@@ -1098,6 +1075,7 @@ int testFromSeparateDataFiles(
     }
 
     delete problem;
+    delete ia;
     return ierr;
 }
 #endif

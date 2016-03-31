@@ -122,8 +122,6 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
     zoltan2Parameters.setParameters(sub);
   }
   
-  zoltan2Parameters.set("compute_metrics", "true");
-
 }
 
 void getParameterLists(const string &inputFileName,
@@ -186,6 +184,7 @@ void run(const UserInputForTests &uinput,
     if(rank == 0) std::cerr << "Zoltan2 problem parameters not provided" << std::endl;
     return;
   }
+
   if(rank == 0)
     cout << "\n\nRunning test: " << problem_parameters.name() << endl;
   
@@ -213,7 +212,6 @@ void run(const UserInputForTests &uinput,
       cout << "Get adapter for input failed" << endl;
     return;
   }
-  RCP<basic_id_t> rcpia = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
   
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
@@ -250,13 +248,9 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   
   comparison_source->timers["solve time"]->start();
-  RCP<EvaluatePartition<basic_id_t> >metricObject;
+  
   if (problem_kind == "partitioning") {
     reinterpret_cast<partitioning_problem_t *>(problem)->solve();
-    metricObject =
-      rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
-	  newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
-			       (problem), adapter_name, rcpia));
   } else if (problem_kind == "ordering") {
     reinterpret_cast<ordering_problem_t *>(problem)->solve();
   } else if (problem_kind == "coloring") {
@@ -265,7 +259,8 @@ void run(const UserInputForTests &uinput,
   comparison_source->timers["solve time"]->stop();
   if (rank == 0)
     cout << problem_kind + "Problem solved." << endl;
-  
+ 
+
 //#define KDDKDD
 #ifdef KDDKDD
   {
@@ -289,50 +284,41 @@ void run(const UserInputForTests &uinput,
   // RCP<const Zoltan2::Environment> env =
   //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
 
-  if( problem_parameters.isParameter("Metrics")) {
-    // calculate pass fail based on imbalance
-    if(rank == 0) cout << "Analyzing metrics..." << endl;
-    if(rank == 0 && problem_kind == "partitioning") {
-      std::cout << "Print the " << problem_kind << "problem's metrics:" << std::endl; 
-      reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
-      //metricObject->printMetrics(cout);
-    }
+ // get metric object
+  RCP<EvaluatePartition<basic_id_t> >metricObject =
+      rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
+    newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
+             (problem), adapter_name, ia,
+             &zoltan2_parameters));
+  
+  std::string metric_types[] = {"Metrics", "Graph Metrics"};
+  for (auto metric_type : metric_types) {
+    if( problem_parameters.isParameter(metric_type)) {
+      // calculate pass fail based on imbalance
+      if(rank == 0) cout << "Analyzing " << metric_type << endl;
+      if(rank == 0) {
+        std::cout << metric_type << " for " << problem_kind << ":" << std::endl; 
+        if (metric_type == "Metrics")
+          metricObject->printMetrics(cout);
+        else if (metric_type == "Graph Metrics")
+          metricObject->printGraphMetrics(cout);
+      }
 
-    std::ostringstream msg;
-    auto metricsPlist = problem_parameters.sublist("Metrics");
-    bool all_tests_pass = false;
-    
-    if (problem_kind == "partitioning") {
+      std::ostringstream msg;
+      auto metricsPlist = problem_parameters.sublist(metric_type); // get the metrics plist
+      bool all_tests_pass = false;
       all_tests_pass
-      = MetricAnalyzer<partitioning_problem_t>::analyzeMetrics( metricsPlist,
-                                                                reinterpret_cast<const partitioning_problem_t *>(const_cast<base_problem_t *>(problem)),
-                                                                comm,
-                                                                msg); 
-    } else if (problem_kind == "ordering") {
-      all_tests_pass
-      = MetricAnalyzer<ordering_problem_t>::analyzeMetrics( metricsPlist,
-                                                            reinterpret_cast<const ordering_problem_t *>(const_cast<base_problem_t *>(problem)),
-                                                            comm,
-                                                            msg); 
-    } else if (problem_kind == "coloring") {
-      all_tests_pass
-      = MetricAnalyzer<coloring_problem_t>::analyzeMetrics( metricsPlist,
-                                                            reinterpret_cast<const coloring_problem_t *>(const_cast<base_problem_t *>(problem)),
-                                                            comm,
-                                                            msg); 
-    }
-    std::cout << msg.str() << std::endl;
-    if(rank == 0 && all_tests_pass) cout << "All tests PASSED." << endl;
-    else if(rank == 0) cout << "Testing FAILED." << endl;
-    
-  }else if(rank == 0 && problem_kind == "partitioning") {
-    // BDD for debugging
-    cout << "No test metrics requested. Problem Metrics are: " << endl;
-    reinterpret_cast<partitioning_problem_t *>(problem)->printMetrics(cout);
-    //metricObject->printMetrics(cout);
-    cout << "PASSED." << endl;
+      = MetricAnalyzer::analyzeMetrics( metricsPlist,
+                                        metricObject,
+                                        comm,
+                                        msg); 
+
+      std::cout << msg.str() << std::endl;
+      if(rank == 0 && all_tests_pass) cout << "All " << metric_type  << " tests PASSED." << endl;
+      else if (rank == 0) cout << "One or more " << metric_type << " tests FAILED." << endl;
+    } else if (rank == 0) cout << metric_type  << " analysis unrequested. PASSED." << endl;
   }
-
+  
 #define BDD
 #ifdef BDD 
   if (problem_kind == "ordering") {
@@ -379,8 +365,9 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 5. Add solution to map for possible comparison testing
   ////////////////////////////////////////////////////////////
-  comparison_source->adapter = rcpia;
+  comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
   comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
+  comparison_source->metricObject = metricObject;
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
   

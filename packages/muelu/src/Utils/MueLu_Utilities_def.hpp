@@ -491,11 +491,14 @@ namespace MueLu {
         Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label); //more than meets the eye
         A = transposer.createTranspose();
 
-        RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A) );
-        RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(AA);
-        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AAAA = rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(AAA) );
+        RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA   = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A) );
+        RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >       AAA  = rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(AA);
+        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >          AAAA = rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(AAA) );
         if (!AAAA->isFillComplete())
-          AAAA->fillComplete(Op.getRangeMap(),Op.getDomainMap());
+          AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
+
+        if (Op.IsView("stridedMaps"))
+          AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true/*doTranspose*/);
 
         return AAAA;
 

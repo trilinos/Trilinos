@@ -1,10 +1,10 @@
-==========================================================================
+========================================================================
 	README: Zoltan2 Test Driver XML input files
-==========================================================================
+========================================================================
 
 This document details general formatting and requirements for Zoltan2 .xml input files used by the Zoltan2 test driver (/packages/zoltan2/test/driver/test_driver.exe).  A template for creating you own input files is included in this directory (input_template.xml).
 
-==========================================================================
+========================================================================
 
 
 Every Zoltan2 test driver input file must contain 2 required sections sections and may contain a 3rd optional section:
@@ -16,9 +16,9 @@ Every Zoltan2 test driver input file must contain 2 required sections sections a
 Each section is detailed below.  Please note that the sections described must be contained within a “Main” xml block whose name is arbitrary (ex. 0). Please not that the general use of the word “block” in the following refers to an xml parameter list block unless otherwise stated.
 
 
-==========================================================================
+========================================================================
 Section 1: Input source definition (REQUIRED)
-==========================================================================
+========================================================================
 
 In the first section of your input file you should define the input data source and type.  The test driver is designed such that all problems defined in section 2 share a common data source, therefore only 1 XML input source definition block per input file source is supported.  Currently there are 2 different flavors of input source definitions: one defining input from some supported file type, and the second defining Galari generated data.  Input parameter blocks should be named “InputParameters” and be the first defined block with in the main XML block.
 
@@ -40,10 +40,10 @@ An input source block defining a Galari generated data source may define a probl
 
 Both types of input blocks also support optional boolean parameters: distribute input and debug. Both parameters default to “True” when undefined.  Distribute input is only applicable for Chaco and MatrixMarket input formats.  Debug determines the verbosity of the UserInputForTests output stream.
  
-========================================================================== Section 2: Zoltan2 problem definition (REQUIRED)
-==========================================================================
+======================================================================== Section 2: Zoltan2 problem definition (REQUIRED)
+========================================================================
 
-This section contains all of the blocks and associated sub-blocks that define a Zoltan2 problem.  This section must contain at least one problem definition and may contain as many as the user likes for the sake of testing and comparison. Each problem definition block should be uniquely named and must contain a ‘kind’ parameter specifying the kind of Zoltan2 problem: partitioning, coloring, ordering etc. (currently only partitioning problems are supported by the test driver). Each problem definition block must contain the following 2 sub-blocks (ex. 3):
+This section contains all of the blocks and associated sub-blocks that define a Zoltan2 problem.  This section must contain at least one problem definition and may contain as many as the user likes for the sake of testing and comparison. Each problem definition block should be uniquely named and must contain a ‘kind’ parameter specifying the kind of Zoltan2 problem: partitioning, coloring, ordering etc.  Each problem definition block must contain the following 2 sub-blocks (ex. 3):
 	
 	* InputAdapterParameters
 	* Zoltan2Parameters
@@ -68,20 +68,37 @@ Please note that if you choose to use a multi-vector data type with an adapter t
 
 Zoltan2Parameters:  This block defines all of the parameters applicable to a given problem.  It supports all Zoltan2 parameters as well as those defined by supported TPLs.  Please consult the Zoltan2 documentation for a complete list of parameters.
 
-In addition to the aforementioned required blocks, a problem definition block may contain an optional 3rd “Metrics” block.  The “Metrics” block may contain multiple sub-blocks defining lower and/or upper tolerances for pass/fail testing of specific Zoltan2 calculated metrics.  Each sub-block of “Metrics” should be named according the metric being tested, must include a double typed parameter definition for “lower” and /or “upper’, which refer to an acceptable lower/upper bound on the defined metric.  If any of the tolerances are violated then the test driver will report a failure.
+======================================================================== Section 3: Metric definitions (OPTIONAL)
+========================================================================
+In addition to the aforementioned required blocks, a problem definition block may contain an optional 3rd “Metrics” block (ex. 4 and 5).  The “Metrics” block contains a “Metric” sub-block which may contain multiple “Metric Value” blocks each defining lower and/or upper tolerances for pass/fail testing of specific Zoltan2 calculated metrics.  Each “Metric Value” sub-block should be named according the metric being tested, must include a double typed parameter definition for “lower” and /or “upper’, which refer to an acceptable lower/upper bound on the defined metric.  If any of the tolerances are violated then the test driver will report a failure.
 
- ========================================================================== Section 3: Comparison definitions (OPTIONAL)
-==========================================================================
+The following metrics blocks are currently supported: ‘Metrics’, ‘Graph Metrics.  ‘Metrics’ is available for partitioning problems only, and ‘Graph Metrics’ only for problems using a graph adapter.  ‘Metrics’ currently supports the ‘object count’ metric, and ‘Graph Metrics’ the ‘cut count’ metric.
+
+For  an ‘object count’  metric a user may query the following ‘Metric Values’:
+	* ‘local sum’
+	* ’global sum’
+	* ’global minimum’
+	* ’global maximum’
+	* ’global average’
+	* ’minimum imbalance’
+	* ’maximum imbalance’
+	* ’average imbalance’
+
+For ‘cut count’ a user may query the following ‘Metric Values’:
+	* ’global sum’
+	* ’global maximum’
+ ======================================================================== Section 4: Comparison definitions (OPTIONAL)
+========================================================================
  This section is optional, and may be defined to compare of solutions, metrics, or timers for different algorithms/adapters defined in section 2.  Like section 2 this section may include multiple “Comparison” blocks each specifying two problems/tests to compare.  For solution comparisons we compare problem “A” and problem “B” .  For metric or timer comparisons we compare a “Problem” vs. a “Reference”.  
 
-A  solution “Comparison” block must contain the following 2 parameters (ex. 4):
+A  solution “Comparison” block must contain the following 2 parameters (ex. 6):
 	
 	* A: the name of problem A
 	* B: the name of problem B
 
 The value of parameter A and B must be identical to the names of the blocks defining problems A and B in section 2.
 
-A  metric or timer “Comparison” block must contain the following 2 parameters, followed by 1 or more sub-blocks defining metrics or timer lower and/or upper bounds (ex. 5):
+A  metric or timer “Comparison” block must contain the following 2 parameters, followed by 1 or more sub-blocks defining metrics or timer lower and/or upper bounds (ex. 7):
 	
 	* Problem: the name of the problem to compare against the reference
 	* Reference: the problem to be used as a reference
@@ -107,8 +124,8 @@ reference_time * LOWER <= problem_time <= reference_time * UPPER
 
 Where lower and upper refer to the defined lower and/or upper bounds for tolerance.  As before, the values defining the parameters “Problem” and “Reference” must be the same as the values used to define the problems/tests in section 2.  
 
-========================================================================== EXAMPLES:
-==========================================================================
+======================================================================== EXAMPLES:
+========================================================================
 
 
 ////////////////////////////////////////////////////////
@@ -152,9 +169,9 @@ SECTION 3 (OPTIONAL)
 </ParameterList>
 
 
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Example 1: input from file
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   <ParameterList name="InputParameters">
     <Parameter name="input path" type="string" value="PATH/TO/INPUT/DIRECTORY"/>
@@ -162,9 +179,9 @@ Example 1: input from file
     <Parameter name="file type" type="string" value="INPUT FILE TYPE"/>
   </ParameterList>
 
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Example 2: Galari generated input
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 <ParameterList name="InputParameters">
     <Parameter name="x" type="int" value="##"/>
@@ -174,9 +191,9 @@ Example 2: Galari generated input
   </ParameterList>
 
 
-////////////////////////////////////////////////////////
-Example 3: A problem definition block.
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Example 3a: A Partitioning problem definition block.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   <ParameterList name="TEST/PROBLEM TITLE #1">
     
@@ -225,18 +242,81 @@ Example 3: A problem definition block.
      * object count, weight ##, edge ## etc
      #####################################################-->
     
-    <ParameterList name="Metrics">
-      <ParameterList name="METRIC NAME">
-        <Parameter name="lower" type="double" value="##.####"/>
-        <Parameter name="upper" type="double" value="##.####"/>
-      </ParameterList>
+    <ParameterList name=“METRICS NAME">
+      <ParameterList name="METRIC NAME”>
+      	<ParameterList name="METRIC VALUE NAME 1">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="METRIC VALUE NAME 2">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+       </ParameterList>
     </ParameterList>
     
   </ParameterList>
 
-////////////////////////////////////////////////////////
-Example 4.
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Example 4. Metric Definition for ‘object count’
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    <ParameterList name="Metrics">
+      <ParameterList name=“object count”>
+      	<ParameterList name="local sum">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="global sum">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="global minimum">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="global maximum">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="global average">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="minimum imbalance">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="maximum imbalance">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="average imbalance">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+       </ParameterList>
+    </ParameterList>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Example 5. Metric Definition for ‘cut count’
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    <ParameterList name=“Graph Metrics">
+      <ParameterList name=“cut count”>
+      	<ParameterList name="global sum">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+      	<ParameterList name="global maximum">
+        	    <Parameter name="lower" type="double" value="##.####"/>
+        	    <Parameter name="upper" type="double" value=“##.####"/>
+      	</ParameterList>
+       </ParameterList>
+    </ParameterList>
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Example 6.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   <ParameterList name="Comparison">
     <Parameter name="A" type="string" value="TEST/PROBLEM TITLE #1"/>
@@ -249,12 +329,11 @@ Example 4.
   </ParameterList>
 
 
-////////////////////////////////////////////////////////
-Example 5.
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Example 7.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   <ParameterList name=“Comparison">
-
     <Parameter name="Problem" type="string" value="TEST/PROBLEM TITLE #1"/>
     <Parameter name="Reference" type="string" value="TEST/PROBLEM TITLE #2"/>
     

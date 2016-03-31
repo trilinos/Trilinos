@@ -143,7 +143,7 @@ enum EBelosSolverType {
 /// is an alias for "Block GMRES", and also sets the "Flexible Gmres"
 /// parameter to true in the input parameter list.
 ///
-///	 Solver name | Aliases | Solver Manager Class
+///      Solver name | Aliases | Solver Manager Class
 ///  ----------- | ------- | ----------
 ///  Pseudoblock GMRES |  GMRES, Pseudo Block GMRES, PseudoBlockGMRES, PseudoBlockGmres | \c PseudoBlockGmresSolMgr
 ///  Block GMRES | Flexible GMRES | \c BlockGmresSolMgr
@@ -157,7 +157,7 @@ enum EBelosSolverType {
 ///  TFQMR | Transpose-Free QMR | \c TFQMRSolMgr
 ///  Pseudoblock TFQMR | Pseudo Block Transpose-Free QMR | \c PseudoBlockTFQMRSolMgr
 ///  Hybrid Block GMRES | GmresPoly, Seed GMRES | \c GmresPolySolMgr
-///  PCPG | CGPoly, Seed CG | \c PCPGSolMgr 
+///  PCPG | CGPoly, Seed CG | \c PCPGSolMgr
 ///
 /// This class' template parameters are the same as those of
 /// Belos::SolverManager.  Scalar is the scalar type (of entries in
@@ -431,42 +431,34 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
   case SOLVER_TYPE_BLOCK_GMRES: {
     typedef BlockGmresSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
-    break;
   }
   case SOLVER_TYPE_PSEUDO_BLOCK_GMRES: {
     typedef PseudoBlockGmresSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
-    break;
   }
   case SOLVER_TYPE_BLOCK_CG: {
     typedef BlockCGSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
-    break;
   }
   case SOLVER_TYPE_PSEUDO_BLOCK_CG: {
     typedef PseudoBlockCGSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
-    break;
   }
   case SOLVER_TYPE_GCRODR: {
     typedef GCRODRSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
-    break;
   }
   case SOLVER_TYPE_RCG: {
     typedef RCGSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
-    break;
   }
   case SOLVER_TYPE_MINRES: {
     typedef MinresSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
-    break;
   }
   case SOLVER_TYPE_LSQR: {
     typedef LSQRSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
-    break;
   }
   case SOLVER_TYPE_STOCHASTIC_CG: {
     typedef PseudoBlockStochasticCGSolMgr<Scalar, MV, OP> impl_type;
