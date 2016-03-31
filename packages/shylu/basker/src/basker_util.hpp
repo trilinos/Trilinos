@@ -10,6 +10,7 @@
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
+#include <impl/Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -1493,7 +1494,10 @@ namespace BaskerNS
 	  }//end over each matrix row
       }//end over all nblks
 
+    #ifdef BASKER_DEBUG_UTIL
     printf("nnz in ND: %d \n", total_nnz);
+    #endif
+
     //Get nnz for BTF L
     if(Options.btf == BASKER_TRUE)
       {
@@ -1505,7 +1509,9 @@ namespace BaskerNS
 	  }//over all blks
       }//end option btf
 
+    #ifdef BASKER_DEBUG_UTIL
     printf("Total L nnz: %d \n", total_nnz);
+    #endif
     //printf("-----Done Print L2d ---------\n");
 
     return total_nnz;
@@ -1527,7 +1533,9 @@ namespace BaskerNS
 	  }//end over each matrix row
       }//end over all nblks
 
+    #ifdef BASKER_DEBUG_UTIL
     printf("nnz in ND: %d \n", total_nnz);
+    #endif
     //Get nnz for BTF L
     if(Options.btf == BASKER_TRUE)
       {
@@ -1539,8 +1547,10 @@ namespace BaskerNS
 	  }//over all blks
       }//end option btf
 
+    #ifdef BASKER_DEBUG_UTIL
     printf("Total U nnz: %d \n", total_nnz);
     //printf("-----Done Print L2d ---------\n");
+    #endif
 
     return total_nnz;
   }//end get_Unnz()
@@ -1557,9 +1567,9 @@ namespace BaskerNS
    Entry**  val
    )
   {
+
     //Add Check
- 
-    
+    //Kokkos::Impl::Timer timer;
     n   = gn;
     nnz = get_Lnnz();
     (*col_ptr) = new Int[gn+1]();
@@ -1621,8 +1631,34 @@ namespace BaskerNS
       }//end option btf
 
    
+    #ifdef BASKER_DEBUG_UTIL
     printf("Total L nnz: %d ptr: %d  \n", total_Lnnz, ptr);
     printf("-----Done Print GetL ---------\n");
+    #endif
+
+    //Test Printf
+    /*
+    FILE *fp;
+    fp = fopen("L_col_ptr.csc", "w");
+    for(Int i = 0; i < n+1; i++)
+      {
+	fprintf(fp, "%d \n", (*col_ptr)[i]);
+      }
+    fclose(fp);
+    fp = fopen("L_row_idx.csc", "w");
+    for(Int i = 0; i < nnz; i++)
+      {
+	fprintf(fp, "%d \n", (*row_idx)[i]);
+      }
+    fclose(fp);
+    fp = fopen("L_val.csc", "w");
+    for(Int i = 0; i < nnz; i++)
+      {
+	fprintf(fp, "%f \n", (*val)[i]);
+      }
+    fclose(fp);
+    */
+
     return 0;
 
   }//end get_L();
@@ -1711,7 +1747,9 @@ namespace BaskerNS
 	  }//over all blks
       }//end option btf
 
+    #ifdef BASKER_DEBUG_UTIL
     printf("---------Done Get U : %d ------\n",  total_Unnz);
+    #endif
     return 0;
   }//end get_U()
 

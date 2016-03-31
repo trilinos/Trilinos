@@ -63,6 +63,7 @@ build_precond (Teuchos::ParameterList& test_params,
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
   Teuchos::Time timer_init("init");
   Teuchos::Time timer("precond");
+  Teuchos::Time timer2("precond_reuse");
   const int myRank = A->getRowMap ()->getComm ()->getRank ();
 
   RCP<FancyOStream> out = getFancyOStream (rcpFromRef (cout));
@@ -110,14 +111,14 @@ build_precond (Teuchos::ParameterList& test_params,
     if (reuse_pattern == true)
       {
 	{
-	  Teuchos::TimeMonitor timeMon (timer);
+	  Teuchos::TimeMonitor timeMon (timer2);
 	  prec->compute ();
 	}
 	if (myRank == 0) {
 	  *out << "Finished recomputing Ifpack2 preconditioner" 
 	       << endl;
 	  OSTab tab2 (*out);
-	  *out << "Time (s): " << timer.totalElapsedTime () 
+	  *out << "Time (s): " << timer2.totalElapsedTime () 
 	       << endl;
 	}
       }

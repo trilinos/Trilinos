@@ -130,8 +130,8 @@ namespace BaskerNS
     if((btf_tabs_offset != 0) && (fatal_error == BASKER_FALSE))
       {
 	
-	//for(Int l=1; l<=1; l++)
-	  for(Int l=1; l <= tree.nlvls; l++)
+	//for(Int l=1; l<=2; l++)
+	for(Int l=1; l <= tree.nlvls; l++)
       {
 
         //Come back for syncs
@@ -148,7 +148,6 @@ namespace BaskerNS
 
 	//printf("\n\n   ============ SEP: %d ======\n\n",l);
 
-	
 	#ifdef BASKER_KOKKOS
 	//Kokkos::Impl::Timer  timer_inner_sep;
 	#ifdef BASKER_NO_LAMBDA
@@ -187,7 +186,8 @@ namespace BaskerNS
 	    else
 	      {
 		sep_restart++;
-		printf("restart \n");
+		printf("sep restart l: %d \n", l);
+		//exit(0);
 		Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
 		Kokkos::fence();
 
