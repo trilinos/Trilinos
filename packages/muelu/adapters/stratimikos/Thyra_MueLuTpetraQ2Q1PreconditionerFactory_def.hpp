@@ -649,11 +649,11 @@ namespace Thyra {
     PFact->AddFactoryManager(M22);
     M.SetFactory("P", PFact);
 
-    RCP<MueLu::Factory > AcFact = rcp(new BlockedRAPFactory());
     RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
     RFact->SetFactory("P", PFact);
     M.SetFactory("R", RFact);
 
+    RCP<MueLu::Factory > AcFact = rcp(new BlockedRAPFactory());
     AcFact->SetFactory("R", RFact);
     AcFact->SetFactory("P", PFact);
     M.SetFactory("A", AcFact);
@@ -672,6 +672,7 @@ namespace Thyra {
   SetBlockDependencyTree(MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>& M, LocalOrdinal row, LocalOrdinal col, const std::string& mode, const ParameterList& paramList) const {
     typedef MueLu::ConstraintFactory <SC,LO,GO,NO> ConstraintFactory;
     typedef MueLu::EminPFactory      <SC,LO,GO,NO> EminPFactory;
+    typedef MueLu::GenericRFactory   <SC,LO,GO,NO> GenericRFactory;
     typedef MueLu::PatternFactory    <SC,LO,GO,NO> PatternFactory;
     typedef MueLu::Q2Q1PFactory      <SC,LO,GO,NO> Q2Q1PFactory;
     typedef MueLu::Q2Q1uPFactory     <SC,LO,GO,NO> Q2Q1uPFactory;
@@ -733,6 +734,14 @@ namespace Thyra {
     EminPFact->SetFactory("Constraint", CFact);
     EminPFact->SetFactory("P",          Q2Q1Fact);
     M.SetFactory("P", EminPFact);
+
+    if (mode == "velocity" && (!paramList.isParameter("velocity: use transpose") || paramList.get<bool>("velocity: use transpose") == false)) {
+      // Pressure system is symmetric, so it does not matter
+      // Velocity system may benefit from running emin in restriction mode (with A^T)
+      RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
+      RFact->SetFactory("P", EminPFact);
+      M.SetFactory("R", RFact);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
