@@ -184,7 +184,12 @@ namespace MueLu {
 
     } else {
       // The factory is in restriction mode
-      RCP<Matrix> R = Utilities::Transpose(*finalP, true);
+      RCP<Matrix> R;
+      {
+        SubFactoryMonitor m2(*this, "Transpose P", coarseLevel);
+        R = Utilities::Transpose(*finalP, true);
+      }
+
       Set(coarseLevel, "R", R);
 
       // NOTE: EXPERIMENTAL
