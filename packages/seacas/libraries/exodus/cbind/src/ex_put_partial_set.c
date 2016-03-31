@@ -92,7 +92,7 @@ int ex_put_partial_set (int   exoid,
     sprintf(errmsg,
             "ERROR: no %ss defined in file id %d",
 	    ex_name_of_object(set_type), exoid);
-    ex_err("ex_put_set",errmsg,exerrval);
+    ex_err("ex_put_partial_set",errmsg,exerrval);
     return (EX_FATAL);
   }
 
@@ -103,14 +103,14 @@ int ex_put_partial_set (int   exoid,
       sprintf(errmsg,
               "Warning: no data allowed for NULL %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type),set_id,exoid);
-      ex_err("ex_put_set",errmsg,EX_NULLENTITY);
+      ex_err("ex_put_partial_set",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } 
-      sprintf(errmsg,
-	      "ERROR: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
-	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_put_set",errmsg,exerrval);
-      return (EX_FATAL);
+    sprintf(errmsg,
+	    "ERROR: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
+	    ex_name_of_object(set_type), set_id,exoid);
+    ex_err("ex_put_partial_set",errmsg,exerrval);
+    return (EX_FATAL);
     
   }
 
@@ -142,20 +142,8 @@ int ex_put_partial_set (int   exoid,
     sprintf(errmsg,
 	    "ERROR: failed to locate entry list for %s %"PRId64" in file id %d",
 	    ex_name_of_object(set_type), set_id,exoid);
-    ex_err("ex_put_set",errmsg,exerrval);
+    ex_err("ex_put_partial_set",errmsg,exerrval);
     return (EX_FATAL);
-  }
-
-  /* only do for edge, face and side sets */
-  if (extraptr) {
-    if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "ERROR: failed to locate extra list for %s %"PRId64" in file id %d",
-	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_put_set",errmsg,exerrval);
-      return (EX_FATAL);
-    }
   }
 
   /* write out the entry list and extra list arrays */
@@ -164,7 +152,7 @@ int ex_put_partial_set (int   exoid,
     count[0] = num_to_put;
     if (count[0] == 0) {
       start[0] = 0;
-}
+    }
 
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       status = nc_put_vara_longlong(exoid, entry_list_id, start, count, set_entry_list);
@@ -177,15 +165,23 @@ int ex_put_partial_set (int   exoid,
       sprintf(errmsg,
 	      "ERROR: failed to store entry list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_put_set",errmsg,exerrval);
+      ex_err("ex_put_partial_set",errmsg,exerrval);
       return (EX_FATAL);
     }
   }
 
 
   /* only do for edge, face and side sets */
-  if (extraptr && set_extra_list != NULL ) {
-    
+  if (extraptr && (set_extra_list != NULL || ex_is_parallel(exoid))) {
+    if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "ERROR: failed to locate extra list for %s %"PRId64" in file id %d",
+	      ex_name_of_object(set_type), set_id,exoid);
+      ex_err("ex_put_partial_set",errmsg,exerrval);
+      return (EX_FATAL);
+    }
+
     start[0] = offset-1;
     count[0] = num_to_put;
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -199,7 +195,7 @@ int ex_put_partial_set (int   exoid,
       sprintf(errmsg,
 	      "ERROR: failed to store extra list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_put_set",errmsg,exerrval);
+      ex_err("ex_put_partial_set",errmsg,exerrval);
       return (EX_FATAL);
     }
   }
@@ -210,7 +206,7 @@ int ex_put_partial_set (int   exoid,
     sprintf(errmsg,
 	    "Warning: extra list was ignored for %s %"PRId64" in file id %d",
 	    ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_put_set",errmsg,EX_MSG);
+    ex_err("ex_put_partial_set",errmsg,EX_MSG);
     return(EX_WARN); 
   }
 
