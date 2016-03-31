@@ -189,7 +189,7 @@ namespace MueLu {
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
-        R->CreateView("stridedMaps", Ptent, true);
+        R->CreateView("stridedMaps", Ptent, true/*transposeA*/);
 
       if (IsPrint(Statistics1)) {
         RCP<ParameterList> params = rcp(new ParameterList());
