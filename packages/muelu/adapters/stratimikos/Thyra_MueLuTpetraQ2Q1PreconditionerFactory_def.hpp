@@ -821,6 +821,7 @@ namespace Thyra {
       smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("bs: sweeps", int, 1)));
       smootherPrototype->SetParameter("lumping",        ParameterEntry(lumping));
       smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
+      smootherPrototype->SetParameter("q2q1 mode",      ParameterEntry(true));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
     }
 
