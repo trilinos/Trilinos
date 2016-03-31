@@ -839,23 +839,15 @@ namespace Tpetra {
                      size_t& constantNumPackets,
                      Distributor & /* distor */ )
   {
-    const bool debug = false;
-    if (debug) {
-      std::cerr << "$$$ MV::packAndPrepareNew" << std::endl;
-    }
-
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     //typedef Array<size_t>::size_type size_type; // unused
 
-    // If we have no exports, there is nothing to do
-    if (exportLIDs.size () == 0) {
-      if (debug) {
-        std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
-      }
-      return;
+    const bool debug = false;
+    if (debug) {
+      std::cerr << "$$$ MV::packAndPrepareNew" << std::endl;
     }
 
     // We've already called checkSizes(), so this cast must succeed.
@@ -864,6 +856,22 @@ namespace Tpetra {
     // We don't need numExportPacketsPerLID; forestall "unused
     // variable" compile warnings.
     (void) numExportPacketsPerLID;
+
+    const size_t numCols = sourceMV.getNumVectors ();
+
+    // This spares us from needing to fill numExportPacketsPerLID.
+    // Setting constantNumPackets to a nonzero value signals that
+    // all packets have the same number of entries.
+    constantNumPackets = numCols;
+
+    // If we have no exports, there is nothing to do.  Make sure this
+    // goes _after_ setting constantNumPackets correctly.
+    if (exportLIDs.size () == 0) {
+      if (debug) {
+        std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
+      }
+      return;
+    }
 
     /* The layout in the export for MultiVectors is as follows:
        exports = { all of the data from row exportLIDs.front() ;
@@ -879,13 +887,6 @@ namespace Tpetra {
     // data could include entries from multiple LIDs.  DistObject just
     // needs to know how to index into that data.  Kokkos is good at
     // decoupling storage intent from data layout choice.
-
-    const size_t numCols = sourceMV.getNumVectors ();
-
-    // This spares us from needing to fill numExportPacketsPerLID.
-    // Setting constantNumPackets to a nonzero value signals that
-    // all packets have the same number of entries.
-    constantNumPackets = numCols;
 
     if (debug) {
       std::cerr << "$$$ MV::packAndPrepareNew realloc" << std::endl;
