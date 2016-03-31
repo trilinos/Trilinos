@@ -291,6 +291,7 @@ void getCoarsenedPartGraph(
   //create a zoltan dictionary to get the parts of the vertices
   //at the other end of edges
   std::vector <part_t> e_parts (localNumEdges);
+#ifdef HAVE_ZOLTAN2_MPI
   if (comm->getSize() > 1)
   {
     Zoltan_DD_Struct *dd = NULL;
@@ -322,7 +323,9 @@ void getCoarsenedPartGraph(
         NULL
         );
     Zoltan_DD_Destroy(&dd);
-  } else {
+  } else
+#endif
+  {
 
     /*
     std::cout << "localNumVertices:" << localNumVertices
@@ -1285,7 +1288,6 @@ public:
         recursion_depth,
         partNoArray,
         proc_partition_along_longest_dim
-
         //,"proc_partitioning"
     );
     env->timerStop(MACRO_TIMERS, "Mapping - Proc Partitioning");
