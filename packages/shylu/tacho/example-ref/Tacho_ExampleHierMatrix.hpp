@@ -183,12 +183,16 @@ namespace Tacho {
     double t_block = timer.seconds();    
 
     size_type nnz_blocks = 0;
-    for (size_type i=0; i<HA_host.NumNonZeros(); ++i) 
+    for (size_type i=0; i<HA_host.NumNonZeros(); ++i) {
       nnz_blocks += HA_host.Value(i).NumNonZeros();
+      HA_host.Value(i).showMe(std::cout) << std::endl;
+    }
 
     if (nnz_blocks != DD_host.NumNonZeros()) 
       std::cout << "Error, nnz blocks = " << nnz_blocks << " vs flat nnz = " << DD_host.NumNonZeros() 
                 << std::endl;
+    else 
+      std::cout << "Pass, nnz blocks match to flat nnz" << std::endl;      
 
     {
       const auto prec = std::cout.precision();

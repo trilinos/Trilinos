@@ -57,7 +57,7 @@ namespace Tacho {
               continue;
             } else {
               // construct a task
-              future_type f = factory.create<future_type>
+              const future_type f = factory.create<future_type>
                 (policy,
                  Chol<Uplo::Upper,
                  CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
@@ -84,7 +84,7 @@ namespace Tacho {
               if (bb.isEmpty()) {
                 continue;
               } else {
-                future_type f = factory.create<future_type>
+                const future_type f = factory.create<future_type>
                   (policy, 
                    Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
                    CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
@@ -137,11 +137,11 @@ namespace Tacho {
                         if (cc.isEmpty()) {
                           continue;
                         } else {
-                          future_type f = factory.create<future_type>
+                          const future_type f = factory.create<future_type>
                             (policy, 
                              Herk<Uplo::Upper,Trans::ConjTranspose,
                              CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
-                             ::createTaskFunctor(-1.0, aa, 1.0, cc), 2);
+                             ::createTaskFunctor(policy, -1.0, aa, 1.0, cc), 2);
                           
                           // dependence
                           factory.depend(policy, f, aa.Future());              
@@ -154,39 +154,38 @@ namespace Tacho {
                           factory.spawn(policy, f);
                         } 
                       }
+                    } else {
+                      idx = c.Index(col_at_j, idx);
+                      if (idx >= 0) {
+                        value_type &cc = c.Value(idx);
+                        
+                        if (cc.isEmpty()) {
+                          continue;
+                        } else {
+                          const future_type f = factory.create<future_type>
+                            (policy, 
+                             Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                             CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
+                             ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
+                          
+                          // dependence
+                          factory.depend(policy, f, aa.Future());
+                          factory.depend(policy, f, bb.Future());
+                          factory.depend(policy, f, cc.Future());
+                          
+                          // place task signature on y
+                          cc.setFuture(f);
+                          
+                          // spawn a task
+                          factory.spawn(policy, f);
+                        } 
+                      }
                     }
                   } 
-                } else {
-                  idx = c.Index(col_at_j, idx);
-                  if (idx >= 0) {
-                    value_type &cc = c.Value(idx);
-                    
-                    if (cc.isEmpty()) {
-                      continue;
-                    } else {
-                      future_type f = factory.create<future_type>
-                        (policy, 
-                         Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-                         CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
-                         ::createTaskFunctor(-1.0, aa, bb, 1.0, cc), 3);
-                      
-                      // dependence
-                      factory.depend(policy, f, aa.Future());
-                      factory.depend(policy, f, bb.Future());
-                      factory.depend(policy, f, cc.Future());
-                      
-                      // place task signature on y
-                      cc.setFuture(f);
-                      
-                      // spawn a task
-                      factory.spawn(policy, f);
-                    } 
-                  }
                 }
-              } 
+              }
             }
           }
-
           // -----------------------------------------------------
           Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
                            A10, A11, A12, /**/ /******/
@@ -210,7 +209,7 @@ namespace Tacho {
     private:
       ExecViewTypeA _A;
       
-      policy_type _policy;
+      PolicyType _policy;
       
     public:
       KOKKOS_INLINE_FUNCTION

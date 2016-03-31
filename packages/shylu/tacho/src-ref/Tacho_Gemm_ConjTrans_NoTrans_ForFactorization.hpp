@@ -51,7 +51,7 @@ namespace Tacho {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz_a),
                              [&](const ordinal_type i) {
                                const ordinal_type row_at_i  = a.Col(i);
-                               const value_type   val_at_ik = conj(a.Value(i));
+                               const value_type   val_at_ik = Util::conj(a.Value(i));
 
                                row_view_type &c = C.RowView(row_at_i);
 

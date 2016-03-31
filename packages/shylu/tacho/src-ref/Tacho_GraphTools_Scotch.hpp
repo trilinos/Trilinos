@@ -173,7 +173,7 @@ namespace Tacho {
         // if both are zero, do not build strategy
         if (_strat || _level) {
           std::cout << "GraphTools_Scotch:: User provide a strategy and/or level" << std::endl
-                    << "                    strategy = " << _strat << ", level =  " << _level << std::endl
+                    << "                    strategy = " << _strat << ", level =  " << _level << ", treecut = " << treecut << std::endl
                     << "                    strategy & SCOTCH_STRATLEVELMAX   = " << (_strat & SCOTCH_STRATLEVELMAX) << std::endl
                     << "                    strategy & SCOTCH_STRATLEVELMIN   = " << (_strat & SCOTCH_STRATLEVELMIN) << std::endl
                     << "                    strategy & SCOTCH_STRATLEAFSIMPLE = " << (_strat & SCOTCH_STRATLEAFSIMPLE) << std::endl

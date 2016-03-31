@@ -5,7 +5,10 @@
 /// \brief Hermitian rank-k update on given sparse patterns.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-//#include "herk_u_ct_for_factor_blocked.hpp"
+// - Dense HERK
 #include "Tacho_Herk_Upper_ConjTrans_ExternalBlas.hpp"
+
+// - Sparse HERK
+#include "Tacho_Herk_Upper_ConjTrans_ForFactorization.hpp"
 
 #endif

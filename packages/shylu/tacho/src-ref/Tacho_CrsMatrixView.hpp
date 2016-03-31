@@ -218,7 +218,7 @@ namespace Tacho {
            << " Offs ( " << std::setw(w) << _offm << ", " << std::setw(w) << _offn << " ); "
            << " Dims ( " << std::setw(w) << _m    << ", " << std::setw(w) << _n    << " ); "
            << " NumNonZeros = " << std::setw(w) << nnz << ";"
-           << " Density = " << std::setw(w) << (nnz == -1 ? double(0) : double(nnz)/_m/_n) << ";";
+           << " Density = " << std::setw(w) << (nnz == -1 ? double(0) : double(nnz)/_m/(_rc-_lc+1)) << ";";
       }
       os.unsetf(std::ios::scientific);
       os.precision(prec);

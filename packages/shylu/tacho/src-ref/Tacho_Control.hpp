@@ -50,16 +50,13 @@ namespace Tacho {
     static constexpr int Gemm[2] = { AlgoGemm::InternalBlas,   Variant::One };
   };
 
-  // // - CholByblocks Variant 1
-  // // * partitioned block matrix (blocks are sparse)
-  // template<> struct Control<AlgoChol::ByBlocks,Variant::One> {
-  //   // chol var 1 : nested data parallel for is applied in the second inner loop
-  //   // chol var 2 : nested data parallel for is applied in the most inner loop
-  //   static constexpr int Chol[2] = { AlgoChol::UnblockedOpt,     Variant::Two };
-  //   static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked, Variant::One };
-  //   static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked, Variant::One };
-  //   static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked, Variant::One };
-  // };
+  // - SparseByBlocks
+  template<> struct Control<AlgoChol::ByBlocks,Variant::One> {
+    static constexpr int Chol[2] = { AlgoChol::Unblocked,        Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::ForFactorization, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::ForFactorization, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::ForFactorization, Variant::One };
+  };
 
   // // - CholByBlocks Variant 2
   // // * diagonal blocks have nested dense blocks

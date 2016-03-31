@@ -18,7 +18,7 @@ namespace Tacho {
   KOKKOS_INLINE_FUNCTION
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-       AlgoTrsm::ExternalBlas,Variant::One>
+       AlgoTrsm::ForFactorization,Variant::One>
   ::invoke(PolicyType &policy,
            const MemberType &member,
            const int diagA,
@@ -51,61 +51,36 @@ namespace Tacho {
           // b1t = b1t / conj(diag)
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz_b1),
                                [&](const ordinal_type j) {
+                                 const auto backup = b1.Value(j);
                                  b1.Value(j) /= cdiag;
                                });
         }
-
+        
         // update
         const ordinal_type nnz_a = a.NumNonZeros();
         if (nnz_a > 0) {
-          // parallelize for bigger nnz
-          if (nnz_a < nnz_b1) {
-            // B2 = B2 - trans(conj(a12t)) b1t
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz_b1),
-                                 [&](const ordinal_type j) {
+          // B2 = B2 - trans(conj(a12t)) b1t
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 1, nnz_a),
+                               [&](const ordinal_type i) {
+                                 // grab a12t
+                                 const ordinal_type row_at_i = a.Col(i);
+                                 const value_type   val_at_i = Util::conj(a.Value(i));
+                                 
+                                 // grab b2
+                                 row_view_type &b2 = B.RowView(row_at_i);
+                                 
+                                 ordinal_type idx = 0;
+                                 for (ordinal_type j=0;j<nnz_b1 && (idx > -2);++j) {
                                    // grab b1
                                    const ordinal_type col_at_j = b1.Col(j);
                                    const value_type   val_at_j = b1.Value(j);
                                    
-                                   for (ordinal_type i=1;i<nnz_a;++i) {
-                                     // grab a12t
-                                     const ordinal_type row_at_i = a.Col(i);
-                                     const value_type   val_at_i = Util::conj(a.Value(i));
-                                     
-                                     // grab b2
-                                     row_view_type &b2 = B.RowView(row_at_i);
-                                     
-                                     // check and update
-                                     ordinal_type idx = 0;
-                                     idx = b2.Index(col_at_j, idx);
-                                     if (idx >= 0)
-                                       b2.Value(idx) -= val_at_i*val_at_j;
-                                   }
-                                 });
-          } else {
-            // B2 = B2 - trans(conj(a12t)) b1t
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 1, nnz_a),
-                                 [&](const ordinal_type i) {
-                                   // grab a12t
-                                   const ordinal_type row_at_i = a.Col(i);
-                                   const value_type   val_at_i = Util::conj(a.Value(i));
-                                   
-                                   // grab b2
-                                   row_view_type &b2 = B.RowView(row_at_i);
-                                   
-                                   ordinal_type idx = 0;
-                                   for (ordinal_type j=0;j<nnz_b1 && (idx > -2);++j) {
-                                     // grab b1
-                                     const ordinal_type col_at_j = b1.Col(j);
-                                     const value_type   val_at_j = b1.Value(j);
-                                     
-                                     // check and update
-                                     idx = b2.Index(col_at_j, idx);
-                                     if (idx >= 0)
-                                       b2.Value(idx) -= val_at_i*val_at_j;
-                                   }
-                                 });
-          }
+                                   // check and update
+                                   idx = b2.Index(col_at_j, idx);
+                                   if (idx >= 0)
+                                     b2.Value(idx) -= val_at_i*val_at_j;
+                                 }
+                               } );
           member.team_barrier();
         }
       }
@@ -117,3 +92,54 @@ namespace Tacho {
 }
 
 #endif
+
+
+
+
+  // if (false && nnz_a < nnz_b1) {
+  //   // B2 = B2 - trans(conj(a12t)) b1t
+  //   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz_b1),
+  //                        [&](const ordinal_type j) {
+  //                          // grab b1
+  //                          const ordinal_type col_at_j = b1.Col(j);
+  //                          const value_type   val_at_j = b1.Value(j);
+                           
+  //                          for (ordinal_type i=1;i<nnz_a;++i) {
+  //                            // grab a12t
+  //                            const ordinal_type row_at_i = a.Col(i);
+  //                            const value_type   val_at_i = Util::conj(a.Value(i));
+                             
+  //                            // grab b2
+  //                            row_view_type &b2 = B.RowView(row_at_i);
+                             
+  //                            // check and update
+  //                            ordinal_type idx = 0;
+  //                            idx = b2.Index(col_at_j, idx);
+  //                            if (idx >= 0)
+  //                              b2.Value(idx) -= val_at_i*val_at_j;
+  //                          }
+  //                        });
+  // } else {
+  //   B2 = B2 - trans(conj(a12t)) b1t
+  //     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 1, nnz_a),
+  //                          [&](const ordinal_type i) {
+  //                            grab a12t
+  //                            const ordinal_type row_at_i = a.Col(i);
+  //                            const value_type   val_at_i = Util::conj(a.Value(i));
+                             
+  //                            grab b2
+  //                            row_view_type &b2 = B.RowView(row_at_i);
+                             
+  //                            ordinal_type idx = 0;
+  //                            for (ordinal_type j=0;j<nnz_b1 && (idx > -2);++j) {
+  //                              grab b1
+  //                                const ordinal_type col_at_j = b1.Col(j);
+  //                              const value_type   val_at_j = b1.Value(j);
+                               
+  //                              check and update
+  //                                idx = b2.Index(col_at_j, idx);
+  //                            if (idx >= 0)
+  //                              b2.Value(idx) -= val_at_i*val_at_j;
+  //                            }
+  //                          });
+  // }

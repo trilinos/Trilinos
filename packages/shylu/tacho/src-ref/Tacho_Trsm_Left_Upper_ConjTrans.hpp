@@ -5,9 +5,13 @@
 /// \brief Triangular solve 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
-//#include "trsm_l_u_ct_for_factor_blocked.hpp"
+
 //#include "trsm_l_u_ct_for_tri_solve_blocked.hpp"
 
+// - Dense TRSM
 #include "Tacho_Trsm_Left_Upper_ConjTrans_ExternalBlas.hpp"
+
+// - Sparse TRSM
+#include "Tacho_Trsm_Left_Upper_ConjTrans_ForFactorization.hpp"
 
 #endif

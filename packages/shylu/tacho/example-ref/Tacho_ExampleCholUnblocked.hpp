@@ -174,7 +174,7 @@ namespace Tacho {
 
     CrsMatrixViewDeviceType A_device(AA_device);
     Kokkos::View<typename CrsMatrixViewDeviceType::row_view_type*,DeviceSpaceType> 
-      rowviews("RowViewInMatView", AA_device.NumRows());
+      rowviews("RowViewInMatView", A_device.NumRows());
     A_device.setRowViewArray(rowviews);
     
     timer.reset();

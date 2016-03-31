@@ -6,15 +6,15 @@
 /// \brief Upper Cholesky factorization variations
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-// triple for loop
+// Sparse matrix factorization
 #include "Tacho_Chol_Upper_Unblocked.hpp"
+#include "Tacho_Chol_Upper_ByBlocks.hpp"
 
-// tools for supernodal algorithms
+// Dense matrix factorization
 #include "Tacho_Chol_Upper_ExternalLapack.hpp"
 #include "Tacho_Chol_Upper_DenseByBlocks.hpp"
 
 // partitioned block algorithms: see control.hpp
-//#include "chol_u_right_look_by_blocks.hpp"
 //#include "chol_u_nested_dense_block.hpp"
 //#include "chol_u_nested_dense_by_blocks.hpp"
 

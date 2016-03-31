@@ -36,8 +36,16 @@ namespace Tacho {
 
       if (member.team_rank() == 0) {
         // if encounter null diag or wrong index, return -(row + 1)
-        if (Util::abs(alpha) == 0.0 || r1t.Col(0) != k) {
-          return -(k + 1);
+        TACHO_TEST_FOR_ABORT( r1t.Col(0) != k, "Chol::Unblocked:: Diagonal does not exist");        
+        if (Util::real(alpha) <= 0.0) {
+          // warning message
+          fprintf(stderr, "   diagonal = %f, local col = %d, global col = %d\n", 
+                  Util::real(alpha), k, r1t.OffsetCols() + k);
+          // proceed with epsilon; for incomplete factorization, Cholesky factor may not exit
+          alpha = 1.0e-8;
+
+          //TACHO_TEST_FOR_ABORT( true, "Chol::Unblocked:: Diagonal is negative");
+          //return -(k + 1);
         }
 
         // error handling should be more carefully designed
