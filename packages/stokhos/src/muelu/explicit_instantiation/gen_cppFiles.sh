@@ -8,7 +8,7 @@ for i in SC-LO-GO-NO LO-GO-NO
   do
 
   classList=$classListDir/$i.classList
-  # TAW: The MueLu ETI system has changed and only knows 
+  # TAW: The MueLu ETI system has changed and only knows
   #      SC-LO-GO-NO and LO-GO-NO class lists any more
   # The SC-LO-GO-NO-LMO.tmpl should cover both cases
   tmpl=SC-LO-GO-NO-LMO.tmpl

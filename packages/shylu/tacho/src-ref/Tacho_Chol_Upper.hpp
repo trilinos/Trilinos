@@ -6,12 +6,8 @@
 /// \brief Upper Cholesky factorization variations
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-// testing task-data parallelism
-//#include "chol_u_unblocked_dummy.hpp"
-
 // triple for loop
-//#include "Tacho_Chol_Upper_Unblocked_var1.hpp"
-//#include "Tacho_Chol_Upper_Unblocked_var2.hpp"
+#include "Tacho_Chol_Upper_Unblocked.hpp"
 
 // tools for supernodal algorithms
 #include "Tacho_Chol_Upper_ExternalLapack.hpp"

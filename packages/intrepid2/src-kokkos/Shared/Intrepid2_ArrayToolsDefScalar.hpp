@@ -61,57 +61,67 @@ namespace Intrepid2 {
   scalarMultiply( /**/  Kokkos::DynRankView<outputProperties...>     output,
                   const Kokkos::DynRankView<leftInputProperties...>  leftInput,
                   const Kokkos::DynRankView<rightInputProperties...> rightInput,
-                  const bool reciprocal = false ) {
-
+                  const bool hasField,
+                  const bool reciprocal ) {
     struct Functor {
       /**/  Kokkos::DynRankView<outputProperties...>     _output;
       const Kokkos::DynRankView<leftInputProperties...>  _leftInput;
       const Kokkos::DynRankView<rightInputProperties...> _rightInput;
-      const bool _reciprocal;
+      const bool _hasField, _reciprocal;
 
       KOKKOS_INLINE_FUNCTION
       Functor(Kokkos::DynRankView<outputProperties...>     &output_,
               Kokkos::DynRankView<leftInputProperties...>  &leftInput_,
               Kokkos::DynRankView<rightInputProperties...> &rightInput_,
+              const bool hasField_,
               const bool reciprocal_)
-        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), _reciprocal(reciprocal_) {}
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), 
+          _hasField(hasField_), _reciprocal(reciprocal_) {}
 
       KOKKOS_INLINE_FUNCTION
       ~Functor = default;
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type cl) {
-        auto result = Kokkos::subdynrankview(_output, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      void operator()(const size_type iter) {
+        size_type cl, bf, pt;
 
-        const auto left = ( _leftInput.rank() == _output.rank() ?
-                            Kokkos::subdynrankview(_leftInput, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) :
-                            Kokkos::subdynrankview(_leftInput,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) );
+        if (_hasField) 
+          unrollIndex( cl, bf, pt, 
+                       _output.dimension(0),
+                       _output.dimension(1),
+                       iter );
+        else          
+          unrollIndex( cl, pt,
+                       _output.dimension(0),
+                       iter );
 
-        const auto right = Kokkos::subdynrankview(_rightInput, cl, Kokkos::ALL());
+        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_output, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
 
-        const size_type numFields = result.dimension(0);
-        const size_type numPoints = result.dimension(1);
-        const size_type dim1Tens  = result.dimension(2);
-        const size_type dim2Tens  = result.dimension(3);
+        const auto right = ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                             /**/        Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
+        
+        const auto left = Kokkos::subdynrankview(_leftInput, cl, pt);
 
+        const size_type iend  = result.dimension(2);
+        const size_type jend  = result.dimension(3);
+
+        const auto val = left();
         if (_reciprocal)
-          for(size_type bf = 0; bf < numFields; ++bf)
-            for(size_type pt = 0; pt < numPoints; ++pt)
-              for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-                for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
-                  result(bf, pt, iTens1, iTens2) = left(bf, pt, iTens1, iTens2)/right(pt);
+          for(size_type i = 0; i < iend; ++i)
+            for(size_type j = 0; j < jend; ++j)
+              result(i, j) = right(i, j)/val;
         else
-          for(size_type bf = 0; bf < numFields; ++bf)
-            for(size_type pt = 0; pt < numPoints; ++pt)
-              for(size_type iTens1 = 0; iTens1 < dim1Tens; ++iTens1)
-                for(size_type iTens2 = 0; iTens2 < dim2Tens; ++iTens2)
-                  result(bf, pt, iTens1, iTens2) = left(bf, pt, iTens1, iTens2)*right(pt);
+          for(size_type i = 0; i < iend; ++i)
+            for(size_type j = 0; j < jend; ++j)
+              result(i, j) = right(i, j)*val;
       }
     };
 
-    const size_type numCells = output.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
-    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, reciprocal) );
+    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
+                                 /**/       output.dimension(0)*output.dimension(1) );
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField, reciprocal) );
   }
 
   template<typename ExecSpaceType>
@@ -161,10 +171,11 @@ namespace Intrepid2 {
       }
     }
 #endif
-
+    // body
     ArrayTools<ExecSpaceType>::Internal::scalarMultiply( outputFields,
                                                          inputData,
                                                          inputFields,
+                                                         true,
                                                          reciprocal );
   }
 
@@ -214,10 +225,11 @@ namespace Intrepid2 {
       }
     }
 #endif
-
+    // body
     ArrayTools<ExecSpaceType>::Internal::scalarMultiply( outputData,
                                                          inputDataLeft,
                                                          inputDataRight,
+                                                         false,
                                                          reciprocal );
   }
 

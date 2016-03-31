@@ -62,6 +62,8 @@ namespace Intrepid2 {
                       const Kokkos::DynRankView<leftFieldProperties...>   leftFields,
                       const Kokkos::DynRankView<rightFieldProperties...>  rightFields,
                       const bool sumInto ) {
+    typedef typename leftFields::value_type value_type;
+
     struct Functor {
       /**/  Kokkos::DynRankView<outputFieldProperties...> _outputFields;
       const Kokkos::DynRankView<leftFieldProperties...>   _leftFields;
@@ -79,38 +81,33 @@ namespace Intrepid2 {
       ~Functor = default;
       
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type cl) {
-        const size_type numLeftInput  = _leftFields.dimension(1);
-        const size_type numRightInput = _rightFields.dimension(1);
-        const size_type numPoints     = _leftFields.dimension(2);
-        const size_type dim1Tensor    = _leftFields.dimension(3);
-        const size_type dim2Tensor    = _leftFields.dimension(4);
+      void operator()(const size_type iter) {
+        size_type cl, lbf, rbf;
+        unroll( cl, lbf, rbf, 
+                _leftFields.dimension(0),
+                _leftFields.dimension(1),
+                iter );
 
-        if (_sumInto) {
-          for (size_type lbf = 0; lbf < numLeftInput; ++lbf) 
-            for (size_type rbf = 0; rbf < numRightInput; ++rbf) {
-              value_type tmp(0);        
-              for (size_type qp = 0; qp < numPoints; ++qp) 
-                for (size_type iTens1 = 0; iTens1 < dim1Tensor; ++iTens1) 
-                  for (size_type iTens2 = 0; iTens2 < dim2Tensor; ++iTens2) 
-                    tmp += _leftFields(cl, lbf, qp, iTens1, iTens2)*_rightFields(cl, rbf, qp, iTens1, iTens2);
-              _outputFields(cl, lbf, rbf) += tmp;
-            }
-        } else {
-          for (size_type lbf = 0; lbf < numLeftInput; ++lbf) 
-            for (size_type rbf = 0; rbf < numRightInput; ++rbf) {
-              value_type tmp(0);        
-              for (size_type qp = 0; qp < numPoints; ++qp) 
-                for (size_type iTens1 = 0; iTens1 < dim1Tensor; ++iTens1) 
-                  for (size_type iTens2 = 0; iTens2 < dim2Tensor; ++iTens2) 
-                    tmp += _leftFields(cl, lbf, qp, iTens1, iTens2)*_rightInmput(cl, rbf, qp, iTens1, iTens2);
-              _outputFields(cl, lbf, rbf) = tmp;
-            }
-        }
+        auto result = Kokkos::subdynrankView( _outputFields,  cl, lbf, rbf );
+
+        const auto left  = Kokkos::subdynrankView( _leftfields,  cl, lbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        const auto right = Kokkos::subdynrankView( _rightfields, cl, rbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+
+        const size_type npts = left.dimension(0);
+        const size_type iend = left.dimension(1);
+        const size_type jend = left.dimension(2);
+
+        value_type tmp(0);        
+        for (size_type qp = 0; qp < npts; ++qp) 
+          for (size_type i = 0; i < iend; ++i) 
+            for (size_type j = 0; j < jend; ++j) 
+              tmp += left(qp, i, j)*right(qp, i, j);
+
+        result() = value_type(_sumInto)*result() + tmp;
       }
     };
-    const size_type numCells = leftFields.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
+    const size_type loopSize = leftFields.dimension(0)*leftFields.dimension(1)*rightFields.dimension(1);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(outputFields, leftFields, rightFields, sumInto) );
   }
 
@@ -122,18 +119,20 @@ namespace Intrepid2 {
   static void
   ArrayTools<ExecSpaceType>::Internal::
   contractDataField( /**/  Kokkos::DynRankView<outputFieldProperties...>      outputFields,
-                     const Kokkos::DynRankView<inputDataProperties...>   inputData,
+                     const Kokkos::DynRankView<inputDataProperties...>        inputData,
                      const Kokkos::DynRankView<inputFieldsFieldProperties...> inputFields,
                      const bool sumInto ) {
+    typedef typename inputFields::value_Type value_type;
+
     struct Functor {
       /**/  Kokkos::DynRankView<outputFieldProperties...>      _outputFields;
-      const Kokkos::DynRankView<inputDataProperties...>   _inputData;
+      const Kokkos::DynRankView<inputDataProperties...>        _inputData;
       const Kokkos::DynRankView<inputFieldsFieldProperties...> _inputFields;
       const bool _sumInto; 
 
       KOKKOS_INLINE_FUNCTION
       Functor(Kokkos::DynRankView<outputFieldProperties...>      &outputFields_,
-              Kokkos::DynRankView<inputDataProperties...>   &inputData_,
+              Kokkos::DynRankView<inputDataProperties...>        &inputData_,
               Kokkos::DynRankView<inputFieldsFieldProperties...> &inputFields_,
               const bool sumInto_) 
         : _outputFields(outputFields_), _inputData(inputData_), _inputFields(inputFields_), _sumInto(sumInto_) {}
@@ -142,35 +141,31 @@ namespace Intrepid2 {
       ~Functor = default;
       
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type cl) {
-        const size_type numFields = _inputFields.dimension(1);
-        const size_type numPoints = _inputFields.dimension(2);
-        const size_type dim1Tens  = _inputFields.dimension(3);
-        const size_type dim2Tens  = _inputFields.dimension(4);
+      void operator()(const size_type iter) {
+        size_type cl, bf;
+        unrollIndex( cl, bf, 
+                     _inputFields.dimension(0),
+                     iter );
+        
+        auto result = Kokkos::subdynrankView( _outputFields, cl, bf );
 
-        if (_sumInto) {
-          for (size_type bf = 0; bf < numFields; ++bf) {
-            value_type tmp(0);        
-            for (size_type qp = 0; qp < numPoints; ++qp) 
-              for (size_type iTens1 = 0; iTens1 < dim1Tensor; ++iTens1) 
-                for (size_type iTens2 = 0; iTens2 < dim2Tensor; ++iTens2) 
-                  tmp += _inputFields(cl, bf, qp, iTens1, iTens2)*_inputData(cl, qp, iTens1, iTens2);
-            _outputFields(cl, bf) += tmp;
-          }
-        } else {
-          for (size_type bf = 0; bf < numFields; ++bf) {
-            value_type tmp(0);        
-            for (size_type qp = 0; qp < numPoints; ++qp) 
-              for (size_type iTens1 = 0; iTens1 < dim1Tensor; ++iTens1) 
-                for (size_type iTens2 = 0; iTens2 < dim2Tensor; ++iTens2) 
-                  tmp += _inputFields(cl, bf, qp, iTens1, iTens2)*_inputData(cl, qp, iTens1, iTens2);
-            _outputFields(cl, bf) = tmp;
-          }
-        }
+        const auto field = Kokkos::subdynrankView( _inputFields, cl, bf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        const auto data  = Kokkos::subdynrankView( _inputData,   cl,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+
+        const size_type npts = field.dimension(0);
+        const size_type iend = field.dimension(1);
+        const size_type jend = field.dimension(2);
+
+        value_type tmp(0);        
+        for (size_type qp = 0; qp < npts; ++qp) 
+          for (size_type i = 0; i < iend; ++i) 
+            for (size_type j = 0; j < jend; ++j) 
+              tmp += field(qp, i, j) * data(qp, i, j);
+        result() = value_type(_sumInto)*result() + tmp;
       }
     };
-    const size_type numCells = inputData.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
+    const size_type loopSize = inputFields.dimension(0)*inputFields.dimension(1);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(outputFields, inputData, inputFields, sumInto) );
   }
 
@@ -185,7 +180,8 @@ namespace Intrepid2 {
                     const Kokkos::DynRankView<inputDataLeftFieldProperties...>  inputDataLeft,
                     const Kokkos::DynRankView<inputDataRightFieldProperties...> inputDataRight,
                     const bool sumInto ) {
-    
+    typedef typename inputDataLeft::value_type value_type;
+
     struct Functor {
       /**/  Kokkos::DynRankView<outputDataProperties...>          _outputData;
       const Kokkos::DynRankView<inputDataLeftFieldProperties...>  _inputDataLeft;
@@ -203,25 +199,27 @@ namespace Intrepid2 {
       ~Functor = default;
       
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type cl) {
-        size_type numPoints  = _inputDataLeft.dimension(1);
-        size_type dim1Tensor = _inputDataLeft.dimension(2);
-        size_type dim2Tensor = _inputDataLeft.dimension(3);
+      void operator()(const size_type iter) {
+        const size_type cl = iter;
+        
+        auto result = Kokkos::subdynrankview( _outputData, cl );
+        const auto left  = Kokkos::subdynrankview( _inputDataLeft,  cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        const auto right = Kokkos::subdynrankview( _inputDataRight, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+
+        size_type npts = left.dimension(0);
+        size_type iend = left.dimension(1);
+        size_type jend = left.dimension(2);
 
         value_type tmp(0);        
-        for (size_type qp = 0; qp < numPoints; ++qp) 
-          for (size_type iTens1 = 0; iTens1 < dim1Tensor; ++iTens1) 
-            for (size_type iTens2 = 0; iTens2 < dim2Tensor; ++iTens2) 
-              tmp += _inputDataLeft(cl, qp, iTens1, iTens2)*_inputDataRight(cl, qp, iTens1, iTens2);
-        
-        if (_sumInto) 
-          _outputData(cl) += tmp;
-        else 
-          _outputData(cl) = tmp;
+        for (size_type qp = 0; qp < npts; ++qp) 
+          for (size_type i = 0; i < iend; ++i) 
+            for (size_type j = 0; j < jend; ++j) 
+              tmp += left(qp, i, j)*right(qp, i, j);
+        result() = value_type(_sumInto)*result() + tmp;
       }
     };
-    const size_type numCells = inputDataLeft.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
+    const size_type loopSize = inputDataLeft.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(outputData, inputDataLeft, inputDataRight, sumInto) );
   }
 

@@ -68,40 +68,28 @@ namespace Tacho {
       _nnz = nnz;
 
       if (static_cast<ordinal_type>(_ap_begin.dimension_0()) < m) {
-        char label[Util::LabelSize*2];
-        strcat(label, _label);
-        strcat(label, "::RowPtrBeginArray");
-        _ap_begin = size_type_array(label, m);
+        _ap_begin = size_type_array("CrsMatrixBase::RowPtrBeginArray", m);
       } else {
         // otherwise initialize it
         Kokkos::Experimental::Impl::ViewFill<size_type_array>(_ap_begin, size_type());
       }
 
       if (static_cast<ordinal_type>(_ap_end.dimension_0()) < m) {
-        char label[Util::LabelSize*2];
-        strcat(label, _label);
-        strcat(label, "::RowPtrEndArray");
-        _ap_end = size_type_array(label, m);
+        _ap_end = size_type_array("CrsMatrixBase::RowPtrEndArray", m);
       } else {
         // otherwise initialize it
         Kokkos::Experimental::Impl::ViewFill<size_type_array>(_ap_end, size_type());
       }
 
       if (static_cast<size_type>(_aj.dimension_0()) < nnz) {
-        char label[Util::LabelSize*2];
-        strcat(label, _label);
-        strcat(label, "::ColsArray");
-        _aj = ordinal_type_array(label, nnz);
+        _aj = ordinal_type_array("CrsMatrixBase::ColsArray", nnz);
       } else {
         // otherwise initialize it
         Kokkos::Experimental::Impl::ViewFill<ordinal_type_array>(_aj, ordinal_type());
       }
 
       if (static_cast<size_type>(_ax.dimension_0()) < nnz) {
-        char label[Util::LabelSize*2];
-        strcat(label, _label);
-        strcat(label, "::ValuesArray");
-        _ax = value_type_array(label, nnz);
+        _ax = value_type_array("CrsMatrixBase::ValuesArray", nnz);
       } else {
         // otherwise initialize it
         Kokkos::Experimental::Impl::ViewFill<value_type_array>(_ax, value_type());
@@ -128,7 +116,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void setNumNonZeros() { 
       // the nnz here is the size of value and column arrays
-      if (_m) _nnz = _ap_end[_m-1];
+      if (_m) _nnz = _ap_end(_m-1);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -349,6 +337,7 @@ namespace Tacho {
          << "    # of Rows          = " << _m << std::endl
          << "    # of Cols          = " << _n << std::endl
          << "    # of NonZeros      = " << _nnz << std::endl
+         << "    Ap End             = " << _ap_end(_m-1) << std::endl
          << std::endl
          << "    RowPtrBeginArray length = " << _ap_begin.dimension_0() << std::endl
          << "    RowPtrEndArray length   = " << _ap_end.dimension_0() << std::endl

@@ -1039,6 +1039,7 @@ init (const keys_type& keys,
       const bool computeInitContigKeys)
 {
   using Kokkos::subview;
+  using Kokkos::ViewAllocateWithoutInitializing;
 
   const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -1078,7 +1079,11 @@ init (const keys_type& keys,
     // out of Map's constructor here, so there is no loss in doing it
     // sequentially for now.  Later, we can work on parallelization.
     //
-    // FIXME (mfh 01 Jun 2015) This assumes UVM.
+    // NOTE (mfh 01 Jun 2015, 28 Mar 2016) The code below assumes UVM.
+    // It is rational to assume UVM here, because this is "sparse"
+    // access -- we might not need to look at all the entries of keys,
+    // so it doesn't necessarily make sense to copy the whole thing
+    // back to host.
     if (numKeys > 0) {
       firstContigKey_ = keys[0];
       // Start with one plus, then decrement at the end.  That lets us do
@@ -1126,6 +1131,9 @@ init (const keys_type& keys,
   keys_type theKeys =
     subview (keys, std::pair<offset_type, offset_type> (startIndex, numKeys));
 
+  // FIXME (mfh 28 Mar 2016) For some reason, we don't seem to need a
+  // fence here, but we do before other allocations.
+
   // The array of counts must be separate from the array of offsets,
   // in order for parallel_scan to work correctly.
   typedef typename ptr_type::non_const_type counts_type;
@@ -1145,16 +1153,28 @@ init (const keys_type& keys,
     Kokkos::parallel_for (theNumKeys, functor);
   }
   else {
+    // Access to counts is not necessarily contiguous, but is
+    // irregular and likely touches all pages of the array.  Thus, it
+    // probably makes sense to use a host copy explicitly, rather than
+    // assume UVM.
+    auto countsHost = Kokkos::create_mirror_view (counts);
+    // FIXME (mfh 28 Mar 2016) Does create_mirror_view zero-fill?
+    Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
+
     for (offset_type k = 0; k < theNumKeys; ++k) {
       typedef typename hash_type::result_type hash_value_type;
-
       const hash_value_type hashVal = hash_type::hashFunc (theKeys[k], size);
-      ++counts[hashVal];
+      ++countsHost[hashVal];
     }
+    Kokkos::deep_copy (counts, countsHost);
   }
 
+  // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
+  // CUDA when ptr is filled.
+  execution_space::fence ();
+
   // Kokkos::View fills with zeros by default.
-  typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
+  typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size+1);
 
   // Compute row offsets via prefix sum:
   //
@@ -1174,12 +1194,21 @@ init (const keys_type& keys,
     Kokkos::parallel_scan (size+1, functor);
   }
   else {
+    // mfh 28 Mar 2016: We could use UVM here, but it's pretty easy to
+    // use a host mirror too, so I'll just do that.
+    typename decltype (ptr)::HostMirror ptrHost = Kokkos::create_mirror_view (ptr);
+
+    ptrHost[0] = 0;
     for (offset_type i = 0; i < size; ++i) {
-      //ptr[i+1] += ptr[i];
-      ptr[i+1] = ptr[i] + counts[i];
+      //ptrHost[i+1] += ptrHost[i];
+      ptrHost[i+1] = ptrHost[i] + counts[i];
     }
-    //ptr[0] = 0; // We've already done this when initializing ptr above.
+    Kokkos::deep_copy (ptr, ptrHost);
   }
+
+  // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
+  // CUDA when val is filled.
+  execution_space::fence ();
 
   // Allocate the array of (key,value) pairs.  Don't fill it with
   // zeros, because we will fill it with actual data below.
@@ -1213,6 +1242,9 @@ init (const keys_type& keys,
       const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
       // Return the old count; decrement afterwards.
+      //
+      // NOTE (mfh 28 Mar 2016) This assumes UVM.  It might make more
+      // sense to use a host mirror here, due to the access pattern.
       const offset_type count = counts[hashVal];
       --counts[hashVal];
       if (count == 0) {
@@ -1220,8 +1252,10 @@ init (const keys_type& keys,
         break;
       }
       else {
+        // NOTE (mfh 28 Mar 2016) This assumes UVM.
         const offset_type curPos = ptr[hashVal+1] - count;
 
+        // NOTE (mfh 28 Mar 2016) This assumes UVM.
         val[curPos].first = key;
         val[curPos].second = theVal;
       }

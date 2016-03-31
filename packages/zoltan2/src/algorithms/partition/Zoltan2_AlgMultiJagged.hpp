@@ -1338,7 +1338,8 @@ public:
         mj_lno_t *initial_selected_coords_output_permutation,
         mj_lno_t *output_xadj,
         int recursion_depth,
-        const mj_part_t *part_no_array);
+        const mj_part_t *part_no_array,
+        bool partition_along_longest_dim);
 
 };
 
@@ -1378,7 +1379,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     mj_lno_t *inital_adjList_output_adjlist,
     mj_lno_t *output_xadj,
     int rd,
-    const mj_part_t *part_no_array_
+    const mj_part_t *part_no_array_,
+    bool partition_along_longest_dim
 ){
 
         this->mj_env = env;
@@ -1451,6 +1453,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     RCP<mj_partBoxVector_t> t1;
     RCP<mj_partBoxVector_t> t2;
 
+
+    std::vector <uSignedSortItem<int, mj_scalar_t, char> > coord_dimension_range_sorted(this->coord_dim);
+    uSignedSortItem<int, mj_scalar_t, char> *p_coord_dimension_range_sorted = &(coord_dimension_range_sorted[0]);
+    std::vector <mj_scalar_t> coord_dim_mins(this->coord_dim);
+    std::vector <mj_scalar_t> coord_dim_maxs(this->coord_dim);
+
     for (int i = 0; i < this->recursion_depth; ++i){
 
         //partitioning array. size will be as the number of current partitions and this
@@ -1501,9 +1509,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
             continue;
         }
 
-        //get the coordinate axis along which the partitioning will be done.
-        int coordInd = i % this->coord_dim;
-        mj_scalar_t * mj_current_dim_coords = this->mj_coordinates[coordInd];
         //convert i to string to be used for debugging purposes.
         std::string istring = toString<int>(i);
 
@@ -1518,17 +1523,22 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
         mj_part_t output_coordinate_end_index = 0;
 
         mj_part_t current_work_part = 0;
-        mj_part_t current_concurrent_num_parts = std::min(current_num_parts - current_work_part,
-                                         this->max_concurrent_part_calculation);
+        mj_part_t current_concurrent_num_parts = 1;
 
         mj_part_t obtained_part_index = 0;
+
+        //get the coordinate axis along which the partitioning will be done.
+        int coordInd = i % this->coord_dim;
+        mj_scalar_t * mj_current_dim_coords = this->mj_coordinates[coordInd];
+
 
         //run for all available parts.
         for (; current_work_part < current_num_parts;
                      current_work_part += current_concurrent_num_parts){
 
-            current_concurrent_num_parts = std::min(current_num_parts - current_work_part,
-            this->max_concurrent_part_calculation);
+
+            //current_concurrent_num_parts = std::min(current_num_parts - current_work_part,
+            //this->max_concurrent_part_calculation);
 
             mj_part_t actual_work_part_count = 0;
             //initialization for 1D partitioning.
@@ -1552,15 +1562,63 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                                 << " coordinate_end_index:" << coordinate_end_index
                                 << " total:" << coordinate_end_index - coordinate_begin_index<< std::endl;
                                 */
-                this->mj_get_local_min_max_coord_totW(
-                                coordinate_begin_index,
-                                coordinate_end_index,
-                                this->coordinate_permutations,
-                                mj_current_dim_coords,
-                                this->process_local_min_max_coord_total_weight[kk], //min coordinate
-                        this->process_local_min_max_coord_total_weight[kk + current_concurrent_num_parts], //max coordinate
-                        this->process_local_min_max_coord_total_weight[kk + 2*current_concurrent_num_parts] //total weight);
-                );
+
+
+                if(partition_along_longest_dim){
+
+                  mj_scalar_t best_weight_coord = 0;
+                  for (int coord_traverse_ind = 0; coord_traverse_ind < this->coord_dim; ++coord_traverse_ind){
+                    mj_scalar_t best_min_coord = 0;
+                    mj_scalar_t best_max_coord = 0;
+                    //MD:same for all coordinates, but I will still use this for now.
+
+                    this->mj_get_local_min_max_coord_totW(
+                        coordinate_begin_index,
+                        coordinate_end_index,
+                        this->coordinate_permutations,
+                        this->mj_coordinates[coord_traverse_ind],
+                        best_min_coord, //min coordinate
+                        best_max_coord, //max coordinate
+                        best_weight_coord //total weight);
+                    );
+
+                    coord_dim_mins[coord_traverse_ind] = best_min_coord;
+                    coord_dim_maxs[coord_traverse_ind] = best_max_coord;
+                    mj_scalar_t best_range = best_max_coord - best_min_coord;
+                    coord_dimension_range_sorted[coord_traverse_ind].id = coord_traverse_ind;
+                    coord_dimension_range_sorted[coord_traverse_ind].val = best_range;
+                    coord_dimension_range_sorted[coord_traverse_ind].signbit = 1;
+                  }
+
+
+                  uqSignsort(this->coord_dim, p_coord_dimension_range_sorted);
+                  coordInd = p_coord_dimension_range_sorted[this->coord_dim - 1].id;
+                  /*
+                  for (int coord_traverse_ind = 0; coord_traverse_ind < this->coord_dim; ++coord_traverse_ind){
+                    std::cout << "i:" << p_coord_dimension_range_sorted[coord_traverse_ind].id << " range:" << p_coord_dimension_range_sorted[coord_traverse_ind].val << std::endl;
+                    std::cout << "i:" << p_coord_dimension_range_sorted[coord_traverse_ind].id << " coord_dim_mins:" << coord_dim_mins[p_coord_dimension_range_sorted[coord_traverse_ind].id]<< std::endl;
+                    std::cout << "i:" << p_coord_dimension_range_sorted[coord_traverse_ind].id << " coord_dim_maxs:" << coord_dim_maxs[p_coord_dimension_range_sorted[coord_traverse_ind].id] << std::endl;
+
+                  }
+                  */
+                  mj_current_dim_coords = this->mj_coordinates[coordInd];
+
+                  this->process_local_min_max_coord_total_weight[kk] = coord_dim_mins[coordInd];
+                  this->process_local_min_max_coord_total_weight[kk+ current_concurrent_num_parts] = coord_dim_maxs[coordInd];
+                  this->process_local_min_max_coord_total_weight[kk + 2*current_concurrent_num_parts] = best_weight_coord;
+
+                }
+                else{
+                  this->mj_get_local_min_max_coord_totW(
+                                  coordinate_begin_index,
+                                  coordinate_end_index,
+                                  this->coordinate_permutations,
+                                  mj_current_dim_coords,
+                                  this->process_local_min_max_coord_total_weight[kk], //min coordinate
+                          this->process_local_min_max_coord_total_weight[kk + current_concurrent_num_parts], //max coordinate
+                          this->process_local_min_max_coord_total_weight[kk + 2*current_concurrent_num_parts] //total weight);
+                  );
+                }
             }
 
             //1D partitioning
@@ -1717,6 +1775,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                         this->coordinate_permutations + coordinate_begin,
                         part_size * sizeof(mj_lno_t));
                     }
+
+
+
                     cut_shift += num_parts - 1;
                     tlr_shift += (4 *(num_parts - 1) + 1);
                     output_array_shift += num_parts;
@@ -1734,6 +1795,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                     for (mj_part_t ii = 0;ii < num_parts ; ++ii){
                         //shift it by previousCount
                         this->new_part_xadj[output_part_index+ii] += output_coordinate_end_index;
+                        if (ii % 2 == 1){
+                          mj_lno_t coordinate_end = this->new_part_xadj[output_part_index+ii];
+                          mj_lno_t coordinate_begin = this->new_part_xadj[output_part_index];
+
+                          for (mj_lno_t task_traverse = coordinate_begin; task_traverse < coordinate_end; ++task_traverse){
+                            mj_lno_t l = this->new_coordinate_permutations[task_traverse];
+                            mj_current_dim_coords[l] = -mj_current_dim_coords[l];
+                          }
+                        }
                     }
                     //increase the previous count by current end.
                     output_coordinate_end_index = this->new_part_xadj[output_part_index + num_parts - 1];

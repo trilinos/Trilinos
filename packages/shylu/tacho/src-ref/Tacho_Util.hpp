@@ -88,7 +88,7 @@ namespace Tacho {
   template<> bool is_scalar_type<double>::value = true;
   template<> bool is_scalar_type<Kokkos::complex<float> >::value = true;
   template<> bool is_scalar_type<Kokkos::complex<double> >::value = true;
-  
+
   class Util {
   public:
     static const size_t LabelSize = 64;    
@@ -103,6 +103,30 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     static T max(const T a, const T b) {
       return (a > b ? a : b);
+    }
+
+    template<typename T>
+    KOKKOS_INLINE_FUNCTION
+    static T abs(const T a) {
+      return (a > 0 ? a : -a);
+    }
+
+    template<typename T>
+    KOKKOS_INLINE_FUNCTION
+    static T real(const T a) {
+      return a;
+    }
+
+    template<typename T>
+    KOKKOS_INLINE_FUNCTION
+    static T imag(const T a) {
+      return 0;
+    }
+
+    template<typename T>
+    KOKKOS_INLINE_FUNCTION
+    static T conj(const T a) {
+      return a;
     }
 
     template<typename SpT>
@@ -202,6 +226,34 @@ namespace Tacho {
         // recursion
         Util::sort(data, idx, begin, left);
         Util::sort(data, idx, right, end );
+      }
+    }
+
+    template<typename ValueType, 
+             typename OrdinalType, 
+             typename SpaceType>
+    KOKKOS_INLINE_FUNCTION    
+    static void sort(Kokkos::View<ValueType*,SpaceType> data,
+                     const OrdinalType begin,
+                     const OrdinalType end) {
+      if (begin + 1 < end) {
+        const auto piv = data[begin];
+        OrdinalType left = (begin + 1), right = end;
+        while (left < right) {
+          if (data[left] <= piv) {
+            ++left;
+          } else {
+            --right;
+            Util::swap(data[left], data[right]);
+          }
+        }
+
+        --left;
+        Util::swap(data[left], data[begin]);
+        
+        // recursion
+        Util::sort(data, begin, left);
+        Util::sort(data, right, end );
       }
     }
                      

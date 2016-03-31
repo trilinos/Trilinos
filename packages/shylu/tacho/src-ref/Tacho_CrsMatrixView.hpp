@@ -64,15 +64,23 @@ namespace Tacho {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void setRowViewArray(const row_view_type_array &rows) {
+    void setRowViewArray(const row_view_type_array rows) {
       // use user provided array
       _rows = rows;
 
       // fill the array
       _nnz = 0;
-      for (ordinal_type i=0;i<_m;++i) {
-        _rows[i].setView(*this, i);
-        _nnz += _rows[i].NumNonZeros();
+      if (_offm == 0 && _m == _base.NumRows() &&
+          _offn == 0 && _n == _base.NumCols()) {
+        for (ordinal_type i=0;i<_m;++i) {
+          _rows(i).setView(_base, i);
+          _nnz += _rows(i).NumNonZeros();
+        }
+      } else {
+        for (ordinal_type i=0;i<_m;++i) {
+          _rows(i).setView(*this, i);
+          _nnz += _rows(i).NumNonZeros();
+        }
       }
     }
 

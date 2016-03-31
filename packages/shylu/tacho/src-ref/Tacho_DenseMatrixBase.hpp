@@ -84,10 +84,7 @@ namespace Tacho {
 
       // grow buffer dimension
       if (static_cast<size_type>(_a.dimension_0()) < size) {
-        char label[Util::LabelSize*2];
-        strcat(label, _label); 
-        strcat(label, "::ValueArray");
-        _a = value_type_array(label, size);
+        _a = value_type_array("DenseMatrixBase::ValueArray", size);
       } else {
         // otherwise initialize it
         Kokkos::Experimental::Impl::ViewFill<value_type_array>(_a, value_type());

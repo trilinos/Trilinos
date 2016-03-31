@@ -127,16 +127,13 @@ namespace Tacho {
         _ax() 
     { }
 
-    // KOKKOS_INLINE_FUNCTION
-    // CrsRowView(const ordinal_type       offn,
-    //            const ordinal_type       n,
-    //            const ordinal_type_array aj,
-    //            const value_type_array   ax) 
-    //   : _offn(offn),
-    //     _n(n),
-    //     _aj(aj),
-    //     _ax(ax) 
-    // { }
+    KOKKOS_INLINE_FUNCTION
+    CrsRowView(const CrsRowView &b)
+      : _offn(b._offn),
+        _n(b._n),
+        _aj(b._aj),
+        _ax(b._ax) 
+    { }
 
     KOKKOS_INLINE_FUNCTION
     CrsRowView(const CrsMatrixView<CrsMatBaseType> &A, 

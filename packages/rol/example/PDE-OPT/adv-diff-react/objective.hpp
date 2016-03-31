@@ -86,7 +86,8 @@ public:
     // (u-ud)
     diffp->update(-1.0, *(data_->getVecUd()), 1.0);
     // M*(u-ud)
-    data_->getMatM()->apply(*diffp, *matvecp);
+    //data_->getMatM()->apply(*diffp, *matvecp); // mass matrix product
+    matvecp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *diffp, 0.0); // (weighted) diagonal product
     // (u-ud)'*M*(u-ud)
     diffp->dot(*matvecp, dotvalU);
 
@@ -111,7 +112,8 @@ public:
     // (u-ud)
     diffp->update(-1.0, *(data_->getVecUd()), 1.0);
     // M*(u-ud)
-    data_->getMatM()->apply(*diffp, *gp);
+    //data_->getMatM()->apply(*diffp, *gp); // mass matrix product
+    gp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *diffp, 0.0);  // (weighted) diagonal product
   }
 
   void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
@@ -133,7 +135,8 @@ public:
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
 
     // M*v
-    data_->getMatM()->apply(*vp, *hvp);
+    //data_->getMatM()->apply(*vp, *hvp); // mass matrix product
+    hvp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *vp, 0.0);  // (weighted) diagonal product
   }
 
   void hessVec_12(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,

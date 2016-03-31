@@ -12,16 +12,16 @@
   </ParameterList>
 
   <ParameterList name="ElasticitySIMP">
-    <Parameter name="Initial Density"    type="double" value="1.0"     />
+    <Parameter name="Initial Density"    type="double" value="0.75"    />
     <Parameter name="SIMP Power"         type="int"    value="3"       />
-    <Parameter name="Load Case"          type="int"    value="1"       />
+    <Parameter name="Load Case"          type="int"    value="0"       />
     <Parameter name="Load Magnitude"     type="double" value="10.0"    />
-    <Parameter name="Load Polar Angle"   type="double" value="-3.1415" />
+    <Parameter name="Load Polar Angle"   type="double" value="-1.5708" />
     <Parameter name="Load Azimuth Angle" type="double" value="0.0"     />
   </ParameterList>
   
   <ParameterList name="ElasticityTopoOpt">
-    <Parameter name="volfrac"           type="double"  value="0.25"  />
+    <Parameter name="volfrac"           type="double"  value="0.40"  />
     <Parameter name="threshold"         type="double"  value="0.004"  />
     <Parameter name="maxIter"           type="int"     value="500"  />
   </ParameterList>
@@ -163,7 +163,7 @@
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
     <ParameterList name="Augmented Lagrangian">
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
-      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"        />
+      <Parameter name="Initial Penalty Parameter"               type="double" value="2.e1"        />
       <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
       <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
       <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->

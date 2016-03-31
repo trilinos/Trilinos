@@ -53,8 +53,9 @@
 
 #include "MueLu_EminPFactory_fwd.hpp"
 
-#include "MueLu_Constraint_fwd.hpp"
 #include "MueLu_CGSolver_fwd.hpp"
+#include "MueLu_Constraint_fwd.hpp"
+#include "MueLu_GMRESSolver_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"

@@ -9,6 +9,7 @@
 #include "MueLu_CGSolver.hpp"
 #include "MueLu_Constraint.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_GMRESSolver.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PatternFactory.hpp"
@@ -30,7 +31,7 @@ namespace MueLu {
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
       validParamList->getEntry("emin: iterative method").setValidator(
-        rcp(new validatorType(Teuchos::tuple<std::string>("cg", "sd"), "emin: iterative method")));
+        rcp(new validatorType(Teuchos::tuple<std::string>("cg", "sd", "gmres"), "emin: iterative method")));
     }
 #undef  SET_VALID_ENTRY
 
@@ -129,6 +130,8 @@ namespace MueLu {
       solver = rcp(new CGSolver(numIts));
     else if (solverType == "sd")
       solver = rcp(new SteepestDescentSolver(numIts));
+    else if (solverType == "gmres")
+      solver = rcp(new GMRESSolver(numIts));
 
     RCP<Matrix> P;
     solver->Iterate(*A, *X, *P0, P);
