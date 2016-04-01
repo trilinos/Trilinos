@@ -190,6 +190,9 @@ cmake \
 -D Trilinos_ENABLE_Intrepid=ON \
   -D Intrepid_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
   -D Intrepid_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Intrepid2=ON \
+  -D Intrepid2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D Intrepid2_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Isorropia=ON \
   -D Isorropia_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Kokkos=ON \
@@ -200,6 +203,8 @@ cmake \
   -D MueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON \
   -D MueLu_ENABLE_TESTS:BOOL=${TESTS} \
   -D MueLu_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_NOX=ON \
+  -D NOX_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Panzer=ON \
   -D Panzer_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_ROL=ON \
