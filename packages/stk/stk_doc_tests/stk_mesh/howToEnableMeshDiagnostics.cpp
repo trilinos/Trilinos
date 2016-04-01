@@ -35,7 +35,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
+#include <stk_mesh/base/MeshDiagnostics.hpp>
 
 namespace
 {

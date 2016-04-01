@@ -16,7 +16,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
 #include "penso/penso.hpp"
-#include "stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp"
+#include "stk_mesh/base/MeshDiagnostics.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 
 namespace stk {

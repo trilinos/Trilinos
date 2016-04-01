@@ -2,7 +2,7 @@
 #define MESH_DIAGNOSTICS_HPP
 
 #include <map>
-#include "../../base/Types.hpp"
+#include "Types.hpp"
 
 namespace stk { namespace mesh {
 

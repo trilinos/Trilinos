@@ -18,7 +18,7 @@
 #include <map>
 #include <string>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
-#include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
+#include <stk_mesh/base/MeshDiagnostics.hpp>
 
 namespace
 {

@@ -2,7 +2,7 @@
 #include <map>
 #include <utility>
 #include "../../base/BulkData.hpp"
-#include "MeshDiagnostics.hpp"
+#include "../../base/MeshDiagnostics.hpp"
 #include <cstdio>
 
 namespace stk { namespace mesh {

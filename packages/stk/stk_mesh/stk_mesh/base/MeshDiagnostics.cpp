@@ -1,19 +1,19 @@
-#include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
+#include <stk_mesh/base/MeshDiagnostics.hpp>
 #include <stddef.h>                     // for size_t, nullptr
 #include <string>                       // for string
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <map>
 #include <string>
-#include "../../base/BulkData.hpp"
-#include "../../base/MetaData.hpp"
-#include "ElemElemGraph.hpp"
-#include "MeshDiagnosticObserver.hpp"
-#include "../EquivalentEntityBlocks.hpp"
-#include "../../../../stk_util/stk_util/parallel/DistributedIndex.hpp"
-#include "../../base/GetEntities.hpp"
-#include "../MeshImplUtils.hpp"
-#include "BulkDataIdMapper.hpp"
-#include "ElemGraphCoincidentElems.hpp"
+#include "BulkData.hpp"
+#include "MetaData.hpp"
+#include "../baseImpl/elementGraph/ElemElemGraph.hpp"
+#include "../baseImpl/elementGraph/MeshDiagnosticObserver.hpp"
+#include "../baseImpl/EquivalentEntityBlocks.hpp"
+#include "../../../stk_util/stk_util/parallel/DistributedIndex.hpp"
+#include "GetEntities.hpp"
+#include "../baseImpl/MeshImplUtils.hpp"
+#include "../baseImpl/elementGraph/BulkDataIdMapper.hpp"
+#include "../baseImpl/elementGraph/ElemGraphCoincidentElems.hpp"
 
 namespace stk { namespace mesh {
 
