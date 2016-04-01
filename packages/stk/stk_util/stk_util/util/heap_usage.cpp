@@ -41,7 +41,7 @@
 #include <sys/malloc.h>
 #endif
 
-#elif defined(__PGI)
+#elif defined(__PGI) || defined (_CRAYC)
 #include <malloc.h>
 
 #elif defined(__sun)
