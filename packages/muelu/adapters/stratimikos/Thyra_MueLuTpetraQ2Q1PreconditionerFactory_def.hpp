@@ -823,6 +823,9 @@ namespace Thyra {
       smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
       smootherPrototype->SetParameter("q2q1 mode",      ParameterEntry(true));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
+
+    } else {
+      throw MueLu::Exceptions::RuntimeError("Unknown smoother type: \"" + type + "\"");
     }
 
     return coarseSolver ? rcp(new SmootherFactory(smootherPrototype, Teuchos::null)) : rcp(new SmootherFactory(smootherPrototype));
