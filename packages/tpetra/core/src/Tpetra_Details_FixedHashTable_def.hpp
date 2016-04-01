@@ -590,7 +590,7 @@ public:
   typedef SizeType size_type;
 
   // The result of the check is whether the table has one or more duplicates.
-  typedef bool value_type;
+  typedef int value_type;
 
   /// \brief Constructor
   ///
@@ -608,7 +608,7 @@ public:
   //! Set the initial value of the reduction result.
   KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
   {
-    dst = false;
+    dst = 0;
   }
 
   //! Combine two intermediate reduction results.
@@ -616,7 +616,7 @@ public:
   join (volatile value_type& dst,
         const volatile value_type& src) const
   {
-    dst = dst || src;
+    dst = dst + src > 0?1:0;
   }
 
   //! Parallel loop body.
@@ -627,7 +627,7 @@ public:
     typedef typename pairs_view_type::non_const_value_type pair_type;
     typedef typename pair_type::first_type key_type;
 
-    if (dst) {
+    if (dst>0) {
       return; // we've already found duplicate keys elsewhere
     }
     else {
@@ -647,7 +647,7 @@ public:
           }
         }
       }
-      dst = dst || foundDuplicateKey;
+      dst = (dst>0) || foundDuplicateKey?1:0;
     }
   }
 
@@ -1427,9 +1427,9 @@ checkForDuplicateKeys () const
   else {
     typedef FHT::CheckForDuplicateKeys<ptr_type, val_type> functor_type;
     functor_type functor (val_, ptr_);
-    bool hasDupKeys = false;
+    int hasDupKeys = 0;
     Kokkos::parallel_reduce (size, functor, hasDupKeys);
-    return hasDupKeys;
+    return hasDupKeys>0;
   }
 }
 
