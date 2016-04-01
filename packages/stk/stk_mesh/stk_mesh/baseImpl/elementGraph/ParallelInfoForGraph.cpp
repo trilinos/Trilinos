@@ -95,19 +95,10 @@ stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkDat
     return edge;
 }
 
-
-int64_t encode_id_for_selected_value(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, stk::mesh::Selector sel)
-{
-    int64_t id = bulkData.identifier(local_element);
-    if(!sel(bulkData.bucket(local_element)))
-        id = -id;
-    return id;
-}
-
 void pack_selected_value_for_par_info(stk::CommSparse &comm, int procRank, const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, stk::mesh::Selector sel)
 {
-    int64_t id = encode_id_for_selected_value(bulkData, local_element, sel);
-    comm.send_buffer(procRank).pack<int64_t>(id);
+    if(sel(bulkData.bucket(local_element)))
+        comm.send_buffer(procRank).pack<int64_t>(bulkData.identifier(local_element));
 }
 
 void pack_data_for_selector(stk::CommSparse &comm, ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, stk::mesh::Selector sel)
@@ -136,44 +127,21 @@ class RemoteSelectedValue
 public:
     void set_id_as_selected(int64_t id)
     {
-        idsTrue.push_back(id);
+        idsSelected.insert(id);
     }
-    void set_id_as_not_selected(int64_t id)
-    {
-        idsFalse.push_back(id);
-    }
-    void sort()
-    {
-        std::sort(idsTrue.begin(), idsTrue.end());
-        std::sort(idsFalse.begin(), idsFalse.end());
-    }
-
     bool is_id_selected(int64_t id) const
     {
-        return std::binary_search(idsTrue.begin(), idsTrue.end(), id);
-    }
-    bool is_id_not_selected(int64_t id) const
-    {
-        return std::binary_search(idsFalse.begin(), idsFalse.end(), id);
+        return idsSelected.find(id) != idsSelected.end();
     }
 private:
-    std::vector<int64_t> idsTrue;
-    std::vector<int64_t> idsFalse;
+    std::set<int64_t> idsSelected;
 };
-
-void decode_selected_value_for_id(int64_t id, RemoteSelectedValue &remoteSelectedValue)
-{
-    if(id > 0)
-        remoteSelectedValue.set_id_as_selected(id);
-    else
-        remoteSelectedValue.set_id_as_not_selected(-id);
-}
 
 void unpack_selector_value(stk::CommSparse& comm, int rank, RemoteSelectedValue &remoteSelectedValue)
 {
     int64_t id;
     comm.recv_buffer(rank).unpack<int64_t>(id);
-    decode_selected_value_for_id(id, remoteSelectedValue);
+    remoteSelectedValue.set_id_as_selected(id);
 }
 
 void unpack_selected_states(const stk::mesh::BulkData& bulkData,
@@ -184,7 +152,6 @@ void unpack_selected_states(const stk::mesh::BulkData& bulkData,
     {
         unpack_selector_value(comm, rank, remoteSelectedValue);
     });
-    remoteSelectedValue.sort();
 }
 
 void update_selected_values(ElemElemGraph& graph,
