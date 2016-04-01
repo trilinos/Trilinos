@@ -56,7 +56,7 @@
 #include "boost/program_options/variables_map.hpp"  // for variables_map, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(_CRAYC)
 #include <cstdlib>
 #include <sys/time.h>
 #include <sys/resource.h>
