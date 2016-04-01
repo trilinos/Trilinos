@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     // Set all values to 1 in u, z.
     u_rcp->putScalar(1.0);
     // Set z to gray solution.
-    RealT volFrac = parlist->sublist("ElasticityTopoOpt").get("volfrac", 0.5), one(1), two(2);
+    RealT volFrac = parlist->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5), one(1), two(2);
     z_rcp->putScalar(volFrac);
     (*vscale_rcp)[0] = one/std::pow(static_cast<RealT>(z_rcp->getGlobalLength())*(one-volFrac),two);
 
