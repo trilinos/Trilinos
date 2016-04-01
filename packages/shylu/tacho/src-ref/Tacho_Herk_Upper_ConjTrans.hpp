@@ -11,4 +11,6 @@
 // - Sparse HERK
 #include "Tacho_Herk_Upper_ConjTrans_ForFactorization.hpp"
 
+#include "Tacho_Herk_Upper_ConjTrans_ForSuperNodes.hpp"
+
 #endif

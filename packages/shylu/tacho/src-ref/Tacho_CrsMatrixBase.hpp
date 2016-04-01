@@ -103,6 +103,24 @@ namespace Tacho {
     /// Properties:
     /// - Compile with Device (o),
     /// - Callable in KokkosFunctors (o)
+    /// \brief Constructor to attach external arrays to the matrix.
+    KOKKOS_INLINE_FUNCTION    
+    void setExternalMatrix(const ordinal_type m, 
+                           const ordinal_type n, 
+                           const ordinal_type nnz,
+                           const size_type_array &ap_begin,
+                           const size_type_array &ap_end,
+                           const ordinal_type_array &aj,
+                           const value_type_array &ax) {
+      _m = m;
+      _n = n;
+      _nnz = nnz;
+      _ap_begin = ap_begin;
+      _ap_end = ap_end;
+      _aj = aj;
+      _ax = ax;
+    }
+
     KOKKOS_INLINE_FUNCTION
     bool isValueArrayNull() const {
       return !_ax.dimension_0();

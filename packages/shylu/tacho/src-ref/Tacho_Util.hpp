@@ -264,16 +264,16 @@ namespace Tacho {
   ///
   class Partition {
   public:
-    static const int Top         = 101;
-    static const int Bottom      = 102;
+    static constexpr int Top         = 101;
+    static constexpr int Bottom      = 102;
 
-    static const int Left        = 201;
-    static const int Right       = 202;
+    static constexpr int Left        = 201;
+    static constexpr int Right       = 202;
 
-    static const int TopLeft     = 401;
-    static const int TopRight    = 402;
-    static const int BottomLeft  = 403;
-    static const int BottomRight = 404;
+    static constexpr int TopLeft     = 401;
+    static constexpr int TopRight    = 402;
+    static constexpr int BottomLeft  = 403;
+    static constexpr int BottomRight = 404;
   };
 
   /// \class Uplo
@@ -281,43 +281,43 @@ namespace Tacho {
   ///
   class Uplo {
   public:
-    static const int Upper = 501;
-    static const int Lower = 502;
+    static constexpr int Upper = 501;
+    static constexpr int Lower = 502;
   };
 
   /// \class Side
   /// \brief Matrix left/right parameters.
   class Side {
   public:
-    static const int Left  = 601;
-    static const int Right = 602;
+    static constexpr int Left  = 601;
+    static constexpr int Right = 602;
   };
 
   /// \class Diag
   /// \brief Matrix unit/non-unit diag parameters.
   class Diag {
   public:
-    static const int Unit    = 701;
-    static const int NonUnit = 702;
+    static constexpr int Unit    = 701;
+    static constexpr int NonUnit = 702;
   };
 
   /// \class Trans
   /// \brief Matrix upper/lower parameters.
   class Trans {
   public:
-    static const int Transpose     = 801;
-    static const int ConjTranspose = 802;
-    static const int NoTranspose   = 803;
+    static constexpr int Transpose     = 801;
+    static constexpr int ConjTranspose = 802;
+    static constexpr int NoTranspose   = 803;
   };
 
   /// \class Variant
   /// \brief Algorithmic variants.
   class Variant {
   public:
-    static const int One   = 1;
-    static const int Two   = 2;
-    static const int Three = 3;
-    static const int Four  = 4;
+    static constexpr int One   = 1;
+    static constexpr int Two   = 2;
+    static constexpr int Three = 3;
+    static constexpr int Four  = 4;
   };
 
   /// \class AlgoChol
@@ -325,44 +325,47 @@ namespace Tacho {
   class AlgoChol {
   public:
     // - Flat sparse matrix
-    static const int Dummy                  = 1000;
-    static const int Unblocked              = 1001;
-    static const int ExternalPardiso        = 1002;
+    static constexpr int Dummy                  = 1000;
+    static constexpr int Unblocked              = 1001;
+    static constexpr int ExternalPardiso        = 1002;
 
     // - Block sparse matrix
-    static const int ByBlocks               = 1101;
+    static constexpr int ByBlocks               = 1101;
 
     // - Flat matrix
-    static const int DenseTeamParallel      = 1201;
-    static const int ExternalLapack         = 1202;
+    static constexpr int ExternalLapack         = 1202;
 
     // - Block matrix
-    static const int DenseRightLookByBlocks = 1211;
-    static const int DenseByBlocks          = DenseRightLookByBlocks;
+    static constexpr int DenseByBlocks          = 1211;
+
+    static constexpr int SuperNodes             = 1301;
+    static constexpr int SuperNodesByBlocks     = 1302;
   };
 
   /// \class AlgoBlas
   /// \brief Various matrix BLAS algorithms for sparse and dense operations.
   class AlgoBlas {
   public:
-    static const int ForFactorization   = 2001;
-    static const int ForTriSolve        = 2011;
-    static const int ExternalBlas       = 2021;
-    static const int InternalBlas       = 2022;
+    static constexpr int ForFactorization      = 2001; // sparse - sparse
+    static constexpr int ForTriSolve           = 2011; // sparse - dense 
+    static constexpr int ExternalBlas          = 2021; // dense interface
+    static constexpr int InternalBlas          = 2022;
+    static constexpr int ForSuperNodes         = 2031; // dense - dense 
+    static constexpr int ForSuperNodesByBlocks = 2032; // dense - dense 
   };
   class AlgoGemm : public AlgoBlas {
   public:
-    static const int DenseByBlocks = 2101;
+    static constexpr int DenseByBlocks = 2101;
   };
 
   class AlgoTrsm : public AlgoBlas {
   public:
-    static const int DenseByBlocks = 2201;
+    static constexpr int DenseByBlocks = 2201;
   };
 
   class AlgoHerk : public AlgoBlas {
   public:
-    static const int DenseByBlocks = 2301;
+    static constexpr int DenseByBlocks = 2301;
   };
 
 

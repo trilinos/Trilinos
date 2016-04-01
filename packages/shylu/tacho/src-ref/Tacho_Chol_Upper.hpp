@@ -14,9 +14,7 @@
 #include "Tacho_Chol_Upper_ExternalLapack.hpp"
 #include "Tacho_Chol_Upper_DenseByBlocks.hpp"
 
-// partitioned block algorithms: see control.hpp
-//#include "chol_u_nested_dense_block.hpp"
-//#include "chol_u_nested_dense_by_blocks.hpp"
-
+// Supernodal factorization
+#include "Tacho_Chol_Upper_SuperNodes.hpp"
 
 #endif

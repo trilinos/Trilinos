@@ -9,7 +9,6 @@
 
 namespace Tacho { 
 
-
   template<typename CrsMatBaseType>
   class CrsRowView;
 
@@ -43,7 +42,7 @@ namespace Tacho {
     ordinal_type   _n;        // # of cols
 
     size_type _nnz;
-    ordinal_type _lc, _rc;
+    ordinal_type _tr, _br, _lc, _rc; // top row, bottom row, left column, right column
 
     row_view_type_array _rows;
 
@@ -84,8 +83,17 @@ namespace Tacho {
         // statistics
         const size_type tmp = row.NumNonZeros();
         if (tmp) {
-          _lc = _nnz ? Util::min(_lc, row.Col(0))     : row.Col(0);
-          _rc = _nnz ? Util::max(_rc, row.Col(tmp-1)) : row.Col(tmp-1);
+          if (_nnz) {
+            // _tr is not necessary to be updated
+            _br = i;
+            _lc = Util::min(_lc, row.Col(0));
+            _rc = Util::max(_rc, row.Col(tmp-1));
+          } else { // first initialization
+            _tr = i;
+            _br = i;
+            _lc = row.Col(0);
+            _rc = row.Col(tmp-1);
+          }
           _nnz += tmp;
         }
       }
@@ -115,8 +123,9 @@ namespace Tacho {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void ColRange(ordinal_type &lc, 
-                  ordinal_type &rc) {
+    void getDataRegion(ordinal_type &tr, ordinal_type &br,
+                       ordinal_type &lc, ordinal_type &rc) {
+      tr = _tr; br = _br;
       lc = _lc; rc = _rc;
     }
 
@@ -145,6 +154,8 @@ namespace Tacho {
         _m(0),
         _n(0),
         _nnz(0),
+        _tr(-1),
+        _br(-1),
         _lc(-1),
         _rc(-1),
         _rows()
@@ -159,6 +170,8 @@ namespace Tacho {
         _m(b._m),
         _n(b._n),
         _nnz(b._nnz),
+        _tr(b._tr),
+        _br(b._br),
         _lc(b._lc),
         _rc(b._rc),
         _rows(b._rows)
@@ -172,6 +185,8 @@ namespace Tacho {
         _m(b.NumRows()),
         _n(b.NumCols()),
         _nnz(0),
+        _tr(-1),
+        _br(-1),
         _lc(-1),
         _rc(-1),
         _rows()
@@ -187,6 +202,8 @@ namespace Tacho {
         _m(m),
         _n(n),
         _nnz(0),
+        _tr(-1),
+        _br(-1),
         _lc(-1),
         _rc(-1),
         _rows()
@@ -218,7 +235,9 @@ namespace Tacho {
            << " Offs ( " << std::setw(w) << _offm << ", " << std::setw(w) << _offn << " ); "
            << " Dims ( " << std::setw(w) << _m    << ", " << std::setw(w) << _n    << " ); "
            << " NumNonZeros = " << std::setw(w) << nnz << ";"
-           << " Density = " << std::setw(w) << (nnz == -1 ? double(0) : double(nnz)/_m/(_rc-_lc+1)) << ";";
+           << " Density (nnz/data) = " << std::setw(w) << (nnz == -1 ? double(0) : double(nnz)/(_br-_tr+1)/(_rc-_lc+1)) << ";"
+           << " Density (nnz/view) = " << std::setw(w) << (nnz == -1 ? double(0) : double(nnz)/_m/_n) << ";";
+
       }
       os.unsetf(std::ios::scientific);
       os.precision(prec);

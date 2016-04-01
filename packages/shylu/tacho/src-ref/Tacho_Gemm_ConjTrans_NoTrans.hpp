@@ -14,4 +14,6 @@
 #include "Tacho_Gemm_ConjTrans_NoTrans_ForFactorization.hpp"
 //#include "Tacho_Gemm_NoTrans_NoTrans_ForTriSolve.hpp"
 
+#include "Tacho_Gemm_ConjTrans_NoTrans_ForSuperNodes.hpp"
+
 #endif

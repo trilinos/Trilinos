@@ -51,7 +51,6 @@ namespace Tacho {
           // b1t = b1t / conj(diag)
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz_b1),
                                [&](const ordinal_type j) {
-                                 const auto backup = b1.Value(j);
                                  b1.Value(j) /= cdiag;
                                });
         }

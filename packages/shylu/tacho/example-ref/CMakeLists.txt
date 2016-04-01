@@ -129,6 +129,12 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleCholByBlocks_Pthreads.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholSuperNodesByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholSuperNodesByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 

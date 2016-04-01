@@ -14,4 +14,6 @@
 // - Sparse TRSM
 #include "Tacho_Trsm_Left_Upper_ConjTrans_ForFactorization.hpp"
 
+#include "Tacho_Trsm_Left_Upper_ConjTrans_ForSuperNodes.hpp"
+
 #endif

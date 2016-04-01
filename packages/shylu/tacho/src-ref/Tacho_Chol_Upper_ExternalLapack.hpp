@@ -36,12 +36,11 @@ namespace Tacho {
     typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
     typedef typename DenseExecViewTypeA::value_type   value_type;
 
-
+    int r_val = 0;      
     if (member.team_rank() == 0) {
 #ifdef HAVE_SHYLUTACHO_TEUCHOS
       Teuchos::LAPACK<ordinal_type,value_type> lapack;
 
-      int r_val = 0;      
       lapack.POTRF('U',
                    A.NumRows(),
                    A.ValuePtr(), A.BaseObject().ColStride(),
@@ -51,7 +50,7 @@ namespace Tacho {
 #endif
     }
 
-    return 0;
+    return r_val;
   }
 }
 

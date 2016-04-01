@@ -44,7 +44,7 @@ int main (int argc, char *argv[]) {
   int fill_level = -1;
   clp.setOption("fill-level", &fill_level, "Fill level");
 
-  int rows_per_team = 100;
+  int rows_per_team = 4096;
   clp.setOption("rows-per-team", &rows_per_team, "Workset size");
 
   clp.recogniseAllOptions(true);

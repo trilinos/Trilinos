@@ -1,0 +1,47 @@
+#ifndef __HERK_UPPER_CONJTRANS_FOR_SUPERNODES_HPP__
+#define __HERK_UPPER_CONJTRANS_FOR_SUPERNODES_HPP__
+
+/// \file Tacho_Herk_Upper_ConjTrans_ForSuperNodes.hpp
+/// \brief Hermitian rank-k update for supernodal factorization
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
+namespace Tacho {
+
+  template<typename MT>
+  class DenseMatrixView;
+
+  // Herk used in the supernodal factorization
+  // =========================================
+  template<>
+  template<typename PolicyType,
+           typename MemberType,
+           typename ScalarType,
+           typename CrsExecViewTypeA,
+           typename CrsExecViewTypeC>
+  KOKKOS_INLINE_FUNCTION
+  int
+  Herk<Uplo::Upper,Trans::ConjTranspose,
+       AlgoHerk::ForSuperNodes,Variant::One>
+  ::invoke(PolicyType &policy,
+           const MemberType &member,
+           const ScalarType alpha,
+           CrsExecViewTypeA &A,
+           const ScalarType beta,
+           CrsExecViewTypeC &C) {
+
+    if (member.team_rank()) {
+      DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> AA(A.Flat());
+      DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> CC(C.Flat());
+      
+      Herk<Uplo::Upper,Trans::ConjTranspose,
+        AlgoHerk::ExternalBlas,Variant::One>
+        ::invoke(policy, member,
+                 alpha, AA, beta, CC);
+    }
+
+    return 0;
+  }
+
+}
+
+#endif

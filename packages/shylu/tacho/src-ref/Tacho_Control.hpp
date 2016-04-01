@@ -58,57 +58,21 @@ namespace Tacho {
     static constexpr int Gemm[2] = { AlgoGemm::ForFactorization, Variant::One };
   };
 
-  // // - CholByBlocks Variant 2
-  // // * diagonal blocks have nested dense blocks
-  // template<> struct Control<AlgoChol::ByBlocks,Variant::Two> {
-  //   static constexpr int Chol[2] = { AlgoChol::NestedDenseBlock, Variant::One }; 
-  //   static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked, Variant::One };
-  //   static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked, Variant::One };
-  //   static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked, Variant::One };
-  // };
+  // - SuperNodalByblocks
+  template<> struct Control<AlgoChol::ByBlocks,Variant::Two> {
+    static constexpr int Chol[2] = { AlgoChol::SuperNodes,    Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::ForSuperNodes, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::ForSuperNodes, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::ForSuperNodes, Variant::One };
+  };
 
-  // // - CholByBlocks Variant 3
-  // // * all blocks have nested dense blocks (full supernodal algorithm)
-  // // template<> struct Control<AlgoChol::ByBlocks,Variant::Three> {
-  // //   static constexpr int Chol[2] = { AlgoChol::NestedDenseBlock, Variant::One }; 
-  // //   static constexpr int Trsm[2] = { AlgoTrsm::NestedDenseBlock, Variant::One };
-  // //   static constexpr int Herk[2] = { AlgoHerk::NestedDenseBlock, Variant::One };
-  // //   static constexpr int Gemm[2] = { AlgoGemm::NestedDenseBlock, Variant::One };
-  // // };
-
-  // // - CholByBlocks Variant 4
-  // // * diagonal blocks have nested hier dense blocks (hierarchical task scheduling)
-  // template<> struct Control<AlgoChol::ByBlocks,Variant::Four> {
-  //   static constexpr int Chol[2] = { AlgoChol::NestedDenseByBlocks, Variant::One }; 
-  //   static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked,    Variant::One };
-  //   static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked,    Variant::One };
-  //   static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked,    Variant::One };
-  // };
-
-  // // - CholByBlocks Variant 5
-  // // * diagonal blocks have nested hier dense blocks (hierarchical task scheduling)
-  // // template<> struct Control<AlgoChol::ByBlocks,Variant::Four> {
-  // //   static constexpr int Chol[2] = { AlgoChol::NestedDenseByBlocks, Variant::One }; 
-  // //   static constexpr int Trsm[2] = { AlgoTrsm::NestedDenseByBlocks, Variant::One };
-  // //   static constexpr int Herk[2] = { AlgoHerk::NestedDenseByBlocks, Variant::One };
-  // //   static constexpr int Gemm[2] = { AlgoGemm::NestedDenseByBlocks, Variant::One };
-  // // };
-
-  // // ----------------------------------------------------------------------------------
-
-  // // - CholNestedDenseBlock
-  // // * branch control between sparse and dense operations
-  // template<> struct Control<AlgoChol::NestedDenseBlock,Variant::One> {
-  //   static constexpr int CholSparse[2] = { AlgoChol::UnblockedOpt,   Variant::One };
-  //   static constexpr int CholDense[2]  = { AlgoChol::ExternalLapack, Variant::One }; 
-  // };
-
-  // // - CholNestedDenseBlock
-  // // * branch control between sparse and dense operations
-  // template<> struct Control<AlgoChol::NestedDenseByBlocks,Variant::One> {
-  //   static constexpr int CholSparse[2]        = { AlgoChol::UnblockedOpt,  Variant::One };
-  //   static constexpr int CholDenseByBlocks[2] = { AlgoChol::DenseByBlocks, Variant::One }; 
-  // };
+  // - Fine grained SuperNodalByblocks
+  template<> struct Control<AlgoChol::ByBlocks,Variant::Three> {
+    static constexpr int Chol[2] = { AlgoChol::SuperNodesByBlocks,    Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::ForSuperNodesByBlocks, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::ForSuperNodesByBlocks, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::ForSuperNodesByBlocks, Variant::One };
+  };
 
   // // ----------------------------------------------------------------------------------
 

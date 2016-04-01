@@ -66,8 +66,8 @@ namespace Tacho {
 
     class FunctorComputeNonZeroPatternInRow {
     private:
-      ordinal_type _level;
-      CrsMatBaseType _A;
+      const ordinal_type _level;
+      const CrsMatBaseType _A;
       
       size_type_array _ap;
       ordinal_type_array _aj;
@@ -92,8 +92,8 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const typename team_policy_type::member_type &member) const {
-        const int lrank = member.league_rank();
-        //const int lsize = member.league_size();
+        const ordinal_type lrank = member.league_rank();
+        const ordinal_type lsize = member.league_size();
 
         const ordinal_type m = _A.NumRows(), n = _A.NumCols();
 
@@ -102,15 +102,20 @@ namespace Tacho {
         shared_ordinal_type_array visited (member.team_shmem(), n);
 
         // clean up visited array
-        for (ordinal_type i=0;i<m;++i)
+        for (ordinal_type i=0;i<n;++i)
           visited(i) = 0;
 
-        const ordinal_type ibegin = lrank*_rows_per_team;
-        const ordinal_type itemp  = ibegin + _rows_per_team;
-        const ordinal_type iend   = itemp < m ? itemp : m;
-        
-        for (ordinal_type i=ibegin;i<iend;++i) {
-          //for (ordinal_type i=0;i<m;i+=lsize) {
+        Queue q(queue); // fixed size queue
+
+        // ** this approach is not suitable for the symbolic factorization
+        // const ordinal_type ibegin = lrank*_rows_per_team;
+        // const ordinal_type itemp  = ibegin + _rows_per_team;
+        // const ordinal_type iend   = itemp < m ? itemp : m;
+
+        //for (ordinal_type i=ibegin;i<iend;++i) {
+
+        // ** rows should be shuffled for better load balance
+        for (ordinal_type i=lrank;i<m;i+=lsize) {
           size_type cnt = 0;
 
           // account for the diagonal
@@ -125,8 +130,6 @@ namespace Tacho {
           }
           
           {
-            Queue q(queue); // fixed size queue
-
             // initialize work space
             q.push(i);
             distance(i) = 0;
@@ -142,8 +145,8 @@ namespace Tacho {
               const ordinal_type jbegin = _A.RowPtrBegin(h), jend = _A.RowPtrEnd(h);
               for (ordinal_type j=jbegin;j<jend;++j) {
                 const ordinal_type t = _A.Col(j);
-                
-                // skip diagonal and visited ondes
+
+                // skip diagonal and visited ones
                 if (h != t && visited(t) != id) {
                   visited(t) = id;
 
@@ -166,10 +169,8 @@ namespace Tacho {
             }
 
             // clear work space
-            for (ordinal_type j=0;j<q.end();++j) {
-              const ordinal_type jj = queue(j);
-              distance(jj) = 0;
-            }
+            for (ordinal_type j=0;j<q.end();++j) 
+              distance(queue(j)) = 0;
             q.reset();
           }
           switch (_phase) {
@@ -251,14 +252,17 @@ namespace Tacho {
         team_policy = team_policy.set_scratch_size( 1, // memory hierarchy level
                                                     Kokkos::PerTeam  (scratch_size_per_team),
                                                     Kokkos::PerThread(scratch_size_per_thread) );
-        
+
         // parallel for count # of nonzeros 
         Kokkos::parallel_for(team_policy, FunctorComputeNonZeroPatternInRow(ap, level, A, rows_per_team));
-        
-        // parallel scan with range policy
-        range_policy_type range_policy(0, m+1);
-        Kokkos::parallel_scan(range_policy, FunctorCountOffsetsInRow(ap));
-        
+
+        // parallel scan with range policy: too slow
+        // range_policy_type range_policy(0, m+1);
+        // Kokkos::parallel_scan(range_policy, FunctorCountOffsetsInRow(ap));
+
+        for (size_type i=0;i<m;++i) 
+          ap(i+1) += ap(i);
+
         nnz = ap(m);
         aj  = ordinal_type_array(std::string(F.Label()) + 
                                  std::string("::ColIndexArray"), nnz);
@@ -267,7 +271,7 @@ namespace Tacho {
         
         // parallel for to fill column indices
         Kokkos::parallel_for(team_policy, FunctorComputeNonZeroPatternInRow(ap, aj, level, A, rows_per_team));
-        
+
         size_type_array ap_begin = size_type_array(std::string(F.Label()) + 
                                                    std::string("::RowPtrArrayBegin"), m);
         size_type_array ap_end   = size_type_array(std::string(F.Label()) + 
