@@ -1,7 +1,7 @@
-#ifndef __TRSM_LEFT_UPPER_CONJTRANS_FOR_FACTORIZATION_HPP__
-#define __TRSM_LEFT_UPPER_CONJTRANS_FOR_FACTORIZATION_HPP__
+#ifndef __TRSM_LEFT_UPPER_CONJTRANS_SPARSE_SPARSE_UNBLOCKED_HPP__
+#define __TRSM_LEFT_UPPER_CONJTRANS_SPARSE_SPARSE_UNBLOCKED_HPP__
 
-/// \file Tacho_Trsm_Left_Upper_ConjTrans_ForFactorization.hpp
+/// \file Tacho_Trsm_Left_Upper_ConjTrans_SparseSparseUnblocked.hpp
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -18,7 +18,7 @@ namespace Tacho {
   KOKKOS_INLINE_FUNCTION
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-       AlgoTrsm::ForFactorization,Variant::One>
+       AlgoTrsm::SparseSparseUnblocked,Variant::One>
   ::invoke(PolicyType &policy,
            const MemberType &member,
            const int diagA,

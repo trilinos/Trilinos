@@ -11,9 +11,10 @@
 #include "Tacho_Gemm_ConjTrans_NoTrans_InternalBlas.hpp"
 
 // Sparse Linear Algebra
-#include "Tacho_Gemm_ConjTrans_NoTrans_ForFactorization.hpp"
-//#include "Tacho_Gemm_NoTrans_NoTrans_ForTriSolve.hpp"
+#include "Tacho_Gemm_ConjTrans_NoTrans_SparseSparseUnblocked.hpp"
+//#include "Tacho_Gemm_NoTrans_NoTrans_SparseDenseUnblocked.hpp"
 
-#include "Tacho_Gemm_ConjTrans_NoTrans_ForSuperNodes.hpp"
+#include "Tacho_Gemm_ConjTrans_NoTrans_SparseSparseSuperNodes.hpp"
+//#include "Tacho_Gemm_ConjTrans_NoTrans_SparseDenseSuperNodes.hpp"
 
 #endif

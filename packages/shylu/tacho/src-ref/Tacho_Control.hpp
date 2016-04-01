@@ -52,27 +52,27 @@ namespace Tacho {
 
   // - SparseByBlocks
   template<> struct Control<AlgoChol::ByBlocks,Variant::One> {
-    static constexpr int Chol[2] = { AlgoChol::Unblocked,        Variant::One };
-    static constexpr int Trsm[2] = { AlgoTrsm::ForFactorization, Variant::One };
-    static constexpr int Herk[2] = { AlgoHerk::ForFactorization, Variant::One };
-    static constexpr int Gemm[2] = { AlgoGemm::ForFactorization, Variant::One };
+    static constexpr int Chol[2] = { AlgoChol::Unblocked,             Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseSparseUnblocked, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::SparseSparseUnblocked, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseSparseUnblocked, Variant::One };
   };
 
   // - SuperNodalByblocks
   template<> struct Control<AlgoChol::ByBlocks,Variant::Two> {
     static constexpr int Chol[2] = { AlgoChol::SuperNodes,    Variant::One };
-    static constexpr int Trsm[2] = { AlgoTrsm::ForSuperNodes, Variant::One };
-    static constexpr int Herk[2] = { AlgoHerk::ForSuperNodes, Variant::One };
-    static constexpr int Gemm[2] = { AlgoGemm::ForSuperNodes, Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseSparseSuperNodes, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::SparseSparseSuperNodes, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseSparseSuperNodes, Variant::One };
   };
 
   // - Fine grained SuperNodalByblocks
-  template<> struct Control<AlgoChol::ByBlocks,Variant::Three> {
-    static constexpr int Chol[2] = { AlgoChol::SuperNodesByBlocks,    Variant::One };
-    static constexpr int Trsm[2] = { AlgoTrsm::ForSuperNodesByBlocks, Variant::One };
-    static constexpr int Herk[2] = { AlgoHerk::ForSuperNodesByBlocks, Variant::One };
-    static constexpr int Gemm[2] = { AlgoGemm::ForSuperNodesByBlocks, Variant::One };
-  };
+  // template<> struct Control<AlgoChol::ByBlocks,Variant::Three> {
+  //   static constexpr int Chol[2] = { AlgoChol::SuperNodesByBlocks,             Variant::One };
+  //   static constexpr int Trsm[2] = { AlgoTrsm::SparseSparseSuperNodesByBlocks, Variant::One };
+  //   static constexpr int Herk[2] = { AlgoHerk::SparseSparseSuperNodesByBlocks, Variant::One };
+  //   static constexpr int Gemm[2] = { AlgoGemm::SparseSparseSuperNodesByBlocks, Variant::One };
+  // };
 
   // // ----------------------------------------------------------------------------------
 

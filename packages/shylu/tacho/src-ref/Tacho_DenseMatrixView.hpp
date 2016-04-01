@@ -48,7 +48,7 @@ namespace Tacho {
                  const ordinal_type offn, const ordinal_type n) {
       TACHO_TEST_FOR_ABORT( !( (offm + m) <= base.NumRows() &&
                                (offn + n) <= base.NumCols() ),
-                            ">> Input ranges are out of the base matrix" );
+                            "Input ranges are out of the base matrix" );
       _base = base;
 
       _offm = offm; _m = m;

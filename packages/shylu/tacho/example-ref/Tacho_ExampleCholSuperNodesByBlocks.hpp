@@ -15,6 +15,7 @@
 #include "Tacho_CrsMatrixViewExt.hpp"
 
 #include "Tacho_CrsMatrixTools.hpp"
+#include "Tacho_DenseMatrixTools.hpp"
 
 #include "Tacho_MatrixMarket.hpp"
 
@@ -44,7 +45,8 @@ namespace Tacho {
                                     const int max_concurrency,
                                     const int max_task_dependence,
                                     const int team_size,
-                                    const bool check,
+                                    const int nrhs,
+                                    const int nb,
                                     const bool verbose) {
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
@@ -71,6 +73,14 @@ namespace Tacho {
     typedef CrsMatrixBase<CrsTaskViewHostType,ordinal_type,size_type,HostSpaceType> CrsHierBaseHostType;
     typedef CrsMatrixView<CrsHierBaseHostType> CrsHierViewHostType;
     typedef TaskView<CrsHierViewHostType> CrsTaskHierViewHostType;
+
+    typedef DenseMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> DenseMatrixBaseHostType;
+    typedef DenseMatrixView<DenseMatrixBaseHostType> DenseMatrixViewHostType;
+
+    typedef TaskView<DenseMatrixViewHostType> DenseTaskViewHostType;
+    typedef DenseMatrixBase<DenseTaskViewHostType,ordinal_type,size_type,HostSpaceType> DenseHierBaseHostType;
+    typedef DenseMatrixView<DenseHierBaseHostType> DenseHierViewHostType;
+    typedef TaskView<DenseHierViewHostType> DenseTaskHierViewHostType;
 
     typedef Kokkos::pair<size_type,size_type> range_type;
 
@@ -181,6 +191,8 @@ namespace Tacho {
     if (verbose)
       AA_camd_host.showMe(std::cout) << std::endl;
 
+    const auto AA_reordered_host = AA_camd_host;
+
     ///
     /// Symbolic factorization
     ///
@@ -193,7 +205,7 @@ namespace Tacho {
     SymbolicFactorizationType::createNonZeroPattern(AA_factor_host,
                                                     fill_level,
                                                     Uplo::Upper,
-                                                    AA_camd_host,
+                                                    AA_reordered_host,
                                                     rows_per_team);
     double t_symbolic = timer.seconds();
 
@@ -203,7 +215,7 @@ namespace Tacho {
     ///
     /// Clean tempoerary matrices
     ///
-    ///     input  - AA_scotch_host, AA_camd_host, C, rptr, cidx
+    ///     input  - AA_scotch_host, AA_reordered_host, C, rptr, cidx
     ///     output - none
     ///
     AA_scotch_host = CrsMatrixBaseHostType();
@@ -229,43 +241,12 @@ namespace Tacho {
     double t_policy = timer.seconds();
 
     ///
-    /// Sequential execution
-    ///
-    ///     input  - AA_factor_host (matrix to be compared), rowviews
-    ///     output - BB_factor_host, B_factor_host
-    ///
-    // double t_chol_serial = 0;
-    // CrsMatrixBaseHostType BB_factor_host("BB_factor_host");
-    // if (check) {
-    //   BB_factor_host.createConfTo(AA_factor_host);
-    //   CrsMatrixTools::copy(BB_factor_host, AA_factor_host);
-      
-    //   CrsTaskViewHostType B_factor_host(BB_factor_host);
-    //   Kokkos::View<typename CrsTaskViewHostType::row_view_type*,HostSpaceType>
-    //     rowviews("RowViewInMatView", B_factor_host.NumRows());
-    //   B_factor_host.setRowViewArray(rowviews);
-      
-    //   timer.reset();
-    //   {
-    //     auto future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::Unblocked,Variant::One>
-    //                                           ::createTaskFunctor(policy, B_factor_host));
-    //     policy.spawn(future);
-    //     Kokkos::Experimental::wait(policy);
-    //     TACHO_TEST_FOR_ABORT( future.get(), "Fail to perform Cholesky (serial)");
-    //   }
-    //   t_chol_serial = timer.seconds();
-
-    //   if (verbose)
-    //     BB_factor_host.showMe(std::cout) << std::endl;
-    // }
-
-    ///
     /// Task parallel execution
     ///
     ///    input  - AA_factor_host, rowviews
     ///    output - HA_factor_host, AA_factor_host, B_factor_host
     ///
-    double t_hier = 0, t_blocks = 0, t_chol_parallel = 0;
+    double t_hier = 0, t_blocks = 0, t_chol = 0;
     CrsHierBaseHostType HA_factor_host("HA_factor_host");
 
     Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType> rows;
@@ -320,6 +301,7 @@ namespace Tacho {
                                                               block.NumCols(),
                                                               -1, -1,
                                                               Kokkos::subview(mats, range_type(ap(k), ap(k+1))));
+                               block.copyToFlat();
                              } );
       }
       t_blocks = timer.seconds();    
@@ -340,37 +322,124 @@ namespace Tacho {
                   << std::endl;
       }
       
-      CrsTaskHierViewHostType H_factor_host(HA_factor_host);
+      CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
       timer.reset();
       {
         auto future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>
-                                              ::createTaskFunctor(policy, H_factor_host));
+                                              ::createTaskFunctor(policy, 
+                                                                  TA_factor_host), 
+                                              0);
         policy.spawn(future);
         Kokkos::Experimental::wait(policy);
-        TACHO_TEST_FOR_ABORT( future.get(), "Fail to perform Cholesky (serial)");
+        TACHO_TEST_FOR_ABORT(future.get(), "Fail to perform CholeskySuperNodeByBlocks");
       }
-      t_chol_parallel = timer.seconds();
-      
+      t_chol = timer.seconds();
+
+      {      
+        const size_type nblocks = HA_factor_host.NumNonZeros();
+
+        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
+                             [&](const ordinal_type k) {
+                               auto &block = HA_factor_host.Value(k);
+                               block.copyToView();
+                             } );
+      }        
+
       if (verbose)
         AA_factor_host.showMe(std::cout) << std::endl;
     }
-    
-    // if (check) {
-    //   double diff = 0, norm = 0;    
-    //   TACHO_TEST_FOR_ABORT( BB_factor_host.NumNonZeros() != AA_factor_host.NumNonZeros(),
-    //                         "nnz used in serial is not same as nnz used in parallel");
 
-    //   const size_type nnz = AA_factor_host.NumNonZeros();
-    //   for (size_type k=0;k<nnz;++k) {
-    //     norm += Util::abs(BB_factor_host.Value(k));
-    //     diff += Util::abs(AA_factor_host.Value(k) - BB_factor_host.Value(k));
+    ///
+    /// Solution check
+    ///
+    ///    input  - AA_reordered_host
+    ///    output - 
+    ///
+    double t_solve = 0;
+    // double error = 0, norm = 1;
+    // if (nrhs) {
+    //   DenseMatrixBaseHostType BB_host("BB_host", AA_reordered_host.NumRows(), nrhs), XX_host("XX_host");
+    //   XX_host.createConfTo(BB_host);
+
+    //   const ordinal_type m = BB_host.NumRows();
+    //   for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+    //     for (ordinal_type i=0;i<m;++i) 
+    //       XX_host.Value(i, rhs) = (rhs + 1);
+
+    //     // matvec
+    //     HostSpaceType::execution_space::fence();
+    //     Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
+    //                          [&](const ordinal_type i) {
+    //                            const auto nnz  = AA_reordered_host.NumNonZerosInRow(i);
+    //                            const auto cols = AA_reordered_host.ColsInRow(i);
+    //                            const auto vals = AA_reordered_host.ValuesInRow(i);
+                               
+    //                            value_type tmp = 0;
+    //                            for (ordinal_type j=0;j<nnz;++j) 
+    //                              tmp += vals(j)*XX_host.Value(cols(j), rhs);
+    //                            BB_host.Value(i, rhs) = tmp;
+    //                          } );
+    //     HostSpaceType::execution_space::fence();
+
+    //     for (ordinal_type i=0;i<m;++i) 
+    //       XX_host.Value(i, rhs) = BB_host.Value(i, rhs);
     //   }
+
+    //   DenseHierBaseHostType HB_host("HB_host");
+      
+    //   DenseMatrixTools::createHierMatrix(HB_host, BB_host, 
+    //                                      S.NumBlocks(),
+    //                                      S.RangeVector(),
+    //                                      nb);
+      
+    //   CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
+    //   DenseTaskHierViewHostType TB_host(HB_host);
+      
+    //   // timer.reset();
+    //   // {
+    //   //   auto future_forward_solve 
+    //   //     = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
+    //   //                               AlgoTriSolve::ByBlocks,Variant::Two>
+    //   //                               ::createTaskFunctor(policy, 
+    //   //                                                   Diag::NonUnit, TA_factor_host, TB_host),
+    //   //                               0);
+    //   //   policy.spawn(future_forward_solve);
+        
+    //   //   auto future_backward_solve
+    //   //     = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
+    //   //                               AlgoTriSolve::ByBlocks,Variant::Two>
+    //   //                               ::createTaskFunctor(policy,
+    //   //                                                   Diag::NonUnit, TA_factor_host, TB_host),
+    //   //                               1);
+        
+    //   //   policy.add_dependence(future_backward_solve, future_forward_solve);
+    //   //   policy.spawn(future_backward_solve);
+        
+    //   //   Kokkos::Experimental::wait(policy);
+        
+    //   //   TACHO_TEST_FOR_ABORT(future_forward_solve.get(),  "Fail to perform TriSolveSuperNodesByBlocks (forward)");
+    //   //   TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");
+    //   // }
+    //   // t_solve = timer.seconds();
+
+    //   // for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+    //   //   for (ordinal_type i=0;i<m;++i) {
+    //   //     error += Util::abs(XX_host.Value(i, rhs) - (rhs + 1));
+    //   //     norm  += Util::abs(rhs + 1);
+    //   //   }
+    //   // }
+      
     //   std::cout << std::scientific;
-    //   std::cout << "CholSuperNodesByBlocks:: check with serial execution " << std::endl
-    //             << "               diff = " << diff << ", norm = " << norm << ", rel err = " << (diff/norm) << std::endl;
+    //   std::cout << "CholSuperNodesByBlocks:: error = " << error 
+    //             << ", norm = " << norm 
+    //             << ", rel error = " << (error/norm) 
+    //             << std::endl;
     //   std::cout.unsetf(std::ios::scientific);      
     // }
-
+  
+    ///
+    /// Print out 
+    ///
     {
       const auto prec = std::cout.precision();
       std::cout.precision(4);
@@ -395,11 +464,10 @@ namespace Tacho {
                 << "block specification = " << t_blocks << " [sec] "
                 << std::endl
                 << "CholSuperNodesByBlocks:: "
-                << "Chol Parallel = " << t_chol_parallel << " [sec] ";
-      // if (check) 
-      //   std::cout << "Chol Serial = " << (check ? t_chol_serial : -1) << " [sec] "
-      //             << "speed-up = " << (t_chol_serial/t_chol_parallel) << " [sec] ";
-      
+                << "Chol = " << t_chol << " [sec] ";
+      if (nrhs)
+        std::cout << "Solve = " << t_solve << " [sec] ";
+          
       std::cout << std::endl;
       
       std::cout.unsetf(std::ios::scientific);

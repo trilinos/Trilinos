@@ -40,19 +40,19 @@ namespace Tacho {
     fprintf(stderr, "   %s\n", msg);                                    \
     Kokkos::abort(">> Tacho abort\n");                                    \
   }
-  
+
   /// \brief Control parameter decomposition.
   ///
 
   // control id
 #undef  Ctrl
 #define Ctrl(name,algo,variant) name<algo,variant>
-  
+
   // control leaf
 #undef CtrlComponent
 #define CtrlComponent(name,algo,variant,component,id)   \
   Ctrl(name,algo,variant)::component[id]
-  
+
   // control recursion
 #undef CtrlDetail
 #define CtrlDetail(name,algo,variant,component)                         \
@@ -62,8 +62,8 @@ namespace Tacho {
   struct is_complex_type {
     static bool value;
   };
-  
-  // default value 
+
+  // default value
   template<typename T> bool is_complex_type<T>::value = false;
 
   // specialization
@@ -71,15 +71,15 @@ namespace Tacho {
   template<> bool is_complex_type<double>::value = false;
   template<> bool is_complex_type<Kokkos::complex<float> >::value = true;
   template<> bool is_complex_type<Kokkos::complex<double> >::value = true;
-  
+
   template<typename T>
   struct is_scalar_type {
     static bool value;
   };
 
-  // default value 
+  // default value
   template<typename T> bool is_scalar_type<T>::value = false;
-  
+
   template<> bool is_scalar_type<int>::value = true;
   template<> bool is_scalar_type<unsigned int>::value = true;
   template<> bool is_scalar_type<long>::value = true;
@@ -91,7 +91,7 @@ namespace Tacho {
 
   class Util {
   public:
-    static const size_t LabelSize = 64;    
+    static const size_t LabelSize = 64;
 
     template<typename T>
     KOKKOS_INLINE_FUNCTION
@@ -130,14 +130,14 @@ namespace Tacho {
     }
 
     template<typename SpT>
-    KOKKOS_INLINE_FUNCTION    
+    KOKKOS_INLINE_FUNCTION
     static size_t alignDimension(size_t dim, size_t value_type_size) {
       return dim;
     }
 
     template<typename T1, typename T2, typename T3>
     KOKKOS_FORCEINLINE_FUNCTION
-    static void unrollIndex(Kokkos::pair<T1,T1> &idx, 
+    static void unrollIndex(Kokkos::pair<T1,T1> &idx,
                             const T2 k, const T3 stride) {
       idx.first  = k%stride;
       idx.second = k/stride;
@@ -146,7 +146,7 @@ namespace Tacho {
     template<typename T1, typename T2, typename T3, typename T4>
     KOKKOS_FORCEINLINE_FUNCTION
     static void unrollIndex(T1 &i, T2 &j,
-                            const T3 k, 
+                            const T3 k,
                             const T4 stride) {
       i = k%stride;
       j = k/stride;
@@ -171,7 +171,7 @@ namespace Tacho {
       return is_scalar_type<T>::value;
     }
 
-    template<typename ValueType, typename SpaceType, typename IterType> 
+    template<typename ValueType, typename SpaceType, typename IterType>
     KOKKOS_FORCEINLINE_FUNCTION
     static IterType getLowerBound(const Kokkos::View<ValueType*,SpaceType> &data,
                                   const IterType begin,
@@ -184,7 +184,7 @@ namespace Tacho {
         if (data[it] < val) {
           tmp = ++it;
           count -= (step+1);
-        } else { 
+        } else {
           count=step;
         }
       }
@@ -192,16 +192,16 @@ namespace Tacho {
     }
 
     template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION    
+    KOKKOS_FORCEINLINE_FUNCTION
     static void swap(T &a, T &b) {
       T c(a); a = b; b = c;
     }
 
-    template<typename ValueType, 
-             typename IndexType, 
-             typename OrdinalType, 
+    template<typename ValueType,
+             typename IndexType,
+             typename OrdinalType,
              typename SpaceType>
-    KOKKOS_INLINE_FUNCTION    
+    KOKKOS_INLINE_FUNCTION
     static void sort(Kokkos::View<ValueType*,SpaceType> data,
                      Kokkos::View<IndexType*,SpaceType> idx,
                      const OrdinalType begin,
@@ -222,17 +222,17 @@ namespace Tacho {
         --left;
         Util::swap(data[left], data[begin]);
         Util::swap(idx [left], idx [begin]);
-        
+
         // recursion
         Util::sort(data, idx, begin, left);
         Util::sort(data, idx, right, end );
       }
     }
 
-    template<typename ValueType, 
-             typename OrdinalType, 
+    template<typename ValueType,
+             typename OrdinalType,
              typename SpaceType>
-    KOKKOS_INLINE_FUNCTION    
+    KOKKOS_INLINE_FUNCTION
     static void sort(Kokkos::View<ValueType*,SpaceType> data,
                      const OrdinalType begin,
                      const OrdinalType end) {
@@ -250,15 +250,15 @@ namespace Tacho {
 
         --left;
         Util::swap(data[left], data[begin]);
-        
+
         // recursion
         Util::sort(data, begin, left);
         Util::sort(data, right, end );
       }
     }
-                     
+
   };
-  
+
   /// \class Partition
   /// \brief Matrix partition parameters.
   ///
@@ -332,12 +332,13 @@ namespace Tacho {
     // - Block sparse matrix
     static constexpr int ByBlocks               = 1101;
 
-    // - Flat matrix
+    // - Flat dense matrix
     static constexpr int ExternalLapack         = 1202;
 
-    // - Block matrix
+    // - Hier dense matrix
     static constexpr int DenseByBlocks          = 1211;
 
+    // - Flat sparse with nested dense matrices
     static constexpr int SuperNodes             = 1301;
     static constexpr int SuperNodesByBlocks     = 1302;
   };
@@ -346,13 +347,21 @@ namespace Tacho {
   /// \brief Various matrix BLAS algorithms for sparse and dense operations.
   class AlgoBlas {
   public:
-    static constexpr int ForFactorization      = 2001; // sparse - sparse
-    static constexpr int ForTriSolve           = 2011; // sparse - dense 
-    static constexpr int ExternalBlas          = 2021; // dense interface
-    static constexpr int InternalBlas          = 2022;
-    static constexpr int ForSuperNodes         = 2031; // dense - dense 
-    static constexpr int ForSuperNodesByBlocks = 2032; // dense - dense 
+    // - Flat sparse-sparse matrix
+    static constexpr int SparseSparseUnblocked          = 2001;
+    static constexpr int SparseDenseUnblocked           = 2002;
+
+    // - Flat dense matrix
+    static constexpr int ExternalBlas                   = 2011;
+    static constexpr int InternalBlas                   = 2012;
+
+    // - Flat sparse with nested dense matrices
+    static constexpr int SparseSparseSuperNodes         = 2021;
+    static constexpr int SparseDenseSuperNodes          = 2022;
+    static constexpr int SparseSparseSuperNodesByBlocks = 2033;
+    static constexpr int SparseDenseSuperNodesByBlocks  = 2034;
   };
+
   class AlgoGemm : public AlgoBlas {
   public:
     static constexpr int DenseByBlocks = 2101;
@@ -368,7 +377,6 @@ namespace Tacho {
     static constexpr int DenseByBlocks = 2301;
   };
 
-
   /// \class Coo
   /// \brief Sparse coordinate format; (i, j, val).
   template<typename OrdinalType, typename ValueType>
@@ -382,18 +390,18 @@ namespace Tacho {
     value_type _val;
 
   public:
-    ordinal_type& Row() { return _i;   } 
+    ordinal_type& Row() { return _i;   }
     ordinal_type& Col() { return _j;   }
     value_type&   Val() { return _val; }
 
-    ordinal_type  Row() const { return _i;   } 
+    ordinal_type  Row() const { return _i;   }
     ordinal_type  Col() const { return _j;   }
     value_type    Val() const { return _val; }
-    
+
     Coo() = default;
-    Coo(const ordinal_type i, 
-        const ordinal_type j, 
-        const value_type val) 
+    Coo(const ordinal_type i,
+        const ordinal_type j,
+        const value_type val)
       : _i(i), _j(j), _val(val) {}
     Coo(const Coo& b) = default;
 
@@ -401,17 +409,17 @@ namespace Tacho {
     bool operator<(const Coo &y) const {
       ordinal_type r_val = (this->_i - y._i);
       return (r_val == 0 ? this->_j < y._j : r_val < 0);
-    }  
-    
+    }
+
     /// \brief Compare "equality" only index i and j.
     bool operator==(const Coo &y) const {
       return (this->_i == y._i) && (this->_j == y._j);
-    }  
- 
-    /// \brief Compare "in-equality" only index i and j.   
+    }
+
+    /// \brief Compare "in-equality" only index i and j.
     bool operator!=(const Coo &y) const {
       return !(*this == y);
-    }  
+    }
   };
 
 

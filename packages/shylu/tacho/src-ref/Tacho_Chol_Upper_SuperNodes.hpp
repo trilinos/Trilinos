@@ -28,6 +28,7 @@ namespace Tacho {
     if (member.team_rank() == 0) {
       DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> AA(A.Flat());
       
+      // all diagonal blocks are supposed and assumed to be full matrix
       r_val = Chol<Uplo::Upper,
         AlgoChol::ExternalLapack,Variant::One>
         ::invoke(policy, member,

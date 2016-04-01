@@ -40,6 +40,28 @@ namespace Tacho {
     flat_mat_base_type  Flat() const { return _A; }
 
     KOKKOS_INLINE_FUNCTION
+    void copyToFlat() { 
+      const ordinal_type m = this->NumRows();
+      for (ordinal_type i=0;i<m;++i) {
+        const auto &row = this->RowView(i);
+        const size_type nnz = row.NumNonZeros();
+        for (ordinal_type j=0;j<nnz;++j)
+          _A.Value(i, row.Col(j)) = row.Value(j);
+      }
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void copyToView() { 
+      const ordinal_type m = this->NumRows();
+      for (ordinal_type i=0;i<m;++i) {
+        auto &row = this->RowView(i);
+        const size_type nnz = row.NumNonZeros();
+        for (ordinal_type j=0;j<nnz;++j)
+          row.Value(j) = _A.Value(i, row.Col(j));
+      }
+    }
+
+    KOKKOS_INLINE_FUNCTION
     CrsMatrixViewExt()
       : CrsMatrixView<CrsMatBaseType>(), _A()//, _H()
     { }

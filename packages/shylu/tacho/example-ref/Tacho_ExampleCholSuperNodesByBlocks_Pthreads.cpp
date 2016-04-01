@@ -31,9 +31,6 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
-  bool check = true;
-  clp.setOption("enable-check", "disable-check", &check, "Flag for check solution with serial execution");
-
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
@@ -52,7 +49,7 @@ int main (int argc, char *argv[]) {
   int rows_per_team = 4096;
   clp.setOption("rows-per-team", &rows_per_team, "Workset size");
 
-  int max_concurrency = 4096;
+  int max_concurrency = 250000;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
   int max_task_dependence = 3;
@@ -60,6 +57,12 @@ int main (int argc, char *argv[]) {
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
+
+  int nrhs = 1;
+  clp.setOption("nrhs", &team_size, "# of right hand side");
+
+  int nb = 1;
+  clp.setOption("nb", &team_size, "column block size of right hand side");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -78,7 +81,8 @@ int main (int argc, char *argv[]) {
       (file_input, 
        treecut, prunecut, fill_level, rows_per_team, 
        max_concurrency, max_task_dependence, team_size,
-       check, verbose);
+       nrhs, nb,
+       verbose);
 #else
     r_val = -1;
     std::cout << "Scotch or Cholmod is NOT configured in Trilinos" << std::endl;

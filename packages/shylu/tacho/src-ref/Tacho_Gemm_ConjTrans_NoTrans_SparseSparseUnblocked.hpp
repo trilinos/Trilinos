@@ -1,59 +1,54 @@
-#ifndef __HERK_UPPER_CONJTRANS_FOR_FACTORIZATION_HPP__
-#define __HERK_UPPER_CONJTRANS_FOR_FACTORIZATION_HPP__
+#ifndef __GEMM_CONJTRANS_NOTRANS_SPARSE_SPARSE_UNBLOCKED_HPP__
+#define __GEMM_CONJTRANS_NOTRANS_SPARSE_SPARSE_UNBLOCKED_HPP__
 
-/// \file Tacho_Herk_Upper_ConjTrans_ForFactorization.hpp
-/// \brief Sparse hermitian rank one update on given sparse patterns.
+/// \file Tacho_Gemm_ConjTrans_NoTrans_SparseSparse.hpp
+/// \brief Sparse matrix-matrix multiplication on given sparse patterns; used for plain sparse factorization.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace Tacho {
 
-  // Herk used in the factorization phase
-  // ====================================
+
+  /// Sparse Gemm
+  /// ===========
   template<>
   template<typename PolicyType,
            typename MemberType,
            typename ScalarType,
            typename CrsExecViewTypeA,
+           typename CrsExecViewTypeB,
            typename CrsExecViewTypeC>
   KOKKOS_INLINE_FUNCTION
   int
-  Herk<Uplo::Upper,Trans::ConjTranspose,
-       AlgoHerk::ForFactorization,Variant::One>
+  Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+       AlgoGemm::SparseSparseUnblocked,Variant::One>
   ::invoke(PolicyType &policy,
            const MemberType &member,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
+           CrsExecViewTypeB &B,
            const ScalarType beta,
            CrsExecViewTypeC &C) {
-
     typedef typename CrsExecViewTypeA::ordinal_type  ordinal_type;
     typedef typename CrsExecViewTypeA::value_type    value_type;
     typedef typename CrsExecViewTypeA::row_view_type row_view_type;
+
+
 
     // scale the matrix C with beta
     ScaleCrsMatrix::invoke(policy, member,
                            beta, C);
 
-    // KJ :: fix later
-    //
-    // the following implementation is not stable 
-    // c.Value possible very large and the rank update
-    // may be so small. k-loop should goes inside 
-    // but it will be expensive as A is row-major.
-    // a potential fix is to use small workspace and run
-    // the loop with batched computations.
-    // 
-    // FYI: this is in particular a problem for Cholesky.
-    //      at least diagonal should be reconsidered.
-
-    // C(i,j) += alpha*A'(i,k)*A(k,j)
+    // C(i,j) += alpha*A'(i,k)*B(k,j)
     const ordinal_type mA = A.NumRows();
-    for (ordinal_type k=0;k<A.NumRows();++k) {
+    for (ordinal_type k=0;k<mA;++k) {
       row_view_type &a = A.RowView(k);
-      const ordinal_type nnz = a.NumNonZeros();
-      
-      if (nnz > 0) {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz),
+      const ordinal_type nnz_a = a.NumNonZeros();
+
+      row_view_type &b = B.RowView(k);
+      const ordinal_type nnz_b = b.NumNonZeros();
+
+      if (nnz_a > 0 && nnz_b) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz_a),
                              [&](const ordinal_type i) {
                                const ordinal_type row_at_i  = a.Col(i);
                                const value_type   val_at_ik = Util::conj(a.Value(i));
@@ -61,9 +56,9 @@ namespace Tacho {
                                row_view_type &c = C.RowView(row_at_i);
 
                                ordinal_type idx = 0;
-                               for (ordinal_type j=i;j<nnz && (idx > -2);++j) {
-                                 const ordinal_type col_at_j  = a.Col(j);
-                                 const value_type   val_at_kj = a.Value(j);
+                               for (ordinal_type j=0;j<nnz_b && (idx > -2);++j) {
+                                 const ordinal_type col_at_j  = b.Col(j);
+                                 const value_type   val_at_kj = b.Value(j);
 
                                  idx = c.Index(col_at_j, idx);
                                  if (idx >= 0)
