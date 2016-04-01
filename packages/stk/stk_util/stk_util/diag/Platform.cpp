@@ -129,6 +129,13 @@ extern void *__heap_end;		///< Magic address of end of heap
 #include <sys/resource.h>
 #include <netdb.h>
 
+#elif defined(_CRAYC)
+#include <sys/utsname.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <malloc.h>
+#include <netdb.h>
+
 #else
 #include <sys/utsname.h>
 #include <sys/time.h>
