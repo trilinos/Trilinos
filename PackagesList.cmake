@@ -131,6 +131,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   MeshingGenie          packages/meshinggenie             EX
   TrilinosCouplings     packages/trilinoscouplings        SS
   Pike                  packages/pike                     SS
+  xSDKTrilinos          packages/xSDKTrilinos             SS
   )
 
 # Allow builds even if some packages are missing
@@ -152,6 +153,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Mesquite)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(ForTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(WebTrilinos)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(xSDKTrilinos)
 
 #
 # Disable certain packages on certain platforms.
