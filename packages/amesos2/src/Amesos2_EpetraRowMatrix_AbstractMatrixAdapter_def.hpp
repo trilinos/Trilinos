@@ -293,8 +293,8 @@ namespace Amesos2 {
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
   {
     // Delegate implementation to subclass
-#ifdef __CUDACC__
-    // NVCC doesn't seem to like the static_cast, even though it is valid
+#if defined(__CUDACC__) || defined(_CRAYC)
+    // NVCC and Cray compilers don't seem to like the static_cast, even though it is valid
     return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
 #else
     return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
