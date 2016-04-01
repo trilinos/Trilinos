@@ -64,7 +64,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Amesos2Smoother(const std::string& type, const Teuchos::ParameterList& paramList)
-    : type_(type) {
+    : type_(type), useTransformation_(false) {
     this->SetParameterList(paramList);
 
     if (!type_.empty()) {
@@ -119,9 +119,53 @@ namespace MueLu {
     if (SmootherPrototype::IsSetup() == true)
       this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
-    RCP<Matrix> A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
+    RCP<Matrix> A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
-    RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(A_);
+    // Do a quick check if we need to modify the matrix
+    RCP<const Map> rowMap = A->getRowMap();
+    if (rowMap->getGlobalNumElements() != as<size_t>((rowMap->getMaxAllGlobalIndex() - rowMap->getMinAllGlobalIndex())+1)) {
+      // If our system is non-conventional, here is the place where we try to fix it
+      // One example is: if our maps contain a gap in them, for instance GIDs
+      // are [0,..., 100, 10000, ..., 10010], then Amesos2 breaks down.
+      //
+      // The approach we take is to construct a second system with maps
+      // replaced by their continuous versions.
+      //
+      // FIXME: for the moment, this functionality works for selected limited scenarios
+      this->GetOStream(Runtime1) << "MueLu::Amesos2Smoother::Setup(): using system transformation" << std::endl;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getComm()->getSize() > 1, Exceptions::RuntimeError,
+        "MueLu::Amesos2Smoother::Setup Fixing coarse matrix for Amesos2 for multiple processors has not been implemented yet.");
+      TEUCHOS_TEST_FOR_EXCEPTION(!rowMap->isSameAs(*A->getColMap()), Exceptions::RuntimeError,
+        "MueLu::Amesos2Smoother::Setup Fixing coarse matrix for Amesos2 when row map is different from column map has not been implemented yet.");
+
+      RCP<CrsMatrixWrap> Acrs = rcp_dynamic_cast<CrsMatrixWrap>(A);
+      TEUCHOS_TEST_FOR_EXCEPTION(Acrs.is_null(), Exceptions::RuntimeError,
+        "MueLu::Amesos2Smoother::Setup Fixing coarse matrix for Amesos2 when matrix is not a Crs matrix has not been implemented yet.");
+
+      useTransformation_ = true;
+
+      ArrayRCP<const size_t> rowPointers;
+      ArrayRCP<const LO>     colIndices;
+      ArrayRCP<const SC>     values;
+      Acrs->getCrsMatrix()->getAllValues(rowPointers, colIndices, values);
+
+      // Create new map
+      RCP<Map>       map     = MapFactory::Build(rowMap->lib(), rowMap->getGlobalNumElements(), 0, rowMap->getComm());
+      RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(map, map, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
+
+      using Teuchos::arcp_const_cast;
+      newAcrs->setAllValues(arcp_const_cast<size_t>(rowPointers), arcp_const_cast<LO>(colIndices), arcp_const_cast<SC>(values));
+      newAcrs->expertStaticFillComplete(map, map);
+
+      A.swap(newA);
+
+      X_ = MultiVectorFactory::Build(map, 1);
+      B_ = MultiVectorFactory::Build(map, 1);
+    }
+
+    RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(A);
 
     prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
@@ -133,9 +177,29 @@ namespace MueLu {
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
-    RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(X);
-    MultiVector & BNonC = const_cast<MultiVector&>(B);
-    RCP<Tpetra_MultiVector> tB = Utilities::MV2NonConstTpetraMV2(BNonC);
+    RCP<Tpetra_MultiVector> tX, tB;
+    if (!useTransformation_) {
+      tX = Utilities::MV2NonConstTpetraMV2(X);
+      tB = Utilities::MV2NonConstTpetraMV2(const_cast<MultiVector&>(B));
+    } else {
+      // Copy data of the original vectors into the transformed ones
+      size_t numVectors = X.getNumVectors();
+      size_t length     = X.getLocalLength();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(numVectors > 1, Exceptions::RuntimeError,
+        "MueLu::Amesos2Smoother::Apply: Fixing coarse matrix for Amesos2 for multivectors has not been implemented yet.");
+      ArrayRCP<const SC> Xdata  = X.  getData(0),         Bdata  = B.  getData(0);
+      ArrayRCP<SC>       X_data = X_->getDataNonConst(0), B_data = B_->getDataNonConst(0);
+
+      for (size_t i = 0; i < length; i++) {
+        X_data[i] = Xdata[i];
+        B_data[i] = Bdata[i];
+      }
+
+      tX = Utilities::MV2NonConstTpetraMV2(*X_);
+      tB = Utilities::MV2NonConstTpetraMV2(*B_);
+    }
+
     prec_->setX(tX);
     prec_->setB(tB);
 
@@ -143,6 +207,17 @@ namespace MueLu {
 
     prec_->setX(Teuchos::null);
     prec_->setB(Teuchos::null);
+
+    if (useTransformation_) {
+      // Copy data from the transformed vectors into the original ones
+      size_t length     = X.getLocalLength();
+
+      ArrayRCP<SC>       Xdata  = X.  getDataNonConst(0);
+      ArrayRCP<const SC> X_data = X_->getData(0);
+
+      for (size_t i = 0; i < length; i++)
+        Xdata[i] = X_data[i];
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
