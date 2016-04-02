@@ -41,6 +41,7 @@
 // @HEADER
 
 // Local includes
+#include "Python3Compat.hpp"
 #include "PyTrilinos_Tpetra_Util.hpp"
 #include "PyTrilinos_PythonException.hpp"
 

@@ -45,14 +45,6 @@
 
 #include "numpy_include.hpp"
 
-#if PY_VERSION_HEX >= 0x03000000
-#  define import_array_type void*
-#  define return_value NULL
-#else
-#  define import_array_type void
-#  define return_value 
-#endif
-
 namespace PyTrilinos
 {
 
@@ -61,16 +53,24 @@ namespace PyTrilinos
 
 class NumPyImporter
 {
-  static import_array_type import_array_method()
+#if PY_VERSION_HEX > 0x03000000
+  static void * import_array_method()
   {
+    // The import_array() macro has a 'return' statement in it
     import_array();
-    return return_value;
+    // But this return statement should supress compiler errors
+    return NULL;
   }
+#endif
 
 protected:
   // These are protected instead of private to keep compilers happy.
   ~NumPyImporter() { }
-  NumPyImporter() {import_array_type result = import_array_method();}
+#if PY_VERSION_HEX >= 0x03000000
+  NumPyImporter() {void * result = import_array_method();}
+#else
+  NumPyImporter() {import_array();}
+#endif
 
 private:
   NumPyImporter(const NumPyImporter & a_ref);
