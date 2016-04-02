@@ -149,7 +149,7 @@ if __name__ == "__main__":
     try:
         main(comm)
         errors = 0
-    except Exception, e:
+    except Exception as e:
         print(e)
         errors = 1
 
