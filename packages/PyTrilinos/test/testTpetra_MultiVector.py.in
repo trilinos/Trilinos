@@ -89,9 +89,9 @@ class TpetraMultiVectorTestCase(unittest.TestCase):
                                                     self.numMyEl)
         self.elSize           = 1
         self.indexBase        = 0
-        globalEls             = range(self.numGlobalEl)
+        globalEls             = list(range(self.numGlobalEl))
         globalEls.reverse()  # Force this to be different from the linear distribution
-        self.start            = 4*self.myPID + self.myPID*(self.myPID-1)/2
+        self.start            = 4*self.myPID + self.myPID*(self.myPID-1) // 2
         self.myGlobalEls      = globalEls[self.start:self.start+self.numMyEl]
 
         self.map1             = Tpetra.Map(self.numGlobalElConst,

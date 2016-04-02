@@ -71,7 +71,7 @@ class PartitionerTestCase(unittest.TestCase):
         
         
         self.part = Isorropia.Epetra.Partitioner(self.crsg, self.pList)
-	self.costs = Isorropia.Epetra.CostDescriber()
+        self.costs = Isorropia.Epetra.CostDescriber()
 #        self.pv = LOCA.ParameterVector()
 #        self.pv.addParameter("Zero"     )
 #        self.pv.addParameter("One", 1.0 )

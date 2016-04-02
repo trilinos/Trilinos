@@ -84,20 +84,28 @@ class TpetraMapTestCase(unittest.TestCase):
                                                     self.numMyEl)
         self.elSize           = 1
         self.indexBase        = 0
-        globalEls             = range(self.numGlobalEl)
+        globalEls             = list(range(self.numGlobalEl))
         globalEls.reverse()  # Force this to be different from the linear distribution
-        self.start            = 4*self.myPID + self.myPID*(self.myPID-1)/2
+        self.start            = 4*self.myPID + self.myPID*(self.myPID-1) // 2
         self.myGlobalEls      = globalEls[self.start:self.start+self.numMyEl]
 
+        print("\nConstructing self.map1")
         self.map1             = Tpetra.Map(self.numGlobalElConst,
                                            self.indexBase,
                                            self.comm)
 
+        print("Constructing self.map2")
+        print("args = (%d, %d, %d, %s)" % (self.numGlobalEl,
+                                           self.numMyEl,
+                                           self.indexBase,
+                                           str(self.comm)))
+        print("type(self.numGlobalEl) =", type(self.numGlobalEl))
         self.map2             = Tpetra.Map(self.numGlobalEl,
                                            self.numMyEl,
                                            self.indexBase,
                                            self.comm)
 
+        print("Constructing self.map3")
         self.map3             = Tpetra.Map(self.numGlobalEl,
                                            self.myGlobalEls,
                                            self.indexBase,
@@ -210,15 +218,15 @@ class TpetraMapTestCase(unittest.TestCase):
 
     def testGetRemoteIndexList(self):
         "Test Tpetra.Map getRemoteIndexList method for variable element size"
-        gidList  = range(self.numGlobalEl)
+        gidList  = list(range(self.numGlobalEl))
         gidList.reverse()  # Match the setUp pattern
         pidList  = numpy.zeros( self.numGlobalEl)
         lidList  = numpy.arange(self.numGlobalEl)
         for p in range(1,self.numProc):
-            start  = 4*p + p*(p-1)/2
+            start  = 4*p + p*(p-1) // 2
             length = 4 + p
             pidList[start:] += 1
-            lidList[start:start+length] = range(length)
+            lidList[start:start+length] = list(range(length))
         result = self.map3.getRemoteIndexList(gidList)
         self.failUnless((result[0] == pidList).all())
         self.failUnless((result[1] == lidList).all())
