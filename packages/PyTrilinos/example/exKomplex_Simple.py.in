@@ -45,7 +45,7 @@
 
 #
 # System imports
-from __futire__ import print_function
+from __future__ import print_function
 from optparse   import *
 
 #

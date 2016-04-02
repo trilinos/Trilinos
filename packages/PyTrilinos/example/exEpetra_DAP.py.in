@@ -215,7 +215,7 @@ if __name__ == "__main__":
     errors = 0
     try:
         errors = main()
-    except Exception, e:
+    except Exception as e:
         msg = "P%d: : Exception raised\n  Exception text = '%s'" % \
               (rank, str(e))
         print(msg)

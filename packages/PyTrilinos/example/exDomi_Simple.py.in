@@ -102,7 +102,7 @@ def main():
     if rank == 0:
         print("Teuchos.Comm number of processors =", nproc)
         print("Domi.MDComm shape =", \
-              [mdComm.getCommDim(axis) for axis in range(mdComm.numDims())]
+              [mdComm.getCommDim(axis) for axis in range(mdComm.numDims())])
 
     # Constract a Domi MDMap, and print the index bounds along each axis for
     # every processor
