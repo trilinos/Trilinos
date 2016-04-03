@@ -68,7 +68,7 @@ public:
     dual_vec1_ = (vec1_->dual()).clone();
     dual_vec2_ = (vec2_->dual()).clone();
   }
-  
+
   void plus( const Vector<Real> &x ) {
     const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const Vector<Real> >(x));

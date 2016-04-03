@@ -131,16 +131,16 @@ int main(int argc, char *argv[]) {
     std::vector<Teuchos::RCP<V> > y_rcp;
     std::vector<Teuchos::RCP<V> > z_rcp;
 
-    Teuchos::RCP<std::vector<RealT> > xk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
-    Teuchos::RCP<std::vector<RealT> > yk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
-    Teuchos::RCP<std::vector<RealT> > zk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
-
-    Teuchos::RCP<V> xk = Teuchos::rcp( new SV( xk_rcp ) );
-    Teuchos::RCP<V> yk = Teuchos::rcp( new SV( yk_rcp ) );
-    Teuchos::RCP<V> zk = Teuchos::rcp( new SV( zk_rcp ) );
-
     for( int k=0; k<nvecloc; ++k ) {
        
+      Teuchos::RCP<std::vector<RealT> > xk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
+      Teuchos::RCP<std::vector<RealT> > yk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
+      Teuchos::RCP<std::vector<RealT> > zk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
+
+      Teuchos::RCP<V> xk = Teuchos::rcp( new SV( xk_rcp ) );
+      Teuchos::RCP<V> yk = Teuchos::rcp( new SV( yk_rcp ) );
+      Teuchos::RCP<V> zk = Teuchos::rcp( new SV( zk_rcp ) );
+
       for( int i=0; i<dim; ++i ) {
         (*xk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
         (*yk_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
