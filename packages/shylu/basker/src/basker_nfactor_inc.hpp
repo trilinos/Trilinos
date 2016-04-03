@@ -90,14 +90,20 @@ namespace BaskerNS
 	    //This error is not recoverable
 	    //Therefore, we should not try any other work
 	    FREE_INT_1DARRAY(thread_start);
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("DOM FATAL ERROR\n");
+	      }
 	    fatal_error = BASKER_TRUE;
 	    break;
 	  }
 	else
 	  {
 	    domain_restart++;
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("dom restart \n");
+	      }
 	    kokkos_nfactor_domain_remalloc_inc_lvl <Int, Entry, Exe_Space>
 	      diag_nfactor_remalloc(this, thread_start);
 	    Kokkos::parallel_for(TeamPolicy(num_threads,1),
@@ -146,7 +152,10 @@ namespace BaskerNS
 
 	Int sep_restart = 0;
 
-	//printf("\n\n   ============ SEP: %d ======\n\n",l);
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	printf("\n\n   ============ SEP: %d ======\n\n",l);
+	  }
 
 	#ifdef BASKER_KOKKOS
 	//Kokkos::Impl::Timer  timer_inner_sep;
@@ -180,13 +189,19 @@ namespace BaskerNS
 	      {
 		FREE_INT_1DARRAY(thread_start);
 		fatal_error = BASKER_TRUE;
+		if(Options.verbose == BASKER_TRUE)
+		  {
 		printf("SEP FATAL ERROR\n");
+		  }
 		break;
 	      }
 	    else
 	      {
 		sep_restart++;
+		if(Options.verbose == BASKER_TRUE)
+		  {
 		printf("sep restart l: %d \n", l);
+		  }
 		//exit(0);
 		Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
 		Kokkos::fence();

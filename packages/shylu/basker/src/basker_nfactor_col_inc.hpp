@@ -893,10 +893,12 @@ namespace BaskerNS
      if(unnz+ucnt-1 > uunnz)
        {
 	 
-	 /*
+	 if(Options.verbose == BASKER_TRUE)
+	   {
 	 printf("kid: %d col: %d need to realloc, unnz: %d ucnt: %d uunnz: %d U_col: %d U_row: %d \n", kid, k, unnz, ucnt, uunnz, U_col, U_row);
+	   }
 	 BASKER_ASSERT(0==1, "USIZE\n");
-	 */
+	 
 
 	 Int newsize = (unnz+U.nrow) * 1.2  ;
 	 
@@ -908,6 +910,7 @@ namespace BaskerNS
 	   }
 	 else
 	   {
+	     //printf("HERE\n");
 	     thread_array(kid).error_type =
 	       BASKER_ERROR_REMALLOC;
 	     thread_array(kid).error_blk    = U_col;
@@ -2171,8 +2174,13 @@ namespace BaskerNS
      {
        //Note: comeback
        newsize = lnnz * 1.1 + 2 *L.nrow + 1;
-       //cout << "Lower Col Reallocing L oldsize: " << llnnz 
-       //   << " newsize: " << newsize << endl;
+     
+       if(Options.verbose == BASKER_TRUE)
+	 {
+       cout << "Lower Col Reallocing L oldsize: " 
+	    << llnnz 
+	    << " newsize: " << newsize << endl;
+	 }
       
        if(Options.realloc == BASKER_FALSE)
 	 {
@@ -2194,8 +2202,14 @@ namespace BaskerNS
      {
        //Note: comeback
        newsize = uunnz*1.1 + 2*U.nrow+1;
-       //cout << "Lower Col Reallocing U oldsize: " << uunnz 
-       //   << " newsize " << newsize << endl;
+
+       if(Options.verbose == BASKER_TRUE)
+	 {
+       cout << "Lower Col Reallocing U oldsize: " 
+	    << uunnz 
+	    << " newsize " << newsize << endl;
+	 }
+
        if(Options.realloc == BASKER_FALSE)
 	 {
 	   thread_array(kid).error_type = 

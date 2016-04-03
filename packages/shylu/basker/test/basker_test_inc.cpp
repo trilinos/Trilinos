@@ -202,8 +202,8 @@ int main(int argc, char* argv[])
   mybasker.Options.incomplete = true;
   mybasker.Options.incomplete_type = 
     BASKER_INCOMPLETE_LVL;
-  mybasker.Options.inc_lvl    = 2;
-  mybasker.Options.user_fill  = 1.0;
+  mybasker.Options.inc_lvl    = 5;
+  mybasker.Options.user_fill  = 0.10;
   mybasker.Options.same_pattern = false;
 
   mybasker.SetThreads(numthreads);
@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
 
 
   //----------------RECALL TEST----------------//
-  
+  /*
   mybasker.Options.same_pattern = true;
   cout << "Calling Factor" << endl;
   timer.reset();
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
   cout << "Second Factor Time: " << timer.seconds() << endl;
   mybasker.DEBUG_PRINT();
   cout << "Done with second print " << endl;
-  
+  */
 
  
   /*
