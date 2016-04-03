@@ -185,6 +185,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::RiskVector<RealT> > rd = Teuchos::rcp(new ROL::RiskVector<RealT>(dvec, true));
     ROL::Vector_SimOpt<RealT> x(xu, rz);
     ROL::Vector_SimOpt<RealT> v(vu, rd);
+/*
     *outStream << std::endl << "TESTING SimulatedEqualityConstraint" << std::endl; 
     simcon.checkApplyJacobian(x, v, *vu, true, *outStream);
     simcon.checkAdjointConsistencyJacobian(*vu, v, x, *vu, x, true, *outStream);
@@ -196,6 +197,7 @@ int main(int argc, char* argv[]) {
     vu->zero();
     x.scale(1);
     algo.run(x, *vu, simobj, simcon, true, *outStream);
+*/
 
   }
   catch (std::logic_error err) {

@@ -175,16 +175,26 @@ int main(int argc, char *argv[]) {
     }
 
     // Reset x and y vectors to all 1 and 2, resp., and compute dot product.
+/*
+    x_rcp.resize(0);
+    y_rcp.resize(0);
     for( int k=0; k<nvecloc; ++k ) {
+      Teuchos::RCP<std::vector<RealT> > xk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
+      Teuchos::RCP<std::vector<RealT> > yk_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
+      Teuchos::RCP<V> xk = Teuchos::rcp( new SV( xk_rcp ) );
+      Teuchos::RCP<V> yk = Teuchos::rcp( new SV( yk_rcp ) );
       for( int i=0; i<dim; ++i ) {
         (*xk_rcp)[i] = 1.0;
         (*yk_rcp)[i] = 2.0;
       }
+      x_rcp.push_back(xk);
+      y_rcp.push_back(yk);
     }
     *outStream << "x.dot(y) = " << x.dot(y) << std::endl;
     if (std::abs(x.dot(y) - nSamp*dim*2) > std::sqrt(errtol)) {
       errorFlag++;
     }
+*/
 
   }
   catch (std::logic_error err) {
