@@ -93,14 +93,14 @@ void print_memory(stk::ParallelMachine communicator, const std::string &preamble
 
     size_t curr_max, curr_min, curr_avg;
     stk::get_current_memory_usage_across_processors(communicator, curr_max, curr_min, curr_avg);
-    curr_max /= (1024.0 * 1024.0);
+    double max = curr_max / (1024.0 * 1024.0);
     curr_min /= (1024.0 * 1024.0);
     curr_avg /= (1024.0 * 1024.0);
 
     if(stk::parallel_machine_rank(communicator) == 0)
     {
         std::ostringstream os;
-        os << preamble << " high water mark = " << maxHwmInMB << " Mb, current max = " << curr_max << " Mb" << std::endl;
+        os << preamble << " high water mark = " << maxHwmInMB << " Mb, current max = " << max << " Mb" << std::endl;
         std::cerr << os.str();
     }
 }
@@ -139,10 +139,12 @@ public:
             stk::unit_test_util::PerformanceTester(bulk.parallel()),
             bulkData(bulk),
             meshSpec(fileSpec),
-            addElemTimer("add elements", CHILDMASK1, childTimer),
-            deleteElemTimer("delete elements", CHILDMASK1, childTimer),
-            createGraphTimer("create graph", CHILDMASK1, childTimer)
+            CHILDMASK2(2),
+            addElemTimer("add elements", CHILDMASK2, rootTimer),
+            deleteElemTimer("delete elements", CHILDMASK2, rootTimer),
+            createGraphTimer("create graph", CHILDMASK2, rootTimer)
     {
+        enabledTimerSet.setEnabledTimerMask(CHILDMASK2);
         {
             print_memory(bulk.parallel(), "Before elem graph creation");
             stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createGraphTimer, communicator);
@@ -227,6 +229,7 @@ protected:
     ElemElemGraphUpdaterWithTiming *elemGraphUpdater = nullptr;
     const std::string meshSpec;
 
+    const int CHILDMASK2;
     stk::diag::Timer addElemTimer;
     stk::diag::Timer deleteElemTimer;
     stk::diag::Timer createGraphTimer;

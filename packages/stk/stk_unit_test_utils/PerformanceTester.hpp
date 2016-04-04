@@ -31,7 +31,6 @@ class PerformanceTester
 public:
     void run_performance_test()
     {
-        rootTimer.start();
         time_algorithm();
         generate_output();
     }
@@ -44,7 +43,9 @@ protected:
             communicator(comm),
             duration(0.0)
     {
+        rootTimer.start();
     }
+
     virtual ~PerformanceTester()
     {
         stk::diag::deleteRootTimer(rootTimer);
