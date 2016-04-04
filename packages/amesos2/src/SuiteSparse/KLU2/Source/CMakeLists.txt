@@ -101,19 +101,8 @@ klu2_extract.hpp
 klu2_memory.hpp
   )
 
-# Set sources
-
-APPEND_SET(SOURCES
-  klu2_simple.cpp
-  )
-
-
 #
-# C) Define the targets for package's library(s)
+# C) Define the targets for package's example
 #
 
-TRIBITS_ADD_EXECUTABLE(
-  klu2_simple
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  )
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
