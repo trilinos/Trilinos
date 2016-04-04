@@ -148,6 +148,7 @@ protected:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPointsPhysical_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dataUd_;
 
+protected:
 public:
 
   // constructor
@@ -157,9 +158,33 @@ public:
   
   virtual void Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                           const Teuchos::RCP<Teuchos::ParameterList> &parlist,
-                          const Teuchos::RCP<std::ostream> &outStream)  { }
-  
-  
+                          const Teuchos::RCP<std::ostream> &outStream) {
+    commPtr_   = comm;
+    parlist_   = parlist;
+    outStream_ = outStream;
+    myRank_    = comm->getRank();
+    numProcs_  = comm->getSize();
+    *outStream_ << "Total number of processors: " << numProcs_ << std::endl;
+
+    basisOrder_ = parlist->sublist("PDE FEM").get("Order of FE Discretization", 1);
+  }
+
+  void SetDiscretization(const Teuchos::RCP<MeshManager<Real> > &meshMgr,
+                         const std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > &basisPtrs) {
+    meshMgr_ = meshMgr;
+    totalNumCells_ = meshMgr_->getNumCells();
+
+    basisPtrs_ = basisPtrs;
+
+    // Retrieve some basic cell information.
+    cellType_ = (basisPtrs_[0])->getBaseCellTopology(); // get the cell type from any basis
+    spaceDim_ = cellType_.getDimension();        // retrieve spatial dimension
+    numNodesPerCell_ = cellType_.getNodeCount(); // retrieve number of nodes per cell
+
+    coord_iface_ = Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basisPtrs_[0]);
+    dofMgr_ = Teuchos::rcp(new DofManager<Real>(meshMgr_, basisPtrs_));
+  }
+
   virtual void SetParallelStructure(void) {
     int cellSplit = parlist_->sublist("Geometry").get("Partition type", 1);
     /****************************************************/
@@ -222,17 +247,10 @@ public:
     //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
   }
   
-  
-  
   virtual void SetUpLocalIntrepidArrays(void) {
     /****************************************************/
     /*** Set up local discretization data and arrays. ***/
     /****************************************************/
-    // Retrieve some basic cell information.
-    cellType_ = (basisPtrs_[0])->getBaseCellTopology();   // get the cell type from any basis
-    spaceDim_ = cellType_.getDimension();                 // retrieve spatial dimension
-    numNodesPerCell_ = cellType_.getNodeCount();          // retrieve number of nodes per cell
-
     // Cubature data.
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                                          // create cubature factory
     int cubDegree = 4;                                                                          // set cubature degree, e.g., 2
@@ -364,7 +382,42 @@ public:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
   }
   
-  
+  virtual void updateF(const std::vector<Real> &param) {
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    int numLocalDofs = cellDofs.dimension(1);
+    std::vector<Real> F(1), x(spaceDim_);
+    for (int i = 0; i < numCells_; ++i) {
+      for (int j = 0; j < numCubPoints_; ++j) {
+        for (int k = 0; k < spaceDim_; ++k) {
+          x[k] = (*cubPointsPhysical_)(i,j,k);
+        }
+        funcRHS(F,x,param);
+        (*dataF_)(i,j) = F[0];
+      }
+    }
+    Intrepid::FunctionSpaceTools::integrate<Real>(*datavalVecF_,
+                                                  *dataF_,
+                                                  *valPhysicalWeighted_,
+                                                  Intrepid::COMP_CPP);
+    // vecF_ requires assembly using vecF_overlap_ and redistribution
+    vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
+    for (int i = 0; i < numCells_; ++i) {
+      for (int j = 0; j < numCubPoints_; ++j) {
+        vecF_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),0,
+                                                   (*datavalVecF_)[i*numLocalDofs+j]);
+      }
+    }
+    Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());
+    vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);
+
+    Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
+    for (int i = 0; i < myDirichletDofs_.size(); ++i) {
+      if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
+        vecF_dirichlet_->replaceGlobalValue(myDirichletDofs_[i], 0, 0);
+      }
+    }
+  }
   
   virtual void AssembleDataVector(void) {
     // vecUd_ does not require assembly
@@ -505,14 +558,13 @@ public:
   }
 
 /*
-virtual void GenerateTransposedMats()
-{
+  virtual void GenerateTransposedMats() {
     // Create matrix transposes.
     Tpetra::RowMatrixTransposer<> transposerA(matA_dirichlet_);
     Tpetra::RowMatrixTransposer<> transposerM(matM_dirichlet_);
     matA_dirichlet_trans_ = transposerA.createTranspose();
     matM_dirichlet_trans_ = transposerM.createTranspose();
-}
+  }
 */
 
   virtual void ConstructSolvers(void) {
@@ -527,8 +579,7 @@ virtual void GenerateTransposedMats()
   }
 
 /*
-virtual void ConstructAdjointSolvers()
-{
+  virtual void ConstructAdjointSolvers() {
     // Construct solver using Amesos2 factory.
     try{
       solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_trans_);
@@ -536,7 +587,7 @@ virtual void ConstructAdjointSolvers()
       std::cout << e.what() << std::endl;
     }
     solverA_trans_->numericFactorization();
-}
+  }
 */
 
   Teuchos::RCP<Tpetra::CrsMatrix<> > getMatA(const bool &transpose = false) const {
@@ -591,8 +642,12 @@ virtual void ConstructAdjointSolvers()
     }
   }
 
-
  virtual Real funcRHS(const Real &x1, const Real &x2) const { return 0.0; }
+ virtual void funcRHS(std::vector<Real> &F,
+                const std::vector<Real> &x,
+                const std::vector<Real> &param) const {
+   F.clear(); F.resize(1);
+ }
 
  virtual Real funcTarget(const Real &x1, const Real &x2) const { return 0.0; }
 
@@ -671,6 +726,45 @@ virtual void ConstructAdjointSolvers()
                           const std::string &filename) const {
     Tpetra::MatrixMarket::Writer<Tpetra::MultiVector<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);
+  }
+
+  // ACCESSOR FUNCTIONS
+  Teuchos::RCP<MeshManager<Real> >& GetMeshManager(void) {
+    TEUCHOS_TEST_FOR_EXCEPTION(meshMgr_==Teuchos::null, std::logic_error,
+      ">>> (PDE_FEM::GetMeshManager): MeshManager not initialized!");
+    return meshMgr_;
+  }
+
+  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > >& GetBasisPtr(const int ind) {
+    TEUCHOS_TEST_FOR_EXCEPTION(ind > spaceDim_-1 || ind < 0, std::logic_error,
+      ">>> (PDE_FEM::GetBasisPtr): ind out of bounds!");
+    TEUCHOS_TEST_FOR_EXCEPTION(basisPtrs_.size()==0, std::logic_error,
+      ">>> (PDE_FEM::GetBasisPtr): BasisPntrs not initialized!");
+    return basisPtrs_[ind];
+  }
+
+  int GetBasisOrder(void) const {
+    return basisOrder_;
+  }
+
+  int GetSpaceDim(void) const {
+    return spaceDim_;
+  }
+
+  int GetNumCells(void) const {
+    return numCells_;
+  }
+
+  int GetNumLocalDofs(void) const {
+    return numLocalDofs_;
+  }
+
+  int GetNumCubPoints(void) const {
+    return numCubPoints_;
+  }
+
+  int GetLocalFieldSize(void) const {
+    return lfs_;
   }
 
 }; // class PDE_FEM

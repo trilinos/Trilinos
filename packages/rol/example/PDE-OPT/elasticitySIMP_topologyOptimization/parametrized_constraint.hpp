@@ -41,25 +41,24 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_PDEOPT_ELASTICITYSIMP_PARAMETRIZED_CONSTRAINT_H
+#define ROL_PDEOPT_ELASTICITYSIMP_PARAMETRIZED_CONSTRAINT_H
 
-#ifndef ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_H
-#define ROL_PDEOPT_ELASTICITYSIMP_CONSTRAINT_H
-
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "Amesos2.hpp"
 #include "data.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_ElasticitySIMP : public ROL::EqualityConstraint_SimOpt<Real> {
+class ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
 private:
 
   Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
 
 public:
 
-  EqualityConstraint_PDEOPT_ElasticitySIMP(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
-                                           const Teuchos::RCP<Teuchos::ParameterList> &parlist) : data_(data) {}
+  ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
+                                                       const Teuchos::RCP<Teuchos::ParameterList> &parlist) : data_(data) {}
 
   using ROL::EqualityConstraint_SimOpt<Real>::value;
   
@@ -71,6 +70,7 @@ public:
     data_->updateMaterialDensity(zp);
     data_->ApplyJacobian1ToVec(cp, up);
     Real one(1);
+    data_->updateF(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
     cp->update(-one, *(data_->getVecF()), one);
   }
 
