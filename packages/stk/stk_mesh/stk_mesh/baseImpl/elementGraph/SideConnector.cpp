@@ -32,10 +32,10 @@ void SideConnector::connect_side_to_adjacent_elements(stk::mesh::Entity sideEnti
 {
     for(const GraphEdge& graphEdge : m_graph.get_edges_for_element(elemLocalId))
     {
-        if(graphEdge.side1 == elemSide)
+        if(graphEdge.side1() == elemSide)
         {
             connect_side_entity_to_other_element(sideEntity, graphEdge);
-            connect_side_to_coincident_elements(sideEntity, graphEdge.elem2, graphEdge.side2);
+            connect_side_to_coincident_elements(sideEntity, graphEdge.elem2(), graphEdge.side2());
         }
     }
 }
@@ -43,9 +43,9 @@ void SideConnector::connect_side_to_adjacent_elements(stk::mesh::Entity sideEnti
 void SideConnector::connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,
                                                          const stk::mesh::GraphEdge &graphEdge)
 {
-    stk::mesh::Entity otherElement = get_entity_for_local_id(graphEdge.elem2);
+    stk::mesh::Entity otherElement = get_entity_for_local_id(graphEdge.elem2());
     if(m_bulk_data.is_valid(otherElement))
-        connect_side_to_elem(sideEntity, otherElement, graphEdge.side2);
+        connect_side_to_elem(sideEntity, otherElement, graphEdge.side2());
 }
 
 stk::mesh::Entity SideConnector::get_entity_for_local_id(stk::mesh::impl::LocalId localId) const
@@ -61,7 +61,7 @@ void SideConnector::connect_side_to_coincident_elements(stk::mesh::Entity sideEn
                                                         int elemSide)
 {
     for(const stk::mesh::GraphEdge &graphEdge : m_coincidentGraph.get_edges_for_element(elemLocalId))
-        if(graphEdge.side1 == elemSide)
+        if(graphEdge.side1() == elemSide)
             connect_side_entity_to_other_element(sideEntity, graphEdge);
 }
 

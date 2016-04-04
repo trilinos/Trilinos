@@ -232,18 +232,61 @@ struct IdViaSidePair
 
 }//namespace impl
 
+const int max_num_sides_per_elem = 10;
+const double inverse_of_max_num_sides_per_elem = 0.1;
+
 struct GraphEdge
 {
-    GraphEdge(impl::LocalId e1, int s1, impl::LocalId e2, int s2) :
-        elem1(e1), elem2(e2), side1(s1), side2(s2)
-    {}
+    GraphEdge(impl::LocalId e1, int s1, impl::LocalId e2, int s2)
+    {
+        set_vertex1(e1,s1);
+        set_vertex2(e2,s2);
+    }
+
     GraphEdge() :
-        elem1(std::numeric_limits<impl::LocalId>::max()), elem2(std::numeric_limits<impl::LocalId>::max()), side1(-1), side2(-1)
+        vertex1(std::numeric_limits<impl::LocalId>::max()), vertex2(std::numeric_limits<impl::LocalId>::max())
     {}
-    impl::LocalId elem1;
-    impl::LocalId elem2;
-    int side1;
-    int side2;
+
+    int side1() const { return get_side(vertex1); }
+    int side2() const { return get_side(vertex2); }
+
+    void set_vertex1(const impl::LocalId& elem, int side)
+    {
+        set_vertex(elem, side, vertex1);
+    }
+
+    void set_vertex2(const impl::LocalId& elem, int side)
+    {
+        set_vertex(elem, side, vertex2);
+    }
+
+    void set_vertex(const impl::LocalId& elem, int side, impl::LocalId& vertex)
+    {
+        if(elem>=0)
+            vertex = max_num_sides_per_elem*elem+side;
+        else
+            vertex = max_num_sides_per_elem*elem-side;
+    }
+
+    impl::LocalId elem1() const
+    {
+        return vertex1*inverse_of_max_num_sides_per_elem;
+    }
+
+    impl::LocalId elem2() const
+    {
+        return vertex2*inverse_of_max_num_sides_per_elem;
+    }
+
+    int get_side(const impl::LocalId& vertex) const
+    {
+        return abs(vertex)%max_num_sides_per_elem;
+    }
+
+    // elem1, side1, elem2, side2
+
+    impl::LocalId vertex1;
+    impl::LocalId vertex2;
 };
 
 typedef GraphEdge CoincidentElementConnection;
@@ -251,21 +294,21 @@ typedef GraphEdge CoincidentElementConnection;
 struct GraphEdgeLessByElem2 {
     bool operator()(const GraphEdge& a, const GraphEdge& b) const
     {
-        if (a.elem2 != b.elem2)
+        if (a.elem2() != b.elem2())
         {
-            return a.elem2 < b.elem2;
+            return a.elem2() < b.elem2();
         }
-        else if (a.side2 != b.side2)
+        else if (a.side2() != b.side2())
         {
-            return a.side2 < b.side2;
+            return a.side2() < b.side2();
         }
-        else if (a.elem1 != b.elem1)
+        else if (a.elem1() != b.elem1())
         {
-            return a.elem1 < b.elem1;
+            return a.elem1() < b.elem1();
         }
         else
         {
-            return a.side1 < b.side1;
+            return a.side1() < b.side1();
         }
     }
 };
@@ -273,16 +316,13 @@ struct GraphEdgeLessByElem2 {
 inline
 bool operator==(const GraphEdge& a, const GraphEdge& b)
 {
-    return  a.elem1 == b.elem1 &&
-            a.side1 == b.side1 &&
-            a.elem2 == b.elem2 &&
-            a.side2 == b.side2;
+    return  a.vertex1 == b.vertex1 && a.vertex2 == b.vertex2;
 }
 
 inline
 std::ostream& operator<<(std::ostream& out, const GraphEdge& graphEdge)
 {
-    out << "(" << graphEdge.elem1 << "," << graphEdge.side1 << " -> " << graphEdge.elem2 << "," << graphEdge.side2 << ")";
+    out << "(" << graphEdge.vertex1 << " -> " << graphEdge.vertex2 << ")";
     return out;
 }
 

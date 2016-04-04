@@ -36,7 +36,7 @@ void pack_data_for_part_ordinals(stk::CommSparse &comm, const ElemElemGraph& gra
     {
         const stk::mesh::GraphEdge &edge = item.first;
         const stk::mesh::impl::ParallelInfo &pinfo = item.second;
-        stk::mesh::Entity local_element = graph.get_entity(edge.elem1);
+        stk::mesh::Entity local_element = graph.get_entity(edge.elem1());
         std::vector<stk::mesh::PartOrdinal> partOrdinals = stk::mesh::impl::get_element_block_part_ordinals(local_element, bulkData);
 
         pack_edge(comm, graph, bulkData, edge, pinfo.get_proc_rank_of_neighbor());
@@ -49,10 +49,10 @@ void pack_data_for_part_ordinals(stk::CommSparse &comm, const ElemElemGraph& gra
 
 void pack_edge(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& edge, int other_proc)
 {
-    stk::mesh::EntityId id1 = bulkData.identifier(graph.get_entity(edge.elem1));
-    unsigned side1 = edge.side1;
-    stk::mesh::EntityId id2 = -edge.elem2;
-    unsigned side2 = edge.side2;
+    stk::mesh::EntityId id1 = bulkData.identifier(graph.get_entity(edge.elem1()));
+    unsigned side1 = edge.side1();
+    stk::mesh::EntityId id2 = -edge.elem2();
+    unsigned side2 = edge.side2();
     comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(id1);
     comm.send_buffer(other_proc).pack<unsigned>(side1);
     comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(id2);
@@ -73,7 +73,7 @@ void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::Bul
             for(stk::mesh::PartOrdinal &partOrdinal : partOrdinals)
                 comm.recv_buffer(i).unpack<stk::mesh::PartOrdinal>(partOrdinal);
 
-            parallelPartInfo[edge.elem2] = partOrdinals;
+            parallelPartInfo[edge.elem2()] = partOrdinals;
         }
     }
 }
@@ -107,7 +107,7 @@ void pack_data_for_selector(stk::CommSparse &comm, ElemElemGraph& graph, const s
     {
         const stk::mesh::GraphEdge &edge = item.first;
         const stk::mesh::impl::ParallelInfo &parInfo = item.second;
-        pack_selected_value_for_par_info(comm, parInfo.get_proc_rank_of_neighbor(), bulkData, graph.get_entity(edge.elem1), sel);
+        pack_selected_value_for_par_info(comm, parInfo.get_proc_rank_of_neighbor(), bulkData, graph.get_entity(edge.elem1()), sel);
     }
 }
 
@@ -162,10 +162,10 @@ void update_selected_values(ElemElemGraph& graph,
     for(stk::mesh::impl::ParallelGraphInfo::value_type& edgeAndParInfo : parallel_info)
     {
         const stk::mesh::GraphEdge &graphEdge = edgeAndParInfo.first;
-        if(remoteSelectedValue.is_id_selected(-graphEdge.elem2))
-            selInfo[graphEdge.elem2] = true;
+        if(remoteSelectedValue.is_id_selected(-graphEdge.elem2()))
+            selInfo[graphEdge.elem2()] = true;
         else
-            selInfo[graphEdge.elem2] = false;
+            selInfo[graphEdge.elem2()] = false;
     }
 }
 

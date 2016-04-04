@@ -134,7 +134,7 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVec
         stk::mesh::impl::LocalId localElemId = graph.get_local_element_id(elementAndSide.element);
         for(const stk::mesh::GraphEdge& edge : graph.get_edges_for_element(localElemId))
         {
-            if(edge.side1 == elementAndSide.side && edge.elem2 < 0)
+            if(edge.side1() == elementAndSide.side && edge.elem2() < 0)
             {
                 const stk::mesh::impl::ParallelInfo &pInfo = graph.get_parallel_info_for_graph_edge(edge);
                 const stk::mesh::Entity* nodes = bulkData.begin_nodes(sidesThatNeedFixing[i]);
@@ -153,8 +153,8 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVec
 
                 sideSharingDataThisProc.push_back(localTemp);
 
-                stk::mesh::EntityId localId = -edge.elem2;
-                idAndSides.push_back({localId, edge.side2});
+                stk::mesh::EntityId localId = -edge.elem2();
+                idAndSides.push_back({localId, edge.side2()});
             }
         }
     }

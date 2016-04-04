@@ -814,7 +814,7 @@ void test_parallel_graph_info(const stk::mesh::Graph& graph, const ParallelInfoF
         for(size_t j=0;j<numConnected;++j)
         {
             const stk::mesh::GraphEdge& graphEdge = graph.get_edge_for_element(i, j);
-            if(graphEdge.elem2==-1*other_element && static_cast<LocalId>(i) == this_element)
+            if(graphEdge.elem2()==-1*other_element && static_cast<LocalId>(i) == this_element)
             {
                 const stk::mesh::impl::ParallelInfo& parallelInfo= parallel_graph.get_parallel_info_for_graph_edge(graphEdge);
                 did_find = true;
@@ -947,16 +947,16 @@ TEST(ElementGraph, create_element_graph_serial)
             {
                 ASSERT_EQ(1u, numConnected);
                 const stk::mesh::GraphEdge & graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 0);
-                EXPECT_EQ(1, graphEdge.elem2);
-                EXPECT_EQ(right_side_id, graphEdge.side1);
+                EXPECT_EQ(1, graphEdge.elem2());
+                EXPECT_EQ(right_side_id, graphEdge.side1());
             }
             else if (i == elemElemGraph.get_graph().get_num_elements_in_graph() - 1)
             {
                 LocalId second_to_last_element_index = elemElemGraph.get_graph().get_num_elements_in_graph() - 2;
                 ASSERT_EQ(1u, numConnected);
                 const stk::mesh::GraphEdge & graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 0);
-                EXPECT_EQ(second_to_last_element_index, graphEdge.elem2);
-                EXPECT_EQ(left_side_id, graphEdge.side1);
+                EXPECT_EQ(second_to_last_element_index, graphEdge.elem2());
+                EXPECT_EQ(left_side_id, graphEdge.side1());
             }
             else
             {
@@ -965,10 +965,10 @@ TEST(ElementGraph, create_element_graph_serial)
                 LocalId element_to_the_right = i+1;
                 const stk::mesh::GraphEdge & graphEdge0 = elemElemGraph.get_graph().get_edge_for_element(i, 0);
                 const stk::mesh::GraphEdge & graphEdge1 = elemElemGraph.get_graph().get_edge_for_element(i, 1);
-                EXPECT_EQ(element_to_the_left, graphEdge0.elem2);
-                EXPECT_EQ(element_to_the_right, graphEdge1.elem2);
-                EXPECT_EQ(left_side_id, graphEdge0.side1);
-                EXPECT_EQ(right_side_id, graphEdge1.side1);
+                EXPECT_EQ(element_to_the_left, graphEdge0.elem2());
+                EXPECT_EQ(element_to_the_right, graphEdge1.elem2());
+                EXPECT_EQ(left_side_id, graphEdge0.side1());
+                EXPECT_EQ(right_side_id, graphEdge1.side1());
             }
         }
 
@@ -1051,8 +1051,8 @@ TEST(ElementGraph, create_element_graph_parallel)
                 // Element on parallel boundary
                 ASSERT_EQ(2u, numConnectedElements);
                 const stk::mesh::GraphEdge & graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 1);
-                ASSERT_GE(-1, graphEdge.elem2);
-                ASSERT_EQ(side_id, graphEdge.side1);
+                ASSERT_GE(-1, graphEdge.elem2());
+                ASSERT_EQ(side_id, graphEdge.side1());
             }
             else
             {

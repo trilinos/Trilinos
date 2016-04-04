@@ -194,7 +194,8 @@ protected:
 
     stk::topology get_topology_of_remote_element(const GraphEdge &graphEdge);
 
-    void add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges, std::vector<stk::mesh::GraphEdge> &coincidentGraphEdges) const;
+    void add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges,
+                                        std::vector<stk::mesh::GraphEdge> &coincidentGraphEdges) const;
 
     impl::SerialElementDataVector get_only_valid_element_connections(stk::mesh::Entity element, unsigned side_index, const stk::mesh::EntityVector& side_nodes) const;
 

@@ -18,7 +18,6 @@ public:
     stk::mesh::impl::ParallelGraphInfo& get_parallel_info() { return m_parallelInfoForGraphEdges.get_parallel_graph_info(); }
 };
 
-
 class ParallelGraphUpdate : public stk::unit_test_util::MeshFixture
 {
 public:
@@ -85,7 +84,7 @@ public:
     {
         for(const auto& item : parallel_info)
         {
-            stk::mesh::impl::LocalId elemOnOtherProc = item.first.elem2;
+            stk::mesh::impl::LocalId elemOnOtherProc = item.first.elem2();
             EXPECT_FALSE(remoteAirSelector[elemOnOtherProc]);
             EXPECT_FALSE(remoteSkinSelector[elemOnOtherProc]);
         }
@@ -105,7 +104,7 @@ public:
     {
         for(const auto& item : parallel_info)
         {
-            stk::mesh::impl::LocalId elemOnOtherProc = item.first.elem2;
+            stk::mesh::impl::LocalId elemOnOtherProc = item.first.elem2();
             if(elemOnOtherProc %2 == 0)
             {
                 EXPECT_TRUE(remoteAirSelector[elemOnOtherProc]) << " for element " << -elemOnOtherProc;
@@ -125,6 +124,7 @@ public:
         {
             const stk::mesh::impl::LocalId elemOnOtherProc = item.first;
             const stk::mesh::impl::PartOrdinals &partOrdinals = item.second;
+
             if(elemOnOtherProc%2 == 0)
             {
                 EXPECT_TRUE(std::binary_search(partOrdinals.begin(), partOrdinals.end(), airPart->mesh_meta_data_ordinal()));

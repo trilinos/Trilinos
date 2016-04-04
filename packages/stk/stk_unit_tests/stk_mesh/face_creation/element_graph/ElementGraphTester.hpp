@@ -56,9 +56,9 @@ public:
     {
         for(size_t i=0; i<m_graph.get_num_edges_for_element(elemId); i++)
         {
-            if(get_entity_id(m_graph.get_edge_for_element(elemId, i).elem2) == elem2Id)
+            if(get_entity_id(m_graph.get_edge_for_element(elemId, i).elem2()) == elem2Id)
             {
-                return m_graph.get_edge_for_element(elemId, i).side1;
+                return m_graph.get_edge_for_element(elemId, i).side1();
             }
         }
         return -1;

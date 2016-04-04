@@ -454,7 +454,7 @@ void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
     for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
     {
         const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
-        int sideId = graphEdge.side1;
+        int sideId = graphEdge.side1();
         elemSides[sideId] = sideId;
     }
 

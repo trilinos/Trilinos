@@ -95,10 +95,10 @@ typedef std::map<stk::mesh::impl::ElementSidePair, std::vector<stk::mesh::GraphE
 
 void pack_graph_edge_and_chosen_side_id_to_proc(stk::CommSparse& commSparse, int otherProc, const stk::mesh::GraphEdge& graphEdge, stk::mesh::EntityId chosenSideId)
 {
-    commSparse.send_buffer(otherProc).pack<stk::mesh::EntityId>(graphEdge.elem1);
-    commSparse.send_buffer(otherProc).pack<int>(graphEdge.side1);
-    commSparse.send_buffer(otherProc).pack<stk::mesh::EntityId>(graphEdge.elem2);
-    commSparse.send_buffer(otherProc).pack<int>(graphEdge.side2);
+    commSparse.send_buffer(otherProc).pack<stk::mesh::EntityId>(graphEdge.elem1());
+    commSparse.send_buffer(otherProc).pack<int>(graphEdge.side1());
+    commSparse.send_buffer(otherProc).pack<stk::mesh::EntityId>(graphEdge.elem2());
+    commSparse.send_buffer(otherProc).pack<int>(graphEdge.side2());
     commSparse.send_buffer(otherProc).pack<stk::mesh::EntityId>(chosenSideId);
 }
 
@@ -111,16 +111,20 @@ void unpack_local_elem_side(stk::CommSparse& commSparse,
 {
     stk::mesh::EntityId globalId;
     commSparse.recv_buffer(procId).unpack<stk::mesh::EntityId>(globalId);
-    recvGraphEdge.elem1 = idMapper.globalToLocal(globalId);
-    commSparse.recv_buffer(procId).unpack<int>(recvGraphEdge.side1);
+    impl::LocalId elem1 = idMapper.globalToLocal(globalId);
+    int side1 = 0;
+    commSparse.recv_buffer(procId).unpack<int>(side1);
+    recvGraphEdge.set_vertex1(elem1, side1);
 }
 
 void unpack_remote_elem_side(stk::CommSparse& commSparse, int procId, stk::mesh::GraphEdge& recvGraphEdge)
 {
     stk::mesh::EntityId globalId;
     commSparse.recv_buffer(procId).unpack<stk::mesh::EntityId>(globalId);
-    recvGraphEdge.elem2 = -globalId;
-    commSparse.recv_buffer(procId).unpack<int>(recvGraphEdge.side2);
+    impl::LocalId elem2 = -globalId;
+    int side2 = 0;
+    commSparse.recv_buffer(procId).unpack<int>(side2);
+    recvGraphEdge.set_vertex2(elem2, side2);
 }
 
 stk::mesh::GraphEdge unpack_graph_edge(stk::CommSparse& commSparse, int procId, const IdMapper& idMapper)
@@ -161,9 +165,9 @@ int get_elem2_proc_id(const stk::mesh::GraphEdge& graphEdge,
                       stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges)
 {
     int elem2Proc = -1;
-    if(!stk::mesh::impl::is_local_element(graphEdge.elem2))
+    if(!stk::mesh::impl::is_local_element(graphEdge.elem2()))
     {
-        stk::mesh::GraphEdge MCEtoElem2(MCEAndSide.first, MCEAndSide.second, graphEdge.elem2, graphEdge.side2);
+        stk::mesh::GraphEdge MCEtoElem2(MCEAndSide.first, MCEAndSide.second, graphEdge.elem2(), graphEdge.side2());
         stk::mesh::impl::ParallelInfo& MCEtoElem2ParInfo = parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(MCEtoElem2);
         elem2Proc = MCEtoElem2ParInfo.get_proc_rank_of_neighbor();
     }
@@ -181,18 +185,18 @@ void pack_changed_edges_and_chosen_side_ids(stk::CommSparse& commSparse,
         const std::vector<stk::mesh::GraphEdge>& edgesForThisSide = MCEsideAndEdges.second;
         for(const stk::mesh::GraphEdge& graphEdge : edgesForThisSide)
         {
-            if(!stk::mesh::impl::is_local_element(graphEdge.elem1))
+            if(!stk::mesh::impl::is_local_element(graphEdge.elem1()))
             {
-                stk::mesh::GraphEdge MCEtoElem1(MCEAndSide.first, MCEAndSide.second, graphEdge.elem1, graphEdge.side1);
+                stk::mesh::GraphEdge MCEtoElem1(MCEAndSide.first, MCEAndSide.second, graphEdge.elem1(), graphEdge.side1());
                 stk::mesh::impl::ParallelInfo& MCEtoElem1ParInfo = parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(MCEtoElem1);
                 int elem1Proc = MCEtoElem1ParInfo.get_proc_rank_of_neighbor();
                 int elem2Proc = get_elem2_proc_id(graphEdge, MCEAndSide, parallelInfoForGraphEdges);
                 if(elem1Proc != elem2Proc)
                 {
-                    stk::mesh::GraphEdge edgeOnOtherProc(idMapper.localToGlobal(graphEdge.elem1),
-                                                         graphEdge.side1,
-                                                         idMapper.localToGlobal(graphEdge.elem2),
-                                                         graphEdge.side2);
+                    stk::mesh::GraphEdge edgeOnOtherProc(idMapper.localToGlobal(graphEdge.elem1()),
+                                                         graphEdge.side1(),
+                                                         idMapper.localToGlobal(graphEdge.elem2()),
+                                                         graphEdge.side2());
                     pack_graph_edge_and_chosen_side_id_to_proc(commSparse, elem1Proc, edgeOnOtherProc, MCEtoElem1ParInfo.m_chosen_side_id);
                 }
             }
@@ -250,7 +254,7 @@ void update_chosen_side_id_for_coincident_graph_edges(const GraphEdgeToParInfoMa
 void fill_par_infos_for_edges(const std::vector<stk::mesh::GraphEdge>& edges, stk::mesh::ParallelInfoForGraphEdges& parallelInfoForGraphEdges, GraphEdgeToParInfoMap &coincidentParInfos)
 {
     for(const stk::mesh::GraphEdge& edge : edges)
-        if(stk::mesh::impl::is_local_element(edge.elem1) && !stk::mesh::impl::is_local_element(edge.elem2))
+        if(stk::mesh::impl::is_local_element(edge.elem1()) && !stk::mesh::impl::is_local_element(edge.elem2()))
             add_graph_edge_and_par_info(edge, parallelInfoForGraphEdges, coincidentParInfos);
 }
 
@@ -260,7 +264,7 @@ std::vector<stk::mesh::GraphEdge> getMCEtoANCEedges(const stk::mesh::Graph& grap
 {
     std::vector<stk::mesh::GraphEdge> MCEtoANCEedges;
     for(const stk::mesh::GraphEdge& MCEtoANCEedge : graph.get_edges_for_element(MCE))
-        if(MCEtoANCEedge.side1 == sideIndex)
+        if(MCEtoANCEedge.side1() == sideIndex)
             MCEtoANCEedges.push_back(MCEtoANCEedge);
     return MCEtoANCEedges;
 }
@@ -269,7 +273,7 @@ std::vector<stk::mesh::GraphEdge> getMCEtoSCEedges(const std::vector<stk::mesh::
 {
     std::vector<stk::mesh::GraphEdge> MCEtoSCEedges;
     for(const stk::mesh::GraphEdge& MCEtoSCEedge : allMCEtoSCEedges)
-        if(MCEtoSCEedge.side1 == sideIndex)
+        if(MCEtoSCEedge.side1() == sideIndex)
             MCEtoSCEedges.push_back(MCEtoSCEedge);
     return MCEtoSCEedges;
 }
@@ -283,21 +287,21 @@ std::vector<stk::mesh::GraphEdge> getANCEtoSCEedges(const std::vector<stk::mesh:
     std::vector<stk::mesh::GraphEdge> ANCEtoSCEedges;
     for(const stk::mesh::GraphEdge& MCEtoANCE : MCEtoANCEedges)
         for(const stk::mesh::GraphEdge& MCEtoSCE : MCEtoSCEedges)
-            ANCEtoSCEedges.push_back(stk::mesh::GraphEdge(MCEtoANCE.elem2, MCEtoANCE.side2, MCEtoSCE.elem2, MCEtoSCE.side2));
+            ANCEtoSCEedges.push_back(stk::mesh::GraphEdge(MCEtoANCE.elem2(), MCEtoANCE.side2(), MCEtoSCE.elem2(), MCEtoSCE.side2()));
     return ANCEtoSCEedges;
 }
 
 void appendTransposeEdges(const std::vector<stk::mesh::GraphEdge>& graphEdges, std::vector<stk::mesh::GraphEdge> &collectedEdges)
 {
     for(const stk::mesh::GraphEdge& graphEdge : graphEdges)
-        collectedEdges.push_back(stk::mesh::GraphEdge(graphEdge.elem2, graphEdge.side2, graphEdge.elem1, graphEdge.side1));
+        collectedEdges.push_back(stk::mesh::GraphEdge(graphEdge.elem2(), graphEdge.side2(), graphEdge.elem1(), graphEdge.side1()));
 }
 
 int get_num_sides_of_coincident_element(const std::vector<stk::mesh::GraphEdge>& allMCEtoSCEedges)
 {
     int maxSideId = -1;
     for(const stk::mesh::GraphEdge& MCEtoSCEedge : allMCEtoSCEedges)
-        maxSideId = std::max(maxSideId, MCEtoSCEedge.side1);
+        maxSideId = std::max(maxSideId, MCEtoSCEedge.side1());
     return maxSideId + 1;
 }
 
@@ -343,7 +347,7 @@ void match_chosen_ids_for_edges_this_proc(const stk::mesh::Graph& graph,
 bool is_master_coincident_element(const stk::mesh::impl::LocalId elemId, const std::vector<stk::mesh::GraphEdge>& coincidentEdgesForElem, const IdMapper &idMapper)
 {
     for(const stk::mesh::GraphEdge& graphEdge : coincidentEdgesForElem)
-        if(idMapper.localToGlobal(elemId) > idMapper.localToGlobal(graphEdge.elem2))
+        if(idMapper.localToGlobal(elemId) > idMapper.localToGlobal(graphEdge.elem2()))
             return false;
     return true;
 }
