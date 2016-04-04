@@ -532,6 +532,43 @@ namespace Tpetra {
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
+    /** \brief Constructor with user-defined arbitrary (possibly
+     *   noncontiguous) distribution.
+     *
+     * Call this constructor if you have an arbitrary list of global
+     * indices for each process in the given communicator.  Those
+     * indices need not be contiguous, and the sets of global indices
+     * on different processes may overlap.  This is the constructor to
+     * use to make a general overlapping distribution.
+     *
+     * \param numGlobalElements [in] If <tt>numGlobalElements ==
+     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
+     *   the number of global elements will be computed (via a global
+     *   communication) as the sum of the counts of local elements.
+     *   Otherwise, it must equal the sum of the local elements over
+     *   all processes.  Regardless, this must be the same on all
+     *   calling processes in the given communicator \c comm.  Map
+     *   does <i>not</i> promise to verify this.
+     *
+     * \param entryList [in] List of global indices owned by the
+     *   calling process.  (This likely differs on different
+     *   processes.)
+     *
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every process in the given
+     *   communicator \c comm.  Currently, Map requires that this
+     *   equal the global minimum index over all processes'
+     *   <tt>entryList</tt> inputs.
+     *
+     * \param comm [in] Communicator over which to distribute the
+     *   indices.  This constructor must be called as a collective
+     *   over this communicator.
+     */
+    Map (const global_size_t numGlobalElements,
+         const Kokkos::View<const GlobalOrdinal*, device_type>& entryList,
+         const GlobalOrdinal indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
     /** \brief Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
      *
      * Call this constructor if you have an arbitrary list of global
@@ -571,6 +608,7 @@ namespace Tpetra {
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
+
 
 
     /// \brief Default constructor (that does nothing).

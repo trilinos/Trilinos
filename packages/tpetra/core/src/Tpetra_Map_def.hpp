@@ -637,6 +637,294 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (const global_size_t numGlobalElements,
+       const Kokkos::View<const GlobalOrdinal*, device_type>& entryList,
+       const GlobalOrdinal indexBase,
+       const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
+    comm_ (comm),
+    node_ (defaultArgNode<Node> ()),
+    uniform_ (false),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
+  {
+    using Teuchos::arcp;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::broadcast;
+    using Teuchos::outArg;
+    using Teuchos::ptr;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::reduceAll;
+    using Teuchos::typeName;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef global_size_t GST;
+    typedef typename ArrayView<const GO>::size_type size_type;
+    const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
+
+    // The user has specified the distribution of indices over the
+    // processes, via entryList.  The distribution is not necessarily
+    // contiguous or equally shared over the processes.
+
+    // The length of entryList on this node is the number of local
+    // indices (on this process), even though entryList contains
+    // global indices.  We assume that the number of local indices can
+    // be stored in a size_t; numLocalElements_ is a size_t, so this
+    // variable and that should have the same type.
+    const size_t numLocalElements = static_cast<size_t> (entryList.size ());
+
+#ifdef HAVE_TPETRA_DEBUG
+    // Keep this for later debug checks.
+    GST debugGlobalSum = 0; // Will be global sum of numLocalElements
+    reduceAll<int, GST> (*comm, REDUCE_SUM,
+                         static_cast<GST> (numLocalElements),
+                         outArg (debugGlobalSum));
+    // In debug mode only, check whether numGlobalElements and
+    // indexBase are the same over all processes in the communicator.
+    {
+      GST proc0NumGlobalElements = numGlobalElements;
+      broadcast<int, GST> (*comm_, 0, outArg (proc0NumGlobalElements));
+      GST minNumGlobalElements = numGlobalElements;
+      GST maxNumGlobalElements = numGlobalElements;
+      reduceAll<int, GST> (*comm, REDUCE_MIN, numGlobalElements,
+                           outArg (minNumGlobalElements));
+      reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements,
+                           outArg (maxNumGlobalElements));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (minNumGlobalElements != maxNumGlobalElements ||
+         numGlobalElements != minNumGlobalElements,
+         std::invalid_argument,
+         "Tpetra::Map constructor: All processes must provide the same number "
+         "of global elements.  This is true even if that argument is Teuchos::"
+         "OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
+         "compute the global number of elements.  Process 0 set numGlobalElements"
+         " = " << proc0NumGlobalElements << ".  The calling process "
+         << comm->getRank () << " set numGlobalElements = " << numGlobalElements
+         << ".  The min and max values over all processes are "
+         << minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
+
+      GO proc0IndexBase = indexBase;
+      broadcast<int, GO> (*comm_, 0, outArg (proc0IndexBase));
+      GO minIndexBase = indexBase;
+      GO maxIndexBase = indexBase;
+      reduceAll<int, GO> (*comm, REDUCE_MIN, indexBase, outArg (minIndexBase));
+      reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        minIndexBase != maxIndexBase || indexBase != minIndexBase,
+        std::invalid_argument,
+        "Tpetra::Map constructor: "
+        "All processes must provide the same indexBase argument.  "
+        "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
+        "process " << comm->getRank () << " set indexBase = " << indexBase
+        << ".  The min and max values over all processes are "
+        << minIndexBase << " resp. " << maxIndexBase << ".");
+
+      // Make sure that the sum of numLocalElements over all processes
+      // equals numGlobalElements.
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numGlobalElements != GSTI && debugGlobalSum != numGlobalElements,
+         std::invalid_argument,
+         "Tpetra::Map constructor: The sum of entryList.size() over all "
+         "processes = " << debugGlobalSum << " != numGlobalElements = "
+         << numGlobalElements << ".  If you would like this constructor to "
+         "compute numGlobalElements for you, you may set numGlobalElements = "
+         "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.");
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+    // FIXME (mfh 20 Feb 2013) The global reduction is redundant,
+    // since the directory Map will have to do the same thing.  We
+    // should actually do the scan and broadcast for the directory Map
+    // here, and give the computed offsets to the directory Map's
+    // constructor.
+    if (numGlobalElements != GSTI) {
+      numGlobalElements_ = numGlobalElements; // Use the user's value.
+    } else { // The user wants us to compute the sum.
+      reduceAll<int, GST> (*comm, REDUCE_SUM,
+                           static_cast<GST> (numLocalElements),
+                           outArg (numGlobalElements_));
+    }
+
+    // mfh 20 Feb 2013: We've never quite done the right thing for
+    // duplicate GIDs here.  Duplicate GIDs have always been counted
+    // distinctly in numLocalElements_, and thus should get a
+    // different LID.  However, we've always used std::map or a hash
+    // table for the GID -> LID lookup table, so distinct GIDs always
+    // map to the same LID.  Furthermore, the order of the input GID
+    // list matters, so it's not desirable to sort for determining
+    // uniqueness.
+    //
+    // I've chosen for now to write this code as if the input GID list
+    // contains no duplicates.  If this is not desired, we could use
+    // the lookup table itself to determine uniqueness: If we haven't
+    // seen the GID before, it gets a new LID and it's added to the
+    // LID -> GID and GID -> LID tables.  If we have seen the GID
+    // before, it doesn't get added to either table.  I would
+    // implement this, but it would cost more to do the double lookups
+    // in the table (one to check, and one to insert).
+
+    numLocalElements_ = numLocalElements;
+    indexBase_ = indexBase;
+
+    minMyGID_ = indexBase_;
+    maxMyGID_ = indexBase_;
+
+    // NOTE (mfh 27 May 2015): While finding the initial contiguous
+    // GID range requires looking at all the GIDs in the range,
+    // dismissing an interval of GIDs only requires looking at the
+    // first and last GIDs.  Thus, we could do binary search backwards
+    // from the end in order to catch the common case of a contiguous
+    // interval followed by noncontiguous entries.  On the other hand,
+    // we could just expose this case explicitly as yet another Map
+    // constructor, and avoid the trouble of detecting it.
+    if (numLocalElements_ > 0) {
+      // Find contiguous GID range, with the restriction that the
+      // beginning of the range starts with the first entry.  While
+      // doing so, fill in the LID -> GID table.
+      Kokkos::View<GO*, Kokkos::LayoutLeft,
+                   device_type> lgMap ("lgMap", numLocalElements_);
+      auto lgMap_host = Kokkos::create_mirror_view (lgMap);
+
+      // Creating the mirror view is trivial, and the deep_copy is a
+      // no-op, if entryList is on host already.
+      auto entryList_host = Kokkos::create_mirror_view (entryList);
+      Kokkos::deep_copy (entryList_host, entryList);
+
+      firstContiguousGID_ = entryList_host[0];
+      lastContiguousGID_ = firstContiguousGID_+1;
+
+      // FIXME (mfh 23 Sep 2015) We need to copy the input GIDs
+      // anyway, so we have to look at them all.  The logical way to
+      // find the first noncontiguous entry would thus be to "reduce,"
+      // where the local reduction result is whether entryList[i] + 1
+      // == entryList[i+1].
+
+      lgMap_host[0] = firstContiguousGID_;
+      size_t i = 1;
+      for ( ; i < numLocalElements_; ++i) {
+        const GO curGid = entryList_host[i];
+        const LO curLid = static_cast<LO> (i);
+
+        if (lastContiguousGID_ != curGid) break;
+
+        // Add the entry to the LID->GID table only after we know that
+        // the current GID is in the initial contiguous sequence, so
+        // that we don't repeat adding it in the first iteration of
+        // the loop below over the remaining noncontiguous GIDs.
+        lgMap_host[curLid] = curGid;
+        ++lastContiguousGID_;
+      }
+      --lastContiguousGID_;
+
+      // [firstContiguousGID_, lastContigousGID_] is the initial
+      // sequence of contiguous GIDs.  We can start the min and max
+      // GID using this range.
+      minMyGID_ = firstContiguousGID_;
+      maxMyGID_ = lastContiguousGID_;
+
+      // Compute the GID -> LID lookup table, _not_ including the
+      // initial sequence of contiguous GIDs.
+      auto nonContigEntries =
+        Kokkos::subview (entryList,
+                         std::make_pair (i, entryList.dimension_0 () - i));
+      glMap_ = global_to_local_table_type (nonContigEntries, firstContiguousGID_,
+                                           lastContiguousGID_, static_cast<LO> (i));
+
+      for ( ; i < numLocalElements_; ++i) {
+        const GO curGid = entryList_host[i];
+        const LO curLid = static_cast<LO> (i);
+        lgMap_host[curLid] = curGid; // LID -> GID table
+
+        // While iterating through entryList, we compute its
+        // (process-local) min and max elements.
+        if (curGid < minMyGID_) {
+          minMyGID_ = curGid;
+        }
+        if (curGid > maxMyGID_) {
+          maxMyGID_ = curGid;
+        }
+      }
+
+      // We filled lgMap on host above; now sync back to device.
+      Kokkos::deep_copy (lgMap, lgMap_host);
+
+      // "Commit" the local-to-global lookup table we filled in above.
+      lgMap_ = lgMap;
+    }
+    else {
+      // This insures tests for GIDs in the range
+      // [firstContiguousGID_, lastContiguousGID_] fail for processes
+      // with no local elements.
+      firstContiguousGID_ = indexBase_+1;
+      lastContiguousGID_ = indexBase_;
+      // glMap_ was default constructed, so it's already empty.
+    }
+
+    // Compute the min and max of all processes' GIDs.  If
+    // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
+    // are both indexBase_.  This is wrong, but fixing it would
+    // require either a fancy sparse all-reduce, or a custom reduction
+    // operator that ignores invalid values ("invalid" means
+    // Tpetra::Details::OrdinalTraits<GO>::invalid()).
+    //
+    // Also, while we're at it, use the same all-reduce to figure out
+    // if the Map is distributed.  "Distributed" means that there is
+    // at least one process with a number of local elements less than
+    // the number of global elements.
+    //
+    // We're computing the min and max of all processes' GIDs using a
+    // single MAX all-reduce, because min(x,y) = -max(-x,-y) (when x
+    // and y are signed).  (This lets us combine the min and max into
+    // a single all-reduce.)  If each process sets localDist=1 if its
+    // number of local elements is strictly less than the number of
+    // global elements, and localDist=0 otherwise, then a MAX
+    // all-reduce on localDist tells us if the Map is distributed (1
+    // if yes, 0 if no).  Thus, we can append localDist onto the end
+    // of the data and get the global result from the all-reduce.
+    if (std::numeric_limits<GO>::is_signed) {
+      // Does my process NOT own all the elements?
+      const GO localDist =
+        (as<GST> (numLocalElements_) < numGlobalElements_) ? 1 : 0;
+
+      GO minMaxInput[3];
+      minMaxInput[0] = -minMyGID_;
+      minMaxInput[1] = maxMyGID_;
+      minMaxInput[2] = localDist;
+
+      GO minMaxOutput[3];
+      minMaxOutput[0] = 0;
+      minMaxOutput[1] = 0;
+      minMaxOutput[2] = 0;
+      reduceAll<int, GO> (*comm, REDUCE_MAX, 3, minMaxInput, minMaxOutput);
+      minAllGID_ = -minMaxOutput[0];
+      maxAllGID_ = minMaxOutput[1];
+      const GO globalDist = minMaxOutput[2];
+      distributed_ = (comm_->getSize () > 1 && globalDist == 1);
+    }
+    else { // unsigned; use two reductions
+      // This is always correct, no matter the signedness of GO.
+      reduceAll<int, GO> (*comm_, REDUCE_MIN, minMyGID_, outArg (minAllGID_));
+      reduceAll<int, GO> (*comm_, REDUCE_MAX, maxMyGID_, outArg (maxAllGID_));
+      distributed_ = checkIsDist ();
+    }
+
+    contiguous_  = false; // "Contiguous" is conservative.
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      minAllGID_ < indexBase_,
+      std::invalid_argument,
+      "Tpetra::Map constructor (noncontiguous): "
+      "Minimum global ID = " << minAllGID_ << " over all process(es) is "
+      "less than the given indexBase = " << indexBase_ << ".");
+
+    // Create the Directory on demand in getRemoteIndexList().
+    //setupDirectory ();
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map ()
   {}
 
