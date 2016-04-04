@@ -1102,13 +1102,18 @@ namespace Tpetra {
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    //! The Kokkos Node instance (for shared-memory parallelism).
+    /// \brief LEGACY Node instance.
+    ///
+    /// This object only exists for backwards compatibility.  Please
+    /// do not rely upon it.  In particular, do not assume that this
+    /// pointer is non-null.
     Teuchos::RCP<Node> node_;
 
     //! The index base for global indices in this Map.
     GlobalOrdinal indexBase_;
 
-    //! The total number of global indices in this Map over all processes in its communicator.
+    /// \brief The total number of global indices in this Map over all
+    ///   processes in its communicator \c comm (see above).
     global_size_t numGlobalElements_;
 
     //! The number of global indices owned by this process.
@@ -1120,10 +1125,12 @@ namespace Tpetra {
     //! The max global index owned by this process.
     GlobalOrdinal maxMyGID_;
 
-    //! The min global index in this Map over all processes in its communicator.
+    /// \brief The min global index in this Map over all processes in
+    ///   its communicator \c comm (see above).
     GlobalOrdinal minAllGID_;
 
-    //! The max global index in this Map over all processes in its communicator.
+    /// \brief The max global index in this Map over all processes in
+    ///   its communicator \c comm (see above).
     GlobalOrdinal maxAllGID_;
 
     /// \brief First contiguous GID.
@@ -1159,7 +1166,9 @@ namespace Tpetra {
     //! Whether the range of global indices are contiguous and ordered.
     bool contiguous_;
 
-    /// \brief Whether this map's global indices are distributed.
+    /// \brief Whether this map's global indices are distributed
+    ///   (true), or locally replicated (false), over its communicator
+    ///   \c comm (see above).
     ///
     /// This is true if the Map is globally distributed, and false
     /// otherwise (if the Map is locally replicated).  See the
