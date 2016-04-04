@@ -176,5 +176,5 @@ __version__ = Isorropia_Version().split()[3]
 %{
 # Epetra namespace
 __all__ = ['Epetra']
-from . import IsorropiaEpetra as Epetra
+import IsorropiaEpetra as Epetra
 %}
