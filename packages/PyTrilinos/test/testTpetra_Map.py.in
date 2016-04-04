@@ -89,23 +89,15 @@ class TpetraMapTestCase(unittest.TestCase):
         self.start            = 4*self.myPID + self.myPID*(self.myPID-1) // 2
         self.myGlobalEls      = globalEls[self.start:self.start+self.numMyEl]
 
-        print("\nConstructing self.map1")
         self.map1             = Tpetra.Map(self.numGlobalElConst,
                                            self.indexBase,
                                            self.comm)
 
-        print("Constructing self.map2")
-        print("args = (%d, %d, %d, %s)" % (self.numGlobalEl,
-                                           self.numMyEl,
-                                           self.indexBase,
-                                           str(self.comm)))
-        print("type(self.numGlobalEl) =", type(self.numGlobalEl))
         self.map2             = Tpetra.Map(self.numGlobalEl,
                                            self.numMyEl,
                                            self.indexBase,
                                            self.comm)
 
-        print("Constructing self.map3")
         self.map3             = Tpetra.Map(self.numGlobalEl,
                                            self.myGlobalEls,
                                            self.indexBase,
