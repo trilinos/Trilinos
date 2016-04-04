@@ -95,7 +95,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     TRIBITS_ADD_TEST(
       TogglePFactory_driver
       NAME "Driver_TogglePFactory_semi_sa_line_easy_Tpetra"
-      ARGS "--matrixType=Laplace3D --nx=40 --ny=40 --nz=60 --mz=1 --xmlFile=parameters_semi_sa_easy.xml --linAlgebra=Epetra"
+      ARGS "--matrixType=Laplace3D --nx=40 --ny=40 --nz=60 --mz=1 --xmlFile=parameters_semi_sa_easy.xml --linAlgebra=Tpetra"
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
