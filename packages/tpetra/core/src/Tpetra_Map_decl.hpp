@@ -823,6 +823,16 @@ namespace Tpetra {
     /// and cache the list of global indices for later use.  Beware of
     /// calling this if the calling process owns a very large number
     /// of global indices.
+    Kokkos::View<const GlobalOrdinal*,
+                 Kokkos::LayoutLeft,
+                 device_type> getMyGlobalIndices () const;
+
+    /// \brief Return a view of the global indices owned by this process.
+    ///
+    /// If you call this method on a contiguous Map, it will create
+    /// and cache the list of global indices for later use.  Beware of
+    /// calling this if the calling process owns a very large number
+    /// of global indices.
     Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const;
 
     //@}

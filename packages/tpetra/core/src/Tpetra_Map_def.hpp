@@ -1247,6 +1247,72 @@ namespace Tpetra {
     return isSame_gbl == 1;
   }
 
+  namespace { // (anonymous)
+    template <class LO, class GO, class DT>
+    class FillLgMap {
+    public:
+      FillLgMap (const Kokkos::View<GO*, DT>& lgMap,
+                 const GO startGid) :
+        lgMap_ (lgMap), startGid_ (startGid)
+      {
+        Kokkos::RangePolicy<LO, typename DT::execution_space>
+          range (static_cast<LO> (0), static_cast<LO> (lgMap.size ()));
+        Kokkos::parallel_for (range, *this);
+      }
+
+      KOKKOS_INLINE_FUNCTION void operator () (const LO& lid) const {
+        lgMap_(lid) = startGid_ + static_cast<GO> (lid);
+      }
+
+    private:
+      const Kokkos::View<GO*, DT> lgMap_;
+      const GO startGid_;
+    };
+
+  } // namespace (anonymous)
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Kokkos::View<const GlobalOrdinal*,
+               Kokkos::LayoutLeft,
+               typename Map<LocalOrdinal, GlobalOrdinal, Node>::device_type>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getMyGlobalIndices () const
+  {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef device_type DT;
+
+    typedef decltype (lgMap_) const_lg_view_type;
+    typedef typename const_lg_view_type::non_const_type lg_view_type;
+
+    // If the local-to-global mapping doesn't exist yet, and if we
+    // have local entries, then create and fill the local-to-global
+    // mapping.
+    const bool needToCreateLocalToGlobalMapping =
+      lgMap_.dimension_0 () == 0 && numLocalElements_ > 0;
+
+    if (needToCreateLocalToGlobalMapping) {
+#ifdef HAVE_TEUCHOS_DEBUG
+      // The local-to-global mapping should have been set up already
+      // for a noncontiguous map.
+      TEUCHOS_TEST_FOR_EXCEPTION( ! isContiguous(), std::logic_error,
+        "Tpetra::Map::getNodeElementList: The local-to-global mapping (lgMap_) "
+        "should have been set up already for a noncontiguous Map.  Please report"
+        " this bug to the Tpetra team.");
+#endif // HAVE_TEUCHOS_DEBUG
+
+      const LO numElts = static_cast<LO> (getNodeNumElements ());
+
+      lg_view_type lgMap ("lgMap", numElts);
+      FillLgMap<LO, GO, DT> fillIt (lgMap, minMyGID_);
+
+      // "Commit" the local-to-global lookup table we filled in above.
+      lgMap_ = lgMap;
+    }
+
+    return lgMap_;
+  }
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
