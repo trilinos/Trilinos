@@ -123,7 +123,6 @@ exe stk_mesh_utest
            $(stk_mesh-root)/unit_tests/face_creation/mesh_diagnostics/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/integration/*.cpp 
            $(stk_mesh-root)/unit_tests/face_creation/element_graph/*.cpp 
-           $(stk_mesh-root)/unit_tests/face_creation/element_graph/*.C 
            $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp 
            $(stk_mesh-root)/unit_tests/entity_sorting/*.cpp 
     ]
