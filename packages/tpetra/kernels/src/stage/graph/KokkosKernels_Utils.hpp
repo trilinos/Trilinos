@@ -736,7 +736,8 @@ void create_reverse_map(
   if (num_reverse_elements < MINIMUM_TO_ATOMIC){
     const lno_t  scale_size = 1024;
     const lno_t  multiply_shift_for_scale = 10;
-    const lno_t division_shift_for_bucket = lno_t (ceil(log(num_forward_elements / scale_size)/log(2)));
+    const lno_t division_shift_for_bucket =
+          lno_t (ceil(log(double (num_forward_elements) / scale_size)/log(2)));
     const lno_t bucket_range_size = pow(2, division_shift_for_bucket);
 
     //coloring indices are base-1. we end up using not using element 1.
