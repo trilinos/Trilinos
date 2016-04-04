@@ -1,43 +1,31 @@
-#ifndef __TACHO_GEMM_CONJTRANS_NOTRANS_DENSE_BY_BLOCKS_HPP__
-#define __TACHO_GEMM_CONJTRANS_NOTRANS_DENSE_BY_BLOCKS_HPP__
+#ifndef __HERK_UPPER_CONJTRANS_DENSE_BY_BLOCKS_HPP__
+#define __HERK_UPPER_CONJTRANS_DENSE_BY_BLOCKS_HPP__
 
-/// \file Tacho_Gemm_ConjTrans_NoTrans_DenseByBlocks.hpp
-/// \brief Dense Gemm By Blocks
+/// \file Tacho_Herk_Upper_ConjTrans_DenseByBlocks.hpp
+/// \brief Hermitian rank-k By Blocks
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace Tacho {
 
-  // Gemm-By-Blocks
+  // Herk-By-Blocks
   // ==============
   template<int ArgVariant, template<int,int> class ControlType>
-  class Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-             AlgoGemm::DenseByBlocks,ArgVariant,ControlType> {
+  class Herk<Uplo::Upper,Trans::ConjTranspose,
+             AlgoHerk::DenseByBlocks,ArgVariant,ControlType> {
   public:
     template<typename PolicyType,
              typename MemberType,
              typename ScalarType,
              typename DenseTaskViewTypeA,
-             typename DenseTaskViewTypeB,
              typename DenseTaskViewTypeC>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
                       const MemberType &member,
                       const ScalarType alpha,
                       DenseTaskViewTypeA &A,
-                      DenseTaskViewTypeB &B,
                       const ScalarType beta,
                       DenseTaskViewTypeC &C) {
-      // static_assert( Kokkos::Impl::is_same<
-      //                typename DenseMatrixTypeA::space_type,
-      //                typename DenseMatrixTypeB::space_type
-      //                >::value &&
-      //                Kokkos::Impl::is_same<
-      //                typename DenseMatrixTypeB::space_type,
-      //                typename DenseMatrixTypeC::space_type
-      //                >::value,
-      //                "Space type of input matrices does not match" );
       
-      // typedef ScalarType scalar_type;
       typedef typename DenseTaskViewTypeA::ordinal_type ordinal_type;
       typedef typename DenseTaskViewTypeA::value_type   value_type;
       typedef typename value_type::future_type          future_type;
@@ -48,29 +36,44 @@ namespace Tacho {
         for (ordinal_type p=0;p<A.NumRows();++p) {
           const ScalarType beta_select = (p > 0 ? ScalarType(1.0) : beta);
           for (ordinal_type k2=0;k2<C.NumCols();++k2) {
-            value_type &bb = B.Value(p, k2);
-            for (ordinal_type k1=0;k1<C.NumRows();++k1) {
+            for (ordinal_type k1=0;k1<(k2+1);++k1) {
               value_type &aa = A.Value(p,  k1);
               value_type &cc = C.Value(k1, k2);
+              if (k1 == k2) {
+                future_type f = factory.create<future_type>
+                  (policy,
+                   Herk<Uplo::Upper,Trans::ConjTranspose,
+                   CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Herk)>
+                   ::createTaskFunctor(policy, alpha, aa, beta_select, cc), 2);
+                
+                // dependence
+                factory.depend(policy, f, aa.Future());
+                factory.depend(policy, f, cc.Future());
 
-              future_type f = factory.create<future_type>
-                (policy,
-                 Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-                 CtrlDetail(ControlType,AlgoGemm::DenseByBlocks,ArgVariant,Gemm)>
-                 ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc), 3);
+                // place task signature on y
+                cc.setFuture(f);
 
-              // dependence
-              factory.depend(policy, f, aa.Future());
-              factory.depend(policy, f, bb.Future());
+                // spawn a task
+                factory.spawn(policy, f);
+              } else {
+                value_type &bb = A.Value(p, k2);
+                future_type f = factory.create<future_type>
+                  (policy,
+                   Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                   CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Gemm)>
+                   ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc), 3);
+                
+                // dependence
+                factory.depend(policy, f, aa.Future());
+                factory.depend(policy, f, bb.Future());
+                factory.depend(policy, f, cc.Future());
 
-              // self
-              factory.depend(policy, f, cc.Future());
-              
-              // place task signature on y
-              cc.setFuture(f);
-              
-              // spawn a task
-              factory.spawn(policy, f);
+                // place task signature on y
+                cc.setFuture(f);
+                
+                // spawn a task
+                factory.spawn(policy, f);
+              }
             }
           }
         }
@@ -84,7 +87,6 @@ namespace Tacho {
     template<typename PolicyType,
              typename ScalarType,
              typename ExecViewTypeA,
-             typename ExecViewTypeB,
              typename ExecViewTypeC>
     class TaskFunctor {
     public:
@@ -94,7 +96,6 @@ namespace Tacho {
     private:
       ScalarType _alpha, _beta;
       ExecViewTypeA _A;
-      ExecViewTypeB _B;
       ExecViewTypeC _C;
 
       PolicyType _policy;
@@ -104,36 +105,33 @@ namespace Tacho {
       TaskFunctor(const PolicyType &policy,
                   const ScalarType alpha,
                   const ExecViewTypeA &A,
-                  const ExecViewTypeB &B,
                   const ScalarType beta,
                   const ExecViewTypeC &C)
         : _alpha(alpha),
           _beta(beta),
           _A(A),
-          _B(B),
           _C(C),
           _policy(policy)
       { }
 
       KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return "Dense::GemmByBlocks"; }
+      const char* Label() const { return "Herk"; }
 
       KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke(_policy, _policy.member_single(),
-                             _alpha, _A, _B, _beta, _C);
+        r_val = Herk::invoke(_policy, _policy.member_single(),
+                             _alpha, _A, _beta, _C);
         _C.setFuture(typename ExecViewTypeC::future_type());
       }
-
       KOKKOS_INLINE_FUNCTION
       void apply(const member_type &member, value_type &r_val) {
-        const int ierr = Gemm::invoke(_policy, member,
-                                      _alpha, _A, _B, _beta, _C);
+        const int ierr = Herk::invoke(_policy, member,
+                                      _alpha, _A, _beta, _C);
 
         // return for only team leader
-        if (member.team_rank() == 0) { 
+        if (!member.team_rank()) {
           _C.setFuture(typename ExecViewTypeC::future_type());
-          r_val = ierr; 
+          r_val = ierr;
         }
       }
 
@@ -142,20 +140,19 @@ namespace Tacho {
     template<typename PolicyType,
              typename ScalarType,
              typename ExecViewTypeA,
-             typename ExecViewTypeB,
              typename ExecViewTypeC>
     KOKKOS_INLINE_FUNCTION
     static
-    TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB,ExecViewTypeC>
+    TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeC>
     createTaskFunctor(const PolicyType &policy,
                       const ScalarType alpha,
                       const ExecViewTypeA &A,
-                      const ExecViewTypeB &B,
                       const ScalarType beta,
                       const ExecViewTypeC &C) {
-      return TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB,ExecViewTypeC>
-        (policy, alpha, A, B, beta, C);
+      return TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeC>
+        (policy, alpha, A, beta, C);
     }
+
 
   };
 

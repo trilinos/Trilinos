@@ -14,8 +14,8 @@ namespace Tacho {
   template<int ArgUplo,
            int ArgAlgo, int ArgVariant,
            template<int,int> class ControlType = Control>
-  struct Chol {
-
+  class Chol {
+  public:
     // data-parallel interface with nested task generation
     // ===================================================
     template<typename PolicyType,

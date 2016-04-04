@@ -23,7 +23,7 @@ namespace Tacho {
       // typedef ScalarType scalar_type;
       typedef typename DenseTaskViewTypeA::ordinal_type ordinal_type;
       typedef typename DenseTaskViewTypeA::value_type   value_type;
-      typedef typename DenseTaskViewTypeA::future_type  future_type;
+      typedef typename value_type::future_type          future_type;
 
       TaskFactory factory;
 

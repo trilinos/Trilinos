@@ -11,7 +11,8 @@
 
 namespace Tacho {
   
-  struct ScaleCrsMatrix {
+  class ScaleCrsMatrix {
+  public:
 
     // data-parallel interface with nested task generation
     // ===================================================

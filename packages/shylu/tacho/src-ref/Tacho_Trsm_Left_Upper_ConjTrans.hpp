@@ -10,10 +10,13 @@
 
 // - Dense TRSM
 #include "Tacho_Trsm_Left_Upper_ConjTrans_ExternalBlas.hpp"
+#include "Tacho_Trsm_Left_Upper_ConjTrans_DenseByBlocks.hpp"
 
 // - Sparse TRSM
 #include "Tacho_Trsm_Left_Upper_ConjTrans_SparseSparseUnblocked.hpp"
 
+// - TRSM for supernodal algorithms
 #include "Tacho_Trsm_Left_Upper_ConjTrans_SparseSparseSuperNodes.hpp"
+#include "Tacho_Trsm_Left_Upper_ConjTrans_SparseSparseSuperNodesByBlocks.hpp"
 
 #endif

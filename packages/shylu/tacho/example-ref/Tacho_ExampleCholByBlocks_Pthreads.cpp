@@ -52,7 +52,7 @@ int main (int argc, char *argv[]) {
   int rows_per_team = 4096;
   clp.setOption("rows-per-team", &rows_per_team, "Workset size");
 
-  int max_concurrency = 4096;
+  int max_concurrency = 250000;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
   int max_task_dependence = 3;

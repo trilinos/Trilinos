@@ -46,6 +46,7 @@ namespace Tacho {
                                     const int max_task_dependence,
                                     const int team_size,
                                     const int nrhs,
+                                    const int mb,
                                     const int nb,
                                     const bool verbose) {
     typedef typename
@@ -78,11 +79,13 @@ namespace Tacho {
     typedef DenseMatrixView<DenseMatrixBaseHostType> DenseMatrixViewHostType;
 
     typedef TaskView<DenseMatrixViewHostType> DenseTaskViewHostType;
-    typedef DenseMatrixBase<DenseTaskViewHostType,ordinal_type,size_type,HostSpaceType> DenseHierBaseHostType;
-    typedef DenseMatrixView<DenseHierBaseHostType> DenseHierViewHostType;
-    typedef TaskView<DenseHierViewHostType> DenseTaskHierViewHostType;
+
+    //typedef DenseMatrixBase<DenseTaskViewHostType,ordinal_type,size_type,HostSpaceType> DenseHierBaseHostType;
+    //typedef DenseMatrixView<DenseHierBaseHostType> DenseHierViewHostType;
+    //typedef TaskView<DenseHierViewHostType> DenseTaskHierViewHostType;
 
     typedef Kokkos::pair<size_type,size_type> range_type;
+    typedef Kokkos::Experimental::Future<int,HostSpaceType> future_type;
 
     int r_val = 0;
     
@@ -251,6 +254,7 @@ namespace Tacho {
 
     Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType> rows;
     Kokkos::View<value_type*,HostSpaceType> mats;
+    Kokkos::View<DenseTaskViewHostType*,HostSpaceType> blks;
     {
       timer.reset();
       S.pruneTree(prunecut);
@@ -304,6 +308,31 @@ namespace Tacho {
                                block.copyToFlat();
                              } );
       }
+      {
+        const size_type nblocks = HA_factor_host.NumNonZeros();
+
+        // scan ap
+        Kokkos::View<size_type*,HostSpaceType> ap("ap", nblocks + 1);
+        ap(0) = 0;
+        for (size_type k=0;k<nblocks;++k) {
+          const auto &block = HA_factor_host.Value(k);
+          ordinal_type hm, hn;
+          DenseMatrixTools::getDimensionOfHierMatrix(hm, hn, block.Flat(), mb, mb);
+          ap(k+1) = ap(k) + hm*hn;
+        }
+
+        blks = Kokkos::View<DenseTaskViewHostType*,HostSpaceType>("DenseBlocksInCrsBlocks", ap(nblocks));
+
+        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
+                             [&](const ordinal_type k) {
+                               auto &block = HA_factor_host.Value(k);
+                               ordinal_type hm, hn;
+                               DenseMatrixTools::getDimensionOfHierMatrix(hm, hn, block.Flat(), mb, mb);
+                               block.Hier().setExternalMatrix(hm, hn,
+                                                              -1, -1,
+                                                              Kokkos::subview(blks, range_type(ap(k), ap(k+1))));
+                             } );
+      }
       t_blocks = timer.seconds();    
 
       {
@@ -316,7 +345,7 @@ namespace Tacho {
         }
         TACHO_TEST_FOR_ABORT( nnz_blocks != AA_factor_host.NumNonZeros(),
                               "nnz counted in blocks is different from nnz in the base matrix.");
-        std::cout << "CholSuperNodeByBlocks:: nnz in blocks = " << nnz_blocks 
+        std::cout << "CholSuperNodesByBlocks:: nnz in blocks = " << nnz_blocks 
                   << ", size of blocks = " << size_blocks 
                   << ", ratio = " << (double(nnz_blocks)/size_blocks) 
                   << std::endl;
@@ -325,13 +354,24 @@ namespace Tacho {
       CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
       timer.reset();
       {
-        auto future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>
-                                              ::createTaskFunctor(policy, 
-                                                                  TA_factor_host), 
-                                              0);
-        policy.spawn(future);
+        future_type future;
+        if (mb) {
+          // call nested block version
+          future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>
+                                           ::createTaskFunctor(policy, 
+                                                               TA_factor_host), 
+                                           0);
+          policy.spawn(future);
+        } else {
+          // call plain block version
+          future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>
+                                           ::createTaskFunctor(policy, 
+                                                               TA_factor_host), 
+                                           0);
+          policy.spawn(future);
+        }
         Kokkos::Experimental::wait(policy);
-        TACHO_TEST_FOR_ABORT(future.get(), "Fail to perform CholeskySuperNodeByBlocks");
+        TACHO_TEST_FOR_ABORT(future.get(), "Fail to perform CholeskySuperNodesByBlocks");
       }
       t_chol = timer.seconds();
 

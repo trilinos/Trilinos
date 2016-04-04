@@ -11,7 +11,8 @@ namespace Tacho {
   using namespace std;
 
   template<int ArgUplo, int ArgTrans, int ArgAlgo>
-  struct TriSolve {
+  class TriSolve {
+  public:
     static int blocksize;
 
     // data-parallel interface

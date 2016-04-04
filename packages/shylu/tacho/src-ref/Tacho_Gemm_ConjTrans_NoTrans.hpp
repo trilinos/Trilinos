@@ -12,9 +12,10 @@
 
 // Sparse Linear Algebra
 #include "Tacho_Gemm_ConjTrans_NoTrans_SparseSparseUnblocked.hpp"
-//#include "Tacho_Gemm_NoTrans_NoTrans_SparseDenseUnblocked.hpp"
 
+// GEMM for supernodal algorithms
 #include "Tacho_Gemm_ConjTrans_NoTrans_SparseSparseSuperNodes.hpp"
-//#include "Tacho_Gemm_ConjTrans_NoTrans_SparseDenseSuperNodes.hpp"
+#include "Tacho_Gemm_ConjTrans_NoTrans_SparseSparseSuperNodesByBlocks.hpp"
+
 
 #endif

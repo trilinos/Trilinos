@@ -57,6 +57,18 @@ IF(Kokkos_ENABLE_Pthread)
     COMM serial mpi
   )
   TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseHerkByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseHerkByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseTrsmByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseTrsmByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDenseCholByBlocks_Pthreads
     NOEXEPREFIX
     SOURCES Tacho_ExampleDenseCholByBlocks_Pthreads.cpp
@@ -129,12 +141,12 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleCholByBlocks_Pthreads.cpp
     COMM serial mpi
   )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCholSuperNodesByBlocks_Pthreads
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleCholSuperNodesByBlocks_Pthreads.cpp
-    COMM serial mpi
-  )
+#  TRIBITS_ADD_EXECUTABLE(
+#    Tacho_ExampleCholSuperNodesByBlocks_Pthreads
+#    NOEXEPREFIX
+#    SOURCES Tacho_ExampleCholSuperNodesByBlocks_Pthreads.cpp
+#    COMM serial mpi
+#  )
 ENDIF()
 
 
