@@ -865,6 +865,63 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const keys_type& keys,
+                const KeyType firstContigKey,
+                const KeyType lastContigKey,
+                const ValueType startingValue,
+                const bool keepKeys) :
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
+  minVal_ (startingValue),
+  maxVal_ (keys.size () == 0 ?
+           startingValue :
+           static_cast<ValueType> (startingValue + keys.size () - 1)),
+  firstContigKey_ (firstContigKey),
+  lastContigKey_ (lastContigKey),
+  contiguousValues_ (true),
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+{
+  const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
+  // min() for a floating-point type returns the minimum _positive_
+  // normalized value.  This is different than for integer types.
+  // lowest() is new in C++11 and returns the least value, always
+  // negative for signed finite types.
+  //
+  // mfh 23 May 2015: I have heard reports that
+  // std::numeric_limits<int>::lowest() does not exist with the Intel
+  // compiler.  I'm not sure if the users in question actually enabled
+  // C++11.  However, it's easy enough to work around this issue.  The
+  // standard floating-point types are signed and have a sign bit, so
+  // lowest() is just -max().  For integer types, we can use min()
+  // instead.
+  const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
+    std::numeric_limits<KeyType>::min () :
+    -std::numeric_limits<KeyType>::max ();
+  this->init (keys, startingValue, initMinKey, initMaxKey,
+              firstContigKey, lastContigKey, true);
+  if (keepKeys) {
+    keys_ = keys;
+#ifdef HAVE_TPETRA_DEBUG
+    typedef typename keys_type::size_type size_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+       std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
+       "keepKeys is true, but on return, keys_.dimension_0() = " <<
+       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const KeyType firstContigKey,
                 const KeyType lastContigKey,

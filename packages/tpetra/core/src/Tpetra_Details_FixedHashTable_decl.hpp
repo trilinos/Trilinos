@@ -489,7 +489,35 @@ public:
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue, that takes an initial
+  ///   contiguous sequence of keys, stored as a Kokkos::View.
+  ///
+  /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
+  /// 0, 1, ..., <tt>keys.size()</tt>.
+  ///
+  /// \param keys [in] The keys in the hash table.  We reserve the
+  ///   right to keep the input View without a deep copy.  If you
+  ///   intend to modify this View after calling this constructor,
+  ///   please make a deep copy yourself and give the copy to this
+  ///   constructor.
+  /// \param firstContigKey [in] First key in the initial contiguous
+  ///   sequence of keys.
+  /// \param lastContigKey [in] Last key (inclusive!) in the initial
   ///   contiguous sequence of keys.
+  /// \param startingValue [in] First value in the contiguous sequence
+  ///   of values.
+  /// \param keepKeys [in] Whether to keep the input keys (NOT deep
+  ///   copied, in this case).  Keeping a copy lets you convert from a
+  ///   value back to a key (the reverse of what get() does).
+  FixedHashTable (const keys_type& keys,
+                  const KeyType firstContigKey,
+                  const KeyType lastContigKey,
+                  const ValueType startingValue,
+                  const bool keepKeys = false);
+
+  /// \brief Constructor for arbitrary keys and contiguous values
+  ///   starting with \c startingValue, that takes an initial
+  ///   contiguous sequence of keys, stored as a Teuchos::ArrayView
+  ///   (host pointer).
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
   /// 0, 1, ..., <tt>keys.size()</tt>.
