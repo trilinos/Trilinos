@@ -10,8 +10,9 @@ namespace mesh
 
 std::vector<size_t> get_global_max(const std::vector<size_t> &allObserverValues, MPI_Comm communicator)
 {
-    std::vector<size_t> maxValues(allObserverValues.size());
-    stk::all_reduce_max(communicator, allObserverValues.data(), maxValues.data(), maxValues.size());
+    std::vector<size_t> maxValues(allObserverValues);
+    if(stk::parallel_machine_size(communicator) > 1)
+        stk::all_reduce_max(communicator, allObserverValues.data(), maxValues.data(), maxValues.size());
     return maxValues;
 }
 
