@@ -1222,6 +1222,17 @@ namespace Tpetra {
                          Kokkos::LayoutLeft,
                          device_type> lgMap_;
 
+    /// \brief Host View of lgMap_.
+    ///
+    /// This is allocated along with lgMap_, on demand (lazily), by
+    /// getNodeElementList() (which see).  It is also used by
+    /// getGlobalElement() (which is a host method, and therefore
+    /// requires a host View) if necessary (only noncontiguous Maps
+    /// need this).
+    mutable Kokkos::View<const GlobalOrdinal*,
+                         Kokkos::LayoutLeft,
+                         device_type> lgMapHost_;
+
     //! Type of a mapping from global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
       global_to_local_table_type;
@@ -1488,6 +1499,12 @@ namespace Tpetra {
           lgMapOut ("lgMap", mapIn.lgMap_.dimension_0 ());
         Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
         mapOut.lgMap_ = lgMapOut; // cast to const
+
+        // Array layouts are the same, and memory spaces are the same
+        // (both are host Views), so we may assign directly.  If this
+        // hasn't been allocated yet, getNodeElementList or
+        // getMyGlobalIndices will create it on demand.
+        mapOut.lgMapHost_ = mapIn.lgMapHost_;
       }
       // This makes a deep copy only if necessary.  We could have
       // defined operator= to do this, but that would violate

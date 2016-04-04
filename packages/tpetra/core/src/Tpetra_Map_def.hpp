@@ -502,7 +502,8 @@ namespace Tpetra {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      Kokkos::View<GO*, Kokkos::LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
+      Kokkos::View<GO*, Kokkos::LayoutLeft, device_type>
+        lgMap ("lgMap", numLocalElements_);
       auto lgMap_host = Kokkos::create_mirror_view (lgMap);
 
       firstContiguousGID_ = entryList[0];
@@ -564,6 +565,8 @@ namespace Tpetra {
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
+      // We've already created this, so use it.
+      lgMapHost_ = lgMap_host;
     }
     else {
       // This insures tests for GIDs in the range
@@ -852,6 +855,8 @@ namespace Tpetra {
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
+      // We've already created this, so use it.
+      lgMapHost_ = lgMap_host;
     }
     else {
       // This insures tests for GIDs in the range
@@ -982,9 +987,8 @@ namespace Tpetra {
       // This is a host Kokkos::View access, with no RCP or ArrayRCP
       // involvement.  As a result, it is thread safe.
       //
-      // NOTE (mfh 12 Jan 2016) This assumes UVM, if lgMap_ is a CUDA
-      // device View.
-      return lgMap_[localIndex];
+      // lgMapHost_ is a host pointer; this does NOT assume UVM.
+      return lgMapHost_[localIndex];
     }
   }
 
@@ -1306,8 +1310,12 @@ namespace Tpetra {
       lg_view_type lgMap ("lgMap", numElts);
       FillLgMap<LO, GO, DT> fillIt (lgMap, minMyGID_);
 
+      auto lgMapHost = Kokkos::create_mirror_view (lgMap);
+      Kokkos::deep_copy (lgMapHost, lgMap);
+
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
+      lgMapHost_ = lgMapHost;
     }
 
     return lgMap_;
@@ -1323,44 +1331,15 @@ namespace Tpetra {
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global
     // mapping.
-    const bool needToCreateLocalToGlobalMapping =
-      lgMap_.dimension_0 () == 0 && numLocalElements_ > 0;
+    (void) this->getMyGlobalIndices ();
 
-    if (needToCreateLocalToGlobalMapping) {
-#ifdef HAVE_TEUCHOS_DEBUG
-      // The local-to-global mapping should have been set up already
-      // for a noncontiguous map.
-      TEUCHOS_TEST_FOR_EXCEPTION( ! isContiguous(), std::logic_error,
-        "Tpetra::Map::getNodeElementList: The local-to-global mapping (lgMap_) "
-        "should have been set up already for a noncontiguous Map.  Please report"
-        " this bug to the Tpetra team.");
-#endif // HAVE_TEUCHOS_DEBUG
-
-      typedef typename Teuchos::ArrayRCP<GO>::size_type size_type;
-      const size_type numElts = static_cast<size_type> (getNodeNumElements ());
-
-      lg_view_type lgMap ("lgMap", numElts);
-      if (numElts != 0) {
-        auto lgMap_host = Kokkos::create_mirror_view (lgMap);
-        GO gid = minMyGID_;
-        for (size_type k = 0; k < numElts; ++k, ++gid) {
-          lgMap_host[k] = gid;
-        }
-        // We filled lgMap on host; now, sync it back to device.
-        Kokkos::deep_copy (lgMap, lgMap_host);
-      }
-
-      // "Commit" the local-to-global lookup table we filled in above.
-      lgMap_ = lgMap;
-    }
-
-    // NOTE (mfh 12 Jan 2016) This assumes UVM, if lgMap is a CUDA
-    // device View.
-    const GO* lgMapHostRawPtr = lgMap_.ptr_on_device ();
+    // This does NOT assume UVM; lgMapHost_ is a host pointer.
+    const GO* lgMapHostRawPtr = lgMapHost_.ptr_on_device ();
     // The third argument forces ArrayView not to try to track memory
     // in a debug build.  We have to use it because the memory does
     // not belong to a Teuchos memory management class.
-    return Teuchos::ArrayView<const GO> (lgMapHostRawPtr, lgMap_.dimension_0 (),
+    return Teuchos::ArrayView<const GO> (lgMapHostRawPtr,
+                                         lgMapHost_.dimension_0 (),
                                          Teuchos::RCP_DISABLE_NODE_LOOKUP);
   }
 
@@ -1605,6 +1584,7 @@ namespace Tpetra {
       }
 
       map->lgMap_ = lgMap_;
+      map->lgMapHost_ = lgMapHost_;
       map->glMap_ = glMap_;
       map->node_ = node_;
 
