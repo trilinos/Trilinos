@@ -1,16 +1,20 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
- relaxation: type = Symmetric Gauss-Seidel
- relaxation: sweeps = 1
- relaxation: damping factor = 1
- relaxation: zero starting solution = 1   [default]
- relaxation: backward mode = 0   [default]
- relaxation: use l1 = 0   [default]
- relaxation: l1 eta = 1.5   [default]
- relaxation: min diagonal value = 0   [default]
- relaxation: fix tiny diagonal entries = 0   [default]
- relaxation: check diagonal entries = 0   [default]
- relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  relaxation: type = Symmetric Gauss-Seidel
+  relaxation: sweeps = 1
+  relaxation: damping factor = 1
+  relaxation: zero starting solution = 1   [default]
+  relaxation: backward mode = 0   [default]
+  relaxation: use l1 = 0   [default]
+  relaxation: l1 eta = 1.5   [default]
+  relaxation: min diagonal value = 0   [default]
+  relaxation: fix tiny diagonal entries = 0   [default]
+  relaxation: check diagonal entries = 0   [default]
+  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
 
 Level 1
  Computing Ac (MueLu::RAPFactory)
@@ -19,6 +23,9 @@ Level 1
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother ->
   [empty list]
 
