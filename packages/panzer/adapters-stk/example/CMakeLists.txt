@@ -3,6 +3,7 @@ ADD_SUBDIRECTORY(PoissonExample)
 ADD_SUBDIRECTORY(CurlLaplacianExample)
 ADD_SUBDIRECTORY(MixedPoissonExample)
 ADD_SUBDIRECTORY(PoissonInterfaceExample)
+ADD_SUBDIRECTORY(ModelEvaluator)
 
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
    ADD_SUBDIRECTORY(assembly_engine)
