@@ -817,17 +817,49 @@ namespace Tpetra {
     getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
                         const Teuchos::ArrayView<                int> & nodeIDList) const;
 
+  private:
+    /// \brief Type of lgMap_ (see below); used to derive return type
+    ///   of getMyGlobalIndices() (also below).
+    ///
+    /// \warning YOU ARE NOT ALLOWED TO REFER TO THIS TYPE BY NAME.
+    ///   Use <tt>auto</tt> to refer to the type of the return value
+    ///   of getMyGlobalIndices().
+    ///
+    /// I would have preferred not to have this typedef at all.  It
+    /// exists only so that we could avoid needing to declare lgMap_
+    /// before declaring the getMyGlobalIndices() method.  That would
+    /// have made this class declaration harder to read.
+    typedef Kokkos::View<const GlobalOrdinal*,
+                         Kokkos::LayoutLeft,
+                         device_type> global_indices_array_type;
+
+  public:
     /// \brief Return a view of the global indices owned by this process.
+    ///
+    /// The returned "view" has some type that looks like
+    /// <ul>
+    /// <li> <tt> Kokkos::View<const GlobalOrdinal*, ...> </tt> or </li>
+    /// <li> <tt> Teuchos::ArrayView<const GlobalOrdinal> </tt> </li>
+    /// </ul>
+    /// It implements operator[] and the size() method, and behaves as
+    /// a one-dimensional array.  You may <i>not</i> modify its
+    /// entries.
+    ///
+    /// \warning You are NOT allowed to refer to the return value's
+    ///   type by name.  That name is private.  Use <tt>auto</tt>
+    ///   instead.
     ///
     /// If you call this method on a contiguous Map, it will create
     /// and cache the list of global indices for later use.  Beware of
     /// calling this if the calling process owns a very large number
     /// of global indices.
-    Kokkos::View<const GlobalOrdinal*,
-                 Kokkos::LayoutLeft,
-                 device_type> getMyGlobalIndices () const;
+    global_indices_array_type getMyGlobalIndices () const;
 
-    /// \brief Return a view of the global indices owned by this process.
+    /// \brief Return a NONOWNING view of the global indices owned by
+    ///   this process.
+    ///
+    /// \warning This method may be deprecated at some point.  Please
+    ///   consider using getMyGlobalIndices() (see above) instead.
     ///
     /// If you call this method on a contiguous Map, it will create
     /// and cache the list of global indices for later use.  Beware of

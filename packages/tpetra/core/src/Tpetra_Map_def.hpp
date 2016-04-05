@@ -1277,9 +1277,7 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Kokkos::View<const GlobalOrdinal*,
-               Kokkos::LayoutLeft,
-               typename Map<LocalOrdinal, GlobalOrdinal, Node>::device_type>
+  typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_type
   Map<LocalOrdinal,GlobalOrdinal,Node>::getMyGlobalIndices () const
   {
     typedef LocalOrdinal LO;
