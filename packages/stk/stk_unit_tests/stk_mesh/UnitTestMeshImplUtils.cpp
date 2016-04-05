@@ -99,12 +99,12 @@ TEST ( MeshImplUtils, find_elements_these_nodes_have_in_common )
 
   std::vector<stk::mesh::Entity> elements;
 
-  stk::mesh::impl::find_elements_these_nodes_have_in_common(bulk, numNodesPerEdge, edge_2_6_nodes, elements);
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEMENT_RANK, numNodesPerEdge, edge_2_6_nodes, elements);
 
   size_t expected_num_elements = 2;
   EXPECT_EQ(expected_num_elements, elements.size());
 
-  stk::mesh::impl::find_elements_these_nodes_have_in_common(bulk, numNodesPerEdge, edge_5_6_nodes, elements);
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEMENT_RANK, numNodesPerEdge, edge_5_6_nodes, elements);
 
   expected_num_elements = 1;
   EXPECT_EQ(expected_num_elements, elements.size());
@@ -141,12 +141,12 @@ TEST ( MeshImplUtils, find_faces_these_nodes_have_in_common )
 
   std::vector<stk::mesh::Entity> faces;
 
-  stk::mesh::impl::find_faces_these_nodes_have_in_common(bulk, numNodesPerEdge, edge_2_6_nodes, faces);
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::FACE_RANK, numNodesPerEdge, &edge_2_6_nodes[0],faces);
 
   size_t expected_num_faces = 3;
   EXPECT_EQ(expected_num_faces, faces.size());
 
-  stk::mesh::impl::find_faces_these_nodes_have_in_common(bulk, numNodesPerEdge, edge_5_6_nodes, faces);
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::FACE_RANK, numNodesPerEdge, &edge_5_6_nodes[0],faces);
 
   expected_num_faces = 2;
   EXPECT_EQ(expected_num_faces, faces.size());

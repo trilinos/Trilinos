@@ -109,7 +109,7 @@ bool check_if_one_owned_face_with_these_nodes_exists(const std::array <uint64_t,
     node_vector[i] = mesh.get_entity(stk::topology::NODE_RANK, nodes[i]);
   }
 
-  stk::mesh::impl::find_faces_these_nodes_have_in_common(mesh, numNodes, &node_vector[0], face_vector);
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(mesh,stk::topology::FACE_RANK,numNodes,&node_vector[0],face_vector);
 
   // remove all non-locally owned entities
   face_vector.erase(

@@ -57,6 +57,9 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
 {
   entity_vector.clear();
 
+  if(numNodes==0)
+      return;
+
   unsigned maxNumEntities = 0;
   for(unsigned i=0; i<numNodes; ++i)
       maxNumEntities += mesh.num_connectivity(nodes[i],rank);
@@ -81,12 +84,12 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
   {
       counter = 1;
 
-      while((counter < numNodes) && (entity_vector[i] == entity_vector[i+counter]))
+      while((i+counter) < entity_vector.size() && (entity_vector[i] == entity_vector[i+counter]))
       {
           ++counter;
       }
 
-      if(counter == numNodes)
+      if(counter >= numNodes)
       {
           entity_vector[numUniqueEntities++] = entity_vector[i];
       }
@@ -95,20 +98,59 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
   entity_vector.resize(numUniqueEntities);
 }
 
-void find_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
 {
-    find_entities_these_nodes_have_in_common(mesh,stk::topology::ELEMENT_RANK,numNodes,nodes,entity_vector);
-}
+  entity_vector.clear();
 
-void find_faces_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
-{
-    find_entities_these_nodes_have_in_common(mesh,stk::topology::FACE_RANK,numNodes,nodes,entity_vector);
+  if(numNodes==0)
+      return;
+
+  unsigned maxNumEntities = 0;
+  for(unsigned i=0; i<numNodes; ++i)
+      maxNumEntities += mesh.num_connectivity(nodes[i],rank);
+
+  if(maxNumEntities < numNodes)
+      return;
+
+  entity_vector.reserve(maxNumEntities);
+
+  for(unsigned i=0; i<numNodes; ++i) {
+    const Entity* entities = mesh.begin(nodes[i],rank);
+    unsigned numEntities = mesh.num_connectivity(nodes[i],rank);
+    for(unsigned j=0;j<numEntities;++j)
+        if(mesh.identifier(entities[j])>id && mesh.bucket(entities[j]).owned())
+            entity_vector.push_back(entities[j]);
+  }
+
+  std::sort(entity_vector.begin(), entity_vector.end());
+
+  size_t counter = 1;
+  unsigned numUniqueEntities = 0;
+
+  for(size_t i=0; i<entity_vector.size(); i += counter)
+  {
+      if(entity_vector.size()-i < numNodes) break;
+
+      counter = 1;
+
+      while((i+counter) < entity_vector.size() && (entity_vector[i] == entity_vector[i+counter]))
+      {
+          ++counter;
+      }
+
+      if(counter >= numNodes)
+      {
+          entity_vector[numUniqueEntities++] = entity_vector[i];
+      }
+  }
+
+  entity_vector.resize(numUniqueEntities);
 }
 
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes)
 {
   std::vector<Entity> elems;
-  find_elements_these_nodes_have_in_common(mesh, numNodes, nodes, elems);
+  find_entities_these_nodes_have_in_common(mesh, stk::topology::ELEMENT_RANK, numNodes, nodes, elems);
   bool found_shell = false;
   for (unsigned count = 0; count < elems.size(); ++count) {
       if (mesh.bucket(elems[count]).topology().is_shell()) {
@@ -118,10 +160,9 @@ bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned n
   return found_shell;
 }
 
-
 void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems)
 {
-  find_elements_these_nodes_have_in_common(mesh, numNodes, nodes, elems);
+  find_entities_these_nodes_have_in_common(mesh, stk::topology::ELEMENT_RANK, numNodes, nodes, elems);
 
   for(int i=elems.size()-1; i>=0; --i) {
     if (!mesh.bucket(elems[i]).owned()) {
@@ -705,7 +746,7 @@ void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
     std::vector<stk::mesh::Entity> side_nodes(num_side_nodes);
     elem_topology.face_nodes(bulk.begin_nodes(elem_with_face),elem_with_face_side_ordinal,&side_nodes[0]);
     std::vector<stk::mesh::Entity> common_elements;
-    stk::mesh::impl::find_elements_these_nodes_have_in_common(bulk,num_side_nodes,&side_nodes[0],common_elements);
+    stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk,stk::topology::ELEMENT_RANK,num_side_nodes,&side_nodes[0],common_elements);
 
     std::vector<stk::topology> element_topology_touching_surface_vector(common_elements.size());
     for (size_t i=0 ; i<common_elements.size() ; ++i) {

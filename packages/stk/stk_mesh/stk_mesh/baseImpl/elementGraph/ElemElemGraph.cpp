@@ -297,9 +297,9 @@ void ElemElemGraph::clear_data_members()
     m_num_parallel_edges = 0;
 }
 
-impl::SerialElementDataVector ElemElemGraph::get_only_valid_element_connections(stk::mesh::Entity element, unsigned side_index, const stk::mesh::EntityVector& side_nodes) const
+impl::SerialElementDataVector ElemElemGraph::get_valid_element_connections_for_elements_with_larger_ids(stk::mesh::EntityId id, stk::mesh::Entity element, unsigned side_index, const stk::mesh::EntityVector& side_nodes) const
 {
-    impl::SerialElementDataVector connectedElementDataVector = impl::get_elements_connected_via_sidenodes<impl::SerialElementData>(m_bulk_data, m_idMapper, side_nodes);
+    impl::SerialElementDataVector connectedElementDataVector = impl::get_elements_with_larger_ids_connected_via_sidenodes<impl::SerialElementData>(id, m_bulk_data, m_idMapper, side_nodes);
     impl::filter_out_invalid_solid_shell_connections(m_bulk_data, element, side_index, connectedElementDataVector);
     return connectedElementDataVector;
 }
@@ -315,19 +315,23 @@ void ElemElemGraph::insert_edge_between_elements(impl::LocalId local_elem_id,
 void ElemElemGraph::add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex,
                                                    impl::LocalId local_elem_id,
                                                    std::vector<stk::mesh::GraphEdge> &graphEdges,
-                                                   std::vector<stk::mesh::GraphEdge> &coincidentGraphEdges) const
+                                                   std::vector<stk::mesh::GraphEdge> &coincidentGraphEdges,
+                                                   bool only_consider_upper_symmetry) const
 {
     stk::mesh::Entity element = (*meshIndex.bucket)[meshIndex.bucket_ordinal];
     int num_sides = meshIndex.bucket->topology().num_sides();
     graphEdges.clear();
     coincidentGraphEdges.clear();
+    stk::mesh::EntityId elem_global_id = m_bulk_data.identifier(get_entity_from_local_id(local_elem_id));
+    if(!only_consider_upper_symmetry) elem_global_id = 0;
+
     for(int side_index=0; side_index<num_sides; ++side_index)
     {
         stk::mesh::EntityVector side_nodes = impl::get_element_side_nodes_from_topology(m_bulk_data, element, side_index);
-        impl::SerialElementDataVector connectedElementDataVector = get_only_valid_element_connections(element, side_index, side_nodes);
+        impl::SerialElementDataVector connectedElementDataVector = get_valid_element_connections_for_elements_with_larger_ids(elem_global_id, element, side_index, side_nodes);
         for (const impl::SerialElementData & otherElem: connectedElementDataVector)
         {
-            if (local_elem_id != otherElem.get_element_local_id())
+            if(local_elem_id != otherElem.get_element_local_id())
             {
                 if(impl::is_coincident_connection(m_bulk_data, element, side_index, otherElem.get_element_topology(), otherElem.get_side_nodes()))
                     insert_edge_between_elements(local_elem_id, side_index, otherElem, coincidentGraphEdges);
@@ -345,7 +349,10 @@ template <typename GraphType>
 void add_edges_to_graph(const std::vector<stk::mesh::GraphEdge> &newGraphEdges, GraphType &graph)
 {
     for(const stk::mesh::GraphEdge &graphEdge : newGraphEdges)
+    {
         graph.add_edge(graphEdge);
+        graph.add_edge(create_symmetric_edge(graphEdge));
+    }
 }
 
 void ElemElemGraph::fill_graph()
@@ -1330,7 +1337,8 @@ void ElemElemGraph::add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId
 {
     std::vector<stk::mesh::GraphEdge> newGraphEdges;
     std::vector<stk::mesh::GraphEdge> coincidentGraphEdges;
-    add_local_graph_edges_for_elem(m_bulk_data.mesh_index(elem_to_add), new_elem_id, newGraphEdges, coincidentGraphEdges);
+    bool only_consider_upper_symmetry = false;
+    add_local_graph_edges_for_elem(m_bulk_data.mesh_index(elem_to_add), new_elem_id, newGraphEdges, coincidentGraphEdges, only_consider_upper_symmetry);
     add_new_local_edges_to_graph(m_graph, newGraphEdges);
     add_new_local_edges_to_graph(m_coincidentGraph, coincidentGraphEdges);
 }
