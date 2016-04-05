@@ -731,31 +731,40 @@ namespace Iogn {
     }
   }
 
+  int64_t GeneratedMesh::build_node_map(Ioss::Int64Vector& map,
+                                        std::vector<int>& proc,
+                                        int64_t slab,
+                                        size_t slabOffset,
+                                        size_t adjacentProc,
+                                        int64_t startIndex)
+  {
+      int64_t index = startIndex;
+      int64_t offset = (myStartZ + slabOffset) * (numX + 1) * (numY + 1);
+      for(int64_t i = 0; i < slab; i++)
+      {
+          map[index] = offset + i + 1;
+          proc[index++] = static_cast<int>(adjacentProc);
+      }
+      return index;
+  }
+
   void GeneratedMesh::node_communication_map(Ioss::Int64Vector &map, std::vector<int> &proc)
   {
+    bool isFirstProc = myProcessor == 0;
+    bool isLastProc = myProcessor == processorCount-1;
+
     int64_t count = (numX+1) * (numY+1);
     int64_t slab = count;
-    if (myProcessor != 0 && myProcessor != processorCount-1) {
+    if (!isFirstProc && !isLastProc)
       count *= 2;
-    }
-
     map.resize(count);
     proc.resize(count);
+
     int64_t j = 0;
-    if (myProcessor != 0) {
-      int64_t offset = myStartZ * (numX+1) * (numY+1);
-      for (int64_t i=0; i < slab; i++) {
-        map[j] = offset + i + 1;
-        proc[j++] = static_cast<int>(myProcessor-1);
-      }
-    }
-    if (myProcessor != processorCount-1) {
-      int64_t offset = (myStartZ + myNumZ) * (numX+1) * (numY+1);
-      for (int64_t i=0; i < slab; i++) {
-        map[j] = offset + i + 1;
-        proc[j++] = static_cast<int>(myProcessor+1);
-      }
-    }
+    if (!isFirstProc)
+        j = build_node_map(map, proc, slab, 0, myProcessor - 1, j);
+    if (!isLastProc)
+        j = build_node_map(map, proc, slab, myNumZ, myProcessor + 1, j);
   }
 
   void GeneratedMesh::element_map(int64_t block_number, Ioss::Int64Vector &map) const
