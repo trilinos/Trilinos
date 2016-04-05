@@ -133,7 +133,7 @@ namespace Tacho {
 
     GraphToolsHostType_Scotch S;
     S.setGraph(AA_host.NumRows(), rptr, cidx);
-    S.setSeed(); //(0);
+    S.setSeed(0);
     S.setTreeLevel();
     S.setStrategy( SCOTCH_STRATSPEED 
                    | SCOTCH_STRATLEVELMAX   
