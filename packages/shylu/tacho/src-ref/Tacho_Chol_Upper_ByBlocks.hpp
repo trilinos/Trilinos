@@ -40,7 +40,7 @@ namespace Tacho {
         Part_2x2(A,  ATL, ATR,
                  /**/ABL, ABR,
                  0, 0, Partition::TopLeft);
-
+        ordinal_type ntasks_spawned = 0;
         while (ATL.NumRows() < A.NumRows()) {
           Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
                           /*******/ /**/  A10, A11, A12,
@@ -69,6 +69,7 @@ namespace Tacho {
               
               // spawn a task
               factory.spawn(policy, f);
+              ++ntasks_spawned;
             } 
           }
 
@@ -99,6 +100,7 @@ namespace Tacho {
                 
                 // spawn a task
                 factory.spawn(policy, f);              
+                ++ntasks_spawned;
               } 
             }
           }
@@ -152,6 +154,7 @@ namespace Tacho {
                           
                           // spawn a task
                           factory.spawn(policy, f);
+                          ++ntasks_spawned;
                         } 
                       }
                     } else {
@@ -178,6 +181,7 @@ namespace Tacho {
                           
                           // spawn a task
                           factory.spawn(policy, f);
+                          ++ntasks_spawned;
                         } 
                       }
                     }
@@ -186,12 +190,17 @@ namespace Tacho {
               }
             }
           }
+
           // -----------------------------------------------------
           Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
                            A10, A11, A12, /**/ /******/
                            A20, A21, A22, /**/ ABL, ABR,
                            Partition::TopLeft);
+
+          if (ntasks_spawned > 4096) 
+            break;
         }
+        A = ABR;
       }
       
       return 0;
@@ -231,12 +240,19 @@ namespace Tacho {
       
       KOKKOS_INLINE_FUNCTION
       void apply(const member_type &member, value_type &r_val) {
-        const int ierr = Chol::invoke(_policy, member,
-                                      _A);
 
         // return for only team leader
         if (member.team_rank() == 0) {
-          _A.setFuture(typename ExecViewTypeA::future_type());
+          _policy.clear_dependence(this);
+
+          const int ierr = Chol::invoke(_policy, member,
+                                        _A);
+
+          if (_A.NumRows()) {
+            _policy.respawn_needing_memory(this); 
+          } else {
+            _A.setFuture(typename ExecViewTypeA::future_type());
+          }
           r_val = ierr;
         }
       }
