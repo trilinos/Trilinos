@@ -66,6 +66,16 @@
 
 ////////////////////////////////////////////////////////////////////////
 
+// Convert a Python string object to a char*, and work for both Python
+// 2 and Python 3.
+#if PY_VERSION_HEX < 0x03000000
+#define convertPyStringToChar(pyobj) PyString_AsString(pyobj)
+#else
+#define convertPyStringToChar(pyobj) PyBytes_AsString(PyUnicode_AsASCIIString(pyobj))
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
 namespace PyTrilinos
 {
 
@@ -146,7 +156,7 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,
     if (!dim_dict) goto fail;
     dist_type = PyDict_GetItemString(dim_dict, "dist_type");
     if (!dist_type) goto fail;
-    if (strcmp(PyString_AsString(dist_type), "b") == 0)
+    if (strcmp(convertPyStringToChar(dist_type), "b") == 0)
     {
       start = PyDict_GetItemString(dim_dict, "start");
       if (!start) goto fail;
@@ -155,7 +165,7 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,
       dims[i] = PyInt_AsLong(stop) - PyInt_AsLong(start);
       if (PyErr_Occurred()) goto fail;
     }
-    else if (strcmp(PyString_AsString(dist_type), "u") == 0)
+    else if (strcmp(convertPyStringToChar(dist_type), "u") == 0)
     {
       indices = PyDict_GetItemString(dim_dict, "indices");
       if (!indices) goto fail;
@@ -166,7 +176,7 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,
     {
       PyErr_Format(PyExc_ValueError,
                    "Unsupported distribution type '%s'",
-                   PyString_AsString(dist_type));
+                   convertPyStringToChar(dist_type));
       goto fail;
     }
   }
