@@ -357,11 +357,11 @@ namespace Tacho {
         future_type future;
         if (mb) {
           // call nested block version
-          future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>
-                                           ::createTaskFunctor(policy, 
-                                                               TA_factor_host), 
-                                           0);
-          policy.spawn(future);
+          // future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>
+          //                                  ::createTaskFunctor(policy, 
+          //                                                      TA_factor_host), 
+          //                                  0);
+          // policy.spawn(future);
         } else {
           // call plain block version
           future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>

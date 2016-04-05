@@ -141,13 +141,22 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleCholByBlocks_Pthreads.cpp
     COMM serial mpi
   )
-#  TRIBITS_ADD_EXECUTABLE(
-#    Tacho_ExampleCholSuperNodesByBlocks_Pthreads
-#    NOEXEPREFIX
-#    SOURCES Tacho_ExampleCholSuperNodesByBlocks_Pthreads.cpp
-#    COMM serial mpi
-#  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholSuperNodesByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholSuperNodesByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
 ENDIF()
+
+# IF(Kokkos_ENABLE_QTHREAD) 
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCholSuperNodesByBlocks_Qthreads
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCholSuperNodesByBlocks_Qthreads.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
 
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
