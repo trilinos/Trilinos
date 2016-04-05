@@ -307,10 +307,18 @@ namespace PHX {
   std::ostream& operator<<(std::ostream& os, 
 			   const PHX::MDField<DataT, Tag0, Tag1, 
 			   Tag2, Tag3, Tag4, Tag5, Tag6, Tag7>& h);
-  
+}
+
   // *************************************
   // Runtime time checked MDField
   // *************************************
+#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
+
+#include "Phalanx_MDField_DynRank.hpp"
+
+#else
+
+namespace PHX {
 
   // temporary for bracket op support
   template <typename ViewType>
@@ -425,12 +433,6 @@ namespace PHX {
     
     void print(std::ostream& os, bool printValues = false) const;
 
-/*    KOKKOS_FORCEINLINE_FUNCTION
-    array_type1 get_kokkos_view();
-
-    KOKKOS_FORCEINLINE_FUNCTION
-    const array_type1 get_kokkos_view()const;
-*/
     template<typename MDFieldType>
     void deep_copy(const MDFieldType& source);
 
@@ -448,16 +450,8 @@ namespace PHX {
 
     template<typename MDFieldType>
     void V_Multiply(const MDFieldType& source);
- 
-    template<typename ArrayType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    ArrayType get_kokkos_view();
-
-    template<typename ArrayType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    const ArrayType get_kokkos_view() const;
-   
-    private:
+    
+  private:
    
     PHX::Tag<DataT> m_tag;  
     typedef Kokkos::View<DataT*, PHX::Device> array_type1;
@@ -495,8 +489,9 @@ namespace PHX {
   std::ostream& operator<<(std::ostream& os, 
 			   const PHX::MDField<DataT, void, void, 
 			   void, void, void, void, void, void>& h);
-  
-} 
+
+}
+#endif // PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
 
 namespace Intrepid2 {
 

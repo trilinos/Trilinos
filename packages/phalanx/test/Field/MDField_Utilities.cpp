@@ -43,7 +43,7 @@
 
 
 #include <vector>
-
+#include <limits>
 #include "Phalanx_config.hpp"
 #include "Phalanx.hpp"
 #include "Phalanx_MDField_Utilities.hpp"
@@ -90,7 +90,7 @@ PHX::DataLayout* makeLayout (const int rank, const int* d) {
 }
 } // namespace
 
-void testRank (const int rank) {
+void testRank (const int rank, Teuchos::FancyOStream& out, bool& success) {
   // A random set of dimensions.
   static const int dims[] = {3, 2, 4, 2, 2, 1, 3};
 
@@ -119,13 +119,16 @@ void testRank (const int rank) {
     else di.ref() = static_cast<double>(k);
     *fi = a;
     *fi *= b;
-    TEUCHOS_ASSERT(fi->val() == c.val());
-    TEUCHOS_ASSERT(fi->dx(0) == c.dx(0));
-    TEUCHOS_ASSERT(*fi == c);
-    TEUCHOS_ASSERT(fi.idx() == k);
+
+    double tol = 100.0 * std::numeric_limits<double>::epsilon();
+    TEST_FLOATING_EQUALITY(fi->val(), c.val(), tol);
+    TEST_FLOATING_EQUALITY(fi->dx(0), c.dx(0), tol);
+    TEST_EQUALITY(*fi, c);
+    TEST_EQUALITY(fi.idx(), k);
+
     ++di; fi++;
   }
-  TEUCHOS_ASSERT(k == d.size());
+  TEST_EQUALITY(k, d.size());
 }
 
 TEUCHOS_UNIT_TEST(mdfield, Utilities) {
@@ -135,7 +138,7 @@ TEUCHOS_UNIT_TEST(mdfield, Utilities) {
   
   PHX::InitializeKokkosDevice();
 
-  for (int rank = 1; rank <= 7; ++rank) testRank(rank);
+  for (int rank = 1; rank <= 7; ++rank) testRank(rank,out,success);
 
   PHX::FinalizeKokkosDevice();  
   Teuchos::TimeMonitor::summarize();

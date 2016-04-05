@@ -51,6 +51,16 @@
 #include "Kokkos_View_Fad.hpp"
 
 namespace Kokkos {
+
+
+  // Overload of dimension_scalar() for all dynamic-rank views
+  template <typename T, typename ... P>
+  KOKKOS_INLINE_FUNCTION
+  constexpr unsigned
+  dimension_scalar(const Experimental::DynRankView<T,P...>& view) {
+    return dimension_scalar(view.ConstDownCast());
+  }
+
 namespace Experimental {
 namespace Impl {
 

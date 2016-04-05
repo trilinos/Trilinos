@@ -529,7 +529,11 @@ std::ostream& PHX::operator<<(std::ostream& os,
 //**********************************************************************
 
 
+#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
 
+#include "Phalanx_MDField_DynRank_Def.hpp"
+
+#else
 
 //**********************************************************************
 template<typename DataT>
@@ -1148,6 +1152,8 @@ std::ostream& PHX::operator<<(std::ostream& os,
   f.print(os, false);
   return os;
 }
+
+#endif // PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
 
 //**********************************************************************
 // For interoperability with Intrepid+Kokkos
