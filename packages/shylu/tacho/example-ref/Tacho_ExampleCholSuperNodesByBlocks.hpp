@@ -308,7 +308,7 @@ namespace Tacho {
                                block.copyToFlat();
                              } );
       }
-      {
+      if (mb) {
         const size_type nblocks = HA_factor_host.NumNonZeros();
 
         // scan ap
@@ -331,23 +331,38 @@ namespace Tacho {
                                block.Hier().setExternalMatrix(hm, hn,
                                                               -1, -1,
                                                               Kokkos::subview(blks, range_type(ap(k), ap(k+1))));
+                               DenseMatrixTools::getHierMatrix(block.Hier(), 
+                                                               block.Flat(),
+                                                               mb, mb);
                              } );
       }
       t_blocks = timer.seconds();    
 
       {
         const size_type nblocks = HA_factor_host.NumNonZeros();
-        size_type nnz_blocks = 0, size_blocks = 0;
+        size_type nnz_blocks = 0, size_blocks = 0, max_blk_size = 0, max_blk_nnz = 0, max_blk_nrows = 0, max_blk_ncols = 0;
         for (size_type k=0;k<nblocks;++k) {
           const auto &block = HA_factor_host.Value(k);
           nnz_blocks  += block.NumNonZeros();
-          size_blocks += block.NumRows()*block.NumCols();
+          const auto current_blk_size = block.NumRows()*block.NumCols();
+          size_blocks += current_blk_size;
+          
+          if (max_blk_size < current_blk_size) {
+            max_blk_nnz   = block.NumNonZeros(); 
+            max_blk_nrows = block.NumRows();
+            max_blk_ncols = block.NumCols();
+            max_blk_size = current_blk_size;
+          }
         }
         TACHO_TEST_FOR_ABORT( nnz_blocks != AA_factor_host.NumNonZeros(),
                               "nnz counted in blocks is different from nnz in the base matrix.");
         std::cout << "CholSuperNodesByBlocks:: nnz in blocks = " << nnz_blocks 
                   << ", size of blocks = " << size_blocks 
                   << ", ratio = " << (double(nnz_blocks)/size_blocks) 
+                  << std::endl;
+        std::cout << "CholSuperNodesByBlocks:: max block info, nnz = " << max_blk_nnz
+                  << ", dim = " << max_blk_nrows << " x " << max_blk_ncols
+                  << ", ratio = " << (double(max_blk_nnz)/max_blk_size)
                   << std::endl;
       }
       
@@ -357,13 +372,15 @@ namespace Tacho {
         future_type future;
         if (mb) {
           // call nested block version
-          // future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>
-          //                                  ::createTaskFunctor(policy, 
-          //                                                      TA_factor_host), 
-          //                                  0);
-          // policy.spawn(future);
+          std::cout << "CholSuperNodesByBlocks:: use DenseByBlocks with external LAPACK and BLAS" << std::endl;
+          future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>
+                                           ::createTaskFunctor(policy, 
+                                                               TA_factor_host), 
+                                           0);
+          policy.spawn(future);
         } else {
           // call plain block version
+          std::cout << "CholSuperNodesByBlocks:: use external LAPACK and BLAS" << std::endl;
           future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>
                                            ::createTaskFunctor(policy, 
                                                                TA_factor_host), 
