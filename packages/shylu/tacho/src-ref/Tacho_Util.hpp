@@ -343,6 +343,23 @@ namespace Tacho {
     static constexpr int SuperNodesByBlocks     = 1302;
   };
 
+  /// \class AlgoTriSolve
+  /// \brief Various Cholesky algorithms for sparse and dense factorization.
+  class AlgoTriSolve {
+  public:
+    // - Flat sparse matrix
+    static constexpr int Dummy                  = 1400;
+    static constexpr int Unblocked              = 1401;
+    static constexpr int ExternalPardiso        = 1402;
+
+    // - Block sparse matrix
+    static constexpr int ByBlocks               = 1501;
+
+    // - Flat sparse with nested dense matrices
+    static constexpr int SuperNodes             = 1701;
+    static constexpr int SuperNodesByBlocks     = 1702;
+  };
+
   /// \class AlgoBlas
   /// \brief Various matrix BLAS algorithms for sparse and dense operations.
   class AlgoBlas {

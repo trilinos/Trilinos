@@ -1,39 +1,44 @@
-#pragma once
-#ifndef __TRI_SOLVE_HPP__
-#define __TRI_SOLVE_HPP__
+#ifndef __TACHO_TRI_SOLVE_HPP__
+#define __TACHO_TRI_SOLVE_HPP__
 
-/// \file tri_solve.hpp
+/// \file Tacho_TriSolve.hpp
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace Tacho {
 
-  using namespace std;
-
-  template<int ArgUplo, int ArgTrans, int ArgAlgo>
+  template<int ArgUplo, int ArgTrans, 
+           int ArgAlgo, int ArgVariant,
+           template<int,int> class ControlType = Control>
   class TriSolve {
   public:
-    static int blocksize;
 
     // data-parallel interface
     // =======================
-    template<typename ExecViewTypeA,
+    template<typename PolicyType,
+             typename MemberType,
+             typename ExecViewTypeA,
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
-    static int invoke(typename ExecViewTypeA::policy_type &policy,
-                      const typename ExecViewTypeA::policy_type::member_type &member,
+    static int invoke(PolicyType &policy,
+                      const MemberType &member,
                       const int diagA,
                       ExecViewTypeA &A,
-                      ExecViewTypeB &B);
+                      ExecViewTypeB &B) {
+      fprintf(stderr, ">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n",
+              ArgUplo, ArgTrans, ArgAlgo, ArgVariant);
+      TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
+      return -1;
+    }
 
     // task-data parallel interface
     // ============================
-    template<typename ExecViewTypeA,
+    template<typename PolicyType,
+             typename ExecViewTypeA,
              typename ExecViewTypeB>
     class TaskFunctor {
     public:
-      typedef typename ExecViewTypeA::policy_type policy_type;
-      typedef typename policy_type::member_type member_type;
+      typedef typename PolicyType::member_type member_type;
       typedef int value_type;
 
     private:
@@ -41,57 +46,72 @@ namespace Tacho {
       ExecViewTypeA _A;
       ExecViewTypeB _B;
 
-      policy_type &_policy;
+      PolicyType _policy;
 
     public:
-      TaskFunctor(const int diagA,
-                  const ExecViewTypeA A,
-                  const ExecViewTypeB B)
+      KOKKOS_INLINE_FUNCTION
+      TaskFunctor(const PolicyType &policy,
+                  const int diagA,
+                  const ExecViewTypeA &A,
+                  const ExecViewTypeB &B)
         : _diagA(diagA),
           _A(A),
           _B(B),
-          _policy(ExecViewTypeA::task_factory_type::Policy())
+          _policy(policy)
       { }
 
-      string Label() const { return "TriSolve"; }
+      KOKKOS_INLINE_FUNCTION
+      const char* Label() const { return "TriSolve"; }
 
-      // task execution
+      KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {
         r_val = TriSolve::invoke(_policy, _policy.member_single(), 
                                  _diagA, _A, _B);
+        _B.setFuture(typename ExecViewTypeB::future_type());
       }
 
-      // task-data execution
+      KOKKOS_INLINE_FUNCTION
       void apply(const member_type &member, value_type &r_val) {
-        r_val = TriSolve::invoke(_policy, member, 
-                                 _diagA, _A, _B);
+        const int ierr = TriSolve::invoke(_policy, member, 
+                                          _diagA, _A, _B);
+        
+        // return for only team leader
+        if (!member.team_rank()) {
+          _B.setFuture(typename ExecViewTypeB::future_type());
+          r_val = ierr;
+        }
       }
 
     };
+
+    template<typename PolicyType,
+             typename ExecViewTypeA,
+             typename ExecViewTypeB>
+    KOKKOS_INLINE_FUNCTION
+    static
+    TaskFunctor<PolicyType,ExecViewTypeA,ExecViewTypeB>
+    createTaskFunctor(const PolicyType &policy,
+                      const int diagA,
+                      const ExecViewTypeA &A,
+                      const ExecViewTypeA &B) {
+      return TaskFunctor<PolicyType,ExecViewTypeA,ExecViewTypeB>
+        (policy, diagA, A, B);
+    }
+
   };
 
-  template<int ArgUplo, int ArgTrans, int ArgAlgo> int TriSolve<ArgUplo,ArgTrans,ArgAlgo>::blocksize = 32;
 }
 
-// basic utils
-#include "util.hpp"
-#include "partition.hpp"
+//#include "Tacho_TriSolve_Upper_ConjTrans_Unblocked.hpp"
+//#include "Tacho_TriSolve_Upper_NoTrans_Unblocked.hpp"
 
-// unblocked version blas operations
-#include "scale.hpp"
+#include "Tacho_TriSolve_Upper_ConjTrans_SuperNodes.hpp"
+#include "Tacho_TriSolve_Upper_NoTrans_SuperNodes.hpp"
 
-// blocked version blas operations
-#include "gemm.hpp"
-#include "trsm.hpp"
-#include "herk.hpp"
+//#include "Tacho_TriSolve_Upper_ConjTrans_SuperNodesByBlocks.hpp"
+//#include "Tacho_TriSolve_Upper_NoTrans_SuperNodesByBlocks.hpp"
 
-// triangular solve
-#include "tri_solve_u_ct_unblocked.hpp"
-#include "tri_solve_u_ct_blocked.hpp"
-#include "tri_solve_u_ct_by_blocks.hpp"
-
-#include "tri_solve_u_nt_unblocked.hpp"
-#include "tri_solve_u_nt_blocked.hpp"
-#include "tri_solve_u_nt_by_blocks.hpp"
+#include "Tacho_TriSolve_Upper_ConjTrans_ByBlocks.hpp"
+#include "Tacho_TriSolve_Upper_NoTrans_ByBlocks.hpp"
 
 #endif

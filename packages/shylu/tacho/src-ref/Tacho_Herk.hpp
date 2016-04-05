@@ -33,7 +33,7 @@ namespace Tacho {
       fprintf(stderr, ">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n", 
               ArgUplo, ArgTrans, ArgAlgo, ArgVariant);  
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
-      return 0;
+      return -1;
     }
 
     // task-data parallel interface

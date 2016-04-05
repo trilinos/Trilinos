@@ -58,7 +58,7 @@ int main (int argc, char *argv[]) {
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
 
-  int nrhs = 1;
+  int nrhs = 0;
   clp.setOption("nrhs", &team_size, "# of right hand side");
 
   int mb = 0;

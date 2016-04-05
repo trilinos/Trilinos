@@ -33,6 +33,9 @@ namespace Tacho {
       TaskFactory factory;
 
       if (member.team_rank() == 0) {
+        const ordinal_type ntasks_window = 4096;
+        ordinal_type ntasks_spawned = 0;
+
         CrsTaskViewTypeA ATL, ATR,      A00, A01, A02,
           /**/           ABL, ABR,      A10, A11, A12,
           /**/                          A20, A21, A22;
@@ -40,7 +43,7 @@ namespace Tacho {
         Part_2x2(A,  ATL, ATR,
                  /**/ABL, ABR,
                  0, 0, Partition::TopLeft);
-        ordinal_type ntasks_spawned = 0;
+
         while (ATL.NumRows() < A.NumRows()) {
           Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
                           /*******/ /**/  A10, A11, A12,
@@ -197,9 +200,10 @@ namespace Tacho {
                            A20, A21, A22, /**/ ABL, ABR,
                            Partition::TopLeft);
 
-          if (ntasks_spawned > 4096) 
+          if (ntasks_spawned > ntasks_window) 
             break;
         }
+
         A = ABR;
       }
       

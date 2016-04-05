@@ -80,9 +80,9 @@ namespace Tacho {
 
     typedef TaskView<DenseMatrixViewHostType> DenseTaskViewHostType;
 
-    //typedef DenseMatrixBase<DenseTaskViewHostType,ordinal_type,size_type,HostSpaceType> DenseHierBaseHostType;
-    //typedef DenseMatrixView<DenseHierBaseHostType> DenseHierViewHostType;
-    //typedef TaskView<DenseHierViewHostType> DenseTaskHierViewHostType;
+    typedef DenseMatrixBase<DenseTaskViewHostType,ordinal_type,size_type,HostSpaceType> DenseHierBaseHostType;
+    typedef DenseMatrixView<DenseHierBaseHostType> DenseHierViewHostType;
+    typedef TaskView<DenseHierViewHostType> DenseTaskHierViewHostType;
 
     typedef Kokkos::pair<size_type,size_type> range_type;
     typedef Kokkos::Experimental::Future<int,HostSpaceType> future_type;
@@ -413,86 +413,86 @@ namespace Tacho {
     ///    output - 
     ///
     double t_solve = 0;
-    // double error = 0, norm = 1;
-    // if (nrhs) {
-    //   DenseMatrixBaseHostType BB_host("BB_host", AA_reordered_host.NumRows(), nrhs), XX_host("XX_host");
-    //   XX_host.createConfTo(BB_host);
+    double error = 0, norm = 1;
+    if (nrhs) {
+      DenseMatrixBaseHostType BB_host("BB_host", AA_reordered_host.NumRows(), nrhs), XX_host("XX_host");
+      XX_host.createConfTo(BB_host);
 
-    //   const ordinal_type m = BB_host.NumRows();
-    //   for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-    //     for (ordinal_type i=0;i<m;++i) 
-    //       XX_host.Value(i, rhs) = (rhs + 1);
+      const ordinal_type m = BB_host.NumRows();
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+        for (ordinal_type i=0;i<m;++i) 
+          XX_host.Value(i, rhs) = (rhs + 1);
 
-    //     // matvec
-    //     HostSpaceType::execution_space::fence();
-    //     Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
-    //                          [&](const ordinal_type i) {
-    //                            const auto nnz  = AA_reordered_host.NumNonZerosInRow(i);
-    //                            const auto cols = AA_reordered_host.ColsInRow(i);
-    //                            const auto vals = AA_reordered_host.ValuesInRow(i);
+        // matvec
+        HostSpaceType::execution_space::fence();
+        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
+                             [&](const ordinal_type i) {
+                               const auto nnz  = AA_reordered_host.NumNonZerosInRow(i);
+                               const auto cols = AA_reordered_host.ColsInRow(i);
+                               const auto vals = AA_reordered_host.ValuesInRow(i);
                                
-    //                            value_type tmp = 0;
-    //                            for (ordinal_type j=0;j<nnz;++j) 
-    //                              tmp += vals(j)*XX_host.Value(cols(j), rhs);
-    //                            BB_host.Value(i, rhs) = tmp;
-    //                          } );
-    //     HostSpaceType::execution_space::fence();
+                               value_type tmp = 0;
+                               for (ordinal_type j=0;j<nnz;++j) 
+                                 tmp += vals(j)*XX_host.Value(cols(j), rhs);
+                               BB_host.Value(i, rhs) = tmp;
+                             } );
+        HostSpaceType::execution_space::fence();
 
-    //     for (ordinal_type i=0;i<m;++i) 
-    //       XX_host.Value(i, rhs) = BB_host.Value(i, rhs);
-    //   }
+        for (ordinal_type i=0;i<m;++i) 
+          XX_host.Value(i, rhs) = BB_host.Value(i, rhs);
+      }
 
-    //   DenseHierBaseHostType HB_host("HB_host");
+      DenseHierBaseHostType HB_host("HB_host");
       
-    //   DenseMatrixTools::createHierMatrix(HB_host, BB_host, 
-    //                                      S.NumBlocks(),
-    //                                      S.RangeVector(),
-    //                                      nb);
+      DenseMatrixTools::createHierMatrix(HB_host, BB_host, 
+                                         S.NumBlocks(),
+                                         S.RangeVector(),
+                                         nb);
       
-    //   CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
-    //   DenseTaskHierViewHostType TB_host(HB_host);
+      CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
+      DenseTaskHierViewHostType TB_host(HB_host);
       
-    //   // timer.reset();
-    //   // {
-    //   //   auto future_forward_solve 
-    //   //     = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
-    //   //                               AlgoTriSolve::ByBlocks,Variant::Two>
-    //   //                               ::createTaskFunctor(policy, 
-    //   //                                                   Diag::NonUnit, TA_factor_host, TB_host),
-    //   //                               0);
-    //   //   policy.spawn(future_forward_solve);
+      timer.reset();
+      // {
+      //   auto future_forward_solve 
+      //     = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
+      //                               AlgoTriSolve::ByBlocks,Variant::Two>
+      //                               ::createTaskFunctor(policy, 
+      //                                                   Diag::NonUnit, TA_factor_host, TB_host),
+      //                               0);
+      //   policy.spawn(future_forward_solve);
         
-    //   //   auto future_backward_solve
-    //   //     = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
-    //   //                               AlgoTriSolve::ByBlocks,Variant::Two>
-    //   //                               ::createTaskFunctor(policy,
-    //   //                                                   Diag::NonUnit, TA_factor_host, TB_host),
-    //   //                               1);
+      //   auto future_backward_solve
+      //     = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
+      //                               AlgoTriSolve::ByBlocks,Variant::Two>
+      //                               ::createTaskFunctor(policy,
+      //                                                   Diag::NonUnit, TA_factor_host, TB_host),
+      //                               1);
         
-    //   //   policy.add_dependence(future_backward_solve, future_forward_solve);
-    //   //   policy.spawn(future_backward_solve);
+      //   policy.add_dependence(future_backward_solve, future_forward_solve);
+      //   policy.spawn(future_backward_solve);
         
-    //   //   Kokkos::Experimental::wait(policy);
+      //   Kokkos::Experimental::wait(policy);
         
-    //   //   TACHO_TEST_FOR_ABORT(future_forward_solve.get(),  "Fail to perform TriSolveSuperNodesByBlocks (forward)");
-    //   //   TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");
-    //   // }
-    //   // t_solve = timer.seconds();
+      //   TACHO_TEST_FOR_ABORT(future_forward_solve.get(),  "Fail to perform TriSolveSuperNodesByBlocks (forward)");
+      //   TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");
+      // }
+      t_solve = timer.seconds();
 
-    //   // for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-    //   //   for (ordinal_type i=0;i<m;++i) {
-    //   //     error += Util::abs(XX_host.Value(i, rhs) - (rhs + 1));
-    //   //     norm  += Util::abs(rhs + 1);
-    //   //   }
-    //   // }
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+        for (ordinal_type i=0;i<m;++i) {
+          error += Util::abs(XX_host.Value(i, rhs) - (rhs + 1));
+          norm  += Util::abs(rhs + 1);
+        }
+      }
       
-    //   std::cout << std::scientific;
-    //   std::cout << "CholSuperNodesByBlocks:: error = " << error 
-    //             << ", norm = " << norm 
-    //             << ", rel error = " << (error/norm) 
-    //             << std::endl;
-    //   std::cout.unsetf(std::ios::scientific);      
-    // }
+      std::cout << std::scientific;
+      std::cout << "CholSuperNodesByBlocks:: error = " << error 
+                << ", norm = " << norm 
+                << ", rel error = " << (error/norm) 
+                << std::endl;
+      std::cout.unsetf(std::ios::scientific);      
+    }
   
     ///
     /// Print out 
