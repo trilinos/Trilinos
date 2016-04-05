@@ -30,23 +30,28 @@ namespace Tacho {
            CrsExecViewTypeB &B) {
 
     if (member.team_rank() == 0) {
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA(A.Hier());
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> BB(B.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA; //(A.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> BB; //(B.Hier());
 
-      // {
-      //   ordinal_type tr, br, lc, rc;
+      {
+        typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
+        const ordinal_type blksize = 256;
 
-      //   B.getDataRegion(tr, br, lc, rc);
-      //   const ordinal_type offm = tr, offn = lc, m = br - tr + 1, n = rc - lc + 1;
+        ordinal_type tr, br, lc, rc;
 
-      //   BB.setView(B.Flat(),
-      //              offm, m,
-      //              offn, n);
+        B.getDataRegion(tr, br, lc, rc);
+        const ordinal_type 
+          offm = tr/blksize, m = br/blksize - offm + 1, 
+          offn = lc/blksize, n = rc/blksize - offn + 1;
 
-      //   AA.setView(A.Flat(),
-      //              offm, m,
-      //              offm, m);
-      // }
+        BB.setView(B.Hier(),
+                   offm, m,
+                   offn, n);
+
+        AA.setView(A.Hier(),
+                   offm, m,
+                   offm, m);
+      }
 
       // all diagonal blocks are supposed and assumed to be full matrix
       // B matrix dimensions should match to A

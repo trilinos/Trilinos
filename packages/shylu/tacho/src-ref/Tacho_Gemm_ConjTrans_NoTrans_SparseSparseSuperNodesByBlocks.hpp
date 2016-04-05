@@ -31,38 +31,45 @@ namespace Tacho {
            const ScalarType beta,
            CrsExecViewTypeC &C) {
 
-    //typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
-
     if (member.team_rank() == 0) {
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA(A.Hier());
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> BB(B.Hier());
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> CC(C.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA; //(A.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> BB; //(B.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> CC; //(C.Hier());
       
       // be careful for scaling on C as we narrow computation region for factorization
-      // {
-      //   ordinal_type tr, br, lc, rc;
+      {
+        typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
+        const ordinal_type blksize = 256;
 
-      //   A.getDataRegion(tr, br, lc, rc);
-      //   const ordinal_type offmA = tr, offnA = lc, mA = br - tr + 1, nA = rc - lc + 1;
+        ordinal_type tr, br, lc, rc;
 
-      //   B.getDataRegion(tr, br, lc, rc);
-      //   const ordinal_type offmB = tr, offnB = lc, mB = br - tr + 1, nB = rc - lc + 1;
+        A.getDataRegion(tr, br, lc, rc);
+        const ordinal_type 
+          offmA = tr/blksize, mA = br/blksize - offmA + 1, 
+          offnA = lc/blksize, nA = rc/blksize - offnA + 1;
 
-      //   C.getDataRegion(tr, br, lc, rc);
-      //   const ordinal_type offmC = tr, offnC = lc, mC = br - tr + 1, nC = rc - lc + 1;
+        B.getDataRegion(tr, br, lc, rc);
+        const ordinal_type 
+          offmB = tr/blksize, mB = br/blksize - offmB + 1, 
+          offnB = lc/blksize, nB = rc/blksize - offnB + 1;
+
+        C.getDataRegion(tr, br, lc, rc);
+        const ordinal_type 
+          offmC = tr/blksize, mC = br/blksize - offmC + 1, 
+          offnC = lc/blksize, nC = rc/blksize - offnC + 1;
         
-      //   AA.setView(A.Flat(),
-      //              Util::max(offmA, offmB), Util::min(mA, mB),
-      //              Util::max(offnA, offmC), Util::min(nA, mC));
+        AA.setView(A.Hier(),
+                   Util::max(offmA, offmB), Util::min(mA, mB),
+                   Util::max(offnA, offmC), Util::min(nA, mC));
 
-      //   BB.setView(B.Flat(),
-      //              Util::max(offmA, offmB), Util::min(mA, mB),
-      //              Util::max(offnB, offnC), Util::min(nB, nC));
+        BB.setView(B.Hier(),
+                   Util::max(offmA, offmB), Util::min(mA, mB),
+                   Util::max(offnB, offnC), Util::min(nB, nC));
 
-      //   CC.setView(C.Flat(),
-      //              AA.OffsetCols(), AA.NumCols(),
-      //              BB.OffsetCols(), BB.NumCols());
-      // }
+        CC.setView(C.Hier(),
+                   AA.OffsetCols(), AA.NumCols(),
+                   BB.OffsetCols(), BB.NumCols());
+      }
 
       Gemm<Trans::ConjTranspose,Trans::NoTranspose,
         AlgoGemm::DenseByBlocks,Variant::One>
