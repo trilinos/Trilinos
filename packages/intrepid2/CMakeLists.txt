@@ -28,11 +28,20 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
-  HAVE_INTREPID2_DEBUG_INF_CHECK
-  "Enable a host of runtime debug checking for infs and nans."
-  ${${PROJECT_NAME}_ENABLE_DEBUG}
-  )
+## Once KokkosDynRankView refactoring is done, this should be removed
+IF(${PACKAGE_NAME}_DISABLE_DEBUG_INF_CHECK)
+  ## override the flag to be off
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
+    HAVE_INTREPID2_DEBUG_INF_CHECK
+    "Enable a host of runtime debug checking for infs and nans."
+    OFF)
+ELSE()
+  ## the flag inherits from trilinos
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
+    HAVE_INTREPID2_DEBUG_INF_CHECK
+    "Enable a host of runtime debug checking for infs and nans."
+    ${${PROJECT_NAME}_ENABLE_DEBUG})
+ENDIF()   
 
 #
 # C) Add the libraries, tests, and examples
