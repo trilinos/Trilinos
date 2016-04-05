@@ -55,6 +55,11 @@
 #include <KokkosKernels_GaussSeidel.hpp>
 #endif
 
+#ifdef HAVE_IFPACK2_DUMP_MTX_MATRIX
+ #include <MatrixMarket_Tpetra.hpp>
+#endif
+
+
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
 // #ifndef IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
@@ -579,6 +584,8 @@ void Relaxation<MatrixType>::initialize ()
       hasBlockCrsMatrix_ = true;
     }
   }
+
+
 #ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
     //KokkosKernels GaussSiedel Initialization.
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
@@ -586,6 +593,13 @@ void Relaxation<MatrixType>::initialize ()
       TEUCHOS_TEST_FOR_EXCEPTION(
           crsMat == NULL, std::runtime_error, "Ifpack2::Relaxation::compute: "
           "MT methods works for CRSMatrix Only.");
+
+#ifdef HAVE_IFPACK2_DUMP_MTX_MATRIX
+      Tpetra::MatrixMarket::Writer<crs_matrix_type> crs_writer;
+      std::string file_name = "Ifpack2_MT_GS.mtx";
+      Teuchos::RCP<const crs_matrix_type> rcp_crs_mat = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+      crs_writer.writeSparseFile(file_name, rcp_crs_mat);
+#endif
 
       this->kh = Teuchos::rcp(new KernelHandle());
       if (kh->get_gs_handle() == NULL){
