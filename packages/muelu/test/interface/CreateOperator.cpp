@@ -57,6 +57,7 @@
 #include <Galeri_XpetraMaps.hpp>
 
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_MultiVector.hpp>
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
@@ -74,9 +75,6 @@
 #include <MueLu_CreateEpetraPreconditioner.hpp>
 #endif
 
-// These files must be included last
-#include <MueLu_UseDefaultTypes.hpp>
-
 void run_sed(const std::string& pattern, const std::string& baseFile);
 
 const std::string thickSeparator = "==========================================================================================================================";
@@ -85,9 +83,10 @@ const std::string thinSeparator  = "--------------------------------------------
 const std::string prefSeparator = "=====================================";
 
 namespace MueLuExamples {
-#include <MueLu_UseShortNames.hpp>
 
-  void setup_system_list(Xpetra::UnderlyingLib& lib, Teuchos::RCP<Matrix>& A, Teuchos::ParameterList& mueluList, const std::string& fname) {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void setup_system_list(Xpetra::UnderlyingLib& lib, Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, Teuchos::ParameterList& mueluList, const std::string& fname) {
+#include <MueLu_UseShortNames.hpp>
     using Teuchos::RCP;
     using Teuchos::rcp;
     int myRank = A->getRowMap()->getComm()->getRank();
@@ -138,7 +137,9 @@ namespace MueLuExamples {
   }
 
   // This routine generate's the user's original A matrix and nullspace
-  void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib, Teuchos::ParameterList &galeriList,  Teuchos::RCP<const Teuchos::Comm<int> > &comm, Teuchos::RCP<Matrix> & A, Teuchos::RCP<MultiVector> & nullspace){
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib, Teuchos::ParameterList &galeriList,  Teuchos::RCP<const Teuchos::Comm<int> > &comm, Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace){
+#include <MueLu_UseShortNames.hpp>
     using Teuchos::RCP;
 
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -222,6 +223,7 @@ namespace MueLuExamples {
       std::vector<std::string> classes;
       classes.push_back("Xpetra::Matrix");
       classes.push_back("MueLu::Constraint");
+      classes.push_back("MueLu::SmootherPrototype");
       for (size_t q = 0; q < classes.size(); q++)
         run_sed("'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/'", baseFile);
 
@@ -258,18 +260,13 @@ namespace MueLuExamples {
 
 }//namespace
 
-int main(int argc, char *argv[]) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
-
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ParameterList;
   using Teuchos::TimeMonitor;
-
-  // =========================================================================
-  // MPI initialization using Teuchos
-  // =========================================================================
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   bool success = true;
   bool verbose = true;
@@ -283,7 +280,6 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     // Parameters initialization
     // =========================================================================
-    Teuchos::CommandLineProcessor clp(false);
     GO nx = 100, ny = 100, nz = 100;
     Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
     ::Xpetra::Parameters xpetraParameters(clp);
@@ -295,7 +291,6 @@ int main(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
     ParameterList galeriList = galeriParameters.GetParameterList();
     out << thickSeparator << std::endl << xpetraParameters << galeriParameters;
 
@@ -306,7 +301,7 @@ int main(int argc, char *argv[]) {
     RCP<Matrix> A, P, R, Ac;
     RCP<MultiVector> nullspace;
     std::string matrixType = galeriParameters.GetMatrixType();
-    MueLuExamples::generate_user_matrix_and_nullspace(matrixType, lib, galeriList, comm, A, nullspace);
+    MueLuExamples::generate_user_matrix_and_nullspace<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrixType, lib, galeriList, comm, A, nullspace);
     map = A->getRowMap();
 
     // =========================================================================
@@ -345,7 +340,7 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Get("R", R);
       H->GetLevel(1)->Get("P", P);
       H->GetLevel(1)->Get("A", Ac);
-      nullspace = H->GetLevel(1)->Get<RCP<MultiVector> >("Nullspace", LevelFactory->GetFactory("Nullspace").get());
+      nullspace = H->GetLevel(1)->template Get<RCP<MultiVector> >("Nullspace", LevelFactory->GetFactory("Nullspace").get());
 
       if (myRank==0) {
         // Redirect output back
@@ -376,7 +371,7 @@ int main(int argc, char *argv[]) {
       level1.set("P",         P);
       level1.set("Nullspace", nullspace);
 
-      MueLuExamples::setup_system_list(lib, A, mueluList, fname);
+      MueLuExamples::setup_system_list<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lib, A, mueluList, fname);
 
       bool passed = MueLuExamples::compare_to_gold(myRank, fname);
       success = success && passed;
@@ -402,7 +397,7 @@ int main(int argc, char *argv[]) {
       level1.set("P",         P);
       level1.set("Nullspace", nullspace);
 
-      MueLuExamples::setup_system_list(lib, A, mueluList, fname);
+      MueLuExamples::setup_system_list<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lib, A, mueluList, fname);
 
       bool passed = MueLuExamples::compare_to_gold(myRank, fname);
       success = success && passed;
@@ -428,7 +423,7 @@ int main(int argc, char *argv[]) {
       level1.set("P",         P);
       level1.set("Nullspace", nullspace);
 
-      MueLuExamples::setup_system_list(lib, A, mueluList, fname);
+      MueLuExamples::setup_system_list<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lib, A, mueluList, fname);
 
       bool passed = MueLuExamples::compare_to_gold(myRank, fname);
       success = success && passed;
@@ -441,6 +436,65 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
+
+int main(int argc, char* argv[]) {
+  bool success = false;
+  bool verbose = true;
+
+  try {
+    const bool throwExceptions = false;
+
+    Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+
+    Teuchos::CommandLineProcessor clp(throwExceptions);
+    Xpetra::Parameters xpetraParameters(clp);
+
+    clp.recogniseAllOptions(false);
+    switch (clp.parse(argc, argv, NULL)) {
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    }
+
+    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
+    if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
+#else
+      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
+#endif
+    }
+
+    if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+
+#ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+      return main_<double,int,long,Node>(clp, lib, argc, argv);
+#else
+#  if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+      return main_<double,int,int,Node> (clp, lib, argc, argv);
+#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG)
+      return main_<double,int,long,Node>(clp, lib, argc, argv);
+#  elif defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+      return main_<double,int,long long,Node>(clp, lib, argc, argv);
+#  else
+      throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation for Tpetra");
+#  endif
+#endif
+
+#else
+      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
+#endif
+    }
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+}
+
 
 void run_sed(const std::string& pattern, const std::string& baseFile) {
   // sed behaviour differs between Mac and Linux
