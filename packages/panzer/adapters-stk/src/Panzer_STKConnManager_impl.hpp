@@ -82,6 +82,14 @@ STKConnManager<GO>::STKConnManager(const Teuchos::RCP<STK_Interface> & stkMeshDB
 }
 
 template <typename GO>
+Teuchos::RCP<panzer::ConnManagerBase<int> > 
+STKConnManager<GO>::
+noConnectivityClone() const
+{
+  return Teuchos::rcp(new STKConnManager<GO>(stkMeshDB_));
+}
+
+template <typename GO>
 void STKConnManager<GO>::clearLocalElementMapping()
 {
    elements_ = Teuchos::null; 
