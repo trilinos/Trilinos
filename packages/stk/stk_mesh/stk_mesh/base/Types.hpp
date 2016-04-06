@@ -322,10 +322,18 @@ inline std::ostream & operator<<(std::ostream &out, ConnectivityType type)
   return out;
 }
 
-enum ConnectivityOrdinal
+#define STK_16BIT_CONNECTIVITY_ORDINAL
+#ifdef STK_16BIT_CONNECTIVITY_ORDINAL
+enum ConnectivityOrdinal : uint16_t
+{
+  INVALID_CONNECTIVITY_ORDINAL = 65535
+};
+#else
+enum ConnectivityOrdinal : uint32_t
 {
   INVALID_CONNECTIVITY_ORDINAL = ~0U
 };
+#endif
 
 inline
 ConnectivityOrdinal& operator++(ConnectivityOrdinal& ord)

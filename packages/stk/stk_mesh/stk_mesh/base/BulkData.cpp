@@ -433,6 +433,22 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
 
 /////////////////////////////////////// End functions for create edges
 
+void check_size_of_types()
+{
+    const size_t sizeof_entity_in_bytes = sizeof(Entity);
+#ifdef STK_32BIT_ENTITY
+    ThrowRequireMsg(4 == sizeof_entity_in_bytes, "sizeof(Entity) expected to be 4, is instead "<<sizeof_entity_in_bytes);
+#else
+    ThrowRequireMsg(8 == sizeof_entity_in_bytes, "sizeof(Entity) expected to be 8, is instead "<<sizeof_entity_in_bytes);
+#endif
+
+    const size_t sizeof_connectivityordinal_in_bytes = sizeof(ConnectivityOrdinal);
+#ifdef STK_16BIT_CONNECTIVITY_ORDINAL
+    ThrowRequireMsg(2 == sizeof_connectivityordinal_in_bytes, "sizeof(ConnectivityOrdinal) expected to be 2, is instead "<<sizeof_connectivityordinal_in_bytes);
+#else
+    ThrowRequireMsg(4 == sizeof_connectivityordinal_in_bytes, "sizeof(ConnectivityOrdinal) expected to be 4, is instead "<<sizeof_connectivityordinal_in_bytes);
+#endif
+}
 //----------------------------------------------------------------------
 enum {ELEM_DEATH_CHILDMASK1 = 1};
 
@@ -507,6 +523,8 @@ BulkData::BulkData( MetaData & mesh_meta_data
   internal_create_ghosting( "shared" );
   //shared part should reside in m_ghost_parts[0]
   internal_create_ghosting( "shared_aura" );
+
+  check_size_of_types();
 
   register_observer(&m_meshDiagnosticObserver);
 
