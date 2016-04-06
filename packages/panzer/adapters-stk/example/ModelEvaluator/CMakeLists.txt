@@ -13,7 +13,7 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${main_driver_SOURCES}
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
+TRIBITS_COPY_FILES_TO_BINARY_DIR(me_main_driver_files
   SOURCE_FILES
     energy-ss.xml
     EXEDEPS me_main_driver
