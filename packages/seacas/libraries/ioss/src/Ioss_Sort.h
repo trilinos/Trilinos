@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -42,102 +42,98 @@
 // use this version where there are compiler issues.
 
 // Using Explicit Template Instantiation with the types:
-// 
+//
 // std::vector<int>, std::vector<int64_t>, std::vector<std::pair<int64_t,int64_t>>
-// 
+//
 // Update in Ioss_Sort.C if other types are needed.
 
 namespace {
-  const int QSORT_CUTOFF=12;
+  const int QSORT_CUTOFF = 12;
 
-  template <typename INT>
-    void SWAP(INT *V, size_t I, size_t J)
-    {
-      std::swap(V[I], V[J]);
+  template <typename INT> void SWAP(INT *V, size_t I, size_t J) { std::swap(V[I], V[J]); }
+
+  template <typename INT> size_t median3(INT v[], size_t left, size_t right)
+  {
+    size_t center;
+    center = (left + right) / 2;
+
+    if (v[left] > v[center])
+      SWAP(v, left, center);
+    if (v[left] > v[right])
+      SWAP(v, left, right);
+    if (v[center] > v[right])
+      SWAP(v, center, right);
+
+    SWAP(v, center, right - 1);
+    return right - 1;
+  }
+
+  template <typename INT> void qsort_int(INT v[], size_t left, size_t right)
+  {
+    size_t pivot;
+    size_t i, j;
+
+    if (left + QSORT_CUTOFF <= right) {
+      pivot = median3(v, left, right);
+      i     = left;
+      j     = right - 1;
+
+      for (;;) {
+        while (v[++i] < v[pivot])
+          ;
+        while (v[--j] > v[pivot])
+          ;
+        if (i < j) {
+          SWAP(v, i, j);
+        }
+        else {
+          break;
+        }
+      }
+
+      SWAP(v, i, right - 1);
+      qsort_int(v, left, i - 1);
+      qsort_int(v, i + 1, right);
     }
+  }
 
-  template <typename INT>
-    size_t median3(INT v[], size_t left, size_t right)
-    {
-      size_t center;
-      center = (left + right) / 2;
+  template <typename INT> void isort_int(INT v[], size_t N)
+  {
+    size_t i, j;
+    size_t ndx = 0;
+    INT    small;
+    INT    tmp;
 
-      if (v[left] > v[center])
-	SWAP(v, left, center);
-      if (v[left] > v[right])
-	SWAP(v, left, right);
-      if (v[center] > v[right])
-	SWAP(v, center, right);
-
-      SWAP(v, center, right-1);
-      return right-1;
-    }
-
-  template <typename INT>
-    void qsort_int(INT v[], size_t left, size_t right)
-    {
-      size_t pivot;
-      size_t i, j;
-
-      if (left + QSORT_CUTOFF <= right) {
-	pivot = median3(v, left, right);
-	i = left;
-	j = right - 1;
-
-	for ( ; ; ) {
-	  while (v[++i] < v[pivot]);
-	  while (v[--j] > v[pivot]);
-	  if (i < j) {
-	    SWAP(v, i, j);
-	  } else {
-	    break;
-	  }
-	}
-
-	SWAP(v, i, right-1);
-	qsort_int(v, left, i-1);
-	qsort_int(v, i+1, right);
+    if (N <= 1)
+      return;
+    small = v[0];
+    for (i = 1; i < N; i++) {
+      if (v[i] < small) {
+        small = v[i];
+        ndx   = i;
       }
     }
+    /* Put smallest value in slot 0 */
+    SWAP(v, 0, ndx);
 
-  template <typename INT>
-    void isort_int(INT v[], size_t N)
-    {
-      size_t i,j;
-      size_t ndx = 0;
-      INT small;
-      INT tmp;
-
-      if (N <= 1) return;
-      small = v[0];
-      for (i = 1; i < N; i++) {
-	if (v[i] < small) {
-	  small = v[i];
-	  ndx = i;
-	}
+    for (i = 1; i < N; i++) {
+      tmp = v[i];
+      for (j = i; tmp < v[j - 1]; j--) {
+        v[j] = v[j - 1];
       }
-      /* Put smallest value in slot 0 */
-      SWAP(v, 0, ndx);
-
-      for (i=1; i <N; i++) {
-	tmp = v[i];
-	for (j=i; tmp < v[j-1]; j--) {
-	  v[j] = v[j-1];
-	}
-	v[j] = tmp;
-      }
+      v[j] = tmp;
     }
+  }
 }
 
 namespace Ioss {
-  template <typename INT>
-    void qsort(std::vector<INT> &v)
-    {
-      if (v.size() <= 1) return;
-      qsort_int(v.data(), 0, v.size()-1);
-      isort_int(v.data(), v.size());
-    }
+  template <typename INT> void qsort(std::vector<INT> &v)
+  {
+    if (v.size() <= 1)
+      return;
+    qsort_int(v.data(), 0, v.size() - 1);
+    isort_int(v.data(), v.size());
+  }
 }
-
 
 #endif

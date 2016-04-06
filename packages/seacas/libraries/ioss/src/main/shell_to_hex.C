@@ -36,10 +36,10 @@
 #include <mpi.h>
 #endif
 
-#include <assert.h>
+#include <cassert>
 #include <Ionit_Initializer.h>
-#include <stddef.h>
-#include <stdlib.h>
+#include <cstddef>
+#include <cstdlib>
 #include <algorithm>
 #include <cstring>
 #include <iomanip>
@@ -99,13 +99,13 @@ namespace {
   void file_copy(const std::string& inpfile, const std::string& input_type,
 		 const std::string& outfile, const std::string& output_type,
 		 Globals& globals);
-}
+} // namespace
 // ========================================================================
 
 namespace {
   std::string codename;
   std::string version = "$Revision$";
-}
+} // namespace
 
 int main(int argc, char *argv[])
 {
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   globals.thickness = 1.0;
 
   codename = argv[0];
-  size_t ind = codename.find_last_of("/", codename.size());
+  size_t ind = codename.find_last_of('/', codename.size());
   if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
 }
@@ -336,7 +336,7 @@ namespace {
 	std::cerr  << " Number of nodes                      =" << std::setw(9) << num_nodes << "\n";
       }
 
-      Ioss::NodeBlock *nb = new Ioss::NodeBlock(output_region.get_database(), name, 2*num_nodes, degree);
+      auto nb = new Ioss::NodeBlock(output_region.get_database(), name, 2*num_nodes, degree);
       output_region.add(nb);
       ++i;
       ++id;
@@ -365,7 +365,7 @@ namespace {
 	type = "wedge";
       
       
-}Ioss::ElementBlock *eb = new Ioss::ElementBlock(output_region.get_database(), name, type, num_elem);
+}auto eb = new Ioss::ElementBlock(output_region.get_database(), name, type, num_elem);
       output_region.add(eb);
       ++i;
     }
@@ -593,5 +593,5 @@ namespace {
       }
     }
   }
-}
+} // namespace
 

@@ -1,15 +1,15 @@
 // Copyright(C) 2010 Sandia Corporation.
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,59 +32,58 @@
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
 
-#include <iosfwd>                       // for ostream
-#include <string>                       // for string
-#include <vector>                       // for vector
-#include "EJ_CodeTypes.h"               // for StringIdVector, Omissions, etc
-#include "EJ_vector3d.h"                // for vector3d
-#include "GetLongOpt.h"                 // for GetLongOption
+#include "EJ_CodeTypes.h" // for StringIdVector, Omissions, etc
+#include "EJ_vector3d.h"  // for vector3d
+#include "GetLongOpt.h"   // for GetLongOption
+#include <iosfwd>         // for ostream
+#include <string>         // for string
+#include <vector>         // for vector
 
 class SystemInterface
 {
- public:
+public:
   SystemInterface();
   ~SystemInterface();
 
   bool parse_options(int argc, char **argv);
-  
-  int debug() const {return debugLevel_;}
-      
-  double tolerance() const {return tolerance_;}
-  bool match_node_ids() const {return matchNodeIds_;}
-  bool match_node_xyz() const {return matchNodeXYZ_;}
-  bool match_elem_ids() const {return matchElemIds_;}
-  bool omit_nodesets() const {return omitNodesets_;}
-  bool omit_sidesets() const {return omitSidesets_;}
+
+  int debug() const { return debugLevel_; }
+
+  double tolerance() const { return tolerance_; }
+  bool   match_node_ids() const { return matchNodeIds_; }
+  bool   match_node_xyz() const { return matchNodeXYZ_; }
+  bool   match_elem_ids() const { return matchElemIds_; }
+  bool   omit_nodesets() const { return omitNodesets_; }
+  bool   omit_sidesets() const { return omitSidesets_; }
   bool convert_nodes_to_nodesets(int part_number) const;
-  bool disable_field_recognition() const {return disableFieldRecognition_;}
-  bool ints64bit() const {return ints64bit_;}
-  
-  int step_min() const {return stepMin_;}
-  int step_max() const {return stepMax_;}
-  int step_interval() const {return stepInterval_;}
+  bool disable_field_recognition() const { return disableFieldRecognition_; }
+  bool ints64bit() const { return ints64bit_; }
 
-  vector3d offset() const {return offset_;}
-  const std::vector<int>& information_record_parts() const {return infoRecordParts_;}
-  const StringIdVector& global_var_names() const {return globalVarNames_;}
-  const StringIdVector& node_var_names() const {return nodeVarNames_;}
-  const StringIdVector& elem_var_names() const {return elemVarNames_;}
-  const StringIdVector& nset_var_names() const {return nsetVarNames_;}
-  const StringIdVector& sset_var_names() const {return ssetVarNames_;}
+  int step_min() const { return stepMin_; }
+  int step_max() const { return stepMax_; }
+  int step_interval() const { return stepInterval_; }
 
-  const Omissions &block_omissions() const {return blockOmissions_;}
-  const Omissions &nset_omissions() const {return nsetOmissions_;}
-  const Omissions &sset_omissions() const {return ssetOmissions_;}
-  
+  vector3d                offset() const { return offset_; }
+  const std::vector<int> &information_record_parts() const { return infoRecordParts_; }
+  const StringIdVector &  global_var_names() const { return globalVarNames_; }
+  const StringIdVector &  node_var_names() const { return nodeVarNames_; }
+  const StringIdVector &  elem_var_names() const { return elemVarNames_; }
+  const StringIdVector &  nset_var_names() const { return nsetVarNames_; }
+  const StringIdVector &  sset_var_names() const { return ssetVarNames_; }
+
+  const Omissions &block_omissions() const { return blockOmissions_; }
+  const Omissions &nset_omissions() const { return nsetOmissions_; }
+  const Omissions &sset_omissions() const { return ssetOmissions_; }
 
   //! Dumps representation of data in this class to cerr
-  
-  static void show_version();
-  
-  // Make this private eventually...
-  StringVector   inputFiles_;
-  std::string outputName_;
 
- private:
+  static void show_version();
+
+  // Make this private eventually...
+  StringVector inputFiles_;
+  std::string  outputName_;
+
+private:
   void enroll_options();
 
   /*! The defined formats for the count attribute are:<br>
@@ -100,12 +99,11 @@ class SystemInterface
   void parse_step_option(const char *token);
 
   GetLongOption options_; //!< Options parsing
-  
 
-  int debugLevel_;
-  int stepMin_;
-  int stepMax_;
-  int stepInterval_;
+  int  debugLevel_;
+  int  stepMin_;
+  int  stepMax_;
+  int  stepInterval_;
   bool omitNodesets_;
   bool omitSidesets_;
   bool matchNodeIds_;
@@ -113,20 +111,20 @@ class SystemInterface
   bool matchElemIds_;
   bool disableFieldRecognition_;
   bool ints64bit_;
-  
+
   std::string elementStatusVariable_;
   std::string nodalStatusVariable_;
 
   vector3d offset_;
-  double tolerance_;
-      
+  double   tolerance_;
+
   Omissions blockOmissions_;
   Omissions nsetOmissions_;
   Omissions ssetOmissions_;
 
   std::vector<int> nodesetConvertParts_;
   std::vector<int> infoRecordParts_;
-  
+
   StringIdVector globalVarNames_;
   StringIdVector nodeVarNames_;
   StringIdVector elemVarNames_;

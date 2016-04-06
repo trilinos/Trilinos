@@ -33,14 +33,14 @@
  * 
  */
 #include "shell_interface.h"
-#include <stddef.h>                     // for nullptr
+#include <cstddef>                     // for nullptr
+#include "Ioss_GetLongOpt.h"            // for GetLongOption, etc
+#include "Ioss_Utils.h"                 // for Utils
 #include <cstdlib>                      // for exit, strtod, EXIT_SUCCESS, etc
 #include <cstring>                      // for strcmp
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <string>                       // for string, char_traits
 #include <vector>                       // for vector
-#include "Ioss_GetLongOpt.h"            // for GetLongOption, etc
-#include "Ioss_Utils.h"                 // for Utils
 
 
 
@@ -56,7 +56,7 @@ IOShell::Interface::Interface()
   enroll_options();
 }
 
-IOShell::Interface::~Interface() {}
+IOShell::Interface::~Interface() = default;
 
 void IOShell::Interface::enroll_options()
 {

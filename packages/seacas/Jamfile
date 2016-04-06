@@ -199,16 +199,16 @@ install install-user-include1
 # the install-root.
 explicit install-user-include2 ;
 install install-user-include2
-  : [ path.glob-tree $(seacas-root)/libraries/exodus/cbind/include : *.h ]
+  : [ path.glob-tree $(seacas-root)/libraries/exodus/include : *.h ]
   : <location>$(install-root)/seacas/include/exodus
-    <install-source-root>$(seacas-root)/libraries/exodus/cbind/include
+    <install-source-root>$(seacas-root)/libraries/exodus/include
   ;
 
 explicit install-user-include2b ;
 install install-user-include2b
-  : $(seacas-root)/libraries/exodus/cbind/sierra/exodusII_meta.h
+  : $(seacas-root)/libraries/exodus/sierra/exodusII_meta.h
   : <location>$(install-root)/seacas/include/exodus
-    <install-source-root>$(seacas-root)/libraries/exodus/cbind/sierra
+    <install-source-root>$(seacas-root)/libraries/exodus/sierra
   ;
 
 # This rule copies all headers it finds in the named directory of the
@@ -223,9 +223,9 @@ install install-user-include3
 
 explicit install-user-include4 ;
 install install-user-include4
-  : [ path.glob-tree $(seacas-root)/libraries/exodus_for/forbind/include : *.inc ]
+  : [ path.glob-tree $(seacas-root)/libraries/exodus_for/include : *.inc ]
   : <location>$(install-root)/seacas/include/exodus
-    <install-source-root>$(seacas-root)/libraries/exodus_for/forbind/include
+    <install-source-root>$(seacas-root)/libraries/exodus_for/include
   ;
 
 explicit install-user-include5 ;
@@ -594,6 +594,8 @@ lib ioss
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/*.C ]
     ]
+    /tpl/parmetis//parmetis
+    /tpl/trilinos//zoltan
     /mpi//mpi
   : <define>SIERRA_PARALLEL_MPI
     [ ifuserbuild
@@ -658,7 +660,7 @@ lib iovs
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/../TPLs_src/ParaViewCatalystSierraAdaptor/include
+        <include>$(seacas-root)/../TPLs/ParaViewCatalystSierraAdaptor/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -682,7 +684,7 @@ obj blot_main : $(seacas-root)/applications/blot/blot.f
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
-    <include>$(seacas-root)/libraries/exodus_for/forbind/include
+    <include>$(seacas-root)/libraries/exodus_for/include
     <include>$(seacas-root)/libraries/suplib
   ;
 
@@ -696,7 +698,7 @@ obj fastq_main : $(seacas-root)/applications/fastq/fastq.f
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
-    <include>$(seacas-root)/libraries/exodus_for/forbind/include
+    <include>$(seacas-root)/libraries/exodus_for/include
     <include>$(seacas-root)/libraries/suplib
   ;
 
@@ -705,14 +707,14 @@ lib exodus
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/exodus/cbind/src/*.c ]
+        [ glob $(seacas-root)/libraries/exodus/src/*.c ]
     ]
     /tpl/netcdf//netcdf
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exodus/cbind/include
+        <include>$(seacas-root)/libraries/exodus/include
 	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
@@ -725,7 +727,7 @@ lib exodus
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exodus/cbind/include
+        <include>$(seacas-root)/libraries/exodus/include
 	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
@@ -736,7 +738,7 @@ lib exodus
     ]
   ;
 
-obj addrwrap : $(seacas-root)/libraries/exodus_for/forbind/src/addrwrap.F
+obj addrwrap : $(seacas-root)/libraries/exodus_for/src/addrwrap.F
   : <toolset>gcc:<fflags>-fcray-pointer
     <toolset>clang:<fflags>-fcray-pointer
     <toolset>nvidia:<fflags>-fcray-pointer
@@ -750,7 +752,7 @@ obj addrwrap : $(seacas-root)/libraries/exodus_for/forbind/src/addrwrap.F
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-WF,-D__XLF__ -qintsize=8 -qrealsize=8"
-    <include>$(seacas-root)/libraries/exodus_for/forbind/include
+    <include>$(seacas-root)/libraries/exodus_for/include
     <link>shared:<fflags>-fPIC
   ;
 
@@ -759,7 +761,7 @@ lib exodus_for
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        $(seacas-root)/libraries/exodus_for/forbind/src/exo_jack.c
+        $(seacas-root)/libraries/exodus_for/src/exo_jack.c
         addrwrap
     ]
     exodus
@@ -767,7 +769,7 @@ lib exodus_for
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exodus_for/forbind/include
+        <include>$(seacas-root)/libraries/exodus_for/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -788,7 +790,7 @@ lib exodus_for
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exodus_for/forbind/include
+        <include>$(seacas-root)/libraries/exodus_for/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

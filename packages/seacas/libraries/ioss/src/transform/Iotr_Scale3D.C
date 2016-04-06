@@ -32,8 +32,8 @@
 
 #include <Ioss_Field.h>
 #include <Ioss_VariableType.h>
-#include <assert.h>
-#include <stddef.h>
+#include <cassert>
+#include <cstddef>
 #include <transform/Iotr_Scale3D.h>
 #include <string>
 #include <vector>
@@ -112,8 +112,16 @@ namespace Iotr {
 	idata[i+1] *= intScale[1];
 	idata[i+2] *= intScale[2];
       }
+    } else if (field.get_type() == Ioss::Field::INT64) {
+      int64_t *idata = static_cast<int64_t*>(data);
+
+      for (size_t i = 0; i < count*3; i+=3) {
+	idata[i+0] *= intScale[0];
+	idata[i+1] *= intScale[1];
+	idata[i+2] *= intScale[2];
+      }
     } else {
     }
     return true;
   }
-}
+} // namespace Iotr

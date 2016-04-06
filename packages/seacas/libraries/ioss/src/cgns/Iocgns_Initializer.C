@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if !defined(__PUMAGON__) || (defined(__PUMAGON__) && defined(JANUS2))
-#include <cgns/Iocgns_Initializer.h>
 #include <cgns/Iocgns_IOFactory.h>
+#include <cgns/Iocgns_Initializer.h>
 
 namespace Iocgns {
 
@@ -46,6 +46,6 @@ namespace Iocgns {
     } catch (...) {
     }
   }
-}
+}  // namespace Iocgns
 
 #endif

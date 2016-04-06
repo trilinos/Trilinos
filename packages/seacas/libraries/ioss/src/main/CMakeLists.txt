@@ -54,8 +54,16 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES sphgen.C
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  skinner
+  NOEXEPREFIX
+  NOEXESUFFIX
+  SOURCES skinner.C skinner_interface.C Ioss_GetLongOpt.C
+  )
+
 install_executable(cth_pressure_map)
 install_executable(io_shell)
 install_executable(shell_to_hex)
 install_executable(io_info)
 install_executable(sphgen)
+install_executable(skinner)
