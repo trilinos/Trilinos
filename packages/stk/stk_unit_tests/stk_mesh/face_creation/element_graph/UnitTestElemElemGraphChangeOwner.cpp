@@ -829,13 +829,15 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
         }
         else if (proc == 1) {
             // Connectivity for Shell Element 2
+            unsigned hex1Index = 0;
+            unsigned hex3Index = 1;
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(shell2));
-            EXPECT_EQ(0,  elem_graph.get_connected_remote_id_and_via_side(shell2, 0).side);
-            EXPECT_EQ(1,  elem_graph.get_connected_remote_id_and_via_side(shell2, 1).side);
-            EXPECT_EQ(3u, elem_graph.get_connected_remote_id_and_via_side(shell2, 0).id);
-            EXPECT_EQ(1u, elem_graph.get_connected_remote_id_and_via_side(shell2, 1).id);
-            EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 0));
-            EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 1));
+            EXPECT_EQ(0,  elem_graph.get_connected_remote_id_and_via_side(shell2, hex3Index).side);
+            EXPECT_EQ(1,  elem_graph.get_connected_remote_id_and_via_side(shell2, hex1Index).side);
+            EXPECT_EQ(3u, elem_graph.get_connected_remote_id_and_via_side(shell2, hex3Index).id);
+            EXPECT_EQ(1u, elem_graph.get_connected_remote_id_and_via_side(shell2, hex1Index).id);
+            EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, hex3Index));
+            EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, hex1Index));
             EXPECT_EQ(2u, elem_graph.num_edges());
             EXPECT_EQ(2u, elem_graph.num_parallel_edges());
         }

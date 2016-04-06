@@ -1527,41 +1527,45 @@ TEST( ElementGraph, Hex1Shell0Shell0Hex1Parallel )
 
     if (p_rank == 0) {
         // Connectivity for Shell Element 3
+        size_t hex1Index = 0;
+        size_t hex2Index = 1;
         EXPECT_EQ(2u, elemElemGraph.get_num_connected_elems(shell3));
-        EXPECT_EQ(0,  elemElemGraph.get_connected_remote_id_and_via_side(shell3, 0).side);
-        EXPECT_EQ(1,  elemElemGraph.get_connected_remote_id_and_via_side(shell3, 1).side);
-        EXPECT_EQ(2u, elemElemGraph.get_connected_remote_id_and_via_side(shell3, 0).id);
-        EXPECT_EQ(1u, elemElemGraph.get_connected_remote_id_and_via_side(shell3, 1).id);
-        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
-        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+        EXPECT_EQ(0,  elemElemGraph.get_connected_remote_id_and_via_side(shell3, hex2Index).side);
+        EXPECT_EQ(1,  elemElemGraph.get_connected_remote_id_and_via_side(shell3, hex1Index).side);
+        EXPECT_EQ(2u, elemElemGraph.get_connected_remote_id_and_via_side(shell3, hex2Index).id);
+        EXPECT_EQ(1u, elemElemGraph.get_connected_remote_id_and_via_side(shell3, hex1Index).id);
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, hex2Index));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, hex1Index));
 
         // Connectivity for Shell Element 4
         EXPECT_EQ(2u, elemElemGraph.get_num_connected_elems(shell4));
-        EXPECT_EQ(0,  elemElemGraph.get_connected_remote_id_and_via_side(shell4, 0).side);
-        EXPECT_EQ(1,  elemElemGraph.get_connected_remote_id_and_via_side(shell4, 1).side);
-        EXPECT_EQ(2u, elemElemGraph.get_connected_remote_id_and_via_side(shell4, 0).id);
-        EXPECT_EQ(1u, elemElemGraph.get_connected_remote_id_and_via_side(shell4, 1).id);
-        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
-        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+        EXPECT_EQ(0,  elemElemGraph.get_connected_remote_id_and_via_side(shell4, hex2Index).side);
+        EXPECT_EQ(1,  elemElemGraph.get_connected_remote_id_and_via_side(shell4, hex1Index).side);
+        EXPECT_EQ(2u, elemElemGraph.get_connected_remote_id_and_via_side(shell4, hex2Index).id);
+        EXPECT_EQ(1u, elemElemGraph.get_connected_remote_id_and_via_side(shell4, hex1Index).id);
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, hex2Index));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, hex1Index));
     }
     else if (p_rank == 1) {
+        size_t shell3Index = 0;
+        size_t shell4Index = 1;
         // Connectivity for Hex Element 1
         EXPECT_EQ(2u, elemElemGraph.get_num_connected_elems(hex1));
-        EXPECT_EQ(5,  elemElemGraph.get_connected_remote_id_and_via_side(hex1, 0).side);
-        EXPECT_EQ(5,  elemElemGraph.get_connected_remote_id_and_via_side(hex1, 1).side);
-        EXPECT_EQ(3u, elemElemGraph.get_connected_remote_id_and_via_side(hex1, 0).id);
-        EXPECT_EQ(4u, elemElemGraph.get_connected_remote_id_and_via_side(hex1, 1).id);
-        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
-        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 1));
+        EXPECT_EQ(5,  elemElemGraph.get_connected_remote_id_and_via_side(hex1, shell3Index).side);
+        EXPECT_EQ(5,  elemElemGraph.get_connected_remote_id_and_via_side(hex1, shell4Index).side);
+        EXPECT_EQ(3u, elemElemGraph.get_connected_remote_id_and_via_side(hex1, shell3Index).id);
+        EXPECT_EQ(4u, elemElemGraph.get_connected_remote_id_and_via_side(hex1, shell4Index).id);
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, shell3Index));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, shell4Index));
 
         // Connectivity for Hex Element 2
         EXPECT_EQ(2u, elemElemGraph.get_num_connected_elems(hex2));
-        EXPECT_EQ(4,  elemElemGraph.get_connected_remote_id_and_via_side(hex2, 0).side);
-        EXPECT_EQ(4,  elemElemGraph.get_connected_remote_id_and_via_side(hex2, 1).side);
-        EXPECT_EQ(3u, elemElemGraph.get_connected_remote_id_and_via_side(hex2, 0).id);
-        EXPECT_EQ(4u, elemElemGraph.get_connected_remote_id_and_via_side(hex2, 1).id);
-        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
-        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+        EXPECT_EQ(4,  elemElemGraph.get_connected_remote_id_and_via_side(hex2, shell3Index).side);
+        EXPECT_EQ(4,  elemElemGraph.get_connected_remote_id_and_via_side(hex2, shell4Index).side);
+        EXPECT_EQ(3u, elemElemGraph.get_connected_remote_id_and_via_side(hex2, shell3Index).id);
+        EXPECT_EQ(4u, elemElemGraph.get_connected_remote_id_and_via_side(hex2, shell4Index).id);
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, shell3Index));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, shell4Index));
     }
 
     EXPECT_EQ(4u, elemElemGraph.num_edges());

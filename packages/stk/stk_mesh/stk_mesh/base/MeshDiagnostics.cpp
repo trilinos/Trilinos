@@ -60,7 +60,12 @@ SplitCoincidentInfo get_split_coincident_elements_from_received_element_sides(st
     for (SideNodeToReceivedElementDataMap::value_type & receivedElementData: elementSidesReceived)
     {
         stk::mesh::impl::ParallelElementDataVector &parallelElementDatas = receivedElementData.second;
-        impl::ParallelElementDataVector localElementsAttachedToReceivedNodes = impl::get_elements_connected_via_sidenodes<impl::ParallelElementData>(bulkData, localIdMapper, parallelElementDatas[0].get_side_nodes());
+        impl::ParallelElementDataVector localElementsAttachedToReceivedNodes =
+                impl::get_elements_connected_via_sidenodes<impl::ParallelElementData>(bulkData,
+                                                                                      parallelElementDatas[0].get_element_identifier(),
+                                                                                      parallelElementDatas[0].get_element_topology(),
+                                                                                      localIdMapper,
+                                                                                      parallelElementDatas[0].get_side_nodes());
         fill_split_coincident_connections(bulkData, localIdMapper, localElementsAttachedToReceivedNodes, parallelElementDatas, splitCoincidents);
     }
     return splitCoincidents;
