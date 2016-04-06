@@ -88,3 +88,15 @@ SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE
 
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
+
+# Install TriBITS so that other projects can use it.
+ADVANCED_SET(${PROJECT_NAME}_INSTALL_TriBITS ON CACHE BOOL
+  "If ture, install TriBITS into <lib-install-dir>/cmake/tribits/")
+IF (${PROJECT_NAME}_INSTALL_TriBITS)
+  ASSERT_DEFINED(Trilinos_SOURCE_DIR)
+  ASSERT_DEFINED(${PROJECT_NAME}_INSTALL_LIB_DIR)
+  INSTALL(
+    DIRECTORY "${Trilinos_SOURCE_DIR}/cmake/tribits"
+    DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake"
+    )
+ENDIF()
