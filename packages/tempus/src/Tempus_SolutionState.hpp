@@ -27,8 +27,9 @@ namespace tempus {
  *  be useful for adjoint sensitivities.
  */
 template<class Scalar>
-class SolutionState : public Teuchos::Describable,
-                      public Teuchos::VerboseObject<tempus::Integrator<Scalar> >
+class SolutionState :
+  public Teuchos::Describable,
+  public Teuchos::VerboseObject<tempus::SolutionState<Scalar> >
 {
   public:
 
@@ -71,7 +72,8 @@ class SolutionState : public Teuchos::Describable,
     int    iStep;           ///< Time step index for this solution
     int    order;           ///< Order of this solution
     Scalar error;           ///< Local truncation error of this solution
-    bool   isInterpolated;  ///< 0 - soln is time integrated; 1 - soln is interpolated
+    bool   isInterpolated;  ///< F - soln is time integrated; T - soln is interpolated
+    bool   isRestartable;   ///< T - soln can be used as a restart
     Scalar accuracy;        ///< Interpolation accuracy of solution
 
     /// Solution at above time:

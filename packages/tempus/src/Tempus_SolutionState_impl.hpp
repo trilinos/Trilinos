@@ -16,6 +16,7 @@ SolutionState<Scalar>::SolutionState()
    order(-1),
    error(-1),
    isInterpolated(false),
+   isRestartable(true),
    accuracy(-1)
 {}
 
@@ -29,6 +30,7 @@ SolutionState<Scalar>::SolutionState(
   const int    order_,
   const Scalar error_,
   const bool   isInterpolated_,
+  const bool   isRestartable_,
   const Scalar accuracy_,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x_,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot_,
@@ -41,10 +43,11 @@ SolutionState<Scalar>::SolutionState(
    order         (order_),
    error         (error_),
    isInterpolated(isInterpolated_),
+   isRestartable (isRestartable_),
    accuracy      (accuracy_),
    x             (x_),
    xdot          (xdot_),
-   xdotdot       (xdotdot_),
+   xdotdot       (xdotdot_)
 {}
 
 template<class Scalar>
@@ -56,11 +59,12 @@ SolutionState<Scalar>::SolutionState( const SolutionState<Scalar>& ss_ )
    iStep         (ss_.iStep),
    order         (ss_.order),
    error         (ss_.error),
-   isInterpolated(ss_.isInterpolated_),
+   isInterpolated(ss_.isInterpolated),
+   isRestartable (ss_.isRestartable),
    accuracy      (ss_.accuracy),
    x             (ss_.x),
    xdot          (ss_.xdot),
-   xdotdot       (ss_.xdotdot),
+   xdotdot       (ss_.xdotdot)
 {}
 
 template<class Scalar>
@@ -76,8 +80,8 @@ RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
   if (!Teuchos::is_null(xdotdot)) xdotdot_out = xdotdot->clone_v();
 
   RCP<SolutionState<Scalar> > ss_out = Teuchos::rcp(new SolutionState<Scalar> (
-    time, dt, dtMin, dtMax, iStep, order, error, isInterpolated, accuracy,
-    x_out, xdot_out, xdotdot_out));
+    time, dt, dtMin, dtMax, iStep, order, error, isInterpolated, isRestartable,
+    accuracy, x_out, xdot_out, xdotdot_out));
 
   return ss_out;
 }
@@ -155,17 +159,18 @@ void SolutionState<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   if (verbLevel == Teuchos::VERB_EXTREME) {
-    out << description() << "::describe:" << std::endl;
-    out << "time           = " << time << std:endl;
-    out << "dt             = " << dt << std:endl;
-    out << "dtMin          = " << dtMin << std:endl;
-    out << "dtMax          = " << dtMax << std:endl;
-    out << "iStep          = " << iStep << std:endl;
-    out << "order          = " << order << std:endl;
-    out << "error          = " << error << std:endl;
-    out << "isInterpolated = " << isInterpolated << std:endl;
-    out << "accuracy       = " << accuracy << std:endl;
-    out << "x = " << std::endl;
+    out << description() << "::describe:" << std::endl
+        << "time           = " << time << std::endl
+        << "dt             = " << dt << std::endl
+        << "dtMin          = " << dtMin << std::endl
+        << "dtMax          = " << dtMax << std::endl
+        << "iStep          = " << iStep << std::endl
+        << "order          = " << order << std::endl
+        << "error          = " << error << std::endl
+        << "isInterpolated = " << isInterpolated << std::endl
+        << "isRestartable  = " << isRestartable << std::endl
+        << "accuracy       = " << accuracy << std::endl
+        << "x = " << std::endl;
     x->describe(out,verbLevel);
     if (xdot != Teuchos::null) {
       out << "xdot = " << std::endl;

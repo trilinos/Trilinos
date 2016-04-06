@@ -15,12 +15,34 @@ enum HistoryPolicy {
 };
 
 
-/** \brief Caretaker class for the history of solution states.
+/** \brief SolutionHistory is bascially a container of SolutionStates.
+ *  SolutionHistory maintains a collection of SolutionStates for later
+ *  retrival and reuse, such as checkingpointing, restart, and undo
+ *  operations.
+ *
+ *  The actual storage of the SolutionStates may take several forms:
+ *   - in memory
+ *   - on disk
+ *   - combination
+ *   - use ATDM DataWareHouse
+ *  but the interface should be unchanged and very similar to other
+ *  containers.
+ *
+ *  SolutionHistory can fill in SolutionStates between other SolutionStates
+ *  by either
+ *   - Integrating from one SolutionState to the desired time
+ *     - This might include methods like Griewank's algorithm.
+ *   - Interpolating between SolutionStates
+ *     - Interpolated SolutionStates may not be suitable for adjoint
+ *       solutions, restart, or undo operations (see SolutionState).
  *
  */
 template<class Scalar>
-class SolutionHistory :
-  virtual public InterpolatorAcceptingObjectBase<Scalar>
+class SolutionHistory
+  : virtual public Teuchos::Describable,
+    virtual public Teuchos::ParameterListAcceptor,
+    virtual public Teuchos::VerboseObject<SolutionHistory<Scalar> >,
+    virtual public InterpolatorAcceptingObjectBase<Scalar>
 {
 public:
 

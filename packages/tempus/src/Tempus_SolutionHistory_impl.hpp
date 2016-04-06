@@ -358,11 +358,13 @@ RCP<Teuchos::ParameterList> SolutionHistory<Scalar>::unsetParameterList()
   return(temp_param_list);
 }
 
+
 template <class Scalar>
 HistoryPolicy SolutionHistory<Scalar>::getHistoryPolicy()
 {
   return historyPolicy;
 }
+
 
 } // namespace tempus
 #endif // TEMPUS_SOLUTIONHISTORY_IMPL_HPP
