@@ -35,10 +35,10 @@ namespace {
   static std::string orderMax_name    = "Maximum time integration order";
   static int         orderMax_default = 4;
 
-  static std::string Constant_name     = "Constant";
-  static std::string Variable_name     = "Variable";
-  static std::string Selection_name    = "Step Type";
-  static std::string Selection_default = Variable_name;
+  static std::string Constant_name    = "Constant";
+  static std::string Variable_name    = "Variable";
+  static std::string StepType_name    = "Step Type";
+  static std::string StepType_default = Variable_name;
 
   Teuchos::Array<std::string> StepType_names = Teuchos::tuple<std::string>(
       Constant_name,
@@ -51,7 +51,7 @@ namespace {
           Teuchos::tuple<tempus::StepType>(
             tempus::CONSTANT_STEP_SIZE,
             tempus::VARIABLE_STEP_SIZE),
-          Selection_name));
+          StepType_name));
 
   static std::string dtConstant_name             = "Constant Time Step Size";
   static Scalar      dtConstant_default          = 1.0;
@@ -295,7 +295,7 @@ void TimeStepControl<Scalar>::setParameterList(
     "    (orderMin = "<<orderMin<<") > (orderMax = "<<orderMax<<")\n");
 
   stepType = StepTypePolicyValidator->getIntegralValue(
-      *paramList, Selection_name, Selection_default);
+      *paramList, StepType_name, StepType_default);
 
   dtConstant  = paramList->get<double>(dtConstant_name , dtConstant_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -393,11 +393,11 @@ RCP<const Teuchos::ParameterList> TimeStepControl<Scalar>::getValidParameters() 
     pl->set(orderMin_name, orderMin_default, "Minimum time integration order");
     pl->set(orderMax_name, orderMax_default, "Maximum time integration order");
 
-    pl->set(Selection_name, Selection_default,
+    pl->set(StepType_name, StepType_default,
       "Step Type indicates whether the Integrator will allow the time step "
       "to be modified the Stepper.\n"
       "  'Constant' - Integrator will take constant time step sizes.\n"
-      "  'Variable' - Integrator will allow changes to the time step size.\n"
+      "  'Variable' - Integrator will allow changes to the time step size.\n",
 //      "'Unmodifiable' - Integrator will not allow the Stepper to take a "
 //                     "time step different than one requested.\n"
 //      "'Modifiable' - Integrator will use a time step size from the Stepper "

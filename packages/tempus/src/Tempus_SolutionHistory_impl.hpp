@@ -329,7 +329,7 @@ RCP<const Teuchos::ParameterList> SolutionHistory<Scalar>::getValidParameters() 
       "'Keep Newest' - will retain the single newest solution state.  "
       "'Undo' - will retain two solution states in order to do a single undo.  "
       "'Static' - will retain 'Storage Limit' number of solution states.  "
-      "'Unlimited' - will not remove any solution states!"
+      "'Unlimited' - will not remove any solution states!",
       PolicyValidator);
 
     pl->set( StorageLimit_name, StorageLimit_default,
