@@ -17,5 +17,8 @@
 #include "Tacho_Gemm_ConjTrans_NoTrans_SparseSparseSuperNodes.hpp"
 #include "Tacho_Gemm_ConjTrans_NoTrans_SparseSparseSuperNodesByBlocks.hpp"
 
+#include "Tacho_Gemm_ConjTrans_NoTrans_SparseDenseSuperNodes.hpp"
+//#include "Tacho_Gemm_ConjTrans_NoTrans_SparseSparseSuperNodesByBlocks.hpp"
+
 
 #endif

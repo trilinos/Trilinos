@@ -33,6 +33,7 @@
 #include "Tacho_Herk.hpp"
 #include "Tacho_Trsm.hpp"
 #include "Tacho_Chol.hpp"
+#include "Tacho_TriSolve.hpp"
 
 namespace Tacho {
 
@@ -422,7 +423,7 @@ namespace Tacho {
       for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
         for (ordinal_type i=0;i<m;++i) 
           XX_host.Value(i, rhs) = (rhs + 1);
-
+        
         // matvec
         HostSpaceType::execution_space::fence();
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
@@ -436,48 +437,55 @@ namespace Tacho {
                                  tmp += vals(j)*XX_host.Value(cols(j), rhs);
                                BB_host.Value(i, rhs) = tmp;
                              } );
-        HostSpaceType::execution_space::fence();
-
-        for (ordinal_type i=0;i<m;++i) 
-          XX_host.Value(i, rhs) = BB_host.Value(i, rhs);
+        HostSpaceType::execution_space::fence();       
       }
+      if (verbose) {
+        XX_host.showMe(std::cout) << std::endl;
+        BB_host.showMe(std::cout) << std::endl;
+      }
+      DenseMatrixTools::copy(XX_host, BB_host);
 
-      DenseHierBaseHostType HB_host("HB_host");
+      DenseHierBaseHostType HX_host("HX_host");
       
-      DenseMatrixTools::createHierMatrix(HB_host, BB_host, 
+      DenseMatrixTools::createHierMatrix(HX_host, XX_host, 
                                          S.NumBlocks(),
                                          S.RangeVector(),
                                          nb);
       
       CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
-      DenseTaskHierViewHostType TB_host(HB_host);
+      DenseTaskHierViewHostType TX_host(HX_host);
       
       timer.reset();
-      // {
-      //   auto future_forward_solve 
-      //     = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
-      //                               AlgoTriSolve::ByBlocks,Variant::Two>
-      //                               ::createTaskFunctor(policy, 
-      //                                                   Diag::NonUnit, TA_factor_host, TB_host),
-      //                               0);
-      //   policy.spawn(future_forward_solve);
+      {
+        auto future_forward_solve 
+          = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
+                                    AlgoTriSolve::ByBlocks,Variant::Two>
+                                    ::createTaskFunctor(policy, 
+                                                        Diag::NonUnit, TA_factor_host, TX_host),
+                                    0);
+        policy.spawn(future_forward_solve);
         
-      //   auto future_backward_solve
-      //     = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
-      //                               AlgoTriSolve::ByBlocks,Variant::Two>
-      //                               ::createTaskFunctor(policy,
-      //                                                   Diag::NonUnit, TA_factor_host, TB_host),
-      //                               1);
+        auto future_backward_solve
+          = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
+                                    AlgoTriSolve::ByBlocks,Variant::Two>
+                                    ::createTaskFunctor(policy,
+                                                        Diag::NonUnit, TA_factor_host, TX_host),
+                                    1);
         
-      //   policy.add_dependence(future_backward_solve, future_forward_solve);
-      //   policy.spawn(future_backward_solve);
+        policy.add_dependence(future_backward_solve, future_forward_solve);
+        policy.spawn(future_backward_solve);
         
-      //   Kokkos::Experimental::wait(policy);
+        Kokkos::Experimental::wait(policy);
         
-      //   TACHO_TEST_FOR_ABORT(future_forward_solve.get(),  "Fail to perform TriSolveSuperNodesByBlocks (forward)");
-      //   TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");
-      // }
+        TACHO_TEST_FOR_ABORT(future_forward_solve.get(),  "Fail to perform TriSolveSuperNodesByBlocks (forward)");
+        TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");
+      }
       t_solve = timer.seconds();
+
+      if (verbose) {                                                                                                  
+        XX_host.showMe(std::cout) << std::endl;                                                                       
+        BB_host.showMe(std::cout) << std::endl;                                                                       
+      } 
 
       for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
         for (ordinal_type i=0;i<m;++i) {

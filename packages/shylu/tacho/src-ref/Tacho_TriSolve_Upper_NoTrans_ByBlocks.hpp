@@ -9,8 +9,8 @@
 namespace Tacho {
 
   template<int ArgVariant,
-           template<int,int> class ControlType = Control>
-  class TriSolve<Uplo::Upper,Trans::NoTrans,
+           template<int,int> class ControlType>
+  class TriSolve<Uplo::Upper,Trans::NoTranspose,
                  AlgoTriSolve::ByBlocks,ArgVariant,ControlType>{
   public:
 
@@ -18,24 +18,24 @@ namespace Tacho {
     // =======================
     template<typename PolicyType,
              typename MemberType,
-             typename ExecViewTypeA,
-             typename ExecViewTypeB>
+             typename CrsTaskViewTypeA,
+             typename DenseTaskViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
                       const MemberType &member,
                       const int diagA,
                       CrsTaskViewTypeA &A,
                       DenseTaskViewTypeB &B) {
-
+      
       typedef typename CrsTaskViewTypeA::ordinal_type      ordinal_type;
-
+      
       typedef typename CrsTaskViewTypeA::value_type        crs_value_type;
       typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
-
+      
       typedef typename DenseTaskViewTypeB::value_type      dense_value_type;
-
+      
       typedef typename CrsTaskViewTypeA::future_type       future_type;
-
+      
       TaskFactory factory;
 
       // ---------------------------------------------
@@ -73,63 +73,65 @@ namespace Tacho {
           // -----------------------------------------------------
 
           // B1 = B1 - A12*B2;
-          genGemmTasks_TriSolveUpperNoTransposeByBlocks(policy, A12, B2, B1);
-          row_view_type a(A12,0);
-          const ordinal_type nnz = a.NumNonZeros();
-
-          for (ordinal_type i=0;i<nnz;++i) {
-            const ordinal_type row_at_i = a.Col(i);
-            crs_value_type &aa = a.Value(i);
-
-            for (ordinal_type j=0;j<B1.NumCols();++j) {
-              const ordinal_type col_at_j = j;
-              dense_value_type &bb = B2.Value(row_at_i, col_at_j);
-              dense_value_type &cc = B1.Value(0, col_at_j);
-
-              const future_type f = factory.create<future_type>
-                (policy,
-                 Gemm<Trans::NoTranspose,Trans::NoTranspose,
-                 CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
-                 ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
-
-              // dependence
-              factory.depend(policy, f, aa.Future());
-              factory.depend(policy, f, bb.Future());
-              factory.depend(policy, f, cc.Future());
-
-              // place task signature on y
-              cc.setFuture(f);
-
-              // spawn a task
-              factory.spawn(policy, f);
-              ++ntasks_spawned;
+          {
+            row_view_type a(A12,0);
+            const ordinal_type nnz = a.NumNonZeros();
+            
+            for (ordinal_type i=0;i<nnz;++i) {
+              const ordinal_type row_at_i = a.Col(i);
+              crs_value_type &aa = a.Value(i);
+              
+              for (ordinal_type j=0;j<B1.NumCols();++j) {
+                const ordinal_type col_at_j = j;
+                dense_value_type &bb = B2.Value(row_at_i, col_at_j);
+                dense_value_type &cc = B1.Value(0, col_at_j);
+                
+                const future_type f = factory.create<future_type>
+                  (policy,
+                   Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                   CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
+                   ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
+                
+                // dependence
+                factory.depend(policy, f, aa.Future());
+                factory.depend(policy, f, bb.Future());
+                factory.depend(policy, f, cc.Future());
+                
+                // place task signature on y
+                cc.setFuture(f);
+                
+                // spawn a task
+                factory.spawn(policy, f);
+                ++ntasks_spawned;
+              }
             }
           }
 
           // B1 = inv(triu(A11))*B1
-          genTrsmTasks_TriSolveUpperNoTransposeByBlocks(policy, diagA, A11, B1);
-          row_view_type a(A11,0);
-          crs_value_type &aa = a.Value(0);
-
-          for (ordinal_type j=0;j<B1.NumCols();++j) {
-            dense_value_type &bb = B1.Value(0, j);
-
-            const future_type f = factory.create<future_type>
-              (policy,
-               Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
-               CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
-               ::createTaskFunctor(policy, diagA, 1.0, aa, bb), 2);
+          {
+            row_view_type a(A11,0);
+            crs_value_type &aa = a.Value(0);
             
-            // trsm dependence
-            factory.depend(policy, f, aa.Future());
-            factory.depend(policy, f, bb.Future());
-
-            // place task signature on b
-            bb.setFuture(f);
-
-            // spawn a task
-            factory.spawn(policy, f);
-            ++ntasks_spawned;
+            for (ordinal_type j=0;j<B1.NumCols();++j) {
+              dense_value_type &bb = B1.Value(0, j);
+              
+              const future_type f = factory.create<future_type>
+                (policy,
+                 Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
+                 CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
+                 ::createTaskFunctor(policy, diagA, 1.0, aa, bb), 2);
+              
+              // trsm dependence
+              factory.depend(policy, f, aa.Future());
+              factory.depend(policy, f, bb.Future());
+              
+              // place task signature on b
+              bb.setFuture(f);
+              
+              // spawn a task
+              factory.spawn(policy, f);
+              ++ntasks_spawned;
+            }
           }
           
           // -----------------------------------------------------
@@ -156,7 +158,6 @@ namespace Tacho {
     // task-data parallel interface
     // ===================\=========
     template<typename PolicyType,
-             typename ScalarType,
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     class TaskFunctor {
@@ -166,7 +167,6 @@ namespace Tacho {
 
     private:
       int _diagA;
-      ScalarType _alpha;
 
       ExecViewTypeA _A;
       ExecViewTypeB _B;
@@ -177,23 +177,21 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const int diagA,
-                  const ScalarType alpha,
                   const ExecViewTypeA &A,
                   const ExecViewTypeB &B)
         : _diagA(diagA),
-          _alpha(alpha),
           _A(A),
           _B(B),
           _policy(policy)
       { }
 
       KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return "Trsm"; }
+      const char* Label() const { return "TriSolve"; }
 
       KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke(_policy, _policy.member_single(),
-                             _diagA, _alpha, _A, _B);
+        r_val = TriSolve::invoke(_policy, _policy.member_single(),
+                                 _diagA, _A, _B);
         _B.setFuture(typename ExecViewTypeB::future_type());
       }
 
@@ -203,8 +201,8 @@ namespace Tacho {
         if (member.team_rank() == 0) {
           _policy.clear_dependence(this);
 
-          const int ierr = Trsm::invoke(_policy, member,
-                                        _diagA, _alpha, _A, _B);
+          const int ierr = TriSolve::invoke(_policy, member,
+                                            _diagA,_A, _B);
 
           if (_A.NumRows()) {
             _policy.respawn_needing_memory(this);
@@ -218,22 +216,19 @@ namespace Tacho {
     };
 
     template<typename PolicyType,
-             typename ScalarType,
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static
-    TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB>
+    TaskFunctor<PolicyType,ExecViewTypeA,ExecViewTypeB>
     createTaskFunctor(const PolicyType &policy,
                       const int diagA,
-                      const ScalarType alpha,
                       const ExecViewTypeA &A,
                       const ExecViewTypeB &B) {
-      return TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB>
-        (policy, diagA, alpha, A, B);
+      return TaskFunctor<PolicyType,ExecViewTypeA,ExecViewTypeB>
+        (policy, diagA, A, B);
     }
 
-  }
-
-
+  };
+}
 #endif

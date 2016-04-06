@@ -115,5 +115,6 @@ namespace Tacho {
 }
 
 #include "Tacho_Trsm_Left_Upper_ConjTrans.hpp"
+#include "Tacho_Trsm_Left_Upper_NoTrans.hpp"
 
 #endif

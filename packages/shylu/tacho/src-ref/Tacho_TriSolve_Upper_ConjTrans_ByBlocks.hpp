@@ -9,8 +9,8 @@
 namespace Tacho {
 
   template<int ArgVariant,
-           template<int,int> class ControlType = Control>
-  class TriSolve<Uplo::Upper,Trans::ConjTrans,
+           template<int,int> class ControlType>
+  class TriSolve<Uplo::Upper,Trans::ConjTranspose,
                  AlgoTriSolve::ByBlocks,ArgVariant,ControlType>{
   public:
 
@@ -18,8 +18,8 @@ namespace Tacho {
     // =======================
     template<typename PolicyType,
              typename MemberType,
-             typename ExecViewTypeA,
-             typename ExecViewTypeB>
+             typename CrsTaskViewTypeA,
+             typename DenseTaskViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
                       const MemberType &member,
@@ -156,7 +156,6 @@ namespace Tacho {
     // task-data parallel interface
     // ===================\=========
     template<typename PolicyType,
-             typename ScalarType,
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     class TaskFunctor {
@@ -166,7 +165,6 @@ namespace Tacho {
 
     private:
       int _diagA;
-      ScalarType _alpha;
 
       ExecViewTypeA _A;
       ExecViewTypeB _B;
@@ -177,23 +175,21 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const int diagA,
-                  const ScalarType alpha,
                   const ExecViewTypeA &A,
                   const ExecViewTypeB &B)
         : _diagA(diagA),
-          _alpha(alpha),
           _A(A),
           _B(B),
           _policy(policy)
       { }
 
       KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return "Trsm"; }
+      const char* Label() const { return "TriSolve"; }
 
       KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke(_policy, _policy.member_single(),
-                             _diagA, _alpha, _A, _B);
+        r_val = TriSolve::invoke(_policy, _policy.member_single(),
+                                 _diagA, _A, _B);
         _B.setFuture(typename ExecViewTypeB::future_type());
       }
 
@@ -203,8 +199,8 @@ namespace Tacho {
         if (member.team_rank() == 0) {
           _policy.clear_dependence(this);
           
-          const int ierr = Trsm::invoke(_policy, member,
-                                      _diagA, _alpha, _A, _B);
+          const int ierr = TriSolve::invoke(_policy, member,
+                                            _diagA, _A, _B);
 
           if (_A.NumRows()) {
             _policy.respawn_needing_memory(this);
@@ -218,19 +214,17 @@ namespace Tacho {
     };
 
     template<typename PolicyType,
-             typename ScalarType,
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static
-    TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB>
+    TaskFunctor<PolicyType,ExecViewTypeA,ExecViewTypeB>
     createTaskFunctor(const PolicyType &policy,
                       const int diagA,
-                      const ScalarType alpha,
                       const ExecViewTypeA &A,
                       const ExecViewTypeB &B) {
-      return TaskFunctor<PolicyType,ScalarType,ExecViewTypeA,ExecViewTypeB>
-        (policy, diagA, alpha, A, B);
+      return TaskFunctor<PolicyType,ExecViewTypeA,ExecViewTypeB>
+        (policy, diagA, A, B);
     }
 
   };

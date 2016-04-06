@@ -59,7 +59,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("team-size", &team_size, "Team size");
 
   int nrhs = 0;
-  clp.setOption("nrhs", &team_size, "# of right hand side");
+  clp.setOption("nrhs", &nrhs, "# of right hand side");
 
   int mb = 0;
   clp.setOption("mb", &mb, "Dense nested blocks size");

@@ -84,6 +84,24 @@ namespace Tacho {
     static constexpr int Gemm[2] = { AlgoGemm::SparseSparseSuperNodesByBlocks, Variant::One };
   };
 
+  // - SparseByBlocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::One> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseUnblocked, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseUnblocked, Variant::One };
+  };
+
+  // - SuperNodalByblocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::Two> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseSuperNodes, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseSuperNodes, Variant::One };
+  };
+
+  // - Fine grained SuperNodalByblocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::Three> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseSuperNodesByBlocks, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseSuperNodesByBlocks, Variant::One };
+  };
+
   // // ----------------------------------------------------------------------------------
 
 }
