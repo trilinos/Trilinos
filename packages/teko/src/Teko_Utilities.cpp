@@ -94,10 +94,10 @@
 #endif
 
 // Teko includes
-#include "Epetra/Teko_EpetraHelpers.hpp"
-#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
-#include "Tpetra/Teko_TpetraHelpers.hpp"
-#include "Tpetra/Teko_TpetraOperatorWrapper.hpp"
+#include "Teko_EpetraHelpers.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_TpetraHelpers.hpp"
+#include "Teko_TpetraOperatorWrapper.hpp"
 
 // Tpetra
 #include "Thyra_TpetraLinearOp.hpp"

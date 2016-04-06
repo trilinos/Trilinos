@@ -73,7 +73,7 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 #include "Teko_TpetraOperatorWrapper.hpp"
-#include "Tpetra/Teko_TpetraHelpers.hpp"
+#include "Teko_TpetraHelpers.hpp"
 
 #include "tTpetraOperatorWrapper.hpp"
 
