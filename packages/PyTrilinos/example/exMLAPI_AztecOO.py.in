@@ -112,7 +112,7 @@ class MultiLevel(ML.BaseOperator):
     }
 
     # Builds the multilevel hierarchy
-    for level in xrange(MaxLevels):
+    for level in range(MaxLevels):
       A = A_array[level]
       NextNullSpace = ML.MultiVector()
       # Constructs the non-smoothed prolongator...

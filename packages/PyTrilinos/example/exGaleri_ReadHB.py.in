@@ -78,13 +78,27 @@ Comm = Epetra.PyComm()
 failures = 0
 try:
   Map, Matrix, X, B, Xexact = Galeri.ReadHB("gre__115.rua", Comm);
-except Exception, e:
+except Exception as e:
   failures += 1
   print("Problems reading matrix file.  Error message is:")
   print("   ", e)
 
 # at this point you can use the objects in any PyTrilinos module,
 # for example AztecOO, Amesos, IFPACK, ML, and so on. 
+
+
+# A normal code path for the end of this script would just allow the Python
+# garbage collector to delete all the existing objects. Under Python 3, this
+# leads to a segmentation fault, which I have traced to the destruction of one
+# of the Epetra_Vectors. I got stuck trying to print the args to the
+# _wrap_delete_Vector() function, where the data refuses to be printed as
+# anythin other than a hex value.
+
+# As a temporary workaround, I delete one of the Epetra.Vector objects
+# explicitly. Deleting only X or only B both work as a workaround.
+
+print("Deleting X")
+del X
 
 failures = Comm.SumAll(failures)
 if failures == 0 and Comm.MyPID() == 0: print("End Result: TEST PASSED")

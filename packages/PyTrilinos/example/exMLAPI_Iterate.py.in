@@ -107,7 +107,7 @@ class MultiLevel(ML.BaseOperator):
       "aggregation: type": "MIS"
     }
 
-    for level in xrange(MaxLevels):
+    for level in range(MaxLevels):
       NextNullSpace = ML.MultiVector()
       A = A_array[level]
       # Constructs the non-smoothed prolongator...
@@ -220,7 +220,7 @@ def main():
   FineSpace = ML.Space(n)
   
   Matrix = ML.PyMatrix(FineSpace, FineSpace)
-  for i in xrange(n):
+  for i in range(n):
     if i > 0:
       Matrix[i, i - 1] = -1.
     if i < n - 1:

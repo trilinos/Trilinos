@@ -89,7 +89,7 @@ def main():
   # Creates a rectangular matrix, corresponding to non-smoothed
   # aggregation for a simple 1D problem
   NumGlobalRows = 12
-  NumGlobalCols = NumGlobalRows / 3
+  NumGlobalCols = NumGlobalRows // 3
   RowSpace = ML.Space(NumGlobalRows)
   ColSpace = ML.Space(NumGlobalCols)
   MyGlobalRows = RowSpace.GetMyGlobalElements()
@@ -102,7 +102,7 @@ def main():
   # Off-processor elements can be set (for example, the entire matrix
   # can be specified on processor 0 only). 
   for i in MyGlobalRows:
-    P[i, i / 3] = 1
+    P[i, i // 3] = 1
   
   # Most of MLAPI functions will work only *after* having called
   # FillComplete() on the P object. `print(P)' will not print
@@ -116,13 +116,13 @@ def main():
   # Modifies the already inserted elements. Note that new elements cannot 
   # be inserted after FillComplete().
   for i in MyGlobalRows:
-    P[i, i / 3] = 10
+    P[i, i // 3] = 10
 
   # Prints out the nonzeros of the matrix, row-by-row. Note that only
   # *local* elements can be queried.
   for i in MyGlobalRows:
     Indices, Values = P[i]
-    for j in xrange(len(Indices)):
+    for j in range(len(Indices)):
       print("P(%d, %d) = %e" %(i, Indices[j], Values[j]))
 
   Comm.Barrier()
@@ -186,13 +186,13 @@ def main():
     ML.Eig(A, ER, EI)
     ER.Sort()
     if Comm.MyPID() == 0:
-      for i in xrange(NumGlobalRows):
+      for i in range(NumGlobalRows):
         print("lambda_%d = %e" % (i, ER[i,0]))
   # 10) Get the lower triangular part of a distributed matrix
   L = ML.PyMatrix(RowSpace, RowSpace)
   for i in MyGlobalRows:
     Indices, Values = A[i]
-    for j in xrange(len(Indices)):
+    for j in range(len(Indices)):
       if Indices[j] <= i:
         L[i, Indices[j]] = Values[j]
   L.FillComplete()

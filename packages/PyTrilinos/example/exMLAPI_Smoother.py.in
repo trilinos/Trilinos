@@ -112,7 +112,7 @@ class MyJacobiSmoother(ML.BaseOperator):
         self = args[0]
         y = args[1]
         x = args[2]
-        for j in xrange(self.sweeps_):
+        for j in range(self.sweeps_):
             res = y - self.A_ * x
             x.Update(self.omega_, self.D_ * res, 1.0)
         return 0
@@ -172,7 +172,7 @@ def main():
     FineSpace = ML.Space(n)
   
     Matrix = ML.PyMatrix(FineSpace, FineSpace)
-    for i in xrange(n):
+    for i in range(n):
         if i > 0:
             Matrix[i, i - 1] = -1.
         if i < n - 1:
@@ -200,7 +200,7 @@ def main():
     # -------------------------------------------- #
     #
     MaxLevels = 3
-    for level in xrange(MaxLevels):
+    for level in range(MaxLevels):
         NextNullSpace = ML.MultiVector()
         # Constructs the non-smoothed prolongator...
         Ptent = ML.GetPNonSmoothed(A[level], NullSpace, NextNullSpace, List)
@@ -233,7 +233,7 @@ def main():
     # using 10 iterations:                                 #
     # ---------------------------------------------------- #
     #
-    for i in xrange(10):
+    for i in range(10):
         # compute non-preconditioned residual
         res = y - A[0] * x 
         # compute the preconditioned residual
