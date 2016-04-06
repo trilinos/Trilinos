@@ -100,7 +100,7 @@ class MultiLevel:
         self.NullSpace_ = ML.MultiVector(A.GetDomainSpace())
         self.NullSpace_.Update(1.0)
 
-        for level in xrange(MaxLevels):
+        for level in range(MaxLevels):
             # Needs a vector containing the actual null space, plus another
             # vector for the next-level null space.
             ThisNS = self.NullSpace_
@@ -204,7 +204,7 @@ def main():
     # A very simple Richardson method to solve the problem #
     # using 10 iterations:                                 #
     # ---------------------------------------------------- #
-    for i in xrange(10):
+    for i in range(10):
         # compute non-preconditioned residual
         res = y - Matrix * x 
         # compute the preconditioned residual

@@ -141,7 +141,7 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
             else:
                 NumEntries[0] = 3
             return 0
-        except Exception, e:
+        except Exception as e:
             print(e)
             return -1
 
@@ -176,7 +176,7 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
             RowIndex[0] = row
             ColIndex[0] = col + row - 1
             return 0
-        except Exception, e:
+        except Exception as e:
             print(e)
             return -1
 
@@ -207,7 +207,7 @@ class Laplace1D_Matrix(Epetra.BasicRowMatrix):
                                  colMap.LID(globalRow  ),
                                  colMap.LID(globalRow+1)]
             return 0
-        except Exception, e:
+        except Exception as e:
             print(e)
             return -1
 
