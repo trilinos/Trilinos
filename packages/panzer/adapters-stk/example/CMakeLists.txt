@@ -3,11 +3,5 @@ ADD_SUBDIRECTORY(PoissonExample)
 ADD_SUBDIRECTORY(CurlLaplacianExample)
 ADD_SUBDIRECTORY(MixedPoissonExample)
 ADD_SUBDIRECTORY(PoissonInterfaceExample)
-
-IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
-   ADD_SUBDIRECTORY(assembly_engine)
-ENDIF()
-
-IF (${PACKAGE_NAME}_BUILD_SOLVER_DRIVERS_EPETRA)
-   ADD_SUBDIRECTORY(main_driver)
-ENDIF()
+ADD_SUBDIRECTORY(assembly_engine)
+ADD_SUBDIRECTORY(main_driver)
