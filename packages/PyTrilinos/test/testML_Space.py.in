@@ -104,7 +104,7 @@ class MLSpaceTestCase(unittest.TestCase):
         "Test ML.Space (int,int) constructor"
         numMyEl = self.comm.MyPID() + 5
         n = self.comm.NumProc()
-        numGlobalEl = n * (n-1) / 2 + 5*n
+        numGlobalEl = n * (n-1) // 2 + 5*n
         space = ML.Space(numGlobalEl, numMyEl)
         self.assertEqual(space.GetLabel()[:4], "obj_")
         self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
@@ -141,7 +141,7 @@ class MLSpaceTestCase(unittest.TestCase):
         "Test ML.Space copy constructor"
         numMyEl = self.comm.MyPID() + 5
         n = self.comm.NumProc()
-        numGlobalEl = n * (n-1) / 2 + 5*n
+        numGlobalEl = n * (n-1) // 2 + 5*n
         space1 = ML.Space(numGlobalEl, numMyEl)
         space2 = ML.Space(space1)
         self.assertEqual(space1.GetNumGlobalElements(), space2.GetNumGlobalElements())
@@ -231,7 +231,7 @@ class MLSpaceTestCase(unittest.TestCase):
         self.assertEqual(space.IsLinear(), False)
         numMyEl = self.comm.MyPID() + 5
         n = self.comm.NumProc()
-        numGlobalEl = n * (n-1) / 2 + 5*n
+        numGlobalEl = n * (n-1) // 2 + 5*n
         space.Reshape(numGlobalEl, numMyEl)
         self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
         self.assertEqual(space.GetNumMyElements(), numMyEl)
