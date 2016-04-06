@@ -53,6 +53,9 @@
 #  endif
 #endif
 
+//#define STK_MEMORY_TRACKING
+#include <stk_util/util/MemoryTracking.hpp>
+
 namespace stk
 {
 
@@ -112,6 +115,12 @@ size_t get_memory_usage_now()
 // return current resident set size in bytes
 void get_memory_usage(size_t & now, size_t & hwm)
 {
+#ifdef STK_MEMORY_TRACKING
+    now = stk::get_total_bytes_currently_allocated();
+    hwm = stk::get_high_water_mark_in_bytes();
+    return;
+#endif
+
 #if defined (PROCFS)
   std::string vmhwm;
   std::string vmrss;
