@@ -19,6 +19,10 @@ using namespace Tacho;
 
 int main (int argc, char *argv[]) {
 
+#ifdef HAVE_SHYLUTACHO_VTUNE
+  __itt_pause();
+#endif
+
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("Tacho::DenseMatrixBase examples on Pthreads execution space.\n");
 

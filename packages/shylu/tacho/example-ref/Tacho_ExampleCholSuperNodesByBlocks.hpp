@@ -35,6 +35,10 @@
 #include "Tacho_Chol.hpp"
 #include "Tacho_TriSolve.hpp"
 
+#ifdef HAVE_SHYLUTACHO_VTUNE
+#include "ittnotify.h"
+#endif
+
 namespace Tacho {
 
   template<typename DeviceSpaceType>
@@ -87,6 +91,10 @@ namespace Tacho {
 
     typedef Kokkos::pair<size_type,size_type> range_type;
     typedef Kokkos::Experimental::Future<int,HostSpaceType> future_type;
+
+#ifdef HAVE_SHYLUTACHO_VTUNE
+    __itt_pause();
+#endif
 
     int r_val = 0;
     
@@ -368,6 +376,9 @@ namespace Tacho {
       }
       
       CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
+#ifdef HAVE_SHYLUTACHO_VTUNE
+      __itt_resume();
+#endif
       timer.reset();
       {
         future_type future;
@@ -392,6 +403,9 @@ namespace Tacho {
         TACHO_TEST_FOR_ABORT(future.get(), "Fail to perform CholeskySuperNodesByBlocks");
       }
       t_chol = timer.seconds();
+#ifdef HAVE_SHYLUTACHO_VTUNE
+      __itt_pause();
+#endif
 
       {      
         const size_type nblocks = HA_factor_host.NumNonZeros();
