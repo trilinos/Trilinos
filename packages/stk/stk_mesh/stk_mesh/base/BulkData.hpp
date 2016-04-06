@@ -141,7 +141,7 @@ class BulkData {
 
 public:
   enum GHOSTING_ID { SHARED = 0, AURA = 1 };
-  enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
+  enum entitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
 
   enum AutomaticAuraOption {
       NO_AUTO_AURA,
@@ -1376,7 +1376,7 @@ protected: //data
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
-  std::vector<int> m_mark_entity; //indexed by Entity
+  std::vector<entitySharing> m_mark_entity; //indexed by Entity
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count; //indexed by Entity
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity

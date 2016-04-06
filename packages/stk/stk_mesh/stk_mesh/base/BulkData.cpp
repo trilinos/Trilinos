@@ -3750,7 +3750,7 @@ void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_en
     this->fill_shared_entities_of_rank_while_updating_sharing_info(stk::topology::EDGE_RANK, shared_new);
     this->fill_shared_entities_of_rank_while_updating_sharing_info(stk::topology::FACE_RANK, shared_new);
 
-    std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
+    std::fill(m_mark_entity.begin(), m_mark_entity.end(), BulkData::NOT_MARKED);
 }
 
 
@@ -4136,7 +4136,7 @@ void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::Ent
 
       add_comm_list_entries_for_entities( shared_modified );
   }
-  std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
+  std::fill(m_mark_entity.begin(), m_mark_entity.end(), BulkData::NOT_MARKED);
 }
 
 
