@@ -45,11 +45,19 @@ public:
   // This is a copy constructor
   TimeStepControl(const TimeStepControl<Scalar>& tsc_);
 
+  /** \brief. .*/
+  virtual void getNextTimeStep(
+    const Scalar time, const int iStep, const Scalar errorAbs,
+    const Scalar errorRel, const unsigned int order, Scalar dt,
+    bool stepperStatus, bool integratorStatus, unsigned int nFailures,
+    unsigned int nConsecutiveFailures, bool output) const;
 
-  /** \brief. Basic time-step control.*/
-  virtual void TimeStepControl::setNextTimeStep(const Scalar time,
-    const int iStep, const Scalar errorAbs, const Scalar errorRel,
-    const int order, Scalar dt, bool output) const;
+  /** \brief. .*/
+  virtual bool timeInRange(const Scalar time) const;
+
+  /** \brief. .*/
+  virtual bool indexInRange(const int iStep) const;
+
 
   Scalar timeMin;         ///< Minimum simulation time
   Scalar timeMax;         ///< Maximum simulation time
@@ -59,14 +67,17 @@ public:
   int    iStepMax;        ///< Maximum time step index
   Scalar errorMaxAbs;     ///< Maximum absolute error
   Scalar errorMaxRel;     ///< Maximum relative error
-  int    orderMin;        ///< Minimum time integration order
-  int    orderMax;        ///< Maximum time integration order
+  unsigned int orderMin;  ///< Minimum time integration order
+  unsigned int orderMax;  ///< Maximum time integration order
 
   StepType stepType;      ///< Step type for step control
   Scalar dtConstant;      ///< Constant time step if stepType=CONSTANT_STEP_SIZE
 
   std::vector<int>    outputIndices;  ///< Vector of output indices.
   std::vector<Scalar> outputTimes;    ///< Vector of output times.
+
+  unsigned int nFailuresMax;            ///< Maximum number of stepper failures
+  unsigned int nConsecutiveFailuresMax; ///< Maximum number of consecutive stepper failures
 
   RCP<Teuchos::ParameterList> paramList;
 

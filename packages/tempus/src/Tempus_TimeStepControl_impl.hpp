@@ -64,6 +64,13 @@ namespace {
   static std::string outputIndexInterval_name    = "Output Index Interval";
   static int         outputIndexInterval_default = 100;
 
+  static std::string nFailuresMax_name    =
+    "Maximum number of Stepper failures";
+  static int         nFailuresMax_default = 10.0;
+  static std::string nConsecutiveFailuresMax_name    =
+    "Maximum number of consecutive Stepper failures";
+  static int         nConsecutiveFailuresMax_default = 5.0;
+
 } // namespace
 
 
@@ -105,17 +112,41 @@ TimeStepControl<Scalar>::TimeStepControl( const TimeStepControl<Scalar>& tsc_ )
     dtConstant   (tsc_.dtConstant ),
     outputIndices(tsc_.outputIndices),
     outputTimes  (tsc_.outputTimes),
+    nFailuresMax           (tsc_.nFailuresMax),
+    nConsecutiveFailuresMax(tsc_.nConsecutiveFailuresMax),
     paramList    (tsc_.paramList  )
 {}
 
 
-
 template<class Scalar>
-void TimeStepControl::setNextTimeStep(const Scalar time,
-  const int iStep, const Scalar errorAbs, const Scalar errorRel,
-  const int order, Scalar dt, bool output) const
+void TimeStepControl::getNextTimeStep(
+  const Scalar time, const int iStep, const Scalar errorAbs,
+  const Scalar errorRel, const unsigned int order, Scalar dt,
+  bool stepperStatus, bool integratorStatus, unsigned int nFailures,
+  unsigned int nConsecutiveFailures, bool output) const
 {
   output = false;
+  integratorStatus = true;
+  if (stepperStatus != true) {
+    nFailures++;
+    nConsecutiveFailures++;
+  } else {
+    nConsecutiveFailures = 0;
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (nFailures >= nFailuresMax ), std::logic_error,
+    "Error - Stepper has failed more than the maximum allowed.\n"
+    "    (nFailures = "<<nFailures
+    <<") >= (nFailuresMax = "<<nFailuresMax<<")\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (nConsecutiveFailures >= nConsecutiveFailuresMax ),
+    std::logic_error,
+    "Error - Stepper has failed more than the maximum consecutive allowed.\n"
+    "    (nConsecutiveFailures = "<<nConsecutiveFailures
+    <<") >= (nConsecutiveFailuresMax = "
+    <<nConsecutiveFailuresMax<<")\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ( dt <= ST::zero() ), std::out_of_range,
@@ -128,43 +159,29 @@ void TimeStepControl::setNextTimeStep(const Scalar time,
     << "    [iStepMin, iStepMax] = [" << iStepMin << ", " << iStepMax << "]\n"
     << "    iStep + 1 = " << iStep << "\n");
 
-  if ( outputIndices.find(iStep) ) output = true;
+
 
   if (stepType == CONSTANT_STEP_SIZE) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ( dt != dtConstant ), std::out_of_range,
-      "Error - ( dt = "<< dt <<") != ( dtConstant = "<< dtConstant <<" )!\n");
-
-    if (time + dt < timeMin || time + dt > timeMax ) {
+    // Stepper failure
+    if (stepperStatus and (order+1 <= orderMax)) {
+      order++;
       RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"setNextTimeStep");
-      *out << "Warning - Time step 'steps' outside desired time range.\n"
-           << "    [t_min, t_max] = [" << timeMin << ", " << timeMax << "]\n"
-           << "    T + dt = "<< time <<" + "<< dt<<" = "<< time + dt <<"\n";
+      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+      *out << "Warning - Stepper failure. Try increasing order.\n"
+           << "    order = " << order << "\n";
+    } else {
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+      *out << "Error - Stepper failed and can not change time step size "
+           << "or order!\n"
+           << "    Time step type == CONSTANT_STEP_SIZE\n"
+           << "    order = " << order << "\n";
+      integratorStatus = false;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (errorAbs > errorAbsMax ), std::out_of_range,
-      "Error - Solution absolute error is too large and can not change "
-      "time step size!\n"
-      "    Time step type == CONSTANT_STEP_SIZE\n"
-      "    (errorAbs = "<<errorAbs<<") > (errorMaxAbs = "<<errorAbsMax<<")\n");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (errorRel > errorRelMax ), std::out_of_range,
-      "Error - Solution relative error is too large and can not change "
-      "time step size!\n"
-      "    Time step type == CONSTANT_STEP_SIZE\n"
-      "    (errorRel = "<<errorRel<<") > (errorMaxRel = "<<errorRelMax<<")\n");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (order < orderMin || order > orderMax ), std::out_of_range,
-      "Error - Solution order is out of range and can not change "
-      "time step size!\n"
-      "    Time step type == CONSTANT_STEP_SIZE\n"
-      "    [order_min, order_max] = [" << orderMin << ", " << orderMax << "]\n"
-      "    order = " << order << "\n");
+    // Check if to output this step
+    if (outputIndices.find(iStep)) output = true;
 
     if (!output) {
       for (int i=0; i < outputTimes.size(); ++i) {
@@ -175,21 +192,58 @@ void TimeStepControl::setNextTimeStep(const Scalar time,
       }
     }
 
-  } else { // VARIABLE_STEP_SIZE
+    if (time + dt < timeMin || time + dt > timeMax ) {
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+      *out << "Warning - Time step moves time outside desired time range.\n"
+           << "    [timeMin, timeMax] = [" << timeMin << ", " << timeMax << "]\n"
+           << "    T + dt = "<< time <<" + "<< dt<<" = "<< time + dt <<"\n";
+      output = true;
+    }
+
+    // Consistency checks
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (dt != dtConstant), std::out_of_range,
+      "Error - ( dt = "<< dt <<") != ( dtConstant = "<< dtConstant <<" )!\n");
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      (time + dt < timeMin ), std::out_of_range,
-      "Error - Time step does not 'step' INTO time range.\n"
-      "    [t_min, t_max] = [" << timeMin << ", " << timeMax << "]\n"
-      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
+      (errorAbs > errorAbsMax), std::out_of_range,
+      "Error - Solution absolute error is too large and can not change "
+      "time step size!\n"
+      "    Time step type == CONSTANT_STEP_SIZE\n"
+      "    (errorAbs = "<<errorAbs<<") > (errorMaxAbs = "<<errorAbsMax<<")\n");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (errorRel > errorRelMax), std::out_of_range,
+      "Error - Solution relative error is too large and can not change "
+      "time step size!\n"
+      "    Time step type == CONSTANT_STEP_SIZE\n"
+      "    (errorRel = "<<errorRel<<") > (errorMaxRel = "<<errorRelMax<<")\n");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (order < orderMin || order > orderMax), std::out_of_range,
+      "Error - Solution order is out of range and can not change "
+      "time step size!\n"
+      "    Time step type == CONSTANT_STEP_SIZE\n"
+      "    [order_min, order_max] = [" << orderMin << ", " << orderMax << "]\n"
+      "    order = " << order << "\n");
+
+  } else { // VARIABLE_STEP_SIZE
 
     // \todo The following controls should be generalized to plugable options.
+    if (stepperStatus) dt /=2;
     if (errorAbs > errorMaxAbs) dt /= 2;
     if (errorRel > errorMaxRel) dt /= 2;
     if (order < orderMin) dt *= 2;
     if (order > orderMax) dt /= 2;
 
+    if (dt < dtMin) dt = dtMin;
+    if (dt > dtMax) dt = dtMax;
+
     if (time + dt > timeMax ) dt = timeMax - time;
+
+    // Check if to output this step
+    if (outputIndices.find(iStep)) output = true;
 
     if (!output) {
       for (int i=0; i < outputTimes.size(); ++i) {
@@ -200,8 +254,35 @@ void TimeStepControl::setNextTimeStep(const Scalar time,
         }
       }
     }
+
+    // Consistency checks
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (time + dt < timeMin ), std::out_of_range,
+      "Error - Time step does not move time INTO time range.\n"
+      "    [timeMin, timeMax] = [" << timeMin << ", " << timeMax << "]\n"
+      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (time + dt > timeMax ), std::out_of_range,
+      "Error - Time step move time OUT OF time range.\n"
+      "    [timeMin, timeMax] = [" << timeMin << ", " << timeMax << "]\n"
+      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
   }
 
+}
+
+
+template<class Scalar>
+bool timeInRange(const Scalar time) const{
+  bool tir = (time >= timeMin and time < timeMax);
+  return tir;
+}
+
+
+template<class Scalar>
+bool indexInRange(const int iStep) const{
+  bool iir = (iStep >= iStepMin and iStep < iStepMax);
+  return iir;
 }
 
 
@@ -220,18 +301,20 @@ void TimeStepControl<Scalar>::describe(
 {
   if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe:" << std::endl
-        << "timeMin     = " << timeMin     << std::endl
-        << "timeMax     = " << timeMax     << std::endl
-        << "dtMin       = " << dtMin       << std::endl
-        << "dtMax       = " << dtMax       << std::endl
-        << "iStepMin    = " << iStepMin    << std::endl
-        << "iStepMax    = " << iStepMax    << std::endl
-        << "errorMaxAbs = " << errorMaxAbs << std::endl
-        << "errorMaxRel = " << errorMaxRel << std::endl
-        << "orderMin    = " << orderMin    << std::endl
-        << "orderMax    = " << orderMax    << std::endl
-        << "stepType    = " << stepType    << std::endl
-        << "paramList   = " << paramList   << std::endl;
+        << "timeMin      = " << timeMin      << std::endl
+        << "timeMax      = " << timeMax      << std::endl
+        << "dtMin        = " << dtMin        << std::endl
+        << "dtMax        = " << dtMax        << std::endl
+        << "iStepMin     = " << iStepMin     << std::endl
+        << "iStepMax     = " << iStepMax     << std::endl
+        << "errorMaxAbs  = " << errorMaxAbs  << std::endl
+        << "errorMaxRel  = " << errorMaxRel  << std::endl
+        << "orderMin     = " << orderMin     << std::endl
+        << "orderMax     = " << orderMax     << std::endl
+        << "stepType     = " << stepType     << std::endl
+        << "nFailuresMax = " << nFailuresMax << std::endl
+        << "nConsecutiveFailuresMax = " << nConsecutiveFailuresMax << std::endl
+        << "paramList    = " << paramList    << std::endl;
 }
 
 
@@ -368,7 +451,10 @@ void TimeStepControl<Scalar>::setParameterList(
     std::sort(outputIndices.begin(),outputIndices.end());
   }
 
-  Teuchos::readVerboseObjectSublist(&*paramList,this);
+  nFailuresMax = paramList->get<unsigned int>(
+    nFailuresMax_name, nFailuresMax_default);
+  nConsecutiveFailuresMax = paramList->get<unsigned int>(
+    nConsecutiveFailuresMax_name, nConsecutiveFailuresMax_default);
 }
 
 
@@ -412,6 +498,11 @@ RCP<const Teuchos::ParameterList> TimeStepControl<Scalar>::getValidParameters() 
       "Output time interval (e.g., every 100.0 integrated time");
     pl->set(outputIndexInterval_name, outputIndexInterval_default,
       "Output index interval (e.g., every 100 time steps");
+
+    pl->set(nFailuresMax_name, nFailuresMax_default,
+      "Maximum number of Stepper failures");
+    pl->set(nConsecutiveFailuresMax_name, nConsecutiveFailuresMax_default,
+      "Maximum number of consecutive Stepper failures");
 
     validPL = pl;
 

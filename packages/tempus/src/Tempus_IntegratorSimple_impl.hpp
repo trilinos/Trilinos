@@ -130,11 +130,18 @@ void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
 {
   integratorObserver->observeStartTime();
 
+  bool output = false;
+  bool integratorStatus = true;
+  bool stepperStatus = true;
+
   while ( timeStepControl->timeInRange(time) and
           timeStepControl->indexInRange(iStep) ){
 
-    integratorStatus = timeStepControl->getNextTimeStep();
-    if (integratorStatus == FAILED) {
+    timeStepControl->getNextTimeStep(time, iStep, errorAbs, errorRel, order,
+                                     dt, stepperStatus, integratorStatus,
+                                     nFailures, nConsecutiveFailures, output);
+
+    if (integratorStatus != true) {
       integratorObserver->observeFailedIntegrator();
       break;
     }
@@ -143,7 +150,7 @@ void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
 
     stepperStatus = stepper->takeStep();
 
-    if (stepperStatus == FAILED) {
+    if (stepperStatus != true) {
       integratorObserver->observeFailedTimeStep();
       continue;
     }
