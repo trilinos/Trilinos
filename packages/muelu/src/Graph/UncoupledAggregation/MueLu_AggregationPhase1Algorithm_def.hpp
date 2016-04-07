@@ -81,6 +81,7 @@ namespace MueLu {
       O_RANDOM,
       O_GRAPH
     } ordering;
+    ordering = O_NATURAL; // initialize variable (fix CID 143665)
     if (orderingStr == "natural") ordering = O_NATURAL;
     if (orderingStr == "random" ) ordering = O_RANDOM;
     if (orderingStr == "graph"  ) ordering = O_GRAPH;

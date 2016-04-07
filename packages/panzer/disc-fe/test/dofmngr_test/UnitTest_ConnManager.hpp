@@ -135,6 +135,14 @@ public:
      */
    virtual void buildConnectivity(const FieldPattern & fp);
 
+   /** Tell the connection manager to build the connectivity assuming
+     * a particular field pattern.
+     *
+     * \param[in] fp Field pattern to build connectivity for
+     */
+   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone() const
+   { return Teuchos::rcp(new ConnManager(procRank_,2)); }
+
    /** Get ID connectivity for a particular element
      *
      * \param[in] localElmtId Local element ID

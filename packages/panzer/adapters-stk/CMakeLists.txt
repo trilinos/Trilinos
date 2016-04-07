@@ -32,15 +32,6 @@ ELSE()
    GLOBAL_SET(HAVE_IFPACK2 OFF)
 ENDIF()
 
-# Combined option for testing
-#############################
-COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_SOLVER_DRIVERS_EPETRA
-  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_Stratimikos ${PACKAGE_NAME}_ENABLE_Piro ${PACKAGE_NAME}_ENABLE_NOX ${PACKAGE_NAME}_ENABLE_Rythmos
-  DOCSTR "Enables support for the solver drivers for the tests/examples."
-    " Defaults to ON if Stratimikos, Piro, NOX, and Rythmos are"
-    " enabled, otherwise defaults to OFF."
-  )
-
 ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)

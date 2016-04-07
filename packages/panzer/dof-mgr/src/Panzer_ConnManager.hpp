@@ -69,6 +69,12 @@ public:
      * \param[in] fp Field pattern to build connectivity for
      */
    virtual void buildConnectivity(const FieldPattern & fp) = 0;
+  
+   /** Build a clone of this connection manager, without any assumptions
+     * about the required connectivity (e.g. <code>buildConnectivity</code>
+     * has never been called).
+     */
+   virtual Teuchos::RCP<ConnManagerBase<LocalOrdinalT> > noConnectivityClone() const = 0;
 
    /** How many mesh IDs are associated with this element?
      *
@@ -140,6 +146,12 @@ public:
      * \param[in] fp Field pattern to build connectivity for
      */
    virtual void buildConnectivity(const FieldPattern & fp) = 0;
+
+   /** Build a clone of this connection manager, without any assumptions
+     * about the required connectivity (e.g. <code>buildConnectivity</code>
+     * has never been called).
+     */
+   virtual Teuchos::RCP<ConnManagerBase<LocalOrdinalT> > noConnectivityClone() const = 0;
 
    /** Get ID connectivity for a particular element
      *

@@ -115,12 +115,6 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   ae_tm_.buildObjects(builder);
 
   //
-  // Setup parameters
-  //
-  for(std::size_t i=0;i<p_names.size();i++)
-     addParameter(*(p_names[i]),*(p_values[i]));
-
-  //
   // Build x, f spaces
   //
 
@@ -129,6 +123,12 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 
   x_space_ = tof->getThyraDomainSpace();
   f_space_ = tof->getThyraRangeSpace();
+
+  //
+  // Setup parameters
+  //
+  for(std::size_t i=0;i<p_names.size();i++)
+     addParameter(*(p_names[i]),*(p_values[i]));
 
   // now that the vector spaces are setup we can allocate the nominal values
   // (i.e. initial conditions)
