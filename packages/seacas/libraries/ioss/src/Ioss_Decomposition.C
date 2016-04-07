@@ -1084,7 +1084,9 @@ namespace Ioss {
 
     // Map that converts nodes from the global index (1-based) to a
     // local-per-processor index (1-based)
+#if DEBUG_OUTPUT
     std::cerr << m_processor << ":\tNode Count = " << nodes.size() << "\n";
+#endif
     nodeGTL.swap(nodes);
     for (size_t i = 0; i < nodeGTL.size(); i++) {
       nodeGTL[i]++; // convert from 0-based index to 1-based index
