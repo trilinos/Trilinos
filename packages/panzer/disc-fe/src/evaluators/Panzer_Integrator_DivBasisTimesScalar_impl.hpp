@@ -150,7 +150,7 @@ PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
      Intrepid2::FunctionSpaceTools::
        integrate<ScalarT>(residual, tmp, 
                        this->wda(workset).bases[basis_index]->weighted_div_basis, 
-		       Intrepid2::COMP_BLAS);
+		       Intrepid2::COMP_CPP);
   }
 */
 }

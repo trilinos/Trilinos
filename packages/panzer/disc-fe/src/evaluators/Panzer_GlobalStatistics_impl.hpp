@@ -129,7 +129,7 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
 
   Intrepid2::FunctionSpaceTools::integrate<ScalarT>(volumes, ones, 
                                                        (this->wda(workset).int_rules[ir_index])->weighted_measure, 
-                                                       Intrepid2::COMP_BLAS);
+                                                       Intrepid2::COMP_CPP);
 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
     total_volume += volumes(cell);
@@ -140,7 +140,7 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
     
     Intrepid2::FunctionSpaceTools::integrate<ScalarT>(tmp, *field, 
                                                          (this->wda(workset).int_rules[ir_index])->weighted_measure, 
-                                                         Intrepid2::COMP_BLAS);
+                                                         Intrepid2::COMP_CPP);
     
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
       averages[field_index] += tmp(cell);
