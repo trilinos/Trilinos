@@ -8,14 +8,11 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
 
   IF(${PACKAGE_NAME}_ENABLE_Galeri)
-
-    IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-      TRIBITS_ADD_EXECUTABLE(
-        FixedMatrixPattern
-        SOURCES FixedMatrixPattern.cpp
-        COMM serial mpi
-        )
-    ENDIF()
+    TRIBITS_ADD_EXECUTABLE(
+      FixedMatrixPattern
+      SOURCES FixedMatrixPattern.cpp
+      COMM serial mpi
+      )
 
     TRIBITS_ADD_EXECUTABLE(
       StandardReuse
@@ -33,14 +30,10 @@ ENDIF()
 INCLUDE(XpetraAddTest)
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAGE_NAME}_ENABLE_Galeri)
-  IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-    XPETRA_ADD_TEST_TPETRA(FixedMatrixPattern 4)
-  ENDIF()
+  XPETRA_ADD_TEST_TPETRA(FixedMatrixPattern 4)
   XPETRA_ADD_TEST_TPETRA(StandardReuse 4)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND ${PACKAGE_NAME}_ENABLE_Galeri)
-  IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-    XPETRA_ADD_TEST_EPETRA(FixedMatrixPattern 4)
-  ENDIF()
+  XPETRA_ADD_TEST_EPETRA(FixedMatrixPattern 4)
   XPETRA_ADD_TEST_EPETRA(StandardReuse 4)
 ENDIF()
