@@ -130,10 +130,10 @@ namespace Intrepid2 {
 
   template<>
   KOKKOS_INLINE_FUNCTION
-  double epsilon<float>() {
+  float epsilon<float>() {
     typedef union {
       int i32;
-      floag f32;
+      float f32;
     } flt_32;
 
     flt_32 s;
