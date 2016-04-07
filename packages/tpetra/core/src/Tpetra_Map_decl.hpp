@@ -569,26 +569,70 @@ namespace Tpetra {
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
-    /** \brief Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
+    /** \brief Constructor with user-defined arbitrary (possibly
+     *   noncontiguous) distribution, taking the input global indices
+     *   as a raw host pointer.
      *
      * Call this constructor if you have an arbitrary list of global
      * indices for each process in the given communicator.  Those
      * indices need not be contiguous, and the sets of global indices
-     * on different processes may overlap.  This is the constructor to
-     * use to make a general overlapping distribution.
+     * on different processes may overlap.  This is one of the
+     * constructors to use to make a general overlapping distribution.
+     *
+     * This constructor, like all Map constructors, must be called as
+     * a collective over the input communicator.
      *
      * \param numGlobalElements [in] If <tt>numGlobalElements ==
      *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
      *   the number of global elements will be computed (via a global
      *   communication) as the sum of the counts of local elements.
      *   Otherwise, it must equal the sum of the local elements over
-     *   all processes.  This will only be checked if Trilinos'
-     *   Teuchos package was built with debug support (CMake Boolean
-     *   option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
-     *   verification fails, the constructor will throw
-     *   std::invalid_argument.
+     *   all processes.  This value must be the same on all processes
+     *   participating in the call.
      *
-     * \param elementList [in] List of global indices owned by the
+     * \param indexList [in] List of global indices owned by the
+     *   calling process.
+     *
+     * \param indexListSize [in] Number of valid entries in indexList.
+     *   This is a LocalOrdinal because the number of indices owned by
+     *   each process must fit in LocalOrdinal.
+     *
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every process in the given
+     *   communicator.  Currently, Map requires that this equal the
+     *   global minimum index over all processes' \c indexList inputs.
+     *
+     * \param comm [in] Communicator over which to distribute the
+     *   elements.
+     */
+    Map (const global_size_t numGlobalElements,
+         const GlobalOrdinal indexList[],
+         const LocalOrdinal indexListSize,
+         const GlobalOrdinal indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
+    /** \brief Constructor with user-defined arbitrary (possibly
+     *   noncontiguous) distribution, taking a Teuchos::ArrayView (for
+     *   backwards compatibility).
+     *
+     * Call this constructor if you have an arbitrary list of global
+     * indices for each process in the given communicator.  Those
+     * indices need not be contiguous, and the sets of global indices
+     * on different processes may overlap.  This is one of the
+     * constructors to use to make a general overlapping distribution.
+     *
+     * This constructor, like all Map constructors, must be called as
+     * a collective over the input communicator.
+     *
+     * \param numGlobalElements [in] If <tt>numGlobalElements ==
+     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
+     *   the number of global elements will be computed (via a global
+     *   communication) as the sum of the counts of local elements.
+     *   Otherwise, it must equal the sum of the local elements over
+     *   all processes.  This value must be the same on all processes
+     *   participating in the call.
+     *
+     * \param indexList [in] List of global indices owned by the
      *   calling process.
      *
      * \param indexBase [in] The base of the global indices in the
@@ -602,14 +646,14 @@ namespace Tpetra {
      *
      * \param node [in/out] Kokkos Node instance.  The type of this
      *   object must match the type of the Node template parameter.
+     *   If you don't know what this is, you don't have to supply it;
+     *   the default value is perfectly fine.
      */
-    Map (global_size_t numGlobalElements,
-         const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
-         GlobalOrdinal indexBase,
-         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
-
-
+    Map (const global_size_t numGlobalElements,
+         const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
+         const GlobalOrdinal indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+         const Teuchos::RCP<Node>& node = defaultArgNode<Node>());
 
     /// \brief Default constructor (that does nothing).
     ///
@@ -1140,6 +1184,28 @@ namespace Tpetra {
     /// <tt>lg=GloballyDistributed</tt>, since then checking the
     /// number of processes in the communicator suffices.
     bool checkIsDist() const;
+
+    /// \brief Call at the beginning of the nonuniform constructors;
+    ///   it does checks (with extra global communication) in a debug
+    ///   build.  In a release build, it does nothing.
+    ///
+    /// \return In a debug build: The global sum of numLocalElements
+    ///   over all processes in the given communicator.  In a release
+    ///   build: 0 (zero).
+    global_size_t
+    initialNonuniformDebugCheck (const global_size_t numGlobalElements,
+                                 const size_t numLocalElements,
+                                 const GlobalOrdinal indexBase,
+                                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm) const;
+
+    void
+    initWithNonownedHostIndexList (const global_size_t numGlobalElements,
+                                   const Kokkos::View<const GlobalOrdinal*,
+                                     Kokkos::LayoutLeft,
+                                     Kokkos::HostSpace,
+                                     Kokkos::MemoryUnmanaged>& entryList,
+                                   const GlobalOrdinal indexBase,
+                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
