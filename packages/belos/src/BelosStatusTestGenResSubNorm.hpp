@@ -656,6 +656,34 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
         scalevector_.resize( numrhs_ );
         MvSubNorm( *init_res, subIdx_, scalevector_, scalenormtype_ );
       }
+      else if (scaletype_==NormOfFullInitRes) {
+        Teuchos::RCP<const MV> init_res = lp.getInitResVec();
+        numrhs_ = MVT::GetNumberVecs( *init_res );
+        scalevector_.resize( numrhs_ );
+        MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
+        scalevalue_ = Teuchos::ScalarTraits<ScalarType>::one();
+      }
+      else if (scaletype_==NormOfFullPrecInitRes) {
+        Teuchos::RCP<const MV> init_res = lp.getInitPrecResVec();
+        numrhs_ = MVT::GetNumberVecs( *init_res );
+        scalevector_.resize( numrhs_ );
+        MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
+        scalevalue_ = Teuchos::ScalarTraits<ScalarType>::one();
+      }
+      else if (scaletype_==NormOfFullScaledInitRes) {
+        Teuchos::RCP<const MV> init_res = lp.getInitResVec();
+        numrhs_ = MVT::GetNumberVecs( *init_res );
+        scalevector_.resize( numrhs_ );
+        MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
+        MvScalingRatio( *init_res, subIdx_, scalevalue_ );
+      }
+      else if (scaletype_==NormOfFullScaledPrecInitRes) {
+        Teuchos::RCP<const MV> init_res = lp.getInitPrecResVec();
+        numrhs_ = MVT::GetNumberVecs( *init_res );
+        scalevector_.resize( numrhs_ );
+        MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
+        MvScalingRatio( *init_res, subIdx_, scalevalue_ );
+      }
       else {
         numrhs_ = MVT::GetNumberVecs( *(lp.getRHS()) );
       }
@@ -729,6 +757,14 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
           oss << " Res0 [" << subIdx_ << "]";
         else if (scaletype_==NormOfPrecInitRes)
           oss << " Prec Res0 [" << subIdx_ << "]";
+        else if (scaletype_==NormOfFullInitRes)
+          oss << " Full Res0 [" << subIdx_ << "]";
+        else if (scaletype_==NormOfFullPrecInitRes)
+          oss << " Full Prec Res0 [" << subIdx_ << "]";
+        else if (scaletype_==NormOfFullScaledInitRes)
+          oss << " scaled Full Res0 [" << subIdx_ << "]";
+        else if (scaletype_==NormOfFullScaledPrecInitRes)
+          oss << " scaled Full Prec Res0 [" << subIdx_ << "]";
         else
           oss << " RHS [" << subIdx_ << "]";
         oss << ")";
@@ -761,6 +797,23 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
     typedef MultiVecTraits<ScalarType, MV> MVT;
     MVT::MvNorm(*thySubVec,normVec,type);
   }
+
+  // calculate ration of sub-vector length to full vector length (for scalevalue_)
+  void MvScalingRatio( const MV& mv, size_t block, MagnitudeType& lengthRatio) {
+    Teuchos::RCP<const MV> input = Teuchos::rcpFromRef(mv);
+
+    typedef typename Thyra::ProductMultiVectorBase<ScalarType> TPMVB;
+    Teuchos::RCP<const TPMVB> thyProdVec = Teuchos::rcp_dynamic_cast<const TPMVB>(input);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(thyProdVec == Teuchos::null, std::invalid_argument,
+                             "Belos::StatusTestGenResSubNorm::MvScalingRatio (Thyra specialization): "
+                             "mv must be a Thyra::ProductMultiVector, but is of type " << thyProdVec);
+
+    Teuchos::RCP<const MV> thySubVec = thyProdVec->getMultiVectorBlock(block);
+
+    lengthRatio = Teuchos::as<MagnitudeType>(thySubVec->range()->dim()) / Teuchos::as<MagnitudeType>(thyProdVec->range()->dim());
+  }
+
   //@}
 
   //! @name Private data members.

@@ -230,14 +230,22 @@ namespace Belos {
         "Norm of Preconditioned Initial Residual",
         "Norm of RHS",
         "Norm of Right-Hand Side",
+        "Norm of Full Initial Residual",
+        "Norm of Full Preconditioned Initial Residual",
+        "Norm of Full Scaled Initial Residual",
+        "Norm of Full Scaled Preconditioned Initial Residual",
         "None"
       };
-      const int numValidNames = 5;
+      const int numValidNames = 9;
       const ScaleType correspondingOutputs[] = {
         Belos::NormOfInitRes,
         Belos::NormOfPrecInitRes,
         Belos::NormOfRHS,
         Belos::NormOfRHS,
+        Belos::NormOfFullInitRes,
+        Belos::NormOfFullPrecInitRes,
+        Belos::NormOfFullScaledInitRes,
+        Belos::NormOfFullScaledPrecInitRes,
         Belos::None
       };
       for (int k = 0; k < numValidNames; ++k)

@@ -120,7 +120,11 @@ namespace Belos {
                   NormOfInitRes, /*!< Use the initial residual vector. */
                   NormOfPrecInitRes, /*!< Use the preconditioned initial residual vector. */
                   None,          /*!< Use unscaled residual. */
-                  UserProvided   /*!< User provides an explicit value by which the residual norm will be divided. */
+                  UserProvided,  /*!< User provides an explicit value by which the residual norm will be divided. */
+                  NormOfFullInitRes, /*!< Use the full initial residual vector. Only interesting for partial subnorms. For singular fields this is equivalent with NormOfInitRes. */
+                  NormOfFullPrecInitRes, /*!< Use the full preconditioned initial residual vector. Only interesting for partial subnorms. For singular fields this is equivalent with NormOfPrecInitRes. */
+                  NormOfFullScaledInitRes, /*!< Use the full initial residual vector scaled by the inverse of the length of the subvector compared to the overall residual vector length. Only interesting for partial subnorms. For singular fields this is equivalent with NormOfInitRes. */
+                  NormOfFullScaledPrecInitRes /*!< Use the full initial residual vector scaled by the inverse of the length of the subvector compared to the overall residual vector length. Only interesting for partial subnorms. For singular fields this is equivalent with NormOfInitRes. */
   };
 
   /// \enum OutputType

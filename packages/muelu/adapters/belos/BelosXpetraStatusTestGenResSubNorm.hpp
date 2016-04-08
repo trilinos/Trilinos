@@ -478,6 +478,34 @@ class StatusTestGenResSubNorm<Scalar,Xpetra::MultiVector<Scalar,LocalOrdinal,Glo
         scalevector_.resize( numrhs_ );
         MvSubNorm( *init_res, subIdx_, scalevector_, scalenormtype_ );
       }
+      else if (scaletype_==NormOfFullInitRes) {
+        Teuchos::RCP<const MV> init_res = lp.getInitResVec();
+        numrhs_ = MVT::GetNumberVecs( *init_res );
+        scalevector_.resize( numrhs_ );
+        MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
+        scalevalue_ = Teuchos::ScalarTraits<Scalar>::one();
+      }
+      else if (scaletype_==NormOfFullPrecInitRes) {
+        Teuchos::RCP<const MV> init_res = lp.getInitPrecResVec();
+        numrhs_ = MVT::GetNumberVecs( *init_res );
+        scalevector_.resize( numrhs_ );
+        MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
+        scalevalue_ = Teuchos::ScalarTraits<Scalar>::one();
+      }
+      else if (scaletype_==NormOfFullScaledInitRes) {
+        Teuchos::RCP<const MV> init_res = lp.getInitResVec();
+        numrhs_ = MVT::GetNumberVecs( *init_res );
+        scalevector_.resize( numrhs_ );
+        MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
+        MvScalingRatio( *init_res, subIdx_, scalevalue_ );
+      }
+      else if (scaletype_==NormOfFullScaledPrecInitRes) {
+        Teuchos::RCP<const MV> init_res = lp.getInitPrecResVec();
+        numrhs_ = MVT::GetNumberVecs( *init_res );
+        scalevector_.resize( numrhs_ );
+        MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
+        MvScalingRatio( *init_res, subIdx_, scalevalue_ );
+      }
       else {
         numrhs_ = MVT::GetNumberVecs( *(lp.getRHS()) );
       }
@@ -551,6 +579,14 @@ class StatusTestGenResSubNorm<Scalar,Xpetra::MultiVector<Scalar,LocalOrdinal,Glo
           oss << " Res0 [" << subIdx_ << "]";
         else if (scaletype_==NormOfPrecInitRes)
           oss << " Prec Res0 [" << subIdx_ << "]";
+        else if (scaletype_==NormOfFullInitRes)
+          oss << " Full Res0 [" << subIdx_ << "]";
+        else if (scaletype_==NormOfFullPrecInitRes)
+          oss << " Full Prec Res0 [" << subIdx_ << "]";
+        else if (scaletype_==NormOfFullScaledInitRes)
+          oss << " scaled Full Res0 [" << subIdx_ << "]";
+        else if (scaletype_==NormOfFullScaledPrecInitRes)
+          oss << " scaled Full Prec Res0 [" << subIdx_ << "]";
         else
           oss << " RHS [" << subIdx_ << "]";
         oss << ")";
@@ -575,6 +611,15 @@ class StatusTestGenResSubNorm<Scalar,Xpetra::MultiVector<Scalar,LocalOrdinal,Glo
     Teuchos::RCP<const MV> SubVec = mapExtractor_->ExtractVector(input, block);
     typedef MultiVecTraits<Scalar, MV> MVT;
     MVT::MvNorm(*SubVec,normVec,type);
+  }
+
+  // calculate ration of sub-vector length to full vector length (for scalevalue_)
+  void MvScalingRatio( const MV& mv, size_t block, MagnitudeType& lengthRatio) {
+    Teuchos::RCP<const MV> input = Teuchos::rcpFromRef(mv);
+
+    Teuchos::RCP<const MV> SubVec = mapExtractor_->ExtractVector(input, block);
+
+    lengthRatio = Teuchos::as<MagnitudeType>(SubVec->getGlobalLength()) / Teuchos::as<MagnitudeType>(input->getGlobalLength());
   }
   //@}
 
