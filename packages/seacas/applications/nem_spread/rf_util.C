@@ -2,23 +2,23 @@
  * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -45,8 +45,7 @@ void check_exodus_error(int error, const char function_name[])
 {
 
   if (error == -1) {
-    fprintf(stderr, "ERROR returned from %s!\n",
-            function_name);
+    fprintf(stderr, "ERROR returned from %s!\n", function_name);
     exit(1);
   }
 
@@ -56,7 +55,7 @@ void check_exodus_error(int error, const char function_name[])
 /*****************************************************************************/
 /*****************************************************************************/
 
-void print_line (const char *charstr, int ntimes)
+void print_line(const char *charstr, int ntimes)
 
 {
   int i;
@@ -69,8 +68,7 @@ void print_line (const char *charstr, int ntimes)
 /*****************************************************************************/
 /*****************************************************************************/
 
-int break_message_up (size_t unit_size, size_t num_units, size_t max_bytes,
-		      int *start_pos[])
+int break_message_up(size_t unit_size, size_t num_units, size_t max_bytes, int *start_pos[])
 
 /*
  *   break_message_up:
@@ -113,29 +111,30 @@ int break_message_up (size_t unit_size, size_t num_units, size_t max_bytes,
  */
 
 {
-  size_t  i, num_units_per_message, remainder, num_mesg;
+  size_t i, num_units_per_message, remainder, num_mesg;
 
- /*------------------------- begin execution --------------------------------*/
+  /*------------------------- begin execution --------------------------------*/
 
   if (num_units <= 0) {
-    num_mesg = 0;
+    num_mesg   = 0;
     *start_pos = nullptr;
     return (num_mesg);
   }
 
-  num_units_per_message = max_bytes / unit_size ;
-  if (num_units < num_units_per_message) num_units_per_message = num_units;
-  num_mesg   = num_units / num_units_per_message;
-  remainder  = num_units % num_units_per_message;
-  if (remainder != 0) num_mesg++;
+  num_units_per_message = max_bytes / unit_size;
+  if (num_units < num_units_per_message)
+    num_units_per_message = num_units;
+  num_mesg                = num_units / num_units_per_message;
+  remainder               = num_units % num_units_per_message;
+  if (remainder != 0)
+    num_mesg++;
 
-  *start_pos = (int *) array_alloc (__FILE__, __LINE__, 1, (num_mesg + 1),
-                                    sizeof (int));
+  *start_pos = (int *)array_alloc(__FILE__, __LINE__, 1, (num_mesg + 1), sizeof(int));
 
   for (i = 0; i < num_mesg; i++) {
-    (*start_pos)[i] =  i * num_units_per_message;
+    (*start_pos)[i] = i * num_units_per_message;
   }
-  (*start_pos) [num_mesg] = num_units;
+  (*start_pos)[num_mesg] = num_units;
 
   return num_mesg;
 }

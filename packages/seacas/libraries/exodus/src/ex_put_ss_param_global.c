@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 /*****************************************************************************/
@@ -59,18 +59,15 @@
 #include <exodusII.h>
 #include <exodusII_int.h>
 
-int ex_put_ss_param_global(int exoid,
-                           void_int *global_ids,
-                           void_int *side_cnts,
-                           void_int *df_cnts
-                           )
+int ex_put_ss_param_global(int exoid, void_int *global_ids, void_int *side_cnts,
+                           void_int *df_cnts)
 {
-  const char   *func_name="ex_put_ss_param_global";
-  int     varid;
+  const char *func_name = "ex_put_ss_param_global";
+  int         varid;
 
-  int     status;
-  char    errmsg[MAX_ERR_LENGTH];
-/*-----------------------------Execution begins-----------------------------*/
+  int  status;
+  char errmsg[MAX_ERR_LENGTH];
+  /*-----------------------------Execution begins-----------------------------*/
 
   exerrval = 0; /* clear error code */
 
@@ -88,13 +85,13 @@ int ex_put_ss_param_global(int exoid,
   /* Output the vector of global side set IDs */
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
     status = nc_put_var_longlong(exoid, varid, global_ids);
-  } else {
+  }
+  else {
     status = nc_put_var_int(exoid, varid, global_ids);
   }
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to output variable \"%s\" to file ID %d",
+    sprintf(errmsg, "ERROR: failed to output variable \"%s\" to file ID %d",
             VAR_SS_IDS_GLOBAL, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -102,7 +99,8 @@ int ex_put_ss_param_global(int exoid,
   }
 
   /* Get the variable ID for the vector of global side-set side counts */
-  if ((status = nc_inq_varid(exoid, VAR_SS_SIDE_CNT_GLOBAL, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_SS_SIDE_CNT_GLOBAL, &varid)) !=
+      NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "ERROR: failed to find variable ID for \"%s\" in file ID %d",
@@ -115,13 +113,13 @@ int ex_put_ss_param_global(int exoid,
   /* Output the vector of global side counts in each global side set */
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_var_longlong(exoid, varid, side_cnts);
-  } else {
+  }
+  else {
     status = nc_put_var_int(exoid, varid, side_cnts);
   }
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to put variable \"%s\" in file ID %d",
+    sprintf(errmsg, "ERROR: failed to put variable \"%s\" in file ID %d",
             VAR_SS_SIDE_CNT_GLOBAL, exoid);
     ex_err(func_name, errmsg, exerrval);
 
@@ -129,7 +127,8 @@ int ex_put_ss_param_global(int exoid,
   }
 
   /* Get the variable ID for the number of dist. factors in each side set */
-  if ((status = nc_inq_varid(exoid, VAR_SS_DF_CNT_GLOBAL, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_SS_DF_CNT_GLOBAL, &varid)) !=
+      NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "ERROR: failed to find variable ID for \"%s\" in file ID %d",
@@ -142,13 +141,13 @@ int ex_put_ss_param_global(int exoid,
   /* Output the vector of dist. factor counts */
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_var_longlong(exoid, varid, df_cnts);
-  } else {
+  }
+  else {
     status = nc_put_var_int(exoid, varid, df_cnts);
   }
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to output variable \"%s\" in file ID %d",
+    sprintf(errmsg, "ERROR: failed to output variable \"%s\" in file ID %d",
             VAR_SS_DF_CNT_GLOBAL, exoid);
     ex_err(func_name, errmsg, exerrval);
 

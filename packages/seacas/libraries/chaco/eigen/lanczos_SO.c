@@ -2,23 +2,23 @@
  * Copyright (c) 2014, Sandia Corporation.
  * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
  * the U.S. Government retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,14 +30,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <math.h>                       // for sqrt
-#include <stdio.h>                      // for printf, NULL, FILE
-#include "defs.h"                       // for FALSE, TRUE, min, max
-#include "smalloc.h"                    // for sfree, smalloc
-#include "structs.h"                    // for orthlink, scanlink
+#include "defs.h"    // for FALSE, TRUE, min, max
+#include "smalloc.h" // for sfree, smalloc
+#include "structs.h" // for orthlink, scanlink
+#include <math.h>    // for sqrt
+#include <stdio.h>   // for printf, NULL, FILE
 
 /* These comments are for version 1 of selective orthogonalization:
    This version of selective orthogonalization largely follows that described in
@@ -58,9 +58,9 @@
    the wrong eigenpair. These conditions will usually be detected by the algorithm
    and a warning issued. If the graph is small, full orthogonalization is
    then a fall back option. If the graph is large, one of the multi-level schemes
-   should be tried. The algorithm orthogonalizes the starting vector and each 
-   residual vector against the vector of all ones since we know that is an 
-   eigenvector of the Laplacian (which we don't want to see).  This is 
+   should be tried. The algorithm orthogonalizes the starting vector and each
+   residual vector against the vector of all ones since we know that is an
+   eigenvector of the Laplacian (which we don't want to see).  This is
    accomplished through calls to orthog1. These can be removed, but then
    we must compute an extra eigenvalue and the vector of all ones shows up as
    a Ritz pair we need to orthogonalize against in order to maintain the basis.
@@ -78,14 +78,14 @@
    These comments are cumulative from version 1. Modified the heuristics to
    make it faster. Now only checks left end of spectrum for converging Ritz pairs.
    Only checking the left end of the spectrum for converging Ritz pairs is in principle
-   not as good as checking both ends, but in practice seems to be no worse and usually 
+   not as good as checking both ends, but in practice seems to be no worse and usually
    better than checking both ends. Since the distribution of eigenvalues for Laplacian
    graphs of interest seems to generally result in much more rapid convergence on the
    right end of the spectrum, ignoring the converging Ritz pairs there saves a lot of
    work. */
 
-/* These comments are for version 3 of selective orthogonalization: 
-   This option hasn't performed that well, so I've rescinded it from the menu. 
+/* These comments are for version 3 of selective orthogonalization:
+   This option hasn't performed that well, so I've rescinded it from the menu.
    Uses Paige suggestion of monitoring dot product of current Lanczos vector
    against first to sense loss of orthogonality. This can save time by avoiding
    calls to the QL or bisection routines for finding Ritz values. */
@@ -101,7 +101,7 @@
 /* These comments pertain to the calculation of the eigenvalues of T:
    There are several safety features in the code which computes the Ritz values.
    Computation is first attempted using either the QL algorithm or Sturm sequence
-   bisection, whichever is predicted to be cheaper based on simple complexity analysis 
+   bisection, whichever is predicted to be cheaper based on simple complexity analysis
    (normally bisection is cheaper in this context). The classic bisection algorithm
    can fail due to overflow, so a re-scaling heuristic is used to guard against this.
    The number of bisection and QL iterations is monitored and if a reasonable maximum

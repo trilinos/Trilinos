@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /****************************************************************************/
 /****************************************************************************/
@@ -54,31 +54,25 @@
 /****************************************************************************/
 /****************************************************************************/
 
-#include <exodusII.h>                   // for ex_err, exerrval, etc
-#include <exodusII_int.h>               // for EX_FATAL, DIM_NCNT_CMAP, etc
-#include <netcdf.h>                     // for NC_NOERR, nc_inq_varid, etc
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf, fprintf, stderr
-#include <sys/types.h>                  // for int64_t
+#include <exodusII.h>     // for ex_err, exerrval, etc
+#include <exodusII_int.h> // for EX_FATAL, DIM_NCNT_CMAP, etc
+#include <netcdf.h>       // for NC_NOERR, nc_inq_varid, etc
+#include <stddef.h>       // for size_t
+#include <stdio.h>        // for sprintf, fprintf, stderr
+#include <sys/types.h>    // for int64_t
 
-
-
-int ex_put_node_cmap(int  exoid,
-                     ex_entity_id  map_id,
-                     void_int *node_ids,
-                     void_int *proc_ids,
-                     int  processor
-                     )
+int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids,
+                     void_int *proc_ids, int processor)
 {
-  const char   *func_name="ex_put_node_cmap";
+  const char *func_name = "ex_put_node_cmap";
 
   int     map_idx, varid, dimid, status;
   size_t  start[1], count[1], ret_val;
   int64_t varidx[2];
   int     value;
 
-  char    errmsg[MAX_ERR_LENGTH];
-/*-----------------------------Execution begins-----------------------------*/
+  char errmsg[MAX_ERR_LENGTH];
+  /*-----------------------------Execution begins-----------------------------*/
 
   exerrval = 0; /* clear error code */
 
@@ -93,7 +87,7 @@ int ex_put_node_cmap(int  exoid,
   }
 
   /* Get the index for this map_id */
-  if ((map_idx=ne_id_lkup(exoid, VAR_N_COMM_IDS, varidx, map_id)) == -1) {
+  if ((map_idx = ne_id_lkup(exoid, VAR_N_COMM_IDS, varidx, map_id)) == -1) {
     sprintf(errmsg,
             "ERROR: failed to find index for variable \"%s\" in file ID %d",
             VAR_N_COMM_IDS, exoid);
@@ -117,15 +111,15 @@ int ex_put_node_cmap(int  exoid,
   start[0] = map_idx;
   if ((status = nc_get_var1_int(exoid, varid, start, &value)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: unable to get variable \"%s\" from file ID %d",
+    sprintf(errmsg, "ERROR: unable to get variable \"%s\" from file ID %d",
             VAR_N_COMM_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
 
-  if (value == 0) { return(EX_NOERR);   /* NULL set */
-}
+  if (value == 0) {
+    return (EX_NOERR); /* NULL set */
+  }
 
   /* now I need to get the comm map data index */
   if (ex_get_idx(exoid, VAR_N_COMM_DATA_IDX, varidx, map_idx) == -1) {
@@ -164,9 +158,9 @@ int ex_put_node_cmap(int  exoid,
 
   start[0] = varidx[0];
   count[0] = varidx[1] - varidx[0];
-  
+
   /* Output the node IDs for this comm map */
-  if ((status = nc_inq_varid(exoid, VAR_N_COMM_NIDS, &varid )) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_N_COMM_NIDS, &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "ERROR: failed to find variable ID for \"%s\" in file ID %d",
@@ -177,14 +171,15 @@ int ex_put_node_cmap(int  exoid,
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_vara_longlong(exoid, varid, start, count, node_ids);
-  } else {
+  }
+  else {
     status = nc_put_vara_int(exoid, varid, start, count, node_ids);
   }
   if (status != NC_NOERR) {
-    fprintf(stderr, "Start, Count = %"ST_ZU"\t%"ST_ZU"\n", start[0], count[0]);
+    fprintf(stderr, "Start, Count = %" ST_ZU "\t%" ST_ZU "\n", start[0],
+            count[0]);
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to output vector \"%s\" in file ID %d",
+    sprintf(errmsg, "ERROR: failed to output vector \"%s\" in file ID %d",
             VAR_N_COMM_NIDS, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
@@ -202,13 +197,13 @@ int ex_put_node_cmap(int  exoid,
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_vara_longlong(exoid, varid, start, count, proc_ids);
-  } else {
+  }
+  else {
     status = nc_put_vara_int(exoid, varid, start, count, proc_ids);
   }
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to output variable \"%s\" in file ID %d",
+    sprintf(errmsg, "ERROR: failed to output variable \"%s\" in file ID %d",
             VAR_N_COMM_PROC, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);

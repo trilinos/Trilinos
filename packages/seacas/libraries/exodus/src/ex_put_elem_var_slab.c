@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************/
 /*****************************************************************************/
@@ -55,15 +55,14 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <inttypes.h>                   // for PRId64
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf
-#include <stdlib.h>                     // for free, malloc
-#include <sys/types.h>                  // for int64_t
-#include "exodusII.h"                   // for ex_err, exerrval, etc
-#include "exodusII_int.h"               // for EX_FATAL, VAR_ELEM_VAR, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
-
+#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII_int.h" // for EX_FATAL, VAR_ELEM_VAR, etc
+#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
+#include <inttypes.h>     // for PRId64
+#include <stddef.h>       // for size_t
+#include <stdio.h>        // for sprintf
+#include <stdlib.h>       // for free, malloc
+#include <sys/types.h>    // for int64_t
 
 /*
  * writes the values of a single element variable for one element block,
@@ -71,179 +70,181 @@
  * first time step and element variable index are 1
  */
 
-int ex_put_elem_var_slab (int   exoid,
-		          int   time_step,
-		          int   elem_var_index,
-		          ex_entity_id   elem_blk_id,
-                          int64_t   start_pos,
-		          int64_t   num_vals,
-		          void *elem_var_vals)
+int ex_put_elem_var_slab(int exoid, int time_step, int elem_var_index,
+                         ex_entity_id elem_blk_id, int64_t start_pos,
+                         int64_t num_vals, void *elem_var_vals)
 {
-  int status;
-  int varid, dimid,time_dim, numelbdim, dims[2], elem_blk_id_ndx;
+  int    status;
+  int    varid, dimid, time_dim, numelbdim, dims[2], elem_blk_id_ndx;
   size_t num_elem_blk, num_elem_var, start[2], count[2];
-  int *elem_var_tab;
-  char errmsg[MAX_ERR_LENGTH];
+  int *  elem_var_tab;
+  char   errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
 
   /* Determine index of elem_blk_id in VAR_ID_EL_BLK array */
   if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0) {
     if (exerrval == EX_NULLENTITY) {
-      sprintf(errmsg,
-	      "Warning: no variables allowed for NULL block %"PRId64" in file id %d",
-	      elem_blk_id, exoid);
+      sprintf(errmsg, "Warning: no variables allowed for NULL block %" PRId64
+                      " in file id %d",
+              elem_blk_id, exoid);
       ex_err("ex_put_elem_var_slab", errmsg, EX_NULLENTITY);
       return (EX_WARN);
-    } 
-      sprintf(errmsg,
-	      "ERROR: failed to locate element block id %"PRId64" in %s array in file id %d",
-	      elem_blk_id, VAR_ID_EL_BLK, exoid);
-      ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-      return (EX_FATAL);
-    
+    }
+    sprintf(errmsg, "ERROR: failed to locate element block id %" PRId64
+                    " in %s array in file id %d",
+            elem_blk_id, VAR_ID_EL_BLK, exoid);
+    ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+    return (EX_FATAL);
   }
 
-  if ((status = nc_inq_varid (exoid,
-			      VAR_ELEM_VAR(elem_var_index, elem_blk_id_ndx), &varid)) != NC_NOERR) {
+  if ((status =
+           nc_inq_varid(exoid, VAR_ELEM_VAR(elem_var_index, elem_blk_id_ndx),
+                        &varid)) != NC_NOERR) {
     if (status == NC_ENOTVAR) { /* variable doesn't exist, create it! */
 
       /*    inquire previously defined dimensions */
 
       /* check for the existance of an element variable truth table */
-      if ((status = nc_inq_varid (exoid, VAR_ELEM_TAB, &varid)) == NC_NOERR) {
-	/* find out number of element blocks and element variables */
-	if ((status = nc_inq_dimid (exoid, DIM_NUM_EL_BLK, &dimid)) != NC_NOERR) {
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "ERROR: failed to locate number of element blocks in file id %d",
-		  exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	  return (EX_FATAL);
-	}
+      if ((status = nc_inq_varid(exoid, VAR_ELEM_TAB, &varid)) == NC_NOERR) {
+        /* find out number of element blocks and element variables */
+        if ((status = nc_inq_dimid(exoid, DIM_NUM_EL_BLK, &dimid)) !=
+            NC_NOERR) {
+          exerrval = status;
+          sprintf(
+              errmsg,
+              "ERROR: failed to locate number of element blocks in file id %d",
+              exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+          return (EX_FATAL);
+        }
 
-	if ((status = nc_inq_dimlen(exoid, dimid, &num_elem_blk)) != NC_NOERR) {
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "ERROR: failed to get number of element blocks in file id %d",
-		  exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	  return (EX_FATAL);
-	}
+        if ((status = nc_inq_dimlen(exoid, dimid, &num_elem_blk)) != NC_NOERR) {
+          exerrval = status;
+          sprintf(errmsg,
+                  "ERROR: failed to get number of element blocks in file id %d",
+                  exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+          return (EX_FATAL);
+        }
 
-	if ((status = nc_inq_dimid (exoid, DIM_NUM_ELE_VAR, &dimid)) != NC_NOERR) {
-	  exerrval = EX_BADPARAM;
-	  sprintf(errmsg,
-		  "ERROR: no element variables stored in file id %d",
-		  exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	  return (EX_FATAL);
-	}
+        if ((status = nc_inq_dimid(exoid, DIM_NUM_ELE_VAR, &dimid)) !=
+            NC_NOERR) {
+          exerrval = EX_BADPARAM;
+          sprintf(errmsg, "ERROR: no element variables stored in file id %d",
+                  exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+          return (EX_FATAL);
+        }
 
-	if ((status = nc_inq_dimlen(exoid, dimid, &num_elem_var)) != NC_NOERR) {
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "ERROR: failed to get number of element variables in file id %d",
-		  exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	  return (EX_FATAL);
-	}
+        if ((status = nc_inq_dimlen(exoid, dimid, &num_elem_var)) != NC_NOERR) {
+          exerrval = status;
+          sprintf(
+              errmsg,
+              "ERROR: failed to get number of element variables in file id %d",
+              exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+          return (EX_FATAL);
+        }
 
-	if (!(elem_var_tab =
-	      (int *)malloc(num_elem_blk*num_elem_var*sizeof(int)))) {
-	  exerrval = EX_MEMFAIL;
-	  sprintf(errmsg,
-		  "ERROR: failed to allocate memory for element variable truth table in file id %d",
-		  exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	  return (EX_FATAL);
-	}
+        if (!(elem_var_tab =
+                  (int *)malloc(num_elem_blk * num_elem_var * sizeof(int)))) {
+          exerrval = EX_MEMFAIL;
+          sprintf(errmsg, "ERROR: failed to allocate memory for element "
+                          "variable truth table in file id %d",
+                  exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+          return (EX_FATAL);
+        }
 
-	/*   read in the element variable truth table */
-	if ((status = nc_get_var_int(exoid, varid, elem_var_tab)) != NC_NOERR) {
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "ERROR: failed to get truth table from file id %d", exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	  return (EX_FATAL);
-	}
+        /*   read in the element variable truth table */
+        if ((status = nc_get_var_int(exoid, varid, elem_var_tab)) != NC_NOERR) {
+          exerrval = status;
+          sprintf(errmsg, "ERROR: failed to get truth table from file id %d",
+                  exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+          return (EX_FATAL);
+        }
 
-	if (elem_var_tab[num_elem_var*(elem_blk_id_ndx-1)+elem_var_index-1] == 0L) {
-	  free(elem_var_tab);
-	  exerrval = EX_BADPARAM;
-	  sprintf(errmsg,
-		  "ERROR: Invalid element variable %d, block %"PRId64" in file id %d",
-		  elem_var_index, elem_blk_id, exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	  return (EX_FATAL);
-	}
-	free(elem_var_tab);
+        if (elem_var_tab[num_elem_var * (elem_blk_id_ndx - 1) + elem_var_index -
+                         1] == 0L) {
+          free(elem_var_tab);
+          exerrval = EX_BADPARAM;
+          sprintf(errmsg, "ERROR: Invalid element variable %d, block %" PRId64
+                          " in file id %d",
+                  elem_var_index, elem_blk_id, exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+          return (EX_FATAL);
+        }
+        free(elem_var_tab);
       }
 
-      if ((status = nc_inq_dimid (exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"ERROR: failed to locate time dimension in file id %d", exoid);
-	ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	goto error_ret;		/* exit define mode and return */
+      if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
+        exerrval = status;
+        sprintf(errmsg, "ERROR: failed to locate time dimension in file id %d",
+                exoid);
+        ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+        goto error_ret; /* exit define mode and return */
       }
 
-      if ((status = nc_inq_dimid(exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx), &numelbdim)) != NC_NOERR) {
-	if (status == NC_EBADDIM) {
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "ERROR: number of elements in element block %"PRId64" not defined in file id %d",
-		  elem_blk_id, exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	} else {
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "ERROR: failed to locate number of elements in element block %"PRId64" in file id %d",
-		  elem_blk_id, exoid);
-	  ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	}
-	goto error_ret;
+      if ((status = nc_inq_dimid(exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx),
+                                 &numelbdim)) != NC_NOERR) {
+        if (status == NC_EBADDIM) {
+          exerrval = status;
+          sprintf(errmsg, "ERROR: number of elements in element block %" PRId64
+                          " not defined in file id %d",
+                  elem_blk_id, exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+        }
+        else {
+          exerrval = status;
+          sprintf(errmsg, "ERROR: failed to locate number of elements in "
+                          "element block %" PRId64 " in file id %d",
+                  elem_blk_id, exoid);
+          ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+        }
+        goto error_ret;
       }
 
       /*    variable doesn't exist so put file into define mode  */
-      if ((status = nc_redef (exoid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"ERROR: failed to put file id %d into define mode", exoid);
-	ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	return (EX_FATAL);
+      if ((status = nc_redef(exoid)) != NC_NOERR) {
+        exerrval = status;
+        sprintf(errmsg, "ERROR: failed to put file id %d into define mode",
+                exoid);
+        ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+        return (EX_FATAL);
       }
-
 
       /*    define netCDF variable to store element variable values */
       dims[0] = time_dim;
       dims[1] = numelbdim;
-      if ((status = nc_def_var(exoid, VAR_ELEM_VAR(elem_var_index, elem_blk_id_ndx),
-			       nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"ERROR: failed to define element variable %d in file id %d",
-		elem_var_index, exoid);
-	ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	goto error_ret;
+      if ((status =
+               nc_def_var(exoid, VAR_ELEM_VAR(elem_var_index, elem_blk_id_ndx),
+                          nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+        exerrval = status;
+        sprintf(errmsg,
+                "ERROR: failed to define element variable %d in file id %d",
+                elem_var_index, exoid);
+        ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+        goto error_ret;
       }
       ex_compress_variable(exoid, varid, 2);
 
-
       /*    leave define mode  */
       if ((status = nc_enddef(exoid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"ERROR: failed to complete element variable %s definition to file id %d",
-		VAR_ELEM_VAR(elem_var_index, elem_blk_id_ndx), exoid);
-	ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-	return (EX_FATAL);
+        exerrval = status;
+        sprintf(errmsg, "ERROR: failed to complete element variable %s "
+                        "definition to file id %d",
+                VAR_ELEM_VAR(elem_var_index, elem_blk_id_ndx), exoid);
+        ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+        return (EX_FATAL);
       }
-    } else {
+    }
+    else {
       exerrval = status;
       sprintf(errmsg,
-	      "ERROR: failed to locate element variable %s in file id %d",
-	      VAR_ELEM_VAR(elem_var_index, elem_blk_id_ndx),exoid);
+              "ERROR: failed to locate element variable %s in file id %d",
+              VAR_ELEM_VAR(elem_var_index, elem_blk_id_ndx), exoid);
       ex_err("ex_put_elem_var_slab", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -258,28 +259,28 @@ int ex_put_elem_var_slab (int   exoid,
 
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, varid, start, count, elem_var_vals);
-  } else {
+  }
+  else {
     status = nc_put_vara_double(exoid, varid, start, count, elem_var_vals);
   }
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-	    "ERROR: failed to store element variable %d in file id %d", 
-	    elem_var_index, exoid);
+    sprintf(errmsg, "ERROR: failed to store element variable %d in file id %d",
+            elem_var_index, exoid);
     ex_err("ex_put_elem_var_slab", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   return (EX_NOERR);
 
-  /* Fatal error: exit definition mode and return */
- error_ret:
-  if (nc_enddef (exoid) != NC_NOERR)     /* exit define mode */
-    {
-      sprintf(errmsg,
-	      "ERROR: failed to complete definition for file id %d", exoid);
-      ex_err("ex_put_elem_var_slab", errmsg, exerrval);
-    }
+/* Fatal error: exit definition mode and return */
+error_ret:
+  if (nc_enddef(exoid) != NC_NOERR) /* exit define mode */
+  {
+    sprintf(errmsg, "ERROR: failed to complete definition for file id %d",
+            exoid);
+    ex_err("ex_put_elem_var_slab", errmsg, exerrval);
+  }
   return (EX_FATAL);
 }

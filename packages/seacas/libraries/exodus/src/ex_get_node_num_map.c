@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,20 +30,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************
 *
 * exgnnm - ex_get_node_num_map
 *
-* entry conditions - 
+* entry conditions -
 *   input parameters:
 *       int     exoid                   exodus file id
 *
-* exit conditions - 
+* exit conditions -
 *       int*    node_map                node numbering map array
 *
-* revision history - 
+* revision history -
 *
 *
 *****************************************************************************/
@@ -64,9 +64,11 @@ returned. Memory must be allocated for the node number map array
 number; a warning will return a positive number. Possible causes of
 errors include:
   -  data file not properly opened with call to ex_create() or ex_open()
-  -  if a node number map is not stored, a default map and a warning value are returned.
+  -  if a node number map is not stored, a default map and a warning value are
+returned.
 
-\param[in]   exoid      exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in]   exoid      exodus file ID returned from a previous call to
+ex_create() or ex_open().
 \param[out]  node_map   Returned node number map.
 
 The following code will read a node number map from an open exodus
@@ -85,8 +87,7 @@ error = ex_get_id_map(exoid, EX_NODE_MAP, node_map);
 
 */
 
-int ex_get_node_num_map (int  exoid,
-			 void_int *node_map)
+int ex_get_node_num_map(int exoid, void_int *node_map)
 {
   return ex_get_id_map(exoid, EX_NODE_MAP, node_map);
 }

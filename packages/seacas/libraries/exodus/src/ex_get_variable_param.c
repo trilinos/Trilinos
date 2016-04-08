@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,31 +30,30 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************
 *
 * exgvp - ex_get_variable_param
 *
-* entry conditions - 
+* entry conditions -
 *   input parameters:
 *       int     exoid                   exodus file id
 *       int     obj_type                variable type
 *
-* exit conditions - 
+* exit conditions -
 *       int*    num_vars                number of variables in database
 *
-* revision history - 
+* revision history -
 *
 *
 *****************************************************************************/
 
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf
-#include "exodusII.h"                   // for exerrval, ex_err, etc
-#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
-
+#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
+#include <stddef.h>       // for size_t
+#include <stdio.h>        // for sprintf
 
 /*!
 
@@ -67,10 +66,13 @@ errors include:
   -  data file not properly opened with call to ex_create() or ex_open()
   -  invalid variable type specified.
 
-\param[in]  exoid     exodus file ID returned from a previous call to ex_create() or ex_open().
-\param[in]  obj_type  Variable indicating the type of variable which is described. Use one
+\param[in]  exoid     exodus file ID returned from a previous call to
+ex_create() or ex_open().
+\param[in]  obj_type  Variable indicating the type of variable which is
+described. Use one
                       of the options in the table below.
-\param[out] num_vars  Returned number of \c var_type variables that are stored in the database.
+\param[out] num_vars  Returned number of \c var_type variables that are stored
+in the database.
 
 <table>
 <tr><td> \c EX_GLOBAL}    </td><td>  Global entity type       </td></tr>
@@ -97,19 +99,17 @@ error = ex_get_variable_param(exoid, EX_GLOBAL, &num_glo_vars);
 
 */
 
-int ex_get_variable_param (int   exoid,
-			   ex_entity_type obj_type,
-			   int  *num_vars)
+int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars)
 {
-  int dimid;
-  size_t dimlen;
-  char errmsg[MAX_ERR_LENGTH];
-  const char* dnumvar;
-  int status;
-  
-  exerrval = 0; /* clear error code */
+  int         dimid;
+  size_t      dimlen;
+  char        errmsg[MAX_ERR_LENGTH];
+  const char *dnumvar;
+  int         status;
+
+  exerrval  = 0; /* clear error code */
   *num_vars = 0;
-  
+
   switch (obj_type) {
   case EX_GLOBAL:
     dnumvar = DIM_NUM_GLO_VAR;
@@ -146,34 +146,32 @@ int ex_get_variable_param (int   exoid,
     sprintf(errmsg,
             "Warning: invalid variable type %d requested from file id %d",
             obj_type, exoid);
-    ex_err("ex_get_variable_param",errmsg,exerrval);
+    ex_err("ex_get_variable_param", errmsg, exerrval);
     return (EX_WARN);
   }
 
-  if ((status = nc_inq_dimid (exoid, dnumvar, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != NC_NOERR) {
     *num_vars = 0;
     if (status == NC_EBADDIM) {
-      return(EX_NOERR);      /* no global variables defined */
+      return (EX_NOERR); /* no global variables defined */
     }
     else {
       exerrval = status;
-      sprintf(errmsg,
-	      "ERROR: failed to locate %s variable names in file id %d",
-	      ex_name_of_object(obj_type),exoid);
-      ex_err("ex_get_variable_param",errmsg,exerrval);
+      sprintf(errmsg, "ERROR: failed to locate %s variable names in file id %d",
+              ex_name_of_object(obj_type), exoid);
+      ex_err("ex_get_variable_param", errmsg, exerrval);
       return (EX_FATAL);
     }
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &dimlen)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-	    "ERROR: failed to get number of %s variables in file id %d",
-	    ex_name_of_object(obj_type),exoid);
-    ex_err("ex_get_variable_param",errmsg,exerrval);
+    sprintf(errmsg, "ERROR: failed to get number of %s variables in file id %d",
+            ex_name_of_object(obj_type), exoid);
+    ex_err("ex_get_variable_param", errmsg, exerrval);
     return (EX_FATAL);
   }
   *num_vars = dimlen;
-  
-  return(EX_NOERR);
+
+  return (EX_NOERR);
 }

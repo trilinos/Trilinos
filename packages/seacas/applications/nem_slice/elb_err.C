@@ -67,13 +67,13 @@ void error_add(int level, const std::string &message, const std::string &filenam
  *****************************************************************************/
 void error_report()
 {
-  int iflag=0;
+  int iflag = 0;
 
-  if(error_lev >= 1) {
+  if (error_lev >= 1) {
     size_t error_cnt = error_info.size();
-    for(size_t i=0; i < error_cnt; i++) {
-      if(error_info[i].level == 0 || error_lev > 1) {
-        if(iflag == 0) {
+    for (size_t i = 0; i < error_cnt; i++) {
+      if (error_info[i].level == 0 || error_lev > 1) {
+        if (iflag == 0) {
           fprintf(stderr, "================================");
           fprintf(stderr, "messages");
           fprintf(stderr, "================================\n");
@@ -81,10 +81,10 @@ void error_report()
         }
 
         fprintf(stderr, "\t%s\n", error_info[i].err_mesg.c_str());
-        if(error_lev >= 2)
+        if (error_lev >= 2)
           fprintf(stderr, "\t\tin file %s\n", error_info[i].filename.c_str());
-	
-        if(error_lev >= 3)
+
+        if (error_lev >= 3)
           fprintf(stderr, "\t\t\tat line %d\n", error_info[i].line_no);
       }
     }

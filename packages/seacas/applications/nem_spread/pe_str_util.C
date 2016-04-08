@@ -2,23 +2,23 @@
  * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -51,28 +51,28 @@
 int token_compare(char *token, const char *key)
 {
 
-  size_t kcnt=0;
+  size_t kcnt = 0;
 
   size_t key_len = strlen(key);
 
-  for(size_t i1=0; i1 < strlen(token); i1++) {
-    if(isupper(token[i1]))
+  for (size_t i1 = 0; i1 < strlen(token); i1++) {
+    if (isupper(token[i1]))
       token[i1] = tolower(token[i1]);
 
-    if(token[i1] != ' ') {
-      if(token[i1] == key[kcnt]) {
+    if (token[i1] != ' ') {
+      if (token[i1] == key[kcnt]) {
         kcnt++;
-        if(kcnt > key_len)
+        if (kcnt > key_len)
           return 0;
       }
       else
         return 0;
     }
-    if(key[kcnt] == ' ')
+    if (key[kcnt] == ' ')
       kcnt++;
   }
 
-  if(kcnt == strlen(key))
+  if (kcnt == strlen(key))
     return 1;
   else
     return 0;
@@ -84,55 +84,48 @@ int token_compare(char *token, const char *key)
 /*****************************************************************************/
 void strip_string(char inp_str[], const char *tokens)
 {
-  int  i, j, itok, ntokes, bval;
+  int i, j, itok, ntokes, bval;
 
-  i = 0;
+  i      = 0;
   ntokes = strlen(tokens);
 
-  while(inp_str[i] != '\0')
-  {
+  while (inp_str[i] != '\0') {
     bval = 0;
-    for(itok=0; itok < ntokes; itok++)
-    {
-      if(inp_str[i] == tokens[itok])
-      {
+    for (itok = 0; itok < ntokes; itok++) {
+      if (inp_str[i] == tokens[itok]) {
         i++;
         bval = 1;
         break; /* out of for loop */
       }
     }
-    if(bval == 0)
+    if (bval == 0)
       break; /* out of while loop */
   }
 
   /* Move real part of string to the front */
   j = 0;
-  while(inp_str[j+i] != '\0')
-  {
-    inp_str[j] = inp_str[j+i];
+  while (inp_str[j + i] != '\0') {
+    inp_str[j] = inp_str[j + i];
     j++;
   }
-  inp_str[j] = inp_str[j+i];
+  inp_str[j] = inp_str[j + i];
   j--;
 
   /* Remove trailing tokens */
-  while(j != -1)
-  {
+  while (j != -1) {
     bval = 0;
-    for(itok=0; itok < ntokes; itok++)
-    {
-      if(inp_str[j] == tokens[itok])
-      {
+    for (itok = 0; itok < ntokes; itok++) {
+      if (inp_str[j] == tokens[itok]) {
         bval = 1;
         j--;
         break; /* out of for loop */
       }
     }
-    if(bval == 0)
+    if (bval == 0)
       break; /* out of while loop */
   }
 
-  inp_str[j+1] = '\0';
+  inp_str[j + 1] = '\0';
 
   return;
 }
@@ -142,38 +135,33 @@ void strip_string(char inp_str[], const char *tokens)
 /*****************************************************************************/
 void clean_string(char inp_str[], const char *tokens)
 {
-  int  i, j, itok, ntokes, bval, inplen;
+  int i, j, itok, ntokes, bval, inplen;
 
   ntokes = strlen(tokens);
   inplen = strlen(inp_str);
 
-  i = 0;
+  i    = 0;
   bval = 0;
-  while(inp_str[i] != '\0')
-  {
-    for(itok=0; itok < ntokes; itok++)
-    {
-      if(inp_str[i] == tokens[itok])
-      {
+  while (inp_str[i] != '\0') {
+    for (itok = 0; itok < ntokes; itok++) {
+      if (inp_str[i] == tokens[itok]) {
         /* Find out if the next character is also a token */
-        for(j=0; j < ntokes; j++)
-        {
-          if(inp_str[i+1] == tokens[j])
-          {
+        for (j = 0; j < ntokes; j++) {
+          if (inp_str[i + 1] == tokens[j]) {
             bval = 1;
             break;
           }
         }
 
-        if(bval == 1)
-        {
-          for(j=i+1; j < inplen; j++)
-            inp_str[j] = inp_str[j+1];
+        if (bval == 1) {
+          for (j       = i + 1; j < inplen; j++)
+            inp_str[j] = inp_str[j + 1];
 
           inplen--;
           bval = 0;
           i--;
-	  if (i < 0) i = 0;
+          if (i < 0)
+            i = 0;
         }
       }
     }
@@ -194,15 +182,13 @@ void string_to_lower(char in_string[], const char cval)
   int len, cnt;
 
   len = strlen(in_string);
-  for(cnt=0; cnt < len; cnt++)
-  {
-    if(in_string[cnt] == cval)
+  for (cnt = 0; cnt < len; cnt++) {
+    if (in_string[cnt] == cval)
       return;
 
-    if(isupper(in_string[cnt]))
+    if (isupper(in_string[cnt]))
       in_string[cnt] = tolower(in_string[cnt]);
   }
 
   return;
 }
-

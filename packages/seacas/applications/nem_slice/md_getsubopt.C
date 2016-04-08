@@ -28,54 +28,51 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 /* Parse comma separated suboption from *OPTIONP and match against
    strings in TOKENS.  If found return index and set *VALUEP to
    optional value introduced by an equal sign.  If the suboption is
    not part of TOKENS return in *VALUEP beginning of unknown
    suboption.  On exit *OPTIONP is set to the beginning of the next
    token or at the terminating NUL character.  */
-int
-md_getsubopt (char **optionp, const char **tokens, char **valuep)
+int md_getsubopt(char **optionp, const char **tokens, char **valuep)
 {
   char *endp, *vstart;
-  int cnt;
+  int   cnt;
 
   if (**optionp == '\0')
     return -1;
 
   /* Find end of next token.  */
-  endp = strchr (*optionp, ',');
+  endp = strchr(*optionp, ',');
   if (endp == nullptr)
-    endp = strchr (*optionp, '\0');
+    endp = strchr(*optionp, '\0');
 
   /* Find start of value.  */
-  vstart = (char*)memchr (*optionp, '=', endp - *optionp);
+  vstart = (char *)memchr(*optionp, '=', endp - *optionp);
   if (vstart == nullptr)
     vstart = endp;
 
   /* Try to match the characters between *OPTIONP and VSTART against
      one of the TOKENS.  */
   for (cnt = 0; tokens[cnt] != nullptr; ++cnt)
-    if (memcmp (*optionp, tokens[cnt], vstart - *optionp) == 0
-	&& tokens[cnt][vstart - *optionp] == '\0')
-      {
-	/* We found the current option in TOKENS.  */
-        *valuep = vstart != endp ? vstart + 1 : nullptr;
+    if (memcmp(*optionp, tokens[cnt], vstart - *optionp) == 0 &&
+        tokens[cnt][vstart - *optionp] == '\0') {
+      /* We found the current option in TOKENS.  */
+      *valuep = vstart != endp ? vstart + 1 : nullptr;
 
-	if (*endp != '\0')
-	  *endp++ = '\0';
-	*optionp = endp;
+      if (*endp != '\0')
+        *endp++ = '\0';
+      *optionp  = endp;
 
-	return cnt;
-      }
+      return cnt;
+    }
 
   /* The current suboption does not match any option.  */
   *valuep = *optionp;
 
   if (*endp != '\0')
     *endp++ = '\0';
-  *optionp = endp;
+  *optionp  = endp;
 
   return -1;
 }

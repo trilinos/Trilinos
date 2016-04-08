@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,13 +30,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************
 *
 * exgfrm - ex_get_coordinate_frames: read coordinate frames
 *
-* entry conditions - 
+* entry conditions -
 *   input parameters:
 *       int         exoid               exodus file id
 *
@@ -66,15 +66,15 @@
 * returns -
 *      EX_NOERR         for no error
 *      EX_FATAL         for fatal errors
-* 
+*
 *****************************************************************************/
 
-#include <assert.h>                     // for assert
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf
-#include "exodusII.h"                   // for ex_err, exerrval, etc
-#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
+#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
+#include <assert.h>       // for assert
+#include <stddef.h>       // for size_t
+#include <stdio.h>        // for sprintf
 
 /* -------------------- local defines --------------------------- */
 #define PROCNAME "ex_get_coordinate_frames"
@@ -94,71 +94,81 @@
  * compute word size passed in ex_create() or
  * ex_open().
  * \param        exoid    exodus file id
- * \param[in,out] nframes  if 'cf_ids' is NULL, then nframes is returned with the number
- *                        of defined coordinate frames. Else it is the number of coordinate
+ * \param[in,out] nframes  if 'cf_ids' is NULL, then nframes is returned with
+ * the number
+ *                        of defined coordinate frames. Else it is the number of
+ * coordinate
  *                        frames to read.
  * \param[out] cf_ids The (nframes) coordinate frame Ids. If cf_ids is
- *                    NULL, no data will be returned in this or any other array. Only
- *                    nframes will be modified. Otherwise, space must be allocated to
+ *                    NULL, no data will be returned in this or any other array.
+ * Only
+ *                    nframes will be modified. Otherwise, space must be
+ * allocated to
  *                    store 'nframes' integers before making this call.
  * \param[out] pt_coordinates The (9*nframes) coordinates of the three
- *                            points defining each coordinate axis. The first three values are
- *                            the origin of the first frame. The next three values are the
- *                            coordinates of a point on the 3rd axis of the first frame. The next
- *                            three values are the coordinates of a point in the plane of the 1-3
- *                            axis. The pattern is repeated for each frame. If 'cf_ids'
- *                            is null, no data will be returned in this array. Otherwise, space
- *                            must be allocated for 9*nframes floating point values. The size of
+ *                            points defining each coordinate axis. The first
+ * three values are
+ *                            the origin of the first frame. The next three
+ * values are the
+ *                            coordinates of a point on the 3rd axis of the
+ * first frame. The next
+ *                            three values are the coordinates of a point in the
+ * plane of the 1-3
+ *                            axis. The pattern is repeated for each frame. If
+ * 'cf_ids'
+ *                            is null, no data will be returned in this array.
+ * Otherwise, space
+ *                            must be allocated for 9*nframes floating point
+ * values. The size of
  *                            the allocation depends upon the compute word size.
  * \param[out] tags The (nframes) character tags associated with each
  *                  coordinate frame. If 'cf_ids' is NULL, no data will be
- *                  returned in this array. Otherwise, space must be allocated for
+ *                  returned in this array. Otherwise, space must be allocated
+ * for
  *                  'nframes' characters.
  */
 
- int ex_get_coordinate_frames( int exoid,
-			       int *nframes,
-			       void_int *cf_ids,
-			       void* pt_coordinates,
-			       char* tags)
+int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids,
+                             void *pt_coordinates, char *tags)
 
 {
-  int status;
-  int dimid; /* ID of the dimension of # frames */
-  char errmsg[MAX_ERR_LENGTH];
-  int varids;                    /* variable id for the frame ids  */
-  size_t start=0;                /* start value for varputs        */
-  size_t count=0;                /* number vars to put in varput   */
+  int    status;
+  int    dimid; /* ID of the dimension of # frames */
+  char   errmsg[MAX_ERR_LENGTH];
+  int    varids;    /* variable id for the frame ids  */
+  size_t start = 0; /* start value for varputs        */
+  size_t count = 0; /* number vars to put in varput   */
 
   /* get the dimensions */
-  assert( nframes !=NULL );
+  assert(nframes != NULL);
   status = nc_inq_dimid(exoid, DIM_NUM_CFRAMES, &dimid);
-  if (status != NC_NOERR){
-    *nframes=0;
+  if (status != NC_NOERR) {
+    *nframes = 0;
     return EX_NOERR;
   }
 
-  (void)nc_inq_dimlen(exoid,dimid,&count);
-  *nframes=(int)count;
+  (void)nc_inq_dimlen(exoid, dimid, &count);
+  *nframes = (int)count;
 
-  if ( count==0 ) {
+  if (count == 0) {
     return (EX_NOERR);
-}
+  }
 
-  if ( cf_ids ) {
-    if ((status = nc_inq_varid(exoid,VAR_FRAME_IDS, &varids))!= NC_NOERR) {
+  if (cf_ids) {
+    if ((status = nc_inq_varid(exoid, VAR_FRAME_IDS, &varids)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
               "ERROR: failed to read number coordinate ids from file id %d",
               exoid);
-      ex_err(PROCNAME,errmsg,exerrval);
+      ex_err(PROCNAME, errmsg, exerrval);
       return (EX_FATAL);
     }
 
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
-      status = nc_get_var_longlong(exoid,varids,cf_ids);
-    } else {
-      status = nc_get_var_int(exoid,varids,cf_ids);
+      status = nc_get_var_longlong(exoid, varids, cf_ids);
+    }
+    else {
+      status = nc_get_var_int(exoid, varids, cf_ids);
     }
 
     if (status != NC_NOERR) {
@@ -166,37 +176,38 @@
       sprintf(errmsg,
               "ERROR: failed to read coordinate frame ids from file id %d",
               exoid);
-      ex_err(PROCNAME,errmsg,exerrval);
+      ex_err(PROCNAME, errmsg, exerrval);
       return (EX_FATAL);
     }
   }
 
-  if ( tags ) {
-    if ( (status = nc_inq_varid(exoid,VAR_FRAME_TAGS,&varids))!= NC_NOERR  ||
-         (nc_get_vara_text(exoid,varids,&start,&count,tags) != NC_NOERR)) {
+  if (tags) {
+    if ((status = nc_inq_varid(exoid, VAR_FRAME_TAGS, &varids)) != NC_NOERR ||
+        (nc_get_vara_text(exoid, varids, &start, &count, tags) != NC_NOERR)) {
       exerrval = status;
       sprintf(errmsg,
               "ERROR: failed to read number coordinate tags from file id %d",
               exoid);
-      ex_err(PROCNAME,errmsg,exerrval);
+      ex_err(PROCNAME, errmsg, exerrval);
       return (EX_FATAL);
     }
-}
+  }
 
-  if (pt_coordinates ){
-    if ( (status = nc_inq_varid(exoid,VAR_FRAME_COORDS,&varids))!= NC_NOERR) {
+  if (pt_coordinates) {
+    if ((status = nc_inq_varid(exoid, VAR_FRAME_COORDS, &varids)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
               "ERROR: failed to read number coordinate tags from file id %d",
               exoid);
-      ex_err(PROCNAME,errmsg,exerrval);
+      ex_err(PROCNAME, errmsg, exerrval);
       return (EX_FATAL);
     }
 
     if (ex_comp_ws(exoid) == 4) {
-      status = nc_get_var_float(exoid,varids,pt_coordinates);
-    } else {
-      status = nc_get_var_double(exoid,varids,pt_coordinates);
+      status = nc_get_var_float(exoid, varids, pt_coordinates);
+    }
+    else {
+      status = nc_get_var_double(exoid, varids, pt_coordinates);
     }
 
     if (status != NC_NOERR) {
@@ -204,7 +215,7 @@
       sprintf(errmsg,
               "ERROR: failed to read number coordinate tags from file id %d",
               exoid);
-      ex_err(PROCNAME,errmsg,exerrval);
+      ex_err(PROCNAME, errmsg, exerrval);
       return (EX_FATAL);
     }
   }

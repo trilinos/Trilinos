@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,29 +30,27 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*
  *
  *****************************************************************************/
 
-#include <stdio.h>                      // for sprintf
-#include "exodusII.h"                   // for exerrval, ex_err, etc
-#include "exodusII_int.h"               // for EX_FATAL, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_get_var_int, etc
+#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII_int.h" // for EX_FATAL, etc
+#include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
+#include <stdio.h>        // for sprintf
 
 /*
  *  reads the element block ids from the database
  */
 
-int ex_get_ids (int  exoid,
-		ex_entity_type obj_type, 
-		void_int *ids)
+int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
 {
-  int varid, status;
+  int  varid, status;
   char errmsg[MAX_ERR_LENGTH];
 
-  const char* varidobj;
+  const char *varidobj;
 
   exerrval = 0; /* clear error code */
 
@@ -93,48 +91,46 @@ int ex_get_ids (int  exoid,
   case EX_ELEM_MAP:
     varidobj = VAR_EM_PROP(1);
     break;
-  default:/* invalid variable type */
+  default: /* invalid variable type */
     exerrval = EX_BADPARAM;
     sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err("ex_get_ids",errmsg,exerrval);
-    return(EX_FATAL);
+    ex_err("ex_get_ids", errmsg, exerrval);
+    return (EX_FATAL);
   }
 
   /* Determine if there are any 'obj-type' objects */
-  if ((status = nc_inq_dimid (exoid, ex_dim_num_objects(obj_type), &varid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(obj_type), &varid)) !=
+      NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "Warning: no %s defined in file id %d",
-	    ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_ids",errmsg,exerrval);
+    sprintf(errmsg, "Warning: no %s defined in file id %d",
+            ex_name_of_object(obj_type), exoid);
+    ex_err("ex_get_ids", errmsg, exerrval);
     return (EX_WARN);
   }
-
 
   /* inquire id's of previously defined dimensions and variables  */
   if ((status = nc_inq_varid(exoid, varidobj, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-	    "ERROR: failed to locate %s ids variable in file id %d",
-	    ex_name_of_object(obj_type),exoid);
-    ex_err("ex_get_ids",errmsg,exerrval);
+    sprintf(errmsg, "ERROR: failed to locate %s ids variable in file id %d",
+            ex_name_of_object(obj_type), exoid);
+    ex_err("ex_get_ids", errmsg, exerrval);
     return (EX_FATAL);
   }
-  
+
   /* read in the element block ids  */
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
     status = nc_get_var_longlong(exoid, varid, ids);
-  } else {
+  }
+  else {
     status = nc_get_var_int(exoid, varid, ids);
   }
-  
+
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-	    "ERROR: failed to return %s ids in file id %d",
-	    ex_name_of_object(obj_type),exoid);
-    ex_err("ex_get_ids",errmsg,exerrval);
+    sprintf(errmsg, "ERROR: failed to return %s ids in file id %d",
+            ex_name_of_object(obj_type), exoid);
+    ex_err("ex_get_ids", errmsg, exerrval);
     return (EX_FATAL);
   }
-  return(EX_NOERR);
+  return (EX_NOERR);
 }

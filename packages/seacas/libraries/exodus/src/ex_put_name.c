@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************
 *
@@ -38,25 +38,25 @@
 *
 * environment - UNIX
 *
-* entry conditions - 
+* entry conditions -
 *   input parameters:
 *       int     exoid          exodus file id
 *       int     obj_type       object type
 *       int     entity_id      id of entity name to write
 *       char*   name           ptr to entity name
 *
-* exit conditions - 
+* exit conditions -
 *
-* revision history - 
+* revision history -
 *
 *
 *****************************************************************************/
 
-#include <inttypes.h>                   // for PRId64
-#include <stdio.h>                      // for sprintf
-#include "exodusII.h"                   // for exerrval, ex_err, etc
-#include "exodusII_int.h"               // for EX_FATAL, ex_id_lkup, etc
-#include "netcdf.h"                     // for nc_inq_varid, NC_NOERR
+#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
+#include "netcdf.h"       // for nc_inq_varid, NC_NOERR
+#include <inttypes.h>     // for PRId64
+#include <stdio.h>        // for sprintf
 
 /*!
  * writes the name of the specified entity to the database. The entity
@@ -68,20 +68,18 @@
  * \param  name           ptr to entity name
  */
 
-int ex_put_name (int   exoid,
-		 ex_entity_type obj_type,
-		 ex_entity_id   entity_id,
-		 const char *name)
+int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
+                const char *name)
 {
-  int status;
-  int varid, ent_ndx; 
-  char errmsg[MAX_ERR_LENGTH];
+  int         status;
+  int         varid, ent_ndx;
+  char        errmsg[MAX_ERR_LENGTH];
   const char *routine = "ex_put_name";
   const char *vobj;
-   
+
   exerrval = 0; /* clear error code */
 
-  switch(obj_type) {
+  switch (obj_type) {
   case EX_EDGE_BLOCK:
     vobj = VAR_NAME_ED_BLK;
     break;
@@ -120,39 +118,38 @@ int ex_put_name (int   exoid,
     break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg,
-	    "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err(routine,errmsg,exerrval);
-    return(EX_FATAL);
+    sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
+    ex_err(routine, errmsg, exerrval);
+    return (EX_FATAL);
   }
-   
+
   if ((status = nc_inq_varid(exoid, vobj, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-	    "ERROR: failed to locate %s names in file id %d",
-	    ex_name_of_object(obj_type), exoid);
-    ex_err(routine,errmsg,exerrval);
+    sprintf(errmsg, "ERROR: failed to locate %s names in file id %d",
+            ex_name_of_object(obj_type), exoid);
+    ex_err(routine, errmsg, exerrval);
     return (EX_FATAL);
   }
 
   ent_ndx = ex_id_lkup(exoid, obj_type, entity_id);
 
-  if (exerrval == EX_LOOKUPFAIL) {   /* could not find the element block id */
-    sprintf(errmsg,
-            "ERROR: %s id %"PRId64" not found in file id %d",
-	    ex_name_of_object(obj_type), entity_id, exoid);
-    ex_err("ex_put_name",errmsg,exerrval);
+  if (exerrval == EX_LOOKUPFAIL) { /* could not find the element block id */
+    sprintf(errmsg, "ERROR: %s id %" PRId64 " not found in file id %d",
+            ex_name_of_object(obj_type), entity_id, exoid);
+    ex_err("ex_put_name", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* If this is a null entity, then 'ent_ndx' will be negative.
    * We don't care in this routine, so make it positive and continue...
    */
-  if (ent_ndx < 0) { ent_ndx = -ent_ndx;
-}
-   
-  /* write EXODUS entityname */
-  status = ex_put_name_internal(exoid, varid, ent_ndx-1, name, obj_type, "", routine);
+  if (ent_ndx < 0) {
+    ent_ndx = -ent_ndx;
+  }
 
-  return(status);
+  /* write EXODUS entityname */
+  status = ex_put_name_internal(exoid, varid, ent_ndx - 1, name, obj_type, "",
+                                routine);
+
+  return (status);
 }
