@@ -180,12 +180,12 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman,false,false,100));
     // Build stochastic problem
-    ROL::StochasticProblem<RealT> opt(*parlist,objReduced,sampler,zp,bnd);
+    ROL::StochasticProblem<RealT> opt(*stoch_parlist,objReduced,sampler,zp,bnd);
 
     /*** Run optimization ***/
     ROL::AugmentedLagrangian<RealT> augLag(opt.getObjective(),volcon,*vc_lamp,1.0,*opt.getSolutionVector(),*vcp,*parlist);
     ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
-    algo.run(*opt.getSolutionVector(),*vc_lamp,augLag,*volcon,*bnd,true,*outStream);
+    algo.run(*opt.getSolutionVector(),*vc_lamp,augLag,*volcon,*opt.getBoundConstraint(),true,*outStream);
 
     data->outputTpetraVector(z_rcp, "density.txt");
     data->outputTpetraVector(u_rcp, "state.txt");
