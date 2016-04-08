@@ -57,8 +57,7 @@
  * \deprecated use ex_get_variable_name()(exoid, obj_type, var_num, *var_name)
  */
 
-int ex_get_var_name(int exoid, const char *var_type, int var_num,
-                    char *var_name)
+int ex_get_var_name(int exoid, const char *var_type, int var_num, char *var_name)
 {
   ex_entity_type obj_type;
   obj_type = ex_var_type_to_ex_entity_type(*var_type);

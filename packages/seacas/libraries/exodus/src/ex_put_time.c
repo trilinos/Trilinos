@@ -37,7 +37,7 @@
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
 
@@ -89,8 +89,7 @@ int ex_put_time(int exoid, int time_step, const void *time_value)
   /* inquire previously defined variable */
   if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate time variable in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time variable in file id %d", exoid);
     ex_err("ex_put_time", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -107,7 +106,7 @@ int ex_put_time(int exoid, int time_step, const void *time_value)
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to store time value in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store time value in file id %d", exoid);
     ex_err("ex_put_time", errmsg, exerrval);
     return (EX_FATAL);
   }

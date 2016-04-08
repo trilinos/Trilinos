@@ -57,8 +57,8 @@
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf, NULL
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*
  * reads the number of entries and the number of distribution factors which
@@ -95,11 +95,10 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
     }
   }
   /* first check if any sets are specified */
-  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) !=
-      NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "Warning: no %ss stored in file id %d",
-            ex_name_of_object(set_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss stored in file id %d",
+             ex_name_of_object(set_type), exoid);
     ex_err("ex_get_set_param", errmsg, exerrval);
     return (EX_WARN);
   }
@@ -111,9 +110,9 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
     {
       return (EX_NOERR);
     }
-    sprintf(errmsg, "ERROR: failed to locate %s id %" PRId64
-                    " in id array in file id %d",
-            ex_name_of_object(set_type), set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate %s id %" PRId64 " in id array in file id %d",
+             ex_name_of_object(set_type), set_id, exoid);
     ex_err("ex_get_set_param", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -142,8 +141,8 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   }
 
   /* inquire values of dimension for number of entities in set */
-  if (ex_get_dimension(exoid, numentryptr, "entries", &lnum_entry_in_set,
-                       &dimid, "ex_get_set_param") != NC_NOERR) {
+  if (ex_get_dimension(exoid, numentryptr, "entries", &lnum_entry_in_set, &dimid,
+                       "ex_get_set_param") != NC_NOERR) {
     return EX_FATAL;
   }
 
@@ -165,17 +164,15 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
      count will be the same as the number of nodes in the set. */
 
   if (set_type == EX_NODE_SET) {
-    if ((status = nc_inq_varid(exoid, VAR_FACT_NS(set_id_ndx), &varid)) !=
-        NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_FACT_NS(set_id_ndx), &varid)) != NC_NOERR) {
       if (status == NC_ENOTVAR) {
         return (EX_NOERR);
       }
       else {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to locate the dist factors for %s %" PRId64
-                " in file id %d",
-                ex_name_of_object(set_type), set_id, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to locate the dist factors for %s %" PRId64 " in file id %d",
+                 ex_name_of_object(set_type), set_id, exoid);
         ex_err("ex_get_set_param", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -198,22 +195,19 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       }
       else {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to locate number of dist factors in %s %" PRId64
-                " in file id %d",
-                ex_name_of_object(set_type), set_id, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to locate number of dist factors in %s %" PRId64 " in file id %d",
+                 ex_name_of_object(set_type), set_id, exoid);
         ex_err("ex_get_set_param", errmsg, exerrval);
         return (EX_FATAL);
       }
     }
 
-    if ((status = nc_inq_dimlen(exoid, dimid, &lnum_dist_fact_in_set)) !=
-        NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &lnum_dist_fact_in_set)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: failed to get number of dist factors in %s %" PRId64
-              " in file id %d",
-              ex_name_of_object(set_type), set_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to get number of dist factors in %s %" PRId64 " in file id %d",
+               ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_get_set_param", errmsg, exerrval);
       return (EX_FATAL);
     }

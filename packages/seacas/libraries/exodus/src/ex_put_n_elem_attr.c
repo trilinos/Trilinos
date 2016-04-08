@@ -60,9 +60,8 @@
  * \deprecated Use ex_put_partial_attr() instead.
  */
 
-int ex_put_n_elem_attr(int exoid, ex_entity_id elem_blk_id,
-                       int64_t start_elem_num, int64_t num_elems, void *attrib)
+int ex_put_n_elem_attr(int exoid, ex_entity_id elem_blk_id, int64_t start_elem_num,
+                       int64_t num_elems, void *attrib)
 {
-  return ex_put_partial_attr(exoid, EX_ELEM_BLOCK, elem_blk_id, start_elem_num,
-                             num_elems, attrib);
+  return ex_put_partial_attr(exoid, EX_ELEM_BLOCK, elem_blk_id, start_elem_num, num_elems, attrib);
 }

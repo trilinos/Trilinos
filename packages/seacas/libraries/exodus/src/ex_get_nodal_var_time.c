@@ -37,8 +37,8 @@
 #include "exodusII_int.h" // for EX_WARN, ex_comp_ws, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*!
 The function ex_get_nodal_var_time() reads the values of a nodal
@@ -110,9 +110,8 @@ error = ex_get_nodal_var_time(exoid, var_index, node_num, beg_time,
 \endcode
 */
 
-int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
-                          int beg_time_step, int end_time_step,
-                          void *nodal_var_vals)
+int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, int beg_time_step,
+                          int end_time_step, void *nodal_var_vals)
 {
   int    status;
   int    varid;
@@ -123,9 +122,9 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
   {
     int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
     if (beg_time_step <= 0 || beg_time_step > num_time_steps) {
-      sprintf(errmsg, "ERROR: beginning time_step is out-of-range. Value = %d, "
-                      "valid range is 1 to %d in file id %d",
-              beg_time_step, num_time_steps, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: beginning time_step is out-of-range. Value = %d, "
+                                       "valid range is 1 to %d in file id %d",
+               beg_time_step, num_time_steps, exoid);
       ex_err("ex_get_nodal_var_time", errmsg, EX_BADPARAM);
       return (EX_FATAL);
     }
@@ -138,9 +137,9 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
       end_time_step = num_time_steps;
     }
     else if (end_time_step < beg_time_step || end_time_step > num_time_steps) {
-      sprintf(errmsg, "ERROR: end time_step is out-of-range. Value = %d, valid "
-                      "range is %d to %d in file id %d",
-              beg_time_step, end_time_step, num_time_steps, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: end time_step is out-of-range. Value = %d, valid "
+                                       "range is %d to %d in file id %d",
+               beg_time_step, end_time_step, num_time_steps, exoid);
       ex_err("ex_get_nodal_var_time", errmsg, EX_BADPARAM);
       return (EX_FATAL);
     }
@@ -157,8 +156,8 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
      */
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "Warning: could not find nodal variable %d in file id %d",
-              nodal_var_index, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
+               nodal_var_index, exoid);
       ex_err("ex_get_nodal_var_time", errmsg, exerrval);
       return (EX_WARN);
     }
@@ -172,11 +171,10 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
     count[2] = 1;
   }
   else {
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index),
-                               &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "Warning: could not find nodal variable %d in file id %d",
-              nodal_var_index, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
+               nodal_var_index, exoid);
       ex_err("ex_get_nodal_var_time", errmsg, exerrval);
       return (EX_WARN);
     }
@@ -202,8 +200,7 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get nodal variables in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get nodal variables in file id %d", exoid);
     ex_err("ex_get_nodal_var_time", errmsg, exerrval);
     return (EX_FATAL);
   }

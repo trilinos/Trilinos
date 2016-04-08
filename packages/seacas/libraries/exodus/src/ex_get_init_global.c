@@ -60,8 +60,8 @@
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include <netcdf.h>       // for NC_NOERR, nc_inq_dimid, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
                        void_int *num_elem_blks_g, void_int *num_node_sets_g,
@@ -82,12 +82,10 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
   }
 
   /* Get the dimension ID for the number of global FEM nodes */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES_GLOBAL, &dimid)) !=
-      NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES_GLOBAL, &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
-            DIM_NUM_NODES_GLOBAL, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
+             DIM_NUM_NODES_GLOBAL, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -96,21 +94,19 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
   /* Get the value of the number of global FEM nodes */
   if ((status = nc_inq_dimlen(exoid, dimid, &nng)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to find length of dimension \"%s\" in file ID %d",
-            DIM_NUM_NODES_GLOBAL, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_NODES_GLOBAL,
+             exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
   }
 
   /* Get the dimension ID for the number of global FEM elements */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_ELEMS_GLOBAL, &dimid)) !=
-      NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_ELEMS_GLOBAL, &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
-            DIM_NUM_ELEMS_GLOBAL, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
+             DIM_NUM_ELEMS_GLOBAL, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -119,21 +115,19 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
   /* Get the value of the number of global FEM elements */
   if ((status = nc_inq_dimlen(exoid, dimid, &neg)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to find length of dimension \"%s\" in file ID %d",
-            DIM_NUM_ELEMS_GLOBAL, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_ELEMS_GLOBAL,
+             exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
   }
 
   /* Get the dimension ID for the number of global element blocks */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_ELBLK_GLOBAL, &dimid)) !=
-      NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_ELBLK_GLOBAL, &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
-            DIM_NUM_ELBLK_GLOBAL, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
+             DIM_NUM_ELBLK_GLOBAL, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -142,9 +136,9 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
   /* Get the value of the number of global element blocks */
   if ((status = nc_inq_dimlen(exoid, dimid, &nebg)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to find length of dimension \"%s\" in file ID %d",
-            DIM_NUM_ELBLK_GLOBAL, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_ELBLK_GLOBAL,
+             exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -158,9 +152,9 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
     /* Get the value of the number of global node sets */
     if ((status = nc_inq_dimlen(exoid, dimid, &nnsg)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: failed to find length of dimension \"%s\" in file ID %d",
-              DIM_NUM_NS_GLOBAL, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_NS_GLOBAL,
+               exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);
@@ -175,9 +169,9 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
     /* Get the value of the number of global side sets */
     if ((status = nc_inq_dimlen(exoid, dimid, &nssg)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: failed to find length of dimension \"%s\" in file ID %d",
-              DIM_NUM_SS_GLOBAL, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_SS_GLOBAL,
+               exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);

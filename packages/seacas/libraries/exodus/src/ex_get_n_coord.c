@@ -77,9 +77,8 @@
  *                    returned only if z_coor is non-NULL.
  */
 
-int ex_get_n_coord(int exoid, int64_t start_node_num, int64_t num_nodes,
-                   void *x_coor, void *y_coor, void *z_coor)
+int ex_get_n_coord(int exoid, int64_t start_node_num, int64_t num_nodes, void *x_coor, void *y_coor,
+                   void *z_coor)
 {
-  return ex_get_partial_coord(exoid, start_node_num, num_nodes, x_coor, y_coor,
-                              z_coor);
+  return ex_get_partial_coord(exoid, start_node_num, num_nodes, x_coor, y_coor, z_coor);
 }

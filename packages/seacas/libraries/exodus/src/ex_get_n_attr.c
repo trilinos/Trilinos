@@ -50,10 +50,9 @@
  */
 /*
  */
-int ex_get_n_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
-                  int64_t start_num, int64_t num_ent, void *attrib)
+int ex_get_n_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t start_num,
+                  int64_t num_ent, void *attrib)
 
 {
-  return ex_get_partial_attr(exoid, obj_type, obj_id, start_num, num_ent,
-                             attrib);
+  return ex_get_partial_attr(exoid, obj_type, obj_id, start_num, num_ent, attrib);
 }

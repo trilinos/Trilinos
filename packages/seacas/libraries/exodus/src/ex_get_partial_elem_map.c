@@ -42,9 +42,8 @@
  * ent_start, ent_count, elem_map) instead
  */
 
-int ex_get_partial_elem_map(int exoid, ex_entity_id map_id, int64_t ent_start,
-                            int64_t ent_count, void_int *elem_map)
+int ex_get_partial_elem_map(int exoid, ex_entity_id map_id, int64_t ent_start, int64_t ent_count,
+                            void_int *elem_map)
 {
-  return ex_get_partial_num_map(exoid, EX_ELEM_MAP, map_id, ent_start,
-                                ent_count, elem_map);
+  return ex_get_partial_num_map(exoid, EX_ELEM_MAP, map_id, ent_start, ent_count, elem_map);
 }

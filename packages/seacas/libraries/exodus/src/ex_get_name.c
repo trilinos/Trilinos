@@ -53,14 +53,13 @@
 #include "exodusII.h"     // for ex_inquire_int, exerrval, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid
-#include <stdio.h>        // for sprintf, NULL
+#include <stdio.h>
 
 /*
  * reads the specified entity name from the database
  */
 
-int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
-                char *name)
+int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char *name)
 {
   int         status;
   int         varid, ent_ndx;
@@ -71,46 +70,22 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
   exerrval = 0;
 
   switch (obj_type) {
-  case EX_ELEM_BLOCK:
-    vobj = VAR_NAME_EL_BLK;
-    break;
-  case EX_EDGE_BLOCK:
-    vobj = VAR_NAME_ED_BLK;
-    break;
-  case EX_FACE_BLOCK:
-    vobj = VAR_NAME_FA_BLK;
-    break;
-  case EX_NODE_SET:
-    vobj = VAR_NAME_NS;
-    break;
-  case EX_SIDE_SET:
-    vobj = VAR_NAME_SS;
-    break;
-  case EX_EDGE_SET:
-    vobj = VAR_NAME_ES;
-    break;
-  case EX_FACE_SET:
-    vobj = VAR_NAME_FS;
-    break;
-  case EX_ELEM_SET:
-    vobj = VAR_NAME_ELS;
-    break;
-  case EX_NODE_MAP:
-    vobj = VAR_NAME_NM;
-    break;
-  case EX_EDGE_MAP:
-    vobj = VAR_NAME_EDM;
-    break;
-  case EX_FACE_MAP:
-    vobj = VAR_NAME_FAM;
-    break;
-  case EX_ELEM_MAP:
-    vobj = VAR_NAME_EM;
-    break;
+  case EX_ELEM_BLOCK: vobj = VAR_NAME_EL_BLK; break;
+  case EX_EDGE_BLOCK: vobj = VAR_NAME_ED_BLK; break;
+  case EX_FACE_BLOCK: vobj = VAR_NAME_FA_BLK; break;
+  case EX_NODE_SET: vobj   = VAR_NAME_NS; break;
+  case EX_SIDE_SET: vobj   = VAR_NAME_SS; break;
+  case EX_EDGE_SET: vobj   = VAR_NAME_ES; break;
+  case EX_FACE_SET: vobj   = VAR_NAME_FS; break;
+  case EX_ELEM_SET: vobj   = VAR_NAME_ELS; break;
+  case EX_NODE_MAP: vobj   = VAR_NAME_NM; break;
+  case EX_EDGE_MAP: vobj   = VAR_NAME_EDM; break;
+  case EX_FACE_MAP: vobj   = VAR_NAME_FAM; break;
+  case EX_ELEM_MAP: vobj   = VAR_NAME_EM; break;
   default:
     /* invalid variable type */
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
     ex_err(routine, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -126,14 +101,11 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
 
     /* read the name */
     {
-      int db_name_size =
-          ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
+      int db_name_size  = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
       int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
-      int name_size =
-          db_name_size < api_name_size ? db_name_size : api_name_size;
+      int name_size     = db_name_size < api_name_size ? db_name_size : api_name_size;
 
-      status = ex_get_name_internal(exoid, varid, ent_ndx - 1, name, name_size,
-                                    obj_type, routine);
+      status = ex_get_name_internal(exoid, varid, ent_ndx - 1, name, name_size, obj_type, routine);
       if (status != NC_NOERR) {
         return (EX_FATAL);
       }

@@ -54,7 +54,7 @@
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
 #include <inttypes.h>     // for PRId64
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
  * writes the attributes for an edge/face/element block
@@ -64,8 +64,7 @@
  * \param   attrib                  array of attributes
  */
 
-int ex_put_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
-                const void *attrib)
+int ex_put_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const void *attrib)
 {
   int  status;
   int  attrid, blk_id_ndx;
@@ -78,62 +77,43 @@ int ex_put_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
     blk_id_ndx = ex_id_lkup(exoid, blk_type, blk_id);
     if (exerrval != 0) {
       if (exerrval == EX_NULLENTITY) {
-        sprintf(errmsg, "Warning: no attributes allowed for NULL %s %" PRId64
-                        " in file id %d",
-                ex_name_of_object(blk_type), blk_id, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "Warning: no attributes allowed for NULL %s %" PRId64 " in file id %d",
+                 ex_name_of_object(blk_type), blk_id, exoid);
         ex_err("ex_put_attr", errmsg, EX_NULLENTITY);
         return (EX_WARN); /* no attributes for this block */
       }
-      sprintf(errmsg, "ERROR: no %s id %" PRId64 " in in file id %d",
-              ex_name_of_object(blk_type), blk_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s id %" PRId64 " in in file id %d",
+               ex_name_of_object(blk_type), blk_id, exoid);
       ex_err("ex_put_attr", errmsg, exerrval);
       return (EX_FATAL);
     }
   }
 
   switch (blk_type) {
-  case EX_SIDE_SET:
-    status = nc_inq_varid(exoid, VAR_SSATTRIB(blk_id_ndx), &attrid);
-    break;
-  case EX_NODE_SET:
-    status = nc_inq_varid(exoid, VAR_NSATTRIB(blk_id_ndx), &attrid);
-    break;
-  case EX_EDGE_SET:
-    status = nc_inq_varid(exoid, VAR_ESATTRIB(blk_id_ndx), &attrid);
-    break;
-  case EX_FACE_SET:
-    status = nc_inq_varid(exoid, VAR_FSATTRIB(blk_id_ndx), &attrid);
-    break;
-  case EX_ELEM_SET:
-    status = nc_inq_varid(exoid, VAR_ELSATTRIB(blk_id_ndx), &attrid);
-    break;
-  case EX_NODAL:
-    status = nc_inq_varid(exoid, VAR_NATTRIB, &attrid);
-    break;
-  case EX_EDGE_BLOCK:
-    status = nc_inq_varid(exoid, VAR_EATTRIB(blk_id_ndx), &attrid);
-    break;
-  case EX_FACE_BLOCK:
-    status = nc_inq_varid(exoid, VAR_FATTRIB(blk_id_ndx), &attrid);
-    break;
-  case EX_ELEM_BLOCK:
-    status = nc_inq_varid(exoid, VAR_ATTRIB(blk_id_ndx), &attrid);
-    break;
+  case EX_SIDE_SET: status   = nc_inq_varid(exoid, VAR_SSATTRIB(blk_id_ndx), &attrid); break;
+  case EX_NODE_SET: status   = nc_inq_varid(exoid, VAR_NSATTRIB(blk_id_ndx), &attrid); break;
+  case EX_EDGE_SET: status   = nc_inq_varid(exoid, VAR_ESATTRIB(blk_id_ndx), &attrid); break;
+  case EX_FACE_SET: status   = nc_inq_varid(exoid, VAR_FSATTRIB(blk_id_ndx), &attrid); break;
+  case EX_ELEM_SET: status   = nc_inq_varid(exoid, VAR_ELSATTRIB(blk_id_ndx), &attrid); break;
+  case EX_NODAL: status      = nc_inq_varid(exoid, VAR_NATTRIB, &attrid); break;
+  case EX_EDGE_BLOCK: status = nc_inq_varid(exoid, VAR_EATTRIB(blk_id_ndx), &attrid); break;
+  case EX_FACE_BLOCK: status = nc_inq_varid(exoid, VAR_FATTRIB(blk_id_ndx), &attrid); break;
+  case EX_ELEM_BLOCK: status = nc_inq_varid(exoid, VAR_ATTRIB(blk_id_ndx), &attrid); break;
   default:
     exerrval = 1005;
-    sprintf(
-        errmsg,
-        "Internal ERROR: unrecognized object type in switch: %d in file id %d",
-        blk_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Internal ERROR: unrecognized object type in switch: %d in file id %d", blk_type,
+             exoid);
     ex_err("ex_put_attr", errmsg, EX_MSG);
     return (EX_FATAL); /* number of attributes not defined */
   }
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate attribute variable for %s %" PRId64
-                    " in file id %d",
-            ex_name_of_object(blk_type), blk_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate attribute variable for %s %" PRId64 " in file id %d",
+             ex_name_of_object(blk_type), blk_id, exoid);
     ex_err("ex_put_attr", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -148,9 +128,9 @@ int ex_put_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to put attributes for %s %" PRId64 " in file id %d",
-            ex_name_of_object(blk_type), blk_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to put attributes for %s %" PRId64 " in file id %d",
+             ex_name_of_object(blk_type), blk_id, exoid);
     ex_err("ex_put_attr", errmsg, exerrval);
     return (EX_FATAL);
   }

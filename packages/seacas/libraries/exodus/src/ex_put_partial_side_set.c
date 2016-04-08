@@ -59,16 +59,15 @@
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*
  * writes the side set element list and side set side list for a single side set
  */
 
-int ex_put_partial_side_set(int exoid, ex_entity_id side_set_id,
-                            int64_t start_side_num, int64_t num_sides,
-                            const void_int *side_set_elem_list,
+int ex_put_partial_side_set(int exoid, ex_entity_id side_set_id, int64_t start_side_num,
+                            int64_t num_sides, const void_int *side_set_elem_list,
                             const void_int *side_set_side_list)
 {
   int    status;
@@ -83,7 +82,7 @@ int ex_put_partial_side_set(int exoid, ex_entity_id side_set_id,
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_SS, &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: no side sets defined in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no side sets defined in file id %d", exoid);
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -92,53 +91,50 @@ int ex_put_partial_side_set(int exoid, ex_entity_id side_set_id,
 
   if ((side_set_id_ndx = ex_id_lkup(exoid, EX_SIDE_SET, side_set_id)) < 0) {
     if (exerrval == EX_NULLENTITY) {
-      sprintf(errmsg, "Warning: no data allowed for NULL side set %" PRId64
-                      " in file id %d",
-              side_set_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "Warning: no data allowed for NULL side set %" PRId64 " in file id %d", side_set_id,
+               exoid);
       ex_err("ex_put_partial_side_set", errmsg, EX_NULLENTITY);
       return (EX_WARN);
     }
-    sprintf(errmsg, "ERROR: failed to locate side set id %" PRId64
-                    " in VAR_SS_IDS array in file id %d",
-            side_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate side set id %" PRId64 " in VAR_SS_IDS array in file id %d",
+             side_set_id, exoid);
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* inquire id's of previously defined dimensions  */
 
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_SIDE_SS(side_set_id_ndx),
-                             &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_SIDE_SS(side_set_id_ndx), &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to locate number of sides in side set %" PRId64
-            " in file id %d",
-            side_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate number of sides in side set %" PRId64 " in file id %d",
+             side_set_id, exoid);
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &num_side_in_set)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get number of sides in side set %" PRId64
-                    " in file id %d",
-            side_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to get number of sides in side set %" PRId64 " in file id %d",
+             side_set_id, exoid);
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* Check input parameters for a valid range of side numbers */
-  if (start_side_num < 0 ||
-      (num_sides > 0 && start_side_num > num_side_in_set)) {
+  if (start_side_num < 0 || (num_sides > 0 && start_side_num > num_side_in_set)) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid input");
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid input");
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if (num_sides < 0) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid number of elements in side set!");
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid number of elements in side set!");
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -146,28 +142,26 @@ int ex_put_partial_side_set(int exoid, ex_entity_id side_set_id,
   /* start_side_num now starts at 1, not 0 */
   if ((start_side_num + num_sides) > num_side_in_set + 1) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: request larger than number of elements in set!");
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: request larger than number of elements in set!");
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* inquire id's of previously defined variables  */
-  if ((status = nc_inq_varid(exoid, VAR_ELEM_SS(side_set_id_ndx),
-                             &elem_list_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_ELEM_SS(side_set_id_ndx), &elem_list_id)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate element list for side set %" PRId64
-                    " in file id %d",
-            side_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate element list for side set %" PRId64 " in file id %d",
+             side_set_id, exoid);
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_SIDE_SS(side_set_id_ndx),
-                             &side_list_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_SIDE_SS(side_set_id_ndx), &side_list_id)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate side list for side set %" PRId64
-                    " in file id %d",
-            side_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate side list for side set %" PRId64 " in file id %d",
+             side_set_id, exoid);
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -180,37 +174,33 @@ int ex_put_partial_side_set(int exoid, ex_entity_id side_set_id,
   }
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    status = nc_put_vara_longlong(exoid, elem_list_id, start, count,
-                                  side_set_elem_list);
+    status = nc_put_vara_longlong(exoid, elem_list_id, start, count, side_set_elem_list);
   }
   else {
-    status =
-        nc_put_vara_int(exoid, elem_list_id, start, count, side_set_elem_list);
+    status = nc_put_vara_int(exoid, elem_list_id, start, count, side_set_elem_list);
   }
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to store element list for side set %" PRId64
-                    " in file id %d",
-            side_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to store element list for side set %" PRId64 " in file id %d",
+             side_set_id, exoid);
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    status = nc_put_vara_longlong(exoid, side_list_id, start, count,
-                                  side_set_side_list);
+    status = nc_put_vara_longlong(exoid, side_list_id, start, count, side_set_side_list);
   }
   else {
-    status =
-        nc_put_vara_int(exoid, side_list_id, start, count, side_set_side_list);
+    status = nc_put_vara_int(exoid, side_list_id, start, count, side_set_side_list);
   }
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to store side list for side set %" PRId64
-                    " in file id %d",
-            side_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to store side list for side set %" PRId64 " in file id %d", side_set_id,
+             exoid);
     ex_err("ex_put_partial_side_set", errmsg, exerrval);
     return (EX_FATAL);
   }

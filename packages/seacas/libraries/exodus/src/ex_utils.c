@@ -42,16 +42,16 @@
 #include <assert.h>
 #endif
 
-#include <ctype.h>     /* for tolower, isspace */
-#include <errno.h>     /* for errno */
-#include <stddef.h>    /* for size_t */
-#include <stdio.h>     /* for sprintf, NULL, fprintf, etc */
-#include <stdlib.h>    /* for free, calloc, malloc, etc */
-#include <string.h>    /* for strlen */
-#include <sys/types.h> /* for int64_t */
+#include <ctype.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 
-#include "exodusII.h"     /* for exerrval, ex_err, etc */
-#include "exodusII_int.h" /* for obj_stats, EX_FATAL, etc */
+#include "exodusII.h"
+#include "exodusII_int.h"
 
 struct obj_stats *exoII_eb  = 0;
 struct obj_stats *exoII_ed  = 0;
@@ -133,15 +133,14 @@ int ex_set_max_name_length(int exoid, int length)
   char errmsg[MAX_ERR_LENGTH];
   if (length <= 0) {
     exerrval = NC_EMAXNAME;
-    sprintf(errmsg, "ERROR: Max name length must be positive.");
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Max name length must be positive.");
     ex_err("ex_set_max_name_length", errmsg, exerrval);
     return (EX_FATAL);
   }
   if (length > NC_MAX_NAME) {
     exerrval = NC_EMAXNAME;
-    sprintf(errmsg,
-            "ERROR: Max name length (%d) exceeds netcdf max name size (%d).",
-            length, NC_MAX_NAME);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: Max name length (%d) exceeds netcdf max name size (%d).", length, NC_MAX_NAME);
     ex_err("ex_set_max_name_length", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -158,13 +157,11 @@ void ex_update_max_name_length(int exoid, int length)
   int rootid    = exoid & EX_FILE_ID_MASK;
 
   /* Get current value of the maximum_name_length attribute... */
-  if ((status = nc_get_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH,
-                               &db_length)) != NC_NOERR) {
+  if ((status = nc_get_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to update 'max_name_length' attribute in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to update 'max_name_length' attribute in file id %d", exoid);
     ex_err("ex_update_max_name_length", errmsg, exerrval);
   }
 
@@ -176,8 +173,7 @@ void ex_update_max_name_length(int exoid, int length)
 }
 
 int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
-                          ex_entity_type obj_type, const char *subtype,
-                          const char *routine)
+                          ex_entity_type obj_type, const char *subtype, const char *routine)
 {
   size_t i;
   int    status;
@@ -201,8 +197,8 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
       if (count[1] > name_length) {
         fprintf(stderr, "Warning: The %s %s name '%s' is too long.\n\tIt will "
                         "be truncated from %d to %d characters\n",
-                ex_name_of_object(obj_type), subtype, names[i],
-                (int)strlen(names[i]), (int)name_length - 1);
+                ex_name_of_object(obj_type), subtype, names[i], (int)strlen(names[i]),
+                (int)name_length - 1);
         count[1] = name_length;
         too_long = 1;
       }
@@ -211,11 +207,10 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
         max_name_len = count[1];
       }
 
-      if ((status = nc_put_vara_text(exoid, varid, start, count, names[i])) !=
-          NC_NOERR) {
+      if ((status = nc_put_vara_text(exoid, varid, start, count, names[i])) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg, "ERROR: failed to store %s names in file id %d",
-                ex_name_of_object(obj_type), exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s names in file id %d",
+                 ex_name_of_object(obj_type), exoid);
         ex_err(routine, errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -235,8 +230,7 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
 }
 
 int ex_put_name_internal(int exoid, int varid, size_t index, const char *name,
-                         ex_entity_type obj_type, const char *subtype,
-                         const char *routine)
+                         ex_entity_type obj_type, const char *subtype, const char *routine)
 {
   int    status;
   size_t start[2], count[2];
@@ -257,17 +251,15 @@ int ex_put_name_internal(int exoid, int varid, size_t index, const char *name,
     if (count[1] > name_length) {
       fprintf(stderr, "Warning: The %s %s name '%s' is too long.\n\tIt will be "
                       "truncated from %d to %d characters\n",
-              ex_name_of_object(obj_type), subtype, name, (int)strlen(name),
-              (int)name_length - 1);
+              ex_name_of_object(obj_type), subtype, name, (int)strlen(name), (int)name_length - 1);
       count[1] = name_length;
       too_long = 1;
     }
 
-    if ((status = nc_put_vara_text(exoid, varid, start, count, name)) !=
-        NC_NOERR) {
+    if ((status = nc_put_vara_text(exoid, varid, start, count, name)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to store %s name in file id %d",
-              ex_name_of_object(obj_type), exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s name in file id %d",
+               ex_name_of_object(obj_type), exoid);
       ex_err(routine, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -296,11 +288,10 @@ int ex_get_names_internal(int exoid, int varid, size_t num_entity, char **names,
    */
   int db_name_size  = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
   int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
-  int name_size = db_name_size < api_name_size ? db_name_size : api_name_size;
+  int name_size     = db_name_size < api_name_size ? db_name_size : api_name_size;
 
   for (i = 0; i < num_entity; i++) {
-    status = ex_get_name_internal(exoid, varid, i, names[i], name_size,
-                                  obj_type, routine);
+    status = ex_get_name_internal(exoid, varid, i, names[i], name_size, obj_type, routine);
     if (status != NC_NOERR) {
       return status;
     }
@@ -308,9 +299,8 @@ int ex_get_names_internal(int exoid, int varid, size_t num_entity, char **names,
   return EX_NOERR;
 }
 
-int ex_get_name_internal(int exoid, int varid, size_t index, char *name,
-                         int name_size, ex_entity_type obj_type,
-                         const char *routine)
+int ex_get_name_internal(int exoid, int varid, size_t index, char *name, int name_size,
+                         ex_entity_type obj_type, const char *routine)
 {
   size_t start[2], count[2];
   int    status;
@@ -326,8 +316,8 @@ int ex_get_name_internal(int exoid, int varid, size_t index, char *name,
   status = nc_get_vara_text(exoid, varid, start, count, name);
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get %s name at index %d from file id %d",
-            ex_name_of_object(obj_type), (int)index, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s name at index %d from file id %d",
+             ex_name_of_object(obj_type), (int)index, exoid);
     ex_err(routine, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -377,8 +367,7 @@ char *ex_catstr(const char *string, int num)
 char *ex_catstr2(const char *string1, int num1, const char *string2, int num2)
 {
   char *tmp_string = cur_string;
-  cur_string +=
-      sprintf(cur_string, "%s%d%s%d", string1, num1, string2, num2) + 1;
+  cur_string += sprintf(cur_string, "%s%d%s%d", string1, num1, string2, num2) + 1;
   if (cur_string - ret_string > 9 * (MAX_VAR_NAME_LENGTH + 1)) {
     cur_string = ret_string;
   }
@@ -388,38 +377,22 @@ char *ex_catstr2(const char *string1, int num1, const char *string2, int num2)
 char *ex_name_of_object(ex_entity_type obj_type)
 {
   switch (obj_type) {
-  case EX_COORDINATE: /* kluge so some wrapper functions work */
-    return "coordinate";
-  case EX_NODAL:
-    return "nodal";
-  case EX_EDGE_BLOCK:
-    return "edge block";
-  case EX_FACE_BLOCK:
-    return "face block";
-  case EX_ELEM_BLOCK:
-    return "element block";
-  case EX_NODE_SET:
-    return "node set";
-  case EX_EDGE_SET:
-    return "edge set";
-  case EX_FACE_SET:
-    return "face set";
-  case EX_SIDE_SET:
-    return "side set";
-  case EX_ELEM_SET:
-    return "element set";
-  case EX_ELEM_MAP:
-    return "element map";
-  case EX_NODE_MAP:
-    return "node map";
-  case EX_EDGE_MAP:
-    return "edge map";
-  case EX_FACE_MAP:
-    return "face map";
-  case EX_GLOBAL:
-    return "global";
-  default:
-    return "invalid type";
+  case EX_COORDINATE: /* kluge so some wrapper functions work */ return "coordinate";
+  case EX_NODAL: return "nodal";
+  case EX_EDGE_BLOCK: return "edge block";
+  case EX_FACE_BLOCK: return "face block";
+  case EX_ELEM_BLOCK: return "element block";
+  case EX_NODE_SET: return "node set";
+  case EX_EDGE_SET: return "edge set";
+  case EX_FACE_SET: return "face set";
+  case EX_SIDE_SET: return "side set";
+  case EX_ELEM_SET: return "element set";
+  case EX_ELEM_MAP: return "element map";
+  case EX_NODE_MAP: return "node map";
+  case EX_EDGE_MAP: return "edge map";
+  case EX_FACE_MAP: return "face map";
+  case EX_GLOBAL: return "global";
+  default: return "invalid type";
   }
 }
 
@@ -465,38 +438,24 @@ char *ex_dim_num_objects(ex_entity_type obj_type)
 {
   exerrval = 0; /* clear error code */
   switch (obj_type) {
-  case EX_NODAL:
-    return DIM_NUM_NODES;
-  case EX_ELEM_BLOCK:
-    return DIM_NUM_EL_BLK;
-  case EX_EDGE_BLOCK:
-    return DIM_NUM_ED_BLK;
-  case EX_FACE_BLOCK:
-    return DIM_NUM_FA_BLK;
-  case EX_NODE_SET:
-    return DIM_NUM_NS;
-  case EX_EDGE_SET:
-    return DIM_NUM_ES;
-  case EX_FACE_SET:
-    return DIM_NUM_FS;
-  case EX_ELEM_SET:
-    return DIM_NUM_ELS;
-  case EX_SIDE_SET:
-    return DIM_NUM_SS;
-  case EX_ELEM_MAP:
-    return DIM_NUM_EM;
-  case EX_FACE_MAP:
-    return DIM_NUM_FAM;
-  case EX_EDGE_MAP:
-    return DIM_NUM_EDM;
-  case EX_NODE_MAP:
-    return DIM_NUM_NM;
+  case EX_NODAL: return DIM_NUM_NODES;
+  case EX_ELEM_BLOCK: return DIM_NUM_EL_BLK;
+  case EX_EDGE_BLOCK: return DIM_NUM_ED_BLK;
+  case EX_FACE_BLOCK: return DIM_NUM_FA_BLK;
+  case EX_NODE_SET: return DIM_NUM_NS;
+  case EX_EDGE_SET: return DIM_NUM_ES;
+  case EX_FACE_SET: return DIM_NUM_FS;
+  case EX_ELEM_SET: return DIM_NUM_ELS;
+  case EX_SIDE_SET: return DIM_NUM_SS;
+  case EX_ELEM_MAP: return DIM_NUM_EM;
+  case EX_FACE_MAP: return DIM_NUM_FAM;
+  case EX_EDGE_MAP: return DIM_NUM_EDM;
+  case EX_NODE_MAP: return DIM_NUM_NM;
   default: {
     char errmsg[MAX_ERR_LENGTH];
     exerrval = EX_BADPARAM;
-    sprintf(errmsg,
-            "ERROR: object type %d not supported in call to ex_dim_num_objects",
-            obj_type);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: object type %d not supported in call to ex_dim_num_objects", obj_type);
     ex_err("ex_dim_num_objects", errmsg, exerrval);
     return (NULL);
   }
@@ -506,66 +465,42 @@ char *ex_dim_num_objects(ex_entity_type obj_type)
 char *ex_dim_num_entries_in_object(ex_entity_type obj_type, int idx)
 {
   switch (obj_type) {
-  case EX_NODAL:
-    return DIM_NUM_NODES;
-  case EX_EDGE_BLOCK:
-    return DIM_NUM_ED_IN_EBLK(idx);
-  case EX_FACE_BLOCK:
-    return DIM_NUM_FA_IN_FBLK(idx);
-  case EX_ELEM_BLOCK:
-    return DIM_NUM_EL_IN_BLK(idx);
-  case EX_NODE_SET:
-    return DIM_NUM_NOD_NS(idx);
-  case EX_EDGE_SET:
-    return DIM_NUM_EDGE_ES(idx);
-  case EX_FACE_SET:
-    return DIM_NUM_FACE_FS(idx);
-  case EX_SIDE_SET:
-    return DIM_NUM_SIDE_SS(idx);
-  case EX_ELEM_SET:
-    return DIM_NUM_ELE_ELS(idx);
-  default:
-    return 0;
+  case EX_NODAL: return DIM_NUM_NODES;
+  case EX_EDGE_BLOCK: return DIM_NUM_ED_IN_EBLK(idx);
+  case EX_FACE_BLOCK: return DIM_NUM_FA_IN_FBLK(idx);
+  case EX_ELEM_BLOCK: return DIM_NUM_EL_IN_BLK(idx);
+  case EX_NODE_SET: return DIM_NUM_NOD_NS(idx);
+  case EX_EDGE_SET: return DIM_NUM_EDGE_ES(idx);
+  case EX_FACE_SET: return DIM_NUM_FACE_FS(idx);
+  case EX_SIDE_SET: return DIM_NUM_SIDE_SS(idx);
+  case EX_ELEM_SET: return DIM_NUM_ELE_ELS(idx);
+  default: return 0;
   }
 }
 
 char *ex_name_var_of_object(ex_entity_type obj_type, int i, int j)
 {
   switch (obj_type) {
-  case EX_EDGE_BLOCK:
-    return VAR_EDGE_VAR(i, j);
-  case EX_FACE_BLOCK:
-    return VAR_FACE_VAR(i, j);
-  case EX_ELEM_BLOCK:
-    return VAR_ELEM_VAR(i, j);
-  case EX_NODE_SET:
-    return VAR_NS_VAR(i, j);
-  case EX_EDGE_SET:
-    return VAR_ES_VAR(i, j);
-  case EX_FACE_SET:
-    return VAR_FS_VAR(i, j);
-  case EX_SIDE_SET:
-    return VAR_SS_VAR(i, j);
-  case EX_ELEM_SET:
-    return VAR_ELS_VAR(i, j);
-  default:
-    return 0;
+  case EX_EDGE_BLOCK: return VAR_EDGE_VAR(i, j);
+  case EX_FACE_BLOCK: return VAR_FACE_VAR(i, j);
+  case EX_ELEM_BLOCK: return VAR_ELEM_VAR(i, j);
+  case EX_NODE_SET: return VAR_NS_VAR(i, j);
+  case EX_EDGE_SET: return VAR_ES_VAR(i, j);
+  case EX_FACE_SET: return VAR_FS_VAR(i, j);
+  case EX_SIDE_SET: return VAR_SS_VAR(i, j);
+  case EX_ELEM_SET: return VAR_ELS_VAR(i, j);
+  default: return 0;
   }
 }
 
 char *ex_name_of_map(ex_entity_type map_type, int map_index)
 {
   switch (map_type) {
-  case EX_NODE_MAP:
-    return VAR_NODE_MAP(map_index);
-  case EX_EDGE_MAP:
-    return VAR_EDGE_MAP(map_index);
-  case EX_FACE_MAP:
-    return VAR_FACE_MAP(map_index);
-  case EX_ELEM_MAP:
-    return VAR_ELEM_MAP(map_index);
-  default:
-    return 0;
+  case EX_NODE_MAP: return VAR_NODE_MAP(map_index);
+  case EX_EDGE_MAP: return VAR_EDGE_MAP(map_index);
+  case EX_FACE_MAP: return VAR_FACE_MAP(map_index);
+  case EX_ELEM_MAP: return VAR_ELEM_MAP(map_index);
+  default: return 0;
   }
 }
 
@@ -606,10 +541,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
   exerrval = 0; /* clear error code */
 
   switch (id_type) {
-  case EX_NODAL:
-    return 0;
-  case EX_GLOBAL:
-    return 0;
+  case EX_NODAL: return 0;
+  case EX_GLOBAL: return 0;
   case EX_ELEM_BLOCK:
     id_table   = VAR_ID_EL_BLK;   /* id array name */
     id_dim     = DIM_NUM_EL_BLK;  /* id array dimension name*/
@@ -684,8 +617,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: unsupported id array type %d for file id %d",
-            id_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unsupported id array type %d for file id %d", id_type,
+             exoid);
     ex_err("ex_id_lkup", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -699,9 +632,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     /* First get dimension id of id array */
     if ((status = nc_inq_dimid(exoid, id_dim, &dimid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: failed to locate id array dimension in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate id array dimension in file id %d",
+               exoid);
       ex_err("ex_id_lkup", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -709,8 +641,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     /* Next get value of dimension */
     if ((status = nc_inq_dimlen(exoid, dimid, &dim_len)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to locate %s array length in file id %d",
-              id_table, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s array length in file id %d",
+               id_table, exoid);
       ex_err("ex_id_lkup", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -718,8 +650,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     /* get variable id of id array */
     if ((status = nc_inq_varid(exoid, id_table, &varid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to locate %s array in file id %d",
-              id_table, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s array in file id %d", id_table,
+               exoid);
       ex_err("ex_id_lkup", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -728,9 +660,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
        that the higher bits don't contain garbage while copy from ints */
     if (!(id_vals = calloc(dim_len, sizeof(int64_t)))) {
       exerrval = EX_MEMFAIL;
-      sprintf(errmsg,
-              "ERROR: failed to allocate memory for %s array for file id %d",
-              id_table, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate memory for %s array for file id %d", id_table, exoid);
       ex_err("ex_id_lkup", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -742,9 +673,9 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
       int *id_vals_int;
       if (!(id_vals_int = malloc(dim_len * sizeof(int)))) {
         exerrval = EX_MEMFAIL;
-        sprintf(errmsg, "ERROR: failed to allocate memory for temporary array "
-                        "id_vals_int for file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate memory for temporary array "
+                                         "id_vals_int for file id %d",
+                 exoid);
         ex_err("ex_id_lkup", errmsg, exerrval);
         free(id_vals);
         return (EX_FATAL);
@@ -760,8 +691,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
 
     if (status != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to get %s array from file id %d", id_table,
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s array from file id %d", id_table,
+               exoid);
       ex_err("ex_id_lkup", errmsg, exerrval);
       free(id_vals);
       return (EX_FATAL);
@@ -801,8 +732,7 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
       free(id_vals);
     }
     exerrval = EX_LOOKUPFAIL;
-    return (
-        EX_LOOKUPFAIL); /*if we got here, the id array value doesn't exist */
+    return (EX_LOOKUPFAIL); /*if we got here, the id array value doesn't exist */
   }
 
   /* Now check status array to see if object is null */
@@ -820,9 +750,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
       if (!(stat_vals = malloc(dim_len * sizeof(int)))) {
         exerrval = EX_MEMFAIL;
         free(id_vals);
-        sprintf(errmsg,
-                "ERROR: failed to allocate memory for %s array for file id %d",
-                id_table, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to allocate memory for %s array for file id %d", id_table, exoid);
         ex_err("ex_id_lkup", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -831,8 +760,8 @@ int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
         exerrval = status;
         free(id_vals);
         free(stat_vals);
-        sprintf(errmsg, "ERROR: failed to get %s array from file id %d",
-                stat_table, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s array from file id %d",
+                 stat_table, exoid);
         ex_err("ex_id_lkup", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -891,10 +820,10 @@ struct obj_stats *ex_get_stat_ptr(int exoid, struct obj_stats **obj_ptr)
   }
 
   if (!tmp_ptr) { /* exoid not found */
-    tmp_ptr          = (struct obj_stats *)calloc(1, sizeof(struct obj_stats));
-    tmp_ptr->exoid   = exoid;
-    tmp_ptr->next    = *obj_ptr;
-    tmp_ptr->id_vals = 0;
+    tmp_ptr             = (struct obj_stats *)calloc(1, sizeof(struct obj_stats));
+    tmp_ptr->exoid      = exoid;
+    tmp_ptr->next       = *obj_ptr;
+    tmp_ptr->id_vals    = 0;
     tmp_ptr->stat_vals  = 0;
     tmp_ptr->num        = 0;
     tmp_ptr->valid_ids  = 0;
@@ -964,32 +893,19 @@ static struct list_item *em_ctr_list  = 0; /* element maps */
 struct list_item **ex_get_counter_list(ex_entity_type obj_type)
 {
   switch (obj_type) {
-  case EX_ELEM_BLOCK:
-    return &eb_ctr_list;
-  case EX_NODE_SET:
-    return &ns_ctr_list;
-  case EX_SIDE_SET:
-    return &ss_ctr_list;
-  case EX_ELEM_MAP:
-    return &em_ctr_list;
-  case EX_NODE_MAP:
-    return &nm_ctr_list;
-  case EX_EDGE_BLOCK:
-    return &ed_ctr_list;
-  case EX_FACE_BLOCK:
-    return &fa_ctr_list;
-  case EX_EDGE_SET:
-    return &es_ctr_list;
-  case EX_FACE_SET:
-    return &fs_ctr_list;
-  case EX_ELEM_SET:
-    return &els_ctr_list;
-  case EX_EDGE_MAP:
-    return &edm_ctr_list;
-  case EX_FACE_MAP:
-    return &fam_ctr_list;
-  default:
-    return (NULL);
+  case EX_ELEM_BLOCK: return &eb_ctr_list;
+  case EX_NODE_SET: return &ns_ctr_list;
+  case EX_SIDE_SET: return &ss_ctr_list;
+  case EX_ELEM_MAP: return &em_ctr_list;
+  case EX_NODE_MAP: return &nm_ctr_list;
+  case EX_EDGE_BLOCK: return &ed_ctr_list;
+  case EX_FACE_BLOCK: return &fa_ctr_list;
+  case EX_EDGE_SET: return &es_ctr_list;
+  case EX_FACE_SET: return &fs_ctr_list;
+  case EX_ELEM_SET: return &els_ctr_list;
+  case EX_EDGE_MAP: return &edm_ctr_list;
+  case EX_FACE_MAP: return &fam_ctr_list;
+  default: return (NULL);
   }
 }
 
@@ -1024,11 +940,10 @@ int ex_inc_file_item(int                exoid,    /* file id */
                      struct list_item **list_ptr) /* ptr to ptr to list_item */
 
 {
-  struct list_item *tlist_ptr =
-      *list_ptr;      /* use temp list ptr to walk linked list */
-  while (tlist_ptr) { /* Walk linked list of file ids/vals */
-    if (exoid == tlist_ptr->exo_id) { /* linear search for exodus file id */
-      break;                          /* Quit if found */
+  struct list_item *tlist_ptr = *list_ptr; /* use temp list ptr to walk linked list */
+  while (tlist_ptr) {                      /* Walk linked list of file ids/vals */
+    if (exoid == tlist_ptr->exo_id) {      /* linear search for exodus file id */
+      break;                               /* Quit if found */
     }
     tlist_ptr = tlist_ptr->next; /* Loop back if not */
   }
@@ -1074,11 +989,10 @@ int ex_get_file_item(int                exoid,    /* file id */
                      struct list_item **list_ptr) /* ptr to ptr to list_item */
 
 {
-  struct list_item *tlist_ptr =
-      *list_ptr;      /* use temp list ptr to walk linked list */
-  while (tlist_ptr) { /* Walk linked list of file ids/vals */
-    if (exoid == tlist_ptr->exo_id) { /* linear search for exodus file id */
-      break;                          /* Quit if found */
+  struct list_item *tlist_ptr = *list_ptr; /* use temp list ptr to walk linked list */
+  while (tlist_ptr) {                      /* Walk linked list of file ids/vals */
+    if (exoid == tlist_ptr->exo_id) {      /* linear search for exodus file id */
+      break;                               /* Quit if found */
     }
     tlist_ptr = tlist_ptr->next; /* Loop back if not */
   }
@@ -1154,46 +1068,22 @@ int ex_get_num_props(int exoid, ex_entity_type obj_type)
   /* the variables begin with an increment of 1 ("xx_prop1") so use cntr+1 */
   while (EX_TRUE) {
     switch (obj_type) {
-    case EX_ELEM_BLOCK:
-      var_name = VAR_EB_PROP(cntr + 1);
-      break;
-    case EX_EDGE_BLOCK:
-      var_name = VAR_ED_PROP(cntr + 1);
-      break;
-    case EX_FACE_BLOCK:
-      var_name = VAR_FA_PROP(cntr + 1);
-      break;
-    case EX_NODE_SET:
-      var_name = VAR_NS_PROP(cntr + 1);
-      break;
-    case EX_EDGE_SET:
-      var_name = VAR_ES_PROP(cntr + 1);
-      break;
-    case EX_FACE_SET:
-      var_name = VAR_FS_PROP(cntr + 1);
-      break;
-    case EX_SIDE_SET:
-      var_name = VAR_SS_PROP(cntr + 1);
-      break;
-    case EX_ELEM_SET:
-      var_name = VAR_ELS_PROP(cntr + 1);
-      break;
-    case EX_ELEM_MAP:
-      var_name = VAR_EM_PROP(cntr + 1);
-      break;
-    case EX_FACE_MAP:
-      var_name = VAR_FAM_PROP(cntr + 1);
-      break;
-    case EX_EDGE_MAP:
-      var_name = VAR_EDM_PROP(cntr + 1);
-      break;
-    case EX_NODE_MAP:
-      var_name = VAR_NM_PROP(cntr + 1);
-      break;
+    case EX_ELEM_BLOCK: var_name = VAR_EB_PROP(cntr + 1); break;
+    case EX_EDGE_BLOCK: var_name = VAR_ED_PROP(cntr + 1); break;
+    case EX_FACE_BLOCK: var_name = VAR_FA_PROP(cntr + 1); break;
+    case EX_NODE_SET: var_name   = VAR_NS_PROP(cntr + 1); break;
+    case EX_EDGE_SET: var_name   = VAR_ES_PROP(cntr + 1); break;
+    case EX_FACE_SET: var_name   = VAR_FS_PROP(cntr + 1); break;
+    case EX_SIDE_SET: var_name   = VAR_SS_PROP(cntr + 1); break;
+    case EX_ELEM_SET: var_name   = VAR_ELS_PROP(cntr + 1); break;
+    case EX_ELEM_MAP: var_name   = VAR_EM_PROP(cntr + 1); break;
+    case EX_FACE_MAP: var_name   = VAR_FAM_PROP(cntr + 1); break;
+    case EX_EDGE_MAP: var_name   = VAR_EDM_PROP(cntr + 1); break;
+    case EX_NODE_MAP: var_name   = VAR_NM_PROP(cntr + 1); break;
     default:
       exerrval = EX_BADPARAM;
-      sprintf(errmsg, "ERROR: object type %d not supported; file id %d",
-              obj_type, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d", obj_type,
+               exoid);
       ex_err("ex_get_prop_names", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -1267,8 +1157,7 @@ static int ex_int_median3(int v[], int iv[], int64_t left, int64_t right)
   return iv[right - 1];
 }
 
-static int64_t ex_int_median3_64(int64_t v[], int64_t iv[], int64_t left,
-                                 int64_t right)
+static int64_t ex_int_median3_64(int64_t v[], int64_t iv[], int64_t left, int64_t right)
 {
   int64_t center;
   center = (left + right) / 2;
@@ -1318,8 +1207,7 @@ static void ex_int_iqsort(int v[], int iv[], int left, int right)
   }
 }
 
-static void ex_int_iqsort64(int64_t v[], int64_t iv[], int64_t left,
-                            int64_t right)
+static void ex_int_iqsort64(int64_t v[], int64_t iv[], int64_t left, int64_t right)
 {
   int64_t pivot;
   int64_t i, j;
@@ -1468,8 +1356,7 @@ int ex_large_model(int exoid)
   else {
     /* See if the ATT_FILESIZE attribute is defined in the file */
     int file_size = 0;
-    if (nc_get_att_int(exoid, NC_GLOBAL, ATT_FILESIZE, &file_size) !=
-        NC_NOERR) {
+    if (nc_get_att_int(exoid, NC_GLOBAL, ATT_FILESIZE, &file_size) != NC_NOERR) {
       /* Variable not found; default is 0 */
       file_size = 0;
     }
@@ -1477,8 +1364,8 @@ int ex_large_model(int exoid)
   }
 }
 
-int ex_get_dimension(int exoid, const char *DIMENSION, const char *label,
-                     size_t *count, int *dimid, const char *routine)
+int ex_get_dimension(int exoid, const char *DIMENSION, const char *label, size_t *count, int *dimid,
+                     const char *routine)
 {
   char errmsg[MAX_ERR_LENGTH];
   int  status;
@@ -1490,12 +1377,12 @@ int ex_get_dimension(int exoid, const char *DIMENSION, const char *label,
     exerrval = status;
     if (routine != NULL) {
       if (status == NC_EBADDIM) {
-        sprintf(errmsg, "Warning: no %s defined in file id %d", label, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s defined in file id %d", label, exoid);
         ex_err(routine, errmsg, exerrval);
       }
       else {
-        sprintf(errmsg, "ERROR: failed to locate number of %s in file id %d",
-                label, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of %s in file id %d",
+                 label, exoid);
         ex_err(routine, errmsg, exerrval);
       }
     }
@@ -1505,8 +1392,8 @@ int ex_get_dimension(int exoid, const char *DIMENSION, const char *label,
   if ((status = nc_inq_dimlen(exoid, *dimid, count)) != NC_NOERR) {
     exerrval = status;
     if (routine != NULL) {
-      sprintf(errmsg, "ERROR: failed to get number of %s in file id %d", label,
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s in file id %d", label,
+               exoid);
       ex_err(routine, errmsg, exerrval);
       return -1;
     }
@@ -1527,16 +1414,15 @@ void ex_compress_variable(int exoid, int varid, int type)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     exerrval = EX_BADFILEID;
-    sprintf(errmsg, "ERROR: unknown file id %d for ex_compress_variable().",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for ex_compress_variable().",
+             exoid);
     ex_err("ex_compress_variable", errmsg, exerrval);
   }
   else {
     int deflate_level = file->compression_level;
     int compress      = 1;
     int shuffle       = file->shuffle;
-    if (!file->is_parallel && deflate_level > 0 &&
-        (file->file_type == 2 || file->file_type == 3)) {
+    if (!file->is_parallel && deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
       nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
     }
 #if defined(PARALLEL_AWARE_EXODUS)

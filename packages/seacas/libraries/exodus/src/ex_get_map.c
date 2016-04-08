@@ -37,8 +37,8 @@
 #include "exodusII_int.h" // for EX_NOERR, EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*!
 \deprecated Use ex_get_num_map() instead.
@@ -92,8 +92,8 @@ int ex_get_map(int exoid, void_int *elem_map)
 
   if ((status = nc_inq_dimlen(exoid, numelemdim, &num_elem)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get number of elements in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of elements in file id %d",
+             exoid);
     ex_err("ex_get_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -126,8 +126,7 @@ int ex_get_map(int exoid, void_int *elem_map)
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get element order map in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get element order map in file id %d", exoid);
     ex_err("ex_get_map", errmsg, exerrval);
     return (EX_FATAL);
   }

@@ -135,13 +135,10 @@ error = ex_put_concat_node_sets (exoid, ids, num_nodes_per_set,
 
  */
 
-int ex_put_concat_node_sets(int exoid, void_int *node_set_ids,
-                            void_int *num_nodes_per_set,
-                            void_int *num_dist_per_set,
-                            void_int *node_sets_node_index,
-                            void_int *node_sets_df_index,
-                            void_int *node_sets_node_list,
-                            void *    node_sets_dist_fact)
+int ex_put_concat_node_sets(int exoid, void_int *node_set_ids, void_int *num_nodes_per_set,
+                            void_int *num_dist_per_set, void_int *node_sets_node_index,
+                            void_int *node_sets_df_index, void_int *node_sets_node_list,
+                            void *node_sets_dist_fact)
 {
   struct ex_set_specs set_specs;
 

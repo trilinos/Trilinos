@@ -60,9 +60,7 @@
  * this allows element numbers to be non-contiguous
  */
 
-int ex_put_n_elem_num_map(int exoid, int64_t start_ent, int64_t num_ents,
-                          const void_int *elem_map)
+int ex_put_n_elem_num_map(int exoid, int64_t start_ent, int64_t num_ents, const void_int *elem_map)
 {
-  return ex_put_partial_id_map(exoid, EX_ELEM_MAP, start_ent, num_ents,
-                               elem_map);
+  return ex_put_partial_id_map(exoid, EX_ELEM_MAP, start_ent, num_ents, elem_map);
 }

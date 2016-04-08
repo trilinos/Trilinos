@@ -71,7 +71,4 @@ error = ex_get_ids (exoid, EX_NODE_SET, ids);
 \endcode
  */
 
-int ex_get_node_set_ids(int exoid, void_int *ids)
-{
-  return ex_get_ids(exoid, EX_NODE_SET, ids);
-}
+int ex_get_node_set_ids(int exoid, void_int *ids) { return ex_get_ids(exoid, EX_NODE_SET, ids); }

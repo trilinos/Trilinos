@@ -36,7 +36,7 @@
 #include "exodusII.h"     // for exerrval, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, VAR_WHOLE_TIME, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_var_double, etc
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
 
@@ -90,8 +90,8 @@ int ex_get_all_times(int exoid, void *time_values)
 
   if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate time variable %s in file id %d",
-            VAR_WHOLE_TIME, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time variable %s in file id %d",
+             VAR_WHOLE_TIME, exoid);
     ex_err("ex_get_all_times", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -106,7 +106,7 @@ int ex_get_all_times(int exoid, void *time_values)
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get time values from file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get time values from file id %d", exoid);
     ex_err("ex_get_all_times", errmsg, exerrval);
     return (EX_FATAL);
   }

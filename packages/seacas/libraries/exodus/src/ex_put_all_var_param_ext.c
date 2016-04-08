@@ -50,44 +50,40 @@
 #include "netcdf.h"       // for NC_NOERR, nc_def_var, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <stdlib.h>       // for malloc, NULL, free
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <stdlib.h>    // for malloc, NULL, free
+#include <sys/types.h> // for int64_t
 
-static int define_dimension(int exoid, const char *DIMENSION, int count,
-                            const char *label, int *dimid);
-static int define_variable_name_variable(int exoid, const char *VARIABLE,
-                                         int dimension, const char *label);
-static int *get_status_array(int exoid, int var_count, const char *VARIABLE,
-                             const char *label);
+static int define_dimension(int exoid, const char *DIMENSION, int count, const char *label,
+                            int *dimid);
+static int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension,
+                                         const char *label);
+static int *get_status_array(int exoid, int var_count, const char *VARIABLE, const char *label);
 static int put_truth_table(int exoid, int varid, int *table, const char *label);
-static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent,
-                              int num_var, int *var_tab, int *status_tab,
-                              void_int *ids, const char *label);
+static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, int num_var,
+                              int *var_tab, int *status_tab, void_int *ids, const char *label);
 
-#define EX_GET_IDS_STATUS(TNAME, NUMVAR, DNAME, DID, DVAL, VIDS, EIDS, VSTAT,  \
-                          VSTATVAL)                                            \
-  if (NUMVAR > 0) {                                                            \
-    status = ex_get_dimension(exoid, DNAME, TNAME "s", &DVAL, &DID, routine);  \
-    if (status != NC_NOERR)                                                    \
-      goto error_ret;                                                          \
-                                                                               \
-    /* get element block IDs */                                                \
-    if (!(VIDS = malloc(DVAL * sizeof(int64_t)))) {                            \
-      exerrval = EX_MEMFAIL;                                                   \
-      sprintf(errmsg, "ERROR: failed to allocate memory for " TNAME            \
-                      " id array for file id %d",                              \
-              exoid);                                                          \
-      ex_err("ex_put_all_var_param_ext", errmsg, exerrval);                    \
-      goto error_ret;                                                          \
-    }                                                                          \
-    ex_get_ids(exoid, EIDS, VIDS);                                             \
-                                                                               \
-    /* Get element block status array for later use (allocates memory) */      \
-    VSTATVAL = get_status_array(exoid, DVAL, VSTAT, TNAME);                    \
-    if (VSTATVAL == NULL) {                                                    \
-      goto error_ret;                                                          \
-    }                                                                          \
+#define EX_GET_IDS_STATUS(TNAME, NUMVAR, DNAME, DID, DVAL, VIDS, EIDS, VSTAT, VSTATVAL)            \
+  if (NUMVAR > 0) {                                                                                \
+    status = ex_get_dimension(exoid, DNAME, TNAME "s", &DVAL, &DID, routine);                      \
+    if (status != NC_NOERR)                                                                        \
+      goto error_ret;                                                                              \
+                                                                                                   \
+    /* get element block IDs */                                                                    \
+    if (!(VIDS = malloc(DVAL * sizeof(int64_t)))) {                                                \
+      exerrval = EX_MEMFAIL;                                                                       \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR: failed to allocate memory for " TNAME " id array for file id %d", exoid);   \
+      ex_err("ex_put_all_var_param_ext", errmsg, exerrval);                                        \
+      goto error_ret;                                                                              \
+    }                                                                                              \
+    ex_get_ids(exoid, EIDS, VIDS);                                                                 \
+                                                                                                   \
+    /* Get element block status array for later use (allocates memory) */                          \
+    VSTATVAL = get_status_array(exoid, DVAL, VSTAT, TNAME);                                        \
+    if (VSTATVAL == NULL) {                                                                        \
+      goto error_ret;                                                                              \
+    }                                                                                              \
   }
 
 /*!
@@ -105,13 +101,13 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   int    time_dim, num_nod_dim, dimid;
   size_t num_elem_blk, num_edge_blk, num_face_blk;
   size_t num_nset, num_eset, num_fset, num_sset, num_elset;
-  int    numelblkdim, numelvardim, numedvardim, numedblkdim, numfavardim,
-      numfablkdim, numnsetdim, nsetvardim, numesetdim, esetvardim, numfsetdim,
-      fsetvardim, numssetdim, ssetvardim, numelsetdim, elsetvardim;
+  int    numelblkdim, numelvardim, numedvardim, numedblkdim, numfavardim, numfablkdim, numnsetdim,
+      nsetvardim, numesetdim, esetvardim, numfsetdim, fsetvardim, numssetdim, ssetvardim,
+      numelsetdim, elsetvardim;
   int i;
 
-  int edblk_varid, fablk_varid, eblk_varid, nset_varid, eset_varid, fset_varid,
-      sset_varid, elset_varid, varid;
+  int edblk_varid, fablk_varid, eblk_varid, nset_varid, eset_varid, fset_varid, sset_varid,
+      elset_varid, varid;
 
   void_int *eblk_ids  = 0;
   void_int *edblk_ids = 0;
@@ -141,8 +137,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
 
   if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate time dimension in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d", exoid);
     ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     goto error_ret;
   }
@@ -154,36 +149,32 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   /* Check this now so we can use it later without checking for errors */
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &temp)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get string length in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
     ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     goto error_ret;
   }
 
-  EX_GET_IDS_STATUS("edge block", vp->num_edge, DIM_NUM_ED_BLK, numedblkdim,
-                    num_edge_blk, edblk_ids, EX_EDGE_BLOCK, VAR_STAT_ED_BLK,
-                    edblk_stat);
-  EX_GET_IDS_STATUS("face block", vp->num_face, DIM_NUM_FA_BLK, numfablkdim,
-                    num_face_blk, fablk_ids, EX_FACE_BLOCK, VAR_STAT_FA_BLK,
-                    fablk_stat);
-  EX_GET_IDS_STATUS("element block", vp->num_elem, DIM_NUM_EL_BLK, numelblkdim,
-                    num_elem_blk, eblk_ids, EX_ELEM_BLOCK, VAR_STAT_EL_BLK,
-                    eblk_stat);
-  EX_GET_IDS_STATUS("node set", vp->num_nset, DIM_NUM_NS, numnsetdim, num_nset,
-                    nset_ids, EX_NODE_SET, VAR_NS_STAT, nset_stat);
-  EX_GET_IDS_STATUS("edge set", vp->num_eset, DIM_NUM_ES, numesetdim, num_eset,
-                    eset_ids, EX_EDGE_SET, VAR_ES_STAT, eset_stat);
-  EX_GET_IDS_STATUS("face set", vp->num_fset, DIM_NUM_FS, numfsetdim, num_fset,
-                    fset_ids, EX_FACE_SET, VAR_FS_STAT, fset_stat);
-  EX_GET_IDS_STATUS("side set", vp->num_sset, DIM_NUM_SS, numssetdim, num_sset,
-                    sset_ids, EX_SIDE_SET, VAR_SS_STAT, sset_stat);
-  EX_GET_IDS_STATUS("element set", vp->num_elset, DIM_NUM_ELS, numelsetdim,
-                    num_elset, elset_ids, EX_ELEM_SET, VAR_ELS_STAT,
-                    elset_stat);
+  EX_GET_IDS_STATUS("edge block", vp->num_edge, DIM_NUM_ED_BLK, numedblkdim, num_edge_blk,
+                    edblk_ids, EX_EDGE_BLOCK, VAR_STAT_ED_BLK, edblk_stat);
+  EX_GET_IDS_STATUS("face block", vp->num_face, DIM_NUM_FA_BLK, numfablkdim, num_face_blk,
+                    fablk_ids, EX_FACE_BLOCK, VAR_STAT_FA_BLK, fablk_stat);
+  EX_GET_IDS_STATUS("element block", vp->num_elem, DIM_NUM_EL_BLK, numelblkdim, num_elem_blk,
+                    eblk_ids, EX_ELEM_BLOCK, VAR_STAT_EL_BLK, eblk_stat);
+  EX_GET_IDS_STATUS("node set", vp->num_nset, DIM_NUM_NS, numnsetdim, num_nset, nset_ids,
+                    EX_NODE_SET, VAR_NS_STAT, nset_stat);
+  EX_GET_IDS_STATUS("edge set", vp->num_eset, DIM_NUM_ES, numesetdim, num_eset, eset_ids,
+                    EX_EDGE_SET, VAR_ES_STAT, eset_stat);
+  EX_GET_IDS_STATUS("face set", vp->num_fset, DIM_NUM_FS, numfsetdim, num_fset, fset_ids,
+                    EX_FACE_SET, VAR_FS_STAT, fset_stat);
+  EX_GET_IDS_STATUS("side set", vp->num_sset, DIM_NUM_SS, numssetdim, num_sset, sset_ids,
+                    EX_SIDE_SET, VAR_SS_STAT, sset_stat);
+  EX_GET_IDS_STATUS("element set", vp->num_elset, DIM_NUM_ELS, numelsetdim, num_elset, elset_ids,
+                    EX_ELEM_SET, VAR_ELS_STAT, elset_stat);
 
   /* put file into define mode  */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to put file id %d into define mode", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     goto error_ret;
   }
@@ -191,26 +182,24 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
 
   /* define dimensions and variables */
   if (vp->num_glob > 0) {
-    if (define_dimension(exoid, DIM_NUM_GLO_VAR, vp->num_glob, "global",
-                         &dimid) != NC_NOERR) {
+    if (define_dimension(exoid, DIM_NUM_GLO_VAR, vp->num_glob, "global", &dimid) != NC_NOERR) {
       goto error_ret;
     }
 
     dims[0] = time_dim;
     dims[1] = dimid;
-    if ((status = nc_def_var(exoid, VAR_GLO_VAR, nc_flt_code(exoid), 2, dims,
-                             &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_GLO_VAR, nc_flt_code(exoid), 2, dims, &varid)) !=
+        NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to define global variables in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define global variables in file id %d",
+               exoid);
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
       goto error_ret; /* exit define mode and return */
     }
     ex_compress_variable(exoid, varid, 2);
 
     /* Now define global variable name variable */
-    if (define_variable_name_variable(exoid, VAR_NAME_GLO_VAR, dimid,
-                                      "global") != NC_NOERR) {
+    if (define_variable_name_variable(exoid, VAR_NAME_GLO_VAR, dimid, "global") != NC_NOERR) {
       goto error_ret;
     }
   }
@@ -229,8 +218,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
      * variables. If the variable 'coord' is defined, then store old
      * way; otherwise store new.
      */
-    if (define_dimension(exoid, DIM_NUM_NOD_VAR, vp->num_node, "nodal",
-                         &dimid) != NC_NOERR) {
+    if (define_dimension(exoid, DIM_NUM_NOD_VAR, vp->num_node, "nodal", &dimid) != NC_NOERR) {
       goto error_ret;
     }
 
@@ -239,12 +227,11 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
         dims[0] = time_dim;
         dims[1] = dimid;
         dims[2] = num_nod_dim;
-        if ((status = nc_def_var(exoid, VAR_NOD_VAR, nc_flt_code(exoid), 3,
-                                 dims, &varid)) != NC_NOERR) {
+        if ((status = nc_def_var(exoid, VAR_NOD_VAR, nc_flt_code(exoid), 3, dims, &varid)) !=
+            NC_NOERR) {
           exerrval = status;
-          sprintf(errmsg,
-                  "ERROR: failed to define nodal variables in file id %d",
-                  exoid);
+          snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define nodal variables in file id %d",
+                   exoid);
           ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
           goto error_ret; /* exit define mode and return */
         }
@@ -253,13 +240,11 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
         for (i = 1; i <= vp->num_node; i++) {
           dims[0] = time_dim;
           dims[1] = num_nod_dim;
-          if ((status = nc_def_var(exoid, VAR_NOD_VAR_NEW(i),
-                                   nc_flt_code(exoid), 2, dims, &varid)) !=
-              NC_NOERR) {
+          if ((status = nc_def_var(exoid, VAR_NOD_VAR_NEW(i), nc_flt_code(exoid), 2, dims,
+                                   &varid)) != NC_NOERR) {
             exerrval = status;
-            sprintf(errmsg,
-                    "ERROR: failed to define nodal variable %d in file id %d",
-                    i, exoid);
+            snprintf(errmsg, MAX_ERR_LENGTH,
+                     "ERROR: failed to define nodal variable %d in file id %d", i, exoid);
             ex_err("ex_put_var_param", errmsg, exerrval);
             goto error_ret; /* exit define mode and return */
           }
@@ -269,144 +254,123 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
     }
 
     /* Now define nodal variable name variable */
-    if (define_variable_name_variable(exoid, VAR_NAME_NOD_VAR, dimid,
-                                      "nodal") != NC_NOERR) {
+    if (define_variable_name_variable(exoid, VAR_NAME_NOD_VAR, dimid, "nodal") != NC_NOERR) {
       goto error_ret;
     }
   }
 
-#define EX_DEFINE_VARS(TID, STNAME, TNAME, NUMVAR, DNAME, DID1, DID2, DVAL,    \
-                       VIDS, VNOV, VTV, VSTATVAL, VTABVAL, VTABVAR)            \
-  if (NUMVAR > 0) {                                                            \
-    status = define_dimension(exoid, DNAME, NUMVAR, STNAME, &DID2);            \
-    if (status != NC_NOERR)                                                    \
-      goto error_ret;                                                          \
-                                                                               \
-    /* Now define STNAME variable name variable */                             \
-    if (define_variable_name_variable(exoid, VNOV, DID2, STNAME) != NC_NOERR)  \
-      goto error_ret;                                                          \
-                                                                               \
-    if (define_truth_table(TID, exoid, DVAL, NUMVAR, VTABVAL, VSTATVAL, VIDS,  \
-                           TNAME) != NC_NOERR)                                 \
-      goto error_ret;                                                          \
-                                                                               \
-    VSTATVAL = ex_safe_free(VSTATVAL);                                         \
-    VIDS     = ex_safe_free(VIDS);                                             \
-                                                                               \
-    /* create a variable array in which to store the STNAME variable truth     \
-     * table                                                                   \
-     */                                                                        \
-                                                                               \
-    dims[0] = DID1;                                                            \
-    dims[1] = DID2;                                                            \
-                                                                               \
-    if ((status = nc_def_var(exoid, VTV, NC_INT, 2, dims, &VTABVAR)) !=        \
-        NC_NOERR) {                                                            \
-      exerrval = status;                                                       \
-      sprintf(errmsg, "ERROR: failed to define " STNAME                        \
-                      " variable truth table in file id %d",                   \
-              exoid);                                                          \
-      ex_err("ex_put_all_var_param_ext", errmsg, exerrval);                    \
-      goto error_ret; /* exit define mode and return */                        \
-    }                                                                          \
+#define EX_DEFINE_VARS(TID, STNAME, TNAME, NUMVAR, DNAME, DID1, DID2, DVAL, VIDS, VNOV, VTV,       \
+                       VSTATVAL, VTABVAL, VTABVAR)                                                 \
+  if (NUMVAR > 0) {                                                                                \
+    status = define_dimension(exoid, DNAME, NUMVAR, STNAME, &DID2);                                \
+    if (status != NC_NOERR)                                                                        \
+      goto error_ret;                                                                              \
+                                                                                                   \
+    /* Now define STNAME variable name variable */                                                 \
+    if (define_variable_name_variable(exoid, VNOV, DID2, STNAME) != NC_NOERR)                      \
+      goto error_ret;                                                                              \
+                                                                                                   \
+    if (define_truth_table(TID, exoid, DVAL, NUMVAR, VTABVAL, VSTATVAL, VIDS, TNAME) != NC_NOERR)  \
+      goto error_ret;                                                                              \
+                                                                                                   \
+    VSTATVAL = ex_safe_free(VSTATVAL);                                                             \
+    VIDS     = ex_safe_free(VIDS);                                                                 \
+                                                                                                   \
+    /* create a variable array in which to store the STNAME variable truth                         \
+     * table                                                                                       \
+     */                                                                                            \
+                                                                                                   \
+    dims[0] = DID1;                                                                                \
+    dims[1] = DID2;                                                                                \
+                                                                                                   \
+    if ((status = nc_def_var(exoid, VTV, NC_INT, 2, dims, &VTABVAR)) != NC_NOERR) {                \
+      exerrval = status;                                                                           \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR: failed to define " STNAME " variable truth table in file id %d", exoid);    \
+      ex_err("ex_put_all_var_param_ext", errmsg, exerrval);                                        \
+      goto error_ret; /* exit define mode and return */                                            \
+    }                                                                                              \
   }
-  EX_DEFINE_VARS(EX_EDGE_BLOCK, "edge", "edge block", vp->num_edge,
-                 DIM_NUM_EDG_VAR, numedblkdim, numedvardim, num_edge_blk,
-                 edblk_ids, VAR_NAME_EDG_VAR, VAR_EBLK_TAB, edblk_stat,
+  EX_DEFINE_VARS(EX_EDGE_BLOCK, "edge", "edge block", vp->num_edge, DIM_NUM_EDG_VAR, numedblkdim,
+                 numedvardim, num_edge_blk, edblk_ids, VAR_NAME_EDG_VAR, VAR_EBLK_TAB, edblk_stat,
                  vp->edge_var_tab, edblk_varid);
-  EX_DEFINE_VARS(EX_FACE_BLOCK, "face", "face block", vp->num_face,
-                 DIM_NUM_FAC_VAR, numfablkdim, numfavardim, num_face_blk,
-                 fablk_ids, VAR_NAME_FAC_VAR, VAR_FBLK_TAB, fablk_stat,
+  EX_DEFINE_VARS(EX_FACE_BLOCK, "face", "face block", vp->num_face, DIM_NUM_FAC_VAR, numfablkdim,
+                 numfavardim, num_face_blk, fablk_ids, VAR_NAME_FAC_VAR, VAR_FBLK_TAB, fablk_stat,
                  vp->face_var_tab, fablk_varid);
-  EX_DEFINE_VARS(EX_ELEM_BLOCK, "element", "element block", vp->num_elem,
-                 DIM_NUM_ELE_VAR, numelblkdim, numelvardim, num_elem_blk,
-                 eblk_ids, VAR_NAME_ELE_VAR, VAR_ELEM_TAB, eblk_stat,
-                 vp->elem_var_tab, eblk_varid);
-  EX_DEFINE_VARS(EX_NODE_SET, "nodeset", "node set", vp->num_nset,
-                 DIM_NUM_NSET_VAR, numnsetdim, nsetvardim, num_nset, nset_ids,
-                 VAR_NAME_NSET_VAR, VAR_NSET_TAB, nset_stat, vp->nset_var_tab,
-                 nset_varid);
-  EX_DEFINE_VARS(EX_EDGE_SET, "edgeset", "edge set", vp->num_eset,
-                 DIM_NUM_ESET_VAR, numesetdim, esetvardim, num_eset, eset_ids,
-                 VAR_NAME_ESET_VAR, VAR_ESET_TAB, eset_stat, vp->eset_var_tab,
-                 eset_varid);
-  EX_DEFINE_VARS(EX_FACE_SET, "faceset", "face set", vp->num_fset,
-                 DIM_NUM_FSET_VAR, numfsetdim, fsetvardim, num_fset, fset_ids,
-                 VAR_NAME_FSET_VAR, VAR_FSET_TAB, fset_stat, vp->fset_var_tab,
-                 fset_varid);
-  EX_DEFINE_VARS(EX_SIDE_SET, "sideset", "side set", vp->num_sset,
-                 DIM_NUM_SSET_VAR, numssetdim, ssetvardim, num_sset, sset_ids,
-                 VAR_NAME_SSET_VAR, VAR_SSET_TAB, sset_stat, vp->sset_var_tab,
-                 sset_varid);
-  EX_DEFINE_VARS(EX_ELEM_SET, "elemset", "element set", vp->num_elset,
-                 DIM_NUM_ELSET_VAR, numelsetdim, elsetvardim, num_elset,
-                 elset_ids, VAR_NAME_ELSET_VAR, VAR_ELSET_TAB, elset_stat,
-                 vp->elset_var_tab, elset_varid);
+  EX_DEFINE_VARS(EX_ELEM_BLOCK, "element", "element block", vp->num_elem, DIM_NUM_ELE_VAR,
+                 numelblkdim, numelvardim, num_elem_blk, eblk_ids, VAR_NAME_ELE_VAR, VAR_ELEM_TAB,
+                 eblk_stat, vp->elem_var_tab, eblk_varid);
+  EX_DEFINE_VARS(EX_NODE_SET, "nodeset", "node set", vp->num_nset, DIM_NUM_NSET_VAR, numnsetdim,
+                 nsetvardim, num_nset, nset_ids, VAR_NAME_NSET_VAR, VAR_NSET_TAB, nset_stat,
+                 vp->nset_var_tab, nset_varid);
+  EX_DEFINE_VARS(EX_EDGE_SET, "edgeset", "edge set", vp->num_eset, DIM_NUM_ESET_VAR, numesetdim,
+                 esetvardim, num_eset, eset_ids, VAR_NAME_ESET_VAR, VAR_ESET_TAB, eset_stat,
+                 vp->eset_var_tab, eset_varid);
+  EX_DEFINE_VARS(EX_FACE_SET, "faceset", "face set", vp->num_fset, DIM_NUM_FSET_VAR, numfsetdim,
+                 fsetvardim, num_fset, fset_ids, VAR_NAME_FSET_VAR, VAR_FSET_TAB, fset_stat,
+                 vp->fset_var_tab, fset_varid);
+  EX_DEFINE_VARS(EX_SIDE_SET, "sideset", "side set", vp->num_sset, DIM_NUM_SSET_VAR, numssetdim,
+                 ssetvardim, num_sset, sset_ids, VAR_NAME_SSET_VAR, VAR_SSET_TAB, sset_stat,
+                 vp->sset_var_tab, sset_varid);
+  EX_DEFINE_VARS(EX_ELEM_SET, "elemset", "element set", vp->num_elset, DIM_NUM_ELSET_VAR,
+                 numelsetdim, elsetvardim, num_elset, elset_ids, VAR_NAME_ELSET_VAR, VAR_ELSET_TAB,
+                 elset_stat, vp->elset_var_tab, elset_varid);
 
   /* leave define mode  */
 
   in_define = 0;
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to complete definition in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d", exoid);
     ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     goto error_ret;
   }
 
   /* write out the variable truth tables */
   if (vp->num_edge > 0) {
-    if (put_truth_table(exoid, edblk_varid, vp->edge_var_tab, "edge") !=
-        NC_NOERR) {
+    if (put_truth_table(exoid, edblk_varid, vp->edge_var_tab, "edge") != NC_NOERR) {
       goto error_ret;
     }
   }
 
   if (vp->num_face > 0) {
-    if (put_truth_table(exoid, fablk_varid, vp->face_var_tab, "face") !=
-        NC_NOERR) {
+    if (put_truth_table(exoid, fablk_varid, vp->face_var_tab, "face") != NC_NOERR) {
       goto error_ret;
     }
   }
 
   if (vp->num_elem > 0) {
-    if (put_truth_table(exoid, eblk_varid, vp->elem_var_tab, "element") !=
-        NC_NOERR) {
+    if (put_truth_table(exoid, eblk_varid, vp->elem_var_tab, "element") != NC_NOERR) {
       goto error_ret;
     }
   }
 
   if (vp->num_nset > 0) {
-    if (put_truth_table(exoid, nset_varid, vp->nset_var_tab, "nodeset") !=
-        NC_NOERR) {
+    if (put_truth_table(exoid, nset_varid, vp->nset_var_tab, "nodeset") != NC_NOERR) {
       goto error_ret;
     }
   }
 
   if (vp->num_eset > 0) {
-    if (put_truth_table(exoid, eset_varid, vp->eset_var_tab, "edgeset") !=
-        NC_NOERR) {
+    if (put_truth_table(exoid, eset_varid, vp->eset_var_tab, "edgeset") != NC_NOERR) {
       goto error_ret;
     }
   }
 
   if (vp->num_fset > 0) {
-    if (put_truth_table(exoid, fset_varid, vp->fset_var_tab, "faceset") !=
-        NC_NOERR) {
+    if (put_truth_table(exoid, fset_varid, vp->fset_var_tab, "faceset") != NC_NOERR) {
       goto error_ret;
     }
   }
 
   if (vp->num_sset > 0) {
-    if (put_truth_table(exoid, sset_varid, vp->sset_var_tab, "sideset") !=
-        NC_NOERR) {
+    if (put_truth_table(exoid, sset_varid, vp->sset_var_tab, "sideset") != NC_NOERR) {
       goto error_ret;
     }
   }
 
   if (vp->num_elset > 0) {
-    if (put_truth_table(exoid, elset_varid, vp->elset_var_tab, "elemset") !=
-        NC_NOERR) {
+    if (put_truth_table(exoid, elset_varid, vp->elset_var_tab, "elemset") != NC_NOERR) {
       goto error_ret;
     }
   }
@@ -418,8 +382,8 @@ error_ret:
   if (in_define == 1) {
     if (nc_enddef(exoid) != NC_NOERR) /* exit define mode */
     {
-      sprintf(errmsg, "ERROR: failed to complete definition for file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
+               exoid);
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     }
   }
@@ -443,31 +407,30 @@ error_ret:
   return (EX_FATAL);
 }
 
-static int define_dimension(int exoid, const char *DIMENSION, int count,
-                            const char *label, int *dimid)
+static int define_dimension(int exoid, const char *DIMENSION, int count, const char *label,
+                            int *dimid)
 {
   char errmsg[MAX_ERR_LENGTH];
   int  status;
   if ((status = nc_def_dim(exoid, DIMENSION, count, dimid)) != NC_NOERR) {
     exerrval = status;
     if (status == NC_ENAMEINUSE) {
-      sprintf(errmsg, "ERROR: %s variable name parameters are already defined "
-                      "in file id %d",
-              label, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s variable name parameters are already defined "
+                                       "in file id %d",
+               label, exoid);
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     }
     else {
-      sprintf(errmsg,
-              "ERROR: failed to define number of %s variables in file id %d",
-              label, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to define number of %s variables in file id %d", label, exoid);
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     }
   }
   return status;
 }
 
-static int define_variable_name_variable(int exoid, const char *VARIABLE,
-                                         int dimension, const char *label)
+static int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension,
+                                         const char *label)
 {
   char errmsg[MAX_ERR_LENGTH];
   int  dims[2];
@@ -475,30 +438,26 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE,
   int  status;
 
   dims[0] = dimension;
-  (void)nc_inq_dimid(exoid, DIM_STR_NAME,
-                     &dims[1]); /* Checked earlier, so known to exist */
+  (void)nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
 
-  if ((status = nc_def_var(exoid, VARIABLE, NC_CHAR, 2, dims, &variable)) !=
-      NC_NOERR) {
+  if ((status = nc_def_var(exoid, VARIABLE, NC_CHAR, 2, dims, &variable)) != NC_NOERR) {
     if (status == NC_ENAMEINUSE) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: %s variable names are already defined in file id %d",
-              label, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s variable names are already defined in file id %d",
+               label, exoid);
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     }
     else {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to define %s variable names in file id %d",
-              label, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s variable names in file id %d",
+               label, exoid);
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     }
   }
   return status;
 }
 
-static int *get_status_array(int exoid, int var_count, const char *VARIABLE,
-                             const char *label)
+static int *get_status_array(int exoid, int var_count, const char *VARIABLE, const char *label)
 {
   char errmsg[MAX_ERR_LENGTH];
   int  varid;
@@ -507,10 +466,8 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE,
 
   if (!(stat_vals = malloc(var_count * sizeof(int)))) {
     exerrval = EX_MEMFAIL;
-    sprintf(
-        errmsg,
-        "ERROR: failed to allocate memory for %s status array for file id %d",
-        label, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate memory for %s status array for file id %d", label, exoid);
     ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     return (NULL);
   }
@@ -523,8 +480,8 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE,
     if ((status = nc_get_var_int(exoid, varid, stat_vals)) != NC_NOERR) {
       exerrval = status;
       ex_safe_free(stat_vals);
-      sprintf(errmsg, "ERROR: failed to get %s status array from file id %d",
-              label, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s status array from file id %d",
+               label, exoid);
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
       return (NULL);
     }
@@ -548,17 +505,15 @@ static int put_truth_table(int exoid, int varid, int *table, const char *label)
 
   if (iresult != NC_NOERR) {
     exerrval = iresult;
-    sprintf(errmsg,
-            "ERROR: failed to store %s variable truth table in file id %d",
-            label, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s variable truth table in file id %d",
+             label, exoid);
     ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
   }
   return iresult;
 }
 
-static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent,
-                              int num_var, int *var_tab, int *status_tab,
-                              void_int *ids, const char *label)
+static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, int num_var,
+                              int *var_tab, int *status_tab, void_int *ids, const char *label)
 {
   char errmsg[MAX_ERR_LENGTH];
   int  k = 0;
@@ -570,16 +525,15 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent,
 
   if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate time dimension in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d", exoid);
     ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     return -1;
   }
 
   if (var_tab == NULL) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: %s variable truth table is NULL in file id %d",
-            label, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s variable truth table is NULL in file id %d", label,
+             exoid);
     ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     return -1;
   }
@@ -602,14 +556,12 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent,
 
           /* Determine number of entities in entity */
           /* Need way to make this more generic... */
-          status = nc_inq_dimid(
-              exoid, ex_dim_num_entries_in_object(obj_type, i + 1), &dims[1]);
+          status = nc_inq_dimid(exoid, ex_dim_num_entries_in_object(obj_type, i + 1), &dims[1]);
           if (status != NC_NOERR) {
             exerrval = status;
-            sprintf(errmsg,
-                    "ERROR: failed to locate number of entities in %s %" PRId64
-                    " in file id %d",
-                    label, id, exoid);
+            snprintf(errmsg, MAX_ERR_LENGTH,
+                     "ERROR: failed to locate number of entities in %s %" PRId64 " in file id %d",
+                     label, id, exoid);
             ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
             return status;
           }
@@ -619,15 +571,14 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent,
            * that the index of the EXODUS II variable (which is part of
            * the name of the netCDF variable) will begin at 1 instead of 0
            */
-          status = nc_def_var(exoid, ex_name_var_of_object(obj_type, j, i + 1),
-                              nc_flt_code(exoid), 2, dims, &varid);
+          status = nc_def_var(exoid, ex_name_var_of_object(obj_type, j, i + 1), nc_flt_code(exoid),
+                              2, dims, &varid);
           if (status != NC_NOERR) {
             if (status != NC_ENAMEINUSE) {
               exerrval = status;
-              sprintf(errmsg,
-                      "ERROR: failed to define %s variable for %s %" PRId64
-                      " in file id %d",
-                      label, label, id, exoid);
+              snprintf(errmsg, MAX_ERR_LENGTH,
+                       "ERROR: failed to define %s variable for %s %" PRId64 " in file id %d",
+                       label, label, id, exoid);
               ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
               return status;
             }

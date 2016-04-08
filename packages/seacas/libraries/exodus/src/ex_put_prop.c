@@ -38,8 +38,8 @@
 #include "netcdf.h"       // for NC_NOERR, nc_set_fill, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf, fprintf, stderr
-#include <string.h>       // for memset, strcmp, etc
+#include <stdio.h>
+#include <string.h> // for memset, strcmp, etc
 
 /*!
 
@@ -106,8 +106,8 @@ For an example of code to write out an object property, refer to the
 description for ex_put_prop_names().
 */
 
-int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
-                const char *prop_name, ex_entity_id value)
+int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const char *prop_name,
+                ex_entity_id value)
 {
   int       status;
   int       oldfill = 0;
@@ -134,65 +134,39 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
 
     for (i = 1; i <= num_props; i++) {
       switch (obj_type) {
-      case EX_ELEM_BLOCK:
-        name = VAR_EB_PROP(i);
-        break;
-      case EX_EDGE_BLOCK:
-        name = VAR_ED_PROP(i);
-        break;
-      case EX_FACE_BLOCK:
-        name = VAR_FA_PROP(i);
-        break;
-      case EX_NODE_SET:
-        name = VAR_NS_PROP(i);
-        break;
-      case EX_EDGE_SET:
-        name = VAR_ES_PROP(i);
-        break;
-      case EX_FACE_SET:
-        name = VAR_FS_PROP(i);
-        break;
-      case EX_ELEM_SET:
-        name = VAR_ELS_PROP(i);
-        break;
-      case EX_SIDE_SET:
-        name = VAR_SS_PROP(i);
-        break;
-      case EX_ELEM_MAP:
-        name = VAR_EM_PROP(i);
-        break;
-      case EX_FACE_MAP:
-        name = VAR_FAM_PROP(i);
-        break;
-      case EX_EDGE_MAP:
-        name = VAR_EDM_PROP(i);
-        break;
-      case EX_NODE_MAP:
-        name = VAR_NM_PROP(i);
-        break;
+      case EX_ELEM_BLOCK: name = VAR_EB_PROP(i); break;
+      case EX_EDGE_BLOCK: name = VAR_ED_PROP(i); break;
+      case EX_FACE_BLOCK: name = VAR_FA_PROP(i); break;
+      case EX_NODE_SET: name   = VAR_NS_PROP(i); break;
+      case EX_EDGE_SET: name   = VAR_ES_PROP(i); break;
+      case EX_FACE_SET: name   = VAR_FS_PROP(i); break;
+      case EX_ELEM_SET: name   = VAR_ELS_PROP(i); break;
+      case EX_SIDE_SET: name   = VAR_SS_PROP(i); break;
+      case EX_ELEM_MAP: name   = VAR_EM_PROP(i); break;
+      case EX_FACE_MAP: name   = VAR_FAM_PROP(i); break;
+      case EX_EDGE_MAP: name   = VAR_EDM_PROP(i); break;
+      case EX_NODE_MAP: name   = VAR_NM_PROP(i); break;
       default:
         exerrval = EX_BADPARAM;
-        sprintf(errmsg, "ERROR: object type %d not supported; file id %d",
-                obj_type, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d",
+                 obj_type, exoid);
         ex_err("ex_put_prop", errmsg, exerrval);
         return (EX_FATAL);
       }
 
       if ((status = nc_inq_varid(exoid, name, &propid)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg, "ERROR: failed to get property array id in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property array id in file id %d",
+                 exoid);
         ex_err("ex_put_prop", errmsg, exerrval);
         return (EX_FATAL);
       }
 
       /*   compare stored attribute name with passed property name   */
       memset(tmpstr, 0, MAX_STR_LENGTH + 1);
-      if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) !=
-          NC_NOERR) {
+      if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg, "ERROR: failed to get property name in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property name in file id %d", exoid);
         ex_err("ex_put_prop", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -212,8 +186,7 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     /* put netcdf file into define mode  */
     if ((status = nc_redef(exoid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to place file id %d into define mode",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
       ex_err("ex_put_prop", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -272,8 +245,8 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
       break;
     default:
       exerrval = EX_BADPARAM;
-      sprintf(errmsg, "ERROR: object type %d not supported; file id %d",
-              obj_type, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d", obj_type,
+               exoid);
       ex_err("ex_put_prop", errmsg, exerrval);
       goto error_ret; /* Exit define mode and return */
     }
@@ -281,27 +254,24 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     /*   inquire id of previously defined dimension (number of objects) */
     if ((status = nc_inq_dimid(exoid, dim_name, &dimid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to locate number of objects in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of objects in file id %d",
+               exoid);
       ex_err("ex_put_prop", errmsg, exerrval);
       goto error_ret; /* Exit define mode and return */
     }
 
     dims[0] = dimid;
-    nc_set_fill(exoid, NC_FILL,
-                &oldfill); /* fill with zeros per routine spec */
+    nc_set_fill(exoid, NC_FILL, &oldfill); /* fill with zeros per routine spec */
 
     int_type = NC_INT;
     if (ex_int64_status(exoid) & EX_IDS_INT64_DB) {
       int_type = NC_INT64;
     }
 
-    if ((status = nc_def_var(exoid, name, int_type, 1, dims, &propid)) !=
-        NC_NOERR) {
+    if ((status = nc_def_var(exoid, name, int_type, 1, dims, &propid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: failed to create property array variable in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to create property array variable in file id %d", exoid);
       ex_err("ex_put_prop", errmsg, exerrval);
       goto error_ret; /* Exit define mode and return */
     }
@@ -309,13 +279,10 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     vals[0] = 0; /* fill value */
     /*   create attribute to cause variable to fill with zeros per routine spec
      */
-    if ((status = nc_put_att_longlong(exoid, propid, _FillValue, int_type, 1,
-                                      vals)) != NC_NOERR) {
+    if ((status = nc_put_att_longlong(exoid, propid, _FillValue, int_type, 1, vals)) != NC_NOERR) {
       exerrval = status;
-      sprintf(
-          errmsg,
-          "ERROR: failed to create property name fill attribute in file id %d",
-          exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to create property name fill attribute in file id %d", exoid);
       ex_err("ex_put_prop", errmsg, exerrval);
       goto error_ret; /* Exit define mode and return */
     }
@@ -333,8 +300,8 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     if ((status = nc_put_att_text(exoid, propid, ATT_PROP_NAME, prop_name_len,
                                   (void *)prop_name)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to store property name %s in file id %d",
-              prop_name, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store property name %s in file id %d",
+               prop_name, exoid);
       ex_err("ex_put_prop", errmsg, exerrval);
       goto error_ret; /* Exit define mode and return */
     }
@@ -344,8 +311,7 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     /* leave define mode  */
     if ((status = nc_enddef(exoid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to leave define mode in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to leave define mode in file id %d", exoid);
       ex_err("ex_put_prop", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -363,9 +329,9 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     if (exerrval != EX_LOOKUPFAIL) /* found the id */
     {
       exerrval = EX_BADPARAM;
-      sprintf(errmsg, "Warning: attempt to assign duplicate %s ID %" PRId64
-                      " in file id %d",
-              ex_name_of_object(obj_type), value, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "Warning: attempt to assign duplicate %s ID %" PRId64 " in file id %d",
+               ex_name_of_object(obj_type), value, exoid);
       ex_err("ex_put_prop", errmsg, exerrval);
       return (EX_WARN);
     }
@@ -374,15 +340,15 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
   start[0] = ex_id_lkup(exoid, obj_type, obj_id);
   if (exerrval != 0) {
     if (exerrval == EX_NULLENTITY) {
-      sprintf(errmsg, "Warning: no properties allowed for NULL %s id %" PRId64
-                      " in file id %d",
-              ex_name_of_object(obj_type), obj_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "Warning: no properties allowed for NULL %s id %" PRId64 " in file id %d",
+               ex_name_of_object(obj_type), obj_id, exoid);
       ex_err("ex_put_prop", errmsg, EX_NULLENTITY);
       return (EX_WARN);
     }
-    sprintf(errmsg, "ERROR: failed to find value %" PRId64
-                    " in %s property array in file id %d",
-            obj_id, ex_name_of_object(obj_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to find value %" PRId64 " in %s property array in file id %d", obj_id,
+             ex_name_of_object(obj_type), exoid);
     ex_err("ex_put_prop", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -395,8 +361,7 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to store property value in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store property value in file id %d", exoid);
     ex_err("ex_put_prop", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -408,8 +373,7 @@ error_ret:
   nc_set_fill(exoid, oldfill, &temp); /* default: nofill */
 
   if (nc_enddef(exoid) != NC_NOERR) { /* exit define mode */
-    sprintf(errmsg, "ERROR: failed to complete definition for file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
     ex_err("ex_put_prop", errmsg, exerrval);
   }
   return (EX_FATAL);

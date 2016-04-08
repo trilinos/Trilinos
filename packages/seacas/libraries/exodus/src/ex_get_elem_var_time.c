@@ -138,10 +138,9 @@ error = ex_get_elem_var_time (exoid, EX_ELEM_BLOCK, var_index, elem_num,
 
  */
 
-int ex_get_elem_var_time(int exoid, int elem_var_index, int64_t elem_number,
-                         int beg_time_step, int end_time_step,
-                         void *elem_var_vals)
+int ex_get_elem_var_time(int exoid, int elem_var_index, int64_t elem_number, int beg_time_step,
+                         int end_time_step, void *elem_var_vals)
 {
-  return ex_get_var_time(exoid, EX_ELEM_BLOCK, elem_var_index, elem_number,
-                         beg_time_step, end_time_step, elem_var_vals);
+  return ex_get_var_time(exoid, EX_ELEM_BLOCK, elem_var_index, elem_number, beg_time_step,
+                         end_time_step, elem_var_vals);
 }

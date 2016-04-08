@@ -53,15 +53,14 @@
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_NODES, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_vara_int, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf, fprintf, stderr
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*
  *  reads the node numbering map from the database
  */
 
-int ex_get_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents,
-                                void_int *node_map)
+int ex_get_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents, void_int *node_map)
 {
   int    numnodedim, mapid, status;
   size_t i;
@@ -74,16 +73,15 @@ int ex_get_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents,
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES, &numnodedim)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate number of nodes in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of nodes in file id %d",
+             exoid);
     ex_err("ex_get_partial_node_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, numnodedim, &num_nodes)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get number of nodes in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of nodes in file id %d", exoid);
     ex_err("ex_get_partial_node_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -108,9 +106,9 @@ int ex_get_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents,
 
   if ((status = nc_inq_varid(exoid, VAR_NODE_NUM_MAP, &mapid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "Warning: node numbering map not stored in file id %d; "
-                    "returning default map",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: node numbering map not stored in file id %d; "
+                                     "returning default map",
+             exoid);
     ex_err("ex_get_partial_node_num_map", errmsg, exerrval);
 
     /* generate default map of 1..n, where n is num_nodes */
@@ -142,8 +140,8 @@ int ex_get_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get node numbering map in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get node numbering map in file id %d",
+             exoid);
     ex_err("ex_get_partial_node_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }

@@ -72,10 +72,10 @@
  * \param   num_attr_per_entry      number of attributes per block entry
  */
 
-int ex_put_block(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
-                 const char *entry_descrip, int64_t num_entries_this_blk,
-                 int64_t num_nodes_per_entry, int64_t num_edges_per_entry,
-                 int64_t num_faces_per_entry, int64_t num_attr_per_entry)
+int ex_put_block(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const char *entry_descrip,
+                 int64_t num_entries_this_blk, int64_t num_nodes_per_entry,
+                 int64_t num_edges_per_entry, int64_t num_faces_per_entry,
+                 int64_t num_attr_per_entry)
 {
   ex_block block;
   block.type = blk_type;

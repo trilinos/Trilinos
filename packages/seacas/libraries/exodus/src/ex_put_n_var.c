@@ -77,10 +77,10 @@
  * \param      var_vals        the values to be written
  */
 
-int ex_put_n_var(int exoid, int time_step, ex_entity_type var_type,
-                 int var_index, ex_entity_id obj_id, int64_t start_index,
-                 int64_t num_entities, const void *var_vals)
+int ex_put_n_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
+                 ex_entity_id obj_id, int64_t start_index, int64_t num_entities,
+                 const void *var_vals)
 {
-  return ex_put_partial_var(exoid, time_step, var_type, var_index, obj_id,
-                            start_index, num_entities, var_vals);
+  return ex_put_partial_var(exoid, time_step, var_type, var_index, obj_id, start_index,
+                            num_entities, var_vals);
 }

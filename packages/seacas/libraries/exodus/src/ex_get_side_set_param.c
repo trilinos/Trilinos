@@ -65,10 +65,8 @@
  * num_side_in_set, num_dist_fact_in_set)
  */
 
-int ex_get_side_set_param(int exoid, ex_entity_id side_set_id,
-                          void_int *num_side_in_set,
+int ex_get_side_set_param(int exoid, ex_entity_id side_set_id, void_int *num_side_in_set,
                           void_int *num_dist_fact_in_set)
 {
-  return ex_get_set_param(exoid, EX_SIDE_SET, side_set_id, num_side_in_set,
-                          num_dist_fact_in_set);
+  return ex_get_set_param(exoid, EX_SIDE_SET, side_set_id, num_side_in_set, num_dist_fact_in_set);
 }

@@ -68,9 +68,7 @@
  * num_sset_var, sset_var_tab)
  */
 
-int ex_put_sset_var_tab(int exoid, int num_sset, int num_sset_var,
-                        int *sset_var_tab)
+int ex_put_sset_var_tab(int exoid, int num_sset, int num_sset_var, int *sset_var_tab)
 {
-  return ex_put_truth_table(exoid, EX_SIDE_SET, num_sset, num_sset_var,
-                            sset_var_tab);
+  return ex_put_truth_table(exoid, EX_SIDE_SET, num_sset, num_sset_var, sset_var_tab);
 }

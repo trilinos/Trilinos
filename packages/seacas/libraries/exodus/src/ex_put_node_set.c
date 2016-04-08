@@ -63,8 +63,7 @@ Refer to the description of ex_put_node_set_param() for a sample code
 segment to write out a node set.
 */
 
-int ex_put_node_set(int exoid, ex_entity_id node_set_id,
-                    const void_int *node_set_node_list)
+int ex_put_node_set(int exoid, ex_entity_id node_set_id, const void_int *node_set_node_list)
 {
   return ex_put_set(exoid, EX_NODE_SET, node_set_id, node_set_node_list, NULL);
 }

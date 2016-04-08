@@ -39,7 +39,7 @@
 #include "exodusII.h"     // for exerrval, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*
  *  reads the element block ids from the database
@@ -55,55 +55,30 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {
-  case EX_EDGE_BLOCK:
-    varidobj = VAR_ID_ED_BLK;
-    break;
-  case EX_FACE_BLOCK:
-    varidobj = VAR_ID_FA_BLK;
-    break;
-  case EX_ELEM_BLOCK:
-    varidobj = VAR_ID_EL_BLK;
-    break;
-  case EX_NODE_SET:
-    varidobj = VAR_NS_IDS;
-    break;
-  case EX_EDGE_SET:
-    varidobj = VAR_ES_IDS;
-    break;
-  case EX_FACE_SET:
-    varidobj = VAR_FS_IDS;
-    break;
-  case EX_SIDE_SET:
-    varidobj = VAR_SS_IDS;
-    break;
-  case EX_ELEM_SET:
-    varidobj = VAR_ELS_IDS;
-    break;
-  case EX_NODE_MAP:
-    varidobj = VAR_NM_PROP(1);
-    break;
-  case EX_EDGE_MAP:
-    varidobj = VAR_EDM_PROP(1);
-    break;
-  case EX_FACE_MAP:
-    varidobj = VAR_FAM_PROP(1);
-    break;
-  case EX_ELEM_MAP:
-    varidobj = VAR_EM_PROP(1);
-    break;
+  case EX_EDGE_BLOCK: varidobj = VAR_ID_ED_BLK; break;
+  case EX_FACE_BLOCK: varidobj = VAR_ID_FA_BLK; break;
+  case EX_ELEM_BLOCK: varidobj = VAR_ID_EL_BLK; break;
+  case EX_NODE_SET: varidobj   = VAR_NS_IDS; break;
+  case EX_EDGE_SET: varidobj   = VAR_ES_IDS; break;
+  case EX_FACE_SET: varidobj   = VAR_FS_IDS; break;
+  case EX_SIDE_SET: varidobj   = VAR_SS_IDS; break;
+  case EX_ELEM_SET: varidobj   = VAR_ELS_IDS; break;
+  case EX_NODE_MAP: varidobj   = VAR_NM_PROP(1); break;
+  case EX_EDGE_MAP: varidobj   = VAR_EDM_PROP(1); break;
+  case EX_FACE_MAP: varidobj   = VAR_FAM_PROP(1); break;
+  case EX_ELEM_MAP: varidobj   = VAR_EM_PROP(1); break;
   default: /* invalid variable type */
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
     ex_err("ex_get_ids", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* Determine if there are any 'obj-type' objects */
-  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(obj_type), &varid)) !=
-      NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(obj_type), &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "Warning: no %s defined in file id %d",
-            ex_name_of_object(obj_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s defined in file id %d",
+             ex_name_of_object(obj_type), exoid);
     ex_err("ex_get_ids", errmsg, exerrval);
     return (EX_WARN);
   }
@@ -111,8 +86,8 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
   /* inquire id's of previously defined dimensions and variables  */
   if ((status = nc_inq_varid(exoid, varidobj, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate %s ids variable in file id %d",
-            ex_name_of_object(obj_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids variable in file id %d",
+             ex_name_of_object(obj_type), exoid);
     ex_err("ex_get_ids", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -127,8 +102,8 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to return %s ids in file id %d",
-            ex_name_of_object(obj_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to return %s ids in file id %d",
+             ex_name_of_object(obj_type), exoid);
     ex_err("ex_get_ids", errmsg, exerrval);
     return (EX_FATAL);
   }

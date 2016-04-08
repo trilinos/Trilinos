@@ -68,9 +68,7 @@
  * num_nset_var, nset_var_tab)
  */
 
-int ex_put_nset_var_tab(int exoid, int num_nset, int num_nset_var,
-                        int *nset_var_tab)
+int ex_put_nset_var_tab(int exoid, int num_nset, int num_nset_var, int *nset_var_tab)
 {
-  return ex_put_truth_table(exoid, EX_NODE_SET, num_nset, num_nset_var,
-                            nset_var_tab);
+  return ex_put_truth_table(exoid, EX_NODE_SET, num_nset, num_nset_var, nset_var_tab);
 }

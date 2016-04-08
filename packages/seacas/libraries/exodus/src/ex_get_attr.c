@@ -54,14 +54,13 @@
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_var_double, etc
 #include <inttypes.h>     // for PRId64
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
  * \undoc reads the attributes for an edge, face, or element block
  */
 
-int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
-                void *attrib)
+int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *attrib)
 
 {
   int         status;
@@ -80,54 +79,35 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
 
     if (exerrval != 0) {
       if (exerrval == EX_NULLENTITY) {
-        sprintf(errmsg, "Warning: no attributes found for NULL %s %" PRId64
-                        " in file id %d",
-                ex_name_of_object(obj_type), obj_id, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "Warning: no attributes found for NULL %s %" PRId64 " in file id %d",
+                 ex_name_of_object(obj_type), obj_id, exoid);
         ex_err("ex_get_attr", errmsg, EX_NULLENTITY);
         return (EX_WARN); /* no attributes for this object */
       }
-      sprintf(errmsg, "Warning: failed to locate %s id %" PRId64
-                      " in id array in file id %d",
-              ex_name_of_object(obj_type), obj_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "Warning: failed to locate %s id %" PRId64 " in id array in file id %d",
+               ex_name_of_object(obj_type), obj_id, exoid);
       ex_err("ex_get_attr", errmsg, exerrval);
       return (EX_WARN);
     }
   }
 
   switch (obj_type) {
-  case EX_SIDE_SET:
-    vattrbname = VAR_SSATTRIB(obj_id_ndx);
-    break;
-  case EX_NODE_SET:
-    vattrbname = VAR_NSATTRIB(obj_id_ndx);
-    break;
-  case EX_EDGE_SET:
-    vattrbname = VAR_ESATTRIB(obj_id_ndx);
-    break;
-  case EX_FACE_SET:
-    vattrbname = VAR_FSATTRIB(obj_id_ndx);
-    break;
-  case EX_ELEM_SET:
-    vattrbname = VAR_ELSATTRIB(obj_id_ndx);
-    break;
-  case EX_NODAL:
-    vattrbname = VAR_NATTRIB;
-    break;
-  case EX_EDGE_BLOCK:
-    vattrbname = VAR_EATTRIB(obj_id_ndx);
-    break;
-  case EX_FACE_BLOCK:
-    vattrbname = VAR_FATTRIB(obj_id_ndx);
-    break;
-  case EX_ELEM_BLOCK:
-    vattrbname = VAR_ATTRIB(obj_id_ndx);
-    break;
+  case EX_SIDE_SET: vattrbname   = VAR_SSATTRIB(obj_id_ndx); break;
+  case EX_NODE_SET: vattrbname   = VAR_NSATTRIB(obj_id_ndx); break;
+  case EX_EDGE_SET: vattrbname   = VAR_ESATTRIB(obj_id_ndx); break;
+  case EX_FACE_SET: vattrbname   = VAR_FSATTRIB(obj_id_ndx); break;
+  case EX_ELEM_SET: vattrbname   = VAR_ELSATTRIB(obj_id_ndx); break;
+  case EX_NODAL: vattrbname      = VAR_NATTRIB; break;
+  case EX_EDGE_BLOCK: vattrbname = VAR_EATTRIB(obj_id_ndx); break;
+  case EX_FACE_BLOCK: vattrbname = VAR_FATTRIB(obj_id_ndx); break;
+  case EX_ELEM_BLOCK: vattrbname = VAR_ATTRIB(obj_id_ndx); break;
   default:
     exerrval = 1005;
-    sprintf(
-        errmsg,
-        "Internal ERROR: unrecognized object type in switch: %d in file id %d",
-        obj_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Internal ERROR: unrecognized object type in switch: %d in file id %d", obj_type,
+             exoid);
     ex_err("ex_get_attr", errmsg, EX_MSG);
     return (EX_FATAL); /* number of attributes not defined */
   }
@@ -135,9 +115,9 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
   /* inquire id's of previously defined dimensions  */
   if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate attributes for %s %" PRId64
-                    " in file id %d",
-            ex_name_of_object(obj_type), obj_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate attributes for %s %" PRId64 " in file id %d",
+             ex_name_of_object(obj_type), obj_id, exoid);
     ex_err("ex_get_attr", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -152,9 +132,9 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to get attributes for %s %" PRId64 " in file id %d",
-            ex_name_of_object(obj_type), obj_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to get attributes for %s %" PRId64 " in file id %d",
+             ex_name_of_object(obj_type), obj_id, exoid);
     ex_err("ex_get_attr", errmsg, exerrval);
     return (EX_FATAL);
   }

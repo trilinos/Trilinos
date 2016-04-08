@@ -53,40 +53,37 @@
 #include "exodusII.h"     // for ex_err, exerrval, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
-#define EX_PUT_NAMES(TNAME, DNUMVAR, VNAMES)                                   \
-  if ((status = nc_inq_dimid(exoid, DNUMVAR, &dimid)) != NC_NOERR) {           \
-    exerrval = status;                                                         \
-    if (status == NC_EBADDIM) {                                                \
-      sprintf(errmsg, "ERROR: no " TNAME " variables defined in file id %d",   \
-              exoid);                                                          \
-      ex_err("ex_put_variable_names", errmsg, exerrval);                       \
-    }                                                                          \
-    else {                                                                     \
-      sprintf(errmsg, "ERROR: failed to locate number of " TNAME               \
-                      " variables in file id %d",                              \
-              exoid);                                                          \
-      ex_err("ex_put_variable_names", errmsg, exerrval);                       \
-    }                                                                          \
-    return (EX_FATAL);                                                         \
-  }                                                                            \
-                                                                               \
-  if ((status = nc_inq_varid(exoid, VNAMES, &varid)) != NC_NOERR) {            \
-    exerrval = status;                                                         \
-    if (status == NC_ENOTVAR) {                                                \
-      sprintf(errmsg,                                                          \
-              "ERROR: no " TNAME " variable names defined in file id %d",      \
-              exoid);                                                          \
-      ex_err("ex_put_variable_names", errmsg, exerrval);                       \
-    }                                                                          \
-    else {                                                                     \
-      sprintf(errmsg,                                                          \
-              "ERROR: " TNAME " name variable names not found in file id %d",  \
-              exoid);                                                          \
-      ex_err("ex_put_variable_names", errmsg, exerrval);                       \
-    }                                                                          \
-    return (EX_FATAL);                                                         \
+#define EX_PUT_NAMES(TNAME, DNUMVAR, VNAMES)                                                       \
+  if ((status = nc_inq_dimid(exoid, DNUMVAR, &dimid)) != NC_NOERR) {                               \
+    exerrval = status;                                                                             \
+    if (status == NC_EBADDIM) {                                                                    \
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no " TNAME " variables defined in file id %d",      \
+               exoid);                                                                             \
+      ex_err("ex_put_variable_names", errmsg, exerrval);                                           \
+    }                                                                                              \
+    else {                                                                                         \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR: failed to locate number of " TNAME " variables in file id %d", exoid);      \
+      ex_err("ex_put_variable_names", errmsg, exerrval);                                           \
+    }                                                                                              \
+    return (EX_FATAL);                                                                             \
+  }                                                                                                \
+                                                                                                   \
+  if ((status = nc_inq_varid(exoid, VNAMES, &varid)) != NC_NOERR) {                                \
+    exerrval = status;                                                                             \
+    if (status == NC_ENOTVAR) {                                                                    \
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no " TNAME " variable names defined in file id %d", \
+               exoid);                                                                             \
+      ex_err("ex_put_variable_names", errmsg, exerrval);                                           \
+    }                                                                                              \
+    else {                                                                                         \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR: " TNAME " name variable names not found in file id %d", exoid);             \
+      ex_err("ex_put_variable_names", errmsg, exerrval);                                           \
+    }                                                                                              \
+    return (EX_FATAL);                                                                             \
   }
 
 /*!
@@ -147,8 +144,7 @@ error = ex_put_variable_names (exoid, EX_NODAL, num_nod_vars, var_names);
 
 */
 
-int ex_put_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
-                          char *var_names[])
+int ex_put_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char *var_names[])
 {
   int  varid, dimid, status;
   char errmsg[MAX_ERR_LENGTH];
@@ -156,47 +152,27 @@ int ex_put_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {
-  case EX_GLOBAL:
-    EX_PUT_NAMES("global", DIM_NUM_GLO_VAR, VAR_NAME_GLO_VAR);
-    break;
-  case EX_NODAL:
-    EX_PUT_NAMES("nodal", DIM_NUM_NOD_VAR, VAR_NAME_NOD_VAR);
-    break;
-  case EX_EDGE_BLOCK:
-    EX_PUT_NAMES("edge", DIM_NUM_EDG_VAR, VAR_NAME_EDG_VAR);
-    break;
-  case EX_FACE_BLOCK:
-    EX_PUT_NAMES("face", DIM_NUM_FAC_VAR, VAR_NAME_FAC_VAR);
-    break;
-  case EX_ELEM_BLOCK:
-    EX_PUT_NAMES("element", DIM_NUM_ELE_VAR, VAR_NAME_ELE_VAR);
-    break;
-  case EX_NODE_SET:
-    EX_PUT_NAMES("node set", DIM_NUM_NSET_VAR, VAR_NAME_NSET_VAR);
-    break;
-  case EX_EDGE_SET:
-    EX_PUT_NAMES("edge set", DIM_NUM_ESET_VAR, VAR_NAME_ESET_VAR);
-    break;
-  case EX_FACE_SET:
-    EX_PUT_NAMES("face set", DIM_NUM_FSET_VAR, VAR_NAME_FSET_VAR);
-    break;
-  case EX_SIDE_SET:
-    EX_PUT_NAMES("side set", DIM_NUM_SSET_VAR, VAR_NAME_SSET_VAR);
-    break;
-  case EX_ELEM_SET:
-    EX_PUT_NAMES("element set", DIM_NUM_ELSET_VAR, VAR_NAME_ELSET_VAR);
-    break;
+  case EX_GLOBAL: EX_PUT_NAMES("global", DIM_NUM_GLO_VAR, VAR_NAME_GLO_VAR); break;
+  case EX_NODAL: EX_PUT_NAMES("nodal", DIM_NUM_NOD_VAR, VAR_NAME_NOD_VAR); break;
+  case EX_EDGE_BLOCK: EX_PUT_NAMES("edge", DIM_NUM_EDG_VAR, VAR_NAME_EDG_VAR); break;
+  case EX_FACE_BLOCK: EX_PUT_NAMES("face", DIM_NUM_FAC_VAR, VAR_NAME_FAC_VAR); break;
+  case EX_ELEM_BLOCK: EX_PUT_NAMES("element", DIM_NUM_ELE_VAR, VAR_NAME_ELE_VAR); break;
+  case EX_NODE_SET: EX_PUT_NAMES("node set", DIM_NUM_NSET_VAR, VAR_NAME_NSET_VAR); break;
+  case EX_EDGE_SET: EX_PUT_NAMES("edge set", DIM_NUM_ESET_VAR, VAR_NAME_ESET_VAR); break;
+  case EX_FACE_SET: EX_PUT_NAMES("face set", DIM_NUM_FSET_VAR, VAR_NAME_FSET_VAR); break;
+  case EX_SIDE_SET: EX_PUT_NAMES("side set", DIM_NUM_SSET_VAR, VAR_NAME_SSET_VAR); break;
+  case EX_ELEM_SET: EX_PUT_NAMES("element set", DIM_NUM_ELSET_VAR, VAR_NAME_ELSET_VAR); break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid variable type %d specified in file id %d",
-            obj_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid variable type %d specified in file id %d",
+             obj_type, exoid);
     ex_err("ex_put_variable_names", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* write EXODUS variable names */
-  status = ex_put_names_internal(exoid, varid, num_vars, var_names, obj_type,
-                                 "variable", "ex_put_variable_names");
+  status = ex_put_names_internal(exoid, varid, num_vars, var_names, obj_type, "variable",
+                                 "ex_put_variable_names");
 
   return (status);
 }

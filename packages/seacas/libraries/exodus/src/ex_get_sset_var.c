@@ -65,10 +65,9 @@
  * sset_id, num_side_this_sset, sset_var_vals) instead
  */
 
-int ex_get_sset_var(int exoid, int time_step, int sset_var_index,
-                    ex_entity_id sset_id, int64_t num_side_this_sset,
-                    void *sset_var_vals)
+int ex_get_sset_var(int exoid, int time_step, int sset_var_index, ex_entity_id sset_id,
+                    int64_t num_side_this_sset, void *sset_var_vals)
 {
-  return ex_get_var(exoid, time_step, EX_SIDE_SET, sset_var_index, sset_id,
-                    num_side_this_sset, sset_var_vals);
+  return ex_get_var(exoid, time_step, EX_SIDE_SET, sset_var_index, sset_id, num_side_this_sset,
+                    sset_var_vals);
 }

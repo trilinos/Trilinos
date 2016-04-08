@@ -63,9 +63,8 @@
  * \param   attrib                  array of attributes
  */
 
-int ex_put_n_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
-                  int64_t start_entity, int64_t num_entity, const void *attrib)
+int ex_put_n_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, int64_t start_entity,
+                  int64_t num_entity, const void *attrib)
 {
-  return ex_put_partial_attr(exoid, blk_type, blk_id, start_entity, num_entity,
-                             attrib);
+  return ex_put_partial_attr(exoid, blk_type, blk_id, start_entity, num_entity, attrib);
 }

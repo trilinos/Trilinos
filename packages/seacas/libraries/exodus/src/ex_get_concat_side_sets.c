@@ -65,11 +65,10 @@
  * \deprecated Use ex_get_concat_sets()(exoid, EX_SIDE_SET, set_specs) instead
  */
 
-int ex_get_concat_side_sets(
-    int exoid, void_int *side_set_ids, void_int *num_elem_per_set,
-    void_int *num_dist_per_set, void_int *side_sets_elem_index,
-    void_int *side_sets_dist_index, void_int *side_sets_elem_list,
-    void_int *side_sets_side_list, void *side_sets_dist_fact)
+int ex_get_concat_side_sets(int exoid, void_int *side_set_ids, void_int *num_elem_per_set,
+                            void_int *num_dist_per_set, void_int *side_sets_elem_index,
+                            void_int *side_sets_dist_index, void_int *side_sets_elem_list,
+                            void_int *side_sets_side_list, void *side_sets_dist_fact)
 {
   struct ex_set_specs set_specs;
 

@@ -53,14 +53,13 @@
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
  * \undoc retrieves the number of attributes.
  */
 
-int ex_get_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
-                      int *num_attrs)
+int ex_get_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int *num_attrs)
 {
   int status;
   int dimid;
@@ -83,46 +82,28 @@ int ex_get_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
         *num_attrs = 0;
         return (EX_NOERR);
       }
-      sprintf(errmsg, "Warning: failed to locate %s id %" PRId64
-                      " in id array in file id %d",
-              ex_name_of_object(obj_type), obj_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "Warning: failed to locate %s id %" PRId64 " in id array in file id %d",
+               ex_name_of_object(obj_type), obj_id, exoid);
       ex_err("ex_get_attr_param", errmsg, exerrval);
       return (EX_WARN);
     }
   }
 
   switch (obj_type) {
-  case EX_SIDE_SET:
-    dnumobjatt = DIM_NUM_ATT_IN_SS(obj_id_ndx);
-    break;
-  case EX_NODE_SET:
-    dnumobjatt = DIM_NUM_ATT_IN_NS(obj_id_ndx);
-    break;
-  case EX_EDGE_SET:
-    dnumobjatt = DIM_NUM_ATT_IN_ES(obj_id_ndx);
-    break;
-  case EX_FACE_SET:
-    dnumobjatt = DIM_NUM_ATT_IN_FS(obj_id_ndx);
-    break;
-  case EX_ELEM_SET:
-    dnumobjatt = DIM_NUM_ATT_IN_ELS(obj_id_ndx);
-    break;
-  case EX_NODAL:
-    dnumobjatt = DIM_NUM_ATT_IN_NBLK;
-    break;
-  case EX_EDGE_BLOCK:
-    dnumobjatt = DIM_NUM_ATT_IN_EBLK(obj_id_ndx);
-    break;
-  case EX_FACE_BLOCK:
-    dnumobjatt = DIM_NUM_ATT_IN_FBLK(obj_id_ndx);
-    break;
-  case EX_ELEM_BLOCK:
-    dnumobjatt = DIM_NUM_ATT_IN_BLK(obj_id_ndx);
-    break;
+  case EX_SIDE_SET: dnumobjatt   = DIM_NUM_ATT_IN_SS(obj_id_ndx); break;
+  case EX_NODE_SET: dnumobjatt   = DIM_NUM_ATT_IN_NS(obj_id_ndx); break;
+  case EX_EDGE_SET: dnumobjatt   = DIM_NUM_ATT_IN_ES(obj_id_ndx); break;
+  case EX_FACE_SET: dnumobjatt   = DIM_NUM_ATT_IN_FS(obj_id_ndx); break;
+  case EX_ELEM_SET: dnumobjatt   = DIM_NUM_ATT_IN_ELS(obj_id_ndx); break;
+  case EX_NODAL: dnumobjatt      = DIM_NUM_ATT_IN_NBLK; break;
+  case EX_EDGE_BLOCK: dnumobjatt = DIM_NUM_ATT_IN_EBLK(obj_id_ndx); break;
+  case EX_FACE_BLOCK: dnumobjatt = DIM_NUM_ATT_IN_FBLK(obj_id_ndx); break;
+  case EX_ELEM_BLOCK: dnumobjatt = DIM_NUM_ATT_IN_BLK(obj_id_ndx); break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Bad block type (%d) specified for file id %d",
-            obj_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad block type (%d) specified for file id %d",
+             obj_type, exoid);
     ex_err("ex_get_attr_param", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -134,12 +115,11 @@ int ex_get_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     *num_attrs = 0;
   }
   else {
-    if ((status = nc_inq_dimlen(exoid, dimid, &lnum_attr_per_entry)) !=
-        NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &lnum_attr_per_entry)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to get number of attributes in %s %" PRId64
-                      " in file id %d",
-              ex_name_of_object(obj_type), obj_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to get number of attributes in %s %" PRId64 " in file id %d",
+               ex_name_of_object(obj_type), obj_id, exoid);
       ex_err("ex_get_attr_param", errmsg, exerrval);
       return (EX_FATAL);
     }

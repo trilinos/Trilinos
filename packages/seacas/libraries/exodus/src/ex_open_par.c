@@ -56,7 +56,7 @@
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include <mpi.h>          // for MPI_Comm, MPI_Info, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf, fprintf, stderr
+#include <stdio.h>
 
 /*!
 
@@ -126,9 +126,8 @@ exoid = ex_open ("test.exo",     \co{filename path}
 
 static int warning_output = 0;
 
-int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
-                    float *version, MPI_Comm comm, MPI_Info info,
-                    int run_version)
+int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
+                    MPI_Comm comm, MPI_Info info, int run_version)
 {
   int     exoid;
   int     status, stat_att, stat_dim;
@@ -158,14 +157,13 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
                     "version %d.%02d,\n          but was linked with exodus "
                     "library version %d.%02d\n          This is probably an "
                     "error in the build process of this code.\n",
-            run_version_major, run_version_minor, lib_version_major,
-            lib_version_minor);
+            run_version_major, run_version_minor, lib_version_major, lib_version_minor);
     warning_output = 1;
   }
 
   if ((mode & EX_READ) && (mode & EX_WRITE)) {
     exerrval = EX_BADFILEMODE;
-    sprintf(errmsg, "ERROR: Cannot specify both EX_READ and EX_WRITE");
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Cannot specify both EX_READ and EX_WRITE");
     ex_err("ex_open_par", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -187,8 +185,8 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
 
   /* The EX_READ mode is the default if EX_WRITE is not specified... */
   if (!(mode & EX_WRITE)) { /* READ ONLY */
-    if ((status = nc_open_par(path, NC_NOWRITE | NC_SHARE | pariomode, comm,
-                              info, &exoid)) != NC_NOERR) {
+    if ((status = nc_open_par(path, NC_NOWRITE | NC_SHARE | pariomode, comm, info, &exoid)) !=
+        NC_NOERR) {
       /* It is possible that the user is trying to open a netcdf4
          file, but the netcdf4 capabilities aren't available in the
          netcdf linked to this library. Note that we can't just use a
@@ -234,23 +232,23 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
       }
       exerrval = status;
 
-      sprintf(errmsg, "ERROR: failed to open %s read only", path);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to open %s read only", path);
       ex_err("ex_open_par", errmsg, exerrval);
       return (EX_FATAL);
     }
   }
   else /* (mode & EX_WRITE) READ/WRITE */
   {
-    if ((status = nc_open_par(path, NC_WRITE | NC_SHARE | pariomode, comm, info,
-                              &exoid)) != NC_NOERR) {
+    if ((status = nc_open_par(path, NC_WRITE | NC_SHARE | pariomode, comm, info, &exoid)) !=
+        NC_NOERR) {
       exerrval = status;
 #if defined(NC_HAVE_META_H)
 #if (NC_HAS_PARALLEL == 0) && (NC_HAS_PNETCDF == 0)
-      sprintf(errmsg, "ERROR: The underyling netcdf library was not compiled "
-                      "with parallel support!\n");
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: The underyling netcdf library was not compiled "
+                                       "with parallel support!\n");
 #endif
 #endif
-      sprintf(errmsg, "ERROR: failed to open %s write only", path);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to open %s write only", path);
       ex_err("ex_open_par", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -258,28 +256,25 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
     /* turn off automatic filling of netCDF variables */
     if ((status = nc_set_fill(exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to set nofill mode in file id %d", exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to set nofill mode in file id %d", exoid);
       ex_err("ex_open_par", errmsg, exerrval);
       return (EX_FATAL);
     }
 
-    stat_att =
-        nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
+    stat_att = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
     stat_dim = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
     if (stat_att != NC_NOERR || stat_dim != NC_NOERR) {
       nc_redef(exoid);
       if (stat_att != NC_NOERR) {
         int max_so_far = 32;
-        nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1,
-                       &max_so_far);
+        nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far);
       }
 
       /* If the DIM_STR_NAME variable does not exist on the database, we need to
        * add it now. */
       if (stat_dim != NC_NOERR) {
         /* Not found; set to default value of 32+1. */
-        int max_name =
-            ex_default_max_name_length < 32 ? 32 : ex_default_max_name_length;
+        int max_name = ex_default_max_name_length < 32 ? 32 : ex_default_max_name_length;
         nc_def_dim(exoid, DIM_STR_NAME, max_name + 1, &dim_str_name);
       }
       nc_enddef(exoid);
@@ -290,11 +285,10 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
    * floating point and integer values stored in the file
    */
 
-  if ((status = nc_get_att_float(exoid, NC_GLOBAL, ATT_VERSION, version)) !=
-      NC_NOERR) {
+  if ((status = nc_get_att_float(exoid, NC_GLOBAL, ATT_VERSION, version)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get database version for file id: %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get database version for file id: %d",
+             exoid);
     ex_err("ex_open_par", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -302,19 +296,18 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
   /* check ExodusII file version - old version 1.x files are not supported */
   if (*version < 2.0) {
     exerrval = EX_FATAL;
-    sprintf(errmsg, "ERROR: Unsupported file version %.2f in file id: %d",
-            *version, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Unsupported file version %.2f in file id: %d",
+             *version, exoid);
     ex_err("ex_open_par", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if (nc_get_att_int(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, &file_wordsize) !=
       NC_NOERR) { /* try old (prior to db version 2.02) attribute name */
-    if (nc_get_att_int(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE_BLANK,
-                       &file_wordsize) != NC_NOERR) {
+    if (nc_get_att_int(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE_BLANK, &file_wordsize) != NC_NOERR) {
       exerrval = EX_FATAL;
-      sprintf(errmsg, "ERROR: failed to get file wordsize from file id: %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get file wordsize from file id: %d",
+               exoid);
       ex_err("ex_open_par", errmsg, exerrval);
       return (exerrval);
     }
@@ -325,10 +318,8 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
    * Older files don't have the attribute, so it is not an error if it is
    * missing
    */
-  if (nc_get_att_int(exoid, NC_GLOBAL, ATT_INT64_STATUS, &int64_status) !=
-      NC_NOERR) {
-    int64_status =
-        0; /* Just in case it gets munged by a failed get_att_int call */
+  if (nc_get_att_int(exoid, NC_GLOBAL, ATT_INT64_STATUS, &int64_status) != NC_NOERR) {
+    int64_status = 0; /* Just in case it gets munged by a failed get_att_int call */
   }
 
   /* Merge in API int64 status flags as specified by caller of function... */
@@ -345,23 +336,22 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
   if (ex_find_file_item(exoid) != NULL) {
     char errmsg[MAX_ERR_LENGTH];
     exerrval = EX_BADFILEID;
-    sprintf(errmsg, "ERROR: There is an existing file already using the file "
-                    "id %d which was also assigned to file %s.\n\tWas "
-                    "nc_close() called instead of ex_close() on an open Exodus "
-                    "file?\n",
-            exoid, path);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: There is an existing file already using the file "
+                                     "id %d which was also assigned to file %s.\n\tWas "
+                                     "nc_close() called instead of ex_close() on an open Exodus "
+                                     "file?\n",
+             exoid, path);
     ex_err("ex_open_par", errmsg, exerrval);
     nc_close(exoid);
     return (EX_FATAL);
   }
 
   /* initialize floating point and integer size conversion. */
-  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1,
-                  is_mpiio, is_pnetcdf) != EX_NOERR) {
+  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1, is_mpiio, is_pnetcdf) !=
+      EX_NOERR) {
     exerrval = EX_FATAL;
-    sprintf(errmsg,
-            "ERROR: failed to initialize conversion routines in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to initialize conversion routines in file id %d", exoid);
     ex_err("ex_open_par", errmsg, exerrval);
     return (EX_FATAL);
   }

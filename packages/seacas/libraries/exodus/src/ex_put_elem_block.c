@@ -131,12 +131,11 @@ error = ex_put_attr (exoid, EX_ELEM_BLOCK, id, attrib);
 
  */
 
-int ex_put_elem_block(int exoid, ex_entity_id elem_blk_id,
-                      const char *elem_type, int64_t num_elem_this_blk,
-                      int64_t num_nodes_per_elem, int64_t num_attr_per_elem)
+int ex_put_elem_block(int exoid, ex_entity_id elem_blk_id, const char *elem_type,
+                      int64_t num_elem_this_blk, int64_t num_nodes_per_elem,
+                      int64_t num_attr_per_elem)
 {
-  return ex_put_block(exoid, EX_ELEM_BLOCK, elem_blk_id, elem_type,
-                      num_elem_this_blk, num_nodes_per_elem,
-                      0 /*num_edge_per_elem*/, 0 /*num_face_per_elem*/,
+  return ex_put_block(exoid, EX_ELEM_BLOCK, elem_blk_id, elem_type, num_elem_this_blk,
+                      num_nodes_per_elem, 0 /*num_edge_per_elem*/, 0 /*num_face_per_elem*/,
                       num_attr_per_elem);
 }

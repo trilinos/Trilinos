@@ -59,8 +59,8 @@
 #include "exodusII_int.h" // for EX_WARN, ex_comp_ws, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*
  * writes the values of a single nodal variable for a single time step to
@@ -68,9 +68,8 @@
  * is 1
  */
 
-int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index,
-                          int64_t start_pos, int64_t num_vals,
-                          void *nodal_var_vals)
+int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index, int64_t start_pos,
+                          int64_t num_vals, void *nodal_var_vals)
 
 {
   int    status;
@@ -87,8 +86,8 @@ int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index,
     /* write values of the nodal variable */
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "Warning: could not find nodal variable %d in file id %d",
-              nodal_var_index, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
+               nodal_var_index, exoid);
       ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
       return (EX_WARN);
     }
@@ -105,11 +104,10 @@ int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index,
 
     /* nodal variables stored separately, find variable for this variable
        index */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index),
-                               &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "Warning: could not find nodal variable %d in file id %d",
-              nodal_var_index, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
+               nodal_var_index, exoid);
       ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
       return (EX_WARN);
     }
@@ -130,8 +128,7 @@ int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to store nodal variables in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store nodal variables in file id %d", exoid);
     ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
     return (EX_FATAL);
   }

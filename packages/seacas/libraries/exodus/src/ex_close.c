@@ -50,7 +50,7 @@
 #include "exodusII.h"     // for ex_err, exerrval, etc
 #include "exodusII_int.h" // for ex_get_counter_list, etc
 #include "netcdf.h"       // for NC_NOERR, nc_close, etc
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 extern char *ret_string; /* cf ex_utils.c */
 
@@ -93,7 +93,7 @@ int ex_close(int exoid)
    */
   if ((status = nc_inq_grp_parent(exoid, &parent_id)) != NC_ENOGRP) {
     exerrval = EX_NOTROOTID;
-    sprintf(errmsg, "ERROR: file id %d does not refer to root group.", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file id %d does not refer to root group.", exoid);
     ex_err("ex_close", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -101,7 +101,7 @@ int ex_close(int exoid)
 
   if ((status = nc_sync(exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to update file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to update file id %d", exoid);
     ex_err("ex_close", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -136,7 +136,7 @@ int ex_close(int exoid)
   }
   else {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to close file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to close file id %d", exoid);
     ex_err("ex_close", errmsg, status);
     return (EX_FATAL);
   }

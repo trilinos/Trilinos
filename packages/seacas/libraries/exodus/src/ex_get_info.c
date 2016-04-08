@@ -37,7 +37,7 @@
 #include "exodusII_int.h" // for EX_FATAL, ex_trim_internal, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_vara_text, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
 
@@ -89,17 +89,16 @@ int ex_get_info(int exoid, char **info)
   /* inquire previously defined dimensions and variables  */
   if ((status = nc_inq_dimid(rootid, DIM_NUM_INFO, &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "Warning: failed to locate number of info records in file id %d",
-            rootid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Warning: failed to locate number of info records in file id %d", rootid);
     ex_err("ex_get_info", errmsg, exerrval);
     return (EX_WARN);
   }
 
   if ((status = nc_inq_dimlen(rootid, dimid, &num_info)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get number of info records in file id %d",
-            rootid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of info records in file id %d",
+             rootid);
     ex_err("ex_get_info", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -108,8 +107,8 @@ int ex_get_info(int exoid, char **info)
   if (num_info > 0) {
     if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to locate info record data in file id %d",
-              rootid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate info record data in file id %d",
+               rootid);
       ex_err("ex_get_info", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -121,11 +120,10 @@ int ex_get_info(int exoid, char **info)
       start[1] = 0;
       count[1] = MAX_LINE_LENGTH + 1;
 
-      if ((status = nc_get_vara_text(rootid, varid, start, count, info[i])) !=
-          NC_NOERR) {
+      if ((status = nc_get_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg, "ERROR: failed to get info record data in file id %d",
-                rootid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get info record data in file id %d",
+                 rootid);
         ex_err("ex_get_info", errmsg, exerrval);
         return (EX_FATAL);
       }

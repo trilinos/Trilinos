@@ -71,10 +71,9 @@
  * sset_id, num_faces_this_sset, sset_var_vals)
  */
 
-int ex_put_sset_var(int exoid, int time_step, int sset_var_index,
-                    ex_entity_id sset_id, int64_t num_faces_this_sset,
-                    const void *sset_var_vals)
+int ex_put_sset_var(int exoid, int time_step, int sset_var_index, ex_entity_id sset_id,
+                    int64_t num_faces_this_sset, const void *sset_var_vals)
 {
-  return ex_put_var(exoid, time_step, EX_SIDE_SET, sset_var_index, sset_id,
-                    num_faces_this_sset, sset_var_vals);
+  return ex_put_var(exoid, time_step, EX_SIDE_SET, sset_var_index, sset_id, num_faces_this_sset,
+                    sset_var_vals);
 }
