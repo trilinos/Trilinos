@@ -134,7 +134,7 @@ int ex_get_side_set_node_count(int exoid,
   if (ndim < 0) {
     sprintf(errmsg,
 	    "ERROR: failed to get dimensionality in file id %d",exoid);
-    ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
+    ex_err("ex_get_side_set_node_count",errmsg,exerrval);
     return(EX_FATAL);
   }
 

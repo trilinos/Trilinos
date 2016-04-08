@@ -211,7 +211,7 @@ int ex_put_partial_var (int   exoid,
       sprintf(errmsg,
 	      "Warning: no global variables specified for file id %d",
 	      exoid);
-      ex_err("ex_put_glob_vars",errmsg,exerrval);
+      ex_err("ex_put_partial_var",errmsg,exerrval);
 
       return (EX_WARN);
     }
@@ -223,13 +223,13 @@ int ex_put_partial_var (int   exoid,
         sprintf(errmsg,
 		"ERROR: no global variables defined in file id %d",
 		exoid);
-        ex_err("ex_put_glob_vars",errmsg,exerrval);
+        ex_err("ex_put_partial_var",errmsg,exerrval);
       } else {
         exerrval = status;
         sprintf(errmsg,
 		"ERROR: failed to get global variables parameters in file id %d",
 		exoid);
-        ex_err("ex_put_glob_vars",errmsg,exerrval);
+        ex_err("ex_put_partial_var",errmsg,exerrval);
       }
       return (EX_FATAL);
     } 

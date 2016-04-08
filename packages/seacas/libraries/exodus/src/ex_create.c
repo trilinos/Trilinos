@@ -123,22 +123,17 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 \endcode
 
 */
-#include <stdlib.h>
-#include <mpi.h>
-
-#include "netcdf_par.h"
 #include "exodusII.h"
 #include "exodusII_int.h"
+#include <stdlib.h>
 
 static int warning_output = 0;
 
-int ex_create_par_int (const char *path,
-		       int   cmode,
-		       int  *comp_ws,
-		       int  *io_ws,
-		       MPI_Comm comm,
-		       MPI_Info info,
-		       int   run_version)
+int ex_create_int (const char *path,
+		   int   cmode,
+		   int  *comp_ws,
+		   int  *io_ws,
+		   int   run_version)
 {
   int exoid;
   int status;
@@ -150,13 +145,12 @@ int ex_create_par_int (const char *path,
   char errmsg[MAX_ERR_LENGTH];
   char *mode_name;
   int nc_mode = 0;
-   
+#if NC_HAS_HDF5
+  static int netcdf4_mode = -1;
+  char *option;
+#endif /* NC_NETCDF4 */
+  const char *routine = "ex_create";
   int int64_status;
-  const char *routine = "ex_create_par";
-  int pariomode = 0;
-  int is_mpiio = 0;
-  int is_pnetcdf = 0;
-
   unsigned int my_mode = cmode;
 
   /* Contains a 1 in all bits corresponding to file modes */
@@ -167,15 +161,6 @@ int ex_create_par_int (const char *path,
     EX_NETCDF4;
 
   exerrval = 0; /* clear error code */
-
-#if !NC_HAS_PARALLEL
-    /* Library does NOT support parallel output via netcdf-4 or pnetcdf */
-    exerrval = EX_BADPARAM;
-    sprintf(errmsg,
-	    "EXODUS: ERROR: Parallel output requires the netcdf-4 and/or pnetcdf library format, but this netcdf library does not support either.\n");
-    ex_err(routine,errmsg,exerrval);
-    return (EX_FATAL);
-#endif
 
   if (run_version != EX_API_VERS_NODOT && warning_output == 0) {
     int run_version_major = run_version / 100;
@@ -240,7 +225,7 @@ int ex_create_par_int (const char *path,
    * As of netcdf-4.4.0, can also use NC_64BIT_DATA (CDF5) mode for this...
    */
   int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
-
+  
   if ((int64_status & EX_ALL_INT64_DB) != 0) {
 #if NC_HAS_HDF5 || defined(NC_64BIT_DATA)
     /* Library DOES support netcdf4 and/or cdf5 ... See if user
@@ -278,65 +263,34 @@ int ex_create_par_int (const char *path,
 #endif
   }
 
-  /* Check parallel io mode.  Valid is NC_MPIPOSIX or NC_MPIIO or NC_PNETCDF
-   * Exodus uses different flag values; map to netcdf values
-   */
-  {
-    int tmp_mode = 0;
-    if (my_mode & EX_MPIPOSIX) {
-      pariomode = NC_MPIPOSIX;
-      tmp_mode = EX_NETCDF4;
-#if !NC_HAS_HDF5
-      exerrval = EX_BADPARAM;
-      sprintf(errmsg,
-	      "EXODUS: ERROR: EX_MPIPOSIX parallel output requested which requires NetCDF-4 support, but the library does not have that option enabled.\n");
-      ex_err(routine,errmsg,exerrval);
-      return (EX_FATAL);
-#endif
-    }
-    else if (my_mode & EX_MPIIO) {
-      pariomode = NC_MPIIO;
-      is_mpiio = 1;
-      tmp_mode = EX_NETCDF4;
-#if !NC_HAS_HDF5
-      exerrval = EX_BADPARAM;
-      sprintf(errmsg,
-	      "EXODUS: ERROR: EX_MPIIO parallel output requested which requires NetCDF-4 support, but the library does not have that option enabled.\n");
-      ex_err(routine,errmsg,exerrval);
-      return (EX_FATAL);
-#endif
-    }
-    else if (my_mode & EX_PNETCDF) {
-      pariomode = NC_PNETCDF;
-      is_pnetcdf = 1;
-      /* See if client specified 64-bit or not... */
-      if ((int64_status & EX_ALL_INT64_DB) != 0) {
-	tmp_mode = EX_64BIT_DATA;
-      } else {
-	tmp_mode = EX_64BIT_OFFSET;
-      }
-#if !NC_HAS_PNETCDF
-      exerrval = EX_BADPARAM;
-      sprintf(errmsg,
-	      "EXODUS: ERROR: EX_PNETCDF parallel output requested which requires PNetCDF support, but the library does not have that option enabled.\n");
-      ex_err(routine,errmsg,exerrval);
-      return (EX_FATAL);
-#endif
-    }
-
-    /* If tmp_mode was set here, then need to clear any other mode that
-       was potentially already set in my_mode... */
-    my_mode &= ~all_modes;
-    my_mode |= tmp_mode;
-  }
-
+#if NC_HAS_HDF5
   if (my_mode & EX_NETCDF4) {
-    nc_mode |= NC_NETCDF4;
+    nc_mode |= (NC_NETCDF4);
+  } else {
+    if (netcdf4_mode == -1) {
+      option = getenv("EXODUS_NETCDF4");
+      if (option != NULL) {
+	fprintf(stderr, "EXODUS: Using netcdf version 4 selected via EXODUS_NETCDF4 environment variable\n");
+	netcdf4_mode = NC_NETCDF4; 
+      } else {
+	netcdf4_mode = 0;
+      }
+    }
+    nc_mode |= netcdf4_mode;
   }
-
   if (! (my_mode & EX_NOCLASSIC)) {
     nc_mode |= NC_CLASSIC_MODEL;
   }
+#endif
+
+#if defined(NC_64BIT_DATA)
+  if (my_mode & EX_64BIT_DATA) {
+    nc_mode |= (NC_64BIT_DATA);
+  }
+  if (! (my_mode & EX_NOCLASSIC)) {
+    nc_mode |= NC_CLASSIC_MODEL;
+  }
+#endif
 
   /*
    * See if "large file" mode was specified in a ex_create my_mode. If
@@ -393,7 +347,13 @@ int ex_create_par_int (const char *path,
   nc_mode |= NC_IGNORE_MAX_VARS;
 #endif
 
-  if ((status = nc_create_par (path, nc_mode|pariomode, comm, info, &exoid)) != NC_NOERR) {
+#if NC_HAS_DISKLESS
+  if (my_mode & EX_DISKLESS) {
+    nc_mode |= NC_DISKLESS;
+  }
+#endif
+
+  if ((status = nc_create (path, nc_mode, &exoid)) != NC_NOERR) {
     exerrval = status;
 #if NC_HAS_HDF5
     sprintf(errmsg,
@@ -445,7 +405,7 @@ int ex_create_par_int (const char *path,
   /* initialize floating point size conversion.  since creating new file, 
    * i/o wordsize attribute from file is zero.
    */
-  if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status, 1, is_mpiio, is_pnetcdf) != EX_NOERR) {
+  if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status, 0, 0, 0) != EX_NOERR) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "ERROR: failed to init conversion routines in file id %d",
@@ -550,7 +510,7 @@ int ex_create_par_int (const char *path,
       exerrval = status;
       sprintf(errmsg,
 	      "ERROR: failed to add int64_status attribute in file id %d",exoid);
-      ex_err("ex_put_init_ext",errmsg,exerrval);
+      ex_err(routine,errmsg,exerrval);
       return (EX_FATAL);
     }
   }

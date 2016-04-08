@@ -73,7 +73,7 @@ static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimensi
       exerrval = status;
       sprintf(errmsg, "ERROR: failed to get number of %s in file id %d",
 	      name, exoid);
-      ex_err("ex_get_init",errmsg,exerrval);
+      ex_err("ex_get_init_ext",errmsg,exerrval);
       return (EX_FATAL);
     }
     *value = tmp;

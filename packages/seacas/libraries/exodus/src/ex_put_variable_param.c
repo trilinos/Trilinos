@@ -56,13 +56,13 @@ int ex_prepare_result_var(int exoid, int num_vars,
       exerrval = status;
       sprintf(errmsg,
 	      "ERROR: %s variable name parameters are already defined in file id %d", type_name, exoid);
-      ex_err("ex_put_var_param",errmsg,exerrval);
+      ex_err("ex_put_variable_param",errmsg,exerrval);
     } else {
       exerrval = status;
       sprintf(errmsg,
 	      "ERROR: failed to define number of %s variables in file id %d",
 	      type_name, exoid);
-      ex_err("ex_put_var_param",errmsg,exerrval);
+      ex_err("ex_put_variable_param",errmsg,exerrval);
     }
     return 1;     /* exit define mode and return */
   }
@@ -218,7 +218,7 @@ int ex_put_variable_param (int exoid,
     exerrval = status;
     sprintf(errmsg,
 	    "ERROR: failed to put file id %d into define mode", exoid);
-    ex_err("ex_get_var_param",errmsg,exerrval);
+    ex_err("ex_put_variable_param",errmsg,exerrval);
     return (EX_FATAL);
   }
 

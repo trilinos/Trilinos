@@ -181,7 +181,7 @@ int ex_put_truth_table (int  exoid,
     sprintf(errmsg,
 	    "ERROR: Invalid variable type %d specified in file id %d",
 	    obj_type, exoid);
-    ex_err("ex_get_varid",errmsg,exerrval);
+    ex_err(routine,errmsg,exerrval);
     return (EX_WARN);
   }
        
@@ -190,7 +190,7 @@ int ex_put_truth_table (int  exoid,
     sprintf(errmsg,
 	    "ERROR: # of %s doesn't match those defined in file id %d",
 	    ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_var_tab",errmsg,exerrval);
+    ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
   }
 
@@ -199,7 +199,7 @@ int ex_put_truth_table (int  exoid,
     sprintf(errmsg,
 	    "ERROR: # of %s variables doesn't match those defined in file id %d",
 	    ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_var_tab",errmsg,exerrval);
+    ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
   }
 
@@ -226,7 +226,7 @@ int ex_put_truth_table (int  exoid,
       sprintf(errmsg,
 	      "ERROR: failed to get %s status array from file id %d",
               ex_name_of_object(obj_type), exoid);
-      ex_err("put_var_tab",errmsg,exerrval);
+      ex_err(routine,errmsg,exerrval);
       return (EX_FATAL);
     }
   } else {

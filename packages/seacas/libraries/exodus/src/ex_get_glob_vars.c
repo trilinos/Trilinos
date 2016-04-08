@@ -130,7 +130,7 @@ int ex_get_glob_vars (int   exoid,
       sprintf(errmsg,
               "ERROR: time_step is out-of-range. Value = %d, valid range is 1 to %d in file id %d",
               time_step, num_time_steps, exoid);
-      ex_err("ex_get_nodal_var",errmsg,EX_BADPARAM);
+      ex_err("ex_get_glob_vars",errmsg,EX_BADPARAM);
       return (EX_FATAL);
     }
   }

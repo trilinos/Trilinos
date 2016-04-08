@@ -102,7 +102,7 @@ int ex_get_concat_sets (int   exoid,
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "ERROR: invalid set type (%d)", set_type);
-    ex_err("ex_put_set_param",errmsg,exerrval);
+    ex_err("ex_get_concat_sets",errmsg,exerrval);
     return (EX_FATAL);
   }
 

@@ -154,7 +154,7 @@ int ex_get_nodal_var_time (int   exoid,
       sprintf(errmsg,
               "Warning: could not find nodal variable %d in file id %d",
               nodal_var_index, exoid);
-      ex_err("ex_get_nodal_var",errmsg,exerrval);
+      ex_err("ex_get_nodal_var_time",errmsg,exerrval);
       return (EX_WARN);
     }
 
@@ -171,7 +171,7 @@ int ex_get_nodal_var_time (int   exoid,
       sprintf(errmsg,
               "Warning: could not find nodal variable %d in file id %d",
               nodal_var_index, exoid);
-      ex_err("ex_get_nodal_var",errmsg,exerrval);
+      ex_err("ex_get_nodal_var_time",errmsg,exerrval);
       return (EX_WARN);
     }
 

@@ -170,7 +170,7 @@ int ex_put_map_param (int   exoid,
 	sprintf(errmsg,
 		"ERROR: couldn't determine number of nodes in file id %d",
 		exoid);
-	ex_err("ex_put_node_map",errmsg,exerrval);
+	ex_err("ex_put_map_param",errmsg,exerrval);
 	goto error_ret;         /* exit define mode and return */
       }
 	  
@@ -184,13 +184,13 @@ int ex_put_map_param (int   exoid,
 	    sprintf(errmsg,
 		    "ERROR: node map %d already defined in file id %d",
 		    i,exoid);
-	    ex_err("ex_put_node_map",errmsg,exerrval);
+	    ex_err("ex_put_map_param",errmsg,exerrval);
 	  } else {
 	    exerrval = status;
 	    sprintf(errmsg,
 		    "ERROR: failed to create node map %d in file id %d",
 		    i,exoid);
-	    ex_err("ex_put_node_map",errmsg,exerrval);
+	    ex_err("ex_put_map_param",errmsg,exerrval);
 	  }
 	  goto error_ret;          /* exit define mode and return */
 	}
@@ -251,7 +251,7 @@ int ex_put_map_param (int   exoid,
 	  sprintf(errmsg,
 		  "ERROR: couldn't determine number of elements in file id %d",
 		  exoid);
-	  ex_err("ex_put_elem_map",errmsg,exerrval);
+	  ex_err("ex_put_map_param",errmsg,exerrval);
 	  goto error_ret;         /* exit define mode and return */
 	}
 	
@@ -264,14 +264,14 @@ int ex_put_map_param (int   exoid,
 	    sprintf(errmsg,
 		    "ERROR: element map %d already defined in file id %d",
 		    i,exoid);
-	    ex_err("ex_put_elem_map",errmsg,exerrval);
+	    ex_err("ex_put_map_param",errmsg,exerrval);
 	  }
 	  else {
 	    exerrval = status;
 	    sprintf(errmsg,
 		    "ERROR: failed to create element map %d in file id %d",
 		    i,exoid);
-	    ex_err("ex_put_elem_map",errmsg,exerrval);
+	    ex_err("ex_put_map_param",errmsg,exerrval);
 	  }
 	  goto error_ret;          /* exit define mode and return */
 	}

@@ -92,7 +92,7 @@ int ex_put_partial_set_dist_fact (int   exoid,
     sprintf(errmsg,
             "ERROR: no %ss specified in file id %d",
 	    ex_name_of_object(set_type), exoid);
-    ex_err("ex_put_set_dist_fact",errmsg,exerrval);
+    ex_err("ex_put_partial_set_dist_fact",errmsg,exerrval);
     return (EX_FATAL);
   }
 
@@ -103,13 +103,13 @@ int ex_put_partial_set_dist_fact (int   exoid,
       sprintf(errmsg,
               "Warning: no data allowed for NULL %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_put_set_fact",errmsg,EX_NULLENTITY);
+      ex_err("ex_put_partial_set_dist_fact",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } 
       sprintf(errmsg,
 	      "ERROR: failed to locate %s id %"PRId64" in VAR_*S_IDS array in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_put_set_dist_fact",errmsg,exerrval);
+      ex_err("ex_put_partial_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
     
   }
@@ -143,14 +143,14 @@ int ex_put_partial_set_dist_fact (int   exoid,
       sprintf(errmsg,
 	      "Warning: no dist factors defined for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_put_set_dist_fact",errmsg,exerrval);
+      ex_err("ex_put_partial_set_dist_fact",errmsg,exerrval);
       return (EX_WARN);
     }  
       exerrval = status;
       sprintf(errmsg,
 	      "ERROR: failed to locate dist factors list for %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_put_set_dist_fact",errmsg,exerrval);
+      ex_err("ex_put_partial_set_dist_fact",errmsg,exerrval);
       return (EX_FATAL);
     
   }

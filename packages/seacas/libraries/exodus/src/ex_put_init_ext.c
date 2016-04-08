@@ -312,7 +312,7 @@ int ex_put_init_ext (int   exoid,
     exerrval = status;
     sprintf(errmsg,
 	    "ERROR: failed to define time dimension in file id %d", exoid);
-    ex_err("ex_create",errmsg,exerrval);
+    ex_err("ex_put_init_ext",errmsg,exerrval);
     return (EX_FATAL);
   }
 
@@ -322,7 +322,7 @@ int ex_put_init_ext (int   exoid,
     sprintf(errmsg,
 	    "ERROR: failed to define whole time step variable in file id %d",
 	    exoid);
-    ex_err("ex_create",errmsg,exerrval);
+    ex_err("ex_put_init_ext",errmsg,exerrval);
     return (EX_FATAL);
   }
   ex_compress_variable(exoid, temp, 2);

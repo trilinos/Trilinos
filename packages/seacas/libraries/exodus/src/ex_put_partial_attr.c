@@ -91,13 +91,13 @@ int ex_put_partial_attr (int   exoid,
         sprintf(errmsg,
 		"Warning: no attributes allowed for NULL %s %"PRId64" in file id %d",
                 ex_name_of_object(blk_type),blk_id,exoid);
-        ex_err("ex_put_attr",errmsg,EX_NULLENTITY);
+        ex_err("ex_put_partial_attr",errmsg,EX_NULLENTITY);
         return (EX_WARN);              /* no attributes for this block */
       } 
         sprintf(errmsg,
 		"ERROR: no %s id %"PRId64" in in file id %d",
                 ex_name_of_object(blk_type), blk_id, exoid);
-        ex_err("ex_put_attr",errmsg,exerrval);
+        ex_err("ex_put_partial_attr",errmsg,exerrval);
         return (EX_FATAL);
       
     }

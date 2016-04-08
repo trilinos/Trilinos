@@ -251,7 +251,7 @@ int ex_get_partial_coord (int exoid,
 	    exerrval = status;
 	    sprintf(errmsg,
 		    "ERROR: failed to get %s coord array in file id %d", which, exoid);
-	    ex_err("ex_get_coord",errmsg,exerrval);
+	    ex_err("ex_get_partial_coord",errmsg,exerrval);
 	    return (EX_FATAL);
 	  }
         }

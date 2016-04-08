@@ -107,7 +107,7 @@ int ex_get_num_map ( int   exoid,
      sprintf(errmsg,
             "Warning: no %ss defined in file id %d",
              ex_name_of_object(map_type),exoid);
-     ex_err("ex_get_map",errmsg,exerrval);
+     ex_err("ex_get_num_map",errmsg,exerrval);
      return (EX_WARN);
    }
 
@@ -117,7 +117,7 @@ int ex_get_num_map ( int   exoid,
       sprintf(errmsg,
               "ERROR: failed to locate %s id %"PRId64" in id variable in file id %d",
                ex_name_of_object(map_type),map_id,exoid);
-      ex_err("ex_get_map",errmsg,exerrval);
+      ex_err("ex_get_num_map",errmsg,exerrval);
       return (EX_FATAL);
    }
 
@@ -127,7 +127,7 @@ int ex_get_num_map ( int   exoid,
      sprintf(errmsg,
             "ERROR: failed to locate %s %"PRId64" in file id %d",
              ex_name_of_object(map_type),map_id,exoid);
-     ex_err("ex_get_map",errmsg,exerrval);
+     ex_err("ex_get_num_map",errmsg,exerrval);
      return (EX_FATAL);
    }
 
@@ -143,7 +143,7 @@ int ex_get_num_map ( int   exoid,
      sprintf(errmsg,
             "ERROR: failed to get %s in file id %d",
              ex_name_of_object(map_type),exoid);
-     ex_err("ex_get_map",errmsg,exerrval);
+     ex_err("ex_get_num_map",errmsg,exerrval);
      return (EX_FATAL);
    }
 

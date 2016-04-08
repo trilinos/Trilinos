@@ -62,12 +62,12 @@
       sprintf(errmsg,							\
 	      "ERROR: no " TNAME " variables defined in file id %d",	\
 	      exoid);							\
-      ex_err("ex_put_var_names",errmsg,exerrval);			\
+      ex_err("ex_put_variable_names",errmsg,exerrval);			\
     } else  {								\
       sprintf(errmsg,							\
 	      "ERROR: failed to locate number of " TNAME " variables in file id %d", \
 	      exoid);							\
-      ex_err("ex_put_var_names",errmsg,exerrval);			\
+      ex_err("ex_put_variable_names",errmsg,exerrval);			\
     }									\
     return(EX_FATAL);							\
   }									\
@@ -79,12 +79,12 @@
 	sprintf(errmsg,							\
 		"ERROR: no " TNAME " variable names defined in file id %d", \
 		exoid);							\
-	ex_err("ex_put_var_names",errmsg,exerrval);			\
+	ex_err("ex_put_variable_names",errmsg,exerrval);			\
       }	 else {								\
       sprintf(errmsg,							\
 	      "ERROR: " TNAME " name variable names not found in file id %d", \
 	      exoid);							\
-      ex_err("ex_put_var_names",errmsg,exerrval);			\
+      ex_err("ex_put_variable_names",errmsg,exerrval);			\
     }									\
     return(EX_FATAL);							\
   }
@@ -191,13 +191,13 @@ int ex_put_variable_names (int   exoid,
     sprintf(errmsg,
             "ERROR: Invalid variable type %d specified in file id %d",
 	    obj_type, exoid);
-    ex_err("ex_put_var_names",errmsg,exerrval);
+    ex_err("ex_put_variable_names",errmsg,exerrval);
     return(EX_FATAL);
   }
 
   /* write EXODUS variable names */
   status = ex_put_names_internal(exoid, varid, num_vars, var_names, obj_type,
-				 "variable", "ex_put_var_names");
+				 "variable", "ex_put_variable_names");
   
   return(status);
 }
