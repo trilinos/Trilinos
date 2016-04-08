@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,18 +30,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_CodeTypes.h> // for IntVector
 #include <Ioss_ElementTopology.h>
-#include <Ioss_Super.h> // for Super
-#include <Ioss_Utils.h>
+#include <Ioss_Super.h>                 // for Super
+#include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR, etc
+#include <Ioss_CodeTypes.h>             // for IntVector
 
-#include <cassert> // for assert
-#include <cstddef> // for size_t
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for size_t
 
-#include <ostream> // for operator<<, basic_ostream, etc
-#include <string>  // for string, char_traits, etc
-#include <utility> // for pair
-#include <vector>  // for vector
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <string>                       // for string, char_traits, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+
 
 void Ioss::ETRegistry::insert(const Ioss::ETM_VP &value, bool delete_me)
 {
@@ -60,8 +61,8 @@ Ioss::ETRegistry::~ETRegistry()
 
 // ========================================================================
 Ioss::ElementTopology::ElementTopology(std::string type, std::string master_elem_name,
-                                       bool delete_me)
-    : name_(std::move(type)), masterElementName_(std::move(master_elem_name))
+				       bool delete_me)
+  : name_(std::move(type)), masterElementName_(std::move(master_elem_name))
 {
   registry().insert(Ioss::ETM_VP(name_, this), delete_me);
   std::string lname = Ioss::Utils::lowercase(name_);
@@ -71,7 +72,7 @@ Ioss::ElementTopology::ElementTopology(std::string type, std::string master_elem
   alias(name_, masterElementName_);
 }
 
-void Ioss::ElementTopology::alias(const std::string &base, const std::string &syn)
+void Ioss::ElementTopology::alias(const std::string& base, const std::string& syn)
 {
   registry().insert(Ioss::ETM_VP(syn, factory(base)), false);
   std::string lsyn = Ioss::Utils::lowercase(syn);
@@ -80,23 +81,24 @@ void Ioss::ElementTopology::alias(const std::string &base, const std::string &sy
   }
 }
 
-Ioss::ETRegistry &Ioss::ElementTopology::registry()
+Ioss::ETRegistry& Ioss::ElementTopology::registry()
 {
   static ETRegistry registry_;
   return registry_;
 }
 
-Ioss::ElementTopology::~ElementTopology() = default;
+Ioss::ElementTopology::~ElementTopology()
+= default;
 
-bool Ioss::ElementTopology::edges_similar() const { return true; }
-bool Ioss::ElementTopology::faces_similar() const { return true; }
+bool Ioss::ElementTopology::edges_similar() const {return true;}
+bool Ioss::ElementTopology::faces_similar() const {return true;}
 
-Ioss::ElementTopology *Ioss::ElementTopology::factory(const std::string &type, bool ok_to_fail)
+Ioss::ElementTopology* Ioss::ElementTopology::factory(const std::string& type, bool ok_to_fail)
 {
   std::string ltype = Ioss::Utils::lowercase(type);
-
-  Ioss::ElementTopology *inst = nullptr;
-  auto                   iter = registry().find(ltype);
+  
+  Ioss::ElementTopology* inst = nullptr;
+  auto iter = registry().find(ltype);
 
   if (iter == registry().end()) {
     std::string base1 = "super";
@@ -116,7 +118,7 @@ Ioss::ElementTopology *Ioss::ElementTopology::factory(const std::string &type, b
       size_t dash = ltype.find('-');
       if (dash != std::string::npos) {
         std::string sub_type = ltype.substr(0, dash);
-        iter                 = registry().find(sub_type);
+        iter = registry().find(sub_type);
       }
     }
   }
@@ -127,42 +129,41 @@ Ioss::ElementTopology *Ioss::ElementTopology::factory(const std::string &type, b
       errmsg << "ERROR: The topology type '" << type << "' is not supported.";
       IOSS_ERROR(errmsg);
     }
-  }
-  else {
+  } else {
     inst = (*iter).second;
   }
   return inst;
 }
 
-Ioss::ElementTopology *Ioss::ElementTopology::factory(unsigned int unique_id)
+Ioss::ElementTopology* Ioss::ElementTopology::factory(unsigned int unique_id)
 {
   // Given a unique id obtained from 'get_unique_id', return the
   // topology type that it refers to...
   for (auto &entry : registry()) {
     if (Ioss::Utils::hash(entry.second->name()) == unique_id) {
       return entry.second;
-    }
+}
   }
   return nullptr;
 }
 
-unsigned int Ioss::ElementTopology::get_unique_id(const std::string &type)
+unsigned int Ioss::ElementTopology::get_unique_id(const std::string& type)
 {
   // Return a unique integer id corresponding to this topology type.
   // Basically used to simplify some parallel calculations so they can
   // deal with int instead of strings...
   if (type == "unknown") {
     return 0;
-  }
+}
   unsigned int hash_val = 0;
-  std::string  ltype    = Ioss::Utils::lowercase(type);
-  auto         iter     = registry().find(ltype);
+  std::string ltype = Ioss::Utils::lowercase(type);
+  auto iter = registry().find(ltype);
   if (iter == registry().end()) {
-    IOSS_WARNING << "WARNING: The topology type '" << type << "' is not supported.\n";
-  }
-  else {
-    Ioss::ElementTopology *inst = (*iter).second;
-    hash_val                    = Ioss::Utils::hash(inst->name());
+    IOSS_WARNING << "WARNING: The topology type '" << type
+		 << "' is not supported.\n";
+  } else {
+    Ioss::ElementTopology* inst = (*iter).second;
+    hash_val = Ioss::Utils::hash(inst->name());
   }
   return hash_val;
 }
@@ -181,24 +182,24 @@ Ioss::IntVector Ioss::ElementTopology::face_edge_connectivity(int face_number) c
 {
   assert(face_number > 0 && face_number <= number_faces());
 
-  int             nface_edge = number_edges_face(face_number);
+  int nface_edge = number_edges_face(face_number);
   Ioss::IntVector fcon(nface_edge);
 
   // This works for 2D elements, 3D elements override
-  for (int i = 0; i < nface_edge; i++) {
+  for (int i=0; i < nface_edge; i++) {
     fcon[i] = i;
-  }
+}
 
   return fcon;
 }
 
 Ioss::IntVector Ioss::ElementTopology::element_edge_connectivity() const
 {
-  int             nedge = number_edges();
+  int nedge = number_edges();
   Ioss::IntVector econ(nedge);
-  for (int i = 0; i < nedge; i++) {
+  for (int i=0; i < nedge; i++) {
     econ[i] = i;
-  }
+}
 
   return econ;
 }
@@ -206,11 +207,12 @@ Ioss::IntVector Ioss::ElementTopology::element_edge_connectivity() const
 bool Ioss::ElementTopology::is_alias(const std::string &my_alias) const
 {
   std::string low_my_alias = Ioss::Utils::lowercase(my_alias);
-  auto        iter         = registry().find(low_my_alias);
+  auto iter = registry().find(low_my_alias);
   if (iter == registry().end()) {
     return false;
-  }
-  return this == (*iter).second;
+  } 
+    return this == (*iter).second;
+  
 }
 
 bool Ioss::ElementTopology::is_element() const
@@ -224,32 +226,30 @@ int Ioss::ElementTopology::number_boundaries() const
 {
   if (parametric_dimension() == 3 && spatial_dimension() == 3) {
     return number_faces();
-  }
+}
 
   if (parametric_dimension() == 2 && spatial_dimension() == 2) {
     return number_edges();
-  }
+}
 
   if (parametric_dimension() == 1 && !is_element()) {
     return number_corner_nodes();
-  }
-
+}
+  
   if (is_element()) {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
       // A shell has faces and edges in its boundary...
       return number_faces() + number_edges();
-    }
-    if (parametric_dimension() == 1) {
+    } if (parametric_dimension() == 1) {
       return number_edges();
     }
-  }
-  else {
+  } else {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
       return number_edges();
     }
-  }
+  }    
   return 0;
 }
 
@@ -257,66 +257,63 @@ Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int edge_number) co
 {
   if (parametric_dimension() == 3 && spatial_dimension() == 3) {
     return face_connectivity(edge_number);
-  }
+}
 
   if (parametric_dimension() == 2 && spatial_dimension() == 2) {
     return edge_connectivity(edge_number);
-  }
+}
 
   if (is_element()) {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
       // A shell has faces and edges in its boundary...
       if (edge_number > number_faces()) {
-        return edge_connectivity(edge_number - number_faces());
-      }
-      return face_connectivity(edge_number);
-    }
-    if (parametric_dimension() == 1) {
+	return edge_connectivity(edge_number - number_faces());
+      } 
+	return face_connectivity(edge_number);
+      
+    } else if (parametric_dimension() == 1) {
       return edge_connectivity(edge_number);
     }
-  }
-  else {
+  } else {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
       return edge_connectivity(edge_number);
     }
-  }
+  }    
   return Ioss::IntVector();
 }
 
-Ioss::ElementTopology *Ioss::ElementTopology::boundary_type(int face_number) const
+Ioss::ElementTopology* Ioss::ElementTopology::boundary_type(int face_number) const
 {
   if (parametric_dimension() == 3 && spatial_dimension() == 3) {
     return face_type(face_number);
-  }
+}
 
   if (parametric_dimension() == 2 && spatial_dimension() == 2) {
     return edge_type(face_number);
-  }
+}
 
   if (is_element()) {
     if (parametric_dimension() == 2) {
       // A shell has faces and edges in its boundary...
-      if (face_number == 0) {
-        return nullptr;
-      }
-
+      if (face_number == 0) { return nullptr;
+}
+      
       assert(spatial_dimension() == 3);
       if (face_number > number_faces()) {
-        return edge_type(face_number - number_faces());
-      }
-      return face_type(face_number);
-    }
-    if (parametric_dimension() == 1) {
+	return edge_type(face_number - number_faces());
+      } 
+	return face_type(face_number);
+      
+    } else if (parametric_dimension() == 1) {
       return edge_type(face_number);
     }
-  }
-  else {
+  } else {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
       return edge_type(face_number);
     }
-  }
+  }    
   return nullptr;
 }

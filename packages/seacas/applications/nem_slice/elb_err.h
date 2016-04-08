@@ -36,35 +36,38 @@
 #ifndef _EXOIILB_ERR_CONST_H_
 #define _EXOIILB_ERR_CONST_H_
 
+
 #include <string>
 
 /* Structure to store an error message */
 struct error_message
 {
-  int         level;
+  int   level;
   std::string err_mesg;
-  int         line_no;
+  int   line_no;
   std::string filename;
-
-  error_message(int l, std::string msg, int ln, std::string file)
-      : level(l), err_mesg(std::move(msg)), line_no(ln), filename(std::move(file))
-  {
-  }
+  
+  error_message(int l, std::string msg, int ln, std::string file) :
+    level(l), err_mesg(std::move(msg)), line_no(ln), filename(std::move(file))
+  {}
 };
 
 extern int error_lev;
 
 /* Macro used in the code to add an error message */
-#define Gen_Error(a, b) (error_add(a, b, __FILE__, __LINE__))
+#define Gen_Error(a,b) (error_add(a, b, __FILE__, __LINE__))
 
 /* Function prototype for error functions */
-extern void error_add(int                level,
-                      const std::string &message,  /* The message to add to the error list */
-                      const std::string &filename, /* The filename in which the error occured */
-                      int                line      /* The line number in filename where the error
-                                                    * was reported */
-                      );
+extern
+void error_add(
+  int   level,
+  const std::string &message,	/* The message to add to the error list */
+  const std::string &filename,	/* The filename in which the error occured */
+  int   line		/* The line number in filename where the error
+                         * was reported */
+  );
 
-extern void error_report(void);
+extern
+void error_report(void);
 
 #endif /* _EXOIILB_ERR_CONST_H_ */

@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,36 +32,35 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_NodeBlock.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_ElementTopology.h>
-#include <Ioss_EntityBlock.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_NodeBlock.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_Region.h>
 #include <Ioss_Utils.h>
+#include <Ioss_FileInfo.h>
+#include <assert.h>
+#include <stddef.h>
+#include <float.h>
 #include <algorithm>
-#include <cassert>
-#include <cfloat>
-#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <set>
-#include <stddef.h>
 #include <string>
-#include <sys/stat.h>
-#include <tokenize.h>
 #include <utility>
 #include <vector>
+#include <tokenize.h>
+#include <sys/stat.h>
+#include <cstring>
 
 #include "Ioss_DBUsage.h"
 #include "Ioss_Field.h"
 #include "Ioss_GroupingEntity.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_SideBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_SerializeIO.h"
-#include "Ioss_SideBlock.h"
-#include "Ioss_SideSet.h"
 #include "Ioss_State.h"
 #include "Ioss_SurfaceSplit.h"
 
@@ -70,23 +69,23 @@
 #endif
 
 namespace {
-  void log_field(const char *symbol, const Ioss::GroupingEntity *entity, const Ioss::Field &field,
-                 bool single_proc_only, const Ioss::ParallelUtils &util);
+  void log_field(const char *symbol, const Ioss::GroupingEntity *entity,
+		 const Ioss::Field &field, bool single_proc_only,
+		 const Ioss::ParallelUtils &util);
 
 #ifndef NDEBUG
   bool internal_parallel_consistent(bool single_proc_only, const Ioss::GroupingEntity *ge,
-                                    const Ioss::Field &field, int in_out,
-                                    const Ioss::ParallelUtils &util)
+				    const Ioss::Field &field, int in_out, const Ioss::ParallelUtils &util)
   {
     if (single_proc_only) {
       return true;
-    }
+}
 
-    std::string        ge_name    = ge->name();
-    const std::string &field_name = field.get_name();
-    unsigned int       hash_code  = Ioss::Utils::hash(ge_name) + Ioss::Utils::hash(field_name);
-    unsigned int       max_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MAX);
-    unsigned int       min_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MIN);
+    std::string ge_name = ge->name();
+    std::string field_name = field.get_name();
+    unsigned int hash_code = Ioss::Utils::hash(ge_name) + Ioss::Utils::hash(field_name);
+    unsigned int max_hash  = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MAX);
+    unsigned int min_hash  = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MIN);
     if (max_hash != min_hash) {
       std::string errmsg = "Parallel inconsistency detected for ";
       errmsg += in_out == 0 ? "writing" : "reading";
@@ -97,22 +96,30 @@ namespace {
       errmsg += "'\n";
       IOSS_WARNING << errmsg;
       return false;
-    }
-    return true;
+    } 
+      return true;
+    
   }
 #endif
-  double my_min(double x1, double x2) { return x1 < x2 ? x1 : x2; }
+  double my_min(double x1, double x2)
+  {
+    return x1 < x2 ? x1 : x2;
+  }
 
-  double my_max(double x1, double x2) { return x1 > x2 ? x1 : x2; }
+  double my_max(double x1, double x2)
+  {
+    return x1 > x2 ? x1 : x2;
+  }
 
   template <typename INT>
-  void calc_bounding_box(size_t ndim, size_t node_count, std::vector<double> coordinates,
-                         std::vector<INT> connectivity, double &xmin, double &ymin, double &zmin,
-                         double &xmax, double &ymax, double &zmax)
+  void calc_bounding_box(size_t ndim, size_t node_count, size_t elem_count,
+			 std::vector<double> coordinates, std::vector<INT> connectivity,
+			 double &xmin, double &ymin, double &zmin,
+			 double &xmax, double &ymax, double &zmax)
   {
     std::vector<int> elem_block_nodes(node_count);
     for (auto &node : connectivity) {
-      elem_block_nodes[node - 1] = 1;
+      elem_block_nodes[node-1] = 1;
     }
 
     xmin = DBL_MAX;
@@ -123,20 +130,20 @@ namespace {
     ymax = -DBL_MAX;
     zmax = -DBL_MAX;
 
-    for (size_t i = 0; i < node_count; i++) {
+    for (size_t i=0; i < node_count; i++) {
       if (elem_block_nodes[i] == 1) {
-        xmin = my_min(xmin, coordinates[ndim * i + 0]);
-        xmax = my_max(xmax, coordinates[ndim * i + 0]);
+	xmin = my_min(xmin,coordinates[ndim*i+0]);
+	xmax = my_max(xmax,coordinates[ndim*i+0]);
 
-        if (ndim > 1) {
-          ymin = my_min(ymin, coordinates[ndim * i + 1]);
-          ymax = my_max(ymax, coordinates[ndim * i + 1]);
-        }
+	if (ndim > 1) {
+	  ymin = my_min(ymin,coordinates[ndim*i+1]);
+	  ymax = my_max(ymax,coordinates[ndim*i+1]);
+	}
 
-        if (ndim > 2) {
-          zmin = my_min(zmin, coordinates[ndim * i + 2]);
-          zmax = my_max(zmax, coordinates[ndim * i + 2]);
-        }
+	if (ndim > 2) {
+	  zmin = my_min(zmin,coordinates[ndim*i+2]);
+	  zmax = my_max(zmax,coordinates[ndim*i+2]);
+	}
       }
     }
     if (ndim < 3) {
@@ -146,20 +153,21 @@ namespace {
       ymin = ymax = 0.0;
     }
   }
-} // namespace
+}
 
 namespace Ioss {
-  DatabaseIO::DatabaseIO(Region *region, std::string filename, DatabaseUsage db_usage,
-                         MPI_Comm communicator, const PropertyManager &props)
-      : properties(props), commonSideTopology(nullptr), DBFilename(std::move(filename)),
-        dbState(STATE_INVALID), isParallel(false), isSerialParallel(false), myProcessor(0),
-        cycleCount(0), overlayCount(0), timeScaleFactor(1.0), splitType(SPLIT_BY_TOPOLOGIES),
-        dbUsage(db_usage), dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
-        util_(communicator), region_(region), isInput(is_input_event(db_usage)),
-        isParallelConsistent(true),
-        singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT ||
-                       SerializeIO::isEnabled()),
-        doLogging(false), useGenericCanonicalName(false)
+  DatabaseIO::DatabaseIO(Region* region, std::string  filename,
+			 DatabaseUsage db_usage,
+			 MPI_Comm communicator,
+			 const PropertyManager &props)
+    : properties(props), commonSideTopology(nullptr), DBFilename(std::move(filename)), dbState(STATE_INVALID),
+      isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
+      timeScaleFactor(1.0), splitType(SPLIT_BY_TOPOLOGIES),
+      dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
+      util_(communicator), region_(region), isInput(is_input_event(db_usage)),
+      isParallelConsistent(true), 
+      singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
+      doLogging(false), useGenericCanonicalName(false)
   {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
@@ -173,24 +181,24 @@ namespace Ioss {
       // "PROP1=VALUE1:PROP2=VALUE2:..."
       std::vector<std::string> prop_val = tokenize(env_props, ":");
 
-      for (auto &elem : prop_val) {
+      for (auto & elem : prop_val) {
         std::vector<std::string> property = tokenize(elem, "=");
         if (property.size() != 2) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: Invalid property specification found in "
-                    "IOSS_PROPERTIES environment variable\n"
-                 << "       Found '" << elem << "' which is not of the correct PROPERTY=VALUE form";
+          errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
+		 << "       Found '" << elem << "' which is not of the correct PROPERTY=VALUE form";
           IOSS_ERROR(errmsg);
         }
-        std::string prop      = Utils::uppercase(property[0]);
-        std::string value     = property[1];
-        std::string up_value  = Utils::uppercase(value);
-        bool        all_digit = value.find_first_not_of("0123456789") == std::string::npos;
+        std::string prop = Utils::uppercase(property[0]);
+        std::string value = property[1];
+        std::string up_value = Utils::uppercase(value);
+        bool all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
         if (myProcessor == 0) {
           std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
-        }
-        if (all_digit) {
+
+        
+	}if (all_digit) {
           int int_value = std::strtol(value.c_str(), nullptr, 10);
           properties.add(Property(prop, int_value));
         }
@@ -219,7 +227,7 @@ namespace Ioss {
     }
 
     if (properties.exists("USE_GENERIC_CANONICAL_NAMES")) {
-      int generic             = properties.get("USE_GENERIC_CANONICAL_NAMES").get_int();
+      int generic = properties.get("USE_GENERIC_CANONICAL_NAMES").get_int();
       useGenericCanonicalName = (generic != 0);
     }
 
@@ -229,20 +237,21 @@ namespace Ioss {
     }
 
     if (!is_input()) {
-      // Create full path to the output file at this point if it doesn't
-      // exist...
+      // Create full path to the output file at this point if it doesn't exist...
       create_path(DBFilename);
     }
   }
 
-  DatabaseIO::~DatabaseIO() = default;
+  DatabaseIO::~DatabaseIO()
+    = default;
 
   int DatabaseIO::int_byte_size_api() const
   {
     if (dbIntSizeAPI == USE_INT32_API) {
       return 4;
-    }
+    } 
     return 8;
+    
   }
 
   void DatabaseIO::set_int_byte_size_api(DataSize size) const
@@ -255,7 +264,7 @@ namespace Ioss {
     char suffix = '_'; // Default
     if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
       std::string tmp = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
-      suffix          = tmp[0];
+      suffix = tmp[0];
     }
     return suffix;
   }
@@ -264,7 +273,7 @@ namespace Ioss {
   {
     if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
       properties.erase("FIELD_SUFFIX_SEPARATOR");
-    }
+    } 
     char tmp[2];
     tmp[0] = separator;
     tmp[1] = 0;
@@ -275,86 +284,83 @@ namespace Ioss {
   {
     IfDatabaseExistsBehavior exists = DB_OVERWRITE;
     if (properties.exists("APPEND_OUTPUT")) {
-      exists = static_cast<IfDatabaseExistsBehavior>(properties.get("APPEND_OUTPUT").get_int());
+      exists = (IfDatabaseExistsBehavior)properties.get("APPEND_OUTPUT").get_int();
     }
     return exists;
   }
 
-  void DatabaseIO::create_path(const std::string &filename) const
+  void DatabaseIO::create_path(const std::string& filename) const
   {
-    bool               error_found = false;
+    bool error_found = false;
     std::ostringstream errmsg;
 
     if (myProcessor == 0) {
       Ioss::FileInfo file = Ioss::FileInfo(filename);
-      std::string    path = file.pathname();
+      std::string path = file.pathname();
 
-      const int mode = 0777; // Users umask will be applied to this.
+      const int mode = 0777;  // Users umask will be applied to this.
 
       auto iter = path.begin();
       while (iter != path.end() && !error_found) {
-        iter                  = std::find(iter, path.end(), '/');
-        std::string path_root = std::string(path.begin(), iter);
+	iter = std::find(iter, path.end(), '/');
+	std::string path_root = std::string(path.begin(), iter);
 
-        if (iter != path.end()) {
-          ++iter; // Skip past the '/'
-        }
+	if (iter != path.end()) {
+	  ++iter; // Skip past the '/'
+	}
 
-        if (path_root.empty()) { // Path started with '/'
-          continue;
-        }
+	if (path_root.empty()) { // Path started with '/'
+	  continue;
+	}
 
-        struct stat st;
-        if (stat(path_root.c_str(), &st) != 0) {
-          if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
-            errmsg << "ERROR: Cannot create directory '" << path_root
-                   << "' : " << std::strerror(errno) << "\n";
-            error_found = true;
-          }
-        }
-        else if (!S_ISDIR(st.st_mode)) {
-          errno = ENOTDIR;
-          errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
-          error_found = true;
-        }
+	struct stat st;
+	if (stat(path_root.c_str(), &st) != 0) {
+	  if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
+	    errmsg << "ERROR: Cannot create directory '" << path_root
+		   << "' : " << std::strerror(errno) << "\n";
+	    error_found = true;
+	  }
+	}
+	else if (!S_ISDIR(st.st_mode)) {
+	  errno = ENOTDIR;
+	  errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
+	  error_found = true;
+	}
       }
-    }
-    else {
+    } else {
       // Give the other processors something to say in case there is an error.
-      errmsg << "ERROR: Could not create path. See processor 0 output for more "
-                "details.\n";
+      errmsg << "ERROR: Could not create path. See processor 0 output for more details.\n";
     }
 
     // Sync all processors with error status...
     // All processors but 0 will have error_found=false
-    // Processor 0 will have error_found = true or false depending on path
-    // result.
-    int is_error = error_found ? 1 : 0;
-    error_found  = (util().global_minmax(is_error, Ioss::ParallelUtils::DO_MAX) == 1);
+    // Processor 0 will have error_found = true or false depending on path result.
+    int is_error = error_found ? 1 : 0; 
+    error_found = (util().global_minmax(is_error, Ioss::ParallelUtils::DO_MAX) == 1);
 
     if (error_found) {
       IOSS_ERROR(errmsg);
     }
   }
 
-  void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field &field, int in_out) const
+  void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field, int in_out) const
   {
     if (ge != nullptr) {
       assert(!is_parallel_consistent() ||
-             internal_parallel_consistent(singleProcOnly, ge, field, in_out, util_));
+	     internal_parallel_consistent(singleProcOnly, ge, field, in_out, util_));
     }
     if (get_logging()) {
-      log_field(in_out == 1 ? ">" : "<", ge, field, singleProcOnly, util_);
+      log_field(in_out == 1? ">" : "<", ge, field, singleProcOnly, util_);
     }
   }
 
   // Default versions do nothing...
-  bool DatabaseIO::begin_state(Region * /* region */, int /* state */, double /* time */)
+  bool DatabaseIO::begin_state(Region */* region */, int /* state */, double /* time */)
   {
     return true;
   }
 
-  bool DatabaseIO::end_state(Region * /* region */, int /* state */, double /* time */)
+  bool DatabaseIO::end_state(Region */* region */, int /* state */, double /* time */)
   {
     return true;
   }
@@ -364,34 +370,30 @@ namespace Ioss {
     // Set Grouping requests are specified as properties...
     // See if the property exists and decode...
     // There is a property for each "type":
-    // GROUP_SIDESET, GROUP_NODESET, GROUP_EDGESET, GROUP_FACESET,
-    // GROUP_ELEMSET.
-    // Within the property, the "value" consists of multiple groups separated by
-    // ":"
+    // GROUP_SIDESET, GROUP_NODESET, GROUP_EDGESET, GROUP_FACESET, GROUP_ELEMSET.
+    // Within the property, the "value" consists of multiple groups separated by ":"
     // Within the group, the names are "," separated:
     //
     // new_surf1,member1,member2,member3:new_surf2,mem1,mem2,mem3,mem4:new_surf3,....
     //
-    // Currently does not check for duplicate entity membership in a set --
-    // union
-    // with duplicates
+    // Currently does not check for duplicate entity membership in a set -- union with duplicates
     //
-    create_groups("GROUP_SIDESET", SIDESET, "side", (SideSet *)nullptr);
-    create_groups("GROUP_NODESET", NODESET, "node", (NodeSet *)nullptr);
-    create_groups("GROUP_EDGESET", EDGESET, "edge", (EdgeSet *)nullptr);
-    create_groups("GROUP_FACESET", FACESET, "face", (FaceSet *)nullptr);
-    create_groups("GROUP_ELEMSET", ELEMENTSET, "elem", (ElementSet *)nullptr);
+    create_groups("GROUP_SIDESET", SIDESET, "side", (SideSet*)nullptr);
+    create_groups("GROUP_NODESET", NODESET, "node", (NodeSet*)nullptr);
+    create_groups("GROUP_EDGESET", EDGESET, "edge", (EdgeSet*)nullptr);
+    create_groups("GROUP_FACESET", FACESET, "face", (FaceSet*)nullptr);
+    create_groups("GROUP_ELEMSET", ELEMENTSET, "elem", (ElementSet*)nullptr);
   }
 
   template <typename T>
   void DatabaseIO::create_groups(const std::string &property_name, EntityType type,
-                                 const std::string &type_name, const T *set_type)
+				 const std::string &type_name, const T* set_type)
   {
     if (!properties.exists(property_name)) {
       return;
     }
 
-    std::string              prop   = properties.get(property_name).get_string();
+    std::string prop = properties.get(property_name).get_string();
     std::vector<std::string> groups = tokenize(prop, ":");
     for (auto &group : groups) {
       std::vector<std::string> group_spec = tokenize(group, ",");
@@ -400,77 +402,77 @@ namespace Ioss {
       // the first location and the members of the group as subsequent
       // locations.  OK to have a single member
       if (group_spec.size() < 2) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: Invalid " << type_name << " group specification '" << group << "'\n"
-               << "       Correct syntax is 'new_group,member1,...,memberN' and "
-                  "their must "
-               << "       be at least 1 member of the group";
-        IOSS_ERROR(errmsg);
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Invalid " << type_name << " group specification '" << group << "'\n"
+	       << "       Correct syntax is 'new_group,member1,...,memberN' and their must "
+	       << "       be at least 1 member of the group";
+	IOSS_ERROR(errmsg);
       }
-
+	  
       create_group(type, type_name, group_spec, set_type);
     }
   }
 
   template <typename T>
-  void DatabaseIO::create_group(EntityType /*type*/, const std::string &type_name,
-                                const std::vector<std::string> &group_spec, const T * /*set_type*/)
+  void DatabaseIO::create_group(EntityType type, const std::string &type_name,
+				const std::vector<std::string> &group_spec, const T* set_type)
   {
     IOSS_WARNING << "WARNING: Grouping of " << type_name << " sets is not yet implemented.\n"
-                 << "         Skipping the creation of " << type_name << " set '" << group_spec[0]
-                 << "'\n\n";
+		 << "         Skipping the creation of " << type_name << " set '" << group_spec[0] << "'\n\n";
   }
 
   template <>
-  void DatabaseIO::create_group(EntityType type, const std::string & /*type_name*/,
-                                const std::vector<std::string> &group_spec,
-                                const SideSet * /*set_type*/)
+  void DatabaseIO::create_group(EntityType type, const std::string &type_name,
+				const std::vector<std::string> &group_spec, const SideSet* set_type)
   {
     // Not generalized yet... This only works for T == SideSet
     if (type != SIDESET) {
       return;
     }
-
+	
     int64_t entity_count = 0;
-    int64_t df_count     = 0;
+    int64_t df_count = 0;
 
     // Create the new set...
-    auto new_set = new SideSet(this, group_spec[0]);
-
+    auto  new_set = new SideSet(this, group_spec[0]);
+	
     get_region()->add(new_set);
-
+	
     // Find the member SideSets...
-    for (size_t i = 1; i < group_spec.size(); i++) {
-      SideSet *set = get_region()->get_sideset(group_spec[i]);
+    for (size_t i=1; i < group_spec.size(); i++) {
+      SideSet* set = get_region()->get_sideset(group_spec[i]);
       if (set != nullptr) {
-        SideBlockContainer side_blocks = set->get_side_blocks();
-        for (auto &sbold : side_blocks) {
-          size_t side_count = sbold->get_property("entity_count").get_int();
-          auto   sbnew      = new SideBlock(this, sbold->name(), sbold->topology()->name(),
-                                     sbold->parent_element_topology()->name(), side_count);
-          int64_t id = sbold->get_property("id").get_int();
-          sbnew->property_add(Property("set_offset", entity_count));
-          sbnew->property_add(Property("set_df_offset", df_count));
-          sbnew->property_add(Property("id", id));
+	SideBlockContainer side_blocks = set->get_side_blocks();
+	for (auto &sbold : side_blocks) {
+	  size_t side_count = sbold->get_property("entity_count").get_int();
+	  auto sbnew = new SideBlock(this, sbold->name(),
+				     sbold->topology()->name(),
+				     sbold->parent_element_topology()->name(),
+				     side_count);
+	  int64_t id = sbold->get_property("id").get_int();
+	  sbnew->property_add(Property("set_offset", entity_count));
+	  sbnew->property_add(Property("set_df_offset", df_count));
+	  sbnew->property_add(Property("id", id));
+	      
+	  new_set->add(sbnew);
 
-          new_set->add(sbnew);
-
-          size_t old_df_count = sbold->get_property("distribution_factor_count").get_int();
-          if (old_df_count > 0) {
-            std::string storage = "Real[";
-            storage += Utils::to_string(sbnew->topology()->number_nodes());
-            storage += "]";
-            sbnew->field_add(
-                Field("distribution_factors", Field::REAL, storage, Field::MESH, side_count));
-          }
-          entity_count += side_count;
-          df_count += old_df_count;
-        }
+	  size_t old_df_count   = sbold->get_property("distribution_factor_count").get_int();
+	  if (old_df_count > 0) {
+	    std::string storage = "Real[";
+	    storage += Utils::to_string(sbnew->topology()->number_nodes());
+	    storage += "]";
+	    sbnew->field_add(Field("distribution_factors",
+				   Field::REAL, storage,
+				   Field::MESH, side_count));
+	  }
+	  entity_count += side_count;
+	  df_count     += old_df_count;
+	}
       }
       else {
-        IOSS_WARNING << "WARNING: While creating the grouped surface '" << group_spec[0]
-                     << "', the surface '" << group_spec[i] << "' does not exist. "
-                     << "This surface will skipped and not added to the group.\n\n";
+	IOSS_WARNING << "WARNING: While creating the grouped surface '" << group_spec[0]
+		     << "', the surface '" << group_spec[i] << "' does not exist. "
+		     << "This surface will skipped and not added to the group.\n\n";
       }
     }
   }
@@ -481,33 +483,33 @@ namespace Ioss {
   // have to check each face (or group of faces) individually.
   void DatabaseIO::set_common_side_topology() const
   {
-    DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
+    DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 
-    bool                  first          = true;
+    bool first = true;
     ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     for (auto block : element_blocks) {
       size_t element_count = block->get_property("entity_count").get_int();
 
       // Check face types.
       if (element_count > 0) {
-        if (commonSideTopology != nullptr || first) {
-          first                      = false;
-          ElementTopology *side_type = block->topology()->boundary_type();
-          if (commonSideTopology == nullptr) { // First block
-            new_this->commonSideTopology = side_type;
-          }
-          if (commonSideTopology != side_type) { // Face topologies differ in mesh
-            new_this->commonSideTopology = nullptr;
-            return;
-          }
-        }
+	if (commonSideTopology != nullptr || first) {
+	  first = false;
+	  ElementTopology* side_type = block->topology()->boundary_type();
+	  if (commonSideTopology == nullptr) { // First block
+	    new_this->commonSideTopology = side_type;
+	  }
+	  if (commonSideTopology != side_type) { // Face topologies differ in mesh
+	    new_this->commonSideTopology = nullptr;
+	    return;
+	  }
+	}
       }
     }
   }
 
   void DatabaseIO::add_information_records(const std::vector<std::string> &info)
   {
-    informationRecords.reserve(informationRecords.size() + info.size());
+    informationRecords.reserve(informationRecords.size()+info.size());
     informationRecords.insert(informationRecords.end(), info.begin(), info.end());
   }
 
@@ -517,7 +519,7 @@ namespace Ioss {
   }
 
   void DatabaseIO::add_qa_record(const std::string &code, const std::string &code_qa,
-                                 const std::string &date, const std::string &time)
+				 const std::string &date, const std::string &time)
   {
     qaRecords.push_back(code);
     qaRecords.push_back(code_qa);
@@ -550,47 +552,45 @@ namespace Ioss {
 
     if (sideTopology.empty()) {
       // Set contains (parent_element, boundary_topology) pairs...
-      std::set<std::pair<const ElementTopology *, const ElementTopology *>> side_topo;
+      std::set<std::pair<const ElementTopology*, const ElementTopology*> > side_topo;
 
-      ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+      ElementBlockContainer element_blocks =
+	get_region()->get_element_blocks();
 
       for (auto &block : element_blocks) {
-        const ElementTopology *elem_type = block->topology();
-        const ElementTopology *side_type = elem_type->boundary_type();
-        if (side_type == nullptr) {
-          // heterogeneous sides.  Iterate through...
-          int size = elem_type->number_boundaries();
-          for (int i = 1; i <= size; i++) {
-            side_type = elem_type->boundary_type(i);
-            side_topo.insert(std::make_pair(elem_type, side_type));
-            all_sphere = false;
-          }
-        }
-        else {
-          // homogenous sides.
-          side_topo.insert(std::make_pair(elem_type, side_type));
-          all_sphere = false;
-        }
+	const ElementTopology *elem_type = block->topology();
+	const ElementTopology *side_type = elem_type->boundary_type();
+	if (side_type == nullptr) {
+	  // heterogeneous sides.  Iterate through...
+	  int size = elem_type->number_boundaries();
+	  for (int i=1; i <= size; i++) {
+	    side_type = elem_type->boundary_type(i);
+	    side_topo.insert(std::make_pair(elem_type, side_type));
+	    all_sphere = false;
+	  }
+	} else {
+	  // homogenous sides.
+	  side_topo.insert(std::make_pair(elem_type, side_type));
+	  all_sphere = false;
+	}
       }
       if (all_sphere) {
-        // If we end up here, the model either contains all spheres, or there
-        // are
-        // no
-        // element blocks in the model...
-        const ElementTopology *ftopo = ElementTopology::factory("unknown");
-        if (element_blocks.empty()) {
-          side_topo.insert(std::make_pair(ftopo, ftopo));
-        }
-        else {
-          const ElementBlock *block = *element_blocks.begin();
-          side_topo.insert(std::make_pair(block->topology(), ftopo));
-        }
+	// If we end up here, the model either contains all spheres, or there are no
+	// element blocks in the model...
+	const ElementTopology *ftopo = ElementTopology::factory("unknown");
+	if (element_blocks.empty()) {
+	  side_topo.insert(std::make_pair(ftopo, ftopo));
+	} else {
+	  const ElementBlock *block = *element_blocks.begin();
+	  side_topo.insert(std::make_pair(block->topology(), ftopo));
+	}
       }
       assert(!side_topo.empty());
       assert(sideTopology.empty());
       // Copy into the sideTopology container...
-      DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
-      std::copy(side_topo.begin(), side_topo.end(), std::back_inserter(new_this->sideTopology));
+      DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
+      std::copy(side_topo.begin(), side_topo.end(),
+		std::back_inserter(new_this->sideTopology));
     }
     assert(!sideTopology.empty());
   }
@@ -600,47 +600,47 @@ namespace Ioss {
     if (elementBlockBoundingBoxes.empty()) {
       // Calculate the bounding boxes for all element blocks...
       std::vector<double> coordinates;
-      Ioss::NodeBlock *   nb = get_region()->get_node_blocks()[0];
+      Ioss::NodeBlock *nb = get_region()->get_node_blocks()[0];
       nb->get_field_data("mesh_model_coordinates", coordinates);
       ssize_t nnode = nb->get_property("entity_count").get_int();
       ssize_t ndim  = nb->get_property("component_degree").get_int();
-
+      
       Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-      size_t                      nblock         = element_blocks.size();
-      std::vector<double>         minmax;
-      minmax.reserve(6 * nblock);
-
+      size_t nblock = element_blocks.size();
+      std::vector<double> minmax;
+      minmax.reserve(6*nblock);
+      
       for (auto &block : element_blocks) {
-        double xmin, ymin, zmin, xmax, ymax, zmax;
-        if (block->get_database()->int_byte_size_api() == 8) {
-          std::vector<int64_t> connectivity;
-          block->get_field_data("connectivity_raw", connectivity);
-          calc_bounding_box(ndim, nnode, coordinates, connectivity, xmin, ymin, zmin, xmax, ymax,
-                            zmax);
-        }
-        else {
-          std::vector<int> connectivity;
-          block->get_field_data("connectivity_raw", connectivity);
-          calc_bounding_box(ndim, nnode, coordinates, connectivity, xmin, ymin, zmin, xmax, ymax,
-                            zmax);
-        }
+	double xmin, ymin, zmin, xmax, ymax, zmax;
+	ssize_t nelem = block->get_property("entity_count").get_int();
+	if (block->get_database()->int_byte_size_api() == 8) {
+	  std::vector<int64_t> connectivity;
+	  block->get_field_data("connectivity_raw", connectivity);
+	  calc_bounding_box(ndim, nnode, nelem, coordinates, connectivity,
+			    xmin, ymin, zmin, xmax, ymax, zmax);
+	} else {
+	  std::vector<int> connectivity;
+	  block->get_field_data("connectivity_raw", connectivity);
+	  calc_bounding_box(ndim, nnode, nelem, coordinates, connectivity,
+			    xmin, ymin, zmin, xmax, ymax, zmax);
+	}
 
-        minmax.push_back(xmin);
-        minmax.push_back(ymin);
-        minmax.push_back(zmin);
-        minmax.push_back(-xmax);
-        minmax.push_back(-ymax);
-        minmax.push_back(-zmax);
+	minmax.push_back(xmin);
+	minmax.push_back(ymin);
+	minmax.push_back(zmin);
+	minmax.push_back(-xmax);
+	minmax.push_back(-ymax);
+	minmax.push_back(-zmax);
       }
 
-      util().global_array_minmax(minmax, Ioss::ParallelUtils::DO_MIN);
+      util().global_array_minmax(minmax,  Ioss::ParallelUtils::DO_MIN);
 
-      for (size_t i = 0; i < element_blocks.size(); i++) {
-        Ioss::ElementBlock *   block = element_blocks[i];
-        std::string            name  = block->name();
-        AxisAlignedBoundingBox bbox(minmax[6 * i + 0], minmax[6 * i + 1], minmax[6 * i + 2],
-                                    -minmax[6 * i + 3], -minmax[6 * i + 4], -minmax[6 * i + 5]);
-        elementBlockBoundingBoxes[name] = bbox;
+      for (size_t i=0; i < element_blocks.size(); i++) {
+	Ioss::ElementBlock *block = element_blocks[i];
+	std::string name = block->name();
+	AxisAlignedBoundingBox bbox(minmax[6*i+0], minmax[6*i+1], minmax[6*i+2],
+				    -minmax[6*i+3], -minmax[6*i+4], -minmax[6*i+5]);
+	elementBlockBoundingBoxes[name] = bbox;
       }
     }
     return elementBlockBoundingBoxes[eb->name()];
@@ -651,60 +651,59 @@ namespace Ioss {
 
 namespace {
   static struct timeval tp;
-  static double         initial_time = -1.0;
+  static double initial_time = -1.0;
 
-  void log_field(const char *symbol, const Ioss::GroupingEntity *entity, const Ioss::Field &field,
-                 bool single_proc_only, const Ioss::ParallelUtils &util)
+  void log_field(const char *symbol, const Ioss::GroupingEntity *entity,
+		 const Ioss::Field &field, bool single_proc_only,
+		 const Ioss::ParallelUtils &util)
   {
     if (initial_time < 0.0) {
       gettimeofday(&tp, nullptr);
-      initial_time = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
+      initial_time = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
     }
 
     if (entity != nullptr) {
       std::vector<int64_t> all_sizes;
       if (single_proc_only) {
-        all_sizes.push_back(field.get_size());
-      }
-      else {
-        util.gather(static_cast<int64_t>(field.get_size()), all_sizes);
+	all_sizes.push_back(field.get_size());
+      } else {
+	util.gather((int64_t)field.get_size(), all_sizes);
       }
 
       if (util.parallel_rank() == 0 || single_proc_only) {
-        std::string        name = entity->name();
-        std::ostringstream strm;
-        gettimeofday(&tp, nullptr);
-        double time_now = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-        strm << symbol << " [" << std::fixed << std::setprecision(3) << time_now - initial_time
-             << "]\t";
+	std::string name = entity->name();
+	std::ostringstream strm;
+	gettimeofday(&tp, nullptr);
+	double time_now = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
+	strm << symbol << " [" << std::fixed << std::setprecision(3)
+	     << time_now-initial_time << "]\t";
 
-        int64_t total = 0;
-        // Now append each processors size onto the stream...
-        for (auto &p_size : all_sizes) {
-          strm << std::setw(8) << p_size << ":";
-          total += p_size;
-        }
-        if (util.parallel_size() > 1) {
-          strm << std::setw(8) << total;
-        }
-        strm << "\t" << name << "/" << field.get_name() << "\n";
-        std::cout << strm.str();
+	int64_t total = 0;
+	// Now append each processors size onto the stream...
+	for (auto &p_size : all_sizes) {
+	  strm << std::setw(8) << p_size << ":";
+	  total += p_size;
+	}
+	if (util.parallel_size() > 1) {
+	  strm << std::setw(8) << total;
+	}
+	strm << "\t" << name << "/" << field.get_name() << "\n";
+	std::cout << strm.str();
       }
-    }
-    else {
+    } else {
 #ifdef HAVE_MPI
       if (!single_proc_only) {
-        MPI_Barrier(util.communicator());
+	MPI_Barrier(util.communicator());
       }
 #endif
       if (util.parallel_rank() == 0 || single_proc_only) {
-        std::ostringstream strm;
-        gettimeofday(&tp, nullptr);
-        double time_now = static_cast<double>(tp.tv_sec) + (1.e-6) * tp.tv_usec;
-        strm << symbol << " [" << std::fixed << std::setprecision(3) << time_now - initial_time
-             << "]\n";
-        std::cout << strm.str();
+	std::ostringstream strm;
+	gettimeofday(&tp, nullptr);
+	double time_now = (double)tp.tv_sec+(1.e-6)*tp.tv_usec;
+	strm << symbol << " [" << std::fixed << std::setprecision(3)
+	     << time_now-initial_time << "]\n";
+	std::cout << strm.str();
       }
     }
   }
-} // namespace
+}

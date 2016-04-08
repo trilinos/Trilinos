@@ -32,7 +32,7 @@
 
 #include <Ioss_Field.h>
 #include <Ioss_VariableType.h>
-#include <cstddef>
+#include <stddef.h>
 #include <transform/Iotr_Offset.h>
 #include <string>
 
@@ -86,22 +86,16 @@ namespace Iotr {
       double *rdata = static_cast<double*>(data);
 
       for (size_t i = 0; i < count*components; i++) {
-	rdata[i] += realOffset;
+	rdata[i] = rdata[i] + realOffset;
       }
     } else if (field.get_type() == Ioss::Field::INTEGER) {
       int *idata = static_cast<int*>(data);
 
       for (size_t i = 0; i < count*components; i++) {
-	idata[i] += intOffset;
-      }
-    } else if (field.get_type() == Ioss::Field::INT64) {
-      int64_t *idata = static_cast<int64_t*>(data);
-
-      for (size_t i = 0; i < count*components; i++) {
-	idata[i] += intOffset;
+	idata[i] = idata[i] + intOffset;
       }
     } else {
     }
     return true;
   }
-}  // namespace Iotr
+}

@@ -2,23 +2,23 @@
  * Copyright (c) 2014, Sandia Corporation.
  * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
  * the U.S. Government retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- *
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,43 +30,47 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 
-#include "structs.h" // for vtx_data
-#include <stdio.h>   // for printf
+#include <stdio.h>                      // for printf
+#include "structs.h"                    // for vtx_data
 
-void countup_vtx_sep(struct vtx_data **graph, /* list of graph info for each vertex */
-                     int               nvtxs, /* number of vertices in graph */
-                     int *             sets   /* local partitioning of vtxs */
-                     )
+
+void 
+countup_vtx_sep (
+    struct vtx_data **graph,	/* list of graph info for each vertex */
+    int nvtxs,		/* number of vertices in graph */
+    int *sets			/* local partitioning of vtxs */
+)
 {
-  int vtx, set; /* vertex and set in graph */
-  int sep_size; /* size of the separator */
-  int i, j, k;  /* loop counters */
+    int       vtx, set;		/* vertex and set in graph */
+    int       sep_size;		/* size of the separator */
+    int       i, j, k;		/* loop counters */
 
-  sep_size = 0;
-  j = k = 0;
-  for (i = 1; i <= nvtxs; i++) {
-    if (sets[i] == 0)
-      j += graph[i]->vwgt;
-    if (sets[i] == 1)
-      k += graph[i]->vwgt;
-    if (sets[i] == 2)
-      sep_size += graph[i]->vwgt;
-  }
-  printf("Set sizes = %d/%d, Separator size = %d\n\n", j, k, sep_size);
-
-  /* Now check that it really is a separator. */
-  for (i = 1; i <= nvtxs; i++) {
-    set = sets[i];
-    if (set != 2) {
-      for (j = 1; j < graph[i]->nedges; j++) {
-        vtx = graph[i]->edges[j];
-        if (sets[vtx] != 2 && sets[vtx] != set) {
-          printf("Error: %d (set %d) adjacent to %d (set %d)\n", i, set, vtx, sets[vtx]);
-        }
-      }
+    sep_size = 0;
+    j = k = 0;
+    for (i = 1; i <= nvtxs; i++) {
+	if (sets[i] == 0)
+	    j += graph[i]->vwgt;
+	if (sets[i] == 1)
+	    k += graph[i]->vwgt;
+	if (sets[i] == 2)
+	    sep_size += graph[i]->vwgt;
     }
-  }
+    printf("Set sizes = %d/%d, Separator size = %d\n\n", j, k, sep_size);
+
+    /* Now check that it really is a separator. */
+    for (i = 1; i <= nvtxs; i++) {
+	set = sets[i];
+	if (set != 2) {
+	    for (j = 1; j < graph[i]->nedges; j++) {
+		vtx = graph[i]->edges[j];
+		if (sets[vtx] != 2 && sets[vtx] != set) {
+		    printf("Error: %d (set %d) adjacent to %d (set %d)\n",
+			   i, set, vtx, sets[vtx]);
+		}
+	    }
+	}
+    }
 }

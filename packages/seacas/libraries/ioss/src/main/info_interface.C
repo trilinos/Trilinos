@@ -33,11 +33,11 @@
  * 
  */
 #include "info_interface.h"
-#include <cstddef>                     // for nullptr
-#include "Ioss_GetLongOpt.h"            // for GetLongOption, etc
+#include <stddef.h>                     // for nullptr
 #include <cstdlib>                      // for exit, EXIT_SUCCESS, getenv
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <string>                       // for char_traits, string
+#include "Ioss_GetLongOpt.h"            // for GetLongOption, etc
 
 
 
@@ -51,7 +51,7 @@ Info::Interface::Interface()
   enroll_options();
 }
 
-Info::Interface::~Interface() = default;
+Info::Interface::~Interface() {}
 
 void Info::Interface::enroll_options()
 {

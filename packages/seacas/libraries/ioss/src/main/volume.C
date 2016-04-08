@@ -32,7 +32,7 @@
 // 
 
 
-#include <cstddef>                     // for size_t, nullptr
+#include <stddef.h>                     // for size_t, nullptr
 #include <sys/time.h>                   // for timeval, gettimeofday
 #include <sys/types.h>                  // for int64_t
 #include <algorithm>                    // for max_element, min_element
@@ -58,7 +58,7 @@ namespace {
 #else
     timeval ts;
     gettimeofday(&ts, nullptr);
-    return static_cast<size_t>(ts.tv_sec) * 1000000LL + static_cast<size_t>(ts.tv_usec);
+    return (size_t)ts.tv_sec * 1000000LL + (size_t)ts.tv_usec;
 #endif
   }
 
@@ -170,7 +170,7 @@ namespace {
     double d5 = x1[6] * x2[6] + x1[7] * x2[7];
     return d1 + d2 + d4 + d5;
   }
-}  // namespace
+}
 
 template <typename T>
 void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &coordinates, const std::vector<T> &connectivity,

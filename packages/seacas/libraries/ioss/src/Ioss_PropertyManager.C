@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,9 +33,9 @@
 #include <Ioss_Property.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Utils.h>
+#include <stddef.h>
 #include <map>
 #include <ostream>
-#include <stddef.h>
 #include <string>
 #include <utility>
 
@@ -45,12 +45,11 @@ Ioss::PropertyManager::~PropertyManager()
 {
   try {
     properties.clear();
-  }
-  catch (...) {
+  } catch (...) {
   }
 }
 
-void Ioss::PropertyManager::add(const Ioss::Property &new_prop)
+void Ioss::PropertyManager::add(const Ioss::Property& new_prop)
 {
   auto iter = properties.find(new_prop.get_name());
   if (iter != properties.end()) {
@@ -60,12 +59,12 @@ void Ioss::PropertyManager::add(const Ioss::Property &new_prop)
 }
 
 // Checks if a property with 'property_name' exists in the database.
-bool Ioss::PropertyManager::exists(const std::string &property_name) const
+bool Ioss::PropertyManager::exists(const std::string& property_name) const
 {
   return (properties.find(property_name) != properties.end());
 }
 
-Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) const
+Ioss::Property Ioss::PropertyManager::get(const std::string& property_name) const
 {
   auto iter = properties.find(property_name);
   if (iter == properties.end()) {
@@ -76,7 +75,7 @@ Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) cons
   return (*iter).second;
 }
 
-void Ioss::PropertyManager::erase(const std::string &property_name)
+void Ioss::PropertyManager::erase(const std::string& property_name)
 {
   auto iter = properties.find(property_name);
   if (iter != properties.end()) {
@@ -87,7 +86,7 @@ void Ioss::PropertyManager::erase(const std::string &property_name)
 // Returns the names of all properties
 int Ioss::PropertyManager::describe(NameList *names) const
 {
-  int                         the_count = 0;
+  int the_count = 0;
   PropMapType::const_iterator I;
   for (I = properties.begin(); I != properties.end(); ++I) {
     names->push_back((*I).first);
@@ -96,4 +95,8 @@ int Ioss::PropertyManager::describe(NameList *names) const
   return the_count;
 }
 
-size_t Ioss::PropertyManager::count() const { return properties.size(); }
+
+size_t Ioss::PropertyManager::count() const
+{
+  return properties.size();
+}

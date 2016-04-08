@@ -32,14 +32,14 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
-#include <cassert>
+#include <assert.h>
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <heartbeat/Iohb_Layout.h>
-#include <cstddef>
+#include <stddef.h>
 #include <sys/select.h>
-#include <fstream>
-#include <iostream>
 #include <time.h>
+#include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -136,7 +136,7 @@ namespace {
     }
     return log_stream;
   }
-} // namespace
+}
 
 namespace Iohb {
 
@@ -180,7 +180,7 @@ namespace Iohb {
     }
   }
 
-  void DatabaseIO::initialize(const Ioss::Region * /*region*/) const
+  void DatabaseIO::initialize(const Ioss::Region *region) const
   {
     if (!initialized_) {
       assert(layout_ == nullptr);
@@ -421,12 +421,12 @@ namespace Iohb {
 	  layout.add_literal("-");
 	  layout.add_literal(time_stamp(tsFormat));
 	  layout.add_literal(" ");
-	  layout.add_literal(*reinterpret_cast<std::string*>(data));
+	  layout.add_literal(*(std::string*)data);
 	  if (logStream != nullptr) {
 	    *logStream << layout << std::endl;
 }
 	} else {
-	  layout_->add(field.get_name(), *reinterpret_cast<std::string*>(data));
+	  layout_->add(field.get_name(), *(std::string*)data);
 	}
       } else {
 	if (layout_ == nullptr) {
@@ -437,7 +437,7 @@ namespace Iohb {
 	if (field.get_type() == Ioss::Field::INTEGER) {
 	  assert(field.transformed_count() == 1);
 
-	  int *i_data = reinterpret_cast<int*>(data);
+	  int *i_data = (int*)data;
 	  std::vector<int> idata(ncomp);
 	  for (int i=0; i < ncomp; i++) {
 	    idata[i] = i_data[i];
@@ -445,7 +445,7 @@ namespace Iohb {
 	  layout_->add(field.get_name(), idata);
 	} else {
 	  std::vector<double> rdata(ncomp);
-	  double *r_data = reinterpret_cast<double*>(data);
+	  double *r_data = (double*)data;
 	  for (int i=0; i < ncomp; i++) {
 	    rdata[i] = r_data[i];
 	  }
@@ -521,5 +521,5 @@ namespace Iohb {
   {
     return Ioss::REGION;
   }
-} // namespace Iohb
+}
 

@@ -32,9 +32,9 @@
 
 #include <Ioss_Transform.h>
 #include <Ioss_Utils.h>
+#include <stddef.h>
 #include <map>
 #include <ostream>
-#include <stddef.h>
 #include <string>
 #include <utility>
 
@@ -43,7 +43,7 @@ namespace Iotr {
 Ioss::Transform* Factory::create(const std::string& type)
 {
   Ioss::Transform *transform = nullptr;
-  auto iter = registry()->find(type);
+  FactoryMap::iterator iter = registry()->find(type);
   if (iter == registry()->end()) {
     if (registry()->empty()) {
       std::ostringstream errmsg;
@@ -91,4 +91,4 @@ FactoryMap* Factory::registry()
   return &registry_;
 }
 
-}  // namespace Iotr
+}

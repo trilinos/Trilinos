@@ -37,13 +37,13 @@
 #define _ELB_FORMAT_H_
 
 #if defined(__STDC_VERSION__)
-#if (__STDC_VERSION__ >= 199901L)
-#define ST_ZU "%zu"
+#  if (__STDC_VERSION__ >= 199901L)
+#    define ST_ZU   "%zu"
+#  else
+#    define ST_ZU   "%lu"
+#  endif
 #else
-#define ST_ZU "%lu"
-#endif
-#else
-#define ST_ZU "%lu"
+#  define ST_ZU   "%lu"
 #endif
 
 #endif

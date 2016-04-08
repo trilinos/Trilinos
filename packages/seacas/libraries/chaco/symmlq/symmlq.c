@@ -2,23 +2,23 @@
  * Copyright (c) 2014, Sandia Corporation.
  * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
  * the U.S. Government retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- *
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,53 +30,75 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /* symmlq.f -- translated by f2c (version of 16 May 1991  13:06:06).
    You must link the resulting object file with the libraries:
-        -link <S|C|M|L>f2c.lib   (in that order)
+	-link <S|C|M|L>f2c.lib   (in that order)
 */
 
 #include "f2c.h"
 
 /* Table of constant values */
 
-static integer    c__1  = 1;
-static doublereal c_b4  = 1.;
+static integer c__1 = 1;
+static doublereal c_b4 = 1.;
 static doublereal c_b18 = .33333;
 
-int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublereal *v, doublereal *w,
-            doublereal *x, doublereal *y, doublereal *work, logical *checka, logical *goodb,
-            logical *precon, doublereal *shift, integer *nout, integer *itnlim, doublereal *rtol,
-            integer *istop, integer *itn, doublereal *anorm, doublereal *acond, doublereal *rnorm,
-            doublereal *ynorm, doublereal *a, doublereal *vwsqrt, doublereal *orthlist,
-            doublereal *macheps, doublereal *normxlim, integer *itnmin)
+int symmlq_(integer *n,
+	    doublereal *b,
+	    doublereal *r1,
+	    doublereal *r2,
+	    doublereal *v,
+	    doublereal *w,
+	    doublereal *x,
+	    doublereal *y,
+	    doublereal *work,
+	    logical *checka,
+	    logical *goodb,
+	    logical *precon,
+	    doublereal *shift,
+	    integer *nout,
+	    integer *itnlim,
+	    doublereal *rtol,
+	    integer *istop,
+	    integer *itn,
+	    doublereal *anorm,
+	    doublereal *acond,
+	    doublereal *rnorm,
+	    doublereal *ynorm,
+	    doublereal *a,
+	    doublereal *vwsqrt,
+	    doublereal *orthlist,
+	    doublereal *macheps,
+	    doublereal *normxlim,
+	    integer *itnmin)
 {
 
   /* System generated locals */
-  integer    i__1;
+  integer i__1;
   doublereal d__1, d__2;
 
   /* Builtin functions */
   double pow_dd(), sqrt();
 
   /* Local variables */
-  static doublereal           alfa, diag, dbar, beta, gbar, oldb, epsa;
-  extern doublereal           ch_ddot_();
-  static doublereal           gmin, gmax, zbar, epsr, epsx, beta1;
-  extern doublereal           chdnrm2_();
-  static integer              i;
-  static doublereal           gamma, s, t, delta, z, denom;
+  static doublereal alfa, diag, dbar, beta, gbar, oldb, epsa;
+  extern doublereal ch_ddot_();
+  static doublereal gmin, gmax, zbar, epsr, epsx, beta1;
+  extern doublereal chdnrm2_();
+  static integer i;
+  static doublereal gamma, s, t, delta, z, denom;
   extern /* Subroutine */ int aprod_();
-  static doublereal           bstep;
+  static doublereal bstep;
   extern /* Subroutine */ int chdcopy_();
-  static doublereal           epsln;
+  static doublereal epsln;
   extern /* Subroutine */ int chdaxpy_();
-  static doublereal           tnorm, cs, ynorm2, sn, cgnorm;
+  static doublereal tnorm, cs, ynorm2, sn, cgnorm;
   extern /* Subroutine */ int msolve_();
-  static doublereal           snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
+  static doublereal snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
 
-  /*     ------------------------------------------------------------------
+  /*     ------------------------------------------------------------------ 
    */
 
   /*     SYMMLQ  is designed to solve the system of linear equations */
@@ -87,19 +109,21 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*     The matrix A is not required to be positive definite. */
   /*     (If A is known to be definite, the method of conjugate gradients */
 
-  /*     might be preferred, since it will require about the same number of
+  /*     might be preferred, since it will require about the same number of 
    */
   /*     iterations as SYMMLQ but slightly less work per iteration.) */
+
 
   /*     The matrix A is intended to be large and sparse.  It is accessed */
 
   /*     by means of a subroutine call of the form */
 
   /*     old        call aprod ( n, x, y ) */
-  /*     new:       call aprod ( n, x, y, A, vwsqrt, work, orthlist ) -rwl
+  /*     new:       call aprod ( n, x, y, A, vwsqrt, work, orthlist ) -rwl 
    */
 
   /*     which must return the product y = Ax for any given vector x. */
+
 
   /*     More generally, SYMMLQ is designed to solve the system */
 
@@ -111,6 +135,7 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*     inverse iteration and/or Rayleigh-quotient iteration. */
   /*     Again, the matrix (A - shift*I) need not be positive definite. */
   /*     The work per iteration is very slightly less if  shift = 0. */
+
 
   /*     A further option is that of preconditioning, which may reduce */
   /*     the number of iterations required.  If M = C C' is a positive */
@@ -157,7 +182,7 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
 
   /*                        old: call aprod ( n, x, y, ) */
   /*                       new: call aprod ( n, x, y, A, vwsqrt, work, orthl
-                           ist ) -rwl*/
+			   ist ) -rwl*/
 
   /*                        must return the product y = Ax */
   /*                        without altering the vector x. */
@@ -174,7 +199,7 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*                        must solve the linear system My = x */
   /*                        without altering the vector x. */
 
-  /*                        In general, M should be chosen so that Abar has
+  /*                        In general, M should be chosen so that Abar has 
    */
   /*                        clustered eigenvalues.  For example, */
   /*                        if A is positive definite, Abar would ideally */
@@ -184,18 +209,18 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
 
   /*                        be close to a multiple of diag( I  -I ). */
 
-  /*                        NOTE.  The program calling SYMMLQ must declare
+  /*                        NOTE.  The program calling SYMMLQ must declare 
    */
   /*                        aprod and msolve to be external. */
 
-  /*     checka  input      If checka = .true., an extra call of aprod will
+  /*     checka  input      If checka = .true., an extra call of aprod will 
    */
   /*                        be used to check if A is symmetric.  Also, */
   /*                        if precon = .true., an extra call of msolve */
   /*                        will be used to check if M is symmetric. */
 
   /*     goodb   input      Usually, goodb should be .false. */
-  /*                        If x is expected to contain a large multiple of
+  /*                        If x is expected to contain a large multiple of 
    */
   /*                        b (as in Rayleigh-quotient iteration), */
   /*                        better precision may result if goodb = .true. */
@@ -227,12 +252,12 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
 
   /*     itnlim  input      An upper limit on the number of iterations. */
 
-  /*     rtol    input      A user-specified tolerance.  SYMMLQ terminates
+  /*     rtol    input      A user-specified tolerance.  SYMMLQ terminates 
    */
   /*                        if it appears that norm(rbar) is smaller than */
 
   /*                              rtol * norm(Abar) * norm(xbar), */
-  /*                        where rbar is the transformed residual vector,
+  /*                        where rbar is the transformed residual vector, 
    */
   /*                              rbar = bbar - Abar xbar. */
 
@@ -240,20 +265,20 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*                        terminates if norm(b - A*x) is smaller than */
   /*                              rtol * norm(A) * norm(x). */
 
-  /*     istop   output     An integer giving the reason for termination...
+  /*     istop   output     An integer giving the reason for termination... 
    */
 
   /*              -1        beta2 = 0 in the Lanczos iteration; i.e. the */
-  /*                        second Lanczos vector is zero.  This means the
+  /*                        second Lanczos vector is zero.  This means the 
    */
   /*                        rhs is very special. */
   /*                        If there is no preconditioner, b is an */
   /*                        eigenvector of A. */
   /*                        Otherwise (if precon is true), let My = b. */
   /*                        If shift is zero, y is a solution of the */
-  /*                        generalized eigenvalue problem Ay = lambda My,
+  /*                        generalized eigenvalue problem Ay = lambda My, 
    */
-  /*                        with lambda = alpha1 from the Lanczos vectors.
+  /*                        with lambda = alpha1 from the Lanczos vectors. 
    */
 
   /*                        In general, (A - shift*I)x = b */
@@ -298,7 +323,7 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*                        products y'y and r'v differ significantly. */
 
   /*               8        An inner product of the form  x' M**(-1) x */
-  /*                        was not positive, so the preconditioning matrix
+  /*                        was not positive, so the preconditioning matrix 
    */
   /*                        M does not appear to be positive definite. */
 
@@ -311,9 +336,9 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
 
   /*     itn     output     The number of iterations performed. */
 
-  /*     anorm   output     An estimate of the norm of the matrix operator
+  /*     anorm   output     An estimate of the norm of the matrix operator 
    */
-  /*                        Abar = P (A - shift*I) P',   where P = C**(-1).
+  /*                        Abar = P (A - shift*I) P',   where P = C**(-1). 
    */
 
   /*     acond   output     An estimate of the condition of Abar above. */
@@ -350,8 +375,9 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*            double precision, */
   /*            chdaxpy, chdcopy, chddot, chdnrm2 */
   /*     to their single or double equivalents. */
-  /*     ------------------------------------------------------------------
+  /*     ------------------------------------------------------------------ 
    */
+
 
   /*     This routine is an implementation of the algorithm described in */
   /*     the following references: */
@@ -383,8 +409,9 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*          Preconditioners for indefinite systems arising in */
   /*          optimization, SIMAX 13, 1, 292--311, January 1992. */
   /*          (SIAM J. on Matrix Analysis and Applications) */
-  /*     ------------------------------------------------------------------
+  /*     ------------------------------------------------------------------ 
    */
+
 
   /*     SYMMLQ development: */
   /*            1972: First version. */
@@ -403,20 +430,21 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*                  This required both a solve and a multiply with M. */
   /*            1979: Implemented present method for preconditioning. */
   /*                  This requires only a solve with M. */
-  /*            1984: Sven Hammarling noted corrections to tnorm and x1lq.
+  /*            1984: Sven Hammarling noted corrections to tnorm and x1lq. 
    */
   /*                  SYMMLQ added to NAG Fortran Library. */
-  /*     15 Sep 1985: Final F66 version.  SYMMLQ sent to "misc" in netlib.
+  /*     15 Sep 1985: Final F66 version.  SYMMLQ sent to "misc" in netlib. 
    */
   /*     16 Feb 1989: First F77 version. */
 
   /*     22 Feb 1989: Hans Mittelmann observed beta2 = 0 (hence failure) */
   /*                  if Abar = const*I.  istop = -1 added for this case. */
 
+
   /*     01 Mar 1989: Hans Mittelmann observed premature termination on */
   /*                  ( 1  1  1 )     (   )                   ( 1  1    ) */
 
-  /*                  ( 1  1    ) x = ( 1 ),  for which  T3 = ( 1  1  1 ).
+  /*                  ( 1  1    ) x = ( 1 ),  for which  T3 = ( 1  1  1 ). 
    */
   /*                  ( 1     1 )     (   )                   (    1  1 ) */
 
@@ -449,12 +477,12 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
    */
   /* 		   to integrate with a C application code. The matrix */
   /*                  data is now passed by reference through symmlq to */
-  /*                  aprod and msolve. These are now just Fortran wrappers
+  /*                  aprod and msolve. These are now just Fortran wrappers 
    */
   /*                  for C codes consistent with the matrix data passed */
-  /*                  via the pointers "A", "vwsqrt", "work" and "orthlist"
+  /*                  via the pointers "A", "vwsqrt", "work" and "orthlist" 
    */
-  /*    10 Feb 1993:  Modified by Robert Leland to return calculate machine
+  /*    10 Feb 1993:  Modified by Robert Leland to return calculate machine 
    */
   /* 		   precision and terminate if the norm of the iterate gets */
   /* 		   above the limit normxlim. Relevant for inverse iteration. */
@@ -474,20 +502,22 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /* 		   Fortran source, run f2c and recompile without losing or */
   /* 		   re-writing any functionality. */
 
-  /*     Michael A. Saunders                    na.saunders@na-net.ornl.gov
+  /*     Michael A. Saunders                    na.saunders@na-net.ornl.gov 
    */
-  /*     Department of Operations Research    mike@sol-michael.stanford.edu
+  /*     Department of Operations Research    mike@sol-michael.stanford.edu 
    */
   /*     Stanford University */
-  /*     Stanford, CA 94305-4022                             (415) 723-1875
+  /*     Stanford, CA 94305-4022                             (415) 723-1875 
    */
-  /*     ------------------------------------------------------------------
+  /*     ------------------------------------------------------------------ 
    */
+
 
   /*     Subroutines and functions */
 
   /*     USER       aprod, msolve */
   /*     BLAS       chdaxpy, chdcopy, chddot , chdnrm2 */
+
 
   /*     Intrinsics and local variables */
   /* Parameter adjustments */
@@ -502,12 +532,12 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   --b;
 
   /* Function Body */
-  /*     ------------------------------------------------------------------
+  /*     ------------------------------------------------------------------ 
    */
   /*     Compute eps, the machine precision.  The call to chdaxpy is */
   /*     intended to fool compilers that use extra-length registers. */
   eps = .0625;
-L10:
+ L10:
   eps /= 2.;
   x[1] = eps;
   y[1] = 1.;
@@ -525,12 +555,12 @@ L10:
   /*     $                     itnlim, rtol, shift */
   /*     end if */
   *istop = 0;
-  *itn   = 0;
+  *itn = 0;
   *anorm = 0.;
   *acond = 0.;
   *rnorm = 0.;
   *ynorm = 0.;
-  i__1   = *n;
+  i__1 = *n;
   for (i = 1; i <= i__1; ++i) {
     x[i] = 0.;
     /* L50: */
@@ -572,8 +602,8 @@ L10:
   }
   /*     Here and later, v is really P * (the Lanczos v). */
   beta1 = sqrt(beta1);
-  s     = 1. / beta1;
-  i__1  = *n;
+  s = 1. / beta1;
+  i__1 = *n;
   for (i = 1; i <= i__1; ++i) {
     v[i] = s * y[i];
     /* L100: */
@@ -600,8 +630,8 @@ L10:
   d__1 = -alfa / beta1;
   chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
   /*     Make sure  r2  will be orthogonal to the first  v. */
-  z    = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
-  s    = ch_ddot_(n, &v[1], &c__1, &v[1], &c__1);
+  z = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
+  s = ch_ddot_(n, &v[1], &c__1, &v[1], &c__1);
   d__1 = -z / s;
   chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
   chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
@@ -621,55 +651,54 @@ L10:
   }
   /*     See if the local reorthogonalization achieved anything. */
   denom = sqrt(s) * chdnrm2_(n, &r2[1], &c__1) + eps;
-  s     = z / denom;
-  t     = ch_ddot_(n, &v[1], &c__1, &r2[1], &c__1) / denom;
+  s = z / denom;
+  t = ch_ddot_(n, &v[1], &c__1, &r2[1], &c__1) / denom;
   /*     if (nout .gt. 0  .and.  goodb) then */
   /*        write(nout, 1100) beta1, alfa, s, t */
   /*     end if */
   /*     Initialize other quantities. */
   cgnorm = beta1;
-  gbar   = alfa;
-  dbar   = beta;
-  rhs1   = beta1;
-  rhs2   = 0.;
-  bstep  = 0.;
+  gbar = alfa;
+  dbar = beta;
+  rhs1 = beta1;
+  rhs2 = 0.;
+  bstep = 0.;
   snprod = 1.;
   /* Computing 2nd power */
-  d__1   = alfa;
-  tnorm  = d__1 * d__1;
+  d__1 = alfa;
+  tnorm = d__1 * d__1;
   ynorm2 = 0.;
-  gmax   = abs(alfa);
-  gmin   = gmax;
+  gmax = abs(alfa);
+  gmin = gmax;
   if (*goodb) {
     i__1 = *n;
     for (i = 1; i <= i__1; ++i) {
       w[i] = 0.;
       /* L200: */
     }
-  }
-  else {
+  } else {
     chdcopy_(n, &v[1], &c__1, &w[1], &c__1);
   }
-/*     ------------------------------------------------------------------
- */
-/*     Main iteration loop. */
-/*     ------------------------------------------------------------------
- */
-/*     Estimate various norms and test for convergence. */
-L300:
+  /*     ------------------------------------------------------------------ 
+   */
+  /*     Main iteration loop. */
+  /*     ------------------------------------------------------------------ 
+   */
+  /*     Estimate various norms and test for convergence. */
+ L300:
   *anorm = sqrt(tnorm);
   *ynorm = sqrt(ynorm2);
-  epsa   = *anorm * eps;
-  epsx   = *anorm * *ynorm * eps;
-  epsr   = *anorm * *ynorm * *rtol;
-  diag   = gbar;
+  epsa = *anorm * eps;
+  epsx = *anorm * *ynorm * eps;
+  epsr = *anorm * *ynorm * *rtol;
+  diag = gbar;
   if (diag == 0.) {
     diag = epsa;
   }
   /* Computing 2nd power */
   d__1 = rhs1;
   /* Computing 2nd power */
-  d__2   = rhs2;
+  d__2 = rhs2;
   lqnorm = sqrt(d__1 * d__1 + d__2 * d__2);
   qrnorm = snprod * beta1;
   cgnorm = qrnorm * beta / abs(diag);
@@ -680,15 +709,14 @@ L300:
   /*     T(k+1) is not, so we must be careful not to overestimate acond. */
   if (lqnorm <= cgnorm) {
     *acond = gmax / gmin;
-  }
-  else {
+  } else {
     /* Computing MIN */
     d__1 = gmin, d__2 = abs(diag);
-    denom  = min(d__1, d__2);
+    denom = min(d__1,d__2);
     *acond = gmax / denom;
   }
   /*     See if any of the stopping criteria are satisfied. */
-  /*     In rare cases, istop is already -1 from above (Abar = const * I).
+  /*     In rare cases, istop is already -1 from above (Abar = const * I). 
    */
   if (*istop == 0) {
     if (*itn >= *itnlim) {
@@ -711,7 +739,7 @@ L300:
   if (*itn < *itnmin) {
     *istop = 0;
   }
-  /*     ==================================================================
+  /*     ================================================================== 
    */
   /*     See if it is time to print something. */
   if (*nout <= 0) {
@@ -742,24 +770,24 @@ L300:
     goto L400;
   }
   goto L600;
-/*     Print a line for this iteration. */
-L400:
+  /*     Print a line for this iteration. */
+ L400:
   zbar = rhs1 / diag;
-  z    = (snprod * zbar + bstep) / beta1;
-/*     x1lq   = x(1)  +  b1 * bstep / beta1 */
-/*     x1cg   = x(1)  +  w(1) * zbar  +  b1 * z */
-/*     if (    itn     .eq. 0) write(nout, 1200) */
-/*     write(nout, 1300) itn, x1cg, cgnorm, bstep/beta1, anorm, acond */
-/*     if (mod(itn,10) .eq. 0) write(nout, 1500) */
-/*     ==================================================================
- */
-/*     Obtain the current Lanczos vector  v = (1 / beta)*y */
-/*     and set up  y  for the next iteration. */
-L600:
+  z = (snprod * zbar + bstep) / beta1;
+  /*     x1lq   = x(1)  +  b1 * bstep / beta1 */
+  /*     x1cg   = x(1)  +  w(1) * zbar  +  b1 * z */
+  /*     if (    itn     .eq. 0) write(nout, 1200) */
+  /*     write(nout, 1300) itn, x1cg, cgnorm, bstep/beta1, anorm, acond */
+  /*     if (mod(itn,10) .eq. 0) write(nout, 1500) */
+  /*     ================================================================== 
+   */
+  /*     Obtain the current Lanczos vector  v = (1 / beta)*y */
+  /*     and set up  y  for the next iteration. */
+ L600:
   if (*istop != 0) {
     goto L800;
   }
-  s    = 1. / beta;
+  s = 1. / beta;
   i__1 = *n;
   for (i = 1; i <= i__1; ++i) {
     v[i] = s * y[i];
@@ -774,9 +802,9 @@ L600:
   /* Computing 2nd power */
   d__1 = alfa;
   /* Computing 2nd power */
-  d__2  = beta;
+  d__2 = beta;
   tnorm = tnorm + d__1 * d__1 + d__2 * d__2 * 2.;
-  d__1  = -alfa / beta;
+  d__1 = -alfa / beta;
   chdaxpy_(n, &d__1, &r2[1], &c__1, &y[1], &c__1);
   chdcopy_(n, &r2[1], &c__1, &r1[1], &c__1);
   chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
@@ -794,18 +822,18 @@ L600:
   /* Computing 2nd power */
   d__1 = gbar;
   /* Computing 2nd power */
-  d__2  = oldb;
+  d__2 = oldb;
   gamma = sqrt(d__1 * d__1 + d__2 * d__2);
-  cs    = gbar / gamma;
-  sn    = oldb / gamma;
+  cs = gbar / gamma;
+  sn = oldb / gamma;
   delta = cs * dbar + sn * alfa;
-  gbar  = sn * dbar - cs * alfa;
+  gbar = sn * dbar - cs * alfa;
   epsln = sn * beta;
-  dbar  = -cs * beta;
+  dbar = -cs * beta;
   /*     Update  x. */
-  z    = rhs1 / gamma;
-  s    = z * cs;
-  t    = z * sn;
+  z = rhs1 / gamma;
+  s = z * cs;
+  t = z * sn;
   i__1 = *n;
   for (i = 1; i <= i__1; ++i) {
     x[i] = w[i] * s + v[i] * t + x[i];
@@ -816,35 +844,34 @@ L600:
   /*     and go round again. */
   bstep = snprod * cs * z + bstep;
   snprod *= sn;
-  gmax = max(gmax, gamma);
-  gmin = min(gmin, gamma);
+  gmax = max(gmax,gamma);
+  gmin = min(gmin,gamma);
   /* Computing 2nd power */
-  d__1   = z;
+  d__1 = z;
   ynorm2 = d__1 * d__1 + ynorm2;
-  rhs1   = rhs2 - delta * z;
-  rhs2   = -epsln * z;
+  rhs1 = rhs2 - delta * z;
+  rhs2 = -epsln * z;
   ++(*itn);
   goto L300;
-/*     ------------------------------------------------------------------
- */
-/*     End of main iteration loop. */
-/*     ------------------------------------------------------------------
- */
-/*     Move to the CG point if it seems better. */
-/*     In this version of SYMMLQ, the convergence tests involve */
-/*     only cgnorm, so we're unlikely to stop at an LQ point, */
-/*     EXCEPT if the iteration limit interferes. */
-L800:
+  /*     ------------------------------------------------------------------ 
+   */
+  /*     End of main iteration loop. */
+  /*     ------------------------------------------------------------------ 
+   */
+  /*     Move to the CG point if it seems better. */
+  /*     In this version of SYMMLQ, the convergence tests involve */
+  /*     only cgnorm, so we're unlikely to stop at an LQ point, */
+  /*     EXCEPT if the iteration limit interferes. */
+ L800:
   if (cgnorm <= lqnorm) {
-    zbar  = rhs1 / diag;
+    zbar = rhs1 / diag;
     bstep = snprod * zbar + bstep;
     /* Computing 2nd power */
-    d__1   = zbar;
+    d__1 = zbar;
     *ynorm = sqrt(ynorm2 + d__1 * d__1);
     *rnorm = cgnorm;
     chdaxpy_(n, &zbar, &w[1], &c__1, &x[1], &c__1);
-  }
-  else {
+  } else {
     *rnorm = lqnorm;
   }
   if (*goodb) {
@@ -856,12 +883,12 @@ L800:
     }
     chdaxpy_(n, &bstep, &y[1], &c__1, &x[1], &c__1);
   }
-/*     ==================================================================
- */
-/*     Display final status. */
-/*     ==================================================================
- */
-L900:
+  /*     ================================================================== 
+   */
+  /*     Display final status. */
+  /*     ================================================================== 
+   */
+ L900:
   /*     if (nout  .gt. 0) then */
   /*        write(nout, 2000) exit, istop, itn, */
   /*    $                     exit, anorm, acond, */
@@ -869,7 +896,7 @@ L900:
   /*        write(nout, 3000) exit, msg(istop) */
   /*     end if */
   return 0;
-  /*     ------------------------------------------------------------------
+  /*     ------------------------------------------------------------------ 
    */
   /* 1000 format(// 1p,    a, 5x, 'Solution of symmetric   Ax = b' */
   /*     $       / ' n      =', i7, 5x, 'checka =', l4, 12x, */
@@ -887,7 +914,8 @@ L900:
   /*     $       /     a, 6x, 'anorm =', e12.4, 6x, 'acond =', e12.4 */
   /*     $       /     a, 6x, 'rnorm =', e12.4, 6x, 'ynorm =', e12.4) */
   /* 3000 format(      a, 6x, a ) */
-  /*     ------------------------------------------------------------------
+  /*     ------------------------------------------------------------------ 
    */
   /*     end of SYMMLQ */
 } /* symmlq_ */
+

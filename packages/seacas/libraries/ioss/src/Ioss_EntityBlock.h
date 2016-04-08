@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,46 +33,42 @@
 #ifndef IOSS_Ioss_EntityBlock_h
 #define IOSS_Ioss_EntityBlock_h
 
-#include <Ioss_GroupingEntity.h> // for GroupingEntity
-#include <Ioss_Property.h>       // for Property
-#include <stddef.h>              // for size_t
-#include <string>                // for string
-namespace Ioss {
-  class DatabaseIO;
-}
-namespace Ioss {
-  class ElementTopology;
-}
+#include <Ioss_GroupingEntity.h>        // for GroupingEntity
+#include <Ioss_Property.h>              // for Property
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class ElementTopology; }
 
 namespace Ioss {
   class ElementBlock;
 
-  class EntityBlock : public GroupingEntity
-  {
+  class EntityBlock : public GroupingEntity {
   public:
-    virtual Property get_implicit_property(const std::string &my_name) const = 0;
+    virtual Property
+      get_implicit_property(const std::string& my_name) const = 0;
 
     // Describes the contained entities topology
-    const ElementTopology *topology() const { return topology_; }
+    const ElementTopology *topology() const {return topology_;}
 
     bool contains(size_t local_id) const
-    {
-      return idOffset < local_id && local_id <= idOffset + entityCount;
-    }
+      { return idOffset < local_id && local_id <= idOffset + entityCount; }
 
-    void set_offset(size_t offset) { idOffset = offset; }
-    size_t                 get_offset() const { return idOffset; }
+    void  set_offset(size_t offset) {idOffset = offset;}
+    size_t get_offset() const {return idOffset;}
 
   protected:
-    EntityBlock(DatabaseIO *io_database, const std::string &my_name, const std::string &entity_type,
-                size_t entity_count);
+    EntityBlock(DatabaseIO *io_database,
+		const std::string& my_name,
+		const std::string& entity_type,
+		size_t entity_count);
 
-    EntityBlock(const EntityBlock &) = delete;
-    EntityBlock &operator=(const EntityBlock &) = delete;
+    EntityBlock(const EntityBlock&) =delete; 
+    EntityBlock& operator=(const EntityBlock&) =delete;
 
     ElementTopology *topology_;
-
   protected:
+
     /**
      * The 'offset' is used to map an element location within an
      * element block to the element 'file descriptor'.

@@ -1,15 +1,15 @@
 // Copyright(C) 2009-2010 Sandia Corporation.
-//
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,94 +32,92 @@
 #ifndef SEACAS_Internals_h
 #define SEACAS_Internals_h
 
-#include <vector> // for vector
-namespace Excn {
-  struct Block;
-}
-namespace Excn {
-  struct CommunicationMetaData;
-}
-namespace Excn {
-  template <typename INT> struct Mesh;
-}
-namespace Excn {
-  template <typename INT> struct NodeSet;
-}
-namespace Excn {
-  template <typename INT> struct SideSet;
-}
+#include <vector>                       // for vector
+namespace Excn { struct Block; }
+namespace Excn { struct CommunicationMetaData; }
+namespace Excn { template <typename INT> struct Mesh; }
+namespace Excn { template <typename INT> struct NodeSet; }
+namespace Excn { template <typename INT> struct SideSet; }
 
-/*!
- * This set of classes provides a thin wrapper around the exodusII
- * internals.  It supplants several of the exodusII API calls in
- * order to avoid ncredef calls which totally rewrite the existing
- * database and can be very expensive.  These routines provide all
- * required variable, dimension, and attribute definitions to the
- * underlying netcdf file with only a single ncredef call.
- *
- * To use the application must create an Excn::Internals instance
- * and call the Excn::Internals::write_meta_data() function.  This
- * function requires several classes as arguments including:
- * <ul>
- * <li> Mesh -- defines mesh global metadata
- * <li> Block -- defines metadata for each block
- * <li> NodeSet -- defines metadata for each nodeset
- * <li> SideSet -- defines metadata for each sideset
- * <li> CommunicationMetaData -- global metadata relating to
- * parallel info.
- * </ul>
- *
- * Calling Excn::Internals::write_meta_data(), replaces the
- * following exodusII and nemesis API calls:
- * <ul>
- * <li> ex_put_init(),
- * <li> ex_put_elem_block(),
- * <li> ex_put_node_set_param(),
- * <li> ex_put_side_set_param(),
- * <li> ne_put_init_info(),
- * <li> ne_put_loadbal_param(),
- * <li> ne_put_cmap_params(),
- * </ul>
- */
+  /*!
+   * This set of classes provides a thin wrapper around the exodusII
+   * internals.  It supplants several of the exodusII API calls in
+   * order to avoid ncredef calls which totally rewrite the existing
+   * database and can be very expensive.  These routines provide all
+   * required variable, dimension, and attribute definitions to the
+   * underlying netcdf file with only a single ncredef call.
+   *
+   * To use the application must create an Excn::Internals instance
+   * and call the Excn::Internals::write_meta_data() function.  This
+   * function requires several classes as arguments including:
+   * <ul>
+   * <li> Mesh -- defines mesh global metadata
+   * <li> Block -- defines metadata for each block
+   * <li> NodeSet -- defines metadata for each nodeset
+   * <li> SideSet -- defines metadata for each sideset
+   * <li> CommunicationMetaData -- global metadata relating to
+   * parallel info.
+   * </ul>
+   *
+   * Calling Excn::Internals::write_meta_data(), replaces the
+   * following exodusII and nemesis API calls:
+   * <ul> 
+   * <li> ex_put_init(),
+   * <li> ex_put_elem_block(),
+   * <li> ex_put_node_set_param(),
+   * <li> ex_put_side_set_param(),
+   * <li> ne_put_init_info(),
+   * <li> ne_put_loadbal_param(),
+   * <li> ne_put_cmap_params(),
+   * </ul>
+   */
 
 namespace Excn {
-
+  
   class Redefine
-  {
-  public:
-    explicit Redefine(int exoid);
-    ~Redefine();
+    {
+    public:
+      explicit Redefine(int exoid);
+      ~Redefine();
 
-  private:
-    int exodusFilePtr;
-  };
+    private:
+      int exodusFilePtr;
+    };
 
   class Internals
-  {
-  public:
-    explicit Internals(int exoid, int maximum_name_length);
+    {
+    public:
+      explicit Internals(int exoid, int maximum_name_length);
 
-    template <typename INT>
-    int write_meta_data(const Mesh<INT> &mesh, const std::vector<Block> &blocks,
-                        const std::vector<NodeSet<INT>> &nodesets,
-                        const std::vector<SideSet<INT>> &sidesets,
-                        const CommunicationMetaData &    comm);
+      template <typename INT>
+      int write_meta_data(const Mesh<INT> &mesh,
+			  const std::vector<Block>   &blocks,
+			  const std::vector<NodeSet<INT> > &nodesets,
+			  const std::vector<SideSet<INT> > &sidesets,
+			  const CommunicationMetaData &comm);
 
-  private:
-    template <typename INT>
-    int put_metadata(const Mesh<INT> &mesh, const CommunicationMetaData &comm);
-    int put_metadata(const std::vector<Block> &blocks);
-    template <typename INT> int put_metadata(const std::vector<NodeSet<INT>> &nodesets);
-    template <typename INT> int put_metadata(const std::vector<SideSet<INT>> &sidesets);
+    private:
+      template <typename INT>
+      int put_metadata(const Mesh<INT> &mesh,
+		       const CommunicationMetaData &comm);
+      int put_metadata(const std::vector<Block> &blocks);
+      template <typename INT>
+      int put_metadata(const std::vector<NodeSet<INT> > &nodesets);
+      template <typename INT>
+      int put_metadata(const std::vector<SideSet<INT> > &sidesets);
 
-    template <typename INT>
-    int put_non_define_data(const Mesh<INT> &mesh, const CommunicationMetaData &comm);
-    int put_non_define_data(const std::vector<Block> &blocks);
-    template <typename INT> int put_non_define_data(const std::vector<NodeSet<INT>> &nodesets);
-    template <typename INT> int put_non_define_data(const std::vector<SideSet<INT>> &sidesets);
+      template <typename INT>
+      int put_non_define_data(const Mesh<INT> &mesh,
+			      const CommunicationMetaData &comm);
+      int put_non_define_data(const std::vector<Block> &blocks);
+      template <typename INT>
+      int put_non_define_data(const std::vector<NodeSet<INT> > &nodesets);
+      template <typename INT>
+      int put_non_define_data(const std::vector<SideSet<INT> > &sidesets);
 
-    int exodusFilePtr;
-    int maximumNameLength;
-  };
+      int exodusFilePtr;
+      int maximumNameLength;
+    };
 }
 #endif /* SEACAS_Internals_h */
+

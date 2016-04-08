@@ -36,16 +36,16 @@
 #ifndef _EXOIILB_CONST_H_
 #define _EXOIILB_CONST_H_
 
-#include "elb_elem.h"
-#include <cstdio>
-#include <exodusII.h>
 #include <string>
 #include <vector>
+#include <stdio.h>
+#include <exodusII.h>
+#include "elb_elem.h"
 
-#define ELB_VERSION "4.11"
-#define UTIL_NAME "nem_slice"
-#define ELB_FALSE 0
-#define ELB_TRUE 1
+#define ELB_VERSION	"4.11"
+#define UTIL_NAME	"nem_slice"
+#define ELB_FALSE	0
+#define ELB_TRUE	1
 
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
@@ -55,7 +55,7 @@
 
 /* Macro for maximum value */
 #ifndef MAX
-#define MAX(x, y) ((x > y) ? x : y)
+#define MAX(x,y)  ((x > y) ? x : y)
 #endif
 
 /*
@@ -63,17 +63,19 @@
  * values, the more efficient the code will be, memory wise. Larger values
  * will likely speed execution and prevent swap thrashing.
  */
-#define SURND_ALLOC 8
-#define ADJ_ALLOC 8
-#define MEM_CHUNK_SIZE 16 /* Value MUST be >= 2 */
-#define MEM_GROWTH 1.5
+#define SURND_ALLOC	8
+#define ADJ_ALLOC	8
+#define MEM_CHUNK_SIZE	16	/* Value MUST be >= 2 */
+#define MEM_GROWTH      1.5
 
 #define MAX_INP_LINE 10240
 
-template <typename INT> void vec_free(std::vector<INT> &V) { std::vector<INT>().swap(V); }
+template <typename INT>
+void vec_free(std::vector<INT> &V)
+{ std::vector<INT>().swap(V);}
 
 /* Prototype for timing function */
-extern double get_time();
+extern double get_time(void);
 
 /* Structure used for the description of the machine for which the
  * load balance is to be constructed. */
@@ -87,61 +89,59 @@ struct Machine_Description
                         one box, then this is the same as num_procs */
   int num_procs;
 
-  Machine_Description() : type(-1), num_dims(-1), num_boxes(-1), procs_per_box(-1), num_procs(-1)
-  {
-    dim[0] = dim[1] = dim[2] = -1;
-  }
+  Machine_Description() :
+    type(-1), num_dims(-1), num_boxes(-1), procs_per_box(-1), num_procs(-1)
+  { dim[0] = dim[1] = dim[2] = -1;}
 };
 
 /* Structure used for the description of what type of load balance is
  * to be performed. */
-template <typename INT> struct LB_Description
+template <typename INT>
+struct LB_Description
 {
-  int         type;
-  int         ignore_z;
-  int         refine;
-  int         num_sects;
-  int         cnctd_dom;
-  int         outfile;
+  int      type;
+  int      ignore_z;
+  int      refine;
+  int      num_sects;
+  int      cnctd_dom;
+  int      outfile;
   std::string file;
 
   /* Calculated quantities */
-  int *vertex2proc;
+  int     *vertex2proc;
 
   /* Nodal */
-  std::vector<std::vector<INT>> int_nodes;
-  std::vector<std::vector<INT>> bor_nodes;
-  std::vector<std::vector<INT>> ext_nodes;
-  std::vector<std::vector<INT>> ext_procs;
+  std::vector<std::vector<INT> > int_nodes;
+  std::vector<std::vector<INT> > bor_nodes;
+  std::vector<std::vector<INT> > ext_nodes;
+  std::vector<std::vector<INT> > ext_procs;
 
   /* Elemental */
-  std::vector<std::vector<std::vector<INT>>> born_procs;
-  std::vector<std::vector<INT>>              int_elems;
-  std::vector<std::vector<INT>>              bor_elems;
-  std::vector<std::vector<INT>>              e_cmap_elems;
-  std::vector<std::vector<INT>>              e_cmap_sides;
-  std::vector<std::vector<INT>>              e_cmap_procs;
-  std::vector<std::vector<INT>>              e_cmap_neigh;
+  std::vector<std::vector<std::vector<INT> > > born_procs;
+  std::vector<std::vector<INT> > int_elems;
+  std::vector<std::vector<INT> > bor_elems;
+  std::vector<std::vector<INT> > e_cmap_elems;
+  std::vector<std::vector<INT> > e_cmap_sides;
+  std::vector<std::vector<INT> > e_cmap_procs;
+  std::vector<std::vector<INT> > e_cmap_neigh;
 
-  LB_Description()
-      : type(-1), ignore_z(0), refine(-1), num_sects(-1), cnctd_dom(-1), outfile(-1),
-        vertex2proc(nullptr)
-  {
-  }
+  LB_Description() :
+    type(-1), ignore_z(0), refine(-1), num_sects(-1), cnctd_dom(-1), outfile(-1), vertex2proc(nullptr)
+  {}
 };
 
 /* Structure for the problem description. */
 struct Problem_Description
 {
-  int    type;
-  int    read_coords;
-  int    coarse_flag;
-  int    alloc_graph;
+  int   type;
+  int   read_coords;
+  int   coarse_flag;
+  int   alloc_graph;
   size_t num_vertices;
-  int    vis_out;
-  int    skip_checks;     /* put in to skip some error checks for some meshes  */
-  int    face_adj;        /* true if using face definition of adjacencies      */
-  int    partial_adj;     /* true if allowing partial (3/4) of nodes to */
+  int   vis_out;
+  int   skip_checks;      /* put in to skip some error checks for some meshes  */
+  int   face_adj;         /* true if using face definition of adjacencies      */
+  int   partial_adj;      /* true if allowing partial (3/4) of nodes to */
                           /* determine adjancencies */
   int   global_mech;      /* true if looking for mechanisms in original mesh   */
   int   local_mech;       /* true if looking for mechanisms in subdivided mesh */
@@ -150,18 +150,17 @@ struct Problem_Description
   int   dsd_add_procs;    /* adds processors in cases of disconnected subdomains */
   int   no_sph;
   char *groups;
-  int * group_no;
+  int  *group_no;
   int   num_groups;
-  int   int64db;  /* integer types for output mesh database */
-  int   int64api; /* integer types for exodus api calls */
+  int   int64db;         /* integer types for output mesh database */
+  int   int64api;        /* integer types for exodus api calls */
 
-  Problem_Description()
-      : type(-1), read_coords(-1), coarse_flag(-1), alloc_graph(-1), num_vertices(0), vis_out(-1),
-        skip_checks(-1), face_adj(-1), partial_adj(0), global_mech(-1), local_mech(-1),
-        find_cnt_domains(-1), mech_add_procs(-1), dsd_add_procs(-1), no_sph(-1), groups(nullptr),
-        group_no(nullptr), num_groups(-1), int64db(0), int64api(0)
-  {
-  }
+  Problem_Description() :
+    type(-1), read_coords(-1), coarse_flag(-1), alloc_graph(-1), num_vertices(0), vis_out(-1),
+    skip_checks(-1), face_adj(-1), partial_adj(0), global_mech(-1), local_mech(-1),
+    find_cnt_domains(-1), mech_add_procs(-1), dsd_add_procs(-1), no_sph(-1),
+    groups(nullptr), group_no(nullptr), num_groups(-1), int64db(0), int64api(0)
+  {}
 };
 
 /* Structure for parameters needed for the Eigensolver in Chaco */
@@ -170,84 +169,95 @@ struct Solver_Description
   double tolerance;
   int    rqi_flag;
   int    vmax;
-
-  Solver_Description() : tolerance(-1.0), rqi_flag(-1), vmax(-1) {}
+  
+  Solver_Description() :
+    tolerance(-1.0), rqi_flag(-1), vmax(-1)
+  {}
 };
 
 /* Structure used to store information about the weighting scheme, if
  * any, that is to be used. */
-template <typename INT> struct Weight_Description
+template <typename INT>
+struct Weight_Description
 {
-  int type;    /* See weight type below for possible types */
-  int ow_read; /* 1 if element block settings overwrite exodus file read */
+  int   type;  /* See weight type below for possible types */
+  int   ow_read; /* 1 if element block settings overwrite exodus file read */
 
   std::string exo_filename;
   std::string exo_varname;
-
-  int exo_tindx;
-  int exo_vindx;
+  
+  int   exo_tindx;
+  int   exo_vindx;
 
   /* Variable parameters */
-  int nvals;
+  int    nvals;
 
   /* vectors to hold element block weights */
-  std::vector<INT> elemblk;     /* Id of element block */
+  std::vector<INT> elemblk; /* Id of element block */
   std::vector<INT> elemblk_wgt; /* Weight of that element block */
 
   /* vector to indicate if weight value has already been overwritten */
   std::vector<INT> ow;
 
-  std::vector<int>   vertices;
+  std::vector<int> vertices;
   std::vector<float> edges;
 
-  Weight_Description<INT>() : type(-1), ow_read(0), exo_tindx(-1), exo_vindx(-1), nvals(0) {}
+  Weight_Description<INT>() :
+    type(-1), ow_read(0), exo_tindx(-1), exo_vindx(-1), nvals(0)
+  {}
 };
 
 /* Structure used to store information about the FEM mesh */
-template <typename INT> struct Mesh_Description
+template <typename INT>
+struct Mesh_Description
 {
-  size_t  num_nodes;
-  size_t  num_elems;
-  size_t  num_dims;
-  size_t  num_el_blks;
-  INT *   eb_cnts;
-  size_t  num_node_sets;
-  size_t  num_side_sets;
-  size_t  max_np_elem;
-  size_t  ns_list_len;
-  char    title[MAX_LINE_LENGTH + 1];
-  float * coords;
+  size_t     num_nodes;
+  size_t     num_elems;
+  size_t     num_dims;
+  size_t     num_el_blks;
+  INT       *eb_cnts;
+  size_t     num_node_sets;
+  size_t     num_side_sets;
+  size_t     max_np_elem;
+  size_t     ns_list_len;
+  char    title[MAX_LINE_LENGTH+1];
+  float  *coords;
   E_Type *elem_type;
-  INT **  connect;
-
-  Mesh_Description()
-      : num_nodes(0), num_elems(0), num_dims(0), num_el_blks(0), eb_cnts(nullptr), num_node_sets(0),
-        num_side_sets(0), max_np_elem(0), ns_list_len(0), coords(nullptr), elem_type(nullptr),
-        connect(nullptr)
-  {
-  }
+  INT   **connect;
+  
+  Mesh_Description() :
+    num_nodes(0), num_elems(0), num_dims(0), num_el_blks(0),
+    eb_cnts(nullptr), num_node_sets(0), num_side_sets(0),
+    max_np_elem(0), ns_list_len(0), coords(nullptr), elem_type(nullptr),
+    connect(nullptr)
+  {}
 };
 
 /* Structure for handling meshes with spheres */
 struct Sphere_Info
 {
   size_t num;
-  int *  adjust;
-  int *  begin;
-  int *  end;
+  int  *adjust;
+  int  *begin;
+  int  *end;
 
-  Sphere_Info() : num(0), adjust(nullptr), begin(nullptr), end(nullptr) {}
+  Sphere_Info() :
+    num(0), adjust(nullptr), begin(nullptr), end(nullptr)
+  {}
 };
 
 /* Structure used to store various information about the graph */
-template <typename INT> struct Graph_Description
+template <typename INT>
+struct Graph_Description
 {
-  size_t                        nadj;
-  size_t                        max_nsur;
-  std::vector<INT>              adj;
-  std::vector<INT>              start;
-  std::vector<std::vector<INT>> sur_elem;
-  Graph_Description<INT>() : nadj(0), max_nsur(0) {}
+  size_t nadj;
+  size_t max_nsur;
+  std::vector<INT> adj;
+  std::vector<INT> start;
+  std::vector<std::vector<INT> > sur_elem;
+  Graph_Description<INT>() :
+    nadj(0),  max_nsur(0)
+  {}
 };
 
 /* Various constants */
@@ -257,35 +267,35 @@ template <typename INT> struct Graph_Description
 #define UTIL_NAME "nem_slice"
 
 /* Load balance types */
-#define MULTIKL 0
-#define SPECTRAL 1
-#define INERTIAL 2
-#define LINEAR 3
-#define RANDOM 4
-#define SCATTERED 5
-#define INFILE 6
-#define KL_REFINE 7
-#define NO_REFINE 8
-#define NUM_SECTS 9
-#define CNCT_DOM 10
-#define OUTFILE 11
-#define ZPINCH 12
-#define BRICK 13
-#define ZOLTAN_RCB 14
-#define ZOLTAN_RIB 15
-#define ZOLTAN_HSFC 16
-#define IGNORE_Z 17
+#define MULTIKL		0
+#define SPECTRAL	1
+#define INERTIAL	2
+#define LINEAR 		3
+#define RANDOM 		4
+#define SCATTERED 	5
+#define INFILE		6
+#define KL_REFINE 	7
+#define NO_REFINE 	8
+#define NUM_SECTS	9
+#define CNCT_DOM	10
+#define OUTFILE		11
+#define ZPINCH          12
+#define BRICK           13
+#define ZOLTAN_RCB      14
+#define ZOLTAN_RIB      15
+#define ZOLTAN_HSFC     16
+#define IGNORE_Z        17
 
 /* Machine types */
-#define MESH 0
-#define HCUBE 1
-#define HYPERCUBE 2
-#define CLUSTER 3
+#define MESH 		0
+#define HCUBE		1
+#define HYPERCUBE	2
+#define CLUSTER		3
 
 /* Solver options */
-#define TOLER 0
-#define USE_RQI 1
-#define VMAX 2
+#define TOLER 		0
+#define USE_RQI 	1
+#define VMAX		2
 
 /* ISSUES options */
 
@@ -301,12 +311,12 @@ template <typename INT> struct Graph_Description
  * currently used in the type, but are needed since they appear
  * on the command line.
  */
-#define NO_WEIGHT 0
-#define READ_EXO 1
-#define EL_BLK 2
-#define VAR_INDX 3
-#define EDGE_WGT 4
-#define TIME_INDX 5
-#define VAR_NAME 6
+#define NO_WEIGHT	0
+#define READ_EXO	1
+#define EL_BLK		2
+#define VAR_INDX	3
+#define EDGE_WGT	4
+#define TIME_INDX	5
+#define VAR_NAME	6
 
 #endif /* _EXOIILB_CONST_H_ */

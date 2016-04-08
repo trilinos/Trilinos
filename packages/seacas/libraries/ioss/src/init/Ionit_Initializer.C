@@ -102,5 +102,5 @@ namespace Ioss {
 	// executing...
       } catch (...) {}
     }
-  }  // namespace Init
-}  // namespace Ioss
+  }
+}

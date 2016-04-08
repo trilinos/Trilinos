@@ -2,23 +2,23 @@
  * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- *
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,192 +30,191 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 #ifndef SEACAS_ExodusEntity_H
 #define SEACAS_ExodusEntity_H
 
 #define NO_NETCDF_2
-#include "EP_ObjectType.h"
 #include <exodusII.h>
-#include <iostream>
-#include <string.h>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <string.h>
+#include "EP_ObjectType.h"
 
 namespace Excn {
-  typedef std::vector<int>     IntVector;
-  typedef std::vector<int64_t> Int64Vector;
-  typedef std::vector<char>    DistVector;
+  typedef std::vector<int>  IntVector;
+  typedef std::vector<int64_t>  Int64Vector;
+  typedef std::vector<char> DistVector;
 
   class Mesh
   {
   public:
-    Mesh()
-        : dimensionality(0), nodeCount(0), elementCount(0), blockCount(0), nodesetCount(0),
-          sidesetCount(0), needNodeMap(true), needElementMap(true)
-    {
-    }
-
+    Mesh() :   dimensionality(0), nodeCount(0), elementCount(0),
+	       blockCount(0), nodesetCount(0), sidesetCount(0),
+	       needNodeMap(true), needElementMap(true) {}
+    
     size_t count(ObjectType type) const
     {
-      switch (type) {
-      case EBLK: return blockCount;
-      case NSET: return nodesetCount;
-      case SSET: return sidesetCount;
-      case NODE: return nodeCount;
-      case ELEM: return elementCount;
-      default: return 0;
+      switch(type) {
+      case EBLK:
+	return blockCount;
+      case NSET:
+	return nodesetCount;
+      case SSET:
+	return sidesetCount;
+      case NODE:
+	return nodeCount;
+      case ELEM:
+	return elementCount;
+      default:
+	return 0;
       }
     }
-
+    
     IntVector truthTable[3];
 
     std::string title;
-    int         dimensionality;
-    int64_t     nodeCount;
-    int64_t     elementCount;
-    int         blockCount;
-    int         nodesetCount;
-    int         sidesetCount;
-    bool        needNodeMap;
-    bool        needElementMap;
-  };
+    int dimensionality;
+    int64_t nodeCount;
+    int64_t elementCount;
+    int blockCount;
+    int nodesetCount;
+    int sidesetCount;
+    bool needNodeMap;
+    bool needElementMap;
 
+  };
+  
   class Block
   {
   public:
-    Block()
-        : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0), offset_(0),
-          position_(0)
+    Block() : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0),
+	      offset_(0), position_(0)
     {
       strcpy(elType, "");
     }
-
-    Block(const Block &other)
-        : name_(other.name_), id(other.id), elementCount(other.elementCount),
-          nodesPerElement(other.nodesPerElement), attributeCount(other.attributeCount),
-          offset_(other.offset_), position_(other.position_)
+    
+    Block(const Block &other) : name_(other.name_), id(other.id), elementCount(other.elementCount),
+				nodesPerElement(other.nodesPerElement),
+				attributeCount(other.attributeCount), offset_(other.offset_),
+				position_(other.position_)
     {
       strcpy(elType, other.elType);
     }
-
+    
     ~Block() = default;
-
-    size_t entity_count() const { return elementCount; }
-
-    char                     elType[MAX_STR_LENGTH + 1];
-    std::string              name_;
+    
+    size_t entity_count() const {return elementCount;}
+    
+    char elType[MAX_STR_LENGTH+1];
+    std::string name_;
     std::vector<std::string> attributeNames;
-    int64_t                  id;
-    int64_t                  elementCount;
-    int                      nodesPerElement;
-    int                      attributeCount;
-    int64_t                  offset_;
-    int                      position_;
+    int64_t id;
+    int64_t elementCount;
+    int nodesPerElement;
+    int attributeCount;
+    int64_t offset_;
+    int position_;
 
-    Block &operator=(const Block &other)
-    {
+    Block& operator=(const Block& other) {
       strcpy(elType, other.elType);
-      name_           = other.name_;
-      id              = other.id;
-      elementCount    = other.elementCount;
+      name_ = other.name_;
+      id = other.id;
+      elementCount = other.elementCount;
       nodesPerElement = other.nodesPerElement;
       attributeCount  = other.attributeCount;
       attributeNames  = other.attributeNames;
-      offset_         = other.offset_;
-      position_       = other.position_;
+      offset_ = other.offset_;
+      position_ = other.position_;
       return *this;
     }
   };
-
-  template <typename INT> class NodeSet
+  
+  template <typename INT>
+  class NodeSet
   {
   public:
     NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(-1), name_("") {}
-
+    
     ex_entity_id id;
-    int64_t      nodeCount;
-    int64_t      dfCount;
-    int64_t      offset_;
-    int          position_;
-    std::string  name_;
+    int64_t nodeCount;
+    int64_t dfCount;
+    int64_t offset_;
+    int position_;
+    std::string name_;
+    
+    std::vector<INT>  nodeSetNodes;
+    std::vector<INT>  nodeOrderMap;
+    DistVector distFactors;
+    
+    size_t entity_count() const {return nodeCount;}
 
-    std::vector<INT> nodeSetNodes;
-    std::vector<INT> nodeOrderMap;
-    DistVector       distFactors;
-
-    size_t entity_count() const { return nodeCount; }
-
-    void dump() const
-    {
+    void dump() const {
       std::cerr << "NodeSet " << id << ", Name: " << name_ << ", " << nodeCount << " nodes, "
-                << dfCount << " df,\torder = " << position_ << "\n";
+		<< dfCount << " df,\torder = " << position_ << "\n";
     }
 
-    void dump_order() const
-    {
+    void dump_order() const {
       dump();
-      for (int64_t i = 0; i < nodeCount; i++) {
-        std::cerr << nodeOrderMap[i] << ", ";
+      for (int64_t i=0; i < nodeCount; i++) {
+	std::cerr << nodeOrderMap[i] << ", ";
       }
       std::cerr << "\n";
     }
   };
-
-  typedef std::pair<int64_t, int64_t> Side;
-  template <typename INT> class SideSet
+  
+  typedef std::pair<int64_t,int64_t> Side;
+  template <typename INT>
+  class SideSet
   {
   public:
     SideSet() : id(0), sideCount(0), dfCount(0), offset_(-1), position_(-1), name_("") {}
-
+    
     ex_entity_id id;
-    int64_t      sideCount;
-    int64_t      dfCount;
-    int64_t      offset_;
-    int          position_;
-    std::string  name_;
+    int64_t sideCount;
+    int64_t dfCount;
+    int64_t offset_;
+    int position_;
+    std::string name_;
+    
+    std::vector<INT>  elems;
+    std::vector<INT>  sides;
+    DistVector distFactors;
+    
+    size_t entity_count() const {return sideCount;}
 
-    std::vector<INT> elems;
-    std::vector<INT> sides;
-    DistVector       distFactors;
-
-    size_t entity_count() const { return sideCount; }
-
-    void dump() const
-    {
+    void dump() const {
       std::cerr << "SideSet " << id << ", Name: " << name_ << ", " << sideCount << " sides, "
-                << dfCount << " df\toffset = " << offset_ << ", order = " << position_ << "\n";
+		<< dfCount << " df\toffset = " << offset_ << ", order = " << position_ << "\n";
     }
   };
-
+  
   class CommunicationMap
   {
   public:
     CommunicationMap() : id(0), entityCount(0), type('U') {}
-    CommunicationMap(int the_id, int64_t count, char the_type)
-        : id(the_id), entityCount(count), type(the_type)
-    {
-    }
+    CommunicationMap(int the_id, int64_t count, char the_type) :
+      id(the_id), entityCount(count), type(the_type) {}
     int64_t id;
     int64_t entityCount;
-    char    type; // 'n' for node, 'e' for element
+    char type; // 'n' for node, 'e' for element
   };
 
   class CommunicationMetaData
   {
   public:
-    CommunicationMetaData()
-        : processorId(0), processorCount(0), globalNodes(0), globalElements(0), nodesInternal(0),
-          nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0)
-    {
-    }
-
+    CommunicationMetaData() : processorId(0), processorCount(0),
+	 globalNodes(0), globalElements(0),
+	 nodesInternal(0), nodesBorder(0), nodesExternal(0),
+	 elementsInternal(0), elementsBorder(0) {}
+    
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
 
-    int     processorId;
-    int     processorCount;
+    int processorId;
+    int processorCount;
     int64_t globalNodes;
     int64_t globalElements;
     int64_t nodesInternal;
@@ -223,9 +222,11 @@ namespace Excn {
     int64_t nodesExternal;
     int64_t elementsInternal;
     int64_t elementsBorder;
-
-  private:
+    
+    private:
     CommunicationMetaData(const CommunicationMetaData &);
   };
+  
 }
 #endif /* SEACAS_ExodusEntity_H */
+

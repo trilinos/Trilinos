@@ -36,20 +36,20 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Transform.h>
 #include <Ioss_FileInfo.h>
-#include <Ioss_ParallelUtils.h>
 #include <Ioss_Utils.h>
-#include <cassert>
+#include <Ioss_ParallelUtils.h>
+#include <assert.h>
 #include <Ionit_Initializer.h>
-#include <cstring>
-#include <iomanip>
 #include <stddef.h>
 #include <stdlib.h>
-#include <fstream>
+#include <cstring>
+#include <iomanip>
 #include <iostream>
-#include <algorithm>
+#include <fstream>
 #include <string>
-#include <unistd.h>
 #include <vector>
+#include <algorithm>
+#include <unistd.h>
 #include <sys/times.h>
 
 #include "shell_interface.h"
@@ -163,13 +163,13 @@ namespace {
 
   template <typename INT>
   void set_owned_node_count(Ioss::Region &region, int my_processor, INT dummy);
-} // namespace
+}
 // ========================================================================
 
 namespace {
   std::string codename;
   std::string version = "4.7";
-} // namespace
+}
 
 int main(int argc, char *argv[])
 {
@@ -283,7 +283,7 @@ namespace {
       properties.add(Ioss::Property("DECOMPOSITION_METHOD", interface.decomp_method));
     }
     bool first = true;
-    for (const auto& inpfile : interface.inputFile) {
+    for (auto inpfile : interface.inputFile) {
       Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(interface.inFiletype, inpfile,
 						      Ioss::READ_MODEL, (MPI_Comm)MPI_COMM_WORLD, properties);
       if (dbi == nullptr || !dbi->ok(true)) {
@@ -628,7 +628,7 @@ namespace {
 	OUTPUT << " Number of nodes                      =" << std::setw(12) << num_nodes << "\n";
       }
 
-      auto nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
+      Ioss::NodeBlock *nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
       output_region.add(nb);
 
       
@@ -732,7 +732,7 @@ namespace {
 	size_t    count  = iblock->get_property("entity_count").get_int();
 	total_entities += count;
 	
-	auto  block = new T(output_region.get_database(), name, type, count);
+	T* block = new T(output_region.get_database(), name, type, count);
 	output_region.add(block);
 	transfer_properties(iblock, block);
 	transfer_fields(iblock, block, Ioss::Field::MESH);
@@ -776,7 +776,7 @@ namespace {
 	OUTPUT << name << ", ";
 	}
 
-      auto surf = new Ioss::SideSet(output_region.get_database(), name);
+      Ioss::SideSet *surf = new Ioss::SideSet(output_region.get_database(), name);
       Ioss::SideBlockContainer fbs = ss->get_side_blocks();
       for (auto fb : fbs) {
 	std::string fbname    = fb->name();
@@ -787,7 +787,7 @@ namespace {
 	size_t    num_side  = fb->get_property("entity_count").get_int();
 	total_sides += num_side;
 
-	auto block = new Ioss::SideBlock(output_region.get_database(),
+	Ioss::SideBlock *block = new Ioss::SideBlock(output_region.get_database(),
 						     fbname, fbtype,
 						     partype, num_side);
 	surf->add(block);
@@ -819,7 +819,7 @@ namespace {
 	
 	}size_t    count     = set->get_property("entity_count").get_int();
 	total_entities += count;
-	auto  o_set = new T(output_region.get_database(), name, count);
+	T* o_set = new T(output_region.get_database(), name, count);
 	output_region.add(o_set);
 	transfer_properties(set, o_set);
 	transfer_fields(set, o_set, Ioss::Field::MESH);
@@ -871,7 +871,7 @@ namespace {
       
       }std::string type      = ics->get_property("entity_type").get_string();
       size_t    count     = ics->get_property("entity_count").get_int();
-      auto cs = new Ioss::CommSet(output_region.get_database(), name, type, count);
+      Ioss::CommSet *cs = new Ioss::CommSet(output_region.get_database(), name, type, count);
       output_region.add(cs);
       transfer_properties(ics, cs);
       transfer_fields(ics, cs, Ioss::Field::MESH);
@@ -885,7 +885,7 @@ namespace {
   void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
     Ioss::CoordinateFrameContainer      cf = region.get_coordinate_frames();
-    for (const auto& frame : cf) {
+    for (auto frame : cf) {
       output_region.add(frame);
     }
     if (debug) { OUTPUT << '\n';
@@ -904,7 +904,7 @@ namespace {
     // Iterate through results fields and transfer to output
     // database...  If a prefix is specified, only transfer fields
     // whose names begin with the prefix
-    for (const auto& field_name : fields) {
+    for (auto field_name : fields) {
       Ioss::Field field = ige->get_field(field_name);
       max_field_size = MAX(max_field_size, field.get_size());
       if (field_name != "ids" && !oge->field_exists(field_name) &&
@@ -924,7 +924,7 @@ namespace {
     ige->field_describe(role, &fields);
 
     // Iterate through results fields and transfer to output database...
-    for (const auto& field_name : fields) {
+    for (auto field_name : fields) {
       std::string out_field_name = field_name + "_mag";
       if (!oge->field_exists(out_field_name)) {
 	// If the field does not already exist, add it to the output node block
@@ -955,7 +955,7 @@ namespace {
     ige->field_describe(role, &state_fields);
     // Iterate through mesh description fields and transfer to
     // output database...
-    for (const auto& field_name : state_fields) {
+    for (auto field_name : state_fields) {
       std::string out_field_name = field_name + "_mag";
 
       assert(oge->field_exists(out_field_name));
@@ -989,7 +989,7 @@ namespace {
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
     if (role == Ioss::Field::MESH) {
-      for (const auto& field_name : state_fields) {
+      for (auto field_name : state_fields) {
 	assert(oge->field_exists(field_name));
 	if (field_name == "ids") {
 	  transfer_field_data_internal(ige, oge, field_name);
@@ -998,7 +998,7 @@ namespace {
       }
     }
 
-    for (const auto& field_name : state_fields) {
+    for (auto field_name : state_fields) {
       // All of the 'Ioss::EntityBlock' derived classes have a
       // 'connectivity' field, but it is only interesting on the
       // Ioss::ElementBlock class. On the other classes, it just
@@ -1084,7 +1084,7 @@ namespace {
     ige->property_describe(&properties);
 
     // Iterate through properties and transfer to output database...
-    for (const auto& property : properties) {
+    for (auto property : properties) {
       if (!oge->property_exists(property)) {
 	oge->property_add(ige->get_property(property));
       }
@@ -1133,4 +1133,4 @@ namespace {
       }
     }
   }
-} // namespace
+}

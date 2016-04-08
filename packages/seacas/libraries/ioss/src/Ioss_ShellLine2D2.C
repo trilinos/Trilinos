@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,12 +30,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "Ioss_CodeTypes.h"           // for IntVector
-#include "Ioss_ElementTopology.h"     // for ElementTopology
-#include <Ioss_ElementVariableType.h> // for ElementVariableType
 #include <Ioss_ShellLine2D2.h>
-#include <cassert> // for assert
-#include <cstddef> // for nullptr
+#include <Ioss_ElementVariableType.h>   // for ElementVariableType
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for nullptr
+#include "Ioss_CodeTypes.h"             // for IntVector
+#include "Ioss_ElementTopology.h"       // for ElementTopology
+
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -43,12 +44,13 @@ namespace Ioss {
   class St_ShellLine2D2 : public ElementVariableType
   {
   public:
-    static void factory() { static St_ShellLine2D2 registerThis; }
+    static void factory() {static St_ShellLine2D2 registerThis;}
 
   protected:
-    St_ShellLine2D2() : ElementVariableType("shellline2d2", 2) {}
+    St_ShellLine2D2()
+      : ElementVariableType("shellline2d2", 2) {}
   };
-} // namespace Ioss
+}
 // ========================================================================
 namespace {
   struct Constants {
@@ -59,7 +61,7 @@ namespace {
     static const int nfacenode = 0;
     static const int nfaceedge = 0;
   };
-} // namespace
+}
 
 void Ioss::ShellLine2D2::factory()
 {
@@ -67,7 +69,8 @@ void Ioss::ShellLine2D2::factory()
   Ioss::St_ShellLine2D2::factory();
 }
 
-Ioss::ShellLine2D2::ShellLine2D2() : Ioss::ElementTopology("shellline2d2", "ShellLine_2")
+Ioss::ShellLine2D2::ShellLine2D2()
+  : Ioss::ElementTopology("shellline2d2", "ShellLine_2")
 {
   Ioss::ElementTopology::alias("shellline2d2", "Shell_Line_2_2D");
   Ioss::ElementTopology::alias("shellline2d2", "SHELL_LINE_2");
@@ -75,16 +78,16 @@ Ioss::ShellLine2D2::ShellLine2D2() : Ioss::ElementTopology("shellline2d2", "Shel
 
 Ioss::ShellLine2D2::~ShellLine2D2() = default;
 
-int Ioss::ShellLine2D2::parametric_dimension() const { return 1; }
-int Ioss::ShellLine2D2::spatial_dimension() const { return 2; }
-int Ioss::ShellLine2D2::order() const { return 1; }
+int Ioss::ShellLine2D2::parametric_dimension()           const {return  1;}
+int Ioss::ShellLine2D2::spatial_dimension()           const {return  2;}
+int Ioss::ShellLine2D2::order()               const {return  1;}
 
-int Ioss::ShellLine2D2::number_corner_nodes() const { return 2; }
-int Ioss::ShellLine2D2::number_nodes() const { return Constants::nnode; }
-int Ioss::ShellLine2D2::number_edges() const { return Constants::nedge; }
-int Ioss::ShellLine2D2::number_faces() const { return Constants::nface; }
+int Ioss::ShellLine2D2::number_corner_nodes() const {return 2;}
+int Ioss::ShellLine2D2::number_nodes()        const {return Constants::nnode;}
+int Ioss::ShellLine2D2::number_edges()        const {return Constants::nedge;}
+int Ioss::ShellLine2D2::number_faces()        const {return Constants::nface;}
 
-int Ioss::ShellLine2D2::number_nodes_edge(int /* edge */) const { return Constants::nedgenode; }
+int Ioss::ShellLine2D2::number_nodes_edge(int /* edge */) const {return  Constants::nedgenode;}
 
 int Ioss::ShellLine2D2::number_nodes_face(int face) const
 {
@@ -106,8 +109,7 @@ Ioss::IntVector Ioss::ShellLine2D2::edge_connectivity(int edge_number) const
   if (edge_number == 1) {
     connectivity[0] = 0;
     connectivity[1] = 1;
-  }
-  else {
+  } else {
     connectivity[0] = 1;
     connectivity[1] = 0;
   }
@@ -123,18 +125,14 @@ Ioss::IntVector Ioss::ShellLine2D2::face_connectivity(int /* face_number */) con
 Ioss::IntVector Ioss::ShellLine2D2::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i = 0; i < number_nodes(); i++) {
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
-  }
+}
   return connectivity;
 }
 
-Ioss::ElementTopology *Ioss::ShellLine2D2::face_type(int /* face_number */) const
-{
-  return (Ioss::ElementTopology *)nullptr;
-}
+Ioss::ElementTopology* Ioss::ShellLine2D2::face_type(int /* face_number */) const
+{ return (Ioss::ElementTopology*)nullptr; }
 
-Ioss::ElementTopology *Ioss::ShellLine2D2::edge_type(int /* edge_number */) const
-{
-  return Ioss::ElementTopology::factory("edge2");
-}
+Ioss::ElementTopology* Ioss::ShellLine2D2::edge_type(int /* edge_number */) const
+{ return Ioss::ElementTopology::factory("edge2"); }

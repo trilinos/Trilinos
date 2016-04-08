@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,12 +30,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "Ioss_CodeTypes.h"           // for IntVector
-#include "Ioss_ElementTopology.h"     // for ElementTopology
-#include <Ioss_ElementVariableType.h> // for ElementVariableType
 #include <Ioss_Tet7.h>
-#include <cassert> // for assert
-#include <cstddef> // for nullptr
+#include <Ioss_ElementVariableType.h>   // for ElementVariableType
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for nullptr
+#include "Ioss_CodeTypes.h"             // for IntVector
+#include "Ioss_ElementTopology.h"       // for ElementTopology
+
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -43,53 +44,57 @@ namespace Ioss {
   class St_Tet7 : public ElementVariableType
   {
   public:
-    static void factory() { static St_Tet7 registerThis; }
+    static void factory() {static St_Tet7 registerThis;}
 
   protected:
-    St_Tet7() : ElementVariableType("tetra7", 7) {}
+    St_Tet7()
+      : ElementVariableType("tetra7", 7) {}
   };
-} // namespace Ioss
+}
 
 // ========================================================================
 namespace {
   struct Constants {
-    static const int nnode     = 7;
-    static const int nedge     = 6;
-    static const int nedgenode = 3;
-    static const int nface     = 4;
-    static const int nfacenode = 6;
-    static const int nfaceedge = 3;
-    static int       edge_node_order[nedge][nedgenode];
-    static int       face_node_order[nface][nfacenode];
-    static int       face_edge_order[nface][nfaceedge];
-    static int       nodes_per_edge[nedge + 1];
-    static int       nodes_per_face[nface + 1];
-    static int       edges_per_face[nface + 1];
+    static const int nnode     =  7;
+    static const int nedge     =  6;
+    static const int nedgenode =  3;
+    static const int nface     =  4;
+    static const int nfacenode =  6;
+    static const int nfaceedge =  3;
+    static int edge_node_order[nedge][nedgenode];
+    static int face_node_order[nface][nfacenode];
+    static int face_edge_order[nface][nfaceedge];
+    static int nodes_per_edge[nedge+1];
+    static int nodes_per_face[nface+1];
+    static int edges_per_face[nface+1];
   };
-
+  
   // Edge numbers are zero-based [0..number_edges)
   int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
-      {{0, 1, 4}, {1, 2, 5}, {2, 0, 6}, {0, 3, -1}, {1, 3, -1}, {2, 3, -1}};
-
+    { {0,1,4}, {1,2,5}, {2,0,6}, {0,3,-1}, {1,3,-1}, {2,3,-1} };
+  
   // Face numbers are zero-based [0..number_faces)
   int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-      {{0, 1, 3, 4, -1, -1}, {1, 2, 3, 5, -1, -1}, {0, 3, 2, 7, -1, 1}, {0, 2, 1, 4, 5, 6}};
-
+    { {0,1,3,4,-1,-1}, {1,2,3,5,-1,-1}, {0,3,2,7,-1,1}, {0,2,1,4,5,6} };
+  
   int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
-      {{0, 4, 3}, {1, 5, 4}, {3, 5, 2}, {2, 1, 0}};
-
+    { {0,4,3}, {1,5,4}, {3,5,2}, {2,1,0} };
+  
   // edge 0 returns number of nodes for all faces if homogenous
   //        returns -1 if faces have differing topology
-  int Constants::nodes_per_edge[nedge + 1] = {-1, 3, 3, 3, 2, 2, 2};
+  int Constants::nodes_per_edge[nedge+1] =
+    {-1,3,3,3,2,2,2};
 
   // face 0 returns number of nodes for all faces if homogenous
   //        returns -1 if faces have differing topology
-  int Constants::nodes_per_face[nface + 1] = {-1, 4, 4, 4, 6};
-
+  int Constants::nodes_per_face[nface+1] =
+    {-1,4,4,4,6};
+  
   // face 0 returns number of edges for all faces if homogenous
   //        returns -1 if faces have differing topology
-  int Constants::edges_per_face[nface + 1] = {3, 3, 3, 3, 3};
-} // namespace
+  int Constants::edges_per_face[nface+1] =
+    {3,3,3,3,3};
+}
 
 void Ioss::Tet7::factory()
 {
@@ -97,38 +102,40 @@ void Ioss::Tet7::factory()
   Ioss::St_Tet7::factory();
 }
 
-Ioss::Tet7::Tet7() : Ioss::ElementTopology("tetra7", "Tetrahedron_7")
+Ioss::Tet7::Tet7()
+  : Ioss::ElementTopology("tetra7", "Tetrahedron_7")
 {
   Ioss::ElementTopology::alias("tetra7", "tet7");
   Ioss::ElementTopology::alias("tetra7", "Solid_Tet_7_3D");
-}
+  }
 
 Ioss::Tet7::~Tet7() = default;
 
-int Ioss::Tet7::parametric_dimension() const { return 3; }
-int Ioss::Tet7::spatial_dimension() const { return 3; }
-int Ioss::Tet7::order() const { return 1; }
+int Ioss::Tet7::parametric_dimension()           const {return  3;}
+int Ioss::Tet7::spatial_dimension()           const {return  3;}
+int Ioss::Tet7::order()               const {return  1;}
 
-int Ioss::Tet7::number_corner_nodes() const { return 4; }
-int Ioss::Tet7::number_nodes() const { return Constants::nnode; }
-int Ioss::Tet7::number_edges() const { return Constants::nedge; }
-int Ioss::Tet7::number_faces() const { return Constants::nface; }
+int Ioss::Tet7::number_corner_nodes() const {return     4;}
+int Ioss::Tet7::number_nodes()        const {return Constants::nnode;}
+int Ioss::Tet7::number_edges()        const {return Constants::nedge;}
+int Ioss::Tet7::number_faces()        const {return Constants::nface;}
 
-bool Ioss::Tet7::faces_similar() const { return false; }
-bool Ioss::Tet7::edges_similar() const { return false; }
 
-int Ioss::Tet7::number_nodes_edge(int edge) const
+bool Ioss::Tet7::faces_similar()      const {return false;}
+bool Ioss::Tet7::edges_similar()      const {return false;}
+
+int Ioss::Tet7::number_nodes_edge(int edge ) const
 {
   // edge is 1-based.  0 passed in for all edges.
   assert(edge >= 0 && edge <= number_edges());
-  return Constants::nodes_per_edge[edge];
+  return  Constants::nodes_per_edge[edge];
 }
 
 int Ioss::Tet7::number_nodes_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
-  return Constants::nodes_per_face[face];
+  return  Constants::nodes_per_face[face];
 }
 
 int Ioss::Tet7::number_edges_face(int face) const
@@ -143,9 +150,9 @@ Ioss::IntVector Ioss::Tet7::edge_connectivity(int edge_number) const
   assert(edge_number > 0 && edge_number <= Constants::nedge);
   Ioss::IntVector connectivity(Constants::nodes_per_edge[edge_number]);
 
-  for (int i = 0; i < Constants::nodes_per_edge[edge_number]; i++) {
-    connectivity[i] = Constants::edge_node_order[edge_number - 1][i];
-  }
+  for (int i=0; i < Constants::nodes_per_edge[edge_number]; i++) {
+    connectivity[i] = Constants::edge_node_order[edge_number-1][i];
+}
 
   return connectivity;
 }
@@ -155,9 +162,9 @@ Ioss::IntVector Ioss::Tet7::face_connectivity(int face_number) const
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(Constants::nodes_per_face[face_number]);
 
-  for (int i = 0; i < Constants::nodes_per_face[face_number]; i++) {
-    connectivity[i] = Constants::face_node_order[face_number - 1][i];
-  }
+  for (int i=0; i < Constants::nodes_per_face[face_number]; i++) {
+    connectivity[i] = Constants::face_node_order[face_number-1][i];
+}
 
   return connectivity;
 }
@@ -165,13 +172,13 @@ Ioss::IntVector Ioss::Tet7::face_connectivity(int face_number) const
 Ioss::IntVector Ioss::Tet7::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i = 0; i < number_nodes(); i++) {
+  for (int i=0; i < number_nodes(); i++) {
     connectivity[i] = i;
-  }
+}
   return connectivity;
 }
 
-Ioss::ElementTopology *Ioss::Tet7::face_type(int face_number) const
+Ioss::ElementTopology* Ioss::Tet7::face_type(int face_number) const
 {
   // face_number == 0 returns topology for all faces if
   // all faces are the same topology; otherwise, returns nullptr
@@ -181,15 +188,14 @@ Ioss::ElementTopology *Ioss::Tet7::face_type(int face_number) const
   if (face_number == 0) {
     return nullptr;
   }
-  if (face_number == 4) {
+  else if (face_number == 4) {
     return Ioss::ElementTopology::factory("tri6");
-  }
-  else {
+  } else { 
     return Ioss::ElementTopology::factory("tri4a");
   }
 }
 
-Ioss::ElementTopology *Ioss::Tet7::edge_type(int edge_number) const
+Ioss::ElementTopology* Ioss::Tet7::edge_type(int edge_number) const
 {
   // edge_number == 0 returns topology for all edges if
   // all edges are the same topology; otherwise, returns nullptr
@@ -199,10 +205,9 @@ Ioss::ElementTopology *Ioss::Tet7::edge_type(int edge_number) const
   if (edge_number == 0) {
     return nullptr;
   }
-  if (edge_number <= 3) {
+  else if (edge_number <= 3) {
     return Ioss::ElementTopology::factory("edge3");
-  }
-  else {
+  } else {
     return Ioss::ElementTopology::factory("edge2");
   }
 }
@@ -211,11 +216,11 @@ Ioss::IntVector Ioss::Tet7::face_edge_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= Constants::nface);
 
-  int             nface_edge = number_edges_face(face_number);
+  int nface_edge = number_edges_face(face_number);
   Ioss::IntVector fcon(nface_edge);
 
-  for (int i = 0; i < nface_edge; i++) {
-    fcon[i] = Constants::face_edge_order[face_number - 1][i];
+  for (int i=0; i < nface_edge; i++) {
+    fcon[i] = Constants::face_edge_order[face_number-1][i];
   }
 
   return fcon;

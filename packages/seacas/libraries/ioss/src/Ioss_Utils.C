@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,18 +31,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Utils.h>
+#include <assert.h>
+#include <stddef.h>
+#include <sys/select.h>
+#include <time.h>
 #include <algorithm>
-#include <cassert>
 #include <cctype>
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
-#include <stdint.h>
 #include <string>
-#include <sys/select.h>
-#include <time.h>
 #include <vector>
+#include <stdint.h>
 
 #ifndef _WIN32
 #include <sys/utsname.h>
@@ -55,28 +55,29 @@
 namespace {
   inline int to_lower(int c) { return std::tolower(c); }
   inline int to_upper(int c) { return std::toupper(c); }
-} // namespace
-
-void Ioss::Utils::time_and_date(char *time_string, char *date_string, size_t length)
+}
+Ioss::Utils::Utils() = default;
+  
+void Ioss::Utils::time_and_date(char* time_string, char* date_string,
+                                size_t length)
 {
-  time_t     calendar_time = time(nullptr);
-  struct tm *local_time    = localtime(&calendar_time);
+  time_t calendar_time = time(nullptr);
+  struct tm *local_time = localtime(&calendar_time);
 
   strftime(time_string, length, "%H:%M:%S", local_time);
   if (length == 8) {
     const char *fmt = "%y/%m/%d";
     strftime(date_string, length, fmt, local_time);
     date_string[8] = '\0';
-  }
-  else if (length >= 10) {
+
+  } else if (length >= 10) {
     strftime(date_string, length, "%Y/%m/%d", local_time);
     date_string[10] = '\0';
   }
   time_string[8] = '\0';
 }
 
-std::string Ioss::Utils::decode_filename(const std::string &filename, int processor,
-                                         int num_processors)
+std::string Ioss::Utils::decode_filename(const std::string &filename, int processor, int num_processors)
 {
   std::string decoded_filename(filename);
   // Current format for per-processor file names is:
@@ -86,12 +87,12 @@ std::string Ioss::Utils::decode_filename(const std::string &filename, int proces
   // Examples: basename.8.1, basename.64.03, basename.128.001
 
   // Create a std::string containing the total number of processors
-  std::string num_proc   = to_string(num_processors);
-  size_t      proc_width = num_proc.length();
+  std::string num_proc = to_string(num_processors);
+  size_t proc_width = num_proc.length();
 
   // Create a std::string containing the current processor number
-  std::string cur_proc  = to_string(processor);
-  size_t      cur_width = cur_proc.length();
+  std::string cur_proc = to_string(processor);
+  size_t cur_width = cur_proc.length();
 
   // Build the filename
   decoded_filename += ".";
@@ -118,7 +119,7 @@ int Ioss::Utils::decode_entity_name(const std::string &entity_name)
   const char *name = entity_name.c_str();
   while (*name != '_') {
     name++;
-  }
+}
   // Increment one more time to get past '_'
   assert(*name == '_');
   name++;
@@ -136,7 +137,7 @@ std::string Ioss::Utils::encode_entity_name(const std::string &entity_type, int6
   // Sierra   stores these as std::strings. The string is created by
   // concatenating the type, the character '_' and the id.
 
-  std::string id_string   = to_string(id);
+  std::string id_string = to_string(id);
   std::string entity_name = entity_type;
   entity_name += "_";
   entity_name += id_string;
@@ -165,40 +166,26 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
   // to unambiguous names for the IO Subsystem.  The 2D name
   // stays the same, the 3D name becomes 'trishell#'
   if (spatial == 3) {
-    if (type == "triangle3") {
-      type = "trishell3";
-    }
-    else if (type == "triangle4") {
-      type = "trishell4";
-    }
-    else if (type == "triangle6") {
-      type = "trishell6";
-    }
-    else if (type == "tri3") {
-      type = "trishell3";
-    }
-    else if (type == "tri4") {
-      type = "trishell4";
-    }
-    else if (type == "tri6") {
-      type = "trishell6";
-    }
-  }
+    if      (type == "triangle3") { type = "trishell3";
+    } else if (type == "triangle4") { type = "trishell4";
+    } else if (type == "triangle6") { type = "trishell6";
+    } else if (type == "tri3") {      type = "trishell3";
+    } else if (type == "tri4") {      type = "trishell4";
+    } else if (type == "tri6") {      type = "trishell6";
+  
+}}
 
   if (spatial == 2) {
     if (type == "shell2") {
       type = "shellline2d2";
-    }
-    else if (type == "rod2" || type == "bar2" || type == "truss2") {
+    } else if (type == "rod2" || type == "bar2" || type == "truss2") {
       type = "rod2d2";
-    }
-    else if (type == "shell3") {
+    } else if (type == "shell3") {
       type = "shellline2d3";
-    }
-    else if (type == "bar3" || type == "rod3" || type == "truss3") {
+    } else if (type == "bar3"  || type == "rod3"  || type == "truss3") {
       type = "rod2d3";
-    }
-  }
+  
+}}
 
   if (std::strncmp(type.c_str(), "super", 5) == 0) {
     // A super element can have a varying number of nodes.  Create
@@ -218,31 +205,33 @@ void Ioss::Utils::abort()
   IOSS_ERROR(errmsg);
 }
 
-std::string Ioss::Utils::local_filename(const std::string &relative_filename,
-                                        const std::string &type,
-                                        const std::string &working_directory)
+std::string Ioss::Utils::local_filename(const std::string& relative_filename,
+                                        const std::string& type,
+                                        const std::string& working_directory)
 {
   if (relative_filename[0] == '/' || type == "generated" || working_directory.empty()) {
     return relative_filename;
-  }
-  std::string filename = working_directory;
-  filename += relative_filename;
-  return filename;
+  } 
+    std::string filename = working_directory;
+    filename += relative_filename;
+    return filename;
+  
 }
 
-int Ioss::Utils::field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
-                               const std::string &inout)
+int Ioss::Utils::field_warning(const Ioss::GroupingEntity *ge,
+                               const Ioss::Field &field, const std::string& inout)
 {
-  IOSS_WARNING << ge->type_string() << " '" << ge->name() << "'. Unknown " << inout << " field '"
+  IOSS_WARNING << ge->type_string() << " '" << ge->name()
+               << "'. Unknown " << inout << " field '"
                << field.get_name() << "'\n";
   return -4;
 }
 
 std::string Ioss::Utils::platform_information()
 {
-// Return a string containing the 'uname' output.
-// This is used as information data in the created results file
-// to help in tracking when/where/... the file was created
+  // Return a string containing the 'uname' output.
+  // This is used as information data in the created results file
+  // to help in tracking when/where/... the file was created
 #ifndef _WIN32
   struct utsname sys_info;
   uname(&sys_info);
@@ -268,20 +257,21 @@ bool Ioss::Utils::block_is_omitted(Ioss::GroupingEntity *block)
   bool omitted = false;
   if (block->property_exists("omitted")) {
     omitted = (block->get_property("omitted").get_int() == 1);
-  }
+}
   return omitted;
 }
 
-void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_member,
+void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
                                                  const Ioss::SideBlock *ef_blk,
-                                                 size_t int_byte_size, const void *element,
-                                                 const void *sides, int64_t number_sides,
+                                                 size_t int_byte_size,
+                                                 const void *element, const void *sides,
+                                                 int64_t number_sides,
                                                  const Ioss::Region *region)
 {
   assert(ef_blk != nullptr);
-
+  
   face_is_member.reserve(number_sides);
-
+  
   // Topology of faces in this face block...
   const ElementTopology *ftopo = ef_blk->topology();
 
@@ -317,23 +307,22 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_
     int64_t elem_id = 0;
     int64_t side_id = 0;
     if (int_byte_size == 4) {
-      elem_id = ((int *)element)[iel];
-      side_id = ((int *)sides)[iel];
-    }
-    else {
-      elem_id = ((int64_t *)element)[iel];
-      side_id = ((int64_t *)sides)[iel];
+      elem_id = ((int*)element)[iel];
+      side_id = ((int*)sides)[iel];
+    } else {
+      elem_id = ((int64_t*)element)[iel];
+      side_id = ((int64_t*)sides)[iel];
     }
 
     // Get the element block containing this face...
     if (block == nullptr || !block->contains(elem_id)) {
-      block      = region->get_element_block(elem_id);
+      block = region->get_element_block(elem_id);
       block_topo = block->topology();
       // nullptr if hetero face/edge on element
       common_ftopo = block->topology()->boundary_type(0);
       if (common_ftopo != nullptr) {
         topo = common_ftopo;
-      }
+}
       current_side = -1;
     }
 
@@ -342,17 +331,17 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_
     // topology corresponding to the current side..
     if (common_ftopo == nullptr && side_id != current_side) {
       current_side = side_id;
-      topo         = block->topology()->boundary_type(side_id);
+      topo = block->topology()->boundary_type(side_id);
     }
 
     // See if the face topology and the parent element topology for
     // the current face match the topology associated with this face block.
     if (topo == ftopo && block_topo == parent_topo &&
-        (parent_block == nullptr || parent_block == block) && !block_is_omitted(block)) {
+        (parent_block == nullptr || parent_block == block )
+        && !block_is_omitted(block)) {
       // This face/edge  belongs in the face/edge block
       face_is_member.push_back(1);
-    }
-    else {
+    } else {
       face_is_member.push_back(0);
     }
   }
@@ -373,30 +362,30 @@ int64_t Ioss::Utils::get_side_offset(const Ioss::SideBlock *sb)
 
   const Ioss::ElementTopology *side_topo   = sb->topology();
   const Ioss::ElementTopology *parent_topo = sb->parent_element_topology();
-  int64_t                      side_offset = 0;
+  int64_t side_offset = 0;
   if ((side_topo != nullptr) && (parent_topo != nullptr)) {
     int side_topo_dim = side_topo->parametric_dimension();
     int elem_topo_dim = parent_topo->parametric_dimension();
     int elem_spat_dim = parent_topo->spatial_dimension();
 
-    if (side_topo_dim + 1 < elem_spat_dim && side_topo_dim < elem_topo_dim) {
+    if (side_topo_dim+1 < elem_spat_dim && side_topo_dim < elem_topo_dim) {
       side_offset = parent_topo->number_faces();
     }
   }
   return side_offset;
 }
 
-unsigned int Ioss::Utils::hash(const std::string &name)
+unsigned int Ioss::Utils::hash (const std::string& name)
 {
   // Hash function from Aho, Sethi, Ullman "Compilers: Principles,
   // Techniques, and Tools.  Page 436
 
-  const char * symbol = name.c_str();
+  const char* symbol = name.c_str();
   unsigned int hashval;
   unsigned int g;
   for (hashval = 0; *symbol != '\0'; symbol++) {
     hashval = (hashval << 4) + *symbol;
-    g       = hashval & 0xf0000000;
+    g = hashval&0xf0000000;
     if (g != 0) {
       hashval = hashval ^ (g >> 24);
       hashval = hashval ^ g;
@@ -405,7 +394,8 @@ unsigned int Ioss::Utils::hash(const std::string &name)
   return hashval;
 }
 
-void Ioss::Utils::input_file(const std::string &file_name, std::vector<std::string> *lines,
+void Ioss::Utils::input_file(const std::string &file_name,
+                             std::vector<std::string> *lines,
                              size_t max_line_length)
 {
   // Create an ifstream for the input file. This does almost the same
@@ -414,25 +404,24 @@ void Ioss::Utils::input_file(const std::string &file_name, std::vector<std::stri
 
   if (file_name.length() != 0) {
     // Open the file and read into the vector...
-    std::string   input_line;
+    std::string input_line;
     std::ifstream infile(file_name.c_str());
-    lines->push_back(file_name.substr(0, max_line_length));
+    lines->push_back(file_name.substr(0,max_line_length));
     while (!std::getline(infile, input_line).fail()) {
       if (max_line_length == 0 || input_line.length() <= max_line_length) {
         lines->push_back(input_line);
-      }
-      else {
+      } else {
         // Split the line into pieces of length "max_line_length-1"
         // and append a "\" to all but the last. Don't worry about
         // splitting at whitespace...
         size_t ibeg = 0;
         do {
-          std::string sub = input_line.substr(ibeg, max_line_length - 1);
-          if (ibeg + max_line_length - 1 < input_line.length()) {
+          std::string sub = input_line.substr(ibeg, max_line_length-1);
+          if (ibeg+max_line_length-1 < input_line.length()) {
             sub += "\\";
           }
           lines->push_back(sub);
-          ibeg += max_line_length - 1;
+          ibeg += max_line_length-1;
         } while (ibeg < input_line.length());
       }
     }
@@ -443,13 +432,13 @@ int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)
 {
   const char *c1 = s1.c_str();
   const char *c2 = s2.c_str();
-  for (;; c1++, c2++) {
+  for ( ; ; c1++, c2++) {
     if (std::tolower(*c1) != std::tolower(*c2)) {
       return (std::tolower(*c1) - std::tolower(*c2));
-    }
+}
     if (*c1 == '\0') {
       return 0;
-    }
+}
   }
 }
 
@@ -473,39 +462,39 @@ void Ioss::Utils::fixup_name(char *name)
   assert(name != nullptr);
 
   size_t len = std::strlen(name);
-  for (size_t i = 0; i < len; i++) {
-    name[i] = static_cast<char>(tolower(name[i])); // guaranteed(?) to be ascii...
+  for (size_t i=0; i < len; i++) {
+    name[i] = static_cast<char>(tolower(name[i]));  // guaranteed(?) to be ascii...
     if (name[i] == ' ') {
       name[i] = '_';
-    }
-  }
+  
+}}
 }
 
 void Ioss::Utils::fixup_name(std::string &name)
 {
   // Convert 'name' to lowercase and convert spaces to '_'
   name = Ioss::Utils::lowercase(name);
-
+  
   size_t len = name.length();
-  for (size_t i = 0; i < len; i++) {
+  for (size_t i=0; i < len; i++) {
     if (name[i] == ' ') {
       name[i] = '_';
-    }
-  }
+  
+}}
 }
 
 namespace {
-  std::string two_letter_hash(const char *symbol)
+  std::string two_letter_hash (const char *symbol)
   {
     // Hash function from Aho, Sethi, Ullman "Compilers: Principles,
     // Techniques, and Tools.  Page 436
-    const int    HASHSIZE = 673; // Largest prime less than 676 (26*26)
-    char         word[3];
+    const int HASHSIZE=673; // Largest prime less than 676 (26*26)
+    char word[3];
     unsigned int hashval;
     unsigned int g;
     for (hashval = 0; *symbol != '\0'; symbol++) {
       hashval = (hashval << 4) + *symbol;
-      g       = hashval & 0xf0000000;
+      g = hashval&0xf0000000;
       if (g != 0) {
         hashval = hashval ^ (g >> 24);
         hashval = hashval ^ g;
@@ -519,29 +508,27 @@ namespace {
     word[2] = '\0';
     return (std::string(word));
   }
-} // namespace
+}
 
-std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t component_count,
-                                             size_t copies, size_t max_var_len)
+std::string Ioss::Utils::variable_name_kluge(const std::string &name,
+                                             size_t component_count, size_t copies,
+                                             size_t max_var_len)
 {
   // This routine tries to shorten long variable names to an acceptable
-  // length ('max_var_len' characters max).  If the name is already less than
-  // this
+  // length ('max_var_len' characters max).  If the name is already less than this
   // length, it is returned unchanged except for the appending of the hash...
   //
   // Since there is a (good) chance that two shortened names will match,
   // a 2-letter 'hash' code is appended to the end of the variable
   // name. This can be treated as a 2-digit base 26 number
   //
-  // So, we shorten the name to a maximum of 'max_var_len-3' characters and
-  // append a
+  // So, we shorten the name to a maximum of 'max_var_len-3' characters and append a
   // dot ('.') and 2 character hash.
   //
   // But, we also have to deal with the suffices that Ioex_DatabaseIO
   // appends on non-scalar values.  For the 'standard' types, the
   // maximum suffix is 4 characters (underscore + 1, 2, or 3 characters).
-  // So...shorten name to maximum of 'max_var_len-3-{3|4|n}' characters
-  // depending on the
+  // So...shorten name to maximum of 'max_var_len-3-{3|4|n}' characters depending on the
   // number of components.
   //
   // This function alo converts name to lowercase and converts spaces
@@ -559,22 +546,17 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
     component_count /= copies;
   }
 
-  if (component_count <= 1) {
+  if (component_count     <=      1) {
     comp_len = 0;
-  }
-  else if (component_count < 100) {
+  } else if (component_count <    100) {
     comp_len = 3;
-  }
-  else if (component_count < 1000) {
+  } else if (component_count <   1000) {
     comp_len = 4; //   _000
-  }
-  else if (component_count < 10000) {
+  } else if (component_count <  10000) {
     comp_len = 5; //  _0000
-  }
-  else if (component_count < 100000) {
+  } else if (component_count < 100000) {
     comp_len = 6; // _00000
-  }
-  else {
+  } else {
     std::ostringstream errmsg;
     errmsg << "Variable '" << name << "' has " << component_count
            << " components which is larger than the current maximum"
@@ -582,25 +564,19 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
     IOSS_ERROR(errmsg);
   }
 
-  if (copies <= 1) {
+  if (copies     <=      1) {
     copy_len = 0;
-  }
-  else if (copies < 10) {
+  } else if (copies <     10) {
     copy_len = 2;
-  }
-  else if (copies < 100) {
-    copy_len = 3;
-  }
-  else if (copies < 1000) {
+  } else if (copies <    100) {
+    copy_len = 3; 
+  } else if (copies <   1000) {
     copy_len = 4; //   _000
-  }
-  else if (copies < 10000) {
+  } else if (copies <  10000) {
     copy_len = 5; //  _0000
-  }
-  else if (copies < 100000) {
+  } else if (copies < 100000) {
     copy_len = 6; // _00000
-  }
-  else {
+  } else {
     std::ostringstream errmsg;
     errmsg << "Variable '" << name << "' has " << copies
            << " copies which is larger than the current maximum"
@@ -616,28 +592,29 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
     // without adding on the hash...
     std::transform(new_str.begin(), new_str.end(), new_str.begin(), to_lower);
     return new_str;
-  }
-  // Know that the name is too long, try to shorten. Need room for
-  // hash now.
-  maxlen -= hash_len;
-  int len = name.length();
+  } 
+    // Know that the name is too long, try to shorten. Need room for
+    // hash now.
+    maxlen -= hash_len;
+    int len = name.length();
 
-  // Take last 'maxlen' characters.  Motivation for this is that the
-  // beginning of the composed (or generated) variable name is the
-  // names of the mechanics and mechanics instances in which this
-  // variable is nested, so they will be similar for all variables at
-  // the same scope and the differences will occur at the variable
-  // name level...
-  //
-  // However, there will likely be variables at the
-  // same level but in different scope that have the same name which
-  // would cause a clash, so we *hope* that the hash will make those
-  // scope names unique...
-  std::string s = std::string(name).substr(len - maxlen, len);
-  assert(s.length() <= maxlen);
-  new_str = s;
+    // Take last 'maxlen' characters.  Motivation for this is that the
+    // beginning of the composed (or generated) variable name is the
+    // names of the mechanics and mechanics instances in which this
+    // variable is nested, so they will be similar for all variables at
+    // the same scope and the differences will occur at the variable
+    // name level...
+    //
+    // However, there will likely be variables at the
+    // same level but in different scope that have the same name which
+    // would cause a clash, so we *hope* that the hash will make those
+    // scope names unique...
+    std::string s = std::string(name.c_str()).substr(len-maxlen,len);
+    assert(s.length() <= maxlen);
+    new_str = s;
+  
 
-  // NOTE: The hash is not added if the name is not shortened.
+  // NOTE: The hash is not added if the name is not shortened. 
   std::string hash_string = two_letter_hash(name.c_str());
   new_str += std::string(".");
   new_str += hash_string;
@@ -648,15 +625,14 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
 void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
 {
   // The model for a history file is a single sphere element (1 node, 1 element)
-  // This is needed for some applications that read this file that require a
-  // "mesh"
+  // This is needed for some applications that read this file that require a "mesh"
   // even though a history file is just a collection of global variables with no
   // real mesh.
 
   Ioss::DatabaseIO *db = region->get_database();
   if (db->parallel_rank() == 0) {
     region->begin_mode(Ioss::STATE_DEFINE_MODEL);
-
+    
     // Node Block
     Ioss::NodeBlock *nb = new Ioss::NodeBlock(db, "nodeblock_1", 1, 3);
     region->add(nb);
@@ -669,14 +645,15 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
 
     region->begin_mode(Ioss::STATE_MODEL);
     static double coord[3] = {1.1, 2.2, 3.3};
-    static int    ids[1]   = {1};
+    static int  ids[1] = {1};
     nb->put_field_data("ids", ids, sizeof(int));
-    nb->put_field_data("mesh_model_coordinates", coord, 3 * sizeof(double));
+    nb->put_field_data("mesh_model_coordinates", coord, 3*sizeof(double));
 
     static int connect[1] = {1};
     eb->put_field_data("ids", ids, sizeof(int));
-    eb->put_field_data("connectivity", connect, 1 * sizeof(int));
+    eb->put_field_data("connectivity", connect, 1*sizeof(int));
 
     region->end_mode(Ioss::STATE_MODEL);
   }
 }
+

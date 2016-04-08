@@ -38,7 +38,7 @@
 #endif
 #include <tokenize.h>
 
-#include <cstddef>                     // for nullptr
+#include <stddef.h>                     // for nullptr
 #include <string>                       // for string
 
 #include "Ioss_CodeTypes.h"             // for MPI_Comm
@@ -116,7 +116,7 @@ namespace Ioex {
 #endif
       return new Iofx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
-}  // namespace Ioex
+}
 
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {

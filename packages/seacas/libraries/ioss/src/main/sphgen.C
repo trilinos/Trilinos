@@ -33,11 +33,11 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
 #include <Ionit_Initializer.h>
+#include <stddef.h>
 #include <cmath>
+#include <stdlib.h>
 #include <cstring>
 #include <iostream>
-#include <stddef.h>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 
@@ -83,13 +83,13 @@ namespace {
   void create_sph(const std::string& inpfile, const std::string& input_type,
 		  const std::string& outfile, const std::string& output_type,
 		  Globals& globals);
-} // namespace
+}
 // ========================================================================
 
 namespace {
   std::string codename;
   std::string version = "0.9";
-} // namespace
+}
 
 int main(int argc, char *argv[])
 {
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   Globals globals;
 
   codename = argv[0];
-  size_t ind = codename.find_last_of('/', codename.size());
+  size_t ind = codename.find_last_of("/", codename.size());
   if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
 }
@@ -289,7 +289,7 @@ namespace {
 
 	// Add a nodeset for each sph element block...
 	name += "_nodes";
-	auto ns = new Ioss::NodeSet(output_region.get_database(), name, num_elem);
+	Ioss::NodeSet *ns = new Ioss::NodeSet(output_region.get_database(), name, num_elem);
 	ns->property_add(Ioss::Property("id", id));
 	output_region.add(ns);
       }
@@ -298,7 +298,7 @@ namespace {
     // Define a node block...  
     std::string block_name = "nodeblock_1";
     int spatial_dimension = region.get_property("spatial_dimension").get_int();
-    auto block = new Ioss::NodeBlock(output_region.get_database(), block_name,
+    Ioss::NodeBlock *block = new Ioss::NodeBlock(output_region.get_database(), block_name,
 						 sph_node_count, spatial_dimension);
     block->property_add(Ioss::Property("id", 1));
     output_region.add(block);
@@ -514,4 +514,4 @@ namespace {
       radius[ielem] = std::pow(volume[ielem]/scale_factor, (1./3.));
     }
   }
-} // namespace
+}

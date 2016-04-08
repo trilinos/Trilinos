@@ -2,23 +2,23 @@
  * Copyright (c) 2014, Sandia Corporation.
  * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
  * the U.S. Government retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- *
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,44 +30,47 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 
-#include "refine_map.h" // for refine_vdata
-#include "structs.h"    // for vtx_data
+#include "refine_map.h"                 // for refine_vdata
+#include "structs.h"                    // for vtx_data
 
-void compute_cube_vdata(struct refine_vdata *vdata,      /* preference data for a vertex */
-                        struct vtx_data **   comm_graph, /* communication graph data structure */
-                        int                  vtx,        /* current vertex */
-                        int                  mask,    /* bit set in current hypercube dimension */
-                        int *                vtx2node /* maps graph vtxs to mesh nodes */
-                        )
+
+void 
+compute_cube_vdata (
+    struct refine_vdata *vdata,	/* preference data for a vertex */
+    struct vtx_data **comm_graph,	/* communication graph data structure */
+    int vtx,			/* current vertex */
+    int mask,			/* bit set in current hypercube dimension */
+    int *vtx2node		/* maps graph vtxs to mesh nodes */
+)
 {
-  float same;        /* my preference to stay where I am */
-  float change;      /* my preference to change this bit */
-  float ewgt;        /* weight of an edge */
-  int   neighbor;    /* neighboring vtx in comm_graph */
-  int   my_side;     /* which side of hypercube I'm on */
-  int   neighb_side; /* which side of hypercube neighbor's on */
-  int   j;           /* loop counter */
+    float     same;		/* my preference to stay where I am */
+    float     change;		/* my preference to change this bit */
+    float     ewgt;		/* weight of an edge */
+    int       neighbor;		/* neighboring vtx in comm_graph */
+    int       my_side;		/* which side of hypercube I'm on */
+    int       neighb_side;	/* which side of hypercube neighbor's on */
+    int       j;		/* loop counter */
 
-  my_side = (vtx2node[vtx] & mask);
+    my_side = (vtx2node[vtx] & mask);
 
-  change = 0;
-  same   = 0;
-  for (j = 1; j < comm_graph[vtx]->nedges; j++) {
-    neighbor = comm_graph[vtx]->edges[j];
-    ewgt     = comm_graph[vtx]->ewgts[j];
+    change = 0;
+    same = 0;
+    for (j = 1; j < comm_graph[vtx]->nedges; j++) {
+	neighbor = comm_graph[vtx]->edges[j];
+	ewgt = comm_graph[vtx]->ewgts[j];
 
-    neighb_side = (vtx2node[neighbor] & mask);
+	neighb_side = (vtx2node[neighbor] & mask);
 
-    if (neighb_side != my_side) {
-      change += ewgt;
+	if (neighb_side != my_side) {
+	    change += ewgt;
+	}
+	else {
+	    same += ewgt;
+	}
     }
-    else {
-      same += ewgt;
-    }
-  }
-  vdata->same  = same;
-  vdata->above = change;
+    vdata->same = same;
+    vdata->above = change;
 }

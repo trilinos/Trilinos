@@ -36,7 +36,7 @@
 #ifndef _ELB_GROUPS_CONST_H_
 #define _ELB_GROUPS_CONST_H_
 
-#include <cstddef> // for size_t
+#include <stddef.h>                     // for size_t
 struct Machine_Description;
 struct Problem_Description;
 template <typename INT> struct Graph_Description;
@@ -44,14 +44,22 @@ template <typename INT> struct Mesh_Description;
 
 /* Function prototypes */
 template <typename INT>
-int parse_groups(INT *                  el_blk_ids,  /* array containing element block ids */
-                 INT *                  el_blk_cnts, /* array containing element block counts */
-                 Mesh_Description<INT> *mesh,        /* Mesh information structure */
-                 Problem_Description *  prob);       /* Problem information */
+int parse_groups(INT *el_blk_ids,		/* array containing element block ids */
+		 INT *el_blk_cnts,		/* array containing element block counts */
+		 Mesh_Description<INT>* mesh,		/* Mesh information structure */
+		 Problem_Description* prob);		/* Problem information */
 
 template <typename INT>
-int get_group_info(Machine_Description *machine, Problem_Description *prob,
-                   Mesh_Description<INT> *mesh, Graph_Description<INT> *graph, int elem2grp[],
-                   int nprocg[], int nelemg[], size_t *max_vtx, size_t *max_adj);
+int get_group_info(
+  Machine_Description* machine,
+  Problem_Description* prob,
+  Mesh_Description<INT>* mesh,
+  Graph_Description<INT>* graph,
+  int elem2grp[],
+  int nprocg[],
+  int nelemg[],
+  size_t *max_vtx,
+  size_t *max_adj
+);
 
 #endif /* _ELB_GROUPS_CONST_H_ */

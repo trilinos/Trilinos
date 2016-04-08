@@ -42,7 +42,7 @@ namespace Iohb {
   {}
 
   Layout::~Layout()
-  = default;
+  {}
 
   std::ostream& operator<<(std::ostream& o, Layout& lo)
   {
@@ -217,4 +217,4 @@ namespace Iohb {
       add(name, value[0]);
 }
   }
-}  // namespace Iohb
+}

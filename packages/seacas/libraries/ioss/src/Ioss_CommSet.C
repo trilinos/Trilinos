@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,50 +34,53 @@
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_Field.h>
 #include <Ioss_Property.h>
-#include <cassert>
-#include <cstddef>
+#include <assert.h>
+#include <stddef.h>
 #include <string>
 
 #include "Ioss_FieldManager.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_PropertyManager.h"
 
-Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                       const std::string &entity_type, size_t entity_count)
-    : Ioss::GroupingEntity(io_database, my_name, entity_count)
+Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database,
+		       const std::string& my_name,
+		       const std::string& entity_type,
+		       size_t entity_count)
+  : Ioss::GroupingEntity(io_database, my_name, entity_count)
 {
   assert(entity_type == "node" || entity_type == "side");
-  properties.add(Ioss::Property("entity_type", entity_type));
+  properties.add(Ioss::Property("entity_type",  entity_type));
 
   if (entity_type == "node") {
     // Field contains a pair of type [entity_id, shared_cpu]
-    fields.add(Ioss::Field("entity_processor", field_int_type(), "pair", Ioss::Field::COMMUNICATION,
-                           entity_count));
+    fields.add(Ioss::Field("entity_processor", field_int_type(), "pair",
+			   Ioss::Field::COMMUNICATION, entity_count));
     fields.add(Ioss::Field("entity_processor_raw", field_int_type(), "pair",
-                           Ioss::Field::COMMUNICATION, entity_count));
+			   Ioss::Field::COMMUNICATION, entity_count));
   }
   else {
     // Field contains a triplet of type [entity_id, local_side, shared_cpu]
     fields.add(Ioss::Field("entity_processor", field_int_type(), "Real[3]",
-                           Ioss::Field::COMMUNICATION, entity_count));
+			   Ioss::Field::COMMUNICATION, entity_count));
     fields.add(Ioss::Field("entity_processor_raw", field_int_type(), "Real[3]",
-                           Ioss::Field::COMMUNICATION, entity_count));
+			   Ioss::Field::COMMUNICATION, entity_count));
   }
 }
 
-int64_t Ioss::CommSet::internal_get_field_data(const Ioss::Field &field, void *data,
-                                               size_t data_size) const
+int64_t Ioss::CommSet::internal_get_field_data(const Ioss::Field& field,
+				 void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int64_t Ioss::CommSet::internal_put_field_data(const Ioss::Field &field, void *data,
-                                               size_t data_size) const
+int64_t Ioss::CommSet::internal_put_field_data(const Ioss::Field& field,
+				 void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);
 }
 
-Ioss::Property Ioss::CommSet::get_implicit_property(const std::string &my_name) const
+Ioss::Property
+Ioss::CommSet::get_implicit_property(const std::string& my_name) const
 {
   return Ioss::GroupingEntity::get_implicit_property(my_name);
 }

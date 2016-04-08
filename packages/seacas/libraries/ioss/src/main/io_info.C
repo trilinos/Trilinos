@@ -34,10 +34,10 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <Ionit_Initializer.h>
-#include <cstring>
-#include <iomanip>
 #include <stddef.h>
 #include <stdlib.h>
+#include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -68,7 +68,7 @@
 #include "Ioss_SideSet.h"
 #include "Ioss_VariableType.h"
 
-#include <cassert>
+#include <assert.h>
 
 #include "info_interface.h"
 
@@ -131,7 +131,7 @@ namespace {
   }
 
 
-}  // namespace
+}
 void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates);
 
 // ========================================================================
@@ -139,7 +139,7 @@ void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinate
 namespace {
   std::string codename;
   std::string version = "1.0";
-} // namespace
+}
 
 int main(int argc, char *argv[])
 {
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
   std::string in_type = "exodusII";
 
   codename = argv[0];
-  size_t ind = codename.find_last_of('/', codename.size());
+  size_t ind = codename.find_last_of("/", codename.size());
   if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
 }
@@ -394,7 +394,7 @@ namespace {
           std::vector<std::string> blocks;
           eb->get_block_adjacencies(blocks);
           OUTPUT << "\n\tAdjacent to  " << blocks.size() << " element block(s):\t";
-	  for (const auto& block : blocks) {
+	  for (auto block : blocks) {
             OUTPUT << block << "  ";
           }
         }
@@ -509,7 +509,7 @@ namespace {
           std::vector<std::string> blocks;
           fs->block_membership(blocks);
           OUTPUT << "\n\tTouches " << blocks.size() << " element block(s):\t";
-	  for (const auto& block : blocks) {
+	  for (auto block : blocks) {
             OUTPUT << block << "  ";
           }
           OUTPUT << "\n";
@@ -534,7 +534,7 @@ namespace {
             std::vector<std::string> blocks;
             fb->block_membership(blocks);
             OUTPUT << "\t\t\tTouches " << blocks.size() << " element block(s):\t";
-	    for (const auto& block : blocks) {
+	    for (auto block : blocks) {
               OUTPUT << block << "  ";
             }
             OUTPUT << "\n";
@@ -661,7 +661,7 @@ namespace {
   void info_coordinate_frames(Ioss::Region &region, bool summary)
   {
     Ioss::CoordinateFrameContainer      cf = region.get_coordinate_frames();
-    for (const auto& frame : cf) {
+    for (auto frame : cf) {
       if (!summary) {
         const double *origin = frame.origin();
         const double *a3pt = frame.axis_3_point();
@@ -715,7 +715,7 @@ namespace {
     }
     // Iterate through results fields and transfer to output
     // database...  
-    for (const auto& field_name : fields) {
+    for (auto field_name : fields) {
       const Ioss::VariableType *var_type = ige->get_field(field_name).raw_storage();
       int comp_count = var_type->component_count();
       OUTPUT << std::setw(16) << field_name << ":" << comp_count << " ";
@@ -738,4 +738,4 @@ namespace {
 #endif
   }
 
-}  // namespace
+}

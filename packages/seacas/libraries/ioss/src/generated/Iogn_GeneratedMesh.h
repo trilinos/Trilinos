@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,14 +33,14 @@
 #ifndef IOSS_Iogn_GeneratedMesh_h
 #define IOSS_Iogn_GeneratedMesh_h
 
+#include <Ioss_EntityType.h>            // for EntityType
 #include <Ioss_CodeTypes.h>
-#include <Ioss_EntityType.h> // for EntityType
-#include <map>               // for map, etc
-#include <stddef.h>          // for size_t
-#include <stdint.h>          // for int64_t
-#include <string>            // for string
-#include <utility>           // for pair
-#include <vector>            // for vector
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <map>                          // for map, etc
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;
@@ -48,7 +48,9 @@ namespace Iogn {
   class GeneratedMesh
   {
   public:
-    enum ShellLocation { MX = 0, PX = 1, MY = 2, PY = 3, MZ = 4, PZ = 5 };
+    enum ShellLocation {MX =  0,  PX =  1,
+			MY =  2,  PY =  3,
+			MZ =  4,  PZ =  5};
 
     /**
        Generate a cube mesh of size 'num_x' by 'num_y' by 'num_z' elements.
@@ -58,14 +60,14 @@ namespace Iogn {
        The mesh will be decomposed along the 'Z' axis so 'num_z' must be greater than
        or equal to 'proc_count' and for even distribution of the hexes 'num_z' mod 'proc_count'
        should be zero.
-
+	 
        The mesh can optionally include shell elements along each face of the cube mesh.
        These are specified via the 'add_shell_block' function.
-
+	 
        The mesh can optionally include nodesets/sidesets along each
        face of the cube mesh.  These are specified via the
        'add_nodesets' and 'add_sidesets' functions.
-
+	 
        If the 'parameters' string constructor is used, the string
        is parsed to determine the intervals in each direction and,
        optionally, additional information.  The form of the string
@@ -198,55 +200,55 @@ namespace Iogn {
      * Cannot currently be used with sidesets or shells.
      */
     void create_tets(bool yesno);
-
+    
     /**
      * Add a shell block along the specified face of the hex mesh.
      * The shell blocks will maintain the order of definition. The
      * first shell block defined will be block 2; the hex block has id
      * 1.  The loc options are:
-     * - MX = add shell layer on the face with minimum X
-     * - PX = add shell layer on the face with maximum X
-     * - MY = add shell layer on the face with minimum Y
-     * - PY = add shell layer on the face with maximum Y
-     * - MZ = add shell layer on the face with minimum Z
+     * - MX = add shell layer on the face with minimum X 
+     * - PX = add shell layer on the face with maximum X 
+     * - MY = add shell layer on the face with minimum Y 
+     * - PY = add shell layer on the face with maximum Y 
+     * - MZ = add shell layer on the face with minimum Z 
      * - PZ = add shell layer on the face with maximum Z
      *
      */
     int64_t add_shell_block(ShellLocation loc);
-
+    
     /**
      * Add a nodeset along the specified face of the hex mesh.
      * The nodesets will maintain the order of definition. The
      * first nodeset defined will be nodeset 1.
      * The loc options are:
-     * - MX = add nodeset on the face with minimum X
-     * - PX = add nodeset on the face with maximum X
-     * - MY = add nodeset on the face with minimum Y
-     * - PY = add nodeset on the face with maximum Y
-     * - MZ = add nodeset on the face with minimum Z
+     * - MX = add nodeset on the face with minimum X 
+     * - PX = add nodeset on the face with maximum X 
+     * - MY = add nodeset on the face with minimum Y 
+     * - PY = add nodeset on the face with maximum Y 
+     * - MZ = add nodeset on the face with minimum Z 
      * - PZ = add nodeset on the face with maximum Z
      *
      */
     int64_t add_nodeset(ShellLocation loc);
-
+    
     /**
      * Add a sideset along the specified face of the hex mesh.
      * The sidesets will maintain the order of definition. The
      * first sideset defined will be sideset 1. If there is a shell
      * block specified on that face, then the sideset will be on the
      * shell elements; otherwise the sideset will be on the hex
-     * elements.
+     * elements. 
      * The loc options are:
-     * - MX = add sideset on the face with minimum X
-     * - PX = add sideset on the face with maximum X
-     * - MY = add sideset on the face with minimum Y
-     * - PY = add sideset on the face with maximum Y
-     * - MZ = add sideset on the face with minimum Z
+     * - MX = add sideset on the face with minimum X 
+     * - PX = add sideset on the face with maximum X 
+     * - MY = add sideset on the face with minimum Y 
+     * - PY = add sideset on the face with maximum Y 
+     * - MZ = add sideset on the face with minimum Z 
      * - PZ = add sideset on the face with maximum Z
      *
      */
     int64_t add_sideset(ShellLocation loc);
-
+    
     /**
      * Specify the coordinate scaling and offset in all three
      * spatial dimensions.
@@ -263,8 +265,9 @@ namespace Iogn {
      */
     void set_scale(double scl_x, double scl_y, double scl_z);
     void set_offset(double off_x, double off_y, double off_z);
-    void set_bbox(double xmin, double ymin, double zmin, double xmax, double ymax, double zmax);
-
+    void set_bbox(double xmin, double ymin, double zmin,
+		  double xmax, double ymax, double zmax);
+	
     /**
      * Set rotation.  Multiple calls are cumulative.
      * Rotate 'angle_degrees' degrees about the axis 'axis'
@@ -339,11 +342,11 @@ namespace Iogn {
      */
     int64_t shell_element_count_proc(ShellLocation /*loc*/) const;
 
-    int64_t timestep_count() const { return timestepCount; }
+    int64_t timestep_count() const {return timestepCount;}
     /**
      * Return number of elements in the element block with id
      * 'block_number'. The 'block_number' ranges from '1' to
-     * 'block_count()'.
+     * 'block_count()'. 
      */
     virtual int64_t element_count(int64_t block_number) const;
 
@@ -359,15 +362,15 @@ namespace Iogn {
      * nodes / element". The topology type string will be "hex8" for
      * the hex element block and "shell4" for the shell element blocks.
      */
-    virtual std::pair<std::string, int> topology_type(int64_t block_number) const;
-
-    int64_t build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc, int64_t slab,
+    virtual std::pair<std::string, int>  topology_type(int64_t block_number) const;
+    
+    int64_t build_node_map(Ioss::Int64Vector& map, std::vector<int>& proc, int64_t slab,
                            size_t slabOffset, size_t adjacentProc, int64_t startIndex);
     virtual int64_t communication_node_count_proc() const;
     virtual void node_communication_map(MapVector &map, std::vector<int> &proc);
     virtual void owning_processor(int *owner, int64_t num_node);
-
-    /**
+    
+    /** 
      * Fill the passed in 'map' argument with the node map
      * "map[local_position] = global_id" for the nodes on this
      * processor.
@@ -375,7 +378,7 @@ namespace Iogn {
     virtual void node_map(MapVector &map) const;
     virtual void node_map(Ioss::IntVector &map) const;
 
-    /**
+    /** 
      * Fill the passed in 'map' argument with the element map
      * "map[local_position] = global_id" for the elements on this
      * processor in block "block_number".
@@ -383,15 +386,15 @@ namespace Iogn {
     virtual void element_map(int64_t block_number, MapVector &map) const;
     virtual void element_map(int64_t block_number, Ioss::IntVector &map) const;
 
-    /**
+    /** 
      * Fill the passed in 'map' argument with the element map
      * "map[local_position] = global_id" for all elements on this
-     * processor
+     * processor 
      */
     virtual void element_map(MapVector &map) const;
     virtual void element_map(Ioss::IntVector &map) const;
-
-    /**
+    
+    /** 
      * Fill the passed in 'map' argument with the element map pair
      * "map[local_position] = element global_id" and
      * "map[local_position+1] = element local face id (0-based)" for
@@ -399,7 +402,7 @@ namespace Iogn {
      * surface defined by ShellLocation.
      */
     void element_surface_map(ShellLocation loc, MapVector &map) const;
-
+    
     /**
      * Return the connectivity for the elements on this processor in
      * the block with id 'block_number'. If the elements in this block
@@ -412,8 +415,8 @@ namespace Iogn {
      */
     void connectivity(int64_t block_number, Ioss::Int64Vector &connect) const;
     void connectivity(int64_t block_number, Ioss::IntVector &connect) const;
-    void connectivity(int64_t block_number, int64_t *connect) const;
-    virtual void connectivity(int64_t block_number, int *connect) const;
+    void connectivity(int64_t block_number, int64_t* connect) const;
+    virtual void connectivity(int64_t block_number, int* connect) const;
 
     /**
      * Return the coordinates for all nodes on this processor.  The
@@ -431,9 +434,10 @@ namespace Iogn {
      * required to contain the nodal coordinates; all information in
      * the vectors will be overwritten.
      */
-    virtual void coordinates(std::vector<double> &x, std::vector<double> &y,
-                             std::vector<double> &z) const;
-
+    virtual void coordinates(std::vector<double> &x,
+		     std::vector<double> &y,
+		     std::vector<double> &z) const;
+    
     /**
      * Return the coordinates for componenet 'comp' (1=x, 2=y, 3=z)
      * for all nodes on this processor. The
@@ -465,34 +469,36 @@ namespace Iogn {
 
     virtual std::vector<std::string> sideset_touching_blocks(int64_t set_id) const;
 
-    int64_t get_num_x() const { return numX; }
-    int64_t get_num_y() const { return numY; }
-    int64_t get_num_z() const { return numZ; }
+    int64_t get_num_x() const {return numX;}
+    int64_t get_num_y() const {return numY;}
+    int64_t get_num_z() const {return numZ;}
 
     size_t get_variable_count(Ioss::EntityType type) const
-    {
-      return variableCount.find(type) != variableCount.end() ? variableCount.find(type)->second : 0;
-    }
+    { return variableCount.find(type) != variableCount.end() ? variableCount.find(type)->second : 0; }
 
   private:
-    template <typename INT> void raw_element_map(int64_t block_number, std::vector<INT> &map) const;
-    template <typename INT> void raw_element_map(std::vector<INT> &map) const;
-    template <typename INT> void raw_connectivity(int64_t block_number, INT *connect) const;
+    
+    template <typename INT>
+      void raw_element_map(int64_t block_number, std::vector<INT> &map) const;
+    template <typename INT>
+      void raw_element_map(std::vector<INT> &map) const;
+    template <typename INT>
+      void raw_connectivity(int64_t block_number, INT *connect) const;
 
-    GeneratedMesh(const GeneratedMesh &);
-    GeneratedMesh &operator=(const GeneratedMesh &);
+    GeneratedMesh( const GeneratedMesh & );
+    GeneratedMesh & operator = ( const GeneratedMesh & );
 
     void set_variable_count(const std::string &type, size_t count);
     void parse_options(const std::vector<std::string> &groups);
     void show_parameters() const;
     void initialize();
-
+	
     std::vector<ShellLocation> shellBlocks;
     std::vector<ShellLocation> nodesets;
     std::vector<ShellLocation> sidesets;
-    double                     rotmat[3][3];
-    size_t                     numX, numY, numZ;
-    size_t                     myNumZ, myStartZ;
+    double rotmat[3][3];
+    size_t numX, numY, numZ;
+    size_t myNumZ, myStartZ;
 
     size_t processorCount;
     size_t myProcessor;
@@ -502,11 +508,13 @@ namespace Iogn {
 
     double offX, offY, offZ; /** Offsets in X, Y, and Z directions */
     double sclX, sclY, sclZ; /** Scale in X, Y, and Z directions
-                              * location of node at (i,j,k)
-                              * position is (sclX*i+offX,
-                              * sclY*i+offY, sclZ*i+offZ) */
+			      * location of node at (i,j,k)
+			      * position is (sclX*i+offX,
+			      * sclY*i+offY, sclZ*i+offZ) */
     bool doRotation;
     bool createTets;
   };
+
+
 }
 #endif

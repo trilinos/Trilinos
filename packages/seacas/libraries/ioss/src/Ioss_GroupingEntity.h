@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,18 +33,18 @@
 #ifndef IOSS_Ioss_GroupingEntity_h
 #define IOSS_Ioss_GroupingEntity_h
 
-#include <Ioss_CodeTypes.h>       // for Complex
-#include <Ioss_DatabaseIO.h>      // for DatabaseIO
-#include <Ioss_EntityType.h>      // for EntityType
-#include <Ioss_Field.h>           // for Field, Field::RoleType, etc
-#include <Ioss_FieldManager.h>    // for FieldManager, NameList
-#include <Ioss_Property.h>        // for Property
-#include <Ioss_PropertyManager.h> // for PropertyManager
-#include <Ioss_State.h>           // for State
-#include <stddef.h>               // for size_t, nullptr
-#include <stdint.h>               // for int64_t
-#include <string>                 // for string
-#include <vector>                 // for vector
+#include <Ioss_CodeTypes.h>             // for Complex
+#include <Ioss_DatabaseIO.h>            // for DatabaseIO
+#include <Ioss_EntityType.h>            // for EntityType
+#include <Ioss_Field.h>                 // for Field, Field::RoleType, etc
+#include <Ioss_FieldManager.h>          // for FieldManager, NameList
+#include <Ioss_PropertyManager.h>       // for PropertyManager
+#include <Ioss_Property.h>              // for Property
+#include <Ioss_State.h>                 // for State
+#include <stddef.h>                     // for size_t, nullptr
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include <vector>                       // for vector
 
 namespace Ioss {
 
@@ -76,116 +76,117 @@ namespace Ioss {
   //
   //========================================================================
   class EntityBlock;
-
-  class GroupingEntity
-  {
+  
+  class GroupingEntity {
   public:
     friend class Property;
 
     GroupingEntity();
-    GroupingEntity(DatabaseIO *io_database, const std::string &my_name, int64_t entity_count);
-    GroupingEntity(const GroupingEntity &) = delete;
-    GroupingEntity &operator=(const GroupingEntity &) = delete;
+    GroupingEntity(DatabaseIO *io_database, const std::string& my_name,
+		   int64_t entity_count);
+    GroupingEntity(const GroupingEntity&) =delete;
+    GroupingEntity& operator=(const GroupingEntity&) =delete;
 
+    
     virtual ~GroupingEntity();
 
     State get_state() const;
 
-    DatabaseIO *get_database() const;
-    void set_database(DatabaseIO *io_database);
+    DatabaseIO* get_database() const;
+    void  set_database(DatabaseIO *io_database);
     virtual void delete_database();
 
     //: Return name of entity.  This short-circuits the process of
     //  getting the name via the property.  Returns the same information
     //  as: entity->get_property("name").get_string()
-    const std::string &name() const { return entityName; }
-    void set_name(const std::string &new_name) { entityName = new_name; }
-
+    const std::string & name() const {return entityName;}
+    void set_name(const std::string &new_name) {entityName = new_name;}
+    
     //: Return a generated name based on the type of the entity and the id
     //  For example, element block 10 would return "block_10"
     //  This is the default name if no name is assigned in the mesh database.
     std::string generic_name() const;
 
+    
     //: Returns true if 'name' is an alias for this entity.
     bool is_alias(const std::string &my_name) const;
 
     //: Return list of blocks that the entities in this GroupingEntity "touch"
     //: For a SideSet, returns a list of the element blocks that the
-    //: elements in the set belong to.
+    //: elements in the set belong to.  
     //: For others, it returns an empty vector.
     //: Entries are pushed onto the "block_members" vector, so it will be
     //: appended to if it is not empty at entry to the function.
     virtual void block_membership(std::vector<std::string> &block_members) {}
-
-    std::string         get_filename() const;
-    virtual std::string type_string() const       = 0;
+      
+    std::string get_filename() const;
+    virtual std::string type_string() const = 0;
     virtual std::string short_type_string() const = 0;
-    virtual EntityType  type() const              = 0;
-
+    virtual EntityType type() const = 0;
+      
     // ========================================================================
     //                                PROPERTIES
     // ========================================================================
     // Property-related information....
     // Just forward it through to the property manager...
-    void property_add(const Property &new_prop);
-    void property_erase(const std::string &property_name);
-    bool property_exists(const std::string &property_name) const;
-    Property get_property(const std::string &property_name) const;
-    int property_describe(NameList *names) const;
+    void property_add(const Property& new_prop);
+    void property_erase(const std::string& property_name);
+    bool property_exists(const std::string& property_name) const;
+    Property get_property(const std::string& property_name) const;
+    int property_describe(NameList* names) const;
     size_t property_count() const;
 
     // ========================================================================
     //                                FIELDS
     // ========================================================================
     // Just forward these through to the field manager...
-    void field_add(const Field &new_field);
-    void field_erase(const std::string &field_name);
-    bool field_exists(const std::string &field_name) const;
-    Field get_field(const std::string &field_name) const;
-    const Field &get_fieldref(const std::string &field_name) const;
-    int field_describe(NameList *names) const;
-    int field_describe(Field::RoleType role, NameList *names) const;
+    void field_add(const Field& new_field);
+    void field_erase(const std::string& field_name);
+    bool field_exists(const std::string& field_name) const;
+    Field get_field(const std::string& field_name) const;
+    const Field &get_fieldref(const std::string& field_name) const;
+    int field_describe(NameList* names) const;
+    int field_describe(Field::RoleType role, NameList* names) const;
     size_t field_count() const;
     size_t field_count(Field::RoleType role) const;
 
     // Put this fields data into 'data'.
     // Returns number of entities for which the field was read.
     // Assumes 'data' is large enough to hold all values.
-    int get_field_data(const std::string &field_name, void *data, size_t data_size) const;
+    int get_field_data(const std::string& field_name, void *data,
+		       size_t data_size) const;
 
-    int put_field_data(const std::string &field_name, void *data, size_t data_size) const;
+    int put_field_data(const std::string& field_name, void *data,
+		       size_t data_size) const;
 
     // Put this fields data into the specified std::vector space.
     // Returns number of entities for which the field was read.
     // Resizes 'data' to size needed to hold all values.
-    int get_field_data(const std::string &field_name, std::vector<char> &data) const;
-    int get_field_data(const std::string &field_name, std::vector<double> &data) const;
-    int get_field_data(const std::string &field_name, std::vector<int> &data) const;
-    int get_field_data(const std::string &field_name, std::vector<int64_t> &data) const;
-    int get_field_data(const std::string &field_name, std::vector<Complex> &data) const;
+    int get_field_data(const std::string& field_name, std::vector<char>    &data) const;
+    int get_field_data(const std::string& field_name, std::vector<double>  &data) const;
+    int get_field_data(const std::string& field_name, std::vector<int>     &data) const;
+    int get_field_data(const std::string& field_name, std::vector<int64_t> &data) const;
+    int get_field_data(const std::string& field_name, std::vector<Complex> &data) const;
 
-    int put_field_data(const std::string &field_name, std::vector<char> &data) const;
-    int put_field_data(const std::string &field_name, std::vector<double> &data) const;
-    int put_field_data(const std::string &field_name, std::vector<int> &data) const;
-    int put_field_data(const std::string &field_name, std::vector<int64_t> &data) const;
-    int put_field_data(const std::string &field_name, std::vector<Complex> &data) const;
+    int put_field_data(const std::string& field_name, std::vector<char>    &data) const;
+    int put_field_data(const std::string& field_name, std::vector<double>  &data) const;
+    int put_field_data(const std::string& field_name, std::vector<int>     &data) const;
+    int put_field_data(const std::string& field_name, std::vector<int64_t> &data) const;
+    int put_field_data(const std::string& field_name, std::vector<Complex> &data) const;
 
-    Ioss::Field::BasicType field_int_type() const
-    {
+    Ioss::Field::BasicType field_int_type() const {
       if (get_database() == nullptr || get_database()->int_byte_size_api() == 4) {
-        return Ioss::Field::INT32;
-      }
-      else {
-        return Ioss::Field::INT64;
+	return Ioss::Field::INT32;
+      } else {
+	return Ioss::Field::INT64;
       }
     }
-
-    unsigned int hash() const { return hash_; }
+	  
+    unsigned int hash() const {return hash_;}
   protected:
     void count_attributes() const;
 
-    bool set_state(State new_state)
-    {
+    bool set_state(State new_state) {
       entityState = new_state;
       return true;
     }
@@ -202,89 +203,83 @@ namespace Ioss {
     // is provided to return properties that are common to all grouping entities.
     // Derived classes should call 'GroupingEntity::get_implicit_property'
     // if the requested property is not specific to their type.
-    virtual Property get_implicit_property(const std::string &my_name) const = 0;
+    virtual Property
+      get_implicit_property(const std::string& my_name) const = 0;
 
     PropertyManager properties;
     FieldManager    fields;
 
-    virtual int64_t internal_get_field_data(const Field &field, void *data,
-                                            size_t data_size = 0) const = 0;
-    virtual int64_t internal_put_field_data(const Field &field, void *data,
-                                            size_t data_size = 0) const = 0;
+    virtual int64_t internal_get_field_data(const Field& field,
+					void *data, size_t data_size=0) const = 0;
+    virtual int64_t internal_put_field_data(const Field& field,
+					void *data, size_t data_size=0) const = 0;
 
     int64_t entityCount;
 
   private:
     void verify_field_exists(const std::string &field_name, const std::string &inout) const;
-
+    
     std::string entityName;
 
-    DatabaseIO *database_;
+    DatabaseIO* database_;
 
-    State           entityState;
+    State entityState;
     mutable int64_t attributeCount;
-    unsigned int    hash_;
+    unsigned int hash_;
   };
 }
-inline void Ioss::GroupingEntity::property_add(const Ioss::Property &new_prop)
-{
-  properties.add(new_prop);
-}
+inline void
+Ioss::GroupingEntity::property_add(const Ioss::Property& new_prop)
+{properties.add(new_prop);}
 
-inline void Ioss::GroupingEntity::property_erase(const std::string &property_name)
-{
-  properties.erase(property_name);
-}
+inline void
+Ioss::GroupingEntity::property_erase(const std::string& property_name)
+{properties.erase(property_name);}
 
-inline bool Ioss::GroupingEntity::property_exists(const std::string &property_name) const
-{
-  return properties.exists(property_name);
-}
+inline bool
+Ioss::GroupingEntity::property_exists(const std::string& property_name) const
+{return properties.exists(property_name);}
 
-inline Ioss::Property Ioss::GroupingEntity::get_property(const std::string &property_name) const
-{
-  return properties.get(property_name);
-}
+inline Ioss::Property
+Ioss::GroupingEntity::get_property(const std::string& property_name) const
+{return properties.get(property_name);}
 
-inline int Ioss::GroupingEntity::property_describe(NameList *names) const
-{
-  return properties.describe(names);
-}
+inline int
+Ioss::GroupingEntity::property_describe(NameList* names) const
+{return properties.describe(names);}
 
-inline size_t Ioss::GroupingEntity::property_count() const { return properties.count(); }
+inline size_t
+Ioss::GroupingEntity::property_count() const
+{return properties.count();}
 
 // ------------------------------------------------------------------------
 
-inline void Ioss::GroupingEntity::field_erase(const std::string &field_name)
-{
-  fields.erase(field_name);
-}
+inline void
+Ioss::GroupingEntity::field_erase(const std::string& field_name)
+{fields.erase(field_name);}
 
-inline bool Ioss::GroupingEntity::field_exists(const std::string &field_name) const
-{
-  return fields.exists(field_name);
-}
+inline bool
+Ioss::GroupingEntity::field_exists(const std::string& field_name) const
+{return fields.exists(field_name);}
 
-inline Ioss::Field Ioss::GroupingEntity::get_field(const std::string &field_name) const
-{
-  return fields.get(field_name);
-}
+inline Ioss::Field
+Ioss::GroupingEntity::get_field(const std::string& field_name) const
+{return fields.get(field_name);}
 
-inline const Ioss::Field &Ioss::GroupingEntity::get_fieldref(const std::string &field_name) const
-{
-  return fields.getref(field_name);
-}
+inline const Ioss::Field&
+Ioss::GroupingEntity::get_fieldref(const std::string& field_name) const
+{return fields.getref(field_name);}
 
-inline int Ioss::GroupingEntity::field_describe(NameList *names) const
-{
-  return fields.describe(names);
-}
+inline int
+Ioss::GroupingEntity::field_describe(NameList* names) const
+{return fields.describe(names);}
 
-inline int Ioss::GroupingEntity::field_describe(Ioss::Field::RoleType role, NameList *names) const
-{
-  return fields.describe(role, names);
-}
+inline int
+Ioss::GroupingEntity::field_describe(Ioss::Field::RoleType role, NameList* names) const
+{return fields.describe(role, names);}
 
-inline size_t Ioss::GroupingEntity::field_count() const { return fields.count(); }
+inline size_t
+Ioss::GroupingEntity::field_count() const
+{return fields.count();}
 
 #endif

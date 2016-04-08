@@ -2,23 +2,23 @@
  * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- *
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,21 +30,21 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
+#include <stdarg.h>                     // for va_arg, va_end, va_list, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for fprintf, nullptr, stderr
+#include <stdlib.h>                     // for exit, free, malloc
 #include "rf_format.h"
-#include <cstdarg> // for va_arg, va_end, va_list, etc
-#include <cstddef> // for size_t
-#include <cstdio>  // for fprintf, nullptr, stderr
-#include <cstdlib> // for exit, free, malloc
 
 /*#include "rf_allo.h"*/
 
 #ifdef DEBUG
-extern int Proc;
+    extern int Proc;
 #endif
 
-static double *smalloc(size_t n, char *filename, int lineno);
+   static double *smalloc (size_t n, char *filename, int lineno);
 
 /******************************************************************************
  *
@@ -118,85 +118,84 @@ static double *smalloc(size_t n, char *filename, int lineno);
 /*****************************************************************************/
 /*****************************************************************************/
 
-double *array_alloc(const char *file, int lineno, int numdim, ...)
+double *array_alloc (const char *file, int lineno, int numdim, ...)
 {
   const char *yo = "array_alloc";
-  struct dim
-  {
-    size_t index; /* Number of elements in the dimension	*/
-    size_t total; /* Total number of elements 		*/
-    size_t size;  /* Size of a single element in bytes	*/
-    size_t off;   /* offset from beginning of array	*/
-  } dim[3];       /* Info about each dimension 		*/
-  size_t  total;  /* Total size of the array		*/
-  double *dfield; /* ptr to avoid lint complaints		*/
-  char *  field;  /* The multi-dimensional array		*/
-  char ** ptr;    /* Pointer offset			*/
-  char *  data;   /* Data offset				*/
-  va_list va;     /* Current pointer in the argument list	*/
+   struct dim {
+     size_t	index;	/* Number of elements in the dimension	*/
+     size_t	total;	/* Total number of elements 		*/
+     size_t	size;	/* Size of a single element in bytes	*/
+     size_t	off;	/* offset from beginning of array	*/
+   }	dim[3];		/* Info about each dimension 		*/
+   size_t total;		/* Total size of the array		*/
+   double *dfield;	/* ptr to avoid lint complaints		*/
+   char *field;		/* The multi-dimensional array		*/
+   char **ptr;		/* Pointer offset			*/
+   char *data;		/* Data offset				*/
+   va_list va;		/* Current pointer in the argument list	*/
 
-  va_start(va, numdim);
+   va_start(va, numdim);
 
-  if (numdim <= 0) {
-    fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is <=0\n", yo, file, lineno,
-            numdim);
-    exit(1);
-  }
-  else if (numdim > 3) {
-    fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is > 3\n", yo, file, lineno,
-            numdim);
-    exit(1);
-  }
+   if (numdim <= 0) {
+     fprintf (stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is <=0\n",
+              yo, file, lineno, numdim);
+	exit(1);
+   } else if (numdim > 3) {
+     fprintf (stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is > 3\n",
+              yo, file, lineno,  numdim);
+	exit(1);
+   }
 
-  dim[0].index = va_arg(va, size_t);
+   dim[0].index = va_arg(va, size_t);
 
-  if (dim[0].index == 0) {
+
+   if (dim[0].index == 0) {
 #ifdef DEBUG
-    fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-                    "dimension == 0; will return nullptr\n",
-            yo, file, lineno);
+     fprintf(stderr, "WARNING, %s (%s: %d) called with first "
+	     "dimension == 0; will return nullptr\n",
+	     yo, file, lineno);
 #endif
-    va_end(va);
-    return ((double *)nullptr);
-  }
+     va_end(va);
+     return((double *) nullptr);
+   }
 
-  dim[0].total = dim[0].index;
-  dim[0].size  = sizeof(void *);
-  dim[0].off   = 0;
-  for (int i = 1; i < numdim; i++) {
-    dim[i].index = va_arg(va, size_t);
-    if (dim[i].index <= 0) {
-      fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d == 0, "
-                      " will return nullptr\n",
-              yo, file, lineno, i + 1);
-      va_end(va);
-      return ((double *)nullptr);
-    }
-    dim[i].total = dim[i - 1].total * dim[i].index;
-    dim[i].size  = sizeof(void *);
-    dim[i].off   = dim[i - 1].off + dim[i - 1].total * dim[i - 1].size;
-  }
-  dim[numdim - 1].size = va_arg(va, size_t);
-  va_end(va);
+   dim[0].total = dim[0].index;
+   dim[0].size = sizeof(void *);
+   dim[0].off = 0;
+   for (int i=1; i<numdim; i++) {
+      dim[i].index = va_arg(va, size_t);
+      if (dim[i].index <= 0) {
+         fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d == 0, "
+                 " will return nullptr\n",
+                 yo, file, lineno, i+1);
+	 va_end(va);
+	 return((double *) nullptr);
+      }
+      dim[i].total = dim[i-1].total * dim[i].index;
+      dim[i].size = sizeof(void *);
+      dim[i].off = dim[i-1].off + dim[i-1].total * dim[i-1].size;
+   }
+   dim[numdim-1].size = va_arg(va, size_t);
+   va_end(va);
 
-  /* Round up the last offset value so data is properly aligned. */
-  dim[numdim - 1].off = dim[numdim - 1].size *
-                        ((dim[numdim - 1].off + dim[numdim - 1].size - 1) / dim[numdim - 1].size);
+   /* Round up the last offset value so data is properly aligned. */
+   dim[numdim-1].off = dim[numdim-1].size *
+       ((dim[numdim-1].off+dim[numdim-1].size-1)/dim[numdim-1].size);
 
-  total = dim[numdim - 1].off + dim[numdim - 1].total * dim[numdim - 1].size;
+   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-  dfield = (double *)smalloc(total, (char *)file, lineno);
-  field  = (char *)dfield;
+   dfield = (double *) smalloc(total, (char*)file, lineno);
+   field = (char *) dfield;
 
-  for (int i = 0; i < numdim - 1; i++) {
-    ptr  = (char **)(field + dim[i].off);
-    data = (char *)(field + dim[i + 1].off);
-    for (size_t j = 0; j < dim[i].total; j++) {
-      ptr[j] = data + j * dim[i + 1].size * dim[i + 1].index;
-    }
-  }
+   for (int i=0; i<numdim - 1; i++) {
+      ptr = (char **) (field + dim[i].off);
+      data = (char *) (field + dim[i+1].off);
+      for (size_t j=0; j<dim[i].total; j++) {
+         ptr[j] = data + j * dim[i+1].size * dim[i+1].index;
+      }
+   }
 
-  return (dfield);
+   return(dfield);
 }
 
 /* Safe version of malloc.  Does not initialize memory .*/
@@ -207,38 +206,38 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
 /*****************************************************************************/
 /*****************************************************************************/
 
-static double *smalloc(size_t n, char *filename, int lineno)
+static double *smalloc (size_t n, char *filename, int lineno)
 
 {
   const char *yo = "smalloc";
-  double *    pntr; /* return value */
+  double *pntr;           /* return value */
 
   if (n == 0)
     pntr = nullptr;
   else
-    pntr = (double *)malloc(n);
+    pntr = (double *) malloc(n);
 
   if (pntr == nullptr && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-                    "requested = " ST_ZU "\n",
-            yo, filename, lineno, (unsigned long)n);
+            "requested = " ST_ZU "\n", yo, filename, lineno, (unsigned long)n);
     exit(0);
   }
 
   return pntr;
+
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-void safe_free(void **ptr)
+void safe_free (void **ptr)
 {
-  /*
-   *  This version of free calls the system's free function
-   *  with maximum error checking. It also doesn't call free if ptr is
-   *  the nullptr pointer.
-   */
+/*
+ *  This version of free calls the system's free function
+ *  with maximum error checking. It also doesn't call free if ptr is
+ *  the nullptr pointer.
+ */
 
   if (*ptr != nullptr) {
 
@@ -251,7 +250,7 @@ void safe_free(void **ptr)
 
     *ptr = nullptr;
   }
-} /* safe_free */
+}  /* safe_free */
 
 /*****************************************************************************/
 /*                       END of rf_allo.c                                    */

@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//
+//         
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,53 +33,60 @@
 #ifndef IOSS_Ioss_FaceGenerator_h
 #define IOSS_Ioss_FaceGenerator_h
 
+#include <unordered_set>
 #include <algorithm>
 #include <array>
 #include <assert.h>
-#include <stddef.h> // for size_t
-#include <unordered_set>
 #include <utility>
+#include <stddef.h>                     // for size_t
 
 namespace Ioss {
   class Region;
-
+  
   class Face
   {
   public:
-    Face() : id_(0), elementCount_(0), sharedWithProc_(-1) {}
-    Face(size_t id, std::array<size_t, 4> conn)
-        : id_(id), elementCount_(0), sharedWithProc_(-1), connectivity_(std::move(conn))
-    {
-    }
-
+    Face() : id_(0), elementCount_(0), sharedWithProc_(-1)
+      {}
+    Face(size_t id, std::array<size_t,4> conn)
+      : id_(id), elementCount_(0),
+        sharedWithProc_(-1), connectivity_(std::move(conn))
+      {}
+    
     void add_element(size_t element_id) const
     {
       assert(elementCount_ < 2);
       element[elementCount_++] = element_id;
     }
-
-    size_t         id_;
+    
+    size_t id_;
     mutable size_t element[2];
-    mutable int    elementCount_; // Should be max of 2 solid elements...
-    mutable int    sharedWithProc_;
-    std::array<size_t, 4> connectivity_;
+    mutable int elementCount_; // Should be max of 2 solid elements...
+    mutable int sharedWithProc_;
+    std::array<size_t,4> connectivity_;
   };
 
-  struct FaceHash {
-    size_t operator()(const Face &face) const { return face.id_; }
+  struct FaceHash
+  {
+    size_t operator()(const Face &face) const
+    {
+      return face.id_;
+    }
   };
 
-  struct FaceEqual {
+  struct FaceEqual
+  {
     bool operator()(const Face &left, const Face &right) const
     {
       if (left.id_ != right.id_) {
-        return false;
+	return false;
       }
       // Hash (id_) is equal
       // Check whether same vertices (can be in different order)
       for (auto lvert : left.connectivity_) {
-        if (std::find(right.connectivity_.begin(), right.connectivity_.end(), lvert) ==
-            right.connectivity_.end()) {
+        if (std::find(right.connectivity_.begin(),
+                      right.connectivity_.end(),
+                      lvert) == right.connectivity_.end()) {
           // Not found, therefore not the same.
           return false;
         }
@@ -88,17 +95,17 @@ namespace Ioss {
     }
   };
 
-  typedef std::unordered_set<Face, FaceHash, FaceEqual> FaceUnorderedSet;
-  class FaceGenerator
-  {
+  typedef std::unordered_set<Face,FaceHash,FaceEqual>  FaceUnorderedSet;
+  class FaceGenerator {
   public:
     FaceGenerator(Ioss::Region &region);
 
-    template <typename INT> void generate_faces(INT /*dummy*/);
-    FaceUnorderedSet &           faces() { return faces_; }
+    template <typename INT> 
+      void generate_faces(INT /*dummy*/);
+    FaceUnorderedSet &faces() {return faces_;}
   private:
-    Ioss::Region &   region_;
-    FaceUnorderedSet faces_;
+    Ioss::Region &region_;
+    FaceUnorderedSet faces_;    
   };
 }
 
