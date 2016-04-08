@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,28 +30,28 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************
 *
 * expmap - ex_put_map
 *
-* entry conditions - 
+* entry conditions -
 *   input parameters:
 *       int     exoid                   exodus file id
 *       int*    elem_map                element order map array
 *
-* exit conditions - 
+* exit conditions -
 *
-* revision history - 
+* revision history -
 *
 *
 *****************************************************************************/
 
-#include <stdio.h>                      // for sprintf
-#include "exodusII.h"                   // for ex_err, exerrval, etc
-#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_enddef, etc
+#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
+#include <stdio.h>        // for sprintf
 
 /*!
 \deprecated Use ex_put_num_map() instead.
@@ -68,7 +68,8 @@ will return a positive number.  Possible causes of errors include:
   -  data file not initialized properly with call to ex_put_init().
   -  an element map already exists in the file.
 
-\param[in]   exoid    exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in]   exoid    exodus file ID returned from a previous call to
+ex_create() or ex_open().
 \param[in]  elem_map  The element order map.
 
 The following code generates a default element order map and outputs
@@ -87,11 +88,10 @@ error = ex_put_map(exoid, elem_map);
 
  */
 
-int ex_put_map (int  exoid,
-                const void_int *elem_map)
+int ex_put_map(int exoid, const void_int *elem_map)
 {
-  int numelemdim, dims[1], mapid, status;
-  int map_int_type;
+  int  numelemdim, dims[1], mapid, status;
+  int  map_int_type;
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
@@ -99,18 +99,15 @@ int ex_put_map (int  exoid,
   /* inquire id's of previously defined dimensions  */
 
   /* determine number of elements. Return if zero... */
-  if (nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim) != NC_NOERR)
-    {
-      return (EX_NOERR);
-    }
+  if (nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim) != NC_NOERR) {
+    return (EX_NOERR);
+  }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef (exoid)) != NC_NOERR) {
+  if ((status = nc_redef(exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-	    "ERROR: failed to put file id %d into define mode",
-	    exoid);
-    ex_err("ex_put_map",errmsg,exerrval);
+    sprintf(errmsg, "ERROR: failed to put file id %d into define mode", exoid);
+    ex_err("ex_put_map", errmsg, exerrval);
     return (EX_FATAL);
   }
 
@@ -122,65 +119,56 @@ int ex_put_map (int  exoid,
     map_int_type = NC_INT64;
   }
 
-  if ((status = nc_def_var(exoid, VAR_MAP, map_int_type, 1, dims, &mapid)) != NC_NOERR) {
+  if ((status = nc_def_var(exoid, VAR_MAP, map_int_type, 1, dims, &mapid)) !=
+      NC_NOERR) {
     if (status == NC_ENAMEINUSE) {
       exerrval = status;
-      sprintf(errmsg,
-	      "ERROR: element map already exists in file id %d",
-	      exoid);
-      ex_err("ex_put_map",errmsg,exerrval);
+      sprintf(errmsg, "ERROR: element map already exists in file id %d", exoid);
+      ex_err("ex_put_map", errmsg, exerrval);
     }
     else {
       exerrval = status;
-      sprintf(errmsg,
-	      "ERROR: failed to create element map array in file id %d",
-	      exoid);
-      ex_err("ex_put_map",errmsg,exerrval);
+      sprintf(errmsg, "ERROR: failed to create element map array in file id %d",
+              exoid);
+      ex_err("ex_put_map", errmsg, exerrval);
     }
-    goto error_ret;         /* exit define mode and return */
+    goto error_ret; /* exit define mode and return */
   }
   ex_compress_variable(exoid, mapid, 1);
 
   /* leave define mode  */
-  if ((status = nc_enddef (exoid)) != NC_NOERR)
-    {
-      exerrval = status;
-      sprintf(errmsg,
-	      "ERROR: failed to complete definition in file id %d",
-	      exoid);
-      ex_err("ex_put_map",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-
+  if ((status = nc_enddef(exoid)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg, "ERROR: failed to complete definition in file id %d",
+            exoid);
+    ex_err("ex_put_map", errmsg, exerrval);
+    return (EX_FATAL);
+  }
 
   /* write out the element order map  */
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
     status = nc_put_var_longlong(exoid, mapid, elem_map);
-  } else {
+  }
+  else {
     status = nc_put_var_int(exoid, mapid, elem_map);
   }
 
-  if (status != NC_NOERR)
-    {
-      exerrval = status;
-      sprintf(errmsg,
-	      "ERROR: failed to store element map in file id %d",
-	      exoid);
-      ex_err("ex_put_map",errmsg,exerrval);
-      return (EX_FATAL);
-    }
+  if (status != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg, "ERROR: failed to store element map in file id %d", exoid);
+    ex_err("ex_put_map", errmsg, exerrval);
+    return (EX_FATAL);
+  }
 
   return (EX_NOERR);
 
-  /* Fatal error: exit definition mode and return */
- error_ret:
-  if (nc_enddef (exoid) != NC_NOERR)     /* exit define mode */
-    {
-      sprintf(errmsg,
-	      "ERROR: failed to complete definition for file id %d",
-	      exoid);
-      ex_err("ex_put_map",errmsg,exerrval);
-    }
+/* Fatal error: exit definition mode and return */
+error_ret:
+  if (nc_enddef(exoid) != NC_NOERR) /* exit define mode */
+  {
+    sprintf(errmsg, "ERROR: failed to complete definition for file id %d",
+            exoid);
+    ex_err("ex_put_map", errmsg, exerrval);
+  }
   return (EX_FATAL);
 }
-

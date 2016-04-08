@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,17 +30,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf
-#include "exodusII.h"                   // for ex_err, exerrval, etc
-#include "exodusII_int.h"               // for EX_FATAL, ATT_PROP_NAME, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_get_att_text, etc
+#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII_int.h" // for EX_FATAL, ATT_PROP_NAME, etc
+#include "netcdf.h"       // for NC_NOERR, nc_get_att_text, etc
+#include <stddef.h>       // for size_t
+#include <stdio.h>        // for sprintf
 
 /*!
-  
+
 The function ex_get_prop_names() returns names of integer properties
 stored for an element block, node set, or side set. The number of
 properties (needed to allocate space for the property names) can be
@@ -53,12 +53,18 @@ include:
   -  invalid object type specified.
 
 
-\param[in]   exoid        exodus file ID returned from a previous call to ex_create() or ex_open().
-\param[in]   obj_type     Type of object; use one of the options in the table below.
-\param[out]  prop_names   Returned array containing \c num_props (obtained from call to
-                          ex_inquire() or ex_inquire_int()) names (of maximum length
-			  \p MAX_STR_LENGTH ) of properties to be stored. \b ID, a
-			  reserved property name, will be the first name in the array.
+\param[in]   exoid        exodus file ID returned from a previous call to
+ex_create() or ex_open().
+\param[in]   obj_type     Type of object; use one of the options in the table
+below.
+\param[out]  prop_names   Returned array containing \c num_props (obtained from
+call to
+                          ex_inquire() or ex_inquire_int()) names (of maximum
+length
+                          \p MAX_STR_LENGTH ) of properties to be stored. \b ID,
+a
+                          reserved property name, will be the first name in the
+array.
 
 <table>
 <tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
@@ -100,16 +106,14 @@ for (i=0; i < num_props; i++) {
 
 */
 
-int ex_get_prop_names (int    exoid,
-                       ex_entity_type obj_type,
-                       char **prop_names)
+int ex_get_prop_names(int exoid, ex_entity_type obj_type, char **prop_names)
 {
-  int status;
-  int i, num_props, propid;
-  char *var_name;
-  size_t att_len;
+  int     status;
+  int     i, num_props, propid;
+  char *  var_name;
+  size_t  att_len;
   nc_type att_type;
-  int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
+  int     api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -117,88 +121,93 @@ int ex_get_prop_names (int    exoid,
 
   /* determine which type of object property names are desired for */
 
-  num_props = ex_get_num_props (exoid, obj_type);
+  num_props = ex_get_num_props(exoid, obj_type);
 
-  for (i=0; i<num_props; i++) {
+  for (i = 0; i < num_props; i++) {
     switch (obj_type) {
     case EX_ELEM_BLOCK:
-      var_name =  VAR_EB_PROP(i+1);
+      var_name = VAR_EB_PROP(i + 1);
       break;
     case EX_FACE_BLOCK:
-      var_name =  VAR_FA_PROP(i+1);
+      var_name = VAR_FA_PROP(i + 1);
       break;
     case EX_EDGE_BLOCK:
-      var_name =  VAR_ED_PROP(i+1);
+      var_name = VAR_ED_PROP(i + 1);
       break;
     case EX_NODE_SET:
-      var_name =  VAR_NS_PROP(i+1);
+      var_name = VAR_NS_PROP(i + 1);
       break;
     case EX_SIDE_SET:
-      var_name =  VAR_SS_PROP(i+1);
+      var_name = VAR_SS_PROP(i + 1);
       break;
     case EX_EDGE_SET:
-      var_name =  VAR_ES_PROP(i+1);
+      var_name = VAR_ES_PROP(i + 1);
       break;
     case EX_FACE_SET:
-      var_name =  VAR_FS_PROP(i+1);
+      var_name = VAR_FS_PROP(i + 1);
       break;
     case EX_ELEM_SET:
-      var_name =  VAR_ELS_PROP(i+1);
+      var_name = VAR_ELS_PROP(i + 1);
       break;
     case EX_ELEM_MAP:
-      var_name =  VAR_EM_PROP(i+1);
+      var_name = VAR_EM_PROP(i + 1);
       break;
     case EX_FACE_MAP:
-      var_name =  VAR_FAM_PROP(i+1);
+      var_name = VAR_FAM_PROP(i + 1);
       break;
     case EX_EDGE_MAP:
-      var_name =  VAR_EDM_PROP(i+1);
+      var_name = VAR_EDM_PROP(i + 1);
       break;
     case EX_NODE_MAP:
-      var_name =  VAR_NM_PROP(i+1);
+      var_name = VAR_NM_PROP(i + 1);
       break;
     default:
       exerrval = EX_BADPARAM;
       sprintf(errmsg, "ERROR: object type %d not supported; file id %d",
-	      obj_type, exoid);
-      ex_err("ex_get_prop_names",errmsg,EX_BADPARAM);
-      return(EX_FATAL);
+              obj_type, exoid);
+      ex_err("ex_get_prop_names", errmsg, EX_BADPARAM);
+      return (EX_FATAL);
     }
 
     if ((status = nc_inq_varid(exoid, var_name, &propid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-	      "ERROR: failed to locate property array %s in file id %d",
-	      var_name, exoid);
-      ex_err("ex_get_prop_names",errmsg,exerrval);
+      sprintf(errmsg, "ERROR: failed to locate property array %s in file id %d",
+              var_name, exoid);
+      ex_err("ex_get_prop_names", errmsg, exerrval);
       return (EX_FATAL);
     }
 
-    /*   for each property, read the "name" attribute of property array variable */
-    if ((status = nc_inq_att(exoid, propid, ATT_PROP_NAME, &att_type, &att_len)) != NC_NOERR) {
+    /*   for each property, read the "name" attribute of property array variable
+     */
+    if ((status = nc_inq_att(exoid, propid, ATT_PROP_NAME, &att_type,
+                             &att_len)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-	      "ERROR: failed to get property attributes (type, len) in file id %d", exoid);
-      ex_err("ex_get_prop_names",errmsg,exerrval);
+      sprintf(
+          errmsg,
+          "ERROR: failed to get property attributes (type, len) in file id %d",
+          exoid);
+      ex_err("ex_get_prop_names", errmsg, exerrval);
       return (EX_FATAL);
     }
 
-    if (att_len-1 <= api_name_size) {
+    if (att_len - 1 <= api_name_size) {
       /* Client has large enough char string to hold text... */
-      if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, prop_names[i])) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"ERROR: failed to get property name in file id %d", exoid);
-	ex_err("ex_get_prop_names",errmsg,exerrval);
-	return (EX_FATAL);
+      if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME,
+                                    prop_names[i])) != NC_NOERR) {
+        exerrval = status;
+        sprintf(errmsg, "ERROR: failed to get property name in file id %d",
+                exoid);
+        ex_err("ex_get_prop_names", errmsg, exerrval);
+        return (EX_FATAL);
       }
     }
     else {
       /* FIXME */
       exerrval = NC_ESTS;
-      sprintf(errmsg,
-	      "ERROR: property name length exceeds space available to store it in file id %d", exoid);
-      ex_err("ex_get_prop_names",errmsg,exerrval);
+      sprintf(errmsg, "ERROR: property name length exceeds space available to "
+                      "store it in file id %d",
+              exoid);
+      ex_err("ex_get_prop_names", errmsg, exerrval);
       return (EX_FATAL);
     }
   }

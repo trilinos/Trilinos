@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,30 +30,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************
 *
 * expgv - ex_put_glo_vars
 *
-* entry conditions - 
+* entry conditions -
 *   input parameters:
 *       int     exoid                   exodus file id
 *       int     time_step               time step number
 *       int     num_glob_vars           number of global vars in file
 *       float*  glob_var_vals           array of global variable values
 *
-* exit conditions - 
+* exit conditions -
 *
-* revision history - 
+* revision history -
 *
 *
 *****************************************************************************/
 
-#include "exodusII.h"                   // for ex_put_var, etc
+#include "exodusII.h" // for ex_put_var, etc
 
 /*!
-\deprecated Use ex_put_var()(exoid, time_step, EX_GLOBAL, 1, 0, num_glob_vars, glob_var_vals)
+\deprecated Use ex_put_var()(exoid, time_step, EX_GLOBAL, 1, 0, num_glob_vars,
+glob_var_vals)
 
 The function ex_put_glob_vars() writes the values of all the global
 variables for a single time step. The function ex_put_variable_param()
@@ -73,12 +74,16 @@ errors include:
      the number of global variables.
 
 
-\param[in] exoid           exodus file ID returned from a previous call to ex_create() or ex_open().
-\param[in] time_step       The time step number, as described under ex_put_time(). 
-                           This is essentially a counter that is incremented when results 
-			   variables are output. The first time step is 1.
-\param[in] num_glob_vars   The number of global variables to be written to the database.
-\param[in]  glob_var_vals  Array of \c num_glob_vars global variable values for 
+\param[in] exoid           exodus file ID returned from a previous call to
+ex_create() or ex_open().
+\param[in] time_step       The time step number, as described under
+ex_put_time().
+                           This is essentially a counter that is incremented
+when results
+                           variables are output. The first time step is 1.
+\param[in] num_glob_vars   The number of global variables to be written to the
+database.
+\param[in]  glob_var_vals  Array of \c num_glob_vars global variable values for
                            the \c time_step-th time step.
 
 
@@ -98,16 +103,16 @@ for (j=0; j < num_glo_vars; j++) {
 error = ex_put_glob_vars (exoid, time_step, num_glo_vars, glob_var_vals);
 
 \comment{Using non-deprecated functions:}
-error = ex_put_var (exoid, time_step, EX_GLOBAL, 1, 0, num_glo_vars, glob_var_vals);
+error = ex_put_var (exoid, time_step, EX_GLOBAL, 1, 0, num_glo_vars,
+glob_var_vals);
 
 \endcode
 
 */
 
-int ex_put_glob_vars (int   exoid,
-                      int   time_step,
-                      int   num_glob_vars,
-                const void *glob_var_vals)
+int ex_put_glob_vars(int exoid, int time_step, int num_glob_vars,
+                     const void *glob_var_vals)
 {
-  return ex_put_var( exoid, time_step, EX_GLOBAL, 1, 0 /*N/A*/, num_glob_vars, glob_var_vals );
+  return ex_put_var(exoid, time_step, EX_GLOBAL, 1, 0 /*N/A*/, num_glob_vars,
+                    glob_var_vals);
 }

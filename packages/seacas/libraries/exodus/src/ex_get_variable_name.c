@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,45 +30,43 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************
 *
 * exgvnm - ex_get_variable_name
 *
-* entry conditions - 
+* entry conditions -
 *   input parameters:
 *       int   exoid                   exodus file id
 *       int   obj_type                variable type
 *       int   var_num                 variable index to read 1..num_var
 *
-* exit conditions - 
+* exit conditions -
 *       char*   var_name                ptr to variable name
 *
-* revision history - 
+* revision history -
 *
 *
 *****************************************************************************/
 
-#include <stdio.h>                      // for sprintf, NULL
-#include "exodusII.h"                   // for exerrval, ex_err, etc
-#include "exodusII_int.h"               // for EX_FATAL, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid
+#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII_int.h" // for EX_FATAL, etc
+#include "netcdf.h"       // for NC_NOERR, nc_inq_varid
+#include <stdio.h>        // for sprintf, NULL
 
 /*!
  * reads the name of a particular results variable from the database
  */
 
-int ex_get_variable_name (int   exoid,
-			  ex_entity_type obj_type,
-			  int   var_num,
-			  char *var_name)
+int ex_get_variable_name(int exoid, ex_entity_type obj_type, int var_num,
+                         char *var_name)
 {
-  int status;
-  int varid;
-  char errmsg[MAX_ERR_LENGTH];
+  int         status;
+  int         varid;
+  char        errmsg[MAX_ERR_LENGTH];
   const char *vname = NULL;
-   
+
   exerrval = 0; /* clear error code */
 
   /* inquire previously defined variables  */
@@ -106,17 +104,17 @@ int ex_get_variable_name (int   exoid,
     break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf( errmsg, "ERROR: Invalid variable type (%d) given for file id %d", obj_type, exoid );
-    ex_err( "ex_get_variable_name", errmsg, exerrval );
+    sprintf(errmsg, "ERROR: Invalid variable type (%d) given for file id %d",
+            obj_type, exoid);
+    ex_err("ex_get_variable_name", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, vname, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-	    "Warning: no %s variable names stored in file id %d",
-	    ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_variable_name",errmsg,exerrval);
+    sprintf(errmsg, "Warning: no %s variable names stored in file id %d",
+            ex_name_of_object(obj_type), exoid);
+    ex_err("ex_get_variable_name", errmsg, exerrval);
     return (EX_WARN);
   }
 
@@ -126,7 +124,8 @@ int ex_get_variable_name (int   exoid,
     int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
     int name_size = db_name_size < api_name_size ? db_name_size : api_name_size;
 
-    status = ex_get_name_internal(exoid, varid, var_num-1, var_name, name_size, obj_type, "ex_get_variable_name");
+    status = ex_get_name_internal(exoid, varid, var_num - 1, var_name,
+                                  name_size, obj_type, "ex_get_variable_name");
     if (status != NC_NOERR) {
       return (EX_FATAL);
     }

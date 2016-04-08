@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,15 +30,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf
-#include <string.h>                     // for strlen, NULL
-#include "exodusII.h"                   // for ex_err, exerrval, etc
-#include "exodusII_int.h"               // for EX_FATAL, DIM_NUM_INFO, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_enddef, etc
+#include "exodusII.h"     // for ex_err, exerrval, etc
+#include "exodusII_int.h" // for EX_FATAL, DIM_NUM_INFO, etc
+#include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
+#include <stddef.h>       // for size_t
+#include <stdio.h>        // for sprintf
+#include <string.h>       // for strlen, NULL
 
 /*!
 The function ex_put_info() writes information records to the
@@ -51,15 +51,16 @@ include:
   -  data file opened for read only.
   -  information records already exist in file.
 
-\param[in] exoid       exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in] exoid       exodus file ID returned from a previous call to
+ex_create() or ex_open().
 \param[in] num_info    The number of information records.
 \param[in] info        Array containing the information records. To only
                        define the number of info records instead of
                        defining and outputting, pass NULL for
-		       info argument.
+                       info argument.
 
 
-The following code will write out three information records 
+The following code will write out three information records
 to an open exodus file -
 
 \code
@@ -100,14 +101,12 @@ error = ex_put_info(exoid, num_info, info);
 
  */
 
-int ex_put_info (int   exoid, 
-                 int   num_info,
-                 char *info[])
+int ex_put_info(int exoid, int num_info, char *info[])
 {
-  int status;
-  int i, lindim, num_info_dim, dims[2], varid;
+  int    status;
+  int    i, lindim, num_info_dim, dims[2], varid;
   size_t start[2], count[2];
-  char errmsg[MAX_ERR_LENGTH];
+  char   errmsg[MAX_ERR_LENGTH];
 
   int rootid = exoid & EX_FILE_ID_MASK;
 
@@ -120,103 +119,109 @@ int ex_put_info (int   exoid,
        Assume that if the DIM_NUM_INFO dimension exists, then the
        VAR_INFO variable also exists...
      */
-    status =  nc_inq_dimid(rootid, DIM_NUM_INFO, &num_info_dim);
+    status = nc_inq_dimid(rootid, DIM_NUM_INFO, &num_info_dim);
     if (status != NC_NOERR) {
 
       /*   inquire previously defined dimensions  */
       if ((status = nc_inq_dimid(rootid, DIM_LIN, &lindim)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to get line string length in file id %d", rootid);
-        ex_err("ex_put_info",errmsg,exerrval);
+        sprintf(errmsg, "ERROR: failed to get line string length in file id %d",
+                rootid);
+        ex_err("ex_put_info", errmsg, exerrval);
         return (EX_FATAL);
       }
 
       /* put file into define mode  */
-      if ((status = nc_redef (rootid)) != NC_NOERR) {
+      if ((status = nc_redef(rootid)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed put file id %d into define mode", rootid);
-        ex_err("ex_put_info",errmsg,exerrval);
+        sprintf(errmsg, "ERROR: failed put file id %d into define mode",
+                rootid);
+        ex_err("ex_put_info", errmsg, exerrval);
         return (EX_FATAL);
       }
 
       /* define dimensions */
-      if ((status = nc_def_dim(rootid, DIM_NUM_INFO, num_info, &num_info_dim)) != NC_NOERR) {
-        if (status == NC_ENAMEINUSE) {     /* duplicate entry? */
+      if ((status = nc_def_dim(rootid, DIM_NUM_INFO, num_info,
+                               &num_info_dim)) != NC_NOERR) {
+        if (status == NC_ENAMEINUSE) { /* duplicate entry? */
           exerrval = status;
-          sprintf(errmsg,
-                  "ERROR: info records already exist in file id %d",
+          sprintf(errmsg, "ERROR: info records already exist in file id %d",
                   rootid);
-          ex_err("ex_put_info",errmsg,exerrval);
-        } else {
+          ex_err("ex_put_info", errmsg, exerrval);
+        }
+        else {
           exerrval = status;
-          sprintf(errmsg,
-                  "ERROR: failed to define number of info records in file id %d",
-                  rootid);
-          ex_err("ex_put_info",errmsg,exerrval);
+          sprintf(
+              errmsg,
+              "ERROR: failed to define number of info records in file id %d",
+              rootid);
+          ex_err("ex_put_info", errmsg, exerrval);
         }
 
-        goto error_ret;         /* exit define mode and return */
+        goto error_ret; /* exit define mode and return */
       }
 
       /* define variable  */
       dims[0] = num_info_dim;
       dims[1] = lindim;
 
-      if ((status = nc_def_var(rootid, VAR_INFO, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
+      if ((status = nc_def_var(rootid, VAR_INFO, NC_CHAR, 2, dims, &varid)) !=
+          NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to define info record in file id %d",
+        sprintf(errmsg, "ERROR: failed to define info record in file id %d",
                 rootid);
-        ex_err("ex_put_info",errmsg,exerrval);
-        goto error_ret;         /* exit define mode and return */
+        ex_err("ex_put_info", errmsg, exerrval);
+        goto error_ret; /* exit define mode and return */
       }
       ex_compress_variable(rootid, varid, 3);
 
       /*   leave define mode  */
-      if ((status = nc_enddef (rootid)) != NC_NOERR) {
+      if ((status = nc_enddef(rootid)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to complete info record definition in file id %d",
-                rootid);
-        ex_err("ex_put_info",errmsg,exerrval);
+        sprintf(
+            errmsg,
+            "ERROR: failed to complete info record definition in file id %d",
+            rootid);
+        ex_err("ex_put_info", errmsg, exerrval);
         return (EX_FATAL);
       }
-    } else {
+    }
+    else {
       if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
         exerrval = status;
         sprintf(errmsg,
                 "ERROR: failed to find info record variable in file id %d",
                 rootid);
-        ex_err("ex_put_info",errmsg,exerrval);
+        ex_err("ex_put_info", errmsg, exerrval);
         return (EX_FATAL);
       }
     }
 
     if (info != NULL) {
       /* write out information records */
-      for (i=0; i<num_info; i++) {
+      for (i = 0; i < num_info; i++) {
         int length = strlen(info[i]);
-        start[0] = i;
-        start[1] = 0;
+        start[0]   = i;
+        start[1]   = 0;
 
         count[0] = 1;
         count[1] = length < MAX_LINE_LENGTH ? length : MAX_LINE_LENGTH;
 
-        if ((status = nc_put_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
+        if ((status = nc_put_vara_text(rootid, varid, start, count, info[i])) !=
+            NC_NOERR) {
           exerrval = status;
-          sprintf(errmsg,
-                  "ERROR: failed to store info record in file id %d",
+          sprintf(errmsg, "ERROR: failed to store info record in file id %d",
                   rootid);
-          ex_err("ex_put_info",errmsg,exerrval);
+          ex_err("ex_put_info", errmsg, exerrval);
           return (EX_FATAL);
         }
       }
-    } else if (ex_is_parallel(rootid)) {
-      /* All processors need to call nc_put_vara_text in case in a global collective mode */
+    }
+    else if (ex_is_parallel(rootid)) {
+      /* All processors need to call nc_put_vara_text in case in a global
+       * collective mode */
       char dummy[] = " ";
-      for (i=0; i<num_info; i++) {
+      for (i = 0; i < num_info; i++) {
         start[0] = start[1] = 0;
         count[0] = count[1] = 0;
         nc_put_vara_text(rootid, varid, start, count, dummy);
@@ -225,13 +230,12 @@ int ex_put_info (int   exoid,
   }
   return (EX_NOERR);
 
-  /* Fatal error: exit definition mode and return */
-  error_ret:
-  if (nc_enddef (rootid) != NC_NOERR) {     /* exit define mode */
-    sprintf(errmsg,
-        "ERROR: failed to complete definition for file id %d",
-        rootid);
-    ex_err("ex_put_info",errmsg,exerrval);
+/* Fatal error: exit definition mode and return */
+error_ret:
+  if (nc_enddef(rootid) != NC_NOERR) { /* exit define mode */
+    sprintf(errmsg, "ERROR: failed to complete definition for file id %d",
+            rootid);
+    ex_err("ex_put_info", errmsg, exerrval);
   }
   return (EX_FATAL);
 }

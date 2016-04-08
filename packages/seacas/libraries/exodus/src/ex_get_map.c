@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,15 +30,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf
-#include <sys/types.h>                  // for int64_t
-#include "exodusII.h"                   // for exerrval, ex_err, etc
-#include "exodusII_int.h"               // for EX_NOERR, EX_FATAL, etc
-#include "netcdf.h"                     // for NC_NOERR, nc_get_var_int, etc
+#include "exodusII.h"     // for exerrval, ex_err, etc
+#include "exodusII_int.h" // for EX_NOERR, EX_FATAL, etc
+#include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
+#include <stddef.h>       // for size_t
+#include <stdio.h>        // for sprintf
+#include <sys/types.h>    // for int64_t
 
 /*!
 \deprecated Use ex_get_num_map() instead.
@@ -57,7 +57,8 @@ include:
   -  if an element order map is not stored, a default map and a
      warning value are returned.
 
-\param[in]  exoid      exodus file ID returned from a previous call to ex_create() or ex_open().
+\param[in]  exoid      exodus file ID returned from a previous call to
+ex_create() or ex_open().
 \param[out] elem_map   Returned element order map.
 
 The following code will read an element order map from an open exodus
@@ -74,65 +75,62 @@ error = ex_get_map(exoid, elem_map);
 
  */
 
-int ex_get_map (int  exoid,
-                void_int *elem_map)
+int ex_get_map(int exoid, void_int *elem_map)
 {
-   int numelemdim, mapid, status;
-   size_t num_elem, i;
-   char errmsg[MAX_ERR_LENGTH];
+  int    numelemdim, mapid, status;
+  size_t num_elem, i;
+  char   errmsg[MAX_ERR_LENGTH];
 
-   exerrval = 0; /* clear error code */
+  exerrval = 0; /* clear error code */
 
-/* inquire id's of previously defined dimensions and variables  */
+  /* inquire id's of previously defined dimensions and variables  */
 
-   /* See if file contains any elements...*/
-   if ((status = nc_inq_dimid (exoid, DIM_NUM_ELEM, &numelemdim)) != NC_NOERR) {
-     return (EX_NOERR);
-   }
+  /* See if file contains any elements...*/
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim)) != NC_NOERR) {
+    return (EX_NOERR);
+  }
 
-   if ((status = nc_inq_dimlen(exoid, numelemdim, &num_elem)) != NC_NOERR) {
-     exerrval = status;
-     sprintf(errmsg,
-            "ERROR: failed to get number of elements in file id %d",
-             exoid);
-     ex_err("ex_get_map",errmsg,exerrval);
-     return (EX_FATAL);
-   }
+  if ((status = nc_inq_dimlen(exoid, numelemdim, &num_elem)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg, "ERROR: failed to get number of elements in file id %d",
+            exoid);
+    ex_err("ex_get_map", errmsg, exerrval);
+    return (EX_FATAL);
+  }
 
+  if (nc_inq_varid(exoid, VAR_MAP, &mapid) != NC_NOERR) {
+    /* generate default map of 1..n, where n is num_elem */
+    if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
+      int64_t *lmap = (int64_t *)elem_map;
+      for (i = 0; i < num_elem; i++) {
+        lmap[i] = i + 1;
+      }
+    }
+    else {
+      int *lmap = (int *)elem_map;
+      for (i = 0; i < num_elem; i++) {
+        lmap[i] = i + 1;
+      }
+    }
 
-   if (nc_inq_varid(exoid, VAR_MAP, &mapid) != NC_NOERR) {
-     /* generate default map of 1..n, where n is num_elem */
-     if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
-       int64_t *lmap = (int64_t*)elem_map;
-       for (i=0; i<num_elem; i++) {
-	 lmap[i] = i+1;
-       }
-     } else {
-       int *lmap = (int*)elem_map;
-       for (i=0; i<num_elem; i++) {
-	 lmap[i] = i+1;
-       }
-     }
+    return (EX_NOERR);
+  }
 
-     return (EX_NOERR);
-   }
-
-   /* read in the element order map  */
+  /* read in the element order map  */
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
     status = nc_get_var_longlong(exoid, mapid, elem_map);
-  } else {
+  }
+  else {
     status = nc_get_var_int(exoid, mapid, elem_map);
   }
 
-   if (status != NC_NOERR) {
-     exerrval = status;
-     sprintf(errmsg,
-            "ERROR: failed to get element order map in file id %d",
-             exoid);
-     ex_err("ex_get_map",errmsg,exerrval);
-     return (EX_FATAL);
-   }
+  if (status != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg, "ERROR: failed to get element order map in file id %d",
+            exoid);
+    ex_err("ex_get_map", errmsg, exerrval);
+    return (EX_FATAL);
+  }
 
-   return(EX_NOERR);
-
+  return (EX_NOERR);
 }

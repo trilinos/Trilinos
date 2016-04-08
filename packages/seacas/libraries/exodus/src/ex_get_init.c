@@ -2,23 +2,23 @@
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,17 +30,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*****************************************************************************
 *
 * exgini - ex_get_init
 *
-* entry conditions - 
+* entry conditions -
 *   input parameters:
 *       int     exoid                   exodus file id
 *
-* exit conditions - 
+* exit conditions -
 *       char*   title                   title of file
 *       int*    num_dim                 number of dimensions (per node)
 *       int*    num_nodes               number of nodes
@@ -49,16 +49,16 @@
 *       int*    num_node_sets           number of node sets
 *       int*    num_side_sets           numver of side sets
 *
-* revision history - 
+* revision history -
 *          David Thompson  - Moved to exginix.c (exgini.c now a special case)
 *
 *
 *****************************************************************************/
 
-#include <string.h>                     // for strcpy
-#include <sys/types.h>                  // for int64_t
-#include "exodusII.h"                   // for ex_init_params, void_int, etc
-#include "exodusII_int.h"               // for EX_NOERR
+#include "exodusII.h"     // for ex_init_params, void_int, etc
+#include "exodusII_int.h" // for EX_NOERR
+#include <string.h>       // for strcpy
+#include <sys/types.h>    // for int64_t
 
 /*!
 
@@ -70,9 +70,12 @@ a warning will return a positive number. Possible causes of errors
 include:
   -  data file not properly opened with call to ex_create() or ex_open().
 
-\param exoid              exodus file ID returned from a previous call to ex_create() or ex_open().
-\param[out] title         Returned database title. String length may be up to \c MAX_LINE_LENGTH bytes.
-\param[out] num_dim       Returned dimensionality of the database. This is the number of coordinates per node.
+\param exoid              exodus file ID returned from a previous call to
+ex_create() or ex_open().
+\param[out] title         Returned database title. String length may be up to \c
+MAX_LINE_LENGTH bytes.
+\param[out] num_dim       Returned dimensionality of the database. This is the
+number of coordinates per node.
 \param[out] num_nodes     Returned number of nodal points.
 \param[out] num_elem      Returned number of elements
 \param[out] num_elem_blk  Returned number of element blocks
@@ -91,34 +94,29 @@ int num_dim, num_nodes, num_elem, num_elem_blk,
 char title[MAX_LINE_LENGTH+1];
 
 \comment{read database parameters}
-error = ex_get_init (exoid, title, &num_dim, &num_nodes, 
+error = ex_get_init (exoid, title, &num_dim, &num_nodes,
                      &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
 \endcode
 
 */
 
-int ex_get_init (int   exoid,
-                 char *title,
-                 void_int  *num_dim,
-                 void_int  *num_nodes,
-                 void_int  *num_elem, 
-                 void_int  *num_elem_blk,
-                 void_int  *num_node_sets,
-                 void_int  *num_side_sets)
+int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes,
+                void_int *num_elem, void_int *num_elem_blk,
+                void_int *num_node_sets, void_int *num_side_sets)
 {
   ex_init_params info;
-  int errval;
+  int            errval;
 
   info.title[0] = '\0';
-  errval = ex_get_init_ext( exoid, &info );
-  if ( errval < 0 ) {
+  errval        = ex_get_init_ext(exoid, &info);
+  if (errval < 0) {
     return errval;
   }
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    int64_t *n_dim 	 = num_dim;
-    int64_t *n_nodes 	 = num_nodes;
-    int64_t *n_elem  	 = num_elem;
+    int64_t *n_dim       = num_dim;
+    int64_t *n_nodes     = num_nodes;
+    int64_t *n_elem      = num_elem;
     int64_t *n_elem_blk  = num_elem_blk;
     int64_t *n_node_sets = num_node_sets;
     int64_t *n_side_sets = num_side_sets;
@@ -129,8 +127,9 @@ int ex_get_init (int   exoid,
     *n_elem_blk  = info.num_elem_blk;
     *n_node_sets = info.num_node_sets;
     *n_side_sets = info.num_side_sets;
-  } else {
-    int *n_dim 	     = num_dim;
+  }
+  else {
+    int *n_dim       = num_dim;
     int *n_nodes     = num_nodes;
     int *n_elem      = num_elem;
     int *n_elem_blk  = num_elem_blk;
@@ -144,7 +143,7 @@ int ex_get_init (int   exoid,
     *n_node_sets = info.num_node_sets;
     *n_side_sets = info.num_side_sets;
   }
-  strcpy( title, info.title );
+  strcpy(title, info.title);
 
   return (EX_NOERR);
 }

@@ -2,23 +2,23 @@
  * Copyright (c) 2012 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,47 +30,53 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stddef.h>                     // for size_t
-#include <stdlib.h>                     // for NULL
-#include "exodusII.h"                   // for ex_set, ex_get_set_param, etc
-#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR
+#include "exodusII.h"     // for ex_set, ex_get_set_param, etc
+#include "exodusII_int.h" // for EX_FATAL, EX_NOERR
+#include <stddef.h>       // for size_t
+#include <stdlib.h>       // for NULL
 
-int ex_get_sets (int   exoid,
-		 size_t set_count,
-		 struct ex_set *sets)
+int ex_get_sets(int exoid, size_t set_count, struct ex_set *sets)
 {
   size_t i;
-  int status = EX_NOERR;
-  int stat;
-  for (i=0; i < set_count; i++) {
+  int    status = EX_NOERR;
+  int    stat;
+  for (i = 0; i < set_count; i++) {
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      stat = ex_get_set_param(exoid, sets[i].type, sets[i].id,
-			      &sets[i].num_entry, &sets[i].num_distribution_factor);
-    } else {
+      stat =
+          ex_get_set_param(exoid, sets[i].type, sets[i].id, &sets[i].num_entry,
+                           &sets[i].num_distribution_factor);
+    }
+    else {
       /* API expecting 32-bit ints; ex_set structure has 64-bit ints. */
       int num_entry;
       int num_dist;
-      stat = ex_get_set_param(exoid, sets[i].type, sets[i].id,
-			      &num_entry, &num_dist);
-      sets[i].num_entry = num_entry;
+      stat = ex_get_set_param(exoid, sets[i].type, sets[i].id, &num_entry,
+                              &num_dist);
+      sets[i].num_entry               = num_entry;
       sets[i].num_distribution_factor = num_dist;
     }
-    if (stat != EX_NOERR) { status = (status == EX_FATAL) ? EX_FATAL : stat;
-}
+    if (stat != EX_NOERR) {
+      status = (status == EX_FATAL) ? EX_FATAL : stat;
+    }
 
-    if (stat == EX_NOERR && (sets[i].entry_list != NULL || sets[i].extra_list != NULL)) {
-      stat = ex_get_set(exoid, sets[i].type, sets[i].id, sets[i].entry_list, sets[i].extra_list);
-      if (stat != EX_NOERR) { status = (status == EX_FATAL) ? EX_FATAL : stat;
-}
+    if (stat == EX_NOERR &&
+        (sets[i].entry_list != NULL || sets[i].extra_list != NULL)) {
+      stat = ex_get_set(exoid, sets[i].type, sets[i].id, sets[i].entry_list,
+                        sets[i].extra_list);
+      if (stat != EX_NOERR) {
+        status = (status == EX_FATAL) ? EX_FATAL : stat;
+      }
     }
 
     if (stat == EX_NOERR && sets[i].distribution_factor_list != NULL) {
-      stat = ex_get_set_dist_fact(exoid, sets[i].type, sets[i].id, sets[i].distribution_factor_list);
-      if (stat != EX_NOERR) { status = (status == EX_FATAL) ? EX_FATAL : stat;
-}
+      stat = ex_get_set_dist_fact(exoid, sets[i].type, sets[i].id,
+                                  sets[i].distribution_factor_list);
+      if (stat != EX_NOERR) {
+        status = (status == EX_FATAL) ? EX_FATAL : stat;
+      }
     }
   }
   return status;
