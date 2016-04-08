@@ -42,7 +42,7 @@
 
 /** \file   Intrepid_Utils.cpp
     \brief  Implementation file for Intrepid_Utils.hpp.
-    \author Created by P. Bochev and D. Ridzal Kyungjoo Kim.
+    \author Created by P. Bochev and D. Ridzal and Kyungjoo Kim.
 */
 
 #ifndef __INTREPID2_UTILS_EXTDATA_DEF_HPP__

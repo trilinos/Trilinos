@@ -43,7 +43,7 @@
 /** \file   Intrepid_Utils.hpp
     \brief  Intrepid utilities.
     \author Created by P. Bochev and D. Ridzal.
-    Kokkorized by Kyungjoo Kim
+            Kokkorized by Kyungjoo Kim
 */
 
 #ifndef __INTREPID2_UTILS_HPP__
@@ -62,9 +62,10 @@ namespace Intrepid2 {
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 
+  // check the first error only
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
-  if (test) {                                                           \
+  if (!info && test) {                                                  \
     fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
     fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
     fprintf(stderr, "            %s \n", msg);                          \
@@ -72,7 +73,7 @@ namespace Intrepid2 {
   }
 #else  
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
-  if (test) {                                                           \
+  if (!info && test) {                                                  \
     fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
     fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
     fprintf(stderr, "            %s \n", msg);                          \

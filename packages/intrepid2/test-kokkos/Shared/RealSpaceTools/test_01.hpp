@@ -286,7 +286,7 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(vnorms_x_x, i0, i1);
 
           //DynRankView ConstructWithLabel(vnorms_x, i0);
-          const value_type tol = INTREPID_TOL*100.0;
+          const value_type tol = Parameters::Tolerence*100.0;
           
           // fill with random numbers
           {

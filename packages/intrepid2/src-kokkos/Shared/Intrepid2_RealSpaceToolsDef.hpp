@@ -43,7 +43,7 @@
 /** \file   Intrepid_RealSpaceToolsDef.hpp
     \brief  Definition file for utility classes providing basic linear algebra functionality.
     \author Created by P. Bochev, D. Ridzal, and D. Day.
-    Kokkorized by Kyungjoo Kim
+            Kokkorized by Kyungjoo Kim
 */
 
 #ifndef __INTREPID2_REALSPACETOOLS_DEF_HPP__
