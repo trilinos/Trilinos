@@ -192,7 +192,7 @@ namespace Iocgns {
 			 MPI_Comm communicator,
 			 const Ioss::PropertyManager &props) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
-    cgnsFilePtr(-1), nodeCount(0), elementCount(0)
+    cgnsFilePtr(-1)
   {
     dbState = Ioss::STATE_UNKNOWN;
 
