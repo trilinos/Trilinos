@@ -338,6 +338,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
+
+#if 0
+      // TODO TAW: 4/8/2016
+      // temporarely deactivate this due to runtime error on perseus:
+      // Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed
+      // if SERIAL=OFF, OPENMP=OFF, PTHREAD=ON, CUDA=OFF
+      // probably a fix necessary in EpetraOperator (which only supports
+      // SERIAL or OPENMP, but not PTHREAD of course).
+
       if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
 
         // AMG as a preconditioner
@@ -385,6 +394,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
         // TODO: AMG as a preconditioner (AZ_cg)
       }
+#endif // if 0 // we should not run this with PTHREADS
 #endif // HAVE_MUELU_AZTECOO
     } // if (translatedmuelu)
 
