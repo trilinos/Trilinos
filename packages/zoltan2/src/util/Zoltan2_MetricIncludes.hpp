@@ -43,21 +43,18 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_Metric.hpp
- *
- *
- *  \This was the original Zoltan2_Metric code, now broken down into various sub files
- *  \
- *  \To use the new code, uncomment the first line: #define USE_NEW_ZOLTAN2_CODE
- *  \
- *  \To restore the original behavior, comment out that line and use <Zoltan2_Old_Zoltan2_Metric.hpp> which is identical to the original Zoltan2_Metric.hpp
- *  \
- *  \In a few days when the conversion is done this file can just be replaced by the code currently in <Zoltan2_MetricIncludes.hpp>
+/*! \file Zoltan2_MetricIncludes.hpp
+ *  \this file will  becomes the new Zoltan2_Metric once the refactoring is complete.
  */
 
-#define Michel_Metrics
-#ifdef Michel_Metrics
-#include <Zoltan2_MetricIncludes.hpp>			// This points to the new code
-#else
-#include <Zoltan2_Old_Zoltan2_Metric.hpp>		// Note - this file is identical to the original Zoltan2_Metric.hpp file
+#ifndef ZOLTAN2_METRICINCUDES_HPP
+#define ZOLTAN2_METRICINCUDES_HPP
+
+/*! \this includes 2 classes which were originally defined in Zoltan2_Metric.hpp along with helper functions that were in that file
+*/
+#include <Zoltan2_GraphMetricValues.hpp>
+#include <Zoltan2_GraphMetricValuesUtility.hpp>
+#include <Zoltan2_MetricValues.hpp>
+#include <Zoltan2_MetricValuesUtility.hpp>
+
 #endif
