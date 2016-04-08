@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************/
 /*****************************************************************************/
@@ -54,18 +54,27 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, DIM_NUM_BOR_ELEMS, etc
-#include <netcdf.h>       // for NC_NOERR, nc_inq_dimid, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <netcdf.h>                     // for NC_NOERR, nc_inq_dimid, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, DIM_NUM_BOR_ELEMS, etc
 
-int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_nodes,
-                         void_int *num_ext_nodes, void_int *num_int_elems, void_int *num_bor_elems,
-                         void_int *num_node_cmaps, void_int *num_elem_cmaps, int processor)
+
+
+int ex_get_loadbal_param(int   exoid,
+                         void_int  *num_int_nodes,
+                         void_int  *num_bor_nodes,
+                         void_int  *num_ext_nodes,
+                         void_int  *num_int_elems,
+                         void_int  *num_bor_elems,
+                         void_int  *num_node_cmaps,
+                         void_int  *num_elem_cmaps,
+                         int   processor
+                         )
 {
-  const char *func_name = "ex_get_loadbal_param";
+  const char  *func_name="ex_get_loadbal_param";
 
   int     dimid, varid, status;
   size_t  start[1];
@@ -74,38 +83,38 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   char    ftype[2];
   int     nmstat;
 
-  char errmsg[MAX_ERR_LENGTH];
+  char   errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    *(int64_t *)num_int_nodes  = 0;
-    *(int64_t *)num_bor_nodes  = 0;
-    *(int64_t *)num_ext_nodes  = 0;
-    *(int64_t *)num_int_elems  = 0;
-    *(int64_t *)num_bor_elems  = 0;
-    *(int64_t *)num_node_cmaps = 0;
-    *(int64_t *)num_elem_cmaps = 0;
-  }
-  else {
-    *(int *)num_int_nodes  = 0;
-    *(int *)num_bor_nodes  = 0;
-    *(int *)num_ext_nodes  = 0;
-    *(int *)num_int_elems  = 0;
-    *(int *)num_bor_elems  = 0;
-    *(int *)num_node_cmaps = 0;
-    *(int *)num_elem_cmaps = 0;
+    *(int64_t*)num_int_nodes = 0;
+    *(int64_t*)num_bor_nodes = 0;
+    *(int64_t*)num_ext_nodes = 0;
+    *(int64_t*)num_int_elems = 0;
+    *(int64_t*)num_bor_elems = 0;
+    *(int64_t*)num_node_cmaps = 0;
+    *(int64_t*)num_elem_cmaps = 0;
+  } else {
+    *(int*)num_int_nodes = 0;
+    *(int*)num_bor_nodes = 0;
+    *(int*)num_ext_nodes = 0;
+    *(int*)num_int_elems = 0;
+    *(int*)num_bor_elems = 0;
+    *(int*)num_node_cmaps = 0;
+    *(int*)num_elem_cmaps = 0;
   }
 
   exerrval = 0; /* clear error code */
 
   /* Check the file version information */
-  if ((dimid = ne_check_file_version(exoid)) != EX_NOERR) {
-    return (dimid);
-  }
+  if ((dimid=ne_check_file_version(exoid)) != EX_NOERR) { return (dimid);
+}
 
   /* Get the file type */
   if (ex_get_file_type(exoid, ftype) != EX_NOERR) {
     exerrval = EX_MSG;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unable to find file type for file ID %d", exoid);
+    sprintf(errmsg,
+            "ERROR: unable to find file type for file ID %d",
+            exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -114,8 +123,9 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   /* Get the status for this node map */
   if ((status = nc_inq_varid(exoid, VAR_INT_N_STAT, &varid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
-             VAR_INT_N_STAT, exoid);
+    sprintf(errmsg,
+            "ERROR: failed to find variable ID for \"%s\" from file ID %d",
+            VAR_INT_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -123,15 +133,15 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
 
   if (ftype[0] == 's') {
     start[0] = processor;
-  }
-  else {
+  } else {
     start[0] = 0;
-  }
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
-             VAR_INT_N_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to get status for \"%s\" from file ID %d",
+	    VAR_INT_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -139,9 +149,9 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   if (nmstat == 1) {
     if (ex_get_idx(exoid, VAR_NODE_MAP_INT_IDX, varidx, processor) == -1) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to find index variable, \"%s\", in file ID %d", VAR_NODE_MAP_INT_IDX,
-               exoid);
+      sprintf(errmsg,
+	      "ERROR: failed to find index variable, \"%s\", in file ID %d",
+	      VAR_NODE_MAP_INT_IDX, exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);
@@ -151,13 +161,13 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of internal nodes */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_INT_NODES, &dimid)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NUM_INT_NODES,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find dimension ID for \"%s\" in file ID %d",
+		DIM_NUM_INT_NODES, exoid);
+	ex_err(func_name, errmsg, exerrval);
 
-        return (EX_FATAL);
+	return (EX_FATAL);
       }
 
       /*
@@ -165,33 +175,33 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * internal FEM nodes.
        */
       if ((status = nc_inq_dimlen(exoid, dimid, &nin)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find length of dimension \"%s\" in file ID %d",
-                 DIM_NUM_INT_NODES, exoid);
-        ex_err(func_name, errmsg, exerrval);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find length of dimension \"%s\" in file ID %d",
+		DIM_NUM_INT_NODES, exoid);
+	ex_err(func_name, errmsg, exerrval);
 
-        return (EX_FATAL);
+	return (EX_FATAL);
       }
 
       /* set the end value for the node map */
       varidx[1] = nin;
-    } /* End "if (varidx[1] = -1)" */
+    }  /* End "if (varidx[1] = -1)" */
 
     /* now get the number of nodes */
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      *(int64_t *)num_int_nodes = varidx[1] - varidx[0];
-    }
-    else {
-      *(int *)num_int_nodes = varidx[1] - varidx[0];
+      *(int64_t*)num_int_nodes = varidx[1] - varidx[0];
+    } else {
+      *(int*)num_int_nodes = varidx[1] - varidx[0];
     }
   }
 
   /* Get the status for this node map */
   if ((status = nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
-             VAR_BOR_N_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to find variable ID for \"%s\" from file ID %d",
+	    VAR_BOR_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -199,15 +209,15 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
 
   if (ftype[0] == 's') {
     start[0] = processor;
-  }
-  else {
+  } else {
     start[0] = 0;
-  }
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
-             VAR_BOR_N_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to get status for \"%s\" from file ID %d",
+	    VAR_BOR_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -215,9 +225,9 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   if (nmstat == 1) {
     if (ex_get_idx(exoid, VAR_NODE_MAP_BOR_IDX, varidx, processor) == -1) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to find index variable, \"%s\", in file ID %d", VAR_NODE_MAP_BOR_IDX,
-               exoid);
+      sprintf(errmsg,
+	      "ERROR: failed to find index variable, \"%s\", in file ID %d",
+	      VAR_NODE_MAP_BOR_IDX, exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);
@@ -227,13 +237,13 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of border nodes */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_BOR_NODES, &dimid)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NUM_BOR_NODES,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find dimension ID for \"%s\" in file ID %d",
+		DIM_NUM_BOR_NODES, exoid);
+	ex_err(func_name, errmsg, exerrval);
 
-        return (EX_FATAL);
+	return (EX_FATAL);
       }
 
       /*
@@ -241,33 +251,33 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * FEM nodes.
        */
       if ((status = nc_inq_dimlen(exoid, dimid, &nbn)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find length of dimension \"%s\" in file ID %d",
-                 DIM_NUM_BOR_NODES, exoid);
-        ex_err(func_name, errmsg, exerrval);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find length of dimension \"%s\" in file ID %d",
+		DIM_NUM_BOR_NODES, exoid);
+	ex_err(func_name, errmsg, exerrval);
 
-        return (EX_FATAL);
+	return (EX_FATAL);
       }
 
       /* set the end value for the node map */
       varidx[1] = nbn;
-    } /* End "if (varidx[1] == -1)" */
+    }  /* End "if (varidx[1] == -1)" */
 
     /* now calculate the number of nodes */
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      *(int64_t *)num_bor_nodes = varidx[1] - varidx[0];
-    }
-    else {
-      *(int *)num_bor_nodes = varidx[1] - varidx[0];
+      *(int64_t*)num_bor_nodes = varidx[1] - varidx[0];
+    } else {
+      *(int*)num_bor_nodes = varidx[1] - varidx[0];
     }
   }
 
   /* Get the status for this node map */
   if ((status = nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
-             VAR_EXT_N_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to find variable ID for \"%s\" from file ID %d",
+	    VAR_EXT_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -275,15 +285,15 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
 
   if (ftype[0] == 's') {
     start[0] = processor;
-  }
-  else {
+  } else {
     start[0] = 0;
-  }
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
-             VAR_EXT_N_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to get status for \"%s\" from file ID %d",
+	    VAR_EXT_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -291,9 +301,9 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   if (nmstat == 1) {
     if (ex_get_idx(exoid, VAR_NODE_MAP_EXT_IDX, varidx, processor) == -1) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to find index variable, \"%s\", in file ID %d", VAR_NODE_MAP_EXT_IDX,
-               exoid);
+      sprintf(errmsg,
+	      "ERROR: failed to find index variable, \"%s\", in file ID %d",
+	      VAR_NODE_MAP_EXT_IDX, exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);
@@ -303,13 +313,13 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of external nodes */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_EXT_NODES, &dimid)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NUM_EXT_NODES,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find dimension ID for \"%s\" in file ID %d",
+		DIM_NUM_EXT_NODES, exoid);
+	ex_err(func_name, errmsg, exerrval);
 
-        return (EX_FATAL);
+	return (EX_FATAL);
       }
 
       /*
@@ -317,47 +327,47 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * FEM nodes.
        */
       if ((status = nc_inq_dimlen(exoid, dimid, &nen)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find length of dimension \"%s\" in file ID %d",
-                 DIM_NUM_EXT_NODES, exoid);
-        ex_err(func_name, errmsg, exerrval);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find length of dimension \"%s\" in file ID %d",
+		DIM_NUM_EXT_NODES, exoid);
+	ex_err(func_name, errmsg, exerrval);
 
-        return (EX_FATAL);
+	return (EX_FATAL);
       }
       /* set the end value for the node map */
       varidx[1] = nen;
-    } /* End "if (varidx[1] == -1)" */
+    }  /* End "if (varidx[1] == -1)" */
 
     /* now get the number of nodes */
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      *(int64_t *)num_ext_nodes = varidx[1] - varidx[0];
-    }
-    else {
-      *(int *)num_ext_nodes = varidx[1] - varidx[0];
+      *(int64_t*)num_ext_nodes = varidx[1] - varidx[0];
+    } else {
+      *(int*)num_ext_nodes = varidx[1] - varidx[0];
     }
   }
 
   /* Get the status for this element map */
   if ((status = nc_inq_varid(exoid, VAR_INT_E_STAT, &varid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
-             VAR_INT_E_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to find variable ID for \"%s\" from file ID %d",
+	    VAR_INT_E_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if (ftype[0] == 's') {
     start[0] = processor;
-  }
-  else {
+  } else {
     start[0] = 0;
-  }
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
-             VAR_INT_E_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to get status for \"%s\" from file ID %d",
+	    VAR_INT_E_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -365,9 +375,9 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   if (nmstat == 1) {
     if (ex_get_idx(exoid, VAR_ELEM_MAP_INT_IDX, varidx, processor) == -1) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to find index variable, \"%s\", in file ID %d", VAR_ELEM_MAP_INT_IDX,
-               exoid);
+      sprintf(errmsg,
+	      "ERROR: failed to find index variable, \"%s\", in file ID %d",
+	      VAR_ELEM_MAP_INT_IDX, exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);
@@ -377,13 +387,13 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of internal elements */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_INT_ELEMS, &dimid)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find dimension ID for \"%s\" from file ID %d", DIM_NUM_INT_ELEMS,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find dimension ID for \"%s\" from file ID %d",
+		DIM_NUM_INT_ELEMS, exoid);
+	ex_err(func_name, errmsg, exerrval);
 
-        return (EX_FATAL);
+	return (EX_FATAL);
       }
 
       /*
@@ -391,47 +401,47 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * FEM elements.
        */
       if ((status = nc_inq_dimlen(exoid, dimid, &nie)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find length of dimesion \"%s\" in file ID %d", DIM_NUM_INT_ELEMS,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
-        return (EX_FATAL);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find length of dimesion \"%s\" in file ID %d",
+		DIM_NUM_INT_ELEMS, exoid);
+	ex_err(func_name, errmsg, exerrval);
+	return (EX_FATAL);
       }
 
       /* set the end value for the node map */
       varidx[1] = nie;
-    } /* End "if (varidx[1] == -1)" */
+    }  /* End "if (varidx[1] == -1)" */
 
     /* now get the number of elements */
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      *(int64_t *)num_int_elems = varidx[1] - varidx[0];
-    }
-    else {
-      *(int *)num_int_elems = varidx[1] - varidx[0];
+      *(int64_t*)num_int_elems = varidx[1] - varidx[0];
+    } else {
+      *(int*)num_int_elems = varidx[1] - varidx[0];
     }
   }
 
   /* Get the status for this element map */
   if ((status = nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
-             VAR_BOR_E_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to find variable ID for \"%s\" from file ID %d",
+	    VAR_BOR_E_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if (ftype[0] == 's') {
     start[0] = processor;
-  }
-  else {
+  } else {
     start[0] = 0;
-  }
+}
 
   if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
-             VAR_BOR_E_STAT, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to get status for \"%s\" from file ID %d",
+	    VAR_BOR_E_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -439,9 +449,9 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   if (nmstat == 1) {
     if (ex_get_idx(exoid, VAR_ELEM_MAP_BOR_IDX, varidx, processor) == -1) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to find index variable, \"%s\", in file ID %d", VAR_ELEM_MAP_BOR_IDX,
-               exoid);
+      sprintf(errmsg,
+	      "ERROR: failed to find index variable, \"%s\", in file ID %d",
+	      VAR_ELEM_MAP_BOR_IDX, exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);
@@ -451,13 +461,13 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of border elements */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_BOR_ELEMS, &dimid)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find dimension ID for \"%s\" from file ID %d", DIM_NUM_BOR_ELEMS,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find dimension ID for \"%s\" from file ID %d",
+		DIM_NUM_BOR_ELEMS, exoid);
+	ex_err(func_name, errmsg, exerrval);
 
-        return (EX_FATAL);
+	return (EX_FATAL);
       }
 
       /*
@@ -465,31 +475,31 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * FEM elements.
        */
       if ((status = nc_inq_dimlen(exoid, dimid, &nbe)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find length of dimesion \"%s\" in file ID %d", DIM_NUM_BOR_ELEMS,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
-        return (EX_FATAL);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find length of dimesion \"%s\" in file ID %d",
+		DIM_NUM_BOR_ELEMS, exoid);
+	ex_err(func_name, errmsg, exerrval);
+	return (EX_FATAL);
       }
 
       /* set the end value for the node map */
       varidx[1] = nbe;
-    } /* End "if (varidx[1] == -1)" */
+    }  /* End "if (varidx[1] == -1)" */
 
     /* now get the number of nodes */
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      *(int64_t *)num_bor_elems = varidx[1] - varidx[0];
-    }
-    else {
-      *(int *)num_bor_elems = varidx[1] - varidx[0];
+      *(int64_t*)num_bor_elems = varidx[1] - varidx[0];
+    } else {
+      *(int*)num_bor_elems = varidx[1] - varidx[0];
     }
   } /* End "if (nmstat == 1)" */
 
   if (ex_get_idx(exoid, VAR_N_COMM_INFO_IDX, varidx, processor) == -1) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
-             VAR_N_COMM_INFO_IDX, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to find index variable, \"%s\", in file ID %d",
+	    VAR_N_COMM_INFO_IDX, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -500,32 +510,31 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     /* Get the nodal comm map information */
     if ((status = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS, &dimid)) != NC_NOERR) {
       varidx[1] = 0;
-    }
-    else {
+    } else {
       if ((status = nc_inq_dimlen(exoid, dimid, &nncm)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_N_CMAPS,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
-        return (EX_FATAL);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find length of dimension \"%s\" in file ID %d",
+		DIM_NUM_N_CMAPS, exoid);
+	ex_err(func_name, errmsg, exerrval);
+	return (EX_FATAL);
       }
       /* set the end value for the node map */
       varidx[1] = nncm;
     }
-  } /* End "if (varidx[1] == -1)" */
+  }  /* End "if (varidx[1] == -1)" */
 
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    *(int64_t *)num_node_cmaps = varidx[1] - varidx[0];
-  }
-  else {
-    *(int *)num_node_cmaps = varidx[1] - varidx[0];
-  }
+    if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+      *(int64_t*)num_node_cmaps = varidx[1] - varidx[0];
+    } else {
+      *(int*)num_node_cmaps = varidx[1] - varidx[0];
+    }
 
   if (ex_get_idx(exoid, VAR_E_COMM_INFO_IDX, varidx, processor) == -1) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
-             VAR_E_COMM_INFO_IDX, exoid);
+    sprintf(errmsg,
+	    "ERROR: failed to find index variable, \"%s\", in file ID %d",
+	    VAR_E_COMM_INFO_IDX, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -536,28 +545,26 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     /* Get the elemental comm map information */
     if ((status = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid)) != NC_NOERR) {
       varidx[1] = 0;
-    }
-    else {
+    } else {
       if ((status = nc_inq_dimlen(exoid, dimid, &necm)) != NC_NOERR) {
-        exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_E_CMAPS,
-                 exoid);
-        ex_err(func_name, errmsg, exerrval);
-        return (EX_FATAL);
+	exerrval = status;
+	sprintf(errmsg,
+		"ERROR: failed to find length of dimension \"%s\" in file ID %d",
+		DIM_NUM_E_CMAPS, exoid);
+	ex_err(func_name, errmsg, exerrval);
+	return (EX_FATAL);
       }
 
       /* set the end value for the node map */
       varidx[1] = necm;
     }
-  } /* End "if (varidx[1] == -1)" */
+  }  /* End "if (varidx[1] == -1)" */
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    *(int64_t *)num_elem_cmaps = varidx[1] - varidx[0];
+    *(int64_t*)num_elem_cmaps = varidx[1] - varidx[0];
+  } else {
+    *(int*)num_elem_cmaps = varidx[1] - varidx[0];
   }
-  else {
-    *(int *)num_elem_cmaps = varidx[1] - varidx[0];
-  }
-
+  
   return (EX_NOERR);
 }

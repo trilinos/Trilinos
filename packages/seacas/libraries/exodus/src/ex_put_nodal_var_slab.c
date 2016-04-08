@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 
 /*****************************************************************************/
@@ -41,7 +41,7 @@
  *      ex_put_nodal_var_slab()
  *
  *****************************************************************************
- *
+ *   
  *  Variable Index:
  *
  *      exoid               - The NetCDF ID of an already open NemesisI file.
@@ -51,31 +51,36 @@
  *                           value is 0.
  *      num_vals           - The number of values to be output.
  *      nodal_var_vals     - Pointer to the vector of values to be output.
- */
+ */    
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "exodusII.h"     // for exerrval, ex_err, etc
-#include "exodusII_int.h" // for EX_WARN, ex_comp_ws, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_WARN, ex_comp_ws, etc
+#include "netcdf.h"                     // for nc_inq_varid, NC_NOERR, etc
+
 
 /*
- * writes the values of a single nodal variable for a single time step to
+ * writes the values of a single nodal variable for a single time step to 
  * the database; assume the first time step and nodal variable index
  * is 1
  */
 
-int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index, int64_t start_pos,
-                          int64_t num_vals, void *nodal_var_vals)
+int ex_put_nodal_var_slab (int   exoid,
+                           int   time_step,
+                           int   nodal_var_index,
+                           int64_t   start_pos,
+                           int64_t   num_vals,
+                           void *nodal_var_vals)
 
 {
-  int    status;
-  int    varid;
+  int status;
+  int varid;
   size_t start[3], count[3];
-  char   errmsg[MAX_ERR_LENGTH];
+  char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
 
@@ -84,11 +89,12 @@ int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index, int64_t
 
   if (ex_large_model(exoid) == 0) {
     /* write values of the nodal variable */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid (exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
-               nodal_var_index, exoid);
-      ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
+      sprintf(errmsg,
+              "Warning: could not find nodal variable %d in file id %d",
+              nodal_var_index, exoid);
+      ex_err("ex_put_nodal_var_slab",errmsg,exerrval);
       return (EX_WARN);
     }
 
@@ -99,16 +105,16 @@ int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index, int64_t
     count[0] = 1;
     count[1] = 1;
     count[2] = num_vals;
-  }
-  else {
+  } else {
 
     /* nodal variables stored separately, find variable for this variable
        index */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid (exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
-               nodal_var_index, exoid);
-      ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
+      sprintf(errmsg,
+              "Warning: could not find nodal variable %d in file id %d",
+              nodal_var_index, exoid);
+      ex_err("ex_put_nodal_var_slab",errmsg,exerrval);
       return (EX_WARN);
     }
 
@@ -121,15 +127,16 @@ int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index, int64_t
 
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, varid, start, count, nodal_var_vals);
-  }
-  else {
+  } else {
     status = nc_put_vara_double(exoid, varid, start, count, nodal_var_vals);
   }
-
+  
   if (status != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store nodal variables in file id %d", exoid);
-    ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
+    sprintf(errmsg,
+	    "ERROR: failed to store nodal variables in file id %d",
+	    exoid);
+    ex_err("ex_put_nodal_var_slab",errmsg,exerrval);
     return (EX_FATAL);
   }
 

@@ -2,23 +2,23 @@
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,31 +30,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************
 *
 * expem - ex_put_num_map
 *
-* entry conditions -
+* entry conditions - 
 *   input parameters:
 *       int     exoid                   exodus file id
 *       int     map_type                type of map (node,edge,face,elem)
 *       int     map_id                  id to associate with new map
 *       int     *map_data               map set value array
 *
-* exit conditions -
+* exit conditions - 
 *
-* revision history -
+* revision history - 
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for ex_err, exerrval, etc
-#include "exodusII_int.h" // for EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
 
 /*!
  * writes a map; this is a vector of integers of the same length as the
@@ -66,85 +66,95 @@
  * \param   map                    map set value array
  */
 
-int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, const void_int *map)
+int ex_put_num_map ( int exoid,
+                     ex_entity_type map_type,
+                     ex_entity_id   map_id,
+                     const void_int *map )
 {
-  int         dimid, varid;
-  int         map_int_type;
-  size_t      start[1];
-  int         ldum;
-  int         num_maps;
-  size_t      num_entries;
-  int         cur_num_maps;
-  char        errmsg[MAX_ERR_LENGTH];
-  const char *dnumentries;
-  const char *dnummaps;
-  const char *vmapids;
-  const char *vmap;
-  int         status;
-
+  int dimid, varid;
+  int map_int_type;
+  size_t start[1]; 
+  int ldum;
+  int num_maps;
+  size_t num_entries;
+  int cur_num_maps;
+  char errmsg[MAX_ERR_LENGTH];
+  const char* dnumentries;
+  const char* dnummaps;
+  const char* vmapids;
+  const char* vmap;
+  int status;
+   
   exerrval = 0; /* clear error code */
 
-  switch (map_type) {
+  switch ( map_type ) {
   case EX_NODE_MAP:
     dnumentries = DIM_NUM_NODES;
-    dnummaps    = DIM_NUM_NM;
-    vmapids     = VAR_NM_PROP(1);
+    dnummaps = DIM_NUM_NM;
+    vmapids = VAR_NM_PROP(1);
     break;
   case EX_EDGE_MAP:
     dnumentries = DIM_NUM_EDGE;
-    dnummaps    = DIM_NUM_EDM;
-    vmapids     = VAR_EDM_PROP(1);
+    dnummaps = DIM_NUM_EDM;
+    vmapids = VAR_EDM_PROP(1);
     break;
   case EX_FACE_MAP:
     dnumentries = DIM_NUM_FACE;
-    dnummaps    = DIM_NUM_FAM;
-    vmapids     = VAR_FAM_PROP(1);
+    dnummaps = DIM_NUM_FAM;
+    vmapids = VAR_FAM_PROP(1);
     break;
   case EX_ELEM_MAP:
     dnumentries = DIM_NUM_ELEM;
-    dnummaps    = DIM_NUM_EM;
-    vmapids     = VAR_EM_PROP(1);
+    dnummaps = DIM_NUM_EM;
+    vmapids = VAR_EM_PROP(1);
     break;
   default:
     exerrval = EX_BADPARAM;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad map type (%d) specified for file id %d", map_type,
-             exoid);
-    ex_err("ex_put_num_map", errmsg, exerrval);
+    sprintf( errmsg,
+	     "ERROR: Bad map type (%d) specified for file id %d",
+	     map_type, exoid );
+    ex_err( "ex_put_num_map", errmsg, exerrval );
     return (EX_FATAL);
   }
 
   /* Make sure the file contains entries */
-  if (nc_inq_dimid(exoid, dnumentries, &dimid) != NC_NOERR) {
-    return (EX_NOERR);
-  }
+  if (nc_inq_dimid (exoid, dnumentries, &dimid) != NC_NOERR )
+    {
+      return (EX_NOERR);
+    }
 
   /* first check if any maps are specified */
-  if ((status = nc_inq_dimid(exoid, dnummaps, &dimid)) != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss specified in file id %d",
-             ex_name_of_object(map_type), exoid);
-    ex_err("ex_put_num_map", errmsg, exerrval);
-    return (EX_FATAL);
-  }
+  if ((status = nc_inq_dimid (exoid, dnummaps, &dimid)) != NC_NOERR )
+    {
+      exerrval = status;
+      sprintf(errmsg,
+	      "ERROR: no %ss specified in file id %d",
+	      ex_name_of_object(map_type),exoid);
+      ex_err("ex_put_num_map",errmsg,exerrval);
+      return (EX_FATAL);
+    }
 
   /* Check for duplicate map id entry */
-  ex_id_lkup(exoid, map_type, map_id);
-  if (exerrval != EX_LOOKUPFAIL) /* found the map id */
-  {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s %" PRId64 " already defined in file id %d",
-             ex_name_of_object(map_type), map_id, exoid);
-    ex_err("ex_put_num_map", errmsg, exerrval);
-    return (EX_FATAL);
-  }
+  ex_id_lkup(exoid,map_type,map_id); 
+  if (exerrval != EX_LOOKUPFAIL)   /* found the map id */
+    {
+      sprintf(errmsg,
+	      "ERROR: %s %"PRId64" already defined in file id %d",
+	      ex_name_of_object(map_type),map_id,exoid);
+      ex_err("ex_put_num_map",errmsg,exerrval);
+      return(EX_FATAL);
+    }
 
   /* Get number of maps initialized for this file */
-  if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d",
-             ex_name_of_object(map_type), exoid);
-    ex_err("ex_put_num_map", errmsg, exerrval);
-    return (EX_FATAL);
-  }
+  if ((status = nc_inq_dimlen(exoid,dimid,&num_entries)) != NC_NOERR)
+    {
+      exerrval = status;
+      sprintf(errmsg,
+	      "ERROR: failed to get number of %ss in file id %d",
+	      ex_name_of_object(map_type),exoid);
+      ex_err("ex_put_num_map",errmsg,exerrval);
+      return (EX_FATAL);
+    }
   num_maps = num_entries;
 
   /* Keep track of the total number of maps defined using a counter stored
@@ -155,9 +165,10 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   cur_num_maps = ex_get_file_item(exoid, ex_get_counter_list(map_type));
   if (cur_num_maps >= num_maps) {
     exerrval = EX_FATAL;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: exceeded number of %ss (%d) specified in file id %d",
-             ex_name_of_object(map_type), num_maps, exoid);
-    ex_err("ex_put_num_map", errmsg, exerrval);
+    sprintf(errmsg,
+	    "ERROR: exceeded number of %ss (%d) specified in file id %d",
+	    ex_name_of_object(map_type),num_maps,exoid);
+    ex_err("ex_put_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
 
@@ -168,57 +179,70 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   /* write out information to previously defined variable */
 
   /* first get id of variable */
-  if ((status = nc_inq_varid(exoid, vmapids, &varid)) == -1) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids in file id %d",
-             ex_name_of_object(map_type), exoid);
-    ex_err("ex_put_num_map", errmsg, exerrval);
-    return (EX_FATAL);
-  }
+  if ((status = nc_inq_varid (exoid, vmapids, &varid)) == -1)
+    {
+      exerrval = status;
+      sprintf(errmsg,
+	      "ERROR: failed to locate %s ids in file id %d",
+	      ex_name_of_object(map_type),exoid);
+      ex_err("ex_put_num_map",errmsg,exerrval);
+      return (EX_FATAL);
+    }
 
   /* then, write out map id */
   start[0] = cur_num_maps;
 
   ldum = (int)map_id;
-  if ((status = nc_put_var1_int(exoid, varid, start, &ldum)) != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s id %" PRId64 " in file id %d",
-             ex_name_of_object(map_type), map_id, exoid);
-    ex_err("ex_put_num_map", errmsg, exerrval);
-    return (EX_FATAL);
-  }
+  if ((status = nc_put_var1_int(exoid, varid, start, &ldum)) != NC_NOERR)
+    {
+      exerrval = status;
+      sprintf(errmsg,
+	      "ERROR: failed to store %s id %"PRId64" in file id %d",
+	      ex_name_of_object(map_type),map_id,exoid);
+      ex_err("ex_put_num_map",errmsg,exerrval);
+      return (EX_FATAL);
+    }
 
-  switch (map_type) {
-  case EX_NODE_MAP: vmap = VAR_NODE_MAP(cur_num_maps + 1); break;
-  case EX_EDGE_MAP: vmap = VAR_EDGE_MAP(cur_num_maps + 1); break;
-  case EX_FACE_MAP: vmap = VAR_FACE_MAP(cur_num_maps + 1); break;
-  case EX_ELEM_MAP: vmap = VAR_ELEM_MAP(cur_num_maps + 1); break;
+  switch ( map_type ) {
+  case EX_NODE_MAP:
+    vmap = VAR_NODE_MAP(cur_num_maps+1);
+    break;
+  case EX_EDGE_MAP:
+    vmap = VAR_EDGE_MAP(cur_num_maps+1);
+    break;
+  case EX_FACE_MAP:
+    vmap = VAR_FACE_MAP(cur_num_maps+1);
+    break;
+  case EX_ELEM_MAP:
+    vmap = VAR_ELEM_MAP(cur_num_maps+1);
+    break;
   default:
     exerrval = 1005;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "Internal ERROR: unrecognized map type in switch: %d in file id %d", map_type, exoid);
-    ex_err("ex_put_num_map", errmsg, EX_MSG);
+    sprintf(errmsg,
+	    "Internal ERROR: unrecognized map type in switch: %d in file id %d",
+	    map_type,exoid);
+    ex_err("ex_put_num_map",errmsg,EX_MSG);
     return (EX_FATAL);
   }
 
   /* locate variable array in which to store the map */
-  if ((status = nc_inq_varid(exoid, vmap, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid,vmap,&varid)) != NC_NOERR) {
     int dims[2];
 
     /* determine number of entries */
-    if ((status = nc_inq_dimid(exoid, dnumentries, &dimid)) == -1) {
+    if ((status = nc_inq_dimid (exoid, dnumentries, &dimid)) == -1 ) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: couldn't determine number of %s entries in file id %d",
-               ex_name_of_object(map_type), exoid);
-      ex_err("ex_put_num_map", errmsg, exerrval);
+      sprintf(errmsg,
+	      "ERROR: couldn't determine number of %s entries in file id %d",
+	      ex_name_of_object(map_type),exoid);
+      ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
     }
-
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+       
+    if ((status = nc_redef( exoid )) != NC_NOERR ) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
-      ex_err("ex_put_num_map", errmsg, exerrval);
+      sprintf(errmsg, "ERROR: failed to place file id %d into define mode", exoid);
+      ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);
     }
 
@@ -229,38 +253,37 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
     }
 
     dims[0] = dimid;
-    if ((status = nc_def_var(exoid, vmap, map_int_type, 1, dims, &varid)) == -1) {
+    if ((status = nc_def_var( exoid, vmap, map_int_type, 1, dims, &varid )) == -1 ) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define map %s in file id %d", vmap, exoid);
-      ex_err("ex_put_num_map", errmsg, exerrval);
+      sprintf(errmsg, "ERROR: failed to define map %s in file id %d", vmap, exoid);
+      ex_err("ex_put_num_map",errmsg,exerrval);
     }
     ex_compress_variable(exoid, varid, 1);
 
-    if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
-               exoid);
-      ex_err("ex_put_num_map", errmsg, exerrval);
+    if ((status = nc_enddef(exoid)) != NC_NOERR ) { /* exit define mode */
+      sprintf( errmsg, "ERROR: failed to complete definition for file id %d", exoid );
+      ex_err( "ex_put_num_map", errmsg, exerrval );
       varid = -1; /* force early exit */
     }
 
-    if (varid == -1) { /* we couldn't define variable and have prepared error message. */
+    if ( varid == -1 ) { /* we couldn't define variable and have prepared error message. */
       return (EX_FATAL);
-    }
+}
   }
 
   /* write out the map  */
 
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
     status = nc_put_var_longlong(exoid, varid, map);
-  }
-  else {
+  } else {
     status = nc_put_var_int(exoid, varid, map);
   }
   if (status != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s in file id %d",
-             ex_name_of_object(map_type), exoid);
-    ex_err("ex_put_num_map", errmsg, exerrval);
+    sprintf(errmsg,
+            "ERROR: failed to store %s in file id %d",
+	    ex_name_of_object(map_type),exoid);
+    ex_err("ex_put_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
 

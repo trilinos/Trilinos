@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************
 *
@@ -38,25 +38,24 @@
 *
 * environment - UNIX
 *
-* entry conditions -
+* entry conditions - 
 *   input parameters:
 *       int     exoid                   exodus file id
 *       int     num_elem_blk            number of element blocks
 *       int     num_elem_var            number of element variables
 *       int*    elem_var_tab            element variable truth table array
 *
-* exit conditions -
+* exit conditions - 
 *
-* revision history -
+* revision history - 
 *
 *
 *****************************************************************************/
 
-#include "exodusII.h" // for ex_put_truth_table, etc
+#include "exodusII.h"                   // for ex_put_truth_table, etc
 
 /*!
-\deprecated Use ex_put_truth_table()(exoid, EX_ELEM_BLOCK, num_elem_blk,
-num_elem_var, elem_var_tab)
+\deprecated Use ex_put_truth_table()(exoid, EX_ELEM_BLOCK, num_elem_blk, num_elem_var, elem_var_tab)
 
 The function ex_put_elem_var_tab() writes the exodus element variable
 truth table to the database. The element variable truth table
@@ -90,14 +89,12 @@ errors include:
      number of element variables.
   -  ex_put_elem_var() previously called.
 
-\param[in]  exoid          exodus file ID returned from a previous call to
-ex_create() or ex_open().
+\param[in]  exoid          exodus file ID returned from a previous call to ex_create() or ex_open().
 \param[in]  num_elem_blk   The number of element blocks.
 \param[in]  num_elem_var   The number of element variables.
-\param[in]  elem_var_tab   Size [num_elem_blk,num_elem_var]. A 2-dimensional
-array
+\param[in]  elem_var_tab   Size [num_elem_blk,num_elem_var]. A 2-dimensional array
                            (with the \c num_elem_var index cycling faster)
-                           containing the element variable truth table.
+			   containing the element variable truth table.
 
 The following coding will create, populate, and write an element
 variable truth table to an opened exodus file (NOTE: all element
@@ -114,13 +111,16 @@ for (i=0, k=0; i < num_elem_blk; i++) {
       truth_tab[k++] = 1;
    }
 }
-error = ex_put_elem_var_tab(exoid, num_elem_blk, num_ele_vars,
+error = ex_put_elem_var_tab(exoid, num_elem_blk, num_ele_vars, 
                             truth_tab);
 \endcode
 
 */
 
-int ex_put_elem_var_tab(int exoid, int num_elem_blk, int num_elem_var, int *elem_var_tab)
+int ex_put_elem_var_tab (int  exoid,
+                         int  num_elem_blk,
+                         int  num_elem_var,
+                         int *elem_var_tab)
 {
   return ex_put_truth_table(exoid, EX_ELEM_BLOCK, num_elem_blk, num_elem_var, elem_var_tab);
 }

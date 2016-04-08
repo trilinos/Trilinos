@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************
 *
@@ -49,40 +49,47 @@
 *
 *
 *****************************************************************************/
-#include "exodusII.h"     // for exerrval, ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, DIM_NUM_NODES, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_vara_int, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, DIM_NUM_NODES, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_vara_int, etc
+
 
 /*
  *  reads the node numbering map from the database
  */
 
-int ex_get_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents, void_int *node_map)
+int ex_get_partial_node_num_map (int  exoid,
+                           int64_t  start_ent,
+                           int64_t  num_ents,
+                           void_int *node_map)
 {
-  int    numnodedim, mapid, status;
-  size_t i;
-  size_t num_nodes, start[1], count[1];
-  char   errmsg[MAX_ERR_LENGTH];
+  int     numnodedim, mapid, status;
+  size_t  i;
+  size_t  num_nodes,  start[1], count[1];
+  char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
 
   /* inquire id's of previously defined dimensions and variables  */
 
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES, &numnodedim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid (exoid, DIM_NUM_NODES, &numnodedim)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of nodes in file id %d",
-             exoid);
-    ex_err("ex_get_partial_node_num_map", errmsg, exerrval);
+    sprintf(errmsg,
+            "ERROR: failed to locate number of nodes in file id %d",
+            exoid);
+    ex_err("ex_get_partial_node_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, numnodedim, &num_nodes)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of nodes in file id %d", exoid);
-    ex_err("ex_get_partial_node_num_map", errmsg, exerrval);
+    sprintf(errmsg,
+            "ERROR: failed to get number of nodes in file id %d",
+            exoid);
+    ex_err("ex_get_partial_node_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
 
@@ -104,24 +111,23 @@ int ex_get_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents, 
     return (EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_NODE_NUM_MAP, &mapid)) != NC_NOERR) {
+  if ((status = nc_inq_varid (exoid, VAR_NODE_NUM_MAP, &mapid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: node numbering map not stored in file id %d; "
-                                     "returning default map",
-             exoid);
-    ex_err("ex_get_partial_node_num_map", errmsg, exerrval);
+    sprintf(errmsg,
+  "Warning: node numbering map not stored in file id %d; returning default map",
+            exoid);
+    ex_err("ex_get_partial_node_num_map",errmsg,exerrval);
 
     /* generate default map of 1..n, where n is num_nodes */
     if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
-      int64_t *lmap = (int64_t *)node_map;
-      for (i = 0; i < num_ents; i++) {
-        lmap[i] = start_ent + i;
+      int64_t *lmap = (int64_t*)node_map;
+      for (i=0; i<num_ents; i++) {
+	lmap[i] = start_ent+i;
       }
-    }
-    else {
-      int *lmap = (int *)node_map;
-      for (i = 0; i < num_ents; i++) {
-        lmap[i] = start_ent + i;
+    } else {
+      int *lmap = (int*)node_map;
+      for (i=0; i<num_ents; i++) {
+	lmap[i] = start_ent+i;
       }
     }
     return (EX_WARN);
@@ -133,17 +139,17 @@ int ex_get_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents, 
 
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
     status = nc_get_vara_longlong(exoid, mapid, start, count, node_map);
-  }
-  else {
+  } else {
     status = nc_get_vara_int(exoid, mapid, start, count, node_map);
   }
 
   if (status != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get node numbering map in file id %d",
-             exoid);
-    ex_err("ex_get_partial_node_num_map", errmsg, exerrval);
+    sprintf(errmsg,
+            "ERROR: failed to get node numbering map in file id %d",
+            exoid);
+    ex_err("ex_get_partial_node_num_map",errmsg,exerrval);
     return (EX_FATAL);
   }
-  return (EX_NOERR);
+  return(EX_NOERR);
 }

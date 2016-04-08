@@ -2,23 +2,23 @@
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,40 +30,37 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************
 *
 * expvar - ex_put_var
 *
-* entry conditions -
+* entry conditions - 
 *   input parameters:
 *       int     exoid                   exodus file id
 *       int     time_step               time step number
-*       int     var_type                type (edge block, face block, edge set,
-*... )
+*       int     var_type                type (edge block, face block, edge set, ... )
 *       int     var_index               element variable index
 *       int     obj_id                  element block id
-*       int     start_num               starting index of the variables to be
-*written
-*       int     num_ent                 number of entities to write variables
-*for.
+*       int     start_num               starting index of the variables to be written
+*       int     num_ent                 number of entities to write variables for.
 *
 * exit conditions -
 *
 *
-* exit conditions -
+* exit conditions - 
 *
-* revision history -
+* revision history - 
 *
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for ex_put_partial_var, etc
-#include <sys/types.h> // for int64_t
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_put_partial_var, etc
 
 /*!
- * \deprecated use ex_put_partial_var() instead
+ * \deprecated use ex_put_partial_var() instead 
  * writes the values of a single variable for a partial block at one time
  * step to the database; assume the first time step and variable index
  * are 1
@@ -77,10 +74,14 @@
  * \param      var_vals        the values to be written
  */
 
-int ex_put_n_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
-                 ex_entity_id obj_id, int64_t start_index, int64_t num_entities,
-                 const void *var_vals)
+int ex_put_n_var (int   exoid,
+		  int   time_step,
+		  ex_entity_type var_type,
+		  int   var_index,
+		  ex_entity_id   obj_id,
+		  int64_t   start_index,
+		  int64_t   num_entities,
+		  const void *var_vals)
 {
-  return ex_put_partial_var(exoid, time_step, var_type, var_index, obj_id, start_index,
-                            num_entities, var_vals);
+  return ex_put_partial_var(exoid, time_step, var_type, var_index, obj_id, start_index, num_entities, var_vals);
 }

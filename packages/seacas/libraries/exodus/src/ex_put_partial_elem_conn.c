@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************/
 /*****************************************************************************/
@@ -53,100 +53,106 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "exodusII.h"     // for ex_err, exerrval, etc
-#include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_id_lkup, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
+
 
 /*
  * writes the connectivity array for an element block
  */
 
-int ex_put_partial_elem_conn(int exoid, ex_entity_id elem_blk_id, int64_t start_elem_num,
-                             int64_t num_elems, const void_int *connect)
+int ex_put_partial_elem_conn (int  exoid,
+			ex_entity_id  elem_blk_id,
+			int64_t  start_elem_num,
+			int64_t  num_elems,
+			const void_int *connect)
 {
-  int    numelbdim, nelnoddim, connid, elem_blk_id_ndx, status;
-  size_t num_elem_this_blk, num_nod_per_elem, start[2], count[2];
-  char   errmsg[MAX_ERR_LENGTH];
+  int numelbdim, nelnoddim, connid, elem_blk_id_ndx, status;
+  size_t num_elem_this_blk, num_nod_per_elem, start[2], count[2]; 
+  char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
 
   /* Determine index of elem_blk_id in VAR_ID_EL_BLK array */
-  if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0) {
-    if (exerrval == EX_NULLENTITY) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: connectivity array not allowed for NULL "
-                                       "element block %" PRId64 " in file id %d",
-               elem_blk_id, exoid);
-      ex_err("ex_put_partial_elem_conn", errmsg, EX_NULLENTITY);
-      return (EX_WARN);
-    }
+  if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0)
+    {
+      if (exerrval == EX_NULLENTITY) {
+	sprintf(errmsg,
+		"Warning: connectivity array not allowed for NULL element block %"PRId64" in file id %d",
+		elem_blk_id, exoid);
+	ex_err("ex_put_partial_elem_conn",errmsg,EX_NULLENTITY);
+	return (EX_WARN);
+      } 
 
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate element block id %" PRId64 " in %s array in file id %d",
-             elem_blk_id, VAR_ID_EL_BLK, exoid);
-    ex_err("ex_put_partial_elem_conn", errmsg, exerrval);
-    return (EX_FATAL);
-  }
+	sprintf(errmsg,
+		"ERROR: failed to locate element block id %"PRId64" in %s array in file id %d",
+		elem_blk_id,VAR_ID_EL_BLK, exoid);
+	ex_err("ex_put_partial_elem_conn",errmsg,exerrval);
+	return (EX_FATAL);
+      
+    }
 
   /* inquire id's of previously defined dimensions  */
 
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx), &numelbdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid (exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx), &numelbdim)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate number of elements in block %" PRId64 " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_put_partial_elem_conn", errmsg, exerrval);
-    return (EX_FATAL);
+    sprintf(errmsg,
+	    "ERROR: failed to locate number of elements in block %"PRId64" in file id %d",
+	    elem_blk_id, exoid);
+    ex_err("ex_put_partial_elem_conn",errmsg, exerrval);
+    return(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, numelbdim, &num_elem_this_blk)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to get number of elements in block %" PRId64 " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_put_partial_elem_conn", errmsg, exerrval);
-    return (EX_FATAL);
+    sprintf(errmsg,
+	    "ERROR: failed to get number of elements in block %"PRId64" in file id %d",
+            elem_blk_id, exoid);
+    ex_err("ex_put_partial_elem_conn",errmsg,exerrval);
+    return(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_NOD_PER_EL(elem_blk_id_ndx), &nelnoddim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid (exoid, DIM_NUM_NOD_PER_EL(elem_blk_id_ndx), &nelnoddim)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate number of nodes/elem in block %" PRId64 " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_put_partial_elem_conn", errmsg, exerrval);
-    return (EX_FATAL);
+    sprintf(errmsg,
+	    "ERROR: failed to locate number of nodes/elem in block %"PRId64" in file id %d",
+            elem_blk_id, exoid);
+    ex_err("ex_put_partial_elem_conn",errmsg,exerrval);
+    return(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimlen(exoid, nelnoddim, &num_nod_per_elem)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen (exoid, nelnoddim, &num_nod_per_elem)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to get number of nodes/elem in block %" PRId64 " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_put_partial_elem_conn", errmsg, exerrval);
-    return (EX_FATAL);
+    sprintf(errmsg,
+	    "ERROR: failed to get number of nodes/elem in block %"PRId64" in file id %d",
+            elem_blk_id, exoid);
+    ex_err("ex_put_partial_elem_conn",errmsg,exerrval);
+    return(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_CONN(elem_blk_id_ndx), &connid)) != NC_NOERR) {
+
+  if ((status = nc_inq_varid (exoid, VAR_CONN(elem_blk_id_ndx), &connid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate connectivity array for element block %" PRId64
-             " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_put_partial_elem_conn", errmsg, exerrval);
-    return (EX_FATAL);
+    sprintf(errmsg,
+	    "ERROR: failed to locate connectivity array for element block %"PRId64" in file id %d",
+            elem_blk_id, exoid);
+    ex_err("ex_put_partial_elem_conn",errmsg, exerrval);
+    return(EX_FATAL);
   }
 
   /* do some error checking */
   if (num_elem_this_blk < (start_elem_num + num_elems - 1)) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: requested connectivity from too many elements in "
-                                     "block, %" PRId64,
-             elem_blk_id);
-    ex_err("ex_put_partial_elem_conn", errmsg, exerrval);
-    return (EX_FATAL);
+    sprintf(errmsg,
+	    "ERROR: requested connectivity from too many elements in block, %"PRId64,
+            elem_blk_id);
+    ex_err("ex_put_partial_elem_conn",errmsg, exerrval);
+    return(EX_FATAL);
   }
 
   /* write out the connectivity array */
@@ -158,22 +164,21 @@ int ex_put_partial_elem_conn(int exoid, ex_entity_id elem_blk_id, int64_t start_
 
   if (count[0] == 0) {
     start[0] = 0;
-  }
+}
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_vara_longlong(exoid, connid, start, count, connect);
-  }
-  else {
+  } else {
     status = nc_put_vara_int(exoid, connid, start, count, connect);
   }
 
   if (status != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to write connectivity array for block %" PRId64 " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_put_partial_elem_conn", errmsg, exerrval);
-    return (EX_FATAL);
+    sprintf(errmsg,
+	    "ERROR: failed to write connectivity array for block %"PRId64" in file id %d",
+            elem_blk_id, exoid);
+    ex_err("ex_put_partial_elem_conn",errmsg, exerrval);
+    return(EX_FATAL);
   }
   return (EX_NOERR);
 }

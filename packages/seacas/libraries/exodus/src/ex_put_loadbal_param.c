@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************/
 /*****************************************************************************/
@@ -55,26 +55,35 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <exodusII.h>     // for exerrval, ex_err, etc
-#include <exodusII_int.h> // for ex_leavedef, EX_FATAL, etc
-#include <netcdf.h>       // for NC_NOERR, nc_def_var, etc
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <exodusII.h>                   // for exerrval, ex_err, etc
+#include <exodusII_int.h>               // for ex_leavedef, EX_FATAL, etc
+#include <netcdf.h>                     // for NC_NOERR, nc_def_var, etc
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
 
-int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes,
-                         int64_t num_ext_nodes, int64_t num_int_elems, int64_t num_bor_elems,
-                         int64_t num_node_cmaps, int64_t num_elem_cmaps, int processor)
+
+
+int ex_put_loadbal_param(int   exoid,
+                         int64_t   num_int_nodes,
+                         int64_t   num_bor_nodes,
+                         int64_t   num_ext_nodes,
+                         int64_t   num_int_elems,
+                         int64_t   num_bor_elems,
+                         int64_t   num_node_cmaps,
+                         int64_t   num_elem_cmaps,
+                         int       processor
+                         )
 {
-  const char *func_name = "ex_put_loadbal_param";
+  const char  *func_name="ex_put_loadbal_param";
 
-  int  status, varid;
-  int  dimid_npf, dimid[3];
-  int  varid_nm[3], varid_em[2];
-  char ftype[2];
+  int    status, varid;
+  int    dimid_npf, dimid[3];
+  int    varid_nm[3], varid_em[2];
+  char   ftype[2];
 
   int nmstat, ltempsv;
 
-  char errmsg[MAX_ERR_LENGTH];
+  char   errmsg[MAX_ERR_LENGTH];
 
   int id_type  = NC_INT;
   int map_type = NC_INT;
@@ -91,7 +100,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   /* Get the file type */
   if (ex_get_file_type(exoid, ftype) != EX_NOERR) {
     exerrval = EX_MSG;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get file type from file ID %d\n", exoid);
+    sprintf(errmsg,
+            "ERROR: failed to get file type from file ID %d\n",
+            exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -99,8 +110,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   /* make sure that this is a parallel file */
   if (ftype[0] != 'p') {
     exerrval = EX_MSG;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: function for use with parallel files only, file ID %d\n", exoid);
+    sprintf(errmsg,
+            "ERROR: function for use with parallel files only, file ID %d\n",
+            exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -111,8 +123,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
    */
   if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid_npf)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
-             DIM_NUM_PROCS_F, exoid);
+    sprintf(errmsg,
+            "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
+            DIM_NUM_PROCS_F, exoid);
     ex_err(func_name, errmsg, exerrval);
 
     /* Leave define mode before returning */
@@ -124,22 +137,23 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   /* Put NetCDF file into define mode */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
+    sprintf(errmsg,
+            "ERROR: failed to put file id %d into define mode", exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* Output the file version */
-  if ((status = ex_put_nemesis_version(exoid)) < 0) {
-    return (status);
-  }
+  if ((status=ex_put_nemesis_version(exoid)) < 0) { return (status);
+}
 
   /* Define the status variables for the nodal vectors */
   if (nc_inq_varid(exoid, VAR_INT_N_STAT, &varid) != NC_NOERR) {
     if ((status = nc_def_var(exoid, VAR_INT_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_INT_N_STAT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_INT_N_STAT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -152,8 +166,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   if (nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid) != NC_NOERR) {
     if ((status = nc_def_var(exoid, VAR_BOR_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_BOR_N_STAT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_BOR_N_STAT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -165,8 +180,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   if (nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid) != NC_NOERR) {
     if ((status = nc_def_var(exoid, VAR_EXT_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_EXT_N_STAT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_EXT_N_STAT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -179,8 +195,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   if (nc_inq_varid(exoid, VAR_INT_E_STAT, &varid) != NC_NOERR) {
     if ((status = nc_def_var(exoid, VAR_INT_E_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_INT_E_STAT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_INT_E_STAT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -192,8 +209,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   if (nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid) != NC_NOERR) {
     if ((status = nc_def_var(exoid, VAR_BOR_E_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to define variable \"%s\" in file ID %d",
-               VAR_BOR_E_STAT, exoid);
+      sprintf(errmsg,
+              "ERROR: Failed to define variable \"%s\" in file ID %d",
+              VAR_BOR_E_STAT, exoid);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
 
@@ -204,8 +222,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   /* Get the variable ID for the nodal status vectors */
   if ((status = nc_inq_varid(exoid, VAR_INT_N_STAT, &varid_nm[0])) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-             VAR_INT_N_STAT, exoid);
+    sprintf(errmsg,
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+            VAR_INT_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     /* Leave define mode before returning */
     ex_leavedef(exoid, func_name);
@@ -215,8 +234,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
 
   if ((status = nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid_nm[1])) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-             VAR_BOR_N_STAT, exoid);
+    sprintf(errmsg,
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+            VAR_BOR_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     /* Leave define mode before returning */
     ex_leavedef(exoid, func_name);
@@ -226,8 +246,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
 
   if ((status = nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid_nm[2])) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-             VAR_EXT_N_STAT, exoid);
+    sprintf(errmsg,
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+            VAR_EXT_N_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     /* Leave define mode before returning */
     ex_leavedef(exoid, func_name);
@@ -240,8 +261,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     ltempsv = num_int_elems;
     if ((status = nc_def_dim(exoid, DIM_NUM_INT_ELEMS, ltempsv, &dimid[0])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
-               DIM_NUM_INT_ELEMS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to dimension \"%s\" in file id %d",
+              DIM_NUM_INT_ELEMS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -251,8 +273,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
 
     if ((status = nc_def_var(exoid, VAR_ELEM_MAP_INT, map_type, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_ELEM_MAP_INT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_ELEM_MAP_INT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -266,8 +289,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   /* Get the variable IDs for the elemental status vectors */
   if ((status = nc_inq_varid(exoid, VAR_INT_E_STAT, &varid_em[0])) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-             VAR_INT_E_STAT, exoid);
+    sprintf(errmsg,
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+            VAR_INT_E_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     /* Leave define mode before returning */
     ex_leavedef(exoid, func_name);
@@ -277,8 +301,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
 
   if ((status = nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid_em[1])) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-             VAR_BOR_E_STAT, exoid);
+    sprintf(errmsg,
+            "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+            VAR_BOR_E_STAT, exoid);
     ex_err(func_name, errmsg, exerrval);
     /* Leave define mode before returning */
     ex_leavedef(exoid, func_name);
@@ -291,8 +316,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     ltempsv = num_bor_elems;
     if ((status = nc_def_dim(exoid, DIM_NUM_BOR_ELEMS, ltempsv, &dimid[0])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
-               DIM_NUM_BOR_ELEMS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to dimension \"%s\" in file id %d",
+              DIM_NUM_BOR_ELEMS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -302,8 +328,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
 
     if ((status = nc_def_var(exoid, VAR_ELEM_MAP_BOR, map_type, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_ELEM_MAP_BOR, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_ELEM_MAP_BOR, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -319,8 +346,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     ltempsv = num_int_nodes;
     if ((status = nc_def_dim(exoid, DIM_NUM_INT_NODES, ltempsv, &dimid[0])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
-               DIM_NUM_INT_NODES, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to dimension \"%s\" in file id %d",
+              DIM_NUM_INT_NODES, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -328,11 +356,11 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
       return (EX_FATAL);
     }
 
-    if ((status = nc_def_var(exoid, VAR_NODE_MAP_INT, map_type, 1, &dimid[0], &varid)) !=
-        NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_NODE_MAP_INT, map_type, 1, &dimid[0], &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_NODE_MAP_INT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_NODE_MAP_INT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -348,8 +376,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     ltempsv = num_bor_nodes;
     if ((status = nc_def_dim(exoid, DIM_NUM_BOR_NODES, ltempsv, &dimid[1])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
-               DIM_NUM_BOR_NODES, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to dimension \"%s\" in file id %d",
+              DIM_NUM_BOR_NODES, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -357,11 +386,11 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
       return (EX_FATAL);
     }
 
-    if ((status = nc_def_var(exoid, VAR_NODE_MAP_BOR, map_type, 1, &dimid[1], &varid)) !=
-        NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_NODE_MAP_BOR, map_type, 1, &dimid[1], &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_NODE_MAP_BOR, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_NODE_MAP_BOR, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -377,8 +406,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     ltempsv = num_ext_nodes;
     if ((status = nc_def_dim(exoid, DIM_NUM_EXT_NODES, ltempsv, &dimid[2])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
-               DIM_NUM_EXT_NODES, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to dimension \"%s\" in file id %d",
+              DIM_NUM_EXT_NODES, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -386,11 +416,11 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
       return (EX_FATAL);
     }
 
-    if ((status = nc_def_var(exoid, VAR_NODE_MAP_EXT, map_type, 1, &dimid[2], &varid)) !=
-        NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_NODE_MAP_EXT, map_type, 1, &dimid[2], &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_NODE_MAP_EXT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_NODE_MAP_EXT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -406,8 +436,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     ltempsv = num_node_cmaps;
     if ((status = nc_def_dim(exoid, DIM_NUM_N_CMAPS, ltempsv, &dimid[0])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add dimension \"%s\" in file ID %d",
-               DIM_NUM_N_CMAPS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add dimension \"%s\" in file ID %d",
+              DIM_NUM_N_CMAPS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -418,8 +449,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     /* Add the ID vector */
     if ((status = nc_def_var(exoid, VAR_N_COMM_IDS, id_type, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_N_COMM_IDS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_N_COMM_IDS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -431,8 +463,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     /* Add the status vector */
     if ((status = nc_def_var(exoid, VAR_N_COMM_STAT, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_N_COMM_STAT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to define variable \"%s\" in file ID %d",
+              VAR_N_COMM_STAT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -447,8 +480,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     ltempsv = num_elem_cmaps;
     if ((status = nc_def_dim(exoid, DIM_NUM_E_CMAPS, ltempsv, &dimid[0])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add dimension \"%s\" in file ID %d",
-               DIM_NUM_E_CMAPS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add dimension \"%s\" in file ID %d",
+              DIM_NUM_E_CMAPS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -459,8 +493,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     /* Add variables for elemental communication maps */
     if ((status = nc_def_var(exoid, VAR_E_COMM_IDS, id_type, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_E_COMM_IDS, exoid);
+      sprintf(errmsg,
+	      "ERROR: failed to define variable \"%s\" in file ID %d",
+	      VAR_E_COMM_IDS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -471,8 +506,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
 
     if ((status = nc_def_var(exoid, VAR_E_COMM_STAT, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
-               VAR_E_COMM_STAT, exoid);
+      sprintf(errmsg,
+	      "ERROR: failed to define variable \"%s\" in file ID %d",
+	      VAR_E_COMM_STAT, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -485,7 +521,7 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   /* Leave define mode */
   if (ex_leavedef(exoid, func_name) != EX_NOERR) {
     return (EX_FATAL);
-  }
+}
 
   /*
   ** Set up status vector for internal node map
@@ -497,8 +533,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 0;
     if ((status = nc_put_var_int(exoid, varid_nm[0], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for int node map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for int node map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -507,8 +544,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 1;
     if ((status = nc_put_var_int(exoid, varid_nm[0], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for int node map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for int node map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -521,8 +559,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 0;
     if ((status = nc_put_var_int(exoid, varid_nm[1], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for bor node map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for bor node map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -532,8 +571,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 1;
     if ((status = nc_put_var_int(exoid, varid_nm[1], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for bor node map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for bor node map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -546,8 +586,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 0;
     if ((status = nc_put_var_int(exoid, varid_nm[2], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for ext node map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for ext node map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -557,8 +598,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 1;
     if ((status = nc_put_var_int(exoid, varid_nm[2], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for ext node map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for ext node map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -571,8 +613,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 0;
     if ((status = nc_put_var_int(exoid, varid_em[0], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for int elem map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for int elem map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -582,8 +625,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 1;
     if ((status = nc_put_var_int(exoid, varid_em[0], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for int elem map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for int elem map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -596,8 +640,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 0;
     if ((status = nc_put_var_int(exoid, varid_em[1], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for bor elem map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for bor elem map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -607,8 +652,9 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     nmstat = 1;
     if ((status = nc_put_var_int(exoid, varid_em[1], &nmstat)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to output status for bor elem map in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output status for bor elem map in file ID %d",
+              exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }

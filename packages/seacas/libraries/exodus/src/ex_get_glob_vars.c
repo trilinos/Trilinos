@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,34 +30,34 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************
 *
 * exggv - ex_get_glob_vars
 *
-* entry conditions -
+* entry conditions - 
 *   input parameters:
 *       int     exoid                   exodus file id
 *       int     time_step               time step number
 *       int     num_glob_vars           number of global vars in file
 *
-* exit conditions -
+* exit conditions - 
 *       float*  glob_var_vals           array of global variable values
 *
-* revision history -
+* revision history - 
 *
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
-#include "exodusII_int.h" // for ex_comp_ws, EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for ex_comp_ws, EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, etc
 
 /*!
-\ingroup ResultsData
+\ingroup ResultsData 
 
 The function ex_get_glob_vars() reads the values of all the
 global variables for a single time step. Memory must be allocated for
@@ -76,18 +76,15 @@ errors include:
  - no global variables stored in the file.
  - a warning value is returned if no global variables are stored in the file.
 
-\param[in] exoid        exodus file ID returned from a previous call to
-ex_create() or ex_open().
+\param[in] exoid        exodus file ID returned from a previous call to ex_create() or ex_open().
 
-\param[in] time_step    The time step, as described under ex_put_time(), at
-                        which the global variable values are desired. This is
-essentially
-                        an index (in the time dimension) into the global
-variable values
+\param[in] time_step    The time step, as described under ex_put_time(), at 
+                        which the global variable values are desired. This is essentially 
+                        an index (in the time dimension) into the global variable values 
                         array stored in the database. The first time step is 1.
 
 \param[in]  num_glob_vars The number of global variables stored in the database.
-\param[out] glob_var_vals Returned array of num_glob_vars global variable values
+\param[out] glob_var_vals Returned array of num_glob_vars global variable values 
                           for the time_step'th time step.
 
 The following is an example code segment that reads all the global
@@ -99,61 +96,65 @@ float *var_values;
 
 error = ex_get_variable_param (idexo, EX_GLOBAL, &num_glo_vars);
 var_values = (float *) calloc (num_glo_vars, sizeof(float));
-error = ex_get_glob_vars (idexo, time_step, num_glo_vars,
+error = ex_get_glob_vars (idexo, time_step, num_glo_vars, 
                           var_values);
 \endverbatim
  */
 
-int ex_get_glob_vars(int exoid, int time_step, int num_glob_vars, void *glob_var_vals)
+int ex_get_glob_vars (int   exoid,
+                      int   time_step,
+                      int   num_glob_vars,
+                      void *glob_var_vals)
 {
-  int    varid;
-  int    status;
-  size_t start[2], count[2];
-  char   errmsg[MAX_ERR_LENGTH];
+   int varid;
+   int status;
+   size_t start[2], count[2];
+   char errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
+   exerrval = 0; /* clear error code */
 
-  /* inquire previously defined variable */
-  if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: failed to locate global variables in file id %d",
-             exoid);
-    ex_err("ex_get_glob_vars", errmsg, exerrval);
-    return (EX_WARN);
-  }
+   /* inquire previously defined variable */
+   if ((status = nc_inq_varid (exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
+     exerrval = status;
+     sprintf(errmsg,
+            "Warning: failed to locate global variables in file id %d",
+            exoid);
+     ex_err("ex_get_glob_vars",errmsg,exerrval);
+     return (EX_WARN);
+   }
 
-  /* Verify that time_step is within bounds */
-  {
-    int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
+   /* Verify that time_step is within bounds */
+   {
+    int num_time_steps = ex_inquire_int (exoid, EX_INQ_TIME);
     if (time_step <= 0 || time_step > num_time_steps) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: time_step is out-of-range. Value = %d, valid "
-                                       "range is 1 to %d in file id %d",
-               time_step, num_time_steps, exoid);
-      ex_err("ex_get_glob_vars", errmsg, EX_BADPARAM);
+      sprintf(errmsg,
+              "ERROR: time_step is out-of-range. Value = %d, valid range is 1 to %d in file id %d",
+              time_step, num_time_steps, exoid);
+      ex_err("ex_get_glob_vars",errmsg,EX_BADPARAM);
       return (EX_FATAL);
     }
   }
 
-  /* read values of global variables */
-  start[0] = --time_step;
-  start[1] = 0;
+   /* read values of global variables */
+   start[0] = --time_step;
+   start[1] = 0;
 
-  count[0] = 1;
-  count[1] = num_glob_vars;
+   count[0] = 1;
+   count[1] = num_glob_vars;
 
-  if (ex_comp_ws(exoid) == 4) {
-    status = nc_get_vara_float(exoid, varid, start, count, glob_var_vals);
-  }
-  else {
-    status = nc_get_vara_double(exoid, varid, start, count, glob_var_vals);
-  }
+   if (ex_comp_ws(exoid) == 4) {
+     status = nc_get_vara_float(exoid, varid, start, count, glob_var_vals);
+   } else {
+     status = nc_get_vara_double(exoid, varid, start, count, glob_var_vals);
+   }
 
-  if (status != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get global variable values from file id %d",
-             exoid);
-    ex_err("ex_get_glob_vars", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-  return (EX_NOERR);
+   if (status != NC_NOERR) {
+     exerrval = status;
+     sprintf(errmsg,
+            "ERROR: failed to get global variable values from file id %d",
+            exoid);
+     ex_err("ex_get_glob_vars",errmsg,exerrval);
+     return (EX_FATAL);
+   }
+   return (EX_NOERR);
 }

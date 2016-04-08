@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,15 +30,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 
-#include "exodusII.h"     // for ex_err, exerrval, etc
-#include "exodusII_int.h" // for EX_WARN, ex_comp_ws, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <sys/types.h> // for int64_t
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_WARN, ex_comp_ws, etc
+#include "netcdf.h"                     // for nc_inq_varid, NC_NOERR, etc
 
 /*!
 The function ex_get_nodal_var_time() reads the values of a nodal
@@ -57,36 +57,26 @@ causes of errors include:
   -  specified nodal variable does not exist.
   -  a warning value is returned if no nodal variables are stored in the file.
 
-\param[in] exoid             exodus file ID returned from a previous call to
-ex_create() or
+\param[in] exoid             exodus file ID returned from a previous call to ex_create() or
                              ex_open().
 
-\param[in] nodal_var_index   The index of the desired nodal variable. The first
-variable has an
+\param[in] nodal_var_index   The index of the desired nodal variable. The first variable has an
                              index of 1.
 
-\param[in] node_number       The internal ID (see  Section LocalNodeIds) of the
-desired
+\param[in] node_number       The internal ID (see  Section LocalNodeIds) of the desired 
                              node. The first node is 1.
 
-\param[in] beg_time_step     The beginning time step for which a nodal variable
-value
-                             is desired. This is not a time value but rather a
-time step number,
-                             as described under ex_put_time(). The first time
-step is 1.
+\param[in] beg_time_step     The beginning time step for which a nodal variable value 
+                             is desired. This is not a time value but rather a time step number, 
+			     as described under ex_put_time(). The first time step is 1.
 
-\param[in] end_time_step     The last time step for which a nodal variable value
-is desired. If
-                             negative, the last time step in the database will
-be used. The first
-                             time step is 1.
+\param[in] end_time_step     The last time step for which a nodal variable value is desired. If
+                             negative, the last time step in the database will be used. The first
+			     time step is 1.
 
-\param[out]  nodal_var_vals  Returned array of(\c end_time_step {-} \c
-beg_time_step +1) values
-                             of the \c node_number-th node for the \c
-nodal_var_index-th nodal
-                             variable.
+\param[out]  nodal_var_vals  Returned array of(\c end_time_step {-} \c beg_time_step +1) values
+                             of the \c node_number-th node for the \c nodal_var_index-th nodal
+			     variable.
 
 
 For example, the following code segment will read the values of the
@@ -110,22 +100,26 @@ error = ex_get_nodal_var_time(exoid, var_index, node_num, beg_time,
 \endcode
 */
 
-int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, int beg_time_step,
-                          int end_time_step, void *nodal_var_vals)
+int ex_get_nodal_var_time (int   exoid,
+                           int   nodal_var_index,
+                           int64_t   node_number,
+                           int   beg_time_step, 
+                           int   end_time_step,
+                           void *nodal_var_vals)
 {
-  int    status;
-  int    varid;
+  int status;
+  int varid;
   size_t start[3], count[3];
-  char   errmsg[MAX_ERR_LENGTH];
+  char errmsg[MAX_ERR_LENGTH];
 
   /* Check that times are in range */
   {
-    int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
+    int num_time_steps = ex_inquire_int (exoid, EX_INQ_TIME);
     if (beg_time_step <= 0 || beg_time_step > num_time_steps) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: beginning time_step is out-of-range. Value = %d, "
-                                       "valid range is 1 to %d in file id %d",
-               beg_time_step, num_time_steps, exoid);
-      ex_err("ex_get_nodal_var_time", errmsg, EX_BADPARAM);
+      sprintf(errmsg,
+	      "ERROR: beginning time_step is out-of-range. Value = %d, valid range is 1 to %d in file id %d",
+	      beg_time_step, num_time_steps, exoid);
+      ex_err("ex_get_nodal_var_time",errmsg,EX_BADPARAM);
       return (EX_FATAL);
     }
 
@@ -137,10 +131,10 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, i
       end_time_step = num_time_steps;
     }
     else if (end_time_step < beg_time_step || end_time_step > num_time_steps) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: end time_step is out-of-range. Value = %d, valid "
-                                       "range is %d to %d in file id %d",
-               beg_time_step, end_time_step, num_time_steps, exoid);
-      ex_err("ex_get_nodal_var_time", errmsg, EX_BADPARAM);
+      sprintf(errmsg,
+	      "ERROR: end time_step is out-of-range. Value = %d, valid range is %d to %d in file id %d",
+	      beg_time_step, end_time_step, num_time_steps, exoid);
+      ex_err("ex_get_nodal_var_time",errmsg,EX_BADPARAM);
       return (EX_FATAL);
     }
   }
@@ -148,6 +142,7 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, i
   beg_time_step--;
   end_time_step--;
   node_number--;
+  
 
   if (ex_large_model(exoid) == 0) {
     /* read values of the nodal variable;
@@ -156,9 +151,10 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, i
      */
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
-               nodal_var_index, exoid);
-      ex_err("ex_get_nodal_var_time", errmsg, exerrval);
+      sprintf(errmsg,
+              "Warning: could not find nodal variable %d in file id %d",
+              nodal_var_index, exoid);
+      ex_err("ex_get_nodal_var_time",errmsg,exerrval);
       return (EX_WARN);
     }
 
@@ -169,13 +165,13 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, i
     count[0] = end_time_step - beg_time_step + 1;
     count[1] = 1;
     count[2] = 1;
-  }
-  else {
+  } else {
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
-               nodal_var_index, exoid);
-      ex_err("ex_get_nodal_var_time", errmsg, exerrval);
+      sprintf(errmsg,
+              "Warning: could not find nodal variable %d in file id %d",
+              nodal_var_index, exoid);
+      ex_err("ex_get_nodal_var_time",errmsg,exerrval);
       return (EX_WARN);
     }
 
@@ -193,15 +189,16 @@ int ex_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, i
 
   if (ex_comp_ws(exoid) == 4) {
     status = nc_get_vara_float(exoid, varid, start, count, nodal_var_vals);
-  }
-  else {
+  } else {
     status = nc_get_vara_double(exoid, varid, start, count, nodal_var_vals);
   }
 
   if (status != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get nodal variables in file id %d", exoid);
-    ex_err("ex_get_nodal_var_time", errmsg, exerrval);
+    sprintf(errmsg,
+	    "ERROR: failed to get nodal variables in file id %d",
+	    exoid);
+    ex_err("ex_get_nodal_var_time",errmsg,exerrval);
     return (EX_FATAL);
   }
   return (EX_NOERR);

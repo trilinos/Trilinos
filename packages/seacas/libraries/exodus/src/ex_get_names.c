@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,49 +30,51 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************
 *
 * exgnam - ex_get_names
 *
-* entry conditions -
+* entry conditions - 
 *   input parameters:
 *       int     exoid          exodus file id
 *       int    obj_type,
 *
-* exit conditions -
+* exit conditions - 
 *       char*   names[]           ptr array of names
 *
-* revision history -
+* revision history - 
 *
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
-#include "exodusII_int.h" // for ex_get_dimension, EX_NOERR, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR
-#include <stddef.h>       // for size_t
-#include <stdio.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for ex_get_dimension, EX_NOERR, etc
+#include "netcdf.h"                     // for nc_inq_varid, NC_NOERR
 
 /*
  * reads the entity names from the database
  */
 
-int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
+int ex_get_names (int exoid,
+                  ex_entity_type obj_type,
+                  char **names)
 {
-  int         status;
-  int         varid, temp;
-  size_t      num_entity, i;
-  char        errmsg[MAX_ERR_LENGTH];
+  int status;
+  int varid, temp;
+  size_t num_entity, i;
+  char errmsg[MAX_ERR_LENGTH];
   const char *routine = "ex_get_names";
-
+   
   exerrval = 0; /* clear error code */
 
   /* inquire previously defined dimensions and variables  */
 
   switch (obj_type) {
-  /*  ======== BLOCKS ========= */
+    /*  ======== BLOCKS ========= */
   case EX_EDGE_BLOCK:
     ex_get_dimension(exoid, DIM_NUM_ED_BLK, "edge block", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_ED_BLK, &varid);
@@ -86,7 +88,7 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
     status = nc_inq_varid(exoid, VAR_NAME_EL_BLK, &varid);
     break;
 
-  /*  ======== SETS ========= */
+    /*  ======== SETS ========= */
   case EX_NODE_SET:
     ex_get_dimension(exoid, DIM_NUM_NS, "nodeset", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_NS, &varid);
@@ -108,7 +110,7 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
     status = nc_inq_varid(exoid, VAR_NAME_ELS, &varid);
     break;
 
-  /*  ======== MAPS ========= */
+    /*  ======== MAPS ========= */
   case EX_NODE_MAP:
     ex_get_dimension(exoid, DIM_NUM_NM, "node map", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_NM, &varid);
@@ -126,25 +128,25 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
     status = nc_inq_varid(exoid, VAR_NAME_EM, &varid);
     break;
 
-  /* invalid variable type */
+    /* invalid variable type */
   default:
     exerrval = EX_BADPARAM;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err(routine, errmsg, exerrval);
-    return (EX_FATAL);
+    sprintf(errmsg, "ERROR: Invalid type specified in file id %d",
+	    exoid);
+    ex_err(routine,errmsg,exerrval);
+    return(EX_FATAL);
   }
-
+   
   if (status == NC_NOERR) {
-    if ((status = ex_get_names_internal(exoid, varid, num_entity, names, obj_type,
-                                        "ex_get_names")) != EX_NOERR) {
+    if ((status = ex_get_names_internal(exoid, varid, num_entity, names,
+					obj_type, "ex_get_names")) != EX_NOERR) {
       return status;
-    }
-  }
-  else {
+    }					
+  } else {
     /* Names variable does not exist on the database; probably since this is an
      * older version of the database.  Return an empty array...
      */
-    for (i = 0; i < num_entity; i++) {
+    for (i=0; i<num_entity; i++) {
       names[i][0] = '\0';
     }
   }

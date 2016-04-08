@@ -48,33 +48,32 @@
  *
  *****************************************************************************/
 
-#include "exodusII.h"     // for ex_init_params, exerrval, etc
-#include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_att_text, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h>    // for free, malloc
-#include <string.h>    // for strncpy
-#include <sys/types.h> // for int64_t
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, malloc
+#include <string.h>                     // for strncpy
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_init_params, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_att_text, etc
 
 /* Used to reduce repeated code below */
 static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimension_name,
-                                int dimension, int64_t *value)
+				int dimension, int64_t *value)
 {
   char errmsg[MAX_ERR_LENGTH];
-  int  status;
+  int status;
 
-  if ((status = nc_inq_dimid(exoid, dimension_name, &dimension)) != NC_NOERR) {
+  if ((status = nc_inq_dimid (exoid, dimension_name, &dimension)) != NC_NOERR) {
     /* optional and default to zero. */
     *value = 0;
-  }
-  else {
+  } else {
     size_t tmp;
     if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s in file id %d", name,
-               exoid);
-      ex_err("ex_get_init_ext", errmsg, exerrval);
+      sprintf(errmsg, "ERROR: failed to get number of %s in file id %d",
+	      name, exoid);
+      ex_err("ex_get_init_ext",errmsg,exerrval);
       return (EX_FATAL);
     }
     *value = tmp;
@@ -89,26 +88,27 @@ static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimensi
  * \sa ex_get_init()
  */
 
-int ex_get_init_ext(int exoid, ex_init_params *info)
+int ex_get_init_ext (int   exoid,
+                     ex_init_params *info)
 {
-  int     dimid = 0;
-  char    errmsg[MAX_ERR_LENGTH];
-  int     status     = 0;
-  size_t  title_len  = 0;
+  int dimid = 0;
+  char errmsg[MAX_ERR_LENGTH];
+  int status = 0;
+  size_t title_len = 0;
   nc_type title_type = 0;
 
   int rootid = exoid & EX_FILE_ID_MASK;
 
   exerrval = 0; /* clear error code */
 
-  info->num_dim       = 0;
-  info->num_nodes     = 0;
-  info->num_edge      = 0;
-  info->num_edge_blk  = 0;
-  info->num_face      = 0;
-  info->num_face_blk  = 0;
-  info->num_elem      = 0;
-  info->num_elem_blk  = 0;
+  info->num_dim = 0;
+  info->num_nodes = 0;
+  info->num_edge = 0;
+  info->num_edge_blk = 0;
+  info->num_face = 0;
+  info->num_face_blk = 0;
+  info->num_elem = 0;
+  info->num_elem_blk = 0;
   info->num_node_sets = 0;
   info->num_edge_sets = 0;
   info->num_face_sets = 0;
@@ -120,113 +120,93 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
   info->num_elem_maps = 0;
 
   dimid = 0;
-  if (ex_get_dim_value(exoid, "dimensions", DIM_NUM_DIM, dimid, &info->num_dim) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "nodes", DIM_NUM_NODES, dimid, &info->num_nodes) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "edges", DIM_NUM_EDGE, dimid, &info->num_edge) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "faces", DIM_NUM_FACE, dimid, &info->num_face) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "elements", DIM_NUM_ELEM, dimid, &info->num_elem) != EX_NOERR) {
-    return EX_FATAL;
-  }
+  if (ex_get_dim_value(exoid,"dimensions",DIM_NUM_DIM,dimid,&info->num_dim) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,   "nodes",DIM_NUM_NODES,dimid,&info->num_nodes) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,   "edges", DIM_NUM_EDGE,dimid,&info->num_edge) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,   "faces", DIM_NUM_FACE,dimid,&info->num_face) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"elements", DIM_NUM_ELEM,dimid,&info->num_elem) != EX_NOERR) { return EX_FATAL;
+}
 
-  if (ex_get_dim_value(exoid, "element blocks", DIM_NUM_EL_BLK, dimid, &info->num_elem_blk) !=
-      EX_NOERR) {
-    return EX_FATAL;
-  }
+  if (ex_get_dim_value(exoid,"element blocks", DIM_NUM_EL_BLK,dimid,&info->num_elem_blk) != EX_NOERR) { return EX_FATAL;
+}
   if (info->num_elem_blk == 0 && info->num_elem > 0) {
     exerrval = EX_BADPARAM;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate number of element blocks in file id %d", exoid);
-    ex_err("ex_get_init_ext", errmsg, exerrval);
+    sprintf(errmsg,
+            "ERROR: failed to locate number of element blocks in file id %d",
+            exoid);
+    ex_err("ex_get_init_ext",errmsg,exerrval);
     return (EX_FATAL);
   }
 
-  if (ex_get_dim_value(exoid, "node sets", DIM_NUM_NS, dimid, &info->num_node_sets) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "edge sets", DIM_NUM_ES, dimid, &info->num_edge_sets) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "face sets", DIM_NUM_FS, dimid, &info->num_face_sets) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "side sets", DIM_NUM_SS, dimid, &info->num_side_sets) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "elem sets", DIM_NUM_ELS, dimid, &info->num_elem_sets) != EX_NOERR) {
-    return EX_FATAL;
-  }
+  if (ex_get_dim_value(exoid,"node sets", DIM_NUM_NS,dimid,&info->num_node_sets) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"edge sets", DIM_NUM_ES,dimid,&info->num_edge_sets) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"face sets", DIM_NUM_FS,dimid,&info->num_face_sets) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"side sets", DIM_NUM_SS,dimid,&info->num_side_sets) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"elem sets",DIM_NUM_ELS,dimid,&info->num_elem_sets) != EX_NOERR) { return EX_FATAL;
+}
 
-  if (ex_get_dim_value(exoid, "node maps", DIM_NUM_NM, dimid, &info->num_node_maps) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "edge maps", DIM_NUM_EDM, dimid, &info->num_edge_maps) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "face maps", DIM_NUM_FAM, dimid, &info->num_face_maps) != EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "elem maps", DIM_NUM_EM, dimid, &info->num_elem_maps) != EX_NOERR) {
-    return EX_FATAL;
-  }
+  if (ex_get_dim_value(exoid,"node maps", DIM_NUM_NM,dimid,&info->num_node_maps) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"edge maps",DIM_NUM_EDM,dimid,&info->num_edge_maps) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"face maps",DIM_NUM_FAM,dimid,&info->num_face_maps) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"elem maps", DIM_NUM_EM,dimid,&info->num_elem_maps) != EX_NOERR) { return EX_FATAL;
+}
 
   /* Edge and face blocks are also optional (for backwards compatability) */
-  if (ex_get_dim_value(exoid, "edge blocks", DIM_NUM_ED_BLK, dimid, &info->num_edge_blk) !=
-      EX_NOERR) {
-    return EX_FATAL;
-  }
-  if (ex_get_dim_value(exoid, "face blocks", DIM_NUM_FA_BLK, dimid, &info->num_face_blk) !=
-      EX_NOERR) {
-    return EX_FATAL;
-  }
+  if (ex_get_dim_value(exoid,"edge blocks",DIM_NUM_ED_BLK,dimid,&info->num_edge_blk) != EX_NOERR) { return EX_FATAL;
+}
+  if (ex_get_dim_value(exoid,"face blocks",DIM_NUM_FA_BLK,dimid,&info->num_face_blk) != EX_NOERR) { return EX_FATAL;
+}
 
   if ((status = nc_inq_att(rootid, NC_GLOBAL, ATT_TITLE, &title_type, &title_len)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no title in file id %d", rootid);
-    ex_err("ex_get_init_ext", errmsg, exerrval);
+    sprintf(errmsg,
+	    "Warning: no title in file id %d", rootid);
+    ex_err("ex_get_init_ext",errmsg,exerrval);
   }
 
-  /* Check title length to avoid overrunning clients memory space; include
-   * trailing null */
+  /* Check title length to avoid overrunning clients memory space; include trailing null */
   if (title_len > 0) {
     if (title_len > MAX_LINE_LENGTH) {
-      char *title = malloc(title_len + 1);
+      char *title = malloc(title_len+1);
       if ((status = nc_get_att_text(rootid, NC_GLOBAL, ATT_TITLE, title)) == NC_NOERR) {
-        strncpy(info->title, title, MAX_LINE_LENGTH + 1);
-        info->title[MAX_LINE_LENGTH] = '\0';
+	strncpy(info->title, title, MAX_LINE_LENGTH+1);
+	info->title[MAX_LINE_LENGTH] = '\0';
       }
       free(title);
-    }
-    else {
-      status                 = nc_get_att_text(rootid, NC_GLOBAL, ATT_TITLE, info->title);
+    } else {
+      status = nc_get_att_text(rootid, NC_GLOBAL, ATT_TITLE, info->title);
       info->title[title_len] = '\0';
     }
     if (status != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get title in file id %d", rootid);
-      ex_err("ex_get_init_ext", errmsg, exerrval);
+      sprintf(errmsg,
+	      "ERROR: failed to get title in file id %d", rootid);
+      ex_err("ex_get_init_ext",errmsg,exerrval);
       return (EX_FATAL);
     }
-  }
-  else {
+  } else {
     info->title[0] = '\0';
   }
 
   /* Update settings in ex_file_item struct */
   {
     struct ex_file_item *file = ex_find_file_item(exoid);
-    if (file) {
+    if (file ) {
       file->has_nodes = info->num_nodes > 0;
-      file->has_edges = info->num_edge > 0;
-      file->has_faces = info->num_face > 0;
-      file->has_elems = info->num_elem > 0;
+      file->has_edges = info->num_edge  > 0;
+      file->has_faces = info->num_face  > 0;
+      file->has_elems = info->num_elem  > 0;
     }
   }
   return (EX_NOERR);

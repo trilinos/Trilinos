@@ -2,23 +2,23 @@
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************/
 /*****************************************************************************/
@@ -59,17 +59,24 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <exodusII.h>     // for exerrval, ex_err, etc
-#include <exodusII_int.h> // for EX_FATAL, ex_leavedef, etc
-#include <netcdf.h>       // for NC_NOERR, nc_def_var, etc
-#include <stddef.h>       // for size_t
-#include <stdint.h>       // for int64_t
-#include <stdio.h>
+#include <exodusII.h>                   // for exerrval, ex_err, etc
+#include <exodusII_int.h>               // for EX_FATAL, ex_leavedef, etc
+#include <netcdf.h>                     // for NC_NOERR, nc_def_var, etc
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <stdio.h>                      // for sprintf
 
-int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_node_cnts,
-                       void_int *elem_cmap_ids, void_int *elem_cmap_elem_cnts, int64_t processor)
+
+
+int ex_put_cmap_params(int  exoid,
+                       void_int *node_cmap_ids,
+                       void_int *node_cmap_node_cnts,
+                       void_int *elem_cmap_ids,
+                       void_int *elem_cmap_elem_cnts,
+                       int64_t  processor
+                       )
 {
-  const char *func_name = "ex_put_cmap_params";
+  const char   *func_name="ex_put_cmap_params";
 
   size_t  num_n_comm_maps, num_e_comm_maps;
   size_t  ncnt_cmap, ecnt_cmap;
@@ -79,12 +86,12 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   size_t  start[1];
   char    ftype[2];
   int64_t nl_ncnt_cmap, nl_ecnt_cmap;
-  int     nmstat;
+  int  nmstat;
 
-  char errmsg[MAX_ERR_LENGTH];
+  char    errmsg[MAX_ERR_LENGTH];
 
   int index_type = NC_INT;
-  int id_type    = NC_INT;
+  int id_type  = NC_INT;
   int format;
   nc_inq_format(exoid, &format);
   if ((ex_int64_status(exoid) & EX_BULK_INT64_DB) || (format == NC_FORMAT_NETCDF4)) {
@@ -93,7 +100,7 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   if (ex_int64_status(exoid) & EX_IDS_INT64_DB) {
     id_type = NC_INT64;
   }
-  /*-----------------------------Execution begins-----------------------------*/
+/*-----------------------------Execution begins-----------------------------*/
 
   exerrval = 0; /* clear error code */
 
@@ -104,7 +111,9 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   /* Get the file type */
   if (ex_get_file_type(exoid, ftype) != EX_NOERR) {
     exerrval = EX_MSG;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get file type from file ID %d\n", exoid);
+    sprintf(errmsg,
+            "ERROR: failed to get file type from file ID %d\n",
+            exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -112,8 +121,9 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   /* make sure that this is a parallel file */
   if (ftype[0] != 'p') {
     exerrval = EX_MSG;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: function for use with parallel files only, file ID %d\n", exoid);
+    sprintf(errmsg,
+            "ERROR: function for use with parallel files only, file ID %d\n",
+            exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -121,7 +131,8 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   /* Put NetCDF file into define mode */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to file ID %d into define mode", exoid);
+    sprintf(errmsg,
+            "ERROR: failed to file ID %d into define mode", exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -133,9 +144,9 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   else {
     if ((status = nc_inq_dimlen(exoid, dimid[0], &num_n_comm_maps)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_N_CMAPS,
-               exoid);
+      sprintf(errmsg,
+              "ERROR: failed to find length of dimension \"%s\" in file ID %d",
+              DIM_NUM_N_CMAPS, exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -148,11 +159,12 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   if (num_n_comm_maps > 0) {
 
     /* add the communications data index variable */
-    if ((status = nc_def_var(exoid, VAR_N_COMM_DATA_IDX, index_type, 1, dimid, &n_varid_idx)) !=
-        NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_N_COMM_DATA_IDX, index_type, 1,
+			     dimid, &n_varid_idx)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
-               VAR_N_COMM_DATA_IDX, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add variable \"%s\" in file ID %d",
+              VAR_N_COMM_DATA_IDX, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -163,20 +175,20 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
     /* Add dimensions for all of the nodal communication maps */
     ncnt_cmap = 0;
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      for (icm = 0; icm < num_n_comm_maps; icm++) {
-        ncnt_cmap += ((int64_t *)node_cmap_node_cnts)[icm];
+      for(icm=0; icm < num_n_comm_maps; icm++) {
+	ncnt_cmap += ((int64_t*)node_cmap_node_cnts)[icm];
       }
-    }
-    else {
-      for (icm = 0; icm < num_n_comm_maps; icm++) {
-        ncnt_cmap += ((int *)node_cmap_node_cnts)[icm];
+    } else {
+      for(icm=0; icm < num_n_comm_maps; icm++) {
+	ncnt_cmap += ((int*)node_cmap_node_cnts)[icm];
       }
     }
 
     if ((status = nc_def_dim(exoid, DIM_NCNT_CMAP, ncnt_cmap, &dimid[0])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add dimension for \"%s\" in file ID %d",
-               DIM_NCNT_CMAP, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add dimension for \"%s\" in file ID %d",
+              DIM_NCNT_CMAP, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -187,8 +199,9 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
     /* Define variables for the nodal IDS and processor vectors */
     if ((status = nc_def_var(exoid, VAR_N_COMM_NIDS, id_type, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
-               VAR_N_COMM_NIDS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add variable \"%s\" in file ID %d",
+              VAR_N_COMM_NIDS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -199,8 +212,9 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
     if ((status = nc_def_var(exoid, VAR_N_COMM_PROC, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
-               VAR_N_COMM_PROC, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add variable \"%s\" in file ID %d",
+              VAR_N_COMM_PROC, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -215,15 +229,16 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   if ((status = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid[0])) != NC_NOERR) {
     num_e_comm_maps = 0;
   }
-  else {
+  else{
     if ((status = nc_inq_dimlen(exoid, dimid[0], &num_e_comm_maps)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_E_CMAPS,
-               exoid);
+      sprintf(errmsg,
+              "ERROR: failed to find length of dimension \"%s\" in file ID %d",
+              DIM_NUM_E_CMAPS, exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
+
   }
 
   /*
@@ -233,11 +248,12 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   if (num_e_comm_maps > 0) {
 
     /* add the communications data index variable */
-    if ((status = nc_def_var(exoid, VAR_E_COMM_DATA_IDX, index_type, 1, dimid, &e_varid_idx)) !=
-        NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_E_COMM_DATA_IDX, index_type, 1,
+			     dimid, &e_varid_idx)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
-               VAR_E_COMM_DATA_IDX, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add variable \"%s\" in file ID %d",
+              VAR_E_COMM_DATA_IDX, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -248,19 +264,19 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
     /* Add dimensions for each of the nodal communication maps */
     ecnt_cmap = 0;
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      for (icm = 0; icm < num_e_comm_maps; icm++) {
-        ecnt_cmap += ((int64_t *)elem_cmap_elem_cnts)[icm];
-      }
-    }
-    else {
-      for (icm = 0; icm < num_e_comm_maps; icm++) {
-        ecnt_cmap += ((int *)elem_cmap_elem_cnts)[icm];
-      }
+      for(icm=0; icm < num_e_comm_maps; icm++) {
+	ecnt_cmap += ((int64_t*)elem_cmap_elem_cnts)[icm];
+}
+    } else {
+      for(icm=0; icm < num_e_comm_maps; icm++) {
+	ecnt_cmap += ((int*)elem_cmap_elem_cnts)[icm];
+}
     }
     if ((status = nc_def_dim(exoid, DIM_ECNT_CMAP, ecnt_cmap, &dimid[0])) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add dimension for \"%s\" in file ID %d",
-               DIM_ECNT_CMAP, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add dimension for \"%s\" in file ID %d",
+              DIM_ECNT_CMAP, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -271,8 +287,9 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
     /* Define variables for the element IDS and processor vectors */
     if ((status = nc_def_var(exoid, VAR_E_COMM_EIDS, id_type, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
-               VAR_E_COMM_EIDS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add variable \"%s\" in file ID %d",
+              VAR_E_COMM_EIDS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -283,8 +300,9 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
     if ((status = nc_def_var(exoid, VAR_E_COMM_PROC, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
-               VAR_E_COMM_PROC, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add variable \"%s\" in file ID %d",
+              VAR_E_COMM_PROC, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -295,8 +313,9 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
     if ((status = nc_def_var(exoid, VAR_E_COMM_SIDS, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add variable \"%s\" in file ID %d",
-               VAR_E_COMM_SIDS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to add variable \"%s\" in file ID %d",
+              VAR_E_COMM_SIDS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -315,34 +334,34 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
     if ((status = nc_inq_varid(exoid, VAR_N_COMM_STAT, &n_varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-               VAR_N_COMM_STAT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+              VAR_N_COMM_STAT, exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
 
     nl_ncnt_cmap = 0; /* reset this for index */
-    for (icm = 0; icm < num_n_comm_maps; icm++) {
+    for(icm=0; icm < num_n_comm_maps; icm++) {
 
       size_t ncnc;
       if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-        ncnc = ((int64_t *)node_cmap_node_cnts)[icm];
-      }
-      else {
-        ncnc = ((int *)node_cmap_node_cnts)[icm];
+	ncnc = ((int64_t*)node_cmap_node_cnts)[icm];
+      } else {
+	ncnc = ((int*)node_cmap_node_cnts)[icm];
       }
 
       start[0] = icm;
       if (ncnc > 0) {
         nmstat = 1;
-      }
-      else {
+      } else {
         nmstat = 0;
-      }
+}
 
       if ((status = nc_put_var1_int(exoid, n_varid, start, &nmstat)) != NC_NOERR) {
         exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unable to output variable in file ID %d", exoid);
+        sprintf(errmsg,
+                "ERROR: unable to output variable in file ID %d", exoid);
         ex_err(func_name, errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -351,11 +370,11 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
       nl_ncnt_cmap += ncnc;
 
       /* fill the cmap data index */
-      if ((status = nc_put_var1_longlong(exoid, n_varid_idx, start, (long long *)&nl_ncnt_cmap)) !=
-          NC_NOERR) {
+      if ((status = nc_put_var1_longlong(exoid, n_varid_idx, start, (long long*)&nl_ncnt_cmap)) != NC_NOERR) {
         exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output int elem map index in file ID %d",
-                 exoid);
+        sprintf(errmsg,
+                "ERROR: failed to output int elem map index in file ID %d",
+                exoid);
         ex_err(func_name, errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -364,22 +383,23 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
     /* Get the variable ID for the comm map IDs vector */
     if ((status = nc_inq_varid(exoid, VAR_N_COMM_IDS, &n_varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-               VAR_N_COMM_IDS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+              VAR_N_COMM_IDS, exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
 
     /* Output the nodal comm map IDs */
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
-      status = nc_put_var_longlong(exoid, n_varid, node_cmap_ids);
-    }
-    else {
-      status = nc_put_var_int(exoid, n_varid, node_cmap_ids);
+      status  = nc_put_var_longlong(exoid, n_varid, node_cmap_ids);
+    } else {
+      status  = nc_put_var_int(exoid, n_varid, node_cmap_ids);
     }
     if (status != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output variable in file ID %d", exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -392,32 +412,32 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
     /* Get variable ID for elemental status vector */
     if ((status = nc_inq_varid(exoid, VAR_E_COMM_STAT, &e_varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-               VAR_E_COMM_STAT, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+              VAR_E_COMM_STAT, exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
 
     nl_ecnt_cmap = 0; /* reset this for index */
-    for (icm = 0; icm < num_e_comm_maps; icm++) {
+    for(icm=0; icm < num_e_comm_maps; icm++) {
       size_t ecec;
       if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-        ecec = ((int64_t *)elem_cmap_elem_cnts)[icm];
-      }
-      else {
-        ecec = ((int *)elem_cmap_elem_cnts)[icm];
+	ecec = ((int64_t*)elem_cmap_elem_cnts)[icm];
+      } else {
+	ecec = ((int*)elem_cmap_elem_cnts)[icm];
       }
       start[0] = icm;
       if (ecec > 0) {
         nmstat = 1;
-      }
-      else {
+      } else {
         nmstat = 0;
-      }
+}
 
       if ((status = nc_put_var1_int(exoid, e_varid, start, &nmstat)) != NC_NOERR) {
         exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unable to output variable in file ID %d", exoid);
+        sprintf(errmsg,
+                "ERROR: unable to output variable in file ID %d", exoid);
         ex_err(func_name, errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -426,21 +446,22 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
       nl_ecnt_cmap += ecec;
 
       /* fill the cmap data index */
-      if ((status = nc_put_var1_longlong(exoid, e_varid_idx, start, (long long *)&nl_ecnt_cmap)) !=
-          NC_NOERR) {
+      if ((status = nc_put_var1_longlong(exoid, e_varid_idx, start, (long long*)&nl_ecnt_cmap)) != NC_NOERR) {
         exerrval = status;
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output int elem map index in file ID %d",
-                 exoid);
+        sprintf(errmsg,
+                "ERROR: failed to output int elem map index in file ID %d",
+                exoid);
         ex_err(func_name, errmsg, exerrval);
         return (EX_FATAL);
       }
-    } /* End "for(icm=0; icm < num_e_comm_maps; icm++)" */
+     } /* End "for(icm=0; icm < num_e_comm_maps; icm++)" */
 
     /* Get the variable ID for the elemental comm map IDs vector */
     if ((status = nc_inq_varid(exoid, VAR_E_COMM_IDS, &e_varid)) != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
-               VAR_E_COMM_IDS, exoid);
+      sprintf(errmsg,
+              "ERROR: failed to find variable ID for \"%s\" in file ID %d",
+              VAR_E_COMM_IDS, exoid);
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -448,13 +469,13 @@ int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
     /* Output the elemental comm map IDs */
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
       status = nc_put_var_longlong(exoid, e_varid, elem_cmap_ids);
-    }
-    else {
+    } else {
       status = nc_put_var_int(exoid, e_varid, elem_cmap_ids);
     }
     if (status != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable in file ID %d", exoid);
+      sprintf(errmsg,
+              "ERROR: failed to output variable in file ID %d", exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);

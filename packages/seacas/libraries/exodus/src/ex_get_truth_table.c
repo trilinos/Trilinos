@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,115 +30,113 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************
 *
 * exgvtt - ex_get_truth_table
 *
-* entry conditions -
+* entry conditions - 
 *   input parameters:
 *       int     exoid              exodus file id
 *       int     num_blk            number of blocks
 *       int     num_var            number of variables
 *
-* exit conditions -
+* exit conditions - 
 *       int*    var_tab            element variable truth table array
 *
 *
 *****************************************************************************/
 
-#include "exodusII.h"     // for exerrval, ex_err, etc
-#include "exodusII_int.h" // for ex_get_dimension, EX_FATAL, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
-#include <stddef.h>       // for size_t
-#include <stdio.h>
-#include <stdlib.h> // for NULL
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for ex_get_dimension, EX_FATAL, etc
+#include "netcdf.h"                     // for nc_inq_varid, NC_NOERR, etc
+
 
 /*!
  * reads the EXODUS II specified variable truth table from the database
  */
 
-int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var, int *var_tab)
+int ex_get_truth_table (int  exoid,
+			ex_entity_type obj_type,
+			int  num_blk,
+			int  num_var,
+			int *var_tab)
 {
-  int         dimid, varid, tabid, i, j, status, status1;
-  size_t      num_entity = 0;
-  size_t      num_var_db = 0;
-  char        errmsg[MAX_ERR_LENGTH];
-  const char *routine = "ex_get_truth_table";
+  int dimid, varid, tabid, i, j, status, status1;
+  size_t num_entity = 0;
+  size_t num_var_db = 0;
+  char errmsg[MAX_ERR_LENGTH];
+  const char* routine = "ex_get_truth_table";
 
   /*
    * The ent_type and the var_name are used to build the netcdf
    * variables name.  Normally this is done via a macro defined in
    * exodusII_int.h
    */
-  const char *ent_type = NULL;
-  const char *var_name = NULL;
+  const char* ent_type = NULL;
+  const char* var_name = NULL;
 
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {
   case EX_EDGE_BLOCK:
-    status =
-        ex_get_dimension(exoid, DIM_NUM_EDG_VAR, "edge variables", &num_var_db, &varid, routine);
-    status1  = nc_inq_varid(exoid, VAR_EBLK_TAB, &tabid);
+    status = ex_get_dimension(exoid, DIM_NUM_EDG_VAR,  "edge variables", &num_var_db, &varid, routine);
+    status1 = nc_inq_varid (exoid, VAR_EBLK_TAB, &tabid);
     var_name = "vals_edge_var";
     ent_type = "eb";
     break;
   case EX_FACE_BLOCK:
-    status =
-        ex_get_dimension(exoid, DIM_NUM_FAC_VAR, "face variables", &num_var_db, &varid, routine);
-    status1  = nc_inq_varid(exoid, VAR_FBLK_TAB, &tabid);
+    status = ex_get_dimension(exoid, DIM_NUM_FAC_VAR,  "face variables", &num_var_db, &varid, routine);
+    status1 = nc_inq_varid (exoid, VAR_FBLK_TAB, &tabid);
     var_name = "vals_face_var";
     ent_type = "fb";
     break;
   case EX_ELEM_BLOCK:
-    status =
-        ex_get_dimension(exoid, DIM_NUM_ELE_VAR, "element variables", &num_var_db, &varid, routine);
-    status1  = nc_inq_varid(exoid, VAR_ELEM_TAB, &tabid);
+    status = ex_get_dimension(exoid, DIM_NUM_ELE_VAR,  "element variables", &num_var_db, &varid, routine);
+    status1 = nc_inq_varid (exoid, VAR_ELEM_TAB, &tabid);
     var_name = "vals_elem_var";
     ent_type = "eb";
     break;
   case EX_NODE_SET:
-    status = ex_get_dimension(exoid, DIM_NUM_NSET_VAR, "nodeset variables", &num_var_db, &varid,
-                              routine);
-    status1  = nc_inq_varid(exoid, VAR_NSET_TAB, &tabid);
+    status = ex_get_dimension(exoid, DIM_NUM_NSET_VAR, "nodeset variables", &num_var_db, &varid, routine);
+    status1 = nc_inq_varid (exoid, VAR_NSET_TAB, &tabid);
     var_name = "vals_nset_var";
     ent_type = "ns";
     break;
   case EX_EDGE_SET:
-    status = ex_get_dimension(exoid, DIM_NUM_ESET_VAR, "edgeset variables", &num_var_db, &varid,
-                              routine);
-    status1  = nc_inq_varid(exoid, VAR_ESET_TAB, &tabid);
+    status = ex_get_dimension(exoid, DIM_NUM_ESET_VAR, "edgeset variables", &num_var_db, &varid, routine);
+    status1 = nc_inq_varid (exoid, VAR_ESET_TAB, &tabid);
     var_name = "vals_eset_var";
     ent_type = "es";
     break;
   case EX_FACE_SET:
-    status = ex_get_dimension(exoid, DIM_NUM_FSET_VAR, "faceset variables", &num_var_db, &varid,
-                              routine);
-    status1  = nc_inq_varid(exoid, VAR_FSET_TAB, &tabid);
+    status = ex_get_dimension(exoid, DIM_NUM_FSET_VAR, "faceset variables", &num_var_db, &varid, routine);
+    status1 = nc_inq_varid (exoid, VAR_FSET_TAB, &tabid);
     var_name = "vals_fset_var";
     ent_type = "fs";
     break;
   case EX_SIDE_SET:
-    status = ex_get_dimension(exoid, DIM_NUM_SSET_VAR, "sideset variables", &num_var_db, &varid,
-                              routine);
-    status1  = nc_inq_varid(exoid, VAR_SSET_TAB, &tabid);
+    status = ex_get_dimension(exoid, DIM_NUM_SSET_VAR, "sideset variables", &num_var_db, &varid, routine);
+    status1 = nc_inq_varid (exoid, VAR_SSET_TAB, &tabid);
     var_name = "vals_sset_var";
     ent_type = "ss";
     break;
   case EX_ELEM_SET:
-    status = ex_get_dimension(exoid, DIM_NUM_ELSET_VAR, "elemset variables", &num_var_db, &varid,
-                              routine);
-    status1  = nc_inq_varid(exoid, VAR_ELSET_TAB, &tabid);
+    status = ex_get_dimension(exoid, DIM_NUM_ELSET_VAR, "elemset variables", &num_var_db, &varid, routine);
+    status1 = nc_inq_varid (exoid, VAR_ELSET_TAB, &tabid);
     var_name = "vals_elset_var";
     ent_type = "es";
     break;
   default:
     exerrval = EX_BADPARAM;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid variable type %d specified in file id %d",
-             obj_type, exoid);
-    ex_err(routine, errmsg, exerrval);
+    sprintf(errmsg,
+      "ERROR: Invalid variable type %d specified in file id %d",
+      obj_type, exoid);
+    ex_err(routine,errmsg,exerrval);
     return (EX_WARN);
   }
 
@@ -147,8 +145,8 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
     return (EX_WARN);
   }
 
-  status = ex_get_dimension(exoid, ex_dim_num_objects(obj_type), ex_name_of_object(obj_type),
-                            &num_entity, &dimid, routine);
+  status  = ex_get_dimension(exoid, ex_dim_num_objects(obj_type),
+			     ex_name_of_object(obj_type), &num_entity, &dimid, routine);
   if (status != NC_NOERR) {
     exerrval = status;
     return (EX_FATAL);
@@ -156,49 +154,49 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
 
   if (num_entity != (size_t)num_blk) {
     exerrval = EX_FATAL;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: # of %s doesn't match those defined in file id %d",
-             ex_name_of_object(obj_type), exoid);
-    ex_err(routine, errmsg, exerrval);
+    sprintf(errmsg,
+      "ERROR: # of %s doesn't match those defined in file id %d",
+	    ex_name_of_object(obj_type), exoid);
+    ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
   }
 
   if (num_var_db != (size_t)num_var) {
     exerrval = EX_FATAL;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: # of %s variables doesn't match those defined in file id %d",
-             ex_name_of_object(obj_type), exoid);
-    ex_err(routine, errmsg, exerrval);
+    sprintf(errmsg,
+      "ERROR: # of %s variables doesn't match those defined in file id %d",
+	    ex_name_of_object(obj_type), exoid);
+    ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
   }
 
   if (status1 != NC_NOERR) {
     /* since truth table isn't stored in the data file, derive it dynamically */
-    for (j = 0; j < num_blk; j++) {
+    for (j=0; j<num_blk; j++) {
 
-      for (i = 0; i < num_var; i++) {
+      for (i=0; i<num_var; i++) {
         /* NOTE: names are 1-based */
-        if (nc_inq_varid(exoid, ex_catstr2(var_name, i + 1, ent_type, j + 1), &tabid) == NC_NOERR) {
+        if (nc_inq_varid (exoid, ex_catstr2(var_name, i+1, ent_type, j+1), &tabid) == NC_NOERR) {
           /* variable exists; put a 1 in the truth table */
-          var_tab[j * num_var + i] = 1;
-        }
-        else {
+          var_tab[j*num_var+i] = 1;
+        } else {
           /* variable doesn't exist; put a 0 in the truth table */
-          var_tab[j * num_var + i] = 0;
+          var_tab[j*num_var+i] = 0;
         }
       }
     }
-  }
-  else {
+  } else {
     /* read in the truth table */
     status = nc_get_var_int(exoid, tabid, var_tab);
 
     if (status != NC_NOERR) {
       exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s truth table from file id %d",
-               ex_name_of_object(obj_type), exoid);
-      ex_err(routine, errmsg, exerrval);
+      sprintf(errmsg,
+        "ERROR: failed to get %s truth table from file id %d",
+	      ex_name_of_object(obj_type), exoid);
+      ex_err(routine,errmsg,exerrval);
       return (EX_FATAL);
     }
-  }
+  } 
   return (EX_NOERR);
 }

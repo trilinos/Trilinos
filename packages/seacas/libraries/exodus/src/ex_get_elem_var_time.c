@@ -2,23 +2,23 @@
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *
+ * 
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
+ *       with the distribution.  
+ * 
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,13 +30,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  */
 /*****************************************************************************
 *
 * exgevt - ex_get_elem_var_time
 *
-* entry conditions -
+* entry conditions - 
 *   input parameters:
 *       int     exoid                   exodus file id
 *       int     elem_var_index          element variable index
@@ -44,20 +44,19 @@
 *       int     beg_time_step           time step number
 *       int     end_time_step           time step number
 *
-* exit conditions -
+* exit conditions - 
 *       float*  elem_var_vals           array of element variable values
 *
-* revision history -
+* revision history - 
 *   20061002 - David Thompson - Moved to ex_get_var_time.
 *
 *****************************************************************************/
 
-#include "exodusII.h"  // for ex_get_var_time, etc
-#include <sys/types.h> // for int64_t
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_get_var_time, etc
 
 /*!
-\deprecated Use ex_get_var_time()(exoid, EX_ELEM_BLOCK, elem_var_index,
-elem_number, beg_time_step, end_time_step, elem_var_vals)
+\deprecated Use ex_get_var_time()(exoid, EX_ELEM_BLOCK, elem_var_index, elem_number, beg_time_step, end_time_step, elem_var_vals)
 
 The function ex_get_elem_var_time() reads the values of an element
 variable for a single element through a specified number of time
@@ -79,30 +78,21 @@ errors include:
   -  variable does not exist for the desired element or results
       haven't been written.
 
-\param[in] exoid             exodus file ID returned from a previous call to
-ex_create()
+\param[in] exoid             exodus file ID returned from a previous call to ex_create()
                              or ex_open().
-\param[in] elem_var_index    The index of the desired element variable. The
-first variable has an
+\param[in] elem_var_index    The index of the desired element variable. The first variable has an
                              index of 1.
-\param[in] elem_number       The internal ID (see Section LocalElementIds) of
-the desired
+\param[in] elem_number       The internal ID (see Section LocalElementIds) of the desired
                              element. The first element is 1.
-\param[in] beg_time_step     The beginning time step for which an element
-variable value is
-                             desired. This is not a time value but rather a time
-step number, as
-                             described under ex_put_time(). The first time step
-is 1.
-\param[in] end_time_step     The last time step for which an element variable
-value is desired. If
-                             negative, the last time step in the database will
-be used. The first
-                             time step is 1.
-\param[out]  elem_var_vals   returned array of(\c end_time_step {-} \c
-beg_time_step +
+\param[in] beg_time_step     The beginning time step for which an element variable value is
+                             desired. This is not a time value but rather a time step number, as
+			     described under ex_put_time(). The first time step is 1.
+\param[in] end_time_step     The last time step for which an element variable value is desired. If
+                             negative, the last time step in the database will be used. The first
+			     time step is 1.
+\param[out]  elem_var_vals   returned array of(\c end_time_step {-} \c beg_time_step + 
                              1) values of the \c elem_number-th element for the
-                             \c elem_var_index-th element variable.
+			     \c elem_var_index-th element variable.
 
 
 For example, the following coding will read the values of the \c
@@ -111,7 +101,7 @@ time step to the last time step:
 
 \code
 
-int error, exoid, num_time_steps, var_index, elem_num,
+int error, exoid, num_time_steps, var_index, elem_num, 
     beg_time, end_time;
 
 float *var_values;
@@ -128,19 +118,22 @@ elem_num = 2;
 beg_time =  1;
 end_time = -1;
 
-error = ex_get_elem_var_time (exoid, var_index, elem_num,
+error = ex_get_elem_var_time (exoid, var_index, elem_num, 
                               beg_time, end_time, var_values);
 
 \comment{Using non-deprecated function:}
-error = ex_get_elem_var_time (exoid, EX_ELEM_BLOCK, var_index, elem_num,
+error = ex_get_elem_var_time (exoid, EX_ELEM_BLOCK, var_index, elem_num, 
                               beg_time, end_time, var_values);
 \endcode
 
  */
 
-int ex_get_elem_var_time(int exoid, int elem_var_index, int64_t elem_number, int beg_time_step,
-                         int end_time_step, void *elem_var_vals)
+int ex_get_elem_var_time (int   exoid,
+                          int   elem_var_index,
+                          int64_t   elem_number,
+                          int   beg_time_step, 
+                          int   end_time_step,
+                          void *elem_var_vals)
 {
-  return ex_get_var_time(exoid, EX_ELEM_BLOCK, elem_var_index, elem_number, beg_time_step,
-                         end_time_step, elem_var_vals);
+  return ex_get_var_time( exoid, EX_ELEM_BLOCK, elem_var_index, elem_number, beg_time_step, end_time_step, elem_var_vals );
 }
