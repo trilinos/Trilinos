@@ -51,8 +51,8 @@
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, nc_def_var, etc
 #include <assert.h>       // for assert
-#include <stdio.h>        // for sprintf
-#include <stdlib.h>       // for free, malloc
+#include <stdio.h>
+#include <stdlib.h> // for free, malloc
 
 /*!
  * defines the number of node and element maps. It is more efficient
@@ -84,13 +84,10 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
   }
 
   /* return if these have been defined before */
-  if ((num_node_maps > 0 &&
-       ((nc_inq_dimid(exoid, DIM_NUM_NM, &dimid)) == NC_NOERR)) ||
-      (num_elem_maps > 0 &&
-       ((nc_inq_dimid(exoid, DIM_NUM_EM, &dimid)) == NC_NOERR))) {
+  if ((num_node_maps > 0 && ((nc_inq_dimid(exoid, DIM_NUM_NM, &dimid)) == NC_NOERR)) ||
+      (num_elem_maps > 0 && ((nc_inq_dimid(exoid, DIM_NUM_EM, &dimid)) == NC_NOERR))) {
     exerrval = EX_MSG;
-    sprintf(errmsg, "ERROR: number of maps already defined for file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: number of maps already defined for file id %d", exoid);
     ex_err("ex_put_map_param", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -100,8 +97,7 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
     /* inquire previously defined dimensions  */
     if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to get string length in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
       ex_err("ex_put_map_param", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -109,8 +105,7 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
     /* put file into define mode */
     if ((status = nc_redef(exoid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to put file id %d into define mode",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
       ex_err("ex_put_map_param", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -118,37 +113,29 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
     /* node maps: */
     if (num_node_maps > 0) {
 
-      if ((status = nc_def_dim(exoid, DIM_NUM_NM, num_node_maps, &dimid)) !=
-          NC_NOERR) {
+      if ((status = nc_def_dim(exoid, DIM_NUM_NM, num_node_maps, &dimid)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to define number of node maps in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to define number of node maps in file id %d", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
 
       /* node maps id array: */
       dim[0] = dimid;
-      if ((status = nc_def_var(exoid, VAR_NM_PROP(1), id_type, 1, dim,
-                               &var_nm_id)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, VAR_NM_PROP(1), id_type, 1, dim, &var_nm_id)) != NC_NOERR) {
         exerrval = status;
-        sprintf(
-            errmsg,
-            "ERROR: failed to create node maps property array in file id %d",
-            exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to create node maps property array in file id %d", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
 
       /*   store property name as attribute of property array variable */
-      if ((status = nc_put_att_text(exoid, var_nm_id, ATT_PROP_NAME, 3,
-                                    "ID")) != NC_NOERR) {
+      if ((status = nc_put_att_text(exoid, var_nm_id, ATT_PROP_NAME, 3, "ID")) != NC_NOERR) {
         exerrval = status;
-        sprintf(
-            errmsg,
-            "ERROR: failed to store node map property name %s in file id %d",
-            "ID", exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to store node map property name %s in file id %d", "ID", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
@@ -159,9 +146,8 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
 
       if (nc_def_var(exoid, VAR_NAME_NM, NC_CHAR, 2, dim, &varid) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to define node map name array in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to define node map name array in file id %d", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
@@ -169,9 +155,8 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
       /* determine number of nodes */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES, &dimid)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: couldn't determine number of nodes in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: couldn't determine number of nodes in file id %d",
+                 exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
@@ -180,18 +165,18 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
 
       /* create variable array in which to store the node maps */
       for (i = 0; i < num_node_maps; i++) {
-        if ((status = nc_def_var(exoid, VAR_NODE_MAP(i + 1), int_type, 1, dim,
-                                 &varid)) != NC_NOERR) {
+        if ((status = nc_def_var(exoid, VAR_NODE_MAP(i + 1), int_type, 1, dim, &varid)) !=
+            NC_NOERR) {
           if (status == NC_ENAMEINUSE) {
             exerrval = status;
-            sprintf(errmsg, "ERROR: node map %d already defined in file id %d",
-                    i, exoid);
+            snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: node map %d already defined in file id %d", i,
+                     exoid);
             ex_err("ex_put_map_param", errmsg, exerrval);
           }
           else {
             exerrval = status;
-            sprintf(errmsg, "ERROR: failed to create node map %d in file id %d",
-                    i, exoid);
+            snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to create node map %d in file id %d", i,
+                     exoid);
             ex_err("ex_put_map_param", errmsg, exerrval);
           }
           goto error_ret; /* exit define mode and return */
@@ -202,37 +187,29 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
 
     /* element maps: */
     if (num_elem_maps > 0) {
-      if ((status = nc_def_dim(exoid, DIM_NUM_EM, num_elem_maps, &dimid)) !=
-          NC_NOERR) {
+      if ((status = nc_def_dim(exoid, DIM_NUM_EM, num_elem_maps, &dimid)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to define number of element maps in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to define number of element maps in file id %d", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
 
       /* element maps id array: */
       dim[0] = dimid;
-      if ((status = nc_def_var(exoid, VAR_EM_PROP(1), id_type, 1, dim,
-                               &var_em_id)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, VAR_EM_PROP(1), id_type, 1, dim, &var_em_id)) != NC_NOERR) {
         exerrval = status;
-        sprintf(
-            errmsg,
-            "ERROR: failed to create element maps property array in file id %d",
-            exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to create element maps property array in file id %d", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
 
       /*   store property name as attribute of property array variable */
-      if ((status = nc_put_att_text(exoid, var_em_id, ATT_PROP_NAME, 3,
-                                    "ID")) != NC_NOERR) {
+      if ((status = nc_put_att_text(exoid, var_em_id, ATT_PROP_NAME, 3, "ID")) != NC_NOERR) {
         exerrval = status;
-        sprintf(
-            errmsg,
-            "ERROR: failed to store element map property name %s in file id %d",
-            "ID", exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to store element map property name %s in file id %d", "ID", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
@@ -241,12 +218,10 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
       dim[0] = dimid;
       dim[1] = strdim;
 
-      if ((status = nc_def_var(exoid, VAR_NAME_EM, NC_CHAR, 2, dim, &varid)) !=
-          NC_NOERR) {
+      if ((status = nc_def_var(exoid, VAR_NAME_EM, NC_CHAR, 2, dim, &varid)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to define element map name array in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to define element map name array in file id %d", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
@@ -254,9 +229,8 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
       /* determine number of elements */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_ELEM, &dimid)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: couldn't determine number of elements in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: couldn't determine number of elements in file id %d", exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         goto error_ret; /* exit define mode and return */
       }
@@ -264,20 +238,18 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
       /* create variable array in which to store the element maps */
       dim[0] = dimid;
       for (i = 0; i < num_elem_maps; i++) {
-        if ((status = nc_def_var(exoid, VAR_ELEM_MAP(i + 1), int_type, 1, dim,
-                                 &varid)) != NC_NOERR) {
+        if ((status = nc_def_var(exoid, VAR_ELEM_MAP(i + 1), int_type, 1, dim, &varid)) !=
+            NC_NOERR) {
           if (status == NC_ENAMEINUSE) {
             exerrval = status;
-            sprintf(errmsg,
-                    "ERROR: element map %d already defined in file id %d", i,
-                    exoid);
+            snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: element map %d already defined in file id %d",
+                     i, exoid);
             ex_err("ex_put_map_param", errmsg, exerrval);
           }
           else {
             exerrval = status;
-            sprintf(errmsg,
-                    "ERROR: failed to create element map %d in file id %d", i,
-                    exoid);
+            snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to create element map %d in file id %d",
+                     i, exoid);
             ex_err("ex_put_map_param", errmsg, exerrval);
           }
           goto error_ret; /* exit define mode and return */
@@ -289,23 +261,21 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
     /* leave define mode */
     if ((status = nc_enddef(exoid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: failed to complete variable definitions in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to complete variable definitions in file id %d", exoid);
       ex_err("ex_put_map_param", errmsg, exerrval);
       return (EX_FATAL);
     }
 
     /* Fill the id arrays with EX_INVALID_ID */
     {
-      int maxset =
-          num_node_maps > num_elem_maps ? num_node_maps : num_elem_maps;
+      int  maxset      = num_node_maps > num_elem_maps ? num_node_maps : num_elem_maps;
       int *invalid_ids = malloc(maxset * sizeof(int));
       if (invalid_ids == NULL) {
         exerrval = EX_MEMFAIL;
-        sprintf(errmsg, "ERROR: failed to allocate memory for invalid id "
-                        "storage in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate memory for invalid id "
+                                         "storage in file id %d",
+                 exoid);
         ex_err("ex_put_map_param", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -330,8 +300,7 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
 error_ret:
   if (nc_enddef(exoid) != NC_NOERR) /* exit define mode */
   {
-    sprintf(errmsg, "ERROR: failed to complete definition for file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
     ex_err("ex_put_map_param", errmsg, exerrval);
   }
   return (EX_FATAL);

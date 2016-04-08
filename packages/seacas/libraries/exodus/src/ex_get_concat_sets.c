@@ -57,11 +57,10 @@
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf, NULL
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
-int ex_get_concat_sets(int exoid, ex_entity_type set_type,
-                       struct ex_set_specs *set_specs)
+int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *set_specs)
 {
   int       status, dimid;
   void_int *num_entries_per_set = set_specs->num_entries_per_set;
@@ -99,24 +98,23 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type,
   }
   else {
     exerrval = EX_FATAL;
-    sprintf(errmsg, "ERROR: invalid set type (%d)", set_type);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid set type (%d)", set_type);
     ex_err("ex_get_concat_sets", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* first check if any sets are specified */
 
-  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) !=
-      NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     exerrval = status;
     if (status == NC_EBADDIM) {
-      sprintf(errmsg, "Warning: no %ss defined for file id %d",
-              ex_name_of_object(set_type), exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined for file id %d",
+               ex_name_of_object(set_type), exoid);
       ex_err("ex_get_concat_sets", errmsg, exerrval);
       return (EX_WARN);
     }
-    sprintf(errmsg, "ERROR: failed to locate %ss defined in file id %d",
-            ex_name_of_object(set_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %ss defined in file id %d",
+             ex_name_of_object(set_type), exoid);
     ex_err("ex_get_concat_sets", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -125,16 +123,16 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type,
 
   num_sets = ex_inquire_int(exoid, ex_inq_val);
   if (num_sets < 0) {
-    sprintf(errmsg, "ERROR: failed to get number of %ss defined for file id %d",
-            ex_name_of_object(set_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss defined for file id %d",
+             ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
     ex_err("ex_get_concat_sets", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if (ex_get_ids(exoid, set_type, set_specs->sets_ids) != NC_NOERR) {
-    sprintf(errmsg, "ERROR: failed to get %s ids for file id %d",
-            ex_name_of_object(set_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s ids for file id %d",
+             ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
     ex_err("ex_get_concat_sets", errmsg, exerrval);
     return (EX_FATAL);
@@ -159,8 +157,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type,
     }
 
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      if (ex_get_set_param(exoid, set_type, set_id,
-                           &(((int64_t *)num_entries_per_set)[i]),
+      if (ex_get_set_param(exoid, set_type, set_id, &(((int64_t *)num_entries_per_set)[i]),
                            &(((int64_t *)num_dist_per_set)[i])) != NC_NOERR) {
         return (EX_FATAL); /* error will be reported by sub */
       }
@@ -168,8 +165,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type,
       if (i < num_sets - 1) {
         /* fill in entry and dist factor index arrays */
         ((int64_t *)sets_entry_index)[i + 1] =
-            ((int64_t *)sets_entry_index)[i] +
-            ((int64_t *)num_entries_per_set)[i];
+            ((int64_t *)sets_entry_index)[i] + ((int64_t *)num_entries_per_set)[i];
         ((int64_t *)sets_dist_index)[i + 1] =
             ((int64_t *)sets_dist_index)[i] + ((int64_t *)num_dist_per_set)[i];
       }
@@ -182,19 +178,15 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type,
         /* Now, use ExodusII call to get sets */
         int64_t *sets_entry_list = set_specs->sets_entry_list;
         int64_t *sets_extra_list = set_specs->sets_extra_list;
-        int64_t *sets_extra =
-            sets_extra_list
-                ? &((int64_t *)
-                        sets_extra_list)[((int64_t *)sets_entry_index)[i]]
-                : NULL;
-        status = ex_get_set(
-            exoid, set_type, set_id,
-            &(sets_entry_list[((int64_t *)sets_entry_index)[i]]), sets_extra);
+        int64_t *sets_extra      = sets_extra_list
+                                  ? &((int64_t *)sets_extra_list)[((int64_t *)sets_entry_index)[i]]
+                                  : NULL;
+        status = ex_get_set(exoid, set_type, set_id,
+                            &(sets_entry_list[((int64_t *)sets_entry_index)[i]]), sets_extra);
       }
     }
     else {
-      if (ex_get_set_param(exoid, set_type, set_id,
-                           &(((int *)num_entries_per_set)[i]),
+      if (ex_get_set_param(exoid, set_type, set_id, &(((int *)num_entries_per_set)[i]),
                            &(((int *)num_dist_per_set)[i])) != NC_NOERR) {
         return (EX_FATAL); /* error will be reported by sub */
       }
@@ -216,12 +208,9 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type,
         int *sets_entry_list = set_specs->sets_entry_list;
         int *sets_extra_list = set_specs->sets_extra_list;
         int *sets_extra =
-            sets_extra_list
-                ? &((int *)sets_extra_list)[((int *)sets_entry_index)[i]]
-                : NULL;
+            sets_extra_list ? &((int *)sets_extra_list)[((int *)sets_entry_index)[i]] : NULL;
         status = ex_get_set(exoid, set_type, set_id,
-                            &(sets_entry_list[((int *)sets_entry_index)[i]]),
-                            sets_extra);
+                            &(sets_entry_list[((int *)sets_entry_index)[i]]), sets_extra);
       }
     }
 
@@ -244,13 +233,11 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type,
       if (num_dist > 0) { /* only get df if they exist */
         if (ex_comp_ws(exoid) == sizeof(float)) {
           flt_dist_fact = sets_dist_fact;
-          status        = ex_get_set_dist_fact(exoid, set_type, set_id,
-                                        &(flt_dist_fact[df_idx]));
+          status        = ex_get_set_dist_fact(exoid, set_type, set_id, &(flt_dist_fact[df_idx]));
         }
         else {
           dbl_dist_fact = sets_dist_fact;
-          status        = ex_get_set_dist_fact(exoid, set_type, set_id,
-                                        &(dbl_dist_fact[df_idx]));
+          status        = ex_get_set_dist_fact(exoid, set_type, set_id, &(dbl_dist_fact[df_idx]));
         }
         if (status != NC_NOERR) {
           return (EX_FATAL); /* error will be reported by subroutine */

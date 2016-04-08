@@ -56,7 +56,7 @@
 #include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR
 #include <inttypes.h>     // for PRId64
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
  * writes the name of the specified entity to the database. The entity
@@ -68,8 +68,7 @@
  * \param  name           ptr to entity name
  */
 
-int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
-                const char *name)
+int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, const char *name)
 {
   int         status;
   int         varid, ent_ndx;
@@ -80,53 +79,29 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {
-  case EX_EDGE_BLOCK:
-    vobj = VAR_NAME_ED_BLK;
-    break;
-  case EX_FACE_BLOCK:
-    vobj = VAR_NAME_FA_BLK;
-    break;
-  case EX_ELEM_BLOCK:
-    vobj = VAR_NAME_EL_BLK;
-    break;
-  case EX_NODE_SET:
-    vobj = VAR_NAME_NS;
-    break;
-  case EX_SIDE_SET:
-    vobj = VAR_NAME_SS;
-    break;
-  case EX_EDGE_SET:
-    vobj = VAR_NAME_ES;
-    break;
-  case EX_FACE_SET:
-    vobj = VAR_NAME_FS;
-    break;
-  case EX_ELEM_SET:
-    vobj = VAR_NAME_ELS;
-    break;
-  case EX_NODE_MAP:
-    vobj = VAR_NAME_NM;
-    break;
-  case EX_EDGE_MAP:
-    vobj = VAR_NAME_EDM;
-    break;
-  case EX_FACE_MAP:
-    vobj = VAR_NAME_FAM;
-    break;
-  case EX_ELEM_MAP:
-    vobj = VAR_NAME_EM;
-    break;
+  case EX_EDGE_BLOCK: vobj = VAR_NAME_ED_BLK; break;
+  case EX_FACE_BLOCK: vobj = VAR_NAME_FA_BLK; break;
+  case EX_ELEM_BLOCK: vobj = VAR_NAME_EL_BLK; break;
+  case EX_NODE_SET: vobj   = VAR_NAME_NS; break;
+  case EX_SIDE_SET: vobj   = VAR_NAME_SS; break;
+  case EX_EDGE_SET: vobj   = VAR_NAME_ES; break;
+  case EX_FACE_SET: vobj   = VAR_NAME_FS; break;
+  case EX_ELEM_SET: vobj   = VAR_NAME_ELS; break;
+  case EX_NODE_MAP: vobj   = VAR_NAME_NM; break;
+  case EX_EDGE_MAP: vobj   = VAR_NAME_EDM; break;
+  case EX_FACE_MAP: vobj   = VAR_NAME_FAM; break;
+  case EX_ELEM_MAP: vobj   = VAR_NAME_EM; break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
     ex_err(routine, errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, vobj, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate %s names in file id %d",
-            ex_name_of_object(obj_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s names in file id %d",
+             ex_name_of_object(obj_type), exoid);
     ex_err(routine, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -134,8 +109,8 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
   ent_ndx = ex_id_lkup(exoid, obj_type, entity_id);
 
   if (exerrval == EX_LOOKUPFAIL) { /* could not find the element block id */
-    sprintf(errmsg, "ERROR: %s id %" PRId64 " not found in file id %d",
-            ex_name_of_object(obj_type), entity_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
+             ex_name_of_object(obj_type), entity_id, exoid);
     ex_err("ex_put_name", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -148,8 +123,7 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
   }
 
   /* write EXODUS entityname */
-  status = ex_put_name_internal(exoid, varid, ent_ndx - 1, name, obj_type, "",
-                                routine);
+  status = ex_put_name_internal(exoid, varid, ent_ndx - 1, name, obj_type, "", routine);
 
   return (status);
 }

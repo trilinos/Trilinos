@@ -64,9 +64,7 @@ Refer to the description of ex_get_node_set_param() for a sample code
 segment to read a node set's distribution factors.
 */
 
-int ex_get_node_set_dist_fact(int exoid, ex_entity_id node_set_id,
-                              void *node_set_dist_fact)
+int ex_get_node_set_dist_fact(int exoid, ex_entity_id node_set_id, void *node_set_dist_fact)
 {
-  return ex_get_set_dist_fact(exoid, EX_NODE_SET, node_set_id,
-                              node_set_dist_fact);
+  return ex_get_set_dist_fact(exoid, EX_NODE_SET, node_set_id, node_set_dist_fact);
 }

@@ -48,7 +48,7 @@
 #include "exodusII.h"     // for exerrval, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR
 #include "netcdf.h"       // for nc_sync, NC_NOERR
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
  * updates an opened EXODUS II file (or EXODUS II history file)
@@ -64,7 +64,7 @@ int ex_update(int exoid)
 
   if ((status = nc_sync(exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to update file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to update file id %d", exoid);
     ex_err("ex_update", errmsg, exerrval);
     return (EX_FATAL);
   }

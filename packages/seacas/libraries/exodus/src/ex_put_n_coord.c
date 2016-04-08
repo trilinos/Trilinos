@@ -70,9 +70,8 @@
  * \param   z_coor          z coord array
  */
 
-int ex_put_n_coord(int exoid, int64_t start_node_num, int64_t num_nodes,
-                   const void *x_coor, const void *y_coor, const void *z_coor)
+int ex_put_n_coord(int exoid, int64_t start_node_num, int64_t num_nodes, const void *x_coor,
+                   const void *y_coor, const void *z_coor)
 {
-  return ex_put_partial_coord(exoid, start_node_num, num_nodes, x_coor, y_coor,
-                              z_coor);
+  return ex_put_partial_coord(exoid, start_node_num, num_nodes, x_coor, y_coor, z_coor);
 }

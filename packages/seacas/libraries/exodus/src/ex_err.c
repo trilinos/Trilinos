@@ -90,7 +90,7 @@ IO_word_size = 0;
 if (exoid = ex_open ("test.exo", EX_READ, &CPU_word_size,
                      &IO_word_size, &version)) {
    errval = 999;
-   sprintf(errmsg,"ERROR: cannot open file test.exo");
+   snprintf(errmsg, MAX_ERR_LENGTH,"ERROR: cannot open file test.exo");
    ex_err("prog_name", errmsg, errval);
 }
 \endcode
@@ -117,15 +117,12 @@ void ex_err(const char *module_name, const char *message, int err_num)
 
   else if (err_num == EX_NULLENTITY) {
     if (exoptval & EX_NULLVERBOSE) {
-      fprintf(stderr, "Exodus Library Warning: [%s]\n\t%s\n", module_name,
-              message);
+      fprintf(stderr, "Exodus Library Warning: [%s]\n\t%s\n", module_name, message);
     }
   }
 
-  else if (exoptval &
-           EX_VERBOSE) { /* check see if we really want to hear this */
-    fprintf(stderr, "Exodus Library Warning/Error: [%s]\n\t%s\n", module_name,
-            message);
+  else if (exoptval & EX_VERBOSE) { /* check see if we really want to hear this */
+    fprintf(stderr, "Exodus Library Warning/Error: [%s]\n\t%s\n", module_name, message);
     if (err_num < 0) {
       fprintf(stderr, "\t%s\n", nc_strerror(err_num));
     }

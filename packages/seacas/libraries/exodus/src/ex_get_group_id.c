@@ -36,9 +36,9 @@
 #include "exodusII.h"     // for exerrval, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_FILE_ID_MASK, etc
 #include "netcdf.h"       // for NC_NOERR, etc
-#include <stdio.h>        // for sprintf
-#include <stdlib.h>       // for NULL
-#include <string.h>       // for strchr
+#include <stdio.h>
+#include <stdlib.h> // for NULL
+#include <string.h> // for strchr
 
 /**
  * Given an exoid and group name (NULL gets root group), return id of that
@@ -66,9 +66,9 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
     status = nc_inq_grp_ncid(parent_id, group_name, group_id);
     if (status != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: Failed to locate group with name %s as child "
-                      "group in file id %d",
-              group_name, parent_id);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to locate group with name %s as child "
+                                       "group in file id %d",
+               group_name, parent_id);
       ex_err("ex_get_group_id", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -78,10 +78,9 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
     status = nc_inq_grp_full_ncid(parent_id, group_name, group_id);
     if (status != NC_NOERR) {
       exerrval = status;
-      sprintf(
-          errmsg,
-          "ERROR: Failed to locate group with full path name %s in file id %d",
-          group_name, parent_id);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: Failed to locate group with full path name %s in file id %d", group_name,
+               parent_id);
       ex_err("ex_get_group_id", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -89,8 +88,8 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
   return (EX_NOERR);
 #else
   exerrval = NC_ENOTNC4;
-  sprintf(errmsg, "ERROR: Group capabilities are not available in this netcdf "
-                  "version--not netcdf4");
+  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Group capabilities are not available in this netcdf "
+                                   "version--not netcdf4");
   ex_err("ex_get_group_id", errmsg, exerrval);
   return (EX_FATAL);
 #endif

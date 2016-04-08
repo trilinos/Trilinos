@@ -37,18 +37,15 @@
 #include "exodusII_int.h"
 
 /*! \cond INTERNAL */
-int ex_default_max_name_length =
-    32; /* For default compatibility with older clients */
+int ex_default_max_name_length = 32; /* For default compatibility with older clients */
 
 #if defined(VERBOSE)
 int exoptval = EX_VERBOSE; /* loud mode: set EX_VERBOSE */
 #else
 #if defined(DEBUG)
-int exoptval =
-    EX_VERBOSE | EX_DEBUG; /* debug mode: set EX_VERBOSE & EX_DEBUG */
+int exoptval = EX_VERBOSE | EX_DEBUG; /* debug mode: set EX_VERBOSE & EX_DEBUG */
 #else
-int exoptval =
-    EX_DEFAULT; /* set default global options value to NOT print error msgs*/
+int exoptval = EX_DEFAULT; /* set default global options value to NOT print error msgs*/
 #endif
 #endif
 /*! \endcond */

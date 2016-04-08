@@ -56,16 +56,15 @@
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*
  * reads the node list for a single node set
  */
 
-int ex_get_partial_node_set(int exoid, ex_entity_id node_set_id,
-                            int64_t start_node_num, int64_t num_nodes,
-                            void_int *node_set_node_list)
+int ex_get_partial_node_set(int exoid, ex_entity_id node_set_id, int64_t start_node_num,
+                            int64_t num_nodes, void_int *node_set_node_list)
 {
   int    dimid, node_list_id, node_set_id_ndx, status;
   size_t num_nodes_in_set, start[1], count[1];
@@ -77,7 +76,7 @@ int ex_get_partial_node_set(int exoid, ex_entity_id node_set_id,
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_NS, &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "Warning: no node sets defined in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no node sets defined in file id %d", exoid);
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_WARN);
   }
@@ -85,36 +84,34 @@ int ex_get_partial_node_set(int exoid, ex_entity_id node_set_id,
   /* Lookup index of node set id in VAR_NS_IDS array */
   if ((node_set_id_ndx = ex_id_lkup(exoid, EX_NODE_SET, node_set_id)) < 0) {
     if (exerrval == EX_NULLENTITY) {
-      sprintf(errmsg, "Warning: node set %" PRId64 " is NULL in file id %d",
-              node_set_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: node set %" PRId64 " is NULL in file id %d",
+               node_set_id, exoid);
       ex_err("ex_get_partial_node_set", errmsg, EX_NULLENTITY);
       return (EX_WARN);
     }
 
-    sprintf(errmsg,
-            "ERROR: failed to locate node set %" PRId64 " in %s in file id %d",
-            node_set_id, VAR_NS_IDS, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate node set %" PRId64 " in %s in file id %d", node_set_id,
+             VAR_NS_IDS, exoid);
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* inquire id's of previously defined dimensions and variables */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_NOD_NS(node_set_id_ndx), &dimid)) !=
-      NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_NOD_NS(node_set_id_ndx), &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to locate number of nodes in node set %" PRId64
-            " in file id %d",
-            node_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate number of nodes in node set %" PRId64 " in file id %d",
+             node_set_id, exoid);
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &num_nodes_in_set)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get number of nodes in set %" PRId64
-                    " in file id %d",
-            node_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to get number of nodes in set %" PRId64 " in file id %d", node_set_id,
+             exoid);
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -122,14 +119,14 @@ int ex_get_partial_node_set(int exoid, ex_entity_id node_set_id,
   /* Check input parameters for a valid range of numbers */
   if (start_node_num < 0 || start_node_num > num_nodes_in_set) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid input");
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid input");
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if (num_nodes < 0) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid number of nodes in nodes set!");
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid number of nodes in nodes set!");
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -137,17 +134,16 @@ int ex_get_partial_node_set(int exoid, ex_entity_id node_set_id,
   /* start_node_num now starts at 1, not 0 */
   if ((start_node_num + num_nodes - 1) > num_nodes_in_set) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: request larger than number of nodes in set!");
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: request larger than number of nodes in set!");
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_NODE_NS(node_set_id_ndx),
-                             &node_list_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_NODE_NS(node_set_id_ndx), &node_list_id)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate node set %" PRId64
-                    " node list in file id %d",
-            node_set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate node set %" PRId64 " node list in file id %d", node_set_id,
+             exoid);
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -157,18 +153,16 @@ int ex_get_partial_node_set(int exoid, ex_entity_id node_set_id,
   count[0] = num_nodes;
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    status = nc_get_vara_longlong(exoid, node_list_id, start, count,
-                                  node_set_node_list);
+    status = nc_get_vara_longlong(exoid, node_list_id, start, count, node_set_node_list);
   }
   else {
-    status =
-        nc_get_vara_int(exoid, node_list_id, start, count, node_set_node_list);
+    status = nc_get_vara_int(exoid, node_list_id, start, count, node_set_node_list);
   }
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get node set node list in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get node set node list in file id %d",
+             exoid);
     ex_err("ex_get_partial_node_set", errmsg, exerrval);
     return (EX_FATAL);
   }

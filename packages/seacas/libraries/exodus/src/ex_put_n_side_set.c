@@ -61,11 +61,10 @@
  * /deprecated use ex_put_partial_set() instead
  */
 
-int ex_put_n_side_set(int exoid, ex_entity_id side_set_id,
-                      int64_t start_side_num, int64_t num_sides,
-                      const void_int *side_set_elem_list,
+int ex_put_n_side_set(int exoid, ex_entity_id side_set_id, int64_t start_side_num,
+                      int64_t num_sides, const void_int *side_set_elem_list,
                       const void_int *side_set_side_list)
 {
-  return ex_put_partial_set(exoid, EX_SIDE_SET, side_set_id, start_side_num,
-                            num_sides, side_set_elem_list, side_set_side_list);
+  return ex_put_partial_set(exoid, EX_SIDE_SET, side_set_id, start_side_num, num_sides,
+                            side_set_elem_list, side_set_side_list);
 }

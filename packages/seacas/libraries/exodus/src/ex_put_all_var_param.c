@@ -68,9 +68,8 @@
 *  \param    *sset_var_tab    sideset variable truth table array
  */
 
-int ex_put_all_var_param(int exoid, int num_g, int num_n, int num_e,
-                         int *elem_var_tab, int num_m, int *nset_var_tab,
-                         int num_s, int *sset_var_tab)
+int ex_put_all_var_param(int exoid, int num_g, int num_n, int num_e, int *elem_var_tab, int num_m,
+                         int *nset_var_tab, int num_s, int *sset_var_tab)
 {
   ex_var_params vparam;
 

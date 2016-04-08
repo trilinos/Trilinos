@@ -91,9 +91,8 @@ if (num_df_in_set > 0) {
 
  */
 
-int ex_get_node_set_param(int exoid, ex_entity_id node_set_id,
-                          void_int *num_nodes_in_set, void_int *num_df_in_set)
+int ex_get_node_set_param(int exoid, ex_entity_id node_set_id, void_int *num_nodes_in_set,
+                          void_int *num_df_in_set)
 {
-  return ex_get_set_param(exoid, EX_NODE_SET, node_set_id, num_nodes_in_set,
-                          num_df_in_set);
+  return ex_get_set_param(exoid, EX_NODE_SET, node_set_id, num_nodes_in_set, num_df_in_set);
 }

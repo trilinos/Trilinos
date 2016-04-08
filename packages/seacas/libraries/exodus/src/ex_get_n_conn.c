@@ -40,10 +40,9 @@
  * \deprecated Use ex_get_partial_conn() instead.
  */
 
-int ex_get_n_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
-                  int64_t start_num, int64_t num_ent, void_int *nodeconn,
-                  void_int *edgeconn, void_int *faceconn)
+int ex_get_n_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, int64_t start_num,
+                  int64_t num_ent, void_int *nodeconn, void_int *edgeconn, void_int *faceconn)
 {
-  return ex_get_partial_conn(exoid, blk_type, blk_id, start_num, num_ent,
-                             nodeconn, edgeconn, faceconn);
+  return ex_get_partial_conn(exoid, blk_type, blk_id, start_num, num_ent, nodeconn, edgeconn,
+                             faceconn);
 }

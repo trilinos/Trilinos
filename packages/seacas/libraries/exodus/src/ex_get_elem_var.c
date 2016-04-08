@@ -112,10 +112,9 @@ for (i=0; i < num_elem_blk; i++) {
 
 */
 
-int ex_get_elem_var(int exoid, int time_step, int elem_var_index,
-                    ex_entity_id elem_blk_id, int64_t num_elem_this_blk,
-                    void *elem_var_vals)
+int ex_get_elem_var(int exoid, int time_step, int elem_var_index, ex_entity_id elem_blk_id,
+                    int64_t num_elem_this_blk, void *elem_var_vals)
 {
-  return ex_get_var(exoid, time_step, EX_ELEM_BLOCK, elem_var_index,
-                    elem_blk_id, num_elem_this_blk, elem_var_vals);
+  return ex_get_var(exoid, time_step, EX_ELEM_BLOCK, elem_var_index, elem_blk_id, num_elem_this_blk,
+                    elem_var_vals);
 }

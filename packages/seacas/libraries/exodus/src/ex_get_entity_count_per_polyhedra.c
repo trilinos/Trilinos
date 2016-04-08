@@ -42,7 +42,7 @@
 #include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
 #include <inttypes.h>     // for PRId64
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
  * reads in the number of entities (nodes/faces) per polyhedra
@@ -53,8 +53,8 @@
  * \param  entity_counts        entity_per_polyhedra count array
  */
 
-int ex_get_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type,
-                                      ex_entity_id blk_id, int *entity_counts)
+int ex_get_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
+                                      int *entity_counts)
 {
   int  npeid = -1, blk_id_ndx, status;
   char errmsg[MAX_ERR_LENGTH];
@@ -64,45 +64,38 @@ int ex_get_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type,
   blk_id_ndx = ex_id_lkup(exoid, blk_type, blk_id);
   if (exerrval != 0) {
     if (exerrval == EX_NULLENTITY) {
-      sprintf(
-          errmsg,
-          "Warning: entity_counts array not allowed for NULL %s block %" PRId64
-          " in file id %d",
-          ex_name_of_object(blk_type), blk_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "Warning: entity_counts array not allowed for NULL %s block %" PRId64
+               " in file id %d",
+               ex_name_of_object(blk_type), blk_id, exoid);
       ex_err("ex_get_entity_count_per_polyhedra", errmsg, EX_NULLENTITY);
       return (EX_WARN);
     }
 
-    sprintf(errmsg, "ERROR: failed to locate %s block id %" PRId64
-                    " in id array in file id %d",
-            ex_name_of_object(blk_type), blk_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate %s block id %" PRId64 " in id array in file id %d",
+             ex_name_of_object(blk_type), blk_id, exoid);
     ex_err("ex_get_entity_count_per_polyhedra", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* inquire id's of previously defined dimensions  */
   switch (blk_type) {
-  case EX_ELEM_BLOCK:
-    status = nc_inq_varid(exoid, VAR_EBEPEC(blk_id_ndx), &npeid);
-    break;
-  case EX_FACE_BLOCK:
-    status = nc_inq_varid(exoid, VAR_FBEPEC(blk_id_ndx), &npeid);
-    break;
+  case EX_ELEM_BLOCK: status = nc_inq_varid(exoid, VAR_EBEPEC(blk_id_ndx), &npeid); break;
+  case EX_FACE_BLOCK: status = nc_inq_varid(exoid, VAR_FBEPEC(blk_id_ndx), &npeid); break;
   default:
     exerrval = 1005;
-    sprintf(
-        errmsg,
-        "Internal ERROR: unrecognized block type in switch: %d in file id %d",
-        blk_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Internal ERROR: unrecognized block type in switch: %d in file id %d", blk_type,
+             exoid);
     ex_err("ex_get_entity_count_per_polyhedra", errmsg, EX_MSG);
     return (EX_FATAL);
   }
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to locate entity_counts array for %s block %" PRId64
-            " in file id %d",
-            ex_name_of_object(blk_type), blk_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate entity_counts array for %s block %" PRId64 " in file id %d",
+             ex_name_of_object(blk_type), blk_id, exoid);
     ex_err("ex_get_entity_count_per_polyhedra", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -110,10 +103,9 @@ int ex_get_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type,
   status = nc_get_var_int(exoid, npeid, entity_counts);
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to read node counts array for %s block %" PRId64
-            " in file id %d",
-            ex_name_of_object(blk_type), blk_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to read node counts array for %s block %" PRId64 " in file id %d",
+             ex_name_of_object(blk_type), blk_id, exoid);
     ex_err("ex_get_entity_count_per_polyhedra", errmsg, exerrval);
     return (EX_FATAL);
   }

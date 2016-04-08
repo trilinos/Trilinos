@@ -100,9 +100,8 @@ error = ex_get_init (exoid, title, &num_dim, &num_nodes,
 
 */
 
-int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes,
-                void_int *num_elem, void_int *num_elem_blk,
-                void_int *num_node_sets, void_int *num_side_sets)
+int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes, void_int *num_elem,
+                void_int *num_elem_blk, void_int *num_node_sets, void_int *num_side_sets)
 {
   ex_init_params info;
   int            errval;

@@ -54,7 +54,7 @@
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf, NULL
+#include <stdio.h>
 
 /*!
 The function ex_put_coord() writes the nodal coordinates of the nodes
@@ -115,8 +115,7 @@ error = ex_put_coord(exoid, NULL, NULL, z);
 
  */
 
-int ex_put_coord(int exoid, const void *x_coor, const void *y_coor,
-                 const void *z_coor)
+int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *z_coor)
 {
   int status;
   int coordid;
@@ -138,26 +137,24 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor,
 
   if ((status = nc_inq_dimlen(exoid, numnoddim, &num_nod)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: inquire failed to return number of nodes in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: inquire failed to return number of nodes in file id %d", exoid);
     ex_err("ex_put_coord", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to locate number of dimensions in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of dimensions in file id %d",
+             exoid);
     ex_err("ex_put_coord", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get number of dimensions in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of dimensions in file id %d",
+             exoid);
     ex_err("ex_put_coord", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -166,8 +163,8 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor,
   if (ex_large_model(exoid) == 0) {
     if ((status = nc_inq_varid(exoid, VAR_COORD, &coordid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to locate nodal coordinates in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate nodal coordinates in file id %d",
+               exoid);
       ex_err("ex_put_coord", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -210,8 +207,8 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor,
 
       if (status != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg, "ERROR: failed to put %s coord array in file id %d",
-                which, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put %s coord array in file id %d", which,
+                 exoid);
         ex_err("ex_put_coord", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -220,9 +217,8 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor,
   else {
     if ((status = nc_inq_varid(exoid, VAR_COORD_X, &coordidx)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: failed to locate x nodal coordinates in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate x nodal coordinates in file id %d",
+               exoid);
       ex_err("ex_put_coord", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -230,9 +226,8 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor,
     if (num_dim > 1) {
       if ((status = nc_inq_varid(exoid, VAR_COORD_Y, &coordidy)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to locate y nodal coordinates in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to locate y nodal coordinates in file id %d", exoid);
         ex_err("ex_put_coord", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -243,9 +238,8 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor,
     if (num_dim > 2) {
       if ((status = nc_inq_varid(exoid, VAR_COORD_Z, &coordidz)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to locate z nodal coordinates in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to locate z nodal coordinates in file id %d", exoid);
         ex_err("ex_put_coord", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -285,8 +279,8 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor,
 
         if (status != NC_NOERR) {
           exerrval = status;
-          sprintf(errmsg, "ERROR: failed to put %s coord array in file id %d",
-                  which, exoid);
+          snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put %s coord array in file id %d",
+                   which, exoid);
           ex_err("ex_put_coord", errmsg, exerrval);
           return (EX_FATAL);
         }

@@ -66,8 +66,7 @@ writing the connectivity array for an element block.
 
 */
 
-int ex_put_elem_conn(int exoid, ex_entity_id elem_blk_id,
-                     const void_int *connect)
+int ex_put_elem_conn(int exoid, ex_entity_id elem_blk_id, const void_int *connect)
 {
   return ex_put_conn(exoid, EX_ELEM_BLOCK, elem_blk_id, connect, 0, 0);
 }

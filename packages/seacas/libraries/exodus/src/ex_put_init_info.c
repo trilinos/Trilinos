@@ -74,7 +74,7 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   /* Check the file type */
   if (!ftype) {
     exerrval = EX_MSG;
-    sprintf(errmsg, "ERROR: NULL file type input for file ID %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: NULL file type input for file ID %d", exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -89,7 +89,7 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   }
   else {
     exerrval = EX_MSG;
-    sprintf(errmsg, "ERROR: unknown file type requested for file ID %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file type requested for file ID %d", exoid);
     ex_err(func_name, errmsg, exerrval);
 
     return (EX_FATAL);
@@ -98,7 +98,7 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   /* Put file into define mode */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to put file ID %d into define mode", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file ID %d into define mode", exoid);
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -106,11 +106,10 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   /* Define dimension for the number of processors */
   if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS, &dimid)) != NC_NOERR) {
     ltempsv = num_proc;
-    if ((status = nc_def_dim(exoid, DIM_NUM_PROCS, ltempsv, &dimid)) !=
-        NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_PROCS, ltempsv, &dimid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to dimension \"%s\" in file ID %d",
-              DIM_NUM_PROCS, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file ID %d",
+               DIM_NUM_PROCS, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */
       ex_leavedef(exoid, func_name);
@@ -122,11 +121,10 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   /* If this is a parallel file then the status vectors are size 1 */
   if (nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid) != NC_NOERR) {
     ltempsv = num_proc_in_f;
-    if ((status = nc_def_dim(exoid, DIM_NUM_PROCS_F, ltempsv, &dimid)) !=
-        NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_PROCS_F, ltempsv, &dimid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to dimension \"%s\" in file ID %d",
-              DIM_NUM_PROCS_F, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file ID %d",
+               DIM_NUM_PROCS_F, exoid);
       ex_err(func_name, errmsg, exerrval);
 
       /* Leave define mode before returning */
@@ -138,10 +136,9 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
 
   /* Output the file type */
   if (nc_inq_varid(exoid, VAR_FILE_TYPE, &varid) != NC_NOERR) {
-    if ((status = nc_def_var(exoid, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid)) !=
-        NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to define file type in file ID %d", exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define file type in file ID %d", exoid);
       ex_err(func_name, errmsg, exerrval);
 
       /* Leave define mode before returning */
@@ -156,9 +153,8 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
 
     if ((status = nc_put_var1_int(exoid, varid, NULL, &lftype)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: unable to output file type variable in file ID %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unable to output file type variable in file ID %d",
+               exoid);
       ex_err(func_name, errmsg, exerrval);
 
       return (EX_FATAL);

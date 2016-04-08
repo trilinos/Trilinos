@@ -55,8 +55,8 @@
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <string.h>       // for NULL
+#include <stdio.h>
+#include <string.h> // for NULL
 
 /*!
  * writes the entity names to the database
@@ -80,43 +80,25 @@ int ex_put_names(int exoid, ex_entity_type obj_type, char *names[])
 
   switch (obj_type) {
   /*  ======== BLOCKS ========= */
-  case EX_EDGE_BLOCK:
-    vname = VAR_NAME_ED_BLK;
-    break;
-  case EX_FACE_BLOCK:
-    vname = VAR_NAME_FA_BLK;
-    break;
+  case EX_EDGE_BLOCK: vname = VAR_NAME_ED_BLK; break;
+  case EX_FACE_BLOCK: vname = VAR_NAME_FA_BLK; break;
   case EX_ELEM_BLOCK:
     vname = VAR_NAME_EL_BLK;
     break;
 
   /*  ======== SETS ========= */
-  case EX_NODE_SET:
-    vname = VAR_NAME_NS;
-    break;
-  case EX_EDGE_SET:
-    vname = VAR_NAME_ES;
-    break;
-  case EX_FACE_SET:
-    vname = VAR_NAME_FS;
-    break;
-  case EX_SIDE_SET:
-    vname = VAR_NAME_SS;
-    break;
+  case EX_NODE_SET: vname = VAR_NAME_NS; break;
+  case EX_EDGE_SET: vname = VAR_NAME_ES; break;
+  case EX_FACE_SET: vname = VAR_NAME_FS; break;
+  case EX_SIDE_SET: vname = VAR_NAME_SS; break;
   case EX_ELEM_SET:
     vname = VAR_NAME_ELS;
     break;
 
   /*  ======== MAPS ========= */
-  case EX_NODE_MAP:
-    vname = VAR_NAME_NM;
-    break;
-  case EX_EDGE_MAP:
-    vname = VAR_NAME_EDM;
-    break;
-  case EX_FACE_MAP:
-    vname = VAR_NAME_FAM;
-    break;
+  case EX_NODE_MAP: vname = VAR_NAME_NM; break;
+  case EX_EDGE_MAP: vname = VAR_NAME_EDM; break;
+  case EX_FACE_MAP: vname = VAR_NAME_FAM; break;
   case EX_ELEM_MAP:
     vname = VAR_NAME_EM;
     break;
@@ -124,25 +106,24 @@ int ex_put_names(int exoid, ex_entity_type obj_type, char *names[])
   /*  ======== ERROR (Invalid type) ========= */
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
     ex_err(routine, errmsg, exerrval);
     return (EX_FATAL);
   }
 
-  ex_get_dimension(exoid, ex_dim_num_objects(obj_type),
-                   ex_name_of_object(obj_type), &num_entity, &varid, routine);
+  ex_get_dimension(exoid, ex_dim_num_objects(obj_type), ex_name_of_object(obj_type), &num_entity,
+                   &varid, routine);
 
   if ((status = nc_inq_varid(exoid, vname, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate %s names in file id %d",
-            ex_name_of_object(obj_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s names in file id %d",
+             ex_name_of_object(obj_type), exoid);
     ex_err(routine, errmsg, exerrval);
     return (EX_FATAL);
   }
 
   /* write EXODUS entitynames */
-  status = ex_put_names_internal(exoid, varid, num_entity, names, obj_type, "",
-                                 routine);
+  status = ex_put_names_internal(exoid, varid, num_entity, names, obj_type, "", routine);
 
   return (status);
 }

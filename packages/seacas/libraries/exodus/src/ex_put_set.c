@@ -55,8 +55,8 @@
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <inttypes.h>     // for PRId64
-#include <stdio.h>        // for sprintf
-#include <stdlib.h>       // for NULL
+#include <stdio.h>
+#include <stdlib.h> // for NULL
 
 /*!
  * writes the set entry list and set extra list for a single set
@@ -81,11 +81,10 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   exerrval = 0; /* clear error code */
 
   /* first check if any sets are specified */
-  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) !=
-      NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: no %ss defined in file id %d",
-            ex_name_of_object(set_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss defined in file id %d",
+             ex_name_of_object(set_type), exoid);
     ex_err("ex_put_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -94,15 +93,15 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   set_id_ndx = ex_id_lkup(exoid, set_type, set_id);
   if (exerrval != 0) {
     if (exerrval == EX_NULLENTITY) {
-      sprintf(errmsg,
-              "Warning: no data allowed for NULL %s %" PRId64 " in file id %d",
-              ex_name_of_object(set_type), set_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "Warning: no data allowed for NULL %s %" PRId64 " in file id %d",
+               ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_put_set", errmsg, EX_NULLENTITY);
       return (EX_WARN);
     }
-    sprintf(errmsg, "ERROR: failed to locate %s id %" PRId64
-                    " in VAR_*S_IDS array in file id %d",
-            ex_name_of_object(set_type), set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate %s id %" PRId64 " in VAR_*S_IDS array in file id %d",
+             ex_name_of_object(set_type), set_id, exoid);
     ex_err("ex_put_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -132,9 +131,9 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   /* inquire id's of previously defined variables  */
   if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate entry list for %s %" PRId64
-                    " in file id %d",
-            ex_name_of_object(set_type), set_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to locate entry list for %s %" PRId64 " in file id %d",
+             ex_name_of_object(set_type), set_id, exoid);
     ex_err("ex_put_set", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -143,9 +142,9 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   if (extraptr) {
     if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to locate extra list for %s %" PRId64
-                      " in file id %d",
-              ex_name_of_object(set_type), set_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to locate extra list for %s %" PRId64 " in file id %d",
+               ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_put_set", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -163,9 +162,9 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
 
     if (status != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to store entry list for %s %" PRId64
-                      " in file id %d",
-              ex_name_of_object(set_type), set_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to store entry list for %s %" PRId64 " in file id %d",
+               ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_put_set", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -183,20 +182,19 @@ int ex_put_set(int exoid, ex_entity_type set_type, ex_entity_id set_id,
 
     if (status != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to store extra list for %s %" PRId64
-                      " in file id %d",
-              ex_name_of_object(set_type), set_id, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to store extra list for %s %" PRId64 " in file id %d",
+               ex_name_of_object(set_type), set_id, exoid);
       ex_err("ex_put_set", errmsg, exerrval);
       return (EX_FATAL);
     }
   }
 
   /* warn if extra data was sent in for node sets and elem sets */
-  if ((set_type == EX_NODE_SET || set_type == EX_ELEM_SET) &&
-      set_extra_list != NULL) {
-    sprintf(errmsg,
-            "Warning: extra list was ignored for %s %" PRId64 " in file id %d",
-            ex_name_of_object(set_type), set_id, exoid);
+  if ((set_type == EX_NODE_SET || set_type == EX_ELEM_SET) && set_extra_list != NULL) {
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Warning: extra list was ignored for %s %" PRId64 " in file id %d",
+             ex_name_of_object(set_type), set_id, exoid);
     ex_err("ex_put_set", errmsg, EX_MSG);
     return (EX_WARN);
   }

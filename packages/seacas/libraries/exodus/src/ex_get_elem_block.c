@@ -99,10 +99,9 @@ error = ex_get_attr (exoid, EX_ELEM_BLOCK, id, attrib);
  */
 
 int ex_get_elem_block(int exoid, ex_entity_id elem_blk_id, char *elem_type,
-                      void_int *num_elem_this_blk, void_int *num_nodes_per_elem,
-                      void_int *num_attr)
+                      void_int *num_elem_this_blk, void_int *num_nodes_per_elem, void_int *num_attr)
 
 {
-  return ex_get_block(exoid, EX_ELEM_BLOCK, elem_blk_id, elem_type,
-                      num_elem_this_blk, num_nodes_per_elem, 0, 0, num_attr);
+  return ex_get_block(exoid, EX_ELEM_BLOCK, elem_blk_id, elem_type, num_elem_this_blk,
+                      num_nodes_per_elem, 0, 0, num_attr);
 }

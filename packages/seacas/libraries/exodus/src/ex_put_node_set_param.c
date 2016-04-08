@@ -100,9 +100,8 @@ error = ex_put_set_dist_fact(exoid, EX_NODE_SET, id, dist_fact);
 \endcode
  */
 
-int ex_put_node_set_param(int exoid, ex_entity_id node_set_id,
-                          int64_t num_nodes_in_set, int64_t num_dist_in_set)
+int ex_put_node_set_param(int exoid, ex_entity_id node_set_id, int64_t num_nodes_in_set,
+                          int64_t num_dist_in_set)
 {
-  return ex_put_set_param(exoid, EX_NODE_SET, node_set_id, num_nodes_in_set,
-                          num_dist_in_set);
+  return ex_put_set_param(exoid, EX_NODE_SET, node_set_id, num_nodes_in_set, num_dist_in_set);
 }

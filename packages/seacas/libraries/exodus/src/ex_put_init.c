@@ -77,9 +77,8 @@ error = ex_put_init (exoid, "This is the title", num_dim,
 
 */
 
-int ex_put_init(int exoid, const char *title, int64_t num_dim,
-                int64_t num_nodes, int64_t num_elem, int64_t num_elem_blk,
-                int64_t num_node_sets, int64_t num_side_sets)
+int ex_put_init(int exoid, const char *title, int64_t num_dim, int64_t num_nodes, int64_t num_elem,
+                int64_t num_elem_blk, int64_t num_node_sets, int64_t num_side_sets)
 {
   ex_init_params par;
 

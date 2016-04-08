@@ -58,8 +58,7 @@
  * node_set_node_list, NULL)
  */
 
-int ex_get_node_set(int exoid, ex_entity_id node_set_id,
-                    void_int *node_set_node_list)
+int ex_get_node_set(int exoid, ex_entity_id node_set_id, void_int *node_set_node_list)
 {
   return ex_get_set(exoid, EX_NODE_SET, node_set_id, node_set_node_list, NULL);
 }

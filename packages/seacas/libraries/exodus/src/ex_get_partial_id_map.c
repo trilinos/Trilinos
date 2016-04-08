@@ -37,16 +37,15 @@
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_vara_int, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*
  * reads the id map
  */
 
-int ex_get_partial_id_map(int exoid, ex_entity_type map_type,
-                          int64_t start_entity_num, int64_t num_entities,
-                          void_int *map)
+int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_entity_num,
+                          int64_t num_entities, void_int *map)
 {
   int         dimid, mapid, status;
   size_t      i;
@@ -80,8 +79,8 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type,
     break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Bad map type (%d) specified for file id %d",
-            map_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad map type (%d) specified for file id %d", map_type,
+             exoid);
     ex_err("ex_get_partial_id_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -95,8 +94,8 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type,
   if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
     if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to get number of %ss in file id %d", tname,
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d", tname,
+               exoid);
       ex_err("ex_get_partial_id_map", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -131,8 +130,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get %s id map in file id %d", tname,
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s id map in file id %d", tname, exoid);
     ex_err("ex_get_partial_id_map", errmsg, exerrval);
     return (EX_FATAL);
   }

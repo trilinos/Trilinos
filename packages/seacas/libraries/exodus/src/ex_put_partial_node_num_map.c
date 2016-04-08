@@ -62,6 +62,5 @@
 int ex_put_partial_node_num_map(int exoid, int64_t start_ent, int64_t num_ents,
                                 const void_int *node_map)
 {
-  return ex_put_partial_id_map(exoid, EX_NODE_MAP, start_ent, num_ents,
-                               node_map);
+  return ex_put_partial_id_map(exoid, EX_NODE_MAP, start_ent, num_ents, node_map);
 }

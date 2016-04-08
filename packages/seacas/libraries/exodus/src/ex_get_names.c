@@ -53,7 +53,7 @@
 #include "exodusII_int.h" // for ex_get_dimension, EX_NOERR, etc
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*
  * reads the entity names from the database
@@ -74,18 +74,15 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
   switch (obj_type) {
   /*  ======== BLOCKS ========= */
   case EX_EDGE_BLOCK:
-    ex_get_dimension(exoid, DIM_NUM_ED_BLK, "edge block", &num_entity, &temp,
-                     routine);
+    ex_get_dimension(exoid, DIM_NUM_ED_BLK, "edge block", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_ED_BLK, &varid);
     break;
   case EX_FACE_BLOCK:
-    ex_get_dimension(exoid, DIM_NUM_FA_BLK, "face block", &num_entity, &temp,
-                     routine);
+    ex_get_dimension(exoid, DIM_NUM_FA_BLK, "face block", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_FA_BLK, &varid);
     break;
   case EX_ELEM_BLOCK:
-    ex_get_dimension(exoid, DIM_NUM_EL_BLK, "element block", &num_entity, &temp,
-                     routine);
+    ex_get_dimension(exoid, DIM_NUM_EL_BLK, "element block", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_EL_BLK, &varid);
     break;
 
@@ -107,45 +104,39 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
     status = nc_inq_varid(exoid, VAR_NAME_SS, &varid);
     break;
   case EX_ELEM_SET:
-    ex_get_dimension(exoid, DIM_NUM_ELS, "elemset", &num_entity, &temp,
-                     routine);
+    ex_get_dimension(exoid, DIM_NUM_ELS, "elemset", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_ELS, &varid);
     break;
 
   /*  ======== MAPS ========= */
   case EX_NODE_MAP:
-    ex_get_dimension(exoid, DIM_NUM_NM, "node map", &num_entity, &temp,
-                     routine);
+    ex_get_dimension(exoid, DIM_NUM_NM, "node map", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_NM, &varid);
     break;
   case EX_EDGE_MAP:
-    ex_get_dimension(exoid, DIM_NUM_EDM, "edge map", &num_entity, &temp,
-                     routine);
+    ex_get_dimension(exoid, DIM_NUM_EDM, "edge map", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_EDM, &varid);
     break;
   case EX_FACE_MAP:
-    ex_get_dimension(exoid, DIM_NUM_FAM, "face map", &num_entity, &temp,
-                     routine);
+    ex_get_dimension(exoid, DIM_NUM_FAM, "face map", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_FAM, &varid);
     break;
   case EX_ELEM_MAP:
-    ex_get_dimension(exoid, DIM_NUM_EM, "element map", &num_entity, &temp,
-                     routine);
+    ex_get_dimension(exoid, DIM_NUM_EM, "element map", &num_entity, &temp, routine);
     status = nc_inq_varid(exoid, VAR_NAME_EM, &varid);
     break;
 
   /* invalid variable type */
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Invalid type specified in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
     ex_err(routine, errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if (status == NC_NOERR) {
-    if ((status = ex_get_names_internal(exoid, varid, num_entity, names,
-                                        obj_type, "ex_get_names")) !=
-        EX_NOERR) {
+    if ((status = ex_get_names_internal(exoid, varid, num_entity, names, obj_type,
+                                        "ex_get_names")) != EX_NOERR) {
       return status;
     }
   }

@@ -60,9 +60,7 @@
  * side_set_dist_fact)
  */
 
-int ex_put_side_set_dist_fact(int exoid, ex_entity_id side_set_id,
-                              const void *side_set_dist_fact)
+int ex_put_side_set_dist_fact(int exoid, ex_entity_id side_set_id, const void *side_set_dist_fact)
 {
-  return ex_put_set_dist_fact(exoid, EX_SIDE_SET, side_set_id,
-                              side_set_dist_fact);
+  return ex_put_set_dist_fact(exoid, EX_SIDE_SET, side_set_id, side_set_dist_fact);
 }

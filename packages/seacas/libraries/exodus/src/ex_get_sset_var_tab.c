@@ -56,9 +56,7 @@
  * num_sset_var, sset_var_tab)
  */
 
-int ex_get_sset_var_tab(int exoid, int num_sidesets, int num_sset_var,
-                        int *sset_var_tab)
+int ex_get_sset_var_tab(int exoid, int num_sidesets, int num_sset_var, int *sset_var_tab)
 {
-  return ex_get_truth_table(exoid, EX_SIDE_SET, num_sidesets, num_sset_var,
-                            sset_var_tab);
+  return ex_get_truth_table(exoid, EX_SIDE_SET, num_sidesets, num_sset_var, sset_var_tab);
 }

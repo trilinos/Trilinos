@@ -36,7 +36,7 @@
 #include "exodusII.h"     // for exerrval, ex_err, etc
 #include "exodusII_int.h" // for EX_WARN, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
 The function ex_get_variable_names() reads the names of the results
@@ -91,8 +91,7 @@ error = ex_get_variable_names(exoid, EX_NODAL, num_nod_vars, var_names);
 
 */
 
-int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
-                          char *var_names[])
+int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char *var_names[])
 {
   int         varid, status;
   char        errmsg[MAX_ERR_LENGTH];
@@ -101,41 +100,20 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
   exerrval = 0; /* clear error code */
 
   switch (obj_type) {
-  case EX_NODAL:
-    vvarname = VAR_NAME_NOD_VAR;
-    break;
-  case EX_EDGE_BLOCK:
-    vvarname = VAR_NAME_EDG_VAR;
-    break;
-  case EX_FACE_BLOCK:
-    vvarname = VAR_NAME_FAC_VAR;
-    break;
-  case EX_ELEM_BLOCK:
-    vvarname = VAR_NAME_ELE_VAR;
-    break;
-  case EX_NODE_SET:
-    vvarname = VAR_NAME_NSET_VAR;
-    break;
-  case EX_EDGE_SET:
-    vvarname = VAR_NAME_ESET_VAR;
-    break;
-  case EX_FACE_SET:
-    vvarname = VAR_NAME_FSET_VAR;
-    break;
-  case EX_SIDE_SET:
-    vvarname = VAR_NAME_SSET_VAR;
-    break;
-  case EX_ELEM_SET:
-    vvarname = VAR_NAME_ELSET_VAR;
-    break;
-  case EX_GLOBAL:
-    vvarname = VAR_NAME_GLO_VAR;
-    break;
+  case EX_NODAL: vvarname      = VAR_NAME_NOD_VAR; break;
+  case EX_EDGE_BLOCK: vvarname = VAR_NAME_EDG_VAR; break;
+  case EX_FACE_BLOCK: vvarname = VAR_NAME_FAC_VAR; break;
+  case EX_ELEM_BLOCK: vvarname = VAR_NAME_ELE_VAR; break;
+  case EX_NODE_SET: vvarname   = VAR_NAME_NSET_VAR; break;
+  case EX_EDGE_SET: vvarname   = VAR_NAME_ESET_VAR; break;
+  case EX_FACE_SET: vvarname   = VAR_NAME_FSET_VAR; break;
+  case EX_SIDE_SET: vvarname   = VAR_NAME_SSET_VAR; break;
+  case EX_ELEM_SET: vvarname   = VAR_NAME_ELSET_VAR; break;
+  case EX_GLOBAL: vvarname     = VAR_NAME_GLO_VAR; break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg,
-            "Warning: invalid variable type %d requested from file id %d",
-            obj_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: invalid variable type %d requested from file id %d",
+             obj_type, exoid);
     ex_err("ex_get_variable_names", errmsg, exerrval);
     return (EX_WARN);
   }
@@ -143,15 +121,15 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
   /* inquire previously defined variables  */
   if ((status = nc_inq_varid(exoid, vvarname, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "Warning: no %s variables names stored in file id %d",
-            ex_name_of_object(obj_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s variables names stored in file id %d",
+             ex_name_of_object(obj_type), exoid);
     ex_err("ex_get_variable_names", errmsg, exerrval);
     return (EX_WARN);
   }
 
   /* read the variable names */
-  status = ex_get_names_internal(exoid, varid, num_vars, var_names, obj_type,
-                                 "ex_get_variable_names");
+  status =
+      ex_get_names_internal(exoid, varid, num_vars, var_names, obj_type, "ex_get_variable_names");
   if (status != NC_NOERR) {
     return (EX_FATAL);
   }

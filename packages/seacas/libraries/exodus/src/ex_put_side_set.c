@@ -62,10 +62,8 @@
  * side_set_elem_list, side_set_side_list)
  */
 
-int ex_put_side_set(int exoid, ex_entity_id side_set_id,
-                    const void_int *side_set_elem_list,
+int ex_put_side_set(int exoid, ex_entity_id side_set_id, const void_int *side_set_elem_list,
                     const void_int *side_set_side_list)
 {
-  return ex_put_set(exoid, EX_SIDE_SET, side_set_id, side_set_elem_list,
-                    side_set_side_list);
+  return ex_put_set(exoid, EX_SIDE_SET, side_set_id, side_set_elem_list, side_set_side_list);
 }

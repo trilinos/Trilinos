@@ -60,10 +60,8 @@
  * \deprecated Use ex_put_partial_elem_conn() instead.
  */
 
-int ex_put_n_elem_conn(int exoid, ex_entity_id elem_blk_id,
-                       int64_t start_elem_num, int64_t num_elems,
-                       const void_int *connect)
+int ex_put_n_elem_conn(int exoid, ex_entity_id elem_blk_id, int64_t start_elem_num,
+                       int64_t num_elems, const void_int *connect)
 {
-  return ex_put_partial_elem_conn(exoid, elem_blk_id, start_elem_num, num_elems,
-                                  connect);
+  return ex_put_partial_elem_conn(exoid, elem_blk_id, start_elem_num, num_elems, connect);
 }

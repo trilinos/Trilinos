@@ -55,7 +55,4 @@
  * \deprecated Use ex_get_ids()(exoid, EX_SIDE_SET, ids)
  */
 
-int ex_get_side_set_ids(int exoid, void_int *ids)
-{
-  return ex_get_ids(exoid, EX_SIDE_SET, ids);
-}
+int ex_get_side_set_ids(int exoid, void_int *ids) { return ex_get_ids(exoid, EX_SIDE_SET, ids); }

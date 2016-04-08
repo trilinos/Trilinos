@@ -120,9 +120,7 @@ error = ex_put_elem_var_tab(exoid, num_elem_blk, num_ele_vars,
 
 */
 
-int ex_put_elem_var_tab(int exoid, int num_elem_blk, int num_elem_var,
-                        int *elem_var_tab)
+int ex_put_elem_var_tab(int exoid, int num_elem_blk, int num_elem_var, int *elem_var_tab)
 {
-  return ex_put_truth_table(exoid, EX_ELEM_BLOCK, num_elem_blk, num_elem_var,
-                            elem_var_tab);
+  return ex_put_truth_table(exoid, EX_ELEM_BLOCK, num_elem_blk, num_elem_var, elem_var_tab);
 }

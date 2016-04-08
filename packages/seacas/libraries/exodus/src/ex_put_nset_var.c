@@ -72,10 +72,9 @@
 
  */
 
-int ex_put_nset_var(int exoid, int time_step, int nset_var_index,
-                    ex_entity_id nset_id, int64_t num_nodes_this_nset,
-                    const void *nset_var_vals)
+int ex_put_nset_var(int exoid, int time_step, int nset_var_index, ex_entity_id nset_id,
+                    int64_t num_nodes_this_nset, const void *nset_var_vals)
 {
-  return ex_put_var(exoid, time_step, EX_NODE_SET, nset_var_index, nset_id,
-                    num_nodes_this_nset, nset_var_vals);
+  return ex_put_var(exoid, time_step, EX_NODE_SET, nset_var_index, nset_id, num_nodes_this_nset,
+                    nset_var_vals);
 }

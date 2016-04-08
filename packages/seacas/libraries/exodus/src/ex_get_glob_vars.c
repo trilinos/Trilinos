@@ -54,7 +54,7 @@
 #include "exodusII_int.h" // for ex_comp_ws, EX_FATAL, etc
 #include "netcdf.h"       // for NC_NOERR, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*!
 \ingroup ResultsData
@@ -104,8 +104,7 @@ error = ex_get_glob_vars (idexo, time_step, num_glo_vars,
 \endverbatim
  */
 
-int ex_get_glob_vars(int exoid, int time_step, int num_glob_vars,
-                     void *glob_var_vals)
+int ex_get_glob_vars(int exoid, int time_step, int num_glob_vars, void *glob_var_vals)
 {
   int    varid;
   int    status;
@@ -117,8 +116,8 @@ int ex_get_glob_vars(int exoid, int time_step, int num_glob_vars,
   /* inquire previously defined variable */
   if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "Warning: failed to locate global variables in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: failed to locate global variables in file id %d",
+             exoid);
     ex_err("ex_get_glob_vars", errmsg, exerrval);
     return (EX_WARN);
   }
@@ -127,9 +126,9 @@ int ex_get_glob_vars(int exoid, int time_step, int num_glob_vars,
   {
     int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
     if (time_step <= 0 || time_step > num_time_steps) {
-      sprintf(errmsg, "ERROR: time_step is out-of-range. Value = %d, valid "
-                      "range is 1 to %d in file id %d",
-              time_step, num_time_steps, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: time_step is out-of-range. Value = %d, valid "
+                                       "range is 1 to %d in file id %d",
+               time_step, num_time_steps, exoid);
       ex_err("ex_get_glob_vars", errmsg, EX_BADPARAM);
       return (EX_FATAL);
     }
@@ -151,9 +150,8 @@ int ex_get_glob_vars(int exoid, int time_step, int num_glob_vars,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to get global variable values from file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get global variable values from file id %d",
+             exoid);
     ex_err("ex_get_glob_vars", errmsg, exerrval);
     return (EX_FATAL);
   }

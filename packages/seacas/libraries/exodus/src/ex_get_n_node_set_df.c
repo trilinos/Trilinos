@@ -43,7 +43,6 @@
 int ex_get_n_node_set_df(int exoid, ex_entity_id node_set_id, int64_t start_num,
                          int64_t num_df_to_get, void *node_set_dist_fact)
 {
-  return ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, node_set_id,
-                                      start_num, num_df_to_get,
+  return ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, node_set_id, start_num, num_df_to_get,
                                       node_set_dist_fact);
 }

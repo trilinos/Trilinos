@@ -64,9 +64,7 @@
 
  */
 
-int ex_put_one_elem_attr(int exoid, ex_entity_id elem_blk_id, int attrib_index,
-                         const void *attrib)
+int ex_put_one_elem_attr(int exoid, ex_entity_id elem_blk_id, int attrib_index, const void *attrib)
 {
-  return ex_put_one_attr(exoid, EX_ELEM_BLOCK, elem_blk_id, attrib_index,
-                         attrib);
+  return ex_put_one_attr(exoid, EX_ELEM_BLOCK, elem_blk_id, attrib_index, attrib);
 }

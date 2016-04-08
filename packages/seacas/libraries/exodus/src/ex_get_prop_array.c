@@ -55,8 +55,8 @@
 #include "exodusII.h"     // for exerrval, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_PROP_NAME, etc
 #include "netcdf.h"       // for NC_NOERR, nc_get_att_text, etc
-#include <stdio.h>        // for sprintf
-#include <string.h>       // for memset, strcmp
+#include <stdio.h>
+#include <string.h> // for memset, strcmp
 
 /*!
 
@@ -114,8 +114,7 @@ For an example of code to read an array of object properties, refer to
 the description for ex_get_prop_names().
 */
 
-int ex_get_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
-                      void_int *values)
+int ex_get_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name, void_int *values)
 {
   int   num_props, i, propid, status;
   int   found = EX_FALSE;
@@ -132,65 +131,39 @@ int ex_get_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
   for (i = 1; i <= num_props; i++) {
     switch (obj_type) {
-    case EX_ELEM_BLOCK:
-      name = VAR_EB_PROP(i);
-      break;
-    case EX_EDGE_BLOCK:
-      name = VAR_ED_PROP(i);
-      break;
-    case EX_FACE_BLOCK:
-      name = VAR_FA_PROP(i);
-      break;
-    case EX_NODE_SET:
-      name = VAR_NS_PROP(i);
-      break;
-    case EX_EDGE_SET:
-      name = VAR_ES_PROP(i);
-      break;
-    case EX_FACE_SET:
-      name = VAR_FS_PROP(i);
-      break;
-    case EX_ELEM_SET:
-      name = VAR_ELS_PROP(i);
-      break;
-    case EX_SIDE_SET:
-      name = VAR_SS_PROP(i);
-      break;
-    case EX_ELEM_MAP:
-      name = VAR_EM_PROP(i);
-      break;
-    case EX_FACE_MAP:
-      name = VAR_FAM_PROP(i);
-      break;
-    case EX_EDGE_MAP:
-      name = VAR_EDM_PROP(i);
-      break;
-    case EX_NODE_MAP:
-      name = VAR_NM_PROP(i);
-      break;
+    case EX_ELEM_BLOCK: name = VAR_EB_PROP(i); break;
+    case EX_EDGE_BLOCK: name = VAR_ED_PROP(i); break;
+    case EX_FACE_BLOCK: name = VAR_FA_PROP(i); break;
+    case EX_NODE_SET: name   = VAR_NS_PROP(i); break;
+    case EX_EDGE_SET: name   = VAR_ES_PROP(i); break;
+    case EX_FACE_SET: name   = VAR_FS_PROP(i); break;
+    case EX_ELEM_SET: name   = VAR_ELS_PROP(i); break;
+    case EX_SIDE_SET: name   = VAR_SS_PROP(i); break;
+    case EX_ELEM_MAP: name   = VAR_EM_PROP(i); break;
+    case EX_FACE_MAP: name   = VAR_FAM_PROP(i); break;
+    case EX_EDGE_MAP: name   = VAR_EDM_PROP(i); break;
+    case EX_NODE_MAP: name   = VAR_NM_PROP(i); break;
     default:
       exerrval = EX_BADPARAM;
-      sprintf(errmsg, "ERROR: object type %d not supported; file id %d",
-              obj_type, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d", obj_type,
+               exoid);
       ex_err("ex_get_prop_array", errmsg, exerrval);
       return (EX_FATAL);
     }
 
     if ((status = nc_inq_varid(exoid, name, &propid)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to locate property array %s in file id %d",
-              name, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate property array %s in file id %d",
+               name, exoid);
       ex_err("ex_get_prop_array", errmsg, exerrval);
       return (EX_FATAL);
     }
 
     /*   compare stored attribute name with passed property name   */
     memset(tmpstr, 0, MAX_STR_LENGTH + 1);
-    if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) !=
-        NC_NOERR) {
+    if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to get property name in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property name in file id %d", exoid);
       ex_err("ex_get_prop_array", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -204,9 +177,9 @@ int ex_get_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   /* if property is not found, return warning */
   if (!found) {
     exerrval = EX_BADPARAM;
-    sprintf(errmsg,
-            "Warning: object type %d, property %s not defined in file id %d",
-            obj_type, prop_name, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Warning: object type %d, property %s not defined in file id %d", obj_type, prop_name,
+             exoid);
     ex_err("ex_get_prop_array", errmsg, exerrval);
     return (EX_WARN);
   }
@@ -221,9 +194,9 @@ int ex_get_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to read values in %s property array in file id %d",
-            ex_name_of_object(obj_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to read values in %s property array in file id %d",
+             ex_name_of_object(obj_type), exoid);
     ex_err("ex_get_prop_array", errmsg, exerrval);
     return (EX_FATAL);
   }

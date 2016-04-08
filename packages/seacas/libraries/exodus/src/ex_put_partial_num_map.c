@@ -56,16 +56,15 @@
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <sys/types.h> // for int64_t
 
 /*!
  * writes a map; this is a vector of integers of length number of mesh
  * objects of that type (element, node, face, edge)
  */
-int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
-                           ex_entity_id map_id, int64_t ent_start,
-                           int64_t ent_count, const void_int *map)
+int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id,
+                           int64_t ent_start, int64_t ent_count, const void_int *map)
 {
   int         status;
   int         dimid, varid, map_ndx, map_exists;
@@ -103,8 +102,8 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
     break;
   default:
     exerrval = EX_BADPARAM;
-    sprintf(errmsg, "ERROR: Bad map type (%d) specified for file id %d",
-            map_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad map type (%d) specified for file id %d", map_type,
+             exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -117,8 +116,8 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
   /* first check if any maps are specified */
   if ((status = nc_inq_dimid(exoid, dnummaps, &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: no %ss specified in file id %d",
-            ex_name_of_object(map_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss specified in file id %d",
+             ex_name_of_object(map_type), exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -137,8 +136,8 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
     /* Get number of maps initialized for this file */
     if ((status = nc_inq_dimlen(exoid, dimid, &num_maps)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to get number of %ss in file id %d",
-              ex_name_of_object(map_type), exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d",
+               ex_name_of_object(map_type), exoid);
       ex_err("ex_put_partial_num_map", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -151,9 +150,9 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
     cur_num_maps = ex_get_file_item(exoid, ex_get_counter_list(map_type));
     if (cur_num_maps >= (int)num_maps) {
       exerrval = EX_FATAL;
-      sprintf(errmsg, "ERROR: exceeded number of %ss (%" ST_ZU
-                      ") specified in file id %d",
-              ex_name_of_object(map_type), num_maps, exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: exceeded number of %ss (%" ST_ZU ") specified in file id %d",
+               ex_name_of_object(map_type), num_maps, exoid);
       ex_err("ex_put_partial_num_map", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -170,17 +169,16 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
   /* determine number of elements */
   if ((status = nc_inq_dimid(exoid, dnumentries, &dimid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: couldn't determine number of mesh objects in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: couldn't determine number of mesh objects in file id %d", exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &num_mobj)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to get number of mesh objects in file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of mesh objects in file id %d",
+             exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -188,22 +186,20 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
   /* Check input parameters for a valid range of numbers */
   if (ent_start <= 0 || ent_start > num_mobj) {
     exerrval = EX_FATAL;
-    sprintf(errmsg, "ERROR: start count is invalid in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: start count is invalid in file id %d", exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
   if (ent_count < 0) {
     exerrval = EX_FATAL;
-    sprintf(errmsg, "ERROR: Invalid count value in file id %d", exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid count value in file id %d", exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
   if (ent_start + ent_count - 1 > num_mobj) {
     exerrval = EX_FATAL;
-    sprintf(
-        errmsg,
-        "ERROR: start+count-1 is larger than mesh object count in file id %d",
-        exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: start+count-1 is larger than mesh object count in file id %d", exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -213,8 +209,8 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
   /* first get id of variable */
   if ((status = nc_inq_varid(exoid, vmapids, &varid)) == -1) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate %s ids in file id %d",
-            ex_name_of_object(map_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids in file id %d",
+             ex_name_of_object(map_type), exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -223,12 +219,10 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
   if (!map_exists) {
     start[0] = cur_num_maps;
     {
-      if ((status = nc_put_var1_longlong(exoid, varid, start,
-                                         (long long *)&map_id)) != NC_NOERR) {
+      if ((status = nc_put_var1_longlong(exoid, varid, start, (long long *)&map_id)) != NC_NOERR) {
         exerrval = status;
-        sprintf(errmsg,
-                "ERROR: failed to store %s id %" PRId64 " in file id %d",
-                ex_name_of_object(map_type), map_id, exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s id %" PRId64 " in file id %d",
+                 ex_name_of_object(map_type), map_id, exoid);
         ex_err("ex_put_partial_num_map", errmsg, exerrval);
         return (EX_FATAL);
       }
@@ -236,23 +230,14 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
   }
 
   switch (map_type) {
-  case EX_NODE_MAP:
-    vmap = VAR_NODE_MAP(cur_num_maps + 1);
-    break;
-  case EX_EDGE_MAP:
-    vmap = VAR_EDGE_MAP(cur_num_maps + 1);
-    break;
-  case EX_FACE_MAP:
-    vmap = VAR_FACE_MAP(cur_num_maps + 1);
-    break;
-  case EX_ELEM_MAP:
-    vmap = VAR_ELEM_MAP(cur_num_maps + 1);
-    break;
+  case EX_NODE_MAP: vmap = VAR_NODE_MAP(cur_num_maps + 1); break;
+  case EX_EDGE_MAP: vmap = VAR_EDGE_MAP(cur_num_maps + 1); break;
+  case EX_FACE_MAP: vmap = VAR_FACE_MAP(cur_num_maps + 1); break;
+  case EX_ELEM_MAP: vmap = VAR_ELEM_MAP(cur_num_maps + 1); break;
   default:
     exerrval = 1005;
-    sprintf(errmsg,
-            "Internal ERROR: unrecognized map type in switch: %d in file id %d",
-            map_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Internal ERROR: unrecognized map type in switch: %d in file id %d", map_type, exoid);
     ex_err("ex_put_partial_num_map", errmsg, EX_MSG);
     return (EX_FATAL);
   }
@@ -260,8 +245,8 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
   /* locate variable array in which to store the map */
   if ((status = nc_inq_varid(exoid, vmap, &varid)) != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to locate %s %" PRId64 " in file id %d",
-            ex_name_of_object(map_type), map_id, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s %" PRId64 " in file id %d",
+             ex_name_of_object(map_type), map_id, exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -283,8 +268,8 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg, "ERROR: failed to store %s in file id %d",
-            ex_name_of_object(map_type), exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s in file id %d",
+             ex_name_of_object(map_type), exoid);
     ex_err("ex_put_partial_num_map", errmsg, exerrval);
     return (EX_FATAL);
   }

@@ -38,9 +38,9 @@
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
-#include <stdlib.h>       // for free, malloc
-#include <sys/types.h>    // for int64_t
+#include <stdio.h>
+#include <stdlib.h>    // for free, malloc
+#include <sys/types.h> // for int64_t
 
 /*!
  * writes the values of a single variable for a partial block at one time
@@ -56,9 +56,9 @@
  * \param      var_vals        the values to be written
  */
 
-int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type,
-                       int var_index, ex_entity_id obj_id, int64_t start_index,
-                       int64_t num_entities, const void *var_vals)
+int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
+                       ex_entity_id obj_id, int64_t start_index, int64_t num_entities,
+                       const void *var_vals)
 {
   int    varid, dimid, time_dim, numobjdim, dims[2], obj_id_ndx;
   size_t num_obj;
@@ -71,144 +71,133 @@ int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type,
 
   exerrval = 0; /* clear error code */
 
-#define EX_LOOK_UP_VAR(VOBJID, VVAR, VOBJTAB, DNUMOBJ, DNUMOBJVAR)             \
-  /* Determine index of obj_id in VOBJID array */                              \
-  obj_id_ndx = ex_id_lkup(exoid, var_type, obj_id);                            \
-  if (exerrval != 0) {                                                         \
-    if (exerrval == EX_NULLENTITY) {                                           \
-      sprintf(errmsg, "Warning: no variables allowed for NULL block %" PRId64  \
-                      " in file id %d",                                        \
-              obj_id, exoid);                                                  \
-      ex_err("ex_put_partial_var", errmsg, EX_NULLENTITY);                     \
-      return (EX_WARN);                                                        \
-    }                                                                          \
-    else {                                                                     \
-      sprintf(errmsg, "ERROR: failed to locate %s id %" PRId64                 \
-                      " in %s array in file id %d",                            \
-              ex_name_of_object(var_type), obj_id, VOBJID, exoid);             \
-      ex_err("ex_put_partial_var", errmsg, exerrval);                          \
-      return (EX_FATAL);                                                       \
-    }                                                                          \
-  }                                                                            \
-                                                                               \
-  if ((status = nc_inq_varid(exoid, VVAR(var_index, obj_id_ndx), &varid)) !=   \
-      NC_NOERR) {                                                              \
-    if (status == NC_ENOTVAR) /* variable doesn't exist, create it! */         \
-    {                                                                          \
-      /* check for the existance of an TNAME variable truth table */           \
-      if (nc_inq_varid(exoid, VOBJTAB, &varid) == NC_NOERR) {                  \
-        /* find out number of TNAMEs and TNAME variables */                    \
-        status = ex_get_dimension(exoid, DNUMOBJ, ex_name_of_object(var_type), \
-                                  &num_obj, &dimid, "ex_put_partial_var");     \
-        if (status != NC_NOERR)                                                \
-          return status;                                                       \
-                                                                               \
-        status =                                                               \
-            ex_get_dimension(exoid, DNUMOBJVAR, ex_name_of_object(var_type),   \
-                             &num_obj_var, &dimid, "ex_put_partial_var");      \
-        if (status != NC_NOERR)                                                \
-          return status;                                                       \
-                                                                               \
-        if (!(obj_var_truth_tab =                                              \
-                  malloc(num_obj * num_obj_var * sizeof(int)))) {              \
-          exerrval = EX_MEMFAIL;                                               \
-          sprintf(errmsg, "ERROR: failed to allocate memory for %s variable "  \
-                          "truth table in file id %d",                         \
-                  ex_name_of_object(var_type), exoid);                         \
-          ex_err("ex_put_partial_var", errmsg, exerrval);                      \
-          return (EX_FATAL);                                                   \
-        }                                                                      \
-                                                                               \
-        /*   read in the TNAME variable truth table */                         \
-        if ((status = nc_get_var_int(exoid, varid, obj_var_truth_tab)) !=      \
-            NC_NOERR) {                                                        \
-          exerrval = status;                                                   \
-          sprintf(errmsg, "ERROR: failed to get truth table from file id %d",  \
-                  exoid);                                                      \
-          ex_err("ex_put_partial_var", errmsg, exerrval);                      \
-          return (EX_FATAL);                                                   \
-        }                                                                      \
-                                                                               \
-        if (obj_var_truth_tab[num_obj_var * (obj_id_ndx - 1) + var_index -     \
-                              1] == 0L) {                                      \
-          free(obj_var_truth_tab);                                             \
-          exerrval = EX_BADPARAM;                                              \
-          sprintf(errmsg, "ERROR: Invalid %s variable %d, %s %" PRId64         \
-                          " in file id %d",                                    \
-                  ex_name_of_object(var_type), var_index,                      \
-                  ex_name_of_object(var_type), obj_id, exoid);                 \
-          ex_err("ex_put_partial_var", errmsg, exerrval);                      \
-          return (EX_FATAL);                                                   \
-        }                                                                      \
-        free(obj_var_truth_tab);                                               \
-      }                                                                        \
-                                                                               \
-      if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {   \
-        exerrval = status;                                                     \
-        sprintf(errmsg,                                                        \
-                "ERROR: failed to locate time dimension in file id %d",        \
-                exoid);                                                        \
-        ex_err("ex_put_partial_var", errmsg, exerrval);                        \
-        goto error_ret; /* exit define mode and return */                      \
-      }                                                                        \
-                                                                               \
-      ex_get_dimension(exoid,                                                  \
-                       ex_dim_num_entries_in_object(var_type, obj_id_ndx),     \
-                       ex_name_of_object(var_type), &num_entity, &numobjdim,   \
-                       "ex_put_partial_var");                                  \
-                                                                               \
-      /*    variable doesn't exist so put file into define mode  */            \
-      if ((status = nc_redef(exoid)) != NC_NOERR) {                            \
-        exerrval = status;                                                     \
-        sprintf(errmsg, "ERROR: failed to put file id %d into define mode",    \
-                exoid);                                                        \
-        ex_err("ex_put_partial_var", errmsg, exerrval);                        \
-        return (EX_FATAL);                                                     \
-      }                                                                        \
-                                                                               \
-      /* define netCDF variable to store TNAME variable values */              \
-      dims[0] = time_dim;                                                      \
-      dims[1] = numobjdim;                                                     \
-      if ((status = nc_def_var(exoid, VVAR(var_index, obj_id_ndx),             \
-                               nc_flt_code(exoid), 2, dims, &varid)) !=        \
-          NC_NOERR) {                                                          \
-        exerrval = status;                                                     \
-        sprintf(errmsg,                                                        \
-                "ERROR: failed to define %s variable %d in file id %d",        \
-                ex_name_of_object(var_type), var_index, exoid);                \
-        ex_err("ex_put_partial_var", errmsg, exerrval);                        \
-        goto error_ret;                                                        \
-      }                                                                        \
-      ex_compress_variable(exoid, varid, 2);                                   \
-                                                                               \
-      /*    leave define mode  */                                              \
-                                                                               \
-      if ((status = nc_enddef(exoid)) != NC_NOERR) {                           \
-        exerrval = status;                                                     \
-        sprintf(errmsg, "ERROR: failed to complete %s variable %s definition " \
-                        "to file id %d",                                       \
-                ex_name_of_object(var_type), VVAR(var_index, obj_id_ndx),      \
-                exoid);                                                        \
-        ex_err("ex_put_partial_var", errmsg, exerrval);                        \
-        return (EX_FATAL);                                                     \
-      }                                                                        \
-    }                                                                          \
-    else {                                                                     \
-      exerrval = status;                                                       \
-      sprintf(errmsg, "ERROR: failed to locate %s variable %s in file id %d",  \
-              ex_name_of_object(var_type), VVAR(var_index, obj_id_ndx),        \
-              exoid);                                                          \
-      ex_err("ex_put_partial_var", errmsg, exerrval);                          \
-      return (EX_FATAL);                                                       \
-    }                                                                          \
+#define EX_LOOK_UP_VAR(VOBJID, VVAR, VOBJTAB, DNUMOBJ, DNUMOBJVAR)                                 \
+  /* Determine index of obj_id in VOBJID array */                                                  \
+  obj_id_ndx = ex_id_lkup(exoid, var_type, obj_id);                                                \
+  if (exerrval != 0) {                                                                             \
+    if (exerrval == EX_NULLENTITY) {                                                               \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "Warning: no variables allowed for NULL block %" PRId64 " in file id %d", obj_id,   \
+               exoid);                                                                             \
+      ex_err("ex_put_partial_var", errmsg, EX_NULLENTITY);                                         \
+      return (EX_WARN);                                                                            \
+    }                                                                                              \
+    else {                                                                                         \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR: failed to locate %s id %" PRId64 " in %s array in file id %d",              \
+               ex_name_of_object(var_type), obj_id, VOBJID, exoid);                                \
+      ex_err("ex_put_partial_var", errmsg, exerrval);                                              \
+      return (EX_FATAL);                                                                           \
+    }                                                                                              \
+  }                                                                                                \
+                                                                                                   \
+  if ((status = nc_inq_varid(exoid, VVAR(var_index, obj_id_ndx), &varid)) != NC_NOERR) {           \
+    if (status == NC_ENOTVAR) /* variable doesn't exist, create it! */                             \
+    {                                                                                              \
+      /* check for the existance of an TNAME variable truth table */                               \
+      if (nc_inq_varid(exoid, VOBJTAB, &varid) == NC_NOERR) {                                      \
+        /* find out number of TNAMEs and TNAME variables */                                        \
+        status = ex_get_dimension(exoid, DNUMOBJ, ex_name_of_object(var_type), &num_obj, &dimid,   \
+                                  "ex_put_partial_var");                                           \
+        if (status != NC_NOERR)                                                                    \
+          return status;                                                                           \
+                                                                                                   \
+        status = ex_get_dimension(exoid, DNUMOBJVAR, ex_name_of_object(var_type), &num_obj_var,    \
+                                  &dimid, "ex_put_partial_var");                                   \
+        if (status != NC_NOERR)                                                                    \
+          return status;                                                                           \
+                                                                                                   \
+        if (!(obj_var_truth_tab = malloc(num_obj * num_obj_var * sizeof(int)))) {                  \
+          exerrval = EX_MEMFAIL;                                                                   \
+          snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate memory for %s variable "     \
+                                           "truth table in file id %d",                            \
+                   ex_name_of_object(var_type), exoid);                                            \
+          ex_err("ex_put_partial_var", errmsg, exerrval);                                          \
+          return (EX_FATAL);                                                                       \
+        }                                                                                          \
+                                                                                                   \
+        /*   read in the TNAME variable truth table */                                             \
+        if ((status = nc_get_var_int(exoid, varid, obj_var_truth_tab)) != NC_NOERR) {              \
+          exerrval = status;                                                                       \
+          snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get truth table from file id %d",     \
+                   exoid);                                                                         \
+          ex_err("ex_put_partial_var", errmsg, exerrval);                                          \
+          return (EX_FATAL);                                                                       \
+        }                                                                                          \
+                                                                                                   \
+        if (obj_var_truth_tab[num_obj_var * (obj_id_ndx - 1) + var_index - 1] == 0L) {             \
+          free(obj_var_truth_tab);                                                                 \
+          exerrval = EX_BADPARAM;                                                                  \
+          snprintf(errmsg, MAX_ERR_LENGTH,                                                         \
+                   "ERROR: Invalid %s variable %d, %s %" PRId64 " in file id %d",                  \
+                   ex_name_of_object(var_type), var_index, ex_name_of_object(var_type), obj_id,    \
+                   exoid);                                                                         \
+          ex_err("ex_put_partial_var", errmsg, exerrval);                                          \
+          return (EX_FATAL);                                                                       \
+        }                                                                                          \
+        free(obj_var_truth_tab);                                                                   \
+      }                                                                                            \
+                                                                                                   \
+      if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {                       \
+        exerrval = status;                                                                         \
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d",   \
+                 exoid);                                                                           \
+        ex_err("ex_put_partial_var", errmsg, exerrval);                                            \
+        goto error_ret; /* exit define mode and return */                                          \
+      }                                                                                            \
+                                                                                                   \
+      ex_get_dimension(exoid, ex_dim_num_entries_in_object(var_type, obj_id_ndx),                  \
+                       ex_name_of_object(var_type), &num_entity, &numobjdim,                       \
+                       "ex_put_partial_var");                                                      \
+                                                                                                   \
+      /*    variable doesn't exist so put file into define mode  */                                \
+      if ((status = nc_redef(exoid)) != NC_NOERR) {                                                \
+        exerrval = status;                                                                         \
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode",       \
+                 exoid);                                                                           \
+        ex_err("ex_put_partial_var", errmsg, exerrval);                                            \
+        return (EX_FATAL);                                                                         \
+      }                                                                                            \
+                                                                                                   \
+      /* define netCDF variable to store TNAME variable values */                                  \
+      dims[0] = time_dim;                                                                          \
+      dims[1] = numobjdim;                                                                         \
+      if ((status = nc_def_var(exoid, VVAR(var_index, obj_id_ndx), nc_flt_code(exoid), 2, dims,    \
+                               &varid)) != NC_NOERR) {                                             \
+        exerrval = status;                                                                         \
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s variable %d in file id %d",   \
+                 ex_name_of_object(var_type), var_index, exoid);                                   \
+        ex_err("ex_put_partial_var", errmsg, exerrval);                                            \
+        goto error_ret;                                                                            \
+      }                                                                                            \
+      ex_compress_variable(exoid, varid, 2);                                                       \
+                                                                                                   \
+      /*    leave define mode  */                                                                  \
+                                                                                                   \
+      if ((status = nc_enddef(exoid)) != NC_NOERR) {                                               \
+        exerrval = status;                                                                         \
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete %s variable %s definition "    \
+                                         "to file id %d",                                          \
+                 ex_name_of_object(var_type), VVAR(var_index, obj_id_ndx), exoid);                 \
+        ex_err("ex_put_partial_var", errmsg, exerrval);                                            \
+        return (EX_FATAL);                                                                         \
+      }                                                                                            \
+    }                                                                                              \
+    else {                                                                                         \
+      exerrval = status;                                                                           \
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s variable %s in file id %d",     \
+               ex_name_of_object(var_type), VVAR(var_index, obj_id_ndx), exoid);                   \
+      ex_err("ex_put_partial_var", errmsg, exerrval);                                              \
+      return (EX_FATAL);                                                                           \
+    }                                                                                              \
   }
 
   switch (var_type) {
   case EX_GLOBAL:
     if (num_entities <= 0) {
       exerrval = EX_MSG;
-      sprintf(errmsg, "Warning: no global variables specified for file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no global variables specified for file id %d",
+               exoid);
       ex_err("ex_put_partial_var", errmsg, exerrval);
 
       return (EX_WARN);
@@ -218,62 +207,50 @@ int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type,
     if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
       if (status == NC_ENOTVAR) {
         exerrval = status;
-        sprintf(errmsg, "ERROR: no global variables defined in file id %d",
-                exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no global variables defined in file id %d", exoid);
         ex_err("ex_put_partial_var", errmsg, exerrval);
       }
       else {
         exerrval = status;
-        sprintf(
-            errmsg,
-            "ERROR: failed to get global variables parameters in file id %d",
-            exoid);
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to get global variables parameters in file id %d", exoid);
         ex_err("ex_put_partial_var", errmsg, exerrval);
       }
       return (EX_FATAL);
     }
     break;
   case EX_NODAL:
-    return ex_put_partial_nodal_var(exoid, time_step, var_index, start_index,
-                                    num_entities, var_vals);
+    return ex_put_partial_nodal_var(exoid, time_step, var_index, start_index, num_entities,
+                                    var_vals);
     break;
   case EX_EDGE_BLOCK:
-    EX_LOOK_UP_VAR(VAR_ID_ED_BLK, VAR_EDGE_VAR, VAR_EBLK_TAB, DIM_NUM_ED_BLK,
-                   DIM_NUM_EDG_VAR);
+    EX_LOOK_UP_VAR(VAR_ID_ED_BLK, VAR_EDGE_VAR, VAR_EBLK_TAB, DIM_NUM_ED_BLK, DIM_NUM_EDG_VAR);
     break;
   case EX_FACE_BLOCK:
-    EX_LOOK_UP_VAR(VAR_ID_FA_BLK, VAR_FACE_VAR, VAR_FBLK_TAB, DIM_NUM_FA_BLK,
-                   DIM_NUM_FAC_VAR);
+    EX_LOOK_UP_VAR(VAR_ID_FA_BLK, VAR_FACE_VAR, VAR_FBLK_TAB, DIM_NUM_FA_BLK, DIM_NUM_FAC_VAR);
     break;
   case EX_ELEM_BLOCK:
-    EX_LOOK_UP_VAR(VAR_ID_EL_BLK, VAR_ELEM_VAR, VAR_ELEM_TAB, DIM_NUM_EL_BLK,
-                   DIM_NUM_ELE_VAR);
+    EX_LOOK_UP_VAR(VAR_ID_EL_BLK, VAR_ELEM_VAR, VAR_ELEM_TAB, DIM_NUM_EL_BLK, DIM_NUM_ELE_VAR);
     break;
   case EX_NODE_SET:
-    EX_LOOK_UP_VAR(VAR_NS_IDS, VAR_NS_VAR, VAR_NSET_TAB, DIM_NUM_NS,
-                   DIM_NUM_NSET_VAR);
+    EX_LOOK_UP_VAR(VAR_NS_IDS, VAR_NS_VAR, VAR_NSET_TAB, DIM_NUM_NS, DIM_NUM_NSET_VAR);
     break;
   case EX_EDGE_SET:
-    EX_LOOK_UP_VAR(VAR_ES_IDS, VAR_ES_VAR, VAR_ESET_TAB, DIM_NUM_ES,
-                   DIM_NUM_ESET_VAR);
+    EX_LOOK_UP_VAR(VAR_ES_IDS, VAR_ES_VAR, VAR_ESET_TAB, DIM_NUM_ES, DIM_NUM_ESET_VAR);
     break;
   case EX_FACE_SET:
-    EX_LOOK_UP_VAR(VAR_FS_IDS, VAR_FS_VAR, VAR_FSET_TAB, DIM_NUM_FS,
-                   DIM_NUM_FSET_VAR);
+    EX_LOOK_UP_VAR(VAR_FS_IDS, VAR_FS_VAR, VAR_FSET_TAB, DIM_NUM_FS, DIM_NUM_FSET_VAR);
     break;
   case EX_SIDE_SET:
-    EX_LOOK_UP_VAR(VAR_SS_IDS, VAR_SS_VAR, VAR_SSET_TAB, DIM_NUM_SS,
-                   DIM_NUM_SSET_VAR);
+    EX_LOOK_UP_VAR(VAR_SS_IDS, VAR_SS_VAR, VAR_SSET_TAB, DIM_NUM_SS, DIM_NUM_SSET_VAR);
     break;
   case EX_ELEM_SET:
-    EX_LOOK_UP_VAR(VAR_ELS_IDS, VAR_ELS_VAR, VAR_ELSET_TAB, DIM_NUM_ELS,
-                   DIM_NUM_ELSET_VAR);
+    EX_LOOK_UP_VAR(VAR_ELS_IDS, VAR_ELS_VAR, VAR_ELSET_TAB, DIM_NUM_ELS, DIM_NUM_ELSET_VAR);
     break;
   default:
     exerrval = EX_MSG;
-    sprintf(errmsg,
-            "ERROR: invalid variable type (%d) specified for file id %d",
-            var_type, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid variable type (%d) specified for file id %d",
+             var_type, exoid);
     ex_err("ex_put_partial_var", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -307,9 +284,9 @@ int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type,
 
   if (status != NC_NOERR) {
     exerrval = status;
-    sprintf(errmsg,
-            "ERROR: failed to store %s %" PRId64 " variable %d in file id %d",
-            ex_name_of_object(var_type), obj_id, var_index, exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to store %s %" PRId64 " variable %d in file id %d",
+             ex_name_of_object(var_type), obj_id, var_index, exoid);
     ex_err("ex_put_partial_var", errmsg, exerrval);
     return (EX_FATAL);
   }
@@ -320,8 +297,7 @@ int ex_put_partial_var(int exoid, int time_step, ex_entity_type var_type,
 error_ret:
   if (nc_enddef(exoid) != NC_NOERR) /* exit define mode */
   {
-    sprintf(errmsg, "ERROR: failed to complete definition for file id %d",
-            exoid);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
     ex_err("ex_put_partial_var", errmsg, exerrval);
   }
   return (EX_FATAL);

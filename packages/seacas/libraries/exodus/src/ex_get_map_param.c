@@ -52,7 +52,7 @@
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_EM, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <stddef.h>       // for size_t
-#include <stdio.h>        // for sprintf
+#include <stdio.h>
 
 /*
  * reads the number of node and element maps
@@ -74,8 +74,8 @@ int ex_get_map_param(int exoid, int *num_node_maps, int *num_elem_maps)
   else {
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_node_maps)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg, "ERROR: failed to get number of node maps in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of node maps in file id %d",
+               exoid);
       ex_err("ex_get_map_param", errmsg, exerrval);
       return (EX_FATAL);
     }
@@ -89,9 +89,8 @@ int ex_get_map_param(int exoid, int *num_node_maps, int *num_elem_maps)
   else {
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_elem_maps)) != NC_NOERR) {
       exerrval = status;
-      sprintf(errmsg,
-              "ERROR: failed to get number of element maps in file id %d",
-              exoid);
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of element maps in file id %d",
+               exoid);
       ex_err("ex_get_map_param", errmsg, exerrval);
       return (EX_FATAL);
     }
