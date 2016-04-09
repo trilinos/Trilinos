@@ -440,25 +440,36 @@ namespace Tpetra {
     //! @name Constructors and destructor
     //@{
 
-    /** \brief Constructor with Tpetra-defined contiguous uniform distribution.
+    /** \brief Constructor with contiguous uniform distribution.
      *
-     * This constructor produces a Map with the following contiguous
-     * range of <tt>numGlobalElements</tt> elements: <tt>indexBase,
-     * indexBase + 1, ..., numGlobalElements + indexBase - 1</tt>.
-     * Depending on the \c lg argument, the elements will either be
+     * Build a Map representing the following contiguous range of
+     * <tt>numGlobalElements</tt> indices:
+     * \code
+     * [indexBase,
+     *  indexBase + 1, ...,
+     *  numGlobalElements + indexBase - 1]
+     * \endcode
+     * For example, if \c indexBase is 0 and \c numGlobalElements is
+     * N and positive, the resulting contiguous range is [0, N-1].
+     *
+     * The \c lg argument determines whether the indices will be
      * distributed evenly over all the processes in the given
      * communicator \c comm, or replicated on all processes in the
-     * communicator.
+     * communicator.  "Distributed evenly" (the default) means that
+     * each process gets a contiguous range of either
+     * numGlobalElements / P or (numGlobalElements / P) + 1 indices.
+     * The resulting Map is nonoverlapping.  "Replicated" means that
+     * every process shares the range [0, N-1]; the resulting Map is
+     * an overlapping Map.
      *
-     * Preconditions on \c numGlobalElements and \c indexBase will
-     * only be checked in a debug build (when Trilinos was configured
-     * with CMake option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
-     * checks are enabled and any check fails, the constructor will
-     * throw std::invalid_argument on all processes in the given
-     * communicator.
+     * This constructor must be called as a collective over the input
+     * communicator.  It reserves the right to use MPI collectives to
+     * check input values in a debug build.  If it does check and any
+     * check fails, it will throw std::invalid_argument on all
+     * processes in the given communicator.
      *
-     * \param numGlobalElements [in] Number of elements in the Map
-     *   (over all processes).
+     * \param numGlobalElements [in] Global number of indices in the
+     *   Map (over all processes).
      *
      * \param indexBase [in] The base of the global indices in the
      *   Map.  This must be the same on every process in the
@@ -471,15 +482,15 @@ namespace Tpetra {
      *   and the communicator contains P processes, then each process
      *   will own either <tt>numGlobalElements/P</tt> or
      *   <tt>numGlobalElements/P + 1</tt> nonoverlapping contiguous
-     *   elements.  If <tt>LocallyReplicated</tt>, then all processes
-     *   will get the same set of elements, namely <tt>indexBase,
+     *   indices.  If <tt>LocallyReplicated</tt>, then all processes
+     *   will get the same set of indices, namely <tt>indexBase,
      *   indexBase + 1, ..., numGlobalElements + indexBase - 1</tt>.
      *
      * \param comm [in] Communicator over which to distribute the
-     *   elements.
+     *   indices.
      *
-     * \param node [in/out] Kokkos Node instance.  The type of this
-     *   object must match the type of the Node template parameter.
+     * \param node [in/out] (OPTIONAL; default usually suffices)
+     *   Kokkos Node instance.
      */
     Map (global_size_t numGlobalElements,
          GlobalOrdinal indexBase,
@@ -487,32 +498,31 @@ namespace Tpetra {
          LocalGlobal lg=GloballyDistributed,
          const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
-    /** \brief Constructor with a user-defined contiguous distribution.
+    /** \brief Constructor with contiguous, possibly nonuniform
+     *    distribution.
      *
      * If N is the sum of \c numLocalElements over all processes, then
-     * this constructor produces a nonoverlapping Map with N elements
-     * distributed over all the processes in the given communicator
-     * <tt>comm</tt>, with either \c numLocalElements or
-     * <tt>numLocalElements+1</tt> contiguous elements on the calling
+     * this constructor produces a nonoverlapping Map with N indices
+     * in the global contiguous range [0, N-1], distributed over all
+     * the processes in the given communicator \c comm, with a
+     * contiguous range of \c numLocalElements indices on the calling
      * process.
      *
-     * Preconditions on \c numGlobalElements, \c numLocalElements, and
-     * \c indexBase will only be checked in a debug build (when
-     * Trilinos was configured with CMake option
-     * <tt>TEUCHOS_ENABLE_DEBUG:BOOL=ON</tt>).  If checks are enabled
-     * and any check fails, the constructor will throw
-     * std::invalid_argument on all processes in the given
-     * communicator.
+     * This constructor must be called as a collective over the input
+     * communicator.  It reserves the right to use MPI collectives to
+     * check input values in a debug build.  If it does check and any
+     * check fails, it will throw std::invalid_argument on all
+     * processes in the given communicator.
      *
-     * \param numGlobalElements [in] If <tt>numGlobalElements ==
-     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
-     *   then the number of global elements will be computed (via a
-     *   global communication) as the sum of numLocalElements over all
-     *   processes.  Otherwise, it must equal the sum of
-     *   numLocalElements over all processes.
+     * \param numGlobalElements [in] If you want Tpetra to compute the
+     *   global number of indices in the Map, set this to
+     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid().
+     *   This costs a global all-reduce.  Otherwise, this must equal
+     *   the sum of numLocalElements over all processes in the input
+     *   communicator \c comm.
      *
-     * \param numLocalElements [in] Number of elements that the
-     *   calling process will own in the Map.
+     * \param numLocalElements [in] Number of indices that the calling
+     *   process will own in the Map.
      *
      * \param indexBase [in] The base of the global indices in the
      *   Map.  This must be the same on every process in the given
@@ -523,8 +533,8 @@ namespace Tpetra {
      * \param comm [in] Communicator over which to distribute the
      *   elements.
      *
-     * \param node [in/out] Kokkos Node instance.  The type of this
-     *   object must match the type of the Node template parameter.
+     * \param node [in/out] (OPTIONAL; default usually suffices)
+     *   Kokkos Node instance.
      */
     Map (global_size_t numGlobalElements,
          size_t numLocalElements,
@@ -532,25 +542,33 @@ namespace Tpetra {
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
-    /** \brief Constructor with user-defined arbitrary (possibly
-     *   noncontiguous) distribution.
+    /** \brief Constructor with arbitrary (possibly noncontiguous
+     *   and/or nonuniform and/or overlapping) distribution, taking
+     *   the input global indices as a Kokkos::View.
      *
      * Call this constructor if you have an arbitrary list of global
      * indices for each process in the given communicator.  Those
      * indices need not be contiguous, and the sets of global indices
-     * on different processes may overlap.  This is the constructor to
-     * use to make a general overlapping distribution.
+     * on different processes may overlap.  This is one of the
+     * constructors to use to make a general, possibly overlapping
+     * distribution.
+     *
+     * This constructor, like all Map constructors, must be called as
+     * a collective over the input communicator.  It reserves the
+     * right to use MPI collectives to check input values in a debug
+     * build.  If it does check and any check fails, it will throw
+     * std::invalid_argument on all processes in the given
+     * communicator.
      *
      * \param numGlobalElements [in] If <tt>numGlobalElements ==
      *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
      *   the number of global elements will be computed (via a global
-     *   communication) as the sum of the counts of local elements.
-     *   Otherwise, it must equal the sum of the local elements over
-     *   all processes.  Regardless, this must be the same on all
-     *   calling processes in the given communicator \c comm.  Map
-     *   does <i>not</i> promise to verify this.
+     *   communication) as the sum of the counts of local indices.
+     *   Otherwise, it must equal the sum of the number of indices on
+     *   each process, over all processes in the given communicator,
+     *   and must be the same on all processes in the communicator.
      *
-     * \param entryList [in] List of global indices owned by the
+     * \param indexList [in] List of global indices owned by the
      *   calling process.  (This likely differs on different
      *   processes.)
      *
@@ -565,22 +583,27 @@ namespace Tpetra {
      *   over this communicator.
      */
     Map (const global_size_t numGlobalElements,
-         const Kokkos::View<const GlobalOrdinal*, device_type>& entryList,
+         const Kokkos::View<const GlobalOrdinal*, device_type>& indexList,
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
-    /** \brief Constructor with user-defined arbitrary (possibly
-     *   noncontiguous) distribution, taking the input global indices
-     *   as a raw host pointer.
+    /** \brief Constructor with arbitrary (possibly noncontiguous
+     *   and/or nonuniform and/or overlapping) distribution, taking
+     *   the input global indices as a raw host pointer.
      *
      * Call this constructor if you have an arbitrary list of global
      * indices for each process in the given communicator.  Those
      * indices need not be contiguous, and the sets of global indices
      * on different processes may overlap.  This is one of the
-     * constructors to use to make a general overlapping distribution.
+     * constructors to use to make a general, possibly overlapping
+     * distribution.
      *
      * This constructor, like all Map constructors, must be called as
-     * a collective over the input communicator.
+     * a collective over the input communicator.  It reserves the
+     * right to use MPI collectives to check input values in a debug
+     * build.  If it does check and any check fails, it will throw
+     * std::invalid_argument on all processes in the given
+     * communicator.
      *
      * \param numGlobalElements [in] If <tt>numGlobalElements ==
      *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
@@ -611,43 +634,49 @@ namespace Tpetra {
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
-    /** \brief Constructor with user-defined arbitrary (possibly
-     *   noncontiguous) distribution, taking a Teuchos::ArrayView (for
+    /** \brief Constructor with arbitrary (possibly noncontiguous
+     *   and/or nonuniform and/or overlapping) distribution, taking
+     *   the input global indices as a Teuchos::ArrayView (for
      *   backwards compatibility).
      *
      * Call this constructor if you have an arbitrary list of global
      * indices for each process in the given communicator.  Those
      * indices need not be contiguous, and the sets of global indices
      * on different processes may overlap.  This is one of the
-     * constructors to use to make a general overlapping distribution.
+     * constructors to use to make a general, possibly overlapping
+     * distribution.
      *
      * This constructor, like all Map constructors, must be called as
-     * a collective over the input communicator.
+     * a collective over the input communicator.  It reserves the
+     * right to use MPI collectives to check input values in a debug
+     * build.  If it does check and any check fails, it will throw
+     * std::invalid_argument on all processes in the given
+     * communicator.
      *
      * \param numGlobalElements [in] If <tt>numGlobalElements ==
      *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
      *   the number of global elements will be computed (via a global
      *   communication) as the sum of the counts of local elements.
-     *   Otherwise, it must equal the sum of the local elements over
-     *   all processes.  This value must be the same on all processes
-     *   participating in the call.
+     *   Otherwise, it must equal the sum of the number of indices on
+     *   each process, over all processes in the given communicator,
+     *   and must be the same on all processes in the communicator.
      *
      * \param indexList [in] List of global indices owned by the
-     *   calling process.
+     *   calling process.  (This likely differs on different
+     *   processes.)
      *
      * \param indexBase [in] The base of the global indices in the
      *   Map.  This must be the same on every process in the given
      *   communicator.  Currently, Map requires that this equal the
-     *   global minimum index over all processes' <tt>elementList</tt>
+     *   global minimum index over all processes' <tt>indexList</tt>
      *   inputs.
      *
      * \param comm [in] Communicator over which to distribute the
-     *   elements.
+     *   indices.  This constructor must be called as a collective
+     *   over this communicator.
      *
-     * \param node [in/out] Kokkos Node instance.  The type of this
-     *   object must match the type of the Node template parameter.
-     *   If you don't know what this is, you don't have to supply it;
-     *   the default value is perfectly fine.
+     * \param node [in/out] (OPTIONAL; default usually suffices)
+     *   Kokkos Node instance.
      */
     Map (const global_size_t numGlobalElements,
          const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
@@ -657,14 +686,17 @@ namespace Tpetra {
 
     /// \brief Default constructor (that does nothing).
     ///
-    /// This only exists to support view semantics of Map.  That is,
-    /// one can create an empty Map, and then assign a nonempty Map to
-    /// it using operator=.
+    /// This creates an empty Map, with 0 (zero) indices total.  The
+    /// Map's communicator only includes the calling process; in MPI
+    /// terms, it behaves like MPI_COMM_SELF.
     ///
-    /// This constructor is also useful in methods like clone() and
-    /// removeEmptyProcesses(), where we have the information to
-    /// initialize the Map more efficiently ourselves, without going
-    /// through one of the three usual Map construction paths.
+    /// This constructor exists mainly to support view semantics of
+    /// Map.  That is, we can create an empty Map, and then assign a
+    /// nonempty Map to it using operator=.  This constructor is also
+    /// useful in methods like clone() and removeEmptyProcesses(),
+    /// where we have the information to initialize the Map more
+    /// efficiently ourselves, without going through one of the three
+    /// usual Map construction paths.
     Map ();
 
     //! Destructor.
