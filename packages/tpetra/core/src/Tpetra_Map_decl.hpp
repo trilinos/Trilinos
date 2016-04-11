@@ -1628,11 +1628,25 @@ namespace Tpetra {
         Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
         mapOut.lgMap_ = lgMapOut; // cast to const
 
-        // Array layouts are the same, and memory spaces are the same
-        // (both are host Views), so we may assign directly.  If this
-        // hasn't been allocated yet, getNodeElementList or
-        // getMyGlobalIndices will create it on demand.
-        mapOut.lgMapHost_ = mapIn.lgMapHost_;
+        // mfh 11 Apr 2016: We can't just assign mapIn.lgMapHost_ to
+        // mapOut.lgMapHost_ either.  This is because the memory space
+        // of the host mirror of a CudaUVMSpace View is also
+        // CudaUVMSpace, but the memory space of the host mirror of a
+        // HostSpace View is HostSpace.  We can't assign one View to
+        // another View with a different memory space.
+        //
+        // What we _can_ do here, though, is avoid a deep_copy in case
+        // we're not using CUDA, by exploiting host mirrors.
+
+        static_assert (std::is_same<typename decltype (mapOut.lgMapHost_)::array_layout,
+                         typename decltype (mapIn.lgMapHost_)::array_layout>::value,
+          "mapOut.lgMapHost_ and MapIn.lgMapHost_ do not have the same "
+          "array_layout.  Please report this bug to the Tpetra developers.");
+
+        // lgMapOut is nonconst, so use it here instead of mapOut.lgMap_.
+        auto lgMapHostOut = Kokkos::create_mirror_view (lgMapOut);
+        Kokkos::deep_copy (lgMapHostOut, lgMapOut);
+        mapOut.lgMapHost_ = lgMapHostOut;
       }
       // This makes a deep copy only if necessary.  We could have
       // defined operator= to do this, but that would violate
