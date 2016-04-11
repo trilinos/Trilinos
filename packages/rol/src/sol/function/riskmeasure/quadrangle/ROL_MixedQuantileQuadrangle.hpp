@@ -71,6 +71,33 @@ private:
 
   bool firstReset_;
 
+  void checkInputs(void) const {
+    int pSize = prob_.size(), cSize = coeff_.size();
+    TEUCHOS_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
+      ">>> ERROR (ROL::MixedQuantileQuadrangle): Probability and coefficient arrays have different sizes!");
+    Real sum(0), zero(0), one(1);
+    for (int i = 0; i < pSize; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION((prob_[i]>one || prob_[i]<zero), std::invalid_argument,
+        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of probability array out of range!");
+      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i]>one || coeff_[i]<zero), std::invalid_argument,
+        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of coefficient array out of range!");
+      sum += coeff_[i];
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
+      ">>> ERROR (ROL::MixedQuantileQuadrangle): Coefficients do not sum to one!");
+    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::MixedQuantileQuadrangle): PlusFunction pointer is null!");
+  }
+
+  void initialize(void) {
+    size_ = prob_.size();
+    // Initialize temporary storage
+    Real zero(0);
+    xvar_.clear(); xvar_.resize(size_,zero);
+    vvar_.clear(); vvar_.resize(size_,zero);
+    vec_.clear();  vec_.resize(size_,zero);
+  }
+
 public:
 
   MixedQuantileQuadrangle( Teuchos::ParameterList &parlist )
@@ -80,57 +107,18 @@ public:
     // Grab probability and coefficient arrays
     prob_  = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
     coeff_ = Teuchos::getArrayFromStringParameter<Real>(list,"Coefficient Array");
-    // Check array sizes
-    int pSize = prob_.size(), cSize = coeff_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
-      ">>> ERROR (ROL::MixedQuantileQuadrangle): Probability and coefficient arrays have different sizes!");
-    size_ = pSize;
-    // Check array elements
-    Real sum(0), zero(0), one(1);
-    for (int i = 0; i < size_; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((prob_[i]>one || prob_[i]<zero), std::invalid_argument,
-        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of probability array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i]>one || coeff_[i]<zero), std::invalid_argument,
-        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of coefficient array out of range!");
-      sum += coeff_[i];
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
-      ">>> ERROR (ROL::MixedQuantileQuadrangle): Coefficients do not sum to one!");
-    // Build (approximate) plus function
     plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
-    // Initialize temporary storage
-    xvar_.clear(); xvar_.resize(size_,zero);
-    vvar_.clear(); vvar_.resize(size_,zero);
-    vec_.clear();  vec_.resize(size_,zero);
+    // Check inputs
+    checkInputs();
+    initialize();
   }
 
   MixedQuantileQuadrangle(const std::vector<Real> &prob,
                           const std::vector<Real> &coeff,
                           const Teuchos::RCP<PlusFunction<Real> > &pf )
-    : RiskMeasure<Real>(), plusFunction_(pf), firstReset_(true) {
-    prob_.clear(); coeff_.clear();
-    // Check array sizes
-    int pSize = prob.size(), cSize = coeff.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
-      ">>> ERROR (ROL::MixedQuantileQuadrangle): Probability and coefficient arrays have different sizes!");
-    size_ = pSize;
-    // Check array elements
-    Real sum(0), zero(0), one(1);
-    for (int i = 0; i < size_; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((prob[i]>one || prob[i]<zero), std::invalid_argument,
-        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of probability array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff[i]>one || coeff[i]<zero), std::invalid_argument,
-        ">>> ERROR (ROL::MixedQuantileQuadrangle): Element of coefficient array out of range!");
-      prob_.push_back(prob_[i]);
-      coeff_.push_back(coeff_[i]);
-      sum += coeff[i];
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
-      ">>> ERROR (ROL::MixedQuantileQuadrangle): Coefficients do not sum to one!");
-    // Initialize temporary storage
-    xvar_.clear(); xvar_.resize(size_,zero);
-    vvar_.clear(); vvar_.resize(size_,zero);
-    vec_.clear();  vec_.resize(size_,zero);
+    : RiskMeasure<Real>(), plusFunction_(pf), prob_(prob), coeff_(coeff), firstReset_(true) {
+    checkInputs();
+    initialize();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {

@@ -289,6 +289,7 @@
       <!-- ===========  QUANTILE-BASED QUADRANGLE SUBLIST  =========== -->
       <ParameterList name="Quantile-Based Quadrangle">
         <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.1"   />
         <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
         <ParameterList name="Distribution">
           <Parameter name="Name" type="string" value="Parabolic" />

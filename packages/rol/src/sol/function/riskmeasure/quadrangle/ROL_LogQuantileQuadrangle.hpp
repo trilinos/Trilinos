@@ -59,29 +59,37 @@ private:
   Real scale_;
   Real eps_;
 
-public:
-
-  LogQuantileQuadrangle(Real prob, Real scale, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
-    : ExpectationQuad<Real>(), pf_(pf) {
-    Real zero(0), half(0.5), one(1);
-    prob_  = ((prob >= zero) ? ((prob <= one) ? prob : half) : half);
-    scale_ = ((scale >= one) ? scale : one);
-    eps_   = ((eps > zero) ? eps : one);
+  void checkInputs(void) const {
+    Real zero(0), one(1);
+    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+      ">>> ERROR (ROL::LogQuantileQuadrangle): Confidence level must be between 0 and 1!");
+    TEUCHOS_TEST_FOR_EXCEPTION((scale_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::LogQuantileQuadrangle): Growth constant must be positive!");
+    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::LogQuantileQuadrangle): Smoothing parameter must be positive!");
+    TEUCHOS_TEST_FOR_EXCEPTION(pf_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::LogQuantileQuadrangle): PlusFunction pointer is null!");
   }
 
-  LogQuantileQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
-    Real zero(0), half(0.5), one(1);
+public:
+
+  LogQuantileQuadrangle(Real prob, Real scale, Real eps,
+                        Teuchos::RCP<PlusFunction<Real> > &pf ) 
+    : ExpectationQuad<Real>(), prob_(prob), scale_(scale), eps_(eps), pf_(pf) {
+    checkInputs();
+  }
+
+  LogQuantileQuadrangle(Teuchos::ParameterList &parlist)
+    : ExpectationQuad<Real>() {
     Teuchos::ParameterList& list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Log-Quantile Quadrangle");
     // Check CVaR inputs
-    Real prob = list.get("Confidence Level",half);
-    prob_  = ((prob >= zero) ? ((prob <= one) ? prob : half) : half);
-    Real scale = list.get("Growth Constant",one);
-    scale_ = ((scale >= one) ? scale : one);
+    prob_  = list.get<Real>("Confidence Level");
+    scale_ = list.get<Real>("Growth Constant");
+    eps_   = list.get<Real>("Smoothing Parameter");
     // Build plus function
     pf_ = Teuchos::rcp( new PlusFunction<Real>(list) );
-    Real eps = list.get("Smoothing Parameter",one);
-    eps_ = ((eps > zero) ? eps : one);
+    checkInputs();
   }
 
   Real error(Real x, int deriv = 0) {

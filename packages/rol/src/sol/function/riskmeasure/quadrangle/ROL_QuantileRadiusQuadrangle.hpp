@@ -69,27 +69,43 @@ private:
 
   bool firstReset_;
 
-public:
-
-  QuantileRadiusQuadrangle( Teuchos::ParameterList &parlist )
-    : RiskMeasure<Real>(), firstReset_(true) {
-    Real zero(0), half(0.5), one(1);
-    Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile-Radius Quadrangle");
-    // Grab probability and coefficient arrays
-    prob_  = list.get("Confidence Level",half);
-    coeff_ = list.get("Coefficient",one);
+  void checkInputs(void) const {
+    Real zero(0), one(1);
     // Check inputs
     TEUCHOS_TEST_FOR_EXCEPTION((prob_>one || prob_<zero), std::invalid_argument,
       ">>> ERROR (ROL::QuantileRadiusQuadrangle): Confidence level out of range!");
     TEUCHOS_TEST_FOR_EXCEPTION((coeff_<zero), std::invalid_argument,
       ">>> ERROR (ROL::QuantileRadiusQuadrangle): Coefficient is negative!");
-    // Build (approximate) plus function
-    plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+  }
+
+  void initialize(void) {
+    Real zero(0);
     // Initialize temporary storage
     xvar_.clear(); xvar_.resize(2,zero);
     vvar_.clear(); vvar_.resize(2,zero);
     vec_.clear();  vec_.resize(2,zero);
+  }
+
+public:
+
+  QuantileRadiusQuadrangle( Teuchos::ParameterList &parlist )
+    : RiskMeasure<Real>(), firstReset_(true) {
+    Teuchos::ParameterList &list
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile-Radius Quadrangle");
+    // Grab probability and coefficient arrays
+    prob_  = list.get<Real>("Confidence Level");
+    coeff_ = list.get<Real>("Coefficient");
+    // Build (approximate) plus function
+    plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+    checkInputs();
+    initialize();
+  }
+
+  QuantileRadiusQuadrangle(const Real prob, const Real coeff,
+                           const Teuchos::RCP<PlusFunction<Real> > &pf)
+    : RiskMeasure<Real>(), plusFunction_(pf), prob_(prob), coeff_(coeff), firstReset_(true) {
+    checkInputs();
+    initialize();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
