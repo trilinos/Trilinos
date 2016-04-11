@@ -350,7 +350,6 @@ inline bool is_shell_solid_connection(stk::topology t1, stk::topology t2)
 
 template<typename SideData>
 void add_local_elements_to_connected_list(const stk::mesh::BulkData& bulkData,
-                                           stk::mesh::EntityId elementId,
                                            stk::topology elementTopology,
                                            const impl::ElementLocalIdMapper & localMapper,
                                            const stk::mesh::EntityVector & elementsAttachedToSideNodes,
@@ -359,39 +358,36 @@ void add_local_elements_to_connected_list(const stk::mesh::BulkData& bulkData,
 {
     for (const stk::mesh::Entity otherElement : elementsAttachedToSideNodes)
     {
-        if(bulkData.identifier(otherElement) != elementId)
+        stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(bulkData, otherElement, bulkData.mesh_meta_data().side_rank(), sideNodes);
+        if (INVALID_CONNECTIVITY_ORDINAL != connectedOrdAndPerm.first)
         {
-            stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(bulkData, otherElement, bulkData.mesh_meta_data().side_rank(), sideNodes);
-            if (INVALID_CONNECTIVITY_ORDINAL != connectedOrdAndPerm.first)
+            const stk::mesh::Bucket & connectedBucket = bulkData.bucket(otherElement);
+            const stk::mesh::Entity* connectedElemNodes = bulkData.begin_nodes(otherElement);
+
+            ThrowAssertMsg(connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_nodes() == sideNodes.size(),
+                          "Error, number of nodes on sides of adjacent elements do not agree:  " <<
+                           sideNodes.size() << " != " << connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_nodes());
+
+            impl::LocalId localId = localMapper.entity_to_local(otherElement);
+            stk::mesh::ConnectivityOrdinal sideOrdinal = connectedOrdAndPerm.first;
+            if (localId != impl::INVALID_LOCAL_ID)
             {
-                const stk::mesh::Bucket & connectedBucket = bulkData.bucket(otherElement);
-                const stk::mesh::Entity* connectedElemNodes = bulkData.begin_nodes(otherElement);
-
-                ThrowAssertMsg(connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_nodes() == sideNodes.size(),
-                              "Error, number of nodes on sides of adjacent elements do not agree:  " <<
-                               sideNodes.size() << " != " << connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_nodes());
-
-                impl::LocalId localId = localMapper.entity_to_local(otherElement);
-                stk::mesh::ConnectivityOrdinal sideOrdinal = connectedOrdAndPerm.first;
-                if (localId != impl::INVALID_LOCAL_ID)
+                bool isConnectingSolidToWrongSideOfShell = is_shell_solid_connection(elementTopology, connectedBucket.topology()) &&
+                        connectedOrdAndPerm.second < connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_positive_permutations();
+                if(!isConnectingSolidToWrongSideOfShell)
                 {
-                    bool isConnectingSolidToWrongSideOfShell = is_shell_solid_connection(elementTopology, connectedBucket.topology()) &&
-                            connectedOrdAndPerm.second < connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_positive_permutations();
-                    if(!isConnectingSolidToWrongSideOfShell)
-                    {
-                        if(is_solid_shell_connection(elementTopology, connectedBucket.topology()))
-                            sideOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>((sideOrdinal == 0u) ? 1u : 0u);
+                    if(is_solid_shell_connection(elementTopology, connectedBucket.topology()))
+                        sideOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>((sideOrdinal == 0u) ? 1u : 0u);
 
-                        SideData connectedElemData;
-                        connectedElemData.set_element_local_id(localId);
-                        connectedElemData.set_element_identifier(bulkData.identifier(otherElement));
-                        connectedElemData.set_element_topology(connectedBucket.topology());
-                        connectedElemData.set_element_side_index(sideOrdinal);
-                        connectedElemData.set_permutation(connectedOrdAndPerm.second);
-                        connectedElemData.resize_side_nodes(sideNodes.size());
-                        connectedElemData.get_element_topology().side_nodes(connectedElemNodes, connectedElemData.get_element_side_index(), connectedElemData.side_nodes_begin());
-                        connectedElements.push_back(connectedElemData);
-                    }
+                    SideData connectedElemData;
+                    connectedElemData.set_element_local_id(localId);
+                    connectedElemData.set_element_identifier(bulkData.identifier(otherElement));
+                    connectedElemData.set_element_topology(connectedBucket.topology());
+                    connectedElemData.set_element_side_index(sideOrdinal);
+                    connectedElemData.set_permutation(connectedOrdAndPerm.second);
+                    connectedElemData.resize_side_nodes(sideNodes.size());
+                    connectedElemData.get_element_topology().side_nodes(connectedElemNodes, connectedElemData.get_element_side_index(), connectedElemData.side_nodes_begin());
+                    connectedElements.push_back(connectedElemData);
                 }
             }
         }
@@ -405,7 +401,7 @@ std::vector<SideData> get_elements_connected_via_sidenodes(const stk::mesh::Bulk
     impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, sideNodesOfReceivedElement.size(), sideNodesOfReceivedElement.data(), localElementsConnectedToReceivedSideNodes);
 
     std::vector<SideData> connectedElementDataVector;
-    impl::add_local_elements_to_connected_list(bulkData, elementId, elementTopology, localMapper, localElementsConnectedToReceivedSideNodes, sideNodesOfReceivedElement, connectedElementDataVector);
+    impl::add_local_elements_to_connected_list(bulkData, elementTopology, localMapper, localElementsConnectedToReceivedSideNodes, sideNodesOfReceivedElement, connectedElementDataVector);
 
     return connectedElementDataVector;
 }
@@ -417,7 +413,7 @@ std::vector<SideData> get_elements_with_larger_ids_connected_via_sidenodes(const
     impl::find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(elementId, bulkData, stk::topology::ELEMENT_RANK, sideNodesOfReceivedElement.size(), sideNodesOfReceivedElement.data(), localElementsConnectedToReceivedSideNodes);
 
     std::vector<SideData> connectedElementDataVector;
-    impl::add_local_elements_to_connected_list(bulkData, elementId, elementTopology, localMapper, localElementsConnectedToReceivedSideNodes, sideNodesOfReceivedElement, connectedElementDataVector);
+    impl::add_local_elements_to_connected_list(bulkData, elementTopology, localMapper, localElementsConnectedToReceivedSideNodes, sideNodesOfReceivedElement, connectedElementDataVector);
 
     return connectedElementDataVector;
 }
