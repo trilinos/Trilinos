@@ -42,31 +42,6 @@ void fill_topologies(stk::mesh::BulkData& bulkData,
             element_topologies[localMapper.entity_to_local(element)] = bucket->topology();
 }
 
-ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &element_list)
-{
-    stk::mesh::EntityVector elements_to_communicate;
-
-    for(const stk::mesh::Entity &element : element_list )
-    {
-        const stk::mesh::Entity* nodes = bulkData.begin_nodes(element);
-        int numNodes = bulkData.num_nodes(element);
-
-        for(int i=0; i<numNodes; ++i)
-        {
-            stk::mesh::Entity node = nodes[i];
-
-            if(bulkData.bucket(node).shared())
-            {
-                elements_to_communicate.push_back(element);
-                break;
-            }
-        }
-    }
-
-    return build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
-}
-
-
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,
                                                            const stk::mesh::EntityVector &elements_to_communicate)
 {
@@ -155,38 +130,6 @@ std::vector<GraphEdgeProc> communicate_killed_entities(stk::ParallelMachine comm
 int get_element_side_multiplier()
 {
     return 1000;
-}
-
-stk::mesh::EntityId get_side_id_for_remotely_connected_element(stk::mesh::EntityId local_element_id,
-        stk::mesh::EntityId local_side_id, stk::mesh::EntityId remote_element_id,
-        stk::mesh::EntityId remote_side_id, size_t& id_counter)
-{
-    stk::mesh::EntityId side_global_id = 0;
-    if(local_element_id < remote_element_id)
-    {
-        side_global_id = local_side_id;
-        id_counter++;
-    }
-    else
-    {
-        side_global_id = remote_side_id;
-    }
-
-    return side_global_id;
-}
-
-stk::mesh::Permutation get_permutation_for_new_side(const ParallelInfo& parallel_edge_info, stk::mesh::EntityId local_element_id, stk::mesh::EntityId remote_element_id)
-{
-    stk::mesh::Permutation perm;
-    if(local_element_id < remote_element_id)
-    {
-        perm = static_cast<stk::mesh::Permutation>(0);
-    }
-    else
-    {
-        perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-    }
-    return perm;
 }
 
 bool is_id_already_in_use_locally(stk::mesh::BulkData& bulkData, stk::mesh::EntityRank rank, stk::mesh::EntityId id)

@@ -91,8 +91,6 @@ public:
 
     size_t get_num_connected_elems(stk::mesh::Entity localElement) const;
 
-    unsigned get_num_connected_elems(stk::mesh::Entity localElement, int side_id) const;
-
     bool is_connected_elem_locally_owned(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
     impl::ElementViaSidePair get_connected_element_and_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const;
@@ -121,8 +119,6 @@ public:
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
     void fill_from_mesh();
-    void create_parallel_graph_info_needed_once_entities_are_moved(const stk::mesh::EntityProcVec &elemProcPairsToMove,
-                                         impl::ParallelGraphInfo &new_parallel_graph_entries);
     stk::mesh::EntityId get_available_side_id();
 
     stk::mesh::SideConnector get_side_connector();
@@ -211,8 +207,6 @@ protected:
 
     void pack_remote_edge_across_shell(stk::CommSparse &comm, stk::mesh::EntityVector &addedShells, int phase);
 
-    void filter_for_elements_in_graph(stk::mesh::EntityVector &localElements);
-
     void communicate_remote_edges_for_pre_existing_graph_nodes(const std::vector<impl::SharedEdgeInfo> &newlySharedEdges,
                                                           std::vector<impl::SharedEdgeInfo> &receivedSharedEdges);
 
@@ -271,34 +265,7 @@ private:
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts);
 
-    void create_remote_sides(stk::mesh::BulkData& bulk_data,
-                             const std::vector<RemoteEdge>& remote_edges,
-                             stk::mesh::EntityVector& skinned_elements,
-                             const stk::mesh::PartVector& skin_parts,
-                             const std::vector<unsigned>& side_counts,
-                             std::vector<stk::mesh::sharing_info>& shared_modified);
-    void create_remote_sides1(stk::mesh::BulkData& bulk_data,
-                              const std::vector<RemoteEdge>& remote_edges,
-                              stk::mesh::EntityVector& skinned_elements,
-                              const stk::mesh::PartVector& skin_parts,
-                              const std::vector<unsigned>& side_counts,
-                              std::vector<stk::mesh::sharing_info>& shared_modified);
-
-    void update_all_local_neighbors(const stk::mesh::Entity elemToSend,
-                                    const int destination_proc,
-                                    impl::ParallelGraphInfo &newParallelGraphEntries);
-
-    impl::ParallelInfo create_parallel_info(stk::mesh::Entity connected_element,
-                                                            const stk::mesh::Entity elemToSend,
-                                                            int side_id,
-                                                            const int destination_proc);
-
-    stk::mesh::Permutation get_permutation_given_neighbors_node_ordering(stk::mesh::Entity connected_element,
-                                                                                        const stk::mesh::Entity elemToSend,
-                                                                                        int side_id);
-
     void fix_coincident_chosen_side_ids();
-    std::vector<impl::LocalId> get_local_ids_for_element_entities(const stk::mesh::EntityVector &elems);
 
     void write_graph_edge(std::ostringstream& os, const stk::mesh::GraphEdge& graphEdge) const;
     unsigned get_max_num_sides_per_element() const;
