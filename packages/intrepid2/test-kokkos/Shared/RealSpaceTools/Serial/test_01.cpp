@@ -40,17 +40,22 @@
 // ************************************************************************
 // @HEADER
 
-
-/*! \file  Intrepid_Version.cpp
-    \brief Returns current version of Intrepid.
+/** \file test_01.cpp
+\brief  Unit test for the RealSpaceTools class.
+\author Created by Kyungjoo Kim
 */
 
-#include "Intrepid2_ConfigDefs.hpp"
+#include "Kokkos_Core.hpp"
 
-namespace Intrepid2 {
+#include "test_01.hpp"
 
-std::string Intrepid_Version() {
-  return("Intrepid2 Version 1.0 / Trilinos 12.4 - September 2016");
+int main(int argc, char *argv[]) {
+
+  const bool verbose = (argc-1) > 0;
+  Kokkos::initialize();
+
+  const int r_val = Intrepid2::Test::RealSpaceTools_Test01<double,Kokkos::Serial>(verbose);
+  
+  Kokkos::finalize();
+  return r_val;
 }
-
-} // namespace Intrepid2

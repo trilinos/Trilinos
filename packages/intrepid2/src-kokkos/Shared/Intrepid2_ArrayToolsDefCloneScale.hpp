@@ -50,43 +50,46 @@
 #define __INTREPID2_ARRAYTOOLS_DEF_CLONESCALE_HPP__
 
 namespace Intrepid2 {
-
+  
   template<typename ExecSpaceType>
-  template<class ...outputFieldProperties,
-           class ...inputFieldProperties>
+  template<typename outputFieldValueType, class ...outputFieldProperties,
+           typename inputFieldValueType,  class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
   void ArrayTools<ExecSpaceType>::
-  cloneFields( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-               const Kokkos::DynRankView<intputFieldProperties...> inputFields ) {
+  cloneFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+               const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields ) {
 
     //static_assert
     // - two memory space of input and output fields should be matched
 
 #ifdef HAVE_INTREPID_DEBUG
-    INTREPID2_TEST_FOR_ABORT( ( inputFields.rank() < 2 || inputFields.rank() > 4 ),
-                              ">>> ERROR (ArrayTools::cloneFields): Input fields container must have rank 2, 3, or 4.");
-    INTREPID2_TEST_FOR_ABORT( ( outputFields.rank() != (inputFields.rank()+1) ),
-                              ">>> ERROR (ArrayTools::cloneFields): The rank of the input fields container must be one less than the rank of the output fields container.");
-    for (size_type i=0;i<inputFields.rank();++i) {
-      INTREPID2_TEST_FOR_ABORT( (inputFields.dimension(i) != outputFields.dimension(i+1)),
-                                ">>> ERROR (ArrayTools::cloneFields): Dimensions of input and output fields containers do not match.");
+    {
+      bool dbgInfo = false;
+      INTREPID2_TEST_FOR_DEBUG_ABORT( ( inputFields.rank() < 2 || inputFields.rank() > 4 ), dbgInfo,
+                                      ">>> ERROR (ArrayTools::cloneFields): Input fields container must have rank 2, 3, or 4.");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( ( outputFields.rank() != (inputFields.rank()+1) ), dbgInfo,
+                                      ">>> ERROR (ArrayTools::cloneFields): The rank of the input fields container must be one less than the rank of the output fields container.");
+      for (size_type i=0;i<inputFields.rank();++i) {
+        INTREPID2_TEST_FOR_DEBUG_ABORT( (inputFields.dimension(i) != outputFields.dimension(i+1)), dbgInfo,
+                                        ">>> ERROR (ArrayTools::cloneFields): Dimensions of input and output fields containers do not match.");
+      }
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
     }
 #endif
 
     struct Functor {
-      Kokkos::DynRankView<outputFieldProperties...> _outputFields;
-      Kokkos::DynRankView<intputFieldProperties...> _inputFields;
+      Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> _outputFields;
+      Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  _inputFields;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<outputFieldProperties...> &outputFields_,
-              Kokkos::DynRankView<intputFieldProperties...> &inputFields_)
+      Functor(Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields_,
+              Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields_)
         : _outputFields(outputFields_), _inputFields(inputFields_) {}
 
       KOKKOS_INLINE_FUNCTION
-      ~Functor = default;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) {
+      void operator()(const size_type iter) const {
         size_type cl, bf, pt;
         unrollIndex( cl, bf, pt,
                      _outputFields.dimension(0), 
@@ -111,49 +114,52 @@ namespace Intrepid2 {
   }
 
   template<typename ExecSpaceType>
-  template<class ...outputFieldProperties,
-           class ...inputFactorProperties,
-           class ...inputFieldProperties>
+  template<typename outputFieldValueType, class ...outputFieldProperties,
+           typename inputFactorValueType, class ...inputFactorProperties,
+           typename inputFieldValueType,  class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
   void ArrayTools<ExecSpaceType>::
-  cloneScaleFields( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                    const Kokkos::DynRankView<inputFactorProperties...> inputFactors,
-                    const Kokkos::DynRankView<intputFieldProperties...> inputFields ) {
+  cloneScaleFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                    const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors,
+                    const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields ) {
     
     // static assert
 #ifdef HAVE_INTREPID_DEBUG
-    INTREPID2_TEST_FOR_ABORT( inputFactors.rank() != 2,
-                              ">>> ERROR (ArrayTools::cloneScaleFields): The rank of the input factors container must be 2.");
-    INTREPID2_TEST_FOR_ABORT( inputFields.rank() < 2 || inputFields.rank() > 4,
-                              ">>> ERROR (ArrayTools::cloneScaleFields): Input fields container must have rank 2, 3, or 4.");
-    INTREPID2_TEST_FOR_ABORT( outputFields.rank() != (inputFields.rank()+1),
-                              ">>> ERROR (ArrayTools::cloneScaleFields): The rank of the input fields container must be one less than the rank of the output fields container.");
-    INTREPID2_TEST_FOR_ABORT( inputFactors.dimension(0) != outputFields.dimension(0),
-                              ">>> ERROR (ArrayTools::cloneScaleFields): Zeroth dimensions of input factors container and output fields container (numbers of integration domains) must agree!");
-    INTREPID2_TEST_FOR_ABORT( inputFactors.dimension(1) != outputFields.dimension(1),
-                              ">>> ERROR (ArrayTools::cloneScaleFields): First dimensions of input factors container and output fields container (numbers of fields) must agree!");
-    for (size_type i=0;i<inputFields.rank();++i) {
-      INTREPID2_TEST_FOR_ABORT( (inputFields.dimension(i) != outputFields.dimension(i+1)),
-                                ">>> ERROR (ArrayTools::cloneScaleFields): Dimensions of input and output fields containers do not match.");
+    { 
+      bool dbgInfo = false;
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFactors.rank() != 2, dbgInfo,
+                                      ">>> ERROR (ArrayTools::cloneScaleFields): The rank of the input factors container must be 2.");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.rank() < 2 || inputFields.rank() > 4, dbgInfo,
+                                      ">>> ERROR (ArrayTools::cloneScaleFields): Input fields container must have rank 2, 3, or 4.");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.rank() != (inputFields.rank()+1), dbgInfo,
+                                      ">>> ERROR (ArrayTools::cloneScaleFields): The rank of the input fields container must be one less than the rank of the output fields container.");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFactors.dimension(0) != outputFields.dimension(0), dbgInfo,
+                                      ">>> ERROR (ArrayTools::cloneScaleFields): Zeroth dimensions of input factors container and output fields container (numbers of integration domains) must agree!");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFactors.dimension(1) != outputFields.dimension(1), dbgInfo,
+                                      ">>> ERROR (ArrayTools::cloneScaleFields): First dimensions of input factors container and output fields container (numbers of fields) must agree!");
+      for (size_type i=0;i<inputFields.rank();++i) {
+        INTREPID2_TEST_FOR_DEBUG_ABORT( (inputFields.dimension(i) != outputFields.dimension(i+1)), dbgInfo,
+                                        ">>> ERROR (ArrayTools::cloneScaleFields): Dimensions of input and output fields containers do not match.");
+      }
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
     }
 #endif
 
     struct Functor {
-      Kokkos::DynRankView<outputFieldProperties...> _outputFields;
-      Kokkos::DynRankView<inputFactorProperties...> _inputFactors;
-      Kokkos::DynRankView<intputFieldProperties...> _inputFields;
+      Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> _outputFields;
+      Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> _inputFactors;
+      Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  _inputFields;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<outputFieldProperties...> &outputFields_,
-              Kokkos::DynRankView<inputFactorProperties...> &inputFactors_,
-              Kokkos::DynRankView<intputFieldProperties...> &inputFields_)
+      Functor(Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields_,
+              Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors_,
+              Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields_)
         : _outputFields(outputFields_), _inputFactors(inputFactors_), _inputFields(inputFields_) {}
 
       KOKKOS_INLINE_FUNCTION
-      ~Functor = default;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) {
+      void operator()(const size_type iter) const {
         size_type cl, bf, pt;
         unrollIndex( cl, bf, pt,
                      _outputFields.dimension(0),
@@ -180,38 +186,41 @@ namespace Intrepid2 {
   }
 
   template<typename ExecSpaceType>
-  template<class ...inoutFieldProperties,
-           class ...inputFactorProperties>
+  template<typename inoutFieldValueType,  class ...inoutFieldProperties,
+           typename inputFactorValueType, class ...inputFactorProperties>
   KOKKOS_INLINE_FUNCTION
   void ArrayTools<ExecSpaceType>::
-  scaleFields( /**/  Kokkos::DynRankView<inoutFieldProperties...>  inoutFields,
-               const Kokkos::DynRankView<inputFactorProperties...> inputFactors ) {
+  scaleFields( /**/  Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  inoutFields,
+               const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors ) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    INTREPID2_TEST_FOR_ABORT( inputFactors.rank() != 2,
-                              ">>> ERROR (ArrayTools::scaleFields): The rank of the input factors container must be 2.");
-    INTREPID2_TEST_FOR_ABORT( inoutFields.rank() < 3 || inoutFields.rank() > 5,
-                              ">>> ERROR (ArrayTools::scaleFields): Input/output fields container must have rank 3, 4, or 5.");
-    INTREPID2_TEST_FOR_ABORT( inputFactors.dimension(0) != inoutFields.dimension(0),
-                              ">>> ERROR (ArrayTools::scaleFields): Zeroth dimensions of input factors container and input/output fields container (numbers of integration domains) must agree!");
-    INTREPID2_TEST_FOR_ABORT( inputFactors.dimension(1) != inoutFields.dimension(1),
-                              ">>> ERROR (ArrayTools::scaleFields): First dimensions (number of fields) of input factors and input/output fields containers must agree!");
+    {
+      bool dbgInfo = false;
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFactors.rank() != 2, dbgInfo,
+                                      ">>> ERROR (ArrayTools::scaleFields): The rank of the input factors container must be 2.");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inoutFields.rank() < 3 || inoutFields.rank() > 5, dbgInfo,
+                                      ">>> ERROR (ArrayTools::scaleFields): Input/output fields container must have rank 3, 4, or 5.");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFactors.dimension(0) != inoutFields.dimension(0), dbgInfo,
+                                      ">>> ERROR (ArrayTools::scaleFields): Zeroth dimensions of input factors container and input/output fields container (numbers of integration domains) must agree!");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFactors.dimension(1) != inoutFields.dimension(1), dbgInfo,
+                                      ">>> ERROR (ArrayTools::scaleFields): First dimensions (number of fields) of input factors and input/output fields containers must agree!");
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+    }
 #endif
 
     struct Functor {
-      Kokkos::DynRankView<inoutFieldProperties...>  _inoutFields;
-      Kokkos::DynRankView<inputFactorProperties...> _inputFactors;
+      Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  _inoutFields;
+      Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> _inputFactors;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<inoutFieldProperties...>  &inoutFields_,
-              Kokkos::DynRankView<inputFactorProperties...> &inputFactors_)
+      Functor(Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  inoutFields_,
+              Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors_)
         : _inoutFields(inoutFields_), _inputFactors(inputFactors_) {}
 
       KOKKOS_INLINE_FUNCTION
-      ~Functor = default;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) {
+      void operator()(const size_type iter) const {
         size_type cl, bf, pt;
         unrollIndex( cl, bf, pt,
                      _outputFields.dimension(0),

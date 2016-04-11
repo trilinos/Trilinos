@@ -105,14 +105,14 @@ namespace Intrepid2 {
         \param  reciprocal      [in] - If TRUE, <b>divides</b> input fields by the data
         (instead of multiplying). Default: FALSE.
     */
-    template<class ...outputFieldProperties,
-             class ...leftFieldProperties,
-             class ...rightFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename leftFieldValueType,   class ...leftFieldProperties,
+             typename rightFieldValueType,  class ...rightFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractFieldFieldScalar( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                              const Kokkos::DynRankView<leftFieldProperties...>   leftFields,
-                              const Kokkos::DynRankView<rightFieldProperties...>  rightFields,
+    contractFieldFieldScalar( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                              const Kokkos::DynRankView<leftFieldValueType.  leftFieldProperties...>   leftFields,
+                              const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                               const bool sumInto = false );
 
     /** \brief Contracts the "point" and "space" dimensions P and D1 of two rank-4
@@ -135,14 +135,14 @@ namespace Intrepid2 {
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
-    template<class ...outputFieldProperties,
-             class ...leftFieldProperties,
-             class ...rightFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename leftFieldValueType,   class ...leftFieldProperties,
+             typename rightFieldValueType,  class ...rightFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractFieldFieldVector( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                              const Kokkos::DynRankView<leftFieldProperties...>   leftFields,
-                              const Kokkos::DynRankView<rightFieldProperties...>  rightFields,
+    contractFieldFieldVector( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                              const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
+                              const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                               const bool sumInto = false );
 
     /** \brief Contracts the "point" and "space" dimensions P, D1, and D2 of two rank-5
@@ -166,14 +166,14 @@ namespace Intrepid2 {
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
-    template<class ...outputFieldProperties,
-             class ...leftFieldProperties,
-             class ...rightFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename leftFieldValueType,   class ...leftFieldProperties,
+             typename rightFieldValueType,  class ...rightFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractFieldFieldTensor( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                              const Kokkos::DynRankView<leftFieldProperties...>   leftFields,
-                              const Kokkos::DynRankView<rightFieldProperties...>  rightFields,
+    contractFieldFieldTensor( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                              const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
+                              const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                               const bool sumInto = false );
 
     /** \brief Contracts the "point" dimensions P of a rank-3 containers and
@@ -193,14 +193,14 @@ namespace Intrepid2 {
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractDataFieldScalar( /**/  Kokkos::DynRankView<outputFieldProperties...>  outputFields,
-                             const Kokkos::DynRankView<inputDataProperties...>    inputData,
-                             const Kokkos::DynRankView<intputFieldProperties...>  inputFields,
+    contractDataFieldScalar( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>  outputFields,
+                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>    inputData,
+                             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>   inputFields,
                              const bool sumInto = false );
 
     /** \brief Contracts the "point" and "space" dimensions P and D of a rank-4 container and
@@ -221,14 +221,14 @@ namespace Intrepid2 {
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractDataFieldVector( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                             const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                             const Kokkos::DynRankView<intputFieldProperties...> inputFields,
+    contractDataFieldVector( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                              const bool sumInto = false );
 
     /** \brief Contracts the "point" and "space" dimensions P, D1 and D2 of a rank-5 container and
@@ -250,14 +250,14 @@ namespace Intrepid2 {
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractDataFieldTensor( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                             const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                             const Kokkos::DynRankView<intputFieldProperties...> inputFields,
+    contractDataFieldTensor( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                              const bool sumInto = false);
 
     /** \brief Contracts the "point" dimensions P of rank-2 containers
@@ -275,14 +275,14 @@ namespace Intrepid2 {
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractDataDataScalar( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                            const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                            const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight,
+    contractDataDataScalar( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                             const bool sumInto = false );
 
     /** \brief Contracts the "point" and "space" dimensions P and D of rank-3 containers
@@ -300,14 +300,14 @@ namespace Intrepid2 {
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractDataDataVector( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                            const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                            const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight,
+    contractDataDataVector( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                             const bool sumInto = false );
 
     /** \brief Contracts the "point" and "space" dimensions P, D1 and D2 of rank-4 containers
@@ -326,14 +326,14 @@ namespace Intrepid2 {
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    contractDataDataTensor( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                            const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                            const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight,
+    contractDataDataTensor( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                             const bool sumInto = false );
 
     /** \brief There are two use cases:
@@ -365,14 +365,14 @@ namespace Intrepid2 {
         \param  reciprocal      [in] - If TRUE, <b>divides</b> input fields by the data
         (instead of multiplying). Default: FALSE.
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                             const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                             const Kokkos::DynRankView<inputFieldProperties...>  inputFields,
+    scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                              const bool reciprocal = false );
 
     /** \brief There are two use cases:
@@ -403,14 +403,14 @@ namespace Intrepid2 {
         \param  reciprocal       [in] - If TRUE, <b>divides</b> input fields by the data
         (instead of multiplying). Default: FALSE.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                            const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                            const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight,
+    scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                             const bool reciprocal = false );
 
     /** \brief There are two use cases:
@@ -442,14 +442,14 @@ namespace Intrepid2 {
        	\param	invalRank	[in] - rank inputDataRight
         \param	outvalRank      [in] - rank output
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                          const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                          const Kokkos::DynRankView<intputFieldProperties...> inputFields );
+    dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                          const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                          const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields );
 
     /** \brief There are two use cases:
         (1) dot product of a rank-2, 3 or 4 container \a <b>inputDataRight</b> with dimensions (C,P)
@@ -477,14 +477,14 @@ namespace Intrepid2 {
         \param  inputDataLeft    [in] - Left input data array.
         \param  inputDataRight   [in] - Right input data array.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                         const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                         const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight );
+    dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                         const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                         const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight );
 
 
     /** \brief There are two use cases:
@@ -508,14 +508,14 @@ namespace Intrepid2 {
         \param  inputData       [in] - Data array.
         \param  inputFields     [in] - Input fields array.
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    crossProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                           const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                           const Kokkos::DynRankView<intputFieldProperties...> inputFields );
+    crossProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                           const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                           const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields );
 
     /** \brief There are two use cases:
         (1) cross product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
@@ -537,14 +537,14 @@ namespace Intrepid2 {
         \param  inputDataLeft    [in] - Left input data array.
         \param  inputDataRight   [in] - Right input data array.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    crossProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                          const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                          const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight );
+    crossProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                          const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                          const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight );
 
     /** \brief There are two use cases:
         (1) outer product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
@@ -568,14 +568,14 @@ namespace Intrepid2 {
         \param  inputData       [in] - Data array.
         \param  inputFields     [in] - Input fields array.
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    outerProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                           const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                           const Kokkos::DynRankView<intputFieldProperties...> inputFields );
+    outerProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                           const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                           const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields );
 
     /** \brief There are two use cases:
         (1) outer product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
@@ -598,14 +598,14 @@ namespace Intrepid2 {
         \param  inputDataLeft    [in] - Left input data array.
         \param  inputDataRight   [in] - Right input data array.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValuetype,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    outerProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                          const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                          const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight );
+    outerProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                          const Kokkos::DynRankView<inputDataLeftValuetype, inputDataLeftProperties...>  inputDataLeft,
+                          const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight );
 
     /** \brief There are two use cases:
         (1) matrix-vector product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
@@ -642,14 +642,14 @@ namespace Intrepid2 {
         \param  inputFields     [in] - Input fields array.
         \param  transpose       [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    matvecProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                            const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                            const Kokkos::DynRankView<intputFieldProperties...> inputFields,
+    matvecProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                             const char transpose = 'N');
 
     /** \brief There are two use cases:
@@ -684,14 +684,14 @@ namespace Intrepid2 {
         \param  inputDataRight   [in] - Right input data array.
         \param  transpose        [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    matvecProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>    outputData,
-                           const Kokkos::DynRankView<inputDataLeftProperties...> inputDataLeft,
-                           const Kokkos::DynRankView<intputFieldProperties...>   inputDataRight,
+    matvecProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>    outputData,
+                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...> inputDataLeft,
+                           const Kokkos::DynRankView<inputDataRightValueType,inputFieldProperties...>   inputDataRight,
                            const char transpose = 'N');
 
     /** \brief There are two use cases:
@@ -728,14 +728,14 @@ namespace Intrepid2 {
         \param  inputFields     [in] - Input fields array.
         \param  transpose       [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
-    template<class ...outputFieldProperties,
-             class ...inputDataProperties,
-             class ...inputFieldsProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputDataValueType,   class ...inputDataProperties,
+             typename inputFieldValueType,  class ...inputFieldsProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    matmatProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                            const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                            const Kokkos::DynRankView<inputFieldProperties...>  inputFields,
+    matmatProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                             const char transpose = 'N' );
     
     /** \brief There are two use cases:
@@ -771,14 +771,14 @@ namespace Intrepid2 {
         \param  inputDataRight   [in] - Right input data array.
         \param  transpose        [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
-    template<class ...outputDataProperties,
-             class ...inputDataLeftProperties,
-             class ...inputDataRightProperties>
+    template<typename outputDataValueType,     class ...outputDataProperties,
+             typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+             typename inputDataRightValueType, class ...inputDataRightProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    matmatProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                           const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                           const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight,
+    matmatProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                           const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                            const char transpose = 'N' );
 
     /** \brief Replicates a rank-2, 3, or 4 container with dimensions (F,P),
@@ -797,12 +797,12 @@ namespace Intrepid2 {
         \param  outputFields   [out] - Output fields array.
         \param  inputFields     [in] - Input fields array.
     */
-    template<class ...outputFieldProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    cloneFields( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                 const Kokkos::DynRankView<intputFieldProperties...> inputFields );
+    cloneFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                 const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields );
 
     /** \brief Multiplies a rank-2, 3, or 4 container with dimensions (F,P),
         (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or a
@@ -822,14 +822,14 @@ namespace Intrepid2 {
         \param  inputFactors    [in] - Input field factors array.
         \param  inputFields     [in] - Input fields array.
     */
-    template<class ...outputFieldProperties,
-             class ...inputFactorProperties,
-             class ...inputFieldProperties>
+    template<typename outputFieldValueType, class ...outputFieldProperties,
+             typename inputFactorValueType, class ...inputFactorProperties,
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    cloneScaleFields( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                      const Kokkos::DynRankView<inputFactorProperties...> inputFactors,
-                      const Kokkos::DynRankView<intputFieldProperties...> inputFields );
+    cloneScaleFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                      const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors,
+                      const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields );
 
     /** \brief Multiplies, in place, a rank-2, 3, or 4 container with dimensions (C,F,P),
         (C,F,P,D1) or (C,F,P,D1,D2), representing the values of a scalar, vector or a
@@ -846,12 +846,12 @@ namespace Intrepid2 {
         \param  inoutFields    [in/out] - Input / output fields array.
         \param  inputFactors       [in] - Scaling field factors array.
     */
-    template<class ...inoutFieldProperties,
-             class ...inputFactorProperties>
+    template<typename inoutFieldValueType,  class ...inoutFieldProperties,
+             typename inputFactorValueType, class ...inputFactorProperties>
     KOKKOS_INLINE_FUNCTION
     static void
-    scaleFields( /**/  Kokkos::DynRankView<inoutFieldProperties...>  inoutFields,
-                 const Kokkos::DynRankView<inputFactorProperties...> inputFactors );
+    scaleFields( /**/  Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  inoutFields,
+                 const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors );
 
     // =====================================================================================
     // Internal universal implementations
@@ -862,95 +862,96 @@ namespace Intrepid2 {
     class Internal {
     public:
 
-      template<class ...outputFieldProperties,
-               class ...leftFieldProperties,
-               class ...rightFieldProperties>
+      template<typename outputFieldValueType, class ...outputFieldProperties,
+               typename leftFieldValueType,   class ...leftFieldProperties,
+               typename rightFieldValueType,  class ...rightFieldProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      contractFieldField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                          const Kokkos::DynRankView<leftFieldProperties...>   leftFields,
-                          const Kokkos::DynRankView<rightFieldProperties...>  rightFields,
-                          const bool sumInto = false );
+      contractFieldField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                          const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
+                          const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
+                          const bool sumInto );
       
-      template<class ...outputFieldProperties,
-               class ...inputDataProperties,
-               class ...inputFieldProperties>
+      template<typename outputFieldValueType, class ...outputFieldProperties,
+               typename inputDataValueType,   class ...inputDataProperties,
+               typename inputFieldValuetype,  class ...inputFieldProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      contractDataField( /**/  Kokkos::DynRankView<outputFieldProperties...>      outputFields,
-                         const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                         const Kokkos::DynRankView<inputFieldsFieldProperties...> inputFields,
-                         const bool sumInto = false );
+      contractDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>      outputFields,
+                         const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>        inputData,
+                         const Kokkos::DynRankView<inputFieldValuetype, inputFieldsFieldProperties...> inputFields,
+                         const bool sumInto );
 
-      template<class ...outputDataProperties,
-               class ...inputDataLeftProperties,
-               class ...inputDataRightProperties>
+      template<typename outputDataValueType,     class ...outputDataProperties,
+               typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+               typename inputDataRightValueType, class ...inputDataRightProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      contractDataData( /**/  Kokkos::DynRankView<outputDataProperties...>          outputData,
-                        const Kokkos::DynRankView<inputDataLeftFieldProperties...>  inputDataLeft,
-                        const Kokkos::DynRankView<inputDataRightFieldProperties...> inputDataRight,
-                        const bool sumInto = false );
+      contractDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>          outputData,
+                        const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftFieldProperties...>  inputDataLeft,
+                        const Kokkos::DynRankView<inputDataRightValueType,inputDataRightFieldProperties...> inputDataRight,
+                        const bool sumInto );
       
-      template<class ...outputProperties,
-               class ...leftInputProperties,
-               class ...rightInputProperties>
+      template<typename outputValueType,     class ...outputProperties,
+               typename leftInputValueType,  class ...leftInputProperties,
+               typename rightInputValueType, class ...rightInputProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      scalarMultiply( /**/  Kokkos::DynRankView<outputProperties...>     output,
-                      const Kokkos::DynRankView<leftInputProperties...>  left,
-                      const Kokkos::DynRankView<rightInputProperties...> rightInput,
+      scalarMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>     output,
+                      const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  left,
+                      const Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput,
                       const bool hasField,
                       const bool reciprocal );
       
-      template<class ...outputProperties,
-               class ...leftInputProperties,
-               class ...rightInputProperties>
+      template<typename outputValueType,     class ...outputProperties,
+               typename leftInputValueType,  class ...leftInputProperties,
+               typename rightInputValueType, class ...rightInputProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      dotMultiply( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                   const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                   const Kokkos::DynRankView<rightInputProperties...>  rightInput );
+      dotMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                   const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                   const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
+                   const bool hasField );
       
-      template<class ...outputProperties,
-               class ...leftInputProperties,
-               class ...rightInputProperties>
+      template<typename outputValueType,     class ...outputProperties,
+               typename leftInputValueType,  class ...leftInputProperties,
+               typename rightInputValueType, class ...rightInputProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      crossProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                    const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                    const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+      crossProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                    const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                    const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                     const bool hasField );
       
-      template<class ...outputProperties,
-               class ...leftInputProperties,
-               class ...rightInputProperties>
+      template<typename outputValueType,     class ...outputProperties,
+               typename leftInputValueType,  class ...leftInputProperties,
+               typename rightInputValueType, class ...rightInputProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      outerProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                    const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                    const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+      outerProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                    const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                    const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                     const bool hasField );
       
-      template<class ...outputProperties,
-               class ...leftInputProperties,
-               class ...rightInputProperties>
+      template<typename outputValueType,     class ...outputProperties,
+               typename leftInputValueType,  class ...leftInputProperties,
+               typename rightInputValueType, class ...rightInputProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      matvecProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                     const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                     const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+      matvecProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                     const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                     const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                      const bool hasField,
                      const bool isTranspose );
-
-      template<class ...outputProperties,
-               class ...leftInputProperties,
-               class ...rightInputProperties>
+      
+      template<typename outputValueType,     class ...outputProperties,
+               typename leftInputValueType,  class ...leftInputProperties,
+               typename rightInputValueType, class ...rightInputProperties>
       KOKKOS_INLINE_FUNCTION
       static void
-      matmatProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                     const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                     const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+      matmatProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                     const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                     const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                      const bool hasField,
                      const bool isTranspose );
     }
