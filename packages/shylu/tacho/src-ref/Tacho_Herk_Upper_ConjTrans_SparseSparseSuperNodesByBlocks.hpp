@@ -7,6 +7,8 @@
 
 namespace Tacho {
 
+  class Util;
+
   template<typename MT>
   class DenseMatrixView;
 
@@ -37,7 +39,9 @@ namespace Tacho {
       
       {
         typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
-        const ordinal_type blksize = 256;
+        const ordinal_type blksize = Util::max(A.Hier().Value(0,0).NumRows(),
+                                               A.Hier().Value(0,0).NumCols());
+                                               
         ordinal_type tr, br, lc, rc;
         
         A.getDataRegion(tr, br, lc, rc);
