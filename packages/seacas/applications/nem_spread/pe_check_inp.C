@@ -30,31 +30,30 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
-#include <exodusII.h>                   // for ex_close, ex_open, EX_READ
-#include <stdio.h>                      // for fprintf, stderr
-#include <string.h>                     // for strlen, strcpy
-#include "nem_spread.h"                 // for NemSpread
-#include "ps_pario_const.h"             // for PIO_Info, Parallel_IO
-#include "rf_io_const.h"                // for ExoFile, Exo_LB_File, etc
+#include "nem_spread.h"     // for NemSpread
+#include "ps_pario_const.h" // for PIO_Info, Parallel_IO
+#include "rf_io_const.h"    // for ExoFile, Exo_LB_File, etc
+#include <cstdio>           // for fprintf, stderr
+#include <cstring>          // for strlen, strcpy
+#include <exodusII.h>       // for ex_close, ex_open, EX_READ
 
-template int NemSpread<double,int>::check_inp(void);
-template int NemSpread<float,int>::check_inp(void);
-template int NemSpread<double,int64_t>::check_inp(void);
-template int NemSpread<float,int64_t>::check_inp(void);
+template int NemSpread<double, int>::check_inp(void);
+template int NemSpread<float, int>::check_inp(void);
+template int NemSpread<double, int64_t>::check_inp(void);
+template int NemSpread<float, int64_t>::check_inp(void);
 
-template<typename T, typename INT>
-int NemSpread<T,INT>::check_inp()
+template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
 {
-  const char  *yo = "check_inp";
+  const char *yo = "check_inp";
 
-  int   exid, icpu_ws=0, iio_ws=0;
+  int   exid, icpu_ws = 0, iio_ws = 0;
   float vers = 0.0;
 
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-/*                 Check the input and output files                          */
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+  /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+  /*                 Check the input and output files                          */
+  /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /* check if the Mesh file was specified */
   if (strlen(ExoFile) <= 0) {
     fprintf(stderr, "%s: fatal - must specify input FEM file.\n", yo);

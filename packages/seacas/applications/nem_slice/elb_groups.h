@@ -36,7 +36,7 @@
 #ifndef _ELB_GROUPS_CONST_H_
 #define _ELB_GROUPS_CONST_H_
 
-#include <stddef.h>                     // for size_t
+#include <cstddef> // for size_t
 struct Machine_Description;
 struct Problem_Description;
 template <typename INT> struct Graph_Description;

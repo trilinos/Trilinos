@@ -30,30 +30,30 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
+#include "el_check_monot.h"    // for check_monot
+#include "el_elm.h"            // for HEXSHELL, NN_SIDE, etc
+#include "exodusII.h"          // for ex_inquire_int, etc
+#include "nem_spread.h"        // for NemSpread, second, etc
+#include "netcdf.h"            // for nc_set_fill, NC_NOFILL
+#include "pe_common.h"         // for MAX_CHUNK_SIZE
+#include "pe_str_util_const.h" // for string_to_lower
+#include "ps_pario_const.h"    // for PIO_Info, Parallel_IO, etc
+#include "rf_allo.h"           // for safe_free, array_alloc
+#include "rf_format.h"         // for ST_ZU
+#include "rf_io_const.h"       // for Debug_Flag, ExoFile
+#include "rf_util.h"           // for print_line, my_sort
+#include "sort_utils.h"        // for gds_qsort
+#include <cassert>             // for assert
+#include <climits>             // for INT_MAX
+#include <cstddef>             // for size_t
+#include <cstdio>              // for printf, fprintf, nullptr, etc
+#include <cstdlib>             // for exit, free
+#include <cstring>             // for strcpy, strrchr, strlen
 #include <iostream>
-#include <assert.h>                     // for assert
-#include <limits.h>                     // for INT_MAX
-#include <stdio.h>                      // for printf, fprintf, nullptr, etc
-#include <stdlib.h>                     // for exit, free
-#include <string.h>                     // for strcpy, strrchr, strlen
-#include <sys/types.h>                  // for int64_t
-#include <cstddef>                      // for size_t
-#include <vector>                       // for vector
-#include "el_check_monot.h"             // for check_monot
-#include "el_elm.h"                     // for HEXSHELL, NN_SIDE, etc
-#include "exodusII.h"                   // for ex_inquire_int, etc
-#include "nem_spread.h"                 // for NemSpread, second, etc
-#include "netcdf.h"                     // for nc_set_fill, NC_NOFILL
-#include "pe_common.h"                  // for MAX_CHUNK_SIZE
-#include "pe_str_util_const.h"          // for string_to_lower
-#include "ps_pario_const.h"             // for PIO_Info, Parallel_IO, etc
-#include "rf_allo.h"                    // for safe_free, array_alloc
-#include "rf_format.h"                  // for ST_ZU
-#include "rf_io_const.h"                // for Debug_Flag, ExoFile
-#include "rf_util.h"                    // for print_line, my_sort
-#include "sort_utils.h"                 // for gds_qsort
+#include <sys/types.h> // for int64_t
+#include <vector>      // for vector
 template <typename T, typename INT> class Globals;
 
 #if __cplusplus > 199711L

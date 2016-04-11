@@ -45,7 +45,8 @@ namespace Excn {
 
   typedef std::vector<int> IntVector;
 
-  struct Variables {
+  struct Variables
+  {
     Variables(ObjectType otype) : objectType(otype), outputCount(0), addProcessorId(false)
     {
       SMART_ASSERT(otype == EBLK || otype == NSET || otype == SSET || otype == NODE ||

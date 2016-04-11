@@ -30,35 +30,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <nem_spread.h>                 // for NemSpread
-#include <stddef.h>                     // for size_t
-#include "rf_allo.h"                    // for array_alloc
-#include "stdint.h"
+#include "rf_allo.h" // for array_alloc
+#include <cstddef>   // for size_t
+#include <cstdint>
+#include <nem_spread.h> // for NemSpread
 
-template void NemSpread<double,int>::create_elem_types(void);
-template void NemSpread<float,int>::create_elem_types(void);
-template void NemSpread<double,int64_t>::create_elem_types(void);
-template void NemSpread<float,int64_t>::create_elem_types(void);
+template void NemSpread<double, int>::create_elem_types(void);
+template void NemSpread<float, int>::create_elem_types(void);
+template void NemSpread<double, int64_t>::create_elem_types(void);
+template void NemSpread<float, int64_t>::create_elem_types(void);
 
-template <typename T, typename INT>
-void NemSpread<T,INT>::create_elem_types()
+template <typename T, typename INT> void NemSpread<T, INT>::create_elem_types()
 /*
  *      Function which creates a vector of element types for each element.
  */
 {
-  globals.Elem_Type = (int **)array_alloc(__FILE__, __LINE__, 1,
-					  Proc_Info[2],
-					  sizeof(int *));
+  globals.Elem_Type = (int **)array_alloc(__FILE__, __LINE__, 1, Proc_Info[2], sizeof(int *));
 
-  for(int iproc=0; iproc <Proc_Info[2]; iproc++) {
+  for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
 
-    globals.Elem_Type[iproc] = (int *) array_alloc(__FILE__, __LINE__, 1,
-						   globals.Num_Internal_Elems[iproc] +
-						   globals.Num_Border_Elems[iproc],
-						   sizeof(int));
+    globals.Elem_Type[iproc] = (int *)array_alloc(
+        __FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc],
+        sizeof(int));
 
     /*
      *     Loop through all the element blocks on the processor,

@@ -38,28 +38,25 @@
  * Functions contained in this file:
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
+#include "elb.h"        // for Problem_Description, etc
+#include "elb_elem.h"   // for elem_name_from_enum
+#include "elb_err.h"    // for Gen_Error
+#include "elb_format.h" // for ST_ZU
 #include "elb_groups.h"
-#include <stdio.h>                      // for printf, sscanf, nullptr
-#include <stdlib.h>                     // for free, malloc
-#include <string.h>                     // for strchr, strlen
-#include <sys/types.h>                  // for ssize_t
-#include <vector>                       // for vector
-#include "elb.h"                        // for Problem_Description, etc
-#include "elb_elem.h"                   // for elem_name_from_enum
-#include "elb_err.h"                    // for Gen_Error
-#include "elb_format.h"                 // for ST_ZU
-
+#include <cstdio>      // for printf, sscanf, nullptr
+#include <cstdlib>     // for free, malloc
+#include <cstring>     // for strchr, strlen
+#include <sys/types.h> // for ssize_t
+#include <vector>      // for vector
 
 /*****************************************************************************/
 namespace {
-template <typename INT>
-void scandescriptor(const char *d, INT *blkids, int n, int nblks,
-		    Problem_Description* prob);
-template <typename INT>
-void chgrp(int grp_id, size_t blk, INT *blkids, int nblks,
-                  Problem_Description* prob);
+  template <typename INT>
+  void scandescriptor(const char *d, INT *blkids, int n, int nblks, Problem_Description *prob);
+  template <typename INT>
+  void chgrp(int grp_id, size_t blk, INT *blkids, int nblks, Problem_Description *prob);
 }
-extern int ilog2i (size_t n);
+extern int ilog2i(size_t n);
 
 /*****************************************************************************/
 

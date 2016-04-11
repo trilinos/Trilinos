@@ -30,25 +30,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
-#include <assert.h>
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for printf, fprintf, stderr, etc
-#include <stdlib.h>                     // for exit, malloc
+#include <cassert>
+#include <cstddef> // for size_t
+#include <cstdio>  // for printf, fprintf, stderr, etc
+#include <cstdlib> // for exit, malloc
 
-#include "exodusII.h"                   // for ex_inquire, ex_opts, etc
-#include "globals.h"                    // for ELEM_COMM_MAP, etc
-#include "nem_spread.h"                 // for NemSpread, etc
-#include "pe_common.h"                  // for PEX_MAX
-#include "rf_allo.h"                    // for array_alloc, safe_free
-#include "rf_io_const.h"                // for Debug_Flag, Exo_LB_File
-#include "rf_util.h"                    // for print_line
-#include "sort_utils.h"                 // for gds_qsort
+#include "exodusII.h"   // for ex_inquire, ex_opts, etc
+#include "globals.h"    // for ELEM_COMM_MAP, etc
+#include "nem_spread.h" // for NemSpread, etc
+#include "pe_common.h"  // for PEX_MAX
+#include "rf_allo.h"    // for array_alloc, safe_free
 #include "rf_format.h"
+#include "rf_io_const.h" // for Debug_Flag, Exo_LB_File
+#include "rf_util.h"     // for print_line
+#include "sort_utils.h"  // for gds_qsort
 
 char **qa_record_ptr, **inf_record_ptr;
-int num_inf_rec=0, num_qa_rec=0, length_qa=0;
+int    num_inf_rec = 0, num_qa_rec = 0, length_qa = 0;
 
 /****************************************************************************
  ****************************************************************************

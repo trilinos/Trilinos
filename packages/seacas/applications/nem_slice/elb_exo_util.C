@@ -33,24 +33,24 @@
  *
  */
 
-#include <exodusII.h>                   // for ex_close, ex_inquire, etc
+#include <exodusII.h> // for ex_close, ex_inquire, etc
 
-#include <vector>
-#include <string>
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for printf, nullptr, sprintf
-#include <stdlib.h>                     // for malloc, free, calloc
-#include <string.h>                     // for strlen
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
+#include <cstddef> // for size_t
+#include <cstdio>  // for printf, nullptr, sprintf
+#include <cstdlib> // for malloc, free, calloc
+#include <cstring> // for strlen
+#include <string>
+#include <vector>
 
+#include "elb.h"      // for Weight_Description<INT>, etc
+#include "elb_elem.h" // for get_elem_type, E_Type, etc
+#include "elb_err.h"  // for Gen_Error, MAX_ERR_MSG
 #include "elb_exo.h"
-#include "elb.h"                  // for Weight_Description<INT>, etc
-#include "elb_elem.h"             // for get_elem_type, E_Type, etc
-#include "elb_err.h"              // for Gen_Error, MAX_ERR_MSG
-#include "elb_groups.h"           // for parse_groups
-#include "elb_util.h"             // for in_list, roundfloat
 #include "elb_format.h"
+#include "elb_groups.h" // for parse_groups
+#include "elb_util.h"   // for in_list, roundfloat
 
 /*****************************************************************************/
 /*****************************************************************************/

@@ -30,17 +30,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stdio.h>                      // for sprintf, fprintf, printf, etc
-#include <stdlib.h>                     // for exit
-#include <string.h>                     // for strcat, strcpy, strlen, etc
+#include "ps_pario_const.h" // for Parallel_IO, PIO_Info
+#include "rf_allo.h"        // for array_alloc
+#include "rf_io_const.h"    // for Debug_Flag, MAX_FNL
+#include <cstdio>           // for sprintf, fprintf, printf, etc
+#include <cstdlib>          // for exit
+#include <cstring>          // for strcat, strcpy, strlen, etc
 #include <sstream>
 #include <string>
-#include "ps_pario_const.h"             // for Parallel_IO, PIO_Info
-#include "rf_allo.h"                    // for array_alloc
-#include "rf_io_const.h"                // for Debug_Flag, MAX_FNL
 
 /*********** R O U T I N E S   I N    T H I S  F I L E ***********************
 

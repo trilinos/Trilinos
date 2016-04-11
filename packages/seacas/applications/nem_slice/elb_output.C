@@ -33,22 +33,21 @@
  *
  */
 
+#include "elb.h"      // for Machine_Description, TOPTR, etc
+#include "elb_allo.h" // for array_alloc
+#include "elb_elem.h" // for NNODES, get_elem_info
+#include "elb_err.h"  // for Gen_Error, error_lev
 #include "elb_output.h"
-#include <iostream>
-#include <exodusII.h>                   // for ex_close, ex_opts, etc
-#include <stddef.h>                     // for size_t, nullptr
-#include <stdio.h>                      // for printf, sprintf, fprintf, etc
-#include <stdlib.h>                     // for free, malloc, realloc
-#include <string.h>                     // for strcat, strcpy, strlen, etc
-#include <time.h>                       // for asctime, localtime, time, etc
-#include <vector>                       // for vector
-#include "elb.h"                        // for Machine_Description, TOPTR, etc
-#include "elb_allo.h"                   // for array_alloc
-#include "elb_elem.h"                   // for NNODES, get_elem_info
-#include "elb_err.h"                    // for Gen_Error, error_lev
-#include "elb_util.h"                   // for gds_qsort, qsort2, in_list, etc
+#include "elb_util.h" // for gds_qsort, qsort2, in_list, etc
 #include "scopeguard.h"
-
+#include <cstddef>    // for size_t, nullptr
+#include <cstdio>     // for printf, sprintf, fprintf, etc
+#include <cstdlib>    // for free, malloc, realloc
+#include <cstring>    // for strcat, strcpy, strlen, etc
+#include <ctime>      // for asctime, localtime, time, etc
+#include <exodusII.h> // for ex_close, ex_opts, etc
+#include <iostream>
+#include <vector> // for vector
 
 namespace {
   const std::string remove_extension(const std::string &filename)

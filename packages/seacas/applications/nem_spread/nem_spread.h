@@ -35,7 +35,6 @@
 #ifndef NEM_SPREAD_H
 #define NEM_SPREAD_H
 
-#include <cstdlib>
 #include "globals.h"
 #include "rf_io_const.h"
 #include <rf_allo.h>

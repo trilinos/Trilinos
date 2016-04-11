@@ -38,19 +38,19 @@
 /* use by SALSA.                                                            */
 /*--------------------------------------------------------------------------*/
 
-#include <stdint.h>                     // for int64_t
-#include <stdio.h>                      // for printf, fprintf, stderr, etc
-#include <stdlib.h>                     // for exit
-#include <string.h>                     // for strcpy
-#include <unistd.h>                     // for getopt, optarg, optind
-#include "add_to_log.h"                 // for add_to_log
-#include "exodusII.h"                   // for ex_opts, ex_int64_status, etc
-#include "nem_spread.h"                 // for NemSpread, second, etc
-#include "ps_pario.h"                   // for PIO_Info
-#include "ps_pario_const.h"             // for Parallel_IO
-#include "rf_allo.h"                    // for safe_free
-#include "rf_io.h"                      // for ExoFile, Debug_Flag, etc
+#include "add_to_log.h"     // for add_to_log
+#include "exodusII.h"       // for ex_opts, ex_int64_status, etc
+#include "nem_spread.h"     // for NemSpread, second, etc
+#include "ps_pario.h"       // for PIO_Info
+#include "ps_pario_const.h" // for Parallel_IO
+#include "rf_allo.h"        // for safe_free
 #include "rf_format.h"
+#include "rf_io.h"  // for ExoFile, Debug_Flag, etc
+#include <cstdint>  // for int64_t
+#include <cstdio>   // for printf, fprintf, stderr, etc
+#include <cstdlib>  // for exit
+#include <cstring>  // for strcpy
+#include <unistd.h> // for getopt, optarg, optind
 
 #if defined(__STRICT_ANSI__)
 #include <getopt.h>

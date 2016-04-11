@@ -30,33 +30,32 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
-#include <assert.h>                     // for assert
-#include <limits.h>                     // for INT_MAX
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for fprintf, stderr, nullptr, etc
-#include <stdlib.h>                     // for exit, free, malloc
-#include <string.h>                     // for strrchr, memset, etc
-#include <unistd.h>                     // for sysconf, _SC_OPEN_MAX
-#include <vector>                       // for vector
-#include <string>
-#include "exodusII.h"                   // for ex_close, etc
-#include "nem_spread.h"                 // for NemSpread, etc
-#include "pe_common.h"                  // for MAX_CHUNK_SIZE
-#include "ps_pario_const.h"             // for PIO_Info, etc
-#include "rf_allo.h"                    // for array_alloc, safe_free
-#include "rf_io_const.h"                // for Exo_Res_File, ExoFile, etc
-#include "rf_util.h"                    // for break_message_up
+#include "exodusII.h"       // for ex_close, etc
+#include "nem_spread.h"     // for NemSpread, etc
+#include "pe_common.h"      // for MAX_CHUNK_SIZE
+#include "ps_pario_const.h" // for PIO_Info, etc
+#include "rf_allo.h"        // for array_alloc, safe_free
 #include "rf_format.h"
+#include "rf_io_const.h" // for Exo_Res_File, ExoFile, etc
+#include "rf_util.h"     // for break_message_up
+#include <cassert>       // for assert
+#include <climits>       // for INT_MAX
+#include <cstddef>       // for size_t
+#include <cstdio>        // for fprintf, stderr, nullptr, etc
+#include <cstdlib>       // for exit, free, malloc
+#include <cstring>       // for strrchr, memset, etc
+#include <string>
+#include <unistd.h> // for sysconf, _SC_OPEN_MAX
+#include <vector>   // for vector
 
 namespace {
   int get_free_descriptor_count();
 
   template <typename INT>
-  size_t find_gnode_inter(INT *intersect, size_t num_g_nodes, INT *glob_vec,
-			size_t num_int_nodes, size_t num_bor_nodes,
-			size_t num_ext_nodes, INT *loc_vec);
+  size_t find_gnode_inter(INT *intersect, size_t num_g_nodes, INT *glob_vec, size_t num_int_nodes,
+                          size_t num_bor_nodes, size_t num_ext_nodes, INT *loc_vec);
 }
 
 #if __cplusplus > 199711L
@@ -1093,7 +1092,7 @@ namespace {
 #else
 #include <unistd.h>
 #endif
-#include <limits.h>
+#include <climits>
 
   int get_free_descriptor_count()
   {

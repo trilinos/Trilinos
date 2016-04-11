@@ -30,16 +30,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "el_elm.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-#define LINEAR          1
-#define QUADRATIC       2
+#define LINEAR 1
+#define QUADRATIC 2
 
 /*************** R O U T I N E S   I N   T H I S   F I L E ********************
 *

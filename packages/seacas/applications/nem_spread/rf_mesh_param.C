@@ -30,28 +30,26 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stdio.h>                      // for printf, fprintf, stderr
-#include <stdlib.h>                     // for exit
-#include <string.h>                     // for memset
-#include "exodusII.h"                   // for MAX_LINE_LENGTH, ex_close, etc
-#include "nem_spread.h"                 // for NemSpread, etc
-#include "rf_io_const.h"                // for Debug_Flag, ExoFile
+#include "exodusII.h"   // for MAX_LINE_LENGTH, ex_close, etc
+#include "nem_spread.h" // for NemSpread, etc
 #include "rf_format.h"
-
+#include "rf_io_const.h" // for Debug_Flag, ExoFile
+#include <cstdio>        // for printf, fprintf, stderr
+#include <cstdlib>       // for exit
+#include <cstring>       // for memset
 
 /* need to hang on to this to write it out to the proc 0 file */
-char    GeomTitle[MAX_LINE_LENGTH+1];
+char GeomTitle[MAX_LINE_LENGTH + 1];
 
-template void NemSpread<double,int>::read_mesh_param ();
-template void NemSpread<float,int>::read_mesh_param ();
-template void NemSpread<double,int64_t>::read_mesh_param ();
-template void NemSpread<float,int64_t>::read_mesh_param ();
+template void NemSpread<double, int>::read_mesh_param();
+template void NemSpread<float, int>::read_mesh_param();
+template void NemSpread<double, int64_t>::read_mesh_param();
+template void NemSpread<float, int64_t>::read_mesh_param();
 
-template <typename T, typename INT>
-void NemSpread<T,INT>::read_mesh_param ()
+template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
 
 /*
  *       Function which reads the sizing parameters from the EXODUS II database,

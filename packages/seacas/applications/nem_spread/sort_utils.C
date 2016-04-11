@@ -35,13 +35,13 @@
 
 #define DEBUG_SORT 1
 #if DEBUG_SORT
-#include <assert.h>
-#include <stdio.h>
+#include <cassert>
+#include <cstdio>
 #endif
 
 #include "rf_format.h"
-#include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for int64_t
+#include <cstddef> // for size_t
+#include <cstdint> // for int64_t
 
 /*
  * The following 'indexed qsort' routine is modified from Sedgewicks

@@ -33,7 +33,7 @@
  *
  */
 
-#include <time.h>
+#include <ctime>
 
 #ifdef HAS_GETRUSAGE
 #include <sys/resource.h>

@@ -33,15 +33,15 @@
  *
  */
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "elb_err.h"
 
 const int MAX_ERR_MSG = 1024;
-int error_lev = 1;
+int       error_lev   = 1;
 
 static std::vector<error_message> error_info;
 

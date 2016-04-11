@@ -36,16 +36,16 @@
 #ifndef _EXOIILB_CONST_H_
 #define _EXOIILB_CONST_H_
 
+#include "elb_elem.h"
+#include <cstdio>
+#include <exodusII.h>
 #include <string>
 #include <vector>
-#include <stdio.h>
-#include <exodusII.h>
-#include "elb_elem.h"
 
-#define ELB_VERSION	"4.11"
-#define UTIL_NAME	"nem_slice"
-#define ELB_FALSE	0
-#define ELB_TRUE	1
+#define ELB_VERSION "4.11"
+#define UTIL_NAME "nem_slice"
+#define ELB_FALSE 0
+#define ELB_TRUE 1
 
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
@@ -73,7 +73,7 @@
 template <typename INT> void vec_free(std::vector<INT> &V) { std::vector<INT>().swap(V); }
 
 /* Prototype for timing function */
-extern double get_time(void);
+extern double get_time();
 
 /* Structure used for the description of the machine for which the
  * load balance is to be constructed. */

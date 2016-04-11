@@ -38,26 +38,26 @@
  *	main()
  *	print_input()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include <cstddef> // for size_t
+#include <cstdio>  // for printf, nullptr, fprintf, etc
+#include <cstdlib> // for free, exit, malloc
+#include <cstring> // for strcmp
 #include <iostream>
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for printf, nullptr, fprintf, etc
-#include <stdlib.h>                     // for free, exit, malloc
-#include <string.h>                     // for strcmp
 
-#include "add_to_log.h"                 // for add_to_log
-#include "elb_allo.h"             // for array_alloc
-#include "elb.h"                  // for LB_Description<INT>, get_time, etc
-#include "elb_elem.h"             // for E_Type, ::NULL_EL
-#include "elb_err.h"              // for error_report, Gen_Error, etc
-#include "elb_exo.h"              // for init_weight_struct, etc
-#include "elb_graph.h"            // for generate_graph
-#include "elb_inp.h"              // for check_inp_specs, etc
-#include "elb_loadbal.h"          // for generate_loadbal, etc
-#include "elb_output.h"           // for write_nemesis, write_vis
+#include "add_to_log.h" // for add_to_log
+#include "elb.h"        // for LB_Description<INT>, get_time, etc
+#include "elb_allo.h"   // for array_alloc
+#include "elb_elem.h"   // for E_Type, ::NULL_EL
+#include "elb_err.h"    // for error_report, Gen_Error, etc
+#include "elb_exo.h"    // for init_weight_struct, etc
 #include "elb_format.h"
+#include "elb_graph.h"   // for generate_graph
+#include "elb_inp.h"     // for check_inp_specs, etc
+#include "elb_loadbal.h" // for generate_loadbal, etc
+#include "elb_output.h"  // for write_nemesis, write_vis
 
 #ifdef USE_ZOLTAN
-#include <mpi.h>                        // for MPI_Finalize, etc
+#include <mpi.h> // for MPI_Finalize, etc
 #endif
 
 #ifdef SGI10K

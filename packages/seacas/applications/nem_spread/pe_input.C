@@ -30,54 +30,53 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*--------------------------------------------------------------------------*/
 /* Purpose: Determine file types for command files and read in the parallel */
 /*          ExodusII command file.                                          */
 /*--------------------------------------------------------------------------*/
 
-#include <stdio.h>                      // for fprintf, nullptr, stderr, etc
-#include <stdlib.h>                     // for exit, realloc
-#include <string.h>                     // for strtok, strchr, strstr, etc
-#include "pe_str_util_const.h"          // for strip_string, token_compare, etc
-#include "ps_pario_const.h"             // for PIO_Info, Parallel_IO, etc
-#include "rf_allo.h"                    // for array_alloc
-#include "rf_io_const.h"                // for MAX_INPUT_STR_LN, ExoFile, etc
 #include "nem_spread.h"
+#include "pe_str_util_const.h" // for strip_string, token_compare, etc
+#include "ps_pario_const.h"    // for PIO_Info, Parallel_IO, etc
+#include "rf_allo.h"           // for array_alloc
+#include "rf_io_const.h"       // for MAX_INPUT_STR_LN, ExoFile, etc
 #include "scopeguard.h"
+#include <cstdio>  // for fprintf, nullptr, stderr, etc
+#include <cstdlib> // for exit, realloc
+#include <cstring> // for strtok, strchr, strstr, etc
 
 #define TLIST_CNT 5
 
 /*****************************************************************************/
 int read_mesh_file_name(const char *filename)
 {
-/* local declarations */
+  /* local declarations */
   FILE *file_cmd = nullptr;
   char  inp_line[MAX_INPUT_STR_LN + 1];
   char  inp_copy[MAX_INPUT_STR_LN + 1];
 
   /* Open the file */
-  if((file_cmd=fopen(filename, "r")) == nullptr)
+  if ((file_cmd = fopen(filename, "r")) == nullptr)
     return -1;
   ON_BLOCK_EXIT(fclose, file_cmd);
-  
+
   /* Begin parsing the input file */
-  while(fgets(inp_line, MAX_INPUT_STR_LN, file_cmd)) {
+  while (fgets(inp_line, MAX_INPUT_STR_LN, file_cmd)) {
     /* skip any line that is a comment */
-    if((inp_line[0] != '#') && (inp_line[0] != '\n')) {
-      
+    if ((inp_line[0] != '#') && (inp_line[0] != '\n')) {
+
       strcpy(inp_copy, inp_line);
       clean_string(inp_line, " \t");
       char *cptr = strtok(inp_line, "\t=");
       /****** The input ExodusII file name ******/
       if (token_compare(cptr, "input fem file")) {
-        if(strlen(ExoFile) == 0)
-        {
+        if (strlen(ExoFile) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
           strncpy(ExoFile, cptr, MAX_FNL);
-          ExoFile[MAX_FNL-1] = '\0';
+          ExoFile[MAX_FNL - 1] = '\0';
           break;
         }
       }

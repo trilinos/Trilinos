@@ -1204,35 +1204,35 @@ namespace {
     int error = 0;
 
     // I. Get and store info strings, if they exist
-    int num_info_records = ex_inquire_int(id,EX_INQ_INFO);
-    auto info_records = new char*[num_info_records+1];
-    int info_string_len = MAX_LINE_LENGTH;
+    int  num_info_records = ex_inquire_int(id, EX_INQ_INFO);
+    auto info_records     = new char *[num_info_records + 1];
+    int  info_string_len  = MAX_LINE_LENGTH;
 
     {
-      for (int i = 0; i < num_info_records+1; i++) {
-	info_records[i] = new char[info_string_len + 1];
-	memset(info_records[i], '\0', info_string_len+1);
+      for (int i = 0; i < num_info_records + 1; i++) {
+        info_records[i] = new char[info_string_len + 1];
+        memset(info_records[i], '\0', info_string_len + 1);
       }
     }
 
     if (num_info_records > 0) {
       error = ex_get_info(id, info_records);
       if (error < 0)
-	exodus_error(__LINE__);
+        exodus_error(__LINE__);
     }
 
     // Add an info record for EPU
     add_info_record(info_records[num_info_records], MAX_LINE_LENGTH);
 
-    error = ex_put_info(id_out,num_info_records+1,info_records);
+    error = ex_put_info(id_out, num_info_records + 1, info_records);
     if (error < 0)
       exodus_error(__LINE__);
 
     {
-      for (int i = 0; i < num_info_records+1; i++) {
-	delete [] info_records[i];
+      for (int i = 0; i < num_info_records + 1; i++) {
+        delete[] info_records[i];
       }
-      delete [] info_records;
+      delete[] info_records;
     }
 
     // II. Get and store QA records, if they exist
@@ -1240,50 +1240,50 @@ namespace {
     {
       char *qa_record[1][4];
     };
-    
-    int num_qa_records = ex_inquire_int(id, EX_INQ_QA);
-    auto qaRecord = new qa_element[num_qa_records+1];
-    for (int i=0; i < num_qa_records+1; i++) {
-      for (int j=0; j < 4; j++) {
-	qaRecord[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
-	qaRecord[i].qa_record[0][j][0] = '\0';
+
+    int  num_qa_records = ex_inquire_int(id, EX_INQ_QA);
+    auto qaRecord       = new qa_element[num_qa_records + 1];
+    for (int i = 0; i < num_qa_records + 1; i++) {
+      for (int j = 0; j < 4; j++) {
+        qaRecord[i].qa_record[0][j]    = new char[MAX_STR_LENGTH + 1];
+        qaRecord[i].qa_record[0][j][0] = '\0';
       }
     }
     if (num_qa_records) {
       error = ex_get_qa(id, qaRecord[0].qa_record);
       if (error < 0)
-	exodus_error(__LINE__);
+        exodus_error(__LINE__);
     }
 
-    char buffer[MAX_STR_LENGTH+1];
+    char buffer[MAX_STR_LENGTH + 1];
 
     strncpy(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH); // Code
     strncpy(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH); // Version
 
     time_t date_time = time(nullptr);
-    strftime( buffer, MAX_STR_LENGTH, "%Y/%m/%d", localtime(&date_time) );
+    strftime(buffer, MAX_STR_LENGTH, "%Y/%m/%d", localtime(&date_time));
 
     strncpy(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH);
 
-    strftime( buffer, MAX_STR_LENGTH, "%H:%M:%S", localtime(&date_time) );
+    strftime(buffer, MAX_STR_LENGTH, "%H:%M:%S", localtime(&date_time));
     strncpy(qaRecord[num_qa_records].qa_record[0][3], buffer, MAX_STR_LENGTH);
 
-    error = ex_put_qa(id_out, num_qa_records+1, qaRecord[0].qa_record);
+    error = ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);
     if (error < 0)
       exodus_error(__LINE__);
 
-    for (int i=0; i < num_qa_records+1; i++) {
-      for (int j=0; j < 4; j++) {
-	delete [] qaRecord[i].qa_record[0][j];
+    for (int i = 0; i < num_qa_records + 1; i++) {
+      for (int j = 0; j < 4; j++) {
+        delete[] qaRecord[i].qa_record[0][j];
       }
     }
-    delete [] qaRecord;
+    delete[] qaRecord;
   }
 
   template <typename T, typename INT>
-  void get_put_coordinates(Mesh& global, int part_count,
-			   std::vector<Mesh> &local_mesh,
-			   const std::vector<std::vector<INT> > &local_node_to_global, T /* float_or_double */)
+  void get_put_coordinates(Mesh &global, int part_count, std::vector<Mesh> &local_mesh,
+                           const std::vector<std::vector<INT>> &local_node_to_global,
+                           T /* float_or_double */)
   {
     SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
     std::vector<T> x(global.nodeCount);

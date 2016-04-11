@@ -40,20 +40,19 @@
  *      read_cmd_file()
  *      check_inp_specs()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include "elb.h"        // for Problem_Description, etc
+#include "elb_err.h"    // for Gen_Error, error_lev
+#include "elb_format.h" // for ST_ZU
 #include "elb_inp.h"
-#include <exodusII.h>                   // for ex_close, EX_READ, etc
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for nullptr, sprintf, printf, etc
-#include <stdlib.h>                     // for malloc, exit, free
-#include <string.h>                     // for strcmp, strstr, strchr, etc
-#include "elb.h"                        // for Problem_Description, etc
-#include "elb_err.h"                    // for Gen_Error, error_lev
-#include "elb_format.h"                 // for ST_ZU
-#include "elb_util.h"                   // for strip_string, token_compare, etc
-#include "getopt.h"                     // for getopt
-#include "md_getsubopt.h"               // for md_getsubopt
+#include "elb_util.h"     // for strip_string, token_compare, etc
+#include "getopt.h"       // for getopt
+#include "md_getsubopt.h" // for md_getsubopt
 #include "scopeguard.h"
-
+#include <cstddef>    // for size_t
+#include <cstdio>     // for nullptr, sprintf, printf, etc
+#include <cstdlib>    // for malloc, exit, free
+#include <cstring>    // for strcmp, strstr, strchr, etc
+#include <exodusII.h> // for ex_close, EX_READ, etc
 
 namespace {
   void print_usage();

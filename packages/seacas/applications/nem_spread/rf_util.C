@@ -30,13 +30,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for printf, fprintf, nullptr, etc
-#include <stdlib.h>                     // for exit
-#include "rf_allo.h"                    // for array_alloc
+#include "rf_allo.h" // for array_alloc
+#include <cstddef>   // for size_t
+#include <cstdio>    // for printf, fprintf, nullptr, etc
+#include <cstdlib>   // for exit
 
 /*************************************************************************/
 /*************************************************************************/

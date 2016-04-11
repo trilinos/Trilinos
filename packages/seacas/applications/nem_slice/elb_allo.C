@@ -33,14 +33,14 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
 
 #include "elb_allo.h"
 #include "elb_format.h"
 
-static void *smalloc (size_t n);
+static void *smalloc(size_t n);
 
 /******************************************************************************
  *
