@@ -62,7 +62,7 @@ namespace Tacho {
       const ordinal_type m = BB.NumRows();
       for (auto rhs=0;rhs<nrhs;++rhs) 
         for (auto i=0;i<m;++i) 
-          BB.Value(i, rhs) = i;// (rhs + 1);
+          BB.Value(i, rhs) = (rhs + 1);
       
       tacho.setProblem(AA, BB, XX);
     }
