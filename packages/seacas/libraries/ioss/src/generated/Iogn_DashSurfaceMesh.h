@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,55 +33,41 @@
 #ifndef IOSS_Iogn_DashSurfaceMesh_h
 #define IOSS_Iogn_DashSurfaceMesh_h
 
-#include <generated/Iogn_GeneratedMesh.h>  // for GeneratedMesh
-#include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for int64_t
-#include <exception>                    // for exception
-#include <string>                       // for string
-#include <utility>                      // for pair
-#include <vector>                       // for vector
+#include <exception>                      // for exception
+#include <generated/Iogn_GeneratedMesh.h> // for GeneratedMesh
+#include <stddef.h>                       // for size_t
+#include <stdint.h>                       // for int64_t
+#include <string>                         // for string
+#include <utility>                        // for pair
+#include <vector>                         // for vector
 
-namespace Iogn
-{
+namespace Iogn {
 
-enum
-{
-    INVALID                 = -1,
-    NUMBER_OF_SURFACES      =  2,
-    SPATIAL_DIMENSION       =  3,
-    NUM_NODES_PER_QUAD_FACE =  4
-};
+  enum { INVALID = -1, NUMBER_OF_SURFACES = 2, SPATIAL_DIMENSION = 3, NUM_NODES_PER_QUAD_FACE = 4 };
 
-struct SharedNode
-{
+  struct SharedNode {
     SharedNode() : nodeId(-1), procId(-1) {}
     int nodeId;
     int procId;
-};
+  };
 
-enum Topology {
-    Shell4 = 4,
-    Hex8   = 8
-};
+  enum Topology { Shell4 = 4, Hex8 = 8 };
 
-inline std::string getTopologyName(Topology topology)
-{
-    switch(topology)
-    {
-        case Shell4:
-            return std::string("shell4");
-        case Hex8:
-            return std::string("hex8");
+  inline std::string getTopologyName(Topology topology)
+  {
+    switch (topology) {
+    case Shell4: return std::string("shell4");
+    case Hex8: return std::string("hex8");
     }
     throw std::exception();
-}
+  }
 
-struct ExodusData {
-    std::vector<double> coordinates;
-    const std::vector< std::vector<int> > elementBlockConnectivity;
-    const std::vector<int> globalNumberOfElementsInBlock;
-    const std::vector<int> localNumberOfElementsInBlock;
-    const std::vector<Topology> blockTopologicalData;
+  struct ExodusData {
+    std::vector<double>                 coordinates;
+    const std::vector<std::vector<int>> elementBlockConnectivity;
+    const std::vector<int>              globalNumberOfElementsInBlock;
+    const std::vector<int>              localNumberOfElementsInBlock;
+    const std::vector<Topology>         blockTopologicalData;
 
     const int globalNumberOfNodes;
 
@@ -95,30 +81,34 @@ struct ExodusData {
     // element side (1-based) The side id is: side_id =
     // 10*element_id + local_side_number This assumes that all
     // sides in a sideset are boundary sides.
-    std::vector< std::vector<int> > sidesetConnectivity;
-    std::vector< std::vector<std::string> > sidesetTouchingBlocks;
+    std::vector<std::vector<int>>         sidesetConnectivity;
+    std::vector<std::vector<std::string>> sidesetTouchingBlocks;
 
-    ExodusData(const std::vector<double> coords, const std::vector< std::vector<int> > elemBlockConnectivity,
-               const std::vector<int> globalNumOfElemsInBlock, const std::vector<int> localNumOfElemsInBlock,
-               const std::vector<Topology> blockTopoData, int globalNumNodes, const std::vector<int> globalIdsOfLocalElems,
-               const std::vector<int> globalIdsLocalNodes,
-               std::vector< std::vector<int> >  sidesetConn = std::vector< std::vector<int> >(),
-               std::vector< std::vector<std::string> >  sidesetBlocks = std::vector< std::vector<std::string> >())
-    : coordinates(coords), elementBlockConnectivity(elemBlockConnectivity),
-      globalNumberOfElementsInBlock(globalNumOfElemsInBlock), localNumberOfElementsInBlock(localNumOfElemsInBlock),
-      blockTopologicalData(blockTopoData), globalNumberOfNodes(globalNumNodes), globalIdsOfLocalElements(globalIdsOfLocalElems),
-      globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(0), sidesetConnectivity(std::move(sidesetConn)),
-      sidesetTouchingBlocks(std::move(sidesetBlocks))
+    ExodusData(const std::vector<double>           coords,
+               const std::vector<std::vector<int>> elemBlockConnectivity,
+               const std::vector<int>              globalNumOfElemsInBlock,
+               const std::vector<int>              localNumOfElemsInBlock,
+               const std::vector<Topology> blockTopoData, int globalNumNodes,
+               const std::vector<int>                globalIdsOfLocalElems,
+               const std::vector<int>                globalIdsLocalNodes,
+               std::vector<std::vector<int>>         sidesetConn = std::vector<std::vector<int>>(),
+               std::vector<std::vector<std::string>> sidesetBlocks =
+                   std::vector<std::vector<std::string>>())
+        : coordinates(coords), elementBlockConnectivity(elemBlockConnectivity),
+          globalNumberOfElementsInBlock(globalNumOfElemsInBlock),
+          localNumberOfElementsInBlock(localNumOfElemsInBlock), blockTopologicalData(blockTopoData),
+          globalNumberOfNodes(globalNumNodes), globalIdsOfLocalElements(globalIdsOfLocalElems),
+          globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(0),
+          sidesetConnectivity(std::move(sidesetConn)),
+          sidesetTouchingBlocks(std::move(sidesetBlocks))
     {
-
     }
-};
+  };
 
-struct DashSurfaceData
-{
+  struct DashSurfaceData {
     const std::vector<double> &coordinates;
-    const std::vector<int> &surfaceAConnectivity;
-    const std::vector<int> &surfaceBConnectivity;
+    const std::vector<int> &   surfaceAConnectivity;
+    const std::vector<int> &   surfaceBConnectivity;
 
     int globalNumberOfNodes;
     int globalNumberOfElements;
@@ -131,45 +121,44 @@ struct DashSurfaceData
 
     std::vector<SharedNode> *sharedNodes;
 
-    DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1, const std::vector<int> &connectivity2)
-    : coordinates(coords), surfaceAConnectivity(connectivity1), surfaceBConnectivity(connectivity2),
-      sharedNodes(0)
+    DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1,
+                    const std::vector<int> &connectivity2)
+        : coordinates(coords), surfaceAConnectivity(connectivity1),
+          surfaceBConnectivity(connectivity2), sharedNodes(0)
     {
-        this->setSerialDefaults();
+      this->setSerialDefaults();
     }
 
   private:
-
     void setSerialDefaults()
     {
-        globalNumberOfNodes = coordinates.size()/SPATIAL_DIMENSION;
+      globalNumberOfNodes = coordinates.size() / SPATIAL_DIMENSION;
 
-        globalNumberOfElementsSurface1 = surfaceBConnectivity.size()/NUM_NODES_PER_QUAD_FACE;
-        globalNumberOfElementsSurface2 = surfaceAConnectivity.size()/NUM_NODES_PER_QUAD_FACE;
-        globalNumberOfElements = globalNumberOfElementsSurface1 + globalNumberOfElementsSurface2;
+      globalNumberOfElementsSurface1 = surfaceBConnectivity.size() / NUM_NODES_PER_QUAD_FACE;
+      globalNumberOfElementsSurface2 = surfaceAConnectivity.size() / NUM_NODES_PER_QUAD_FACE;
+      globalNumberOfElements = globalNumberOfElementsSurface1 + globalNumberOfElementsSurface2;
 
-        globalIdsOfLocalElements.resize(globalNumberOfElements);
-        globalIdsOfLocalNodes.resize(globalNumberOfNodes);
+      globalIdsOfLocalElements.resize(globalNumberOfElements);
+      globalIdsOfLocalNodes.resize(globalNumberOfNodes);
 
-        for (size_t i=0; i<globalIdsOfLocalElements.size();i++)
-        {
-            globalIdsOfLocalElements[i] = i+1;
-        }
+      for (size_t i = 0; i < globalIdsOfLocalElements.size(); i++) {
+        globalIdsOfLocalElements[i] = i + 1;
+      }
 
-        for (size_t i=0; i<globalIdsOfLocalNodes.size();i++)
-        {
-            globalIdsOfLocalNodes[i] = i+1;
-        }
+      for (size_t i = 0; i < globalIdsOfLocalNodes.size(); i++) {
+        globalIdsOfLocalNodes[i] = i + 1;
+      }
     }
-};
+  };
 
-class DashSurfaceMesh : public GeneratedMesh
-{
-public:
+  class DashSurfaceMesh : public GeneratedMesh
+  {
+  public:
+    explicit DashSurfaceMesh(DashSurfaceData &dashSurfaceData) : mDashSurfaceData(dashSurfaceData)
+    {
+    }
 
-    explicit DashSurfaceMesh(DashSurfaceData &dashSurfaceData) : mDashSurfaceData(dashSurfaceData) { }
-
-    virtual ~DashSurfaceMesh() { }
+    virtual ~DashSurfaceMesh() {}
 
     virtual int64_t node_count() const;
     virtual int64_t node_count_proc() const;
@@ -192,9 +181,10 @@ public:
     virtual void coordinates(double *coord) const;
     virtual void coordinates(std::vector<double> &coord) const;
     virtual void coordinates(int component, std::vector<double> &xyz) const;
-    virtual void coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const;
+    virtual void coordinates(std::vector<double> &x, std::vector<double> &y,
+                             std::vector<double> &z) const;
 
-    virtual void connectivity(int64_t block_number, int* connect) const;
+    virtual void connectivity(int64_t block_number, int *connect) const;
 
     virtual std::pair<std::string, int> topology_type(int64_t block_number) const;
 
@@ -212,17 +202,16 @@ public:
     virtual void element_map(std::vector<int64_t> &map) const;
     virtual void element_map(std::vector<int> &map) const;
 
-private:
-    DashSurfaceData & mDashSurfaceData;
-};
+  private:
+    DashSurfaceData &mDashSurfaceData;
+  };
 
-class ExodusMesh : public GeneratedMesh
-{
-public:
-
+  class ExodusMesh : public GeneratedMesh
+  {
+  public:
     explicit ExodusMesh(const ExodusData &exodusData);
 
-    virtual ~ExodusMesh() { }
+    virtual ~ExodusMesh() {}
 
     virtual int64_t node_count() const;
     virtual int64_t node_count_proc() const;
@@ -245,9 +234,10 @@ public:
     virtual void coordinates(double *coord) const;
     virtual void coordinates(std::vector<double> &coord) const;
     virtual void coordinates(int component, std::vector<double> &xyz) const;
-    virtual void coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const;
+    virtual void coordinates(std::vector<double> &x, std::vector<double> &y,
+                             std::vector<double> &z) const;
 
-    virtual void connectivity(int64_t blockNumber, int* connectivityForBlock) const;
+    virtual void connectivity(int64_t blockNumber, int *connectivityForBlock) const;
 
     virtual std::pair<std::string, int> topology_type(int64_t blockNumber) const;
 
@@ -267,14 +257,13 @@ public:
     virtual void element_map(std::vector<int64_t> &map) const;
     virtual void element_map(std::vector<int> &map) const;
 
-private:
+  private:
     int64_t mGlobalNumberOfElements;
     int64_t mLocalNumberOfElements;
 
-    const ExodusData & mExodusData;
+    const ExodusData &   mExodusData;
     std::vector<int64_t> mElementOffsetForBlock;
-};
-
+  };
 }
 
 #endif

@@ -32,15 +32,15 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
-#include <assert.h>
+#include <cassert>
 #include <Ionit_Initializer.h>
-#include <stddef.h>
-#include <stdlib.h>
 #include <algorithm>
 #include <cstring>
 #include <iomanip>
-#include <iostream>
+#include <stddef.h>
+#include <stdlib.h>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -144,13 +144,13 @@ namespace {
   void file_copy(const std::string& inpfile, const std::string& input_type,
 		 const std::string& outfile, const std::string& output_type,
 		 const std::string& ss_file, Globals& globals);
-}
+} // namespace
 // ========================================================================
 
 namespace {
   std::string codename;
   std::string version = "$Revision$";
-}
+} // namespace
 
 int main(int argc, char *argv[])
 {
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
   globals.offset_pressure = 0.0;
   
   codename = argv[0];
-  size_t ind = codename.find_last_of("/", codename.size());
+  size_t ind = codename.find_last_of('/', codename.size());
   if (ind != std::string::npos) {
     codename = codename.substr(ind+1, codename.size());
   }
@@ -642,7 +642,7 @@ namespace {
 	std::cerr << " Number of nodes                      =" << std::setw(9) << num_nodes << "\n";
       }
 
-      Ioss::NodeBlock *nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
+      auto nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
       output_region.add(nb);
 
       transfer_properties(*i, nb);
@@ -669,7 +669,7 @@ namespace {
       int    num_elem  = (*i)->get_property("entity_count").get_int();
       total_elements += num_elem;
 
-      Ioss::ElementBlock *eb = new Ioss::ElementBlock(output_region.get_database(), name, type,
+      auto eb = new Ioss::ElementBlock(output_region.get_database(), name, type,
 						      num_elem);
       output_region.add(eb);
       transfer_properties(*i, eb);
@@ -694,7 +694,7 @@ namespace {
       std::string name      = (*i)->name();
       if (debug) { std::cerr << name << ", ";
       
-      }Ioss::SideSet *surf = new Ioss::SideSet(output_region.get_database(), name);
+      }auto surf = new Ioss::SideSet(output_region.get_database(), name);
 
       Ioss::SideBlockContainer fbs = (*i)->get_side_blocks();
       Ioss::SideBlockContainer::const_iterator j = fbs.begin();
@@ -707,7 +707,7 @@ namespace {
 	int    num_side  = (*j)->get_property("entity_count").get_int();
 	total_sides += num_side;
 
-	Ioss::SideBlock *block = new Ioss::SideBlock(output_region.get_database(), fbname, fbtype,
+	auto block = new Ioss::SideBlock(output_region.get_database(), fbname, fbtype,
 						     partype, num_side);
 	surf->add(block);
 	transfer_properties(*j, block);
@@ -740,7 +740,7 @@ namespace {
       
       }int    count     = (*i)->get_property("entity_count").get_int();
       total_nodes += count;
-      Ioss::NodeSet *ns = new Ioss::NodeSet(output_region.get_database(), name, count);
+      auto ns = new Ioss::NodeSet(output_region.get_database(), name, count);
       output_region.add(ns);
       transfer_properties(*i, ns);
       transfer_fields(*i, ns, Ioss::Field::MESH);
@@ -765,7 +765,7 @@ namespace {
       
       }std::string type      = (*i)->get_property("entity_type").get_string();
       int    count     = (*i)->get_property("entity_count").get_int();
-      Ioss::CommSet *cs = new Ioss::CommSet(output_region.get_database(), name, type, count);
+      auto cs = new Ioss::CommSet(output_region.get_database(), name, type, count);
       output_region.add(cs);
       transfer_properties(*i, cs);
       transfer_fields(*i, cs, Ioss::Field::MESH);
@@ -912,7 +912,7 @@ namespace {
 
 	// Should be able to get this from the input mesh element blocks...
 	std::string partype   = "unknown";
-	Ioss::SideBlock *fb = new Ioss::SideBlock(output_region.get_database(), name, type,
+	auto fb = new Ioss::SideBlock(output_region.get_database(), name, type,
 						  partype, num_elem);
 	pressures->add(fb);
 	++i;
@@ -1001,7 +1001,7 @@ namespace {
 	if ((*i)->field_exists(cth_pressure)) {
 	  int isize = (*i)->get_field(cth_pressure).get_size();
 	  void *zdata = new char[isize];
-	  time_zero_field_data[name] = (double*)zdata;
+	  time_zero_field_data[name] = reinterpret_cast<double*>(zdata);
 	  (*i)->get_field_data(cth_pressure, zdata, isize);
 	} else {
 	  time_zero_field_data[name] = (double*)nullptr;
@@ -1041,7 +1041,7 @@ namespace {
 	    int isize = (*i)->get_field(field_name).get_size();
 	    int count = (*i)->get_field(field_name).raw_count();
 	    data.resize(isize);
-	    double *rdata = (double*)&data[0];
+	    double *rdata = reinterpret_cast<double*>(&data[0]);
 	    for (int ii=0; ii < count; ii++) {
 	      rdata[ii] = globals.offset_pressure;
 	    }
@@ -1095,7 +1095,7 @@ namespace {
 	    int isize = (*i)->get_field(field_name).get_size();
 	    int count = (*i)->get_field(field_name).raw_count();
 	    data.resize(isize);
-	    double *rdata = (double*)&data[0];
+	    double *rdata = reinterpret_cast<double*>(&data[0]);
 
 	    (*i)->get_field_data(field_name, &data[0], isize);
 	    for (int ii=0; ii < count; ii++) {
@@ -1113,7 +1113,7 @@ namespace {
 	    int isize = (*i)->get_field(field_name).get_size();
 	    int count = (*i)->get_field(field_name).raw_count();
 	    data.resize(isize);
-	    double *rdata = (double*)&data[0];
+	    double *rdata = reinterpret_cast<double*>(&data[0]);
 
 	    (*i)->get_field_data(field_name, &data[0], isize);
 	    for (int ii=0; ii < count; ii++) {
@@ -1190,7 +1190,7 @@ namespace {
 	      int isize = (*i)->get_field(field_name).get_size();
 	      int count = (*i)->get_field(field_name).raw_count();
 	      data.resize(isize);
-	      double *rdata = (double*)&data[0];
+	      double *rdata = reinterpret_cast<double*>(&data[0]);
 	      for (int ii=0; ii < count; ii++) {
 		rdata[ii] = value;
 	      }
@@ -1209,10 +1209,10 @@ namespace {
       ss_region.end_state(initial_state);
     }
     if (globals.convert_gage) {
-      std::map<std::string, double*>::iterator i = time_zero_field_data.begin();
-      std::map<std::string, double*>::iterator ie = time_zero_field_data.end();
+      auto i = time_zero_field_data.begin();
+      auto ie = time_zero_field_data.end();
       while (i != ie) {
-	delete [] (char *)(*i).second;
+	delete [] reinterpret_cast<char *>((*i).second);
 	++i;
       }
     }
@@ -1428,5 +1428,5 @@ namespace {
     std::cerr << "     Time step " << std::setw(5) << istep
 	      << " at time " << std::setprecision(5) << time << '\n';
   }
-}
+}  // namespace
 

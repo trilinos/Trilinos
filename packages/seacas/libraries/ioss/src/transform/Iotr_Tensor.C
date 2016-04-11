@@ -32,8 +32,8 @@
 
 #include <Ioss_Field.h>
 #include <Ioss_VariableType.h>
-#include <assert.h>
-#include <stddef.h>
+#include <cassert>
+#include <cstddef>
 #include <transform/Iotr_Tensor.h>
 #include <string>
 
@@ -160,4 +160,4 @@ namespace Iotr {
 
     return success;
   }
-}
+} // namespace Iotr

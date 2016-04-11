@@ -35,7 +35,7 @@
 
 #include <Ioss_Transform.h>             // for Transform, Factory
 #include <string>                       // for string
-#include "Ioss_VariableType.h"          // for VariableType
+#include <transform/Iotr_Offset.h>
 namespace Ioss { class Field; }
 
 namespace Ioss {

@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,13 +32,12 @@
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
+#include "Ioss_CodeTypes.h"           // for IntVector
+#include "Ioss_ElementTopology.h"     // for ElementTopology
+#include <Ioss_ElementVariableType.h> // for ElementVariableType
 #include <Ioss_Pyramid5.h>
-#include <Ioss_ElementVariableType.h>   // for ElementVariableType
-#include <assert.h>                     // for assert
-#include <stddef.h>                     // for nullptr
-#include "Ioss_CodeTypes.h"             // for IntVector
-#include "Ioss_ElementTopology.h"       // for ElementTopology
-
+#include <cassert> // for assert
+#include <cstddef> // for nullptr
 
 namespace Ioss {
   class St_Pyramid5 : public ElementVariableType
@@ -47,13 +46,11 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Pyramid5()
-      :  ElementVariableType("pyramid5", 5) {}
+    St_Pyramid5() : ElementVariableType("pyramid5", 5) {}
   };
-}
+} // namespace Ioss
 
-void Ioss::St_Pyramid5::factory()
-{ static Ioss::St_Pyramid5 registerThis; }
+void Ioss::St_Pyramid5::factory() { static Ioss::St_Pyramid5 registerThis; }
 
 // ========================================================================
 namespace {
@@ -64,39 +61,33 @@ namespace {
     static const int nface     = 5;
     static const int nfacenode = 4;
     static const int nfaceedge = 4;
-    static int edge_node_order[nedge][nedgenode];
-    static int face_node_order[nface][nfacenode];
-    static int face_edge_order[nface][nfaceedge];
-    static int nodes_per_face[nface+1];
-    static int nodes_per_edge[nedge+1];
-    static int edges_per_face[nface+1];
+    static int       edge_node_order[nedge][nedgenode];
+    static int       face_node_order[nface][nfacenode];
+    static int       face_edge_order[nface][nfaceedge];
+    static int       nodes_per_face[nface + 1];
+    static int       nodes_per_edge[nedge + 1];
+    static int       edges_per_face[nface + 1];
   };
 
   // Edge numbers are zero-based [0..number_edges)
   int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
-  {  {0,1}, {1,2}, {2,3}, {3,0},
-     {0,4}, {1,4}, {2,4}, {3,4},
+      {
+          {0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 4}, {2, 4}, {3, 4},
   };
 
   // Face numbers are zero-based [0..number_faces)
   int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-    { {0,1,4,-1}, {1,2,4,-1}, {2,3,4,-1}, {3,0,4,-1},
-      {0,3,2,1} };
+      {{0, 1, 4, -1}, {1, 2, 4, -1}, {2, 3, 4, -1}, {3, 0, 4, -1}, {0, 3, 2, 1}};
 
   int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
-    { {0, 5, 4, -1}, {1, 6, 5, -1}, {2, 7, 6, -1}, {3, 4, 7, -1},
-      {3, 2, 1, 0}
-    };
+      {{0, 5, 4, -1}, {1, 6, 5, -1}, {2, 7, 6, -1}, {3, 4, 7, -1}, {3, 2, 1, 0}};
 
-  int Constants::nodes_per_face[nface+1] =
-    { -1, 3, 3, 3, 3, 4 };
+  int Constants::nodes_per_face[nface + 1] = {-1, 3, 3, 3, 3, 4};
 
-  int Constants::nodes_per_edge[nedge+1] =
-    { 2, 2, 2, 2, 2, 2, 2, 2,2 };
+  int Constants::nodes_per_edge[nedge + 1] = {2, 2, 2, 2, 2, 2, 2, 2, 2};
 
-  int Constants::edges_per_face[nface+1] =
-    { -1, 3, 3, 3, 3, 4 };
-}
+  int Constants::edges_per_face[nface + 1] = {-1, 3, 3, 3, 3, 4};
+} // namespace
 
 void Ioss::Pyramid5::factory()
 {
@@ -104,8 +95,7 @@ void Ioss::Pyramid5::factory()
   Ioss::St_Pyramid5::factory();
 }
 
-Ioss::Pyramid5::Pyramid5()
-  : Ioss::ElementTopology("pyramid5", "Pyramid_5")
+Ioss::Pyramid5::Pyramid5() : Ioss::ElementTopology("pyramid5", "Pyramid_5")
 {
   Ioss::ElementTopology::alias("pyramid5", "pyramid");
   Ioss::ElementTopology::alias("pyramid5", "Solid_Pyramid_5_3D");
@@ -114,24 +104,24 @@ Ioss::Pyramid5::Pyramid5()
 
 Ioss::Pyramid5::~Pyramid5() = default;
 
-int Ioss::Pyramid5::parametric_dimension()           const {return  3;}
-int Ioss::Pyramid5::spatial_dimension()           const {return  3;}
-int Ioss::Pyramid5::order()               const {return  1;}
+int Ioss::Pyramid5::parametric_dimension() const { return 3; }
+int Ioss::Pyramid5::spatial_dimension() const { return 3; }
+int Ioss::Pyramid5::order() const { return 1; }
 
-int Ioss::Pyramid5::number_corner_nodes() const {return Constants::nnode;}
-int Ioss::Pyramid5::number_nodes()        const {return Constants::nnode;}
-int Ioss::Pyramid5::number_edges()        const {return Constants::nedge;}
-int Ioss::Pyramid5::number_faces()        const {return Constants::nface;}
+int Ioss::Pyramid5::number_corner_nodes() const { return Constants::nnode; }
+int Ioss::Pyramid5::number_nodes() const { return Constants::nnode; }
+int Ioss::Pyramid5::number_edges() const { return Constants::nedge; }
+int Ioss::Pyramid5::number_faces() const { return Constants::nface; }
 
-bool Ioss::Pyramid5::faces_similar()      const {return false;}
+bool Ioss::Pyramid5::faces_similar() const { return false; }
 
-int Ioss::Pyramid5::number_nodes_edge(int /* edge */) const {return  Constants::nedgenode;}
+int Ioss::Pyramid5::number_nodes_edge(int /* edge */) const { return Constants::nedgenode; }
 
 int Ioss::Pyramid5::number_nodes_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
-  return  Constants::nodes_per_face[face];
+  return Constants::nodes_per_face[face];
 }
 
 int Ioss::Pyramid5::number_edges_face(int face) const
@@ -145,9 +135,9 @@ Ioss::IntVector Ioss::Pyramid5::edge_connectivity(int edge_number) const
 {
   Ioss::IntVector connectivity(Constants::nodes_per_edge[edge_number]);
 
-  for (int i=0; i < Constants::nodes_per_edge[edge_number]; i++) {
-    connectivity[i] = Constants::edge_node_order[edge_number-1][i];
-}
+  for (int i = 0; i < Constants::nodes_per_edge[edge_number]; i++) {
+    connectivity[i] = Constants::edge_node_order[edge_number - 1][i];
+  }
 
   return connectivity;
 }
@@ -157,9 +147,9 @@ Ioss::IntVector Ioss::Pyramid5::face_connectivity(int face_number) const
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(Constants::nodes_per_face[face_number]);
 
-  for (int i=0; i < Constants::nodes_per_face[face_number]; i++) {
-    connectivity[i] = Constants::face_node_order[face_number-1][i];
-}
+  for (int i = 0; i < Constants::nodes_per_face[face_number]; i++) {
+    connectivity[i] = Constants::face_node_order[face_number - 1][i];
+  }
 
   return connectivity;
 }
@@ -167,28 +157,29 @@ Ioss::IntVector Ioss::Pyramid5::face_connectivity(int face_number) const
 Ioss::IntVector Ioss::Pyramid5::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
-  for (int i=0; i < number_nodes(); i++) {
+  for (int i = 0; i < number_nodes(); i++) {
     connectivity[i] = i;
-}
+  }
   return connectivity;
 }
 
-Ioss::ElementTopology* Ioss::Pyramid5::face_type(int face_number) const
+Ioss::ElementTopology *Ioss::Pyramid5::face_type(int face_number) const
 {
   assert(face_number >= 0 && face_number <= number_faces());
   if (face_number == 0) {
-    return (Ioss::ElementTopology*)nullptr;
+    return (Ioss::ElementTopology *)nullptr;
   }
-  else if (face_number <= 4) {
-//    return Ioss::ElementTopology::factory("triface3");
+  if (face_number <= 4) {
+    //    return Ioss::ElementTopology::factory("triface3");
     return Ioss::ElementTopology::factory("tri3");
-  } else {
-//    return Ioss::ElementTopology::factory("quadface4");
+  }
+  else {
+    //    return Ioss::ElementTopology::factory("quadface4");
     return Ioss::ElementTopology::factory("quad4");
   }
 }
 
-Ioss::ElementTopology* Ioss::Pyramid5::edge_type(int edge_number) const
+Ioss::ElementTopology *Ioss::Pyramid5::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
   return Ioss::ElementTopology::factory("edge2");
@@ -198,12 +189,12 @@ Ioss::IntVector Ioss::Pyramid5::face_edge_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= Constants::nface);
 
-  int nface_edge = number_edges_face(face_number);
+  int             nface_edge = number_edges_face(face_number);
   Ioss::IntVector fcon(nface_edge);
 
-  for (int i=0; i < nface_edge; i++) {
-    fcon[i] = Constants::face_edge_order[face_number-1][i];
-}
+  for (int i = 0; i < nface_edge; i++) {
+    fcon[i] = Constants::face_edge_order[face_number - 1][i];
+  }
 
   return fcon;
 }
