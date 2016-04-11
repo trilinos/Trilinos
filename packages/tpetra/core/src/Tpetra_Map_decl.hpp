@@ -1359,9 +1359,7 @@ namespace Tpetra {
     /// getGlobalElement() (which is a host method, and therefore
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).
-    mutable Kokkos::View<const GlobalOrdinal*,
-                         Kokkos::LayoutLeft,
-                         device_type> lgMapHost_;
+    mutable typename decltype (lgMap_)::HostMirror lgMapHost_;
 
     //! Type of a mapping from global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
