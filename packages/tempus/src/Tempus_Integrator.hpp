@@ -74,22 +74,9 @@ namespace tempus {
     virtual void describe( Teuchos::FancyOStream        & out,
                            const Teuchos::EVerbosityLevel verbLevel) const;
     /// Get time
-    virtual Scalar getTime() const{return time;}
-    /// Set time
-    virtual setTime(Scalar time_){time = time_;}
-    /// Get time step index
-    virtual Scalar getIStep() const{return iStep;}
-    /// Set time step index
-    virtual void setIStep(Scalar iStep_){iStep = iStep_;}
-    /// Get time step size
-    virtual Scalar getDt() const{return dt;}
-    /// Set time step size
-    virtual void setDt(Scalar dt_){dt = dt_;}
-    /// Get order of integrator
-    virtual int getOrder() const{return order;}
-    /// Get error of integrator
-    virtual Scalar getError() const{return error;}
-    virtual bool isInitialized() const;
+    virtual Scalar getTime() const{return currentState->getTime();}
+    /// Get index
+    virtual Scalar getIndex() const{return currentState->getIndex();}
     //@}
 
     /// \name Undo type capabilities
@@ -100,11 +87,6 @@ namespace tempus {
 
   protected:
 
-    Scalar time;
-    Scalar dt;
-    int    iStep;
-    Scalar error;
-    int    order;
     RCP<ParameterList>               parameterList;
     RCP<SolutionHistory<Scalar> >    solutionHistory;
     RCP<SolutionState<Scalar> >      currentState;

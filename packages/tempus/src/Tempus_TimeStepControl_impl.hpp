@@ -120,11 +120,19 @@ TimeStepControl<Scalar>::TimeStepControl( const TimeStepControl<Scalar>& tsc_ )
 
 template<class Scalar>
 void TimeStepControl::getNextTimeStep(
-  const Scalar time, const int iStep, const Scalar errorAbs,
-  const Scalar errorRel, const unsigned int order, Scalar dt,
-  bool stepperStatus, bool integratorStatus, unsigned int nFailures,
-  unsigned int nConsecutiveFailures, bool output) const
+  RCP<SolutionStateMetaData<Scalar> > metaData,
+  bool stepperStatus, bool integratorStatus) const
 {
+  const Scalar time = metaData->time;
+  const int iStep = metaData->iStep;
+  const Scalar errorAbs = metaData->errorAbs;
+  const Scalar errorRel = metaData->errorRel;
+  const unsigned order = metaData->order;
+  Scalar & dt = metaData->dt;
+  unsigned & nFailures = metaData->nFailures;
+  unsigned & nConsecutiveFailures = metaData->nConsecutiveFailures;
+  bool & output = metaData->output;
+
   output = false;
   integratorStatus = true;
   if (stepperStatus != true) {

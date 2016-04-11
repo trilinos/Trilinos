@@ -8,15 +8,25 @@ template class SolutionState< double >;
 template Teuchos::RCP< SolutionState< double > > SolutionState();
 
 template Teuchos::RCP< SolutionState< double > >
+SolutionState( const Teuchos::RCP<SolutionStateMetaData<double> > ssmd,
+               const Teuchos::RCP<const Thyra::VectorBase<double> >& x,
+               const Teuchos::RCP<const Thyra::VectorBase<double> >& xdot,
+               const Teuchos::RCP<const Thyra::VectorBase<double> >& xdotdot);
+
+template Teuchos::RCP< SolutionState< double > >
 SolutionState( const double time,
                const double dt,
-               const double dtMin,
-               const double dtMax,
                const int    iStep,
+               const double errorAbs,
+               const double errorRel,
                const int    order,
-               const double error,
-               const bool   isInterpolated,
+               const int    nFailures,
+               const int    nConsecutiveFailures,
+               const SolutionStatus status,
+               const bool   output,
+               const bool   isAccepted,
                const bool   isRestartable,
+               const bool   isInterpolated,
                const double accuracy,
                const Teuchos::RCP<const Thyra::VectorBase<double> >& x,
                const Teuchos::RCP<const Thyra::VectorBase<double> >& xdot,

@@ -46,11 +46,8 @@ public:
   TimeStepControl(const TimeStepControl<Scalar>& tsc_);
 
   /** \brief. .*/
-  virtual void getNextTimeStep(
-    const Scalar time, const int iStep, const Scalar errorAbs,
-    const Scalar errorRel, const unsigned int order, Scalar dt,
-    bool stepperStatus, bool integratorStatus, unsigned int nFailures,
-    unsigned int nConsecutiveFailures, bool output) const;
+  virtual void getNextTimeStep(RCP<SolutionStateMetaData<Scalar> > metaData,
+    bool stepperStatus, bool integratorStatus) const;
 
   /** \brief. .*/
   virtual bool timeInRange(const Scalar time) const;

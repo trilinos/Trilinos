@@ -42,20 +42,30 @@ class SolutionState :
     SolutionState();
 
     /** \brief. */
-    // This is a shallow copy constructor, use clone for a deep copy
     SolutionState(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x_,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot_,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot_,
-      const Scalar time_,
-      const Scalar dt_,
-      const Scalar dtMin_,
-      const Scalar dtMax_,
-      const int    iStep_,
-      const int    order_,
-      const Scalar error_,
-      const bool   isInterpolated_,
-      const Scalar accuracy_);
+      const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot);
+
+    SolutionState(
+      const Scalar time,
+      const Scalar dt,
+      const int    iStep,
+      const Scalar errorAbs,
+      const Scalar errorRel,
+      const int    order,
+      const int    nFailures,
+      const int    nConsecutiveFailures,
+      const SolutionStatus status,
+      const bool   output,
+      const bool   isAccepted,
+      const bool   isRestartable,
+      const bool   isInterpolated,
+      const Scalar accuracy,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot);
 
     /** \brief. */
     // This is a shallow copy constructor, use clone for a deep copy
@@ -65,25 +75,23 @@ class SolutionState :
     // This is a deep clone and copies the underlying vectors
     virtual RCP<SolutionState<Scalar> > clone() const;
 
-    Scalar time;            ///< Time of solution
-    Scalar dt;              ///< Time step for this solution
-    Scalar dtMin;           ///< Minimum allowed time step
-    Scalar dtMax;           ///< Maximum allowed time step
-    int    iStep;           ///< Time step index for this solution
-    int    order;           ///< Order of this solution
-    Scalar error;           ///< Local truncation error of this solution
-    bool   isInterpolated;  ///< F - soln is time integrated; T - soln is interpolated
-    bool   isRestartable;   ///< T - soln can be used as a restart
-    Scalar accuracy;        ///< Interpolation accuracy of solution
+    /// Meta Data for the solution state
+    Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData;
 
-    /// Solution at above time:
+    /// Solution
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x;
 
-    /// Time derivative of the solution at above time:
+    /// Time derivative of the solution
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot;
 
-    /// Second time derivative of the solution at above time:
+    /// Second time derivative of the solution
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot;
+
+    /// Get time
+    virtual Scalar getTime() const{return metaData->time;}
+
+    /// Get time
+    virtual Scalar getIndex() const{return metaData->iStep;}
 
     /// Less than comparison for sorting based on time:
     bool operator< (const SolutionState<Scalar>& ss) const;

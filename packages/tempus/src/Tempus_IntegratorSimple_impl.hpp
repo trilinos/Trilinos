@@ -61,12 +61,16 @@ IntegratorSimple<Scalar>::IntegratorSimple(
 
   this->setParameterList(paramList);
 
+  // Create meta data
+  RCP<SolutionStateMetaData<Scalar> > md =
+                                   rcp(new SolutionStateMetaData<Scalar> ());
+  md->time = paramList->get<double>(initTime_name, initTime_default);
+  md->dt = paramList->get<double>(initTimeStep_name, initTimeStep_default);
+  md->iStep = paramList->get<int>(initTimeIndex_name, initTimeIndex_default);
+  md->order = paramList->get<int>(initOrder_name, initOrder_default);
+
   // Create initial condition solution state
-  currentState = rcp(new SolutionState<Scalar>(x, xdot, xdotdot, time,
-                                               timeStepControl->dtMin,
-                                               timeStepControl->dtMax,
-                                               iStep, 0, error, false,
-                                               accuracy));
+  currentState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot);
 
   // Create solution history, an array of solution states.
   RCP<ParameterList> sh_pl = Teuchos::sublist(paramList, SolutionHistory_name);
@@ -101,20 +105,13 @@ void IntegratorSimple<Scalar>::describe(
   const Teuchos::EVerbosityLevel verbLevel) const
 {
   out << description() << "::describe" << std::endl;
-  out << "time   = " << time  << std::endl;
-  out << "dt     = " << dt    << std::endl;
-  out << "iStep  = " << iStep << std::endl;
-  out << "error  = " << error  << std::endl;
-  out << "order  = " << order  << std::endl;
-  if ((Teuchos::as<int>(verbLevel)==Teuchos::as<int>(Teuchos::VERB_DEFAULT)) ||
-      (Teuchos::as<int>(verbLevel)>=Teuchos::as<int>(Teuchos::VERB_LOW)    )  ){
-    out << "solutionHistory    = " << solutionHistory->description()<<std::endl;
-    out << "currentState       = " << currentState   ->description()<<std::endl;
-    out << "timeStepControl    = " << timeStepControl->description()<<std::endl;
-    out << "integratorObserver = " << integratorObserver->description()
-        << std::endl;
-    out << "stepper            = " << stepper        ->description()<<std::endl;
-  } else if ( Teuchos::as<int>(verbLevel) >=
+  out << "solutionHistory    = " << solutionHistory->description()<<std::endl;
+  out << "currentState       = " << currentState   ->description()<<std::endl;
+  out << "timeStepControl    = " << timeStepControl->description()<<std::endl;
+  out << "integratorObserver = " <<integratorObserver->description()<<std::endl;
+  out << "stepper            = " << stepper        ->description()<<std::endl;
+
+  if ( Teuchos::as<int>(verbLevel) >=
               Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "solutionHistory    = " << solutionHistory   ->describe()<<std::endl;
     out << "currentState       = " << currentState      ->describe()<<std::endl;
@@ -128,18 +125,19 @@ void IntegratorSimple<Scalar>::describe(
 template <class Scalar>
 void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
 {
+  timeStepControl->timeMax = time_final;
   integratorObserver->observeStartTime();
 
-  bool output = false;
   bool integratorStatus = true;
   bool stepperStatus = true;
 
-  while ( timeStepControl->timeInRange(time) and
-          timeStepControl->indexInRange(iStep) ){
+  while ( timeStepControl->timeInRange(currentState->getTime()) and
+          timeStepControl->indexInRange(currentState->getIndex()) ){
 
-    timeStepControl->getNextTimeStep(time, iStep, errorAbs, errorRel, order,
-                                     dt, stepperStatus, integratorStatus,
-                                     nFailures, nConsecutiveFailures, output);
+    currentState = solutionHistory->setInitialGuess();
+
+    timeStepControl->getNextTimeStep(currentState->metaData,
+                                     stepperStatus, integratorStatus);
 
     if (integratorStatus != true) {
       integratorObserver->observeFailedIntegrator();
@@ -148,7 +146,7 @@ void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
 
     integratorObserver->observeStartTimeStep();
 
-    stepperStatus = stepper->takeStep();
+    stepperStatus = stepper->takeStep(currentState);
 
     if (stepperStatus != true) {
       integratorObserver->observeFailedTimeStep();
@@ -175,7 +173,7 @@ void IntegratorSimple<Scalar>::setParameterList(
 
   Teuchos::readVerboseObjectSublist(&*paramList,this);
 
-  time = paramList->get<double>(initTime_name, initTime_default);
+  Scalar time = paramList->get<double>(initTime_name, initTime_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (time < timeStepControl->timeMin || time > timeStepControl->timeMax ),
     std::out_of_range,
@@ -184,7 +182,7 @@ void IntegratorSimple<Scalar>::setParameterList(
                                     << timeStepControl->timeMax << "]\n"
     << "    time = " << time << "\n");
 
-  dt    = paramList->get<double>(initTimeStep_name, initTimeStep_default);
+  Scalar dt = paramList->get<double>(initTimeStep_name, initTimeStep_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (dt < ST::zero() ), std::logic_error,
     "Error - Negative time step.  dt = "<<dt<<")\n");
@@ -196,7 +194,7 @@ void IntegratorSimple<Scalar>::setParameterList(
                                 << timeStepControl->dtMax << "]\n"
     << "    dt = " << dt << "\n");
 
-  iStep = paramList->get<int>(initTimeIndex_name, initTimeIndex_default);
+  int iStep = paramList->get<int>(initTimeIndex_name, initTimeIndex_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (iStep < timeStepControl->iStepMin || iStep > timeStepControl->iStepMax),
     std::out_of_range,
@@ -205,7 +203,7 @@ void IntegratorSimple<Scalar>::setParameterList(
                                       << timeStepControl->iStepMax << "]\n"
     << "    iStep = " << iStep << "\n");
 
-  order = paramList->get<int>(initOrder_name, initOrder_default);
+  int order = paramList->get<int>(initOrder_name, initOrder_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (order < timeStepControl->orderMin || order > timeStepControl->orderMax),
     std::out_of_range,

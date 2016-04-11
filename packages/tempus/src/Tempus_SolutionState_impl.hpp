@@ -8,60 +8,53 @@ namespace tempus {
 // SolutionState definitions:
 template<class Scalar>
 SolutionState<Scalar>::SolutionState()
-  :time(-1),
-   dt(-1),
-   dtMin(-1),
-   dtMax(-1),
-   iStep(-1),
-   order(-1),
-   error(-1),
-   isInterpolated(false),
-   isRestartable(true),
-   accuracy(-1)
+{
+  metaData = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
+}
+
+template<class Scalar>
+SolutionState( const Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData_,
+               const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
+               const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
+               const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot)
+  : metaData(metaData_),
+    x       (x_),
+    xdot    (xdot_),
+    xdotdot (xdotdot_)
 {}
 
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Scalar time_,
   const Scalar dt_,
-  const Scalar dtMin_,
-  const Scalar dtMax_,
   const int    iStep_,
+  const Scalar errorAbs_,
+  const Scalar errorRel_,
   const int    order_,
-  const Scalar error_,
+  const int    nFailures_,
+  const int    nConsecutiveFailures_,
+  const SolutionStatus status_,
+  const bool   output_,
+  const bool   isAccepted_,
   const bool   isInterpolated_,
   const bool   isRestartable_,
   const Scalar accuracy_,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x_,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot_,
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot_)
-  :time          (time_),
-   dt            (dt_),
-   dtMin         (dtMin_),
-   dtMax         (dtMax_),
-   iStep         (iStep_),
-   order         (order_),
-   error         (error_),
-   isInterpolated(isInterpolated_),
-   isRestartable (isRestartable_),
-   accuracy      (accuracy_),
-   x             (x_),
-   xdot          (xdot_),
-   xdotdot       (xdotdot_)
-{}
+  : x             (x_),
+    xdot          (xdot_),
+    xdotdot       (xdotdot_)
+{
+  metaData = Teuchos::rcp(new SolutionStateMetaData<Scalar> (time_,
+      dt_, iStep_, errorAbs_, errorRel_, order_, nFailures_,
+      nConsecutiveFailures_, status_, output_, isAccepted_,
+      isRestartable_, isInterpolated_, accuracy_);
+}
 
 template<class Scalar>
 SolutionState<Scalar>::SolutionState( const SolutionState<Scalar>& ss_ )
-  :time          (ss_.time),
-   dt            (ss_.dt),
-   dtMin         (ss_.dtMin),
-   dtMax         (ss_.dtMax),
-   iStep         (ss_.iStep),
-   order         (ss_.order),
-   error         (ss_.error),
-   isInterpolated(ss_.isInterpolated),
-   isRestartable (ss_.isRestartable),
-   accuracy      (ss_.accuracy),
+  :metaData      (ss_.metaData),
    x             (ss_.x),
    xdot          (ss_.xdot),
    xdotdot       (ss_.xdotdot)
@@ -80,8 +73,7 @@ RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
   if (!Teuchos::is_null(xdotdot)) xdotdot_out = xdotdot->clone_v();
 
   RCP<SolutionState<Scalar> > ss_out = Teuchos::rcp(new SolutionState<Scalar> (
-    time, dt, dtMin, dtMax, iStep, order, error, isInterpolated, isRestartable,
-    accuracy, x_out, xdot_out, xdotdot_out));
+    metaData, x_out, xdot_out, xdotdot_out));
 
   return ss_out;
 }
@@ -89,61 +81,61 @@ RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const SolutionState<Scalar>& ss) const
 {
-  return( this->time < ss.time );
+  return( this->metaData->time < ss->metaData->time );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator<= (const SolutionState<Scalar>& ss) const
 {
-  return( this->time <= ss.time );
+  return( this->metaData->time <= ss.metaData->time );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const Scalar& t) const
 {
-  return( this->time < t );
+  return( this->metaData->time < t );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator<= (const Scalar& t) const
 {
-  return( this->time <= t );
+  return( this->metaData->time <= t );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator> (const SolutionState<Scalar>& ss) const
 {
-  return( this->time > ss.time );
+  return( this->metaData->time > ss.metaData->time );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator>= (const SolutionState<Scalar>& ss) const
 {
-  return( this->time >= ss.time );
+  return( this->metaData->time >= ss.metaData->time );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator> (const Scalar& t) const
 {
-  return( this->time > t );
+  return( this->metaData->time > t );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator>= (const Scalar& t) const
 {
-  return( this->time >= t );
+  return( this->metaData->time >= t );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator== (const SolutionState<Scalar>& ss) const
 {
-  return( this->time == ss.time );
+  return( this->metaData->time == ss.metaData->time );
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator== (const Scalar& t) const
 {
-  return( this->time == t );
+  return( this->metaData->time == t );
 }
 
 template<class Scalar>
@@ -160,17 +152,9 @@ void SolutionState<Scalar>::describe(
 {
   if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe:" << std::endl
-        << "time           = " << time << std::endl
-        << "dt             = " << dt << std::endl
-        << "dtMin          = " << dtMin << std::endl
-        << "dtMax          = " << dtMax << std::endl
-        << "iStep          = " << iStep << std::endl
-        << "order          = " << order << std::endl
-        << "error          = " << error << std::endl
-        << "isInterpolated = " << isInterpolated << std::endl
-        << "isRestartable  = " << isRestartable << std::endl
-        << "accuracy       = " << accuracy << std::endl
-        << "x = " << std::endl;
+        << "metaData       = " << std::endl;
+        metaData->describe(out,verbLevel);
+    out << "x = " << std::endl;
     x->describe(out,verbLevel);
     if (xdot != Teuchos::null) {
       out << "xdot = " << std::endl;

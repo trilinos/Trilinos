@@ -27,5 +27,28 @@ const char* toString( const StepType stepType )
 }
 
 
+/** \brief Solution Status. */
+enum SolutionStatus {
+  PASSING,     ///< Constant integrator step size
+  FAILED,     ///< Variable integrator step size
+};
+
+
+/** \brief Convert StepType to string. */
+inline
+const char* toString( const SolutionStatus status )
+{
+  switch(status) {
+    case PASSING:
+      return "PASSING";
+    case FAILED:
+      return "FAILED";
+    default:
+      TEUCHOS_TEST_FOR_EXCEPT("Invalid SolutionStatus!");
+  }
+  return 0; // Should never get here!
+}
+
+
 } // namespace tempus
 #ifndef TEMPUS_STEPTYPE_HPP
