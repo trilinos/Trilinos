@@ -29,7 +29,7 @@ namespace Tacho {
                      typename CrsMatBaseTypeB::space_type
                      >::value,
                      "Space type of input matrices does not match" );
-      
+      typedef typename CrsMatBaseTypeA::ordinal_type ordinal_type;      
       typedef typename CrsMatBaseTypeA::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
 
@@ -68,7 +68,8 @@ namespace Tacho {
                      typename CrsMatBaseTypeB::space_type
                      >::value,
                      "Space type of input matrices does not match" );
-      
+      typedef typename CrsMatBaseTypeA::ordinal_type ordinal_type;
+      typedef typename CrsMatBaseTypeA::size_type size_type;
       //typedef typename CrsMatBaseTypeA::space_type space_type;
       //typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
       
@@ -84,9 +85,9 @@ namespace Tacho {
         for (ordinal_type i=0;i<B.NumRows();++i) {
           auto cols = B.ColsInRow(i);
           auto vals = B.ValuesInRow(i);
-          const int ioffset = i + offset;          
+          const auto ioffset = i + offset;          
           A.RowPtrBegin(i) = nnz;
-          for (auto idx=0;idx<cols.dimension_0();++idx) {
+          for (ordinal_type idx=0;idx<cols.dimension_0();++idx) {
             if (ioffset <= cols(idx)) {
               A.Col(nnz) = cols(idx);
               A.Value(nnz) = vals(idx);
@@ -106,9 +107,9 @@ namespace Tacho {
         for (ordinal_type i=0;i<B.NumRows();++i) {
           auto cols = B.ColsInRow(i);
           auto vals = B.ValuesInRow(i);
-          const int ioffset = i - offset;
+          const auto ioffset = i - offset;
           A.RowPtrBegin(i) = nnz;
-          for (auto idx=0;idx<cols.dimension_0();++idx) {
+          for (ordinal_type idx=0;idx<cols.dimension_0();++idx) {
             if (ioffset >= cols(idx)) {
               A.Col(nnz) = cols(idx);
               A.Value(nnz) = vals(idx);
@@ -139,7 +140,8 @@ namespace Tacho {
                      typename CrsMatBaseTypeB::space_type
                      >::value,
                      "Space type of input matrices does not match" );
-      
+      typedef typename CrsMatBaseTypeA::ordinal_type ordinal_type;
+      typedef typename CrsMatBaseTypeA::size_type size_type;
       typedef typename CrsMatBaseTypeA::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
 
@@ -230,7 +232,7 @@ namespace Tacho {
                      typename CrsMatBaseTypeB::space_type
                      >::value,
                      "Space type of input matrices does not match" );
-
+      typedef typename CrsMatBaseTypeA::ordinal_type ordinal_type;
       typedef typename CrsMatBaseTypeA::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
       
@@ -240,11 +242,11 @@ namespace Tacho {
       Kokkos::parallel_for( range_policy_type(0, m),
                             [&](const ordinal_type i)
                             {
-                              size_type ja = A.RowPtrBegin(i);
-                              size_type jb = B.RowPtrBegin(i);
+                              auto ja = A.RowPtrBegin(i);
+                              auto jb = B.RowPtrBegin(i);
 
-                              const size_type jaend = A.RowPtrEnd(i);
-                              const size_type jbend = B.RowPtrEnd(i);
+                              const auto jaend = A.RowPtrEnd(i);
+                              const auto jbend = B.RowPtrEnd(i);
                               
                               for ( ;jb<jbend;++jb) {
                                 for ( ;(A.Col(ja)<B.Col(jb) && ja<jaend);++ja);
@@ -328,17 +330,18 @@ namespace Tacho {
     template<typename CrsMatBaseTypeA>
     static void
     filterEmptyBlocks(CrsMatBaseTypeA &A) {
+      typedef typename CrsMatBaseTypeA::ordinal_type ordinal_type;
       typedef typename CrsMatBaseTypeA::size_type size_type;
       size_type nnz = 0, emptyblocks = 0;
 
       const auto mA = A.NumRows();
-      for (auto i=0;i<mA;++i) {
+      for (ordinal_type i=0;i<mA;++i) {
         const auto nnz_in_row  = A.NumNonZerosInRow(i);
         const auto cols_in_row = A.ColsInRow(i);
         const auto vals_in_row = A.ValuesInRow(i);
 
         A.RowPtrBegin(i) = nnz;
-        for (auto j=0;j<nnz_in_row;++j) {
+        for (ordinal_type j=0;j<nnz_in_row;++j) {
           const auto col   = cols_in_row(j);
           const auto block = vals_in_row(j);
 

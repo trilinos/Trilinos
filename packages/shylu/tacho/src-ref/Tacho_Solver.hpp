@@ -48,6 +48,11 @@ namespace Tacho {
            typename DeviceSpaceType>
   class Solver {
   public:
+    // basic typedefs
+    typedef ValueType   value_type;
+    typedef OrdinalType ordinal_type;
+    typedef SizeType    size_type;
+
     // Host space objects
     typedef typename Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType;
 
