@@ -56,5 +56,4 @@
 #include <Zoltan2_GraphMetricValuesUtility.hpp>
 #include <Zoltan2_MetricValues.hpp>
 #include <Zoltan2_MetricValuesUtility.hpp>
-
 #endif

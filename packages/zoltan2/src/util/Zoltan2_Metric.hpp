@@ -47,16 +47,12 @@
  *
  *
  *  \This was the original Zoltan2_Metric code, now broken down into various sub files
- *  \
- *  \To use the new code, uncomment the first line: #define USE_NEW_ZOLTAN2_CODE
- *  \
+ *  \To use the new code, uncomment the first line: #define ZOLTAN2_NEW_METRICS
  *  \To restore the original behavior, comment out that line and use <Zoltan2_Old_Zoltan2_Metric.hpp> which is identical to the original Zoltan2_Metric.hpp
- *  \
- *  \In a few days when the conversion is done this file can just be replaced by the code currently in <Zoltan2_MetricIncludes.hpp>
  */
 
-#define Michel_Metrics
-#ifdef Michel_Metrics
+#define ZOLTAN2_NEW_METRICS
+#ifdef ZOLTAN2_NEW_METRICS
 #include <Zoltan2_MetricIncludes.hpp>			// This points to the new code
 #else
 #include <Zoltan2_Old_Zoltan2_Metric.hpp>		// Note - this file is identical to the original Zoltan2_Metric.hpp file

@@ -557,7 +557,7 @@ template <typename scalar_t, typename part_t>
 
   std::string unset("unset");
 
-  MetricValues<scalar_t>::printHeader(os);  // MDM - this is the old way
+  MetricValues<scalar_t>::printHeader(os);
 
   for (int i=0; i < infoList.size(); i++)
     if (infoList[i].getName() != unset)

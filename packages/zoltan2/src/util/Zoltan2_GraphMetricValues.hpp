@@ -60,70 +60,50 @@ template <typename scalar_t>
   class GraphMetricValues : public MetricBase<scalar_t> {
 
 public:
+/*! \brief  Enumerator for offsets into metric data. */
+enum metricOffset {
+  evalGlobalSum,   /*!< the global total on all parts */
+  evalGlobalMax   /*!< the maximum across all parts */
+};
 
 /*! \brief Constructor */
-GraphMetricValues(std::string mname) : MetricBase<scalar_t>(evalNumMetrics, mname) {}
+GraphMetricValues(std::string mname) : MetricBase<scalar_t>(getMetrics().size(), mname) {}
 
 /*! \brief Constructor */
-GraphMetricValues() : MetricBase<scalar_t>(evalNumMetrics) {}
+GraphMetricValues() : MetricBase<scalar_t>(getMetrics().size()) {}
 
 /*! \brief Print a standard header */
-static void printHeader(std::ostream &os);	// MDM - note we may want to make this a regular method
+static void printHeader(std::ostream &os);
 
 /*! \brief Print a standard line of data that fits under the header. */
 virtual void printLine(std::ostream &os) const;
 
 /*! \brief Set the global sum.  */
-void setGlobalSum(scalar_t x) { this->values_[evalGlobalSum] = x;}
+void setGlobalSum(scalar_t x) { this->setValue(evalGlobalSum, x);}
 
 /*! \brief Set the global maximum across parts.  */
-void setGlobalMax(scalar_t x) { this->values_[evalGlobalMax] = x;}
+void setGlobalMax(scalar_t x) { this->setValue(evalGlobalMax, x);}
 
 /*! \brief Get the global sum of edge cuts for all parts. */
-scalar_t getGlobalSum() const { return this->values_[evalGlobalSum];}
+scalar_t getGlobalSum() const { return this->getValue(evalGlobalSum);}
 
 /*! \brief Get the global maximum of edge cuts per part across all parts. */
-scalar_t getGlobalMax() const { return this->values_[evalGlobalMax];}
+scalar_t getGlobalMax() const { return this->getValue(evalGlobalMax);}
 
-/*! \brief  Enumerator for offsets into metric data. */
-enum metricOffset{
-  evalGlobalSum,   /*!< the global total on all parts */
-  evalGlobalMax,   /*!< the maximum across all parts */
-  evalNumMetrics    /*!< the number of metric values_ */
-};
+/*! \this method is enforced by the base class. This method will not change for derived classes. */
+virtual const std::vector<std::string> & getMetrics() const { return GraphMetricValues<scalar_t>::static_metrics_; }
 
-/// \brief Return a metric value specified by name
-///
-/// @param metric_name Name of metric to return
-/// @param[out] value metric value returned by reference
-///
-/// @return Returns a boolean indicated whether or not the metric was returned
-virtual scalar_t getMetricValue(const std::string & metric_name) const {
-  if (metric_name == "global maximum") {
-    return this->getGlobalMax();
-  } else if (metric_name == "global sum") {
-    return this->getGlobalSum();
-  } else {
-    return 0.0; // throw error
-  }
-}
-
-/*! \setup a static set of strings. */
-static std::set<std::string> static_graphMetrics_;
-
-/*! \this method is enforced by the base class. */
-virtual const std::set<std::string> & getMetrics() const { return GraphMetricValues<scalar_t>::static_graphMetrics_; }
-
+/*! \setup a static vector of strings. This method will not change for derived classes. */
+static std::vector<std::string> static_metrics_;
 };  // end class
 
-// MDM - Need to figure out a better way to encapsulate this
+/*! \synchronize this with the enum list. */
 template <typename scalar_t>
-std::set<std::string> GraphMetricValues<scalar_t>::static_graphMetrics_ = {
+std::vector<std::string> GraphMetricValues<scalar_t>::static_metrics_ = {
   "global sum",
   "global maximum"
 };
 
-// MDM - These are methods I will move to the .cpp
 template <typename scalar_t>
   void GraphMetricValues<scalar_t>::printHeader(std::ostream &os)
 {
@@ -139,11 +119,12 @@ template <typename scalar_t>
 template <typename scalar_t>
   void GraphMetricValues<scalar_t>::printLine(std::ostream &os) const
 {
-  std::string label( MetricBase<scalar_t>::getName() );
+  std::string label( this->getName() );
 
   os << std::setw(20) << label;
-  os << std::setw(12) << std::setprecision(4) << this->values_[evalGlobalSum];
-  os << std::setw(12) << std::setprecision(4) << this->values_[evalGlobalMax];
+  os << std::setw(12) << std::setprecision(4) << this->getValue(evalGlobalSum);
+  os << std::setw(12) << std::setprecision(4) << this->getValue(evalGlobalMax);
+
   os << std::endl;
 }
 
