@@ -67,10 +67,10 @@ enum metricOffset {
 };
 
 /*! \brief Constructor */
-GraphMetricValues(std::string mname) : MetricBase<scalar_t>(getMetrics().size(), mname) {}
+GraphMetricValues(std::string mname) : MetricBase<scalar_t>(static_metricNames_.size(), mname) {}
 
 /*! \brief Constructor */
-GraphMetricValues() : MetricBase<scalar_t>(getMetrics().size()) {}
+GraphMetricValues() : MetricBase<scalar_t>(static_metricNames_.size()) {}
 
 /*! \brief Print a standard header */
 static void printHeader(std::ostream &os);
@@ -90,16 +90,16 @@ scalar_t getGlobalSum() const { return this->getValue(evalGlobalSum);}
 /*! \brief Get the global maximum of edge cuts per part across all parts. */
 scalar_t getGlobalMax() const { return this->getValue(evalGlobalMax);}
 
-/*! \this method is enforced by the base class. This method will not change for derived classes. */
-virtual const std::vector<std::string> & getMetrics() const { return GraphMetricValues<scalar_t>::static_metrics_; }
+/*! \this method is enforced by the base class. */
+virtual const std::vector<std::string> & getMetrics() const { return GraphMetricValues<scalar_t>::static_metricNames_; }
 
-/*! \setup a static vector of strings. This method will not change for derived classes. */
-static std::vector<std::string> static_metrics_;
+/*! \setup a static vector of strings. */
+static std::vector<std::string> static_metricNames_;
 };  // end class
 
 /*! \synchronize this with the enum list. */
 template <typename scalar_t>
-std::vector<std::string> GraphMetricValues<scalar_t>::static_metrics_ = {
+std::vector<std::string> GraphMetricValues<scalar_t>::static_metricNames_ = {
   "global sum",
   "global maximum"
 };

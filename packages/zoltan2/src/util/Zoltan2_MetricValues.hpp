@@ -82,10 +82,10 @@ evalMaxImbalance /*!< the worst, which is the overall imbalance */
 };
 
 /*! \brief Constructor */
-MetricValues(std::string mname) : MetricBase<scalar_t>(getMetrics().size(), mname),mcnorm_(multiCriteriaNorm(0)) {}
+MetricValues(std::string mname) : MetricBase<scalar_t>(static_metricNames_.size(), mname),mcnorm_(multiCriteriaNorm(0)) {}
 
 /*! \brief Constructor */
-MetricValues() : MetricBase<scalar_t>(getMetrics().size()), mcnorm_(multiCriteriaNorm(0)) {}
+MetricValues() : MetricBase<scalar_t>(static_metricNames_.size()), mcnorm_(multiCriteriaNorm(0)) {}
 
 /*! \brief Print a standard header */
 static void printHeader(std::ostream &os);
@@ -151,16 +151,16 @@ scalar_t getMaxImbalance() const { return this->getValue(evalMaxImbalance);}
 /*! \brief Get the average of the part imbalances. */
 scalar_t getAvgImbalance() const { return this->getValue(evalAvgImbalance);}
 
-/*! \this method is enforced by the base class. This method will not change for derived classes. */
-virtual const std::vector<std::string> & getMetrics() const { return MetricValues<scalar_t>::static_metrics_; }
+/*! \this method is enforced by the base class. */
+virtual const std::vector<std::string> & getMetrics() const { return MetricValues<scalar_t>::static_metricNames_; }
 
-/*! \setup a static vector of strings. This method will not change for derived classes. */
-static std::vector<std::string> static_metrics_;
+/*! \setup a static vector of strings. */
+static std::vector<std::string> static_metricNames_;
 };  // end class
 
 /*! \synchronize this with the enum list. */
 template <typename scalar_t>
-std::vector<std::string> MetricValues<scalar_t>::static_metrics_ = {
+std::vector<std::string> MetricValues<scalar_t>::static_metricNames_ = {
   "local sum",
   "global sum",
   "global minimum",

@@ -44,16 +44,10 @@
 // @HEADER
 
 /*! \file Zoltan2_Metric.hpp
- *
- *
- *  \This was the original Zoltan2_Metric code, now broken down into various sub files
- *  \To use the new code, uncomment the first line: #define ZOLTAN2_NEW_METRICS
- *  \To restore the original behavior, comment out that line and use <Zoltan2_Old_Zoltan2_Metric.hpp> which is identical to the original Zoltan2_Metric.hpp
+ *  \Includes the files for working with MetricValues and GraphMetricValues classes.
  */
 
-#define ZOLTAN2_NEW_METRICS
-#ifdef ZOLTAN2_NEW_METRICS
-#include <Zoltan2_MetricIncludes.hpp>			// This points to the new code
-#else
-#include <Zoltan2_Old_Zoltan2_Metric.hpp>		// Note - this file is identical to the original Zoltan2_Metric.hpp file
-#endif
+#include <Zoltan2_GraphMetricValues.hpp>
+#include <Zoltan2_GraphMetricValuesUtility.hpp>
+#include <Zoltan2_MetricValues.hpp>
+#include <Zoltan2_MetricValuesUtility.hpp>
