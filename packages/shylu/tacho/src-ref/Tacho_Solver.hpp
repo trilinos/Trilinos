@@ -123,10 +123,6 @@ namespace Tacho {
     DenseHierBaseHostType _HY;
     ordinal_type _nb;
 
-    // residual check
-    DenseMatrixBaseHostType RR;
-    bool _check;
-
     // verbose output
     double _t[MaxTimerID];
     //bool _verbose;
@@ -429,22 +425,21 @@ namespace Tacho {
       err  = 0.0;
 
       const auto m = _BB.NumRows(), n = _BB.NumCols();
-      for (auto rhs=0;rhs<n;++rhs) {
-        HostSpaceType::execution_space::fence();
-        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
-                             [&](const ordinal_type i) {
-                               const auto nnz  = _AA.NumNonZerosInRow(i);
-                               const auto cols = _AA.ColsInRow(i);
-                               const auto vals = _AA.ValuesInRow(i);
-                               
+      Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
+                           [&](const ordinal_type i) {
+                             const auto nnz  = _AA.NumNonZerosInRow(i);
+                             const auto cols = _AA.ColsInRow(i);
+                             const auto vals = _AA.ValuesInRow(i);
+                             
+                             for (auto rhs=0;rhs<n;++rhs) {
                                value_type tmp = 0;
                                for (ordinal_type j=0;j<nnz;++j)
                                  tmp += vals(j)*_XX.Value(cols(j), rhs);
-
+                               
                                _YY.Value(i, rhs) = tmp - _BB.Value(i, rhs);
-                             } );
-        HostSpaceType::execution_space::fence();
-      }
+                             }
+                           } );
+      HostSpaceType::execution_space::fence();
 
       for (auto j=0;j<n;++j)
         for (auto i=0;i<m;++i) {
