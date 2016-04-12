@@ -825,7 +825,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_DEBUG_ABORT( inVecs1.dimension(i) != inVecs2.dimension(i), dbgInfo, 
                                         ">>> ERROR (RealSpaceTools::dot): Dimensions of input vector arguments do not agree!");
       }
-      for (auto i=0;i<inVecs1.rank();++i) {
+      for (auto i=0;i<dotArray.rank();++i) {
         INTREPID2_TEST_FOR_DEBUG_ABORT( inVecs1.dimension(i) != dotArray.dimension(i), dbgInfo, 
                                         ">>> ERROR (RealSpaceTools::dot): Dimensions of dot-product and vector arrays do not agree!");
       }

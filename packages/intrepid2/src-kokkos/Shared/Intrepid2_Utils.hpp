@@ -65,7 +65,7 @@ namespace Intrepid2 {
   // check the first error only
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
-  if (!info && test) {                                                  \
+  if (!(info) && (test)) {                                              \
     fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
     fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
     fprintf(stderr, "            %s \n", msg);                          \
@@ -73,7 +73,7 @@ namespace Intrepid2 {
   }
 #else  
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
-  if (!info && test) {                                                  \
+  if (!(info) && (test)) {                                              \
     fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
     fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
     fprintf(stderr, "            %s \n", msg);                          \
