@@ -597,11 +597,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   ViewMapping
     ( ViewCtorProp< P ... > const & prop
-    , typename Traits::array_layout const & layout
+    , typename Traits::array_layout const & local_layout
     )
     : m_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
     , m_offset( std::integral_constant< unsigned , 0 >()
-              , layout )
+              , local_layout )
     // Query m_offset, not input, in case of static dimension
     , m_fad_size(
        ( Rank == 0 ? m_offset.dimension_0() :
@@ -622,7 +622,7 @@ public:
   template< class ... P >
   SharedAllocationRecord<> *
   allocate_shared( ViewCtorProp< P... > const & prop
-                 , typename Traits::array_layout const & layout )
+                 , typename Traits::array_layout const & local_layout )
   {
     typedef ViewCtorProp< P... > ctor_prop ;
 
@@ -634,7 +634,7 @@ public:
     // Disallow padding
     typedef std::integral_constant< unsigned , 0 > padding ;
 
-    m_offset = offset_type( padding(), layout );
+    m_offset = offset_type( padding(), local_layout );
     m_fad_size = ( Rank == 0 ? m_offset.dimension_0() :
                    ( Rank == 1 ? m_offset.dimension_1() :
                      ( Rank == 2 ? m_offset.dimension_2() :
