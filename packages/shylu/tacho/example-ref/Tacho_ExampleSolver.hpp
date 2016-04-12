@@ -45,9 +45,25 @@ namespace Tacho {
     ///     input  - file
     ///     output - AA
     ///
-    typename SolverType::CrsMatrixBaseHostType AA("AA");
+    struct {
+      size_type *ap;
+      ordinal_type *aj;
+      value_type *ax;
+
+      value_type *b;
+      bool is_allocated;
+    } data = { .ap = NULL, .aj = NULL, .ax = NULL,
+               .b = NULL, .is_allocated = false };
+
     timer.reset();
-    {
+    if (file_input.compare("null") != 0) {
+      data.is_allocated = false;
+      std::cout << "Solver:: "
+                << "Matrix market input is selected"
+                << std::endl;
+
+      // matrix market example
+      typename SolverType::CrsMatrixBaseHostType AA("AA");
       std::ifstream in;
       in.open(file_input);
       if (!in.good()) {
@@ -58,11 +74,78 @@ namespace Tacho {
       
       typename SolverType::DenseMatrixBaseHostType BB("BB", AA.NumRows(), nrhs), XX("XX");
       XX.createConfTo(BB);
-      
+
       const ordinal_type m = BB.NumRows();
       for (auto rhs=0;rhs<nrhs;++rhs) 
         for (auto i=0;i<m;++i) 
           BB.Value(i, rhs) = (rhs + 1);
+      
+      tacho.setProblem(AA, BB, XX);
+    } else {
+      data.is_allocated = true;
+      std::cout << "Solver:: "
+                << "user data input is selected"
+                << std::endl;
+
+      const ordinal_type m = 12, nnz = 46;
+
+      data.ap = new size_type[m+1]{
+        0, 3, 7, 11, 15, 20, 23, 26, 31, 35, 39, 43, 46
+      };
+      data.aj = new ordinal_type[nnz]{
+        0, 1, 2,
+        0, 1, 3, 4,  
+        0, 2, 4, 5, 
+        1, 3, 6, 7, 
+        1, 2, 4, 7, 8, 
+        2, 5, 8, 
+        3, 6, 9, 
+        3, 4, 7, 9, 10, 
+        4, 5, 8, 10, 
+        6, 7, 9, 11, 
+        7, 8, 10, 11, 
+        9, 10, 11 
+      };
+      data.ax = new value_type[nnz]{
+        10,  1,  1, 
+        1, 10,  1,  2, 
+        1, 10,  1,  1, 
+        1, 10,  1,  1, 
+        2,  1, 10,  2,  2, 
+        1, 10,  1, 
+        1, 10,  2, 
+        1,  2, 10,  2,  1, 
+        2,  1, 10,  1, 
+        2,  2, 10,  2, 
+        1,  1, 10,  1, 
+        2, 1, 10 
+      };
+
+      data.b = new value_type[m*nrhs];
+      
+      for (auto rhs=0;rhs<nrhs;++rhs) 
+        for (auto i=0;i<m;++i) 
+          data.b[i+m*rhs] = (rhs +1 );
+      
+      typename SolverType::CrsMatrixBaseHostType AA("AA", m, m, nnz);
+
+      // copy user data
+      for (auto i=0;i<m;++i) {
+        AA.RowPtrBegin(i) = data.ap[i];
+        AA.RowPtrEnd(i) = data.ap[i+1];
+      }
+
+      for (auto k=0;k<nnz;++k) {
+        AA.Col(k) = data.aj[k];
+        AA.Value(k) = data.ax[k];
+      }
+      
+      typename SolverType::DenseMatrixBaseHostType BB("BB", m, nrhs), XX("XX");
+      XX.createConfTo(BB);
+
+      for (auto rhs=0;rhs<nrhs;++rhs)
+        for (auto i=0;i<m;++i)
+          BB.Value(i, rhs) = data.b[i+m*rhs];
       
       tacho.setProblem(AA, BB, XX);
     }
@@ -109,9 +192,9 @@ namespace Tacho {
       const auto HU = tacho.getHierU();
 
       std::cout << std::scientific;
-      std::cout << "Solver:: Given    matrix = " << AA.NumRows() << " x " << AA.NumCols() << ", nnz = " << AA.NumNonZeros() << std::endl;
-      std::cout << "Solver:: Factored matrix = " << UU.NumRows() << " x " << UU.NumCols() << ", nnz = " << UU.NumNonZeros() << std::endl;
-      std::cout << "Solver:: Hier     matrix = " << HU.NumRows() << " x " << HU.NumCols() << ", nnz = " << HU.NumNonZeros() << std::endl;
+      std::cout << "Solver:: given    matrix = " << AA.NumRows() << " x " << AA.NumCols() << ", nnz = " << AA.NumNonZeros() << std::endl;
+      std::cout << "Solver:: factored matrix = " << UU.NumRows() << " x " << UU.NumCols() << ", nnz = " << UU.NumNonZeros() << std::endl;
+      std::cout << "Solver:: hier     matrix = " << HU.NumRows() << " x " << HU.NumCols() << ", nnz = " << HU.NumNonZeros() << std::endl;
       
       std::cout << "Solver:: "
                 << "input generation = " << t_input << " [sec], "
@@ -136,6 +219,13 @@ namespace Tacho {
       
       std::cout.unsetf(std::ios::scientific);
       std::cout.precision(prec);
+    }
+
+    if (data.is_allocated) {
+      delete []data.ap;
+      delete []data.aj;
+      delete []data.ax;
+      delete []data.b;
     }
     
     return r_val;
