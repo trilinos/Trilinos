@@ -52,8 +52,11 @@ namespace Tacho {
 
       value_type *b;
       bool is_allocated;
-    } data = { .ap = NULL, .aj = NULL, .ax = NULL,
-               .b = NULL, .is_allocated = false };
+    } data;
+
+    // non standard initialization and icpc complains
+    //= { .ap = NULL, .aj = NULL, .ax = NULL,
+    //.b = NULL, .is_allocated = false };
 
     timer.reset();
     if (file_input.compare("null") != 0) {

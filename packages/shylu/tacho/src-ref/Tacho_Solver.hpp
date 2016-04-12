@@ -240,10 +240,12 @@ namespace Tacho {
         _range = Kokkos::View<ordinal_type*,HostSpaceType>("Tacho::Solver::range", m);
         _tree  = Kokkos::View<ordinal_type*,HostSpaceType>("Tacho::Solver::tree",  m);
       
-        const auto 
-          s_perm = S.PermVector(), s_peri = S.InvPermVector(), 
-          c_perm = C.PermVector(), c_peri = C.InvPermVector(),
-          s_range = S.RangeVector(), s_tree = S.TreeVector();
+        const auto s_perm = S.PermVector();
+        const auto s_peri = S.InvPermVector();
+        const auto c_perm = C.PermVector();
+        const auto c_peri = C.InvPermVector();
+        const auto s_range = S.RangeVector();
+        const auto s_tree = S.TreeVector();
 
         for (auto i=0;i<m;++i) {
           _perm(i)  = c_perm(s_perm(i));
@@ -379,7 +381,8 @@ namespace Tacho {
     
     int solve() {
 
-      const auto m = _BB.NumRows(), n = _BB.NumCols();
+      const auto m = _BB.NumRows();
+      const auto n = _BB.NumCols();
       if (n) {
         // copy BB to XX with permutation
         for (auto i=0;i<m;++i) 
@@ -423,8 +426,9 @@ namespace Tacho {
 
       norm = 0.0;
       err  = 0.0;
-
-      const auto m = _BB.NumRows(), n = _BB.NumCols();
+      
+      const auto m = _BB.NumRows();
+      const auto n = _BB.NumCols();
       Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
                            [&](const ordinal_type i) {
                              const auto nnz  = _AA.NumNonZerosInRow(i);
