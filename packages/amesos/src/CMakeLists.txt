@@ -191,7 +191,19 @@ SET(PARAKLETE_KLU_COMMON
   SuiteSparse/CHOLMOD/Core/amesos_cholmod_memory.c
   SuiteSparse/CHOLMOD/Core/amesos_cholmod_sparse.c
   SuiteSparse/CHOLMOD/Core/amesos_cholmod_transpose.c
+  SuiteSparse/CAMD/Source/amesos_camd_1.c
+  SuiteSparse/CAMD/Source/amesos_camd_defaults.c
+  SuiteSparse/CAMD/Source/amesos_camd_l2.c
+  SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
   SuiteSparse/CAMD/Source/amesos_camd_2.c
+  SuiteSparse/CAMD/Source/amesos_camd_dump.c
+  SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c
+  SuiteSparse/CAMD/Source/amesos_camd_valid.c
+  SuiteSparse/CAMD/Source/amesos_camd_aat.c
+  SuiteSparse/CAMD/Source/amesos_camd_global.c
+  SuiteSparse/CAMD/Source/amesos_camd_order.c
+  SuiteSparse/CAMD/Source/amesos_camd_control.c
+  SuiteSparse/CAMD/Source/amesos_camd_info.c
   SuiteSparse/CAMD/Source/amesos_camd_postorder.c
   )
 
