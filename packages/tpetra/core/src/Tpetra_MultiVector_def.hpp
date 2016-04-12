@@ -833,29 +833,64 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   packAndPrepareNew (const SrcDistObject& sourceObj,
-                     const Kokkos::View<const local_ordinal_type*, execution_space> &exportLIDs,
-                     Kokkos::View<impl_scalar_type*, execution_space> &exports,
-                     const Kokkos::View<size_t*, execution_space> &numExportPacketsPerLID,
+                     const Kokkos::DualView<const local_ordinal_type*, device_type> &exportLIDs,
+                     Kokkos::DualView<impl_scalar_type*, device_type>& exports,
+                     const Kokkos::DualView<size_t*, device_type>& /* numExportPacketsPerLID */,
                      size_t& constantNumPackets,
                      Distributor & /* distor */ )
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
+    using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
-    //typedef Array<size_t>::size_type size_type; // unused
+    typedef impl_scalar_type IST;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_host::memory_space
+      host_memory_space;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_dev::memory_space
+      dev_memory_space;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_host::execution_space
+      host_execution_space;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_dev::execution_space
+      dev_execution_space;
 
     const bool debug = false;
     if (debug) {
       std::cerr << "$$$ MV::packAndPrepareNew" << std::endl;
     }
-
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
-    // We don't need numExportPacketsPerLID; forestall "unused
-    // variable" compile warnings.
-    (void) numExportPacketsPerLID;
+    // mfh 12 Apr 2016: packAndPrepareNew decides where to pack based
+    // on the memory space in which exportLIDs was last modified.
+    // (DistObject::doTransferNew decides this currently.)
+    //
+    // We unfortunately can't change the source object sourceMV.
+    // Thus, we can't sync it to the memory space where we want to
+    // pack communication buffers.  As a result, for example, if
+    // exportLIDs wants us to pack on host, but sourceMV was last
+    // modified on device, we have to allocate a temporary host
+    // version and copy back to host before we can pack.  Similarly,
+    // if exportLIDs wants us to pack on device, but sourceMV was last
+    // modified on host, we have to allocate a temporary device
+    // version and copy back to device before we can pack.
+    const bool packOnHost =
+      exportLIDs.modified_host () > exportLIDs.modified_device ();
+    auto src_dual = sourceMV.getDualView ();
+    auto src_dev = src_dual.template view<dev_memory_space> ();
+    auto src_host = src_dual.template view<host_memory_space> ();
+    if (packOnHost) {
+      if (src_dual.modified_device () > src_dual.modified_host ()) {
+        // Allocate a new host mirror.  We'll use it for packing below.
+        src_host = typename decltype (src_dual)::t_host ("MV::DualView::h_view", src_dual.dimension_0 (), src_dual.dimension_1 ());
+        Kokkos::deep_copy (src_host, src_dev);
+      }
+    }
+    else { // pack on device
+      if (src_dual.modified_host () > src_dual.modified_device ()) {
+        // Allocate a new "device mirror."  We'll use it for packing below.
+        src_dev = typename decltype (src_dual)::t_dev ("MV::DualView::d_view", src_dual.dimension_0 (), src_dual.dimension_1 ());
+        Kokkos::deep_copy (src_dev, src_host);
+      }
+    }
 
     const size_t numCols = sourceMV.getNumVectors ();
 
@@ -866,7 +901,7 @@ namespace Tpetra {
 
     // If we have no exports, there is nothing to do.  Make sure this
     // goes _after_ setting constantNumPackets correctly.
-    if (exportLIDs.size () == 0) {
+    if (exportLIDs.dimension_0 () == 0) {
       if (debug) {
         std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
       }
@@ -892,20 +927,31 @@ namespace Tpetra {
       std::cerr << "$$$ MV::packAndPrepareNew realloc" << std::endl;
     }
 
-    const size_t numExportLIDs = exportLIDs.size ();
+    const size_t numExportLIDs = exportLIDs.dimension_0 ();
     const size_t newExportsSize = numCols * numExportLIDs;
-    if (static_cast<size_t> (exports.size ()) != newExportsSize) {
+    if (static_cast<size_t> (exports.dimension_0 ()) != newExportsSize) {
       if (debug) {
         std::ostringstream os;
         const int myRank = this->getMap ()->getComm ()->getRank ();
         os << "$$$ MV::packAndPrepareNew (Proc " << myRank << ") realloc "
-          "exports from " << exports.size () << " to " << newExportsSize
+          "exports from " << exports.dimension_0 () << " to " << newExportsSize
            << std::endl;
         std::cerr << os.str ();
       }
+      // Resize 'exports' to fit.
       execution_space::fence ();
-      Kokkos::realloc (exports, newExportsSize);
+      exports = Kokkos::DualView<impl_scalar_type*, device_type> ("exports", newExportsSize);
       execution_space::fence ();
+    }
+
+    // Mark 'exports' here, since we might resize it above.  Resizing
+    // currently requires calling the constructor, which clears out
+    // the 'modified' flags.
+    if (packOnHost) {
+      exports.template modify<host_memory_space> ();
+    }
+    else {
+      exports.template modify<dev_memory_space> ();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -922,47 +968,80 @@ namespace Tpetra {
       // "nonconstant stride constructor" as a special case, and makes
       // them constant stride (by making whichVectors_ have length 0).
       if (sourceMV.isConstantStride ()) {
+        using KokkosRefactor::Details::pack_array_single_column;
         if (debug) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 const stride" << std::endl;
         }
-        KokkosRefactor::Details::pack_array_single_column(
-          exports,
-          sourceMV.getKokkosView (),
-          exportLIDs,
-          0);
+        if (packOnHost) {
+          pack_array_single_column (exports.template view<host_memory_space> (),
+                                    create_const_view (src_host),
+                                    exportLIDs.template view<host_memory_space> (),
+                                    0);
+        }
+        else { // pack on device
+          pack_array_single_column (exports.template view<dev_memory_space> (),
+                                    create_const_view (src_dev),
+                                    exportLIDs.template view<dev_memory_space> (),
+                                    0);
+        }
       }
       else {
+        using KokkosRefactor::Details::pack_array_single_column;
         if (debug) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 nonconst stride" << std::endl;
         }
-        KokkosRefactor::Details::pack_array_single_column(
-          exports,
-          sourceMV.getKokkosView (),
-          exportLIDs,
-          sourceMV.whichVectors_[0]);
+        if (packOnHost) {
+          pack_array_single_column (exports.template view<host_memory_space> (),
+                                    create_const_view (src_host),
+                                    exportLIDs.template view<host_memory_space> (),
+                                    sourceMV.whichVectors_[0]);
+        }
+        else { // pack on device
+          pack_array_single_column (exports.template view<dev_memory_space> (),
+                                    create_const_view (src_dev),
+                                    exportLIDs.template view<dev_memory_space> (),
+                                    sourceMV.whichVectors_[0]);
+        }
       }
     }
     else { // the source MultiVector has multiple columns
       if (sourceMV.isConstantStride ()) {
+        using KokkosRefactor::Details::pack_array_multi_column;
         if (debug) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 const stride" << std::endl;
         }
-        KokkosRefactor::Details::pack_array_multi_column(
-          exports,
-          sourceMV.getKokkosView (),
-          exportLIDs,
-          numCols);
+        if (packOnHost) {
+          pack_array_multi_column (exports.template view<host_memory_space> (),
+                                   create_const_view (src_host),
+                                   exportLIDs.template view<host_memory_space> (),
+                                   numCols);
+        }
+        else { // pack on device
+          pack_array_multi_column (exports.template view<dev_memory_space> (),
+                                   create_const_view (src_dev),
+                                   exportLIDs.template view<dev_memory_space> (),
+                                   numCols);
+        }
       }
       else {
+        using KokkosRefactor::Details::pack_array_multi_column_variable_stride;
         if (debug) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 nonconst stride" << std::endl;
         }
-        KokkosRefactor::Details::pack_array_multi_column_variable_stride(
-          exports,
-          sourceMV.getKokkosView (),
-          exportLIDs,
-          getKokkosViewDeepCopy<execution_space> (sourceMV.whichVectors_ ()),
-          numCols);
+        if (packOnHost) {
+          pack_array_multi_column_variable_stride (exports.template view<host_memory_space> (),
+                                                   create_const_view (src_host),
+                                                   exportLIDs.template view<host_memory_space> (),
+                                                   getKokkosViewDeepCopy<host_execution_space> (sourceMV.whichVectors_ ()),
+                                                   numCols);
+        }
+        else { // pack on device
+          pack_array_multi_column_variable_stride (exports.template view<dev_memory_space> (),
+                                                   create_const_view (src_dev),
+                                                   exportLIDs.template view<dev_memory_space> (),
+                                                   getKokkosViewDeepCopy<dev_execution_space> (sourceMV.whichVectors_ ()),
+                                                   numCols);
+        }
       }
     }
 

@@ -603,13 +603,14 @@ namespace Tpetra {
                     size_t& constantNumPackets,
                     Distributor &distor)
     {}
+
     virtual void
     packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::View<const local_ordinal_type*, execution_space> &exportLIDs,
-                       Kokkos::View<packet_type*, execution_space> &exports,
-                       const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                       Kokkos::DualView<packet_type*, device_type>& exports,
+                       const Kokkos::DualView<size_t*, device_type>& numPacketsPerLID,
                        size_t& constantNumPackets,
-                       Distributor &distor)
+                       Distributor& distor)
     {}
 
     /// \brief Perform any unpacking and combining after communication.
@@ -723,7 +724,7 @@ namespace Tpetra {
 
   private:
     //! Buffer from which packed data are exported (sent to other processes).
-    Kokkos::View<packet_type*, execution_space> exports_;
+    Kokkos::DualView<packet_type*, device_type> exports_;
 
   protected:
     Teuchos::Array<packet_type> exports_old_;

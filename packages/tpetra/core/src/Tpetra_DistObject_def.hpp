@@ -187,7 +187,7 @@ namespace Tpetra {
           if (myRank == p) {
             out << "Process " << myRank << ":" << endl;
             Teuchos::OSTab tab2 (out);
-            out << "Export buffer size (in packets): " << exports_.size ()
+            out << "Export buffer size (in packets): " << exports_.dimension_0 ()
                 << endl
                 << "Import buffer size (in packets): " << imports_.size ()
                 << endl;
@@ -738,6 +738,10 @@ namespace Tpetra {
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
+    typedef typename Kokkos::DualView<LocalOrdinal*, device_type>::t_dev::memory_space dev_memory_space;
+    typedef typename Kokkos::DualView<LocalOrdinal*, device_type>::t_host::memory_space host_memory_space;
+
+    const bool packOnHost = false;
     const bool debug = false;
 
     if (debug) {
@@ -782,8 +786,23 @@ namespace Tpetra {
          " != permuteFromLIDs_.size() = " << permuteFromLIDs_.size () << ".");
     }
 
-    lo_const_view_type exportLIDs =
-      getKokkosViewDeepCopy<execution_space> (exportLIDs_);
+    Kokkos::DualView<LocalOrdinal*, device_type> exportLIDs ("exportLIDs", exportLIDs_.size ());
+    {
+      Kokkos::View<const LocalOrdinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
+        exportLIDs_host_in (exportLIDs_.getRawPtr (), exportLIDs_.size ());
+
+      // mfh 12 Apr 2016: packAndPrepareNew decides where to pack
+      // based on the memory space in which exportLIDs was last
+      // modified.
+      if (packOnHost) {
+        exportLIDs.template modify<host_memory_space> ();
+        Kokkos::deep_copy (exportLIDs.template view<host_memory_space> (), exportLIDs_host_in);
+      }
+      else {
+        exportLIDs.template modify<dev_memory_space> ();
+        Kokkos::deep_copy (exportLIDs.template view<dev_memory_space> (), exportLIDs_host_in);
+      }
+    }
 
     if (debug) {
       std::cerr << ">>> 1. checkSizes" << std::endl;
@@ -893,7 +912,7 @@ namespace Tpetra {
         // need to.  That will avoid a bit of time for reinitializing
         // the Views' data.
         execution_space::fence ();
-        Kokkos::realloc (numExportPacketsPerLID_, exportLIDs.size ());
+        Kokkos::realloc (numExportPacketsPerLID_, exportLIDs.dimension_0 ());
         execution_space::fence ();
         host_numExportPacketsPerLID_ = Kokkos::create_mirror_view (numExportPacketsPerLID_);
         execution_space::fence ();
@@ -915,7 +934,7 @@ namespace Tpetra {
           std::ostringstream os;
           const int myRank = this->getMap ()->getComm ()->getRank ();
           os << ">>> (Proc " << myRank << ") 5.0. Before packAndPrepareNew, "
-            "exports_.size()=" << exports_.size () << std::endl;
+            "exports_.dimension_0()=" << exports_.dimension_0 () << std::endl;
           std::cerr << os.str ();
         }
         // Ask the source to pack data.  Also ask it whether there are a
@@ -923,13 +942,20 @@ namespace Tpetra {
         // an output argument).  If there are, constantNumPackets will
         // come back nonzero.  Otherwise, the source will fill the
         // numExportPacketsPerLID_ array.
-        packAndPrepareNew (src, exportLIDs, exports_, numExportPacketsPerLID_,
+
+        // FIXME (mfh 12 Apr 2016) This is temporary, until we push
+        // the DualView into the class as an instance field.
+        auto numExportPacketsPerLID_host = Kokkos::create_mirror_view (numExportPacketsPerLID_);
+        Kokkos::deep_copy (numExportPacketsPerLID_host, numExportPacketsPerLID_);
+        Kokkos::DualView<size_t*, device_type> numExportPacketsPerLID (numExportPacketsPerLID_, numExportPacketsPerLID_host);
+
+        packAndPrepareNew (src, exportLIDs, exports_, numExportPacketsPerLID,
                            constantNumPackets, distor);
         if (debug) {
           std::ostringstream os;
           const int myRank = this->getMap ()->getComm ()->getRank ();
           os << ">>> (Proc " << myRank << ") 5.0. After packAndPrepareNew, "
-            "exports_.size()=" << exports_.size () << std::endl;
+            "exports_.dimension_0()=" << exports_.dimension_0 () << std::endl;
           std::cerr << os.str ();
         }
       }
@@ -1106,10 +1132,20 @@ namespace Tpetra {
               std::cerr << ">>> 9.3. Second comm" << std::endl;
             }
 
-            distor.doReversePostsAndWaits (create_const_view (exports_),
-                                           getArrayView (host_numExportPacketsPerLID_),
-                                           imports_,
-                                           getArrayView (host_numImportPacketsPerLID_));
+            if (packOnHost) {
+              // FIXME (mfh 12 Apr 2016) This needs to use the host
+              // version of imports_ in order to use host only.
+              distor.doReversePostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+                                             getArrayView (host_numExportPacketsPerLID_),
+                                             imports_,
+                                             getArrayView (host_numImportPacketsPerLID_));
+            }
+            else {
+              distor.doReversePostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+                                             getArrayView (host_numExportPacketsPerLID_),
+                                             imports_,
+                                             getArrayView (host_numImportPacketsPerLID_));
+            }
           }
           else {
             if (debug) {
@@ -1117,13 +1153,22 @@ namespace Tpetra {
 
               std::ostringstream os;
               os << ">>> (Proc " << myRank << "): 9.1. Const # packets per LID:"
-                " exports_.size()=" << exports_.size () << ", imports_.size()="
+                " exports_.dimension_0()=" << exports_.dimension_0 () << ", imports_.size()="
                  << imports_.size () << std::endl;
               std::cerr << os.str ();
             }
-            distor.doReversePostsAndWaits (create_const_view (exports_),
-                                           constantNumPackets,
-                                           imports_);
+            if (packOnHost) {
+              // FIXME (mfh 12 Apr 2016) This needs to use the host
+              // version of imports_ in order to use host only.
+              distor.doReversePostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+                                             constantNumPackets,
+                                             imports_);
+            }
+            else { // pack on device
+              distor.doReversePostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+                                             constantNumPackets,
+                                             imports_);
+            }
           }
         }
         else { // revOp == DoForward
@@ -1184,23 +1229,44 @@ namespace Tpetra {
             if (debug) {
               std::cerr << ">>> 9.3. Second comm" << std::endl;
             }
-            distor.doPostsAndWaits (create_const_view (exports_),
-                                    getArrayView (host_numExportPacketsPerLID_),
-                                    imports_,
-                                    getArrayView (host_numImportPacketsPerLID_));
+
+            if (packOnHost) {
+              // FIXME (mfh 12 Apr 2016) This needs to use the host
+              // version of imports_ in order to use host only.
+              distor.doPostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+                                      getArrayView (host_numExportPacketsPerLID_),
+                                      imports_,
+                                      getArrayView (host_numImportPacketsPerLID_));
+            }
+            else { // pack on device
+              distor.doPostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+                                      getArrayView (host_numExportPacketsPerLID_),
+                                      imports_,
+                                      getArrayView (host_numImportPacketsPerLID_));
+            }
           }
           else {
             if (debug) {
               const int myRank = this->getMap ()->getComm ()->getRank ();
               std::ostringstream os;
               os << ">>> (Proc " << myRank << "): 9.1. Const # packets per LID:"
-                " exports_.size()=" << exports_.size () << ", imports_.size()="
+                " exports_.dimension_0()=" << exports_.dimension_0 () << ", imports_.size()="
                  << imports_.size () << std::endl;
               std::cerr << os.str ();
             }
-            distor.doPostsAndWaits (create_const_view (exports_),
-                                    constantNumPackets,
-                                    imports_);
+
+            if (packOnHost) {
+              // FIXME (mfh 12 Apr 2016) This needs to use the host
+              // version of imports_ in order to use host only.
+              distor.doPostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+                                      constantNumPackets,
+                                      imports_);
+            }
+            else { // pack on device
+              distor.doPostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+                                      constantNumPackets,
+                                      imports_);
+            }
           }
         }
 

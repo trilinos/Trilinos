@@ -2222,11 +2222,11 @@ namespace Tpetra {
     virtual void
     packAndPrepareNew (
       const SrcDistObject& sourceObj,
-      const Kokkos::View<const local_ordinal_type*, execution_space>& exportLIDs,
-      Kokkos::View<impl_scalar_type*, execution_space>& exports,
-      const Kokkos::View<size_t*, execution_space>& numPacketsPerLID,
+      const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+      Kokkos::DualView<impl_scalar_type*, device_type>& exports,
+      const Kokkos::DualView<size_t*, device_type>& /* numPacketsPerLID */,
       size_t& constantNumPackets,
-      Distributor &distor);
+      Distributor& /* distor */);
 
     virtual void
     unpackAndCombineNew (
