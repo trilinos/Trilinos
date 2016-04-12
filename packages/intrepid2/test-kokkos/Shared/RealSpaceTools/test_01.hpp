@@ -518,7 +518,7 @@ namespace Intrepid2 {
             errorFlag = -1000;
           }
           
-          *outStream << "\n-- Checking determinant **********\n";
+          *outStream << "\n-- Checking determinant\n";
           
           DynRankView ConstructWithLabel(detA_x, i0);
           DynRankView ConstructWithLabel(detB_x, i0);
