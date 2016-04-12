@@ -305,25 +305,24 @@ namespace Intrepid2 {
             const auto iend = va_x_x_d.dimension(0);
             const auto jend = va_x_x_d.dimension(1);
             const auto kend = va_x_x_d.dimension(2);
-            std::cout << "ends = " << iend << " " << jend << " " << kend << std::endl;
+
             {
               ordinal_type cnt = 0;
               for (ordinal_type i=0;i<iend;++i) 
                 for (ordinal_type j=0;j<jend;++j) 
                   for (ordinal_type k=0;k<kend;++k,++cnt) 
-                    va_x_x_d(i,j,k) = (k+1); //Teuchos::ScalarTraits<double>::random();
-              std::cout << " cnt = " << cnt << std::endl;
+                    va_x_x_d(i,j,k) = Teuchos::ScalarTraits<double>::random();
             }
           }
           
           *outStream << "\n************ Checking vectorNorm \n";
 
           rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_TWO);
-          // if ( std::abs(rst::vectorNorm(vnorms_x_x, NORM_TWO) - 
-          //               rst::vectorNorm(va_x_x_d, NORM_TWO)) > tol) {
-          //   *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
-          //   errorFlag = -1000;
-          // }
+          if ( std::abs(rst::vectorNorm(vnorms_x_x, NORM_TWO) - 
+                        rst::vectorNorm(va_x_x_d, NORM_TWO)) > tol) {
+            *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
+            errorFlag = -1000;
+          }
           
           // rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_ONE);
           // if ( std::abs(rst::vectorNorm(vnorms_x_x, NORM_ONE) - 

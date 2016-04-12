@@ -91,8 +91,8 @@ namespace Intrepid2 {
     unrollIndex(IdxType &i, IdxType &j, 
                 const DimType dim0,
                 const IterType iter) {
-      i = iter/dim0;
-      j = iter - i*dim0;
+      j = iter/dim0;
+      i = iter%dim0;
     }
     
     template<typename IdxType, typename DimType, typename IterType>
@@ -102,17 +102,9 @@ namespace Intrepid2 {
                 const DimType dim0,
                 const DimType dim1,
                 const IterType iter) {
-      const DimType tmpDim = dim0*dim1;
-      IterType tmpIter = iter;
-      i = tmpIter/tmpDim;
-      
-      tmpIter -= i*tmpDim;
-      tmpDim /= dim0;
-      j = tmpIter/tmpDim;
-      
-      tmpIter -= j*tmpDim;
-      tmpDim /= dim1;
-      k = tmpIter/tmpDim;
+      DimType tmp;
+      unrollIndex(tmp, k, dim0*dim1, iter);
+      unrollIndex(  i, j, dim0,      tmp);
     }
 
     template<typename T>
