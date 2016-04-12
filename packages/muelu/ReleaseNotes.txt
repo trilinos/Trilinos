@@ -7,6 +7,7 @@ Trilinos upcoming
 
 * New GMRES algorithm for energy minimization.
 
+
 Trilinos 12.4:
 ---------------
 
