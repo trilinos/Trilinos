@@ -100,6 +100,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // Ifpack2_Relaxation.cpp
   params.set("relaxation: type", "Jacobi");
   params.set("relaxation: sweeps", (int)1);
+  params.set("relaxation: direction", "forward");
   params.set("relaxation: damping factor", (double)1.0);
   params.set("relaxation: min diagonal value", (double)1.0);
   params.set("relaxation: zero starting solution", true);
@@ -133,9 +134,18 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: type", "greedy");
   params.set("partitioner: local parts", (int)1);
   params.set("partitioner: overlap", (int)0);
+  Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
+  params.set("partitioner: parts", tmp0);
 
   // Ifpack2_METISPartitioner.hpp
   params.set("partitioner: use symmetric graph", true);
+
+
+  // Ifpack2_Details_Amesos2Wrapper
+  Teuchos::ParameterList dummyList;
+  params.set("Amesos2",dummyList);
+  params.sublist("Amesos2").disableRecursiveValidation();
+  params.set("Amesos2 solver name", "KLU2");
 
   // Ifpack2_Details_UserPartitioner.hpp
   Teuchos::ArrayRCP<int> tmp;

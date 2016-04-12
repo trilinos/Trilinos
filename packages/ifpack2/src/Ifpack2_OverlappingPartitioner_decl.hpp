@@ -50,14 +50,17 @@
 namespace Ifpack2 {
 
 /// \class OverlappingPartitioner
-/// Create overlapping partitions of a local graph.
+/// \brief Create overlapping partitions of a local graph.
 /// \tparam GraphType Specialization of Tpetra::CrsGraph or
 ///   Tpetra::RowGraph.
 ///
 /// This class enables the extension of nonoverlapping partitions to
-/// an arbitrary amount of overlap.  "Overlap" here refers to the
+/// an arbitrary amount of constant overlap.  "Overlap" here refers to the
 /// overlap among the local parts, and not the overlap among the
 /// processes.
+///
+/// For partitions with varying overlap, use UserPartitioner, which inherits
+/// from OverlappingPartitioner.
 ///
 /// Supported parameters are:
 /// - "partitioner: local parts" (<tt>local_ordinal_type</tt>): the
@@ -166,11 +169,14 @@ protected:
   /// that type may be either signed or unsigned.
   int NumLocalParts_;
 
-  /// Partition_[i] contains the local index of the nonoverlapping
-  /// partition to which it belongs.
-  Teuchos::Array<local_ordinal_type> Partition_; 
+  /// \brief Mapping from local row to partition number.
+  /// \c Partition_[i] contains the local index of the nonoverlapping
+  /// partition to which local row i belongs.  If the application has
+  /// explicitly defined \c Parts_, then \c Partition_ is unused.
+  Teuchos::Array<local_ordinal_type> Partition_;
 
-  /// Parts_[i][j] is the local index of the j-th row contained in the
+  /// \brief Mapping from partition to all local rows it contains.
+  /// \c Parts_[i][j] is the local index of the j-th row contained in the
   /// (overlapping) partition i.
   Teuchos::Array<Teuchos::ArrayRCP<local_ordinal_type> > Parts_;
 

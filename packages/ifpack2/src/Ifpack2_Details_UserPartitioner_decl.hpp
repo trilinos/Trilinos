@@ -45,7 +45,8 @@
 
 /// \file Ifpack2_Details_UserPartitioner_decl.hpp
 /// \brief Declaration of a user-defined partitioner in which the user
-///   can define a nonoverlapping partition of the graph.
+///   can define a partition of the graph.  The partition may have locally
+///   overlapping parts.
 /// \author Tom Benson
 ///
 /// This file is meant for Ifpack2 developers only, not for users.
@@ -60,6 +61,8 @@ namespace Details {
 /// \class UserPartitioner
 /// \brief Partition in which the user can define a nonoverlapping
 ///   partition of the graph in any way they choose.
+///
+/// See Ifpack2::Details::UserPartitioner::setPartitionParameters for a list of supported parameters.
 /// \tparam GraphType Specialization of Tpetra::CrsGraph or
 ///   Tpetra::RowGraph.
 template<class GraphType>
@@ -78,10 +81,16 @@ public:
   virtual ~UserPartitioner();
 
   //! @brief Sets all the parameters for the partitioner.
-  /// The only valid parameter is:
+  /// The only valid parameters are:
   ///   <ul>
   ///     <li> "partitioner: map" (Teuchos::ArrayRCP<local ordinal>)
+  /// Use this option if the parts (aka blocks) do not overlap.  The ith entry in the ArrayRCP is the part (block) number
+  /// that row i belongs to.  In this case, you are specifying OverlappingPartitioner::Partition_.
+  ///     <li> "partitioner: parts" (Teuchos::Array<Teuchos::ArrayRCP<local ordinal>>)
+  /// Use this option if the parts (aka blocks) overlap.  The i'th entry in the Array is an ArrayRCP that contains all the
+  /// rows in part (block) i. In this case, you are specifying OverlappingPartitioner::Parts_.
   ///   </ul>
+  /// You may set only one of these parameters.  Setting both will results in a runtime exception.
   void setPartitionParameters (Teuchos::ParameterList& List);
 
   //! Compute the partitions.
@@ -89,6 +98,10 @@ public:
 
 private:
   Teuchos::ArrayRCP<local_ordinal_type> map_;
+  //! @brief True if user has provided list of parts.  False otherwise.
+  bool userProvidedParts_;
+  //! @brief True if user has provided map.  False otherwise.
+  bool userProvidedMap_;
 };
 
 }// namespace Details
