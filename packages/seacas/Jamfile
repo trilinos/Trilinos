@@ -594,6 +594,8 @@ lib ioss
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/*.C ]
     ]
+    /tpl/trilinos//zoltan
+    /tpl/parmetis//parmetis
     /mpi//mpi
   : <define>SIERRA_PARALLEL_MPI
     [ ifuserbuild

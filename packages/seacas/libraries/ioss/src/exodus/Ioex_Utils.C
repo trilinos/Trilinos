@@ -139,21 +139,20 @@ namespace Ioex {
 
   void update_last_time_attribute(int exodusFilePtr, double value)
   {
-    char errmsg[MAX_ERR_LENGTH];
+    char        errmsg[MAX_ERR_LENGTH];
     const char *routine = "Ioex::Utils::update_last_time_attribute()";
-    
-    double tmp = 0.0;
-    int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
-    int status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
+
+    double tmp    = 0.0;
+    int    rootid = static_cast<unsigned>(exodusFilePtr) & EX_FILE_ID_MASK;
+    int    status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
+
     if (status == NC_NOERR && value > tmp) {
-      status=nc_put_att_double(rootid, NC_GLOBAL, "last_written_time",
-                               NC_DOUBLE, 1, &value);
+      status = nc_put_att_double(rootid, NC_GLOBAL, "last_written_time", NC_DOUBLE, 1, &value);
       if (status != NC_NOERR) {
-        ex_opts(EX_VERBOSE);
-        sprintf(errmsg,
-                "Error: failed to define 'last_written_time' attribute to file id %d",
-                exodusFilePtr);
-        ex_err(routine,errmsg,status);
+	ex_opts(EX_VERBOSE);
+	sprintf(errmsg, "Error: failed to define 'last_written_time' attribute to file id %d",
+		exodusFilePtr);
+	ex_err(routine, errmsg, status);
       }
     }
   }

@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Iocgns_DatabaseIO_h
-#define IOSS_Iocgns_DatabaseIO_h
+#ifndef IOSS_Iocgns_ParallelDatabaseIO_h
+#define IOSS_Iocgns_ParallelDatabaseIO_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
@@ -40,10 +40,12 @@
 #include <Ioss_Map.h>        // for Map
 #include <Ioss_State.h>      // for State
 #include <iostream>          // for ostream
-#include <stddef.h>          // for nullptr
-#include <stddef.h>          // for size_t
-#include <stdint.h>          // for int64_t
-#include <string>            // for string
+#include <memory>
+#include <stddef.h> // for size_t
+#include <stdint.h> // for int64_t
+#include <string>   // for string
+
+#include <cgns/Iocgns_DecompositionData.h>
 
 #include <cgnslib.h>
 
@@ -98,13 +100,16 @@ namespace Ioss {
 
 namespace Iocgns {
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class ParallelDatabaseIO : public Ioss::DatabaseIO
   {
   public:
     enum class entity_type { NODE, ELEM };
 
-    DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+    ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
+                       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                       const Ioss::PropertyManager &props);
+
+    ~ParallelDatabaseIO();
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -115,7 +120,7 @@ namespace Iocgns {
     int64_t node_global_to_local(int64_t global, bool must_exist) const;
     int64_t element_global_to_local(int64_t global) const;
 
-    ~DatabaseIO() = default;
+    void release_memory() override;
 
     void openDatabase() const;
     void closeDatabase() const;
@@ -201,6 +206,8 @@ namespace Iocgns {
     mutable int cgnsFilePtr;
     size_t      nodeCount;
     size_t      elementCount;
+
+    mutable std::unique_ptr<DecompositionDataBase> decomp;
 
     std::vector<size_t> m_zoneOffset; // Offset for local zone/block element ids to global.
     std::vector<std::vector<cgsize_t>> m_blockLocalNodeMap;
