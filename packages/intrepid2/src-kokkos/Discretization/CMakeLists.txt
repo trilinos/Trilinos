@@ -1,7 +1,7 @@
 ADD_SUBDIRECTORY(Basis)
 ADD_SUBDIRECTORY(FunctionSpaceTools)
 ADD_SUBDIRECTORY(Integration)
-ADD_SUBDIRECTORY(TensorProductSpaceTools)
+#ADD_SUBDIRECTORY(TensorProductSpaceTools)
 
 SET(HEADERS_IN_THIS_DIR "")
 
