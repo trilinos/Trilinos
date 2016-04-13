@@ -12,7 +12,7 @@ namespace mesh
 
 void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
 {
-    connect_side_to_elem(sideEntity, elemEntity, elemSide);
+    //connect_side_to_elem(sideEntity, elemEntity, elemSide);
     stk::mesh::impl::LocalId elemLocalId = m_localMapper.entity_to_local(elemEntity);
     connect_side_to_coincident_elements(sideEntity, elemLocalId, elemSide);
     connect_side_to_adjacent_elements(sideEntity, elemLocalId, elemSide);
