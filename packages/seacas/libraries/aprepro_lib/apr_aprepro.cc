@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.28 (2016/03/21)";
+  const char* version_string = "4.29 (2016/04/12)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -75,10 +75,6 @@ namespace SEAMS {
     ap_file_list.push(file_rec());
     init_table("$");
     aprepro = this;
-
-    // Seed the random number generator...
-    time_t time_val = std::time ((time_t*)nullptr);
-    srand((unsigned)time_val);
   }
 
   Aprepro::~Aprepro()
