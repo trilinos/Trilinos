@@ -50,11 +50,12 @@
 #define __INTREPID2_DEFAULT_CUBATURE_FACTORY_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
-#include "Intrepid2_Cubature.hpp"
+#include "Intrepid2_Utils.hpp"
 
 #include "Shards_CellTopology.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
 #include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
@@ -98,23 +99,20 @@ namespace Intrepid2 {
             const int                   degree );
 
 
-    // KJ: for now I am not sure about the typical usage of the cellVertices
-    //     is it from Kokkos::DynRankView ? or std::vector ? cellVertices contains
-    //     numeration of physical vertices and probably it is DynRankView.
-    //
-    // /** \brief Factory method for polygon cubature.
+    /** \brief Factory method for polygon cubature.
       
-    //     \param cellTopology   [in]   - Cell topology
-    //     \param cellVertices   [in]   - Vertices of physical cell
-    //     \param degree         [in]   - A single polynomial degree used for all triangles in tessalation
+        \param cellTopology   [in]   - Cell topology
+        \param cellVertices   [in]   - Vertices of physical cell
+        \param degree         [in]   - A single polynomial degree used for all triangles in tessalation
       
-    //     \return 
-    //     - RCP to cubature with given specifications.
-    // */
-    // static Teuchos::RCP<Cubature<ExecSpace> > 
-    // create( const shards::CellTopology&cellTopology,
-    //         const std::vector<int>    &cellVertices,
-    //         int degree );
+        \return 
+        - RCP to cubature with given specifications.
+    */
+    template<typename cellVertexValueType, class ...cellVertexProperties>
+    static Teuchos::RCP<Cubature<ExecSpace> > 
+    create( const shards::CellTopology &cellTopology,
+            const Kokkos::DynRankView<cellVertexValueType,cellVertexProperties> cellVertices,
+            const int degree );
   };
   
 }// namespace Intrepid2

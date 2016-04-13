@@ -43,187 +43,154 @@
 /** \file   Intrepid_CubatureTensorDef.hpp
     \brief  Definition file for the Intrepid2::CubatureTensor class.
     \author Created by P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
 namespace Intrepid2 {
 
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(std::vector< Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > > cubatures) {
-  unsigned numCubs = cubatures.size();
-  TEUCHOS_TEST_FOR_EXCEPTION( (numCubs < 1),
-                      std::out_of_range,
-                      ">>> ERROR (CubatureTensor): Input cubature array must be of size 1 or larger.");
+  template<typename ExecSpaceType>
+  CubatureTensor<ExecSpaceType>::
+  CubatureTensor( const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature1,
+                  const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature2 ) {
+    numCubatures_ = 2;
+    cubatures_[0] = cubature1;
+    cubatures_[1] = cubature2;
 
-  cubatures_ = cubatures;
-
-  unsigned numDegrees = 0;
-  for (unsigned i=0; i<numCubs; i++) {
-    std::vector<int> tmp;
-    cubatures[i]->getAccuracy(tmp);
-    numDegrees += tmp.size();
-  }
-
-  degree_.assign(numDegrees, 0);
-  int count  = 0;
-  dimension_ = 0;
-  for (unsigned i=0; i<numCubs; i++) {
-    std::vector<int> tmp;
-    cubatures[i]->getAccuracy(tmp);
-    for (unsigned j=0; j<tmp.size(); j++) {
-      degree_[count] = tmp[j];
-      count++;
+    dimension_ = 0;
+    for (auto i=0;i<numCubatures;++i) {
+      degree_[i] = cubatures_[i]->getAccuracy();
+      dimension_ += cubatures_[i]->getDimension();
     }
-    dimension_ += cubatures[i]->getDimension();
-  }
-}
-
-
-
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature1,
-                                                              Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature2) {
-  cubatures_.resize(2);
-  cubatures_[0] = cubature1;
-  cubatures_[1] = cubature2;
-
-  degree_.assign(2, 0);
-  for (unsigned i=0; i<2; i++){
-      std::vector<int> d;
-      cubatures_[i]->getAccuracy(d); degree_[i] = d[0];
   }
 
-  dimension_ = cubatures_[0]->getDimension() + cubatures_[1]->getDimension();
-}
 
+  template<typename ExecSpaceType>
+  CubatureTensor<ExecSpaceType>::
+  CubatureTensor( const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature1,
+                  const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature2,
+                  const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature3 ) {
+    numCubatures_ = 3;
+    cubatures_[0] = cubature1;
+    cubatures_[1] = cubature2;
+    cubatures_[2] = cubature3;
 
-
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature1,
-                                                              Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature2,
-                                                              Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature3) {
-  cubatures_.resize(3);
-  cubatures_[0] = cubature1;
-  cubatures_[1] = cubature2;
-  cubatures_[2] = cubature3;
-
-  degree_.assign(3, 0);
-  for (unsigned i=0; i<3; i++){
-      std::vector<int> d;
-      cubatures_[i]->getAccuracy(d); degree_[i] = d[0];
+    dimension_ = 0;
+    for (auto i=0;i<numCubatures;++i) {
+      degree_[i] = cubatures_[i]->getAccuracy();
+      dimension_ += cubatures_[i]->getDimension();
+    }
   }
 
-  dimension_ = cubatures_[0]->getDimension() + cubatures_[1]->getDimension() + cubatures_[2]->getDimension();
-}
 
+  template <typename ExecSpaceType>
+  template<typename cubPointValueType,  class ...cubPointProperties,
+           typename cubWeightValueType, class ...cubWeightProperties>
+  void 
+  CubatureTensor<ExecSpaceType>::
+  getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+               Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
+#ifdef HAVE_INTREPID_DEBUG
+    // check size of cubPoints and cubWeights
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < this->getNumPoints() ||
+                                  cubPoints.dimension(1)  < this->getDimension() ||
+                                  cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
+                                ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
+#endif
+    typedef Kokkos::DynRankView<cubPointValueType,cubPointProperties...> PointViewType;
+    typedef Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> WeightViewType; 
 
+    PointViewType tmpPoints [Parameters::MaxDimension];
+    WeightViewType tmpWeights[Parameters::MaxDimension];
 
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature, int n) {
-  cubatures_.resize(n);
-  for (int i=0; i<n; i++) {
-    cubatures_[i] = cubature;
-  }
+    // cannot avoid temporary allocation here
+    // this is cubature setup and this should not be called repeatedly.
+    for (auto k=0;k<numCubatures_;++k) {
+      const auto cub = cubatures_[k];
+      tmpPoints [k] = PointViewType ("CubatureTensor::getCubature::tmpPoints",  cub->getNumPoints, cub->getDimension());
+      tmpWeights[k] = WeightViewType("CubatureTensor::getCubature::tmpWeights", cub->getNumPoints);
+      cub->getCubature(tmpPoints[k], tmpWeights[k]);
+    }      
 
-  std::vector<int> d;
-  cubatures_[0]->getAccuracy(d);
-  degree_.assign(n,d[0]);
-
-  dimension_ = cubatures_[0]->getDimension()*n;
-}
-
-
-
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
-                                                                ArrayWeight & cubWeights) const {
-  int numCubPoints = getNumPoints();
-  int cubDim       = getDimension();
-  // check size of cubPoints and cubWeights
-  TEUCHOS_TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints*cubDim ) || ( (int)cubWeights.size() < numCubPoints ) ),
-                      std::out_of_range,
-                      ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
-
-  unsigned numCubs   = cubatures_.size();
-  std::vector<unsigned> numLocPoints(numCubs);
-  std::vector<unsigned> locDim(numCubs);
-  std::vector< FieldContainer<Scalar> > points(numCubs);
-  std::vector< FieldContainer<Scalar> > weights(numCubs);
-
-  // extract required points and weights
-  for (unsigned i=0; i<numCubs; i++) {
-
-    numLocPoints[i] = cubatures_[i]->getNumPoints();
-    locDim[i]       = cubatures_[i]->getDimension();
-    points[i].resize(numLocPoints[i], locDim[i]);
-    weights[i].resize(numLocPoints[i]);
-
-    // cubPoints and cubWeights are used here only for temporary data retrieval
-    cubatures_[i]->getCubature(cubPoints, cubWeights);
-    for (unsigned pt=0; pt<numLocPoints[i]; pt++) {
-      for (unsigned d=0; d<locDim[i]; d++) {
-        points[i](pt,d) = cubPoints(pt,d);
-        weights[i](pt)  = cubWeights(pt);
+    // reset all weights to 1.0
+    {
+      ordinal_type ii = 0;
+      for (auto k=0;k<numCubatures_;++k) {
+        const auto cub  = cubatures_[k];
+        const auto npts = cub->getNumPoints();
+        const auto dim  = cub->getDimension();
+        for (auto i=0;i<npts;++i) 
+          cubWeights(ii++) = 1.0;
       }
     }
 
-  }
-
-  // reset all weights to 1.0
-  for (int i=0; i<numCubPoints; i++) {
-      cubWeights(i) = (Scalar)1.0;
-  }
-
-  // fill tensor-product cubature
-  int globDimCounter = 0;
-  int shift          = 1;
-  for (unsigned i=0; i<numCubs; i++) {
-
-    for (int j=0; j<numCubPoints; j++) {
-      /* int itmp = ((j*shift) % numCubPoints) + (j / (numCubPoints/shift)); // equivalent, but numerically unstable */
-      int itmp = (j % (numCubPoints/shift))*shift + (j / (numCubPoints/shift));
-      for (unsigned k=0; k<locDim[i]; k++) {
-        cubPoints(itmp , globDimCounter+k) = points[i](j % numLocPoints[i], k);
+    // when the input containers are device space, this is better computed on host and copy to devices
+    // fill tensor cubature
+    {
+      ordinal_type offset[Paramters::MaxDimension+1];
+      for (auto k=0;k<numCubatures_;++k) 
+        offset[k+1] = offs[k] + cubatures_[k]->getDimension();
+      
+      ordinal_type ii = 0;
+      for (auto k=0;k<numCubatures_;++k) {
+        const auto cub  = cubatures_[k];
+        const auto npts = cub->getNumPoints();
+        const auto dim  = cub->getDimension();
+        
+        const auto points  = tmpPoints[k];
+        const auto weights = tmpWeights[k];
+        
+        const auto offs = offset[k];
+        for (auto i=0;i<npts;++i) {
+          for (auto j=0;j<dim;++j) 
+            cubPoints(ii, offs+j) = points(i, j);
+          cubWeights(ii++) *= weighst(i);
+        }
       }
-      cubWeights( itmp ) *= weights[i](j % numLocPoints[i]);
     }
-    
-    shift *= numLocPoints[i];
-    globDimCounter += locDim[i];
+  } 
+
+
+  template<typename ExecSpaceType>
+  template<typename cubPointValueType,  class ...cubPointProperties,
+           typename cubWeightValueType, class ...cubWeightProperties,
+           typename cellCoordValueType, class ...cellCoordProperties>
+  void
+  CubatureTensor<ExecSpaceType>::
+  getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+               Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
+               Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const {
+    INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                  ">>> ERROR (CubatureTensor::getCubature): Cubature defined in reference space calling method for physical space cubature.");
   }
 
-} // end getCubature
 
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
-                                                                ArrayWeight& cubWeights,
-                                                                ArrayPoint& cellCoords) const
-{
-    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (CubatureTensor): Cubature defined in reference space calling method for physical space cubature.");
-}
-
-
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {
-  unsigned numCubs = cubatures_.size();
-  int numCubPoints = 1;
-  for (unsigned i=0; i<numCubs; i++) {
-    numCubPoints *= cubatures_[i]->getNumPoints();
+  template<typename ExecSpaceType>
+  ordinal_type
+  CubatureTensor<ExecSpaceType>::
+  getNumPoints() const {
+    ordinal_type numCubPoints = 1;
+    for (auto i=0;i<numCubatures_;++i) 
+      numCubPoints *= cubatures_[i]->getNumPoints();
+    return numCubPoints;
   }
-  return numCubPoints;
-} // end getNumPoints
 
 
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getDimension() const {
-  return dimension_;
-} // end dimension
+  template<typename ExecSpaceType>
+  ordinal_type
+  CubatureTensor<ExecSpaceType>
+  ::getDimension() const {
+    return dimension_;
+  }
 
 
-
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int> & degree) const {
-  degree = degree_;
-} // end getAccuracy
+  template<typename ExecSpaceType>
+  void
+  CubatureTensor<ExecSpaceType>::
+  getAccuracy( ordinal_type &accuracy[Parameters::MaxDimension],
+               ordinal_type &numCubatures ) const { 
+    numCubatures = numCubatures_;
+    for (auto i=0;i<numCubatures_;++i) 
+      accuracy[i] = degree_[i];
+  }
 
 } // end namespace Intrepid2

@@ -161,13 +161,14 @@ namespace Intrepid2 {
   }
 
 
-  // template<typename ExecSpaceType>
-  // Teuchos::RCP<Cubature<ExecSpaceType> > 
-  // DefaultCubatureFactory<ExecSpaceType>::
-  // create(const shards::CellTopology& cellTopology,
-  //        const ArrayPoint& cellVertices,
-  //        int degree){
-  //   return Teuchos::rcp(new CubaturePolygon<ExecSpaceType>(cellTopology,cellVertices, degree));
-  // }
+  template<typename ExecSpaceType>
+  template<typename cellVertexValueType, class ...cellVertexProperties>
+  Teuchos::RCP<Cubature<ExecSpaceType> > 
+  DefaultCubatureFactory<ExecSpaceType>::
+  create(const shards::CellTopology& cellTopology,
+         const Kokkos::DynRankView<cellVertexValueType,cellVertexProperties> cellVertices,
+         int degree){
+    return Teuchos::rcp(new CubaturePolygon<ExecSpaceType>(cellTopology,cellVertices, degree));
+  }
 
 } // namespace Intrepid2
