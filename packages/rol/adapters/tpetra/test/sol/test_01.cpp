@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     /************************* CONSTRUCT VECTORS **************************************************/
     /**********************************************************************************************/
     // Build control vectors
-    int nx = 256;
+    int nx = 1024;
     Teuchos::RCP<std::vector<RealT> > x1_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
     ROL::StdVector<RealT> x1(x1_rcp);
     Teuchos::RCP<std::vector<RealT> > x2_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
@@ -192,6 +192,16 @@ int main(int argc, char* argv[]) {
     vu->zero();
     x.scale(1);
     algo.run(x, *vu, simobj, simcon, true, *outStream);
+
+    // Output control to file.
+    if (Teuchos::rank<int>(*comm)==0) {
+      std::ofstream file;
+      file.open("control-fs-expv.txt");
+      for ( int i = 0; i < nx+2; ++i ) {
+        file << (*zvec_rcp)[i] << "\n";
+      }
+      file.close();
+    }
 
   }
   catch (std::logic_error err) {
