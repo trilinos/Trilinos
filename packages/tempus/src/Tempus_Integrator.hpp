@@ -50,13 +50,13 @@ namespace tempus {
     virtual bool advanceTime(const Scalar time_final) = 0;
 
     /// Get the current solution, x.
-    virtual std::vector<RCP<const Thyra::VectorBase<Scalar> > > getXs() = 0;
+    virtual RCP<const Thyra::VectorBase<Scalar> >& getX() = 0;
 
     /// Get the current time derivative of the solution, xdot.
-    virtual std::vector<RCP<const Thyra::VectorBase<Scalar> > > getXDots();
+    virtual RCP<const Thyra::VectorBase<Scalar> >& getXDot();
 
     /// Get the current second time derivative of the solution, xdotdot.
-    virtual std::vector<RCP<const Thyra::VectorBase<Scalar> > > getXDotDots();
+    virtual RCP<const Thyra::VectorBase<Scalar> >& getXDotDot();
     //@}
 
     /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -74,9 +74,9 @@ namespace tempus {
     virtual void describe( Teuchos::FancyOStream        & out,
                            const Teuchos::EVerbosityLevel verbLevel) const;
     /// Get time
-    virtual Scalar getTime() const{return currentState->getTime();}
+    virtual Scalar getTime() const{return workingState->getTime();}
     /// Get index
-    virtual Scalar getIndex() const{return currentState->getIndex();}
+    virtual Scalar getIndex() const{return workingState->getIndex();}
     //@}
 
     /// \name Undo type capabilities
@@ -89,7 +89,7 @@ namespace tempus {
 
     RCP<ParameterList>               parameterList;
     RCP<SolutionHistory<Scalar> >    solutionHistory;
-    RCP<SolutionState<Scalar> >      currentState;
+    Ptr<SolutionState<Scalar> >      workingState;
     RCP<TimeStepControl<Scalar> >    timeStepControl;
     RCP<IntegratorObserver<Scalar> > integratorObserver;
     RCP<Stepper<Scalar> >            stepper;

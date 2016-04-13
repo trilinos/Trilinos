@@ -41,10 +41,10 @@ namespace tempus {
 
 template<class Scalar>
 IntegratorSimple<Scalar>::IntegratorSimple(
-  RCP<ParameterList>              parameterList,
-  RCP<Thyra::VectorBase<Scalar> > x,
-  RCP<Thyra::VectorBase<Scalar> > xdot=Teuchos::null,
-  RCP<Thyra::VectorBase<Scalar> > xdotdot=Teuchos::null )
+  RCP<ParameterList>&             parameterList,
+  const RCP<Thyra::VectorBase<Scalar> >& x,
+  const RCP<Thyra::VectorBase<Scalar> >& xdot=Teuchos::null,
+  const RCP<Thyra::VectorBase<Scalar> >& xdotdot=Teuchos::null )
 {
   error    = 0.0;
   accuracy = 0.0;
@@ -70,12 +70,12 @@ IntegratorSimple<Scalar>::IntegratorSimple(
   md->order = paramList->get<int>(initOrder_name, initOrder_default);
 
   // Create initial condition solution state
-  currentState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot);
+  workingState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot);
 
   // Create solution history, an array of solution states.
   RCP<ParameterList> sh_pl = Teuchos::sublist(paramList, SolutionHistory_name);
   solutionHistory = rcp(new SolutionHistory<Scalar>(sh_pl));
-  addState(currentState);
+  addState(workingState);
 
   // Create Stepper
   std::string s = paramList->get<std::string>(Stepper_name, Stepper_default);
@@ -106,7 +106,7 @@ void IntegratorSimple<Scalar>::describe(
 {
   out << description() << "::describe" << std::endl;
   out << "solutionHistory    = " << solutionHistory->description()<<std::endl;
-  out << "currentState       = " << currentState   ->description()<<std::endl;
+  out << "workingState       = " << workingState   ->description()<<std::endl;
   out << "timeStepControl    = " << timeStepControl->description()<<std::endl;
   out << "integratorObserver = " <<integratorObserver->description()<<std::endl;
   out << "stepper            = " << stepper        ->description()<<std::endl;
@@ -114,7 +114,7 @@ void IntegratorSimple<Scalar>::describe(
   if ( Teuchos::as<int>(verbLevel) >=
               Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "solutionHistory    = " << solutionHistory   ->describe()<<std::endl;
-    out << "currentState       = " << currentState      ->describe()<<std::endl;
+    out << "workingState       = " << workingState      ->describe()<<std::endl;
     out << "timeStepControl    = " << timeStepControl   ->describe()<<std::endl;
     out << "integratorObserver = " << integratorObserver->describe()<<std::endl;
     out << "stepper            = " << stepper           ->describe()<<std::endl;
@@ -131,12 +131,12 @@ void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
   bool integratorStatus = true;
   bool stepperStatus = true;
 
-  while ( timeStepControl->timeInRange(currentState->getTime()) and
-          timeStepControl->indexInRange(currentState->getIndex()) ){
+  while ( timeStepControl->timeInRange(workingState->getTime()) and
+          timeStepControl->indexInRange(workingState->getIndex()) ){
 
-    currentState = solutionHistory->setInitialGuess();
+    workingState = solutionHistory->setWorkingState();
 
-    timeStepControl->getNextTimeStep(currentState->metaData,
+    timeStepControl->getNextTimeStep(workingState->metaData,
                                      stepperStatus, integratorStatus);
 
     if (integratorStatus != true) {
@@ -146,7 +146,7 @@ void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
 
     integratorObserver->observeStartTimeStep();
 
-    stepperStatus = stepper->takeStep(currentState);
+    stepperStatus = stepper->takeStep(workingState);
 
     if (stepperStatus != true) {
       integratorObserver->observeFailedTimeStep();

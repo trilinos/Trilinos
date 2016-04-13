@@ -90,8 +90,20 @@ class SolutionState :
     /// Get time
     virtual Scalar getTime() const{return metaData->time;}
 
-    /// Get time
+    /// Get index
     virtual Scalar getIndex() const{return metaData->iStep;}
+
+    /// Get time step
+    virtual Scalar getTimeStep() const{return metaData->dt;}
+
+    /// Get the current solution, x.
+    virtual RCP<const Thyra::VectorBase<Scalar> > getX() {return x;}
+
+    /// Get the current time derivative of the solution, xdot.
+    virtual RCP<const Thyra::VectorBase<Scalar> > getXDot() {return xdot;}
+
+    /// Get the current time second derivative of the solution, xdotdot.
+    virtual RCP<const Thyra::VectorBase<Scalar> > getXDotDot() {return xdotdot;}
 
     /// Less than comparison for sorting based on time:
     bool operator< (const SolutionState<Scalar>& ss) const;
