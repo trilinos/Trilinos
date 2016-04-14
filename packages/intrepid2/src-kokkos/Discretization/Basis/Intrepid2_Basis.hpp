@@ -88,6 +88,43 @@ namespace Intrepid2 {
   */
   template<typename ExecSpaceType>
   class Basis {
+  protected:
+    
+    template<typename outputValueViewType, 
+             typename inputPointViewType>
+    struct FunctorBaseWithoutScratch {
+      outputValueViewType _outputValues;
+      inputPointViewType  _inputPoints;
+      const ordinal_type _basisCardinality, _DkCardinality;
+
+      KOKKOS_INLINE_FUNCTION
+      FunctorBaseWithoutScratch( /**/  outputValueViewType outputValues_,
+                                 /**/  inputPointViewType  inputPoints_,
+                                 const ordinal_type        basisCardinality_ = 0,
+                                 const ordinal_type        DkCardinality_ = 0 )
+        : _outputValues(outputValues_), _inputPoints(inputPoints_),
+          _basisCardinality(basisCardinality_), _DkCardinality(DkCardinality_) {}
+    };
+
+    template<typename outputValueViewType, 
+             typename inputPointViewType>
+    struct FunctorSetOperatorDkNull : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
+      KOKKOS_INLINE_FUNCTION
+      FunctorSetOperatorDkNull( /**/  outputValueViewType outputValues_,
+                                /**/  inputPointViewType  inputPoints_,
+                                const ordinal_type        basisCardinality_ = 0,
+                                const ordinal_type        DkCardinality_ = 0 )
+        : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType>
+          (outputValues_, inputPoints_, basisCardinality_, DkCardinality_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type i0) const {
+        for(auto dofOrd=0;dofOrd<_basisCardinality;++dofOrd)
+          for(auto dkOrd=0;dkOrd<_DkCardinality;++dkOrd)
+            _outputValues(dofOrd, i0, dkOrd) = 0.0;
+      }
+    };
+    
   public:
     typedef Kokkos::View<ordinal_type,ExecSpaceType> ordinal_view_type;
     typedef Kokkos::View<EBasis,ExecSpaceType> ebasis_view_type;
@@ -235,9 +272,9 @@ namespace Intrepid2 {
     getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
-               const EOperator operatorType  = OPERATOR_VALUE ) const {
+               const EOperator operatorType = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getValues): this method should be over-riden by derived classes.");
+                                    ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
     }
 
 
@@ -271,7 +308,7 @@ namespace Intrepid2 {
                 const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
                 const EOperator operatorType = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getValues): this method should be over-riden by derived classes.");
+                                    ">>> ERROR (Basis::getValues): this method (FVD) is not supported or should be over-riden accordingly by derived classes.");
     }
 
     /** \brief  Returns cardinality of the basis

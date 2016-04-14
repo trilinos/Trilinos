@@ -46,6 +46,9 @@
             Kokkorized by Kyungjoo Kim
 */
 
+#ifndef __INTREPID2_BASIS_DEF_HPP__
+#define __INTREPID2_BASIS_DEF_HPP__
+
 namespace Intrepid2 {
 
   //--------------------------------------------------------------------------------------------//
@@ -320,3 +323,5 @@ namespace Intrepid2 {
   }
 
 }
+
+#endif
