@@ -51,9 +51,9 @@ namespace Intrepid2 {
   // first create method
   template<typename ExecSpaceType>
   Teuchos::RCP<Cubature<ExecSpaceType> > 
-  DefaultCubatureFactory<ExecSpaceType>::
-  create(const shards::CellTopology &cellTopology,
-         const std::vector<int>     &degree) {
+  DefaultCubatureFactory::
+  create<ExecSpaceType>(const shards::CellTopology      &cellTopology,
+                        const std::vector<ordinal_type> &degree) {
     
     // Create generic cubature.
     Teuchos::RCP<Cubature<ExecSpaceType> > pickCubature;
@@ -65,11 +65,11 @@ namespace Intrepid2 {
       pickCubature = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[0]));
       break;
 
-    case shards::Triangle<>::key:
-      INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
-                                    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      pickCubature = Teuchos::rcp(new CubatureDirectTriDefault<ExecSpaceType>(degree[0]));
-      break;
+    // case shards::Triangle<>::key:
+    //   INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+    //                                 ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+    //   pickCubature = Teuchos::rcp(new CubatureDirectTriDefault<ExecSpaceType>(degree[0]));
+    //   break;
 
     case shards::Quadrilateral<>::key:
       INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
@@ -82,21 +82,22 @@ namespace Intrepid2 {
       }
       break;
 
-    case shards::Tetrahedron<>::key:
-      if (cellTopology.getCellTopologyData()->key == shards::Tetrahedron<11>::key)
-        {
-          INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
-                                        ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-          //pickCubature = Teuchos::rcp(new CubatureCompositeTet<ExecSpaceType>(degree[0]));
-          pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<ExecSpaceType>(degree[0]));
-        } 
-      else
-        {
-          INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
-                                        ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-          pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<ExecSpaceType>(degree[0]));
-        }
-      break;
+    // case shards::Tetrahedron<>::key:
+    //   if (cellTopology.getCellTopologyData()->key == shards::Tetrahedron<11>::key)
+    //     {
+    //       INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+    //                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+    //       //pickCubature = Teuchos::rcp(new CubatureCompositeTet<ExecSpaceType>(degree[0]));
+    //       pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<ExecSpaceType>(degree[0]));
+    //     } 
+    //   else
+    //     {
+    //       INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+    //                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+    //       pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<ExecSpaceType>(degree[0]));
+    //     }
+    //   break;
+
     case shards::Hexahedron<>::key:
       INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
@@ -109,28 +110,28 @@ namespace Intrepid2 {
       }
       break;
 
-    case shards::Wedge<>::key:
-      INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
-                                    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.")
-        {
-          std::vector< Teuchos::RCP< Cubature<ExecSpaceType> > > miscCubs(2);
-          miscCubs[0]  = Teuchos::rcp(new CubatureDirectTriDefault<ExecSpaceType>(degree[0]));
-          miscCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[1]));
-          pickCubature = Teuchos::rcp(new CubatureTensor<ExecSpaceType>(miscCubs));
-        }
-      break;
+    // case shards::Wedge<>::key:
+    //   INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
+    //                                 ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.")
+    //     {
+    //       std::vector< Teuchos::RCP< Cubature<ExecSpaceType> > > miscCubs(2);
+    //       miscCubs[0]  = Teuchos::rcp(new CubatureDirectTriDefault<ExecSpaceType>(degree[0]));
+    //       miscCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[1]));
+    //       pickCubature = Teuchos::rcp(new CubatureTensor<ExecSpaceType>(miscCubs));
+    //     }
+    //   break;
 
-    case shards::Pyramid<>::key:
-      INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
-                                    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      {
-        std::vector< Teuchos::RCP< Cubature<ExecSpaceType> > > lineCubs(3);
-        lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[0]));
-        lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[1]));
-        lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGaussJacobi20<ExecSpaceType>(degree[2]));
-        pickCubature = Teuchos::rcp(new CubatureTensorPyr<ExecSpaceType>(lineCubs));
-      }
-      break;
+    // case shards::Pyramid<>::key:
+    //   INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
+    //                                 ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+    //   {
+    //     std::vector< Teuchos::RCP< Cubature<ExecSpaceType> > > lineCubs(3);
+    //     lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[0]));
+    //     lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[1]));
+    //     lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGaussJacobi20<ExecSpaceType>(degree[2]));
+    //     pickCubature = Teuchos::rcp(new CubatureTensorPyr<ExecSpaceType>(lineCubs));
+    //   }
+    //   break;
 
     default:
       INTREPID2_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key)             &&
@@ -150,9 +151,9 @@ namespace Intrepid2 {
 
   template<typename ExecSpaceType>
   Teuchos::RCP<Cubature<ExecSpaceType> > 
-  DefaultCubatureFactory<ExecSpaceType>::
-  create(const shards::CellTopology &cellTopology,
-         const int                   degree) {
+  DefaultCubatureFactory::
+  create<ExecSpaceType>(const shards::CellTopology &cellTopology,
+                        const ordinal_type          degree) {
     // uniform order for 3 axes
     std::vector<int> degreeArray;
     degreeArray.assign(3, degree);
@@ -161,14 +162,14 @@ namespace Intrepid2 {
   }
 
 
-  template<typename ExecSpaceType>
-  template<typename cellVertexValueType, class ...cellVertexProperties>
-  Teuchos::RCP<Cubature<ExecSpaceType> > 
-  DefaultCubatureFactory<ExecSpaceType>::
-  create(const shards::CellTopology& cellTopology,
-         const Kokkos::DynRankView<cellVertexValueType,cellVertexProperties> cellVertices,
-         int degree){
-    return Teuchos::rcp(new CubaturePolygon<ExecSpaceType>(cellTopology,cellVertices, degree));
-  }
+  // template<typename ExecSpaceType>
+  // template<typename cellVertexValueType, class ...cellVertexProperties>
+  // Teuchos::RCP<Cubature<ExecSpaceType> > 
+  // DefaultCubatureFactory::
+  // create<ExecSpaceType>(const shards::CellTopology& cellTopology,
+  //                       const Kokkos::DynRankView<cellVertexValueType,cellVertexProperties> cellVertices,
+  //                       ordinal_type degree){
+  //   return Teuchos::rcp(new CubaturePolygon<ExecSpaceType>(cellTopology,cellVertices, degree));
+  // }
 
 } // namespace Intrepid2

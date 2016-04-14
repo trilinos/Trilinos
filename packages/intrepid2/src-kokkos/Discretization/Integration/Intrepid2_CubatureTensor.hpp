@@ -137,6 +137,14 @@ namespace Intrepid2 {
      */
     ordinal_type getDimension() const;
 
+    /** \brief Returns cubature name.
+     */
+    const char* getName() const;
+
+    ///
+    /// CubatureTensor specific
+    ///
+
     /** \brief Returns
         The return vector has the size of the degree_ vector.
     */
@@ -146,10 +154,6 @@ namespace Intrepid2 {
     */
     void getAccuracy( ordinal_type &accuracy[Parameters::MaxDimension],
                       ordinal_type &numCubatures ) const;
-
-    /** \brief Returns cubature name.
-     */
-    const char* getName() const;
   };
   
   

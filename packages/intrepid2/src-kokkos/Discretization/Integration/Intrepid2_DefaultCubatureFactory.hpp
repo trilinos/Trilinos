@@ -70,7 +70,7 @@ namespace Intrepid2 {
   /** \class Intrepid2::DefaultCubatureFactory
       \brief A factory class that generates specific instances of cubatures.
   */
-  template<typedef ExecSpaceType>
+
   class DefaultCubatureFactory {
   public:
 
@@ -82,9 +82,10 @@ namespace Intrepid2 {
         \return
         - RCP to cubature with given specifications.
     */
+    template<typename ExecSpaceType>
     static Teuchos::RCP<Cubature<ExecSpace> > 
-    create( const shards::CellTopology &cellTopology,
-            const std::vector<int>     &degree );
+    create( const shards::CellTopology      &cellTopology,
+            const std::vector<ordinal_type> &degree );
     
     /** \brief Factory method.
 
@@ -94,9 +95,10 @@ namespace Intrepid2 {
         \return
         - RCP to cubature with given specifications.
     */
+    template<typename ExecSpaceType>
     static Teuchos::RCP<Cubature<ExecSpace> > 
     create( const shards::CellTopology &cellTopology,
-            const int                   degree );
+            const ordinal_type          degree );
 
 
     /** \brief Factory method for polygon cubature.
@@ -108,11 +110,12 @@ namespace Intrepid2 {
         \return 
         - RCP to cubature with given specifications.
     */
-    template<typename cellVertexValueType, class ...cellVertexProperties>
-    static Teuchos::RCP<Cubature<ExecSpace> > 
-    create( const shards::CellTopology &cellTopology,
-            const Kokkos::DynRankView<cellVertexValueType,cellVertexProperties> cellVertices,
-            const int degree );
+    // template<typename ExecSpaceType>
+    // template<typename cellVertexValueType, class ...cellVertexProperties>
+    // static Teuchos::RCP<Cubature<ExecSpace> > 
+    // create( const shards::CellTopology &cellTopology,
+    //         const Kokkos::DynRankView<cellVertexValueType,cellVertexProperties> cellVertices,
+    //         const ordinal_type degree );
   };
   
 }// namespace Intrepid2

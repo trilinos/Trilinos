@@ -113,7 +113,10 @@ namespace Intrepid2 {
 
     CubatureDirect() = default;    
     ~CubatureDirect() = default; 
-    
+
+    //
+    // Cubature public functions
+    //
 
     /** \brief Returns cubature points and weights
         
@@ -141,7 +144,6 @@ namespace Intrepid2 {
     getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                  Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
                  Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const;
-
     
     /** \brief Returns the number of cubature points.
      */
@@ -150,19 +152,24 @@ namespace Intrepid2 {
     /** \brief Returns dimension of integration domain.
      */
     ordinal_type getDimension() const;
-    
+
+    /** \brief Returns cubature name.
+     */
+    const char* getName() const;
+
+    //
+    // CubatureDirect specific functions
+    //
+
     /** \brief Returns max. degree of polynomials that are integrated exactly.
         The return vector has size 1.
     */
     ordinal_type getAccuracy() const;
-
+    
     /** \brief Returns maximum cubature accuracy.
      */
-    ordinal_type getMaxAccuracy() const;
-    
-    /** \brief Returns cubature name.
-     */
-    const char* getName() const;
+    // never used 
+    // ordinal_type getMaxAccuracy() const;
   };  
   
 } // end namespace Intrepid2

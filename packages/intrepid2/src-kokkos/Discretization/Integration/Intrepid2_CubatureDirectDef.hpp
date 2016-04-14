@@ -58,14 +58,29 @@ namespace Intrepid2 {
                        const CubatureData cubData ) const {
 #ifdef HAVE_INTREPID_DEBUG
     // check size of cubPoints and cubWeights
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR (CubatureDirect): cubPoints must be rank 2." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( cubWeights.rank() != 1, std::invalid_argument,
+                                  ">>> ERROR (CubatureDirect): cubPoints must be rank 1." );
+
     INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < this->getNumPoints() ||
-                                  cubPoints.dimension(1)  < this->getDimension() ||
-                                  cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
-                                  ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points or weights.");
+                                  cubPoints.dimension(1)  < this->getDimension(), std::out_of_range,
+                                  ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points.");
+
+    INTREPID2_TEST_FOR_EXCEPTION( cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
+                                  ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature weights.");
 #endif
     // need subview here
-    Kokkos::deep_copy(cubPoints,  cubData.points_);
-    Kokkos::deep_copy(cubWeights, cubData.weights_);
+    typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+
+    const auto pointRanget(0, this->getNumPoints());
+    const auto dimRange   (0, this->getDimension());
+    
+    Kokkos::deep_copy(Kokkos::subdynrankview(cubPoints,        pointRange, dimRange),
+                      Kokkos::subdynrankview(cubData.points_,  pointRange, dimRange));
+    Kokkos::deep_copy(Kokkos::subdynrankview(cubWeights,       pointRange),
+                      Kokkos::subdynrankview(cubData.weights_, pointRange));
   }
   
 
@@ -118,15 +133,15 @@ namespace Intrepid2 {
     return degree_;
   }
 
-
-  template<typename ExecSpaceType>
-  ordinal_type
-  CubatureDirect<ExecSpaceType>::
-  getMaxAccuracy() const {
-    INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                  ">>> ERROR (CubatureDirect::getMaxAccuracy): this method should be over-riden by derived classes.");
-    return 0;
-  }
+  // never used
+  // template<typename ExecSpaceType>
+  // ordinal_type
+  // CubatureDirect<ExecSpaceType>::
+  // getMaxAccuracy() const {
+  //   INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+  //                                 ">>> ERROR (CubatureDirect::getMaxAccuracy): this method should be over-riden by derived classes.");
+  //   return 0;
+  // }
 
 
   template<typename ExecSpaceType>

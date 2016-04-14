@@ -75,17 +75,23 @@ namespace Intrepid2 {
     CubatureDirectLineGauss(const ordinal_type degree = 0);
     ~CubatureDirectLineGauss() = default;
     
-    /** \brief Exposes cubature data.
-     */
-    CubatureData getCubatureData() const;
     
     /** \brief Returns maximum cubature accuracy.
      */
-    ordinal_type getMaxAccuracy() const;
+    // never used
+    //ordinal_type getMaxAccuracy() const;
     
     /** \brief Returns cubature name.
      */
     const char* getName() const;
+
+    ///
+    /// CubatureDirectLineGauss specific
+    ///
+
+    /** \brief Exposes cubature data.
+     */
+    CubatureData getCubatureData() const;
   };
   
 } // end namespace Intrepid2

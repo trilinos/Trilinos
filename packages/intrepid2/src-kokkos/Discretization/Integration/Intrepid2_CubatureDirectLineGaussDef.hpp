@@ -69,20 +69,20 @@ namespace Intrepid2 {
 
     for (auot i=0;i<this->degree_;++i) {
       cubatureData_[i].numPoints_ = cubatureDataStatic_[i].numPoints_;
-      const Kokkos::pair<ordinal_type,ordinal_type> range(0, cubatureData_[i].numPoints_);
+      const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, cubatureData_[i].numPoints_);
       {
         const pointViewType points(cubatureDataStatic_[i].points_);
 
-        auto dst = Kokkos::subview(cubatureData_[i].points_, range, Kokkos::ALL());
-        auto src = Kokkos::subview(points,                   range, Kokkos::ALL());
+        auto dst = Kokkos::subview(cubatureData_[i].points_, pointRange, Kokkos::ALL());
+        auto src = Kokkos::subview(points,                   pointRange, Kokkos::ALL());
 
         Kokkos::deep_copy(dst, src);
       }
       {
         const weightViewType weights(cubatureDataStatic_[i].weights_);
 
-        auto dst = Kokkos::subview(cubatureData_[i].weight_, range);
-        auto src = Kokkos::subview(weights,                  range);
+        auto dst = Kokkos::subview(cubatureData_[i].weight_, pointRange);
+        auto src = Kokkos::subview(weights,                  pointRange);
 
         Kokkos::deep_copy(dst, src);
       }
@@ -97,12 +97,12 @@ namespace Intrepid2 {
   }
   
   
-  template <typename ExecSpaceType>
-  ordinal_type 
-  CubatureDirectLineGauss<ExecSpaceType>::
-  getMaxAccuracy() const {
-    return Parameters::MaxCubatureDegreeEdge;
-  }
+  // template <typename ExecSpaceType>
+  // ordinal_type 
+  // CubatureDirectLineGauss<ExecSpaceType>::
+  // getMaxAccuracy() const {
+  //   return Parameters::MaxCubatureDegreeEdge;
+  // }
   
   
   template <typename ExecSpaceType>

@@ -58,7 +58,7 @@ namespace Intrepid2 {
 
     dimension_ = 0;
     for (auto i=0;i<numCubatures;++i) {
-      degree_[i] = cubatures_[i]->getAccuracy();
+      degree_[i]  = cubatures_[i]->getAccuracy();
       dimension_ += cubatures_[i]->getDimension();
     }
   }
@@ -76,7 +76,7 @@ namespace Intrepid2 {
 
     dimension_ = 0;
     for (auto i=0;i<numCubatures;++i) {
-      degree_[i] = cubatures_[i]->getAccuracy();
+      degree_[i]  = cubatures_[i]->getAccuracy();
       dimension_ += cubatures_[i]->getDimension();
     }
   }
@@ -96,14 +96,14 @@ namespace Intrepid2 {
                                   cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
                                 ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 #endif
-    typedef Kokkos::DynRankView<cubPointValueType,cubPointProperties...> PointViewType;
+    typedef Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  PointViewType;
     typedef Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> WeightViewType; 
 
-    PointViewType tmpPoints [Parameters::MaxDimension];
+    PointViewType  tmpPoints [Parameters::MaxDimension];
     WeightViewType tmpWeights[Parameters::MaxDimension];
 
     // cannot avoid temporary allocation here
-    // this is cubature setup and this should not be called repeatedly.
+    // this is cubature setup on the reference cell and called for tensor elements.
     for (auto k=0;k<numCubatures_;++k) {
       const auto cub = cubatures_[k];
       tmpPoints [k] = PointViewType ("CubatureTensor::getCubature::tmpPoints",  cub->getNumPoints, cub->getDimension());
@@ -112,6 +112,9 @@ namespace Intrepid2 {
     }      
 
     // reset all weights to 1.0
+    //const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, this->getNumPoints());
+    //Kokkos::deep_copy(Kokkos::subdynrankview(cubWeights, pointRange), 1.0);
+
     {
       ordinal_type ii = 0;
       for (auto k=0;k<numCubatures_;++k) {
@@ -149,7 +152,7 @@ namespace Intrepid2 {
     }
   } 
 
-
+  
   template<typename ExecSpaceType>
   template<typename cubPointValueType,  class ...cubPointProperties,
            typename cubWeightValueType, class ...cubWeightProperties,
@@ -177,9 +180,17 @@ namespace Intrepid2 {
 
   template<typename ExecSpaceType>
   ordinal_type
-  CubatureTensor<ExecSpaceType>
-  ::getDimension() const {
+  CubatureTensor<ExecSpaceType>::
+  getDimension() const {
     return dimension_;
+  }
+
+
+  template<typename ExecSpaceType>
+  ordinal_type
+  CubatureTensor<ExecSpaceType>::
+  getNumCubature() const {
+    return numCubatures_;
   }
 
 
