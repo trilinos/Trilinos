@@ -276,5 +276,9 @@ private:
 
 }
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_GatherSolution_Tpetra_Hessian.hpp"
+#endif
+
 // **************************************************************
 #endif

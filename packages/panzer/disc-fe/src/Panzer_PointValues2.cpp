@@ -70,10 +70,16 @@ template void PointValues2<SCALAR,PHX::MDField>::copyPointCoords<Intrepid2::Fiel
 
 POINT_VALUES_INSTANTIATION(panzer::Traits::RealType)
 POINT_VALUES_INSTANTIATION(panzer::Traits::FadType)
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+POINT_VALUES_INSTANTIATION(panzer::Traits::HessianType)
+#endif
 
 // This is very complicated for reasons I don't fully understand...
 POINT_VALUES_INSTANTIATION2(panzer::Traits::RealType,panzer::Traits::RealType)
 POINT_VALUES_INSTANTIATION2(panzer::Traits::FadType,panzer::Traits::RealType)
 POINT_VALUES_INSTANTIATION2(panzer::Traits::FadType,panzer::Traits::FadType)
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+POINT_VALUES_INSTANTIATION2(panzer::Traits::HessianType,panzer::Traits::RealType)
+#endif
 
 } // namespace panzer
