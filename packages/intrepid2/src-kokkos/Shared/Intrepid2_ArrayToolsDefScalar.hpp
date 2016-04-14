@@ -57,10 +57,10 @@ namespace Intrepid2 {
            typename leftInputValueType,  class ...leftInputProperties,
            typename rightInputValueType, class ...rightInputProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::Internal::
   scalarMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>     output,
-                  const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  left,
+                  const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInput,
                   const Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput,
                   const bool hasField,
                   const bool reciprocal ) {
@@ -85,12 +85,12 @@ namespace Intrepid2 {
         size_type cl, bf, pt;
 
         if (_hasField) 
-          unrollIndex( cl, bf, pt, 
+          Util::unrollIndex( cl, bf, pt, 
                        _output.dimension(0),
                        _output.dimension(1),
                        iter );
         else          
-          unrollIndex( cl, pt,
+          Util::unrollIndex( cl, pt,
                        _output.dimension(0),
                        iter );
 
@@ -130,7 +130,7 @@ namespace Intrepid2 {
            typename inputDataValueType,   class ...inputDataProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
   scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -194,7 +194,7 @@ namespace Intrepid2 {
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
   scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,

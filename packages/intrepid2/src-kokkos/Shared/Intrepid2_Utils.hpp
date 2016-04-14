@@ -67,7 +67,7 @@ namespace Intrepid2 {
     fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
     fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
     fprintf(stderr, "            %s \n", msg);                          \
-    throw exception;
+    throw exception;                                                    \
   }
 
   // check the first error only

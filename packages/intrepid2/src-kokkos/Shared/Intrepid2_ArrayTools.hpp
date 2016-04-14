@@ -111,7 +111,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     static void
     contractFieldFieldScalar( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
-                              const Kokkos::DynRankView<leftFieldValueType.  leftFieldProperties...>   leftFields,
+                              const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
                               const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                               const bool sumInto = false );
 
@@ -691,7 +691,7 @@ namespace Intrepid2 {
     static void
     matvecProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>    outputData,
                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...> inputDataLeft,
-                           const Kokkos::DynRankView<inputDataRightValueType,inputFieldProperties...>   inputDataRight,
+                           const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...>   inputDataRight,
                            const char transpose = 'N');
 
     /** \brief There are two use cases:
@@ -730,7 +730,7 @@ namespace Intrepid2 {
     */
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
-             typename inputFieldValueType,  class ...inputFieldsProperties>
+             typename inputFieldValueType,  class ...inputFieldProperties>
     KOKKOS_INLINE_FUNCTION
     static void
     matmatProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
@@ -879,7 +879,7 @@ namespace Intrepid2 {
       static void
       contractDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>      outputFields,
                          const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>        inputData,
-                         const Kokkos::DynRankView<inputFieldValuetype, inputFieldsFieldProperties...> inputFields,
+                         const Kokkos::DynRankView<inputFieldValuetype, inputFieldProperties...> inputFields,
                          const bool sumInto );
 
       template<typename outputDataValueType,     class ...outputDataProperties,
@@ -888,8 +888,8 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       static void
       contractDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>          outputData,
-                        const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftFieldProperties...>  inputDataLeft,
-                        const Kokkos::DynRankView<inputDataRightValueType,inputDataRightFieldProperties...> inputDataRight,
+                        const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                        const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                         const bool sumInto );
       
       template<typename outputValueType,     class ...outputProperties,
@@ -954,7 +954,7 @@ namespace Intrepid2 {
                      const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                      const bool hasField,
                      const bool isTranspose );
-    }
+    };
 
   }; // end class ArrayTools
 
