@@ -20,8 +20,11 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
 }
 
 template<class Scalar>
-bool takeStep(const Ptr<SolutionState<Scalar> >& workingState)
+bool takeStep(const Ptr<SolutionHistory<Scalar> >& solutionHistory);
 {
+  const Ptr<SolutionState<Scalar> > workingState =
+    solutionHistory->getWorkingState();
+
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(workingState), std::logic_error,
     "Error - SolutionState, workingstate, is invalid!\n");
 

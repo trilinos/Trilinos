@@ -24,7 +24,7 @@ class StepperForwardEuler : virtual public Stepper
     /// \name Basic stepper methods
     //@{
     /// Take the specified timestep, dt, and return true if successful.
-    virtual bool takeStep(const Ptr<SolutionState<Scalar> >& workingState);
+    virtual bool takeStep(const Ptr<SolutionHistory<Scalar> >& solutionHistory);
 
     virtual void setStepperState(
       const RCP<tempus::StepperState<Scalar> >& stepperState);

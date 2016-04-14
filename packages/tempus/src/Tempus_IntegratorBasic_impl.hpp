@@ -123,13 +123,15 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
 {
   timeStepControl->timeMax = time_final;
-  integratorObserver->observeStartTime();
+  integratorObserver->observeStartIntegrator();
 
   bool integratorStatus = true;
   bool stepperStatus = true;
 
   while ( timeStepControl->timeInRange(workingState->getTime()) and
           timeStepControl->indexInRange(workingState->getIndex()) ){
+
+    integratorObserver->observeStartTimeStep();
 
     workingState = solutionHistory->setWorkingState();
 
@@ -143,7 +145,7 @@ void IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
 
     integratorObserver->observeStartTimeStep();
 
-    stepperStatus = stepper->takeStep(workingState);
+    stepperStatus = stepper->takeStep(solutionHistory);
 
     if (stepperStatus != true) {
       integratorObserver->observeFailedTimeStep();
@@ -152,11 +154,9 @@ void IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
 
     acceptTimeStep();
     integratorObserver->observeAcceptedTimeStep();
-
-    printTimeStep();
   }
 
-  integratorObserver->observeEndTime();
+  integratorObserver->observeEndIntegrator();
 }
 
 
