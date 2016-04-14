@@ -66,20 +66,24 @@ private:
 
   bool firstReset_;
 
+  void checkInputs(void) const {
+    Real zero(0);
+    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::KLDivergence): Threshold must be positive!");
+  }
+
 public:
   KLDivergence(const Real eps = 1.e-2)
-    : RiskMeasure<Real>(), firstReset_(true) {
-    Real zero(0), oem2(1.e-2);
-    eps_ = eps > zero ? eps : oem2;
+    : RiskMeasure<Real>(), eps_(eps), firstReset_(true) {
+    checkInputs();
   }
 
   KLDivergence(Teuchos::ParameterList &parlist)
     : RiskMeasure<Real>(), firstReset_(true) {
-    Real zero(0), oem2(1.e-2);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("KL Divergence");
-    Real eps = list.get("Threshold",oem2);
-    eps_ = eps > zero ? eps : oem2;
+    eps_ = list.get<Real>("Threshold");
+    checkInputs();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
