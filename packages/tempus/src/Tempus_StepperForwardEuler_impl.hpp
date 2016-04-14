@@ -15,6 +15,8 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
   inArgs  = model->createInArgs();
   outArgs = model->createOutArgs();
   inArgs  = model->getNominalValues();
+
+  stepperState = rcp(new StepperState<Scalar>(description()));
 }
 
 template<class Scalar>
@@ -45,6 +47,29 @@ bool takeStep(const Ptr<SolutionState<Scalar> >& workingState)
 
   return (true);
 }
+
+
+template<class Scalar>
+void StepperForwardEuler::setStepperState(
+  const RCP<tempus::StepperState<Scalar> >& stepperState_)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(stepperState_->stepperName != description(),
+    std::logic_error,
+    "Error - StepperState does not match Stepper!\n"
+    "        stepperState = " << stepperState_->stepperName << "\n"
+    "        stepper      = " << description() << std::endl);
+
+  // ForwardEuler does not have any state information, but it did we
+  // would set the internal stepperState to the input stepperState_ here.
+}
+
+
+template<class Scalar>
+RCP<tempus::StepperState<Scalar> > getStepperState()
+{
+  return stepperState;
+}
+
 
 template<class Scalar>
 std::string StepperForwardEuler<Scalar>::description() const

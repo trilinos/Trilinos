@@ -48,6 +48,11 @@ class Stepper
     //@{
     /// Take the specified timestep, dt, and return true if successful.
     virtual bool takeStep(const Ptr<SolutionState<Scalar> >& workingState) = 0;
+
+    virtual void setStepperState(
+      const RCP<tempus::StepperState<Scalar> >& stepperState) = 0;
+
+    virtual RCP<tempus::StepperState<Scalar> > getStepperState() = 0;
     //@}
 
     /// \name ParameterList methods

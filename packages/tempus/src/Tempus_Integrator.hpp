@@ -49,14 +49,6 @@ namespace tempus {
     /// Advance the solution to time, and return true if successful.
     virtual bool advanceTime(const Scalar time_final) = 0;
 
-    /// Get the current solution, x.
-    virtual RCP<const Thyra::VectorBase<Scalar> >& getX() = 0;
-
-    /// Get the current time derivative of the solution, xdot.
-    virtual RCP<const Thyra::VectorBase<Scalar> >& getXDot();
-
-    /// Get the current second time derivative of the solution, xdotdot.
-    virtual RCP<const Thyra::VectorBase<Scalar> >& getXDotDot();
     //@}
 
     /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -82,12 +74,12 @@ namespace tempus {
     /// \name Undo type capabilities
     //@{
     /// Only accept step after meeting time step criteria.
-    virtual bool acceptStep() {return false;}
+    virtual bool acceptStep() = 0;
     //@}
 
   protected:
 
-    RCP<ParameterList>               parameterList;
+    RCP<ParameterList>               pList;
     RCP<SolutionHistory<Scalar> >    solutionHistory;
     Ptr<SolutionState<Scalar> >      workingState;
     RCP<TimeStepControl<Scalar> >    timeStepControl;

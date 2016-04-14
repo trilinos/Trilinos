@@ -26,6 +26,10 @@ class StepperForwardEuler : virtual public Stepper
     /// Take the specified timestep, dt, and return true if successful.
     virtual bool takeStep(const Ptr<SolutionState<Scalar> >& workingState);
 
+    virtual void setStepperState(
+      const RCP<tempus::StepperState<Scalar> >& stepperState);
+
+    virtual RCP<tempus::StepperState<Scalar> > getStepperState();
     //@}
 
     /// \name ParameterList methods
@@ -43,28 +47,6 @@ class StepperForwardEuler : virtual public Stepper
                            const Teuchos::EVerbosityLevel verbLevel) const;
     //@}
 
-    /// \name Error estimation methods
-    //@{
-
-    //@}
-
-    /// \name Observer methods
-    //@{
-
-    //@}
-
-    /// \name Adjoint methods
-    //@{
-    //virtual Scalar takeAdjointStep();
-    //@}
-
-    /// \name Solution history methods
-    //@{
-
-    /// Functionality like InterpolationBuffer for multi-step methods, BDF.
-
-    //@}
-
   protected:
 
     RCP<ParameterList>                        pList;
@@ -73,6 +55,7 @@ class StepperForwardEuler : virtual public Stepper
     Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs;
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs;
 
+    RCP<tempus::StepperState<Scalar> > stepperState;
 };
 } // namespace tempus
 #endif // TEMPUS_STEPPERFORWARDEULER_HPP

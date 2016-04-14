@@ -41,45 +41,42 @@ namespace tempus {
 
 template<class Scalar>
 IntegratorSimple<Scalar>::IntegratorSimple(
-  RCP<ParameterList>&             parameterList,
+  RCP<ParameterList>&                    pList_,
   const RCP<Thyra::VectorBase<Scalar> >& x,
   const RCP<Thyra::VectorBase<Scalar> >& xdot=Teuchos::null,
   const RCP<Thyra::VectorBase<Scalar> >& xdotdot=Teuchos::null )
 {
-  error    = 0.0;
-  accuracy = 0.0;
-
   // Create TimeStepControl before ParameterList so we can check
   // ParameterList ranges.
-  RCP<ParameterList> tsc_pl = Teuchos::sublist(paramList, TimeStepControl_name);
+  RCP<ParameterList> tsc_pl = Teuchos::sublist(pList, TimeStepControl_name);
   timeStepControl = rcp(new TimeStepControl<Scalar>(tsc_pl));
 
-  if ( paramList_ == Teuchos::null )
-    paramList = getValidParameters();
+  if ( pList_ == Teuchos::null )
+    pList = getValidParameters();
   else
-    paramList = paramList_;
+    pList = pList_;
 
-  this->setParameterList(paramList);
+  this->setParameterList(pList);
 
   // Create meta data
   RCP<SolutionStateMetaData<Scalar> > md =
                                    rcp(new SolutionStateMetaData<Scalar> ());
-  md->time = paramList->get<double>(initTime_name, initTime_default);
-  md->dt = paramList->get<double>(initTimeStep_name, initTimeStep_default);
-  md->iStep = paramList->get<int>(initTimeIndex_name, initTimeIndex_default);
-  md->order = paramList->get<int>(initOrder_name, initOrder_default);
+  md->time = pList->get<double>(initTime_name, initTime_default);
+  md->dt = pList->get<double>(initTimeStep_name, initTimeStep_default);
+  md->iStep = pList->get<int>(initTimeIndex_name, initTimeIndex_default);
+  md->order = pList->get<int>(initOrder_name, initOrder_default);
 
   // Create initial condition solution state
   workingState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot);
 
   // Create solution history, an array of solution states.
-  RCP<ParameterList> sh_pl = Teuchos::sublist(paramList, SolutionHistory_name);
+  RCP<ParameterList> sh_pl = Teuchos::sublist(pList, SolutionHistory_name);
   solutionHistory = rcp(new SolutionHistory<Scalar>(sh_pl));
-  addState(workingState);
+  solutionHistory->addState(workingState);
 
   // Create Stepper
-  std::string s = paramList->get<std::string>(Stepper_name, Stepper_default);
-  RCP<ParameterList> s_pl = Teuchos::sublist(paramList, s);
+  std::string s = pList->get<std::string>(Stepper_name, Stepper_default);
+  RCP<ParameterList> s_pl = Teuchos::sublist(pList, s);
   stepper = rcp(new Stepper<Scalar>(s_pl));
 
   if ( Teuchos::as<int>(this->getVerbLevel()) >=
@@ -165,15 +162,15 @@ void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
 
 template <class Scalar>
 void IntegratorSimple<Scalar>::setParameterList(
-  RCP<Teuchos::ParameterList> const& paramList_)
+  RCP<Teuchos::ParameterList> const& pList_)
 {
-  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList_) );
-  paramList_->validateParameters(*this->getValidParameters());
-  paramList = paramList_;
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(pList_) );
+  pList_->validateParameters(*this->getValidParameters());
+  pList = pList_;
 
-  Teuchos::readVerboseObjectSublist(&*paramList,this);
+  Teuchos::readVerboseObjectSublist(&*pList,this);
 
-  Scalar time = paramList->get<double>(initTime_name, initTime_default);
+  Scalar time = pList->get<double>(initTime_name, initTime_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (time < timeStepControl->timeMin || time > timeStepControl->timeMax ),
     std::out_of_range,
@@ -182,7 +179,7 @@ void IntegratorSimple<Scalar>::setParameterList(
                                     << timeStepControl->timeMax << "]\n"
     << "    time = " << time << "\n");
 
-  Scalar dt = paramList->get<double>(initTimeStep_name, initTimeStep_default);
+  Scalar dt = pList->get<double>(initTimeStep_name, initTimeStep_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (dt < ST::zero() ), std::logic_error,
     "Error - Negative time step.  dt = "<<dt<<")\n");
@@ -194,7 +191,7 @@ void IntegratorSimple<Scalar>::setParameterList(
                                 << timeStepControl->dtMax << "]\n"
     << "    dt = " << dt << "\n");
 
-  int iStep = paramList->get<int>(initTimeIndex_name, initTimeIndex_default);
+  int iStep = pList->get<int>(initTimeIndex_name, initTimeIndex_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (iStep < timeStepControl->iStepMin || iStep > timeStepControl->iStepMax),
     std::out_of_range,
@@ -203,7 +200,7 @@ void IntegratorSimple<Scalar>::setParameterList(
                                       << timeStepControl->iStepMax << "]\n"
     << "    iStep = " << iStep << "\n");
 
-  int order = paramList->get<int>(initOrder_name, initOrder_default);
+  int order = pList->get<int>(initOrder_name, initOrder_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (order < timeStepControl->orderMin || order > timeStepControl->orderMax),
     std::out_of_range,
@@ -253,15 +250,15 @@ template <class Scalar>
 RCP<Teuchos::ParameterList>
 IntegratorSimple<Scalar>::getNonconstParameterList()
 {
-  return(paramList);
+  return(pList);
 }
 
 
 template <class Scalar>
 RCP<Teuchos::ParameterList> IntegratorSimple<Scalar>::unsetParameterList()
 {
-  RCP<Teuchos::ParameterList> temp_param_list = paramList;
-  paramList = Teuchos::null;
+  RCP<Teuchos::ParameterList> temp_param_list = pList;
+  pList = Teuchos::null;
   return(temp_param_list);
 }
 
