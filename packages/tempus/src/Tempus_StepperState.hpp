@@ -25,7 +25,10 @@ template<class Scalar>
  *   - The base class currently has the Stepper name so the Stepper can
  *     check if the StepperState is usable.
  */
-class StepperState
+class StepperState :
+  public Teuchos::Describable,
+  public Teuchos::VerboseObject<tempus::SolutionState<Scalar> >
+
 {
   public:
     /// Constructor
@@ -33,7 +36,14 @@ class StepperState
 
     /// Destructor
     virtual ~StepperState();
-    //@}
+
+    /// This is a deep copy
+    virtual RCP<StepperState<Scalar> > clone() const
+    {
+       RCP<StepperState<Scalar> > ss_out =
+         Teuchos::rcp(new StepperState<Scalar> (this->stepperName));
+       return ss_out;
+    }
 
     /// \name Accessor methods
     //@{

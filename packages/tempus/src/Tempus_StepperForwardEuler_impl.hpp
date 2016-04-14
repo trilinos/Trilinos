@@ -62,7 +62,7 @@ void StepperForwardEuler::setStepperState(
     "        stepperState = " << stepperState_->stepperName << "\n"
     "        stepper      = " << description() << std::endl);
 
-  // ForwardEuler does not have any state information, but it did we
+  // ForwardEuler does not have any state information, but if it did we
   // would set the internal stepperState to the input stepperState_ here.
 }
 

@@ -66,18 +66,19 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   md->iStep = pList->get<int>(initTimeIndex_name, initTimeIndex_default);
   md->order = pList->get<int>(initOrder_name, initOrder_default);
 
-  // Create initial condition solution state
-  workingState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot);
-
-  // Create solution history, an array of solution states.
-  RCP<ParameterList> sh_pl = Teuchos::sublist(pList, SolutionHistory_name);
-  solutionHistory = rcp(new SolutionHistory<Scalar>(sh_pl));
-  solutionHistory->addState(workingState);
-
   // Create Stepper
   std::string s = pList->get<std::string>(Stepper_name, Stepper_default);
   RCP<ParameterList> s_pl = Teuchos::sublist(pList, s);
   stepper = rcp(new Stepper<Scalar>(s_pl));
+
+  // Create working solution state
+  workingState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
+                                               stepper->getStepperState());
+
+  // Create solution history
+  RCP<ParameterList> sh_pl = Teuchos::sublist(pList, SolutionHistory_name);
+  solutionHistory = rcp(new SolutionHistory<Scalar>(sh_pl));
+  solutionHistory->addState(workingState);
 
   if ( Teuchos::as<int>(this->getVerbLevel()) >=
        Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
@@ -143,7 +144,7 @@ void IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
       break;
     }
 
-    integratorObserver->observeStartTimeStep();
+    integratorObserver->observeBeforeTakeStep();
 
     stepperStatus = stepper->takeStep(solutionHistory);
 

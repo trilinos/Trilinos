@@ -6,6 +6,6 @@ namespace tempus {
 template class SolutionHistory< double >;
 
 template Teuchos::RCP< SolutionHistory< double > >
-SolutionHistory( RCP<Teuchos::ParameterList> paramList_ = Teuchos::null );
+SolutionHistory( RCP<Teuchos::ParameterList> pList_ = Teuchos::null );
 
 } // namespace tempus

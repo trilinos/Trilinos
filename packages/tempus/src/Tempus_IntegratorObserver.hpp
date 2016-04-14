@@ -10,6 +10,14 @@ namespace tempus {
 
   /** \brief IntegratorObserver class for time integrators.
    *
+   * This is a means for application developers to perform tasks
+   * during the time integrator, e.g.,
+   *   - Compute specific quantities
+   *   - Output information
+   *   - Adjust the time step (CFL stability)
+   *   - "Massage" the working solution state
+   *   - ...
+   *
    * <b>Design Considerations</b>
    *   - IntegratorObserver should have access to the entire SolutionHistory,
    *     as application developers may have that need.
@@ -21,10 +29,8 @@ namespace tempus {
    *   - The functions in this base class are simple no-op functions, as
    *     all basic functionality should be handled through other methods.
    */
-  template<class Scalar>
-  class IntegratorObserver
-   : public Teuchos::Describable,
-     public Teuchos::VerboseObject<tempus::IntegratorObserver<Scalar> >
+template<class Scalar>
+class IntegratorObserver
 {
   public:
 
@@ -61,13 +67,6 @@ namespace tempus {
 
     /// Observe the end of the time integrator.
     virtual void observeEndIntegrator(){}
-    //@}
-
-    /// \name Accessor methods
-    //@{
-    virtual std::string description() const;
-    virtual void describe( Teuchos::FancyOStream        & out,
-                           const Teuchos::EVerbosityLevel verbLevel) const;
     //@}
 
   protected:

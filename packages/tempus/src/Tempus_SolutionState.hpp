@@ -4,6 +4,8 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 
+#include "Tempus_StepperState.hpp"
+
 namespace tempus {
 
 /** \brief Solution state for integrators and steppers.
@@ -44,9 +46,10 @@ class SolutionState :
     /** \brief. */
     SolutionState(
       const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot);
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+      const Teuchos::RCP<tempus::StepperState<Scalar> >& stepperState);
 
     SolutionState(
       const Scalar time,
@@ -63,16 +66,15 @@ class SolutionState :
       const bool   isRestartable,
       const bool   isInterpolated,
       const Scalar accuracy,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot);
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+      const Teuchos::RCP<tempus::StepperState<Scalar> >& stepperState);
 
-    /** \brief. */
-    // This is a shallow copy constructor, use clone for a deep copy
+    /// This is a shallow copy constructor, use clone for a deep copy
     SolutionState(const SolutionState<Scalar>& ss_);
 
-    /** \brief. */
-    // This is a deep clone and copies the underlying vectors
+    /// This is a deep copy and copies the underlying vectors
     virtual RCP<SolutionState<Scalar> > clone() const;
 
     /// Meta Data for the solution state
@@ -86,6 +88,9 @@ class SolutionState :
 
     /// Second time derivative of the solution
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot;
+
+    /// StepperState for this SolutionState
+    Teuchos::RCP<tempus::StepperState<Scalar> > stepperState;
 
     /// Get time
     virtual Scalar getTime() const{return metaData->time;}

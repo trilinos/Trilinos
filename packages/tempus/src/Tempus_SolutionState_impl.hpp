@@ -13,14 +13,16 @@ SolutionState<Scalar>::SolutionState()
 }
 
 template<class Scalar>
-SolutionState( const Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData_,
-               const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
-               const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
-               const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot)
-  : metaData(metaData_),
-    x       (x_),
-    xdot    (xdot_),
-    xdotdot (xdotdot_)
+SolutionState(const Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData_,
+              const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x_,
+              const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot_,
+              const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
+              const Teuchos::RCP<tempus::StepperState<Scalar> >& stepperState_)
+  : metaData     (metaData_),
+    x            (x_),
+    xdot         (xdot_),
+    xdotdot      (xdotdot_),
+    stepperState (stepperState_)
 {}
 
 template<class Scalar>
@@ -39,12 +41,14 @@ SolutionState<Scalar>::SolutionState(
   const bool   isInterpolated_,
   const bool   isRestartable_,
   const Scalar accuracy_,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x_,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot_,
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot_)
-  : x             (x_),
-    xdot          (xdot_),
-    xdotdot       (xdotdot_)
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x_,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot_,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
+  const Teuchos::RCP<tempus::StepperState<Scalar> >& stepperState_)
+  : x            (x_),
+    xdot         (xdot_),
+    xdotdot      (xdotdot_),
+    stepperState (stepperState_)
 {
   metaData = Teuchos::rcp(new SolutionStateMetaData<Scalar> (time_,
       dt_, iStep_, errorAbs_, errorRel_, order_, nFailures_,
@@ -53,11 +57,12 @@ SolutionState<Scalar>::SolutionState(
 }
 
 template<class Scalar>
-SolutionState<Scalar>::SolutionState( const SolutionState<Scalar>& ss_ )
-  :metaData      (ss_.metaData),
-   x             (ss_.x),
-   xdot          (ss_.xdot),
-   xdotdot       (ss_.xdotdot)
+SolutionState<Scalar>::SolutionState(const SolutionState<Scalar>& ss_)
+  :metaData     (ss_.metaData),
+   x            (ss_.x),
+   xdot         (ss_.xdot),
+   xdotdot      (ss_.xdotdot),
+   stepperState (ss_.stepperState)
 {}
 
 template<class Scalar>
@@ -72,8 +77,11 @@ RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
   RCP<VectorBase<Scalar> > xdotdot_out;
   if (!Teuchos::is_null(xdotdot)) xdotdot_out = xdotdot->clone_v();
 
+  RCP<StepperState<Scalar> > stepperState_out;
+  if (!Teuchos::is_null(stepperState)) stepperState_out=stepperState->clone();
+
   RCP<SolutionState<Scalar> > ss_out = Teuchos::rcp(new SolutionState<Scalar> (
-    metaData, x_out, xdot_out, xdotdot_out));
+    metaData, x_out, xdot_out, xdotdot_out, stepperState_out));
 
   return ss_out;
 }
@@ -152,7 +160,7 @@ void SolutionState<Scalar>::describe(
 {
   if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe:" << std::endl
-        << "metaData       = " << std::endl;
+        << "metaData = " << std::endl;
         metaData->describe(out,verbLevel);
     out << "x = " << std::endl;
     x->describe(out,verbLevel);
@@ -162,6 +170,10 @@ void SolutionState<Scalar>::describe(
     }
     if (xdotdot != Teuchos::null) {
       out << "xdotdot = " << std::endl;
+      xdotdot->describe(out,verbLevel);
+    }
+    if (stepperState != Teuchos::null) {
+      out << "stepperState = " << std::endl;
       xdotdot->describe(out,verbLevel);
     }
   }

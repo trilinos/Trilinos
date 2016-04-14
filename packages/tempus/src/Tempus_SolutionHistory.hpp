@@ -17,7 +17,7 @@ enum HistoryPolicy {
 
 /** \brief SolutionHistory is bascially a container of SolutionStates.
  *  SolutionHistory maintains a collection of SolutionStates for later
- *  retrival and reuse, such as checkingpointing, restart, and undo
+ *  retrival and reuse, such as checkpointing, restart, and undo
  *  operations.
  *
  *  The actual storage of the SolutionStates may take several forms:
@@ -35,7 +35,6 @@ enum HistoryPolicy {
  *   - Interpolating between SolutionStates
  *     - Interpolated SolutionStates may not be suitable for adjoint
  *       solutions, restart, or undo operations (see SolutionState).
- *
  */
 template<class Scalar>
 class SolutionHistory
@@ -47,7 +46,7 @@ class SolutionHistory
 public:
 
   /** \brief. */
-  SolutionHistory( RCP<Teuchos::ParameterList> paramList_ = Teuchos::null );
+  SolutionHistory( RCP<Teuchos::ParameterList> pList_ = Teuchos::null );
 
   /// Set the interpolator for this history
   void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
@@ -63,7 +62,7 @@ public:
 
 
   /// Set the maximum storage of this history
-  void setStorage( int storage );
+  void setStorage(int storage);
 
   /// Get the maximum storage of this history
   int getStorage() const;
@@ -77,20 +76,17 @@ public:
   /// Add solution state to history
   void addState( const RCP<SolutionState<Scalar> >& state );
 
-  /// Get solution state from history
-  RCP<SolutionState<Scalar> > getState(const Scalar time) const;
+  /// Return the current minimum time of the SolutionStates
+  Scalar minTime() const;
 
-  /** \brief . */
-  TimeRange<Scalar> getTimeRange() const;
+  /// Return the current maximum time of the SolutionStates
+  Scalar maxTime() const;
 
-  /// Get solution state times in history
-  void getTimes(Array<Scalar>* time_vec) const;
+  /// Find solution state at requested time (no interpolation)
+  RCP<SolutionState<Scalar> > findState(const Scalar time) const;
 
-  /// Get order of interpolation
-  int getInterpolationOrder() const;
-
-  /// Remove solution state
-  void removeStates(Array<Scalar>& time_vec);
+  /// Generate and interpolate a new solution state at requested time
+  RCP<SolutionState<Scalar> > interpolateState(const Scalar time) const;
 
   /// Redefined from Teuchos::Describable
   /** \brief . */
@@ -102,7 +98,7 @@ public:
 
   /// Redefined from Teuchos::ParameterListAcceptor
   /** \brief . */
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<Teuchos::ParameterList> const& pList);
 
   /** \brief . */
   RCP<Teuchos::ParameterList> getNonconstParameterList();
@@ -114,7 +110,7 @@ public:
 
 private:
 
-  RCP<Teuchos::ParameterList> paramList;
+  RCP<Teuchos::ParameterList> pList;
   RCP<Array<SolutionState<Scalar> > > history;
   RCP<InterpolatorBase<Scalar> > interpolator;
   HistoryPolicy historyPolicy;
@@ -129,9 +125,9 @@ private:
  */
 template<class Scalar>
 RCP<SolutionHistory<Scalar> > solutionHistory(
-  RCP<Teuchos::ParameterList> paramList_ = Teuchos::null )
+  RCP<Teuchos::ParameterList> pList_ = Teuchos::null )
 {
-  RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(paramList_));
+  RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(pList_));
   return sh;
 }
 
