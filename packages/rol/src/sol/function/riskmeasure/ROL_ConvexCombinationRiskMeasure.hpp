@@ -77,7 +77,7 @@ private:
 
 public:
   ConvexCombinationRiskMeasure(Teuchos::ParameterList &parlist)
-    : RiskMeasure<Real>(), firstReset_(true), size_(0) {
+    : RiskMeasure<Real>(), size_(0), firstReset_(true) {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Convex Combination Risk Measure");
     // Get convex combination parameters

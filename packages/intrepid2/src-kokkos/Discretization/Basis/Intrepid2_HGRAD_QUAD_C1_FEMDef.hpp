@@ -72,10 +72,10 @@ namespace Intrepid2 {
       const ordinal_type tags[]  = { 0, 0, 0, 1,
                                      0, 1, 0, 1,
                                      0, 2, 0, 1,
-                                     0, 3, 0, 1};
+                                     0, 3, 0, 1 };
       
       // when exec space is device, this wrapping relies on uvm.
-      Kokkos::View<ordinal_type*,ExecSpaceType> tagView(tags, 12);
+      Kokkos::View<ordinal_type*,ExecSpaceType> tagView(tags, 16);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -121,8 +121,8 @@ namespace Intrepid2 {
       struct FunctorValue : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type i0) const {
-          const auto x = inputPoints(i0, 0);
-          const auto y = inputPoints(i0, 1);
+          const auto x = _inputPoints(i0, 0);
+          const auto y = _inputPoints(i0, 1);
           
           // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
           _outputValues(0, i0) = (1.0 - x)*(1.0 - y)/4.0;
@@ -140,8 +140,8 @@ namespace Intrepid2 {
       struct FunctorGrad : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type i0) const {
-          const auto x = inputPoints(i0,0);
-          const auto y = inputPoints(i0,1);
+          const auto x = _inputPoints(i0,0);
+          const auto y = _inputPoints(i0,1);
           
           // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
           _outputValues(0, i0, 0) = -(1.0 - y)/4.0;
@@ -164,8 +164,8 @@ namespace Intrepid2 {
       struct FunctorCurl : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type i0) const {
-          const auto x = inputPoints(i0,0);
-          const auto y = inputPoints(i0,1);
+          const auto x = _inputPoints(i0,0);
+          const auto y = _inputPoints(i0,1);
           
           // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
           _outputValues(0, i0, 0) = -(1.0 - x)/4.0;
@@ -193,8 +193,8 @@ namespace Intrepid2 {
       struct FunctorGradD2 : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type i0) const {
-          const auto x = inputPoints(i0,0);
-          const auto y = inputPoints(i0,1);
+          const auto x = _inputPoints(i0,0);
+          const auto y = _inputPoints(i0,1);
           
           // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality=3) 
           _outputValues(0, i0, 0) =  0.0;

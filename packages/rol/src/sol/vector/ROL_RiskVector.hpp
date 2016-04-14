@@ -74,8 +74,8 @@ public:
     // Get risk measure information
     std::string name;
     std::vector<Real> lower, upper;
-    bool activated;
-    int nStat;
+    bool activated(false);
+    int nStat(0);
     RiskMeasureInfo<Real>(parlist,name,nStat,lower,upper,activated);
     augmented_ = (nStat > 0) ? true : false;
     nStat_ = (uint)nStat;

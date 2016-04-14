@@ -67,7 +67,7 @@
       </ParameterList>
       <!-- ===========  KL DIVERGENCE  =========== -->
       <ParameterList name="KL Divergence">
-        <Parameter name="Threshold" type="double" value="1.0" />
+        <Parameter name="Threshold" type="double" value="1.e-2" />
       </ParameterList>
       <!-- ===========  CHI-SQUARED DIVERGENCE  =========== -->
       <ParameterList name="F-Divergence">
