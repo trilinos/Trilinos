@@ -1,7 +1,7 @@
-#ifndef TEMPUS_INTEGRATORSIMPLE_IMPL_HPP
-#define TEMPUS_INTEGRATORSIMPLE_IMPL_HPP
+#ifndef TEMPUS_INTEGRATORBASIC_IMPL_HPP
+#define TEMPUS_INTEGRATORBASIC_IMPL_HPP
 
-#include "Tempus_IntegratorSimple.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 
 
 namespace {
@@ -40,7 +40,7 @@ namespace tempus {
 
 
 template<class Scalar>
-IntegratorSimple<Scalar>::IntegratorSimple(
+IntegratorBasic<Scalar>::IntegratorBasic(
   RCP<ParameterList>&                    pList_,
   const RCP<Thyra::VectorBase<Scalar> >& x,
   const RCP<Thyra::VectorBase<Scalar> >& xdot=Teuchos::null,
@@ -82,22 +82,22 @@ IntegratorSimple<Scalar>::IntegratorSimple(
   if ( Teuchos::as<int>(this->getVerbLevel()) >=
        Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"IntegratorSimple::IntegratorSimple");
+    Teuchos::OSTab ostab(out,1,"IntegratorBasic::IntegratorBasic");
     *out << this->description() << std::endl;
   }
 }
 
 
 template<class Scalar>
-std::string IntegratorSimple<Scalar>::description() const
+std::string IntegratorBasic<Scalar>::description() const
 {
-  std::string name = "tempus::IntegratorSimple";
+  std::string name = "tempus::IntegratorBasic";
   return(name);
 }
 
 
 template<class Scalar>
-void IntegratorSimple<Scalar>::describe(
+void IntegratorBasic<Scalar>::describe(
   Teuchos::FancyOStream          &out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -120,7 +120,7 @@ void IntegratorSimple<Scalar>::describe(
 
 
 template <class Scalar>
-void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
+void IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
 {
   timeStepControl->timeMax = time_final;
   integratorObserver->observeStartTime();
@@ -161,7 +161,7 @@ void IntegratorSimple<Scalar>::advanceTime(const Scalar time_final)
 
 
 template <class Scalar>
-void IntegratorSimple<Scalar>::setParameterList(
+void IntegratorBasic<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& pList_)
 {
   TEUCHOS_TEST_FOR_EXCEPT( is_null(pList_) );
@@ -212,7 +212,7 @@ void IntegratorSimple<Scalar>::setParameterList(
 
 
 template<class Scalar>
-RCP<const Teuchos::ParameterList> IntegratorSimple<Scalar>::getValidParameters() const
+RCP<const Teuchos::ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
 {
   static RCP<Teuchos::ParameterList> validPL;
 
@@ -248,14 +248,14 @@ RCP<const Teuchos::ParameterList> IntegratorSimple<Scalar>::getValidParameters()
 
 template <class Scalar>
 RCP<Teuchos::ParameterList>
-IntegratorSimple<Scalar>::getNonconstParameterList()
+IntegratorBasic<Scalar>::getNonconstParameterList()
 {
   return(pList);
 }
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList> IntegratorSimple<Scalar>::unsetParameterList()
+RCP<Teuchos::ParameterList> IntegratorBasic<Scalar>::unsetParameterList()
 {
   RCP<Teuchos::ParameterList> temp_param_list = pList;
   pList = Teuchos::null;
@@ -264,4 +264,4 @@ RCP<Teuchos::ParameterList> IntegratorSimple<Scalar>::unsetParameterList()
 
 
 } // namespace tempus
-#endif // TEMPUS_INTEGRATORSIMPLE_IMPL_HPP
+#endif // TEMPUS_INTEGRATORBASIC_IMPL_HPP

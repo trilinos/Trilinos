@@ -1,5 +1,5 @@
-#ifndef TEMPUS_INTEGRATOR_HPP
-#define TEMPUS_INTEGRATOR_HPP
+#ifndef TEMPUS_INTEGRATORBASIC_HPP
+#define TEMPUS_INTEGRATORBASIC_HPP
 
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
@@ -7,22 +7,22 @@
 
 namespace tempus {
 
-  /** \brief Simple time integrator
+  /** \brief Basic time integrator
    */
   template<class Scalar>
-  class IntegratorSimple : public tempus::Integrator {
+  class IntegratorBasic : public tempus::Integrator {
   public:
 
     /** \brief Constructor with ParameterList, models, initial conditions
      *  and optional solvers. */
-    IntegratorSimple(
+    IntegratorBasic(
       RCP<ParameterList>                     parameterList,
       const RCP<Thyra::VectorBase<Scalar> >& x,
       const RCP<Thyra::VectorBase<Scalar> >& xdot=Teuchos::null,
       const RCP<Thyra::VectorBase<Scalar> >& xdotdot=Teuchos::null );
 
     /// Destructor
-    virtual ~IntegratorSimple() {}
+    virtual ~IntegratorBasic() {}
 
     //! Unique name for this integrator.
     virtual std::string name() const = 0;
@@ -56,4 +56,4 @@ namespace tempus {
 
 };
 } // namespace tempus
-#endif // TEMPUS_INTEGRATOR_HPP
+#endif // TEMPUS_INTEGRATORBASIC_HPP

@@ -1,12 +1,12 @@
-#include "Tempus_IntegratorSimple.hpp"
-#include "Tempus_IntegratorSimple_impl.hpp"
+#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorBasic_impl.hpp"
 
 namespace tempus {
 
-template class IntegratorSimple< double >;
+template class IntegratorBasic< double >;
 
-template Teuchos::RCP< IntegratorSimple< double > >
-IntegratorSimple(
+template Teuchos::RCP< IntegratorBasic< double > >
+IntegratorBasic(
   RCP<ParameterList>              parameterList,
   RCP<Thyra::VectorBase<double> > x,
   RCP<Thyra::VectorBase<double> > xdot=Teuchos::null,
