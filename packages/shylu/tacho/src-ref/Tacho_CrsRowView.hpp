@@ -65,7 +65,7 @@ namespace Tacho {
       begin = Util::getLowerBound(cols, begin, end, _offn);
       end   = Util::getLowerBound(cols, begin, end, _offn+_n);
       
-      const auto range = range_type<size_type>(begin, end);
+      const auto range = range_type<ordinal_type>(begin, end);
 
       _aj = Kokkos::subview(cols, range);
       _ax = Kokkos::subview(vals, range);

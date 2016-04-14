@@ -8,6 +8,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
 
   # Need ROL_TpetraMultiVector.hpp
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
+  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/sol)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_01

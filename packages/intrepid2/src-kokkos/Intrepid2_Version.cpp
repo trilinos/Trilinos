@@ -50,7 +50,7 @@
 namespace Intrepid2 {
 
 std::string Intrepid_Version() {
-  return("Intrepid Version 1.0 / Trilinos 10.0 - 09/23/2009");
+  return("Intrepid2 Version 1.0 / Trilinos 12.4 - September 2016");
 }
 
 } // namespace Intrepid2

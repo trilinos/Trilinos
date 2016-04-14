@@ -80,27 +80,35 @@ int main(int argc, char* argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    RealT initZ = parlist->sublist("Problem Description").get("Initial Control Guess", 0.0);
+    RealT cvarLevel = parlist->sublist("Problem Description").get("CVaR Level", 0.8);
+    RealT pfuncSmoothing = parlist->sublist("Problem Description").get("Plus Function Smoothing Parameter", 1e-2);
     /**********************************************************************************************/
     /************************* CONSTRUCT VECTORS **************************************************/
     /**********************************************************************************************/
     // Build control vectors
     int nx = 256;
     Teuchos::RCP<std::vector<RealT> > x1_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> x1(x1_rcp);
+    //ROL::StdVector<RealT> x1(x1_rcp);
+      Teuchos::RCP<ROL::StdVector<RealT> > x1 = Teuchos::rcp(new ROL::StdVector<RealT>(x1_rcp));
     Teuchos::RCP<std::vector<RealT> > x2_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
     ROL::StdVector<RealT> x2(x2_rcp);
     Teuchos::RCP<std::vector<RealT> > x3_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
     ROL::StdVector<RealT> x3(x3_rcp);
     Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> z(z_rcp);
+    //ROL::StdVector<RealT> z(z_rcp);
+      Teuchos::RCP<ROL::StdVector<RealT> > z = Teuchos::rcp(new ROL::StdVector<RealT>(z_rcp));
     Teuchos::RCP<std::vector<RealT> > xr_rcp = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
     ROL::StdVector<RealT> xr(xr_rcp);
     Teuchos::RCP<std::vector<RealT> > d_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> d(d_rcp);
+    //ROL::StdVector<RealT> d(d_rcp);
+      Teuchos::RCP<ROL::StdVector<RealT> > d = Teuchos::rcp(new ROL::StdVector<RealT>(d_rcp));
     for ( int i = 0; i < nx+2; i++ ) {
       (*xr_rcp)[i] = random<RealT>(comm);
       (*d_rcp)[i]  = random<RealT>(comm);
+      (*z_rcp)[i]  = initZ;
     }
+    ROL::RiskVector<RealT> zR(z,true), x1R(x1,true), dR(d,true);
     // Build state and adjoint vectors
     Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
     ROL::StdVector<RealT> u(u_rcp);
@@ -131,17 +139,27 @@ int main(int argc, char* argv[]) {
       = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(nx));
     Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj
       = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,pp));
-    Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskNeutralObjective<RealT>(pObj, sampler, true));
+    //Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskNeutralObjective<RealT>(pObj, sampler, true));
+    Teuchos::RCP<ROL::Distribution<RealT> > dist = Teuchos::rcp(new ROL::Parabolic<RealT>(-0.5, 0.5));
+    Teuchos::RCP<ROL::PlusFunction<RealT> > pfunc = Teuchos::rcp(new ROL::PlusFunction<RealT>(dist, pfuncSmoothing));
+    Teuchos::RCP<ROL::RiskMeasure<RealT> > rmeas = Teuchos::rcp(new ROL::CVaR<RealT>(cvarLevel, 1.0, pfunc));
+    Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskAverseObjective<RealT>(pObj, rmeas, sampler));
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
-    x1.set(xr);
+    //x1.set(xr);
+      x1->set(xr);
     pObj->setParameter(sampler->getMyPoint(0));
-    pObj->checkGradient(x1,d,true,*outStream);
-    pObj->checkHessVec(x1,d,true,*outStream);
-    obj->checkGradient(x1,d,true,*outStream);
-    obj->checkHessVec(x1,d,true,*outStream);
+    //pObj->checkGradient(x1,d,true,*outStream);
+      pObj->checkGradient(*x1,*d,true,*outStream);
+    //pObj->checkHessVec(x1,d,true,*outStream);
+      pObj->checkHessVec(*x1,*d,true,*outStream);
+    //obj->checkGradient(x1,d,true,*outStream);
+      obj->checkGradient(x1R,dR,true,*outStream);
+    //obj->checkHessVec(x1,d,true,*outStream);
+      obj->checkHessVec(x1R,dR,true,*outStream);
     ROL::Algorithm<RealT> algors("Trust Region", *parlist);
-    algors.run(z, *obj, true, *outStream);
+    //algors.run(z, *obj, true, *outStream);
+    algors.run(zR, *obj, true, *outStream);
     /**********************************************************************************************/
     /****************** CONSTRUCT SIMULATED CONSTRAINT AND VECTORS ********************************/
     /**********************************************************************************************/
@@ -150,9 +168,7 @@ int main(int argc, char* argv[]) {
     int useW = parlist->sublist("Problem Description").get("Use Constraint Weights", true);
     ROL::SimulatedEqualityConstraint<RealT> simcon(sampler, pconSimOpt, useW);
     // Construct SimulatedObjective.
-    Teuchos::RCP<ROL::Distribution<RealT> > dist = Teuchos::rcp(new ROL::Parabolic<RealT>(-0.5, 0.5));
-    Teuchos::RCP<ROL::PlusFunction<RealT> > pfunc = Teuchos::rcp(new ROL::PlusFunction<RealT>(dist, 1e-2));
-    ROL::SimulatedObjectiveCVaR<RealT> simobj(sampler, pobjSimOpt, pfunc, 0.8);
+    ROL::SimulatedObjectiveCVaR<RealT> simobj(sampler, pobjSimOpt, pfunc, cvarLevel);
     // Simulated vectors.
     std::vector<Teuchos::RCP<ROL::Vector<RealT> > > xu_rcp;
     std::vector<Teuchos::RCP<ROL::Vector<RealT> > > vu_rcp;
@@ -185,19 +201,52 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::RiskVector<RealT> > rd = Teuchos::rcp(new ROL::RiskVector<RealT>(dvec, true));
     ROL::Vector_SimOpt<RealT> x(xu, rz);
     ROL::Vector_SimOpt<RealT> v(vu, rd);
-/*
+
     *outStream << std::endl << "TESTING SimulatedEqualityConstraint" << std::endl; 
     simcon.checkApplyJacobian(x, v, *vu, true, *outStream);
     simcon.checkAdjointConsistencyJacobian(*vu, v, x, *vu, x, true, *outStream);
     simcon.checkApplyAdjointHessian(x, *vu, v, x, true, *outStream);
     *outStream << std::endl << "TESTING SimulatedObjective" << std::endl;
+    RealT tol = 1e-8;
+    simobj.value(x, tol);
     simobj.checkGradient(x, v, true, *outStream);
     simobj.checkHessVec(x, v, true, *outStream);
+
     ROL::Algorithm<RealT> algo("Composite Step", *parlist);
+    ROL::Algorithm<RealT> algo2("Composite Step", *parlist);
+    ROL::Algorithm<RealT> algo3("Composite Step", *parlist);
+    ROL::Algorithm<RealT> algo4("Composite Step", *parlist);
+    ROL::Algorithm<RealT> algo5("Composite Step", *parlist);
     vu->zero();
-    x.scale(1);
+    for ( int i = 0; i < nx+2; i++ ) {
+      (*zvec_rcp)[i] = initZ;
+    }
+    ROL::SimulatedObjectiveCVaR<RealT> simobjExpval(sampler, pobjSimOpt, pfunc, 0.0);
+    ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR3(sampler, pobjSimOpt, pfunc, 0.3);
+    ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR6(sampler, pobjSimOpt, pfunc, 0.6);
+    ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR7(sampler, pobjSimOpt, pfunc, 0.6);
+    algo2.run(x, *vu, simobjExpval, simcon, true, *outStream);
+    algo3.run(x, *vu, simobjCVaR3, simcon, true, *outStream);
+    algo4.run(x, *vu, simobjCVaR6, simcon, true, *outStream);
+    algo5.run(x, *vu, simobjCVaR7, simcon, true, *outStream);
     algo.run(x, *vu, simobj, simcon, true, *outStream);
-*/
+
+    // Output control to file.
+    if (Teuchos::rank<int>(*comm)==0) {
+      std::ofstream file;
+      file.open("control-fs-cvar.txt");
+      for ( int i = 0; i < nx+2; ++i ) {
+        file << (*zvec_rcp)[i] << "\n";
+      }
+      file.close();
+    }
+
+    ROL::RiskVector<RealT> &rxfz = Teuchos::dyn_cast<ROL::RiskVector<RealT> >(*(x.get_2()));
+    Teuchos::RCP<ROL::Vector<RealT> > rfz = rxfz.getVector();
+    ROL::StdVector<RealT> &rfz_std = Teuchos::dyn_cast<ROL::StdVector<RealT> >(*rfz);
+    z->set(rfz_std);
+    ROL::Algorithm<RealT> algors2("Trust Region", *parlist);
+    algors2.run(zR, *obj, true, *outStream);
 
   }
   catch (std::logic_error err) {

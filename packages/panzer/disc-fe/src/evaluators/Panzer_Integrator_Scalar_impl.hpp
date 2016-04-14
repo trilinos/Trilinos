@@ -133,7 +133,7 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
     Intrepid2::FunctionSpaceTools::
       integrate<ScalarT>(integral, tmp, 
 			 (this->wda(workset).int_rules[quad_index])->weighted_measure, 
-			 Intrepid2::COMP_BLAS);
+			 Intrepid2::COMP_CPP);
   */
   
   // NOTE: this is not portable to GPUs.  Need to remove all uses of

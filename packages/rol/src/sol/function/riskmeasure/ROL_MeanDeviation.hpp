@@ -129,62 +129,75 @@ private:
     weights_.clear();
   }
 
+  void checkInputs(void) const {
+    int oSize = order_.size(), cSize = coeff_.size();
+    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
+      ">>> ERROR (ROL::MeanDeviation): Order and coefficient arrays have different sizes!");
+    Real zero(0), two(2);
+    for (int i = 0; i < oSize; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
+        ">>> ERROR (ROL::MeanDeviation): Element of order array out of range!");
+      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
+        ">>> ERROR (ROL::MeanDeviation): Element of coefficient array out of range!");
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::MeanDeviation): PositiveFunction pointer is null!");
+  }
+
 public:
 
-  MeanDeviation( Real order, Real coeff,
-                 Teuchos::RCP<PositiveFunction<Real> > &pf )
+  MeanDeviation( const Real order, const Real coeff,
+                 const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
-    Real zero(0), one(1), two(2);
-    order_.clear(); coeff_.clear();
-    order_.push_back((order < two) ? two : order);
-    coeff_.push_back((coeff < zero) ? one : coeff);
+    order_.clear(); order_.push_back(order);
+    coeff_.clear(); coeff_.push_back(coeff);
+    checkInputs();
     NumMoments_ = order_.size();
     initialize();
   }
 
-  MeanDeviation( std::vector<Real> &order, std::vector<Real> &coeff, 
-                 Teuchos::RCP<PositiveFunction<Real> > &pf )
+  MeanDeviation( const std::vector<Real> &order,
+                 const std::vector<Real> &coeff, 
+                 const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
-    Real zero(0), one(1), two(2);
     order_.clear(); coeff_.clear();
-    NumMoments_ = order.size();
-    if ( NumMoments_ != coeff.size() ) {
-      coeff.resize(NumMoments_,one);
+    for ( uint i = 0; i < order.size(); i++ ) {
+      order_.push_back(order[i]);
     }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < two) ? two : order[i]);
-      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
+    for ( uint i = 0; i < coeff.size(); i++ ) {
+      coeff_.push_back(coeff[i]);
     }
+    checkInputs();
+    NumMoments_ = order_.size();
     initialize();
   }
 
   MeanDeviation( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(), firstReset_(true) {
-    Real zero(0), one(1), two(2);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation");
     // Get data from parameter list
     Teuchos::Array<Real> order
       = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
+    order_ = order.toVector();
     Teuchos::Array<Real> coeff
       = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    // Check inputs
-    NumMoments_ = order.size();
-    order_.clear(); coeff_.clear();
-    if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
-      coeff.resize(NumMoments_,one);
-    }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
-      order_.push_back((order[i] < two) ? two : order[i]);
-      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
-    }
+    coeff_ = coeff.toVector();
     // Build (approximate) positive function
-    if ( list.get("Deviation Type","Upper") == "Upper" ) {
+    std::string type = list.get<std::string>("Deviation Type");
+    if ( type == "Upper" ) {
       positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
     }
-    else {
+    else if ( type == "Absolute" ) {
       positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
     }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> (ROL::MeanDeviation): Deviation type is not recoginized!");
+    }
+    // Check inputs
+    checkInputs();
+    NumMoments_ = order.size();
     initialize();
   }
 

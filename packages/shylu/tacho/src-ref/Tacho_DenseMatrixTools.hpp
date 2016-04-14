@@ -150,14 +150,14 @@ namespace Tacho {
 
       const OrdinalType hm = hier.NumRows(), hn = hier.NumCols();
       const OrdinalType fm = flat.NumRows(), fn = flat.NumCols();
-
-      for (ordinal_type j=0;j<hn;++j) {
+      
+      for (auto j=0;j<hn;++j) {
         const OrdinalType offn = nb*j;
         const OrdinalType ntmp = offn + nb; 
         const OrdinalType n    = ntmp < fn ? nb : (fn - offn); 
         
         //#pragma unroll
-        for (ordinal_type i=0;i<hm;++i) {
+        for (auto i=0;i<hm;++i) {
           const OrdinalType offm = mb*i;
           const OrdinalType mtmp = offm + mb; 
           const OrdinalType m    = mtmp < fm ? mb : (fm - offm); 
@@ -229,6 +229,7 @@ namespace Tacho {
                      >::value,
                      "Space type of input matrices does not match" );
       
+      typedef typename DenseMatrixHierType::ordinal_type ordinal_type;
       typedef typename DenseMatrixHierType::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
 

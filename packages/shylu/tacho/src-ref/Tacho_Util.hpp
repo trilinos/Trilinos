@@ -91,7 +91,7 @@ namespace Tacho {
 
   class Util {
   public:
-    static const size_t LabelSize = 64;
+    static constexpr size_t LabelSize = 64;
 
     template<typename T>
     KOKKOS_INLINE_FUNCTION

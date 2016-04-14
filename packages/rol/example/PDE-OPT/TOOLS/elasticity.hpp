@@ -348,9 +348,9 @@ public:
     this->vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(this->matA_->getRangeMap(), 1, true));
     this->vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     for (int i = 0; i < numCells; ++i) {
-      for (int j = 0; j < numCubPoints; ++j) {
+      for (int j = 0; j < this->numLocalDofs_; ++j) {
         this->vecF_overlap_->sumIntoGlobalValue(this->cellDofs_(this->myCellIds_[i],j),0,
-                                                   (*this->datavalVecF_)[i*(this->numLocalDofs_)+j]);
+                                                (*this->datavalVecF_)[i*(this->numLocalDofs_)+j]);
       }
     }
     Tpetra::Export<> exporter(this->vecF_overlap_->getMap(), this->vecF_->getMap());

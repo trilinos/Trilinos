@@ -7,6 +7,8 @@
 
 namespace Tacho {
 
+  class Util;
+
   template<typename MT>
   class DenseMatrixView;
 
@@ -35,8 +37,9 @@ namespace Tacho {
 
       {
         typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
-        const ordinal_type blksize = 256;
-
+        const ordinal_type blksize = Util::max(B.Hier().Value(0,0).NumRows(), 
+                                               B.Hier().Value(0,0).NumCols());
+        
         ordinal_type tr, br, lc, rc;
 
         B.getDataRegion(tr, br, lc, rc);
@@ -44,13 +47,14 @@ namespace Tacho {
           offm = tr/blksize, m = br/blksize - offm + 1, 
           offn = lc/blksize, n = rc/blksize - offn + 1;
 
+        AA.setView(A.Hier(),
+                   offm, m,
+                   offm, m);
+
         BB.setView(B.Hier(),
                    offm, m,
                    offn, n);
 
-        AA.setView(A.Hier(),
-                   offm, m,
-                   offm, m);
       }
 
       // all diagonal blocks are supposed and assumed to be full matrix

@@ -43,7 +43,7 @@
 /** \file
     \brief  Contains definitions of custom data types in Intrepid.
     \author Created by P. Bochev and D. Ridzal and Kyungjoo Kim.
- */
+*/
 
 #ifndef __INTREPID2_INTREPID2_TYPES_HPP__
 #define __INTREPID2_INTREPID2_TYPES_HPP__
@@ -51,58 +51,58 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DynRankView.hpp>
 
-/** \def    INTREPID2_MAX_ORDER
-    \brief  The maximum reconstruction order.
-*/
-#define INTREPID2_MAX_ORDER 10
-
-/** \def    INTREPID2_MAX_INTEGRATION_POINTS
-    \brief  The maximum number of integration points for direct cubature rules.
-*/
-#define INTREPID2_MAX_INTEGRATION_POINTS 1001
-
-/** \def    INTREPID2_MAX_CUBATURE_DEGREE_EDGE
-    \brief  The maximum degree of the polynomial that can be integrated exactly by
-            a direct edge rule.
-*/
-#define INTREPID2_MAX_CUBATURE_DEGREE_EDGE 61
-
-/** \def    INTREPID2_MAX_CUBATURE_DEGREE_TRI
-    \brief  The maximum degree of the polynomial that can be integrated exactly by
-            a direct triangle rule.
-*/
-#define INTREPID2_MAX_CUBATURE_DEGREE_TRI 20
-
-/** \def    INTREPID2_MAX_CUBATURE_DEGREE_TET
-    \brief  The maximum degree of the polynomial that can be integrated exactly by
-            a direct tetrahedron rule.
-*/
-#define INTREPID2_MAX_CUBATURE_DEGREE_TET 20
-
-/** \def    INTREPID2_MAX_CUBATURE_DEGREE_PYR
-    \brief  The maximum degree of the polynomial that can be integrated exactly by
-            a direct pyramid rule.
-*/
-#define INTREPID2_MAX_CUBATURE_DEGREE_PYR 11
-
-/** \def    INTREPID2_MAX_DIMENSION
-    \brief  The maximum ambient space dimension.
-*/
-#define INTREPID2_MAX_DIMENSION 3
-
-/** \def    INTREPID2_MAX_NEWTON
-    \brief  Maximum number of Newton iterations used internally in methods such as computing the
-    action of the inverse reference to physical cell map.
-*/
-#define INTREPID2_MAX_NEWTON 15
-
-/** \def    INTREPID2_MAX_DERIVATIVE
-    \brief  Maximum order of derivatives allowed in intrepid
-*/
-#define INTREPID2_MAX_DERIVATIVE 10
-
 
 namespace Intrepid2 {
+
+  /** \def    INTREPID2_MAX_ORDER
+      \brief  The maximum reconstruction order.
+  */
+#define INTREPID2_MAX_ORDER 10
+
+  /** \def    INTREPID2_MAX_INTEGRATION_POINTS
+      \brief  The maximum number of integration points for direct cubature rules.
+  */
+#define INTREPID2_MAX_INTEGRATION_POINTS 1001
+
+  /** \def    INTREPID2_MAX_CUBATURE_DEGREE_EDGE
+      \brief  The maximum degree of the polynomial that can be integrated exactly by
+      a direct edge rule.
+  */
+#define INTREPID2_MAX_CUBATURE_DEGREE_EDGE 20
+
+  /** \def    INTREPID2_MAX_CUBATURE_DEGREE_TRI
+      \brief  The maximum degree of the polynomial that can be integrated exactly by
+      a direct triangle rule.
+  */
+#define INTREPID2_MAX_CUBATURE_DEGREE_TRI 20
+
+  /** \def    INTREPID2_MAX_CUBATURE_DEGREE_TET
+      \brief  The maximum degree of the polynomial that can be integrated exactly by
+      a direct tetrahedron rule.
+  */
+#define INTREPID2_MAX_CUBATURE_DEGREE_TET 20
+
+  /** \def    INTREPID2_MAX_CUBATURE_DEGREE_PYR
+      \brief  The maximum degree of the polynomial that can be integrated exactly by
+      a direct pyramid rule.
+  */
+#define INTREPID2_MAX_CUBATURE_DEGREE_PYR 11
+
+  /** \def    INTREPID2_MAX_DIMENSION
+      \brief  The maximum ambient space dimension.
+  */
+#define INTREPID2_MAX_DIMENSION 3
+
+  /** \def    INTREPID2_MAX_NEWTON
+      \brief  Maximum number of Newton iterations used internally in methods such as computing the
+      action of the inverse reference to physical cell map.
+  */
+#define INTREPID2_MAX_NEWTON 15
+
+  /** \def    INTREPID2_MAX_DERIVATIVE
+      \brief  Maximum order of derivatives allowed in intrepid
+  */
+#define INTREPID2_MAX_DERIVATIVE 10
 
   // use ordinal_type and size_type everywhere (no index type)
   typedef int ordinal_type;
@@ -130,10 +130,10 @@ namespace Intrepid2 {
 
   template<>
   KOKKOS_INLINE_FUNCTION
-  double epsilon<float>() {
+  float epsilon<float>() {
     typedef union {
       int i32;
-      floag f32;
+      float f32;
     } flt_32;
 
     flt_32 s;
@@ -141,6 +141,27 @@ namespace Intrepid2 {
     s.f32++;
     return (s.i32 < 0 ? 1 - s.f32 : s.f32 - 1);
   }
+
+  /// define constants
+  class Parameters {
+  public:
+    static constexpr unsigned int MaxOrder             = 10;
+    static constexpr unsigned int MaxIntegrationPoints = 1001;
+    static constexpr unsigned int MaxCubatureDegreeEdge= 20;
+    static constexpr unsigned int MaxCubatureDegreeTri = 20;
+    static constexpr unsigned int MaxCubatureDegreeTet = 20;
+    static constexpr unsigned int MaxCubatureDegreePyr = 11;
+    static constexpr unsigned int MaxDimension         = 3;
+    static constexpr unsigned int MaxNewton            = 15;
+    static constexpr unsigned int MaxDerivative        = 10;
+
+    static const double Epsilon;
+    static const double Threshold;
+    static const double Tolerence;
+  };
+  const double Parameters::Epsilon   =       epsilon<double>();
+  const double Parameters::Threshold =  10.0*epsilon<double>();
+  const double Parameters::Tolerence = 100.0*epsilon<double>();
 
   /** \brief  Platform-dependent machine epsilon.
    */
@@ -162,7 +183,7 @@ namespace Intrepid2 {
 
   /** \enum   Intrepid2::ECoordinates
       \brief  Enumeration of coordinate systems for geometrical entities (cells, points).
-   */
+  */
   enum ECoordinates{
     COORDINATES_CARTESIAN=0,
     COORDINATES_POLAR,
@@ -188,7 +209,7 @@ namespace Intrepid2 {
 
       \param  coordinateType      [in]  - enum of the coordinate system
       \return 1 if the argument is valid coordinate system; 0 otherwise
-    */
+  */
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidCoordinate(const ECoordinates coordinateType){
     return( coordinateType == COORDINATES_CARTESIAN   ||
@@ -199,7 +220,7 @@ namespace Intrepid2 {
 
   /** \enum   Intrepid2::ENorm
       \brief  Enumeration of norm types for vectors and functions
-   */
+  */
   enum ENorm{
     NORM_ONE = 0,
     NORM_TWO,
@@ -225,7 +246,7 @@ namespace Intrepid2 {
 
       \param  normType      [in]  - enum of the norm
       \return 1 if the argument is valid norm; 0 otherwise
-    */
+  */
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidNorm(const ENorm normType){
     return( normType == NORM_ONE ||
@@ -237,8 +258,8 @@ namespace Intrepid2 {
 
   /** \enum   Intrepid2::EOperator
       \brief  Enumeration of primitive operators available in Intrepid. Primitive operators act on
-              reconstructed functions or basis functions. Pairs of primitive operators are used to
-              specify what kind of local weak operator should be constructed.
+      reconstructed functions or basis functions. Pairs of primitive operators are used to
+      specify what kind of local weak operator should be constructed.
   */
   enum EOperator{
     OPERATOR_VALUE = 0,
@@ -285,7 +306,7 @@ namespace Intrepid2 {
 
       \param  operatorType      [in]  - enum of the operator
       \return 1 if the argument is valid operator; 0 otherwise
-    */
+  */
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidOperator(const EOperator operatorType){
     return ( operatorType == OPERATOR_VALUE ||
@@ -307,17 +328,16 @@ namespace Intrepid2 {
 
   /** \enum   Intrepid2::FunctionSpace
       \brief  Enumeration of the admissible function space types in Intrepid.
-    */
-  enum EFunctionSpace
-    {
-      FUNCTION_SPACE_HGRAD = 0,
-      FUNCTION_SPACE_HCURL,
-      FUNCTION_SPACE_HDIV,
-      FUNCTION_SPACE_HVOL,
-      FUNCTION_SPACE_VECTOR_HGRAD,
-      FUNCTION_SPACE_TENSOR_HGRAD,
-      FUNCTION_SPACE_MAX
-    };
+  */
+  enum EFunctionSpace {
+    FUNCTION_SPACE_HGRAD = 0,
+    FUNCTION_SPACE_HCURL,
+    FUNCTION_SPACE_HDIV,
+    FUNCTION_SPACE_HVOL,
+    FUNCTION_SPACE_VECTOR_HGRAD,
+    FUNCTION_SPACE_TENSOR_HGRAD,
+    FUNCTION_SPACE_MAX
+  };
 
   KOKKOS_INLINE_FUNCTION
   const char* EFunctionSpaceToString(const EFunctionSpace space) {
@@ -338,7 +358,7 @@ namespace Intrepid2 {
 
       \param  spaceType      [in]  - enum of the function space
       \return 1 if the argument is valid function space; 0 otherwise
-    */
+  */
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidFunctionSpace(const EFunctionSpace spaceType){
     return ( spaceType == FUNCTION_SPACE_HGRAD ||
@@ -351,28 +371,27 @@ namespace Intrepid2 {
 
   /** \enum   Intrepid2::EDiscreteSpace
       \brief  Enumeration of the discrete spaces used to define bases for function spaces.
-              Intrepid allows up to three basic kinds of discrete spaces for each cell type.
+      Intrepid allows up to three basic kinds of discrete spaces for each cell type.
 
       \arg    COMPLETE     complete polynomial or tensor product space
       \arg    INCOMPLETE   incomplete polynomial or tensor product space, such as used in RT elements
       \arg    BROKEN       piecewise smooth, with respect to a cell, polynomial space
-    */
-  enum EDiscreteSpace
-    {
-      DISCRETE_SPACE_COMPLETE = 0,        // value = 0
-      DISCRETE_SPACE_INCOMPLETE,          // value = 1
-      DISCRETE_SPACE_BROKEN,              // value = 2
-      DISCRETE_SPACE_MAX                  // value = 3
-    };
+  */
+  enum EDiscreteSpace {
+    DISCRETE_SPACE_COMPLETE = 0,        // value = 0
+    DISCRETE_SPACE_INCOMPLETE,          // value = 1
+    DISCRETE_SPACE_BROKEN,              // value = 2
+    DISCRETE_SPACE_MAX                  // value = 3
+  };
 
   KOKKOS_INLINE_FUNCTION
   const char* EDiscreteSpaceToString(const EDiscreteSpace space) {
     switch(space) {
-      case DISCRETE_SPACE_COMPLETE:   return "Complete";
-      case DISCRETE_SPACE_INCOMPLETE: return "Incomplete";
-      case DISCRETE_SPACE_BROKEN:     return "Broken";
-      case DISCRETE_SPACE_MAX:        return "Max. Rec. Space";
-      default:                        return "INVALID EDiscreteSpace";
+    case DISCRETE_SPACE_COMPLETE:   return "Complete";
+    case DISCRETE_SPACE_INCOMPLETE: return "Incomplete";
+    case DISCRETE_SPACE_BROKEN:     return "Broken";
+    case DISCRETE_SPACE_MAX:        return "Max. Rec. Space";
+    default:                        return "INVALID EDiscreteSpace";
     }
     return "Error";
   }
@@ -381,7 +400,7 @@ namespace Intrepid2 {
 
       \param  spaceType      [in]  - enum of the function space
       \return 1 if the argument is valid discrete space; 0 otherwise
-    */
+  */
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidDiscreteSpace(const EDiscreteSpace spaceType){
     return ( spaceType == DISCRETE_SPACE_COMPLETE   ||
@@ -391,14 +410,13 @@ namespace Intrepid2 {
 
   /** \enum   Intrepid2::EPointType
       \brief  Enumeration of types of point distributions in Intrepid
-    */
-  enum EPointType
-    {
-      POINTTYPE_EQUISPACED = 0,             // value = 0
-      POINTTYPE_SPECTRAL,
-      POINTTYPE_SPECTRAL_OPEN,
-      POINTTYPE_WARPBLEND
-    };
+  */
+  enum EPointType {
+    POINTTYPE_EQUISPACED = 0,             // value = 0
+    POINTTYPE_SPECTRAL,
+    POINTTYPE_SPECTRAL_OPEN,
+    POINTTYPE_WARPBLEND
+  };
 
   KOKKOS_INLINE_FUNCTION
   const char* EPointTypeToString(const EPointType pointType) {
@@ -415,7 +433,7 @@ namespace Intrepid2 {
   /** \brief Verifies validity of a point type enum
       \param pointType      [in] - enum of the point type
       \return 1 if the argument is a valid point type; 0 otherwise
-   */
+  */
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidPointType(const EPointType pointType) {
     return ( pointType == POINTTYPE_EQUISPACED ||
@@ -424,29 +442,28 @@ namespace Intrepid2 {
 
   /** \enum   Intrepid2::EBasis
       \brief  Enumeration of basis types for discrete spaces in Intrepid.
-    */
-  enum EBasis
-    {
-      BASIS_FEM_DEFAULT = 0,                // value = 0
-      BASIS_FEM_HIERARCHICAL,               // value = 1
-      BASIS_FEM_FIAT,                       // value = 2
-      BASIS_FVD_DEFAULT,                    // value = 3
-      BASIS_FVD_COVOLUME,                   // value = 4
-      BASIS_FVD_MIMETIC,                    // value = 5
-      BASIS_MAX                             // value = 6
-    };
+  */
+  enum EBasis {
+    BASIS_FEM_DEFAULT = 0,                // value = 0
+    BASIS_FEM_HIERARCHICAL,               // value = 1
+    BASIS_FEM_FIAT,                       // value = 2
+    BASIS_FVD_DEFAULT,                    // value = 3
+    BASIS_FVD_COVOLUME,                   // value = 4
+    BASIS_FVD_MIMETIC,                    // value = 5
+    BASIS_MAX                             // value = 6
+  };
 
   KOKKOS_INLINE_FUNCTION
   const char* EBasisToString(const EBasis basis) {
     switch(basis) {
-      case BASIS_FEM_DEFAULT:      return "FEM Default";
-      case BASIS_FEM_HIERARCHICAL: return "FEM Hierarchical";
-      case BASIS_FEM_FIAT:         return "FEM FIAT";
-      case BASIS_FVD_DEFAULT:      return "FVD Default";
-      case BASIS_FVD_COVOLUME:     return "FVD Covolume";
-      case BASIS_FVD_MIMETIC:      return "FVD Mimetic";
-      case BASIS_MAX:              return "Max. Basis";
-      default:                     return "INVALID EBasis";
+    case BASIS_FEM_DEFAULT:      return "FEM Default";
+    case BASIS_FEM_HIERARCHICAL: return "FEM Hierarchical";
+    case BASIS_FEM_FIAT:         return "FEM FIAT";
+    case BASIS_FVD_DEFAULT:      return "FVD Default";
+    case BASIS_FVD_COVOLUME:     return "FVD Covolume";
+    case BASIS_FVD_MIMETIC:      return "FVD Mimetic";
+    case BASIS_MAX:              return "Max. Basis";
+    default:                     return "INVALID EBasis";
     }
     return "Error";
   }
@@ -455,7 +472,7 @@ namespace Intrepid2 {
 
       \param  basisType      [in]  - enum of the basis
       \return 1 if the argument is valid discrete space; 0 otherwise
-    */
+  */
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidBasis(const EBasis basisType){
     return ( basisType == BASIS_FEM_DEFAULT      ||
@@ -468,10 +485,9 @@ namespace Intrepid2 {
 
   /** \enum  Intrepid2::ECompEngine
       \brief Specifies how operators and functionals are computed internally
-             (COMP_MANUAL = native C++ implementation, COMP_BLAS = BLAS implementation, etc.).
+      (COMP_MANUAL = native C++ implementation, COMP_BLAS = BLAS implementation, etc.).
   */
-  enum ECompEngine
-  {
+  enum ECompEngine {
     COMP_CPP = 0,
     COMP_BLAS,
     COMP_ENGINE_MAX
@@ -493,7 +509,7 @@ namespace Intrepid2 {
 
       \param  compEngType    [in]  - enum of the computational engine
       \return 1 if the argument is valid computational engine; 0 otherwise
-   */
+  */
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidCompEngine(const ECompEngine compEngType){
     //at the moment COMP_BLAS is not a valid CompEngine.

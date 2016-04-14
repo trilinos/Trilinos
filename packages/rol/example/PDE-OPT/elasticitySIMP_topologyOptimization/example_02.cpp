@@ -63,7 +63,7 @@
 // SOL Inputs
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_BatchManager.hpp"
+#include "ROL_TpetraTeuchosBatchManager.hpp"
 #include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 
 #include <iostream>
@@ -108,8 +108,9 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( stoch_filename, stoch_parlist.ptr() );
 
     /*** Initialize main data structure. ***/
+    Teuchos::RCP<const Teuchos::Comm<int> > serial_comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
     Teuchos::RCP<ElasticitySIMPOperators<RealT> > data
-      = Teuchos::rcp(new ElasticitySIMPOperators<RealT>(comm, parlist, outStream));
+      = Teuchos::rcp(new ElasticitySIMPOperators<RealT>(serial_comm, parlist, outStream));
     /*** Build vectors and dress them up as ROL vectors. ***/
     Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getDomainMapA();
     Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getCellMap();
@@ -175,16 +176,16 @@ int main(int argc, char *argv[]) {
     std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<RealT> > bounds(sdim,tmp);
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
-      = Teuchos::rcp(new ROL::BatchManager<RealT>());
+      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman,false,false,100));
     // Build stochastic problem
-    ROL::StochasticProblem<RealT> opt(*parlist,objReduced,sampler,zp,bnd);
+    ROL::StochasticProblem<RealT> opt(*stoch_parlist,objReduced,sampler,zp,bnd);
 
     /*** Run optimization ***/
     ROL::AugmentedLagrangian<RealT> augLag(opt.getObjective(),volcon,*vc_lamp,1.0,*opt.getSolutionVector(),*vcp,*parlist);
     ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
-    algo.run(*opt.getSolutionVector(),*vc_lamp,augLag,*volcon,*bnd,true,*outStream);
+    algo.run(*opt.getSolutionVector(),*vc_lamp,augLag,*volcon,*opt.getBoundConstraint(),true,*outStream);
 
     data->outputTpetraVector(z_rcp, "density.txt");
     data->outputTpetraVector(u_rcp, "state.txt");

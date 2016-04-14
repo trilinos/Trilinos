@@ -43,85 +43,58 @@
 /** \file   Intrepid_CubatureDirectLineGauss.hpp
     \brief  Header file for the Intrepid2::CubatureDirectLineGauss class.
     \author Created by P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_CUBATURE_DIRECT_LINE_GAUSS_HPP
-#define INTREPID2_CUBATURE_DIRECT_LINE_GAUSS_HPP
+#ifndef __INTREPID2_CUBATURE_DIRECT_LINE_GAUSS_HPP__
+#define __INTREPID2_CUBATURE_DIRECT_LINE_GAUSS_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_CubatureDirect.hpp"
-#include "Teuchos_Assert.hpp"
-
-/** \def INTREPID2_CUBATURE_LINE_GAUSS_MAX
-  \brief The maximum degree of the polynomial that can be integrated exactly by
-         a direct line rule of the Gauss(-Legendre) type.
-*/
-// srkenno@sandia.gov 6/21/10:
-// see below comment for the enum
-#define INTREPID2_CUBATURE_LINE_GAUSS_MAX 61
-
 
 namespace Intrepid2 {
 
-/** \class Intrepid2::CubatureDirectLineGauss
-    \brief Defines Gauss integration rules on a line.
-*/
-template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
-class CubatureDirectLineGauss : public Intrepid2::CubatureDirect<Scalar,ArrayPoint,ArrayWeight> {
-  public:
-
-  // srkenno@sandia.gov 6/21/10:
-  // This indirection is to workaround a compiler bug on the sun platform, 5.7 toolset, SunOS 10.
-  enum {INTREPID2_CUBATURE_LINE_GAUSS_MAX_ENUM = INTREPID2_CUBATURE_LINE_GAUSS_MAX};
-
+  /** \class Intrepid2::CubatureDirectLineGauss
+      \brief Defines Gauss integration rules on a line.
+  */
+  template<typename ExecSpaceType>
+  class CubatureDirectLineGauss : public CubatureDirect<ExecSpaceType> {
   private:
 
-  /** \brief Complete set of data defining line Gauss(-Legendre) rules.
-  */
-  static const CubatureTemplate cubature_data_[INTREPID2_CUBATURE_LINE_GAUSS_MAX_ENUM+1];
-
-  /** \brief Names of templates for frequently used direct cubature rules.
-  */
-  static const char *cubature_name_;
-
-
+    /** \brief Complete set of data defining line Gauss(-Legendre) rules.
+     */
+    static const CubatureDataStatic cubatureDataStatic_[Parameters::MaxCubatureDegreeEdge+1]; // initialized once
+    /**/         CubatureData       cubatureData_      [Parameters::MaxCubatureDegreeEdge+1]; // copied to memory space
+    
   public:
+    
+    /** \brief Constructor.
+        \param degree           [in]     - The degree of polynomials that are integrated
+                                           exactly by this cubature rule. Default: 0.
+    */
+    CubatureDirectLineGauss(const ordinal_type degree = 0);
+    ~CubatureDirectLineGauss() = default;
+    
+    
+    /** \brief Returns maximum cubature accuracy.
+     */
+    // never used
+    //ordinal_type getMaxAccuracy() const;
+    
+    /** \brief Returns cubature name.
+     */
+    const char* getName() const;
 
-  ~CubatureDirectLineGauss() {}
+    ///
+    /// CubatureDirectLineGauss specific
+    ///
 
-  /** \brief Constructor.
-
-      \param degree           [in]     - The degree of polynomials that are integrated
-                                         exactly by this cubature rule. Default: 0.
-  */
-  CubatureDirectLineGauss(const int degree = 0);
-
-  /** \brief Returns cubature name.
-  */
-  const char* getName() const;
-
-  /** \brief Exposes cubature data.
-  */
-  const CubatureTemplate * exposeCubatureData() const;
-
-  /** \brief Returns maximum cubature accuracy.
-  */
-  int getMaxAccuracy() const;
-
-  /** \brief Exposes cubature data, accessible without construction.
-  */
-  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID2_CUBATURE_LINE_GAUSS_MAX_ENUM+1];
-
-
-}; // end class CubatureDirect 
-
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-inline const CubatureTemplate (& CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID2_CUBATURE_LINE_GAUSS_MAX_ENUM+1] {
-  return cubature_data_;
-}
-
+    /** \brief Exposes cubature data.
+     */
+    CubatureData getCubatureData() const;
+  };
+  
 } // end namespace Intrepid2
-
 
 // include templated definitions
 #include <Intrepid2_CubatureDirectLineGaussDef.hpp>

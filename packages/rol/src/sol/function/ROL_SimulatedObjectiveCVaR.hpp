@@ -89,7 +89,8 @@ public:
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pobj_->setParameter(param);
-      tmpval = pobj_->value(*(pu.get(i)), *zptr, tol);
+      //tmpval = pobj_->value(*(pu.get(i)), *zptr, tol);
+      tmpval = pobj_->value(*(pu.get(i)), *z, tol);
       tmpplus = pfunc_->evaluate(tmpval-t, 0);
       tmpsum += tmpplus*weight;
     }
@@ -121,24 +122,30 @@ public:
 
     std::vector<Real> param;
     Real weight(0), one(1), sum(0), tmpsum(0), tmpval(0), tmpplus(0);
-    Teuchos::RCP<Vector<Real> > tmp1 = gzptr->clone();
-    Teuchos::RCP<Vector<Real> > tmp2 = gzptr->clone();
+    //Teuchos::RCP<Vector<Real> > tmp1 = gzptr->clone();
+    //Teuchos::RCP<Vector<Real> > tmp2 = gzptr->clone();
+    Teuchos::RCP<Vector<Real> > tmp1 = gz->clone();
+    Teuchos::RCP<Vector<Real> > tmp2 = gz->clone();
     for (typename std::vector<SimulatedVector<Real> >::size_type i=0; i<pgu.numVectors(); ++i) {
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pobj_->setParameter(param);
-      tmpval = pobj_->value(*(pxu.get(i)), *xzptr, tol);
+      //tmpval = pobj_->value(*(pxu.get(i)), *xzptr, tol);
+      tmpval = pobj_->value(*(pxu.get(i)), *xz, tol);
       tmpplus = pfunc_->evaluate(tmpval-xt, 1);
       tmpsum += weight*tmpplus;
-      Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
+      //Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> xi(Teuchos::rcp_const_cast<Vector<Real> >(pxu.get(i)), Teuchos::rcp_const_cast<Vector<Real> >(xz));
       Vector_SimOpt<Real> gi(pgu.get(i), tmp1);
       pobj_->gradient(gi, xi, tol);
       gi.scale(weight*tmpplus);
       tmp2->plus(*tmp1);
       pgu.get(i)->scale(one/(one-alpha_));
     }
-    sampler_->sumAll(*tmp2, *gzptr);
-    gzptr->scale(one/(one-alpha_));
+    //sampler_->sumAll(*tmp2, *gzptr);
+    //gzptr->scale(one/(one-alpha_));
+    sampler_->sumAll(*tmp2, *gz);
+    gz->scale(one/(one-alpha_));
     sampler_->sumAll(&tmpsum, &sum, 1);
     rgz.setStatistic(one - (one/(one-alpha_))*sum);
   }

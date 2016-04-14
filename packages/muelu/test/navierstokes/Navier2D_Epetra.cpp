@@ -424,7 +424,6 @@ int main(int argc, char *argv[]) {
 
     }
 
-    // TODO: don't forget to add Aztec as prerequisite in CMakeLists.txt!
     //
     // Solve Ax = b using AMG as a preconditioner in AztecOO
     //
@@ -436,6 +435,13 @@ int main(int argc, char *argv[]) {
       AztecOO aztecSolver(epetraProblem);
       aztecSolver.SetAztecOption(AZ_solver, AZ_gmres);
 
+#if 0
+      // TODO TAW: 4/8/2016
+      // temporarely deactivate this due to runtime error on perseus:
+      // Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed
+      // if SERIAL=OFF, OPENMP=OFF, PTHREAD=ON, CUDA=OFF
+      // probably a fix necessary in EpetraOperator (which only supports
+      // SERIAL or OPENMP, but not PTHREAD of course).
       MueLu::EpetraOperator aztecPrec(H);
       aztecSolver.SetPrecOperator(&aztecPrec);
 
@@ -443,6 +449,7 @@ int main(int argc, char *argv[]) {
       double tol = 1e-8;
 
       aztecSolver.Iterate(maxIts, tol);
+#endif
     }
 
     success = true;

@@ -43,66 +43,114 @@
 /** \file   Intrepid_CubatureDirectDef.hpp
     \brief  Definition file for the Intrepid2::CubatureDirect class.
     \author Created by P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
 namespace Intrepid2 {
 
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubatureData(ArrayPoint  &                cubPoints,
-                                                                    ArrayWeight &                cubWeights,
-                                                                    const CubatureTemplate *     cubData) const {
+  template<typename ExecSpaceType>
+  template<typename cubPointValueType,  class ...cubPointProperties,
+           typename cubWeightValueType, class ...cubWeightProperties>
+  void 
+  CubatureDirect<ExecSpaceType>::
+  getCubatureFromData( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                       Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
+                       const CubatureData cubData ) const {
+#ifdef HAVE_INTREPID_DEBUG
+    // check size of cubPoints and cubWeights
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR (CubatureDirect): cubPoints must be rank 2." );
 
-  int numCubPoints = getNumPoints();
-  int cellDim      = getDimension();
-  // check size of cubPoints and cubWeights
-  TEUCHOS_TEST_FOR_EXCEPTION( ( ( (int)cubPoints.size() < numCubPoints*cellDim ) || ( (int)cubWeights.size() < numCubPoints ) ),
-                      std::out_of_range,
-                      ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points or weights.");
+    INTREPID2_TEST_FOR_EXCEPTION( cubWeights.rank() != 1, std::invalid_argument,
+                                  ">>> ERROR (CubatureDirect): cubPoints must be rank 1." );
 
-  for (int pointId = 0; pointId < numCubPoints; pointId++) {
-    for (int dim = 0; dim < cellDim; dim++) {
-      cubPoints(pointId,dim) = cubData->points_[pointId][dim];
-    }
-    cubWeights(pointId) = cubData->weights_[pointId];
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < this->getNumPoints() ||
+                                  cubPoints.dimension(1)  < this->getDimension(), std::out_of_range,
+                                  ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points.");
+
+    INTREPID2_TEST_FOR_EXCEPTION( cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
+                                  ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature weights.");
+#endif
+    // need subview here
+    typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+
+    const auto pointRanget(0, this->getNumPoints());
+    const auto dimRange   (0, this->getDimension());
+    
+    Kokkos::deep_copy(Kokkos::subdynrankview(cubPoints,        pointRange, dimRange),
+                      Kokkos::subdynrankview(cubData.points_,  pointRange, dimRange));
+    Kokkos::deep_copy(Kokkos::subdynrankview(cubWeights,       pointRange),
+                      Kokkos::subdynrankview(cubData.weights_, pointRange));
   }
-} // end getCubatureData
+  
+
+  template<typename ExecSpaceType>
+  template<typename ExecSpaceType>
+  template<typename cubPointValueType,  class ...cubPointProperties,
+           typename cubWeightValueType, class ...cubWeightProperties>
+  void 
+  CubatureDirect<ExecSpaceType>::
+  getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+               Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
+    getCubatureData(cubPoints, cubWeights, getCubatureData(degree_));
+  } 
+  
+
+  template<typename ExecSpaceType>
+  template<typename cubPointValueType,  class ...cubPointProperties,
+           typename cubWeightValueType, class ...cubWeightProperties,
+           typename cellCoordValueType, class ...cellCoordProperties>
+  void 
+  CubatureDirect<ExecSpaceType>::
+  getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+               Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
+               Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const {
+    INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                  ">>> ERROR (CubatureDirect::getCubature): Cubature defined in reference space calling method for physical space cubature.");
+  }
+  
+
+  template<typename ExecSpaceType>
+  ordinal_type 
+  CubatureDirect<ExecSpaceType>::
+  getNumPoints() const {
+    return getCubatureData(degree_).numPoints_;
+  } 
 
 
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
-                                                                ArrayWeight & cubWeights) const {
-  getCubatureData( cubPoints, cubWeights, &(exposeCubatureData()[degree_]) );
-} // end getCubature
-
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
-		                                                ArrayWeight& cubWeights,
-                                                                ArrayPoint& cellCoords) const
-{
-    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (CubatureDirect): Cubature defined in reference space calling method for physical space cubature.");
-}
+  template<typename ExecSpaceType>
+  ordinal_type 
+  CubatureDirect<ExecSpaceType>::
+  getDimension() const {
+    return dimension_;
+  } 
 
 
+  template<typename ExecSpaceType>
+  ordinal_type
+  CubatureDirect<ExecSpaceType>::
+  getAccuracy() const {
+    return degree_;
+  }
 
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {
-  return exposeCubatureData()[degree_].numPoints_;
-} // end getNumPoints
+  // never used
+  // template<typename ExecSpaceType>
+  // ordinal_type
+  // CubatureDirect<ExecSpaceType>::
+  // getMaxAccuracy() const {
+  //   INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+  //                                 ">>> ERROR (CubatureDirect::getMaxAccuracy): this method should be over-riden by derived classes.");
+  //   return 0;
+  // }
 
 
+  template<typename ExecSpaceType>
+  const char*
+  CubatureDirect<ExecSpaceType>::
+  getName() const {
+    return "CubatureDirect";
+  }
 
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getDimension() const {
-  return dimension_;
-} // end dimension
-
-
-
-template <class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int> & accuracy) const {
-  accuracy.assign(1, degree_);
-} // end getAccuracy
 
     
-} // end namespace Intrepid2
+}

@@ -51,46 +51,45 @@
 
 namespace Intrepid2 {
 
+
   template<typename ExecSpaceType>
-  template<class ...outputProperties,
-           class ...leftInputProperties,
-           class ...rightInputProperties>
+  template<typename outputValueType,     class ...outputProperties,
+           typename leftInputValueType,  class ...leftInputProperties,
+           typename rightInputValueType, class ...rightInputProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::Internal::
-  crossProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                const Kokkos::DynRankView<rightInputProperties...>  rightInput,
-                const bool hasField) {
+  crossProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
+                const bool hasField ) {
+
     struct Functor {
-      /**/  Kokkos::DynRankView<outputProperties...>    _output;
-      const Kokkos::DynRankView<leftInputProperties...> _leftInput;
-      const Kokkos::DynRankView<leftInputProperties...> _rightInput;
+      /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      _output;
+      const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  _leftInput;
+      const Kokkos::DynRankView<rightInputValueType,rightInputProperties...> _rightInput;
       const bool _hasField, _isCrossProd3D;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<outputProperties...>    &output_,
-              Kokkos::DynRankView<leftInputProperties...> &leftInput_,
-              Kokkos::DynRankView<leftInputProperties...> &rightInput_,
+      Functor(Kokkos::DynRankView<outputValueType,    outputProperties...>     output_,
+              Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInput_,
+              Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput_,
               const bool hasField_,
               const bool isCrossProd3D_)
         : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
           _hasField(hasField_), _isCrossProd3D(isCrossProd3D_) {}
 
       KOKKOS_INLINE_FUNCTION
-      ~Functor = default;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) {
+      void operator()(const size_type iter) const {
         size_type cell, field, point;
 
         if (_hasField) 
-          unrollIndex( cell, field, point, 
+          Util::unrollIndex( cell, field, point, 
                        _output.dimension(0),
                        _output.dimension(1),
                        iter );
         else           
-          unrollIndex( cell, point, 
+          Util::unrollIndex( cell, point, 
                        _output.dimension(0), 
                        iter );
 
@@ -118,283 +117,303 @@ namespace Intrepid2 {
     Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField, isCrossProd3D) );
   }
 
+
+
+
+
   template<typename ExecSpaceType>
-  template<class ...outputFieldProperties,
-           class ...inputDataProperties,
-           class ...inputFieldProperties>
+  template<typename outputFieldValueType, class ...outputFieldProperties,
+           typename inputDataValueType,   class ...inputDataProperties,
+           typename inputFieldValueType,  class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
-  crossProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                         const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                         const Kokkos::DynRankView<intputFieldProperties...> inputFields ) {
+  crossProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                         const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                         const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields ) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    /*
-     *   Check array rank and spatial dimension range (if applicable)
-     *      (1) inputData(C,P,D);
-     *      (2) inputFields(C,F,P,D) or (F,P,D);
-     *      (3) outputFields(C,F,P,D) in 3D, or (C,F,P) in 2D
-     */
-    // (1) inputData is (C, P, D) and 2 <= D <= 3 is required
-    INTREPID2_TEST_FOR_ABORT( inputData.rank() != 3
-                              ">>> ERROR (ArrayTools::crossProductDataField): inputData must have rank 3");
-    INTREPID2_TEST_FOR_ABORT( inputData.dimension(2) < 2 || inputData.dimension(2) > 3,
-                              ">>> ERROR (ArrayTools::crossProductDataField): inputData dimension(2) must be 2 or 3");
+    {
+      bool dbgInfo = false;
+      /*
+       *   Check array rank and spatial dimension range (if applicable)
+       *      (1) inputData(C,P,D);
+       *      (2) inputFields(C,F,P,D) or (F,P,D);
+       *      (3) outputFields(C,F,P,D) in 3D, or (C,F,P) in 2D
+       */
+      // (1) inputData is (C, P, D) and 2 <= D <= 3 is required
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.rank() != 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataField): inputData must have rank 3");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(2) < 2 || inputData.dimension(2) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataField): inputData dimension(2) must be 2 or 3");
 
-    // (2) inputFields is (C, F, P, D) or (F, P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
-    INTREPID2_TEST_FOR_ABORT( inputFields.rank() < 3 || inputFields.rank() > 4,
-                              ">>> ERROR (ArrayTools::crossProductDataField): inputFields must have rank 3 or 4" );
-    INTREPID2_TEST_FOR_ABORT( inputFields.dimension(inputFields.rank()-1) < 2 ||
-                              inputFields.dimension(inputFields.rank()-1) < 3,
-                              ">>> ERROR (ArrayTools::crossProductDataField): inputFields dimension (rank-1) must have rank 2 or 3" );
+      // (2) inputFields is (C, F, P, D) or (F, P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.rank() < 3 || inputFields.rank() > 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataField): inputFields must have rank 3 or 4" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.dimension(inputFields.rank()-1) < 2 ||
+                                inputFields.dimension(inputFields.rank()-1) < 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataField): inputFields dimension (rank-1) must have rank 2 or 3" );
 
-    // (3) outputFields is (C,F,P,D) in 3D and (C,F,P) in 2D => rank = inputData.dimension(2) + 1
-    INTREPID2_TEST_FOR_ABORT( outputFields.rank() != inputData.dimension(2)+1,
-                              ">>> ERROR (ArrayTools::crossProductDataField): outputFields rank must match to inputData dimension(2)+1");
-    /*
-     *   Dimension cross-checks:
-     *      (1) inputData    vs. inputFields
-     *      (2) outputFields vs. inputData
-     *      (3) outputFields vs. inputFields
-     *
-     *   Cross-check (1):
-     */
-    if (inputFields.rank() == 4) {
-      // inputData(C,P,D) vs. inputFields(C,F,P,D): dimensions C, P, D must match
-      const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 2, 3 };
-      for (ordinal_type i=0; i<3; ++i) {
-        INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::crossProductDataField): inputData dimension does not match with inputFields");
-      }
-    } else {
-      // inputData(C,P,D) vs. inputFields(F,P,D): dimensions P, D must match
-      const ordinal_type f1[] = { 1, 2 }, f2[] = { 1, 2 };
-      for (ordinal_type i=0; i<2; ++i) {
-        INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::crossProductDataField): inputData dimension does not match with inputFields");
-      }
-    }
-    /*
-     *  Cross-check (2):
-     */
-    if (inputData.dimension(2) == 2) {
-      //  in 2D: outputFields(C,F,P) vs. inputData(C,P,D): dimensions C,P must match
-      // inputData(C,P,D) vs. inputFields(F,P,D): dimensions P, D must match
-      const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 1 };
-      for (ordinal_type i=0; i<2; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputData");
-      }
-    } else {
-      // in 3D: outputFields(C,F,P,D) vs. inputData(C,P,D): dimensions C,P,D must match
-      const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 1, 2 };
-      for (ordinal_type i=0; i<3; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputData");
-      }
-    }
-    /*
-     *  Cross-check (3):
-     */
-    if (inputData.dimension(2) == 2) {
-      // In 2D:
+      // (3) outputFields is (C,F,P,D) in 3D and (C,F,P) in 2D => rank = inputData.dimension(2) + 1
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.rank() != inputData.dimension(2)+1, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataField): outputFields rank must match to inputData dimension(2)+1");
+      /*
+       *   Dimension cross-checks:
+       *      (1) inputData    vs. inputFields
+       *      (2) outputFields vs. inputData
+       *      (3) outputFields vs. inputFields
+       *
+       *   Cross-check (1):
+       */
       if (inputFields.rank() == 4) {
-        //  and rank-4 inputFields: outputFields(C,F,P) vs. inputFields(C,F,P,D): dimensions C,F,P must match
-        const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 1, 2 };
+        // inputData(C,P,D) vs. inputFields(C,F,P,D): dimensions C, P, D must match
+        const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 2, 3 };
         for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataField): inputData dimension does not match with inputFields");
         }
       } else {
-        //  and rank-3 inputFields: outputFields(C,F,P) vs. inputFields(F,P,D): dimensions F,P must match
-        const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
+        // inputData(C,P,D) vs. inputFields(F,P,D): dimensions P, D must match
+        const ordinal_type f1[] = { 1, 2 }, f2[] = { 1, 2 };
         for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataField): inputData dimension does not match with inputFields");
         }
       }
-    } else {
-      // In 3D:
-      if (inputFields.rank() == 4) {
-        //  and rank-4 inputFields: outputFields(C,F,P,D) vs. inputFields(C,F,P,D): all dimensions C,F,P,D must match
-        for (ordinal_type i=0; i<outputFields.rank(); ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputFields.dimension(i) != inputFields.dimension(i),
-                                    ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
+      /*
+       *  Cross-check (2):
+       */
+      if (inputData.dimension(2) == 2) {
+        //  in 2D: outputFields(C,F,P) vs. inputData(C,P,D): dimensions C,P must match
+        // inputData(C,P,D) vs. inputFields(F,P,D): dimensions P, D must match
+        const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 1 };
+        for (ordinal_type i=0; i<2; ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputData");
         }
       } else {
-        // and rank-3 inputFields: outputFields(C,F,P,D) vs. inputFields(F,P,D): dimensions F,P,D must match
-        const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
+        // in 3D: outputFields(C,F,P,D) vs. inputData(C,P,D): dimensions C,P,D must match
+        const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 1, 2 };
         for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputData");
         }
       }
+      /*
+       *  Cross-check (3):
+       */
+      if (inputData.dimension(2) == 2) {
+        // In 2D:
+        if (inputFields.rank() == 4) {
+          //  and rank-4 inputFields: outputFields(C,F,P) vs. inputFields(C,F,P,D): dimensions C,F,P must match
+          const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 1, 2 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
+          }
+        } else {
+          //  and rank-3 inputFields: outputFields(C,F,P) vs. inputFields(F,P,D): dimensions F,P must match
+          const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
+          }
+        }
+      } else {
+        // In 3D:
+        if (inputFields.rank() == 4) {
+          //  and rank-4 inputFields: outputFields(C,F,P,D) vs. inputFields(C,F,P,D): all dimensions C,F,P,D must match
+          for (ordinal_type i=0; i<outputFields.rank(); ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(i) != inputFields.dimension(i), dbgInfo,
+                                      ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
+          }
+        } else {
+          // and rank-3 inputFields: outputFields(C,F,P,D) vs. inputFields(F,P,D): dimensions F,P,D must match
+          const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
+          }
+        }
+      }
+
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+
     }
 #endif
     // body
-    ArrayTools<ExecSpace>::Internal::crossProduct( outputFields,
+    ArrayTools<ExecSpaceType>::Internal::crossProduct( outputFields,
                                                    inputData,
                                                    inputFields,
                                                    true );
   }
 
+
   template<typename ExecSpaceType>
-  template<class ...outputDataProperties,
-           class ...inputDataLeftProperties,
-           class ...inputDataRightProperties>
+  template<typename outputDataValueType,     class ...outputDataProperties,
+           typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+           typename inputDataRightValueType, class ...inputDataRightProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
-  crossProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                        const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                        const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight ) {
+  crossProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                        const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                        const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight ) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    std::string errmsg = ">>> ERROR (ArrayTools::crossProductDataData):";
-    /*
-     *   Check array rank and spatial dimension range (if applicable)
-     *      (1) inputDataLeft(C,P,D);
-     *      (2) inputDataRight(C,P,D) or (P,D);
-     *      (3) outputData(C,P,D) in 3D, or (C,P) in 2D
-     */
-    // (1) inputDataLeft is (C, P, D) and 2 <= D <= 3 is required
-    INTREPID2_TEST_FOR_ABORT( inputDataLeft.rank() != 3
-                              ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft must have rank 3");
-    INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(2) < 2 || inputDataLeft.dimension(2) > 3,
-                              ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension(2) must be 2 or 3");
+    {
+      bool dbgInfo = false;
 
-    // (2) inputDataRight is (C, P, D) or (P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.rank() < 2 || inputDataRight.rank() > 3,
-                              ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight must have rank 2 or 3" );
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 2 ||
-                              inputDataRight.dimension(inputDataRight.rank()-1) < 3,
-                              ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight dimension (rank-1) must have rank 2 or 3" );
+      /*
+       *   Check array rank and spatial dimension range (if applicable)
+       *      (1) inputDataLeft(C,P,D);
+       *      (2) inputDataRight(C,P,D) or (P,D);
+       *      (3) outputData(C,P,D) in 3D, or (C,P) in 2D
+       */
+      // (1) inputDataLeft is (C, P, D) and 2 <= D <= 3 is required
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.rank() != 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft must have rank 3");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(2) < 2 || inputDataLeft.dimension(2) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension(2) must be 2 or 3");
 
-    // (3) outputData is (C,P,D) in 3D and (C,P) in 2D => rank = inputDataLeft.dimension(2)
-    INTREPID2_TEST_FOR_ABORT( outputData.rank() != inputDataLeft.dimension(2),
-                              ">>> ERROR (ArrayTools::crossProductDataData): outputData rank must match to inputDataLeft dimension(2)");
-    /*
-     *   Dimension cross-checks:
-     *      (1) inputDataLeft vs. inputDataRight
-     *      (2) outputData    vs. inputDataLeft
-     *      (3) outputData    vs. inputDataRight
-     *
-     *   Cross-check (1):
-     */
-    if (inputDataRight.rank() == 3) {
-      // inputDataLeft(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
-      for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(i) != inputDataRight.dimension(i),
-                                  ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to inputDataRight");
-      }
-    }
-    // inputDataLeft(C, P,D) vs. inputDataRight(P,D): dimensions P, D must match
-    else {
-      const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-      for (ordinal_type i=0; i<2; ++i) {
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to inputDataRight");
-      }
-    }
-    /*
-     *  Cross-check (2):
-     */
-    if (inputDataLeft.dimension(2) == 2) {
-      // in 2D: outputData(C,P) vs. inputDataLeft(C,P,D): dimensions C, P must match
-      const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-      for (ordinal_type i=0; i<2; ++i) {
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != outputData.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to outputData");
-      }
-    } else {
-      // in 3D: outputData(C,P,D) vs. inputDataLeft(C,P,D): all dimensions C, P, D must match
-      for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(i) != outputData.dimension(i),
-                                  ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to outputData");
-      }
-    }
-    /*
-     *  Cross-check (3):
-     */
-    if (inputDataLeft.dimension(2) == 2) {
-      // In 2D:
+      // (2) inputDataRight is (C, P, D) or (P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.rank() < 2 || inputDataRight.rank() > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight must have rank 2 or 3" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 2 ||
+                                inputDataRight.dimension(inputDataRight.rank()-1) < 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight dimension (rank-1) must have rank 2 or 3" );
+
+      // (3) outputData is (C,P,D) in 3D and (C,P) in 2D => rank = inputDataLeft.dimension(2)
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.rank() != inputDataLeft.dimension(2), dbgInfo,
+                                ">>> ERROR (ArrayTools::crossProductDataData): outputData rank must match to inputDataLeft dimension(2)");
+      /*
+       *   Dimension cross-checks:
+       *      (1) inputDataLeft vs. inputDataRight
+       *      (2) outputData    vs. inputDataLeft
+       *      (3) outputData    vs. inputDataRight
+       *
+       *   Cross-check (1):
+       */
       if (inputDataRight.rank() == 3) {
-        //  and rank-3 inputDataRight: outputData(C,P) vs. inputDataRight(C,P,D): dimensions C,P must match
-        const ordinal_type f1[] = { 0, 1 }, f2[] = { 0, 1 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
+        // inputDataLeft(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
+        for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(i) != inputDataRight.dimension(i), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to inputDataRight");
         }
-      } else {
-        //  and rank-2 inputDataRight: outputData(C,P) vs. inputDataRight(P,D): dimension P must match
-        INTREPID2_TEST_FOR_ABORT( outputData.dimension(1) != inputDataRight.dimension(0),
-                                  ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
       }
-    } else {
-      // In 3D:
-      if (inputDataRight.rank() == 3) {
-        //  and rank-3 inputDataRight: outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C,P,D must match
-        for (ordinal_type i=0; i<outputData.rank(); ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputData.dimension(i) != inputDataRight.dimension(i),
-                                    ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
-        }
-      } else {
-        //  and rank-2 inputDataRight: outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
+      // inputDataLeft(C, P,D) vs. inputDataRight(P,D): dimensions P, D must match
+      else {
         const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
         for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to inputDataRight");
         }
       }
+      /*
+       *  Cross-check (2):
+       */
+      if (inputDataLeft.dimension(2) == 2) {
+        // in 2D: outputData(C,P) vs. inputDataLeft(C,P,D): dimensions C, P must match
+        const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
+        for (ordinal_type i=0; i<2; ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != outputData.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to outputData");
+        }
+      } else {
+        // in 3D: outputData(C,P,D) vs. inputDataLeft(C,P,D): all dimensions C, P, D must match
+        for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(i) != outputData.dimension(i), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to outputData");
+        }
+      }
+      /*
+       *  Cross-check (3):
+       */
+      if (inputDataLeft.dimension(2) == 2) {
+        // In 2D:
+        if (inputDataRight.rank() == 3) {
+          //  and rank-3 inputDataRight: outputData(C,P) vs. inputDataRight(C,P,D): dimensions C,P must match
+          const ordinal_type f1[] = { 0, 1 }, f2[] = { 0, 1 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
+          }
+        } else {
+          //  and rank-2 inputDataRight: outputData(C,P) vs. inputDataRight(P,D): dimension P must match
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(1) != inputDataRight.dimension(0), dbgInfo,
+                                    ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
+        }
+      } else {
+        // In 3D:
+        if (inputDataRight.rank() == 3) {
+          //  and rank-3 inputDataRight: outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C,P,D must match
+          for (ordinal_type i=0; i<outputData.rank(); ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(i) != inputDataRight.dimension(i), dbgInfo,
+                                      ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
+          }
+        } else {
+          //  and rank-2 inputDataRight: outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
+          const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
+          }
+        }
+      }
+
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+
     }
 #endif
     // body
-    ArrayTools<ExecSpace>::Internal::crossProduct( outputData,
+    ArrayTools<ExecSpaceType>::Internal::crossProduct( outputData,
                                                    inputDataLeft,
                                                    inputDataRight,
                                                    false );
   }
 
+
   template<typename ExecSpaceType>
-  template<class ...outputProperties,
-           class ...leftInputProperties,
-           class ...rightInputProperties>
+  template<typename outputValueType,     class ...outputProperties,
+           typename leftInputValueType,  class ...leftInputProperties,
+           typename rightInputValueType, class ...rightInputProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::Internal::
-  outerProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+  outerProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                 const bool hasField ) {
+
     struct Functor {
-      /**/  Kokkos::DynRankView<outputProperties...>    _output;
-      const Kokkos::DynRankView<leftInputProperties...> _leftInput;
-      const Kokkos::DynRankView<leftInputProperties...> _rightInput;
+      /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>     _output;
+      const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  _leftInput;
+      const Kokkos::DynRankView<rightInputValueType,rightInputProperties...> _rightInput;
       const bool _hasField;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<outputProperties...>    &output_,
-              Kokkos::DynRankView<leftInputProperties...> &leftInput_,
-              Kokkos::DynRankView<leftInputProperties...> &rightInput_,
+      Functor(Kokkos::DynRankView<outputValueType,    outputProperties...>     output_,
+              Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInput_,
+              Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput_,
               const bool hasField_)
         : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
           _hasField(hasField_) {}
 
       KOKKOS_INLINE_FUNCTION
-      ~Functor = default;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) {
+      void operator()(const size_type iter) const {
         size_type cell, field, point;
 
         if (_hasField) 
-          unrollIndex( cell, field, point, 
+          Util::unrollIndex( cell, field, point, 
                        _output.dimension(0),
                        _output.dimension(1),
                        iter );
         else           
-          unrollIndex( cell, point, 
+          Util::unrollIndex( cell, point, 
                        _output.dimension(0), 
                        iter );
 
@@ -419,102 +438,112 @@ namespace Intrepid2 {
     Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField) );
   }
 
+
   template<typename ExecSpaceType>
-  template<class ...outputFieldProperties,
-           class ...inputDataProperties,
-           class ...inputFieldProperties>
+  template<typename outputFieldValueType, class ...outputFieldProperties,
+           typename inputDataValueType,   class ...inputDataProperties,
+           typename inputFieldValueType,  class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
-  outerProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                         const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                         const Kokkos::DynRankView<intputFieldProperties...> inputFields ) {
+  outerProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                         const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                         const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields ) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    /*
-     *   Check array rank and spatial dimension range (if applicable)
-     *      (1) inputData(C,P,D);
-     *      (2) inputFields(C,F,P,D) or (F,P,D);
-     *      (3) outputFields(C,F,P,D,D)
-     */
-    // (1) inputData is (C, P, D) and 2 <= D <= 3 is required
-    INTREPID2_TEST_FOR_ABORT( inputData.rank() != 3
-                              ">>> ERROR (ArrayTools::outerProductDataField): inputData must have rank 3");
-    INTREPID2_TEST_FOR_ABORT( inputData.dimension(2) < 2 || inputData.dimension(2) > 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): inputData dimension(2) must be 2 or 3");
-
-    // (2) inputFields is (C, F, P, D) or (F, P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
-    INTREPID2_TEST_FOR_ABORT( inputFields.rank() < 3 || inputFields.rank() > 4,
-                              ">>> ERROR (ArrayTools::outerProductDataField): inputFields must have rank 3 or 4" );
-    INTREPID2_TEST_FOR_ABORT( inputFields.dimension(inputFields.rank()-1) < 2 ||
-                              inputFields.dimension(inputFields.rank()-1) < 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): inputFields dimension (rank-1) must have rank 2 or 3" );
-
-    // (3) outputFields is (C,F,P,D,D)
-    INTREPID2_TEST_FOR_ABORT( outputFields.rank() != 5,
-                              ">>> ERROR (ArrayTools::outerProductDataField): outputFields must have rank 5");
-    INTREPID2_TEST_FOR_ABORT( outputFields.dimension(3) < 2 ||
-                              outputFields.dimension(3) > 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension(3) must be 2 or 3");
-    INTREPID2_TEST_FOR_ABORT( outputFields.dimension(4) < 2 ||
-                              outputFields.dimension(4) > 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension(4) must be 2 or 3");
-
-    /*
-     *   Dimension cross-checks:
-     *      (1) inputData    vs. inputFields
-     *      (2) outputFields vs. inputData
-     *      (3) outputFields vs. inputFields
-     *
-     *   Cross-check (2): outputFields(C,F,P,D,D) vs. inputData(C,P,D): dimensions C, P, D must match
-     */
     {
-      const ordinal_type f1[] = { 0, 2, 3, 4 }, f2[] = { 0, 1, 2, 2 };
-      for (ordinal_type i=0; i<4; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputData");
-      }
-    }
+      bool dbgInfo = false;
 
-    /*
-     *   Cross-checks (1,3):
-     */
-    if (inputFields.rank() == 4) {
-      // Cross-check (1): inputData(C,P,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match
-      {
-        const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 2, 3 };
-        for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::outerProductDataField): inputData dimension does not match with inputFields");
-        }
-      }
+      /*
+       *   Check array rank and spatial dimension range (if applicable)
+       *      (1) inputData(C,P,D);
+       *      (2) inputFields(C,F,P,D) or (F,P,D);
+       *      (3) outputFields(C,F,P,D,D)
+       */
+      // (1) inputData is (C, P, D) and 2 <= D <= 3 is required
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.rank() != 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): inputData must have rank 3");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(2) < 2 || inputData.dimension(2) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): inputData dimension(2) must be 2 or 3");
 
-      // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(C,F,P,D): dimensions C, F, P, D must match
-      {
-        const ordinal_type f1[] = { 0, 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 3, 3 };
-        for (ordinal_type i=0; i<5; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputFields");
-        }
-      }
-    } else {
-      // Cross-check (1): inputData(C,P,D) vs. inputFields(F,P,D): dimensions  P, D must match
-      {
-        const ordinal_type f1[] = { 1, 2 }, f2[] = { 1, 2 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::outerProductDataField): inputData dimension does not match with inputFields");
-        }
-      }
+      // (2) inputFields is (C, F, P, D) or (F, P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.rank() < 3 || inputFields.rank() > 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): inputFields must have rank 3 or 4" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.dimension(inputFields.rank()-1) < 2 ||
+                                inputFields.dimension(inputFields.rank()-1) < 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): inputFields dimension (rank-1) must have rank 2 or 3" );
 
-      // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(F,P,D): dimensions F, P, D must match
+      // (3) outputFields is (C,F,P,D,D)
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.rank() != 5, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): outputFields must have rank 5");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(3) < 2 ||
+                                outputFields.dimension(3) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension(3) must be 2 or 3");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(4) < 2 ||
+                                outputFields.dimension(4) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension(4) must be 2 or 3");
+
+      /*
+       *   Dimension cross-checks:
+       *      (1) inputData    vs. inputFields
+       *      (2) outputFields vs. inputData
+       *      (3) outputFields vs. inputFields
+       *
+       *   Cross-check (2): outputFields(C,F,P,D,D) vs. inputData(C,P,D): dimensions C, P, D must match
+       */
       {
-        const ordinal_type f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
+        const ordinal_type f1[] = { 0, 2, 3, 4 }, f2[] = { 0, 1, 2, 2 };
         for (ordinal_type i=0; i<4; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputFields");
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputData");
         }
       }
+
+      /*
+       *   Cross-checks (1,3):
+       */
+      if (inputFields.rank() == 4) {
+        // Cross-check (1): inputData(C,P,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match
+        {
+          const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 2, 3 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::outerProductDataField): inputData dimension does not match with inputFields");
+          }
+        }
+
+        // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(C,F,P,D): dimensions C, F, P, D must match
+        {
+          const ordinal_type f1[] = { 0, 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 3, 3 };
+          for (ordinal_type i=0; i<5; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputFields");
+          }
+        }
+      } else {
+        // Cross-check (1): inputData(C,P,D) vs. inputFields(F,P,D): dimensions  P, D must match
+        {
+          const ordinal_type f1[] = { 1, 2 }, f2[] = { 1, 2 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::outerProductDataField): inputData dimension does not match with inputFields");
+          }
+        }
+
+        // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(F,P,D): dimensions F, P, D must match
+        {
+          const ordinal_type f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
+          for (ordinal_type i=0; i<4; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputFields");
+          }
+        }
+      }
+
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+
     }
 #endif
     // body
@@ -524,99 +553,109 @@ namespace Intrepid2 {
                                                                  true );
   }
 
+
   template<typename ExecSpaceType>
-  template<class ...outputDataProperties,
-           class ...inputDataLeftProperties,
-           class ...inputDataRightProperties>
+  template<typename outputDataValueType,     class ...outputDataProperties,
+           typename inputDataLeftValuetype,  class ...inputDataLeftProperties,
+           typename inputDataRightValueType, class ...inputDataRightProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
-  outerProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                        const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                        const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight ) {
+  outerProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                        const Kokkos::DynRankView<inputDataLeftValuetype, inputDataLeftProperties...>  inputDataLeft,
+                        const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight ) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    /*
-     *   Check array rank and spatial dimension range (if applicable)
-     *      (1) inputDataLeft(C,P,D);
-     *      (2) inputDataRight(C,P,D) or (P,D);
-     *      (3) outputData(C,P,D,D)
-     */
-    // (1) inputDataLeft is (C, P, D) and 2 <= D <= 3 is required
-    INTREPID2_TEST_FOR_ABORT( inputDataLeft.rank() != 3
-                              ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft must have rank 3");
-    INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(2) < 2 || inputDataLeft.dimension(2) > 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft dimension(2) must be 2 or 3");
-
-    // (2) inputDataRight is (C, P, D) or (P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.rank() < 2 || inputDataRight.rank() > 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): inputDataRight must have rank 2 or 3" );
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 2 ||
-                              inputDataRight.dimension(inputDataRight.rank()-1) < 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): inputDataRight dimension (rank-1) must have rank 2 or 3" );
-
-    // (3) outputData is (C,P,D,D)
-    INTREPID2_TEST_FOR_ABORT( outputData.rank() != 4,
-                              ">>> ERROR (ArrayTools::outerProductDataField): outputData must have rank 5");
-    INTREPID2_TEST_FOR_ABORT( outputData.dimension(2) < 2 ||
-                              outputData.dimension(2) > 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension(3) must be 2 or 3");
-    INTREPID2_TEST_FOR_ABORT( outputData.dimension(3) < 2 ||
-                              outputData.dimension(3) > 3,
-                              ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension(4) must be 2 or 3");
-
-    /*
-     *   Dimension cross-checks:
-     *      (1) inputDataLeft vs. inputDataRight
-     *      (2) outputData    vs. inputDataLeft
-     *      (3) outputData    vs. inputDataRight
-     *
-     *   Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P,D): dimensions C, P, D must match
-     */
     {
-      const ordinal_type f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
-      for (ordinal_type i=0; i<4; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataLeft");
-      }
-    }
+      bool dbgInfo = false;
 
-    /*
-     *   Cross-checks (1,3):
-     */
-    if (getrank(inputDataRight) == 3) {
-      // Cross-check (1): inputDataLeft(C,P,D) vs. inputDataRight(C,P,D):  all dimensions  C, P, D must match
-      for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(i) != inputDataRight.dimension(i),
-                                  ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft dimension does not match with inputDataRight");
-      }
+      /*
+       *   Check array rank and spatial dimension range (if applicable)
+       *      (1) inputDataLeft(C,P,D);
+       *      (2) inputDataRight(C,P,D) or (P,D);
+       *      (3) outputData(C,P,D,D)
+       */
+      // (1) inputDataLeft is (C, P, D) and 2 <= D <= 3 is required
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.rank() != 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft must have rank 3");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(2) < 2 || inputDataLeft.dimension(2) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft dimension(2) must be 2 or 3");
 
-      // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D): dimensions C, P, D must match
+      // (2) inputDataRight is (C, P, D) or (P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.rank() < 2 || inputDataRight.rank() > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): inputDataRight must have rank 2 or 3" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 2 ||
+                                inputDataRight.dimension(inputDataRight.rank()-1) < 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): inputDataRight dimension (rank-1) must have rank 2 or 3" );
+
+      // (3) outputData is (C,P,D,D)
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.rank() != 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): outputData must have rank 5");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(2) < 2 ||
+                                outputData.dimension(2) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension(3) must be 2 or 3");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(3) < 2 ||
+                                outputData.dimension(3) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension(4) must be 2 or 3");
+
+      /*
+       *   Dimension cross-checks:
+       *      (1) inputDataLeft vs. inputDataRight
+       *      (2) outputData    vs. inputDataLeft
+       *      (3) outputData    vs. inputDataRight
+       *
+       *   Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P,D): dimensions C, P, D must match
+       */
       {
         const ordinal_type f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
         for (ordinal_type i=0; i<4; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataRight");
-        }
-      }
-    } else {
-      // Cross-check (1): inputDataLeft(C,P,D) vs. inputDataRight(P,D): dimensions  P, D must match
-      {
-        const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft dimension does not match with inputDataRight");
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataLeft");
         }
       }
 
-      // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D): dimensions P, D must match
-      {
-        const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 1 };
-        for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataRight");
+      /*
+       *   Cross-checks (1,3):
+       */
+      if (getrank(inputDataRight) == 3) {
+        // Cross-check (1): inputDataLeft(C,P,D) vs. inputDataRight(C,P,D):  all dimensions  C, P, D must match
+        for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(i) != inputDataRight.dimension(i), dbgInfo,
+                                    ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft dimension does not match with inputDataRight");
+        }
+
+        // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D): dimensions C, P, D must match
+        {
+          const ordinal_type f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
+          for (ordinal_type i=0; i<4; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataRight");
+          }
+        }
+      } else {
+        // Cross-check (1): inputDataLeft(C,P,D) vs. inputDataRight(P,D): dimensions  P, D must match
+        {
+          const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft dimension does not match with inputDataRight");
+          }
+        }
+
+        // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D): dimensions P, D must match
+        {
+          const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 1 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataRight");
+          }
         }
       }
+
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+
     }
 #endif
     // body
@@ -626,49 +665,48 @@ namespace Intrepid2 {
                                                                false );
   }
 
+
+
   template<typename ExecSpaceType>
-  template<class ...outputProperties,
-           class ...leftInputProperties,
-           class ...rightInputProperties>
+  template<typename outputValueType,     class ...outputProperties,
+           typename leftInputValueType,  class ...leftInputProperties,
+           typename rightInputValueType, class ...rightInputProperties>
   KOKKOS_INLINE_FUNCTION
-  ArrayTools<ExecSpaceType>::Internal::
-  static void
-  matvecProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                 const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                 const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+  void
+  ArrayTools<ExecSpaceType>::Internal::matvecProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                 const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                 const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                  const bool hasField,
                  const bool isTranspose ) {
-    typedef typename leftInput::value_type value_type;
+
+    typedef typename leftInputValueType::value_type value_type;
 
     struct Functor {
-      /**/  Kokkos::DynRankView<outputProperties...>    _output;
-      const Kokkos::DynRankView<leftInputProperties...> _leftInput;
-      const Kokkos::DynRankView<leftInputProperties...> _rightInput;
+      Kokkos::DynRankView<outputValueType,    outputProperties...>     _output;
+      Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  _leftInput;
+      Kokkos::DynRankView<rightInputValueType,rightInputProperties...> _rightInput;
       const bool _hasField, _isTranspose;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<outputProperties...>    &output_,
-              Kokkos::DynRankView<leftInputProperties...> &leftInput_,
-              Kokkos::DynRankView<leftInputProperties...> &rightInput_,
+      Functor(Kokkos::DynRankView<outputValueType,    outputProperties...>     output_,
+              Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInput_,
+              Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput_,
               const bool hasField_,
               const bool isTranspose_)
         : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
           _hasField(hasField_), _isTranspose(isTranspose_) {}
 
       KOKKOS_INLINE_FUNCTION
-      ~Functor = default;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) {
+      void operator()(const size_type iter) const {
         size_type cell, field, point;
 
         if (_hasField) 
-          unrollIndex( cell, field, point, 
+          Util::unrollIndex( cell, field, point, 
                        _output.dimension(0),
                        _output.dimension(1),
                        iter );
         else           
-          unrollIndex( cell, point, 
+          Util::unrollIndex( cell, point, 
                        _output.dimension(0), 
                        iter );
 
@@ -681,6 +719,8 @@ namespace Intrepid2 {
                         /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
 
         result(0) = value_type(0);
+        const size_type iend = result.dimension(0);
+        const size_type jend = right.dimension(0);
         if (_isTranspose) {
           for (size_type i=0; i<iend; ++i)
             for (size_type j=0; j<jend; ++j)
@@ -698,147 +738,157 @@ namespace Intrepid2 {
     Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField, isTranspose) );
   }
 
+
+
   template<typename ExecSpaceType>
-  template<class ...outputFieldProperties,
-           class ...inputDataProperties,
-           class ...inputFieldProperties>
+  template<typename outputFieldValueType, class ...outputFieldProperties,
+           typename inputDataValueType,   class ...inputDataProperties,
+           typename inputFieldValueType,  class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
-  ArrayTools<ExecSpaceType>
-  matvecProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                          const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                          const Kokkos::DynRankView<intputFieldProperties...> inputFields,
+  void
+  ArrayTools<ExecSpaceType>::matvecProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                          const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                          const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields,
                           const char transpose ) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    /*
-     *   Check array rank and spatial dimension range (if applicable)
-     *      (1) inputData(C,P), (C,P,D) or (C,P,D,D);   P=1 is admissible to allow multiply by const. data
-     *      (2) inputFields(C,F,P,D) or (F,P,D);
-     *      (3) outputFields(C,F,P,D)
-     */
-    // (1) inputData is (C,P), (C, P, D) or (C, P, D, D) and 1 <= D <= 3 is required
-    INTREPID2_TEST_FOR_ABORT( inputData.rank() < 2 || inputData.rank() > 4,
-                              ">>> ERROR (ArrayTools::matvecProductDataField): inputData must have rank 2,3 or 4" );
-    if (inputData.rank() > 2) {
-      INTREPID2_TEST_FOR_ABORT( inputData.dimension(2) < 1 ||
-                                inputData.dimension(2) > 3,
-                                ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(2) must be 1,2 or 3");
-    }
-    if (inputData.rank() == 4) {
-      INTREPID2_TEST_FOR_ABORT( inputData.dimension(3) < 1 ||
-                                inputData.dimension(3) > 3,
-                                ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(3) must be 1,2 or 3");
-    }
+    {
+      bool dbgInfo = false;
 
-    // (2) inputFields is (C, F, P, D) or (F, P, D) and 1 <= (D=dimension(rank - 1)) <= 3 is required.
-    INTREPID2_TEST_FOR_ABORT( inputFields.rank() < 3 ||
-                              inputFields.rank() > 4,
-                              ">>> ERROR (ArrayTools::matvecProductDataField): inputFields must have rank 3 or 4" );
-    INTREPID2_TEST_FOR_ABORT( inputFields.rank(inputfields.rank()-1) < 1 ||
-                              inputFields.rank(inputfields.rank()-1) > 3,
-                              ">>> ERROR (ArrayTools::matvecProductDataField): inputFields dimension(rank-1) must be 1,2, or 3" );
-
-    // (3) outputFields is (C,F,P,D)
-    INTREPID2_TEST_FOR_ABORT( outputFields.rank() != 4,
-                              ">>> ERROR (ArrayTools::matvecProductDataField): outputFields must have rank 4" );
-    INTREPID2_TEST_FOR_ABORT( outputFields.dimension(3) < 1 ||
-                              outputFields.dimension(3) > 3,
-                              ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension(3) must be 1,2 or 3" );
-
-    /*
-     *   Dimension cross-checks:
-     *      (1) inputData    vs. inputFields
-     *      (2) outputFields vs. inputData
-     *      (3) outputFields vs. inputFields
-     *
-     *   Cross-check (2): outputFields(C,F,P,D) vs. inputData(C,P), (C,P,D) or (C,P,D,D):
-     *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
-     *   data is specified (P>1). Do not check P dimensions with constant data, i.e., when P=1 in
-     *   inputData(C,1,...)
-     */
-    if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
-      INTREPID2_TEST_FOR_ABORT( outputFields.dimension(2) != inputData.dimension(1),
-                                ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension(2) must match to inputData dimension(1)" );
-    }
-    if (getrank(inputData) == 2) { // inputData(C,P) -> C match
-      INTREPID2_TEST_FOR_ABORT( outputFields.dimension(0) != inputData.dimension(0),
-                                ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension(0) must match to inputData dimension(0)" );
-    }
-    if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
-      const ordinal_type f1[] = { 0, 3 }, f2[] = { 0, 2 };
-      for (ordinal_type i=0; i<2; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputData dimension" );
-      }
-    }
-    if (inputData.rank() == 4) { // inputData(C,P,D,D) -> C, D, D match
-      const ordinal_type f1[] = { 0, 3, 3 }, f2[] = { 0, 2, 3 };
-      for (ordinal_type i=0; i<3; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputData dimension" );
-      }
-    }
-
-    /*
-     *   Cross-checks (1,3):
-     */
-    if (inputFields.rank() == 4) {
-      // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match
-      if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
-        INTREPID2_TEST_FOR_ABORT( inputFields.dimension(2) != inputData(1),
-                                  ">>> ERROR (ArrayTools::matvecProductDataField): inputFields dimension (2) does not match to inputData dimension (1)" );
-      }
-      if (inputData.rank() == 2) { // inputData(C,P) -> C match
-        INTREPID2_TEST_FOR_ABORT( inputData.dimension(0) != inputFields.dimension(0),
-                                  ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension (0) does not match to inputFields dimension (0)" );
-      }
-      if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
-        const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 3 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
-        }
-      }
-      if (inputData.rank() == 4) {  // inputData(C,P,D,D) -> C, D, D match
-        const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 3, 3 };
-        for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
-        }
-      }
-
-      // Cross-check (3): outputFields(C,F,P,D) vs. inputFields(C,F,P,D): all dimensions C, F, P, D must match
-      for (ordinal_type i=0; i<outputFields.rank(); ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(i) != inputFields.dimension(i),
-                                  ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputFields dimension" );
-      }
-    } else {
-      // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(F,P,D): dimensions  P, D must match
-      if (inputData.dimension(1) > 1) { // check P if P>1 in inputData
-        INTREPID2_TEST_FOR_ABORT( inputData.dimension(1) != inputFields.dimension(1),
-                                  ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(1) does not match to inputFields dimension (1)" );
-      }
-      if (inputData.rank() == 3) {
-        INTREPID2_TEST_FOR_ABORT( inputData.dimension(2) != inputFields.dimension(2),
-                                  ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(2) does not match to inputFields dimension (2)" );
+      /*
+       *   Check array rank and spatial dimension range (if applicable)
+       *      (1) inputData(C,P), (C,P,D) or (C,P,D,D);   P=1 is admissible to allow multiply by const. data
+       *      (2) inputFields(C,F,P,D) or (F,P,D);
+       *      (3) outputFields(C,F,P,D)
+       */
+      // (1) inputData is (C,P), (C, P, D) or (C, P, D, D) and 1 <= D <= 3 is required
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.rank() < 2 || inputData.rank() > 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::matvecProductDataField): inputData must have rank 2,3 or 4" );
+      if (inputData.rank() > 2) {
+        INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(2) < 1 ||
+                                  inputData.dimension(2) > 3, dbgInfo,
+                                  ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(2) must be 1,2 or 3");
       }
       if (inputData.rank() == 4) {
-        const ordinal_type f1[] = { 2, 3 }, f2[] = { 2, 2 };
+        INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(3) < 1 ||
+                                  inputData.dimension(3) > 3,
+                                  ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(3) must be 1,2 or 3");
+      }
+
+      // (2) inputFields is (C, F, P, D) or (F, P, D) and 1 <= (D=dimension(rank - 1)) <= 3 is required.
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.rank() < 3 ||
+                                inputFields.rank() > 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::matvecProductDataField): inputFields must have rank 3 or 4" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.rank(inputfields.rank()-1) < 1 ||
+                                inputFields.rank(inputfields.rank()-1) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matvecProductDataField): inputFields dimension(rank-1) must be 1,2, or 3" );
+
+      // (3) outputFields is (C,F,P,D)
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.rank() != 4,
+                                ">>> ERROR (ArrayTools::matvecProductDataField): outputFields must have rank 4" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(3) < 1 ||
+                                outputFields.dimension(3) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension(3) must be 1,2 or 3" );
+
+      /*
+       *   Dimension cross-checks:
+       *      (1) inputData    vs. inputFields
+       *      (2) outputFields vs. inputData
+       *      (3) outputFields vs. inputFields
+       *
+       *   Cross-check (2): outputFields(C,F,P,D) vs. inputData(C,P), (C,P,D) or (C,P,D,D):
+       *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
+       *   data is specified (P>1). Do not check P dimensions with constant data, i.e., when P=1 in
+       *   inputData(C,1,...)
+       */
+      if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
+        INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(2) != inputData.dimension(1), dbgInfo,
+                                  ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension(2) must match to inputData dimension(1)" );
+      }
+      if (getrank(inputData) == 2) { // inputData(C,P) -> C match
+        INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(0) != inputData.dimension(0), dbgInfo,
+                                  ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension(0) must match to inputData dimension(0)" );
+      }
+      if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
+        const ordinal_type f1[] = { 0, 3 }, f2[] = { 0, 2 };
         for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputData dimension" );
+        }
+      }
+      if (inputData.rank() == 4) { // inputData(C,P,D,D) -> C, D, D match
+        const ordinal_type f1[] = { 0, 3, 3 }, f2[] = { 0, 2, 3 };
+        for (ordinal_type i=0; i<3; ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputData dimension" );
         }
       }
 
-      // Cross-check (3): outputFields(C,F,P,D) vs. inputFields(F,P,D): dimensions F, P, D must match
-      {
-        const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
-        for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]),
+      /*
+       *   Cross-checks (1,3):
+       */
+      if (inputFields.rank() == 4) {
+        // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match
+        if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.dimension(2) != inputData(1), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataField): inputFields dimension (2) does not match to inputData dimension (1)" );
+        }
+        if (inputData.rank() == 2) { // inputData(C,P) -> C match
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(0) != inputFields.dimension(0), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension (0) does not match to inputFields dimension (0)" );
+        }
+        if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
+          const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 3 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
+          }
+        }
+        if (inputData.rank() == 4) {  // inputData(C,P,D,D) -> C, D, D match
+          const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 3, 3 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
+          }
+        }
+
+        // Cross-check (3): outputFields(C,F,P,D) vs. inputFields(C,F,P,D): all dimensions C, F, P, D must match
+        for (ordinal_type i=0; i<outputFields.rank(); ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(i) != inputFields.dimension(i), dbgInfo,
                                     ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputFields dimension" );
         }
+      } else {
+        // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(F,P,D): dimensions  P, D must match
+        if (inputData.dimension(1) > 1) { // check P if P>1 in inputData
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(1) != inputFields.dimension(1), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(1) does not match to inputFields dimension (1)" );
+        }
+        if (inputData.rank() == 3) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(2) != inputFields.dimension(2), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(2) does not match to inputFields dimension (2)" );
+        }
+        if (inputData.rank() == 4) {
+          const ordinal_type f1[] = { 2, 3 }, f2[] = { 2, 2 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
+          }
+        }
+
+        // Cross-check (3): outputFields(C,F,P,D) vs. inputFields(F,P,D): dimensions F, P, D must match
+        {
+          const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputFields dimension" );
+          }
+        }
       }
+
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+
     }
 #endif
     // body
@@ -849,149 +899,160 @@ namespace Intrepid2 {
                                                         transpose == 't' || transpose == 'T' );
   }
 
+
+
   template<typename ExecSpaceType>
-  template<class ...outputDataProperties,
-           class ...inputDataLeftProperties,
-           class ...inputDataRightProperties>
+  template<typename outputDataValueType,     class ...outputDataProperties,
+           typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+           typename inputDataRightValueType, class ...inputDataRightProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
-  matvecProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>    outputData,
-                         const Kokkos::DynRankView<inputDataLeftProperties...> inputDataLeft,
-                         const Kokkos::DynRankView<intputFieldProperties...>   inputDataRight,
+  matvecProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>    outputData,
+                         const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...> inputDataLeft,
+                         const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...>    inputDataRight,
                          const char transpose ) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    /*
-     *   Check array rank and spatial dimension range (if applicable)
-     *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data
-     *      (2) inputDataRight(C,P,D) or (P,D);
-     *      (3) outputData(C,P,D)
-     */
-    // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required
-    INTREPID2_TEST_FOR_ABORT( inputDataLeft.rank() < 2 ||
-                              inputDataLeft.rank() > 4,
-                              ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft must have rank 2,3 or 4" );
+    {
+      bool dbgInfo = false;
 
-    if (inputDataLeft.rank() > 2) {
-      INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(2) < 1 ||
-                                inputDataLeft.dimension(2) > 3,
-                                ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension(2) must be 1, 2 or 3");
-    }
-    if (inputDataLeft.rank() == 4) {
-      INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(3) < 1 ||
-                                inputDataLeft.dimension(3) > 3,
-                                ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension(3) must be 1, 2 or 3");
-    }
+      /*
+       *   Check array rank and spatial dimension range (if applicable)
+       *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data
+       *      (2) inputDataRight(C,P,D) or (P,D);
+       *      (3) outputData(C,P,D)
+       */
+      // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.rank() < 2 ||
+                                inputDataLeft.rank() > 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft must have rank 2,3 or 4" );
 
-    // (2) inputDataRight is (C, P, D) or (P, D) and 1 <= (D=dimension(rank - 1)) <= 3 is required.
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.rank() < 2 ||
-                              inputDataRight.rank() > 3,
-                              ">>> ERROR (ArrayTools::matvecProductDataData): inputDataRight must have rank 2 or 3" );
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 1 ||
-                              inputDataRight.dimension(inputDataRight.rank()-1) > 3,
-                              ">>> ERROR (ArrayTools::matvecProductDataData): inputDataRight dimension (rank-1) must be 1,2 or 3" );
-
-    // (3) outputData is (C,P,D)
-    INTREPID2_TEST_FOR_ABORT( outputData.rank() != 3,
-                              ">>> ERROR (ArrayTools::matvecProductDataData): outputData must have rank 3" );
-    INTREPID2_TEST_FOR_ABORT( outputData.dimension(2) < 1 ||
-                              outputData.dimension(2) > 3,
-                              ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension(2) must be 1, 2 or 3");
-
-    /*
-     *   Dimension cross-checks:
-     *      (1) inputDataLeft vs. inputDataRight
-     *      (2) outputData    vs. inputDataLeft
-     *      (3) outputData    vs. inputDataRight
-     *
-     *   Cross-check (2): outputData(C,P,D) vs. inputDataLeft(C,P), (C,P,D) or (C,P,D,D):
-     *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
-     *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
-     *   inputDataLeft(C,1,...)
-     */
-    if (inputDataLeft.dimension(1) > 1) { // check P dimension if P>1 in inputDataLeft
-      INTREPID2_TEST_FOR_ABORT( outputData.dimension(1) != inputDataLeft.dimension(1),
-                                ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension(1) muat match inputDataLeft dimension(1)" );
-    }
-    if (inputDataLeft.rank() == 2) { // inputDataLeft(C,P): check C
-      INTREPID2_TEST_FOR_ABORT( outputData.dimension(0) != inputDataLeft.dimension(0),
-                                ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension(0) muat match inputDataLeft dimension(0)" );
-    }
-    if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
-      const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 2 };
-      for (ordinal_type i=0; i<2; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match inputDataLeft dimension" );
+      if (inputDataLeft.rank() > 2) {
+        INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(2) < 1 ||
+                                  inputDataLeft.dimension(2) > 3, dbgInfo,
+                                  ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension(2) must be 1, 2 or 3");
       }
-    }
-    if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-      const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
-      for (ordinal_type i=0; i<3; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match inputDataLeft dimension" );
+      if (inputDataLeft.rank() == 4) {
+        INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(3) < 1 ||
+                                  inputDataLeft.dimension(3) > 3, dbgInfo,
+                                  ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension(3) must be 1, 2 or 3");
       }
-    }
 
-    /*
-     *   Cross-checks (1,3):
-     */
-    if (inputDataRight.rank() == 3) {
-      // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D):  dimensions  C, P, D must match
+      // (2) inputDataRight is (C, P, D) or (P, D) and 1 <= (D=dimension(rank - 1)) <= 3 is required.
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.rank() < 2 ||
+                                inputDataRight.rank() > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matvecProductDataData): inputDataRight must have rank 2 or 3" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 1 ||
+                                inputDataRight.dimension(inputDataRight.rank()-1) > 3,
+                                ">>> ERROR (ArrayTools::matvecProductDataData): inputDataRight dimension (rank-1) must be 1,2 or 3" );
+
+      // (3) outputData is (C,P,D)
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.rank() != 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matvecProductDataData): outputData must have rank 3" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(2) < 1 ||
+                                outputData.dimension(2) > 3,
+                                ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension(2) must be 1, 2 or 3");
+
+      /*
+       *   Dimension cross-checks:
+       *      (1) inputDataLeft vs. inputDataRight
+       *      (2) outputData    vs. inputDataLeft
+       *      (3) outputData    vs. inputDataRight
+       *
+       *   Cross-check (2): outputData(C,P,D) vs. inputDataLeft(C,P), (C,P,D) or (C,P,D,D):
+       *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
+       *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
+       *   inputDataLeft(C,1,...)
+       */
       if (inputDataLeft.dimension(1) > 1) { // check P dimension if P>1 in inputDataLeft
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(1),
-                                  ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (1) muat match to inputDataRight dimension (1)" );
+        INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(1) != inputDataLeft.dimension(1), dbgInfo,
+                                  ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension(1) muat match inputDataLeft dimension(1)" );
       }
-      if (getrank(inputDataLeft) == 2) { // inputDataLeft(C,P): check C
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(0) != inputDataRight.dimension(0),
-                                  ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (0) muat match to inputDataRight dimension (0)" );
+      if (inputDataLeft.rank() == 2) { // inputDataLeft(C,P): check C
+        INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(0) != inputDataLeft.dimension(0), dbgInfo,
+                                  ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension(0) muat match inputDataLeft dimension(0)" );
       }
       if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
         const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 2 };
         for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match inputDataLeft dimension" );
         }
       }
       if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-        const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
+        const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
         for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match inputDataLeft dimension" );
         }
       }
 
-      // Cross-check (3): outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
-      for (ordinal_type i=0; i<outputData.rank(); ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputData.dimension(i) != inputDataRight.dimension(i),
-                                  ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match to inputDataRight dimension" );
-      }
-    } else {
-      // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D): dimensions  P, D must match
-      if (inputDataLeft.dimension(1) > 1) { // check P if P>1 in inputData
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(0),
-                                  ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (1) does mot match to inputDataright dimension (0)" );
-      }
-      if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check D
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(2) != inputDataRight.dimension(1),
-                                  ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (2) does mot match to inputDataright dimension (1)" );
-      }
-      if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check D
-        const ordinal_type f1[] = { 2, 3 }, f2[] = { 1, 1 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
+      /*
+       *   Cross-checks (1,3):
+       */
+      if (inputDataRight.rank() == 3) {
+        // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D):  dimensions  C, P, D must match
+        if (inputDataLeft.dimension(1) > 1) { // check P dimension if P>1 in inputDataLeft
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(1), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (1) muat match to inputDataRight dimension (1)" );
         }
-      }
+        if (getrank(inputDataLeft) == 2) { // inputDataLeft(C,P): check C
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(0) != inputDataRight.dimension(0), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (0) muat match to inputDataRight dimension (0)" );
+        }
+        if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
+          const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 2 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
+          }
+        }
+        if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
+          const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
+          }
+        }
 
-      // Cross-check (3): outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
-      {
-        const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
+        // Cross-check (3): outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
+        for (ordinal_type i=0; i<outputData.rank(); ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(i) != inputDataRight.dimension(i), dbgInfo,
                                     ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match to inputDataRight dimension" );
         }
+      } else {
+        // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D): dimensions  P, D must match
+        if (inputDataLeft.dimension(1) > 1) { // check P if P>1 in inputData
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(0), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (1) does mot match to inputDataright dimension (0)" );
+        }
+        if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check D
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(2) != inputDataRight.dimension(1), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (2) does mot match to inputDataright dimension (1)" );
+        }
+        if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check D
+          const ordinal_type f1[] = { 2, 3 }, f2[] = { 1, 1 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
+          }
+        }
+
+        // Cross-check (3): outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
+        {
+          const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match to inputDataRight dimension" );
+          }
+        }
       }
+
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+
     }
 #endif
     // body
@@ -1002,49 +1063,48 @@ namespace Intrepid2 {
                                                         transpose == 't' || transpose == 'T' );
   }
 
+
+
   template<typename ExecSpaceType>
-  template<class ...outputProperties,
-           class ...leftInputProperties,
-           class ...rightInputProperties>
+  template<typename outputValueType,     class ...outputProperties,
+           typename leftInputValueType,  class ...leftInputProperties,
+           typename rightInputValueType, class ...rightInputProperties>
   KOKKOS_INLINE_FUNCTION
-  ArrayTools<ExecSpaceType>::Internal::
-  static void
-  matmatProduct( /**/  Kokkos::DynRankView<outputProperties...>      output,
-                 const Kokkos::DynRankView<leftInputProperties...>   leftInput,
-                 const Kokkos::DynRankView<rightInputProperties...>  rightInput,
+  void
+  ArrayTools<ExecSpaceType>::Internal::matmatProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+                 const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+                 const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                  const bool hasField,
                  const bool isTranspose ) {
-    typedef typename leftInput::value_type value_type;
+
+    typedef typename leftInputValueType::value_type value_type;
 
     struct Functor {
-      /**/  Kokkos::DynRankView<outputProperties...>    _output;
-      const Kokkos::DynRankView<leftInputProperties...> _leftInput;
-      const Kokkos::DynRankView<leftInputProperties...> _rightInput;
+      Kokkos::DynRankView<outputValueType,    outputProperties...>     _output;
+      Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  _leftInput;
+      Kokkos::DynRankView<rightInputValueType,rightInputProperties...> _rightInput;
       const bool _hasField, _isTranspose;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<outputProperties...>    &output_,
-              Kokkos::DynRankView<leftInputProperties...> &leftInput_,
-              Kokkos::DynRankView<leftInputProperties...> &rightInput_,
+      Functor(Kokkos::DynRankView<outputValueType,    outputProperties...>     output_,
+              Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInput_,
+              Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput_,
               const bool hasField_,
-              const bool isTranspose)
+              const bool isTranspose_)
         : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
           _hasField(hasField_), _isTranspose(isTranspose_) {}
 
       KOKKOS_INLINE_FUNCTION
-      ~Functor = default;
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) {
+      void operator()(const size_type iter) const {
         size_type cell, field, point;
 
         if (_hasField) 
-          unrollIndex( cell, field, point, 
+          Util::unrollIndex( cell, field, point, 
                        _output.dimension(0),
                        _output.dimension(1),
                        iter );
         else           
-          unrollIndex( cell, point, 
+          Util::unrollIndex( cell, point, 
                        _output.dimension(0), 
                        iter );
 
@@ -1057,7 +1117,7 @@ namespace Intrepid2 {
                         /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()) );
 
         const size_type iend = result.dimension(0);
-        const size_type jend = result.dimension(0);
+        const size_type jend = result.dimension(1);
 
         if (_isTranspose) {
           const size_type kend = left.dimension(0);
@@ -1084,159 +1144,170 @@ namespace Intrepid2 {
     Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField, isTranspose) );
   }
 
+
+
+
   template<typename ExecSpaceType>
-  template<class ...outputFieldProperties,
-           class ...inputDataProperties,
-           class ...inputFieldsProperties>
+  template<typename outputFieldValueType, class ...outputFieldProperties,
+           typename inputDataValueType,   class ...inputDataProperties,
+           typename inputFieldValueType,  class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
-  matmatProductDataField( /**/  Kokkos::DynRankView<outputFieldProperties...> outputFields,
-                          const Kokkos::DynRankView<inputDataProperties...>   inputData,
-                          const Kokkos::DynRankView<inputFieldProperties...>  inputFields,
-                          const char transpose = 'N' ) {
+  matmatProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                          const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                          const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
+                          const char transpose ) {
 
 #ifdef HAVE_INTREPID_DEBUG
+    {
+      bool dbgInfo = false;
 
-    /*
-     *   Check array rank and spatial dimension range (if applicable)
-     *      (1) inputData(C,P), (C,P,D) or (C,P,D,D);   P=1 is admissible to allow multiply by const. data
-     *      (2) inputFields(C,F,P,D,D) or (F,P,D,D);
-     *      (3) outputFields(C,F,P,D,D)
-     */
-    // (1) inputData is (C,P), (C, P, D) or (C, P, D, D) and 1 <= D <= 3 is required
-    INTREPID2_TEST_FOR_ABORT( inputData.rank() < 2 ||
-                              inputData.rank() > 4,
-                              ">>> ERROR (ArrayTools::matmatProductDataField): inputData must have rank 2,3 or 4" );
-    if (inputData.rank() > 2) {
-      INTREPID2_TEST_FOR_ABORT( inputData.dimension(2) < 1 ||
-                                inputData.dimension(2) > 3,
-                                ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (2) must be 1,2 or 3" );
-    }
-    if (inputData.rank() == 4) {
-      INTREPID2_TEST_FOR_ABORT( inputData.dimension(3) < 1 ||
-                                inputData.dimension(3) > 3,
-                                ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (3) must be 1,2 or 3" );
-    }
-
-    // (2) inputFields is (C,F,P,D,D) or (F,P,D,D) and 1 <= (dimension(rank-1), (rank-2)) <= 3 is required.
-    INTREPID2_TEST_FOR_ABORT( inputFields.rank() < 4 ||
-                              inputFields.rank() > 5,
-                              ">>> ERROR (ArrayTools::matmatProductDataField): inputFields must have rank 4 or 5");
-    INTREPID2_TEST_FOR_ABORT( inputFields.dimension(inputFields.rank()-1) < 1 ||
-                              inputFields.dimension(inputFields.rank()-1) > 3,
-                              ">>> ERROR (ArrayTools::matmatProductDataField): inputFields dimension (rank-1) must be 1,2 or 3" );
-    INTREPID2_TEST_FOR_ABORT( inputFields.dimension(inputFields.rank()-2) < 1 ||
-                              inputFields.dimension(inputFields.rank()-2) > 3,
-                              ">>> ERROR (ArrayTools::matmatProductDataField): inputFields dimension (rank-2) must be 1,2 or 3" );
-
-    // (3) outputFields is (C,F,P,D,D)
-    INTREPID2_TEST_FOR_ABORT( outputFields.rank() != 5,
-                              ">>> ERROR (ArrayTools::matmatProductDataField): outputFields must have rank 5" );
-    INTREPID2_TEST_FOR_ABORT( outputFields.dimension(3) < 1 ||
-                              outputFields.dimension(3) > 3,
-                              ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (3) must be 1,2 or 3" );
-    INTREPID2_TEST_FOR_ABORT( outputFields.dimension(4) < 1 ||
-                              outputFields.dimension(4) > 3,
-                              ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (4) must be 1,2 or 3" );
-
-    /*
-     *   Dimension cross-checks:
-     *      (1) inputData    vs. inputFields
-     *      (2) outputFields vs. inputData
-     *      (3) outputFields vs. inputFields
-     *
-     *   Cross-check (2): outputFields(C,F,P,D,D) vs. inputData(C,P), (C,P,D) or (C,P,D,D):
-     *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
-     *   data is specified (P>1). Do not check P dimensions with constant data, i.e., when P=1 in
-     *   inputData(C,1,...)
-     */
-    if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
-      INTREPID2_TEST_FOR_ABORT( outputFields.dimension(2) != inputData.dimension(1),
-                                ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (2) does not match to inputData dimension (1)" );
-    }
-    if (inputData.rank() == 2) { // inputData(C,P) -> C match
-      INTREPID2_TEST_FOR_ABORT( outputFields.dimension(0) != inputData.dimension(0),
-                                ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (0) does not match to inputData dimension (0)" );
-    }
-    if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
-      const ordinal_type f1[] = { 0, 3, 4 }, f2[] = { 0, 2, 2 };
-      for (ordinal_type i=0; i<3; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputData dimension" );
-      }
-    }
-    if (inputData.rank() == 4) { // inputData(C,P,D,D) -> C, D, D match
-      const ordinal_type f1[] = { 0, 3, 4 }, f2[] = { 0, 2, 3 };
-      for (ordinal_type i=0; i<3; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputData dimension" );
-      }
-    }
-
-    /*
-     *   Cross-checks (1,3):
-     */
-    if (inputFields.rank() == 5) {
-      // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D,D):  dimensions  C, P, D must match
-      if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
-        INTREPID2_TEST_FOR_ABORT( inputData.dimension(1) != inputFields.dimension(2),
-                                  ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (1) does not match to inputFields dimension (2)" );
-      }
-      if (inputData.rank() == 2) { // inputData(C,P) -> C match
-        INTREPID2_TEST_FOR_ABORT( inputData.dimension(0) != inputFields.dimension(0),
-                                  ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (0) does not match to inputFields dimension (0)" );
-      }
-      if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
-
-        const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 3, 4 };
-        for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
-        }
-      }
-      if (inputData.rank() == 4) {  // inputData(C,P,D,D) -> C, D, D match
-        const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 3, 4 };
-        for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
-        }
-      }
-
-      // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(C,F,P,D,D): all dimensions C, F, P, D must match
-      for (ordinal_type i=0; i<outputFields.rank(); ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputFields.dimension(i) != inputFields.dimension(i),
-                                  ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputFields dimension" );
-      }
-    } else {
-      // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(F,P,D,D): dimensions  P, D must match
-      if (inputData.dimension(1) > 1) { // check P if P>1 in inputData
-        INTREPID2_TEST_FOR_ABORT( inputData.dimension(1) != inputFields.dimension(1),
-                                  ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (1) does not match to inputFields dimension (1)" );
-      }
-      if (inputData.rank() == 3) {
-        const ordinal_type f1[] = { 2, 2 }, f2[] = { 2, 3 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
-        }
+      /*
+       *   Check array rank and spatial dimension range (if applicable)
+       *      (1) inputData(C,P), (C,P,D) or (C,P,D,D);   P=1 is admissible to allow multiply by const. data
+       *      (2) inputFields(C,F,P,D,D) or (F,P,D,D);
+       *      (3) outputFields(C,F,P,D,D)
+       */
+      // (1) inputData is (C,P), (C, P, D) or (C, P, D, D) and 1 <= D <= 3 is required
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.rank() < 2 ||
+                                inputData.rank() > 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataField): inputData must have rank 2,3 or 4" );
+      if (inputData.rank() > 2) {
+        INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(2) < 1 ||
+                                  inputData.dimension(2) > 3, dbgInfo,
+                                  ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (2) must be 1,2 or 3" );
       }
       if (inputData.rank() == 4) {
-        const ordinal_type f1[] = { 2, 3 }, f2[] = { 2, 3 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
+        INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(3) < 1 ||
+                                  inputData.dimension(3) > 3, dbgInfo,
+                                  ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (3) must be 1,2 or 3" );
+      }
+
+      // (2) inputFields is (C,F,P,D,D) or (F,P,D,D) and 1 <= (dimension(rank-1), (rank-2)) <= 3 is required.
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.rank() < 4 ||
+                                inputFields.rank() > 5, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataField): inputFields must have rank 4 or 5");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.dimension(inputFields.rank()-1) < 1 ||
+                                inputFields.dimension(inputFields.rank()-1) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataField): inputFields dimension (rank-1) must be 1,2 or 3" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.dimension(inputFields.rank()-2) < 1 ||
+                                inputFields.dimension(inputFields.rank()-2) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataField): inputFields dimension (rank-2) must be 1,2 or 3" );
+
+      // (3) outputFields is (C,F,P,D,D)
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.rank() != 5, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataField): outputFields must have rank 5" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(3) < 1 ||
+                                outputFields.dimension(3) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (3) must be 1,2 or 3" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(4) < 1 ||
+                                outputFields.dimension(4) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (4) must be 1,2 or 3" );
+
+      /*
+       *   Dimension cross-checks:
+       *      (1) inputData    vs. inputFields
+       *      (2) outputFields vs. inputData
+       *      (3) outputFields vs. inputFields
+       *
+       *   Cross-check (2): outputFields(C,F,P,D,D) vs. inputData(C,P), (C,P,D) or (C,P,D,D):
+       *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
+       *   data is specified (P>1). Do not check P dimensions with constant data, i.e., when P=1 in
+       *   inputData(C,1,...)
+       */
+      if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
+        INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(2) != inputData.dimension(1), dbgInfo,
+                                  ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (2) does not match to inputData dimension (1)" );
+      }
+      if (inputData.rank() == 2) { // inputData(C,P) -> C match
+        INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(0) != inputData.dimension(0), dbgInfo,
+                                  ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (0) does not match to inputData dimension (0)" );
+      }
+      if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
+        const ordinal_type f1[] = { 0, 3, 4 }, f2[] = { 0, 2, 2 };
+        for (ordinal_type i=0; i<3; ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputData dimension" );
+        }
+      }
+      if (inputData.rank() == 4) { // inputData(C,P,D,D) -> C, D, D match
+        const ordinal_type f1[] = { 0, 3, 4 }, f2[] = { 0, 2, 3 };
+        for (ordinal_type i=0; i<3; ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputData dimension" );
         }
       }
 
-      // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(F,P,D,D): dimensions F, P, D must match
-      {
-        const ordinal_type f1[] = { 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 3 };
-        for (ordinal_type i=0; i<4; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]),
+      /*
+       *   Cross-checks (1,3):
+       */
+      if (inputFields.rank() == 5) {
+        // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D,D):  dimensions  C, P, D must match
+        if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(1) != inputFields.dimension(2), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (1) does not match to inputFields dimension (2)" );
+        }
+        if (inputData.rank() == 2) { // inputData(C,P) -> C match
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(0) != inputFields.dimension(0), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (0) does not match to inputFields dimension (0)" );
+        }
+        if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
+
+          const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 3, 4 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
+          }
+        }
+        if (inputData.rank() == 4) {  // inputData(C,P,D,D) -> C, D, D match
+          const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 3, 4 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
+          }
+        }
+
+        // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(C,F,P,D,D): all dimensions C, F, P, D must match
+        for (ordinal_type i=0; i<outputFields.rank(); ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(i) != inputFields.dimension(i), dbgInfo,
                                     ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputFields dimension" );
         }
+      } else {
+        // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(F,P,D,D): dimensions  P, D must match
+        if (inputData.dimension(1) > 1) { // check P if P>1 in inputData
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(1) != inputFields.dimension(1), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (1) does not match to inputFields dimension (1)" );
+        }
+        if (inputData.rank() == 3) {
+          const ordinal_type f1[] = { 2, 2 }, f2[] = { 2, 3 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
+          }
+        }
+        if (inputData.rank() == 4) {
+          const ordinal_type f1[] = { 2, 3 }, f2[] = { 2, 3 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
+          }
+        }
+
+        // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(F,P,D,D): dimensions F, P, D must match
+        {
+          const ordinal_type f1[] = { 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 3 };
+          for (ordinal_type i=0; i<4; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputFields dimension" );
+          }
+        }
       }
+
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+
     }
 #endif
     // body
@@ -1247,156 +1318,166 @@ namespace Intrepid2 {
                                                         transpose == 't' || transpose == 'T' );
   }
 
+
+
   template<typename ExecSpaceType>
-  template<class ...outputDataProperties,
-           class ...inputDataLeftProperties,
-           class ...inputDataRightProperties>
+  template<typename outputDataValueType,     class ...outputDataProperties,
+           typename inputDataLeftValueType,  class ...inputDataLeftProperties,
+           typename inputDataRightValueType, class ...inputDataRightProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
-  ArrayTools<ExecSpaceType>
-  matmatProductDataData( /**/  Kokkos::DynRankView<outputDataProperties...>     outputData,
-                         const Kokkos::DynRankView<inputDataLeftProperties...>  inputDataLeft,
-                         const Kokkos::DynRankView<inputDataRightProperties...> inputDataRight,
-                         const char transpose  ) {
+  void
+  ArrayTools<ExecSpaceType>::matmatProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                         const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                         const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
+                         const char transpose ) {
 
 #ifdef HAVE_INTREPID_DEBUG
-    /*
-     *   Check array rank and spatial dimension range (if applicable)
-     *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data
-     *      (2) inputDataRight(C,P,D,D) or (P,D,D);
-     *      (3) outputData(C,P,D,D)
-     */
-    // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required
-    INTREPID2_TEST_FOR_ABORT( inputDataLeft.rank() < 2 ||
-                              inputDataLeft.rank() > 4,
-                              ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft must have rank 2,3 or 4" );
-    if (inputDataLeft.rank() > 2) {
-      INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(2) < 1 ||
-                                inputDataLeft.dimension(2) > 3,
-                                ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (2) must be 1,2 or 3" );
-    }
-    if (inputDataLeft.rank() == 4) {
-      INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(3) < 1 ||
-                                inputDataLeft.dimension(3) > 3,
-                                ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (3) must be 1,2 or 3" );
-    }
+    {
+      bool dbgInfo = false;
 
-    // (2) inputDataRight is (C,P,D,D) or (P,D,D) and 1 <= (D=dimension(rank-1),(rank-2)) <= 3 is required.
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.rank() < 3 ||
-                              inputDataRight.rank() > 4,
-                              ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight must have rank 3 or 4" );
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 1 ||
-                              inputDataRight.dimension(inputDataRight.rank()-1) > 3 ||
-                              ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight (rank-1) must be 1,2 or 3" );
-    INTREPID2_TEST_FOR_ABORT( inputDataRight.dimension(inputDataRight.rank()-2) < 1 ||
-                              inputDataRight.dimension(inputDataRight.rank()-2) > 3 ||
-                              ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight (rank-2) must be 1,2 or 3" );
-
-    // (3) outputData is (C,P,D,D)
-    INTREPID2_TEST_FOR_ABORT( outputData.rank() != 4,
-                              ">>> ERROR (ArrayTools::matmatProductDataData): outputData must have rank 4" );
-    INTREPID2_TEST_FOR_ABORT( outputData.dimension(2) < 1 ||
-                              outputData.dimension(2) > 3 ||
-                              ">>> ERROR (ArrayTools::matmatProductDataData): outputData (2) must be 1,2 or 3" );
-    INTREPID2_TEST_FOR_ABORT( outputData.dimension(3) < 1 ||
-                              outputData.dimension(3) > 3 ||
-                              ">>> ERROR (ArrayTools::matmatProductDataData): outputData (3) must be 1,2 or 3" );
-
-    /*
-     *   Dimension cross-checks:
-     *      (1) inputDataLeft vs. inputDataRight
-     *      (2) outputData    vs. inputDataLeft
-     *      (3) outputData    vs. inputDataRight
-     *
-     *   Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P), (C,P,D) or (C,P,D,D):
-     *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
-     *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
-     *   inputDataLeft(C,1,...)
-     */
-    if (inputDataLeft.dimension(1) > 1) { // check P dimension if P>1 in inputDataLeft
-      INTREPID2_TEST_FOR_ABORT( outputData.dimension(1) != inputDataLeft.dimension(1),
-                                ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension (1) does not match to inputDataLeft dimension (1)" );
-    }
-    if (inputDataLeft.rank() == 2) { // inputDataLeft(C,P): check C
-      INTREPID2_TEST_FOR_ABORT( outputData.dimension(0) != inputDataLeft.dimension(0),
-                                ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension (0) does not match to inputDataLeft dimension (0)" );
-    }
-    if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
-      const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
-      for (ordinal_type i=0; i<3; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataLeft dimension" );
+      /*
+       *   Check array rank and spatial dimension range (if applicable)
+       *      (1) inputDataLeft(C,P), (C,P,D) or (C,P,D,D); P=1 is admissible to allow multiply by const. left data
+       *      (2) inputDataRight(C,P,D,D) or (P,D,D);
+       *      (3) outputData(C,P,D,D)
+       */
+      // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.rank() < 2 ||
+                                inputDataLeft.rank() > 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft must have rank 2,3 or 4" );
+      if (inputDataLeft.rank() > 2) {
+        INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(2) < 1 ||
+                                  inputDataLeft.dimension(2) > 3, dbgInfo,
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (2) must be 1,2 or 3" );
       }
-    }
-    if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-      const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
-      for (ordinal_type i=0; i<3; ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]),
-                                  ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataLeft dimension" );
+      if (inputDataLeft.rank() == 4) {
+        INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(3) < 1 ||
+                                  inputDataLeft.dimension(3) > 3, dbgInfo,
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (3) must be 1,2 or 3" );
       }
-    }
 
-    /*
-     *   Cross-checks (1,3):
-     */
-    if (inputDataRight.rank() == 4) {
-      // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D,D):  dimensions  C, P, D must match
+      // (2) inputDataRight is (C,P,D,D) or (P,D,D) and 1 <= (D=dimension(rank-1),(rank-2)) <= 3 is required.
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.rank() < 3 ||
+                                inputDataRight.rank() > 4, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight must have rank 3 or 4" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.dimension(inputDataRight.rank()-1) < 1 ||
+                                inputDataRight.dimension(inputDataRight.rank()-1) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight (rank-1) must be 1,2 or 3" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataRight.dimension(inputDataRight.rank()-2) < 1 ||
+                                inputDataRight.dimension(inputDataRight.rank()-2) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataData): inputDataRight (rank-2) must be 1,2 or 3" );
+
+      // (3) outputData is (C,P,D,D)
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.rank() != 4,
+                                ">>> ERROR (ArrayTools::matmatProductDataData): outputData must have rank 4" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(2) < 1 ||
+                                outputData.dimension(2) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataData): outputData (2) must be 1,2 or 3" );
+      INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(3) < 1 ||
+                                outputData.dimension(3) > 3, dbgInfo,
+                                ">>> ERROR (ArrayTools::matmatProductDataData): outputData (3) must be 1,2 or 3" );
+
+      /*
+       *   Dimension cross-checks:
+       *      (1) inputDataLeft vs. inputDataRight
+       *      (2) outputData    vs. inputDataLeft
+       *      (3) outputData    vs. inputDataRight
+       *
+       *   Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P), (C,P,D) or (C,P,D,D):
+       *   dimensions C, and D must match in all cases, dimension P must match only when non-constant
+       *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
+       *   inputDataLeft(C,1,...)
+       */
       if (inputDataLeft.dimension(1) > 1) { // check P dimension if P>1 in inputDataLeft
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(1),
-                                  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (1) does not match to inputDataRight dimension (1)" );
+        INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(1) != inputDataLeft.dimension(1), dbgInfo,
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension (1) does not match to inputDataLeft dimension (1)" );
       }
-      if (getrank(inputDataLeft) == 2) { // inputDataLeft(C,P): check C
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(0) != inputDataRight.dimension(0),
-                                  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (0) does not match to inputDataRight dimension (0)" );
+      if (inputDataLeft.rank() == 2) { // inputDataLeft(C,P): check C
+        INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(0) != inputDataLeft.dimension(0), dbgInfo,
+                                  ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension (0) does not match to inputDataLeft dimension (0)" );
       }
       if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
-        const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
+        const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
         for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataLeft dimension" );
         }
       }
       if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
         const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
         for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataLeft dimension" );
         }
       }
 
-      // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D,D): all dimensions C, P, D must match
-      for (ordinal_type i=0; i< outputData.rank(); ++i) {
-        INTREPID2_TEST_FOR_ABORT( outputData.dimension(i) !=  inputDataRight.dimension(i),
-                                  ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataRight dimension" );
-      }
-    } else {
-      // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D,D): dimensions  P, D must match
-      if (inputDataLeft.dimension(1) > 1) { // check P if P>1 in inputData
-        INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(0),
-                                  ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (1) does not match to inputDataRight dimension (0)" );
-      }
-      if (getrank(inputDataLeft) == 3) {  // inputDataLeft(C,P,D): check D
-        const ordinal_type f1[] = { 2, 2 }, f2[] = { 1, 2 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
+      /*
+       *   Cross-checks (1,3):
+       */
+      if (inputDataRight.rank() == 4) {
+        // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D,D):  dimensions  C, P, D must match
+        if (inputDataLeft.dimension(1) > 1) { // check P dimension if P>1 in inputDataLeft
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(1), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (1) does not match to inputDataRight dimension (1)" );
         }
-      }
-      if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check D
-        const ordinal_type f1[] = { 2, 3 }, f2[] = { 1, 2 };
-        for (ordinal_type i=0; i<2; ++i) {
-          INTREPID2_TEST_FOR_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
-                                    ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
+        if (getrank(inputDataLeft) == 2) { // inputDataLeft(C,P): check C
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(0) != inputDataRight.dimension(0), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (0) does not match to inputDataRight dimension (0)" );
         }
-      }
-      // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D,D): dimensions P, D must match
-      {
-        const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
-        for (ordinal_type i=0; i<3; ++i) {
-          INTREPID2_TEST_FOR_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]),
+        if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
+          const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
+          }
+        }
+        if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
+          const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
+          }
+        }
+
+        // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D,D): all dimensions C, P, D must match
+        for (ordinal_type i=0; i< outputData.rank(); ++i) {
+          INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(i) !=  inputDataRight.dimension(i), dbgInfo,
                                     ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataRight dimension" );
         }
+      } else {
+        // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D,D): dimensions  P, D must match
+        if (inputDataLeft.dimension(1) > 1) { // check P if P>1 in inputData
+          INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(1) != inputDataRight.dimension(0), dbgInfo,
+                                    ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (1) does not match to inputDataRight dimension (0)" );
+        }
+        if (getrank(inputDataLeft) == 3) {  // inputDataLeft(C,P,D): check D
+          const ordinal_type f1[] = { 2, 2 }, f2[] = { 1, 2 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
+          }
+        }
+        if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check D
+          const ordinal_type f1[] = { 2, 3 }, f2[] = { 1, 2 };
+          for (ordinal_type i=0; i<2; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
+          }
+        }
+        // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D,D): dimensions P, D must match
+        {
+          const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
+          for (ordinal_type i=0; i<3; ++i) {
+            INTREPID2_TEST_FOR_DEBUG_ABORT( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), dbgInfo,
+                                      ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataRight dimension" );
+          }
+        }
       }
+
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return;
+#endif
+
     }
 #endif
     // body

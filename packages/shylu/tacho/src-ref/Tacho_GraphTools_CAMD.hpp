@@ -6,7 +6,15 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho_Util.hpp"
+
+#ifdef HAVE_SHYLUTACHO_AMESOS
+#include "amesos_camd.h"
+#define TACHO_CHOLMOD(run) amesos_ ## run
+typedef UF_long SuiteSparse_long;
+#else
 #include "camd.h"
+#define TACHO_CHOLMOD(run) run
+#endif
 
 namespace Tacho {
 
@@ -36,8 +44,8 @@ namespace Tacho {
                        double Info[],
                        const int C[],
                        int BucketSet[] ) {
-    camd_2( n, Pe, Iw, Len, iwlen, pfree, 
-            Nv, Next, Last, Head, Elen, Degree, W, Control, Info, C, BucketSet );
+    TACHO_CHOLMOD(camd_2)( n, Pe, Iw, Len, iwlen, pfree, 
+                           Nv, Next, Last, Head, Elen, Degree, W, Control, Info, C, BucketSet );
   }
   
   template<> 
@@ -50,8 +58,8 @@ namespace Tacho {
                                     double Info[],
                                     const SuiteSparse_long C[],
                                     SuiteSparse_long BucketSet[] ) {
-    camd_l2( n, Pe, Iw, Len, iwlen, pfree, 
-             Nv, Next, Last, Head, Elen, Degree, W, Control, Info, C, BucketSet );
+    TACHO_CHOLMOD(camd_l2)( n, Pe, Iw, Len, iwlen, pfree, 
+                            Nv, Next, Last, Head, Elen, Degree, W, Control, Info, C, BucketSet );
   }
   
   template<typename OrdinalType,
@@ -125,8 +133,8 @@ namespace Tacho {
     }
 
     void computeOrdering() {
-      camd_defaults(_control);
-      camd_control(_control);
+      TACHO_CHOLMOD(camd_defaults)(_control);
+      TACHO_CHOLMOD(camd_control)(_control);
 
       ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
       ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());

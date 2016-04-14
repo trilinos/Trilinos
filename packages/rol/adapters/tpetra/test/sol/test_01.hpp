@@ -50,6 +50,8 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
+#include <iostream>
+
 // ROL_Types contains predefined constants and objects
 #include "ROL_Types.hpp"
 // ROL algorithmic information

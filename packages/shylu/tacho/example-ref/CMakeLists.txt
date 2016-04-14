@@ -159,6 +159,19 @@ ENDIF()
 # ENDIF()
 
 
+# Solver Interface
+# ================
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleSolver_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleSolver_Pthreads.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
         SOURCE_FILES test.mtx
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
