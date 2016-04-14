@@ -73,7 +73,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION(  (inputPoints.dimension(0) <= 0), std::invalid_argument,
                                    ">>> ERROR (Intrepid2::getValues_HGRAD_Args): dim 0 (number of points) > 0 required for inputPoints array");
 
-    INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<index_type>(inputPoints.dimension(1)) == static_cast<index_type>(spaceDim)), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.dimension(1) == spaceDim), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 1 (spatial dimension) of inputPoints array  does not match cell dimension");
 
 
@@ -96,7 +96,7 @@ namespace Intrepid2 {
 
     // Check rank of outputValues (all operators are admissible in 1D) and its dim 2 when operator is
     // GRAD, CURL (only in 2D), or Dk.
-
+    
     if(spaceDim == 1) {
       switch(operatorType){
       case OPERATOR_VALUE:
@@ -139,7 +139,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
 
-        INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<index_type>(outputValues.dimension(2)) == static_cast<index_type>(spaceDim) ),
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
                                       std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 2 of outputValues must equal cell dimension when operator = GRAD, CURL (in 2D), or D1.");
         break;
@@ -155,7 +155,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
 
-        INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<index_type>(outputValues.dimension(2)) == static_cast<index_type>(Intrepid2::getDkCardinality(operatorType, spaceDim)) ),
+        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == Intrepid2::getDkCardinality(operatorType, spaceDim)),
                                       std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 2 of outputValues must equal cardinality of the Dk multiset.");
         break;
@@ -163,19 +163,19 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) Invalid operator");
       }
     }
-
-
+    
+    
     // Verify dim 0 and dim 1 of outputValues
     INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(1) == inputPoints.dimension(0) ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
-
-    INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<index_type>(outputValues.dimension(0)) == static_cast<index_type>(basisCard) ),
+    
+    INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
   }
-
-
+  
+  
   template<typename outputValueViewType,
            typename inputPointViewType>
   void getValues_HCURL_Args( /**/  outputValueViewType   outputValues,
@@ -183,39 +183,39 @@ namespace Intrepid2 {
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
                              const ordinal_type          basisCard ) {
-
+    
     const auto spaceDim = cellTopo.getDimension();
-
+    
     // Verify that cell is 2D or 3D (this is redundant for default bases where we use correct cells,
     //  but will force any user-defined basis for HCURL spaces to use 2D or 3D cells
     INTREPID2_TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) cell dimension = 2 or 3 required for HCURL basis");
-
-
+    
+    
     // Verify inputPoints array
     INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.rank() == 2), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 2 required for inputPoints array");
     INTREPID2_TEST_FOR_EXCEPTION(  (inputPoints.dimension(0) <= 0), std::invalid_argument,
                                    ">>> ERROR (Intrepid2::getValues_HCURL_Args): dim 0 (number of points) > 0 required for inputPoints array");
-
-    INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<index_type>(inputPoints.dimension(1)) == static_cast<index_type>(spaceDim)), std::invalid_argument,
+    
+    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.dimension(1) == spaceDim), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 1 (spatial dimension) of inputPoints array  does not match cell dimension");
-
+    
     // Verify that all inputPoints are in the reference cell
     /*
       INTREPID2_TEST_FOR_EXCEPTION( !CellTools<Scalar>::checkPointSetInclusion(inputPoints, cellTopo), std::invalid_argument,
       ">>> ERROR: (Intrepid2::getValues_HCURL_Args) One or more points are outside the "
       << cellTopo <<" reference cell");
     */
-
+    
     // Verify that operatorType is admissible for HCURL fields
     INTREPID2_TEST_FOR_EXCEPTION( !( (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_CURL) ), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) operator = VALUE or CURL required for HCURL fields.");
-
-
+    
+    
     // Check rank of outputValues: for VALUE should always be rank-3 array with (F,P,D) layout
     switch(operatorType) {
-
+      
     case OPERATOR_VALUE:
       INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 3 required for outputValues when operator is VALUE");
@@ -223,9 +223,9 @@ namespace Intrepid2 {
                                     std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension when operator is VALUE.");
       break;
-
+      
     case OPERATOR_CURL:
-
+      
       // in 3D we need an (F,P,D) container because CURL gives a vector field:
       if(spaceDim == 3) {
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3 ) ,
@@ -242,25 +242,25 @@ namespace Intrepid2 {
                                       ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 2 required for outputValues in 2D when operator is CURL");
       }
       break;
-
+      
     default:
       INTREPID2_TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid2::getValues_HCURL_Args) Invalid operator");
     }
-
-
+    
+    
     // Verify dim 0 and dim 1 of outputValues
     INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(1) == inputPoints.dimension(0) ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
-
+    
     INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
-
+    
   }
-
-
-
+  
+  
+  
   template<typename outputValueViewType,
            typename inputPointViewType>
   void getValues_HDIV_Args(  /**/  outputValueViewType   outputValues,
@@ -268,36 +268,36 @@ namespace Intrepid2 {
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
                              const ordinal_type          basisCard ) {
-
+    
     const auto spaceDim = cellTopo.getDimension();
-
+    
     // Verify inputPoints array
     INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.rank() == 2), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) rank = 2 required for inputPoints array");
     INTREPID2_TEST_FOR_EXCEPTION(  (inputPoints.dimension(0) <= 0), std::invalid_argument,
                                    ">>> ERROR (Intrepid2::getValues_HDIV_Args): dim 0 (number of points) > 0 required for inputPoints array");
-
-    INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<index_type>(inputPoints.dimension(1)) == static_cast<index_type>(spaceDim)), std::invalid_argument,
+    
+    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.dimension(1) == spaceDim), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 1 (spatial dimension) of inputPoints array  does not match cell dimension");
-
+    
     // Verify that all inputPoints are in the reference cell
     /*
       INTREPID2_TEST_FOR_EXCEPTION( !CellTools<Scalar>::checkPointSetInclusion(inputPoints, cellTopo), std::invalid_argument,
       ">>> ERROR: (Intrepid2::getValues_HDIV_Args) One or more points are outside the "
       << cellTopo <<" reference cell");
     */
-
+    
     // Verify that operatorType is admissible for HDIV fields
     INTREPID2_TEST_FOR_EXCEPTION( !( (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_DIV) ), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) operator = VALUE or DIV required for HDIV fields.");
-
-
+    
+    
     // Check rank of outputValues
     switch(operatorType) {
     case OPERATOR_VALUE:
       INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::getValues_HDIV_Args) rank = 3 required for outputValues when operator is VALUE.");
-
+      
       INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
                                     std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 2 of outputValues must equal cell dimension for operator VALUE.");
@@ -306,22 +306,22 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::getValues_HDIV_Args) rank = 2 required for outputValues when operator is DIV.");
       break;
-
+      
     default:
       INTREPID2_TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid2::getValues_HDIV_Args) Invalid operator");
     }
-
-
+    
+    
     // Verify dim 0 and dim 1 of outputValues
     INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(1) == inputPoints.dimension(0) ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
-
+    
     INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
   }
-
+  
 }
 
 #endif
