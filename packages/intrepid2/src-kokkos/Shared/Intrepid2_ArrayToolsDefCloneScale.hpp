@@ -91,7 +91,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cl, bf, pt;
-        unrollIndex( cl, bf, pt,
+        Util::unrollIndex( cl, bf, pt,
                      _outputFields.dimension(0), 
                      _outputFields.dimension(1),
                      iter );
@@ -99,8 +99,8 @@ namespace Intrepid2 {
         auto       output = Kokkos::subdynrankview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
         const auto input  = Kokkos::subdynrankview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
 
-        const size_type iend  = out.dimension(0);
-        const size_type jend  = out.dimension(1);
+        const size_type iend  = output.dimension(0);
+        const size_type jend  = output.dimension(1);
 
         for(size_type i = 0; i < iend; ++i)
           for(size_type j = 0; j < jend; ++j)
@@ -161,7 +161,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cl, bf, pt;
-        unrollIndex( cl, bf, pt,
+        Util::unrollIndex( cl, bf, pt,
                      _outputFields.dimension(0),
                      _outputFields.dimension(1),
                      iter );
@@ -170,8 +170,8 @@ namespace Intrepid2 {
         const auto field  = Kokkos::subdynrankview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
         const auto factor = Kokkos::subdynrankview( _inputFactors, cl, bf );
 
-        const size_type iend  = outputFields.dimension(3);
-        const size_type jend  = outputFields.dimension(4);
+        const size_type iend  = _outputFields.dimension(3);
+        const size_type jend  = _outputFields.dimension(4);
 
         const auto val = factor();
         for(size_type i = 0; i < iend; ++i)
@@ -222,16 +222,16 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cl, bf, pt;
-        unrollIndex( cl, bf, pt,
-                     _outputFields.dimension(0),
-                     _outputFields.dimension(1),
+        Util::unrollIndex( cl, bf, pt,
+                     _inoutFields.dimension(0),
+                     _inoutFields.dimension(1),
                      iter );
         
-        auto       inout  = Kokkos::subdynrankview( cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-        const auto factor = Kokkos::subdynrankview( cl, bf );
+        auto       inout  = Kokkos::subdynrankview( _inoutFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto factor = Kokkos::subdynrankview( _inputFactors, cl, bf );
 
-        const size_type iend  = outputFields.dimension(3);
-        const size_type jend  = outputFields.dimension(4);
+        const size_type iend  = _inoutFields.dimension(3);
+        const size_type jend  = _inoutFields.dimension(4);
 
         const auto val = factor();
         for(size_type i = 0; i < iend; ++i)
@@ -240,9 +240,9 @@ namespace Intrepid2 {
       }
     };
     
-    const size_type loopSize = outputFields.dimension(0)*outputFields.dimension(1)*outputFields.dimension(2);
+    const size_type loopSize = inoutFields.dimension(0)*inoutFields.dimension(1)*inoutFields.dimension(2);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, Functor(inoutFactors, inputFields) );
+    Kokkos::parallel_for( policy, Functor(inoutFields, inputFactors) );
   }
 
 } // end namespace Intrepid2

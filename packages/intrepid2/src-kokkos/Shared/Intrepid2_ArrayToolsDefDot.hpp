@@ -46,18 +46,17 @@
             Kokkorized by Kyungjoo Kim
 */
 
-namespace Intrepid {
+#ifndef __INTREPID2_ARRAYTOOLS_DEF_DOT_HPP__
+#define __INTREPID2_ARRAYTOOLS_DEF_DOT_HPP__
 
-  KOKKOS_INLINE_FUNCTION
-  static void
-
+namespace Intrepid2 {
 
   template<typename ExecSpaceType>
   template<typename outputValueType,     class ...outputProperties,
            typename leftInputValueType,  class ...leftInputProperties,
            typename rightInputValueType, class ...rightInputProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::Internal::
   dotMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
@@ -84,12 +83,12 @@ namespace Intrepid {
         size_type cl, bf, pt;
 
         if (_hasField) 
-          unrollIndex( cl, bf, pt, 
+          Util::unrollIndex( cl, bf, pt, 
                        _output.dimension(0),
                        _output.dimension(1), 
                        iter );
         else          
-          unrollIndex( cl, pt,
+          Util::unrollIndex( cl, pt,
                        _output.dimension(0),
                        iter);
 
@@ -125,7 +124,7 @@ namespace Intrepid {
            typename inputDataValueType,   class ...inputDataProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
   dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                         const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -195,7 +194,7 @@ namespace Intrepid {
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   ArrayTools<ExecSpaceType>::
   dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                        const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -257,3 +256,4 @@ namespace Intrepid {
   }
 
 } // end namespace Intrepid2
+#endif
