@@ -259,7 +259,7 @@ void run(const UserInputForTests &uinput,
 
   comparison_source->timers["solve time"]->stop();
   if (rank == 0)
-    cout << problem_kind + "Problem solved." << endl;
+    cout << problem_kind + " problem solved." << endl;
  
 
 #define KDDKDD
@@ -381,26 +381,8 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
 }
 
-class testClass
-{
-public:
-	int x = 3;
-
-};
-
 int main(int argc, char *argv[])
 {
-	/*
-	ArrayRCP< float > testArray;
-	ArrayRCP< float >::size_type newSize = 10;
-	testArray.resize( newSize, 0 );
-	std::cout << testArray.size() << std::endl;
-	newSize = 20;
-	testArray.resize( newSize, 0 );
-	std::cout << testArray.size() << std::endl;
-	return 0;
-*/
-
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
   ////////////////////////////////////////////////////////////

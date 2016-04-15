@@ -657,9 +657,9 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   
   // get metrics
   std::map<const string, const base_metric_t> prb_metrics = this->metricArrayToMap
-    (metricObjectPrb->getAllMetrics());
+    (metricObjectPrb->getAllMetricsOfType( "Metrics" )); // MDM - we may want to generalize this to getAllMetrics()
   std::map<const string, const base_metric_t> ref_metrics = this->metricArrayToMap
-    (metricObjectRef->getAllMetrics());
+    (metricObjectRef->getAllMetricsOfType( "Metrics" )); // MDM - we may want to generalize this to getAllMetrics()
   
   // get timing data
   std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);
