@@ -51,28 +51,19 @@
 
 namespace Intrepid2 {
 
-  template<typename ExecSpaceType>
-  template<typename outputValueType,     class ...outputProperties,
-           typename leftInputValueType,  class ...leftInputProperties,
-           typename rightInputValueType, class ...rightInputProperties>
-  void
-  ArrayTools<ExecSpaceType>::Internal::
-  dotMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
-               const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
-               const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput, 
-               const bool hasField ) {
-    typedef leftInputValueType value_type;
-
-    struct Functor {
-      Kokkos::DynRankView<outputValueType,    outputProperties...>     _output;
-      Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  _leftInput;
-      Kokkos::DynRankView<rightInputValueType,rightInputProperties...> _rightInput;
+    namespace FunctorArrayTools {
+    template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
+    struct F_dotMultiply {
+      outputViewType _output;
+      leftInputViewType _leftInput;
+      rightInputViewType _rightInput;
       const bool _hasField;
+      typedef typename leftInputViewType::value_type value_type;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<outputValueType,    outputProperties...>     output_,
-              Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInput_,
-              Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput_,
+      F_dotMultiply(outputViewType output_,
+              leftInputViewType leftInput_,
+              rightInputViewType rightInput_,
               const bool hasField_)
         : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
           _hasField(hasField_) {}
@@ -115,11 +106,29 @@ namespace Intrepid2 {
         result() = tmp;
       }
     };
+    } //namespace
+
+  template<typename SpT>
+  template<typename outputValueType,     class ...outputProperties,
+           typename leftInputValueType,  class ...leftInputProperties,
+           typename rightInputValueType, class ...rightInputProperties>
+  void
+  ArrayTools<SpT>::Internal::
+  dotMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+               const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+               const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput, 
+               const bool hasField ) {
+
+    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
+    typedef Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
+    typedef Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
+    typedef FunctorArrayTools::F_dotMultiply<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
+    typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
                                  /**/       output.dimension(0)*output.dimension(1) );
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField) );
+    Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, hasField) );
   }
 
 
